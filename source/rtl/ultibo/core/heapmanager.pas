@@ -1,7 +1,7 @@
 {
 Ultibo Heap Manager interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -261,7 +261,7 @@ type
  PHeapSnapshot = ^THeapSnapshot;
  THeapSnapshot = record 
   {Snapshot Properties}
-  Adddress:PtrUInt;       {Address of the Heap Block}
+  Address:PtrUInt;        {Address of the Heap Block}
   Size:PtrUInt;           {Size of the Heap Block (including the size of the THeapBlock structure)}
   State:LongWord;         {State of the Heap Block (eg HEAP_STATE_FREE)}
   Flags:LongWord;         {Flags of the Heap Block (eg HEAP_FLAG_SHARED)}
@@ -4994,7 +4994,7 @@ begin
        if (Block^.State = HEAP_SIGNATURE + HEAP_STATE_FREE) and ((Flags = HEAP_FLAG_ALL) or ((Block^.Flags and Flags) = Flags)) and ((Affinity = CPU_AFFINITY_ALL) or ((Block^.Affinity and Affinity) = Affinity)) then
         begin
          {Add Block}
-         Current.Adddress:=PtrUInt(Block);
+         Current.Address:=PtrUInt(Block);
          Current.Size:=Block^.Size;
          Current.State:=(Block^.State and HEAP_STATE_MASK);  
          Current.Flags:=Block^.Flags;  
@@ -5015,7 +5015,7 @@ begin
        if (Block^.State = HEAP_SIGNATURE + HEAP_STATE_USED) and ((Flags = HEAP_FLAG_ALL) or ((Block^.Flags and Flags) = Flags)) and ((Affinity = CPU_AFFINITY_ALL) or ((Block^.Affinity and Affinity) = Affinity)) then
         begin
          {Add Block}
-         Current.Adddress:=PtrUInt(Block);
+         Current.Address:=PtrUInt(Block);
          Current.Size:=Block^.Size;
          Current.State:=(Block^.State and not(HEAP_SIGNATURE));  
          Current.Flags:=Block^.Flags;  
@@ -5036,7 +5036,7 @@ begin
        if ((Flags = HEAP_FLAG_ALL) or ((Block^.Flags and Flags) = Flags)) and ((Affinity = CPU_AFFINITY_ALL) or ((Block^.Affinity and Affinity) = Affinity)) then
         begin
          {Add Block}
-         Current.Adddress:=PtrUInt(Block);
+         Current.Address:=PtrUInt(Block);
          Current.Size:=Block^.Size;
          Current.State:=(Block^.State and not(HEAP_SIGNATURE));  
          Current.Flags:=Block^.Flags;  

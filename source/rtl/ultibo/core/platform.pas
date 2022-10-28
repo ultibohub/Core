@@ -138,6 +138,19 @@ const
  VECTOR_TABLE_ENTRY_ARM_FIQ       = 7; {ARM FIQ Vector}
  {AARCH64}
  
+ {Shutdown Flags}
+ SHUTDOWN_FLAG_NONE         = $00000000;
+ SHUTDOWN_FLAG_RESTART      = $00000001; {The system is shutting down and restarting}
+ SHUTDOWN_FLAG_FORCE        = $00000002; {Forced shutdown or restart requested, registered callbacks will be bypassed}
+
+ {Shutdown constants}
+ SHUTDOWN_SIGNATURE = $A73D8B0C;
+
+ SHUTDOWN_DEFAULT_DELAY = 1000;    {Default delay before starting a shutdown or restart (Milliseconds)}
+ SHUTDOWN_MINIMUM_DELAY = 10;      {Minimum delay before starting a shutdown or restart (Milliseconds)}
+
+ SHUTDOWN_DEFAULT_TIMEOUT = 5000;  {Default time to wait for a shutdown callback to complete before continuing (Milliseconds)}
+
  {Exception Types}
  EXCEPTION_TYPE_DATA_ABORT            = 1;
  EXCEPTION_TYPE_PREFETCH_ABORT        = 2;
@@ -310,17 +323,29 @@ type
  end;
  
 type
+ {Prototype for Shutdown Callback}
+ TShutdownCallback = function(Flags:LongWord;Parameter:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+
  {Shutdown Entry}
  PShutdownEntry = ^TShutdownEntry;
  TShutdownEntry = record
   {Shutdown Properties}
-  Signature:LongWord;                    {Signature for entry validation}
-  Shutdown:procedure(Parameter:Pointer);{$IFDEF i386} stdcall;{$ENDIF} {The procedure to call on Shutdown}
-  Parameter:Pointer;                     {The parameter to pass to the Shutdown procedure (or nil)}
+  Signature:LongWord;             {Signature for entry validation}
+  Callback:TShutdownCallback;     {The procedure to call on Shutdown or Restart}
+  Parameter:Pointer;              {The parameter to pass to the Callback (or nil)}
+  Timeout:LongWord;               {The time to wait for the Callback to complete (or 0 to use the default timeout) (Milliseconds)}
   {Internal Properties}
-  Prev:PShutdownEntry;                   {Previous entry in Shutdown table}
-  Next:PShutdownEntry;                   {Next entry in Shutdown table}
+  Prev:PShutdownEntry;            {Previous entry in Shutdown table}
+  Next:PShutdownEntry;            {Next entry in Shutdown table}
  end; 
+
+ {Shutdown Data (Used internally by Shutdown or Restart)} 
+ PShutdownData = ^TShutdownData;
+ TShutdownData = record
+  Delay:LongWord;                 {Delay value requested for Shutdown or Restart (Milliseconds)}
+  Flags:LongWord;                 {Flags for requested Shutdown or Restart (eg SHUTDOWN_FLAG_RESTART)}
+  Entry:PShutdownEntry;           {The current shutdown entry being processed}
+ end;
  
 type 
  {Prototypes for Interrupt (IRQ/FIQ) Handlers}
@@ -449,7 +474,7 @@ type
  PPlatformSemaphore = ^TPlatformSemaphore;
  TPlatformSemaphore = record
   Semaphore:THandle;
-  WaitSemaphore:function(Handle:THandle):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+  WaitSemaphore:function(Handle:THandle;Timeout:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
   SignalSemaphore:function(Handle:THandle):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  end; 
  
@@ -1198,6 +1223,22 @@ type
   UserData:Pointer;
  end;
  
+type
+ {Platform Timer}
+ PPlatformTimer = ^TPlatformTimer;
+ TPlatformTimer = record
+  Data:Pointer;
+  CreateTimer:function(Interval:LongWord;Enabled,Reschedule:Boolean;Event:TTimerEvent;Data:Pointer):TTimerHandle;{$IFDEF i386} stdcall;{$ENDIF}
+ end;
+ 
+type
+ {Platform Worker}
+ PPlatformWorker = ^TPlatformWorker;
+ TPlatformWorker = record
+  Data:Pointer;
+  ScheduleWorker:function(Interval:LongWord;Task:TWorkerTask;Data:Pointer;Callback:TWorkerCallback):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ end;
+ 
 {==============================================================================}
 type
  {Platform specific classes}
@@ -1250,12 +1291,17 @@ var
  VectorTableLock:TPlatformLock;
  HandleNameLock:TPlatformLock;
  HandleTableLock:TPlatformLock;
+ ShutdownTableLock:TPlatformLock;
  
  UtilityLock:TPlatformLock;
  
 var
  {Semaphore Variables}
  ShutdownSemaphore:TPlatformSemaphore;
+
+var
+ {Worker Variables}
+ ShutdownWorker:TPlatformWorker;
  
 var
  {Clock Variables}
@@ -2150,8 +2196,10 @@ function GetSystemCallEntry(Number:LongWord):TSystemCallEntry; inline;
 {System Functions}
 function SystemRestart(Delay:LongWord):LongWord; inline;
 function SystemShutdown(Delay:LongWord):LongWord; inline;
-//function SystemRegister //To Do //Register Shutdown/Restart handler
-//function SystemDeregister //To Do //Deregister Shutdown/Restart handler
+
+function SystemRegisterShutdown(Callback:TShutdownCallback;Parameter:Pointer;Timeout:LongWord):LongWord;
+function SystemDeregisterShutdown(Callback:TShutdownCallback;Parameter:Pointer):LongWord;
+
 function SystemGetUptime:Int64; inline;
 function SystemGetCommandLine:String; inline;
 function SystemGetEnvironment:Pointer; inline;
@@ -2791,6 +2839,8 @@ var
  {Platform specific variables}
  HandleTable:THandleTable;
  
+ ShutdownTable:PShutdownEntry;
+ 
  DataAbortException:EDataAbort;
  PrefetchAbortException:EPrefetchAbort;
  UndefinedInstructionException:EUndefinedInstruction;
@@ -2869,6 +2919,11 @@ begin
  HandleTableLock.AcquireLock:=nil;
  HandleTableLock.ReleaseLock:=nil;
 
+ {Initialize Shutdown Table Lock}
+ ShutdownTableLock.Lock:=INVALID_HANDLE_VALUE;
+ ShutdownTableLock.AcquireLock:=nil;
+ ShutdownTableLock.ReleaseLock:=nil;
+
  {Initialize Utility Lock}
  UtilityLock.Lock:=INVALID_HANDLE_VALUE;
  UtilityLock.AcquireLock:=nil;
@@ -2878,6 +2933,9 @@ begin
  ShutdownSemaphore.Semaphore:=INVALID_HANDLE_VALUE;
  ShutdownSemaphore.WaitSemaphore:=nil;
  ShutdownSemaphore.SignalSemaphore:=nil;
+ 
+ {Initialize Shutdown Worker}
+ ShutdownWorker.ScheduleWorker:=nil;
  
  {Setup System Handlers}
  {Random Functions}
@@ -2985,6 +3043,12 @@ begin
      HandleTable.Handles[Count]:=nil;
     end;
   end;  
+
+ {Initialize Shutdown Table}
+ ShutdownTable:=nil;
+
+ {Initialize Shutdown Worker}
+ ShutdownWorker.Data:=AllocMem(SizeOf(TShutdownData));
  
  {Initialize Hardware Exceptions}
  DataAbortException:=EDataAbort.Create(STRING_DATA_ABORT);
@@ -3447,6 +3511,129 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Internal Functions}
+procedure ShutdownCallback(Data:PShutdownData);
+{Called by a worker thread to process a shutdown entry callback}
+begin
+ {}
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Check Entry}
+ if Data.Entry = nil then Exit;
+ 
+ {Call the Callback}
+ Data.Entry.Callback(Data.Flags,Data.Entry.Parameter);
+end;
+
+{==============================================================================}
+
+procedure ShutdownCompleted(Data:PShutdownData);
+{Called by a worker thread to inform that a shutdown callback has completed}
+begin
+ {}
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Check Entry}
+ if Data.Entry = nil then Exit;
+
+ {Signal the Semaphore}
+ if Assigned(ShutdownSemaphore.SignalSemaphore) then
+  begin
+   ShutdownSemaphore.SignalSemaphore(ShutdownSemaphore.Semaphore);
+  end; 
+end;
+
+{==============================================================================}
+
+procedure ShutdownTask(Data:PShutdownData);
+{Called by a worker thread to initiate a Shutdown or Restart sequence}
+var
+ Delay:LongWord;
+ Flags:LongWord;
+ Status:LongWord;
+ Timeout:LongWord;
+ Entry:PShutdownEntry;
+begin
+ {}
+ {Acquire Table Lock}
+ if ShutdownTableLock.Lock <> INVALID_HANDLE_VALUE then ShutdownTableLock.AcquireLock(ShutdownTableLock.Lock);
+ try
+  {Set Defaults}
+  Delay:=SHUTDOWN_DEFAULT_DELAY;
+  Flags:=SHUTDOWN_FLAG_NONE;
+
+  {Check Data}
+  if Data <> nil then
+   begin
+    Delay:=Data.Delay;
+    Flags:=Data.Flags;
+   end;
+
+  {Wait Delay}
+  Sleep(Delay);
+
+  {Check Data and Flags}
+  if (Data <> nil) and ((Flags and SHUTDOWN_FLAG_FORCE) = 0) then
+   begin
+    {Notify Registered Callbacks}
+    Entry:=ShutdownTable;
+    while Entry <> nil do
+     begin
+      if Assigned(ShutdownWorker.ScheduleWorker) and Assigned(ShutdownSemaphore.WaitSemaphore) then
+       begin
+        {Set Entry}
+        Data.Entry:=Entry;
+        
+        {Schedule Worker}
+        Status:=ShutdownWorker.ScheduleWorker(0,TWorkerTask(ShutdownCallback),Data,TWorkerCallback(ShutdownCompleted));
+        if Status <> ERROR_SUCCESS then
+         begin
+          if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to schedule worker for shutdown callback (Status=' + ErrorToString(Status) + ')');
+         end
+        else
+         begin
+          {Get Timeout}
+          Timeout:=SHUTDOWN_DEFAULT_TIMEOUT;
+          if Entry.Timeout > 0 then Timeout:=Entry.Timeout;
+          
+          {Wait Completion}
+          Status:=ShutdownSemaphore.WaitSemaphore(ShutdownSemaphore.Semaphore,Timeout);
+          if Status = ERROR_WAIT_TIMEOUT then
+           begin
+            if PLATFORM_LOG_ENABLED then PlatformLogError('Timeout waiting for shutdown callback (Status=' + ErrorToString(Status) + ')'); 
+           end
+          else if Status <> ERROR_SUCCESS then
+           begin
+            if PLATFORM_LOG_ENABLED then PlatformLogError('Failure waiting for shutdown callback (Status=' + ErrorToString(Status) + ')');
+           end;
+         end; 
+       end; 
+
+      {Get Next Entry}
+      Entry:=Entry.Next;
+     end;
+     
+    {Reset Entry}
+    Data.Entry:=nil;
+   end;
+
+  {Check Flags}
+  if (Flags and SHUTDOWN_FLAG_RESTART) = 0 then
+   begin
+    {Shutdown}
+    SystemShutdownHandler(SHUTDOWN_MINIMUM_DELAY);
+   end
+  else
+   begin
+    {Restart}
+    SystemRestartHandler(SHUTDOWN_MINIMUM_DELAY);
+   end; 
+ finally
+  {Release Table Lock}
+  if ShutdownTableLock.Lock <> INVALID_HANDLE_VALUE then ShutdownTableLock.ReleaseLock(ShutdownTableLock.Lock);
+ end;  
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -5007,18 +5194,29 @@ end;
 {System Functions}
 function SystemRestart(Delay:LongWord):LongWord; inline;
 {Restart the system}
+{Delay: How long to delay before commencing the restart (Milliseconds)}
+{Return: ERROR_SUCCESS if the restart was successfully initiated or another error code on failure}
+var
+ Data:PShutdownData;
 begin
  {}
  if Assigned(SystemRestartHandler) then
   begin
-   //To Do //Transfer to Worker
-   
-   //To Do //Implement Delay (by Worker)
-   
-   //To Do //Call Shutdown handlers (Worker with Callback using Semaphore with Timeout)
-   //To Do //Optional Force parameter to bypass handlers
-   
-   Result:=SystemRestartHandler(Delay); //To Do //Pass default delay
+   if Assigned(ShutdownWorker.ScheduleWorker) and (ShutdownWorker.Data <> nil) then
+    begin
+     {Get Data}
+     Data:=PShutdownData(ShutdownWorker.Data);
+     Data.Delay:=Delay;
+     Data.Flags:=SHUTDOWN_FLAG_RESTART;
+     
+     {Schedule Worker}
+     Result:=ShutdownWorker.ScheduleWorker(0,TWorkerTask(ShutdownTask),Data,nil);
+    end
+   else
+    begin
+     {Call Handler}
+     Result:=SystemRestartHandler(Delay);
+    end; 
   end
  else
   begin
@@ -5030,23 +5228,164 @@ end;
 
 function SystemShutdown(Delay:LongWord):LongWord; inline;
 {Shutdown the system}
+{Delay: How long to delay before commencing the shutdown (Milliseconds)}
+{Return: ERROR_SUCCESS if the shutdown was successfully initiated or another error code on failure}
+var
+ Data:PShutdownData;
 begin
  {}
  if Assigned(SystemShutdownHandler) then
   begin
-   //To Do //Transfer to Worker
-   
-   //To Do //Implement Delay (by Worker)
-  
-   //To Do //Call Shutdown handlers (Worker with Callback using Semaphore with Timeout)
-   //To Do //Optional Force parameter to bypass handlers
-   
-   Result:=SystemShutdownHandler(Delay); //To Do //Pass default delay
+   if Assigned(ShutdownWorker.ScheduleWorker) and (ShutdownWorker.Data <> nil) then
+    begin
+     {Get Data}
+     Data:=PShutdownData(ShutdownWorker.Data);
+     Data.Delay:=Delay;
+     Data.Flags:=SHUTDOWN_FLAG_NONE;
+     
+     {Schedule Worker}
+     Result:=ShutdownWorker.ScheduleWorker(0,TWorkerTask(ShutdownTask),Data,nil);
+    end
+   else
+    begin
+     {Call Handler}
+     Result:=SystemShutdownHandler(Delay);
+    end; 
   end
  else
   begin
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
+end;
+
+{==============================================================================}
+
+function SystemRegisterShutdown(Callback:TShutdownCallback;Parameter:Pointer;Timeout:LongWord):LongWord;
+{Register a procedure to be called during system shutdown or restart}
+{Callback: The procedure to be called on shutdown or restart}
+{Parameter: A pointer to be passed to the callback procedure}
+{Timeout: Time the shutdown process should wait for this callback to complete (0 for the default timeout) (Milliseconds)}
+{Return: ERROR_SUCCESS if the callback was successfully registered or another error code on failure}
+var
+ Entry:PShutdownEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Callback}
+ if not Assigned(Callback) then Exit;
+
+ {Acquire Table Lock}
+ if ShutdownTableLock.Lock <> INVALID_HANDLE_VALUE then ShutdownTableLock.AcquireLock(ShutdownTableLock.Lock);
+ try
+  Result:=ERROR_ALREADY_EXISTS;
+
+  {Check Entry}
+  Entry:=ShutdownTable;
+  while Entry <> nil do
+   begin
+    {Check Entry}
+    if (@Entry.Callback = @Callback) and (Entry.Parameter = Parameter) then Exit;
+     
+    {Next Entry}
+    Entry:=Entry.Next;
+   end;
+
+  Result:=ERROR_OUTOFMEMORY;
+
+  {Create Entry}
+  Entry:=AllocMem(SizeOf(TShutdownEntry));
+  if Entry = nil then Exit;
+
+  {Update Entry}
+  Entry.Signature:=SHUTDOWN_SIGNATURE;
+  Entry.Callback:=Callback;
+  Entry.Parameter:=Parameter;
+  Entry.Timeout:=Timeout;
+
+  {Link Entry}
+  if ShutdownTable = nil then
+   begin
+    ShutdownTable:=Entry;
+   end
+  else
+   begin
+    Entry.Next:=ShutdownTable;
+    ShutdownTable.Prev:=Entry;
+    ShutdownTable:=Entry;
+   end;
+
+  if PLATFORM_LOG_ENABLED then PlatformLogInfo('Registerd shutdown callback (Callback=' + PtrToHex(@Callback) + ')');
+
+  Result:=ERROR_SUCCESS;
+ finally
+  {Release Table Lock}
+  if ShutdownTableLock.Lock <> INVALID_HANDLE_VALUE then ShutdownTableLock.ReleaseLock(ShutdownTableLock.Lock);
+ end;  
+end;
+
+{==============================================================================}
+
+function SystemDeregisterShutdown(Callback:TShutdownCallback;Parameter:Pointer):LongWord;
+{Deregister a procedure from being called during system shutdown or restart}
+{Callback: The procedure previously registered for shutdown or restart}
+{Parameter: The pointer previously registered for the callback procedure}
+{Return: ERROR_SUCCESS if the callback was successfully deregistered or another error code on failure}
+var
+ Prev:PShutdownEntry;
+ Next:PShutdownEntry;
+ Entry:PShutdownEntry;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Callback}
+ if not Assigned(Callback) then Exit;
+
+ {Acquire Table Lock}
+ if ShutdownTableLock.Lock <> INVALID_HANDLE_VALUE then ShutdownTableLock.AcquireLock(ShutdownTableLock.Lock);
+ try
+  Result:=ERROR_NOT_FOUND;
+  
+  {Find Entry}
+  Entry:=ShutdownTable;
+  while Entry <> nil do
+   begin
+    {Check Entry}
+    if (@Entry.Callback = @Callback) and (Entry.Parameter = Parameter) then Break;
+     
+    {Next Entry}
+    Entry:=Entry.Next;
+   end;
+  if Entry = nil then Exit;
+
+  {Unlink Entry}
+  Prev:=Entry.Prev;
+  Next:=Entry.Next;
+  if Prev = nil then
+   begin
+    ShutdownTable:=Next;
+    if Next <> nil then Next.Prev:=nil;
+   end
+  else
+   begin
+    Prev.Next:=Next;
+    if Next <> nil then Next.Prev:=Prev;
+   end;     
+
+  {Invalidate Entry}
+  Entry.Signature:=0;
+
+  {Free Entry}
+  FreeMem(Entry);
+
+  if PLATFORM_LOG_ENABLED then PlatformLogInfo('Deregisterd shutdown callback (Callback=' + PtrToHex(@Callback) + ')');
+
+  Result:=ERROR_SUCCESS;
+ finally
+  {Release Table Lock}
+  if ShutdownTableLock.Lock <> INVALID_HANDLE_VALUE then ShutdownTableLock.ReleaseLock(ShutdownTableLock.Lock);
+ end;  
 end;
 
 {==============================================================================}

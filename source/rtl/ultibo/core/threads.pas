@@ -221,7 +221,7 @@ Threads
           Suitable for use on multiprocessor systems.
 
   Worker - //To Do
-           Not suitable for use by Interrupt handlers unless the WorkerSchedulerIRQ or WorkerSchedulerFIQ functions are used.
+           Not suitable for use by Interrupt handlers unless the WorkerScheduleIRQ or WorkerScheduleFIQ functions are used.
            Suitable for use on multiprocessor systems.
            
            Usage: 
@@ -2831,6 +2831,11 @@ begin
  HandleTableLock.AcquireLock:=SpinLock;
  HandleTableLock.ReleaseLock:=SpinUnlock;
 
+ {Initialize Shutdown Table Lock}
+ ShutdownTableLock.Lock:=SpinCreate;
+ ShutdownTableLock.AcquireLock:=SpinLock;
+ ShutdownTableLock.ReleaseLock:=SpinUnlock;
+
  {Initialize Utility Lock}
  UtilityLock.Lock:=SpinCreate;
  UtilityLock.AcquireLock:=SpinLock;
@@ -2838,8 +2843,11 @@ begin
  
  {Initialize Shutdown Semaphore}
  ShutdownSemaphore.Semaphore:=SemaphoreCreate(0);
- ShutdownSemaphore.WaitSemaphore:=SemaphoreWait;
+ ShutdownSemaphore.WaitSemaphore:=SemaphoreWaitEx;
  ShutdownSemaphore.SignalSemaphore:=SemaphoreSignal;
+ 
+ {Initialize Shutdown Worker}
+ ShutdownWorker.ScheduleWorker:=WorkerSchedule;
  
  {Initialize CodePage Lock}
  CodePageLock.Lock:=MutexCreate;

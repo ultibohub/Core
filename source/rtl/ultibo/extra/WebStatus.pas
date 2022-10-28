@@ -3194,7 +3194,7 @@ begin
    while Current <> nil do
     begin
      {Add Item}
-     AddItem5Column(AResponse,'0x' + AddrToHex(Current.Adddress),IntToStr(Current.Size),HeapStateToString(Current.State),FlagsToFlagName(Current.Flags),'0x' + IntToHex(Current.Affinity,8));
+     AddItem5Column(AResponse,'0x' + AddrToHex(Current.Address),IntToStr(Current.Size),HeapStateToString(Current.State),FlagsToFlagName(Current.Flags),'0x' + IntToHex(Current.Affinity,8));
    
      {Update Count}
      Inc(Count);
@@ -3228,7 +3228,7 @@ begin
    while Current <> nil do
     begin
      {Add Item}
-     AddItem5Column(AResponse,'0x' + AddrToHex(Current.Adddress),IntToStr(Current.Size),HeapStateToString(Current.State),FlagsToFlagName(Current.Flags),'0x' + IntToHex(Current.Affinity,8));
+     AddItem5Column(AResponse,'0x' + AddrToHex(Current.Address),IntToStr(Current.Size),HeapStateToString(Current.State),FlagsToFlagName(Current.Flags),'0x' + IntToHex(Current.Affinity,8));
 
      {Update Count}
      Inc(Count);

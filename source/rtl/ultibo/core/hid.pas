@@ -633,11 +633,11 @@ type
   LogicalMaximum:LongInt;   {The logical maximum value for this usage}
   PhysicalMinimum:LongInt;  {The physical minimum value for this usage (in Units)}
   PhysicalMaximum:LongInt;  {The physical maximum value for this usage (in Units)}
-  UnitType:LongWord;        {The unit type for this uage}
+  UnitType:LongWord;        {The unit type for this usage}
   UnitExponent:LongWord;    {The unit exponent index for this usage}
 
   Aliases:PHIDUsages;       {The list of aliased usages for this control (See Delimiters in Section 6.2.2.8)}
-  AliasCount:LongWord;      {The number of aliased usages contained for this contro}
+  AliasCount:LongWord;      {The number of aliased usages contained for this control}
 
   Report:PHIDReport;        {The report this usage belongs to}
  end;
@@ -654,7 +654,7 @@ type
   Flags:LongWord;            {The main item flags for this report (eg HID_MAIN_ITEM_VARIABLE)}
 
   Size:LongWord;             {The number of bits per field in this report}
-  Count:LongWord;            {The number of field in this report}
+  Count:LongWord;            {The number of fields in this report}
 
   Index:LongWord;            {The index of this report in the collection (First report is 0)}
 
@@ -3213,7 +3213,7 @@ end;
 {==============================================================================}
 
 function HIDFreeDefinition(Definition:PHIDDefinition):LongWord;
-{Free a HID defintion to describing an input, output or feature report}
+{Free a HID definition describing an input, output or feature report}
 {Definition: The HID definition to be freed}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
@@ -5422,7 +5422,7 @@ end;
 {==============================================================================}
 {HID Helper Functions}
 function HIDIsBitField(Field:PHIDField):Boolean;
-{Return True is the supplied field contains a 1 bit value}
+{Return True if the supplied field contains a 1 bit value}
 begin
  {}
  Result:=False;
@@ -5436,7 +5436,7 @@ end;
 {==============================================================================}
 
 function HIDIsByteField(Field:PHIDField):Boolean;
-{Return True is the supplied HID field contains a 1 byte value}
+{Return True if the supplied HID field contains a 1 byte value}
 begin
  {}
  Result:=False;
@@ -5450,7 +5450,7 @@ end;
 {==============================================================================}
 
 function HIDIsWordField(Field:PHIDField):Boolean;
-{Return True is the supplied HID field contains a 2 byte value}
+{Return True if the supplied HID field contains a 2 byte value}
 begin
  {}
  Result:=False;
@@ -5464,7 +5464,7 @@ end;
 {==============================================================================}
 
 function HIDIsLongField(Field:PHIDField):Boolean;
-{Return True is the supplied HID field contains a 3 or 4 byte value}
+{Return True if the supplied HID field contains a 3 or 4 byte value}
 begin
  {}
  Result:=False;
@@ -5478,7 +5478,7 @@ end;
 {==============================================================================}
 
 function HIDIsSignedField(Field:PHIDField):Boolean;
-{Return True is the supplied HID field contains a signed value}
+{Return True if the supplied HID field contains a signed value}
 begin
  {}
  Result:=False;
