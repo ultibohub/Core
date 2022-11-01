@@ -37,10 +37,15 @@ References
 Mouse Devices
 =============
 
- This unit provides both the Mouse device interface and the generic USB HID mouse driver.
+ This unit provides both the Mouse device interface and a generic USB mouse driver.
 
 USB Mouse Devices
 =================
+
+ The USB mouse driver in this unit uses HID Boot Protocol only and has been replaced by
+ the HIDMouse unit which provides complete HID Report Protocol support for USB mice.
+ 
+ This driver will be moved to a seperate unit and retained for backwards compatibility only.
 
 }
 

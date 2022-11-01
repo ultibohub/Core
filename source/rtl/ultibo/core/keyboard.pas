@@ -47,15 +47,17 @@ References
 Keyboard Devices
 ================
 
- This unit provides both the Keyboard device interface and the generic USB HID keyboard driver.
+ This unit provides both the Keyboard device interface and a generic USB keyboard driver.
 
  The keyboard unit also provides the STDIN interface for the Run Time Library (RTL)
 
 USB Keyboard Devices
 ====================
 
- This driver currently uses HID Boot Protocol only and could be redesigned in future to use
- the HID Report Protocol instead to allow for greater language support etc.
+ The USB keyboard driver in this unit uses HID Boot Protocol only and has been replaced by
+ the HIDKeyboard unit which provides complete HID Report Protocol support for USB keyboards.
+ 
+ This driver will be moved to a seperate unit and retained for backwards compatibility only.
 
 }
 
