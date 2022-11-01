@@ -29,7 +29,7 @@ References
  
  Ping
  
-  RFC????
+  RFC792 - Internet Control Message Protocol - https://www.rfc-editor.org/rfc/rfc792
  
  NTP
   
@@ -84,7 +84,8 @@ unit Services;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Logging,SysUtils,Classes,Ultibo,UltiboClasses,Winsock2,Crypto,Authentication;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Logging,SysUtils,
+     Classes,Ultibo,UltiboClasses,Winsock2,Protocol,ICMP,Crypto,Authentication;
 
 {==============================================================================}
 {Global definitions}
@@ -95,7 +96,10 @@ const
  {Services specific constants}
  
  {Ping constants}
- //To do
+ PING_DEFAULT_SIZE = 32;      {Default number of bytes of data to send with echo (Ping) request} 
+ PING_MAXIMUM_SIZE = 65500;   {Maximum number of bytes of data to send with echo (Ping) request} 
+ PING_DEFAULT_COUNT = 4;      {Default number of echo (ping) requests to send in a sequence}
+ PING_DEFAULT_TIMEOUT = 3000; {Default time to wait for echo (Ping) response (Milliseconds)} 
  
  {NTP constants}
  NTP_VERSION_1 = 1;
@@ -289,7 +293,6 @@ type
  {Services specific types}
  
  {Ping types}
- //To do
  
  {NTP types}
  PNTPShort = ^TNTPShort;
@@ -344,19 +347,77 @@ type
  
  {Ping classes}
  TPingClient = class(TWinsock2RAWClient)
+ public
+  {}
+  constructor Create;
  private
   {Internal Variables}
+  FSize:LongWord;
+  FCount:LongWord;
+  FTimeout:LongWord;
+
+  FTimeToLive:Byte;
+  FNoFragment:Boolean;
+
+  FLastHost:String;
+  FLastAddress:String;
+
+  FLastTime:LongWord;
+  FReplyAddress:String;
+
+  FLastSequence:Word;
+  FLastIdentifier:Word;
+
+  FSendCount:LongWord;
+  FReceiveCount:LongWord;
+  FLostCount:LongWord;
 
   {Internal Methods}
-   
+  procedure SetSize(ASize:LongWord);
+  procedure SetCount(ACount:LongWord);
+  procedure SetTimeout(ATimeout:LongWord);
+
+  procedure SetTimeToLive(ATimeToLive:Byte);
+  procedure SetNoFragment(ANoFragment:Boolean);
+
+  function GetLastCount:LongWord;
+
+  function GetErrorCode:LongInt;
+  function GetErrorText:String;
+ protected
+  {Internal Methods}
+  procedure ResetPing; virtual;
  public
   {Public Properties}
- 
+  property Size:LongWord read FSize write SetSize;
+  property Count:LongWord read FCount write SetCount;
+  property Timeout:LongWord read FTimeout write SetTimeout;
+
+  property TimeToLive:Byte read FTimeToLive write SetTimeToLive;
+  property NoFragment:Boolean read FNoFragment write SetNoFragment;
+
+  property LastHost:String read FLastHost;
+  property LastAddress:String read FLastAddress;
+
+  property LastTime:LongWord read FLastTime;
+  property LastCount:LongWord read GetLastCount;
+  property ReplyAddress:String read FReplyAddress;
+
+  property LastSequence:Word read FLastSequence;
+  property LastIdentifier:Word read FLastIdentifier;
+
+  property SendCount:LongWord read FSendCount;
+  property ReceiveCount:LongWord read FReceiveCount;
+  property LostCount:LongWord read FLostCount;
+
+  property ErrorCode:LongInt read GetErrorCode;
+  property ErrorText:String read GetErrorText;
+
   {Public Methods}
-  //To Do
-  //function SendPing(const AHost:String
+  function FirstPing(const AHost:String):Boolean;
+  function NextPing:Boolean;
  end;
- 
+
  {NTP classes}
  TNTPClient = class(TWinsock2UDPClient)
  public
@@ -758,6 +819,483 @@ var
 {==============================================================================}
 {==============================================================================}
 {TPingClient}
+constructor TPingClient.Create;
+{Constructor for TPingClient class}
+begin
+ {}
+ inherited Create;
+ 
+ FSize:=PING_DEFAULT_SIZE;
+ FCount:=PING_DEFAULT_COUNT;
+ FTimeout:=PING_DEFAULT_TIMEOUT;
+end;
+
+{==============================================================================}
+
+procedure TPingClient.SetSize(ASize:LongWord);
+{Set the size in bytes of the data for the ping request}
+begin
+ {}
+ if FSize <> ASize then
+  begin
+   FSize:=ASize;
+   if FSize > PING_MAXIMUM_SIZE then FSize:=PING_DEFAULT_SIZE;
+
+   ResetPing;
+  end; 
+end;
+
+{==============================================================================}
+
+procedure TPingClient.SetCount(ACount:LongWord);
+{Set the number of ping requests to perform}
+begin
+ {}
+ if FCount <> ACount then
+  begin
+   FCount:=ACount;
+   if FCount = 0 then FCount:=PING_DEFAULT_COUNT;
+
+   ResetPing;
+  end; 
+end;
+
+{==============================================================================}
+
+procedure TPingClient.SetTimeout(ATimeout:LongWord);
+{Set the time to wait for a reply to each request (Milliseconds)}
+begin
+ {}
+ if FTimeout <> ATimeout then
+  begin
+   FTimeout:=ATimeout;
+   if FTimeout = 0 then FTimeout:=PING_DEFAULT_TIMEOUT;
+
+   ResetPing;
+  end; 
+end;
+
+{==============================================================================}
+
+procedure TPingClient.SetTimeToLive(ATimeToLive:Byte);
+{Set the time to live in hops for each request}
+begin
+ {}
+ if FTimeToLive <> ATimeToLive then
+  begin
+   FTimeToLive:=ATimeToLive;
+
+   ResetPing;
+  end; 
+end;
+
+{==============================================================================}
+
+procedure TPingClient.SetNoFragment(ANoFragment:Boolean);
+{Set the don't fragment bit in the header of each request}
+begin
+ {}
+ if FNoFragment <> ANoFragment then
+  begin
+   FNoFragment:=ANoFragment;
+
+   ResetPing;
+  end; 
+end;
+
+{==============================================================================}
+
+function TPingClient.GetLastCount:LongWord;
+{Get the current count after the latest request}
+begin
+ {}
+ Result:=FLastSequence;
+end;
+
+{==============================================================================}
+
+function TPingClient.GetErrorCode:LongInt;
+{Get the error code from the latest request}
+begin
+ {}
+ Result:=FLastError;
+end;
+
+{==============================================================================}
+
+function TPingClient.GetErrorText:String;
+{Get the error message from the latest request}
+begin
+ {}
+ Result:=Winsock2ErrorToString(FLastError);
+end;
+
+{==============================================================================}
+
+procedure TPingClient.ResetPing;
+{Reset the state and clear the current ping request}
+begin
+ {}
+ {Disconnect}
+ Disconnect;
+
+ {Reset State}
+ FLastHost:='';
+ FLastAddress:='';
+ 
+ FLastTime:=0;
+ FLastError:=0;
+ FReplyAddress:='';
+
+ FLastSequence:=0;
+
+ FSendCount:=0;
+ FReceiveCount:=0;
+ FLostCount:=0;
+end;
+
+{==============================================================================}
+
+function TPingClient.FirstPing(const AHost:String):Boolean;
+{Start a new ping sequence to the specified host or address}
+{Host: The host name or address to ping}
+
+{Note: After the first ping, NextPing should be called repeatedly until completed}
+var
+ Start:Int64;
+ Len:LongWord;
+ Count:LongInt;
+ Reply:PByte;
+ Request:PByte;
+ WorkInt:LongInt;
+begin
+ {}
+ Result:=False;
+
+ {Check Host}
+ if Length(AHost) = 0 then Exit;
+
+ {Reset}
+ ResetPing;
+
+ {Set Protocol}
+ Protocol:=IPPROTO_ICMP;
+
+ {Set Connect}
+ UseConnect:=False;
+
+ {Update Sequence}
+ Inc(FLastSequence);
+
+ {Update Identifier}
+ Inc(FLastIdentifier);
+
+ {Connect}
+ if not Connect then Exit;
+ try
+  {Set Host}
+  FLastHost:=AHost;
+
+  {Set Address}
+  FLastAddress:=ResolveHost(FLastHost);
+  if Length(FLastAddress) = 0 then Exit;
+
+  {Set Timeouts}
+  SendTimeout:=FTimeout;
+  ReceiveTimeout:=FTimeout;
+
+  {Set TTL}
+  if FTimeToLive > 0 then
+   begin
+    WorkInt:=FTimeToLive;
+    if Winsock2.setsockopt(Handle,IPPROTO_IP,IP_TTL,PChar(@WorkInt),SizeOf(LongInt)) <> ERROR_SUCCESS then Exit;
+   end;
+
+  {Set Dont Fragment}
+  if FNoFragment then
+   begin
+    WorkInt:=1;
+    if Winsock2.setsockopt(Handle,IPPROTO_IP,IP_DONTFRAGMENT,PChar(@WorkInt),SizeOf(LongInt)) <> ERROR_SUCCESS then Exit;
+   end;
+
+  {Get Length}
+  Len:=SizeOf(TICMPEchoHeader) + FSize;
+
+  {Allocate Request}
+  Request:=AllocMem(Len);
+  try
+   {Setup Echo Request}
+   PICMPEchoHeader(Request).ICMPType:=ICMP_ECHO;
+   PICMPEchoHeader(Request).Code:=0;
+   PICMPEchoHeader(Request).Checksum:=0;
+   PICMPEchoHeader(Request).Identifier:=WordNtoBE(FLastIdentifier);
+   PICMPEchoHeader(Request).Sequence:=WordNtoBE(FLastSequence);
+
+   {Setup Echo Data}
+   if FSize > 0 then
+    begin
+     FillChar(Pointer(Request + SizeOf(TICMPEchoHeader))^,FSize,#65);
+    end;
+
+   {Calculate the Checksum}
+   PICMPEchoHeader(Request).Checksum:=ChecksumICMP(ResolveFamily(FLastAddress),Request,0,Len);
+
+   {Get Time}
+   Start:=GetTickCount64;
+
+   {Send Echo Request}
+   Count:=SendDataTo(FLastAddress,Request,Len);
+   if Count = Len then
+    begin
+     {Update Count}
+     Inc(FSendCount);
+
+     {Allocate Reply}
+     Reply:=AllocMem($FFFF);
+     try
+      {Receive Echo Reply}
+      Count:=RecvDataFrom(FReplyAddress,Reply,$FFFF);
+      if Count >= Len then
+       begin
+        {Save Time}
+        FLastTime:=GetTickCount64 - Start;
+
+        {Update Count}
+        Inc(FReceiveCount);
+
+        {Check Reply}
+        if PICMPEchoHeader(Reply).ICMPType = ICMP_ECHOREPLY then
+         begin
+          {Check Sequence}
+          if PICMPEchoHeader(Reply).Sequence = PICMPEchoHeader(Request).Sequence then
+           begin
+            Result:=True;
+           end
+          else
+           begin
+            FLastError:=WSAEINVAL;
+           end; 
+         end
+        else if PICMPUnreachHeader(Reply).ICMPType = ICMP_UNREACH then
+         begin
+          {Check Code}
+          if PICMPUnreachHeader(Reply).Code = ICMP_UNREACH_NET then
+           begin
+            FLastError:=WSAENETUNREACH;
+           end
+          else if PICMPUnreachHeader(Reply).Code = ICMP_UNREACH_HOST then 
+           begin
+            FLastError:=WSAEHOSTUNREACH;
+           end
+          else if PICMPUnreachHeader(Reply).Code = ICMP_UNREACH_NEEDFRAG then 
+           begin
+            FLastError:=WSAEOPNOTSUPP;
+           end
+          else
+           begin
+            FLastError:=WSAENETUNREACH; {WSAEINVAL}
+           end;
+         end
+        else if PICMPExpireHeader(Reply).ICMPType = ICMP_TIMXCEED then
+         begin
+          FLastError:=WSAETIMEDOUT;
+         end
+        else
+         begin
+          FLastError:=WSAEINVAL;
+         end;
+       end
+      else
+       begin
+        if FLastError = ERROR_SUCCESS then FLastError:=WSAEINVAL;
+
+        {Update Count}
+        Inc(FLostCount);
+       end;
+     finally
+      {Free Reply}
+      FreeMem(Reply);
+     end; 
+    end
+   else
+    begin
+     if FLastError = ERROR_SUCCESS then FLastError:=WSAEINVAL;
+    end;
+  finally
+   {Free Request}
+   FreeMem(Request);
+  end;
+ finally
+  {Disconnect}
+  WorkInt:=FLastError;
+
+  Disconnect;
+  FLastError:=WorkInt;
+ end; 
+end;
+
+{==============================================================================}
+
+function TPingClient.NextPing:Boolean;
+{Continue pinging the current address with the current parameters}
+
+{Note: Once LastCount equals Count the sequence is complete and this method will return False}
+var
+ Start:Int64;
+ Len:LongWord;
+ Count:LongInt;
+ Reply:PByte;
+ Request:PByte;
+ WorkInt:LongInt;
+begin
+ {}
+ Result:=False;
+ 
+ {Check Sequence}
+ if FLastSequence = 0 then Exit;
+
+ {Check Sequence}
+ if FLastSequence = FCount then Exit;
+
+ {Update Sequence}
+ Inc(FLastSequence);
+
+ {Connect}
+ if not Connect then Exit;
+ try
+  {Set Timeouts}
+  SendTimeout:=FTimeout;
+  ReceiveTimeout:=FTimeout;
+
+  {Set TTL}
+  if FTimeToLive > 0 then
+   begin
+    WorkInt:=FTimeToLive;
+    if Winsock2.setsockopt(Handle,IPPROTO_IP,IP_TTL,PChar(@WorkInt),SizeOf(LongInt)) <> ERROR_SUCCESS then Exit;
+   end;
+
+  {Set Dont Fragment}
+  if FNoFragment then
+   begin
+    WorkInt:=1;
+    if Winsock2.setsockopt(Handle,IPPROTO_IP,IP_DONTFRAGMENT,PChar(@WorkInt),SizeOf(LongInt)) <> ERROR_SUCCESS then Exit;
+   end;
+
+  {Get Length}
+  Len:=SizeOf(TICMPEchoHeader) + FSize;
+
+  {Allocate Request}
+  Request:=AllocMem(Len);
+  try
+   {Setup Echo Request}
+   PICMPEchoHeader(Request).ICMPType:=ICMP_ECHO;
+   PICMPEchoHeader(Request).Code:=0;
+   PICMPEchoHeader(Request).Checksum:=0;
+   PICMPEchoHeader(Request).Identifier:=WordNtoBE(FLastIdentifier);
+   PICMPEchoHeader(Request).Sequence:=WordNtoBE(FLastSequence);
+
+   {Setup Echo Data}
+   if FSize > 0 then
+    begin
+     FillChar(Pointer(Request + SizeOf(TICMPEchoHeader))^,FSize,#65);
+    end;
+
+   {Calculate the Checksum}
+   PICMPEchoHeader(Request).Checksum:=ChecksumICMP(ResolveFamily(FLastAddress),Request,0,Len);
+
+   {Get Start Count}
+   Start:=GetTickCount64;
+
+   {Send Echo Request}
+   Count:=SendDataTo(FLastAddress,Request,Len);
+   if Count = Len then
+    begin
+     {Update Count}
+     Inc(FSendCount);
+
+     {Allocate Reply}
+     Reply:=AllocMem($FFFF);
+     try
+      {Receive Echo Reply}
+      Count:=RecvDataFrom(FReplyAddress,Reply,$FFFF);
+      if Count >= Len then
+       begin
+        {Save Time}
+        FLastTime:=GetTickCount64 - Start;
+
+        {Update Count}
+        Inc(FReceiveCount);
+
+        {Check Reply}
+        if PICMPEchoHeader(Reply).ICMPType = ICMP_ECHOREPLY then
+         begin
+          {Check Sequence}
+          if PICMPEchoHeader(Reply).Sequence = PICMPEchoHeader(Request).Sequence then
+           begin
+            Result:=True;
+           end
+          else
+           begin
+            FLastError:=WSAEINVAL;
+           end; 
+         end
+        else if PICMPUnreachHeader(Reply).ICMPType = ICMP_UNREACH then
+         begin
+          {Check Code}
+          if PICMPUnreachHeader(Reply).Code = ICMP_UNREACH_NET then
+           begin
+            FLastError:=WSAENETUNREACH;
+           end
+          else if PICMPUnreachHeader(Reply).Code = ICMP_UNREACH_HOST then 
+           begin
+            FLastError:=WSAEHOSTUNREACH;
+           end
+          else if PICMPUnreachHeader(Reply).Code = ICMP_UNREACH_NEEDFRAG then 
+           begin
+            FLastError:=WSAEOPNOTSUPP;
+           end
+          else
+           begin
+            FLastError:=WSAENETUNREACH; {WSAEINVAL}
+           end;
+         end
+        else if PICMPExpireHeader(Reply).ICMPType = ICMP_TIMXCEED then
+         begin
+          FLastError:=WSAETIMEDOUT;
+         end
+        else
+         begin
+          FLastError:=WSAEINVAL;
+         end;
+       end
+      else
+       begin
+        if FLastError = ERROR_SUCCESS then FLastError:=WSAEINVAL;
+
+        {Update Count}
+        Inc(FLostCount);
+       end;
+     finally
+      {Free Reply}
+      FreeMem(Reply);
+     end; 
+    end
+   else
+    begin
+     if FLastError = ERROR_SUCCESS then FLastError:=WSAEINVAL;
+    end;
+  finally
+   {Free Request}
+   FreeMem(Request);
+  end; 
+ finally
+  {Disconnect}
+  WorkInt:=FLastError;
+
+  Disconnect;
+  FLastError:=WorkInt;
+ end; 
+end;
 
 {==============================================================================}
 {==============================================================================}

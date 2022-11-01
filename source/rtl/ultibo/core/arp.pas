@@ -1,7 +1,7 @@
 {
 Ultibo ARP (Address Resolution Protocol) unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -47,10 +47,6 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Threads,SysUtils,Classes,Network,Transport,Protocol,Ultibo,UltiboClasses;
 
-//To Do //Look for:
-       
-//--
-         
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -1291,7 +1287,7 @@ begin
     EventPulse(FAddressAdd);
     
     {Reset Event (Manual Reset)}
-    EventReset(FAddressAdd); //To Do //Critical //This can be removed now that EventPulse has been fixed ?
+    {EventReset(FAddressAdd);} {Not required, reset by EventPulse}
 
     {Lock Address}
     if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
@@ -1358,7 +1354,7 @@ begin
           EventPulse(FAddressRemove);
  
           {Reset Event (Manual Reset)}
-          EventReset(FAddressRemove); //To Do //Critical //This can be removed now that EventPulse has been fixed ?
+          {EventReset(FAddressRemove);} {Not required, reset by EventPulse}
         
           {Unlock Address}
           Address.WriterUnlock;
@@ -1435,7 +1431,7 @@ begin
            EventPulse(FAddressRemove);
            
            {Reset Event (Manual Reset)}
-           EventReset(FAddressRemove); //To Do //Critical //This can be removed now that EventPulse has been fixed ?
+           {EventReset(FAddressRemove);} {Not required, reset by EventPulse}
            
            {Unlock Address}
            Current.WriterUnlock;
@@ -2734,7 +2730,7 @@ begin
     EventPulse(FAddressAdd);
     
     {Reset Event (Manual Reset)}
-    EventReset(FAddressAdd); //To Do //Critical //This can be removed now that EventPulse has been fixed ?
+    {EventReset(FAddressAdd);} {Not required, reset by EventPulse}
     
     {Lock Address}
     if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
@@ -2801,7 +2797,7 @@ begin
           EventPulse(FAddressRemove);
 
           {Reset Event (Manual Reset)}
-          EventReset(FAddressRemove); //To Do //Critical //This can be removed now that EventPulse has been fixed ?
+          {EventReset(FAddressRemove);} {Not required, reset by EventPulse}
         
           {Unlock Address}
           Address.WriterUnlock;
@@ -2878,7 +2874,7 @@ begin
            EventPulse(FAddressRemove);
            
            {Reset Event (Manual Reset)}
-           EventReset(FAddressRemove); //To Do //Critical //This can be removed now that EventPulse has been fixed ?
+           {EventReset(FAddressRemove);} {Not required, reset by EventPulse}
            
            {Unlock Address}
            Current.WriterUnlock;

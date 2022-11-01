@@ -517,6 +517,7 @@ ULTIBO_FONTS=Latin1_8x8 \
 ULTIBO_EXTRAS=ConsoleShell \
 	      RemoteShell \
 	      ShellFilesystem \
+	      ShellNetwork \
 	      ShellUpdate \
 	      ShellUSB \
 	      WebStatus \

@@ -1,7 +1,7 @@
 {
 Ultibo Network Protocol interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -4111,7 +4111,7 @@ begin
  Result:=(EventPulse(FSocketChange) = ERROR_SUCCESS);
     
  {Reset Event (Manual Reset)}
- Result:=Result and (EventReset(FSocketChange) = ERROR_SUCCESS);
+ {Result:=Result and (EventReset(FSocketChange) = ERROR_SUCCESS);} {Not required, reset by EventPulse}
 end;
 
 {==============================================================================}

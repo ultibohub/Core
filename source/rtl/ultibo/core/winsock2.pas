@@ -1217,7 +1217,7 @@ type
   function AllocateFamily:Boolean; virtual;
 
   function AllocateAddress(var ALength:Integer):PSockAddr;
-  function ReleaseAddress(var ASockAddr:PSockAddr;var ALength:Integer):Boolean;
+  function ReleaseAddress(var ASockAddr:PSockAddr;var ALength:Integer;ALastError:Boolean = True):Boolean;
 
   function AllocateBoundAddress(var ALength:Integer):PSockAddr;
 
@@ -2389,7 +2389,7 @@ begin
     {$ENDIF}
    end;
  finally
-  ReleaseAddress(SockAddr,SockAddrLength);
+  ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
  end;
 end;
 
@@ -2984,13 +2984,13 @@ end;
 
 {==============================================================================}
 
-function TWinsock2Socket.ReleaseAddress(var ASockAddr:PSockAddr;var ALength:Integer):Boolean;
+function TWinsock2Socket.ReleaseAddress(var ASockAddr:PSockAddr;var ALength:Integer;ALastError:Boolean = True):Boolean;
 {Free a socket address structure allocated by AllocateAddress or AddressToSockAddr}
 begin
  {}
  Result:=False;
  try
-  FLastError:=WSAEINVAL;
+  if ALastError then FLastError:=WSAEINVAL;
   if ASockAddr = nil then Exit;
 
   {$IFDEF WINSOCK2_DEBUG}
@@ -3000,7 +3000,7 @@ begin
   FreeMem(ASockAddr);
   ASockAddr:=nil;
   ALength:=0;
-  FLastError:=ERROR_SUCCESS;
+  if ALastError then FLastError:=ERROR_SUCCESS;
   Result:=True;
  except
   {}
@@ -3047,7 +3047,7 @@ begin
       if InAddr.S_addr = INADDR_NONE then
        begin
         FLastError:=WSAEINVAL;
-        ReleaseAddress(Result,ALength);
+        ReleaseAddress(Result,ALength,False);
         
         {$IFDEF WINSOCK2_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  inet_addr returned: = INADDR_NONE');
@@ -3058,7 +3058,7 @@ begin
       if (InAddr.S_addr = INADDR_ANY) and (FBoundAddress <> INET_ADDRSTR_ANY) then
        begin
         FLastError:=WSAEINVAL;
-        ReleaseAddress(Result,ALength);
+        ReleaseAddress(Result,ALength,False);
 
         {$IFDEF WINSOCK2_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  inet_addr returned: = INADDR_ANY');
@@ -3080,7 +3080,7 @@ begin
       if Winsock2.InetPtonA(AF_INET6,PChar(FBoundAddress),@SockAddr.sin6_addr) = SOCKET_ERROR then
        begin
         FLastError:=Winsock2.WSAGetLastError;
-        ReleaseAddress(Result,ALength);
+        ReleaseAddress(Result,ALength,False);
 
         {$IFDEF WINSOCK2_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  InetPtonA returned: ' + Winsock2ErrorToString(FLastError));
@@ -3093,7 +3093,7 @@ begin
       if Winsock2.WSAStringToAddressA(PChar(FBoundAddress),FFamily,nil,PSockAddrIn(@SockAddr)^,BufferLength) = SOCKET_ERROR then
        begin
         FLastError:=Winsock2.WSAGetLastError;
-        ReleaseAddress(Result,ALength);
+        ReleaseAddress(Result,ALength,False);
         Exit;
        end;}
        
@@ -3182,7 +3182,7 @@ begin
     {$ENDIF}
    end;
  finally
-  ReleaseAddress(SockAddr,SockAddrLength);
+  ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
  end;
 end;
 
@@ -3510,7 +3510,7 @@ begin
       end;
     end;
    finally
-    ReleaseAddress(SockAddr,SockAddrLength);
+    ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
    end;
   end
  else
@@ -3625,7 +3625,7 @@ begin
     {$ENDIF}
    end;
  finally
-  ReleaseAddress(SockAddr,SockAddrLength);
+  ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
  end; 
 end;
 
@@ -3657,7 +3657,7 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Result = ' + AddressFamilyToString(Result));
   {$ENDIF}
  finally
-  ReleaseAddress(SockAddr,SockAddrLength);
+  ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
  end; 
 end;
 
@@ -3709,7 +3709,7 @@ begin
       end;
     end;
    finally
-    ReleaseAddress(SockAddr,SockAddrLength);
+    ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
    end;
   end
  else
@@ -4628,6 +4628,7 @@ end;
 function TWinsock2RAWSocket.RecvFromSocketEx(AHandle:THandle;ASockAddr:PSockAddr;ASockLen:PInteger;AData:Pointer;ASize:Integer;var ACount:Integer;var AClosed:Boolean):LongInt;
 var
  Count:Integer;
+ OldError:LongInt;
 begin
  {}
  ACount:=0;
@@ -4652,8 +4653,10 @@ begin
     
    if Count = SOCKET_ERROR then
     begin
-     FLastError:=Winsock2.WSAGetLastError;
+     OldError:=Winsock2.WSAGetLastError;
      Disconnect;
+
+     FLastError:=OldError;
      Exit;
     end
    else
@@ -4824,7 +4827,7 @@ begin
   FLastError:=ERROR_SUCCESS;
   Result:=Count;
  finally
-  ReleaseAddress(SockAddr,SockAddrLength);
+  ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
  end;
 end;
 
@@ -4862,7 +4865,7 @@ begin
   FLastError:=ERROR_SUCCESS;
   Result:=Count;
  finally
-  ReleaseAddress(SockAddr,SockAddrLength);
+  ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
  end; 
 end;
 
@@ -5175,6 +5178,7 @@ var
  Offset:Integer;
  StartTime:Int64;
  CurrentTime:Int64;
+ OldError:LongInt;
 begin
  {}
  ACount:=0;
@@ -5194,8 +5198,10 @@ begin
     Count:=Winsock2.recv(Handle,Pointer(PtrUInt(AData) + PtrUInt(Offset))^,ASize - Offset,0);
     if Count = SOCKET_ERROR then
      begin
-      FLastError:=Winsock2.WSAGetLastError;
+      OldError:=Winsock2.WSAGetLastError;
       Disconnect;
+
+      FLastError:=OldError;
       Exit;
      end
     else
@@ -5511,6 +5517,7 @@ end;
 function TWinsock2UDPSocket.RecvFromSocketEx(AHandle:THandle;ASockAddr:PSockAddr;ASockLen:PInteger;AData:Pointer;ASize:Integer;var ACount:Integer;var AClosed:Boolean):LongInt;
 var
  Count:Integer;
+ OldError:LongInt;
 begin
  {}
  ACount:=0;
@@ -5535,8 +5542,10 @@ begin
     
    if Count = SOCKET_ERROR then
     begin
-     FLastError:=Winsock2.WSAGetLastError;
+     OldError:=Winsock2.WSAGetLastError;
      Disconnect;
+
+     FLastError:=OldError;
      Exit;
     end
    else
@@ -5709,7 +5718,7 @@ begin
   FLastError:=ERROR_SUCCESS;
   Result:=Count;
  finally
-  ReleaseAddress(SockAddr,SockAddrLength);
+  ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
  end;
 end;
 
@@ -5751,7 +5760,7 @@ begin
   FLastError:=ERROR_SUCCESS;
   Result:=Count;
  finally
-  ReleaseAddress(SockAddr,SockAddrLength);
+  ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
  end; 
 end;
 
@@ -6121,7 +6130,7 @@ begin
     if (InAddr.S_addr = INADDR_NONE) and (FRemoteAddress <> INET_ADDRSTR_BROADCAST) then
      begin
       FLastError:=WSAEINVAL;
-      ReleaseAddress(Result,ALength);
+      ReleaseAddress(Result,ALength,False);
 
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  inet_addr returned: = INADDR_NONE');
@@ -6132,7 +6141,7 @@ begin
     if InAddr.S_addr = INADDR_ANY then
      begin
       FLastError:=WSAEINVAL;
-      ReleaseAddress(Result,ALength);
+      ReleaseAddress(Result,ALength,False);
 
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  inet_addr returned: = INADDR_ANY');
@@ -6151,7 +6160,7 @@ begin
     if Winsock2.InetPtonA(AF_INET6,PChar(FRemoteAddress),@SockAddr.sin6_addr) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
-      ReleaseAddress(Result,ALength);
+      ReleaseAddress(Result,ALength,False);
  
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  InetPtonA returned: ' + Winsock2ErrorToString(FLastError));
@@ -6164,7 +6173,7 @@ begin
     if Winsock2.WSAStringToAddressA(PChar(FRemoteAddress),FFamily,nil,PSockAddrIn(@SockAddr)^,BufferLength) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
-      ReleaseAddress(Result,ALength);
+      ReleaseAddress(Result,ALength,False);
       Exit;
      end;}
      
@@ -6263,7 +6272,7 @@ begin
       end;
      Result:=True;
     finally
-     ReleaseAddress(SockAddr,SockAddrLength);
+     ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
     end;
    end
   else
@@ -6634,7 +6643,7 @@ begin
     if InAddr.S_addr = INADDR_NONE then
      begin
       FLastError:=WSAEINVAL;
-      ReleaseAddress(Result,ALength);
+      ReleaseAddress(Result,ALength,False);
       
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  inet_addr returned: = INADDR_NONE');
@@ -6645,7 +6654,7 @@ begin
     if InAddr.S_addr = INADDR_ANY then
      begin
       FLastError:=WSAEINVAL;
-      ReleaseAddress(Result,ALength);
+      ReleaseAddress(Result,ALength,False);
       
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  inet_addr returned: = INADDR_ANY');
@@ -6664,7 +6673,7 @@ begin
     if Winsock2.InetPtonA(AF_INET6,PChar(FRemoteAddress),@SockAddr.sin6_addr) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
-      ReleaseAddress(Result,ALength);
+      ReleaseAddress(Result,ALength,False);
       
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  InetPtonA returned: ' + Winsock2ErrorToString(FLastError));
@@ -6677,7 +6686,7 @@ begin
     if Winsock2.WSAStringToAddressA(PChar(FRemoteAddress),FFamily,nil,PSockAddrIn(@SockAddr)^,BufferLength) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
-      ReleaseAddress(Result,ALength);
+      ReleaseAddress(Result,ALength,False);
       Exit;
      end;}
      
@@ -6801,7 +6810,7 @@ begin
     end;
    Result:=True;
   finally
-   ReleaseAddress(SockAddr,SockAddrLength);
+   ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
   end;
  finally
   if not(Result) then Disconnect;
@@ -7254,7 +7263,7 @@ begin
     if (InAddr.S_addr = INADDR_NONE) and (FRemoteAddress <> INET_ADDRSTR_BROADCAST) then
      begin
       FLastError:=WSAEINVAL;
-      ReleaseAddress(Result,ALength);
+      ReleaseAddress(Result,ALength,False);
       
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  inet_addr returned: = INADDR_NONE');
@@ -7265,7 +7274,7 @@ begin
     if InAddr.S_addr = INADDR_ANY then
      begin
       FLastError:=WSAEINVAL;
-      ReleaseAddress(Result,ALength);
+      ReleaseAddress(Result,ALength,False);
       
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  inet_addr returned: = INADDR_ANY');
@@ -7284,7 +7293,7 @@ begin
     if Winsock2.InetPtonA(AF_INET6,PChar(FRemoteAddress),@SockAddr.sin6_addr) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
-      ReleaseAddress(Result,ALength);
+      ReleaseAddress(Result,ALength,False);
       
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  InetPtonA returned: ' + Winsock2ErrorToString(FLastError));
@@ -7297,7 +7306,7 @@ begin
     if Winsock2.WSAStringToAddressA(PChar(FRemoteAddress),FFamily,nil,PSockAddrIn(@SockAddr)^,BufferLength) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
-      ReleaseAddress(Result,ALength);
+      ReleaseAddress(Result,ALength,False);
       Exit;
      end;}
      
@@ -7396,7 +7405,7 @@ begin
       end;
      Result:=True;
     finally
-     ReleaseAddress(SockAddr,SockAddrLength);
+     ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
     end;
    end
   else
