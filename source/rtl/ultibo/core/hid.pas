@@ -438,7 +438,9 @@ const
  {0x93-0xF1CF Reserved}
  HID_PAGE_FIDO_ALLIANCE             = $F1D0; {FIDO Alliance Page}
  {0xF1D1-0xFEFF Reserved}
+ HID_PAGE_VENDOR_MINIMUM            = $FF00; {Vendor-defined}
  {0xFF00-0xFFFF Vendor-defined}
+ HID_PAGE_VENDOR_MAXIMUM            = $FFFF; {Vendor-defined}
 
  {HID Usage Tables (See HID Usage Tables 1.3)}
  {HID Generic Desktop Page (Partial)}
@@ -520,6 +522,64 @@ const
  HID_BUTTON_TERTIARY  = HID_BUTTON_3;
  {Note: Buttons are defined as Button1 to Button65535}
  HID_BUTTON_65535     = $FFFF;
+
+ {HID Digitizers Page (Partial)}
+ HID_DIGITIZERS_UNDEFINED             = $00; {Undefined}
+ HID_DIGITIZERS_DIGITIZER             = $01; {Digitizer}
+ HID_DIGITIZERS_PEN                   = $02; {Pen}
+ HID_DIGITIZERS_LIGHT_PEN             = $03; {Light Pen}
+ HID_DIGITIZERS_TOUCH_SCREEN          = $04; {Touch Screen}
+ HID_DIGITIZERS_TOUCH_PAD             = $05; {Touch Pad}
+ HID_DIGITIZERS_WHITEBOARD            = $06; {Whiteboard}
+ HID_DIGITIZERS_COORD_MEASURING       = $07; {Coordinate Measuring Machine}
+ HID_DIGITIZERS_3D_DIGITIZER          = $08; {3D Digitizer}
+ HID_DIGITIZERS_STEREO_PLOTTER        = $09; {Stereo Plotter}
+ HID_DIGITIZERS_ARTICULATED_ARM       = $0A; {Articulated Arm}
+ HID_DIGITIZERS_ARMATURE              = $0B; {Armature}
+ HID_DIGITIZERS_MULTI_POINT_DIGITIZER = $0C; {Multiple Point Digitizer}
+ HID_DIGITIZERS_FREE_SPACE_WAND       = $0D; {Free Space Wand}
+ HID_DIGITIZERS_DEVICE_CONFIGURATION  = $0E; {Device Configuration}
+ HID_DIGITIZERS_CAPACITIVE_HEAT_MAP   = $0F; {Capacitive Heat Map Digitizer}
+ {0x10-0x1F Reserved}
+ HID_DIGITIZERS_STYLUS                = $20; {Stylus}
+ HID_DIGITIZERS_PUCK                  = $21; {Puck}
+ HID_DIGITIZERS_FINGER                = $22; {Finger}
+ HID_DIGITIZERS_DEVICE_SETTINGS       = $23; {Device settings}
+ HID_DIGITIZERS_CHARACTER_GESTURE     = $24; {Character Gesture}
+ {0x25-0x2F Reserved}
+ HID_DIGITIZERS_TIP_PRESSURE          = $30; {Tip Pressure}
+ HID_DIGITIZERS_BARREL_PRESSURE       = $31; {Barrel Pressure}
+ HID_DIGITIZERS_IN_RANGE              = $32; {In Range}
+ HID_DIGITIZERS_TOUCH                 = $33; {Touch}
+ HID_DIGITIZERS_UNTOUCH               = $34; {Untouch}
+ HID_DIGITIZERS_TAP                   = $35; {Tap}
+ HID_DIGITIZERS_QUALITY               = $36; {Quality}
+ HID_DIGITIZERS_DATA_VALID            = $37; {Data Valid}
+ HID_DIGITIZERS_TRANSDUCER_INDEX      = $38; {Transducer Index}
+ HID_DIGITIZERS_TABLET_FUNCTION_KEYS  = $39; {Tablet Function Keys}
+ HID_DIGITIZERS_PROGRAM_CHANGE_KEYS   = $3A; {Program Change Keys}
+ HID_DIGITIZERS_BATTERY_STRENGTH      = $3B; {Battery Strength}
+ HID_DIGITIZERS_INVERT                = $3C; {Invert}
+ HID_DIGITIZERS_X_TILT                = $3D; {X Tilt}
+ HID_DIGITIZERS_Y_TILT                = $3E; {Y Tilt}
+ HID_DIGITIZERS_AZIMUTH               = $3F; {Azimuth}
+ HID_DIGITIZERS_ALTITUDE              = $40; {Altitude}
+ HID_DIGITIZERS_TWIST                 = $41; {Twist}
+ HID_DIGITIZERS_TIP_SWITCH            = $42; {Tip Switch}
+ HID_DIGITIZERS_SECONDARY_TIP_SWITCH  = $43; {Secondary Tip Switch}
+ HID_DIGITIZERS_BARREL_SWITCH         = $44; {Barrel Switch}
+ HID_DIGITIZERS_ERASER                = $45; {Eraser}
+ HID_DIGITIZERS_TABLET_PICK           = $46; {Tablet Pick}
+ HID_DIGITIZERS_TOUCH_VALID           = $47; {Touch Valid (Confidence)}
+ HID_DIGITIZERS_WIDTH                 = $48; {Width}
+ HID_DIGITIZERS_HEIGHT                = $49; {Height}
+ {0x4A-0x50 Reserved}
+ HID_DIGITIZERS_CONTACT_IDENTIFIER    = $51; {Contact Identifier}
+ HID_DIGITIZERS_DEVICE_MODE           = $52; {Device Mode}
+ HID_DIGITIZERS_DEVICE_IDENTIFIER     = $53; {Device Identifier}
+ HID_DIGITIZERS_CONTACT_COUNT         = $54; {Contact Count}
+ HID_DIGITIZERS_CONTACT_COUNT_MAXIMUM = $55; {Contact Count Maximum}
+ HID_DIGITIZERS_SCAN_TIME             = $56; {Scan Time}
 
  {HID logging}
  HID_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {HID debugging messages}
@@ -657,6 +717,7 @@ type
   Count:LongWord;            {The number of fields in this report}
 
   Index:LongWord;            {The index of this report in the collection (First report is 0)}
+  Sequence:LongWord;         {The sequence of this report in all collections (First report is 0)}
 
   Usages:PHIDUsages;         {The list of usages contained in this report}
   UsageCount:LongWord;       {The number of usages contained in this report}
@@ -790,6 +851,13 @@ type
  end;
 
  {Structures for HID consumer report processing}
+ {HID Report Extent}
+ PHIDExtent = ^THIDExtent;
+ THIDExtent = record
+  Minimum:LongInt;        {The minimum value for this extent}
+  Maximum:LongInt;        {The maximum value for this extent}
+ end;
+
  {HID Report Field}
  PHIDField = ^THIDField;
  THIDField = record
@@ -804,8 +872,8 @@ type
   Offset:LongWord;        {The byte offset of this field within the input, output or feature report}
   Shift:LongWord;         {The number shift bits to access this field in the input, output or feature report}
 
-  Minimum:LongInt;        {The minimum value for this field (either in logical or physical units)}
-  Maximum:LongInt;        {The maximum value for this field (either in logical or physical units)}
+  Logical:THIDExtent;     {The minimum and maximum logical values for this field}
+  Physical:THIDExtent;    {The minimum and maximum physical values for this field}
   Multiplier:Double;      {The conversion multiplier for this field from logical to physical units}
   Resolution:Double;      {The unit resolution for this field in counts per physical unit}
 
@@ -841,9 +909,10 @@ function HIDParserCountReports(Device:PHIDDevice;Collection:PHIDCollection):Long
 function HIDParserCountUsages(Device:PHIDDevice;Report:PHIDReport):LongWord;
 
 function HIDParserAllocateCollection(Device:PHIDDevice;Parent:PHIDCollection;State:PHIDState;Flags,Start:LongWord):PHIDCollection;
-function HIDParserAllocateReport(Device:PHIDDevice;Collection:PHIDCollection;State:PHIDState;Kind:Byte;Flags,Index:LongWord):PHIDReport;
+function HIDParserAllocateReport(Device:PHIDDevice;Collection:PHIDCollection;State:PHIDState;Kind:Byte;Flags,Index,Sequence:LongWord):PHIDReport;
 function HIDParserAllocateUsage(Device:PHIDDevice;Report:PHIDReport;State:PHIDState;Index:LongWord):PHIDUsage;
 function HIDParserUpdateUsage(Device:PHIDDevice;Report:PHIDReport;State:PHIDState;Usage:PHIDUsage):Boolean;
+function HIDParserFreeUsage(Device:PHIDDevice;Usage:PHIDUsage):Boolean;
 
 function HIDParserPopStack(var Stack:PHIDStack;var State:PHIDState):LongWord;
 function HIDParserPushStack(Stack:PHIDStack):LongWord;
@@ -855,6 +924,9 @@ function HIDParserCleanState(State:PHIDState):LongWord;
 function HIDFindCollection(Device:PHIDDevice;Page,Usage:Word):PHIDCollection;
 
 function HIDFindReportIds(Device:PHIDDevice;Collection:PHIDCollection;var MinId,MaxId:Byte):LongWord;
+
+function HIDCountReports(Device:PHIDDevice;Collection:PHIDCollection;Kind,Id:Byte;var Count:LongWord):LongWord;
+function HIDFindReports(Device:PHIDDevice;Collection:PHIDCollection;Kind,Id:Byte;Reports:PHIDReports;Count:LongWord):LongWord;
 
 function HIDAllocateDefinition(Device:PHIDDevice;Collection:PHIDCollection;Kind,Id:Byte):PHIDDefinition;
 function HIDFreeDefinition(Definition:PHIDDefinition):LongWord;
@@ -1055,6 +1127,7 @@ var
  AliasCount:LongWord;
  UsageCount:LongWord;
  ReportCount:LongWord;
+ ReportSequence:LongInt;
  CollectionCount:LongWord;
 
  function HIDSizeToBits(Size:Byte):Byte;
@@ -1224,9 +1297,10 @@ var
         {Increment Reports}
         Inc(ReportIndex);
         Inc(ReportCount);
+        Inc(ReportSequence);
 
         {Allocate Report}
-        Report:=HIDParserAllocateReport(Device,Parent,State,Kind,Data,ReportIndex);
+        Report:=HIDParserAllocateReport(Device,Parent,State,Kind,Data,ReportIndex,ReportSequence);
         if Report = nil then Exit;
 
         {Assign Usages}
@@ -1285,7 +1359,7 @@ var
           Dec(UsageCount);
 
           {Free Usage}
-          FreeMem(Usage);
+          if not HIDParserFreeUsage(Device,Usage) then Exit;
 
           {Unlink Usage}
           if not HIDUnlinkUsage(FirstUsage,LastUsage,FirstUsage) then Exit;
@@ -1632,6 +1706,7 @@ begin
      AliasCount:=0;
      UsageCount:=0;
      ReportCount:=0;
+     ReportSequence:=-1;
      CollectionCount:=0;
 
      {Parse Top Level Collections}
@@ -2325,7 +2400,7 @@ end;
 
 {==============================================================================}
 
-function HIDParserAllocateReport(Device:PHIDDevice;Collection:PHIDCollection;State:PHIDState;Kind:Byte;Flags,Index:LongWord):PHIDReport;
+function HIDParserAllocateReport(Device:PHIDDevice;Collection:PHIDCollection;State:PHIDState;Kind:Byte;Flags,Index,Sequence:LongWord):PHIDReport;
 {Allocate a HID report to contain a set of usages from a HID report descriptor}
 {Device: The HID device containing the report}
 {Collection: The HID collection containing the report}
@@ -2333,6 +2408,7 @@ function HIDParserAllocateReport(Device:PHIDDevice;Collection:PHIDCollection;Sta
 {Kind: The report kind (eg HID_REPORT_INPUT)}
 {Flags: The flags for the report from the HID report descriptor}
 {Index: The index of this report in the collection (First report is 0)}
+{Sequence: The sequence of this report in all collections (First report is 0)}
 {Return: A pointer to the HID report or nil on error}
 var
  Report:PHIDReport;
@@ -2364,6 +2440,7 @@ begin
   Report.Size:=State.ReportSize;
   Report.Count:=State.ReportCount;
   Report.Index:=Index;
+  Report.Sequence:=Sequence;
   Report.Collection:=Collection;
 
   {Count Usages}
@@ -2503,6 +2580,54 @@ begin
       end;
     end;
   end;
+
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function HIDParserFreeUsage(Device:PHIDDevice;Usage:PHIDUsage):Boolean;
+{Free a HID usage and any associated usage aliases}
+{Device: The HID device containing the usage}
+{Usage: The HID usage to free}
+{Return: True if completed or False on error}
+var
+ Alias:PHIDUsage;
+ AliasIndex:LongWord;
+begin
+ {}
+ Result:=False;
+
+ {Check Device}
+ if Device = nil then Exit;
+
+ {Check Usage}
+ if Usage = nil then Exit;
+
+ {$IFDEF HID_DEBUG}
+ if HID_LOG_ENABLED then HIDLogDebug(Device,'Freeing Usage (Page=' + IntToHex(Usage.Page,4) + ' Usage=' + IntToHex(Usage.Usage,4) + ' Count=' + IntToStr(Usage.Count) + ')');
+ {$ENDIF}
+
+ {Check Aliases}
+ if Usage.AliasCount > 0 then
+  begin
+   for AliasIndex:=0 to Usage.AliasCount - 1 do
+    begin
+     Alias:=Usage.Aliases[AliasIndex];
+     if Alias <> nil then
+      begin
+       {Free Alias}
+       FreeMem(Alias);
+      end;
+    end;
+
+   {Free Aliases}
+   FreeMem(Usage.Aliases);
+  end;
+
+ {Free Usage}
+ FreeMem(Usage);
 
  {Return Result}
  Result:=True;
@@ -2764,6 +2889,19 @@ function HIDFindReportIds(Device:PHIDDevice;Collection:PHIDCollection;var MinId,
   {Check Parent}
   if Parent = nil then Exit;
 
+  {Check Collections}
+  if Parent.CollectionCount > 0 then
+   begin
+    for Index:=0 to Parent.CollectionCount - 1 do
+     begin
+      if Parent.Collections[Index] <> nil then
+       begin
+        {Check Collection}
+        if not HIDFindInternal(Parent.Collections[Index]) then Exit;
+       end;
+     end;
+   end;
+
   {Check Reports}
   if Parent.ReportCount > 0 then
    begin
@@ -2782,19 +2920,6 @@ function HIDFindReportIds(Device:PHIDDevice;Collection:PHIDCollection;var MinId,
          begin
           MaxId:=Report.Id;
          end;
-       end;
-     end;
-   end;
-
-  {Check Collections}
-  if Parent.CollectionCount > 0 then
-   begin
-    for Index:=0 to Parent.CollectionCount - 1 do
-     begin
-      if Parent.Collections[Index] <> nil then
-       begin
-        {Check Collection}
-        if not HIDFindInternal(Parent.Collections[Index]) then Exit;
        end;
      end;
    end;
@@ -2870,6 +2995,342 @@ end;
 
 {==============================================================================}
 
+function HIDCountReports(Device:PHIDDevice;Collection:PHIDCollection;Kind,Id:Byte;var Count:LongWord):LongWord;
+{Count the number of HID reports of the specified type and id in the specified collection}
+{Device: The HID device to get the report count from}
+{Collection: The HID collection to get the report count from}
+{Kind: The report kind to count reports for (eg HID_REPORT_INPUT)}
+{Id: The report id to count reports for (must be less than or equal to the maximum report id)}
+{Count: A variable to return the number of reports}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+ function HIDCountInternal(Parent:PHIDCollection):Boolean;
+ var
+  Report:PHIDReport;
+  ReportIndex:LongWord;
+  CollectionIndex:LongWord;
+ begin
+  {}
+  Result:=False;
+
+  {Check Parent}
+  if Parent = nil then Exit;
+
+  {Check Collections}
+  if Parent.CollectionCount > 0 then
+   begin
+    for CollectionIndex:=0 to Parent.CollectionCount - 1 do
+     begin
+      if Parent.Collections[CollectionIndex] <> nil then
+       begin
+        {Check Collection}
+        if not HIDCountInternal(Parent.Collections[CollectionIndex]) then Exit;
+       end;
+     end;
+   end;
+
+  {Check Reports}
+  if Parent.ReportCount > 0 then
+   begin
+    for ReportIndex:=0 to Parent.ReportCount - 1 do
+     begin
+      Report:=Parent.Reports[ReportIndex];
+      if Report <> nil then
+       begin
+        {Check Report}
+        if (Report.Kind = Kind) and (Report.Id = Id) then
+         begin
+          {Update Count}
+          Inc(Count);
+         end;
+       end;
+     end;
+   end;
+
+  Result:=True;
+ end;
+
+var
+ Index:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Set Default}
+ Count:=0;
+
+ {Check Device}
+ if Device = nil then Exit;
+ if Device.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ {$IFDEF HID_DEBUG}
+ if HID_LOG_ENABLED then HIDLogDebug(Device,'Counting Reports (Kind=' + IntToStr(Kind) + ' Id=' + IntToStr(Id) + ')');
+ {$ENDIF}
+
+ {Acquire the Lock}
+ if MutexLock(Device.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Set Result}
+    Result:=ERROR_OPERATION_FAILED;
+
+    {Count Reports}
+    if Collection = nil then
+     begin
+      {Check Collections}
+      if Device.Collections = nil then Exit;
+
+      {Check Collections}
+      if Device.CollectionCount > 0 then
+       begin
+        for Index:=0 to Device.CollectionCount - 1 do
+         begin
+          if Device.Collections[Index] <> nil then
+           begin
+            {Check Collection}
+            if not HIDCountInternal(Device.Collections[Index]) then Exit;
+           end;
+         end;
+       end;
+     end
+    else
+     begin
+      {Check Collection}
+      if not HIDCountInternal(Collection) then Exit;
+     end;
+
+    {$IFDEF HID_DEBUG}
+    if HID_LOG_ENABLED then HIDLogDebug(Device,'Counted Reports (Count=' + IntToStr(Count) + ')');
+    {$ENDIF}
+
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    MutexUnlock(Device.Lock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+  end;
+end;
+
+{==============================================================================}
+
+function HIDFindReports(Device:PHIDDevice;Collection:PHIDCollection;Kind,Id:Byte;Reports:PHIDReports;Count:LongWord):LongWord;
+{Find all HID reports of the specified type and id in the specified collection}
+{Device: The HID device to get the reports from}
+{Collection: The HID collection to get the reports from}
+{Kind: The report kind to get reports for (eg HID_REPORT_INPUT)}
+{Id: The report id to get reports for (must be less than or equal to the maximum report id)}
+{Reports: A pointer to an array to return the list of reports}
+{Count: The number of reports able to be returned in the reports array}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: The caller is responsible for allocating the reports array which must be large enough}
+{      to hold a pointer to every report in the returned list}
+{      When finished the array should be freed by the caller but not the reports themselves}
+{      Call HIDCountReports first to obtain the correct size to be allocated for the array}
+
+var
+ List:PHIDReports;
+ ListIndex:LongInt;
+ ListCount:LongWord;
+ ListMinimum:LongInt;
+ ListMaximum:LongInt;
+
+ function HIDFindSequence(Sequence:LongWord):PHIDReport;
+ var
+  Index:LongWord;
+ begin
+  {}
+  Result:=nil;
+
+  {Check Count}
+  if ListCount = 0 then Exit;
+
+  {Find Sequence}
+  for Index:=0 to ListCount - 1 do
+   begin
+    if (List[Index] <> nil) and (List[Index].Sequence = Sequence) then
+     begin
+      Result:=List[Index];
+      Exit;
+     end;
+   end;
+ end;
+
+ function HIDFindInternal(Parent:PHIDCollection):Boolean;
+ var
+  Report:PHIDReport;
+  UsageIndex:LongWord;
+  ReportIndex:LongWord;
+  CollectionIndex:LongWord;
+ begin
+  {}
+  Result:=False;
+
+  {Check Parent}
+  if Parent = nil then Exit;
+
+  {Check Collections}
+  if Parent.CollectionCount > 0 then
+   begin
+    for CollectionIndex:=0 to Parent.CollectionCount - 1 do
+     begin
+      if Parent.Collections[CollectionIndex] <> nil then
+       begin
+        {Check Collection}
+        if not HIDFindInternal(Parent.Collections[CollectionIndex]) then Exit;
+       end;
+     end;
+   end;
+
+  {Check Reports}
+  if Parent.ReportCount > 0 then
+   begin
+    for ReportIndex:=0 to Parent.ReportCount - 1 do
+     begin
+      Report:=Parent.Reports[ReportIndex];
+      if Report <> nil then
+       begin
+        {Check Report}
+        if (Report.Kind = Kind) and (Report.Id = Id) then
+         begin
+          {Increment List}
+          Inc(ListIndex);
+          Inc(ListCount);
+
+          {Add Report}
+          List[ListIndex]:=Report;
+
+          {Check Report}
+          if (ListMinimum = -1) or (Report.Sequence < ListMinimum) then
+           begin
+            ListMinimum:=Report.Sequence;
+           end;
+
+          if Report.Sequence > ListMaximum then
+           begin
+            ListMaximum:=Report.Sequence;
+           end;
+         end;
+       end;
+     end;
+   end;
+
+  Result:=True;
+ end;
+
+var
+ Index:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Device}
+ if Device = nil then Exit;
+ if Device.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ {Check Reports}
+ if Reports = nil then Exit;
+
+ {Check Count}
+ if Count < 1 then Exit;
+
+ {$IFDEF HID_DEBUG}
+ if HID_LOG_ENABLED then HIDLogDebug(Device,'Finding Reports (Kind=' + IntToStr(Kind) + ' Id=' + IntToStr(Id) + ')');
+ {$ENDIF}
+
+ {Acquire the Lock}
+ if MutexLock(Device.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Set Result}
+    Result:=ERROR_OUTOFMEMORY;
+
+    {Allocate List}
+    List:=AllocMem(Count * SizeOf(PHIDReport));
+    if List = nil then Exit;
+    try
+     {Set Result}
+     Result:=ERROR_OPERATION_FAILED;
+
+     {Set Defaults}
+     ListIndex:=-1;
+     ListCount:=0;
+     ListMinimum:=-1;
+     ListMaximum:=-1;
+
+     {Count Reports}
+     if Collection = nil then
+      begin
+       {Check Collections}
+       if Device.Collections = nil then Exit;
+
+       {Check Collections}
+       if Device.CollectionCount > 0 then
+        begin
+         for Index:=0 to Device.CollectionCount - 1 do
+          begin
+           if Device.Collections[Index] <> nil then
+            begin
+             {Check Collection}
+             if not HIDFindInternal(Device.Collections[Index]) then Exit;
+            end;
+          end;
+        end;
+      end
+     else
+      begin
+       {Check Collection}
+       if not HIDFindInternal(Collection) then Exit;
+      end;
+
+     {Sort Reports}
+     if (ListMinimum <> -1) and (ListMaximum <> -1) then
+      begin
+       ListIndex:=0;
+
+       for Index:=ListMinimum to ListMaximum do
+        begin
+         {Find Sequence}
+         Reports[ListIndex]:=HIDFindSequence(Index);
+         if Reports[ListIndex] <> nil then
+          begin
+           {Update Index}
+           Inc(ListIndex);
+
+           {Check Count}
+           if ListIndex >= Count then Break;
+          end;
+        end;
+      end;
+
+     {$IFDEF HID_DEBUG}
+     if HID_LOG_ENABLED then HIDLogDebug(Device,'Found Reports (Count=' + IntToStr(ListCount) + ' Sequence Minimum=' + IntToStr(ListMinimum) + ' Maximum=' + IntToStr(ListMaximum)  + ')');
+     {$ENDIF}
+
+     {Return Result}
+     Result:=ERROR_SUCCESS;
+    finally
+     {Release List}
+     FreeMem(List);
+    end;
+   finally
+    {Release the Lock}
+    MutexUnlock(Device.Lock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+  end;
+end;
+
+{==============================================================================}
+
 function HIDAllocateDefinition(Device:PHIDDevice;Collection:PHIDCollection;Kind,Id:Byte):PHIDDefinition;
 {Allocate a HID defintion to describe an input, output or feature report contained in the specified collection}
 {Device: The HID device to create the report definition from}
@@ -2879,7 +3340,6 @@ function HIDAllocateDefinition(Device:PHIDDevice;Collection:PHIDCollection;Kind,
 {Return: A pointer to the allocated definition or nil on error}
 
 var
- Bits:LongWord;
  Definition:PHIDDefinition;
 
  function HIDLinkField(Field:PHIDField):Boolean;
@@ -2931,229 +3391,16 @@ var
   Result:=HID_GLOBAL_UNIT_MULTIPLIERS[Usage.UnitExponent];
  end;
 
- function HIDAllocateInternal(Parent:PHIDCollection):Boolean;
- var
-  Count:LongWord;
-  Field:PHIDField;
-  Usage:PHIDUsage;
-  Report:PHIDReport;
-  UsageIndex:LongWord;
-  ReportIndex:LongWord;
-  CollectionIndex:LongWord;
- begin
-  {}
-  Result:=False;
-
-  {Check Parent}
-  if Parent = nil then Exit;
-
-  {Check Reports}
-  if Parent.ReportCount > 0 then
-   begin
-    for ReportIndex:=0 to Parent.ReportCount - 1 do
-     begin
-      Report:=Parent.Reports[ReportIndex];
-      if Report <> nil then
-       begin
-        {Check Report}
-        if (Report.Kind = Kind) and (Report.Id = Id) then
-         begin
-          {$IFDEF HID_DEBUG}
-          if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocating Definition (Report Index=' + IntToStr(Report.Index) + ' Size=' + IntToStr(Report.Size) + ' Count=' + IntToStr(Report.Count) + ' Flags=' + IntToHex(Report.Flags,8) + ')');
-          {$ENDIF}
-
-          {Check Definition}
-          if Definition = nil then
-           begin
-            {Allocate Definition}
-            Definition:=AllocMem(SizeOf(THIDDefinition));
-            if Definition = nil then Exit;
-
-            {Update Definition}
-            Definition.Id:=Id;
-            Definition.Kind:=Kind;
-
-            {Update Bits}
-            if Id <> 0 then Inc(Bits,8);
-           end;
-
-          {Check Usages}
-          if Report.UsageCount > 0 then
-           begin
-            {Data}
-            for UsageIndex:=0 to Report.UsageCount - 1 do
-             begin
-              Usage:=Report.Usages[UsageIndex];
-              if Usage <> nil then
-               begin
-                {Check Usage}
-                if (Usage.Page = 0) or (Usage.Count = 0) then Exit;
-
-                {$IFDEF HID_DEBUG}
-                if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocating Definition (Usage Index=' + IntToStr(Usage.Index) + ' Page=' + IntToHex(Usage.Page,4) + ' Usage=' + IntToHex(Usage.Usage,4) + ' Count=' + IntToStr(Usage.Count) + ')');
-                {$ENDIF}
-
-                {Check Flags}
-                if (Report.Flags and (HID_MAIN_ITEM_CONSTANT or HID_MAIN_ITEM_VARIABLE)) <> 0 then
-                 begin
-                  {Constant or Variable}
-                  for Count:=0 to Usage.Count - 1 do
-                   begin
-                    {Allocate Field}
-                    Field:=AllocMem(SizeOf(THIDField));
-                    if Field = nil then Exit;
-
-                    {Update Field}
-                    Field.Page:=Usage.Page;
-                    Field.Usage:=Usage.Usage + Count;
-                    Field.Count:=1;
-
-                    Field.Flags:=Report.Flags;
-
-                    Field.Size:=(Report.Size + 7) div 8;
-                    Field.Bits:=Report.Size;
-                    Field.Offset:=Bits div 8;
-                    Field.Shift:=Bits mod 8;
-
-                    Field.Minimum:=Usage.LogicalMinimum;
-                    Field.Maximum:=Usage.LogicalMaximum;
-                    if (Usage.PhysicalMinimum <> 0) or (Usage.PhysicalMaximum <> 0) then
-                     begin
-                      Field.Minimum:=Usage.PhysicalMinimum;
-                      Field.Maximum:=Usage.PhysicalMaximum;
-                     end;
-
-                    if (Usage.PhysicalMinimum = Usage.PhysicalMaximum) or (Usage.LogicalMinimum = Usage.LogicalMaximum) then
-                     begin
-                      Field.Multiplier:=1;
-                      Field.Resolution:=1;
-                     end
-                    else
-                     begin
-                      Field.Multiplier:=(Usage.PhysicalMaximum - Usage.PhysicalMinimum) / (Usage.LogicalMaximum - Usage.LogicalMinimum);
-                      Field.Resolution:=(Usage.LogicalMaximum - Usage.LogicalMinimum) / ((Usage.PhysicalMaximum - Usage.PhysicalMinimum) * HIDExponentMultiplier(Usage));
-                     end;
-
-                    {Link Field}
-                    if not HIDLinkField(Field) then
-                     begin
-                      {Free Field}
-                      FreeMem(Field);
-                      Exit;
-                     end;
-
-                    {$IFDEF HID_DEBUG}
-                    if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocated Field (Page=' + IntToHex(Field.Page,4) + ' Usage=' + IntToHex(Field.Usage,4) + ' Count=' + IntToStr(Field.Count) + ' Flags=' + IntToHex(Field.Flags,8) + ')');
-                    if HID_LOG_ENABLED then HIDLogDebug(Device,'                (Size=' + IntToStr(Field.Size) + ' Bits=' + IntToStr(Field.Bits) + ' Offset=' + IntToStr(Field.Offset) + ' Shift=' + IntToStr(Field.Shift) + ')');
-                    if HID_LOG_ENABLED then HIDLogDebug(Device,'                (Minimum=' + IntToStr(Field.Minimum) + ' Maximum=' + IntToStr(Field.Maximum) + ' Multiplier=' + FloatToStr(Field.Multiplier) + ' Resolution=' + FloatToStr(Field.Resolution) + ')');
-                    {$ENDIF}
-
-                    {Update Bits}
-                    Inc(Bits,Report.Size);
-
-                    {$IFDEF HID_DEBUG}
-                    if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocating Definition (Bits=' + IntToStr(Bits) + ')');
-                    {$ENDIF}
-                   end;
-                 end
-                else if (Report.Flags and (HID_MAIN_ITEM_CONSTANT or HID_MAIN_ITEM_VARIABLE)) = 0 then
-                 begin
-                  {Array}
-                  for Count:=0 to Report.Count - 1 do
-                   begin
-                    {Allocate Field}
-                    Field:=AllocMem(SizeOf(THIDField));
-                    if Field = nil then Exit;
-
-                    {Update Field}
-                    Field.Page:=Usage.Page;
-                    Field.Usage:=Usage.Usage;
-                    Field.Count:=Usage.Count;
-
-                    Field.Flags:=Report.Flags;
-
-                    Field.Size:=(Report.Size + 7) div 8;
-                    Field.Bits:=Report.Size;
-                    Field.Offset:=Bits div 8;
-                    Field.Shift:=Bits mod 8;
-
-                    Field.Minimum:=Usage.LogicalMinimum;
-                    Field.Maximum:=Usage.LogicalMaximum;
-                    if (Usage.PhysicalMinimum <> 0) or (Usage.PhysicalMaximum <> 0) then
-                     begin
-                      Field.Minimum:=Usage.PhysicalMinimum;
-                      Field.Maximum:=Usage.PhysicalMaximum;
-                     end;
-
-                    if (Usage.PhysicalMinimum = Usage.PhysicalMaximum) or (Usage.LogicalMinimum = Usage.LogicalMaximum) then
-                     begin
-                      Field.Multiplier:=1;
-                      Field.Resolution:=1;
-                     end
-                    else
-                     begin
-                      Field.Multiplier:=(Usage.PhysicalMaximum - Usage.PhysicalMinimum) / (Usage.LogicalMaximum - Usage.LogicalMinimum);
-                      Field.Resolution:=(Usage.LogicalMaximum - Usage.LogicalMinimum) / ((Usage.PhysicalMaximum - Usage.PhysicalMinimum) * HIDExponentMultiplier(Usage));
-                     end;
-
-                    {Link Field}
-                    if not HIDLinkField(Field) then
-                     begin
-                      {Free Field}
-                      FreeMem(Field);
-                      Exit;
-                     end;
-
-                    {$IFDEF HID_DEBUG}
-                    if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocated Field (Page=' + IntToHex(Field.Page,4) + ' Usage=' + IntToHex(Field.Usage,4) + ' Count=' + IntToStr(Field.Count) + ' Flags=' + IntToHex(Field.Flags,8) + ')');
-                    if HID_LOG_ENABLED then HIDLogDebug(Device,'                (Size=' + IntToStr(Field.Size) + ' Bits=' + IntToStr(Field.Bits) + ' Offset=' + IntToStr(Field.Offset) + ' Shift=' + IntToStr(Field.Shift) + ')');
-                    if HID_LOG_ENABLED then HIDLogDebug(Device,'                (Minimum=' + IntToStr(Field.Minimum) + ' Maximum=' + IntToStr(Field.Maximum) + ' Multiplier=' + FloatToStr(Field.Multiplier) + ' Resolution=' + FloatToStr(Field.Resolution) + ')');
-                    {$ENDIF}
-
-                    {Update Bits}
-                    Inc(Bits,Report.Size);
-
-                    {$IFDEF HID_DEBUG}
-                    if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocating Definition (Bits=' + IntToStr(Bits) + ')');
-                    {$ENDIF}
-                   end;
-                 end;
-               end;
-             end;
-           end
-          else
-           begin
-            {Padding}
-            {Update Bits}
-            Inc(Bits,Report.Size * Report.Count);
-
-            {$IFDEF HID_DEBUG}
-            if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocating Definition (Bits=' + IntToStr(Bits) + ')');
-            {$ENDIF}
-           end;
-         end;
-       end;
-     end;
-   end;
-
-  {Check Collections}
-  if Parent.CollectionCount > 0 then
-   begin
-    for CollectionIndex:=0 to Parent.CollectionCount - 1 do
-     begin
-      if Parent.Collections[CollectionIndex] <> nil then
-       begin
-        {Check Collection}
-        if not HIDAllocateInternal(Parent.Collections[CollectionIndex]) then Exit;
-       end;
-     end;
-   end;
-
-  Result:=True;
- end;
-
 var
- Index:LongWord;
+ Bits:LongWord;
+ Count:LongWord;
+ Field:PHIDField;
+ Usage:PHIDUsage;
+ Report:PHIDReport;
+ Reports:PHIDReports;
+ UsageIndex:LongWord;
+ ReportIndex:LongWord;
+ ReportCount:LongWord;
 begin
  {}
  Result:=nil;
@@ -3161,9 +3408,6 @@ begin
  {Check Device}
  if Device = nil then Exit;
  if Device.Device.Signature <> DEVICE_SIGNATURE then Exit;
-
- {Check Collection}
- if Collection = nil then Exit;
 
  {$IFDEF HID_DEBUG}
  if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocating Definition (Kind=' + IntToStr(Kind) + ' Id=' + IntToStr(Id) + ')');
@@ -3176,34 +3420,230 @@ begin
  {Acquire the Lock}
  if MutexLock(Device.Lock) <> ERROR_SUCCESS then Exit;
  try
-  {Check Collections}
-  if Device.Collections = nil then Exit;
+  {Count Reports}
+  if HIDCountReports(Device,Collection,Kind,Id,ReportCount) <> ERROR_SUCCESS then Exit;
 
-  {Check Collections}
-  if Device.CollectionCount > 0 then
+  {Check Count}
+  if ReportCount > 0 then
    begin
-    for Index:=0 to Device.CollectionCount - 1 do
-     begin
-      if Device.Collections[Index] <> nil then
-       begin
-        {Check Collection}
-        if not HIDAllocateInternal(Device.Collections[Index]) then Exit;
-       end;
-     end;
+    {Allocate Reports}
+    Reports:=AllocMem(ReportCount * SizeOf(PHIDReport));
+    if Reports = nil then Exit;
+    try
+     {Find Reports}
+     if HIDFindReports(Device,Collection,Kind,Id,Reports,ReportCount) <> ERROR_SUCCESS then Exit;
+
+     {Check Reports}
+     for ReportIndex:=0 to ReportCount - 1 do
+      begin
+       Report:=Reports[ReportIndex];
+       if Report <> nil then
+        begin
+         {$IFDEF HID_DEBUG}
+         if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocating Definition (Report Index=' + IntToStr(Report.Index) + ' Size=' + IntToStr(Report.Size) + ' Count=' + IntToStr(Report.Count) + ' Flags=' + IntToHex(Report.Flags,8) + ')');
+         {$ENDIF}
+
+         {Check Definition}
+         if Definition = nil then
+          begin
+           {Allocate Definition}
+           Definition:=AllocMem(SizeOf(THIDDefinition));
+           if Definition = nil then Exit;
+
+           {Update Definition}
+           Definition.Id:=Id;
+           Definition.Kind:=Kind;
+
+           {Update Bits}
+           if Id <> 0 then Inc(Bits,8);
+          end;
+
+         {Check Usages}
+         if Report.UsageCount > 0 then
+          begin
+           {Data}
+           for UsageIndex:=0 to Report.UsageCount - 1 do
+            begin
+             Usage:=Report.Usages[UsageIndex];
+             if Usage <> nil then
+              begin
+               {Check Usage}
+               if (Usage.Page = 0) or (Usage.Count = 0) then Exit;
+
+               {$IFDEF HID_DEBUG}
+               if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocating Definition (Usage Index=' + IntToStr(Usage.Index) + ' Page=' + IntToHex(Usage.Page,4) + ' Usage=' + IntToHex(Usage.Usage,4) + ' Count=' + IntToStr(Usage.Count) + ')');
+               {$ENDIF}
+
+               {Check Flags}
+               if (Report.Flags and (HID_MAIN_ITEM_CONSTANT or HID_MAIN_ITEM_VARIABLE)) <> 0 then
+                begin
+                 {Constant or Variable}
+                 for Count:=0 to Usage.Count - 1 do
+                  begin
+                   {Allocate Field}
+                   Field:=AllocMem(SizeOf(THIDField));
+                   if Field = nil then Exit;
+
+                   {Update Field}
+                   Field.Page:=Usage.Page;
+                   Field.Usage:=Usage.Usage + Count;
+                   Field.Count:=1;
+
+                   Field.Flags:=Report.Flags;
+
+                   Field.Size:=(Report.Size + 7) div 8;
+                   Field.Bits:=Report.Size;
+                   Field.Offset:=Bits div 8;
+                   Field.Shift:=Bits mod 8;
+
+                   Field.Logical.Minimum:=Usage.LogicalMinimum;
+                   Field.Logical.Maximum:=Usage.LogicalMaximum;
+                   if (Usage.PhysicalMinimum <> 0) or (Usage.PhysicalMaximum <> 0) then
+                    begin
+                     Field.Physical.Minimum:=Usage.PhysicalMinimum;
+                     Field.Physical.Maximum:=Usage.PhysicalMaximum;
+                    end
+                   else
+                    begin
+                     Field.Physical.Minimum:=Usage.LogicalMinimum;
+                     Field.Physical.Maximum:=Usage.LogicalMaximum;
+                    end;
+
+                   if (Usage.PhysicalMinimum = Usage.PhysicalMaximum) or (Usage.LogicalMinimum = Usage.LogicalMaximum) then
+                    begin
+                     Field.Multiplier:=1;
+                     Field.Resolution:=1;
+                    end
+                   else
+                    begin
+                     Field.Multiplier:=(Usage.PhysicalMaximum - Usage.PhysicalMinimum) / (Usage.LogicalMaximum - Usage.LogicalMinimum);
+                     Field.Resolution:=(Usage.LogicalMaximum - Usage.LogicalMinimum) / ((Usage.PhysicalMaximum - Usage.PhysicalMinimum) * HIDExponentMultiplier(Usage));
+                    end;
+
+                   {Link Field}
+                   if not HIDLinkField(Field) then
+                    begin
+                     {Free Field}
+                     FreeMem(Field);
+                     Exit;
+                    end;
+
+                   {$IFDEF HID_DEBUG}
+                   if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocated Field (Page=' + IntToHex(Field.Page,4) + ' Usage=' + IntToHex(Field.Usage,4) + ' Count=' + IntToStr(Field.Count) + ' Flags=' + IntToHex(Field.Flags,8) + ')');
+                   if HID_LOG_ENABLED then HIDLogDebug(Device,'                (Size=' + IntToStr(Field.Size) + ' Bits=' + IntToStr(Field.Bits) + ' Offset=' + IntToStr(Field.Offset) + ' Shift=' + IntToStr(Field.Shift) + ')');
+                   if HID_LOG_ENABLED then HIDLogDebug(Device,'                (Logical Minimum=' + IntToStr(Field.Logical.Minimum) + ' Maximum=' + IntToStr(Field.Logical.Maximum) + ')');
+                   if HID_LOG_ENABLED then HIDLogDebug(Device,'                (Physical Minimum=' + IntToStr(Field.Physical.Minimum) + ' Maximum=' + IntToStr(Field.Physical.Maximum) + ' Multiplier=' + FloatToStr(Field.Multiplier) + ' Resolution=' + FloatToStr(Field.Resolution) + ')');
+                   {$ENDIF}
+
+                   {Update Bits}
+                   Inc(Bits,Report.Size);
+
+                   {$IFDEF HID_DEBUG}
+                   if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocating Definition (Bits=' + IntToStr(Bits) + ')');
+                   {$ENDIF}
+                  end;
+                end
+               else if (Report.Flags and (HID_MAIN_ITEM_CONSTANT or HID_MAIN_ITEM_VARIABLE)) = 0 then
+                begin
+                 {Array}
+                 for Count:=0 to Report.Count - 1 do
+                  begin
+                   {Allocate Field}
+                   Field:=AllocMem(SizeOf(THIDField));
+                   if Field = nil then Exit;
+
+                   {Update Field}
+                   Field.Page:=Usage.Page;
+                   Field.Usage:=Usage.Usage;
+                   Field.Count:=Usage.Count;
+
+                   Field.Flags:=Report.Flags;
+
+                   Field.Size:=(Report.Size + 7) div 8;
+                   Field.Bits:=Report.Size;
+                   Field.Offset:=Bits div 8;
+                   Field.Shift:=Bits mod 8;
+
+                   Field.Logical.Minimum:=Usage.LogicalMinimum;
+                   Field.Logical.Maximum:=Usage.LogicalMaximum;
+                   if (Usage.PhysicalMinimum <> 0) or (Usage.PhysicalMaximum <> 0) then
+                    begin
+                     Field.Physical.Minimum:=Usage.PhysicalMinimum;
+                     Field.Physical.Maximum:=Usage.PhysicalMaximum;
+                    end
+                   else
+                    begin
+                     Field.Physical.Minimum:=Usage.LogicalMinimum;
+                     Field.Physical.Maximum:=Usage.LogicalMaximum;
+                    end;
+
+                   if (Usage.PhysicalMinimum = Usage.PhysicalMaximum) or (Usage.LogicalMinimum = Usage.LogicalMaximum) then
+                    begin
+                     Field.Multiplier:=1;
+                     Field.Resolution:=1;
+                    end
+                   else
+                    begin
+                     Field.Multiplier:=(Usage.PhysicalMaximum - Usage.PhysicalMinimum) / (Usage.LogicalMaximum - Usage.LogicalMinimum);
+                     Field.Resolution:=(Usage.LogicalMaximum - Usage.LogicalMinimum) / ((Usage.PhysicalMaximum - Usage.PhysicalMinimum) * HIDExponentMultiplier(Usage));
+                    end;
+
+                   {Link Field}
+                   if not HIDLinkField(Field) then
+                    begin
+                     {Free Field}
+                     FreeMem(Field);
+                     Exit;
+                    end;
+
+                   {$IFDEF HID_DEBUG}
+                   if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocated Field (Page=' + IntToHex(Field.Page,4) + ' Usage=' + IntToHex(Field.Usage,4) + ' Count=' + IntToStr(Field.Count) + ' Flags=' + IntToHex(Field.Flags,8) + ')');
+                   if HID_LOG_ENABLED then HIDLogDebug(Device,'                (Size=' + IntToStr(Field.Size) + ' Bits=' + IntToStr(Field.Bits) + ' Offset=' + IntToStr(Field.Offset) + ' Shift=' + IntToStr(Field.Shift) + ')');
+                   if HID_LOG_ENABLED then HIDLogDebug(Device,'                (Logical Minimum=' + IntToStr(Field.Logical.Minimum) + ' Maximum=' + IntToStr(Field.Logical.Maximum) + ')');
+                   if HID_LOG_ENABLED then HIDLogDebug(Device,'                (Physical Minimum=' + IntToStr(Field.Physical.Minimum) + ' Maximum=' + IntToStr(Field.Physical.Maximum) + ' Multiplier=' + FloatToStr(Field.Multiplier) + ' Resolution=' + FloatToStr(Field.Resolution) + ')');
+                   {$ENDIF}
+
+                   {Update Bits}
+                   Inc(Bits,Report.Size);
+
+                   {$IFDEF HID_DEBUG}
+                   if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocating Definition (Bits=' + IntToStr(Bits) + ')');
+                   {$ENDIF}
+                  end;
+                end;
+              end;
+            end;
+          end
+         else
+          begin
+           {Padding}
+           {Update Bits}
+           Inc(Bits,Report.Size * Report.Count);
+
+           {$IFDEF HID_DEBUG}
+           if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocating Definition (Bits=' + IntToStr(Bits) + ')');
+           {$ENDIF}
+          end;
+        end;
+      end;
+
+     {Check Definition}
+     if Definition = nil then Exit;
+
+     {Update Definition}
+     Definition.Size:=(Bits + 7) div 8;
+
+     {$IFDEF HID_DEBUG}
+     if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocated Definition (Size=' + IntToStr(Definition.Size) + ')');
+     {$ENDIF}
+
+     {Return Result}
+     Result:=Definition;
+    finally
+     {Release Reports}
+     FreeMem(Reports);
+    end;
    end;
-
-  {Check Definition}
-  if Definition = nil then Exit;
-
-  {Update Definition}
-  Definition.Size:=(Bits + 7) div 8;
-
-  {$IFDEF HID_DEBUG}
-  if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocated Definition (Size=' + IntToStr(Definition.Size) + ')');
-  {$ENDIF}
-
-  {Return Result}
-  Result:=Definition;
  finally
   {Release the Lock}
   MutexUnlock(Device.Lock);
@@ -5486,7 +5926,7 @@ begin
  {Check Field}
  if Field = nil then Exit;
 
- Result:=(Field.Minimum < 0);
+ Result:=(Field.Logical.Minimum < 0); {Logical not Physical}
 end;
 
 {==============================================================================}
@@ -5532,6 +5972,7 @@ begin
   HID_PAGE_ARCADE:Result:='Arcade';
   HID_PAGE_GAMING_DEVICE:Result:='Gaming Device';
   HID_PAGE_FIDO_ALLIANCE:Result:='FIDO Alliance';
+  HID_PAGE_VENDOR_MINIMUM..HID_PAGE_VENDOR_MAXIMUM:Result:='Vendor-defined';
  end;
 
  Result:=Result + ' Page';
@@ -5587,6 +6028,42 @@ begin
      HID_BUTTON_SECONDARY:Result:='Secondary';
      HID_BUTTON_TERTIARY:Result:='Tertiary';
      HID_BUTTON_4..HID_BUTTON_65535:Result:='Button' + IntToStr(Usage);
+    end;
+
+    if Count > 1 then Result:=Result + '..' + HIDUsageToString(Page,Usage + Count - 1,1);
+   end;
+  HID_PAGE_DIGITIZERS:begin
+    case Usage of
+     HID_DIGITIZERS_DIGITIZER:Result:='Digitizer';
+     HID_DIGITIZERS_PEN:Result:='Pen';
+     HID_DIGITIZERS_LIGHT_PEN:Result:='Light Pen';
+     HID_DIGITIZERS_TOUCH_SCREEN:Result:='Touch Screen';
+     HID_DIGITIZERS_TOUCH_PAD:Result:='Touch Pad';
+     HID_DIGITIZERS_WHITEBOARD:Result:='Whiteboard';
+     {Some usages omitted}
+     HID_DIGITIZERS_STYLUS:Result:='Stylus';
+     HID_DIGITIZERS_PUCK:Result:='Puck';
+     HID_DIGITIZERS_FINGER:Result:='Finger';
+     {Some usages omitted}
+     HID_DIGITIZERS_TIP_PRESSURE:Result:='Tip Pressure';
+     HID_DIGITIZERS_IN_RANGE:Result:='In Range';
+     {Some usages omitted}
+     HID_DIGITIZERS_INVERT:Result:='Invert';
+     HID_DIGITIZERS_X_TILT:Result:='X Tilt';
+     HID_DIGITIZERS_Y_TILT:Result:='Y Tilt';
+     HID_DIGITIZERS_AZIMUTH:Result:='Azimuth';
+     HID_DIGITIZERS_TWIST:Result:='Twist';
+     HID_DIGITIZERS_TIP_SWITCH:Result:='Tip Switch';
+     HID_DIGITIZERS_BARREL_SWITCH:Result:='Barrel Switch';
+     HID_DIGITIZERS_ERASER:Result:='Eraser';
+     HID_DIGITIZERS_TOUCH_VALID:Result:='Confidence';
+     HID_DIGITIZERS_WIDTH:Result:='Width';
+     HID_DIGITIZERS_HEIGHT:Result:='Height';
+     {Some usages omitted}
+     HID_DIGITIZERS_CONTACT_IDENTIFIER:Result:='Contact Identifier';
+     HID_DIGITIZERS_CONTACT_COUNT:Result:='Contact Count';
+     HID_DIGITIZERS_CONTACT_COUNT_MAXIMUM:Result:='Contact Count Maximum';
+     HID_DIGITIZERS_SCAN_TIME:Result:='Scan Time';
     end;
 
     if Count > 1 then Result:=Result + '..' + HIDUsageToString(Page,Usage + Count - 1,1);

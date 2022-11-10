@@ -561,6 +561,9 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    genet \
 		    hidmouse \
 		    hidkeyboard \
+		    hidtouch \
+		    usbmouse \
+		    usbkeyboard \
 		    rpigpioexpander \
 		    rpisensehat \
 		    i2cgpio \

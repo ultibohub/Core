@@ -157,7 +157,7 @@ type
   {General Properties}
   IRQ:TGPIOInfo;                {The GPIO information for the IRQ line (Optional)}
   RST:TGPIOInfo;                {The GPIO information for the Reset line (Optional)}
-  Timer:TTimerHandle;           {Handle for touch release timer}
+  Timer:TTimerHandle;           {Handle for touch polling timer}
   MaxX:Word;                    {Maximum X value from current configuration}
   MaxY:Word;                    {Maximum Y value from current configuration}
   Width:Word;                   {Screen width value supplied during create}
@@ -1358,6 +1358,9 @@ begin
  Total:=0;
  ModifiedPoints:=0;
 
+ {Clear Mouse Data}
+ FillChar(MouseData,SizeOf(TMouseData),0);
+
  {Read Touch Point Data}
  FillChar(Data[0],SizeOf(Data),0);
  DataSize:=(PointSize * Touch.MaxPoints) + Offset + CRCSize;
@@ -1471,6 +1474,9 @@ begin
          TouchData:=@Touch.Touch.Buffer.Buffer[(Touch.Touch.Buffer.Start + Touch.Touch.Buffer.Count) mod TOUCH_BUFFER_SIZE];
          if TouchData <> nil then
           begin
+           {Clear Touch Data}
+           FillChar(TouchData^,SizeOf(TTouchData),0);
+
            {Update Touch Data}
            TouchData.Info:=TOUCH_FINGER;
            TouchData.PointID:=Id + 1;
@@ -1595,6 +1601,9 @@ begin
            TouchData:=@Touch.Touch.Buffer.Buffer[(Touch.Touch.Buffer.Start + Touch.Touch.Buffer.Count) mod TOUCH_BUFFER_SIZE];
            if TouchData <> nil then
             begin
+             {Clear Touch Data}
+             FillChar(TouchData^,SizeOf(TTouchData),0);
+
              {Update Touch Data}
              TouchData.Info:=0;
              TouchData.PointID:=Count + 1;

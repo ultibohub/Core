@@ -204,7 +204,7 @@ type
   Device:TDevice;                                 {The Device entry for this Touch device}
   {Touch Properties}
   TouchId:LongWord;                               {Unique Id of this Touch device in the Touch device table}
-  TouchState:LongWord;                            {Touch dveice state (eg TOUCH_STATE_ENABLED)}
+  TouchState:LongWord;                            {Touch device state (eg TOUCH_STATE_ENABLED)}
   DeviceStart:TTouchDeviceStart;                  {A Device specific DeviceStart method implementing the standard Touch device interface (Mandatory)}
   DeviceStop:TTouchDeviceStop;                    {A Device specific DeviceStop method implementing the standard Touch device interface (Mandatory)}
   DevicePeek:TTouchDevicePeek;                    {A Device specific DevicePeek method implementing a standard Touch device interface (Or nil if the default method is suitable)}

@@ -3849,7 +3849,7 @@ begin
  AddBlank(AResponse);
 
  {Add Default Language}
- AddItem(AResponse,'Default Language:',IntToHex(GetSystemDefaultLangID,4));
+ AddItem(AResponse,'Default Language:','0x' + IntToHex(GetSystemDefaultLangID,4));
  AddBlank(AResponse);
  
  {Add Default Keymap}
@@ -4458,7 +4458,7 @@ begin
  AddItemEx(AResponse,'CPU Count:',IntToStr(SCHEDULER_CPU_COUNT),2);
  AddItemEx(AResponse,'CPU Mask:','0x' + IntToHex(SCHEDULER_CPU_MASK,8),2);
  AddItemEx(AResponse,'CPU Boot:',CPUIDToString(SCHEDULER_CPU_BOOT),2);
- AddItemEx(AResponse,'CPU Reserve:',IntToHex(SCHEDULER_CPU_RESERVE,8),2);
+ AddItemEx(AResponse,'CPU Reserve:','0x' + IntToHex(SCHEDULER_CPU_RESERVE,8),2);
  
  {Add Scheduler Idle/Wait/Offset}
  AddBlank(AResponse);
@@ -7031,7 +7031,7 @@ begin
 
         AddItem(AResponse,'Erase Size:',IntToStr(MMCDevice.EraseSize));
         AddItem(AResponse,'Erase Shift:',IntToStr(MMCDevice.EraseShift));
-        AddItem(AResponse,'Erase Argument:',IntToHex(MMCDevice.EraseArgument,8));
+        AddItem(AResponse,'Erase Argument:','0x' + IntToHex(MMCDevice.EraseArgument,8));
         AddItem(AResponse,'Preferred Erase Size:',IntToStr(MMCDevice.PreferredEraseSize));
         AddItem(AResponse,'Enhanced Strobe:',BooleanToString(MMCDevice.EnhancedStrobe));
         AddBlank(AResponse);
@@ -9129,7 +9129,7 @@ begin
      
      AddItem(AResponse,'Erase Size:',IntToStr(MMCDevice.EraseSize));
      AddItem(AResponse,'Erase Shift:',IntToStr(MMCDevice.EraseShift));
-     AddItem(AResponse,'Erase Argument:',IntToHex(MMCDevice.EraseArgument,8));
+     AddItem(AResponse,'Erase Argument:','0x' + IntToHex(MMCDevice.EraseArgument,8));
      AddItem(AResponse,'Preferred Erase Size:',IntToStr(MMCDevice.PreferredEraseSize));
      AddItem(AResponse,'Enhanced Strobe:',BooleanToString(MMCDevice.EnhancedStrobe));
      AddBlank(AResponse);
@@ -9558,9 +9558,9 @@ function TWebStatusHID.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;ARespon
 
   {Log Collection}
   HIDLogOutput(Indent + '[Collection]');
-  HIDLogOutput(Indent + 'Page:             ' + IntToHex(Collection.Page,4) + ' (' + HIDPageToString(Collection.Page) + ')');
-  HIDLogOutput(Indent + 'Usage:            ' + IntToHex(Collection.Usage,4) + ' (' + HIDUsageToString(Collection.Page,Collection.Usage,1) + ')');
-  HIDLogOutput(Indent + 'Flags:            ' + IntToHex(Collection.Flags,8) + ' (' + HIDCollectionFlagsToString(Collection.Flags) + ')');
+  HIDLogOutput(Indent + 'Page:             ' + '0x' + IntToHex(Collection.Page,4) + ' (' + HIDPageToString(Collection.Page) + ')');
+  HIDLogOutput(Indent + 'Usage:            ' + '0x' + IntToHex(Collection.Usage,4) + ' (' + HIDUsageToString(Collection.Page,Collection.Usage,1) + ')');
+  HIDLogOutput(Indent + 'Flags:            ' + '0x' + IntToHex(Collection.Flags,8) + ' (' + HIDCollectionFlagsToString(Collection.Flags) + ')');
 
   HIDLogOutput(Indent + 'Start:            ' + IntToStr(Collection.Start));
 
@@ -9574,6 +9574,19 @@ function TWebStatusHID.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;ARespon
   if Collection.Consumer <> nil then WorkBuffer:=DriverGetName(@Collection.Consumer.Driver);
   HIDLogOutput(Indent + 'Consumer:         ' + WorkBuffer);
   HIDLogOutput(Indent);
+
+  {Check Collections}
+  if Collection.CollectionCount > 0 then
+   begin
+    for CollectionIndex:=0 to Collection.CollectionCount - 1 do
+     begin
+      if Collection.Collections[CollectionIndex] <> nil then
+       begin
+        {Log Collection}
+        if not HIDLogCollection(Collection.Collections[CollectionIndex],Level + 1) then Exit;
+       end;
+     end;
+   end; 
 
   {Log Reports}
   if Collection.ReportCount > 0 then
@@ -9590,10 +9603,11 @@ function TWebStatusHID.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;ARespon
         HIDLogOutput(Indent + '[Report]');
         HIDLogOutput(Indent + 'Id:          ' + IntToStr(Report.Id));
         HIDLogOutput(Indent + 'Kind:        ' + IntToStr(Report.Kind) + ' (' + HIDReportKindToString(Report.Kind) + ')');
-        HIDLogOutput(Indent + 'Flags:       ' + IntToHex(Report.Flags,8) + ' (' + HIDReportFlagsToString(Report.Flags) + ')');
+        HIDLogOutput(Indent + 'Flags:       ' + '0x' + IntToHex(Report.Flags,8) + ' (' + HIDReportFlagsToString(Report.Flags) + ')');
         HIDLogOutput(Indent + 'Size:        ' + IntToStr(Report.Size));
         HIDLogOutput(Indent + 'Count:       ' + IntToStr(Report.Count));
         HIDLogOutput(Indent + 'Index:       ' + IntToStr(Report.Index));
+        HIDLogOutput(Indent + 'Sequence:    ' + IntToStr(Report.Sequence));
         HIDLogOutput(Indent + 'Usage Count: ' + IntToStr(Report.UsageCount));
         HIDLogOutput(Indent);
 
@@ -9610,16 +9624,16 @@ function TWebStatusHID.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;ARespon
 
               {Log Usage}
               HIDLogOutput(Indent + '[Usage]');
-              HIDLogOutput(Indent + 'Page:             ' + IntToHex(Usage.Page,4) + ' (' + HIDPageToString(Usage.Page) + ')');
-              HIDLogOutput(Indent + 'Usage:            ' + IntToHex(Usage.Usage,4) + ' (' + HIDUsageToString(Usage.Page,Usage.Usage,Usage.Count) + ')');
+              HIDLogOutput(Indent + 'Page:             ' + '0x' + IntToHex(Usage.Page,4) + ' (' + HIDPageToString(Usage.Page) + ')');
+              HIDLogOutput(Indent + 'Usage:            ' + '0x' + IntToHex(Usage.Usage,4) + ' (' + HIDUsageToString(Usage.Page,Usage.Usage,Usage.Count) + ')');
               HIDLogOutput(Indent + 'Count:            ' + IntToStr(Usage.Count));
               HIDLogOutput(Indent + 'Index:            ' + IntToStr(Usage.Index));
               HIDLogOutput(Indent + 'Logical Minimum:  ' + IntToStr(Usage.LogicalMinimum));
               HIDLogOutput(Indent + 'Logical Maximum:  ' + IntToStr(Usage.LogicalMaximum));
               HIDLogOutput(Indent + 'Physical Minimum: ' + IntToStr(Usage.PhysicalMinimum));
               HIDLogOutput(Indent + 'Physical Maximum: ' + IntToStr(Usage.PhysicalMaximum));
-              HIDLogOutput(Indent + 'Unit Type:        ' + IntToStr(Usage.UnitType) + ' (' + HIDUnitTypeToString(Usage.UnitType) + ')');
-              HIDLogOutput(Indent + 'Unit Exponent:    ' + IntToStr(Usage.UnitExponent));
+              HIDLogOutput(Indent + 'Unit Type:        ' + '0x' + IntToHex(Usage.UnitType,8) + ' (' + HIDUnitTypeToString(Usage.UnitType) + ')');
+              HIDLogOutput(Indent + 'Unit Exponent:    ' + '0x' + IntToHex(Usage.UnitExponent,2) + ' (Exponent: ' + IntToStr(HID_GLOBAL_UNIT_EXPONENTS[Usage.UnitExponent]) + ' / Multiplier: ' + FloatToStr(HID_GLOBAL_UNIT_MULTIPLIERS[Usage.UnitExponent]) + ')');
               HIDLogOutput(Indent + 'Alias Count:      ' + IntToStr(Usage.AliasCount));
               HIDLogOutput(Indent);
 
@@ -9636,16 +9650,16 @@ function TWebStatusHID.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;ARespon
 
                     {Log Alias}
                     HIDLogOutput(Indent + '[Alias]');
-                    HIDLogOutput(Indent + 'Page:             ' + IntToHex(Alias.Page,4) + ' (' + HIDPageToString(Alias.Page) + ')');
-                    HIDLogOutput(Indent + 'Usage:            ' + IntToHex(Alias.Usage,4) + ' (' + HIDUsageToString(Alias.Page,Alias.Usage,Alias.Count) + ')');
+                    HIDLogOutput(Indent + 'Page:             ' + '0x' + IntToHex(Alias.Page,4) + ' (' + HIDPageToString(Alias.Page) + ')');
+                    HIDLogOutput(Indent + 'Usage:            ' + '0x' + IntToHex(Alias.Usage,4) + ' (' + HIDUsageToString(Alias.Page,Alias.Usage,Alias.Count) + ')');
                     HIDLogOutput(Indent + 'Count:            ' + IntToStr(Alias.Count));
                     HIDLogOutput(Indent + 'Index:            ' + IntToStr(Alias.Index));
                     HIDLogOutput(Indent + 'Logical Minimum:  ' + IntToStr(Alias.LogicalMinimum));
                     HIDLogOutput(Indent + 'Logical Maximum:  ' + IntToStr(Alias.LogicalMaximum));
                     HIDLogOutput(Indent + 'Physical Minimum: ' + IntToStr(Alias.PhysicalMinimum));
                     HIDLogOutput(Indent + 'Physical Maximum: ' + IntToStr(Alias.PhysicalMaximum));
-                    HIDLogOutput(Indent + 'Unit Type:        ' + IntToStr(Alias.UnitType) + ' (' + HIDUnitTypeToString(Alias.UnitType) + ')');
-                    HIDLogOutput(Indent + 'Unit Exponent:    ' + IntToStr(Alias.UnitExponent));
+                    HIDLogOutput(Indent + 'Unit Type:        ' + '0x' + IntToHex(Alias.UnitType,8) + ' (' + HIDUnitTypeToString(Alias.UnitType) + ')');
+                    HIDLogOutput(Indent + 'Unit Exponent:    ' + '0x' + IntToHex(Alias.UnitExponent,2) + ' (Exponent: ' + IntToStr(HID_GLOBAL_UNIT_EXPONENTS[Alias.UnitExponent]) + ' / Multiplier: ' + FloatToStr(HID_GLOBAL_UNIT_MULTIPLIERS[Alias.UnitExponent]) + ')');
                     HIDLogOutput(Indent);
                    end;
                  end;
@@ -9656,19 +9670,6 @@ function TWebStatusHID.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;ARespon
        end;
      end;
    end;
-
-  {Check Collections}
-  if Collection.CollectionCount > 0 then
-   begin
-    for CollectionIndex:=0 to Collection.CollectionCount - 1 do
-     begin
-      if Collection.Collections[CollectionIndex] <> nil then
-       begin
-        {Log Collection}
-        if not HIDLogCollection(Collection.Collections[CollectionIndex],Level + 1) then Exit;
-       end;
-     end;
-   end; 
 
   Result:=True;
  end;
@@ -11729,7 +11730,7 @@ begin
    if FramebufferDeviceGetProperties(FramebufferDeviceGetDefault,@FramebufferProperties) = ERROR_SUCCESS then
     begin
      AddBlank(AResponse);
-     AddItemEx(AResponse,'Flags:',IntToHex(FramebufferProperties.Flags,8),2);
+     AddItemEx(AResponse,'Flags:','0x' + IntToHex(FramebufferProperties.Flags,8),2);
      AddBlank(AResponse);
      AddItemEx(AResponse,'Address:','0x' + AddrToHex(FramebufferProperties.Address),2);
      AddItemEx(AResponse,'Size:',IntToStr(FramebufferProperties.Size),2);
@@ -11782,7 +11783,7 @@ begin
        if FramebufferDeviceGetProperties(FramebufferDevice,@FramebufferProperties) = ERROR_SUCCESS then
         begin
          AddBlank(AResponse);
-         AddItemEx(AResponse,'Flags:',IntToHex(FramebufferProperties.Flags,8),2);
+         AddItemEx(AResponse,'Flags:','0x' + IntToHex(FramebufferProperties.Flags,8),2);
          AddBlank(AResponse);
          AddItemEx(AResponse,'Address:','0x' + AddrToHex(FramebufferProperties.Address),2);
          AddItemEx(AResponse,'Size:',IntToStr(FramebufferProperties.Size),2);

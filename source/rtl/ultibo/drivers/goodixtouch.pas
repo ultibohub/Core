@@ -1118,6 +1118,9 @@ begin
  ModifiedKeys:=0;
  ModifiedPoints:=0;
 
+ {Clear Mouse Data}
+ FillChar(MouseData,SizeOf(TMouseData),0);
+
  {Process Keys}
  if (Total > 0) and ((Points[0] and GOODIX_HAVE_KEY) <> 0) then
   begin
@@ -1222,6 +1225,9 @@ begin
        TouchData:=@Touch.Touch.Buffer.Buffer[(Touch.Touch.Buffer.Start + Touch.Touch.Buffer.Count) mod TOUCH_BUFFER_SIZE];
        if TouchData <> nil then
         begin
+         {Clear Touch Data}
+         FillChar(TouchData^,SizeOf(TTouchData),0);
+
          {Update Touch Data}
          TouchData.Info:=TOUCH_FINGER;
          TouchData.PointID:=Id + 1;
@@ -1345,6 +1351,9 @@ begin
            TouchData:=@Touch.Touch.Buffer.Buffer[(Touch.Touch.Buffer.Start + Touch.Touch.Buffer.Count) mod TOUCH_BUFFER_SIZE];
            if TouchData <> nil then
             begin
+             {Clear Touch Data}
+             FillChar(TouchData^,SizeOf(TTouchData),0);
+
              {Update Touch Data}
              TouchData.Info:=0;
              TouchData.PointID:=Count + 1;

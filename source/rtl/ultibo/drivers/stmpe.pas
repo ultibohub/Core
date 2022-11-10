@@ -3314,6 +3314,9 @@ begin
    if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'STMPE: Touch Timer');
    {$ENDIF}
 
+   {Clear Mouse Data}
+   FillChar(MouseData,SizeOf(TMouseData),0);
+
    {Read TSC Control}
    STMPEReadByte(@Touch.Control,Touch.Offsets.TSCCtrl,@Status);
    
@@ -3333,6 +3336,9 @@ begin
          TouchData:=@Touch.Touch.Buffer.Buffer[(Touch.Touch.Buffer.Start + Touch.Touch.Buffer.Count) mod TOUCH_BUFFER_SIZE];
          if TouchData <> nil then
           begin
+           {Clear Touch Data}
+           FillChar(TouchData^,SizeOf(TTouchData),0);
+
            {Update Touch Data}
            TouchData.Info:=0;
            TouchData.PointID:=1;
@@ -3418,6 +3424,9 @@ begin
    
    {Disable Interrupt}
    STMPESetBits(@Touch.Control,Touch.Offsets.IntEnable,STMPE811_INT_EN_FIFO_TH,0);
+
+   {Clear Mouse Data}
+   FillChar(MouseData,SizeOf(TMouseData),0);
    
    {Read FIFO Size}
    STMPEReadByte(@Touch.Control,STMPE811_REG_FIFO_SIZE,@Count);
@@ -3470,6 +3479,9 @@ begin
          TouchData:=@Touch.Touch.Buffer.Buffer[(Touch.Touch.Buffer.Start + Touch.Touch.Buffer.Count) mod TOUCH_BUFFER_SIZE];
          if TouchData <> nil then
           begin
+           {Clear Touch Data}
+           FillChar(TouchData^,SizeOf(TTouchData),0);
+
            {Update Touch Data}
            TouchData.Info:=TOUCH_FINGER;
            TouchData.PointID:=1;

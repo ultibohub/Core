@@ -190,7 +190,16 @@ begin
     case Collection.Usage of
      HID_DESKTOP_MOUSE:begin
        {Check Flags}
-       if Collection.Flags = HID_MAIN_COLLECTION_APPLICATION then Result:=ERROR_SUCCESS;
+       if Collection.Flags = HID_MAIN_COLLECTION_APPLICATION then
+        begin
+         if HID_MOUSE_REJECT_TOUCH then
+          begin
+           {Check Touch Collection}
+           if HIDFindCollection(Collection.Device,HID_PAGE_DIGITIZERS,HID_DIGITIZERS_TOUCH_SCREEN) <> nil then Exit;
+          end;
+
+         Result:=ERROR_SUCCESS;
+        end;
       end;
     end;
    end;
@@ -382,9 +391,10 @@ begin
    end;
 
   {Register Mouse}
-  if MouseDeviceRegister(@Mouse.Mouse) <> ERROR_SUCCESS then
+  Status:=MouseDeviceRegister(@Mouse.Mouse);
+  if Status <> ERROR_SUCCESS then
    begin
-    if HID_LOG_ENABLED then HIDLogError(Device,'Mouse: Failed to register new mouse device');
+    if HID_LOG_ENABLED then HIDLogError(Device,'Mouse: Failed to register new mouse device: ' + ErrorToString(Status));
 
     Exit;
    end;
@@ -615,69 +625,78 @@ begin
         Field:=Definition.Fields;
         while Field <> nil do
          begin
-          {Check Usage}
-          case Field.Usage of
-           {Buttons}
-           HID_BUTTON_PRIMARY:begin
-             HIDExtractBitField(Field,ReportData,ReportSize,Value);
+          {Check Page}
+          case Field.Page of
+           HID_PAGE_BUTTON:begin
+             {Check Usage}
+             case Field.Usage of
+              {Buttons}
+              HID_BUTTON_PRIMARY:begin
+                HIDExtractBitField(Field,ReportData,ReportSize,Value);
 
-             {Check Flags}
-             if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_SWAP_BUTTONS) = 0 then
-              begin
-               if Value then Buttons:=Buttons or MOUSE_LEFT_BUTTON;
-              end
-             else
-              begin
-               if Value then Buttons:=Buttons or MOUSE_RIGHT_BUTTON;
-              end;
+                {Check Flags}
+                if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_SWAP_BUTTONS) = 0 then
+                 begin
+                  if Value then Buttons:=Buttons or MOUSE_LEFT_BUTTON;
+                 end
+                else
+                 begin
+                  if Value then Buttons:=Buttons or MOUSE_RIGHT_BUTTON;
+                 end;
+               end;
+              HID_BUTTON_SECONDARY:begin
+                HIDExtractBitField(Field,ReportData,ReportSize,Value);
+
+                {Check Flags}
+                if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_SWAP_BUTTONS) = 0 then
+                 begin
+                  if Value then Buttons:=Buttons or MOUSE_RIGHT_BUTTON;
+                 end
+                else
+                 begin
+                  if Value then Buttons:=Buttons or MOUSE_LEFT_BUTTON;
+                 end;
+               end;
+              HID_BUTTON_TERTIARY:begin
+                HIDExtractBitField(Field,ReportData,ReportSize,Value);
+
+                if Value then Buttons:=Buttons or MOUSE_MIDDLE_BUTTON;
+               end;
+              HID_BUTTON_4:begin
+                HIDExtractBitField(Field,ReportData,ReportSize,Value);
+
+                if Value then Buttons:=Buttons or MOUSE_SIDE_BUTTON;
+               end;
+              HID_BUTTON_5:begin
+                HIDExtractBitField(Field,ReportData,ReportSize,Value);
+
+                if Value then Buttons:=Buttons or MOUSE_EXTRA_BUTTON;
+               end;
+             end;
             end;
-           HID_BUTTON_SECONDARY:begin
-             HIDExtractBitField(Field,ReportData,ReportSize,Value);
+           HID_PAGE_GENERIC_DESKTOP:begin
+             {Check Usage}
+             case Field.Usage of
+              {X, Y and Wheel}
+              HID_DESKTOP_X:begin
+                HIDExtractSignedField(Field,ReportData,ReportSize,OffsetX);
 
-             {Check Flags}
-             if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_SWAP_BUTTONS) = 0 then
-              begin
-               if Value then Buttons:=Buttons or MOUSE_RIGHT_BUTTON;
-              end
-             else
-              begin
-               if Value then Buttons:=Buttons or MOUSE_LEFT_BUTTON;
-              end;
-            end;
-           HID_BUTTON_TERTIARY:begin
-             HIDExtractBitField(Field,ReportData,ReportSize,Value);
+                {Check Absolute}
+                if (Field.Flags and HID_MAIN_ITEM_RELATIVE) = 0 then Buttons:=Buttons or MOUSE_ABSOLUTE_X;
+               end;
+              HID_DESKTOP_Y:begin
+                HIDExtractSignedField(Field,ReportData,ReportSize,OffsetY);
 
-             if Value then Buttons:=Buttons or MOUSE_MIDDLE_BUTTON;
-            end;
-           HID_BUTTON_4:begin
-             HIDExtractBitField(Field,ReportData,ReportSize,Value);
+                {Check Absolute}
+                if (Field.Flags and HID_MAIN_ITEM_RELATIVE) = 0 then Buttons:=Buttons or MOUSE_ABSOLUTE_Y;
+               end;
+              HID_DESKTOP_WHEEL:begin
+                HIDExtractSignedField(Field,ReportData,ReportSize,OffsetWheel);
 
-             if Value then Buttons:=Buttons or MOUSE_SIDE_BUTTON;
-            end;
-           HID_BUTTON_5:begin
-             HIDExtractBitField(Field,ReportData,ReportSize,Value);
-
-             if Value then Buttons:=Buttons or MOUSE_EXTRA_BUTTON;
-            end;
-
-           {X, Y and Wheel}
-           HID_DESKTOP_X:begin
-             HIDExtractSignedField(Field,ReportData,ReportSize,OffsetX);
-
-             {Check Absolute}
-             if (Field.Flags and HID_MAIN_ITEM_RELATIVE) = 0 then Buttons:=Buttons or MOUSE_ABSOLUTE_X;
-            end;
-           HID_DESKTOP_Y:begin
-             HIDExtractSignedField(Field,ReportData,ReportSize,OffsetY);
-
-             {Check Absolute}
-             if (Field.Flags and HID_MAIN_ITEM_RELATIVE) = 0 then Buttons:=Buttons or MOUSE_ABSOLUTE_Y;
-            end;
-           HID_DESKTOP_WHEEL:begin
-             HIDExtractSignedField(Field,ReportData,ReportSize,OffsetWheel);
-
-             {Check Absolute}
-             if (Field.Flags and HID_MAIN_ITEM_RELATIVE) = 0 then Buttons:=Buttons or MOUSE_ABSOLUTE_WHEEL;
+                {Check Absolute}
+                if (Field.Flags and HID_MAIN_ITEM_RELATIVE) = 0 then Buttons:=Buttons or MOUSE_ABSOLUTE_WHEEL;
+               end;
+             end;
             end;
           end;
 

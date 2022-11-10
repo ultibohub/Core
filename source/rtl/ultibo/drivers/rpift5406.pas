@@ -574,6 +574,9 @@ begin
        
        {Setup Defaults}
        ModifiedPoints:=0;
+
+       {Clear Mouse Data}
+       FillChar(MouseData,SizeOf(TMouseData),0);
        
        {Check Modified Points}
        if Registers.NumPoints > 0 then
@@ -630,6 +633,9 @@ begin
                  TouchData:=@Touch.Touch.Buffer.Buffer[(Touch.Touch.Buffer.Start + Touch.Touch.Buffer.Count) mod TOUCH_BUFFER_SIZE];
                  if TouchData <> nil then
                   begin
+                   {Clear Touch Data}
+                   FillChar(TouchData^,SizeOf(TTouchData),0);
+
                    {Update Touch Data}
                    TouchData.Info:=TOUCH_FINGER;
                    TouchData.PointID:=TouchID + 1;
@@ -755,6 +761,9 @@ begin
                  TouchData:=@Touch.Touch.Buffer.Buffer[(Touch.Touch.Buffer.Start + Touch.Touch.Buffer.Count) mod TOUCH_BUFFER_SIZE];
                  if TouchData <> nil then
                   begin
+                   {Clear Touch Data}
+                   FillChar(TouchData^,SizeOf(TTouchData),0);
+
                    {Update Touch Data}
                    TouchData.Info:=0;
                    TouchData.PointID:=Count + 1;

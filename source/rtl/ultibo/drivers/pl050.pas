@@ -929,6 +929,9 @@ begin
         
         {Get LEDs}
         LEDs:=Keyboard.Keyboard.KeyboardLEDs;
+
+        {Clear Keyboard Data}
+        FillChar(Data,SizeOf(TKeyboardData),0);
         
         {Get ScanCode}
         if PS2KeyboardScancodeToScanCode(@Scancode.Scancode,Scancode.Index,Data.ScanCode) = ERROR_SUCCESS then

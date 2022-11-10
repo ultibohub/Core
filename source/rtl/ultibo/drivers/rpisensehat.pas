@@ -1,7 +1,7 @@
 {
 Raspberry Pi Sense HAT Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1693,6 +1693,9 @@ begin
     
     {Save Keys}
     Joystick.PreviousKeys:=Keys;
+    
+    {Clear Keyboard Data}
+    FillChar(Data,SizeOf(TKeyboardData),0);
     
     {Check Changes}
     for Count:=0 to 4 do

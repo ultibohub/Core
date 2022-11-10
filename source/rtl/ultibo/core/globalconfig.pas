@@ -727,6 +727,8 @@ var
  HID_REGISTER_JOYSTICK:LongBool = True; {If True then register the HID joystick consumer during boot (Only if HIDJoystick unit included)}
  HID_REGISTER_GAMEPAD:LongBool = True;  {If True then register the HID gamepad consumer during boot (Only if HIDGamepad unit included)}
  
+ HID_MOUSE_REJECT_TOUCH:LongBool;       {If True then the HID mouse consumer should reject devices that include a touch screen collection}
+ 
  {PCI}
  PCI_AUTOSTART:LongBool = True;        {If True then auto start the PCI subsystem on boot (Only if PCI unit included)}
  PCI_ASYNCSTART:LongBool = True;       {If True then auto start asynchronously using a worker thread instead of the main thread}

@@ -623,27 +623,32 @@ begin
   Field:=Keyboard.LEDDefinition.Fields;
   while Field <> nil do
    begin
-    {Check Usage}
-    case Field.Usage of
-     HID_LED_NUM_LOCK:begin
-       if (LEDs and KEYBOARD_LED_NUMLOCK) <> 0 then HIDInsertBitField(Field,Data,Size,True);
+    {Check Page}
+    case Field.Page of
+     HID_PAGE_LED:begin
+       {Check Usage}
+       case Field.Usage of
+        HID_LED_NUM_LOCK:begin
+          if (LEDs and KEYBOARD_LED_NUMLOCK) <> 0 then HIDInsertBitField(Field,Data,Size,True);
+         end;
+        HID_LED_CAPS_LOCK:begin
+          if (LEDs and KEYBOARD_LED_CAPSLOCK) <> 0 then HIDInsertBitField(Field,Data,Size,True);
+         end;
+        HID_LED_SCROLL_LOCK:begin
+          if (LEDs and KEYBOARD_LED_SCROLLLOCK) <> 0 then HIDInsertBitField(Field,Data,Size,True);
+         end;
+        HID_LED_COMPOSE:begin
+          if (LEDs and KEYBOARD_LED_COMPOSE) <> 0 then HIDInsertBitField(Field,Data,Size,True);
+         end;
+        HID_LED_KANA:begin
+          if (LEDs and KEYBOARD_LED_KANA) <> 0 then HIDInsertBitField(Field,Data,Size,True);
+         end;
+        {HID_LED_POWER}
+        {HID_LED_SHIFT}
+        {HID_LED_DO_NOT_DISTURB}
+        {HID_LED_MUTE}
+       end;
       end;
-     HID_LED_CAPS_LOCK:begin
-       if (LEDs and KEYBOARD_LED_CAPSLOCK) <> 0 then HIDInsertBitField(Field,Data,Size,True);
-      end;
-     HID_LED_SCROLL_LOCK:begin
-       if (LEDs and KEYBOARD_LED_SCROLLLOCK) <> 0 then HIDInsertBitField(Field,Data,Size,True);
-      end;
-     HID_LED_COMPOSE:begin
-       if (LEDs and KEYBOARD_LED_COMPOSE) <> 0 then HIDInsertBitField(Field,Data,Size,True);
-      end;
-     HID_LED_KANA:begin
-       if (LEDs and KEYBOARD_LED_KANA) <> 0 then HIDInsertBitField(Field,Data,Size,True);
-      end;
-     {HID_LED_POWER}
-     {HID_LED_SHIFT}
-     {HID_LED_DO_NOT_DISTURB}
-     {HID_LED_MUTE}
     end;
 
     {Get Next Field}
@@ -814,9 +819,10 @@ begin
    end;
 
   {Register Keyboard}
-  if KeyboardDeviceRegister(@Keyboard.Keyboard) <> ERROR_SUCCESS then
+  Status:=KeyboardDeviceRegister(@Keyboard.Keyboard);
+  if Status <> ERROR_SUCCESS then
    begin
-    if HID_LOG_ENABLED then HIDLogError(Device,'Keyboard: Failed to register new keyboard device');
+    if HID_LOG_ENABLED then HIDLogError(Device,'Keyboard: Failed to register new keyboard device: ' + ErrorToString(Status));
 
     Exit;
    end;
@@ -1081,58 +1087,63 @@ begin
         Field:=Definition.Fields;
         while Field <> nil do
          begin
-          {Modifiers}
-          case Field.Usage of
-           SCAN_CODE_LEFT_CTRL:begin
-             HIDExtractBitField(Field,ReportData,ReportSize,Value);
-
-             if Value then Modifiers:=Modifiers or KEYBOARD_LEFT_CTRL;
-            end;
-           SCAN_CODE_LEFT_SHIFT:begin
-             HIDExtractBitField(Field,ReportData,ReportSize,Value);
-
-             if Value then Modifiers:=Modifiers or KEYBOARD_LEFT_SHIFT;
-            end;
-           SCAN_CODE_LEFT_ALT:begin
-             HIDExtractBitField(Field,ReportData,ReportSize,Value);
-
-             if Value then Modifiers:=Modifiers or KEYBOARD_LEFT_ALT;
-            end;
-           SCAN_CODE_LEFT_GUI:begin
-             HIDExtractBitField(Field,ReportData,ReportSize,Value);
-
-             if Value then Modifiers:=Modifiers or KEYBOARD_LEFT_GUI;
-            end;
-           SCAN_CODE_RIGHT_CTRL:begin
-             HIDExtractBitField(Field,ReportData,ReportSize,Value);
-
-             if Value then Modifiers:=Modifiers or KEYBOARD_RIGHT_CTRL;
-            end;
-           SCAN_CODE_RIGHT_SHIFT:begin
-             HIDExtractBitField(Field,ReportData,ReportSize,Value);
-
-             if Value then Modifiers:=Modifiers or KEYBOARD_RIGHT_SHIFT;
-            end;
-           SCAN_CODE_RIGHT_ALT:begin
-             HIDExtractBitField(Field,ReportData,ReportSize,Value);
-
-             if Value then Modifiers:=Modifiers or KEYBOARD_RIGHT_ALT;
-            end;
-           SCAN_CODE_RIGHT_GUI:begin
-             HIDExtractBitField(Field,ReportData,ReportSize,Value);
-
-             if Value then Modifiers:=Modifiers or KEYBOARD_RIGHT_GUI;
+          {Check Page}
+          case Field.Page of
+           HID_PAGE_KEYBOARD_KEYPAD:begin
+             {Modifiers}
+             case Field.Usage of
+              SCAN_CODE_LEFT_CTRL:begin
+                HIDExtractBitField(Field,ReportData,ReportSize,Value);
+   
+                if Value then Modifiers:=Modifiers or KEYBOARD_LEFT_CTRL;
+               end;
+              SCAN_CODE_LEFT_SHIFT:begin
+                HIDExtractBitField(Field,ReportData,ReportSize,Value);
+   
+                if Value then Modifiers:=Modifiers or KEYBOARD_LEFT_SHIFT;
+               end;
+              SCAN_CODE_LEFT_ALT:begin
+                HIDExtractBitField(Field,ReportData,ReportSize,Value);
+   
+                if Value then Modifiers:=Modifiers or KEYBOARD_LEFT_ALT;
+               end;
+              SCAN_CODE_LEFT_GUI:begin
+                HIDExtractBitField(Field,ReportData,ReportSize,Value);
+   
+                if Value then Modifiers:=Modifiers or KEYBOARD_LEFT_GUI;
+               end;
+              SCAN_CODE_RIGHT_CTRL:begin
+                HIDExtractBitField(Field,ReportData,ReportSize,Value);
+   
+                if Value then Modifiers:=Modifiers or KEYBOARD_RIGHT_CTRL;
+               end;
+              SCAN_CODE_RIGHT_SHIFT:begin
+                HIDExtractBitField(Field,ReportData,ReportSize,Value);
+   
+                if Value then Modifiers:=Modifiers or KEYBOARD_RIGHT_SHIFT;
+               end;
+              SCAN_CODE_RIGHT_ALT:begin
+                HIDExtractBitField(Field,ReportData,ReportSize,Value);
+   
+                if Value then Modifiers:=Modifiers or KEYBOARD_RIGHT_ALT;
+               end;
+              SCAN_CODE_RIGHT_GUI:begin
+                HIDExtractBitField(Field,ReportData,ReportSize,Value);
+   
+                if Value then Modifiers:=Modifiers or KEYBOARD_RIGHT_GUI;
+               end;
+             end;
+   
+             {Keys}
+             if (SmallInt(Field.Usage) >= SCAN_CODE_NONE) and (Field.Usage + Field.Count - 1 <= SCAN_CODE_RESERVED_255) then {Max is SCAN_CODE_KEYPAD_HEX}
+              begin
+               HIDExtractUnsignedField(Field,ReportData,ReportSize,Key);
+   
+               Keys[Count]:=Key;
+               Inc(Count);
+              end;
             end;
           end;
-
-          {Keys}
-          if (SmallInt(Field.Usage) >= SCAN_CODE_NONE) and (Field.Usage + Field.Count - 1 <= SCAN_CODE_RESERVED_255) then {Max is SCAN_CODE_KEYPAD_HEX}
-           begin
-            HIDExtractUnsignedField(Field,ReportData,ReportSize,Key);
-
-            Keys[Count]:=Key;
-            Inc(Count);
-           end;
 
           {Get Next Field}
           Field:=Field.Next;
@@ -1308,10 +1319,11 @@ begin
                   KeyboardData.CharUnicode:=KeymapGetCharUnicode(Keymap,KeyboardData.KeyCode);
 
                   {Insert Data}
-                  KeyboardInsertData(@Keyboard.Keyboard,@KeyboardData,True);
-
-                  {Update Count}
-                  Inc(Counter);
+                  if KeyboardInsertData(@Keyboard.Keyboard,@KeyboardData,True) = ERROR_SUCCESS then
+                   begin
+                    {Update Count}
+                    Inc(Counter);
+                   end;
                  end
                 else
                  begin
@@ -1330,10 +1342,11 @@ begin
                       KeyboardData.CharUnicode:=KeymapGetCharUnicode(Keymap,KeyboardData.KeyCode);
 
                       {Insert Data}
-                      KeyboardInsertData(@Keyboard.Keyboard,@KeyboardData,True);
-
-                      {Update Count}
-                      Inc(Counter);
+                      if KeyboardInsertData(@Keyboard.Keyboard,@KeyboardData,True) = ERROR_SUCCESS then
+                       begin
+                        {Update Count}
+                        Inc(Counter);
+                       end;
                      end;
                    end;
 
@@ -1353,10 +1366,11 @@ begin
                   {$ENDIF}
 
                   {Insert Data}
-                  KeyboardInsertData(@Keyboard.Keyboard,@KeyboardData,True);
-
-                  {Update Count}
-                  Inc(Counter);
+                  if KeyboardInsertData(@Keyboard.Keyboard,@KeyboardData,True) = ERROR_SUCCESS then
+                   begin
+                    {Update Count}
+                    Inc(Counter);
+                   end;
                  end;
                end;
              end
@@ -1377,10 +1391,11 @@ begin
                 KeyboardData.CharUnicode:=KeymapGetCharUnicode(Keymap,KeyboardData.KeyCode);
 
                 {Insert Data}
-                KeyboardInsertData(@Keyboard.Keyboard,@KeyboardData,True);
-
-                {Update Count}
-                Inc(Counter);
+                if KeyboardInsertData(@Keyboard.Keyboard,@KeyboardData,True) = ERROR_SUCCESS then
+                 begin
+                  {Update Count}
+                  Inc(Counter);
+                 end;
                end;
              end;
            end;
@@ -1466,10 +1481,11 @@ begin
               KeyboardData.CharUnicode:=KeymapGetCharUnicode(Keymap,KeyboardData.KeyCode);
 
               {Insert Data}
-              KeyboardInsertData(@Keyboard.Keyboard,@KeyboardData,True);
-
-              {Update Count}
-              Inc(Counter);
+              if KeyboardInsertData(@Keyboard.Keyboard,@KeyboardData,True) = ERROR_SUCCESS then
+               begin
+                {Update Count}
+                Inc(Counter);
+               end;
              end;
            end;
          end;
@@ -1499,7 +1515,6 @@ begin
         {Update Statistics}
         Inc(Keyboard.Keyboard.ReceiveErrors);
        end;
-
 
       Result:=ERROR_SUCCESS;
      finally

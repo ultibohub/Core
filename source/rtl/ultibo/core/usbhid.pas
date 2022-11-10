@@ -470,9 +470,20 @@ begin
   Status:=USBHIDGetHIDDescriptor(Device,Interrface,HIDDevice.HIDDescriptor);
   if Status <> USB_STATUS_SUCCESS then
    begin
-    if USB_LOG_ENABLED then USBLogError(Device,'HID: Failed to read HID descriptor: ' + USBStatusToString(Status));
+    if (Interrface.ClassData <> nil) and (Interrface.ClassSize >= SizeOf(THIDDescriptor)) then
+     begin
+      {Release HID Descriptor}
+      USBBufferRelease(HIDDevice.HIDDescriptor);
 
-    Exit;
+      {Assign HID Descriptor}
+      HIDDevice.HIDDescriptor:=PHIDDescriptor(Interrface.ClassData);
+     end
+    else
+     begin
+      if USB_LOG_ENABLED then USBLogError(Device,'HID: Failed to read HID descriptor: ' + USBStatusToString(Status));
+
+      Exit;
+     end;
    end;
 
   {Check HID Descriptor}
@@ -601,7 +612,7 @@ begin
      end;
 
     {Release HID Descriptor}
-    if HIDDevice.HIDDescriptor <> nil then
+    if (HIDDevice.HIDDescriptor <> nil) and (HIDDevice.HIDDescriptor <> Pointer(Interrface.ClassData)) then
      begin
       USBBufferRelease(HIDDevice.HIDDescriptor);
      end;
@@ -716,7 +727,10 @@ begin
  USBBufferRelease(HIDDevice.HID.Descriptor);
 
  {Release HID Descriptor}
- USBBufferRelease(HIDDevice.HIDDescriptor);
+ if HIDDevice.HIDDescriptor <> Pointer(Interrface.ClassData) then
+  begin
+   USBBufferRelease(HIDDevice.HIDDescriptor);
+  end;
 
  {Deregister HID Device}
  if HIDDeviceDeregister(@HIDDevice.HID) <> ERROR_SUCCESS then Exit;
