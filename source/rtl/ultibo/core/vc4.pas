@@ -1,7 +1,7 @@
 {
 Ultibo Broadcom VideoCoreIV interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2028,7 +2028,7 @@ function vc4_vchiq_ioctl(device, ioctl_code, argument: int): int; cdecl;
 var
  ptr:P_reent;
  Status:LongWord;
- Response:LongWord;
+ Response:PtrUInt;
  Entry:PHandleEntry;
  Instance:PVCHIQInstance;
 begin

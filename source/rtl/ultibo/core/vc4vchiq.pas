@@ -1,7 +1,7 @@
 {
 Ultibo Broadcom VideoCoreIV VCHIQ driver unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -327,7 +327,7 @@ type
  TVCHIQDeviceOpen = function(VCHIQ:PVCHIQDevice):PVCHIQInstance; 
  TVCHIQDeviceClose = function(VCHIQ:PVCHIQDevice;Instance:PVCHIQInstance):LongWord;
  
- TVCHIQDeviceControl = function(VCHIQ:PVCHIQDevice;Instance:PVCHIQInstance;Code,Argument:LongWord;var Response:LongWord):LongWord;
+ TVCHIQDeviceControl = function(VCHIQ:PVCHIQDevice;Instance:PVCHIQInstance;Code:LongWord;Argument:PtrUInt;var Response:PtrUInt):LongWord;
  
  TVCHIQDevice = record
   {Device Properties}
@@ -1050,7 +1050,7 @@ function VCHIQDeviceStop(VCHIQ:PVCHIQDevice):LongWord;
 function VCHIQDeviceOpen(VCHIQ:PVCHIQDevice):PVCHIQInstance;
 function VCHIQDeviceClose(VCHIQ:PVCHIQDevice;Instance:PVCHIQInstance):LongWord;
  
-function VCHIQDeviceControl(VCHIQ:PVCHIQDevice;Instance:PVCHIQInstance;Code,Argument:LongWord;var Response:LongWord):LongWord;
+function VCHIQDeviceControl(VCHIQ:PVCHIQDevice;Instance:PVCHIQInstance;Code:LongWord;Argument:PtrUInt;var Response:PtrUInt):LongWord;
 
 {==============================================================================}
 {VCHIQ Core Functions}
@@ -2015,7 +2015,7 @@ end;
 
 {==============================================================================}
  
-function VCHIQDeviceControl(VCHIQ:PVCHIQDevice;Instance:PVCHIQInstance;Code,Argument:LongWord;var Response:LongWord):LongWord;
+function VCHIQDeviceControl(VCHIQ:PVCHIQDevice;Instance:PVCHIQInstance;Code:LongWord;Argument:PtrUInt;var Response:PtrUInt):LongWord;
 {Send an IO control message to the specified VCHIQ device and instance}
 {VCHIQ: The VCHIQ device to send the control message to}
 {Instance: The open instance to use for the control message}

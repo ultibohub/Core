@@ -1,7 +1,7 @@
 {
 Ultibo Storage interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -248,7 +248,7 @@ type
  TStorageDeviceRead = function(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TStorageDeviceWrite = function(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TStorageDeviceErase = function(Storage:PStorageDevice;const Start,Count:Int64):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- TStorageDeviceControl = function(Storage:PStorageDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TStorageDeviceControl = function(Storage:PStorageDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TStorageDevice = record
   {Device Properties}
@@ -385,7 +385,7 @@ procedure StorageInit;
 function StorageDeviceRead(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord; 
 function StorageDeviceWrite(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord;
 function StorageDeviceErase(Storage:PStorageDevice;const Start,Count:Int64):LongWord;
-function StorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function StorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 
 function StorageDeviceSetState(Storage:PStorageDevice;State:LongWord):LongWord;
 
@@ -411,7 +411,7 @@ function StorageDeviceNotification(Storage:PStorageDevice;Callback:TStorageNotif
 {USB Storage Functions}
 function USBStorageDeviceRead(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord; 
 function USBStorageDeviceWrite(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord;
-function USBStorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function USBStorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 
 function USBStorageDriverBind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 function USBStorageDriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
@@ -612,7 +612,7 @@ end;
 
 {==============================================================================}
 
-function StorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function StorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1414,7 +1414,7 @@ end;
 
 {==============================================================================}
 
-function USBStorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function USBStorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 {Note: According to 3.4 of USB Mass Storage Bulk Only 1.0, requests must be queued one at a time to a device}
 var
  Status:LongWord;
@@ -1620,7 +1620,7 @@ begin
          end;
         STORAGE_CONTROL_GET_SERIAL:begin
           {Get Serial No}
-          Argument2:=LongWord(@Device.SerialNumber);
+          Argument2:=PtrUInt(@Device.SerialNumber);
           
           {Return Result}
           Result:=ERROR_SUCCESS; 
@@ -1634,7 +1634,7 @@ begin
             Exit;
            end;
            
-          Argument2:=LongWord(Storage.Revision);
+          Argument2:=PtrUInt(Storage.Revision);
           
           {Return Result}
           Result:=ERROR_SUCCESS; 
@@ -1648,7 +1648,7 @@ begin
             Exit;
            end;
            
-          Argument2:=LongWord(Storage.Product);
+          Argument2:=PtrUInt(Storage.Product);
           
           {Return Result}
           Result:=ERROR_SUCCESS; 
@@ -1662,7 +1662,7 @@ begin
             Exit;
            end;
 
-          Argument2:=LongWord(Storage.Vendor);
+          Argument2:=PtrUInt(Storage.Vendor);
           
           {Return Result}
           Result:=ERROR_SUCCESS; 
@@ -2686,7 +2686,7 @@ end;
 
 procedure StorageStatusTimer(Storage:PStorageDevice);
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  {Check Storage}

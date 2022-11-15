@@ -2925,7 +2925,7 @@ function SDHCIHostStateToNotification(State:LongWord):LongWord;
 function MMCStorageDeviceRead(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord; 
 function MMCStorageDeviceWrite(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord;
 function MMCStorageDeviceErase(Storage:PStorageDevice;const Start,Count:Int64):LongWord;
-function MMCStorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function MMCStorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
  
 {==============================================================================}
 {SDIO Macro Replacement Functions}
@@ -17117,7 +17117,7 @@ end;
  
 {==============================================================================}
 
-function MMCStorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function MMCStorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 var
  MMC:PMMCDevice;
  SDHCI:PSDHCIHost;

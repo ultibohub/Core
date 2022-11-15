@@ -102,7 +102,7 @@ procedure HIDKeyboardInit;
 
 {==============================================================================}
 {HID Keyboard Functions}
-function HIDKeyboardDeviceControl(Keyboard:PKeyboardDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function HIDKeyboardDeviceControl(Keyboard:PKeyboardDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 
 {==============================================================================}
 {HID Keyboard Helper Functions}
@@ -190,7 +190,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {HID Keyboard Functions}
-function HIDKeyboardDeviceControl(Keyboard:PKeyboardDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function HIDKeyboardDeviceControl(Keyboard:PKeyboardDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 {Implementation of KeyboardDeviceControl API for HID Keyboard}
 {Note: Not intended to be called directly by applications, use KeyboardDeviceControl instead}
 var
@@ -214,10 +214,10 @@ begin
     case Request of
      KEYBOARD_CONTROL_GET_FLAG:begin
        {Get Flag}
-       LongBool(Argument2):=False;
+       Argument2:=Ord(False);
        if (Keyboard.Device.DeviceFlags and Argument1) <> 0 then
         begin
-         LongBool(Argument2):=True;
+         Argument2:=Ord(True);
 
          {Return Result}
          Result:=ERROR_SUCCESS;
@@ -268,10 +268,10 @@ begin
       end;
      KEYBOARD_CONTROL_GET_LED:begin
        {Get LED}
-       LongBool(Argument2):=False;
+       Argument2:=Ord(False);
        if (Keyboard.KeyboardLEDs and Argument1) <> 0 then
         begin
-         LongBool(Argument2):=True;
+         Argument2:=Ord(True);
 
          {Return Result}
          Result:=ERROR_SUCCESS;

@@ -1,7 +1,7 @@
 {
 Ultibo SCSI interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -490,7 +490,7 @@ function SCSIHostCheck(Host:PSCSIHost):PSCSIHost;
 function SCSIStorageDeviceRead(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord; 
 function SCSIStorageDeviceWrite(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord;
 
-function SCSIStorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1,Argument2:LongWord):LongWord;
+function SCSIStorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 
 {==============================================================================}
 {==============================================================================}
@@ -1589,7 +1589,7 @@ end;
 
 {==============================================================================}
 
-function SCSIStorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1,Argument2:LongWord):LongWord;
+function SCSIStorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 var
  SCSI:PSCSIDevice;
 begin

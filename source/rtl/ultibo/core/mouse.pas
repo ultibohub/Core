@@ -262,7 +262,7 @@ type
  {Mouse Device Methods}
  TMouseDeviceRead = function(Mouse:PMouseDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TMouseDeviceUpdate = function(Mouse:PMouseDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- TMouseDeviceControl = function(Mouse:PMouseDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TMouseDeviceControl = function(Mouse:PMouseDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TMouseDeviceGetProperties = function(Mouse:PMouseDevice;Properties:PMouseProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
@@ -328,7 +328,7 @@ function MouseFlush:LongWord;
 
 function MouseDeviceRead(Mouse:PMouseDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
 function MouseDeviceUpdate(Mouse:PMouseDevice):LongWord;
-function MouseDeviceControl(Mouse:PMouseDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function MouseDeviceControl(Mouse:PMouseDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 
 function MouseDeviceGetProperties(Mouse:PMouseDevice;Properties:PMouseProperties):LongWord;
 
@@ -878,7 +878,7 @@ end;
 
 {==============================================================================}
 
-function MouseDeviceControl(Mouse:PMouseDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function MouseDeviceControl(Mouse:PMouseDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 {Perform a control request on the specified mouse device}
 {Mouse: The mouse device to control}
 {Request: The request code for the operation (eg MOUSE_CONTROL_GET_FLAG)}
@@ -912,10 +912,10 @@ begin
       case Request of
        MOUSE_CONTROL_GET_FLAG:begin
          {Get Flag}
-         LongBool(Argument2):=False;
+         Argument2:=Ord(False);
          if (Mouse.Device.DeviceFlags and Argument1) <> 0 then
           begin
-           LongBool(Argument2):=True;
+           Argument2:=Ord(True);
            
            {Return Result}
            Result:=ERROR_SUCCESS;

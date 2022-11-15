@@ -543,7 +543,7 @@ type
  {Keyboard Device Methods}
  TKeyboardDeviceGet = function(Keyboard:PKeyboardDevice;var KeyCode:Word):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TKeyboardDeviceRead = function(Keyboard:PKeyboardDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- TKeyboardDeviceControl = function(Keyboard:PKeyboardDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TKeyboardDeviceControl = function(Keyboard:PKeyboardDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TKeyboardDevice = record
   {Device Properties}
@@ -612,7 +612,7 @@ function KeyboardFlush:LongWord;
 
 function KeyboardDeviceGet(Keyboard:PKeyboardDevice;var KeyCode:Word):LongWord;
 function KeyboardDeviceRead(Keyboard:PKeyboardDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
-function KeyboardDeviceControl(Keyboard:PKeyboardDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function KeyboardDeviceControl(Keyboard:PKeyboardDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 
 function KeyboardDeviceSetState(Keyboard:PKeyboardDevice;State:LongWord):LongWord;
 
@@ -1227,7 +1227,7 @@ end;
  
 {==============================================================================}
 
-function KeyboardDeviceControl(Keyboard:PKeyboardDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function KeyboardDeviceControl(Keyboard:PKeyboardDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 {Perform a control request on the specified keyboard device}
 {Keyboard: The keyboard device to control}
 {Request: The request code for the operation (eg KEYBOARD_CONTROL_GET_FLAG)}
@@ -1261,10 +1261,10 @@ begin
       case Request of
        KEYBOARD_CONTROL_GET_FLAG:begin
          {Get Flag}
-         LongBool(Argument2):=False;
+         Argument2:=Ord(False);
          if (Keyboard.Device.DeviceFlags and Argument1) <> 0 then
           begin
-           LongBool(Argument2):=True;
+           Argument2:=Ord(True);
            
            {Return Result}
            Result:=ERROR_SUCCESS;
@@ -1315,10 +1315,10 @@ begin
         end;
        KEYBOARD_CONTROL_GET_LED:begin
          {Get LED}
-         LongBool(Argument2):=False;
+         Argument2:=Ord(False);
          if (Keyboard.KeyboardLEDs and Argument1) <> 0 then
           begin
-           LongBool(Argument2):=True;
+           Argument2:=Ord(True);
            
            {Return Result}
            Result:=ERROR_SUCCESS;

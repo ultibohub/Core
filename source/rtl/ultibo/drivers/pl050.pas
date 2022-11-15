@@ -196,7 +196,7 @@ function PL050MouseDestroy(Mouse:PMouseDevice):LongWord;
  
 {==============================================================================}
 {PL050 Keyboard Functions}
-function PL050KeyboardControl(Keyboard:PKeyboardDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function PL050KeyboardControl(Keyboard:PKeyboardDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 
 procedure PL050KeyboardInterruptHandler(Keyboard:PKeyboardDevice);
 
@@ -204,7 +204,7 @@ procedure PL050KeyboardWorker(Scancode:PPL050KeyboardScancode);
 
 {==============================================================================}
 {PL050 Mouse Functions}
-function PL050MouseControl(Mouse:PMouseDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function PL050MouseControl(Mouse:PMouseDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
  
 procedure PL050MouseInterruptHandler(Mouse:PMouseDevice);
 
@@ -612,7 +612,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {PL050 Keyboard Functions}
-function PL050KeyboardControl(Keyboard:PKeyboardDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function PL050KeyboardControl(Keyboard:PKeyboardDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 {Implementation of KeyboardDeviceControl API for PL050 Keyboard}
 {Note: Not intended to be called directly by applications, use KeyboardDeviceControl instead}
 var
@@ -635,10 +635,10 @@ begin
     case Request of
      KEYBOARD_CONTROL_GET_FLAG:begin
        {Get Flag}
-       LongBool(Argument2):=False;
+       Argument2:=Ord(False);
        if (Keyboard.Device.DeviceFlags and Argument1) <> 0 then
         begin
-         LongBool(Argument2):=True;
+         Argument2:=Ord(True);
          
          {Return Result}
          Result:=ERROR_SUCCESS;
@@ -689,10 +689,10 @@ begin
       end;
      KEYBOARD_CONTROL_GET_LED:begin
        {Get LED}
-       LongBool(Argument2):=False;
+       Argument2:=Ord(False);
        if (Keyboard.KeyboardLEDs and Argument1) <> 0 then
         begin
-         LongBool(Argument2):=True;
+         Argument2:=Ord(True);
          
          {Return Result}
          Result:=ERROR_SUCCESS;
@@ -1311,7 +1311,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {PL050 Mouse Functions}
-function PL050MouseControl(Mouse:PMouseDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function PL050MouseControl(Mouse:PMouseDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 {Implementation of MouseDeviceControl API for PL050 Mouse}
 {Note: Not intended to be called directly by applications, use MouseDeviceControl instead}
 var
@@ -1334,10 +1334,10 @@ begin
     case Request of
      MOUSE_CONTROL_GET_FLAG:begin
        {Get Flag}
-       LongBool(Argument2):=False;
+       Argument2:=Ord(False);
        if (Mouse.Device.DeviceFlags and Argument1) <> 0 then
         begin
-         LongBool(Argument2):=True;
+         Argument2:=Ord(True);
          
          {Return Result}
          Result:=ERROR_SUCCESS;

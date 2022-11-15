@@ -49395,7 +49395,7 @@ end;
 function TUSBDiskController.Reset(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=False;
@@ -49423,7 +49423,7 @@ end;
 function TUSBDiskController.LockMedia(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=False;
@@ -49452,7 +49452,7 @@ end;
 function TUSBDiskController.UnlockMedia(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=False;
@@ -49481,7 +49481,7 @@ end;
 function TUSBDiskController.EjectMedia(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=False;
@@ -49509,7 +49509,7 @@ end;
 function TUSBDiskController.MediaReady(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=False;
@@ -49537,7 +49537,7 @@ end;
 function TUSBDiskController.MediaChanged(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=False;
@@ -49565,7 +49565,7 @@ end;
 function TUSBDiskController.MediaLocked(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=False;
@@ -49619,7 +49619,7 @@ end;
 function TUSBDiskController.VendorId(ADevice:TDiskDevice):Word; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=0;
@@ -49650,7 +49650,7 @@ end;
 function TUSBDiskController.DeviceId(ADevice:TDiskDevice):Word; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=0;
@@ -49682,7 +49682,7 @@ function TUSBDiskController.Manufacturer(ADevice:TDiskDevice):String;
 {Note: Caller must hold the device lock}
 var
  Len:LongWord;
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:='';
@@ -49719,7 +49719,7 @@ function TUSBDiskController.Product(ADevice:TDiskDevice):String;
 {Note: Caller must hold the device lock}
 var
  Len:LongWord;
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:='';
@@ -49756,7 +49756,7 @@ function TUSBDiskController.SerialNumber(ADevice:TDiskDevice):String;
 {Note: Caller must hold the device lock}
 var
  Len:LongWord;
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:='';
@@ -50481,7 +50481,7 @@ end;
 function TMMCDiskController.Reset(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=False;
@@ -50509,7 +50509,7 @@ end;
 function TMMCDiskController.LockMedia(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=False;
@@ -50538,7 +50538,7 @@ end;
 function TMMCDiskController.UnlockMedia(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=False;
@@ -50567,7 +50567,7 @@ end;
 function TMMCDiskController.EjectMedia(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=False;
@@ -50595,7 +50595,7 @@ end;
 function TMMCDiskController.MediaReady(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=False;
@@ -50623,7 +50623,7 @@ end;
 function TMMCDiskController.MediaChanged(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=False;
@@ -50651,7 +50651,7 @@ end;
 function TMMCDiskController.MediaLocked(ADevice:TDiskDevice):Boolean; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=False;
@@ -50705,7 +50705,7 @@ end;
 function TMMCDiskController.VendorId(ADevice:TDiskDevice):Word; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=0;
@@ -50736,7 +50736,7 @@ end;
 function TMMCDiskController.DeviceId(ADevice:TDiskDevice):Word; 
 {Note: Caller must hold the device lock}
 var
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:=0;
@@ -50768,7 +50768,7 @@ function TMMCDiskController.Manufacturer(ADevice:TDiskDevice):String;
 {Note: Caller must hold the device lock}
 var
  Len:LongWord;
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:='';
@@ -50805,7 +50805,7 @@ function TMMCDiskController.Product(ADevice:TDiskDevice):String;
 {Note: Caller must hold the device lock}
 var
  Len:LongWord;
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:='';
@@ -50842,7 +50842,7 @@ function TMMCDiskController.SerialNumber(ADevice:TDiskDevice):String;
 {Note: Caller must hold the device lock}
 var
  Len:LongWord;
- Argument:LongWord;
+ Argument:PtrUInt;
 begin
  {}
  Result:='';
