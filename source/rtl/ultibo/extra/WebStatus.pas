@@ -46,7 +46,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$
      Threads,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Winsock2,HTTP,HeapManager,
      DeviceTree,Devices,USB,PCI,MMC,HID,USBHID,Network,Transport,Protocol,Storage,
      FileSystem,Keyboard,Keymap,Mouse,Touch,Console,Framebuffer,Font,Logging,Timezone,
-     Locale,Unicode,Iphlpapi,GPIO,UART,Serial,I2C,SPI,PWM,DMA,RTC;
+     Locale,Unicode,Iphlpapi,GPIO,UART,Serial,I2C,SPI,PWM,DMA,RTC,Joystick;
 
 //To Do //Look for:
 
@@ -500,6 +500,7 @@ type
   function LoggingFlagsToFlagNames(AFlags:LongWord):TStringList;
   function StorageFlagsToFlagNames(AFlags:LongWord):TStringList; 
   function KeyboardFlagsToFlagNames(AFlags:LongWord):TStringList; 
+  function JoystickFlagsToFlagNames(AFlags:LongWord):TStringList;
   function ConsoleFlagsToFlagNames(AFlags:LongWord):TStringList;
   function FramebufferFlagsToFlagNames(AFlags:LongWord):TStringList;
   function ConsoleWindowFlagsToFlagNames(AFlags:LongWord):TStringList;
@@ -817,6 +818,29 @@ type
   
  end;
 
+ TWebStatusJoystick = class(TWebStatusSub)
+ public
+  {}
+  constructor Create(AMain:TWebStatusMain);
+ private
+  {Internal Variables}
+
+  {Internal Methods}
+
+  function JoystickFlagsToFlagNames(AFlags:LongWord):TStringList;
+ protected
+  {Internal Variables}
+
+  {Internal Methods}
+
+  function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+ public
+  {Public Properties}
+
+  {Public Methods}
+
+ end;
+
  TWebStatusFramebuffer = class(TWebStatusSub)
  public
   {}
@@ -1093,6 +1117,7 @@ function WebStatusStorageEnumerate(Storage:PStorageDevice;Data:Pointer):LongWord
 function WebStatusMouseEnumerate(Mouse:PMouseDevice;Data:Pointer):LongWord;
 function WebStatusTouchEnumerate(Touch:PTouchDevice;Data:Pointer):LongWord;
 function WebStatusKeyboardEnumerate(Keyboard:PKeyboardDevice;Data:Pointer):LongWord;
+function WebStatusJoystickEnumerate(Joystick:PJoystickDevice;Data:Pointer):LongWord;
 
 function WebStatusConsoleWindowEnumerate(Console:PConsoleDevice;Handle:TWindowHandle;Data:Pointer):LongWord;
 
@@ -1132,6 +1157,7 @@ var
  WebStatusKeyboard:TWebStatusKeyboard;
  WebStatusMouse:TWebStatusMouse;
  WebStatusTouch:TWebStatusTouch;
+ WebStatusJoystick:TWebStatusJoystick;
  WebStatusFramebuffer:TWebStatusFramebuffer;
  WebStatusEnvironment:TWebStatusEnvironment;
  WebStatusPageTables:TWebStatusPageTables;
@@ -5584,6 +5610,50 @@ end;
 
 {==============================================================================}
 
+function TWebStatusDevices.JoystickFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+ 
+ {Check Flags}
+ if (AFlags and JOYSTICK_FLAG_NON_BLOCK) = JOYSTICK_FLAG_NON_BLOCK then
+  begin
+   Result.Add('JOYSTICK_FLAG_NON_BLOCK');
+  end;
+ if (AFlags and JOYSTICK_FLAG_PEEK_BUFFER) = JOYSTICK_FLAG_PEEK_BUFFER then
+  begin
+   Result.Add('JOYSTICK_FLAG_PEEK_BUFFER');
+  end;
+ if (AFlags and JOYSTICK_FLAG_LED) = JOYSTICK_FLAG_LED then
+  begin
+   Result.Add('JOYSTICK_FLAG_LED');
+  end;
+ if (AFlags and JOYSTICK_FLAG_RGBLED) = JOYSTICK_FLAG_RGBLED then
+  begin
+   Result.Add('JOYSTICK_FLAG_RGBLED');
+  end;
+ if (AFlags and JOYSTICK_FLAG_RUMBLE) = JOYSTICK_FLAG_RUMBLE then
+  begin
+   Result.Add('JOYSTICK_FLAG_RUMBLE');
+  end;
+ if (AFlags and JOYSTICK_FLAG_GYROSCOPE) = JOYSTICK_FLAG_GYROSCOPE then
+  begin
+   Result.Add('JOYSTICK_FLAG_GYROSCOPE');
+  end;
+ if (AFlags and JOYSTICK_FLAG_TOUCHPAD) = JOYSTICK_FLAG_TOUCHPAD then
+  begin
+   Result.Add('JOYSTICK_FLAG_TOUCHPAD');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('JOYSTICK_FLAG_NONE');
+  end; 
+end;
+
+{==============================================================================}
+
 function TWebStatusDevices.ConsoleFlagsToFlagNames(AFlags:LongWord):TStringList;
 begin
  {}
@@ -5978,6 +6048,7 @@ var
  NetworkDevice:PNetworkDevice;
  StorageDevice:PStorageDevice;
  KeyboardDevice:PKeyboardDevice;
+ JoystickDevice:PJoystickDevice;
  ConsoleDevice:PConsoleDevice;
  FramebufferDevice:PFramebufferDevice;
  
@@ -6955,6 +7026,77 @@ begin
         AddItem(AResponse,'Buffer Overruns:',IntToStr(TouchDevice.BufferOverruns));
         AddBlank(AResponse);
         
+        FlagNames.Free;
+       end;
+      DEVICE_CLASS_JOYSTICK:begin
+        {Get Flags Names}
+        FlagNames:=JoystickFlagsToFlagNames(Device.DeviceFlags);
+
+        {Get Joystick}
+        JoystickDevice:=PJoystickDevice(Device);
+
+        AddBold(AResponse,'Joystick','');
+        AddBlank(AResponse);
+        AddItem(AResponse,'Type:',JoystickDeviceTypeToString(Device.DeviceType));
+        AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+
+        {Check Flag Count}
+        if FlagNames.Count > 1 then
+         begin
+          for Count:=1 to FlagNames.Count - 1 do
+           begin
+            {Add Flag Name}
+            AddItem(AResponse,'',FlagNames.Strings[Count]);
+           end;
+         end;
+
+        AddBlank(AResponse);
+        AddItem(AResponse,'Id:',IntToStr(JoystickDevice.JoystickId));
+        AddItem(AResponse,'State:',JoystickDeviceStateToString(JoystickDevice.JoystickState));
+        AddBlank(AResponse);
+
+        AddItem(AResponse,'Axis Count:',IntToStr(JoystickDevice.Properties.AxisCount));
+        for Count:=0 to JoystickDevice.Properties.AxisCount - 1 do
+         begin
+          AddItem(AResponse,'Axis ' + IntToStr(Count + 1),'');
+          AddItemEx(AResponse,'Name:',JoystickDeviceAxisToString(JoystickDevice.Properties.Axes[Count].Name),5);
+          AddItemEx(AResponse,'Logical Minimum:',IntToStr(JoystickDevice.Properties.Axes[Count].Logical.Minimum),5);
+          AddItemEx(AResponse,'Logical Maximum:',IntToStr(JoystickDevice.Properties.Axes[Count].Logical.Maximum),5);
+          AddItemEx(AResponse,'Physical Minimum:',IntToStr(JoystickDevice.Properties.Axes[Count].Physical.Minimum),5);
+          AddItemEx(AResponse,'Physical Maximum:',IntToStr(JoystickDevice.Properties.Axes[Count].Physical.Maximum),5);
+          AddItemEx(AResponse,'Multiplier:',FloatToStr(JoystickDevice.Properties.Axes[Count].Multiplier),5);
+          AddItemEx(AResponse,'Resolution:',FloatToStr(JoystickDevice.Properties.Axes[Count].Resolution),5);
+          AddBlank(AResponse);
+         end;
+        if JoystickDevice.Properties.AxisCount = 0 then AddBlank(AResponse);
+
+        AddItem(AResponse,'Hat Count:',IntToStr(JoystickDevice.Properties.HatCount));
+        for Count:=0 to JoystickDevice.Properties.HatCount - 1 do
+         begin
+          AddItem(AResponse,'Hat ' + IntToStr(Count + 1),'');
+          AddItemEx(AResponse,'Name:',JoystickDeviceHatToString(JoystickDevice.Properties.Hats[Count].Name),5);
+          AddItemEx(AResponse,'Logical Minimum:',IntToStr(JoystickDevice.Properties.Hats[Count].Logical.Minimum),5);
+          AddItemEx(AResponse,'Logical Maximum:',IntToStr(JoystickDevice.Properties.Hats[Count].Logical.Maximum),5);
+          AddItemEx(AResponse,'Physical Minimum:',IntToStr(JoystickDevice.Properties.Hats[Count].Physical.Minimum),5);
+          AddItemEx(AResponse,'Physical Maximum:',IntToStr(JoystickDevice.Properties.Hats[Count].Physical.Maximum),5);
+          AddItemEx(AResponse,'Multiplier:',FloatToStr(JoystickDevice.Properties.Hats[Count].Multiplier),5);
+          AddItemEx(AResponse,'Resolution:',FloatToStr(JoystickDevice.Properties.Hats[Count].Resolution),5);
+          AddBlank(AResponse);
+         end;
+        if JoystickDevice.Properties.HatCount = 0 then AddBlank(AResponse);
+
+        AddItem(AResponse,'Button Count:',IntToStr(JoystickDevice.Properties.ButtonCount));
+        for Count:=0 to JoystickDevice.Properties.ButtonCount - 1 do
+         begin
+          AddItem(AResponse,'Button ' + IntToStr(Count + 1) + ':',JoystickDeviceButtonToString(JoystickDevice.Properties.Buttons[Count]));
+         end;
+        AddBlank(AResponse);
+
+        AddItem(AResponse,'Receive Count:',IntToStr(JoystickDevice.ReceiveCount));
+        AddItem(AResponse,'Receive Errors:',IntToStr(JoystickDevice.ReceiveErrors));
+        AddItem(AResponse,'Buffer Overruns:',IntToStr(JoystickDevice.BufferOverruns));
+        AddBlank(AResponse);
+
         FlagNames.Free;
        end;
       DEVICE_CLASS_RTC:begin
@@ -11601,6 +11743,210 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{TWebStatusJoystick}
+constructor TWebStatusJoystick.Create(AMain:TWebStatusMain);
+begin
+ {}
+ FCaption:='Joystick'; {Must be before create for register}
+ inherited Create(AMain);
+ Name:='/joystick';
+
+ if FMain <> nil then Name:=FMain.Name + Name;
+end;
+
+{==============================================================================}
+
+function TWebStatusJoystick.JoystickFlagsToFlagNames(AFlags:LongWord):TStringList;
+begin
+ {}
+ Result:=TStringList.Create;
+
+ {Check Flags}
+ if (AFlags and JOYSTICK_FLAG_NON_BLOCK) = JOYSTICK_FLAG_NON_BLOCK then
+  begin
+   Result.Add('JOYSTICK_FLAG_NON_BLOCK');
+  end;
+ if (AFlags and JOYSTICK_FLAG_PEEK_BUFFER) = JOYSTICK_FLAG_PEEK_BUFFER then
+  begin
+   Result.Add('JOYSTICK_FLAG_PEEK_BUFFER');
+  end;
+ if (AFlags and JOYSTICK_FLAG_LED) = JOYSTICK_FLAG_LED then
+  begin
+   Result.Add('JOYSTICK_FLAG_LED');
+  end;
+ if (AFlags and JOYSTICK_FLAG_RGBLED) = JOYSTICK_FLAG_RGBLED then
+  begin
+   Result.Add('JOYSTICK_FLAG_RGBLED');
+  end;
+ if (AFlags and JOYSTICK_FLAG_RUMBLE) = JOYSTICK_FLAG_RUMBLE then
+  begin
+   Result.Add('JOYSTICK_FLAG_RUMBLE');
+  end;
+ if (AFlags and JOYSTICK_FLAG_GYROSCOPE) = JOYSTICK_FLAG_GYROSCOPE then
+  begin
+   Result.Add('JOYSTICK_FLAG_GYROSCOPE');
+  end;
+ if (AFlags and JOYSTICK_FLAG_TOUCHPAD) = JOYSTICK_FLAG_TOUCHPAD then
+  begin
+   Result.Add('JOYSTICK_FLAG_TOUCHPAD');
+  end;
+
+ {Check Flags}
+ if Result.Count = 0 then
+  begin
+   Result.Add('JOYSTICK_FLAG_NONE');
+  end;
+end;
+
+{==============================================================================}
+
+function TWebStatusJoystick.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+var
+ Id:LongWord;
+ Action:String;
+ Count:Integer;
+ WorkBuffer:String;
+ Data:TWebStatusData;
+ FlagNames:TStringList;
+ JoystickDevice:PJoystickDevice;
+begin
+ {}
+ Result:=False;
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Get Action}
+ Action:=Uppercase(ARequest.GetParam('ACTION'));
+
+ {Get Id}
+ WorkBuffer:=Uppercase(ARequest.GetParam('ID'));
+
+ if (Action = 'JOYSTICK') and (Length(WorkBuffer) > 0) then
+  begin
+   {Add Header (2 column with Caption)}
+   AddHeaderEx(AResponse,GetTitle,'Joystick Information',Self,2);
+
+   {Get Id}
+   Id:=StrToIntDef(WorkBuffer,0);
+
+   {Get Joystick Device}
+   JoystickDevice:=JoystickDeviceFind(Id);
+   if JoystickDevice <> nil then
+    begin
+     {Get Flags Names}
+     FlagNames:=JoystickFlagsToFlagNames(JoystickDevice.Device.DeviceFlags);
+
+     AddBold(AResponse,'Joystick','');
+     AddBlank(AResponse);
+     AddItem(AResponse,'Name:',DeviceGetName(@JoystickDevice.Device));
+     AddItem(AResponse,'Type:',JoystickDeviceTypeToString(JoystickDevice.Device.DeviceType));
+     AddItem(AResponse,'Flags:',FlagNames.Strings[0]);
+
+     {Check Flag Count}
+     if FlagNames.Count > 1 then
+      begin
+       for Count:=1 to FlagNames.Count - 1 do
+        begin
+         {Add Flag Name}
+         AddItem(AResponse,'',FlagNames.Strings[Count]);
+        end;
+      end;
+
+     AddItem(AResponse,'Description:',JoystickDevice.Device.DeviceDescription);
+     AddBlank(AResponse);
+     AddItem(AResponse,'Id:',IntToStr(JoystickDevice.JoystickId));
+     AddItem(AResponse,'State:',JoystickDeviceStateToString(JoystickDevice.JoystickState));
+     AddBlank(AResponse);
+
+     AddItem(AResponse,'Axis Count:',IntToStr(JoystickDevice.Properties.AxisCount));
+     for Count:=0 to JoystickDevice.Properties.AxisCount - 1 do
+      begin
+       AddItem(AResponse,'Axis ' + IntToStr(Count + 1),'');
+       AddItemEx(AResponse,'Name:',JoystickDeviceAxisToString(JoystickDevice.Properties.Axes[Count].Name),5);
+       AddItemEx(AResponse,'Logical Minimum:',IntToStr(JoystickDevice.Properties.Axes[Count].Logical.Minimum),5);
+       AddItemEx(AResponse,'Logical Maximum:',IntToStr(JoystickDevice.Properties.Axes[Count].Logical.Maximum),5);
+       AddItemEx(AResponse,'Physical Minimum:',IntToStr(JoystickDevice.Properties.Axes[Count].Physical.Minimum),5);
+       AddItemEx(AResponse,'Physical Maximum:',IntToStr(JoystickDevice.Properties.Axes[Count].Physical.Maximum),5);
+       AddItemEx(AResponse,'Multiplier:',FloatToStr(JoystickDevice.Properties.Axes[Count].Multiplier),5);
+       AddItemEx(AResponse,'Resolution:',FloatToStr(JoystickDevice.Properties.Axes[Count].Resolution),5);
+       AddBlank(AResponse);
+      end;
+     if JoystickDevice.Properties.AxisCount = 0 then AddBlank(AResponse);
+
+     AddItem(AResponse,'Hat Count:',IntToStr(JoystickDevice.Properties.HatCount));
+     for Count:=0 to JoystickDevice.Properties.HatCount - 1 do
+      begin
+       AddItem(AResponse,'Hat ' + IntToStr(Count + 1),'');
+       AddItemEx(AResponse,'Name:',JoystickDeviceHatToString(JoystickDevice.Properties.Hats[Count].Name),5);
+       AddItemEx(AResponse,'Logical Minimum:',IntToStr(JoystickDevice.Properties.Hats[Count].Logical.Minimum),5);
+       AddItemEx(AResponse,'Logical Maximum:',IntToStr(JoystickDevice.Properties.Hats[Count].Logical.Maximum),5);
+       AddItemEx(AResponse,'Physical Minimum:',IntToStr(JoystickDevice.Properties.Hats[Count].Physical.Minimum),5);
+       AddItemEx(AResponse,'Physical Maximum:',IntToStr(JoystickDevice.Properties.Hats[Count].Physical.Maximum),5);
+       AddItemEx(AResponse,'Multiplier:',FloatToStr(JoystickDevice.Properties.Hats[Count].Multiplier),5);
+       AddItemEx(AResponse,'Resolution:',FloatToStr(JoystickDevice.Properties.Hats[Count].Resolution),5);
+       AddBlank(AResponse);
+      end;
+     if JoystickDevice.Properties.HatCount = 0 then AddBlank(AResponse);
+
+     AddItem(AResponse,'Button Count:',IntToStr(JoystickDevice.Properties.ButtonCount));
+     for Count:=0 to JoystickDevice.Properties.ButtonCount - 1 do
+      begin
+       AddItem(AResponse,'Button ' + IntToStr(Count + 1) + ':',JoystickDeviceButtonToString(JoystickDevice.Properties.Buttons[Count]));
+      end;
+     AddBlank(AResponse);
+
+     AddItem(AResponse,'Receive Count:',IntToStr(JoystickDevice.ReceiveCount));
+     AddItem(AResponse,'Receive Errors:',IntToStr(JoystickDevice.ReceiveErrors));
+     AddItem(AResponse,'Buffer Overruns:',IntToStr(JoystickDevice.BufferOverruns));
+     AddBlank(AResponse);
+
+     FlagNames.Free;
+    end
+   else
+    begin
+     AddItem(AResponse,'Not Found','');
+    end;
+
+   {Add Footer}
+   AddFooter(AResponse);
+  end
+ else
+  begin
+   {Add Header (4 column)}
+   AddHeaderEx(AResponse,GetTitle,'',Self,4);
+
+   {Add Joystick List}
+   AddBold4Column(AResponse,'Joystick Id','Name','State','Type');
+   AddBlankEx(AResponse,4);
+
+   {Setup Data}
+   Data.Document:=Self;
+   Data.Host:=AHost;
+   Data.Request:=ARequest;
+   Data.Response:=AResponse;
+   Data.ContentStream:=nil;
+   Data.Data:=nil;
+
+   {Enumerate Joystick}
+   JoystickDeviceEnumerate(WebStatusJoystickEnumerate,@Data);
+
+   {Add Footer (4 column)}
+   AddFooterEx(AResponse,4);
+  end;
+
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+{==============================================================================}
 {TWebStatusFramebuffer}
 constructor TWebStatusFramebuffer.Create(AMain:TWebStatusMain);
 begin
@@ -12995,6 +13341,18 @@ begin
  AddBlank(AResponse);
  AddItemEx(AResponse,'TOUCH_MOUSE_DATA_DEFAULT:',BooleanToString(TOUCH_MOUSE_DATA_DEFAULT),2);
  AddBlank(AResponse);
+
+ {Add HID configuration}
+ AddBold(AResponse,'HID configuration','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'HID_REGISTER_KEYBOARD:',BooleanToString(HID_REGISTER_KEYBOARD),2);
+ AddItemEx(AResponse,'HID_REGISTER_MOUSE:',BooleanToString(HID_REGISTER_MOUSE),2);
+ AddItemEx(AResponse,'HID_REGISTER_TOUCH:',BooleanToString(HID_REGISTER_TOUCH),2);
+ AddItemEx(AResponse,'HID_REGISTER_JOYSTICK:',BooleanToString(HID_REGISTER_JOYSTICK),2);
+ AddItemEx(AResponse,'HID_REGISTER_GAMEPAD:',BooleanToString(HID_REGISTER_GAMEPAD),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'HID_MOUSE_REJECT_TOUCH:',BooleanToString(HID_MOUSE_REJECT_TOUCH),2);
+ AddBlank(AResponse);
  
  {Add PCI configuration}
  AddBold(AResponse,'PCI configuration','');
@@ -13020,6 +13378,8 @@ begin
  AddBlank(AResponse);
  AddItemEx(AResponse,'USB_HUB_MESSAGESLOT_MAXIMUM:',IntToStr(USB_HUB_MESSAGESLOT_MAXIMUM),2);
  AddItemEx(AResponse,'USB_HUB_REGISTER_DRIVER:',BooleanToString(USB_HUB_REGISTER_DRIVER),2);
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'USB_HID_REGISTER_DRIVER:',BooleanToString(USB_HID_REGISTER_DRIVER),2);
  AddBlank(AResponse);
  AddItemEx(AResponse,'USB_KEYBOARD_POLLING_INTERVAL:',IntToStr(USB_KEYBOARD_POLLING_INTERVAL),2);
  AddItemEx(AResponse,'USB_KEYBOARD_REGISTER_DRIVER:',BooleanToString(USB_KEYBOARD_REGISTER_DRIVER),2);
@@ -14046,6 +14406,10 @@ begin
  WebStatusTouch:=TWebStatusTouch.Create(WebStatusMain);
  AListener.RegisterDocument(AHost,WebStatusTouch);
 
+ {Register Joystick Page}
+ WebStatusJoystick:=TWebStatusJoystick.Create(WebStatusMain);
+ AListener.RegisterDocument(AHost,WebStatusJoystick);
+
  {Register Framebuffer Page}
  WebStatusFramebuffer:=TWebStatusFramebuffer.Create(WebStatusMain);
  AListener.RegisterDocument(AHost,WebStatusFramebuffer);
@@ -14166,13 +14530,17 @@ begin
  AListener.DeregisterDocument(AHost,WebStatusFramebuffer);
  WebStatusFramebuffer.Free;
   
- {Deregister Mouse Page}
- AListener.DeregisterDocument(AHost,WebStatusMouse);
- WebStatusMouse.Free;
+ {Deregister Joystick Page}
+ AListener.DeregisterDocument(AHost,WebStatusJoystick);
+ WebStatusJoystick.Free;
 
  {Deregister Touch Page}
  AListener.DeregisterDocument(AHost,WebStatusTouch);
  WebStatusTouch.Free;
+
+ {Deregister Mouse Page}
+ AListener.DeregisterDocument(AHost,WebStatusMouse);
+ WebStatusMouse.Free;
  
  {Deregister Keyboard Page}
  AListener.DeregisterDocument(AHost,WebStatusKeyboard);
@@ -15043,6 +15411,36 @@ begin
  Result:=ERROR_SUCCESS;
 end;
  
+{==============================================================================}
+
+function WebStatusJoystickEnumerate(Joystick:PJoystickDevice;Data:Pointer):LongWord;
+var
+ Document:TWebStatusSub;
+ Response:THTTPServerResponse;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+ 
+ {Check Joystick}
+ if Joystick = nil then Exit;
+ 
+ {Check Data}
+ if Data = nil then Exit;
+ 
+ {Get Document}
+ Document:=PWebStatusData(Data).Document;
+ if Document = nil then Exit;
+ 
+ {Get Response}
+ Response:=PWebStatusData(Data).Response;
+ if Response = nil then Exit;
+ 
+ {Add Joystick}
+ Document.AddItem4Column(Response,Document.MakeLink(IntToStr(Joystick.JoystickId),Document.Name + '?action=joystick&id=' + IntToStr(Joystick.JoystickId)),DeviceGetName(@Joystick.Device),JoystickDeviceStateToString(Joystick.JoystickState),JoystickDeviceTypeToString(Joystick.Device.DeviceType));
+ 
+ Result:=ERROR_SUCCESS;
+end;
+
 {==============================================================================}
  
 function WebStatusConsoleWindowEnumerate(Console:PConsoleDevice;Handle:TWindowHandle;Data:Pointer):LongWord;

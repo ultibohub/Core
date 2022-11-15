@@ -171,7 +171,7 @@ Global Defines
 {--$DEFINE KEYBOARD_DEBUG}        {Enable debug output/counters for Keyboard devices (Default: Off)}
 {--$DEFINE MOUSE_DEBUG}           {Enable debug output/counters for Mouse devices (Default: Off)}
 {--$DEFINE TOUCH_DEBUG}           {Enable debug output/counters for Touch devices (Default: Off)}
-{$DEFINE JOYSTICK_DEBUG}        {Enable debug output/counters for Joystick/Gamepad devices (Default: Off)}
+{--$DEFINE JOYSTICK_DEBUG}        {Enable debug output/counters for Joystick/Gamepad devices (Default: Off)}
 
 {$DEFINE WIFI_DEBUG}            {Enable debug output/counters for WiFi devices (Default: Off)}
 {--$DEFINE VPN_DEBUG}             {Enable debug output/counters for VPN devices (Default: Off)}

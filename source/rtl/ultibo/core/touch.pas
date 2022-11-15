@@ -484,7 +484,7 @@ begin
  else
   begin 
    {Default Method}
-   Result:=TouchDeviceRead(Touch,@Data,SizeOf(TouchDeviceRead),TOUCH_FLAG_NON_BLOCK or TOUCH_FLAG_PEEK_BUFFER,Count);
+   Result:=TouchDeviceRead(Touch,@Data,SizeOf(TTouchData),TOUCH_FLAG_NON_BLOCK or TOUCH_FLAG_PEEK_BUFFER,Count);
   end; 
 end;
 
@@ -1162,6 +1162,8 @@ end;
 
 function TouchDeviceDestroy(Touch:PTouchDevice):LongWord;
 {Destroy an existing Touch device entry}
+{Touch: The Touch device to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1197,6 +1199,8 @@ end;
 
 function TouchDeviceRegister(Touch:PTouchDevice):LongWord;
 {Register a new Touch device in the Touch device table}
+{Touch: The Touch device to register}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  TouchId:LongWord;
 begin
@@ -1280,6 +1284,8 @@ end;
 
 function TouchDeviceDeregister(Touch:PTouchDevice):LongWord;
 {Deregister an Touch device from the Touch device table}
+{Touch: The Touch device to deregister}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Prev:PTouchDevice;
  Next:PTouchDevice;
@@ -1354,6 +1360,9 @@ end;
 {==============================================================================}
 
 function TouchDeviceFind(TouchId:LongWord):PTouchDevice;
+{Find a Touch device by ID in the Touch device table}
+{TouchId: The ID number of the Touch device to find}
+{Return: Pointer to Touch device entry or nil if not found}
 var
  Touch:PTouchDevice;
 begin
@@ -1395,6 +1404,9 @@ end;
 {==============================================================================}
 
 function TouchDeviceFindByName(const Name:String):PTouchDevice; inline;
+{Find a Touch device by name in the device table}
+{Name: The name of the Touch device to find (eg Touch0)}
+{Return: Pointer to Touch device entry or nil if not found}
 begin
  {}
  Result:=PTouchDevice(DeviceFindByName(Name));
@@ -1403,6 +1415,9 @@ end;
 {==============================================================================}
 
 function TouchDeviceFindByDescription(const Description:String):PTouchDevice; inline;
+{Find a Touch device by description in the device table}
+{Description: The description of the Touch to find (eg USB Touchscreen)}
+{Return: Pointer to Touch device entry or nil if not found}
 begin
  {}
  Result:=PTouchDevice(DeviceFindByDescription(Description));
@@ -1411,6 +1426,10 @@ end;
 {==============================================================================}
 
 function TouchDeviceEnumerate(Callback:TTouchEnumerate;Data:Pointer):LongWord;
+{Enumerate all Touch devices in the Touch device table}
+{Callback: The callback function to call for each Touch device in the table}
+{Data: A private data pointer to pass to callback for each Touch device in the table}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Touch:PTouchDevice;
 begin
@@ -1454,6 +1473,13 @@ end;
 {==============================================================================}
 
 function TouchDeviceNotification(Touch:PTouchDevice;Callback:TTouchNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
+{Register a notification for Touch device changes}
+{Touch: The Touch device to notify changes for (Optional, pass nil for all Touch devices)}
+{Callback: The function to call when a notification event occurs}
+{Data: A private data pointer to pass to callback when a notification event occurs}
+{Notification: The events to register for notification of (eg DEVICE_NOTIFICATION_REGISTER)}
+{Flags: The flags to control the notification (eg NOTIFIER_FLAG_WORKER)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1481,6 +1507,7 @@ end;
 {Touch Helper Functions}
 function TouchGetCount:LongWord; inline;
 {Get the current Touch device count}
+{Return: The number of Touch devices}
 begin
  {}
  Result:=TouchDeviceTableCount;
@@ -1490,6 +1517,7 @@ end;
 
 function TouchDeviceGetDefault:PTouchDevice; inline;
 {Get the current default Touch device}
+{Return: Pointer to default Touch device entry}
 begin
  {}
  Result:=TouchDeviceDefault;
@@ -1499,6 +1527,8 @@ end;
 
 function TouchDeviceSetDefault(Touch:PTouchDevice):LongWord; 
 {Set the current default Touch device}
+{Touch: The Touch device to set as default}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1534,6 +1564,8 @@ end;
 
 function TouchDeviceCheck(Touch:PTouchDevice):PTouchDevice;
 {Check if the supplied Touch device is in the Touch device table}
+{Touch: The Touch device to check}
+{Return: Pointer to Touch device entry or nil if not found}
 var
  Current:PTouchDevice;
 begin
@@ -1572,6 +1604,7 @@ end;
 {==============================================================================}
 
 function TouchDeviceTypeToString(TouchType:LongWord):String;
+{Return a string describing the Touch device type (eg TOUCH_TYPE_CAPACITIVE)}
 begin
  {}
  Result:='TOUCH_TYPE_UNKNOWN';
@@ -1585,6 +1618,7 @@ end;
 {==============================================================================}
 
 function TouchDeviceStateToString(TouchState:LongWord):String;
+{Return a string describing the Touch device state (eg TOUCH_STATE_ENABLED)}
 begin
  {}
  Result:='TOUCH_STATE_UNKNOWN';
@@ -1671,7 +1705,7 @@ begin
   end
  else
   begin
-   if TOUCH_LOG_ENABLED then TouchLogError(Touch,'Buffer overflow, key discarded');
+   if TOUCH_LOG_ENABLED then TouchLogError(Touch,'Buffer overflow, touch discarded');
      
    {Update Statistics}
    Inc(Touch.BufferOverruns); 

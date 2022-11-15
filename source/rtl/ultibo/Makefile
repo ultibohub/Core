@@ -434,6 +434,7 @@ ULTIBO_UNITS=globalconfig \
 	     keyboard \
 	     mouse \
 	     touch \
+	     joystick \
 	     ps2 \
 	     ataoe \
 	     atapi \
@@ -562,6 +563,7 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    hidmouse \
 		    hidkeyboard \
 		    hidtouch \
+		    hidjoystick \
 		    usbmouse \
 		    usbkeyboard \
 		    rpigpioexpander \
