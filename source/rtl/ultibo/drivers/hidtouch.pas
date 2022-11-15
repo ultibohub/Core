@@ -93,6 +93,8 @@ type
   MaxX:LongWord;                    {Maximum X value from current configuration}
   MaxY:LongWord;                    {Maximum Y value from current configuration}
   MaxZ:LongWord;                    {Maximum Z value from current configuration}
+  MaxWidth:LongWord;                {Maximum width value from current configuration}
+  MaxHeight:LongWord;               {Maximum height value from current configuration}
   MaxPoints:LongWord;               {Maximum touch points for this device}
   LastCount:LongWord;               {Number of touch points for last touch report}
   LastPoints:PHIDTouchPoints;       {Touch points for last touch report}
@@ -148,7 +150,7 @@ function HIDTouchReportReceive(Collection:PHIDCollection;ReportId:Byte;ReportDat
 
 procedure HIDTouchTimer(Touch:PHIDTouchDevice); forward;
 
-function HIDTouchGetMaxXYZ(Touch:PHIDTouchDevice;var MaxX,MaxY,MaxZ:LongWord):LongWord; forward;
+function HIDTouchGetMaxXYZ(Touch:PHIDTouchDevice;var MaxX,MaxY,MaxZ,MaxWidth,MaxHeight:LongWord):LongWord; forward;
 function HIDTouchGetMaxPoints(Touch:PHIDTouchDevice;var MaxPoints:LongWord):LongWord; forward;
 
 function HIDTouchExtractReport(Touch:PHIDTouchDevice;Definition:PHIDDefinition;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord; forward;
@@ -315,6 +317,8 @@ var
  MaxX:LongWord;
  MaxY:LongWord;
  MaxZ:LongWord;
+ MaxWidth:LongWord;
+ MaxHeight:LongWord;
  MaxPoints:LongWord;
 begin
  {}
@@ -335,6 +339,8 @@ begin
     MaxX:=0;
     MaxY:=0;
     MaxZ:=0;
+    MaxWidth:=0;
+    MaxHeight:=0;
     MaxPoints:=0;
 
     {Get Max Points}
@@ -342,13 +348,15 @@ begin
     if Result <> ERROR_SUCCESS then Exit;
 
     {Get Max X, Y, Z}
-    Result:=HIDTouchGetMaxXYZ(PHIDTouchDevice(Touch),MaxX,MaxY,MaxZ);
+    Result:=HIDTouchGetMaxXYZ(PHIDTouchDevice(Touch),MaxX,MaxY,MaxZ,MaxWidth,MaxHeight);
     if Result <> ERROR_SUCCESS then Exit;
 
-    {Update Max X, Y, Z}
+    {Update Max X, Y, Z, Width, Height}
     PHIDTouchDevice(Touch).MaxX:=MaxX;
     PHIDTouchDevice(Touch).MaxY:=MaxY;
     PHIDTouchDevice(Touch).MaxZ:=MaxZ;
+    PHIDTouchDevice(Touch).MaxWidth:=MaxWidth;
+    PHIDTouchDevice(Touch).MaxHeight:=MaxHeight;
 
     {Check Max Points}
     if MaxPoints <> PHIDTouchDevice(Touch).MaxPoints then
@@ -390,6 +398,10 @@ begin
          Touch.Properties.MaxX:=PHIDTouchDevice(Touch).MaxY;
          Touch.Properties.MaxY:=PHIDTouchDevice(Touch).MaxX;
         end;
+
+       {Update Max Width and Height}
+       Touch.Properties.MaxWidth:=PHIDTouchDevice(Touch).MaxWidth;
+       Touch.Properties.MaxHeight:=PHIDTouchDevice(Touch).MaxHeight;
       end;
      TOUCH_ROTATION_90,TOUCH_ROTATION_270:begin
        {Update Width and Height}
@@ -407,6 +419,10 @@ begin
          Touch.Properties.MaxX:=PHIDTouchDevice(Touch).MaxX;
          Touch.Properties.MaxY:=PHIDTouchDevice(Touch).MaxY;
         end;
+
+       {Update Max Width and Height}
+       Touch.Properties.MaxWidth:=PHIDTouchDevice(Touch).MaxHeight;
+       Touch.Properties.MaxHeight:=PHIDTouchDevice(Touch).MaxWidth;
       end;
     end;
 
@@ -638,6 +654,8 @@ begin
  Touch.Touch.Properties.MaxX:=0;
  Touch.Touch.Properties.MaxY:=0;
  Touch.Touch.Properties.MaxZ:=0;
+ Touch.Touch.Properties.MaxWidth:=0;
+ Touch.Touch.Properties.MaxHeight:=0;
  Touch.Touch.Properties.MaxPoints:=0;
  {General}
  Touch.MaxPoints:=1;
@@ -971,8 +989,34 @@ begin
                 end;
                 TouchData.PositionZ:=Touch.TouchPoints[Count].Pressure;
 
-                {Insert Data}
-                TouchInsertData(@Touch.Touch,@TouchData,True);
+                {Check Rotation}
+                case Touch.Touch.Properties.Rotation of
+                 TOUCH_ROTATION_0,TOUCH_ROTATION_180:begin
+                   {No Change}
+                   TouchData.TouchWidth:=Touch.TouchPoints[Count].Width;
+                   TouchData.TouchHeight:=Touch.TouchPoints[Count].Height;
+                  end;
+                 TOUCH_ROTATION_90,TOUCH_ROTATION_270:begin
+                   {Swap Width and Height}
+                   TouchData.TouchWidth:=Touch.TouchPoints[Count].Height;
+                   TouchData.TouchHeight:=Touch.TouchPoints[Count].Width;
+                  end;
+                end;
+
+                {Check Event}
+                if Assigned(Touch.Touch.Event) then
+                 begin
+                  {Event Parameter}
+                  TouchData.Parameter:=Touch.Touch.Parameter;
+
+                  {Event Callback}
+                  Touch.Touch.Event(@Touch.Touch,@TouchData);
+                 end
+                else
+                 begin
+                  {Insert Data}
+                  TouchInsertData(@Touch.Touch,@TouchData,True);
+                 end;
                end
               else
                begin
@@ -1138,8 +1182,34 @@ begin
             end;
             TouchData.PositionZ:=Touch.LastPoints[Count].Pressure;
 
-            {Insert Data}
-            TouchInsertData(@Touch.Touch,@TouchData,True);
+            {Check Rotation}
+            case Touch.Touch.Properties.Rotation of
+             TOUCH_ROTATION_0,TOUCH_ROTATION_180:begin
+               {No Change}
+               TouchData.TouchWidth:=Touch.LastPoints[Count].Width;
+               TouchData.TouchHeight:=Touch.LastPoints[Count].Height;
+              end;
+             TOUCH_ROTATION_90,TOUCH_ROTATION_270:begin
+               {Swap Width and Height}
+               TouchData.TouchWidth:=Touch.LastPoints[Count].Height;
+               TouchData.TouchHeight:=Touch.LastPoints[Count].Width;
+              end;
+            end;
+
+            {Check Event}
+            if Assigned(Touch.Touch.Event) then
+             begin
+              {Event Parameter}
+              TouchData.Parameter:=Touch.Touch.Parameter;
+
+              {Event Callback}
+              Touch.Touch.Event(@Touch.Touch,@TouchData);
+             end
+            else
+             begin
+              {Insert Data}
+              TouchInsertData(@Touch.Touch,@TouchData,True);
+             end;
            end
           else
            begin
@@ -1205,8 +1275,8 @@ end;
 
 {==============================================================================}
 
-function HIDTouchGetMaxXYZ(Touch:PHIDTouchDevice;var MaxX,MaxY,MaxZ:LongWord):LongWord;
-{Scan the allocated HID input definitions to determine the maximum X, Y and Z values}
+function HIDTouchGetMaxXYZ(Touch:PHIDTouchDevice;var MaxX,MaxY,MaxZ,MaxWidth,MaxHeight:LongWord):LongWord;
+{Scan the allocated HID input definitions to determine the maximum X, Y, Z, Width and Height values}
 {Note: Not intended to be called directly by applications}
 var
  Field:PHIDField;
@@ -1219,6 +1289,8 @@ begin
  MaxX:=0;
  MaxY:=0;
  MaxZ:=0;
+ MaxWidth:=0;
+ MaxHeight:=0;
 
  {Check Touch}
  if Touch = nil then Exit;
@@ -1260,6 +1332,20 @@ begin
            if Field.Logical.Maximum > MaxZ then
             begin
              MaxZ:=Field.Logical.Maximum;
+            end;
+          end;
+         HID_DIGITIZERS_WIDTH:begin
+           {Max Width}
+           if Field.Logical.Maximum > MaxWidth then
+            begin
+             MaxWidth:=Field.Logical.Maximum;
+            end;
+          end;
+         HID_DIGITIZERS_HEIGHT:begin
+           {Max Height}
+           if Field.Logical.Maximum > MaxHeight then
+            begin
+             MaxHeight:=Field.Logical.Maximum;
             end;
           end;
         end;

@@ -725,7 +725,7 @@ begin
            begin
             {Event Parameter}
             JoystickData.Parameter:=Joystick.Joystick.Parameter;
-            
+
             {Event Callback}
             Joystick.Joystick.Event(@Joystick.Joystick,@JoystickData);
            end
@@ -733,7 +733,7 @@ begin
            begin
             {Insert Data}
             JoystickInsertData(@Joystick.Joystick,@JoystickData,True);
-           end; 
+           end;
          end
         else
          begin

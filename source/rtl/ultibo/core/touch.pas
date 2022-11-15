@@ -104,6 +104,8 @@ const
  TOUCH_CONTROL_GET_MAX_POINTS   = 10; {Get Maximum number of Touch Points}
  TOUCH_CONTROL_GET_ROTATION     = 11; {Get Rotation value (0, 90, 180, 270)(Only where supported by the driver)}
  TOUCH_CONTROL_SET_ROTATION     = 12; {Set Rotation value (0, 90, 180, 270)(Only where supported by the driver)}
+ TOUCH_CONTROL_GET_CALLBACK     = 13; {Get the registered callback function for touch events}
+ TOUCH_CONTROL_SET_CALLBACK     = 14; {Set the registered callback function for touch events}
  
  {Touch Buffer Size}
  TOUCH_BUFFER_SIZE = 1024; 
@@ -149,11 +151,14 @@ type
  {Touch Data}
  PTouchData = ^TTouchData;
  TTouchData = record
-  Info:LongWord;
-  PointID:Word;
-  PositionX:SmallInt;
-  PositionY:SmallInt;
-  PositionZ:SmallInt;
+  Info:LongWord;      {Bitmap of touch info values (eg TOUCH_FINGER)}
+  PointID:Word;       {The touch point ID value for this touch (First ID is 1)}
+  PositionX:SmallInt; {The X position of this touch point}
+  PositionY:SmallInt; {The Y position of this touch point}
+  PositionZ:SmallInt; {The Z position of this touch point (If applicable)}
+  TouchWidth:Word;    {The Width of this touch point (If applicable)}
+  TouchHeight:Word;   {The Height of this touch point (If applicable)}
+  Parameter:Pointer;  {The parameter for the event callback (If applicable)}
  end;
  
  {Touch Buffer}
@@ -172,15 +177,20 @@ type
   Width:LongWord;        {Screen Width}
   Height:LongWord;       {Screen Height}
   Rotation:LongWord;     {Screen Rotation (eg TOUCH_ROTATION_180)}
-  MaxX:LongWord;         {Maximum (absolute) X value for the touch device}
-  MaxY:LongWord;         {Maximum (absolute) Y value for the touch device}
-  MaxZ:LongWord;         {Maximum (absolute) Z value for the touch device}
+  MaxX:LongWord;         {Maximum (absolute) X position for the touch device}
+  MaxY:LongWord;         {Maximum (absolute) Y position for the touch device}
+  MaxZ:LongWord;         {Maximum (absolute) Z position for the touch device (If applicable)}
+  MaxWidth:LongWord;     {Maximum touch width value for the touch device (If applicable)}
+  MaxHeight:LongWord;    {Maximum touch height value for the touch device (If applicable)}    
   MaxPoints:LongWord;    {Maximum number of touch points}
  end;
  
  {Touch Device}
  PTouchDevice = ^TTouchDevice;
  
+ {Touch Event Callback}
+ TTouchEvent = function(Touch:PTouchDevice;Data:PTouchData):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+
  {Touch Enumeration Callback}
  TTouchEnumerate = function(Touch:PTouchDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Touch Notification Callback}
@@ -195,7 +205,7 @@ type
  TTouchDeviceWrite = function(Touch:PTouchDevice;Buffer:Pointer;Size,Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TTouchDeviceFlush = function(Touch:PTouchDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF} 
  TTouchDeviceUpdate = function(Touch:PTouchDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- TTouchDeviceControl = function(Touch:PTouchDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TTouchDeviceControl = function(Touch:PTouchDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TTouchDeviceGetProperties = function(Touch:PTouchDevice;Properties:PTouchProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
@@ -216,6 +226,8 @@ type
   DeviceGetProperties:TTouchDeviceGetProperties;  {A Device specific DeviceGetProperties method implementing a standard Touch device interface (Or nil if the default method is suitable)}
   {Driver Properties}
   Lock:TMutexHandle;                              {Device lock}
+  Event:TTouchEvent;                              {Event callback function (If assigned)}
+  Parameter:Pointer;                              {Parameter for the event callback (or nil)}
   Buffer:TTouchBuffer;                            {Touch input buffer}
   Properties:TTouchProperties;                    {Device properties}
   {Statistics Properties}
@@ -248,7 +260,7 @@ function TouchDeviceWrite(Touch:PTouchDevice;Buffer:Pointer;Size,Count:LongWord)
 function TouchDeviceFlush(Touch:PTouchDevice):LongWord;
 function TouchDeviceUpdate(Touch:PTouchDevice):LongWord;
 
-function TouchDeviceControl(Touch:PTouchDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function TouchDeviceControl(Touch:PTouchDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 
 function TouchDeviceProperties(Touch:PTouchDevice;Properties:PTouchProperties):LongWord; inline;
 function TouchDeviceGetProperties(Touch:PTouchDevice;Properties:PTouchProperties):LongWord;
@@ -284,6 +296,8 @@ function TouchDeviceStateToString(TouchState:LongWord):String;
 function TouchDeviceRotationToString(Rotation:LongWord):String;
 
 function TouchDeviceResolveRotation(ARotation:LongWord):LongWord;
+
+function TouchDeviceSetCallback(Touch:PTouchDevice;Event:TTouchEvent;Parameter:Pointer):LongWord;
 
 function TouchInsertData(Touch:PTouchDevice;Data:PTouchData;Signal:Boolean):LongWord;
 
@@ -850,7 +864,7 @@ end;
 
 {==============================================================================}
 
-function TouchDeviceControl(Touch:PTouchDevice;Request:Integer;Argument1:LongWord;var Argument2:LongWord):LongWord;
+function TouchDeviceControl(Touch:PTouchDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 {Perform a control request on the specified touch device}
 {Touch: The Touch device to control}
 {Request: The request code for the operation (eg TOUCH_CONTROL_GET_FLAG)}
@@ -884,10 +898,10 @@ begin
       case Request of
        TOUCH_CONTROL_GET_FLAG:begin
          {Get Flag}
-         LongBool(Argument2):=False;
+         Argument2:=Ord(False);
          if (Touch.Device.DeviceFlags and Argument1) <> 0 then
           begin
-           LongBool(Argument2):=True;
+           Argument2:=Ord(True);
            
            {Return Result}
            Result:=ERROR_SUCCESS;
@@ -997,6 +1011,21 @@ begin
             Result:=TouchDeviceUpdate(Touch);
            end;
          end;
+        end;
+       TOUCH_CONTROL_GET_CALLBACK:begin
+         {Get Callback}
+         Argument2:=PtrUInt(@Touch.Event);
+
+         {Return Result}
+         Result:=ERROR_SUCCESS;
+        end;
+       TOUCH_CONTROL_SET_CALLBACK:begin
+         {Set Callback}
+         Touch.Event:=TTouchEvent(Argument1);
+         Touch.Parameter:=Pointer(Argument2);
+
+         {Return Result}
+         Result:=ERROR_SUCCESS;
         end;
       end;
      finally
@@ -1122,6 +1151,8 @@ begin
  Result.DeviceControl:=nil;
  Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
+ Result.Event:=nil;
+ Result.Parameter:=nil;
  Result.Buffer.Wait:=INVALID_HANDLE_VALUE;
  
  {Check Defaults}
@@ -1659,6 +1690,30 @@ begin
   else
    Result:=ARotation;  
  end;
+end;
+
+{==============================================================================}
+
+function TouchDeviceSetCallback(Touch:PTouchDevice;Event:TTouchEvent;Parameter:Pointer):LongWord;
+{Set the event callback function for the specified touch device}
+{Touch: The touch device to set the event callback for}
+{Event: The event callback function to be called when touch data is received}
+{Parameter: A pointer to private data to be passed to the callback with each event}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: This function also clears the TOUCH_FLAG_MOUSE_DATA flag because the event}
+{      callback is not compatible with receiving touch events as mouse data}
+var
+ Argument2:PtrUInt;
+begin
+ {}
+ {Set Callback}
+ Result:=TouchDeviceControl(Touch,TOUCH_CONTROL_SET_CALLBACK,PtrUInt(@Event),PtrUInt(Parameter));
+ if Result = ERROR_SUCCESS then
+  begin
+   {Clear Mouse Data Flag}
+   Result:=TouchDeviceControl(Touch,TOUCH_CONTROL_CLEAR_FLAG,TOUCH_FLAG_MOUSE_DATA,Argument2);
+  end;
 end;
 
 {==============================================================================}

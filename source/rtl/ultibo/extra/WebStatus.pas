@@ -7015,10 +7015,12 @@ begin
         AddItem(AResponse,'Width:',IntToStr(TouchDevice.Properties.Width));
         AddItem(AResponse,'Height:',IntToStr(TouchDevice.Properties.Height));
         AddItem(AResponse,'Rotation:',TouchDeviceRotationToString(TouchDevice.Properties.Rotation));
-        AddItem(AResponse,'MaxX:',IntToStr(TouchDevice.Properties.MaxX));
-        AddItem(AResponse,'MaxY:',IntToStr(TouchDevice.Properties.MaxY));
-        AddItem(AResponse,'MaxZ:',IntToStr(TouchDevice.Properties.MaxZ));
-        AddItem(AResponse,'MaxPoints:',IntToStr(TouchDevice.Properties.MaxPoints));
+        AddItem(AResponse,'Max X:',IntToStr(TouchDevice.Properties.MaxX));
+        AddItem(AResponse,'Max Y:',IntToStr(TouchDevice.Properties.MaxY));
+        AddItem(AResponse,'Max Z:',IntToStr(TouchDevice.Properties.MaxZ));
+        AddItem(AResponse,'Max Width:',IntToStr(TouchDevice.Properties.MaxWidth));
+        AddItem(AResponse,'Max Height:',IntToStr(TouchDevice.Properties.MaxHeight));
+        AddItem(AResponse,'Max Points:',IntToStr(TouchDevice.Properties.MaxPoints));
         AddBlank(AResponse);
 
         AddItem(AResponse,'Receive Count:',IntToStr(TouchDevice.ReceiveCount));
@@ -11692,10 +11694,12 @@ begin
      AddItem(AResponse,'Width:',IntToStr(TouchDevice.Properties.Width));
      AddItem(AResponse,'Height:',IntToStr(TouchDevice.Properties.Height));
      AddItem(AResponse,'Rotation:',TouchDeviceRotationToString(TouchDevice.Properties.Rotation));
-     AddItem(AResponse,'MaxX:',IntToStr(TouchDevice.Properties.MaxX));
-     AddItem(AResponse,'MaxY:',IntToStr(TouchDevice.Properties.MaxY));
-     AddItem(AResponse,'MaxZ:',IntToStr(TouchDevice.Properties.MaxZ));
-     AddItem(AResponse,'MaxPoints:',IntToStr(TouchDevice.Properties.MaxPoints));
+     AddItem(AResponse,'Max X:',IntToStr(TouchDevice.Properties.MaxX));
+     AddItem(AResponse,'Max Y:',IntToStr(TouchDevice.Properties.MaxY));
+     AddItem(AResponse,'Max Z:',IntToStr(TouchDevice.Properties.MaxZ));
+     AddItem(AResponse,'Max Width:',IntToStr(TouchDevice.Properties.MaxWidth));
+     AddItem(AResponse,'Max Height:',IntToStr(TouchDevice.Properties.MaxHeight));
+     AddItem(AResponse,'Max Points:',IntToStr(TouchDevice.Properties.MaxPoints));
      AddBlank(AResponse);
 
      AddItem(AResponse,'Receive Count:',IntToStr(TouchDevice.ReceiveCount));

@@ -3346,11 +3346,23 @@ begin
            TouchData.PositionY:=TOUCH_Y_UNKNOWN;
            TouchData.PositionZ:=TOUCH_Z_UNKNOWN;
        
-           {Update Count}
-           Inc(Touch.Touch.Buffer.Count);
-           
-           {Signal Data Received}
-           SemaphoreSignal(Touch.Touch.Buffer.Wait);
+           {Check Event}
+           if Assigned(Touch.Touch.Event) then
+            begin
+             {Event Parameter}
+             TouchData.Parameter:=Touch.Touch.Parameter;
+
+             {Event Callback}
+             Touch.Touch.Event(@Touch.Touch,TouchData);
+            end
+           else
+            begin
+             {Update Count}
+             Inc(Touch.Touch.Buffer.Count);
+
+             {Signal Data Received}
+             SemaphoreSignal(Touch.Touch.Buffer.Wait);
+            end;
           end;
         end
        else
@@ -3511,11 +3523,23 @@ begin
            end;
            TouchData.PositionZ:=Z;
            
-           {Update Count}
-           Inc(Touch.Touch.Buffer.Count);
-           
-           {Signal Data Received}
-           SemaphoreSignal(Touch.Touch.Buffer.Wait);
+           {Check Event}
+           if Assigned(Touch.Touch.Event) then
+            begin
+             {Event Parameter}
+             TouchData.Parameter:=Touch.Touch.Parameter;
+
+             {Event Callback}
+             Touch.Touch.Event(@Touch.Touch,TouchData);
+            end
+           else
+            begin
+             {Update Count}
+             Inc(Touch.Touch.Buffer.Count);
+
+             {Signal Data Received}
+             SemaphoreSignal(Touch.Touch.Buffer.Wait);
+            end;
           end;
         end
        else
