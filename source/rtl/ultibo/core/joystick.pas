@@ -1640,7 +1640,7 @@ end;
 {==============================================================================}
 
 function JoystickDeviceDeregister(Joystick:PJoystickDevice):LongWord;
-{Deregister an Joystick device from the Joystick device table}
+{Deregister a Joystick device from the Joystick device table}
 {Joystick: The Joystick device to deregister}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
@@ -2107,7 +2107,7 @@ function JoystickDeviceSetHat(Joystick:PJoystickDevice;Index,Name:LongWord):Long
 {Set the name (identifier) of a Hat on the specified Joystick}
 {Joystick: The Joystick device to set the name for}
 {Index: The index of the Hat in the Joystick properties (First Hat is 0)}
-{Name: The name (identifier) to set for the Axis (eg JOYSTICK_HAT_POV}
+{Name: The name (identifier) to set for the Hat (eg JOYSTICK_HAT_POV)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Argument2:PtrUInt;
@@ -2145,7 +2145,7 @@ function JoystickDeviceSetButton(Joystick:PJoystickDevice;Index,Name:LongWord):L
 {Set the name (identifier) of a Button on the specified Joystick}
 {Joystick: The Joystick device to set the name for}
 {Index: The index of the Button in the Joystick properties (First Button is 0)}
-{Name: The name (identifier) to set for the Axis (eg GAMEPAD_BUTTON_LT}
+{Name: The name (identifier) to set for the Button (eg GAMEPAD_BUTTON_LT)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Argument2:PtrUInt;

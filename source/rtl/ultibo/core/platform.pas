@@ -977,6 +977,7 @@ type
  TI2CSetAddress = function(Address:Word):LongWord;
  
  TI2CGetDescription = function(Id:LongWord):String;
+ TI2CSlaveGetDescription = function(Id:LongWord):String;
  
 type
  {Prototypes for PWM Handlers}
@@ -1794,6 +1795,7 @@ var
  I2CSetAddressHandler:TI2CSetAddress;
  
  I2CGetDescriptionHandler:TI2CGetDescription;
+ I2CSlaveGetDescriptionHandler:TI2CSlaveGetDescription;
  
 var
  {PWM Handlers}
@@ -2542,6 +2544,7 @@ function I2CGetAddress:Word; inline;
 function I2CSetAddress(Address:Word):LongWord; inline;
 
 function I2CGetDescription(Id:LongWord):String; inline;
+function I2CSlaveGetDescription(Id:LongWord):String; inline;
 
 {==============================================================================}
 {PWM Functions}
@@ -9594,6 +9597,26 @@ begin
  if Assigned(I2CGetDescriptionHandler) then
   begin
    Result:=I2CGetDescriptionHandler(Id);
+  end
+ else
+  begin
+   Result:='';
+  end;
+end;
+
+{==============================================================================}
+
+function I2CSlaveGetDescription(Id:LongWord):String; inline;
+{Get the device description of an I2C slave device}
+{Id: The Id number of the I2C slave device as shown in the offical documentation}
+{Return: The correct device description suitable for passing to I2CSlaveFindByDescription}
+
+{Note: The Id number supplied to this function may differ from the Ultibo device id value}
+begin
+ {}
+ if Assigned(I2CSlaveGetDescriptionHandler) then
+  begin
+   Result:=I2CSlaveGetDescriptionHandler(Id);
   end
  else
   begin

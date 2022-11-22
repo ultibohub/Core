@@ -1092,6 +1092,7 @@ function BCM2710FramebufferSetProperties(Framebuffer:PFramebufferDevice;Properti
 {BCM2710 Helper Functions}
 function BCM2710SPIGetDescription(Id:LongWord):String;
 function BCM2710I2CGetDescription(Id:LongWord):String;
+function BCM2710I2CSlaveGetDescription(Id:LongWord):String;
 function BCM2710PWMGetDescription(Id,Channel:LongWord):String;
 function BCM2710UARTGetDescription(Id:LongWord):String;
 
@@ -1165,6 +1166,7 @@ begin
  {Register Platform Handlers}
  SPIGetDescriptionHandler:=BCM2710SPIGetDescription;
  I2CGetDescriptionHandler:=BCM2710I2CGetDescription;
+ I2CSlaveGetDescriptionHandler:=BCM2710I2CSlaveGetDescription;
  PWMGetDescriptionHandler:=BCM2710PWMGetDescription;
  UARTGetDescriptionHandler:=BCM2710UARTGetDescription;
  
@@ -11432,6 +11434,23 @@ begin
    0:Result:=BCM2710_I2C0_DESCRIPTION;
    1:Result:=BCM2710_I2C1_DESCRIPTION;
    2:Result:=BCM2710_I2C2_DESCRIPTION;
+  else
+   Result:='';
+  end;  
+end;
+
+{==============================================================================}
+
+function BCM2710I2CSlaveGetDescription(Id:LongWord):String;
+{Get the device description of an I2C slave device}
+{Id: The Id number of the I2C slave device (Always 0)}
+{Return: The correct device description suitable for passing to I2CSlaveFindByDescription}
+
+{Note: The Id number supplied to this function may differ from the Ultibo device id value}
+begin
+  {}
+  case Id of
+   0:Result:=BCM2710_I2CSLAVE_DESCRIPTION;
   else
    Result:='';
   end;  
