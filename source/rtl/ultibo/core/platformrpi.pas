@@ -420,8 +420,6 @@ function RPiFramebufferDeviceBlank(Framebuffer:PFramebufferDevice;Blank:Boolean)
 function RPiFramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 
 function RPiFramebufferDeviceSetBacklight(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
-
-function RPiFramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 {$ENDIF}
 {==============================================================================}
 {RPi Helper Functions}
@@ -1487,7 +1485,6 @@ begin
      RPiFramebuffer.Framebuffer.DeviceBlank:=RPiFramebufferDeviceBlank;
      RPiFramebuffer.Framebuffer.DeviceCommit:=RPiFramebufferDeviceCommit;
      RPiFramebuffer.Framebuffer.DeviceSetBacklight:=RPiFramebufferDeviceSetBacklight;   
-     RPiFramebuffer.Framebuffer.DeviceSetProperties:=RPiFramebufferDeviceSetProperties;
      {Driver}
      RPiFramebuffer.MultiDisplay:=MultiDisplay;
      RPiFramebuffer.DisplayNum:=DisplayNum;
@@ -8290,46 +8287,6 @@ begin
    end;
  end; 
 end; 
- 
-{==============================================================================}
-
-function RPiFramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
-begin
- {}
- Result:=ERROR_INVALID_PARAMETER;
- 
- {Check Properties}
- if Properties = nil then Exit;
- 
- {Check Framebuffer}
- if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
-  begin
-   {Set Current Display}
-   if PRPiFramebuffer(Framebuffer).MultiDisplay then
-    begin
-     FramebufferSetDisplayNum(PRPiFramebuffer(Framebuffer).DisplayNum);
-    end;
-   try
-    {Not Supported}
-    Result:=ERROR_NOT_SUPPORTED;
-   finally
-    {Set Default Display}
-    if PRPiFramebuffer(Framebuffer).MultiDisplay then
-     begin
-      FramebufferSetDisplayNum(0);
-     end;
-     
-    MutexUnlock(Framebuffer.Lock);
-   end; 
-  end
- else
-  begin
-   Result:=ERROR_CAN_NOT_COMPLETE;
-  end;
-end;
 {$ENDIF}
 {==============================================================================}
 {==============================================================================}

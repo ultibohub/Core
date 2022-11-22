@@ -1,7 +1,7 @@
 {
 Himax HX8357D TFT LCD Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -278,7 +278,6 @@ begin
    HX8357DFramebuffer.TFT.Framebuffer.DeviceMark:=TFTFramebufferMark;
    HX8357DFramebuffer.TFT.Framebuffer.DeviceCommit:=TFTFramebufferCommit;
    HX8357DFramebuffer.TFT.Framebuffer.DeviceSetBacklight:=HX8357DFramebufferSetBacklight;
-   HX8357DFramebuffer.TFT.Framebuffer.DeviceSetProperties:=TFTFramebufferSetProperties;
    {TFT}
    HX8357DFramebuffer.TFT.SPI:=SPI;
    HX8357DFramebuffer.TFT.ChipSelect:=ChipSelect;

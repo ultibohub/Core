@@ -1,7 +1,7 @@
 {
 Ultibo Framebuffer interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -208,7 +208,7 @@ type
   DeviceSetCursor:TFramebufferDeviceSetCursor;         {A device specific DeviceSetCursor method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
   DeviceUpdateCursor:TFramebufferDeviceUpdateCursor;   {A device specific DeviceUpdateCursor method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
   DeviceGetProperties:TFramebufferDeviceGetProperties; {A device specific DeviceGetProperties method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
-  DeviceSetProperties:TFramebufferDeviceSetProperties; {A device specific DeviceSetProperties method implementing a standard framebuffer device interface (Mandatory)}
+  DeviceSetProperties:TFramebufferDeviceSetProperties; {A device specific DeviceSetProperties method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   AllocateCount:LongWord;
   ReleaseCount:LongWord;
@@ -2546,6 +2546,9 @@ function FramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Propertie
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: Changing certain properties may cause the framebuffer to be reallocated}
+var
+ Current:TFramebufferProperties;
+ Updated:TFramebufferProperties;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -2568,6 +2571,42 @@ begin
  if Assigned(Framebuffer.DeviceSetProperties) then
   begin
    Result:=Framebuffer.DeviceSetProperties(Framebuffer,Properties);
+  end
+ else
+  begin
+   {Lock Framebuffer}
+   if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
+   try
+    {Get Current Properties}
+    Result:=FramebufferDeviceGetProperties(Framebuffer,@Current);
+    if Result <> ERROR_SUCCESS then Exit;
+
+    {Build Updated Properties}
+    Updated:=Properties^;
+    Updated.Flags:=Current.Flags;
+    Updated.Address:=Current.Address;
+    Updated.Size:=Current.Size;
+    Updated.Pitch:=Current.Pitch;
+    Updated.Format:=Current.Format;
+    Updated.CursorX:=Current.CursorX;
+    Updated.CursorY:=Current.CursorY;
+    Updated.CursorState:=Current.CursorState;
+
+    {Compare Properties}
+    if not CompareMem(@Current,@Updated,SizeOf(TFramebufferProperties)) then
+     begin
+      {Release Framebuffer}
+      Result:=FramebufferDeviceRelease(Framebuffer);
+      if Result <> ERROR_SUCCESS then Exit;
+
+      {Allocate Framebuffer}
+      Result:=FramebufferDeviceAllocate(Framebuffer,@Updated);
+      if Result <> ERROR_SUCCESS then Exit;
+     end;
+   finally
+    {Unlock Framebuffer}
+    MutexUnlock(Framebuffer.Lock);
+   end; 
   end;
 end;
 
@@ -2770,7 +2809,6 @@ begin
  {Check Interfaces}
  if not(Assigned(Framebuffer.DeviceAllocate)) then Exit;
  if not(Assigned(Framebuffer.DeviceRelease)) then Exit;
- if not(Assigned(Framebuffer.DeviceSetProperties)) then Exit;
  
  {Check Framebuffer}
  Result:=ERROR_ALREADY_EXISTS;

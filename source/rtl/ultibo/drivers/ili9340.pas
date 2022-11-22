@@ -1,7 +1,7 @@
 {
 ILITEK ILI9340 TFT LCD Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -266,7 +266,6 @@ begin
    ILI9340Framebuffer.TFT.Framebuffer.DeviceMark:=TFTFramebufferMark;
    ILI9340Framebuffer.TFT.Framebuffer.DeviceCommit:=TFTFramebufferCommit;
    ILI9340Framebuffer.TFT.Framebuffer.DeviceSetBacklight:=ILI9340FramebufferSetBacklight;
-   ILI9340Framebuffer.TFT.Framebuffer.DeviceSetProperties:=TFTFramebufferSetProperties;
    {TFT}
    ILI9340Framebuffer.TFT.SPI:=SPI;
    ILI9340Framebuffer.TFT.ChipSelect:=ChipSelect;

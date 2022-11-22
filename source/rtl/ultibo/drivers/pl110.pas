@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL110 Color LCD Controller Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -233,8 +233,6 @@ function PL110FramebufferCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;S
 
 function PL110FramebufferSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
 
-function PL110FramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
-
 {==============================================================================}
 {PL110 Helper Functions}
 
@@ -307,7 +305,6 @@ begin
    PL110Framebuffer.Framebuffer.DeviceRelease:=PL110FramebufferRelease;
    PL110Framebuffer.Framebuffer.DeviceBlank:=PL110FramebufferBlank;
    PL110Framebuffer.Framebuffer.DeviceCommit:=PL110FramebufferCommit;
-   PL110Framebuffer.Framebuffer.DeviceSetProperties:=PL110FramebufferSetProperties;
    PL110Framebuffer.Framebuffer.DeviceSetOffset:=PL110FramebufferSetOffset;
    {PL110}
    PL110Framebuffer.Mode:=PL110_MODE_VGA;
@@ -421,7 +418,6 @@ begin
    PL110Framebuffer.Framebuffer.DeviceRelease:=PL110FramebufferRelease;
    PL110Framebuffer.Framebuffer.DeviceBlank:=PL110FramebufferBlank;
    PL110Framebuffer.Framebuffer.DeviceCommit:=PL110FramebufferCommit;
-   PL110Framebuffer.Framebuffer.DeviceSetProperties:=PL110FramebufferSetProperties;
    PL110Framebuffer.Framebuffer.DeviceSetOffset:=PL110FramebufferSetOffset;
    {PL110}
    PL110Framebuffer.Mode:=PL110_MODE_SVGA;
@@ -1040,41 +1036,6 @@ begin
      begin
       Framebuffer.OffsetY:=Y;
      end; 
-    
-    {Return Result}
-    Result:=ERROR_SUCCESS;
-   finally
-    MutexUnlock(Framebuffer.Lock);
-   end; 
-  end
- else
-  begin
-   Result:=ERROR_CAN_NOT_COMPLETE;
-  end;
-end;
- 
-{==============================================================================}
-
-function PL110FramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
-{Implementation of FramebufferDeviceSetProperties API for PL110 Framebuffer}
-{Note: Not intended to be called directly by applications, use FramebufferDeviceSetProperties instead}
-begin
- {}
- Result:=ERROR_INVALID_PARAMETER;
- 
- {Check Framebuffer}
- if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
- {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'PL110: Framebuffer Set Properties');
- {$ENDIF}
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
-  begin
-   try
- 
-    //To Do //Check Properties against current, modify if possible, otherwise reallocate ? (and Notify Resize)
     
     {Return Result}
     Result:=ERROR_SUCCESS;

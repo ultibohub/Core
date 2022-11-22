@@ -236,8 +236,6 @@ function RPiSenseFramebufferCommit(Framebuffer:PFramebufferDevice;Address:PtrUIn
 
 function RPiSenseFramebufferSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
 
-function RPiSenseFramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
-
 function RPiSenseFramebufferGetGamma(Framebuffer:PFramebufferDevice;var Gamma:TRPiSenseGamma):LongWord;
 function RPiSenseFramebufferSetGamma(Framebuffer:PFramebufferDevice;const Gamma:TRPiSenseGamma):LongWord;
 function RPiSenseFramebufferResetGamma(Framebuffer:PFramebufferDevice;Value:LongWord):LongWord;
@@ -537,7 +535,6 @@ begin
    RPiSenseFramebuffer.Framebuffer.DeviceMark:=RPiSenseFramebufferMark;
    RPiSenseFramebuffer.Framebuffer.DeviceCommit:=RPiSenseFramebufferCommit;
    RPiSenseFramebuffer.Framebuffer.DeviceSetOffset:=RPiSenseFramebufferSetOffset;
-   RPiSenseFramebuffer.Framebuffer.DeviceSetProperties:=RPiSenseFramebufferSetProperties;
    {RPiSenseHat}
    RPiSenseFramebuffer.I2C:=I2C;
    RPiSenseFramebuffer.Width:=Width;
@@ -1129,41 +1126,6 @@ begin
     
     {Mark Update}
     Result:=FramebufferDeviceMark(Framebuffer,0,0,Framebuffer.PhysicalWidth,Framebuffer.PhysicalHeight,FRAMEBUFFER_TRANSFER_NONE);
-   finally
-    MutexUnlock(Framebuffer.Lock);
-   end; 
-  end
- else
-  begin
-   Result:=ERROR_CAN_NOT_COMPLETE;
-  end;
-end;
-
-{==============================================================================}
-
-function RPiSenseFramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
-{Implementation of FramebufferDeviceSetProperties API for RPiSenseHat Framebuffer}
-{Note: Not intended to be called directly by applications, use FramebufferDeviceSetProperties instead}
-begin
- {}
- Result:=ERROR_INVALID_PARAMETER;
- 
- {Check Framebuffer}
- if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
- {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Framebuffer Set Properties');
- {$ENDIF}
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
-  begin
-   try
- 
-    //To Do //Check Properties against current, modify if possible, otherwise reallocate ? (and Notify Resize)
-    
-    {Return Result}
-    Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Framebuffer.Lock);
    end; 

@@ -1,7 +1,7 @@
 {
 Ultibo TFT Framebuffer driver library unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -123,8 +123,6 @@ function TFTFramebufferRelease(Framebuffer:PFramebufferDevice):LongWord;
 
 function TFTFramebufferMark(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Flags:LongWord):LongWord;
 function TFTFramebufferCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
-
-function TFTFramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 
 procedure TFTFramebufferUpdateDisplay(Framebuffer:PTFTFramebuffer);
 
@@ -478,41 +476,6 @@ begin
  
  {Return Result}
  Result:=ERROR_SUCCESS;
-end;
-
-{==============================================================================}
-
-function TFTFramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
-{Implementation of FramebufferDeviceSetProperties API for TFT Framebuffer}
-{Note: Not intended to be called directly by applications, use FramebufferDeviceSetProperties instead}
-begin
- {}
- Result:=ERROR_INVALID_PARAMETER;
-
- {Check Framebuffer}
- if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
- {$IFDEF FRAMEBUFFER_DEBUG}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'TFT Framebuffer Set Properties');
- {$ENDIF}
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
-  begin
-   try
- 
-    //To Do //Check Properties against current, modify if possible, otherwise reallocate ? (and Notify Resize)
-    
-    {Return Result}
-    Result:=ERROR_SUCCESS;
-   finally
-    MutexUnlock(Framebuffer.Lock);
-   end; 
-  end
- else
-  begin
-   Result:=ERROR_CAN_NOT_COMPLETE;
-  end;
 end;
 
 {==============================================================================}

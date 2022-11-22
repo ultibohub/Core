@@ -344,8 +344,6 @@ function QEMUVPBFramebufferDeviceRelease(Framebuffer:PFramebufferDevice):LongWor
 function QEMUVPBFramebufferDeviceBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
 
 function QEMUVPBFramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
-
-function QEMUVPBFramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 {$ENDIF}
 {==============================================================================}
 {QEMUVPB Helper Functions}
@@ -877,7 +875,6 @@ begin
    PL110Framebuffer.Framebuffer.DeviceRelease:=QEMUVPBFramebufferDeviceRelease;
    PL110Framebuffer.Framebuffer.DeviceBlank:=QEMUVPBFramebufferDeviceBlank;
    PL110Framebuffer.Framebuffer.DeviceCommit:=QEMUVPBFramebufferDeviceCommit;
-   PL110Framebuffer.Framebuffer.DeviceSetProperties:=QEMUVPBFramebufferDeviceSetProperties;
    {PL110}
    PL110Framebuffer.Mode:=PL110_MODE_SVGA;
    PL110Framebuffer.Depth:=FRAMEBUFFER_DEFAULT_DEPTH;
@@ -2360,41 +2357,6 @@ begin
  
  {Return Result}
  Result:=ERROR_SUCCESS;
-end;
-
-{==============================================================================}
-
-function QEMUVPBFramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
-{Implementation of FramebufferDeviceSetProperties API for PL110 Framebuffer}
-{Note: Not intended to be called directly by applications, use FramebufferDeviceSetProperties instead}
-begin
- {}
- Result:=ERROR_INVALID_PARAMETER;
- 
- {Check Framebuffer}
- if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
- {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
- if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'QEMUVPB: Framebuffer Set Properties');
- {$ENDIF}
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
-  begin
-   try
- 
-    //To Do //Check Properties against current, modify if possible, otherwise reallocate ? (and Notify Resize)
-    
-    {Return Result}
-    Result:=ERROR_SUCCESS;
-   finally
-    MutexUnlock(Framebuffer.Lock);
-   end; 
-  end
- else
-  begin
-   Result:=ERROR_CAN_NOT_COMPLETE;
-  end;
 end;
 {$ENDIF}
 {==============================================================================}

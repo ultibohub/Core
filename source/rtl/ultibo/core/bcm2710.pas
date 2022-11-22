@@ -1086,8 +1086,6 @@ function BCM2710FramebufferSetBacklight(Framebuffer:PFramebufferDevice;Brightnes
 function BCM2710FramebufferSetCursor(Framebuffer:PFramebufferDevice;Width,Height,HotspotX,HotspotY:LongWord;Image:Pointer;Len:LongWord):LongWord;
 function BCM2710FramebufferUpdateCursor(Framebuffer:PFramebufferDevice;Enabled:Boolean;X,Y:LongInt;Relative:Boolean):LongWord;
 
-function BCM2710FramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
-
 {==============================================================================}
 {BCM2710 Helper Functions}
 function BCM2710SPIGetDescription(Id:LongWord):String;
@@ -2176,7 +2174,6 @@ begin
          BCM2710Framebuffer.Framebuffer.DeviceSetBacklight:=BCM2710FramebufferSetBacklight;
          if not EMULATOR_MODE then BCM2710Framebuffer.Framebuffer.DeviceSetCursor:=BCM2710FramebufferSetCursor;
          if not EMULATOR_MODE then BCM2710Framebuffer.Framebuffer.DeviceUpdateCursor:=BCM2710FramebufferUpdateCursor;
-         BCM2710Framebuffer.Framebuffer.DeviceSetProperties:=BCM2710FramebufferSetProperties;
          {Driver}
          BCM2710Framebuffer.MultiDisplay:=MultiDisplay;
          BCM2710Framebuffer.DisplayNum:=DisplayNum;
@@ -11341,49 +11338,6 @@ begin
     
     {Update Cursor}
     Result:=CursorSetState(Enabled,X,Y,Relative);
-   finally
-    {Set Default Display}
-    if PBCM2710Framebuffer(Framebuffer).MultiDisplay then
-     begin
-      FramebufferSetDisplayNum(0);
-     end;
-     
-    MutexUnlock(Framebuffer.Lock);
-   end; 
-  end
- else
-  begin
-   Result:=ERROR_CAN_NOT_COMPLETE;
-  end;
-end;
-
-{==============================================================================}
-
-function BCM2710FramebufferSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
-{Implementation of FramebufferDeviceSetProperties API for BCM2710 Framebuffer}
-{Note: Not intended to be called directly by applications, use FramebufferDeviceSetProperties instead}
-begin
- {}
- Result:=ERROR_INVALID_PARAMETER;
- 
- {Check Properties}
- if Properties = nil then Exit;
- 
- {Check Framebuffer}
- if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
-  begin
-   {Set Current Display}
-   if PBCM2710Framebuffer(Framebuffer).MultiDisplay then
-    begin
-     FramebufferSetDisplayNum(PBCM2710Framebuffer(Framebuffer).DisplayNum);
-    end;
-   try
-    
-    //To Do //Check Properties against current, modify if possible, otherwise reallocate ? (and Notify Resize)
-    
    finally
     {Set Default Display}
     if PBCM2710Framebuffer(Framebuffer).MultiDisplay then

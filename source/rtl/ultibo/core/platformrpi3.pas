@@ -454,8 +454,6 @@ function RPi3FramebufferDeviceBlank(Framebuffer:PFramebufferDevice;Blank:Boolean
 function RPi3FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 
 function RPi3FramebufferDeviceSetBacklight(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
-
-function RPi3FramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
 {$ENDIF}
 {==============================================================================}
 {RPi3 Helper Functions}
@@ -1939,7 +1937,6 @@ begin
      RPi3Framebuffer.Framebuffer.DeviceBlank:=RPi3FramebufferDeviceBlank;
      RPi3Framebuffer.Framebuffer.DeviceCommit:=RPi3FramebufferDeviceCommit;
      RPi3Framebuffer.Framebuffer.DeviceSetBacklight:=RPi3FramebufferDeviceSetBacklight;
-     RPi3Framebuffer.Framebuffer.DeviceSetProperties:=RPi3FramebufferDeviceSetProperties;
      {Driver}
      RPi3Framebuffer.MultiDisplay:=MultiDisplay;
      RPi3Framebuffer.DisplayNum:=DisplayNum;
@@ -9344,46 +9341,6 @@ begin
    end;
  end; 
 end; 
-   
-{==============================================================================}
-
-function RPi3FramebufferDeviceSetProperties(Framebuffer:PFramebufferDevice;Properties:PFramebufferProperties):LongWord;
-begin
- {}
- Result:=ERROR_INVALID_PARAMETER;
- 
- {Check Properties}
- if Properties = nil then Exit;
- 
- {Check Framebuffer}
- if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
-  begin
-   {Set Current Display}
-   if PRPi3Framebuffer(Framebuffer).MultiDisplay then
-    begin
-     FramebufferSetDisplayNum(PRPi3Framebuffer(Framebuffer).DisplayNum);
-    end;
-   try
-    {Not Supported}
-    Result:=ERROR_NOT_SUPPORTED;
-   finally
-    {Set Default Display}
-    if PRPi3Framebuffer(Framebuffer).MultiDisplay then
-     begin
-      FramebufferSetDisplayNum(0);
-     end;
-     
-    MutexUnlock(Framebuffer.Lock);
-   end; 
-  end
- else
-  begin
-   Result:=ERROR_CAN_NOT_COMPLETE;
-  end;
-end;
 {$ENDIF}
 {==============================================================================}
 {==============================================================================}
