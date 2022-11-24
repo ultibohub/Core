@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '23 November 2022';
+ ULTIBO_RELEASE_DATE             = '24 November 2022';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.5.279';
+ ULTIBO_RELEASE_VERSION          = '2.5.281';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 5;
- ULTIBO_RELEASE_VERSION_REVISION = 279;
+ ULTIBO_RELEASE_VERSION_REVISION = 281;
  
  FPC_COMPILER_VERSION = {$I %FPCVERSION%}; {The version of FPC used to compile the RTL}
  
@@ -1327,52 +1327,54 @@ const
  DMA_DIR_DEV_TO_DEV = 4;
  
  {DMA DREQ ID constants (Where applicable)}
- DMA_DREQ_ID_NONE         = 0;  {No peripheral gating (memory to memory transfer)}
- DMA_DREQ_ID_UART_TX      = 1;
- DMA_DREQ_ID_UART_RX      = 2;
- DMA_DREQ_ID_SPI_TX       = 3;
- DMA_DREQ_ID_SPI_RX       = 4;
- DMA_DREQ_ID_SPI_SLAVE_TX = 5;
- DMA_DREQ_ID_SPI_SLAVE_RX = 6;
- DMA_DREQ_ID_PCM_TX       = 7;
- DMA_DREQ_ID_PCM_RX       = 8;
- DMA_DREQ_ID_PWM          = 9;
- DMA_DREQ_ID_MMC          = 10;
- DMA_DREQ_ID_SDHOST       = 11;
+ DMA_DREQ_ID_NONE          = 0;  {No peripheral gating (memory to memory transfer)}
+ DMA_DREQ_ID_UART_TX       = 1;
+ DMA_DREQ_ID_UART_RX       = 2;
+ DMA_DREQ_ID_SPI_TX        = 3;
+ DMA_DREQ_ID_SPI_RX        = 4;
+ DMA_DREQ_ID_SPI_SLAVE_TX  = 5;
+ DMA_DREQ_ID_SPI_SLAVE_RX  = 6;
+ DMA_DREQ_ID_PCM_TX        = 7;
+ DMA_DREQ_ID_PCM_RX        = 8;
+ DMA_DREQ_ID_PWM           = 9;
+ DMA_DREQ_ID_MMC           = 10;
+ DMA_DREQ_ID_SDHOST        = 11;
  {Additional and aliased constants (Where applicable)}
- DMA_DREQ_ID_UART0_TX     = DMA_DREQ_ID_UART_TX;
- DMA_DREQ_ID_UART0_RX     = DMA_DREQ_ID_UART_RX;
- DMA_DREQ_ID_UART1_TX     = 12;
- DMA_DREQ_ID_UART1_RX     = 13;
- DMA_DREQ_ID_UART2_TX     = 14;
- DMA_DREQ_ID_UART2_RX     = 15;
- DMA_DREQ_ID_UART3_TX     = 16;
- DMA_DREQ_ID_UART3_RX     = 17;
- DMA_DREQ_ID_UART4_TX     = 18;
- DMA_DREQ_ID_UART4_RX     = 19;
- DMA_DREQ_ID_UART5_TX     = 20;
- DMA_DREQ_ID_UART5_RX     = 21;
- DMA_DREQ_ID_SPI0_TX      = DMA_DREQ_ID_SPI_TX;
- DMA_DREQ_ID_SPI0_RX      = DMA_DREQ_ID_SPI_RX;
- DMA_DREQ_ID_SPI1_TX      = 22;
- DMA_DREQ_ID_SPI1_RX      = 23;
- DMA_DREQ_ID_SPI2_TX      = 24;
- DMA_DREQ_ID_SPI2_RX      = 25;
- DMA_DREQ_ID_SPI3_TX      = 26;
- DMA_DREQ_ID_SPI3_RX      = 27;
- DMA_DREQ_ID_SPI4_TX      = 28;
- DMA_DREQ_ID_SPI4_RX      = 29;
- DMA_DREQ_ID_SPI5_TX      = 30;
- DMA_DREQ_ID_SPI5_RX      = 31;
- DMA_DREQ_ID_SPI6_TX      = 32;
- DMA_DREQ_ID_SPI6_RX      = 33;
- DMA_DREQ_ID_PCM0_TX      = DMA_DREQ_ID_PCM_TX;
- DMA_DREQ_ID_PCM0_RX      = DMA_DREQ_ID_PCM_RX;
- DMA_DREQ_ID_PWM0         = DMA_DREQ_ID_PWM;
- DMA_DREQ_ID_PWM1         = 34;
- DMA_DREQ_ID_EMMC0        = DMA_DREQ_ID_MMC;
- DMA_DREQ_ID_EMMC1        = DMA_DREQ_ID_SDHOST;
- DMA_DREQ_ID_EMMC2        = 35;
+ DMA_DREQ_ID_UART0_TX      = DMA_DREQ_ID_UART_TX;
+ DMA_DREQ_ID_UART0_RX      = DMA_DREQ_ID_UART_RX;
+ DMA_DREQ_ID_UART1_TX      = 12;
+ DMA_DREQ_ID_UART1_RX      = 13;
+ DMA_DREQ_ID_UART2_TX      = 14;
+ DMA_DREQ_ID_UART2_RX      = 15;
+ DMA_DREQ_ID_UART3_TX      = 16;
+ DMA_DREQ_ID_UART3_RX      = 17;
+ DMA_DREQ_ID_UART4_TX      = 18;
+ DMA_DREQ_ID_UART4_RX      = 19;
+ DMA_DREQ_ID_UART5_TX      = 20;
+ DMA_DREQ_ID_UART5_RX      = 21;
+ DMA_DREQ_ID_SPI0_TX       = DMA_DREQ_ID_SPI_TX;
+ DMA_DREQ_ID_SPI0_RX       = DMA_DREQ_ID_SPI_RX;
+ DMA_DREQ_ID_SPI1_TX       = 22;
+ DMA_DREQ_ID_SPI1_RX       = 23;
+ DMA_DREQ_ID_SPI2_TX       = 24;
+ DMA_DREQ_ID_SPI2_RX       = 25;
+ DMA_DREQ_ID_SPI3_TX       = 26;
+ DMA_DREQ_ID_SPI3_RX       = 27;
+ DMA_DREQ_ID_SPI4_TX       = 28;
+ DMA_DREQ_ID_SPI4_RX       = 29;
+ DMA_DREQ_ID_SPI5_TX       = 30;
+ DMA_DREQ_ID_SPI5_RX       = 31;
+ DMA_DREQ_ID_SPI6_TX       = 32;
+ DMA_DREQ_ID_SPI6_RX       = 33;
+ DMA_DREQ_ID_SPI_SLAVE0_TX = DMA_DREQ_ID_SPI_SLAVE_TX;
+ DMA_DREQ_ID_SPI_SLAVE0_RX = DMA_DREQ_ID_SPI_SLAVE_RX;
+ DMA_DREQ_ID_PCM0_TX       = DMA_DREQ_ID_PCM_TX;
+ DMA_DREQ_ID_PCM0_RX       = DMA_DREQ_ID_PCM_RX;
+ DMA_DREQ_ID_PWM0          = DMA_DREQ_ID_PWM;
+ DMA_DREQ_ID_PWM1          = 34;
+ DMA_DREQ_ID_EMMC0         = DMA_DREQ_ID_MMC;
+ DMA_DREQ_ID_EMMC1         = DMA_DREQ_ID_SDHOST;
+ DMA_DREQ_ID_EMMC2         = 35;
  
 {==============================================================================}
 const

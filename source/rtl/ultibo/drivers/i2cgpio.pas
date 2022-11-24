@@ -240,8 +240,8 @@ begin
    {Update I2C}
    {Device}
    I2CGPIODevice.I2C.Device.DeviceBus:=DEVICE_BUS_MMIO;
-   I2CGPIODevice.I2C.Device.DeviceType:=I2C_TYPE_NONE;
-   I2CGPIODevice.I2C.Device.DeviceFlags:=I2C_FLAG_10BIT;
+   I2CGPIODevice.I2C.Device.DeviceType:=I2C_TYPE_MASTER;
+   I2CGPIODevice.I2C.Device.DeviceFlags:=I2CGPIODevice.I2C.Device.DeviceFlags or I2C_FLAG_10BIT; {Don't override defaults}
    I2CGPIODevice.I2C.Device.DeviceData:=nil;
    I2CGPIODevice.I2C.Device.DeviceDescription:=I2CGPIO_I2C_DESCRIPTION;
    {I2C}

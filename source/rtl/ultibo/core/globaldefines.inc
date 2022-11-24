@@ -439,6 +439,11 @@ Global Defines
 {$DEFINE BCM2710_UART0_RX_BUFFER}   {Enable receive buffering for BCM2710 UART0 (Default: On)}
 {$DEFINE BCM2711_UART0_RX_BUFFER}   {Enable receive buffering for BCM2711 UART0 (Default: On)}
 
+{-$DEFINE BCM2708_I2CSLAVE_TX_BUFFER} {Enable transmit buffering for BCM2708 I2C Slave (Default: Off)}
+{-$DEFINE BCM2709_I2CSLAVE_TX_BUFFER} {Enable transmit buffering for BCM2709 I2C Slave (Default: Off)}
+{-$DEFINE BCM2710_I2CSLAVE_TX_BUFFER} {Enable transmit buffering for BCM2710 I2C Slave (Default: Off)}
+{-$DEFINE BCM2711_I2CSLAVE_TX_BUFFER} {Enable transmit buffering for BCM2711 I2C Slave (Default: Off)}
+
 {--$DEFINE RPI2_CLOCK_SYSTEM_TIMER} {Use the System Timer for the Clock instead of the Virtual Timer on the RPi2 (Default: Off)}
 {--$DEFINE RPI3_CLOCK_SYSTEM_TIMER} {Use the System Timer for the Clock instead of the Virtual Timer on the RPi3 (Default: Off)}
 {--$DEFINE RPI4_CLOCK_SYSTEM_TIMER} {Use the System Timer for the Clock instead of the Virtual Timer on the RPi4 (Default: Off)}

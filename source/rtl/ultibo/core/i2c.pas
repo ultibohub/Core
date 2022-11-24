@@ -81,16 +81,21 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
 {==============================================================================}
 const
  {I2C specific constants}
- I2C_NAME_PREFIX = 'I2C';  {Name prefix for I2C Devices}
+ I2C_NAME_PREFIX = 'I2C';            {Name prefix for I2C Devices}
+ I2CSLAVE_NAME_PREFIX = 'I2CSlave';  {Name prefix for I2C Slave Devices}
 
  {I2C Device Types}
  I2C_TYPE_NONE      = 0;
+ I2C_TYPE_MASTER    = 1;
+ I2C_TYPE_SLAVE     = 2;
  
- I2C_TYPE_MAX       = 0;
+ I2C_TYPE_MAX       = 2;
   
  {I2C Type Names}
  I2C_TYPE_NAMES:array[I2C_TYPE_NONE..I2C_TYPE_MAX] of String = (
-  'I2C_TYPE_NONE');
+  'I2C_TYPE_NONE',
+  'I2C_TYPE_MASTER',
+  'I2C_TYPE_SLAVE');
  
  {I2C Device States}
  I2C_STATE_DISABLED = 0;
@@ -238,6 +243,30 @@ function I2CDeviceEnumerate(Callback:TI2CEnumerate;Data:Pointer):LongWord;
 function I2CDeviceNotification(I2C:PI2CDevice;Callback:TI2CNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
 
 {==============================================================================}
+{I2C Slave Functions}
+function I2CSlaveStart(I2C:PI2CDevice):LongWord; inline;
+function I2CSlaveStop(I2C:PI2CDevice):LongWord; inline;
+
+function I2CSlaveRead(I2C:PI2CDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+function I2CSlaveWrite(I2C:PI2CDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+
+function I2CSlaveGetAddress(I2C:PI2CDevice):Word; inline;
+function I2CSlaveSetAddress(I2C:PI2CDevice;Address:Word):LongWord; inline;
+
+function I2CSlaveGetProperties(I2C:PI2CDevice;Properties:PI2CProperties):LongWord; inline;
+
+function I2CSlaveCreate:PI2CDevice;
+function I2CSlaveCreateEx(Size:LongWord):PI2CDevice;
+function I2CSlaveDestroy(I2C:PI2CDevice):LongWord; inline;
+
+function I2CSlaveRegister(I2C:PI2CDevice):LongWord; inline;
+function I2CSlaveDeregister(I2C:PI2CDevice):LongWord; inline;
+
+function I2CSlaveFind(I2CId:LongWord):PI2CDevice;
+function I2CSlaveFindByName(const Name:String):PI2CDevice; inline;
+function I2CSlaveFindByDescription(const Description:String):PI2CDevice; inline;
+
+{==============================================================================}
 {RTL I2C Functions}
 function SysI2CAvailable:Boolean; 
  
@@ -262,6 +291,8 @@ function I2CDeviceGetDefault:PI2CDevice; inline;
 function I2CDeviceSetDefault(I2C:PI2CDevice):LongWord; 
 
 function I2CDeviceCheck(I2C:PI2CDevice):PI2CDevice;
+
+function I2CDeviceIsSlave(I2C:PI2CDevice):Boolean;
 
 function I2CTypeToString(I2CType:LongWord):String;
 function I2CStateToString(I2CState:LongWord):String;
@@ -582,6 +613,9 @@ begin
  Result:=ERROR_NOT_SUPPORTED;
  if I2C.I2CState <> I2C_STATE_ENABLED then Exit;
  
+ {Check Slave}
+ if (I2C.Device.DeviceFlags and I2C_FLAG_SLAVE) <> 0 then Exit;
+
  if MutexLock(I2C.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(I2C.DeviceWriteRead) then
@@ -653,6 +687,9 @@ begin
  Result:=ERROR_NOT_SUPPORTED;
  if I2C.I2CState <> I2C_STATE_ENABLED then Exit;
  
+ {Check Slave}
+ if (I2C.Device.DeviceFlags and I2C_FLAG_SLAVE) <> 0 then Exit;
+
  if MutexLock(I2C.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(I2C.DeviceWriteWrite) then
@@ -694,6 +731,9 @@ begin
  {Check Enabled}
  {if I2C.I2CState <> I2C_STATE_ENABLED then Exit;} {Allow when disabled}
  
+ {Check Slave}
+ if (I2C.Device.DeviceFlags and I2C_FLAG_SLAVE) <> 0 then Exit;
+
  if MutexLock(I2C.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(I2C.DeviceGetRate) then
@@ -731,9 +771,12 @@ begin
  {$ENDIF}
  
  {Check Enabled}
- {Result:=ERROR_NOT_SUPPORTED;}
+ Result:=ERROR_NOT_SUPPORTED;
  {if I2C.I2CState <> I2C_STATE_ENABLED then Exit;} {Allow when disabled}
  
+ {Check Slave}
+ if (I2C.Device.DeviceFlags and I2C_FLAG_SLAVE) <> 0 then Exit;
+
  if MutexLock(I2C.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -946,7 +989,7 @@ begin
  
  {Update Device}
  Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
- Result.Device.DeviceType:=I2C_TYPE_NONE;
+ Result.Device.DeviceType:=I2C_TYPE_MASTER;
  Result.Device.DeviceFlags:=I2C_FLAG_NONE;
  Result.Device.DeviceData:=nil;
 
@@ -982,6 +1025,8 @@ end;
 
 function I2CDeviceDestroy(I2C:PI2CDevice):LongWord;
 {Destroy an existing I2C entry}
+{I2C: The I2C device to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1011,7 +1056,10 @@ end;
 
 function I2CDeviceRegister(I2C:PI2CDevice):LongWord;
 {Register a new I2C in the I2C table}
+{I2C: The I2C device to register}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
+ Slave:Boolean;
  I2CId:LongWord;
 begin
  {}
@@ -1039,18 +1087,37 @@ begin
  if CriticalSectionLock(I2CDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
-    {Update I2C}
-    I2CId:=0;
-    while I2CDeviceFind(I2CId) <> nil do
+    {Check Slave}
+    Slave:=(I2C.Device.DeviceFlags and I2C_FLAG_SLAVE) <> 0;
+    if not Slave then
      begin
-      Inc(I2CId);
+      {Update I2C}
+      I2CId:=0;
+      while I2CDeviceFind(I2CId) <> nil do
+       begin
+        Inc(I2CId);
+       end;
+      I2C.I2CId:=I2CId;
+
+      {Update Device}
+      I2C.Device.DeviceName:=I2C_NAME_PREFIX + IntToStr(I2C.I2CId); 
+      I2C.Device.DeviceClass:=DEVICE_CLASS_I2C;
+     end
+    else
+     begin
+      {Update I2C}
+      I2CId:=0;
+      while I2CSlaveFind(I2CId) <> nil do
+       begin
+        Inc(I2CId);
+       end;
+      I2C.I2CId:=I2CId;
+
+      {Update Device}
+      I2C.Device.DeviceName:=I2CSLAVE_NAME_PREFIX + IntToStr(I2C.I2CId); 
+      I2C.Device.DeviceClass:=DEVICE_CLASS_I2C;
      end;
-    I2C.I2CId:=I2CId;
-    
-    {Update Device}
-    I2C.Device.DeviceName:=I2C_NAME_PREFIX + IntToStr(I2C.I2CId); 
-    I2C.Device.DeviceClass:=DEVICE_CLASS_I2C;
-    
+
     {Register Device}
     Result:=DeviceRegister(@I2C.Device);
     if Result <> ERROR_SUCCESS then
@@ -1075,7 +1142,7 @@ begin
     Inc(I2CDeviceTableCount);
     
     {Check Default}
-    if I2CDeviceDefault = nil then
+    if not(Slave) and (I2CDeviceDefault = nil) then
      begin
       I2CDeviceDefault:=I2C;
      end;
@@ -1095,7 +1162,9 @@ end;
 {==============================================================================}
 
 function I2CDeviceDeregister(I2C:PI2CDevice):LongWord;
-{Deregister a I2C from the I2C table}
+{Deregister an I2C from the I2C table}
+{I2C: The I2C device to deregister}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Prev:PI2CDevice;
  Next:PI2CDevice;
@@ -1170,6 +1239,9 @@ end;
 {==============================================================================}
 
 function I2CDeviceFind(I2CId:LongWord):PI2CDevice;
+{Find an I2C device by ID in the I2C table}
+{I2CId: The ID number of the I2C device to find}
+{Return: Pointer to I2C device entry or nil if not found}
 var
  I2C:PI2CDevice;
 begin
@@ -1190,13 +1262,17 @@ begin
       {Check State}
       if I2C.Device.DeviceState = DEVICE_STATE_REGISTERED then
        begin
-        {Check Id}
-        if I2C.I2CId = I2CId then
+        {Check Master}
+        if (I2C.Device.DeviceFlags and I2C_FLAG_SLAVE) = 0 then
          begin
-          Result:=I2C;
-          Exit;
+          {Check Id}
+          if I2C.I2CId = I2CId then
+           begin
+            Result:=I2C;
+            Exit;
+           end;
          end;
-       end;
+        end; 
        
       {Get Next}
       I2C:=I2C.Next;
@@ -1211,6 +1287,9 @@ end;
 {==============================================================================}
      
 function I2CDeviceFindByName(const Name:String):PI2CDevice; inline;
+{Find an I2C device by name in the device table}
+{Name: The name of the I2C device to find (eg I2C0)}
+{Return: Pointer to I2C device entry or nil if not found}
 begin
  {}
  Result:=PI2CDevice(DeviceFindByName(Name));
@@ -1219,6 +1298,9 @@ end;
 {==============================================================================}
 
 function I2CDeviceFindByDescription(const Description:String):PI2CDevice; inline;
+{Find an I2C device by description in the device table}
+{Description: The description of the I2C to find (eg BCM2837 BSC1 Master I2C)}
+{Return: Pointer to I2C device entry or nil if not found}
 begin
  {}
  Result:=PI2CDevice(DeviceFindByDescription(Description));
@@ -1227,6 +1309,10 @@ end;
 {==============================================================================}
 
 function I2CDeviceEnumerate(Callback:TI2CEnumerate;Data:Pointer):LongWord;
+{Enumerate all I2C devices in the I2C table}
+{Callback: The callback function to call for each I2C device in the table}
+{Data: A private data pointer to pass to callback for each I2C device in the table}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  I2C:PI2CDevice;
 begin
@@ -1270,6 +1356,12 @@ end;
 {==============================================================================}
 
 function I2CDeviceNotification(I2C:PI2CDevice;Callback:TI2CNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
+{Register a notification for I2C device changes}
+{Device: The I2C device to notify changes for (Optional, pass nil for all I2C devices)}
+{Callback: The function to call when a notification event occurs}
+{Data: A private data pointer to pass to callback when a notification event occurs}
+{Notification: The events to register for notification of (eg DEVICE_NOTIFICATION_REGISTER)}
+{Flags: The flags to control the notification (eg NOTIFIER_FLAG_WORKER)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1286,6 +1378,222 @@ begin
 
    Result:=DeviceNotification(@I2C.Device,DEVICE_CLASS_I2C,Callback,Data,Notification,Flags);
   end; 
+end;
+
+{==============================================================================}
+{==============================================================================}
+{I2C Slave Functions}
+function I2CSlaveStart(I2C:PI2CDevice):LongWord; inline;
+{Start the specified I2C slave ready for reading and writing}
+{I2C: The I2C slave to start}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceStart(I2C,0);
+end;
+
+{==============================================================================}
+
+function I2CSlaveStop(I2C:PI2CDevice):LongWord; inline;
+{Stop the specified I2C slave and terminate reading and writing}
+{I2C: The I2C slave to stop}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceStop(I2C);
+end;
+
+{==============================================================================}
+
+function I2CSlaveRead(I2C:PI2CDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+{Read data from the specified I2C slave}
+{I2C: The I2C slave to read from}
+{Buffer: Pointer to a buffer to receive the data}
+{Size: The size of the buffer}
+{Count: The number of bytes read on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceRead(I2C,I2C_ADDRESS_INVALID,Buffer,Size,Count);
+end;
+
+{==============================================================================}
+
+function I2CSlaveWrite(I2C:PI2CDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+{Write data to the specified I2C slave}
+{I2C: The I2C slave to write to}
+{Buffer: Pointer to a buffer of data to transmit}
+{Size: The size of the buffer}
+{Count: The number of bytes written on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceWrite(I2C,I2C_ADDRESS_INVALID,Buffer,Size,Count);
+end;
+
+{==============================================================================}
+
+function I2CSlaveGetAddress(I2C:PI2CDevice):Word; inline;
+{Get the address for the specified I2C slave}
+{I2C: The I2C slave to get the address from}
+{Return: The address or I2C_ADDRESS_INVALID on failure}
+begin
+ {}
+ Result:=I2CDeviceGetAddress(I2C);
+end;
+
+{==============================================================================}
+
+function I2CSlaveSetAddress(I2C:PI2CDevice;Address:Word):LongWord; inline;
+{Set the address for the specified I2C slave}
+{I2C: The I2C slave to set the address for}
+{Address: The address to set}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceSetAddress(I2C,Address);
+end;
+
+{==============================================================================}
+
+function I2CSlaveGetProperties(I2C:PI2CDevice;Properties:PI2CProperties):LongWord; inline;
+{Get the properties for the specified I2C slave}
+{I2C: The I2C slave to get properties from}
+{Properties: Pointer to a TI2CProperties structure to fill in}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceGetProperties(I2C,Properties);
+end;
+
+{==============================================================================}
+
+function I2CSlaveCreate:PI2CDevice;
+{Create a new I2C slave entry}
+{Return: Pointer to new I2C slave entry or nil if I2C could not be created}
+begin
+ {}
+ Result:=I2CSlaveCreateEx(SizeOf(TI2CDevice));
+end;
+
+{==============================================================================}
+
+function I2CSlaveCreateEx(Size:LongWord):PI2CDevice;
+{Create a new I2C slave entry}
+{Size: Size in bytes to allocate for new I2C (Including the I2C slave entry)}
+{Return: Pointer to new I2C slave entry or nil if I2C could not be created}
+begin
+ {}
+ Result:=I2CDeviceCreateEx(Size);
+ if Result <> nil then
+  begin
+   {Update Device}
+   Result.Device.DeviceType:=I2C_TYPE_SLAVE;
+   Result.Device.DeviceFlags:=Result.Device.DeviceFlags or I2C_FLAG_SLAVE; {Don't override defaults}
+  end;
+end;
+
+{==============================================================================}
+
+function I2CSlaveDestroy(I2C:PI2CDevice):LongWord; inline;
+{Destroy an existing I2C slave entry}
+{I2C: The I2C slave to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceDestroy(I2C);
+end;
+
+{==============================================================================}
+
+function I2CSlaveRegister(I2C:PI2CDevice):LongWord; inline;
+{Register a new I2C slave in the I2C table}
+{I2C: The I2C slave to register}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceRegister(I2C);
+end;
+
+{==============================================================================}
+
+function I2CSlaveDeregister(I2C:PI2CDevice):LongWord; inline;
+{Deregister an I2C slave from the I2C table}
+{I2C: The I2C slave to deregister}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceDeregister(I2C);
+end;
+
+{==============================================================================}
+
+function I2CSlaveFind(I2CId:LongWord):PI2CDevice;
+{Find an I2C slave by ID in the I2C table}
+{I2CId: The ID number of the I2C slave to find}
+{Return: Pointer to I2C slave entry or nil if not found}
+var
+ I2C:PI2CDevice;
+begin
+ {}
+ Result:=nil;
+
+ {Check Id}
+ if I2CId = DEVICE_ID_ANY then Exit;
+
+ {Acquire the Lock}
+ if CriticalSectionLock(I2CDeviceTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get I2C}
+    I2C:=I2CDeviceTable;
+    while I2C <> nil do
+     begin
+      {Check State}
+      if I2C.Device.DeviceState = DEVICE_STATE_REGISTERED then
+       begin
+        {Check Slave}
+        if (I2C.Device.DeviceFlags and I2C_FLAG_SLAVE) <> 0 then
+         begin
+          {Check Id}
+          if I2C.I2CId = I2CId then
+           begin
+            Result:=I2C;
+            Exit;
+           end;
+         end;
+       end;  
+
+      {Get Next}
+      I2C:=I2C.Next;
+     end;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(I2CDeviceTableLock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function I2CSlaveFindByName(const Name:String):PI2CDevice; inline;
+{Find an I2C slave by name in the device table}
+{Name: The name of the I2C slave to find (eg I2CSlave0)}
+{Return: Pointer to I2C slave entry or nil if not found}
+begin
+ {}
+ Result:=PI2CDevice(DeviceFindByName(Name));
+end;
+
+{==============================================================================}
+
+function I2CSlaveFindByDescription(const Description:String):PI2CDevice; inline;
+{Find an I2C slave by description in the device table}
+{Description: The description of the I2C slave to find (eg BCM2837 I2C Slave)}
+{Return: Pointer to I2C slave entry or nil if not found}
+begin
+ {}
+ Result:=PI2CDevice(DeviceFindByDescription(Description));
 end;
 
 {==============================================================================}
@@ -1562,6 +1870,21 @@ begin
     CriticalSectionUnlock(I2CDeviceTableLock);
    end;
   end;
+end;
+
+{==============================================================================}
+
+function I2CDeviceIsSlave(I2C:PI2CDevice):Boolean;
+{Check if the supplied I2C is a slave device}
+begin
+ {}
+ Result:=False;
+
+ {Check I2C}
+ if I2C = nil then Exit;
+ if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ Result:=(I2C.Device.DeviceFlags and I2C_FLAG_SLAVE) <> 0;
 end;
 
 {==============================================================================}

@@ -153,7 +153,14 @@ BCM2710 SPI1/2 Device
 BCM2710 SPI/I2C Slave Device
 ============================
 
- 
+ The slave device can be used as either an I2C or an SPI interface, the I2C slave supports 400KHz fast mode
+ operation. Only 7 bit addressing is supported, DMA is not supported and neither is clock stretching.
+
+ Note: On the Raspberry Pi A+/B+/Zero/2B/3B the SPI slave device is apparently faulty and cannot be used.
+
+ The I2C Slave device can only appear on GPIO pins 18 (SDA) and 19 (SCL) (Alternate function 3).
+
+
 BCM2710 DMA Device
 ==================
 
@@ -405,6 +412,10 @@ const
  {BCM2710 I2C Slave constants}
  BCM2710_I2CSLAVE_DESCRIPTION = 'BCM2837 I2C Slave';
 
+ BCM2710_I2CSLAVE_TIMEOUT = 10;                  {Timeout (Milliseconds) for RX/TX wait data}
+ BCM2710_I2CSLAVE_BUFFER_SIZE = 1024;            {Size in bytes of the RX/TX data buffer}
+ BCM2710_I2CSLAVE_RX_POLL_LIMIT = 256;           {Number of times interrupt handler may poll the read FIFO}
+
  {BCM2710 SPI Slave constants}
  BCM2710_SPISLAVE_DESCRIPTION = 'BCM2837 SPI Slave';
  
@@ -654,7 +665,35 @@ type
  end;
  
  {BCM2710 SPI/I2C Slave types}
- 
+ PBCM2710I2CSlaveBuffer = ^TBCM2710I2CSlaveBuffer;
+ TBCM2710I2CSlaveBuffer = record
+  Wait:TSemaphoreHandle;           {Data ready semaphore}
+  Start:LongWord;                  {Index of first available buffer entry}
+  Count:LongWord;                  {Number of available entries in the buffer}
+  Buffer:array[0..(BCM2710_I2CSLAVE_BUFFER_SIZE - 1)] of Byte; 
+ end;
+
+ PBCM2710I2CSlave = ^TBCM2710I2CSlave;
+ TBCM2710I2CSlave = record
+  {I2C Properties}
+  I2C:TI2CDevice;
+  {BCM2710 Properties}
+  IRQ:LongWord;                    {IRQ of this device}
+  Address:Pointer;                 {Device register base address}
+  Lock:TSpinHandle;                {Device lock (Differs from lock in I2C device) (Spin lock due to use by interrupt handler)}
+  SDAPin:LongWord;                 {GPIO pin for the SDA line}
+  SCLPin:LongWord;                 {GPIO pin for the SCL line}                 
+  SDAFunction:LongWord;            {GPIO function for the SDA line}
+  SCLFunction:LongWord;            {GPIO function for the SCL line}
+  {Transfer Properties}
+  Receive:TBCM2710I2CSlaveBuffer;  {Receive Data Buffer}
+  {$IFDEF BCM2710_I2CSLAVE_TX_BUFFER}
+  Transmit:TBCM2710I2CSlaveBuffer; {Transmit Data Buffer}
+  {$ENDIF}
+  {Statistics Properties}
+  InterruptCount:LongWord;         {Number of interrupt requests received by the device}
+ end;
+
  {BCM2710 DMA types}
  PBCM2710DMAHost = ^TBCM2710DMAHost;
  
@@ -901,6 +940,13 @@ procedure BCM2710BSCI2CInterruptHandler(IRQData:PBCM2710BSCI2CIRQData);
 
 {==============================================================================}
 {BCM2710 SPI/I2C Slave Functions}
+function BCM2710I2CSlaveStart(I2C:PI2CDevice;Rate:LongWord):LongWord;
+function BCM2710I2CSlaveStop(I2C:PI2CDevice):LongWord;
+
+function BCM2710I2CSlaveRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function BCM2710I2CSlaveWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+
+function BCM2710I2CSlaveSetAddress(I2C:PI2CDevice;Address:Word):LongWord;
 
 {==============================================================================}
 {BCM2710 DMA Functions}
@@ -1106,6 +1152,16 @@ var
  BCM2710Initialized:Boolean;
 
  BCM2710BSCI2CIRQData:TBCM2710BSCI2CIRQData;
+
+{==============================================================================}
+{==============================================================================}
+{Forward Declarations}
+{$IFDEF BCM2710_I2CSLAVE_TX_BUFFER}
+procedure BCM2710I2CSlaveFillFIFO(I2C:PBCM2710I2CSlave); forward;
+{$ENDIF}
+procedure BCM2710I2CSlaveDrainFIFO(I2C:PBCM2710I2CSlave); forward;
+
+function BCM2710I2CSlaveInterruptHandler(Number,CPUID,Flags:LongWord;I2C:PBCM2710I2CSlave):LongWord;{$IFDEF i386} stdcall;{$ENDIF} forward;
  
 {==============================================================================}
 {==============================================================================}
@@ -1130,6 +1186,7 @@ var
  BCM2710PWM0:PBCM2710PWMDevice;
  BCM2710PWM1:PBCM2710PWMDevice;
  BCM2710UART0:PBCM2710UART0Device;
+ BCM2710I2CSlave:PBCM2710I2CSlave;
  
  BCM2710SystemClock:PBCM2710SystemClock;
  BCM2710ARMClock:PBCM2710ARMClock;
@@ -1454,8 +1511,8 @@ begin
      {Update I2C0}
      {Device}
      BCM2710I2C0.I2C.Device.DeviceBus:=DEVICE_BUS_MMIO;
-     BCM2710I2C0.I2C.Device.DeviceType:=I2C_TYPE_NONE;
-     BCM2710I2C0.I2C.Device.DeviceFlags:=I2C_FLAG_10BIT;
+     BCM2710I2C0.I2C.Device.DeviceType:=I2C_TYPE_MASTER;
+     BCM2710I2C0.I2C.Device.DeviceFlags:=BCM2710I2C0.I2C.Device.DeviceFlags or I2C_FLAG_10BIT; {Don't override defaults}
      BCM2710I2C0.I2C.Device.DeviceData:=nil;
      BCM2710I2C0.I2C.Device.DeviceDescription:=BCM2710_I2C0_DESCRIPTION;
      {I2C}
@@ -1510,8 +1567,8 @@ begin
      {Update I2C1}
      {Device}
      BCM2710I2C1.I2C.Device.DeviceBus:=DEVICE_BUS_MMIO;
-     BCM2710I2C1.I2C.Device.DeviceType:=I2C_TYPE_NONE;
-     BCM2710I2C1.I2C.Device.DeviceFlags:=I2C_FLAG_10BIT;
+     BCM2710I2C1.I2C.Device.DeviceType:=I2C_TYPE_MASTER;
+     BCM2710I2C1.I2C.Device.DeviceFlags:=BCM2710I2C1.I2C.Device.DeviceFlags or I2C_FLAG_10BIT; {Don't override defaults}
      BCM2710I2C1.I2C.Device.DeviceData:=nil;
      BCM2710I2C1.I2C.Device.DeviceDescription:=BCM2710_I2C1_DESCRIPTION;
      {I2C}
@@ -1566,8 +1623,8 @@ begin
      {Update I2C2}
      {Device}
      BCM2710I2C2.I2C.Device.DeviceBus:=DEVICE_BUS_MMIO;
-     BCM2710I2C2.I2C.Device.DeviceType:=I2C_TYPE_NONE;
-     BCM2710I2C2.I2C.Device.DeviceFlags:=I2C_FLAG_10BIT;
+     BCM2710I2C2.I2C.Device.DeviceType:=I2C_TYPE_MASTER;
+     BCM2710I2C2.I2C.Device.DeviceFlags:=BCM2710I2C2.I2C.Device.DeviceFlags or I2C_FLAG_10BIT; {Don't override defaults}
      BCM2710I2C2.I2C.Device.DeviceData:=nil;
      BCM2710I2C2.I2C.Device.DeviceDescription:=BCM2710_I2C2_DESCRIPTION;
      {I2C}
@@ -1808,6 +1865,59 @@ begin
    //To Do
   end;
   
+ {Create I2C Slave}
+ if BCM2710_REGISTER_I2CSLAVE then
+  begin
+   BCM2710I2CSlave:=PBCM2710I2CSlave(I2CSlaveCreateEx(SizeOf(TBCM2710I2CSlave)));
+   if BCM2710I2CSlave <> nil then
+    begin
+     {Update I2C Slave}
+     {Device}
+     BCM2710I2CSlave.I2C.Device.DeviceBus:=DEVICE_BUS_MMIO;
+     BCM2710I2CSlave.I2C.Device.DeviceType:=I2C_TYPE_SLAVE;
+     BCM2710I2CSlave.I2C.Device.DeviceFlags:=BCM2710I2CSlave.I2C.Device.DeviceFlags; {Don't override defaults}
+     BCM2710I2CSlave.I2C.Device.DeviceData:=nil;
+     BCM2710I2CSlave.I2C.Device.DeviceDescription:=BCM2710_I2CSLAVE_DESCRIPTION;
+     {I2C}
+     BCM2710I2CSlave.I2C.I2CState:=I2C_STATE_DISABLED;
+     BCM2710I2CSlave.I2C.DeviceStart:=BCM2710I2CSlaveStart;
+     BCM2710I2CSlave.I2C.DeviceStop:=BCM2710I2CSlaveStop;
+     BCM2710I2CSlave.I2C.DeviceRead:=BCM2710I2CSlaveRead;
+     BCM2710I2CSlave.I2C.DeviceWrite:=BCM2710I2CSlaveWrite;
+     BCM2710I2CSlave.I2C.DeviceSetAddress:=BCM2710I2CSlaveSetAddress;
+     {Driver}
+     BCM2710I2CSlave.I2C.Properties.Flags:=BCM2710I2CSlave.I2C.Device.DeviceFlags;
+     BCM2710I2CSlave.I2C.Properties.SlaveAddress:=I2C_ADDRESS_INVALID;
+     {BCM2710}
+     BCM2710I2CSlave.IRQ:=BCM2837_IRQ_I2CSPI;
+     BCM2710I2CSlave.Address:=Pointer(BCM2837_I2CSPI_REGS_BASE);
+     BCM2710I2CSlave.Lock:=INVALID_HANDLE_VALUE;
+     BCM2710I2CSlave.SDAPin:=GPIO_PIN_18;
+     BCM2710I2CSlave.SCLPin:=GPIO_PIN_19;
+     BCM2710I2CSlave.SDAFunction:=GPIO_FUNCTION_ALT3;
+     BCM2710I2CSlave.SCLFunction:=GPIO_FUNCTION_ALT3;
+     {Transfer}
+     BCM2710I2CSlave.Receive.Wait:=INVALID_HANDLE_VALUE;
+     {$IFDEF BCM2710_I2CSLAVE_TX_BUFFER}
+     BCM2710I2CSlave.Transmit.Wait:=INVALID_HANDLE_VALUE;
+     {$ENDIF}
+
+     {Register I2C Slave}
+     Status:=I2CSlaveRegister(@BCM2710I2CSlave.I2C);
+     if Status <> ERROR_SUCCESS then
+      begin
+       if I2C_LOG_ENABLED then I2CLogError(nil,'BCM2710: Failed to register new I2C Slave device: ' + ErrorToString(Status));
+
+       {Destroy I2C Slave}
+       I2CSlaveDestroy(@BCM2710I2CSlave.I2C);
+      end;
+    end
+   else 
+    begin
+     if I2C_LOG_ENABLED then I2CLogError(nil,'BCM2710: Failed to create new I2C Slave device');
+    end; 
+  end;
+
  {Create SDHCI}
  if BCM2710_REGISTER_SDHCI or BCM2710_REGISTER_SDIO then
   begin
@@ -3430,6 +3540,8 @@ begin
       begin
        if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Read failure or timeout'); 
        
+       Result:=ERROR_READ_FAULT;
+
        {Update Statistics}
        Inc(I2C.ReadErrors);
       end;
@@ -3537,6 +3649,8 @@ begin
       begin
        if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Write failure or timeout'); 
        
+       Result:=ERROR_WRITE_FAULT;
+
        {Update Statistics}
        Inc(I2C.WriteErrors);
       end;
@@ -3662,10 +3776,10 @@ begin
       begin
        if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Write failure or timeout'); 
        
+       Result:=ERROR_WRITE_FAULT;
+
        {Update Statistics}
        Inc(I2C.WriteErrors);
-       
-       Result:=ERROR_OPERATION_FAILED;
       end
      else if Size > 0 then
       begin
@@ -3704,6 +3818,8 @@ begin
           begin
            if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Read failure or timeout'); 
            
+           Result:=ERROR_READ_FAULT;
+
            {Update Statistics}
            Inc(I2C.ReadErrors);
           end;
@@ -3825,6 +3941,8 @@ begin
       begin
        if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Write failure or timeout'); 
        
+       Result:=ERROR_WRITE_FAULT;
+
        {Update Statistics}
        Inc(I2C.WriteErrors);
       end;
@@ -4108,6 +4226,797 @@ end;
 {==============================================================================}
 {==============================================================================}
 {BCM2710 SPI/I2C Slave Functions}
+function BCM2710I2CSlaveStart(I2C:PI2CDevice;Rate:LongWord):LongWord;
+{Implementation of I2CSlaveStart API for BCM2710 I2C slave}
+{Note: Not intended to be called directly by applications, use I2CSlaveStart instead}
+
+{Note: Rate is not applicable for I2C slave devices}
+var
+ Address:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check I2C}
+ if I2C = nil then Exit;
+
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: I2C Slave Start');
+ {$ENDIF}
+
+ {Enable GPIO Pins}
+ GPIOFunctionSelect(PBCM2710I2CSlave(I2C).SDAPin,PBCM2710I2CSlave(I2C).SDAFunction);
+ GPIOFunctionSelect(PBCM2710I2CSlave(I2C).SCLPin,PBCM2710I2CSlave(I2C).SCLFunction);
+
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+
+ {Setup FIFO Interrupt Level (2 bytes RX / 2 bytes TX}
+ PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).IFLS:=BCM2837_I2CSPI_IFLS_RXIFLSEL1_8 or BCM2837_I2CSPI_IFLS_TXIFLSEL1_8;
+
+ {Clear Interrupts}
+ PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).ICR:=$F;
+
+ {Clear Errors}
+ PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).RSR:=0;
+
+ {Clear FIFO}
+ PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).CR:=BCM2837_I2CSPI_CR_BRK;
+
+ {Create Receive Semaphore}
+ PBCM2710I2CSlave(I2C).Receive.Wait:=SemaphoreCreateEx(0,SEMAPHORE_DEFAULT_MAXIMUM,SEMAPHORE_FLAG_IRQ);
+ if PBCM2710I2CSlave(I2C).Receive.Wait = INVALID_HANDLE_VALUE then
+  begin
+   if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Failed to create receive semaphore');
+
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+
+ {$IFDEF BCM2710_I2CSLAVE_TX_BUFFER}
+ {Create Transmit Semaphore}
+ PBCM2710I2CSlave(I2C).Transmit.Wait:=SemaphoreCreateEx(BCM2710_I2CSLAVE_BUFFER_SIZE,SEMAPHORE_DEFAULT_MAXIMUM,SEMAPHORE_FLAG_IRQ);
+ if PBCM2710I2CSlave(I2C).Transmit.Wait = INVALID_HANDLE_VALUE then
+  begin
+   if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Failed to create transmit semaphore');
+
+   SemaphoreDestroy(PBCM2710I2CSlave(I2C).Receive.Wait);
+
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+ {$ELSE}
+ {Create Wait Semaphore}
+ I2C.Wait:=SemaphoreCreateEx(0,SEMAPHORE_DEFAULT_MAXIMUM,SEMAPHORE_FLAG_IRQ);
+ if I2C.Wait = INVALID_HANDLE_VALUE then
+  begin
+   if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Failed to create wait semaphore');
+
+   SemaphoreDestroy(PBCM2710I2CSlave(I2C).Receive.Wait);
+
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end;
+ {$ENDIF}
+
+ {Allocate Lock}
+ PBCM2710I2CSlave(I2C).Lock:=SpinCreate;
+ if PBCM2710I2CSlave(I2C).Lock = INVALID_HANDLE_VALUE then
+  begin
+   if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Failed to create device lock');
+
+   SemaphoreDestroy(PBCM2710I2CSlave(I2C).Receive.Wait);
+   {$IFDEF BCM2710_I2CSLAVE_TX_BUFFER}
+   SemaphoreDestroy(PBCM2710I2CSlave(I2C).Transmit.Wait);
+   {$ELSE}
+   SemaphoreDestroy(I2C.Wait);
+   {$ENDIF}
+
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
+  end; 
+
+ {Reset Receive Buffer}
+ PBCM2710I2CSlave(I2C).Receive.Start:=0;
+ PBCM2710I2CSlave(I2C).Receive.Count:=0;
+
+ {$IFDEF BCM2710_I2CSLAVE_TX_BUFFER}
+ {Reset Transmit Buffer}
+ PBCM2710I2CSlave(I2C).Transmit.Start:=0;
+ PBCM2710I2CSlave(I2C).Transmit.Count:=0;
+ {$ENDIF}
+
+ {Enable Interrupts}
+ PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).IMSC:=BCM2837_I2CSPI_IMSC_RXIM or BCM2837_I2CSPI_IMSC_TXIM;
+
+ {Enable TX, I2C and device}
+ PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).CR:=BCM2837_I2CSPI_CR_EN or BCM2837_I2CSPI_CR_I2C or BCM2837_I2CSPI_CR_TXE or BCM2837_I2CSPI_CR_RXE;
+
+ {Get Address}
+ Address:=(PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).SLV and BCM2837_I2CSPI_SLV_ADDR_MASK);
+
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read}
+
+ {Request IRQ}
+ RegisterInterrupt(PBCM2710I2CSlave(I2C).IRQ,CPUIDToMask(IRQ_ROUTING),INTERRUPT_PRIORITY_DEFAULT,INTERRUPT_FLAG_SHARED,TSharedInterruptHandler(BCM2710I2CSlaveInterruptHandler),I2C);
+
+ {Update Properties}
+ I2C.SlaveAddress:=Address;
+ I2C.Properties.SlaveAddress:=Address;
+
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function BCM2710I2CSlaveStop(I2C:PI2CDevice):LongWord;
+{Implementation of I2CSlaveStop API for BCM2710 I2C slave}
+{Note: Not intended to be called directly by applications, use I2CSlaveStop instead}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check I2C}
+ if I2C = nil then Exit;
+
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: I2C Slave Stop');
+ {$ENDIF}
+ 
+ {Release IRQ}
+ DeregisterInterrupt(PBCM2710I2CSlave(I2C).IRQ,CPUIDToMask(IRQ_ROUTING),INTERRUPT_PRIORITY_DEFAULT,INTERRUPT_FLAG_SHARED,TSharedInterruptHandler(BCM2710I2CSlaveInterruptHandler),I2C);
+
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+
+ {Disable Interrupts}
+ PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).IMSC:=0;
+
+ {Disable I2C and device}
+ PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).CR:=0;
+
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read}
+
+ {Destroy Lock}
+ SpinDestroy(PBCM2710I2CSlave(I2C).Lock);
+ PBCM2710I2CSlave(I2C).Lock:=INVALID_HANDLE_VALUE;
+
+ {$IFDEF BCM2710_I2CSLAVE_TX_BUFFER}
+ {Destroy Transmit Semaphore}
+ SemaphoreDestroy(PBCM2710I2CSlave(I2C).Transmit.Wait);
+ {$ELSE}
+ {Destroy Wait Semaphore}
+ SemaphoreDestroy(I2C.Wait);
+ {$ENDIF}
+
+ {Destroy Receive Semaphore}
+ SemaphoreDestroy(PBCM2710I2CSlave(I2C).Receive.Wait);
+
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function BCM2710I2CSlaveRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+{Implementation of I2CSlaveRead API for BCM2710 I2C slave}
+{Note: Not intended to be called directly by applications, use I2CSlaveRead instead}
+
+{Note: Address is not applicable for I2C slave devices}
+
+ function BCM2710I2CSlaveReceive(I2C:PBCM2710I2CSlave):LongWord;
+ begin
+  {}
+  {Acquire the Lock}
+  if SpinLockIRQ(I2C.Lock) = ERROR_SUCCESS then
+   begin
+    {Drain FIFO}
+    BCM2710I2CSlaveDrainFIFO(I2C);
+
+    {Release the Lock}
+    SpinUnlockIRQ(I2C.Lock);
+
+    Result:=ERROR_SUCCESS;
+   end
+  else
+   begin
+    Result:=ERROR_CAN_NOT_COMPLETE;
+   end;
+ end;
+
+var
+ Total:LongWord;
+ Offset:LongWord;
+ Status:LongWord;
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Buffer}
+ if Buffer = nil then Exit;
+
+ {Check I2C}
+ if I2C = nil then Exit;
+
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: I2C Slave Read (Size=' + IntToStr(Size) + ')');
+ {$ENDIF}
+
+ {Update Statistics}
+ Inc(I2C.ReadCount);
+
+ {Read to Buffer}
+ Offset:=0;
+ Total:=Size;
+ while Size > 0 do
+  begin
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+
+   {Receive Data}
+   Status:=BCM2710I2CSlaveReceive(PBCM2710I2CSlave(I2C));
+   if Status <> ERROR_SUCCESS then
+    begin
+     if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Receive failure on read');
+
+     Result:=Status;
+     Break;
+    end;
+
+   {Check Errors}
+   Status:=PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).RSR;
+   if (Status and BCM2837_I2CSPI_RSR_OE) <> 0 then
+    begin
+     {Clear Error}
+     PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).RSR:=PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).RSR and not(BCM2837_I2CSPI_RSR_OE);
+
+     if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Overrun error on read');
+
+     {Update Statistics}
+     Inc(I2C.ReadErrors);
+
+     Result:=ERROR_READ_FAULT;
+     {Break;}
+    end;
+
+   {Release the Lock}
+   MutexUnlock(I2C.Lock);
+
+   {Wait for Data}
+   Status:=SemaphoreWaitEx(PBCM2710I2CSlave(I2C).Receive.Wait,BCM2710_I2CSLAVE_TIMEOUT);
+
+   {Acquire the Lock}
+   if MutexLock(I2C.Lock) = ERROR_SUCCESS then
+    begin
+     if Status = ERROR_SUCCESS then
+      begin
+       while (PBCM2710I2CSlave(I2C).Receive.Count > 0) and (Size > 0) do
+        begin
+         {Acquire the Lock}
+         if SpinLockIRQ(PBCM2710I2CSlave(I2C).Lock) = ERROR_SUCCESS then
+          begin
+           {Read Data}
+           PByte(Buffer + Offset)^:=PBCM2710I2CSlave(I2C).Receive.Buffer[PBCM2710I2CSlave(I2C).Receive.Start];
+
+           {Update Start}
+           PBCM2710I2CSlave(I2C).Receive.Start:=(PBCM2710I2CSlave(I2C).Receive.Start + 1) mod BCM2710_I2CSLAVE_BUFFER_SIZE;
+
+           {Update Count}
+           Dec(PBCM2710I2CSlave(I2C).Receive.Count);
+
+           {Release the Lock}
+           SpinUnlockIRQ(PBCM2710I2CSlave(I2C).Lock);
+          end
+         else
+          begin
+           Result:=ERROR_CAN_NOT_COMPLETE;
+           Exit;
+          end;
+
+         {Update Count}
+         Inc(Count);
+         
+         {Update Size and Offset}
+         Dec(Size);
+         Inc(Offset);
+         
+         {Check Count}
+         if (PBCM2710I2CSlave(I2C).Receive.Count = 0) or (Size = 0) then Break;
+         
+         {Decrement Wait}
+         SemaphoreWait(PBCM2710I2CSlave(I2C).Receive.Wait);
+        end;
+
+       {Check Count}
+       if PBCM2710I2CSlave(I2C).Receive.Count < BCM2710_I2CSLAVE_BUFFER_SIZE then
+        begin
+         {Acquire the Lock}
+         if SpinLockIRQ(PBCM2710I2CSlave(I2C).Lock) = ERROR_SUCCESS then
+          begin
+           {Enable Interrupts for RX FIFO}
+           PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).IMSC:=PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).IMSC or BCM2837_I2CSPI_IMSC_RXIM;
+
+           {Release the Lock}
+           SpinUnlockIRQ(PBCM2710I2CSlave(I2C).Lock);
+          end
+         else
+          begin
+           Result:=ERROR_CAN_NOT_COMPLETE;
+           Exit;
+          end;
+        end;
+      end
+     else if Status = ERROR_WAIT_TIMEOUT then
+      begin
+       {Receive Data}
+       Status:=BCM2710I2CSlaveReceive(PBCM2710I2CSlave(I2C));
+       if Status <> ERROR_SUCCESS then
+        begin
+         if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Receive failure on read');
+
+         Result:=Status;
+         Break;
+        end;
+      end
+     else
+      begin
+       if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Wait failure on read');
+
+       Result:=ERROR_CAN_NOT_COMPLETE;
+       Exit;
+      end;
+    end
+   else
+    begin
+     if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Failed to acquire lock');
+
+     Result:=ERROR_CAN_NOT_COMPLETE;
+     Exit;
+    end;
+
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read}
+  end;
+
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710:  Return Count=' + IntToStr(Count));
+ {$ENDIF}
+
+ {Return Result}
+ if (Total = Count) then Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function BCM2710I2CSlaveWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+{Implementation of I2CSlaveWrite API for BCM2710 I2C slave}
+{Note: Not intended to be called directly by applications, use I2CSlaveWrite instead}
+
+{Note: Address is not applicable for I2C slave devices}
+
+ {$IFDEF BCM2710_I2CSLAVE_TX_BUFFER}
+ function BCM2710I2CSlaveTransmit(I2C:PBCM2710I2CSlave):LongWord;
+ begin
+  {}
+  {Acquire the Lock}
+  if SpinLockIRQ(I2C.Lock) = ERROR_SUCCESS then
+   begin
+    {Fill FIFO}
+    BCM2710I2CSlaveFillFIFO(I2C);
+
+    {Check Count}
+    if I2C.Transmit.Count > 0 then
+     begin
+      {Enable Interrupts for TX FIFO}
+      PBCM2837I2CSPIRegisters(I2C.Address).IMSC:=PBCM2837I2CSPIRegisters(I2C.Address).IMSC or BCM2837_I2CSPI_IMSC_TXIM;
+     end;
+
+    {Release the Lock}
+    SpinUnlockIRQ(I2C.Lock);
+
+    Result:=ERROR_SUCCESS;
+   end
+  else
+   begin
+    Result:=ERROR_CAN_NOT_COMPLETE;
+   end;
+ end;
+ {$ENDIF}
+
+var
+ Total:LongWord;
+ Offset:LongWord;
+ Status:LongWord;
+begin
+ {}
+ {Setup Result}
+ Count:=0;
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Buffer}
+ if Buffer = nil then Exit;
+
+ {Check I2C}
+ if I2C = nil then Exit;
+
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: I2C Slave Write (Size=' + IntToStr(Size) + ')');
+ {$ENDIF}
+
+ {Update Statistics}
+ Inc(I2C.WriteCount);
+
+ {Write from Buffer}
+ Offset:=0;
+ Total:=Size;
+ while Size > 0 do
+  begin
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+
+   {$IFDEF BCM2710_I2CSLAVE_TX_BUFFER}
+   {Transmit Data}
+   Status:=BCM2710I2CSlaveTransmit(PBCM2710I2CSlave(I2C));
+   if Status <> ERROR_SUCCESS then
+    begin
+     if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Transmit failure on write');
+
+     Result:=Status;
+     Break;
+    end;
+   {$ENDIF}
+
+   {Check Errors}
+   Status:=PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).RSR;
+   if (Status and BCM2837_I2CSPI_RSR_UE) <> 0 then
+    begin
+     {Clear Error}
+     PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).RSR:=PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).RSR and not(BCM2837_I2CSPI_RSR_UE);
+
+     if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Underrun error on write');
+
+     {Update Statistics}
+     Inc(I2C.WriteErrors);
+
+     Result:=ERROR_WRITE_FAULT;
+     {Break;}
+    end;
+
+   {$IFDEF BCM2710_I2CSLAVE_TX_BUFFER}
+   {Release the Lock}
+   MutexUnlock(I2C.Lock);
+
+   {Wait for Space}
+   Status:=SemaphoreWaitEx(PBCM2710I2CSlave(I2C).Transmit.Wait,BCM2710_I2CSLAVE_TIMEOUT);
+
+   {Acquire the Lock}
+   if MutexLock(I2C.Lock) = ERROR_SUCCESS then
+    begin
+     if Status = ERROR_SUCCESS then
+      begin
+       while (PBCM2710I2CSlave(I2C).Transmit.Count < BCM2710_I2CSLAVE_BUFFER_SIZE) and (Size > 0) do
+        begin
+         {Acquire the Lock}
+         if SpinLockIRQ(PBCM2710I2CSlave(I2C).Lock) = ERROR_SUCCESS then
+          begin
+           {Write Data}
+           PBCM2710I2CSlave(I2C).Transmit.Buffer[(PBCM2710I2CSlave(I2C).Transmit.Start + PBCM2710I2CSlave(I2C).Transmit.Count) mod BCM2710_I2CSLAVE_BUFFER_SIZE]:=PByte(Buffer + Offset)^;
+
+           {Update Count}
+           Inc(PBCM2710I2CSlave(I2C).Transmit.Count);
+
+           {Release the Lock}
+           SpinUnlockIRQ(PBCM2710I2CSlave(I2C).Lock);
+          end
+         else
+          begin
+           Result:=ERROR_CAN_NOT_COMPLETE;
+           Exit;
+          end;
+
+         {Update Count}
+         Inc(Count);
+         
+         {Update Size and Offset}
+         Dec(Size);
+         Inc(Offset);
+         
+         {Check Count}
+         if (PBCM2710I2CSlave(I2C).Transmit.Count = BCM2710_I2CSLAVE_BUFFER_SIZE) or (Size = 0) then Break;
+         
+         {Decrement Wait}
+         SemaphoreWait(PBCM2710I2CSlave(I2C).Transmit.Wait);
+        end;
+
+       {Transmit Data}
+       Status:=BCM2710I2CSlaveTransmit(PBCM2710I2CSlave(I2C));
+       if Status <> ERROR_SUCCESS then
+        begin
+         if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Transmit failure on write');
+
+         Result:=Status;
+         Break;
+        end;
+      end
+     else if Status = ERROR_WAIT_TIMEOUT then
+      begin
+       {Transmit Data}
+       Status:=BCM2710I2CSlaveTransmit(PBCM2710I2CSlave(I2C));
+       if Status <> ERROR_SUCCESS then
+        begin
+         if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Transmit failure on write');
+
+         Result:=Status;
+         Break;
+        end;
+      end
+     else
+      begin
+       if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Wait failure on write');
+
+       Result:=ERROR_CAN_NOT_COMPLETE;
+       Exit;
+      end;
+    end
+   else
+    begin
+     if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Failed to acquire lock');
+
+     Result:=ERROR_CAN_NOT_COMPLETE;
+     Exit;
+    end;
+   {$ELSE}
+   {Setup Result}
+   Result:=ERROR_CAN_NOT_COMPLETE;
+
+   {Acquire the Lock}
+   if SpinLockIRQ(PBCM2710I2CSlave(I2C).Lock) <> ERROR_SUCCESS then Exit;
+
+   {Check Size}
+   while Size > 0 do
+    begin
+     {Check Space}
+     if (PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).FR and BCM2837_I2CSPI_FR_TXFF) = 0 then
+      begin
+       {Write Data}
+       PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).DR:=(PLongWord(Buffer + Offset)^ and BCM2837_I2CSPI_DR_DATA_MASK);
+
+       {Update Count}
+       Inc(Count);
+       
+       {Update Size and Offset}
+       Dec(Size);
+       Inc(Offset);
+      end
+     else
+      begin
+       {Enable Interrupts for TX FIFO}
+       PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).IMSC:=PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).IMSC or BCM2837_I2CSPI_IMSC_TXIM;
+
+       {Release the Lock}
+       SpinUnlockIRQ(PBCM2710I2CSlave(I2C).Lock);
+
+       {Release the Lock}
+       MutexUnlock(I2C.Lock);
+
+       {Wait for Space}
+       if SemaphoreWait(I2C.Wait) <> ERROR_SUCCESS then Exit;
+
+       {Acquire the Lock}
+       if MutexLock(I2C.Lock) <> ERROR_SUCCESS then Exit;
+
+       {Acquire the Lock}
+       if SpinLockIRQ(PBCM2710I2CSlave(I2C).Lock) <> ERROR_SUCCESS then Exit;
+      end; 
+    end;
+
+   {Release the Lock}
+   SpinUnlockIRQ(PBCM2710I2CSlave(I2C).Lock);
+   {$ENDIF}
+
+   {Memory Barrier}
+   DataMemoryBarrier; {After the Last Read}
+  end;
+
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710:  Return Count=' + IntToStr(Count));
+ {$ENDIF}
+
+ {Return Result}
+ if (Total = Count) then Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+
+function BCM2710I2CSlaveSetAddress(I2C:PI2CDevice;Address:Word):LongWord;
+{Implementation of I2CSlaveSetAddress API for BCM2710 I2C slave}
+{Note: Not intended to be called directly by applications, use I2CSlaveSetAddress instead}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check I2C}
+ if I2C = nil then Exit;
+
+ {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: I2C Slave Set Address (Address=' + IntToHex(Address,4) + ')');
+ {$ENDIF}
+
+ {Check Address}
+ if Address = I2C_ADDRESS_INVALID then Exit;
+
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+
+ {Set Address}
+ PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).SLV:=(Address and BCM2837_I2CSPI_SLV_ADDR_MASK);
+
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read}
+
+ {Update Properties}
+ I2C.SlaveAddress:=Address;
+ I2C.Properties.SlaveAddress:=Address;
+
+ {Return Result}
+ Result:=ERROR_SUCCESS;
+end;
+
+{==============================================================================}
+{$IFDEF BCM2710_I2CSLAVE_TX_BUFFER}
+procedure BCM2710I2CSlaveFillFIFO(I2C:PBCM2710I2CSlave);
+{Fill the transmit FIFO from the transmit buffer}
+{Note: Caller must hold the I2C slave interrupt lock}
+{Note: Called from within the interrupt handler}
+var
+ Value:LongWord;
+begin
+ {}
+ {Check I2C}
+ if I2C = nil then Exit;
+
+ {Check Space}
+ while (I2C.Transmit.Count > 0) and ((PBCM2837I2CSPIRegisters(I2C.Address).FR and BCM2837_I2CSPI_FR_TXFF) = 0) do
+  begin
+   {Get Data}
+   Value:=I2C.Transmit.Buffer[I2C.Transmit.Start];
+
+   {Write Data}
+   PBCM2837I2CSPIRegisters(I2C.Address).DR:=(Value and BCM2837_I2CSPI_DR_DATA_MASK);
+
+   {Update Start}
+   I2C.Transmit.Start:=(I2C.Transmit.Start + 1) mod BCM2710_I2CSLAVE_BUFFER_SIZE;
+
+   {Update Count}
+   Dec(I2C.Transmit.Count);
+
+   {Signal Semaphore}
+   SemaphoreSignal(I2C.Transmit.Wait);
+  end;
+end;
+{$ENDIF}
+{==============================================================================}
+
+procedure BCM2710I2CSlaveDrainFIFO(I2C:PBCM2710I2CSlave);
+{Drain the receive FIFO to the receive buffer}
+{Note: Caller must hold the I2C slave interrupt lock}
+{Note: Called from within the interrupt handler}
+var
+ Limit:LongWord;
+ Value:LongWord;
+begin
+ {}
+ {Check I2C}
+ if I2C = nil then Exit;
+
+ {Check Data}
+ Limit:=BCM2710_I2CSLAVE_RX_POLL_LIMIT;
+ while (I2C.Receive.Count < BCM2710_I2CSLAVE_BUFFER_SIZE) and ((PBCM2837I2CSPIRegisters(I2C.Address).FR and BCM2837_I2CSPI_FR_RXFE) = 0) do
+  begin
+   {Read Data}
+   Value:=(PBCM2837I2CSPIRegisters(I2C.Address).DR and BCM2837_I2CSPI_DR_DATA_MASK);
+
+   {Put Data}
+   I2C.Receive.Buffer[(I2C.Receive.Start + I2C.Receive.Count) mod BCM2710_I2CSLAVE_BUFFER_SIZE]:=Value;
+
+   {Update Count}
+   Inc(I2C.Receive.Count);
+
+   {Signal Semaphore}
+   SemaphoreSignal(I2C.Receive.Wait);
+
+   {Update Limit}
+   Dec(Limit);
+   if Limit = 0 then Break;
+  end;
+end;
+
+{==============================================================================}
+
+function BCM2710I2CSlaveInterruptHandler(Number,CPUID,Flags:LongWord;I2C:PBCM2710I2CSlave):LongWord;
+{Interrupt handler for the BCM2710 I2C slave}
+{Note: Not intended to be called directly by applications}
+var
+ Status:LongWord;
+begin
+ {}
+ Result:=INTERRUPT_RETURN_NONE;
+
+ {Check I2C}
+ if I2C = nil then Exit;
+
+ {Acquire Lock}
+ if SpinLockIRQ(I2C.Lock) <> ERROR_SUCCESS then Exit;
+
+ {Memory Barrier}
+ DataMemoryBarrier; {Before the First Write}
+
+ {Read Status}
+ Status:=PBCM2837I2CSPIRegisters(I2C.Address).MIS;
+
+ {Check Status}
+ if (Status and BCM2837_I2CSPI_MIS_RXMIS) <> 0 then 
+  begin
+   {Receive}
+   {Update Statistics}
+   Inc(I2C.InterruptCount);
+
+   {Clear Interrupt}
+   PBCM2837I2CSPIRegisters(I2C.Address).ICR:=BCM2837_I2CSPI_ICR_RXIC;
+
+   {Drain FIFO}
+   BCM2710I2CSlaveDrainFIFO(I2C);
+
+   {Check Count}
+   if I2C.Receive.Count = BCM2710_I2CSLAVE_BUFFER_SIZE then
+    begin
+     {Disable Interrupt}
+     PBCM2837I2CSPIRegisters(I2C.Address).IMSC:=PBCM2837I2CSPIRegisters(I2C.Address).IMSC and not(BCM2837_I2CSPI_IMSC_RXIM);
+    end;
+
+   Result:=INTERRUPT_RETURN_HANDLED;
+  end
+ else if (Status and BCM2837_I2CSPI_MIS_TXMIS) <> 0 then 
+  begin
+   {Transmit}
+   {Update Statistics}
+   Inc(I2C.InterruptCount);
+
+   {Clear Interrupt}
+   PBCM2837I2CSPIRegisters(I2C.Address).ICR:=BCM2837_I2CSPI_ICR_TXIC;
+
+   {$IFDEF BCM2710_I2CSLAVE_TX_BUFFER}
+   {Fill FIFO}
+   BCM2710I2CSlaveFillFIFO(I2C);
+
+   {Check Count}
+   if I2C.Transmit.Count = 0 then
+    begin
+     {Disable Interrupt}
+     PBCM2837I2CSPIRegisters(I2C.Address).IMSC:=PBCM2837I2CSPIRegisters(I2C.Address).IMSC and not(BCM2837_I2CSPI_IMSC_TXIM);
+    end;
+   {$ELSE}
+   {Disable Interrupt}
+   PBCM2837I2CSPIRegisters(I2C.Address).IMSC:=PBCM2837I2CSPIRegisters(I2C.Address).IMSC and not(BCM2837_I2CSPI_IMSC_TXIM);
+
+   {Signal Semaphore}
+   SemaphoreSignal(I2C.I2C.Wait);
+   {$ENDIF}
+
+   Result:=INTERRUPT_RETURN_HANDLED;
+  end;
+
+ {Memory Barrier}
+ DataMemoryBarrier; {After the Last Read} 
+
+ {Release Lock}
+ SpinUnlockIRQ(I2C.Lock);
+end;
 
 {==============================================================================}
 {==============================================================================}

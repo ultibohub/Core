@@ -1096,10 +1096,94 @@ const
  BCM2838_SPI0_DC_RDREQ    = ($FF shl 16); {DMA Read Request Threshold (Generate A DREQ to the RX DMA engine whenever the RX FIFO level is greater than this amount) (RX DREQ is also generated if thetransfer has finished but the RXFIFO isn't empty)}
  BCM2838_SPI0_DC_TPANIC   = ($FF shl 8);  {DMA Write Panic Threshold (Generate the Panic signal to the TX DMA engine whenever the TX FIFO level is less than or equal to this amount)}
  BCM2838_SPI0_DC_TDREQ    = ($FF shl 0);  {DMA Write Request Threshold (Generate a DREQ signal to the TX DMA engine whenever the TX FIFO level is less than or equal to this amount)}
- 
-//const
- {I2C / SPI Slave register bits (See 11.2)}
- //To Do  
+
+const
+ {I2C / SPI Slave DR (Data) register bits (See 11.2)}
+ BCM2838_I2CSPI_DR_RXFLEVEL_MASK  = ($1F shl 27); {RX FIFO Level}
+ BCM2838_I2CSPI_DR_RXFLEVEL_SHIFT = 27;
+ BCM2838_I2CSPI_DR_TXFLEVEL_MASK  = ($1F shl 22); {TX FIFO Level}
+ BCM2838_I2CSPI_DR_TXFLEVEL_SHIFT = 22;
+ BCM2838_I2CSPI_DR_RXBUSY         = (1 shl 21);   {Receive Busy}
+ BCM2838_I2CSPI_DR_TXFE           = (1 shl 20);   {TX FIFO Empty}
+ BCM2838_I2CSPI_DR_RXFF           = (1 shl 19);   {RX FIFO Full}
+ BCM2838_I2CSPI_DR_TXFF           = (1 shl 18);   {TX FIFO Full}
+ BCM2838_I2CSPI_DR_RXFE           = (1 shl 17);   {RX FIFO Empty}
+ BCM2838_I2CSPI_DR_TXBUSY         = (1 shl 16);   {Transmit Busy}
+ BCM2838_I2CSPI_DR_UE             = (1 shl 9);    {TX Underrun Error}
+ BCM2838_I2CSPI_DR_OE             = (1 shl 8);    {RX Overrun Error}
+ BCM2838_I2CSPI_DR_DATA_MASK      = ($FF shl 0);  {Received/Transferred data}
+
+ {I2C / SPI Slave RSR (Status) register bits (See 11.2)}
+ BCM2838_I2CSPI_RSR_UE = (1 shl 1); {TX Underrun Error}
+ BCM2838_I2CSPI_RSR_OE = (1 shl 0); {RX Overrun Error}
+
+ {I2C / SPI Slave SLV (Slave) register bits (See 11.2)}
+ BCM2838_I2CSPI_SLV_ADDR_MASK = ($7F shl 0); {I2C Slave Address}
+
+ {I2C / SPI Slave CR (Control) register bits (See 11.2)}
+ BCM2838_I2CSPI_CR_INV_TXF  = (1 shl 13); {Inverse TX status flags}
+ BCM2838_I2CSPI_CR_TESTFIFO = (1 shl 11); {TEST FIFO}
+ BCM2838_I2CSPI_CR_INV_RXF  = (1 shl 10); {Inverse RX status flags}
+ BCM2838_I2CSPI_CR_RXE      = (1 shl 9);  {Receive Enable}
+ BCM2838_I2CSPI_CR_TXE      = (1 shl 8);  {Transmit Enable}
+ BCM2838_I2CSPI_CR_BRK      = (1 shl 7);  {Break current operation}
+ BCM2838_I2CSPI_CR_CPOL     = (1 shl 4);  {Clock Polarity}
+ BCM2838_I2CSPI_CR_CPHA     = (1 shl 3);  {Clock Phase}
+ BCM2838_I2CSPI_CR_I2C      = (1 shl 2);  {I2C Enable}
+ BCM2838_I2CSPI_CR_SPI      = (1 shl 1);  {SPI Enable}
+ BCM2838_I2CSPI_CR_EN       = (1 shl 0);  {Enable Device}
+
+ {I2C / SPI Slave FR (Flags) register bits (See 11.2)}
+ BCM2838_I2CSPI_RXFLEVEL_MASK  = ($1F shl 11); {RX FIFO Level}
+ BCM2838_I2CSPI_RXFLEVEL_SHIFT = 11;
+ BCM2838_I2CSPI_TXFLEVEL_MASK  = ($1F shl 6);  {TX FIFO Level}
+ BCM2838_I2CSPI_TXFLEVEL_SHIFT = 6;
+ BCM2838_I2CSPI_FR_RXBUSY      = (1 shl 5);    {Receive Busy}
+ BCM2838_I2CSPI_FR_TXFE        = (1 shl 4);    {TX FIFO Empty}
+ BCM2838_I2CSPI_FR_RXFF        = (1 shl 3);    {RX FIFO Full}
+ BCM2838_I2CSPI_FR_TXFF        = (1 shl 2);    {TX FIFO Full}
+ BCM2838_I2CSPI_FR_RXFE        = (1 shl 1);    {RX FIFO Empty}
+ BCM2838_I2CSPI_FR_TXBUSY      = (1 shl 0);    {Transmit Busy}
+
+ {I2C / SPI Slave IFLS (Interrupt FIFO Level Select) register bits (See 11.2)}
+ BCM2838_I2CSPI_IFLS_RXIFLSEL_MASK  = (7 shl 3); {RX Interrupt FIFO Level Select}
+ BCM2838_I2CSPI_IFLS_RXIFLSEL_SHIFT = 3;
+ BCM2838_I2CSPI_IFLS_RXIFLSEL1_8    = (0 shl 3); {000 RX FIFO gets 1/8 full}
+ BCM2838_I2CSPI_IFLS_RXIFLSEL1_4    = (1 shl 3); {001 RX FIFO gets 1/4 full}
+ BCM2838_I2CSPI_IFLS_RXIFLSEL1_2    = (2 shl 3); {010 RX FIFO gets 1/2 full}
+ BCM2838_I2CSPI_IFLS_RXIFLSEL3_4    = (3 shl 3); {011 RX FIFO gets 3/4 full}
+ BCM2838_I2CSPI_IFLS_RXIFLSEL7_8    = (4 shl 3); {100 RX FIFO gets 7/8 full}
+ BCM2838_I2CSPI_IFLS_TXIFLSEL_MASK  = (7 shl 0); {TX Interrupt FIFO Level Select}
+ BCM2838_I2CSPI_IFLS_TXIFLSEL_SHIFT = 0;
+ BCM2838_I2CSPI_IFLS_TXIFLSEL1_8    = (0 shl 0); {000 TX FIFO gets 1/8 full}
+ BCM2838_I2CSPI_IFLS_TXIFLSEL1_4    = (1 shl 0); {001 TX FIFO gets 1/4 full}
+ BCM2838_I2CSPI_IFLS_TXIFLSEL1_2    = (2 shl 0); {010 TX FIFO gets 1/2 full}
+ BCM2838_I2CSPI_IFLS_TXIFLSEL3_4    = (3 shl 0); {011 TX FIFO gets 3/4 full}
+ BCM2838_I2CSPI_IFLS_TXIFLSEL7_8    = (4 shl 0); {100 TX FIFO gets 7/8 full}
+
+ {I2C / SPI Slave IMSC (Interrupt Mask Set Clear) register bits (See 11.2)}
+ BCM2838_I2CSPI_IMSC_OEIM = (1 shl 3); {Overrun error interrupt mask}
+ BCM2838_I2CSPI_IMSC_BEIM = (1 shl 2); {Break error interrupt mask}
+ BCM2838_I2CSPI_IMSC_TXIM = (1 shl 1); {Transmit interrupt mask}
+ BCM2838_I2CSPI_IMSC_RXIM = (1 shl 0); {Receive interrupt mask}
+
+ {I2C / SPI Slave RIS (Raw Interrupt Status) register bits (See 11.2)}
+ BCM2838_I2CSPI_RIS_OERIS = (1 shl 3); {Overrun error interrupt status}
+ BCM2838_I2CSPI_RIS_BERIS = (1 shl 2); {Break error interrupt status}
+ BCM2838_I2CSPI_RIS_TXRIS = (1 shl 1); {Transmit interrupt status}
+ BCM2838_I2CSPI_RIS_RXRIS = (1 shl 0); {Receive interrupt status}
+
+ {I2C / SPI Slave MIS (Masked Interrupt Status) register bits (See 11.2)}
+ BCM2838_I2CSPI_MIS_OEMIS = (1 shl 3); {Overrun error masked interrupt status}
+ BCM2838_I2CSPI_MIS_BEMIS = (1 shl 2); {Break error masked interrupt status}
+ BCM2838_I2CSPI_MIS_TXMIS = (1 shl 1); {Transmit masked interrupt status}
+ BCM2838_I2CSPI_MIS_RXMIS = (1 shl 0); {Receive masked interrupt status}
+
+ {I2C / SPI Slave ICR (Interrupt Clear Register) register bits (See 11.2)}
+ BCM2838_I2CSPI_ICR_OEIC = (1 shl 3); {Overrun error interrupt clear}
+ BCM2838_I2CSPI_ICR_BEIC = (1 shl 2); {Break error interrupt clear}
+ BCM2838_I2CSPI_ICR_TXIC = (1 shl 1); {Transmit interrupt clear}
+ BCM2838_I2CSPI_ICR_RXIC = (1 shl 0); {Receive interrupt clear}
  
 //const
  {AUX (UART1, SPI1 and SPI2) register bits (See 2.1)}

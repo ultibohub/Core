@@ -1,7 +1,7 @@
 {
 Ultibo SPI interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -71,16 +71,21 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
 {==============================================================================}
 const
  {SPI specific constants}
- SPI_NAME_PREFIX = 'SPI';  {Name prefix for SPI Devices}
+ SPI_NAME_PREFIX = 'SPI';            {Name prefix for SPI Devices}
+ SPISLAVE_NAME_PREFIX = 'SPISlave';  {Name prefix for SPI Slave Devices}
  
  {SPI Device Types}
  SPI_TYPE_NONE      = 0;
+ SPI_TYPE_MASTER    = 1;
+ SPI_TYPE_SLAVE     = 2;
  
- SPI_TYPE_MAX       = 0;
+ SPI_TYPE_MAX       = 2;
   
  {SPI Type Names}
  SPI_TYPE_NAMES:array[SPI_TYPE_NONE..SPI_TYPE_MAX] of String = (
-  'SPI_TYPE_NONE');
+  'SPI_TYPE_NONE',
+  'SPI_TYPE_MASTER',
+  'SPI_TYPE_SLAVE');
  
  {SPI Device States}
  SPI_STATE_DISABLED = 0;
@@ -1371,6 +1376,8 @@ end;
 
 function SPIDeviceDestroy(SPI:PSPIDevice):LongWord;
 {Destroy an existing SPI entry}
+{SPI: The SPI device to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1400,6 +1407,8 @@ end;
 
 function SPIDeviceRegister(SPI:PSPIDevice):LongWord;
 {Register a new SPI in the SPI table}
+{SPI: The SPI device to register}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  SPIId:LongWord;
 begin
@@ -1483,7 +1492,9 @@ end;
 {==============================================================================}
 
 function SPIDeviceDeregister(SPI:PSPIDevice):LongWord;
-{Deregister a SPI from the SPI table}
+{Deregister an SPI from the SPI table}
+{SPI: The SPI device to deregister}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  Prev:PSPIDevice;
  Next:PSPIDevice;
@@ -1558,6 +1569,9 @@ end;
 {==============================================================================}
 
 function SPIDeviceFind(SPIId:LongWord):PSPIDevice;
+{Find an SPI device by ID in the SPI table}
+{SPIId: The ID number of the SPI device to find}
+{Return: Pointer to SPI device entry or nil if not found}
 var
  SPI:PSPIDevice;
 begin
@@ -1599,6 +1613,9 @@ end;
 {==============================================================================}
 
 function SPIDeviceFindByName(const Name:String):PSPIDevice; inline;
+{Find an SPI device by name in the device table}
+{Name: The name of the SPI device to find (eg SPI0)}
+{Return: Pointer to SPI device entry or nil if not found}
 begin
  {}
  Result:=PSPIDevice(DeviceFindByName(Name));
@@ -1607,6 +1624,9 @@ end;
 {==============================================================================}
 
 function SPIDeviceFindByDescription(const Description:String):PSPIDevice; inline;
+{Find an SPI device by description in the device table}
+{Description: The description of the SPI to find (eg BCM2837 SPI0 Master)}
+{Return: Pointer to SPI device entry or nil if not found}
 begin
  {}
  Result:=PSPIDevice(DeviceFindByDescription(Description));
@@ -1615,6 +1635,10 @@ end;
 {==============================================================================}
 
 function SPIDeviceEnumerate(Callback:TSPIEnumerate;Data:Pointer):LongWord;
+{Enumerate all SPI devices in the SPI table}
+{Callback: The callback function to call for each SPI device in the table}
+{Data: A private data pointer to pass to callback for each SPI device in the table}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 var
  SPI:PSPIDevice;
 begin
@@ -1658,6 +1682,12 @@ end;
 {==============================================================================}
 
 function SPIDeviceNotification(SPI:PSPIDevice;Callback:TSPINotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
+{Register a notification for SPI device changes}
+{Device: The SPI device to notify changes for (Optional, pass nil for all SPI devices)}
+{Callback: The function to call when a notification event occurs}
+{Data: A private data pointer to pass to callback when a notification event occurs}
+{Notification: The events to register for notification of (eg DEVICE_NOTIFICATION_REGISTER)}
+{Flags: The flags to control the notification (eg NOTIFIER_FLAG_WORKER)}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
