@@ -1,7 +1,7 @@
 {
 Ultibo Real Time Clock device interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -183,8 +183,8 @@ function SysRTCSetTime(const Time:Int64):Int64;
 
 {==============================================================================}
 {RTC Helper Functions}
-function RTCGetCount:LongWord; inline;
-function RTCDeviceGetDefault:PRTCDevice; inline;
+function RTCGetCount:LongWord;
+function RTCDeviceGetDefault:PRTCDevice;
 function RTCDeviceSetDefault(RTC:PRTCDevice):LongWord; 
 
 function RTCDeviceCheck(RTC:PRTCDevice):PRTCDevice;
@@ -866,7 +866,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RTC Helper Functions}
-function RTCGetCount:LongWord; inline;
+function RTCGetCount:LongWord;
 {Get the current RTC count}
 begin
  {}
@@ -875,7 +875,7 @@ end;
 
 {==============================================================================}
 
-function RTCDeviceGetDefault:PRTCDevice; inline;
+function RTCDeviceGetDefault:PRTCDevice;
 {Get the current default RTC device}
 begin
  {}

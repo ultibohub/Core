@@ -52968,7 +52968,6 @@ begin
  {}
  Int64(Result):=-1;
 
- 
  {Check Driver}
  if FileSysDriver = nil then Exit;
 

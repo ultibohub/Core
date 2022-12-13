@@ -334,8 +334,8 @@ function SysFramebufferAvailable:Boolean;
 
 {==============================================================================}
 {Framebuffer Helper Functions}
-function FramebufferDeviceGetCount:LongWord; inline;
-function FramebufferDeviceGetDefault:PFramebufferDevice; inline;
+function FramebufferDeviceGetCount:LongWord;
+function FramebufferDeviceGetDefault:PFramebufferDevice;
 function FramebufferDeviceSetDefault(Framebuffer:PFramebufferDevice):LongWord; 
 
 function FramebufferDeviceCheck(Framebuffer:PFramebufferDevice):PFramebufferDevice;
@@ -3104,7 +3104,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Framebuffer Helper Functions}
-function FramebufferDeviceGetCount:LongWord; inline;
+function FramebufferDeviceGetCount:LongWord;
 {Get the current framebuffer device count}
 begin
  {}
@@ -3113,7 +3113,7 @@ end;
 
 {==============================================================================}
 
-function FramebufferDeviceGetDefault:PFramebufferDevice; inline;
+function FramebufferDeviceGetDefault:PFramebufferDevice;
 {Get the current default framebuffer device}
 begin
  {}

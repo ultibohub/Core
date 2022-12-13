@@ -286,8 +286,8 @@ function SysI2CSetAddress(Address:Word):LongWord;
  
 {==============================================================================}
 {I2C Helper Functions}
-function I2CGetCount:LongWord; inline;
-function I2CDeviceGetDefault:PI2CDevice; inline;
+function I2CGetCount:LongWord;
+function I2CDeviceGetDefault:PI2CDevice;
 function I2CDeviceSetDefault(I2C:PI2CDevice):LongWord; 
 
 function I2CDeviceCheck(I2C:PI2CDevice):PI2CDevice;
@@ -1782,7 +1782,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {I2C Helper Functions}
-function I2CGetCount:LongWord; inline;
+function I2CGetCount:LongWord;
 {Get the current I2C count}
 begin
  {}
@@ -1791,7 +1791,7 @@ end;
 
 {==============================================================================}
 
-function I2CDeviceGetDefault:PI2CDevice; inline;
+function I2CDeviceGetDefault:PI2CDevice;
 {Get the current default I2C device}
 begin
  {}

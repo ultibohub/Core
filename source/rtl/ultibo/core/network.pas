@@ -1300,10 +1300,10 @@ function SysHostSetDomain(const ADomain:String):Boolean;
 
 {==============================================================================}
 {Network Helper Functions}
-function NetworkGetLastError:LongInt; inline;
-procedure NetworkSetLastError(Error:LongInt); inline;
+function NetworkGetLastError:LongInt;
+procedure NetworkSetLastError(Error:LongInt);
 
-function NetworkGetCount:LongWord; inline;
+function NetworkGetCount:LongWord;
 
 function NetworkDeviceCheck(Network:PNetworkDevice):PNetworkDevice;
 
@@ -6822,7 +6822,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Network Helper Functions}
-function NetworkGetLastError:LongInt; inline;
+function NetworkGetLastError:LongInt;
 {Get the last network error value for the current Thread}
 {Return: Last Network Error or ERROR_SUCCESS if no error}
 begin
@@ -6832,7 +6832,7 @@ end;
 
 {==============================================================================}
 
-procedure NetworkSetLastError(Error:LongInt); inline;
+procedure NetworkSetLastError(Error:LongInt);
 {Set the last network error value for the current Thread}
 begin
  {}
@@ -6841,7 +6841,7 @@ end;
 
 {==============================================================================}
 
-function NetworkGetCount:LongWord; inline;
+function NetworkGetCount:LongWord;
 {Get the current network count}
 begin
  {}

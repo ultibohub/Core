@@ -351,9 +351,9 @@ function SysSerialWrite(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWor
 
 {==============================================================================}
 {Serial Helper Functions}
-function SerialGetCount:LongWord; inline;
+function SerialGetCount:LongWord;
 
-function SerialDeviceGetDefault:PSerialDevice; inline;
+function SerialDeviceGetDefault:PSerialDevice;
 function SerialDeviceSetDefault(Serial:PSerialDevice):LongWord; 
 
 function SerialDeviceCheck(Serial:PSerialDevice):PSerialDevice;
@@ -1832,7 +1832,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Serial Helper Functions}
-function SerialGetCount:LongWord; inline;
+function SerialGetCount:LongWord;
 {Get the current Serial count}
 begin
  {}
@@ -1841,7 +1841,7 @@ end;
 
 {==============================================================================}
 
-function SerialDeviceGetDefault:PSerialDevice; inline;
+function SerialDeviceGetDefault:PSerialDevice;
 {Get the current default Serial device}
 begin
  {}

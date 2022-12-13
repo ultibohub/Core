@@ -752,8 +752,8 @@ function FramebufferConsoleGetPosition(Console:PConsoleDevice;Position:LongWord;
 
 {==============================================================================}
 {Console Helper Functions}
-function ConsoleDeviceGetCount:LongWord; inline;
-function ConsoleDeviceGetDefault:PConsoleDevice; inline;
+function ConsoleDeviceGetCount:LongWord;
+function ConsoleDeviceGetDefault:PConsoleDevice;
 function ConsoleDeviceSetDefault(Console:PConsoleDevice):LongWord; 
 
 function ConsoleDeviceCheck(Console:PConsoleDevice):PConsoleDevice;
@@ -12850,7 +12850,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Console Helper Functions}
-function ConsoleDeviceGetCount:LongWord; inline;
+function ConsoleDeviceGetCount:LongWord;
 {Get the current console device count}
 begin
  {}
@@ -12859,7 +12859,7 @@ end;
 
 {==============================================================================}
 
-function ConsoleDeviceGetDefault:PConsoleDevice; inline;
+function ConsoleDeviceGetDefault:PConsoleDevice;
 {Get the current default console device}
 begin
  {}

@@ -356,7 +356,7 @@ function SysConsoleReadMouse(var X,Y,Buttons:LongWord;AUserData:Pointer):Boolean
 
 {==============================================================================}
 {Mouse Helper Functions}
-function MouseGetCount:LongWord; inline;
+function MouseGetCount:LongWord;
 
 function MouseDeviceCheck(Mouse:PMouseDevice):PMouseDevice;
 
@@ -1588,7 +1588,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Mouse Helper Functions}
-function MouseGetCount:LongWord; inline;
+function MouseGetCount:LongWord;
 {Get the current mouse count}
 begin
  {}

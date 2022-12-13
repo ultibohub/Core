@@ -2196,8 +2196,8 @@ function GetSystemCallEntry(Number:LongWord):TSystemCallEntry; inline;
 
 {==============================================================================}
 {System Functions}
-function SystemRestart(Delay:LongWord):LongWord; inline;
-function SystemShutdown(Delay:LongWord):LongWord; inline;
+function SystemRestart(Delay:LongWord):LongWord;
+function SystemShutdown(Delay:LongWord):LongWord;
 
 function SystemRegisterShutdown(Callback:TShutdownCallback;Parameter:Pointer;Timeout:LongWord):LongWord;
 function SystemDeregisterShutdown(Callback:TShutdownCallback;Parameter:Pointer):LongWord;
@@ -5195,7 +5195,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {System Functions}
-function SystemRestart(Delay:LongWord):LongWord; inline;
+function SystemRestart(Delay:LongWord):LongWord;
 {Restart the system}
 {Delay: How long to delay before commencing the restart (Milliseconds)}
 {Return: ERROR_SUCCESS if the restart was successfully initiated or another error code on failure}
@@ -5229,7 +5229,7 @@ end;
 
 {==============================================================================}
 
-function SystemShutdown(Delay:LongWord):LongWord; inline;
+function SystemShutdown(Delay:LongWord):LongWord;
 {Shutdown the system}
 {Delay: How long to delay before commencing the shutdown (Milliseconds)}
 {Return: ERROR_SUCCESS if the shutdown was successfully initiated or another error code on failure}
@@ -9347,7 +9347,7 @@ end;
 
 function SPIGetDescription(Id:LongWord):String; inline;
 {Return the device description of an SPI device}
-{Id: The Id number of the SPI device as shown in the offical documentation}
+{Id: The Id number of the SPI device as shown in the official documentation}
 {Return: The correct device description suitable for passing to SPIDeviceFindByDescription}
 
 {Note: The Id number supplied to this function may differ from the Ultibo device id value}
@@ -9588,7 +9588,7 @@ end;
 
 function I2CGetDescription(Id:LongWord):String; inline;
 {Get the device description of an I2C device}
-{Id: The Id number of the I2C device as shown in the offical documentation}
+{Id: The Id number of the I2C device as shown in the official documentation}
 {Return: The correct device description suitable for passing to I2CDeviceFindByDescription}
 
 {Note: The Id number supplied to this function may differ from the Ultibo device id value}
@@ -9608,7 +9608,7 @@ end;
 
 function I2CSlaveGetDescription(Id:LongWord):String; inline;
 {Get the device description of an I2C slave device}
-{Id: The Id number of the I2C slave device as shown in the offical documentation}
+{Id: The Id number of the I2C slave device as shown in the official documentation}
 {Return: The correct device description suitable for passing to I2CSlaveFindByDescription}
 
 {Note: The Id number supplied to this function may differ from the Ultibo device id value}
@@ -9778,8 +9778,8 @@ end;
 
 function PWMGetDescription(Id,Channel:LongWord):String; inline;
 {Get the device description of an PWM device}
-{Id: The Id number of the PWM device as shown in the offical documentation}
-{Channel: The channel number of the PWM device as shown in the offical documentation}
+{Id: The Id number of the PWM device as shown in the official documentation}
+{Channel: The channel number of the PWM device as shown in the official documentation}
 {Return: The correct device description suitable for passing to PWMDeviceFindByDescription}
 
 {Note: The Id number supplied to this function may differ from the Ultibo device id value}
@@ -9855,7 +9855,7 @@ end;
 {UART Functions}
 function UARTGetDescription(Id:LongWord):String; inline; 
 {Get the device description of a UART device}
-{Id: The Id number of the UART device as shown in the offical documentation}
+{Id: The Id number of the UART device as shown in the official documentation}
 {Return: The correct device description suitable for passing to UARTDeviceFindByDescription}
 
 {Note: The Id number supplied to this function may differ from the Ultibo device id value}

@@ -1,7 +1,7 @@
 {
 Ultibo I2S/PCM interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -150,8 +150,8 @@ function I2SDeviceNotification(I2S:PI2SDevice;Callback:TI2SNotification;Data:Poi
 
 {==============================================================================}
 {I2S Helper Functions}
-function I2SGetCount:LongWord; inline;
-function I2SDeviceGetDefault:PI2SDevice; inline;
+function I2SGetCount:LongWord;
+function I2SDeviceGetDefault:PI2SDevice;
 function I2SDeviceSetDefault(I2S:PI2SDevice):LongWord; 
 
 function I2SDeviceCheck(I2S:PI2SDevice):PI2SDevice;
@@ -589,7 +589,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {I2S Helper Functions}
-function I2SGetCount:LongWord; inline;
+function I2SGetCount:LongWord;
 {Get the current I2S count}
 begin
  {}
@@ -598,7 +598,7 @@ end;
 
 {==============================================================================}
 
-function I2SDeviceGetDefault:PI2SDevice; inline;
+function I2SDeviceGetDefault:PI2SDevice;
 {Get the current default I2S device}
 begin
  {}

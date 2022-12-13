@@ -323,8 +323,8 @@ function SysSPISetSelectPolarity(ChipSelect:Word;SelectPolarity:LongWord):LongWo
 
 {==============================================================================}
 {SPI Helper Functions}
-function SPIGetCount:LongWord; inline;
-function SPIDeviceGetDefault:PSPIDevice; inline;
+function SPIGetCount:LongWord;
+function SPIDeviceGetDefault:PSPIDevice;
 function SPIDeviceSetDefault(SPI:PSPIDevice):LongWord; 
 
 function SPIDeviceCheck(SPI:PSPIDevice):PSPIDevice;
@@ -1964,7 +1964,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {SPI Helper Functions}
-function SPIGetCount:LongWord; inline;
+function SPIGetCount:LongWord;
 {Get the current SPI count}
 begin
  {}
@@ -1973,7 +1973,7 @@ end;
 
 {==============================================================================}
 
-function SPIDeviceGetDefault:PSPIDevice; inline;
+function SPIDeviceGetDefault:PSPIDevice;
 {Get the current default SPI device}
 begin
  {}

@@ -1,7 +1,7 @@
 {
 Ultibo GPIO interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -307,8 +307,8 @@ function SysGPIOFunctionSelect(Pin,Mode:LongWord):LongWord;
 
 {==============================================================================}
 {GPIO Helper Functions}
-function GPIOGetCount:LongWord; inline;
-function GPIODeviceGetDefault:PGPIODevice; inline;
+function GPIOGetCount:LongWord;
+function GPIODeviceGetDefault:PGPIODevice;
 function GPIODeviceSetDefault(GPIO:PGPIODevice):LongWord; 
 
 function GPIODeviceCheck(GPIO:PGPIODevice):PGPIODevice;
@@ -1555,7 +1555,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {GPIO Helper Functions}
-function GPIOGetCount:LongWord; inline;
+function GPIOGetCount:LongWord;
 {Get the current GPIO count}
 begin
  {}
@@ -1564,7 +1564,7 @@ end;
 
 {==============================================================================}
 
-function GPIODeviceGetDefault:PGPIODevice; inline;
+function GPIODeviceGetDefault:PGPIODevice;
 {Get the current default GPIO device}
 begin
  {}

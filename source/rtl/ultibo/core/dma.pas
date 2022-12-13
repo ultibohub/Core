@@ -1,7 +1,7 @@
 {
 Ultibo DMA interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -269,8 +269,8 @@ function SysDMAReleaseBuffer(Buffer:Pointer):LongWord;
 
 {==============================================================================}
 {DMA Helper Functions}
-function DMAGetCount:LongWord; inline;
-function DMAHostGetDefault:PDMAHost; inline;
+function DMAGetCount:LongWord;
+function DMAHostGetDefault:PDMAHost;
 function DMAHostSetDefault(DMA:PDMAHost):LongWord; 
 
 function DMAHostCheck(DMA:PDMAHost):PDMAHost;
@@ -1841,7 +1841,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {DMA Helper Functions}
-function DMAGetCount:LongWord; inline;
+function DMAGetCount:LongWord;
 {Get the current DMA host count}
 begin
  {}
@@ -1850,7 +1850,7 @@ end;
 
 {==============================================================================}
 
-function DMAHostGetDefault:PDMAHost; inline;
+function DMAHostGetDefault:PDMAHost;
 {Get the current default DMA host}
 begin
  {}

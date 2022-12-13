@@ -2128,27 +2128,27 @@ procedure SysSemaphoreWait(const Semaphore:Pointer);
 
 {==============================================================================}
 {Thread Helper Functions}
-function SpinGetCount:LongWord; inline;
+function SpinGetCount:LongWord;
 
-function MutexGetCount:LongWord; inline;
+function MutexGetCount:LongWord;
 
-function CriticalSectionGetCount:LongWord; inline;
+function CriticalSectionGetCount:LongWord;
 
-function SemaphoreGetCount:LongWord; inline;
+function SemaphoreGetCount:LongWord;
 
-function SynchronizerGetCount:LongWord; inline;
+function SynchronizerGetCount:LongWord;
 
-function ConditionGetCount:LongWord; inline;
+function ConditionGetCount:LongWord;
 
-function CompletionGetCount:LongWord; inline;
+function CompletionGetCount:LongWord;
 
-function ListGetCount:LongWord; inline;
+function ListGetCount:LongWord;
 
-function QueueGetCount:LongWord; inline;
+function QueueGetCount:LongWord;
 
-function ThreadGetCount:LongWord; inline;
+function ThreadGetCount:LongWord;
 
-function ThreadTlsGetCount:LongWord; inline;
+function ThreadTlsGetCount:LongWord;
 
 function ThreadAllocateStack(StackSize:LongWord):Pointer;
 procedure ThreadReleaseStack(StackBase:Pointer;StackSize:LongWord);
@@ -2157,20 +2157,20 @@ function ThreadSetupStack(StackBase:Pointer;StartProc:TThreadStart;ReturnProc:TT
 function ThreadSnapshotCreate:PThreadSnapshot;
 function ThreadSnapshotDestroy(ASnapshot:PThreadSnapshot):LongWord;
 
-function MessageslotGetCount:LongWord; inline;
+function MessageslotGetCount:LongWord;
 
-function MailslotGetCount:LongWord; inline;
+function MailslotGetCount:LongWord;
 
-function BufferGetCount:LongWord; inline;
+function BufferGetCount:LongWord;
 
-function EventGetCount:LongWord; inline;
+function EventGetCount:LongWord;
 
-function TimerGetCount:LongWord; inline;
+function TimerGetCount:LongWord;
 
-function WorkerGetCount:LongWord; inline;
-function WorkerGetPriorityCount:LongWord; inline;
+function WorkerGetCount:LongWord;
+function WorkerGetPriorityCount:LongWord;
 
-function TaskerGetCount:LongWord; inline;
+function TaskerGetCount:LongWord;
 
 function ListTypeToString(ListType:LongWord):String;
 function QueueTypeToString(QueueType:LongWord):String;
@@ -24307,7 +24307,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Thread Helper Functions}
-function SpinGetCount:LongWord; inline;
+function SpinGetCount:LongWord;
 {Get the current spin lock count}
 begin
  {}
@@ -24316,7 +24316,7 @@ end;
 
 {==============================================================================}
 
-function MutexGetCount:LongWord; inline;
+function MutexGetCount:LongWord;
 {Get the current mutex count}
 begin
  {}
@@ -24325,7 +24325,7 @@ end;
 
 {==============================================================================}
 
-function CriticalSectionGetCount:LongWord; inline;
+function CriticalSectionGetCount:LongWord;
 {Get the current critical section count}
 begin
  {}
@@ -24334,7 +24334,7 @@ end;
 
 {==============================================================================}
 
-function SemaphoreGetCount:LongWord; inline;
+function SemaphoreGetCount:LongWord;
 {Get the current semaphore count}
 begin
  {}
@@ -24343,7 +24343,7 @@ end;
 
 {==============================================================================}
 
-function SynchronizerGetCount:LongWord; inline;
+function SynchronizerGetCount:LongWord;
 {Get the current synchronizer count}
 begin
  {}
@@ -24352,7 +24352,7 @@ end;
 
 {==============================================================================}
 
-function ConditionGetCount:LongWord; inline;
+function ConditionGetCount:LongWord;
 {Get the current condition count}
 begin
  {}
@@ -24361,7 +24361,7 @@ end;
 
 {==============================================================================}
 
-function CompletionGetCount:LongWord; inline;
+function CompletionGetCount:LongWord;
 {Get the current completion count}
 begin
  {}
@@ -24370,7 +24370,7 @@ end;
 
 {==============================================================================}
 
-function ListGetCount:LongWord; inline;
+function ListGetCount:LongWord;
 {Get the current list count}
 begin
  {}
@@ -24379,7 +24379,7 @@ end;
 
 {==============================================================================}
 
-function QueueGetCount:LongWord; inline;
+function QueueGetCount:LongWord;
 {Get the current queue count}
 begin
  {}
@@ -24388,7 +24388,7 @@ end;
 
 {==============================================================================}
 
-function ThreadGetCount:LongWord; inline;
+function ThreadGetCount:LongWord;
 {Get the current thread count}
 begin
  {}
@@ -24397,7 +24397,7 @@ end;
 
 {==============================================================================}
 
-function ThreadTlsGetCount:LongWord; inline;
+function ThreadTlsGetCount:LongWord;
 {Get the current thread tls count}
 begin
  {}
@@ -24633,7 +24633,7 @@ end;
 
 {==============================================================================}
 
-function MessageslotGetCount:LongWord; inline;
+function MessageslotGetCount:LongWord;
 {Get the current messageslot count}
 begin
  {}
@@ -24642,7 +24642,7 @@ end;
 
 {==============================================================================}
 
-function MailslotGetCount:LongWord; inline;
+function MailslotGetCount:LongWord;
 {Get the current mailslot count}
 begin
  {}
@@ -24651,7 +24651,7 @@ end;
 
 {==============================================================================}
 
-function BufferGetCount:LongWord; inline;
+function BufferGetCount:LongWord;
 {Get the current buffer count}
 begin
  {}
@@ -24660,7 +24660,7 @@ end;
 
 {==============================================================================}
 
-function EventGetCount:LongWord; inline;
+function EventGetCount:LongWord;
 {Get the current event count}
 begin
  {}
@@ -24669,7 +24669,7 @@ end;
 
 {==============================================================================}
 
-function TimerGetCount:LongWord; inline;
+function TimerGetCount:LongWord;
 {Get the current timer count}
 begin
  {}
@@ -24678,7 +24678,7 @@ end;
 
 {==============================================================================}
 
-function WorkerGetCount:LongWord; inline;
+function WorkerGetCount:LongWord;
 {Get the current worker thread count}
 begin
  {}
@@ -24687,7 +24687,7 @@ end;
 
 {==============================================================================}
 
-function WorkerGetPriorityCount:LongWord; inline;
+function WorkerGetPriorityCount:LongWord;
 {Get the current worker priority thread count}
 begin
  {}
@@ -24696,7 +24696,7 @@ end;
 
 {==============================================================================}
 
-function TaskerGetCount:LongWord; inline;
+function TaskerGetCount:LongWord;
 {Get the current tasker count}
 begin
  {}

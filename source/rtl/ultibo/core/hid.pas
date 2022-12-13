@@ -1017,14 +1017,14 @@ function HIDReportFlagsToString(Flags:LongWord):String;
 function HIDCollectionFlagsToString(Flags:LongWord):String;
 
 procedure HIDLog(Level:LongWord;Device:PHIDDevice;const AText:String);
-procedure HIDLogInfo(Device:PHIDDevice;const AText:String); {inline;}
-procedure HIDLogWarn(Device:PHIDDevice;const AText:String); {inline;}
-procedure HIDLogError(Device:PHIDDevice;const AText:String); {inline;}
-procedure HIDLogDebug(Device:PHIDDevice;const AText:String); {inline;}
+procedure HIDLogInfo(Device:PHIDDevice;const AText:String); inline;
+procedure HIDLogWarn(Device:PHIDDevice;const AText:String); inline;
+procedure HIDLogError(Device:PHIDDevice;const AText:String); inline;
+procedure HIDLogDebug(Device:PHIDDevice;const AText:String); inline;
 
 {==============================================================================}
 {HID Device Helper Functions}
-function HIDDeviceGetCount:LongWord; inline;
+function HIDDeviceGetCount:LongWord;
 
 function HIDDeviceCheck(Device:PHIDDevice):PHIDDevice;
 
@@ -1035,7 +1035,7 @@ function HIDDeviceStateToNotification(State:LongWord):LongWord;
 
 {==============================================================================}
 {HID Consumer Helper Functions}
-function HIDConsumerGetCount:LongWord; inline;
+function HIDConsumerGetCount:LongWord;
 
 function HIDConsumerCheck(Consumer:PHIDConsumer):PHIDConsumer;
 
@@ -6190,7 +6190,7 @@ end;
 
 {==============================================================================}
 
-procedure HIDLogInfo(Device:PHIDDevice;const AText:String); {inline;}
+procedure HIDLogInfo(Device:PHIDDevice;const AText:String); inline;
 begin
  {}
  HIDLog(HID_LOG_LEVEL_INFO,Device,AText);
@@ -6198,7 +6198,7 @@ end;
 
 {==============================================================================}
 
-procedure HIDLogWarn(Device:PHIDDevice;const AText:String); {inline;}
+procedure HIDLogWarn(Device:PHIDDevice;const AText:String); inline;
 begin
  {}
  HIDLog(HID_LOG_LEVEL_WARN,Device,AText);
@@ -6206,7 +6206,7 @@ end;
 
 {==============================================================================}
 
-procedure HIDLogError(Device:PHIDDevice;const AText:String); {inline;}
+procedure HIDLogError(Device:PHIDDevice;const AText:String); inline;
 begin
  {}
  HIDLog(HID_LOG_LEVEL_ERROR,Device,AText);
@@ -6214,7 +6214,7 @@ end;
 
 {==============================================================================}
 
-procedure HIDLogDebug(Device:PHIDDevice;const AText:String); {inline;}
+procedure HIDLogDebug(Device:PHIDDevice;const AText:String); inline;
 begin
  {}
  HIDLog(HID_LOG_LEVEL_DEBUG,Device,AText);
@@ -6223,7 +6223,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {HID Device Helper Functions}
-function HIDDeviceGetCount:LongWord; inline;
+function HIDDeviceGetCount:LongWord;
 {Get the current HID Device count}
 begin
  {}
@@ -6317,7 +6317,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {HID Consumer Helper Functions}
-function HIDConsumerGetCount:LongWord; inline;
+function HIDConsumerGetCount:LongWord;
 {Get the current HID Consumer count}
 begin
  {}

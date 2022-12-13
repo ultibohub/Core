@@ -1,7 +1,7 @@
 {
 Ultibo PWM interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -282,8 +282,8 @@ function SysPWMConfigure(DutyNS,PeriodNS:LongWord):LongWord;
 
 {==============================================================================}
 {PWM Helper Functions}
-function PWMGetCount:LongWord; inline;
-function PWMDeviceGetDefault:PPWMDevice; inline;
+function PWMGetCount:LongWord;
+function PWMDeviceGetDefault:PPWMDevice;
 function PWMDeviceSetDefault(PWM:PPWMDevice):LongWord; 
 
 function PWMDeviceCheck(PWM:PPWMDevice):PPWMDevice;
@@ -1521,7 +1521,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {PWM Helper Functions}
-function PWMGetCount:LongWord; inline;
+function PWMGetCount:LongWord;
 {Get the current PWM count}
 begin
  {}
@@ -1530,7 +1530,7 @@ end;
 
 {==============================================================================}
 
-function PWMDeviceGetDefault:PPWMDevice; inline;
+function PWMDeviceGetDefault:PPWMDevice;
 {Get the current default PWM device}
 begin
  {}

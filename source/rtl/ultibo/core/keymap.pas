@@ -1,7 +1,7 @@
 {
 Ultibo Keymap interface unit.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -285,8 +285,8 @@ function KeymapEnumerate(Callback:TKeymapEnumerate;Data:Pointer):LongWord;
 
 {==============================================================================}
 {Keymap Helper Functions}
-function KeymapGetCount:LongWord; inline;
-function KeymapGetDefault:TKeymapHandle; inline;
+function KeymapGetCount:LongWord;
+function KeymapGetDefault:TKeymapHandle;
 function KeymapSetDefault(Handle:TKeymapHandle):LongWord; 
 
 function KeymapCheck(Keymap:PKeymapEntry):PKeymapEntry;
@@ -1477,7 +1477,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Keymap Helper Functions}
-function KeymapGetCount:LongWord; inline;
+function KeymapGetCount:LongWord;
 {Get the current keymap count}
 begin
  {}
@@ -1486,7 +1486,7 @@ end;
 
 {==============================================================================}
 
-function KeymapGetDefault:TKeymapHandle; inline;
+function KeymapGetDefault:TKeymapHandle;
 {Get the current default keymap}
 begin
  {}

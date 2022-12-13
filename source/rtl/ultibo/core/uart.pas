@@ -1,7 +1,7 @@
 {
 Ultibo UART interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -307,8 +307,8 @@ function UARTSerialDeviceGetProperties(Serial:PSerialDevice;Properties:PSerialPr
 
 {==============================================================================}
 {UART Helper Functions}
-function UARTGetCount:LongWord; inline;
-function UARTDeviceGetDefault:PUARTDevice; inline;
+function UARTGetCount:LongWord;
+function UARTDeviceGetDefault:PUARTDevice;
 function UARTDeviceSetDefault(UART:PUARTDevice):LongWord; 
 
 function UARTDeviceCheck(UART:PUARTDevice):PUARTDevice;
@@ -2291,7 +2291,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {UART Helper Functions}
-function UARTGetCount:LongWord; inline;
+function UARTGetCount:LongWord;
 {Get the current UART count}
 begin
  {}
@@ -2300,7 +2300,7 @@ end;
 
 {==============================================================================}
 
-function UARTDeviceGetDefault:PUARTDevice; inline;
+function UARTDeviceGetDefault:PUARTDevice;
 {Get the current default UART device}
 begin
  {}
