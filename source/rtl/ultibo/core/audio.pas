@@ -1,7 +1,7 @@
 {
 Ultibo Audio interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -165,8 +165,8 @@ function AudioDeviceNotification(Audio:PAudioDevice;Callback:TAudioNotification;
 
 {==============================================================================}
 {Audio Helper Functions}
-function AudioGetCount:LongWord; inline;
-function AudioDeviceGetDefault:PAudioDevice; inline;
+function AudioGetCount:LongWord;
+function AudioDeviceGetDefault:PAudioDevice;
 function AudioDeviceSetDefault(Audio:PAudioDevice):LongWord; 
 
 function AudioDeviceCheck(Audio:PAudioDevice):PAudioDevice;
@@ -645,7 +645,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Audio Helper Functions}
-function AudioGetCount:LongWord; inline;
+function AudioGetCount:LongWord;
 {Get the current Audio device count}
 begin
  {}
@@ -654,7 +654,7 @@ end;
 
 {==============================================================================}
 
-function AudioDeviceGetDefault:PAudioDevice; inline;
+function AudioDeviceGetDefault:PAudioDevice;
 {Get the current default Audio device}
 begin
  {}

@@ -422,7 +422,7 @@ procedure USBStorageInterruptComplete(Request:PUSBRequest);
 
 {==============================================================================}
 {Storage Helper Functions}
-function StorageGetCount:LongWord; inline;
+function StorageGetCount:LongWord;
 
 function StorageDeviceCheck(Storage:PStorageDevice):PStorageDevice;
 
@@ -2523,7 +2523,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Storage Helper Functions}
-function StorageGetCount:LongWord; inline;
+function StorageGetCount:LongWord;
 {Get the current storage count}
 begin
  {}

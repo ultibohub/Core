@@ -223,9 +223,9 @@ procedure SysLoggingOutputEx(AFacility,ASeverity:LongWord;const ATag,AContent:St
 
 {==============================================================================}
 {Logging Helper Functions}
-function LoggingDeviceGetCount:LongWord; inline;
+function LoggingDeviceGetCount:LongWord;
 
-function LoggingDeviceGetDefault:PLoggingDevice; inline;
+function LoggingDeviceGetDefault:PLoggingDevice;
 function LoggingDeviceSetDefault(Logging:PLoggingDevice):LongWord; 
 
 function LoggingDeviceCheck(Logging:PLoggingDevice):PLoggingDevice;
@@ -1592,7 +1592,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Logging Helper Functions}
-function LoggingDeviceGetCount:LongWord; inline;
+function LoggingDeviceGetCount:LongWord;
 {Get the current logging device count}
 begin
  {}
@@ -1601,7 +1601,7 @@ end;
 
 {==============================================================================}
 
-function LoggingDeviceGetDefault:PLoggingDevice; inline;
+function LoggingDeviceGetDefault:PLoggingDevice;
 {Get the current default logging device}
 begin
  {}

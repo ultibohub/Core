@@ -106,10 +106,10 @@ procedure VGShapesImage(x,y:VGfloat;w,h:Integer;const filename:String);
 function VGShapesCreateImageFromJpeg(const filename:String):VGImage;
 
 {Transformation}
-procedure VGShapesTranslate(x,y:VGfloat); inline;
-procedure VGShapesRotate(r:VGfloat); inline;
-procedure VGShapesShear(x,y:VGfloat); inline;
-procedure VGShapesScale(x,y:VGfloat); inline;
+procedure VGShapesTranslate(x,y:VGfloat);
+procedure VGShapesRotate(r:VGfloat);
+procedure VGShapesShear(x,y:VGfloat);
+procedure VGShapesScale(x,y:VGfloat);
  
 {Style} 
 procedure VGShapesSetFill(const color:TVGShapesColor);
@@ -125,7 +125,7 @@ procedure VGShapesFill(r,g,b:LongWord;a:VGfloat);
 procedure VGShapesFillLinearGradient(x1,y1,x2,y2:VGfloat;stops:PVGfloat;ns:Integer);
 procedure VGShapesFillRadialGradient(cx,cy,fx,fy,radius:VGfloat;stops:PVGfloat;ns:Integer);
 procedure VGShapesClipRect(x,y,w,h:VGint);
-procedure VGShapesClipEnd; inline;
+procedure VGShapesClipEnd;
 
 {Text}
 procedure VGShapesText(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer);
@@ -153,8 +153,8 @@ function VGShapesEnd:Boolean;
 function VGShapesSaveEnd(const filename:String):Boolean;
 procedure VGShapesBackground(r,g,b:LongWord);
 procedure VGShapesBackgroundRGB(r,g,b:LongWord;a:VGfloat);
-procedure VGShapesWindowClear; inline;
-procedure VGShapesAreaClear(x,y,w,h:LongWord); inline;
+procedure VGShapesWindowClear;
+procedure VGShapesAreaClear(x,y,w,h:LongWord);
 procedure VGShapesWindowLayer(layerid:LongInt);
 procedure VGShapesWindowOpacity(a:LongWord);
 procedure VGShapesWindowPosition(x,y:Integer);
@@ -1527,7 +1527,7 @@ end;
 
 {==============================================================================}
 {Transformation}
-procedure VGShapesTranslate(x,y:VGfloat); inline;
+procedure VGShapesTranslate(x,y:VGfloat);
 {Translate the coordinate system to x,y}
 begin
  {}
@@ -1539,7 +1539,7 @@ end;
 
 {==============================================================================}
 
-procedure VGShapesRotate(r:VGfloat); inline;
+procedure VGShapesRotate(r:VGfloat);
 {Rotate around angle r}
 begin
  {}
@@ -1551,7 +1551,7 @@ end;
 
 {==============================================================================}
 
-procedure VGShapesShear(x,y:VGfloat); inline;
+procedure VGShapesShear(x,y:VGfloat);
 {Shear shears the x coordinate by x degrees, the y coordinate by y degrees}
 begin
  {}
@@ -1563,7 +1563,7 @@ end;
 
 {==============================================================================}
 
-procedure VGShapesScale(x,y:VGfloat); inline;
+procedure VGShapesScale(x,y:VGfloat);
 {Scale scales by  x, y}
 begin
  {}
@@ -1807,7 +1807,7 @@ end;
 
 {==============================================================================}
 
-procedure VGShapesClipEnd; inline;
+procedure VGShapesClipEnd;
 {ClipEnd stops limiting drawing area to specified rectangle}
 begin
  {}
@@ -2468,7 +2468,7 @@ end;
 
 {==============================================================================}
 
-procedure VGShapesWindowClear; inline;
+procedure VGShapesWindowClear;
 {WindowClear clears the window to previously set background colour}
 begin
  {}
@@ -2480,7 +2480,7 @@ end;
 
 {==============================================================================}
 
-procedure VGShapesAreaClear(x,y,w,h:LongWord); inline;
+procedure VGShapesAreaClear(x,y,w,h:LongWord);
 {AreaClear clears a given rectangle in window coordinates (not affected by transformations)}
 begin
  {}

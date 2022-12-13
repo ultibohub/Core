@@ -1,7 +1,7 @@
 {
 Ultibo Codec interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -157,8 +157,8 @@ function CodecDeviceNotification(Codec:PCodecDevice;Callback:TCodecNotification;
 
 {==============================================================================}
 {Codec Helper Functions}
-function CodecGetCount:LongWord; inline;
-function CodecDeviceGetDefault:PCodecDevice; inline;
+function CodecGetCount:LongWord;
+function CodecDeviceGetDefault:PCodecDevice;
 function CodecDeviceSetDefault(Codec:PCodecDevice):LongWord; 
 
 function CodecDeviceCheck(Codec:PCodecDevice):PCodecDevice;
@@ -637,7 +637,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Codec Helper Functions}
-function CodecGetCount:LongWord; inline;
+function CodecGetCount:LongWord;
 {Get the current Codec device count}
 begin
  {}
@@ -646,7 +646,7 @@ end;
 
 {==============================================================================}
 
-function CodecDeviceGetDefault:PCodecDevice; inline;
+function CodecDeviceGetDefault:PCodecDevice;
 {Get the current default Codec device}
 begin
  {}

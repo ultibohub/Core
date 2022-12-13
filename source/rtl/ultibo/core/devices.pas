@@ -1323,11 +1323,11 @@ function SysWatchdogRefresh(Milliseconds:LongWord):LongWord;
 
 {==============================================================================}
 {Device Helper Functions}
-function DeviceGetCount:LongWord; inline;
+function DeviceGetCount:LongWord;
 
 function DeviceCheck(Device:PDevice):PDevice;
 
-function NotifierGetCount:LongWord; inline;
+function NotifierGetCount:LongWord;
 
 function NotifierCheck(Notifier:PNotifier):PNotifier;
 
@@ -1345,7 +1345,7 @@ procedure DeviceLogDebug(Device:PDevice;const AText:String); inline;
 
 {==============================================================================}
 {Driver Helper Functions}
-function DriverGetCount:LongWord; inline;
+function DriverGetCount:LongWord;
 
 function DriverCheck(Driver:PDriver):PDriver;
 
@@ -1354,8 +1354,8 @@ function DriverClassToString(DriverClass:LongWord):String;
 
 {==============================================================================}
 {Clock Device Helper Functions}
-function ClockDeviceGetCount:LongWord; inline;
-function ClockDeviceGetDefault:PClockDevice; inline;
+function ClockDeviceGetCount:LongWord;
+function ClockDeviceGetDefault:PClockDevice;
 function ClockDeviceSetDefault(Clock:PClockDevice):LongWord; 
 
 function ClockDeviceCheck(Clock:PClockDevice):PClockDevice;
@@ -1365,8 +1365,8 @@ function ClockStateToString(ClockState:LongWord):String;
 
 {==============================================================================}
 {Timer Device Helper Functions}
-function TimerDeviceGetCount:LongWord; inline;
-function TimerDeviceGetDefault:PTimerDevice; inline;
+function TimerDeviceGetCount:LongWord;
+function TimerDeviceGetDefault:PTimerDevice;
 function TimerDeviceSetDefault(Timer:PTimerDevice):LongWord; 
 
 function TimerDeviceCheck(Timer:PTimerDevice):PTimerDevice;
@@ -1382,8 +1382,8 @@ function TimerDeviceDeregisterWaiter(Timer:PTimerDevice;Waiter:PTimerWaiter):Lon
 
 {==============================================================================}
 {Random Device Helper Functions}
-function RandomDeviceGetCount:LongWord; inline;
-function RandomDeviceGetDefault:PRandomDevice; inline;
+function RandomDeviceGetCount:LongWord;
+function RandomDeviceGetDefault:PRandomDevice;
 function RandomDeviceSetDefault(Random:PRandomDevice):LongWord; 
 
 function RandomDeviceCheck(Random:PRandomDevice):PRandomDevice;
@@ -1393,8 +1393,8 @@ function RandomStateToString(RandomState:LongWord):String;
 
 {==============================================================================}
 {Mailbox Device Helper Functions}
-function MailboxDeviceGetCount:LongWord; inline;
-function MailboxDeviceGetDefault:PMailboxDevice; inline;
+function MailboxDeviceGetCount:LongWord;
+function MailboxDeviceGetDefault:PMailboxDevice;
 function MailboxDeviceSetDefault(Mailbox:PMailboxDevice):LongWord; 
 
 function MailboxDeviceCheck(Mailbox:PMailboxDevice):PMailboxDevice;
@@ -1404,8 +1404,8 @@ function MailboxStateToString(MailboxState:LongWord):String;
 
 {==============================================================================}
 {Watchdog Device Helper Functions}
-function WatchdogDeviceGetCount:LongWord; inline;
-function WatchdogDeviceGetDefault:PWatchdogDevice; inline;
+function WatchdogDeviceGetCount:LongWord;
+function WatchdogDeviceGetDefault:PWatchdogDevice;
 function WatchdogDeviceSetDefault(Watchdog:PWatchdogDevice):LongWord;
 
 function WatchdogDeviceCheck(Watchdog:PWatchdogDevice):PWatchdogDevice;
@@ -7803,7 +7803,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Device Helper Functions}
-function DeviceGetCount:LongWord; inline;
+function DeviceGetCount:LongWord;
 {Get the current device count}
 begin
  {}
@@ -7851,7 +7851,7 @@ end;
 
 {==============================================================================}
 
-function NotifierGetCount:LongWord; inline;
+function NotifierGetCount:LongWord;
 {Get the current notifier count}
 begin
  {}
@@ -8154,7 +8154,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Driver Helper Functions}
-function DriverGetCount:LongWord; inline;
+function DriverGetCount:LongWord;
 {Get the current driver count}
 begin
  {}
@@ -8233,7 +8233,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Clock Device Helper Functions}
-function ClockDeviceGetCount:LongWord; inline;
+function ClockDeviceGetCount:LongWord;
 {Get the current clock device count}
 begin
  {}
@@ -8242,7 +8242,7 @@ end;
 
 {==============================================================================}
 
-function ClockDeviceGetDefault:PClockDevice; inline;
+function ClockDeviceGetDefault:PClockDevice;
 {Get the current default clock device}
 begin
  {}
@@ -8354,7 +8354,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Timer Device Helper Functions}
-function TimerDeviceGetCount:LongWord; inline;
+function TimerDeviceGetCount:LongWord;
 {Get the current timer device count}
 begin
  {}
@@ -8363,7 +8363,7 @@ end;
 
 {==============================================================================}
 
-function TimerDeviceGetDefault:PTimerDevice; inline;
+function TimerDeviceGetDefault:PTimerDevice;
 {Get the current default timer device}
 begin
  {}
@@ -8610,7 +8610,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Random Device Helper Functions}
-function RandomDeviceGetCount:LongWord; inline;
+function RandomDeviceGetCount:LongWord;
 {Get the current random device count}
 begin
  {}
@@ -8619,7 +8619,7 @@ end;
 
 {==============================================================================}
 
-function RandomDeviceGetDefault:PRandomDevice; inline;
+function RandomDeviceGetDefault:PRandomDevice;
 {Get the current default random device}
 begin
  {}
@@ -8731,7 +8731,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Mailbox Device Helper Functions}
-function MailboxDeviceGetCount:LongWord; inline;
+function MailboxDeviceGetCount:LongWord;
 {Get the current mailbox device count}
 begin
  {}
@@ -8740,7 +8740,7 @@ end;
 
 {==============================================================================}
 
-function MailboxDeviceGetDefault:PMailboxDevice; inline;
+function MailboxDeviceGetDefault:PMailboxDevice;
 {Get the current default mailbox device}
 begin
  {}
@@ -8852,7 +8852,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Watchdog Device Helper Functions}
-function WatchdogDeviceGetCount:LongWord; inline;
+function WatchdogDeviceGetCount:LongWord;
 {Get the current watchdog device count}
 begin
  {}
@@ -8861,7 +8861,7 @@ end;
 
 {==============================================================================}
 
-function WatchdogDeviceGetDefault:PWatchdogDevice; inline;
+function WatchdogDeviceGetDefault:PWatchdogDevice;
 {Get the current default watchdog device}
 begin
  {}

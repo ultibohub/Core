@@ -1,7 +1,7 @@
 {
 Ultibo Font interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -314,8 +314,8 @@ function PSFFontLoadEx(Data:Pointer;Size:LongWord):TFontHandle;
 
 {==============================================================================}
 {Font Helper Functions}
-function FontGetCount:LongWord; inline;
-function FontGetDefault:TFontHandle; inline;
+function FontGetCount:LongWord;
+function FontGetDefault:TFontHandle;
 function FontSetDefault(Handle:TFontHandle):LongWord;
 
 function FontCheck(Font:PFontEntry):PFontEntry;
@@ -1430,7 +1430,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Font Helper Functions}
-function FontGetCount:LongWord; inline;
+function FontGetCount:LongWord;
 {Get the current font count}
 begin
  {}
@@ -1439,7 +1439,7 @@ end;
 
 {==============================================================================}
 
-function FontGetDefault:TFontHandle; inline;
+function FontGetDefault:TFontHandle;
 {Get the current default font}
 begin
  {}

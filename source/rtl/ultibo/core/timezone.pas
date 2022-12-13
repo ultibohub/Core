@@ -1,7 +1,7 @@
 {
 Ultibo Timezone interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -167,8 +167,8 @@ function TimezoneEnumerate(Callback:TTimezoneEnumerate;Data:Pointer):LongWord;
 
 {==============================================================================}
 {Timezone Helper Functions}
-function TimezoneGetCount:LongWord; inline;
-function TimezoneGetDefault:PTimezoneEntry; inline;
+function TimezoneGetCount:LongWord;
+function TimezoneGetDefault:PTimezoneEntry;
 function TimezoneSetDefault(Timezone:PTimezoneEntry):LongWord;
 
 function TimezoneCheck(Timezone:PTimezoneEntry):PTimezoneEntry;
@@ -2714,7 +2714,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Timezone Helper Functions}
-function TimezoneGetCount:LongWord; inline;
+function TimezoneGetCount:LongWord;
 {Get the current timezone count}
 begin
  {}
@@ -2723,7 +2723,7 @@ end;
 
 {==============================================================================}
 
-function TimezoneGetDefault:PTimezoneEntry; inline;
+function TimezoneGetDefault:PTimezoneEntry;
 {Get the current default timezone}
 begin
  {}

@@ -1,7 +1,7 @@
 {
 Ultibo Video interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -162,8 +162,8 @@ function VideoDeviceNotification(Video:PVideoDevice;Callback:TVideoNotification;
 
 {==============================================================================}
 {Video Helper Functions}
-function VideoGetCount:LongWord; inline;
-function VideoDeviceGetDefault:PVideoDevice; inline;
+function VideoGetCount:LongWord;
+function VideoDeviceGetDefault:PVideoDevice;
 function VideoDeviceSetDefault(Video:PVideoDevice):LongWord; 
 
 function VideoDeviceCheck(Video:PVideoDevice):PVideoDevice;
@@ -642,7 +642,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Video Helper Functions}
-function VideoGetCount:LongWord; inline;
+function VideoGetCount:LongWord;
 {Get the current Video device count}
 begin
  {}
@@ -651,7 +651,7 @@ end;
 
 {==============================================================================}
 
-function VideoDeviceGetDefault:PVideoDevice; inline;
+function VideoDeviceGetDefault:PVideoDevice;
 {Get the current default Video device}
 begin
  {}

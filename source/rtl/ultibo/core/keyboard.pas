@@ -640,7 +640,7 @@ function SysConsoleReadWideChar(var ACh:WideChar;AUserData:Pointer):Boolean;
 
 {==============================================================================}
 {Keyboard Helper Functions}
-function KeyboardGetCount:LongWord; inline;
+function KeyboardGetCount:LongWord;
 
 function KeyboardDeviceCheck(Keyboard:PKeyboardDevice):PKeyboardDevice;
 
@@ -2102,7 +2102,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Keyboard Helper Functions}
-function KeyboardGetCount:LongWord; inline;
+function KeyboardGetCount:LongWord;
 {Get the current keyboard count}
 begin
  {}

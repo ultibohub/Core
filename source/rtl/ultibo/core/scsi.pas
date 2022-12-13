@@ -469,7 +469,7 @@ function SCSIHostEnumerate(Callback:TSCSIHostEnumerate;Data:Pointer):LongWord;
  
 {==============================================================================}
 {SCSI Helper Functions}
-function SCSIGetCount:LongWord; inline;
+function SCSIGetCount:LongWord;
 
 function SCSIDeviceCheck(SCSI:PSCSIDevice):PSCSIDevice;
 
@@ -481,7 +481,7 @@ procedure SCSILogDebug(SCSI:PSCSIDevice;const AText:String); inline;
 
 function SCSIDeviceTypeToStorageType(DeviceType:Byte;Removable,Floppy:Boolean):LongWord;
 
-function SCSIHostGetCount:LongWord; inline;
+function SCSIHostGetCount:LongWord;
 
 function SCSIHostCheck(Host:PSCSIHost):PSCSIHost;
 
@@ -1324,7 +1324,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {SCSI Helper Functions}
-function SCSIGetCount:LongWord; inline;
+function SCSIGetCount:LongWord;
 {Get the current SCSI count}
 begin
  {}
@@ -1480,7 +1480,7 @@ end;
 
 {==============================================================================}
 
-function SCSIHostGetCount:LongWord; inline;
+function SCSIHostGetCount:LongWord;
 {Get the current Host count}
 begin
  {}

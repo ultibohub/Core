@@ -284,8 +284,8 @@ function TouchDeviceNotification(Touch:PTouchDevice;Callback:TTouchNotification;
 
 {==============================================================================}
 {Touch Helper Functions}
-function TouchGetCount:LongWord; inline;
-function TouchDeviceGetDefault:PTouchDevice; inline;
+function TouchGetCount:LongWord;
+function TouchDeviceGetDefault:PTouchDevice;
 function TouchDeviceSetDefault(Touch:PTouchDevice):LongWord; 
 
 function TouchDeviceCheck(Touch:PTouchDevice):PTouchDevice;
@@ -1536,7 +1536,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Touch Helper Functions}
-function TouchGetCount:LongWord; inline;
+function TouchGetCount:LongWord;
 {Get the current Touch device count}
 {Return: The number of Touch devices}
 begin
@@ -1546,7 +1546,7 @@ end;
 
 {==============================================================================}
 
-function TouchDeviceGetDefault:PTouchDevice; inline;
+function TouchDeviceGetDefault:PTouchDevice;
 {Get the current default Touch device}
 {Return: Pointer to default Touch device entry}
 begin

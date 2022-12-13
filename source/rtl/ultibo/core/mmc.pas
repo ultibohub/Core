@@ -2818,7 +2818,7 @@ function SDHCIHostNotification(SDHCI:PSDHCIHost;Callback:TSDHCINotification;Data
 
 {==============================================================================}
 {MMC Helper Functions}
-function MMCGetCount:LongWord; inline;
+function MMCGetCount:LongWord;
 
 function MMCDeviceCheck(MMC:PMMCDevice):PMMCDevice;
 
@@ -2875,7 +2875,7 @@ function SDBusWidthToString(BusWidth:LongWord):String;
 
 {==============================================================================}
 {SDIO Helper Functions}
-function SDIODriverGetCount:LongWord; inline;
+function SDIODriverGetCount:LongWord;
 
 function SDIODriverCheck(Driver:PSDIODriver):PSDIODriver;
 
@@ -2894,7 +2894,7 @@ function SDIOFunctionStatusToNotification(Status:LongWord):LongWord;
 
 {==============================================================================}
 {SDHCI Helper Functions}
-function SDHCIGetCount:LongWord; inline;
+function SDHCIGetCount:LongWord;
 
 function SDHCIHostCheck(SDHCI:PSDHCIHost):PSDHCIHost;
 
@@ -15448,7 +15448,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {MMC Helper Functions}
-function MMCGetCount:LongWord; inline;
+function MMCGetCount:LongWord;
 {Get the current MMC count}
 begin
  {}
@@ -16310,7 +16310,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {SDIO Helper Functions}
-function SDIODriverGetCount:LongWord; inline;
+function SDIODriverGetCount:LongWord;
 {Get the current SDIO driver count}
 begin
  {}
@@ -16492,7 +16492,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {SDHCI Helper Functions}
-function SDHCIGetCount:LongWord; inline;
+function SDHCIGetCount:LongWord;
 {Get the current SDHCI count}
 begin
  {}

@@ -1,7 +1,7 @@
 {
 Ultibo 1-Wire interface unit.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2022 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -161,8 +161,8 @@ function W1DeviceNotification(W1:PW1Device;Callback:TW1Notification;Data:Pointer
   
 {==============================================================================}
 {W1 Helper Functions}
-function W1GetCount:LongWord; inline;
-function W1DeviceGetDefault:PW1Device; inline;
+function W1GetCount:LongWord;
+function W1DeviceGetDefault:PW1Device;
 function W1DeviceSetDefault(W1:PW1Device):LongWord; 
 
 function W1DeviceCheck(W1:PW1Device):PW1Device;
@@ -642,7 +642,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {W1 Helper Functions}
-function W1GetCount:LongWord; inline;
+function W1GetCount:LongWord;
 {Get the current W1 count}
 begin
  {}
@@ -651,7 +651,7 @@ end;
 
 {==============================================================================}
 
-function W1DeviceGetDefault:PW1Device; inline;
+function W1DeviceGetDefault:PW1Device;
 {Get the current default W1 device}
 begin
  {}

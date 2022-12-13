@@ -569,8 +569,8 @@ function JoystickDeviceNotification(Joystick:PJoystickDevice;Callback:TJoystickN
 
 {==============================================================================}
 {Joystick Helper Functions}
-function JoystickGetCount:LongWord; inline;
-function JoystickDeviceGetDefault:PJoystickDevice; inline;
+function JoystickGetCount:LongWord;
+function JoystickDeviceGetDefault:PJoystickDevice;
 function JoystickDeviceSetDefault(Joystick:PJoystickDevice):LongWord;
 
 function JoystickDeviceCheck(Joystick:PJoystickDevice):PJoystickDevice;
@@ -598,10 +598,10 @@ function JoystickDeviceSetCallback(Joystick:PJoystickDevice;Event:TJoystickEvent
 function JoystickInsertData(Joystick:PJoystickDevice;Data:PJoystickData;Signal:Boolean):LongWord;
 
 procedure JoystickLog(Level:LongWord;Joystick:PJoystickDevice;const AText:String);
-procedure JoystickLogInfo(Joystick:PJoystickDevice;const AText:String); {inline;}
-procedure JoystickLogWarn(Joystick:PJoystickDevice;const AText:String); {inline;}
-procedure JoystickLogError(Joystick:PJoystickDevice;const AText:String); {inline;}
-procedure JoystickLogDebug(Joystick:PJoystickDevice;const AText:String); {inline;}
+procedure JoystickLogInfo(Joystick:PJoystickDevice;const AText:String); inline;
+procedure JoystickLogWarn(Joystick:PJoystickDevice;const AText:String); inline;
+procedure JoystickLogError(Joystick:PJoystickDevice;const AText:String); inline;
+procedure JoystickLogDebug(Joystick:PJoystickDevice;const AText:String); inline;
 
 {==============================================================================}
 {==============================================================================}
@@ -1862,7 +1862,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Joystick Helper Functions}
-function JoystickGetCount:LongWord; inline;
+function JoystickGetCount:LongWord;
 {Get the current Joystick device count}
 {Return: The number of Joystick devices}
 begin
@@ -1872,7 +1872,7 @@ end;
 
 {==============================================================================}
 
-function JoystickDeviceGetDefault:PJoystickDevice; inline;
+function JoystickDeviceGetDefault:PJoystickDevice;
 {Get the current default Joystick device}
 {Return: Pointer to default Joystick device entry}
 begin
@@ -2264,7 +2264,7 @@ end;
 
 {==============================================================================}
 
-procedure JoystickLogInfo(Joystick:PJoystickDevice;const AText:String); {inline;}
+procedure JoystickLogInfo(Joystick:PJoystickDevice;const AText:String); inline;
 begin
  {}
  JoystickLog(JOYSTICK_LOG_LEVEL_INFO,Joystick,AText);
@@ -2272,7 +2272,7 @@ end;
 
 {==============================================================================}
 
-procedure JoystickLogWarn(Joystick:PJoystickDevice;const AText:String); {inline;}
+procedure JoystickLogWarn(Joystick:PJoystickDevice;const AText:String); inline;
 begin
  {}
  JoystickLog(JOYSTICK_LOG_LEVEL_WARN,Joystick,AText);
@@ -2280,7 +2280,7 @@ end;
 
 {==============================================================================}
 
-procedure JoystickLogError(Joystick:PJoystickDevice;const AText:String); {inline;}
+procedure JoystickLogError(Joystick:PJoystickDevice;const AText:String); inline;
 begin
  {}
  JoystickLog(JOYSTICK_LOG_LEVEL_ERROR,Joystick,AText);
@@ -2288,7 +2288,7 @@ end;
 
 {==============================================================================}
 
-procedure JoystickLogDebug(Joystick:PJoystickDevice;const AText:String); {inline;}
+procedure JoystickLogDebug(Joystick:PJoystickDevice;const AText:String); inline;
 begin
  {}
  JoystickLog(JOYSTICK_LOG_LEVEL_DEBUG,Joystick,AText);
