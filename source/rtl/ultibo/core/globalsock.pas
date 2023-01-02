@@ -1,7 +1,7 @@
 {
 Ultibo Global Socket Definitions.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -31,7 +31,7 @@ References
 Global Sockets
 ==============
 
- Notes: Includes all global socket defintions, base classes for GetXbyY
+ Notes: Includes all global socket definitions, base classes for GetXbyY
         interfaces and DNS handling classes. 
 
         This unit is used by every network layer
