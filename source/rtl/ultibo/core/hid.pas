@@ -1,7 +1,7 @@
 {
 Ultibo Human Interface Device (HID) interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3332,7 +3332,7 @@ end;
 {==============================================================================}
 
 function HIDAllocateDefinition(Device:PHIDDevice;Collection:PHIDCollection;Kind,Id:Byte):PHIDDefinition;
-{Allocate a HID defintion to describe an input, output or feature report contained in the specified collection}
+{Allocate a HID definition to describe an input, output or feature report contained in the specified collection}
 {Device: The HID device to create the report definition from}
 {Collection: The HID collection to create the report definition from}
 {Kind: The report kind to create a definition for (eg HID_REPORT_INPUT)}
@@ -3394,6 +3394,7 @@ var
 var
  Bits:LongWord;
  Count:LongWord;
+ Remain:LongWord;
  Field:PHIDField;
  Usage:PHIDUsage;
  Report:PHIDReport;
@@ -3462,6 +3463,9 @@ begin
          if Report.UsageCount > 0 then
           begin
            {Data}
+           {Remaining Bits}
+           Remain:=Report.Size * Report.Count;
+
            for UsageIndex:=0 to Report.UsageCount - 1 do
             begin
              Usage:=Report.Usages[UsageIndex];
@@ -3537,6 +3541,7 @@ begin
 
                    {Update Bits}
                    Inc(Bits,Report.Size);
+                   Dec(Remain,Report.Size);
 
                    {$IFDEF HID_DEBUG}
                    if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocating Definition (Bits=' + IntToStr(Bits) + ')');
@@ -3605,6 +3610,7 @@ begin
 
                    {Update Bits}
                    Inc(Bits,Report.Size);
+                   Dec(Remain,Report.Size);
 
                    {$IFDEF HID_DEBUG}
                    if HID_LOG_ENABLED then HIDLogDebug(Device,'Allocating Definition (Bits=' + IntToStr(Bits) + ')');
@@ -3613,6 +3619,10 @@ begin
                 end;
               end;
             end;
+
+           {Padding}
+           {Update Bits}
+           if Remain > 0 then Inc(Bits,Remain);
           end
          else
           begin

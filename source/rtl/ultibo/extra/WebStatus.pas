@@ -1,7 +1,7 @@
 {
 Ultibo Web Status unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -9748,8 +9748,8 @@ function TWebStatusHID.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;ARespon
         HIDLogOutput(Indent + 'Id:          ' + IntToStr(Report.Id));
         HIDLogOutput(Indent + 'Kind:        ' + IntToStr(Report.Kind) + ' (' + HIDReportKindToString(Report.Kind) + ')');
         HIDLogOutput(Indent + 'Flags:       ' + '0x' + IntToHex(Report.Flags,8) + ' (' + HIDReportFlagsToString(Report.Flags) + ')');
-        HIDLogOutput(Indent + 'Size:        ' + IntToStr(Report.Size));
-        HIDLogOutput(Indent + 'Count:       ' + IntToStr(Report.Count));
+        HIDLogOutput(Indent + 'Size:        ' + IntToStr(Report.Size) + ' (Bits per Field)');
+        HIDLogOutput(Indent + 'Count:       ' + IntToStr(Report.Count) + ' (Number of Fields)');
         HIDLogOutput(Indent + 'Index:       ' + IntToStr(Report.Index));
         HIDLogOutput(Indent + 'Sequence:    ' + IntToStr(Report.Sequence));
         HIDLogOutput(Indent + 'Usage Count: ' + IntToStr(Report.UsageCount));
@@ -9818,15 +9818,75 @@ function TWebStatusHID.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;ARespon
   Result:=True;
  end;
 
+ function HIDLogDefinition(Definition:PHIDDefinition):Boolean;
+ var
+  Indent:String;
+  Field:PHIDField;
+ begin
+  {}
+  Result:=False;
+
+  {Check Definition}
+  if Definition = nil then Exit;
+
+  {Get Indent}
+  Indent:=StringOfChar(' ',2);
+
+  {Log Definition}
+  HIDLogOutput(Indent + '[Definition]');
+  HIDLogOutput(Indent + 'Id:          ' + IntToStr(Definition.Id));
+  HIDLogOutput(Indent + 'Kind:        ' + IntToStr(Definition.Kind) + ' (' + HIDReportKindToString(Definition.Kind) + ')');
+  HIDLogOutput(Indent + 'Size:        ' + IntToStr(Definition.Size) + ' (Bytes)');
+  HIDLogOutput(Indent);
+
+  {Get Indent}
+  Indent:=StringOfChar(' ',4);
+
+  {Log Fields}
+  if Definition.Fields <> nil then
+   begin
+    Field:=Definition.Fields;
+    while Field <> nil do
+     begin
+      {Log Field}
+      HIDLogOutput(Indent + '[Field]');
+      HIDLogOutput(Indent + 'Page:             ' + '0x' + IntToHex(Field.Page,4) + ' (' + HIDPageToString(Field.Page) + ')');
+      HIDLogOutput(Indent + 'Usage:            ' + '0x' + IntToHex(Field.Usage,4) + ' (' + HIDUsageToString(Field.Page,Field.Usage,Field.Count) + ')');
+      HIDLogOutput(Indent + 'Count:            ' + IntToStr(Field.Count));
+      HIDLogOutput(Indent + 'Flags:            ' + '0x' + IntToHex(Field.Flags,8) + ' (' + HIDReportFlagsToString(Field.Flags) + ')');
+      HIDLogOutput(Indent + 'Size:             ' + IntToStr(Field.Size) + ' (Bytes)');
+      HIDLogOutput(Indent + 'Bits:             ' + IntToStr(Field.Bits));
+      HIDLogOutput(Indent + 'Offset:           ' + IntToStr(Field.Offset) + ' (Bytes)');
+      HIDLogOutput(Indent + 'Shift:            ' + IntToStr(Field.Shift));
+      HIDLogOutput(Indent + 'Logical Minimum:  ' + IntToStr(Field.Logical.Minimum));
+      HIDLogOutput(Indent + 'Logical Maximum:  ' + IntToStr(Field.Logical.Maximum));
+      HIDLogOutput(Indent + 'Physical Minimum: ' + IntToStr(Field.Physical.Minimum));
+      HIDLogOutput(Indent + 'Physical Maximum: ' + IntToStr(Field.Physical.Maximum));
+      HIDLogOutput(Indent + 'Multiplier:       ' + FloatToStr(Field.Multiplier));
+      HIDLogOutput(Indent + 'Resolution:       ' + FloatToStr(Field.Resolution));
+      HIDLogOutput(Indent);
+
+      Field:=Field.Next;
+     end;
+   end;
+
+  Result:=True;
+ end;
+
 var
+ MinId:Byte;
+ MaxId:Byte;
  Id:LongWord;
  Action:String;
  Count:Integer;
+ Index:Integer;
  WorkBuffer:String;
  Data:TWebStatusData;
  FlagNames:TStringList;
  HIDDevice:PHIDDevice;
  HIDReport:TMemoryStream;
+ HIDCollection:PHIDCollection;
+ HIDDefinition:PHIDDefinition;
 begin
  {}
  Result:=False;
@@ -9913,7 +9973,62 @@ begin
            if not HIDLogCollection(HIDDevice.Collections[Count],0) then Break;
           end;
         end;
-      end; 
+      end;
+
+     AddBold(AResponse,'HID Definitions','');
+     AddBlank(AResponse);
+
+     {Check Collections}
+     if HIDDevice.CollectionCount > 0 then
+      begin
+       for Count:=0 to HIDDevice.CollectionCount - 1 do
+        begin
+         HIDCollection:=HIDDevice.Collections[Count];
+         if (HIDCollection <> nil) and (HIDCollection.Parent = nil) then
+          begin
+           {Get Report Ids}
+           if HIDFindReportIds(HIDDevice,HIDCollection,MinId,MaxId) = ERROR_SUCCESS then
+            begin
+             {Allocate Definitions}
+             for Index:=MinId to MaxId do
+              begin
+               {Allocate Input Definition}
+               HIDDefinition:=HIDAllocateDefinition(HIDDevice,HIDCollection,HID_REPORT_INPUT,Index);
+               if HIDDefinition <> nil then
+                begin
+                 {Log Definition}
+                 HIDLogDefinition(HIDDefinition);
+
+                 {Free Definition}
+                 HIDFreeDefinition(HIDDefinition);
+                end;
+
+               {Allocate Output Definition}
+               HIDDefinition:=HIDAllocateDefinition(HIDDevice,HIDCollection,HID_REPORT_OUTPUT,Index);
+               if HIDDefinition <> nil then
+                begin
+                 {Log Definition}
+                 HIDLogDefinition(HIDDefinition);
+
+                 {Free Definition}
+                 HIDFreeDefinition(HIDDefinition);
+                end;
+
+               {Allocate Feature Definition}
+               HIDDefinition:=HIDAllocateDefinition(HIDDevice,HIDCollection,HID_REPORT_FEATURE,Index);
+               if HIDDefinition <> nil then
+                begin
+                 {Log Definition}
+                 HIDLogDefinition(HIDDefinition);
+
+                 {Free Definition}
+                 HIDFreeDefinition(HIDDefinition);
+                end;
+              end;
+            end;
+          end;
+        end;
+      end;
 
      FlagNames.Free;
     end
