@@ -1,7 +1,7 @@
 {
 Ultibo HID Mouse consumer unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -558,6 +558,10 @@ var
  OffsetY:LongInt;
  OffsetTemp:LongInt;
  OffsetWheel:LongInt;
+ MaximumX:LongWord;
+ MaximumY:LongWord;
+ MaximumTemp:LongWord;
+ MaximumWheel:LongWord;
 
  Mouse:PHIDMouseDevice;
  MouseData:TMouseData;
@@ -617,6 +621,9 @@ begin
         OffsetX:=0;
         OffsetY:=0;
         OffsetWheel:=0;
+        MaximumX:=0;
+        MaximumY:=0;
+        MaximumWheel:=0;
 
         {Clear Mouse Data}
         FillChar(MouseData,SizeOf(TMouseData),0);
@@ -682,19 +689,34 @@ begin
                 HIDExtractSignedField(Field,ReportData,ReportSize,OffsetX);
 
                 {Check Absolute}
-                if (Field.Flags and HID_MAIN_ITEM_RELATIVE) = 0 then Buttons:=Buttons or MOUSE_ABSOLUTE_X;
+                if (Field.Flags and HID_MAIN_ITEM_RELATIVE) = 0 then
+                 begin
+                  Buttons:=Buttons or MOUSE_ABSOLUTE_X;
+
+                  MaximumX:=Field.Logical.Maximum;
+                 end;
                end;
               HID_DESKTOP_Y:begin
                 HIDExtractSignedField(Field,ReportData,ReportSize,OffsetY);
 
                 {Check Absolute}
-                if (Field.Flags and HID_MAIN_ITEM_RELATIVE) = 0 then Buttons:=Buttons or MOUSE_ABSOLUTE_Y;
+                if (Field.Flags and HID_MAIN_ITEM_RELATIVE) = 0 then
+                 begin
+                  Buttons:=Buttons or MOUSE_ABSOLUTE_Y;
+
+                  MaximumY:=Field.Logical.Maximum;
+                 end;
                end;
               HID_DESKTOP_WHEEL:begin
                 HIDExtractSignedField(Field,ReportData,ReportSize,OffsetWheel);
 
                 {Check Absolute}
-                if (Field.Flags and HID_MAIN_ITEM_RELATIVE) = 0 then Buttons:=Buttons or MOUSE_ABSOLUTE_WHEEL;
+                if (Field.Flags and HID_MAIN_ITEM_RELATIVE) = 0 then
+                 begin
+                  Buttons:=Buttons or MOUSE_ABSOLUTE_WHEEL;
+
+                  MaximumWheel:=Field.Logical.Maximum;
+                 end;
                end;
              end;
             end;
@@ -732,35 +754,57 @@ begin
           OffsetY:=-OffsetY;
          end;
 
+        {Check Swap Max}
+        if (Mouse.Mouse.Device.DeviceFlags and MOUSE_FLAG_SWAP_MAX_XY) <> 0 then
+         begin
+          {Swap Maximum X/Y}
+          MaximumTemp:=MaximumX;
+          MaximumX:=MaximumY;
+          MaximumY:=MaximumTemp;
+         end;
+
         {Check Rotation}
         case Mouse.Mouse.Properties.Rotation of
          MOUSE_ROTATION_0:begin
            {Get Offset X and Y}
            MouseData.OffsetX:=OffsetX;
            MouseData.OffsetY:=OffsetY;
+
+           {Get Maximum X, Y}
+           MouseData.MaximumX:=MaximumX;
+           MouseData.MaximumY:=MaximumY;
           end;
          MOUSE_ROTATION_90:begin
            {Swap Offset X and Y, Invert Offset X}
            MouseData.OffsetX:=-OffsetY;
            MouseData.OffsetY:=OffsetX;
+
+           {Get Maximum X, Y}
+           MouseData.MaximumX:=MaximumY;
+           MouseData.MaximumY:=MaximumX;
           end;
          MOUSE_ROTATION_180:begin
            {Invert Offset X and Y}
            MouseData.OffsetX:=-OffsetX;
            MouseData.OffsetY:=-OffsetY;
+
+           {Get Maximum X, Y}
+           MouseData.MaximumX:=MaximumX;
+           MouseData.MaximumY:=MaximumY;
           end;
          MOUSE_ROTATION_270:begin
            {Swap Offset X and Y, Invert Offset Y}
            MouseData.OffsetX:=OffsetY;
            MouseData.OffsetY:=-OffsetX;
+
+           {Get Maximum X, Y}
+           MouseData.MaximumX:=MaximumY;
+           MouseData.MaximumY:=MaximumX;
           end;
         end;
+        {Get Wheel Offset and Maximum}
         MouseData.OffsetWheel:=OffsetWheel;
-
-        {Maximum X, Y and Wheel}
-        MouseData.MaximumX:=0;
-        MouseData.MaximumY:=0;
-        MouseData.MaximumWheel:=0;
+        MouseData.MaximumWheel:=MaximumWheel;
 
         {Insert Data}
         MouseInsertData(@Mouse.Mouse,@MouseData,True);

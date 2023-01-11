@@ -1,7 +1,7 @@
 {
 Ultibo HID Touch consumer unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1603,7 +1603,7 @@ begin
            Inc(IndexHeight);
           end;
         end;
-       HID_DIGITIZERS_CONTACT_IDENTIFIER :begin
+       HID_DIGITIZERS_CONTACT_IDENTIFIER:begin
          {Contact Identifier}
          if IndexIdentifier < Count then
           begin
