@@ -1,7 +1,7 @@
 {
 Ultibo Definitions specific to the Broadcom 2837 System on chip.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1385,7 +1385,7 @@ const
  BCM2837_BOARD_REVISION_MODEL_UNKNOWN        = (7 shl 4);   {Unknown}
  BCM2837_BOARD_REVISION_MODEL_3B             = (8 shl 4);   {Model 3B}
  BCM2837_BOARD_REVISION_MODEL_ZERO           = (9 shl 4);   {Model Zero (Cannot occur on BCM2837)}
- BCM2837_BOARD_REVISION_MODEL_COMPUTE3       = (10 shl 4);  {Compute Module 3 }
+ BCM2837_BOARD_REVISION_MODEL_COMPUTE3       = (10 shl 4);  {Compute Module 3}
  BCM2837_BOARD_REVISION_MODEL_UNKNOWN_2      = (11 shl 4);  {Unknown}
  BCM2837_BOARD_REVISION_MODEL_ZERO_W         = (12 shl 4);  {Model Zero W (Cannot occur on BCM2837)}
  BCM2837_BOARD_REVISION_MODEL_3BPLUS         = (13 shl 4);  {Model 3B+}
@@ -1395,6 +1395,7 @@ const
  BCM2837_BOARD_REVISION_MODEL_ZERO2_W        = (18 shl 4);  {Model Zero 2 W}
  BCM2837_BOARD_REVISION_MODEL_400            = (19 shl 4);  {Pi 400 (Cannot occur on BCM2837)}
  BCM2837_BOARD_REVISION_MODEL_CM4            = (20 shl 4);  {Compute Module 4 (Cannot occur on BCM2837)}
+ BCM2837_BOARD_REVISION_MODEL_CM4S           = (21 shl 4);  {Compute Module 4S (Cannot occur on BCM2837)}
                                              
  BCM2837_BOARD_REVISION_PROCESSOR_MASK       = ($F shl 12); {Processor Type}
  BCM2837_BOARD_REVISION_PROCESSOR_BCM2835    = (0 shl 12);  {BCM2835 (Cannot occur on BCM2837)}

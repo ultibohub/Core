@@ -1,7 +1,7 @@
 {
 Ultibo Definitions specific to the Broadcom 2835 System on chip.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1406,6 +1406,7 @@ const
  BCM2835_BOARD_REVISION_MODEL_ZERO2_W        = (18 shl 4);  {Model Zero 2 W (Cannot occur on BCM2835)}
  BCM2835_BOARD_REVISION_MODEL_400            = (19 shl 4);  {Pi 400 (Cannot occur on BCM2835)}
  BCM2835_BOARD_REVISION_MODEL_CM4            = (20 shl 4);  {Compute Module 4 (Cannot occur on BCM2835)}
+ BCM2835_BOARD_REVISION_MODEL_CM4S           = (21 shl 4);  {Compute Module 4S (Cannot occur on BCM2835)}
  
  BCM2835_BOARD_REVISION_PROCESSOR_MASK       = ($F shl 12); {Processor Type}
  BCM2835_BOARD_REVISION_PROCESSOR_BCM2835    = (0 shl 12);  {BCM2835}
