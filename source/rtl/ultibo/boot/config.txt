@@ -29,7 +29,11 @@
 max_framebuffers=2
 
 [pi2]
-armstub=armstub32-rpi2.bin
+#For 2B Revision 1 (BCM2836) uncomment this one
+#armstub=armstub32-rpi2.bin
+
+#For 2B Revision 2 (BCM2837) uncomment this one
+#armstub=armstub32-rpi3.bin
 
 [pi3]
 armstub=armstub32-rpi3.bin
