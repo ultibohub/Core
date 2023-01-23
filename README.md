@@ -16,7 +16,7 @@ Ultibo core is much more than just another OS example it is a complete platform 
 
 * Complete IPv4 stack including TCP, UDP, ICMP and raw sockets as well as DNS and DHCP protocols
 
-* USB support with drivers for Hub, Keyboard, Mouse, Storage and Network
+* USB support with drivers for Hub, Keyboard, Mouse, Storage, Network, HID, Touch, Gamepad and Joystick
 
 * MMC/SD/SDIO device support including eMMC devices on Raspberry Pi Compute Modules
 
