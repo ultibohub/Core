@@ -1,7 +1,7 @@
 {
 Ultibo interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -487,7 +487,7 @@ type
  end;} {TWin32FindDataA is now defined in SysUtils}
  WIN32_FIND_DATAA = _WIN32_FIND_DATAA;
  LPWIN32_FIND_DATAA = ^WIN32_FIND_DATAA;
- TWin32FindDataA = WIN32_FIND_DATAA;
+ {TWin32FindDataA = WIN32_FIND_DATAA;} {TWin32FindDataA is now defined in SysUtils}
  PWin32FindDataA = PWIN32_FIND_DATAA;
 
  PWIN32_FIND_DATAW = ^WIN32_FIND_DATAW;
@@ -511,7 +511,7 @@ type
  WIN32_FIND_DATA = WIN32_FIND_DATAA;
  PWIN32_FIND_DATA = PWIN32_FIND_DATAA;
  LPWIN32_FIND_DATA = LPWIN32_FIND_DATAA;
- TWin32FindData = TWin32FindDataA;
+ {TWin32FindData = TWin32FindDataA;} {TWin32FindData is now defined in SysUtils}
  PWin32FindData = PWin32FindDataA;
   
 type
@@ -1942,7 +1942,8 @@ begin
   {Nothing}
  
  {Setup SysUtils Handlers}
-  {Nothing}
+ SysUtilsFileTimeToSystemTimeHandler:=FileTimeToSystemTime;
+ SysUtilsFileTimeToLocalFileTimeHandler:=FileTimeToLocalFileTime;
 end;
 
 {==============================================================================}

@@ -1,6 +1,6 @@
 {
     This file is part of the Free Pascal run time library.
-    Copyright (c) 2022 by the Free Pascal development team
+    Copyright (c) 2023 by the Free Pascal development team
 
     Sysutils unit for Ultibo target.
 
@@ -26,6 +26,7 @@ interface
 {$DEFINE HAS_GETTICKCOUNT}
 {$DEFINE HAS_GETTICKCOUNT64}
 {$DEFINE HAS_LOCALTIMEZONEOFFSET}
+{$DEFINE HAS_FILEGETDATETIMEINFO}
 {$modeswitch typehelpers}
 {$modeswitch advancedrecords}
 
@@ -59,6 +60,7 @@ type
    cFileName:array[0..({System.}MaxPathLen) - 1] of AnsiCHAR;
    cAlternateFileName:array[0..13] of AnsiCHAR;
   end;
+  TWin32FindData = TWin32FindDataA;
 
 type
   {System Time (Equivalent to Win32 with FPC compatability}
@@ -137,6 +139,9 @@ type
  TSysUtilsGetLocalTimeOffset = function:Integer;
  TSysUtilsGetLocalTimeOffsetEx = function(const DateTime:TDateTime;const InputIsUTC:Boolean;out Offset:Integer):Boolean;
  TSysUtilsSysErrorMessage = function(ErrorCode:Integer):String;
+ {FileTime Functions}
+ TSysUtilsFileTimeToSystemTime = function(const lpFileTime:FILETIME;var lpSystemTime:SYSTEMTIME):ByteBool;
+ TSysUtilsFileTimeToLocalFileTime = function(const lpFileTime:FILETIME;var lpLocalFileTime:FILETIME):ByteBool;
  
 var
  {File Functions}
@@ -181,6 +186,9 @@ var
  SysUtilsGetLocalTimeOffsetHandler:TSysUtilsGetLocalTimeOffset;
  SysUtilsGetLocalTimeOffsetExHandler:TSysUtilsGetLocalTimeOffsetEx;
  SysUtilsSysErrorMessageHandler:TSysUtilsSysErrorMessage;
+ {FileTime Functions}
+ SysUtilsFileTimeToSystemTimeHandler:TSysUtilsFileTimeToSystemTime;
+ SysUtilsFileTimeToLocalFileTimeHandler:TSysUtilsFileTimeToLocalFileTime;
  
  procedure SysUtilsInitExceptions;
  
@@ -188,6 +196,34 @@ implementation
 
 uses
   sysconst;
+
+{****************************************************************************
+                              Time Functions
+****************************************************************************}
+
+function FileTimeToSystemTime(const lpFileTime:FILETIME;var lpSystemTime:SYSTEMTIME):ByteBool;
+begin
+ if Assigned(SysUtilsFileTimeToSystemTimeHandler) then
+  begin
+   Result:=SysUtilsFileTimeToSystemTimeHandler(lpFileTime,lpSystemTime);
+  end
+ else
+  begin
+   Result:=False;
+  end;
+end;
+
+function FileTimeToLocalFileTime(const lpFileTime:FILETIME;var lpLocalFileTime:FILETIME):ByteBool;
+begin
+ if Assigned(SysUtilsFileTimeToLocalFileTimeHandler) then
+  begin
+   Result:=SysUtilsFileTimeToLocalFileTimeHandler(lpFileTime,lpLocalFileTime);
+  end
+ else
+  begin
+   Result:=False;
+  end;
+end;
 
   { Include platform independent implementation part }
   {$i sysutils.inc}
