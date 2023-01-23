@@ -3028,6 +3028,7 @@ begin
  AddItemEx(AResponse,'ReallocRemoveFailCount:',IntToStr(Statistics.ReallocRemoveFailCount),3);
  {GetAligned Internal}
  AddBlank(AResponse);
+ AddItemEx(AResponse,'GetAlignedZeroCount:',IntToStr(Statistics.GetAlignedZeroCount),3);
  AddItemEx(AResponse,'GetAlignedRemainCount:',IntToStr(Statistics.GetAlignedRemainCount),3);
  AddItemEx(AResponse,'GetAlignedInvalidCount:',IntToStr(Statistics.GetAlignedInvalidCount),3);
  AddItemEx(AResponse,'GetAlignedUndersizeCount:',IntToStr(Statistics.GetAlignedUndersizeCount),3);
@@ -3035,8 +3036,6 @@ begin
  AddItemEx(AResponse,'GetAlignedAddFailCount:',IntToStr(Statistics.GetAlignedAddFailCount),3);
  AddItemEx(AResponse,'GetAlignedSplitFailCount:',IntToStr(Statistics.GetAlignedSplitFailCount),3);
  AddItemEx(AResponse,'GetAlignedRemoveFailCount:',IntToStr(Statistics.GetAlignedRemoveFailCount),3);
- AddItemEx(AResponse,'GetAlignedOrphanCount:',IntToStr(Statistics.GetAlignedOrphanCount),3);
- AddItemEx(AResponse,'GetAlignedOrphanBytes:',IntToStr(Statistics.GetAlignedOrphanBytes),3);
  AddItemEx(AResponse,'GetAlignedReleaseCount:',IntToStr(Statistics.GetAlignedReleaseCount),3);
  AddItemEx(AResponse,'GetAlignedReleaseBytes:',IntToStr(Statistics.GetAlignedReleaseBytes),3);
  {Free Internal}
@@ -3080,6 +3079,7 @@ begin
  AddBlank(AResponse);
  AddItemEx(AResponse,'GetSmallCount:',IntToStr(Statistics.GetSmallCount),3);
  AddItemEx(AResponse,'GetLargeCount:',IntToStr(Statistics.GetLargeCount),3);
+ AddItemEx(AResponse,'FindFreeCount:',IntToStr(Statistics.FindFreeCount),3);
  AddItemEx(AResponse,'AddSmallCount:',IntToStr(Statistics.AddSmallCount),3);
  AddItemEx(AResponse,'AddLargeCount:',IntToStr(Statistics.AddLargeCount),3);
  AddItemEx(AResponse,'RemoveSmallCount:',IntToStr(Statistics.RemoveSmallCount),3);

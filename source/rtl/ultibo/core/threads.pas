@@ -1,7 +1,7 @@
 {
 Ultibo Threads interface unit.
            
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -20163,9 +20163,12 @@ begin
    BufferItem.Parent:=TBufferHandle(BufferEntry);
    BufferItem.Next:=PBufferItem(PtrUInt(BufferItem) + PtrUInt(BufferSize));
    BufferItem.Buffer:=Pointer(PtrUInt(BufferItem) + PtrUInt(SizeOf(TBufferItem)));
+
    {Get Next Item}
-   BufferItem:=BufferItem.Next;
+   if BufferCount < Count - 1 then BufferItem:=BufferItem.Next;
   end;
+ {Update Last Item}
+ BufferItem.Next:=nil;
  
  {Insert Buffer entry}
  if SpinLock(BufferTableLock) = ERROR_SUCCESS then
@@ -20663,6 +20666,7 @@ begin
           
           {Get Next}
           BufferItem:=PreviousItem.Next;
+          if BufferItem = nil then Exit;
   
           {Return Buffer}
           Result:=BufferItem.Buffer;
