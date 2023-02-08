@@ -523,6 +523,21 @@ begin
   end;
 end;
 
+{$IF NOT DEFINED(FPC_STABLE) AND NOT DEFINED(FPC_FIXES) AND NOT DEFINED(FPC_LEGACY)}
+function FileGetDateTimeInfo(const FileName: string; out DateTime: TDateTimeInfoRec; FollowLink: Boolean = True): Boolean;
+var
+ Info:TSearchRec;
+begin
+ Result:=FindFirst(FileName,0,Info) = 0;
+ if Result then
+  begin
+   DateTime.data:=Info.FindData;
+   
+   FindClose(Info);
+  end;
+end;
+{$ENDIF}
+
 {****************************************************************************
                               Disk Functions
 ****************************************************************************}
