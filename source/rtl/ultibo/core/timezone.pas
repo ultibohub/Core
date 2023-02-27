@@ -1,7 +1,7 @@
 {
 Ultibo Timezone interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -149,8 +149,10 @@ function TimezoneGetName(Timezone:PTimezoneEntry):String;
 function TimezoneGetDescription(Timezone:PTimezoneEntry):String;
 
 function TimezoneGetBias(Timezone:PTimezoneEntry):LongInt;
-function TimezoneGetState(Timezone:PTimezoneEntry):LongWord;
-function TimezoneGetActiveBias(Timezone:PTimezoneEntry):LongInt;
+function TimezoneGetState(Timezone:PTimezoneEntry):LongWord; inline;
+function TimezoneGetStateEx(Timezone:PTimezoneEntry;const DateTime:TDateTime):LongWord;
+function TimezoneGetActiveBias(Timezone:PTimezoneEntry):LongInt; inline;
+function TimezoneGetActiveBiasEx(Timezone:PTimezoneEntry;const DateTime:TDateTime):LongInt;
 
 function TimezoneGetStandardName(Timezone:PTimezoneEntry):String;
 function TimezoneGetStandardBias(Timezone:PTimezoneEntry):LongInt;
@@ -163,6 +165,9 @@ function TimezoneGetDaylightDate(Timezone:PTimezoneEntry;Next:Boolean):TDateTime
 function TimezoneGetDaylightStart(Timezone:PTimezoneEntry):SYSTEMTIME;
 
 function TimezoneFind(const Name:String):PTimezoneEntry;
+function TimezoneFindByStandard(const StandardName:String):PTimezoneEntry;
+function TimezoneFindByDaylight(const DaylightName:String):PTimezoneEntry;
+
 function TimezoneEnumerate(Callback:TTimezoneEnumerate;Data:Pointer):LongWord;
 
 {==============================================================================}
@@ -2197,7 +2202,22 @@ end;
 
 {==============================================================================}
 
-function TimezoneGetState(Timezone:PTimezoneEntry):LongWord;
+function TimezoneGetState(Timezone:PTimezoneEntry):LongWord; inline;
+{Get the state of the supplied Timezone at the current date and time}
+{Timezone: The timezone entry to get the state for}
+{Return: The TIME_ZONE_ID_* constant representing the standard / daylight state of the timezone}
+begin
+ {}
+ TimezoneGetStateEx(Timezone,Now);
+end;
+
+{==============================================================================}
+
+function TimezoneGetStateEx(Timezone:PTimezoneEntry;const DateTime:TDateTime):LongWord;
+{Get the state of the supplied Timezone at the specified date and time}
+{Timezone: The timezone entry to get the state for}
+{DateTime: The date and time to get the state of the timezone at}
+{Return: The TIME_ZONE_ID_* constant representing the standard / daylight state of the timezone}
 var
  Day:Word;
  Month:Word;
@@ -2221,11 +2241,11 @@ begin
     if TimezoneCheck(Timezone) <> Timezone then Exit;
  
     {Get Year}
-    DecodeDate(Date,Year,Month,Day);
+    DecodeDate(Trunc(DateTime),Year,Month,Day);
     if Year > 0 then
      begin
       {Get Current}
-      CurrentDate:=Now;
+      CurrentDate:=DateTime;
       
       {Get Daylight Start and End}
       StartDate:=TimezoneStartToDateTime(Timezone.DaylightStart,Year);
@@ -2290,7 +2310,22 @@ end;
 
 {==============================================================================}
 
-function TimezoneGetActiveBias(Timezone:PTimezoneEntry):LongInt;
+function TimezoneGetActiveBias(Timezone:PTimezoneEntry):LongInt; inline;
+{Get the bias (offset between UTC and Local) of the supplied Timezone at the current date and time}
+{Timezone: The timezone entry to get the bias for}
+{Return: The bias in minutes offset between UTC and Local including any daylight bias if active}
+begin
+ {}
+ TimezoneGetActiveBiasEx(Timezone,Now);
+end;
+
+{==============================================================================}
+
+function TimezoneGetActiveBiasEx(Timezone:PTimezoneEntry;const DateTime:TDateTime):LongInt;
+{Get the bias (offset between UTC and Local) of the supplied Timezone at the specified date and time}
+{Timezone: The timezone entry to get the bias for}
+{DateTime: The date and time to get the bias of the timezone at}
+{Return: The bias in minutes offset between UTC and Local}
 var
  Day:Word;
  Month:Word;
@@ -2314,11 +2349,11 @@ begin
     if TimezoneCheck(Timezone) <> Timezone then Exit;
  
     {Get Year}
-    DecodeDate(Date,Year,Month,Day);
+    DecodeDate(Trunc(DateTime),Year,Month,Day);
     if Year > 0 then
      begin
       {Get Current}
-      CurrentDate:=Now;
+      CurrentDate:=DateTime;
       
       {Get Daylight Start and End}
       StartDate:=TimezoneStartToDateTime(Timezone.DaylightStart,Year);
@@ -2630,6 +2665,7 @@ begin
    end;
   end;
 end;
+
 {==============================================================================}
 
 function TimezoneFind(const Name:String):PTimezoneEntry;
@@ -2667,7 +2703,83 @@ begin
    end;
   end;
 end;
-       
+
+{==============================================================================}
+
+function TimezoneFindByStandard(const StandardName:String):PTimezoneEntry;
+var
+ Timezone:PTimezoneEntry;
+begin
+ {}
+ Result:=nil;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Timezone}
+    Timezone:=TimezoneTable;
+    while Timezone <> nil do
+     begin
+      {Check State}
+      if Timezone.Signature = TIMEZONE_SIGNATURE then
+       begin
+        {Check Standard Name}
+        if Uppercase(Timezone.StandardName) = Uppercase(StandardName) then
+         begin
+          {Return Result}
+          Result:=Timezone;
+          Exit;
+         end;
+       end;
+      {Get Next}
+      Timezone:=Timezone.Next;
+     end;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(TimezoneTableLock);
+   end;
+  end;
+end;
+
+{==============================================================================}
+
+function TimezoneFindByDaylight(const DaylightName:String):PTimezoneEntry;
+var
+ Timezone:PTimezoneEntry;
+begin
+ {}
+ Result:=nil;
+ 
+ {Acquire the Lock}
+ if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Get Timezone}
+    Timezone:=TimezoneTable;
+    while Timezone <> nil do
+     begin
+      {Check State}
+      if Timezone.Signature = TIMEZONE_SIGNATURE then
+       begin
+        {Check Daylight Name}
+        if Uppercase(Timezone.DaylightName) = Uppercase(DaylightName) then
+         begin
+          {Return Result}
+          Result:=Timezone;
+          Exit;
+         end;
+       end;
+      {Get Next}
+      Timezone:=Timezone.Next;
+     end;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(TimezoneTableLock);
+   end;
+  end;
+end;
+
 {==============================================================================}
 
 function TimezoneEnumerate(Callback:TTimezoneEnumerate;Data:Pointer):LongWord;

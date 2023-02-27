@@ -1245,7 +1245,7 @@ procedure GetLocalTime(var lpSystemTime:SYSTEMTIME);
 function SetLocalTime(var lpSystemTime:SYSTEMTIME):BOOL;
 
 function SystemTimeToTzSpecificLocalTime(lpTimeZoneInformation:LPTIME_ZONE_INFORMATION;var lpUniversalTime,lpLocalTime:SYSTEMTIME):BOOL;
-function TzSpecificLocalTimeToSystemTime(const lpTimeZoneInformation:TIME_ZONE_INFORMATION;const lpLocalTime:SYSTEMTIME;var lpUniversalTime:SYSTEMTIME):BOOL;
+function TzSpecificLocalTimeToSystemTime(lpTimeZoneInformation:LPTIME_ZONE_INFORMATION;const lpLocalTime:SYSTEMTIME;var lpUniversalTime:SYSTEMTIME):BOOL;
 
 function GetTimeZoneInformation(var lpTimeZoneInformation:TIME_ZONE_INFORMATION):DWORD;
 function SetTimeZoneInformation(const lpTimeZoneInformation:TIME_ZONE_INFORMATION):BOOL;
@@ -2578,21 +2578,79 @@ end;
 {==============================================================================}
 
 function SystemTimeToTzSpecificLocalTime(lpTimeZoneInformation:LPTIME_ZONE_INFORMATION;var lpUniversalTime,lpLocalTime:SYSTEMTIME):BOOL;
+var
+ Offset:Int64;
+ LocalTime:TFileTime;
+ UniversalTime:TFileTime;
+ Timezone:PTimezoneEntry;
 begin
  {}
  Result:=False;
- 
- //To Do
+
+ if lpTimeZoneInformation = nil then
+  begin
+   {Get Default Timezone}
+   Timezone:=TimezoneGetDefault;
+  end
+ else
+  begin
+   {Find Timezone by Standard Name}
+   Timezone:=TimezoneFindByStandard(WideCharToString(@lpTimeZoneInformation.StandardName));
+  end;
+ if Timezone = nil then Exit;
+
+ {Get Universal Time}
+ if SystemTimeToFileTime(lpUniversalTime,UniversalTime) then
+  begin
+   {Get Offset}
+   Offset:=TimezoneGetActiveBiasEx(Timezone,SystemFileTimeToDateTime(UniversalTime));
+   Offset:=Offset * TIME_TICKS_PER_MINUTE;
+
+   {Convert Time}
+   Int64(LocalTime):=Int64(UniversalTime) - (Offset);
+
+   {Return Local Time}
+   Result:=FileTimeToSystemTime(LocalTime,lpLocalTime);
+  end;
 end;
 
 {==============================================================================}
 
-function TzSpecificLocalTimeToSystemTime(const lpTimeZoneInformation:TIME_ZONE_INFORMATION;const lpLocalTime:SYSTEMTIME;var lpUniversalTime:SYSTEMTIME):BOOL;
+function TzSpecificLocalTimeToSystemTime(lpTimeZoneInformation:LPTIME_ZONE_INFORMATION;const lpLocalTime:SYSTEMTIME;var lpUniversalTime:SYSTEMTIME):BOOL;
+var
+ Offset:Int64;
+ LocalTime:TFileTime;
+ UniversalTime:TFileTime;
+ Timezone:PTimezoneEntry;
 begin
  {}
  Result:=False;
- 
- //To Do
+
+ if lpTimeZoneInformation = nil then
+  begin
+   {Get Default Timezone}
+   Timezone:=TimezoneGetDefault;
+  end
+ else
+  begin
+   {Find Timezone by Standard Name}
+   Timezone:=TimezoneFindByStandard(WideCharToString(@lpTimeZoneInformation.StandardName));
+  end;
+ if Timezone = nil then Exit;
+
+ {Get Local Time}
+ if SystemTimeToFileTime(lpLocalTime,LocalTime) then
+  begin
+   {Get Offset}
+   Offset:=TimezoneGetActiveBiasEx(Timezone,SystemFileTimeToDateTime(UniversalTime));
+   Offset:=Offset * TIME_TICKS_PER_MINUTE;
+
+   {Convert Time}
+   Int64(UniversalTime):=Int64(LocalTime) + (Offset);
+
+   {Return Universal Time}
+   Result:=FileTimeToSystemTime(UniversalTime,lpUniversalTime);
+  end;
 end;
 
 {==============================================================================}
@@ -2612,10 +2670,10 @@ begin
  
  {Get Timezone Information}
  lpTimeZoneInformation.Bias:=Timezone.Bias;
- //lpTimeZoneInformation.StandardName //To Do //StringToWideChar
+ StringToWideChar(Timezone.StandardName,@lpTimeZoneInformation.StandardName,32 shl 1); {Multiply by SizeOf(WideChar)}
  lpTimeZoneInformation.StandardDate:=Timezone.StandardStart;
  lpTimeZoneInformation.StandardBias:=Timezone.StandardBias;
- //lpTimeZoneInformation.DaylightName //To Do //StringToWideChar
+ StringToWideChar(Timezone.DaylightName,@lpTimeZoneInformation.DaylightName,32 shl 1); {Multiply by SizeOf(WideChar)}
  lpTimeZoneInformation.DaylightDate:=Timezone.DaylightStart;
  lpTimeZoneInformation.DaylightBias:=Timezone.DaylightBias;
  
@@ -2638,10 +2696,10 @@ begin
  
  {Set Timezone Information}
  Timezone.Bias:=lpTimeZoneInformation.Bias;
- //lpTimeZoneInformation.StandardName //To Do //StringToWideChar
+ Timezone.StandardName:=WideCharToString(@lpTimeZoneInformation.StandardName);
  Timezone.StandardStart:=lpTimeZoneInformation.StandardDate;
  Timezone.StandardBias:=lpTimeZoneInformation.StandardBias;
- //lpTimeZoneInformation.DaylightName //To Do //StringToWideChar
+ Timezone.DaylightName:=WideCharToString(@lpTimeZoneInformation.DaylightName);
  Timezone.DaylightStart:=lpTimeZoneInformation.DaylightDate;
  Timezone.DaylightBias:=lpTimeZoneInformation.DaylightBias;
  
