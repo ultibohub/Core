@@ -2,7 +2,7 @@
 Ultibo Newlib C Library Syscalls interface unit.
 
 Copyright (C) 2016 - Paul Jervois.
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2007,7 +2007,7 @@ begin
  while TableStart < TableEnd do
   begin
    {Call Init}
-   TableProc:=TSyscallsPreinit(TableStart^);
+   TableProc:=TSyscallsInit(TableStart^);
    TableProc();
    
    {Update Start}
@@ -2020,7 +2020,7 @@ begin
  while TableStart < TableEnd do
   begin
    {Call Constructor}
-   TableProc:=TSyscallsPreinit(TableStart^);
+   TableProc:=TSyscallsCtor(TableStart^);
    TableProc();
    
    {Update Start}
@@ -2053,7 +2053,7 @@ begin
  while TableStart < TableEnd do
   begin
    {Call Destructor}
-   TableProc:=TSyscallsPreinit(TableStart^);
+   TableProc:=TSyscallsDtor(TableStart^);
    TableProc();
    
    {Update Start}
@@ -2066,7 +2066,7 @@ begin
  while TableStart < TableEnd do
   begin
    {Call Fini}
-   TableProc:=TSyscallsPreinit(TableStart^);
+   TableProc:=TSyscallsFini(TableStart^);
    TableProc();
    
    {Update Start}
