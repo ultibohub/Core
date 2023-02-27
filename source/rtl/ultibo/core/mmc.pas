@@ -1,7 +1,7 @@
 {
 Ultibo MMC/SD interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -7348,8 +7348,8 @@ begin
           {Update Statistics}
           Inc(SDHCI.CommandRequestCount);
 
-          {Get Command Timeout (Default 100ms)}
-          Timeout:=100;
+          {Get Command Timeout (Default 1000ms)}
+          Timeout:=1000;
           if Command.Timeout > Timeout then Timeout:=Command.Timeout;
           
           {Wait for Signal with Timeout}
