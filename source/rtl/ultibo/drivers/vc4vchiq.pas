@@ -1,7 +1,7 @@
 {
 Ultibo Broadcom VideoCoreIV VCHIQ driver unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -126,7 +126,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,C
 
 {==============================================================================}
 {Global definitions}
-{$INCLUDE GlobalDefines.inc}
+{$INCLUDE ..\core\GlobalDefines.inc}
 
 //To Do //Some functions need better parameter checking
 //To Do //Normalize structure and member naming where relevant and field types (eg Char -> Byte or Boolean depending on purpose)

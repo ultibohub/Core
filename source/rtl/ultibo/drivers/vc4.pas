@@ -1,7 +1,7 @@
 {
 Ultibo Broadcom VideoCoreIV interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -163,7 +163,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Syscalls,
 
 {==============================================================================}
 {Global definitions}
-{$INCLUDE GlobalDefines.inc} 
+{$INCLUDE ..\core\GlobalDefines.inc}
 
 {==============================================================================}
 {const}

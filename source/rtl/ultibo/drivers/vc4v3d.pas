@@ -1,7 +1,7 @@
 {
 Ultibo Broadcom VideoCoreIV V3D interface unit.
 
-Copyright (C) 2019 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -65,7 +65,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,S
 
 {==============================================================================}
 {Global definitions}
-{$INCLUDE GlobalDefines.inc}
+{$INCLUDE ..\core\GlobalDefines.inc}
  
 {==============================================================================}
 const

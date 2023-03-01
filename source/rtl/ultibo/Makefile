@@ -447,8 +447,6 @@ ULTIBO_UNITS=globalconfig \
 	     dab \
 	     dfu \
 	     tftframebuffer \
-	     vc4v3d \
-	     vc4vchiq \
 	     bigint \
 	     crypto \
 	     asn1 \
@@ -506,8 +504,7 @@ ULTIBO_UNITS=globalconfig \
 	     services \
 	     shell \
 	     graphicsconsole \
-	     syscalls \
-	     vc4
+	     syscalls
 ULTIBO_FONTS=Latin1_8x8 \
 	     Latin1_8x10 \
 	     Latin1_8x12 \
@@ -571,7 +568,10 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    i2cgpio \
 		    goodixtouch \
 		    ft5x06touch \
-		    hyperpixel
+		    hyperpixel \
+		    vc4v3d \
+		    vc4vchiq \
+		    vc4
 ULTIBO_KEYMAP_UNITS=keymap_us \
 		    keymap_uk \
 		    keymap_de \
