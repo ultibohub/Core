@@ -1,7 +1,7 @@
 {
 Ultibo Logging interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -160,8 +160,9 @@ type
   {Logging Properties}
   Logging:TLoggingDevice;
   {Console Properties}
-  Console:PConsoleDevice;
-  Window:TWindowHandle;
+  Console:PConsoleDevice;  {The console device for logging output}
+  Window:TWindowHandle;    {The console window for logging output}
+  Existing:LongBool;       {True if the console window already existed when logging started}
  end;
  
 {==============================================================================}
@@ -1104,11 +1105,18 @@ begin
  
     {Check Console}
     if PConsoleLogging(Logging).Console = nil then Exit;
-    
-    {Create Window}
-    PConsoleLogging(Logging).Window:=ConsoleWindowCreate(PConsoleLogging(Logging).Console,CONSOLE_LOGGING_POSITION,False);
-    if PConsoleLogging(Logging).Window = INVALID_HANDLE_VALUE then Exit;
-    
+
+    {Find Window}
+    PConsoleLogging(Logging).Window:=ConsoleWindowFind(PConsoleLogging(Logging).Console,CONSOLE_LOGGING_POSITION);
+    PConsoleLogging(Logging).Existing:=True;
+    if PConsoleLogging(Logging).Window = INVALID_HANDLE_VALUE then
+     begin
+      {Create Window}
+      PConsoleLogging(Logging).Window:=ConsoleWindowCreate(PConsoleLogging(Logging).Console,CONSOLE_LOGGING_POSITION,False);
+      PConsoleLogging(Logging).Existing:=False;
+      if PConsoleLogging(Logging).Window = INVALID_HANDLE_VALUE then Exit;
+     end;
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1145,9 +1153,17 @@ begin
  
     {Check Window}
     if PConsoleLogging(Logging).Window = INVALID_HANDLE_VALUE then Exit;
-    
-    {Destroy Window}
-    Result:=ConsoleWindowDestroy(PConsoleLogging(Logging).Window);
+
+    {Check Existing}
+    if PConsoleLogging(Logging).Existing then
+     begin
+      Result:=ERROR_SUCCESS;
+     end
+    else
+     begin
+      {Destroy Window}
+      Result:=ConsoleWindowDestroy(PConsoleLogging(Logging).Window);
+     end;
    finally
     MutexUnlock(Logging.Lock);
    end; 
@@ -1237,7 +1253,7 @@ begin
       if Console = nil then Exit;
 
       {Check Window}
-      if PConsoleLogging(Logging).Window <> INVALID_HANDLE_VALUE then
+      if not(PConsoleLogging(Logging).Existing) and (PConsoleLogging(Logging).Window <> INVALID_HANDLE_VALUE) then
        begin
         {Destroy Window}
         ConsoleWindowDestroy(PConsoleLogging(Logging).Window);
@@ -1252,9 +1268,16 @@ begin
       {Update Parameters}
       PConsoleLogging(Logging).Console:=Console;
 
-      {Create Window}
-      PConsoleLogging(Logging).Window:=ConsoleWindowCreate(PConsoleLogging(Logging).Console,CONSOLE_LOGGING_POSITION,False);
-      if PConsoleLogging(Logging).Window = INVALID_HANDLE_VALUE then Exit;
+      {Find Window}
+      PConsoleLogging(Logging).Window:=ConsoleWindowFind(PConsoleLogging(Logging).Console,CONSOLE_LOGGING_POSITION);
+      PConsoleLogging(Logging).Existing:=True;
+      if PConsoleLogging(Logging).Window = INVALID_HANDLE_VALUE then
+       begin
+        {Create Window}
+        PConsoleLogging(Logging).Window:=ConsoleWindowCreate(PConsoleLogging(Logging).Console,CONSOLE_LOGGING_POSITION,False);
+        PConsoleLogging(Logging).Existing:=False;
+        if PConsoleLogging(Logging).Window = INVALID_HANDLE_VALUE then Exit;
+       end;
      end;
 
     {Return Result}
