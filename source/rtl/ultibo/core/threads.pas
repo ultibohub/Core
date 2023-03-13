@@ -297,7 +297,7 @@ Threads
                Lock Hierarchy:
                ---------------
                The rules for Completions are the same as those that apply to other serialized objects such as CriticalSection and Synchronizers except that
-               like Semaphotes they may be signalled by interrupt handlers if the appropriate flags as passed to create. 
+               like Semaphores they may be signalled by interrupt handlers if the appropriate flags as passed to create. 
 
 
  Thread Handling
@@ -305,7 +305,7 @@ Threads
 
   List - A linked list designed to provide the wait list functionality for threads, each thread record includes a list element and the list elements include a
          thread handle to allow resolution in both directions. Lists are used by all serialized objects to hold threads in an ordered wait list that can be
-         saftely manipulated in all scheduling states.
+         safely manipulated in all scheduling states.
          Lists are primarily intended to be used internally but are available for use by applications for appropriate cases.
          Suitable for use by Interrupt handlers if created with appropriate flags.
          Suitable for use on multiprocessor systems.
@@ -359,7 +359,7 @@ Threads
 
 
   Thread - Threads form the primary unit of code execution in Ultibo. It is not possible to create processes which run in their own protected address space,
-           all threads run within the kernal and with full privilege so they can perform any operation required. The core of Ultibo always includes
+           all threads run within the kernel and with full privilege so they can perform any operation required. The core of Ultibo always includes
            threading and multiple threads are created during the boot process to perform system critical functions.
 
            The complete set of available thread functions are listed below and the header of each one includes more information including any
@@ -427,7 +427,7 @@ Threads
 
            Get/Free
 
-           The next available buffer entry is obtainted by calling BufferGet() or BufferGetEx() to specify a timeout.
+           The next available buffer entry is obtained by calling BufferGet() or BufferGetEx() to specify a timeout.
            When the buffer is no longer required it can be returned to the list by calling BufferFree() and will be made available again.
 
            During initialization of the Buffer all entries can be enumerated (in order to set initial values etc) by calling BufferIterate()
@@ -507,7 +507,7 @@ Threads
 
            WorkerScheduleFIQ() checks for the assignment of the scheduler, if the scheduler is bound to an FIQ then it proceeds as per
            the IRQ version because the FIQ cannot occur when the scheduler is active or while it is blocked by a lock. If the scheduler
-           if bound to an IRQ then this function reverts to using the Tasker instead to transfer FIQ operations to an IRQ handler.
+           is bound to an IRQ then this function reverts to using the Tasker instead to transfer FIQ operations to an IRQ handler.
 
            Both functions only support immediate scheduling of a one time task, delayed or repeating tasks cannot be scheduled.
 
@@ -530,7 +530,7 @@ Threads
            Usage:
            ------
 
-           There are currently three Tasker functions avaiable, TaskerThreadSendMessage(), TaskerMessageslotSend() and
+           There are currently three Tasker functions available, TaskerThreadSendMessage(), TaskerMessageslotSend() and
            TaskerSemaphoreSignal() which each perform the same function as their non Tasker equivalent.
 
            The Tasker list is checked on each clock interrupt for tasks waiting to be triggered, the task is performed
@@ -541,7 +541,7 @@ Threads
  Services
  --------
 
-  In addition to the various synchronization and serialization objects desribed above the following services are provided
+  In addition to the various synchronization and serialization objects described above the following services are provided
   by this unit:
 
    ThreadManager

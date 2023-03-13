@@ -1,7 +1,7 @@
 {
 Ultibo BCM2710 interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -4459,14 +4459,14 @@ begin
    DataMemoryBarrier; {Before the First Write}
 
    {Receive Data}
-   Status:=BCM2710I2CSlaveReceive(PBCM2710I2CSlave(I2C));
+   (*Status:=BCM2710I2CSlaveReceive(PBCM2710I2CSlave(I2C));
    if Status <> ERROR_SUCCESS then
     begin
      if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Receive failure on read');
 
      Result:=Status;
      Break;
-    end;
+    end;*)
 
    {Check Errors}
    Status:=PBCM2837I2CSPIRegisters(PBCM2710I2CSlave(I2C).Address).RSR;
@@ -4529,11 +4529,11 @@ begin
          if (PBCM2710I2CSlave(I2C).Receive.Count = 0) or (Size = 0) then Break;
          
          {Decrement Wait}
-         SemaphoreWait(PBCM2710I2CSlave(I2C).Receive.Wait);
+         if SemaphoreWait(PBCM2710I2CSlave(I2C).Receive.Wait) <> ERROR_SUCCESS then Break;
         end;
 
        {Check Count}
-       if PBCM2710I2CSlave(I2C).Receive.Count < BCM2710_I2CSLAVE_BUFFER_SIZE then
+       (*if PBCM2710I2CSlave(I2C).Receive.Count < BCM2710_I2CSLAVE_BUFFER_SIZE then
         begin
          {Acquire the Lock}
          if SpinLockIRQ(PBCM2710I2CSlave(I2C).Lock) = ERROR_SUCCESS then
@@ -4549,7 +4549,7 @@ begin
            Result:=ERROR_CAN_NOT_COMPLETE;
            Exit;
           end;
-        end;
+        end;*)
       end
      else if Status = ERROR_WAIT_TIMEOUT then
       begin
@@ -4973,11 +4973,11 @@ begin
    BCM2710I2CSlaveDrainFIFO(I2C);
 
    {Check Count}
-   if I2C.Receive.Count = BCM2710_I2CSLAVE_BUFFER_SIZE then
+   (*if I2C.Receive.Count = BCM2710_I2CSLAVE_BUFFER_SIZE then
     begin
      {Disable Interrupt}
      PBCM2837I2CSPIRegisters(I2C.Address).IMSC:=PBCM2837I2CSPIRegisters(I2C.Address).IMSC and not(BCM2837_I2CSPI_IMSC_RXIM);
-    end;
+    end;*)
 
    Result:=INTERRUPT_RETURN_HANDLED;
   end
