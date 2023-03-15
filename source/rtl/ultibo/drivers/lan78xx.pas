@@ -1,7 +1,7 @@
 {
 Microchip LAN78xx USB Ethernet Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1967,6 +1967,12 @@ begin
  if MutexLock(Network.Lock) = ERROR_SUCCESS then
   begin
    try
+    {Cancel Interrupt Request}
+    USBRequestCancel(PLAN78XXNetwork(Network).InterruptRequest);
+
+    {Cancel Receive Request}
+    USBRequestCancel(PLAN78XXNetwork(Network).ReceiveRequest);
+
     {Check Pending}
     if PLAN78XXNetwork(Network).PendingCount <> 0 then
      begin

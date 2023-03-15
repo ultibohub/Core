@@ -1,7 +1,7 @@
 {
 Ultibo WiFi (IEEE 802.11 / WPA) interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3426,7 +3426,10 @@ begin
    begin
     {Terminate Thread}
     FThread.Terminate;
-  
+
+    {Release Thread (In future override TerminatedSet method in TAdapterThread)}
+    ThreadWake(FThread.Handle);
+
     {Wait For Thread}
     FThread.WaitFor;
   

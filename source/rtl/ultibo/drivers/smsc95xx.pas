@@ -1,7 +1,7 @@
 {
 SMSC LAN95xx USB Ethernet Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1186,6 +1186,12 @@ begin
  if MutexLock(Network.Lock) = ERROR_SUCCESS then
   begin
    try
+    {Cancel Interrupt Request}
+    USBRequestCancel(PSMSC95XXNetwork(Network).InterruptRequest);
+
+    {Cancel Receive Request}
+    USBRequestCancel(PSMSC95XXNetwork(Network).ReceiveRequest);
+
     {Check Pending}
     if PSMSC95XXNetwork(Network).PendingCount <> 0 then
      begin

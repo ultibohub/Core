@@ -1,7 +1,7 @@
 {
 USB CDC Ethernet Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -717,6 +717,12 @@ begin
  if MutexLock(Network.Lock) = ERROR_SUCCESS then
   begin
    try
+    {Cancel Interrupt Request}
+    USBRequestCancel(PCDCEthernetNetwork(Network).InterruptRequest);
+
+    {Cancel Receive Request}
+    USBRequestCancel(PCDCEthernetNetwork(Network).ReceiveRequest);
+
     {Check Pending}
     if PCDCEthernetNetwork(Network).PendingCount <> 0 then
      begin

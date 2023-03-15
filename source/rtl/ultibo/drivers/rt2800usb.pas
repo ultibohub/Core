@@ -1,7 +1,7 @@
 {
 Ralink RT2800 USB Wireless Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1919,7 +1919,10 @@ begin
        {Release Receive Requests}
        for Count:=0 to Length(PRT2800USBWiFiDevice(Network).ReceiveRequests) - 1 do
         begin
-         //To Do //Cancel the request first ?
+         {Cancel Receive Request}
+         USBRequestCancel(PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Request);
+
+         {Release Receive Request}
          USBRequestRelease(PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Request);
         end;
        
@@ -1981,6 +1984,8 @@ end;
 function RT2800USBDeviceClose(Network:PNetworkDevice):LongWord;
 {Implementation of NetworkDeviceClose for the RT2800USB device}
 var
+ Count:LongWord;
+ Message:TMessage;
  Device:PUSBDevice;
 begin
  {}
@@ -2010,7 +2015,41 @@ begin
  if MutexLock(Network.Lock) = ERROR_SUCCESS then
   begin
    try
+    {Release Receive Requests}
+    for Count:=0 to Length(PRT2800USBWiFiDevice(Network).ReceiveRequests) - 1 do
+     begin
+      {Cancel Receive Request}
+      USBRequestCancel(PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Request);
+     end;
+
+    {Check Pending}
+    if PRT2800USBWiFiDevice(Network).PendingCount <> 0 then
+     begin
+      {$IFDEF RT2800USB_DEBUG}
+      if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Waiting for ' + IntToStr(PRT2800USBWiFiDevice(Network).PendingCount) + ' pending requests to complete');
+      {$ENDIF}
+
+      {Wait for Pending}
  
+      {Setup Waiter}
+      PRT2800USBWiFiDevice(Network).WaiterThread:=GetCurrentThreadId; 
+   
+      {Release the Lock}
+      MutexUnlock(Network.Lock);
+   
+      {Wait for Message}
+      ThreadReceiveMessage(Message); 
+      
+      {Acquire the Lock}
+      if MutexLock(Network.Lock) <> ERROR_SUCCESS then Exit;
+     end;
+       
+    {Set State to Closed}
+    Network.NetworkState:=NETWORK_STATE_CLOSED;
+ 
+    {Notify the State}
+    NotifierNotify(@Network.Device,DEVICE_NOTIFICATION_CLOSE); 
+    
     //To Do //rt2x00lib_stop
     
     {Return Result}
