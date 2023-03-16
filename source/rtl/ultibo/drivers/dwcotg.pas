@@ -122,7 +122,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,U
             
 {==============================================================================}
 {Global definitions}
-{$INCLUDE GlobalDefines.inc}
+{$INCLUDE ..\core\GlobalDefines.inc}
             
 {==============================================================================}
 const

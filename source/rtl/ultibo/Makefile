@@ -429,7 +429,6 @@ ULTIBO_UNITS=globalconfig \
 	     ahci \
 	     ehci \
 	     xhci \
-	     dwcotg \
 	     keymap \
 	     keyboard \
 	     mouse \
@@ -554,6 +553,7 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    smc91x \
 		    pl18x \
 		    bcmsdhost \
+		    dwcotg \
 		    smsc95xx \
 		    lan78xx \
 		    genet \
