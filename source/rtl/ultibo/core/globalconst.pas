@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '15 March 2023';
+ ULTIBO_RELEASE_DATE             = '16 March 2023';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.5.435';
+ ULTIBO_RELEASE_VERSION          = '2.5.437';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 5;
- ULTIBO_RELEASE_VERSION_REVISION = 435;
+ ULTIBO_RELEASE_VERSION_REVISION = 437;
  
  FPC_COMPILER_VERSION = {$I %FPCVERSION%}; {The version of FPC used to compile the RTL}
  
@@ -1634,7 +1634,9 @@ const
  POWER_ID_SPI7   = 36;
  POWER_ID_SPI8   = 37;
  POWER_ID_SPI9   = 38;
- 
+
+ POWER_ID_UNKNOWN = LongWord(-1);
+
 const
  {Power State constants}
  POWER_STATE_OFF   = 0;
@@ -1688,7 +1690,9 @@ const
  CLOCK_ID_SPI7    = 41;
  CLOCK_ID_SPI8    = 42;
  CLOCK_ID_SPI9    = 43;
- 
+
+ CLOCK_ID_UNKNOWN = LongWord(-1);
+
 const
  {Clock State constants}
  CLOCK_STATE_OFF   = 0;

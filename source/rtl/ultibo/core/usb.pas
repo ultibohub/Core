@@ -1,7 +1,7 @@
 {
 Ultibo USB interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -4761,6 +4761,7 @@ begin
  Device.Lock:=INVALID_HANDLE_VALUE;
  Device.Speed:=USB_SPEED_HIGH; {Default to high-speed unless overridden later}
  if Parent <> nil then Device.Depth:=Parent.Depth + 1;
+ if Parent = nil then Device.PortNumber:=1;
  Device.Descriptor:=nil;
  Device.LastError:=USB_STATUS_SUCCESS;
  Device.WaiterThread:=INVALID_HANDLE_VALUE;
@@ -7993,6 +7994,7 @@ end;
 procedure USBHubUnbindDevices(Device:PUSBDevice;Driver:PUSBDriver;Callback:TUSBDeviceUnbind);
 {Enumerate each device in the USB tree and call an unbind callback for each one}
 {Device: USB device at which to start the enueration}
+{Driver: The driver to unbind the device from (nil to unbind from current driver)}
 {Callback: Unbind callback function to execute for each device}
 var
  Hub:PUSBHub;
