@@ -1,0 +1,1 @@
+{$INCLUDE ..\drivers\dwcotg.pas}
