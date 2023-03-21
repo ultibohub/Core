@@ -1,7 +1,7 @@
 {
 Ultibo UDP (User Datagram Protocol) unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3293,6 +3293,8 @@ begin
  FRecvData.Size:=UDP_BUFFER_SIZE;
 
  {Set Socket Defaults}
+ FSocketOptions.SendBuffer:=UDP_BUFFER_SIZE;
+ FSocketOptions.RecvBuffer:=UDP_BUFFER_SIZE;
  FSocketOptions.SendTimeout:=UDP_TIMEOUT;
  FSocketOptions.RecvTimeout:=UDP_TIMEOUT;
 end;

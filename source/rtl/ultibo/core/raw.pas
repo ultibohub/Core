@@ -1,7 +1,7 @@
 {
 Ultibo Raw Socket Protocol unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2362,6 +2362,8 @@ begin
  FRecvData.Size:=RAW_BUFFER_SIZE;
 
  {Set Socket Defaults}
+ FSocketOptions.SendBuffer:=RAW_BUFFER_SIZE;
+ FSocketOptions.RecvBuffer:=RAW_BUFFER_SIZE;
  FSocketOptions.SendTimeout:=RAW_TIMEOUT;
  FSocketOptions.RecvTimeout:=RAW_TIMEOUT;
 end;

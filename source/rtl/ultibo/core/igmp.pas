@@ -1,7 +1,7 @@
 {
 Ultibo IGMP (Internet Group Management Protocol) unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3075,6 +3075,8 @@ begin
  FRecvData.Size:=IGMP_BUFFER_SIZE;
 
  {Set Socket Defaults}
+ FSocketOptions.SendBuffer:=IGMP_BUFFER_SIZE;
+ FSocketOptions.RecvBuffer:=IGMP_BUFFER_SIZE;
  FSocketOptions.SendTimeout:=IGMP_TIMEOUT;
  FSocketOptions.RecvTimeout:=IGMP_TIMEOUT;
 end;

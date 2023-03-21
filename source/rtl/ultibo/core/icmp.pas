@@ -1,7 +1,7 @@
 {
 Ultibo ICMP (Internet Control Message Protocol) unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3547,6 +3547,8 @@ begin
  FRecvData.Size:=ICMP_BUFFER_SIZE;
 
  {Set Socket Defaults}
+ FSocketOptions.SendBuffer:=ICMP_BUFFER_SIZE;
+ FSocketOptions.RecvBuffer:=ICMP_BUFFER_SIZE;
  FSocketOptions.SendTimeout:=ICMP_TIMEOUT;
  FSocketOptions.RecvTimeout:=ICMP_TIMEOUT;
 end;
