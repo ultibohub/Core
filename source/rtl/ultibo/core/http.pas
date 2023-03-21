@@ -1,7 +1,7 @@
 {
 Ultibo HTTP interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023- SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3690,7 +3690,7 @@ begin
     {$ENDIF}
     
     {Allocate Buffer}
-    BlockSize:=SIZE_256K;
+    BlockSize:=Min(SegmentSize,SIZE_2M - (SIZE_2M mod MaxSegmentSize)); {SIZE_256K;}
     Buffer:=GetMem(BlockSize);
     if Buffer = nil then Exit;
     try
@@ -3997,7 +3997,7 @@ begin
     {$ENDIF}
  
     {Allocate Buffer}
-    BlockSize:=SIZE_256K;
+    BlockSize:=Min(SegmentSize,SIZE_2M - (SIZE_2M mod MaxSegmentSize)); {SIZE_256K;}
     Buffer:=GetMem(BlockSize);
     if Buffer = nil then Exit;
     try
@@ -4373,9 +4373,6 @@ begin
    {Connect}    
    if Connected or Connect then
     begin
-     {Setup Receive Size}
-     ReceiveSize:=SIZE_2M; //To Do //This should be set by the caller (Modify TWinsockTCPClient to allow setting before connect)
-     
      {Write Request}
      if not FRequest.WriteRequest then Exit;
      
@@ -9595,7 +9592,7 @@ begin
  if ASize > AContent.Size then Exit;
  
  {Allocate Buffer}
- BlockSize:=SIZE_256K;
+ BlockSize:=Min(AThread.Server.SegmentSize,SIZE_2M - (SIZE_2M mod AThread.Server.MaxSegmentSize)); {SIZE_256K;}
  Buffer:=GetMem(BlockSize);
  if Buffer = nil then Exit;
  try

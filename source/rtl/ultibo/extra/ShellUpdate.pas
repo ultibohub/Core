@@ -1,7 +1,7 @@
 {
 Ultibo Update Shell extension unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -380,7 +380,7 @@ begin
       SetProxy(HTTPClient);
       
       {Set Receive Size}
-      HTTPClient.ReceiveSize:=SIZE_2M; //To Do //This doesn't work until after Connect (Add to TWinsockTCPClient)
+      HTTPClient.ReceiveSize:=SIZE_2M;
       try
        {Create Temp File}
        FileStream:=TFSFileStream.Create(TempName,fmCreate);

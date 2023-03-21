@@ -274,7 +274,7 @@ Threads
                value before incrementing or decrementing the count further. In this way the setting of complete all is genuinely infinite and will not fail on a long running
                application.
 
-               Suitable for use by Interrupt handlers to call complete only if created with COMPLETION_FLAG_IRQ or FIQ (Interrupt handlers must not call wait).
+               Suitable for use by Interrupt handlers to call complete or reset only if created with COMPLETION_FLAG_IRQ or FIQ (Interrupt handlers must not call wait).
                Suitable for use on multiprocessor systems.
                Access is serialized, the next thread released when a completion is set will be the thread that has been waiting longest (See also stolen wakeups below).
 
