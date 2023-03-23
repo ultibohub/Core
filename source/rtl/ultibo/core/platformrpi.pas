@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for Raspberry Pi.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -8809,7 +8809,7 @@ begin
      if FIQEnabled <> LongWord(-1) then Exit; {FIQEnabled will be -1 when nothing enabled}
      
      {Check IRQ}
-     if (IRQEnabled[Group] and (1 shl Entry.Number - Offset)) <> 0 then Exit;
+     if (IRQEnabled[Group] and (1 shl (Entry.Number - Offset))) <> 0 then Exit;
 
      {Memory Barrier}
      DataMemoryBarrier; {Before the First Write}
@@ -8882,7 +8882,7 @@ begin
      if FIQEnabled <> Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
      
      {Check IRQ}
-     if (IRQEnabled[Group] and (1 shl Entry.Number - Offset)) <> 0 then Exit;
+     if (IRQEnabled[Group] and (1 shl (Entry.Number - Offset))) <> 0 then Exit;
 
      {Memory Barrier}
      DataMemoryBarrier; {Before the First Write}

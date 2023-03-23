@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for Raspberry Pi 4.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -11667,7 +11667,7 @@ begin
    if Entry.IsFIQ then
     begin
      {Check IRQ}
-     if (LegacyIRQEnabled[Group] and (1 shl LegacyNumber - Offset)) <> 0 then Exit;
+     if (LegacyIRQEnabled[Group] and (1 shl (LegacyNumber - Offset))) <> 0 then Exit;
 
      {Memory Barrier}
      DataMemoryBarrier; {Before the First Write}
@@ -11679,7 +11679,7 @@ begin
    else
     begin
      {Check FIQ}
-     if (LegacyFIQEnabled[Group] and (1 shl LegacyNumber - Offset)) <> 0 then Exit;
+     if (LegacyFIQEnabled[Group] and (1 shl (LegacyNumber - Offset))) <> 0 then Exit;
     
      {Memory Barrier}
      DataMemoryBarrier; {Before the First Write}
@@ -11855,7 +11855,7 @@ begin
    if Entry.IsFIQ then
     begin
      {Check IRQ}
-     if (LegacyIRQEnabled[Group] and (1 shl LegacyNumber - Offset)) <> 0 then Exit;
+     if (LegacyIRQEnabled[Group] and (1 shl (LegacyNumber - Offset))) <> 0 then Exit;
 
      {Memory Barrier}
      DataMemoryBarrier; {Before the First Write}
@@ -11867,7 +11867,7 @@ begin
    else
     begin
      {Check FIQ}
-     if (LegacyFIQEnabled[Group] and (1 shl LegacyNumber - Offset)) <> 0 then Exit;
+     if (LegacyFIQEnabled[Group] and (1 shl (LegacyNumber - Offset))) <> 0 then Exit;
     
      {Memory Barrier}
      DataMemoryBarrier; {Before the First Write}
