@@ -1,7 +1,7 @@
 {
 Ultibo Raspberry Pi 4 unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -121,6 +121,9 @@ begin
  
  {Get Board Type}
  BoardType:=BoardGetType;
+
+ {Initialize BCM2711EMMC1_FIQ_ENABLED}
+ if not(FIQ_ENABLED) then BCM2711EMMC1_FIQ_ENABLED:=False;
 
  {Check SDHOST}
  if BCM2711_REGISTER_EMMC1 then

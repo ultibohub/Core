@@ -805,6 +805,7 @@ type
   {SDHCI Properties}
   SDHCI:TSDHCIHost;
   {BCM2709 Properties}
+  FIQ:LongBool;
   SDIO:LongBool;
   WriteDelay:LongWord;
   DelayClock:LongWord;
@@ -1048,6 +1049,8 @@ function BCM2709SDHCIHostStop(SDHCI:PSDHCIHost):LongWord;
 
 function BCM2709SDHCIHostLock(SDHCI:PSDHCIHost):LongWord;
 function BCM2709SDHCIHostUnlock(SDHCI:PSDHCIHost):LongWord;
+
+function BCM2709SDHCIHostSignal(SDHCI:PSDHCIHost;Semaphore:TSemaphoreHandle):LongWord;
 
 function BCM2709SDHCIHostReadByte(SDHCI:PSDHCIHost;Reg:LongWord):Byte; 
 function BCM2709SDHCIHostReadWord(SDHCI:PSDHCIHost;Reg:LongWord):Word; 
@@ -1944,6 +1947,7 @@ begin
      BCM2709SDHCIHost.SDHCI.HostStop:=BCM2709SDHCIHostStop;
      BCM2709SDHCIHost.SDHCI.HostLock:=BCM2709SDHCIHostLock;
      BCM2709SDHCIHost.SDHCI.HostUnlock:=BCM2709SDHCIHostUnlock;
+     BCM2709SDHCIHost.SDHCI.HostSignal:=BCM2709SDHCIHostSignal;
      BCM2709SDHCIHost.SDHCI.HostReadByte:=BCM2709SDHCIHostReadByte;
      BCM2709SDHCIHost.SDHCI.HostReadWord:=BCM2709SDHCIHostReadWord;
      BCM2709SDHCIHost.SDHCI.HostReadLong:=BCM2709SDHCIHostReadLong;
@@ -1973,6 +1977,7 @@ begin
      BCM2709SDHCIHost.SDHCI.Address:=Pointer(BCM2836_SDHCI_REGS_BASE);
      BCM2709SDHCIHost.SDHCI.DMASlave:=DMA_DREQ_ID_MMC;
      {BCM2709}
+     BCM2709SDHCIHost.FIQ:=BCM2709SDHCI_FIQ_ENABLED;
      BCM2709SDHCIHost.SDIO:=BCM2709_REGISTER_SDIO;
    
      {Register SDHCI}
@@ -9531,7 +9536,7 @@ begin
  
  {Update SDHCI}
  {Driver Properties}
- if BCM2709SDHCI_FIQ_ENABLED then
+ if PBCM2709SDHCIHost(SDHCI).FIQ then
   begin
    SDHCI.Wait:=SemaphoreCreateEx(0,SEMAPHORE_DEFAULT_MAXIMUM,SEMAPHORE_FLAG_IRQFIQ);
   end
@@ -9593,7 +9598,7 @@ begin
  if SDHCI = nil then Exit;
 
  {Release the IRQ/FIQ}
- if BCM2709SDHCI_FIQ_ENABLED then
+ if PBCM2709SDHCIHost(SDHCI).FIQ then
   begin
    ReleaseFIQ(FIQ_ROUTING,BCM2836_IRQ_SDHCI,TInterruptHandler(BCM2709SDHCIInterruptHandler),SDHCI);
   end
@@ -9658,7 +9663,7 @@ begin
  {Check SDHCI}
  if SDHCI = nil then Exit;
 
- if BCM2709SDHCI_FIQ_ENABLED then
+ if PBCM2709SDHCIHost(SDHCI).FIQ then
   begin
    Result:=SpinLockIRQFIQ(SDHCI.Spin);
   end
@@ -9680,13 +9685,35 @@ begin
  {Check SDHCI}
  if SDHCI = nil then Exit;
 
- if BCM2709SDHCI_FIQ_ENABLED then
+ if PBCM2709SDHCIHost(SDHCI).FIQ then
   begin
    Result:=SpinUnlockIRQFIQ(SDHCI.Spin);
   end
  else
   begin
    Result:=SpinUnlockIRQ(SDHCI.Spin);
+  end;
+end;
+
+{==============================================================================}
+
+function BCM2709SDHCIHostSignal(SDHCI:PSDHCIHost;Semaphore:TSemaphoreHandle):LongWord;
+{Implementation of SDHCIHostSignal API for BCM2709 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostSignal instead}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check SDHCI}
+ if SDHCI = nil then Exit;
+
+ if PBCM2709SDHCIHost(SDHCI).FIQ then
+  begin
+   Result:=TaskerSemaphoreSignal(Semaphore,1);
+  end
+ else
+  begin
+   Result:=SemaphoreSignal(Semaphore);
   end;
 end;
 
@@ -10040,7 +10067,7 @@ begin
      SDHCIHostWriteLong(SDHCI,SDHCI_SIGNAL_ENABLE,SDHCI.Interrupts);
      
      {Dispatch Interrupt}
-     SDIOHostDispatchInterrupt(SDHCI,not(BCM2709SDHCI_FIQ_ENABLED),BCM2709SDHCI_FIQ_ENABLED);
+     SDIOHostDispatchInterrupt(SDHCI,not(PBCM2709SDHCIHost(SDHCI).FIQ),PBCM2709SDHCIHost(SDHCI).FIQ);
     end;
    
    {Check for unexpected interrupts}
@@ -10095,7 +10122,7 @@ begin
  SDHCIHostWriteLong(SDHCI,SDHCI_SIGNAL_ENABLE,SDHCI.Interrupts);
 
  {Request the IRQ/FIQ} 
- if BCM2709SDHCI_FIQ_ENABLED then
+ if PBCM2709SDHCIHost(SDHCI).FIQ then
   begin
    RequestFIQ(FIQ_ROUTING,BCM2836_IRQ_SDHCI,TInterruptHandler(BCM2709SDHCIInterruptHandler),SDHCI);
   end

@@ -1,7 +1,7 @@
 {
 Ultibo Raspberry Pi 2 unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -116,6 +116,9 @@ begin
  {}
  {Check Initialized}
  if RaspberryPi2Initialized then Exit;
+
+ {Initialize BCM2709SDHOST_FIQ_ENABLED}
+ if not(FIQ_ENABLED) then BCM2709SDHOST_FIQ_ENABLED:=False;
 
  {Check SDHOST}
  if BCM2709_REGISTER_SDHOST then

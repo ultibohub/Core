@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL180/181 Multimedia Card Interface Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -354,9 +354,9 @@ type
   {SDHCI Properties}
   SDHCI:TSDHCIHost;
   {PL18X Properties}
-  IRQ0:LongWord;
-  IRQ1:LongWord;
-  Lock:TSpinHandle;                                {Host lock (Differs from lock in Host portion) (Spin lock due to use by interrupt handler)}
+  IRQ0:LongWord;                                   {First host IRQ line}
+  IRQ1:LongWord;                                   {Second host IRQ line}
+  EnableFIQ:LongBool;                              {Use FIQ instead of IRQ}
   SingleIRQ:LongBool;                              {The host only has a single IRQ line instead of the standard 2 lines}
   Registers:PPL18XMMCIRegisters;                   {Host registers}
   Version:PPL18XVersionData;                       {Host version data}
@@ -675,7 +675,7 @@ begin
    {Pl18X}
    PL18XSDHCI.IRQ0:=IRQ0;
    PL18XSDHCI.IRQ1:=IRQ1;
-   PL18XSDHCI.Lock:=INVALID_HANDLE_VALUE;
+   PL18XSDHCI.EnableFIQ:=PL18X_MMCI_FIQ_ENABLED;
    PL18XSDHCI.SingleIRQ:=False;
    PL18XSDHCI.Registers:=PPL18XMMCIRegisters(Address);
    PL18XSDHCI.Version:=PL18XGetVersionData(PL18XSDHCI);
@@ -785,7 +785,7 @@ begin
    {Pl18X}
    PL18XSDHCI.IRQ0:=IRQ0;
    PL18XSDHCI.IRQ1:=IRQ1;
-   PL18XSDHCI.Lock:=INVALID_HANDLE_VALUE;
+   PL18XSDHCI.EnableFIQ:=PL18X_MMCI_FIQ_ENABLED;
    PL18XSDHCI.SingleIRQ:=False;
    PL18XSDHCI.Registers:=PPL18XMMCIRegisters(Address);
    PL18XSDHCI.Version:=PL18XGetVersionData(PL18XSDHCI);
@@ -1133,13 +1133,13 @@ begin
      SDHCI.Command:=Command;
      try
       {Acquire the Lock}
-      if PL18X_MMCI_FIQ_ENABLED then
+      if PPL18XSDHCIHost(SDHCI).EnableFIQ then
        begin
-        if SpinLockIRQFIQ(PPL18XSDHCIHost(SDHCI).Lock) <> ERROR_SUCCESS then Exit;
+        if SpinLockIRQFIQ(SDHCI.Spin) <> ERROR_SUCCESS then Exit;
        end
       else
        begin
-        if SpinLockIRQ(PPL18XSDHCIHost(SDHCI).Lock) <> ERROR_SUCCESS then Exit;
+        if SpinLockIRQ(SDHCI.Spin) <> ERROR_SUCCESS then Exit;
        end;  
       
       {Write Interrupt Mask}
@@ -1153,13 +1153,13 @@ begin
       DataMemoryBarrier; {After the Last Read} 
  
       {Release the Lock}
-      if PL18X_MMCI_FIQ_ENABLED then
+      if PPL18XSDHCIHost(SDHCI).EnableFIQ then
        begin
-        SpinUnlockIRQFIQ(PPL18XSDHCIHost(SDHCI).Lock);
+        SpinUnlockIRQFIQ(SDHCI.Spin);
        end
       else
        begin
-        SpinUnlockIRQ(PPL18XSDHCIHost(SDHCI).Lock);
+        SpinUnlockIRQ(SDHCI.Spin);
        end;     
        
       {Wait for Completion}
@@ -1317,7 +1317,7 @@ begin
  
  {Update SDHCI}
  {Driver Properties}
- if PL18X_MMCI_FIQ_ENABLED then
+ if PPL18XSDHCIHost(SDHCI).EnableFIQ then
   begin
    SDHCI.Wait:=SemaphoreCreateEx(0,SEMAPHORE_DEFAULT_MAXIMUM,SEMAPHORE_FLAG_IRQFIQ);
   end
@@ -1398,9 +1398,6 @@ begin
  {Determine Block Count}
  SDHCI.MaximumBlockCount:=(SDHCI.MaximumRequestSize shr 11);
  
- {Create the Lock}
- PPL18XSDHCIHost(SDHCI).Lock:=SpinCreate;
- 
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
  
@@ -1410,7 +1407,7 @@ begin
  PPL18XSDHCIHost(SDHCI).Registers.Clear:=$fff;
  
  {Request the IRQ/FIQ}
- if PL18X_MMCI_FIQ_ENABLED then
+ if PPL18XSDHCIHost(SDHCI).EnableFIQ then
   begin
    {Request IRQ0}
    RequestFIQ(FIQ_ROUTING,PPL18XSDHCIHost(SDHCI).IRQ0,TInterruptHandler(PL18XSDHCIInterruptHandler),SDHCI);
@@ -1602,7 +1599,7 @@ begin
  NotifierNotify(@SDHCI.Device,DEVICE_NOTIFICATION_DISABLE);
  
  {Release the IRQ/FIQ}
- if PL18X_MMCI_FIQ_ENABLED then
+ if PPL18XSDHCIHost(SDHCI).EnableFIQ then
   begin
    {Release IRQ0}
    ReleaseFIQ(FIQ_ROUTING,PPL18XSDHCIHost(SDHCI).IRQ0,TInterruptHandler(PL18XSDHCIInterruptHandler),SDHCI);
@@ -1655,14 +1652,6 @@ begin
    {Destroy MMC}
    MMCDeviceDestroy(MMC);   
   end;
- 
- {Destroy the Lock}
- if PPL18XSDHCIHost(SDHCI).Lock <> INVALID_HANDLE_VALUE then
-  begin
-   SpinDestroy(PPL18XSDHCIHost(SDHCI).Lock);
-   
-   PPL18XSDHCIHost(SDHCI).Lock:=INVALID_HANDLE_VALUE
-  end; 
  
  {Destroy the Semaphore}
  if SDHCI.Wait <> INVALID_HANDLE_VALUE then
@@ -1790,13 +1779,13 @@ begin
  if SDHCI = nil then Exit;
  
  {Acquire the Lock}
- if PL18X_MMCI_FIQ_ENABLED then
+ if SDHCI.EnableFIQ then
   begin
-   if SpinLockIRQFIQ(SDHCI.Lock) <> ERROR_SUCCESS then Exit;
+   if SpinLockIRQFIQ(SDHCI.SDHCI.Spin) <> ERROR_SUCCESS then Exit;
   end
  else
   begin
-   if SpinLockIRQ(SDHCI.Lock) <> ERROR_SUCCESS then Exit;
+   if SpinLockIRQ(SDHCI.SDHCI.Spin) <> ERROR_SUCCESS then Exit;
   end;  
  
  {Update Statistics}
@@ -1854,13 +1843,13 @@ begin
  DataMemoryBarrier; {After the Last Read} 
  
  {Release the Lock}
- if PL18X_MMCI_FIQ_ENABLED then
+ if SDHCI.EnableFIQ then
   begin
-   SpinUnlockIRQFIQ(SDHCI.Lock);
+   SpinUnlockIRQFIQ(SDHCI.SDHCI.Spin);
   end
  else
   begin
-   SpinUnlockIRQ(SDHCI.Lock);
+   SpinUnlockIRQ(SDHCI.SDHCI.Spin);
   end;     
 end;
 
@@ -1956,7 +1945,14 @@ begin
    SDHCI.SDHCI.Command.Data.BytesTransfered:=RoundDown(Success,SDHCI.SDHCI.Command.Data.BlockSize);
    
    {Signal Completion}
-   SemaphoreSignal(SDHCI.SDHCI.Wait);
+   if SDHCI.EnableFIQ then
+    begin
+     TaskerSemaphoreSignal(SDHCI.SDHCI.Wait,1);
+    end
+   else
+    begin
+     SemaphoreSignal(SDHCI.SDHCI.Wait);
+    end;
   end;
  
  {Check for Data Block End} 
@@ -1992,7 +1988,14 @@ begin
        if SDHCI.SDHCI.Command.CommandCompleted then
         begin
          {Signal Completion}
-         SemaphoreSignal(SDHCI.SDHCI.Wait);
+         if SDHCI.EnableFIQ then
+          begin
+           TaskerSemaphoreSignal(SDHCI.SDHCI.Wait,1);
+          end
+         else
+          begin
+           SemaphoreSignal(SDHCI.SDHCI.Wait);
+          end;
         end;   
       end;  
     end;
@@ -2060,7 +2063,14 @@ begin
    SDHCI.SDHCI.Command.Status:=MMC_STATUS_TIMEOUT;
    
    {Signal Completion}
-   SemaphoreSignal(SDHCI.SDHCI.Wait);
+   if SDHCI.EnableFIQ then
+    begin
+     TaskerSemaphoreSignal(SDHCI.SDHCI.Wait,1);
+    end
+   else
+    begin
+     SemaphoreSignal(SDHCI.SDHCI.Wait);
+    end;
   end
  else if ((Status and PL18X_MMCI_CMDCRCFAIL) <> 0) and ((SDHCI.SDHCI.Command.ResponseType and MMC_RSP_CRC) <> 0) then
   begin
@@ -2068,7 +2078,14 @@ begin
    SDHCI.SDHCI.Command.Status:=MMC_STATUS_INVALID_SEQUENCE;
    
    {Signal Completion}
-   SemaphoreSignal(SDHCI.SDHCI.Wait);
+   if SDHCI.EnableFIQ then
+    begin
+     TaskerSemaphoreSignal(SDHCI.SDHCI.Wait,1);
+    end
+   else
+    begin
+     SemaphoreSignal(SDHCI.SDHCI.Wait);
+    end;
   end
  else
   begin
@@ -2092,7 +2109,14 @@ begin
        SDHCI.SDHCI.Command.Status:=MMC_STATUS_SUCCESS;
        
        {Signal Completion}
-       SemaphoreSignal(SDHCI.SDHCI.Wait);
+       if SDHCI.EnableFIQ then
+        begin
+         TaskerSemaphoreSignal(SDHCI.SDHCI.Wait,1);
+        end
+       else
+        begin
+         SemaphoreSignal(SDHCI.SDHCI.Wait);
+        end;
       end;   
     end;  
   end;  
@@ -2145,13 +2169,13 @@ begin
  {Acquire the Lock}
  if not SDHCI.SingleIRQ then
   begin
-   if PL18X_MMCI_FIQ_ENABLED then
+   if SDHCI.EnableFIQ then
     begin
-     if SpinLockIRQFIQ(SDHCI.Lock) <> ERROR_SUCCESS then Exit;
+     if SpinLockIRQFIQ(SDHCI.SDHCI.Spin) <> ERROR_SUCCESS then Exit;
     end
    else
     begin
-     if SpinLockIRQ(SDHCI.Lock) <> ERROR_SUCCESS then Exit;
+     if SpinLockIRQ(SDHCI.SDHCI.Spin) <> ERROR_SUCCESS then Exit;
     end; 
   end;  
  
@@ -2221,13 +2245,13 @@ begin
  {Release the Lock}
  if not SDHCI.SingleIRQ then
   begin
-   if PL18X_MMCI_FIQ_ENABLED then
+   if SDHCI.EnableFIQ then
     begin
-      SpinUnlockIRQFIQ(SDHCI.Lock);
+      SpinUnlockIRQFIQ(SDHCI.SDHCI.Spin);
     end
    else
     begin
-     SpinUnlockIRQ(SDHCI.Lock);
+     SpinUnlockIRQ(SDHCI.SDHCI.Spin);
     end;     
   end; 
 end;

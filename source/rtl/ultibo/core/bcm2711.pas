@@ -1266,6 +1266,8 @@ function BCM2711EMMC0HostStop(SDHCI:PSDHCIHost):LongWord;
 function BCM2711EMMC0HostLock(SDHCI:PSDHCIHost):LongWord;
 function BCM2711EMMC0HostUnlock(SDHCI:PSDHCIHost):LongWord;
 
+function BCM2711EMMC0HostSignal(SDHCI:PSDHCIHost;Semaphore:TSemaphoreHandle):LongWord;
+
 function BCM2711EMMC0HostReadByte(SDHCI:PSDHCIHost;Reg:LongWord):Byte; 
 function BCM2711EMMC0HostReadWord(SDHCI:PSDHCIHost;Reg:LongWord):Word; 
 function BCM2711EMMC0HostReadLong(SDHCI:PSDHCIHost;Reg:LongWord):LongWord; 
@@ -1731,6 +1733,8 @@ begin
  {Initialize BCM2711EMMC0/2}
  if BCM2711_REGISTER_SDIO then BCM2711_REGISTER_EMMC0:=False;
  if BCM2711_REGISTER_EMMC0 then BCM2711_REGISTER_EMMC2:=False;
+ if BCM2711EMMC0_FIQ_ENABLED then BCM2711EMMC2_FIQ_ENABLED:=True;
+ if BCM2711EMMC2_FIQ_ENABLED then BCM2711EMMC0_FIQ_ENABLED:=True;
 
  {Register Platform Handlers}
  SPIGetDescriptionHandler:=BCM2711SPIGetDescription;
@@ -2156,6 +2160,7 @@ begin
      BCM2711EMMC0Host.SDHCI.HostStop:=BCM2711EMMC0HostStop;
      BCM2711EMMC0Host.SDHCI.HostLock:=BCM2711EMMC0HostLock;
      BCM2711EMMC0Host.SDHCI.HostUnlock:=BCM2711EMMC0HostUnlock;
+     BCM2711EMMC0Host.SDHCI.HostSignal:=BCM2711EMMC0HostSignal;
      BCM2711EMMC0Host.SDHCI.HostReadByte:=BCM2711EMMC0HostReadByte;
      BCM2711EMMC0Host.SDHCI.HostReadWord:=BCM2711EMMC0HostReadWord;
      BCM2711EMMC0Host.SDHCI.HostReadLong:=BCM2711EMMC0HostReadLong;
@@ -2230,7 +2235,8 @@ begin
      BCM2711EMMC2Host.SDHCI.HostStart:=BCM2711EMMC0HostStart;
      BCM2711EMMC2Host.SDHCI.HostStop:=BCM2711EMMC0HostStop;
      BCM2711EMMC2Host.SDHCI.HostLock:=BCM2711EMMC0HostLock;
-     BCM2711EMMC2Host.SDHCI.HostStop:=BCM2711EMMC0HostStop;
+     BCM2711EMMC2Host.SDHCI.HostUnlock:=BCM2711EMMC0HostUnlock;
+     BCM2711EMMC2Host.SDHCI.HostSignal:=BCM2711EMMC0HostSignal;
      BCM2711EMMC2Host.SDHCI.HostReadByte:=BCM2711EMMC0HostReadByte;
      BCM2711EMMC2Host.SDHCI.HostReadWord:=BCM2711EMMC0HostReadWord;
      BCM2711EMMC2Host.SDHCI.HostReadLong:=BCM2711EMMC0HostReadLong;
@@ -10831,7 +10837,7 @@ begin
  {Release the IRQ/FIQ}
  if PBCM2711EMMC0Host(SDHCI).FIQ then
   begin
-   DeregisterInterrupt(PBCM2711EMMC0Host(SDHCI).IRQ,CPUIDToMask(FIQ_ROUTING),INTERRUPT_PRIORITY_DEFAULT,INTERRUPT_FLAG_SHARED or INTERRUPT_FLAG_FIQ,TSharedInterruptHandler(BCM2711EMMC0SharedInterruptHandler),SDHCI);
+   DeregisterInterrupt(PBCM2711EMMC0Host(SDHCI).IRQ,CPUIDToMask(FIQ_ROUTING),INTERRUPT_PRIORITY_FIQ,INTERRUPT_FLAG_SHARED or INTERRUPT_FLAG_FIQ,TSharedInterruptHandler(BCM2711EMMC0SharedInterruptHandler),SDHCI);
   end
  else
   begin
@@ -10927,6 +10933,28 @@ begin
  else
   begin
    Result:=SpinUnlockIRQ(SDHCI.Spin);
+  end;
+end;
+
+{==============================================================================}
+
+function BCM2711EMMC0HostSignal(SDHCI:PSDHCIHost;Semaphore:TSemaphoreHandle):LongWord;
+{Implementation of SDHCIHostSignal API for BCM2711 SDHCI}
+{Note: Not intended to be called directly by applications, use SDHCIHostSignal instead}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check SDHCI}
+ if SDHCI = nil then Exit;
+
+ if PBCM2711EMMC0Host(SDHCI).FIQ then
+  begin
+   Result:=TaskerSemaphoreSignal(Semaphore,1);
+  end
+ else
+  begin
+   Result:=SemaphoreSignal(Semaphore);
   end;
 end;
 
@@ -11345,7 +11373,7 @@ begin
  {Request the IRQ/FIQ} 
  if PBCM2711EMMC0Host(SDHCI).FIQ then
   begin
-   RegisterInterrupt(PBCM2711EMMC0Host(SDHCI).IRQ,CPUIDToMask(FIQ_ROUTING),INTERRUPT_PRIORITY_DEFAULT,INTERRUPT_FLAG_SHARED or INTERRUPT_FLAG_FIQ,TSharedInterruptHandler(BCM2711EMMC0SharedInterruptHandler),SDHCI);
+   RegisterInterrupt(PBCM2711EMMC0Host(SDHCI).IRQ,CPUIDToMask(FIQ_ROUTING),INTERRUPT_PRIORITY_FIQ,INTERRUPT_FLAG_SHARED or INTERRUPT_FLAG_FIQ,TSharedInterruptHandler(BCM2711EMMC0SharedInterruptHandler),SDHCI);
   end
  else
   begin

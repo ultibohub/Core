@@ -1,5 +1,5 @@
 {
-Ultibo MMC/SD interface unit.
+Ultibo MMC/SD/SDIO interface unit.
 
 Copyright (C) 2023 - SoftOz Pty Ltd.
 
@@ -140,10 +140,6 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,DMA,Storage,S
         //Host/Device Flags (Decode OCR/CID/CSD/SCR/SSR etc)
         //Host/Device Capabilities (specifically Device) (Decode OCR/CID/CSD/SCR/SSR etc)
         //Device Voltages (Decode OCR)
-           
-//To Do //TestingSDIO
-        //Update TPL18XSDHCIHost.Lock in PL18X to use the TSDHCIHost.Spin now it has been added
-        //Update TBCMSDHOSTHost.Lock in BCMSDHOST to use the TSDHCIHost.Spin now it has been added
         
 //To Do //TestingSDIO
         //Locks around some SDIOFunction handling (Interrupt etc)
@@ -2419,6 +2415,7 @@ type
  TSDHCIHostStop = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostLock = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostUnlock = function(SDHCI:PSDHCIHost):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TSDHCIHostSignal = function(SDHCI:PSDHCIHost;Semaphore:TSemaphoreHandle):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostReadByte = function(SDHCI:PSDHCIHost;Reg:LongWord):Byte;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostReadWord = function(SDHCI:PSDHCIHost;Reg:LongWord):Word;{$IFDEF i386} stdcall;{$ENDIF}
  TSDHCIHostReadLong = function(SDHCI:PSDHCIHost;Reg:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -2449,6 +2446,7 @@ type
   HostStop:TSDHCIHostStop;             {A Host specific HostStop method implementing a standard SDHCI host interface}
   HostLock:TSDHCIHostLock;             {A Host specific HostLock method implementing a standard SDHCI host interface}
   HostUnlock:TSDHCIHostUnlock;         {A Host specific HostUnlock method implementing a standard SDHCI host interface}
+  HostSignal:TSDHCIHostSignal;         {A Host specific HostSignal method implementing a standard SDHCI host interface}
   HostReadByte:TSDHCIHostReadByte;     {A Host specific HostReadByte method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   HostReadWord:TSDHCIHostReadWord;     {A Host specific HostReadWord method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
   HostReadLong:TSDHCIHostReadLong;     {A Host specific HostReadLong method implementing a standard SDHCI host interface (Or nil if the default method is suitable)}
@@ -2786,6 +2784,8 @@ function SDHCIHostStop(SDHCI:PSDHCIHost):LongWord;
 
 function SDHCIHostLock(SDHCI:PSDHCIHost):LongWord; inline;
 function SDHCIHostUnlock(SDHCI:PSDHCIHost):LongWord; inline;
+
+function SDHCIHostSignal(SDHCI:PSDHCIHost;Semaphore:TSemaphoreHandle):LongWord; inline;
 
 function SDHCIHostReadByte(SDHCI:PSDHCIHost;Reg:LongWord):Byte; inline;
 function SDHCIHostReadWord(SDHCI:PSDHCIHost;Reg:LongWord):Word; inline;
@@ -13707,7 +13707,7 @@ begin
   begin
    SDHCI.Command.Status:=MMC_STATUS_SUCCESS;
    
-   SemaphoreSignal(SDHCI.Wait);
+   SDHCIHostSignal(SDHCI,SDHCI.Wait);
   end; 
  
  Result:=MMC_STATUS_SUCCESS; 
@@ -13783,7 +13783,7 @@ begin
   begin
    SDHCI.Command.Status:=MMC_STATUS_SUCCESS;
    
-   SemaphoreSignal(SDHCI.Wait);       
+   SDHCIHostSignal(SDHCI,SDHCI.Wait);
   end; 
  
  Result:=MMC_STATUS_SUCCESS; 
@@ -13831,7 +13831,7 @@ begin
   begin
    SDHCI.Command.Status:=MMC_STATUS_TIMEOUT;
    
-   SemaphoreSignal(SDHCI.Wait);
+   SDHCIHostSignal(SDHCI,SDHCI.Wait);
    Exit;
   end;
  
@@ -13840,7 +13840,7 @@ begin
   begin
    SDHCI.Command.Status:=MMC_STATUS_INVALID_SEQUENCE;
    
-   SemaphoreSignal(SDHCI.Wait);
+   SDHCIHostSignal(SDHCI,SDHCI.Wait);
    Exit;
   end;  
  
@@ -13938,7 +13938,7 @@ begin
       begin
        SDHCI.Command.Status:=MMC_STATUS_TIMEOUT;
        
-       SemaphoreSignal(SDHCI.Wait);
+       SDHCIHostSignal(SDHCI,SDHCI.Wait);
        Exit;
       end;
      
@@ -13972,7 +13972,7 @@ begin
    SDHCI.Command.Status:=MMC_STATUS_TIMEOUT;
    
    SDHCIHostFinishData(SDHCI);
-   SemaphoreSignal(SDHCI.Wait);
+   SDHCIHostSignal(SDHCI,SDHCI.Wait);
    Exit;
   end;
   
@@ -13982,7 +13982,7 @@ begin
    SDHCI.Command.Status:=MMC_STATUS_INVALID_SEQUENCE;
    
    SDHCIHostFinishData(SDHCI);
-   SemaphoreSignal(SDHCI.Wait);
+   SDHCIHostSignal(SDHCI,SDHCI.Wait);
    Exit;
   end;
  if ((InterruptMask and SDHCI_INT_DATA_CRC) <> 0) and (SDHCIGetCommand(SDHCIHostReadWord(SDHCI,SDHCI_COMMAND)) <> MMC_CMD_BUS_TEST_R) then
@@ -13990,7 +13990,7 @@ begin
    SDHCI.Command.Status:=MMC_STATUS_INVALID_SEQUENCE;
    
    SDHCIHostFinishData(SDHCI);
-   SemaphoreSignal(SDHCI.Wait);
+   SDHCIHostSignal(SDHCI,SDHCI.Wait);
    Exit;
   end;
   
@@ -14670,6 +14670,27 @@ end;
 
 {==============================================================================}
 
+function SDHCIHostSignal(SDHCI:PSDHCIHost;Semaphore:TSemaphoreHandle):LongWord; inline;
+{Default host semaphore signal function for SDHCI host controllers}
+
+{Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
+begin
+ {}
+ {Check Host Signal}
+ if Assigned(SDHCI.HostSignal) then
+  begin
+   {Host Signal Method}
+   Result:=SDHCI.HostSignal(SDHCI,Semaphore);
+  end
+ else
+  begin
+   {Default Signal Method}
+   Result:=SemaphoreSignal(Semaphore);
+  end;  
+end;
+
+{==============================================================================}
+
 function SDHCIHostReadByte(SDHCI:PSDHCIHost;Reg:LongWord):Byte; inline;
 {Default read byte function for SDHCI host controllers}
 
@@ -15075,6 +15096,7 @@ begin
  Result.HostStop:=nil;
  Result.HostLock:=nil;
  Result.HostUnlock:=nil;
+ Result.HostSignal:=nil;
  Result.HostReadByte:=nil;
  Result.HostReadWord:=nil;
  Result.HostReadLong:=nil;
