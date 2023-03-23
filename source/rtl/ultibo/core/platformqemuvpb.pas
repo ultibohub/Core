@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for QEMU VersatilePB.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -274,7 +274,7 @@ var
 var
  {IRQ/FIQ Variables}
  IRQEnabled:array[0..1] of LongWord; {2 groups of IRQs to Enable/Disable (See: TPL190InterruptRegisters)}
- FIQEnabled:LongWord;                {The single IRQ number to Enable as FIQ instead (See: TPL190InterruptRegisters)}
+ FIQEnabled:array[0..1] of LongWord; {2 groups of FIQs to Enable/Disable (See: TPL190InterruptRegisters)}
  
 {==============================================================================}
 {Initialization Functions}
@@ -785,14 +785,12 @@ begin
    SystemCallEntries[Count].CPUID:=CPU_ID_ALL;
   end;
  
- {Setup Enabled IRQs}
+ {Setup Enabled IRQ/FIQs}
  for Count:=0 to 1 do {Number of elements in IRQEnabled}
   begin
    IRQEnabled[Count]:=0;
+   FIQEnabled[Count]:=0;
   end; 
- 
- {Setup Enabled FIQ}
- FIQEnabled:=LongWord(-1);
  
  {Clear Primary Interrupt Enable}
  PrimaryInterruptRegisters.INTENCLEAR:=$FFFFFFFF;
@@ -2608,54 +2606,48 @@ begin
  {Find Group}
  if Entry.Number < 32 then
   begin
+   {Primary}
    if Entry.IsFIQ then
     begin
-     {Check FIQ}
-     if FIQEnabled <> LongWord(-1) then Exit; {FIQEnabled will be -1 when nothing enabled}
-     
      {Check IRQ}
      if (IRQEnabled[0] and (1 shl Entry.Number)) <> 0 then Exit;
-     
+
      {Memory Barrier}
      DataMemoryBarrier; {Before the First Write}
-     
+
      {Enable FIQ}
      PrimaryInterruptRegisters.INTENABLE:=(1 shl Entry.Number);
      PrimaryInterruptRegisters.INTSELECT:=PrimaryInterruptRegisters.INTSELECT or (1 shl Entry.Number);
-     FIQEnabled:=Entry.Number;
+     FIQEnabled[0]:=FIQEnabled[0] or (1 shl Entry.Number);
     end
-   else 
+   else
     begin
      {Check FIQ}
-     if FIQEnabled = Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
-  
+     if (FIQEnabled[0] and (1 shl Entry.Number)) <> 0 then Exit;
+
      {Memory Barrier}
      DataMemoryBarrier; {Before the First Write}
-     
+
      {Enable IRQ}
      PrimaryInterruptRegisters.INTENABLE:=(1 shl Entry.Number);
-     IRQEnabled[0]:=IRQEnabled[0] or (1 shl Entry.Number); 
-    end; 
+     IRQEnabled[0]:=IRQEnabled[0] or (1 shl Entry.Number);
+    end;
   end
  else if Entry.Number < 64 then
   begin
-   if Entry.IsFIQ then
-    begin
-     {Not supported on Secondary Interrupt Controller}
-     Exit;
-    end
-   else 
-    begin
-     {Check FIQ}
-     if FIQEnabled = Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
-  
-     {Memory Barrier}
-     DataMemoryBarrier; {Before the First Write}
-     
-     {Enable IRQ}
-     SecondaryInterruptRegisters.SIC_ENSET:=(1 shl (Entry.Number - 32));
-     IRQEnabled[1]:=IRQEnabled[1] or (1 shl (Entry.Number - 32)); 
-    end; 
+   {Secondary}
+   {if Entry.IsFIQ then Exit;} 
+
+   {FIQ not supported on Secondary Interrupt Controller, enable IRQ}
+   {Check FIQ}
+   if (FIQEnabled[1] and (1 shl (Entry.Number - 32))) <> 0 then Exit;
+
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+
+   {Enable IRQ}
+   SecondaryInterruptRegisters.SIC_ENSET:=(1 shl (Entry.Number - 32));
+   IRQEnabled[1]:=IRQEnabled[1] or (1 shl (Entry.Number - 32));
   end
  else 
   begin
@@ -2677,56 +2669,50 @@ begin
  {Find Group}
  if Entry.Number < 32 then
   begin
+   {Primary}
    if Entry.IsFIQ then
     begin
-     {Check FIQ}
-     if FIQEnabled <> Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
-     
      {Check IRQ}
      if (IRQEnabled[0] and (1 shl Entry.Number)) <> 0 then Exit;
-     
+
      {Memory Barrier}
      DataMemoryBarrier; {Before the First Write}
-     
+
      {Disable FIQ}
      PrimaryInterruptRegisters.INTENCLEAR:=(1 shl Entry.Number);
      PrimaryInterruptRegisters.INTSELECT:=PrimaryInterruptRegisters.INTSELECT and not(1 shl Entry.Number);
-     FIQEnabled:=LongWord(-1);
+     FIQEnabled[0]:=FIQEnabled[0] and not(1 shl Entry.Number);
     end
    else
     begin
      {Check FIQ}
-     if FIQEnabled = Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
-     
+     if (FIQEnabled[0] and (1 shl Entry.Number)) <> 0 then Exit;
+
      {Memory Barrier}
      DataMemoryBarrier; {Before the First Write}
-     
+
      {Disable IRQ}
      PrimaryInterruptRegisters.INTENCLEAR:=(1 shl Entry.Number);
-     IRQEnabled[0]:=IRQEnabled[0] and not(1 shl Entry.Number); 
+     IRQEnabled[0]:=IRQEnabled[0] and not(1 shl Entry.Number);
     end;
   end
  else if Entry.Number < 64 then
   begin
-   if Entry.IsFIQ then
-    begin
-     {Not supported on Secondary Interrupt Controller}
-     Exit;
-    end
-   else
-    begin
-     {Check FIQ}
-     if FIQEnabled = Entry.Number then Exit; {FIQEnabled will be -1 when nothing enabled}
-  
-     {Memory Barrier}
-     DataMemoryBarrier; {Before the First Write}
-     
-     {Disable IRQ}
-     SecondaryInterruptRegisters.SIC_ENCLR:=(1 shl (Entry.Number - 32));
-     IRQEnabled[1]:=IRQEnabled[1] and not(1 shl (Entry.Number - 32));
-    end; 
+   {Secondary}
+   {if Entry.IsFIQ then Exit;}
+
+   {FIQ not supported on Secondary Interrupt Controller, disable IRQ}   
+   {Check FIQ}
+   if (FIQEnabled[1] and (1 shl (Entry.Number - 32))) <> 0 then Exit;
+
+   {Memory Barrier}
+   DataMemoryBarrier; {Before the First Write}
+
+   {Disable IRQ}
+   SecondaryInterruptRegisters.SIC_ENCLR:=(1 shl (Entry.Number - 32));
+   IRQEnabled[1]:=IRQEnabled[1] and not(1 shl (Entry.Number - 32));
   end
- else 
+ else
   begin
    {Nothing under QEMU}
    Exit;
@@ -3165,19 +3151,43 @@ function QEMUVPBDispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
 {Process any pending FIQ requests}
 {Called by ARMv7/8FIQHandler in PlatformARMv7/8}
 {Note: A DataMemoryBarrier is executed before and after calling this function} 
+var
+ Group:LongWord;
+ FIQBit:LongWord;
+ FIQMatch:LongWord;
 begin
  {}
  Result:=Thread;
- 
+
  {$IF DEFINED(FIQ_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
  Inc(DispatchFastInterruptCounter[CPUID]);
  {$ENDIF}
- 
- {Check FIQ Enabled}
- if FIQEnabled <> LongWord(-1) then
+
+ {Check FIQ Groups}
+ for Group:=0 to 1 do
   begin
-   {Call FIQ Handler}
-   Result:=QEMUVPBHandleInterrupt(FIQEnabled,CPU_ID_ALL,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
+   {Check FIQ Enabled}
+   if FIQEnabled[Group] <> 0 then
+    begin
+     case Group of
+      {Check Primary Controller FIQ}
+      0:FIQMatch:=(FIQEnabled[Group] and PrimaryInterruptRegisters.FIQSTATUS);
+      {Check Secondary Controller FIQ}
+      1:FIQMatch:=0; {FIQ not supported on Secondary Interrupt Controller}
+     end;
+     {Check FIQ Match}
+     while FIQMatch <> 0 do
+      begin
+       {Find first set bit}
+       FIQBit:=FirstBitSet(FIQMatch);
+
+       {Clear set bit}
+       FIQMatch:=FIQMatch xor (1 shl FIQBit);
+
+       {Call FIQ Handler}
+       Result:=QEMUVPBHandleInterrupt(FIQBit + (Group shl 5),CPU_ID_ALL,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
+      end;
+    end;
   end;
 end;
 
