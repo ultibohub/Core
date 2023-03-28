@@ -521,7 +521,7 @@ interface
 
 {==============================================================================}
 {Global definitions} {Must be prior to uses}
-{$INCLUDE GlobalDefines.inc}
+{$INCLUDE ..\core\GlobalDefines.inc}
 {--$DEFINE BCM2711_SPI0_DMA_CS_DLEN} {Use DMA to load the CS and DLEN registers of SPI0 (See 10.6.3 DMA on Page 158 of BCM2835 ARM Peripherals)}
                                      {Not used by the Linux driver, works on RPi 2/3/4, fails randomly on RPi A/B/Zero}
 

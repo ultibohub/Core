@@ -601,9 +601,9 @@ ifeq ($(SUBARCH),armv6)
 CPU_UNITS=
 CPU_UNITS_DEFINED=1
 override ULTIBO_UNITS+=bcm2835 \
-		       bcm2708 \
 		       platformarmv6 \
 		       platformrpi
+override ULTIBO_DRIVER_UNITS+=bcm2708
 ULTIBO_CPU_UNITS=bootrpi
 ULTIBO_CPU_EXTRAS=RaspberryPi
 endif
@@ -613,9 +613,6 @@ CPU_UNITS_DEFINED=1
 override ULTIBO_UNITS+=bcm2836 \
 		       bcm2837 \
 		       bcm2838 \
-		       bcm2709 \
-		       bcm2710 \
-		       bcm2711 \
 		       armgic \
 		       versatilepb \
 		       platformarmv7 \
@@ -625,6 +622,9 @@ override ULTIBO_UNITS+=bcm2836 \
 		       platformrpi3 \
 		       platformrpi4 \
 		       platformqemuvpb
+override ULTIBO_DRIVER_UNITS+=bcm2709 \
+			      bcm2710 \
+			      bcm2711
 ULTIBO_CPU_UNITS=bootrpi2 \
 		 bootrpi3 \
 		 bootrpi4 \
@@ -665,14 +665,14 @@ CPU_UNITS=
 CPU_UNITS_DEFINED=1
 override ULTIBO_UNITS+=bcm2837 \
 		       bcm2838 \
-		       bcm2710 \
-		       bcm2711 \
 		       armgic \
 		       versatilepb \
 		       platformarmv8 \
 		       platformrpi3 \
 		       platformrpi4 \
 		       platformqemuvpb
+override ULTIBO_DRIVER_UNITS+=bcm2710 \
+			      bcm2711
 ULTIBO_CPU_UNITS=bootrpi3 \
 		 bootrpi4 \
 		 bootqemuvpb
