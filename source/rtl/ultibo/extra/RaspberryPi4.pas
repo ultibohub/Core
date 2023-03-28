@@ -113,7 +113,6 @@ procedure RaspberryPi4Init;
 {Note: Called only during system startup}
 var
  BoardType:LongWord;
- ClockMaximum:LongWord;
 begin
  {}
  {Check Initialized}
@@ -122,19 +121,8 @@ begin
  {Get Board Type}
  BoardType:=BoardGetType;
 
- {Initialize BCM2711EMMC1_FIQ_ENABLED}
- if not(FIQ_ENABLED) then BCM2711EMMC1_FIQ_ENABLED:=False;
-
  {Check SDHOST}
- if BCM2711_REGISTER_EMMC1 then
-  begin
-   {Set Parameters}
-   ClockMaximum:=ClockGetRate(CLOCK_ID_MMC1);
-   if ClockMaximum = 0 then ClockMaximum:=BCM2711_EMMC1_MAX_FREQ;
-   
-   {Create Device}
-   BCMSDHOSTCreate(BCM2838_EMMC1_REGS_BASE,BCM2711_EMMC1_DESCRIPTION,BCM2838_IRQ_EMMC1,DMA_DREQ_ID_EMMC1,BCM2711_EMMC1_MIN_FREQ,ClockMaximum,GPIO_PIN_22,GPIO_PIN_27,GPIO_FUNCTION_ALT0,BCM2711EMMC1_FIQ_ENABLED);
-  end;
+ {Note: SDHOST initialization moved to BCM2711Init}
  
  {Check RTC}
  if BCM2711_REGISTER_RTC then

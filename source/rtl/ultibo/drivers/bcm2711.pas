@@ -525,7 +525,7 @@ interface
 {--$DEFINE BCM2711_SPI0_DMA_CS_DLEN} {Use DMA to load the CS and DLEN registers of SPI0 (See 10.6.3 DMA on Page 158 of BCM2835 ARM Peripherals)}
                                      {Not used by the Linux driver, works on RPi 2/3/4, fails randomly on RPi A/B/Zero}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2838,Platform{$IFNDEF CONSOLE_EARLY_INIT},PlatformRPi4{$ENDIF},Threads,HeapManager,Devices,SPI,I2C,DMA,PWM,GPIO,UART,Serial,MMC,Framebuffer,Audio,SysUtils; 
+uses GlobalConfig,GlobalConst,GlobalTypes,BCM2838,Platform{$IFNDEF CONSOLE_EARLY_INIT},PlatformRPi4{$ENDIF},Threads,HeapManager,Devices,SPI,I2C,DMA,PWM,GPIO,UART,Serial,MMC,BCMSDHOST,Framebuffer,Audio,SysUtils; 
 
 {==============================================================================}
 const
@@ -1693,7 +1693,9 @@ procedure BCM2711Init;
  
 var
  Status:LongWord;
- 
+
+ ClockMaximum:LongWord;
+
  DisplayId:LongWord;
  DisplayNum:LongWord;
  DisplayCount:LongWord;
@@ -2214,7 +2216,15 @@ begin
   end;
   
  {Create EMMC1}
- {See: BCMSDHOST for the driver implementation}
+ if BCM2711_REGISTER_EMMC1 then
+  begin
+   {Set Parameters}
+   ClockMaximum:=ClockGetRate(CLOCK_ID_MMC1);
+   if ClockMaximum = 0 then ClockMaximum:=BCM2711_EMMC1_MAX_FREQ;
+   
+   {Create Device}
+   BCMSDHOSTCreate(BCM2838_EMMC1_REGS_BASE,BCM2711_EMMC1_DESCRIPTION,BCM2838_IRQ_EMMC1,DMA_DREQ_ID_EMMC1,BCM2711_EMMC1_MIN_FREQ,ClockMaximum,GPIO_PIN_22,GPIO_PIN_27,GPIO_FUNCTION_ALT0,BCM2711EMMC1_FIQ_ENABLED);
+  end;
 
  {Create EMMC2}
  if BCM2711_REGISTER_EMMC2 then

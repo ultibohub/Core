@@ -344,7 +344,7 @@ interface
 {--$DEFINE BCM2708_SPI0_DMA_CS_DLEN} {Use DMA to load the CS and DLEN registers of SPI0 (See 10.6.3 DMA on Page 158 of BCM2835 ARM Peripherals)}
                                      {Not used by the Linux driver, works on RPi 2/3, fails randomly on RPi A/B/Zero}
                                      
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2835,Platform{$IFNDEF CONSOLE_EARLY_INIT},PlatformRPi{$ENDIF},Threads,HeapManager,Devices,SPI,I2C,DMA,PWM,GPIO,UART,Serial,MMC,Framebuffer,Audio,SysUtils; 
+uses GlobalConfig,GlobalConst,GlobalTypes,BCM2835,Platform{$IFNDEF CONSOLE_EARLY_INIT},PlatformRPi{$ENDIF},Threads,HeapManager,Devices,SPI,I2C,DMA,PWM,GPIO,UART,Serial,MMC,BCMSDHOST,Framebuffer,Audio,SysUtils; 
 
 {==============================================================================}
 const
@@ -1144,7 +1144,11 @@ function BCM2708I2CSlaveInterruptHandler(Number,CPUID,Flags:LongWord;I2C:PBCM270
 procedure BCM2708Init;
 var
  Status:LongWord;
- 
+
+ GPIOFirst:LongWord;
+ GPIOLast:LongWord;
+ ClockMaximum:LongWord;
+
  DisplayId:LongWord;
  DisplayNum:LongWord;
  DisplayCount:LongWord;
@@ -1181,6 +1185,9 @@ begin
  {Initialize BCM2708SDHCI_FIQ_ENABLED}
  if not(FIQ_ENABLED) then BCM2708SDHCI_FIQ_ENABLED:=False;
  
+ {Initialize BCM2708SDHOST_FIQ_ENABLED}
+ if not(FIQ_ENABLED) then BCM2708SDHOST_FIQ_ENABLED:=False;
+
  {Initialize BCM2708ARM_TIMER_FIQ_ENABLED}
  if not(FIQ_ENABLED) then BCM2708ARM_TIMER_FIQ_ENABLED:=False;
  
@@ -1960,7 +1967,29 @@ begin
   end;
 
  {Create SDHOST}
- {See: BCMSDHOST for the driver implementation}
+ if BCM2708_REGISTER_SDHOST then
+  begin
+   {Set Parameters}
+   {Check SDHCI Enabled}
+   if BCM2708_REGISTER_SDHCI then
+    begin
+     {Use GPIO 22 to 27}
+     GPIOFirst:=GPIO_PIN_22;
+     GPIOLast:=GPIO_PIN_27;
+    end
+   else
+    begin
+     {Use GPIO 48 to 53}
+     GPIOFirst:=GPIO_PIN_48;
+     GPIOLast:=GPIO_PIN_53;
+    end;
+   {Get Clock Maximum}
+   ClockMaximum:=ClockGetRate(CLOCK_ID_MMC1);
+   if ClockMaximum = 0 then ClockMaximum:=BCM2708_SDHOST_MAX_FREQ;
+
+   {Create Device}
+   BCMSDHOSTCreate(BCM2835_SDHOST_REGS_BASE,BCM2708_SDHOST_DESCRIPTION,BCM2835_IRQ_SDHOST,DMA_DREQ_ID_SDHOST,BCM2708_SDHOST_MIN_FREQ,ClockMaximum,GPIOFirst,GPIOLast,GPIO_FUNCTION_ALT0,BCM2708SDHOST_FIQ_ENABLED);
+  end;
 
  {Create System Clock}
  if BCM2708_REGISTER_SYS_CLOCK then
