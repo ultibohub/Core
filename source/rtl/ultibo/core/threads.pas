@@ -530,8 +530,9 @@ Threads
            Usage:
            ------
 
-           There are currently three Tasker functions available, TaskerThreadSendMessage(), TaskerMessageslotSend() and
-           TaskerSemaphoreSignal() which each perform the same function as their non Tasker equivalent.
+           There are currently five Tasker functions available, TaskerThreadSendMessage(), TaskerMessageslotSend(), 
+           TaskerSemaphoreSignal(), TaskerCompletionReset() and TaskerCompletionComplete() which each perform the same function
+           as their non Tasker equivalent.
 
            The Tasker list is checked on each clock interrupt for tasks waiting to be triggered, the task is performed
            directly by the clock interrupt so the delay between request and trigger is no more than one clock interrupt
@@ -896,9 +897,11 @@ const
  WORKER_FLAG_EXCLUDED_FIQ = WORKER_FLAG_RESCHEDULE or WORKER_FLAG_IMMEDIATE; {Excluded flags}
  
  {Tasker task constants}
- TASKER_TASK_THREADSENDMESSAGE = 1;  {Perform a ThreadSendMessage() function using the tasker list}
- TASKER_TASK_MESSAGESLOTSEND   = 2;  {Perform a MessageslotSend() function using the tasker list}
- TASKER_TASK_SEMAPHORESIGNAL   = 3;  {Perform a SemaphoreSignal() function using the tasker list}
+ TASKER_TASK_THREADSENDMESSAGE  = 1;  {Perform a ThreadSendMessage() function using the tasker list}
+ TASKER_TASK_MESSAGESLOTSEND    = 2;  {Perform a MessageslotSend() function using the tasker list}
+ TASKER_TASK_SEMAPHORESIGNAL    = 3;  {Perform a SemaphoreSignal() function using the tasker list}
+ TASKER_TASK_COMPLETIONRESET    = 4;  {Perform a CompletionReset() function using the tasker list}
+ TASKER_TASK_COMPLETIONCOMPLETE = 5;  {Perform a CompletionComplete() or CompletionCompleteAll() function using the tasker list}
  
  {Scheduler migration constants}
  SCHEDULER_MIGRATION_DISABLED = 0;
@@ -1452,7 +1455,28 @@ type
   Semaphore:TSemaphoreHandle; {Handle of the semaphore to signal}
   Count:LongWord;             {The count to be signalled}
  end;
- 
+
+ {Tasker CompletionReset task}
+ PTaskerCompletionReset = ^TTaskerCompletionReset;
+ TTaskerCompletionReset = record
+  Task:LongWord;                {The task to be performed}
+  Prev:PTaskerTask;             {Previous task in Tasker list}
+  Next:PTaskerTask;             {Next task in Tasker list}
+  {Internal Properties}
+  Completion:TCompletionHandle; {Handle of the completion to reset}
+ end;
+
+ {Tasker CompletionComplete task}
+ PTaskerCompletionComplete = ^TTaskerCompletionComplete;
+ TTaskerCompletionComplete = record
+  Task:LongWord;                {The task to be performed}
+  Prev:PTaskerTask;             {Previous task in Tasker list}
+  Next:PTaskerTask;             {Next task in Tasker list}
+  {Internal Properties}
+  Completion:TCompletionHandle; {Handle of the completion to complete or complete all}
+  All:LongBool;                 {False for complete, True for complete all}
+ end;
+
 type
  {RTL Thread Manager Types}
  PThreadInfo = ^TThreadInfo;
@@ -2338,6 +2362,8 @@ procedure WorkerTimer(WorkerRequest:PWorkerRequest);
 function TaskerThreadSendMessage(Thread:TThreadHandle;const Message:TMessage):LongWord;
 function TaskerMessageslotSend(Messageslot:TMessageslotHandle;const Message:TMessage):LongWord;
 function TaskerSemaphoreSignal(Semaphore:TSemaphoreHandle;Count:LongWord):LongWord;
+function TaskerCompletionReset(Completion:TCompletionHandle):LongWord;
+function TaskerCompletionComplete(Completion:TCompletionHandle;All:Boolean):LongWord;
 
 function TaskerEnqueue(Task:PTaskerTask):LongWord;
 function TaskerDequeue:PTaskerTask;
@@ -23912,7 +23938,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
+ {Check Scheduler}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   {Can call ThreadSendMessage from FIQ if scheduler uses FIQ}
+   Result:=ThreadSendMessage(Thread,Message);
+
+   Exit;
+  end;
+
  {Check Thread}
  if Thread = INVALID_HANDLE_VALUE then Exit;
  
@@ -23951,7 +23986,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
+ {Check Scheduler}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   {Can call MessageslotSend from FIQ if scheduler uses FIQ}
+   Result:=MessageslotSend(Messageslot,Message);
+
+   Exit;
+  end;
+
  {Check Messageslot}
  if Messageslot = INVALID_HANDLE_VALUE then Exit;
  
@@ -23990,7 +24034,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
+ {Check Scheduler}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   {Can call SemaphoreSignal from FIQ if scheduler uses FIQ}
+   Result:=SemaphoreSignalEx(Semaphore,Count,nil);
+
+   Exit;
+  end;
+
  {Check Semaphore}
  if Semaphore = INVALID_HANDLE_VALUE then Exit;
  
@@ -24017,6 +24070,108 @@ begin
    FreeFIQMem(Task)
   end;
  
+ {Task will be freed by TaskerTrigger}
+end;
+
+{==============================================================================}
+
+function TaskerCompletionReset(Completion:TCompletionHandle):LongWord;
+{Perform a CompletionReset() function call using the tasker list}
+var
+ Task:PTaskerCompletionReset;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Scheduler}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   {Can call CompletionReset from FIQ if scheduler uses FIQ}
+   Result:=CompletionReset(Completion);
+
+   Exit;
+  end;
+
+ {Check Completion}
+ if Completion = INVALID_HANDLE_VALUE then Exit;
+
+ {Create Task}
+ Task:=AllocFIQMem(SizeOf(TTaskerCompletionReset),CPU_AFFINITY_NONE);
+ if Task = nil then Exit;
+
+ {Update Task}
+ Task.Task:=TASKER_TASK_COMPLETIONRESET;
+ Task.Completion:=Completion;
+
+ {Flush Task}
+ if not(HEAP_FIQ_CACHE_COHERENT) then
+  begin
+   CleanDataCacheRange(PtrUInt(Task),SizeOf(TTaskerCompletionReset));
+  end;
+
+ {Enqueue}
+ Result:=TaskerEnqueue(PTaskerTask(Task));
+ if Result <> ERROR_SUCCESS then
+  begin
+   {Free Task}
+   FreeFIQMem(Task)
+  end;
+
+ {Task will be freed by TaskerTrigger}
+end;
+
+{==============================================================================}
+
+function TaskerCompletionComplete(Completion:TCompletionHandle;All:Boolean):LongWord;
+{Perform a CompletionComplete() or CompletionCompleteAll() function call using the tasker list}
+var
+ Task:PTaskerCompletionComplete;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Scheduler}
+ if SCHEDULER_FIQ_ENABLED then
+  begin
+   {Can call CompletionComplete or CompletionCompleteAll from FIQ if scheduler uses FIQ}
+   if All then
+    begin
+     Result:=CompletionCompleteAll(Completion);
+    end
+   else
+    begin
+     Result:=CompletionComplete(Completion);
+    end;
+
+   Exit;
+  end;
+
+ {Check Completion}
+ if Completion = INVALID_HANDLE_VALUE then Exit;
+
+ {Create Task}
+ Task:=AllocFIQMem(SizeOf(TTaskerCompletionComplete),CPU_AFFINITY_NONE);
+ if Task = nil then Exit;
+
+ {Update Task}
+ Task.Task:=TASKER_TASK_COMPLETIONCOMPLETE;
+ Task.Completion:=Completion;
+ Task.All:=All;
+
+ {Flush Task}
+ if not(HEAP_FIQ_CACHE_COHERENT) then
+  begin
+   CleanDataCacheRange(PtrUInt(Task),SizeOf(TTaskerCompletionComplete));
+  end;
+
+ {Enqueue}
+ Result:=TaskerEnqueue(PTaskerTask(Task));
+ if Result <> ERROR_SUCCESS then
+  begin
+   {Free Task}
+   FreeFIQMem(Task)
+  end;
+
  {Task will be freed by TaskerTrigger}
 end;
 
@@ -24189,6 +24344,23 @@ begin
       TASKER_TASK_SEMAPHORESIGNAL:begin
         {Call SemaphoreSignal}
         SemaphoreSignalEx(PTaskerSemaphoreSignal(Task).Semaphore,PTaskerSemaphoreSignal(Task).Count,nil);
+       end;
+      TASKER_TASK_COMPLETIONRESET:begin
+        {Call CompletionReset}
+        CompletionReset(PTaskerCompletionReset(Task).Completion);
+       end;
+      TASKER_TASK_COMPLETIONCOMPLETE:begin
+        {Check All}
+        if PTaskerCompletionComplete(Task).All then
+         begin
+          {Call CompletionCompleteAll}
+          CompletionCompleteAll(PTaskerCompletionComplete(Task).Completion);
+         end
+        else
+         begin
+          {Call CompletionComplete}
+          CompletionComplete(PTaskerCompletionComplete(Task).Completion);
+         end;
        end;
      end;
      

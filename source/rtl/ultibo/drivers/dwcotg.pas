@@ -5268,16 +5268,7 @@ begin
  Message.lParam:=Status;
  if DWCOTG_FIQ_ENABLED then
   begin
-   if SCHEDULER_FIQ_ENABLED then
-    begin
-     {Can use ThreadSendMessage from FIQ if scheduler uses FIQ}
-     ThreadSendMessage(Host.CompletionThread,Message);
-    end
-   else
-    begin
-     {Must use TaskerThreadSendMessage if scheduler is not using FIQ}
-     TaskerThreadSendMessage(Host.CompletionThread,Message);
-    end;
+   TaskerThreadSendMessage(Host.CompletionThread,Message);
   end
  else
   begin
