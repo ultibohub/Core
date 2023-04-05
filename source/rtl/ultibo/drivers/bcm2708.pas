@@ -1190,7 +1190,20 @@ begin
 
  {Initialize BCM2708ARM_TIMER_FIQ_ENABLED}
  if not(FIQ_ENABLED) then BCM2708ARM_TIMER_FIQ_ENABLED:=False;
- 
+
+ {Initialize BCM2708SDIO}
+ case BoardGetType of
+  BOARD_TYPE_RPIA,
+  BOARD_TYPE_RPIB,
+  BOARD_TYPE_RPI_COMPUTE,
+  BOARD_TYPE_RPIA_PLUS,
+  BOARD_TYPE_RPIB_PLUS,
+  BOARD_TYPE_RPI_ZERO:begin
+    {Disable SDIO for boards without WiFi}
+    BCM2708_REGISTER_SDIO:=False;
+   end;
+ end;
+
  {Initialize BCM2708SDHCI}
  if BCM2708_REGISTER_SDIO then BCM2708_REGISTER_SDHCI:=False;
  
