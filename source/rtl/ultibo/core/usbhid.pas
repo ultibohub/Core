@@ -1,7 +1,7 @@
 {
 Ultibo USB Human Interface Device (HID) driver unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -459,26 +459,30 @@ begin
   if HIDDevice.ReportEndpoint = nil then Exit;
 
   {$IF DEFINED(USB_DEBUG) or DEFINED(HID_DEBUG)}
-  if USB_LOG_ENABLED then USBLogDebug(Device,'HID: Reading HID descriptor');
+  if USB_LOG_ENABLED then USBLogDebug(Device,'HID: Checking class specific data');
   {$ENDIF}
 
-  {Allocate HID Descriptor}
-  HIDDevice.HIDDescriptor:=USBBufferAllocate(Device,SizeOf(THIDDescriptor));
-  if HIDDevice.HIDDescriptor = nil then Exit;
-
-  {Get HID Descriptor}
-  Status:=USBHIDGetHIDDescriptor(Device,Interrface,HIDDevice.HIDDescriptor);
-  if Status <> USB_STATUS_SUCCESS then
+  {Check Class Specific Data}
+  if (Interrface.ClassData <> nil) and (Interrface.ClassSize >= SizeOf(THIDDescriptor)) then
    begin
-    if (Interrface.ClassData <> nil) and (Interrface.ClassSize >= SizeOf(THIDDescriptor)) then
-     begin
-      {Release HID Descriptor}
-      USBBufferRelease(HIDDevice.HIDDescriptor);
+    {Assign HID Descriptor}
+    HIDDevice.HIDDescriptor:=PHIDDescriptor(Interrface.ClassData);
+   end;
 
-      {Assign HID Descriptor}
-      HIDDevice.HIDDescriptor:=PHIDDescriptor(Interrface.ClassData);
-     end
-    else
+  {Check HID Descriptor}
+  if (HIDDevice.HIDDescriptor = nil) or (HIDDevice.HIDDescriptor.bDescriptorType <> HID_DESCRIPTOR_TYPE_HID) or (HIDDevice.HIDDescriptor.bHIDDescriptorType <> HID_DESCRIPTOR_TYPE_REPORT) then
+   begin
+    {$IF DEFINED(USB_DEBUG) or DEFINED(HID_DEBUG)}
+    if USB_LOG_ENABLED then USBLogDebug(Device,'HID: Reading HID descriptor');
+    {$ENDIF}
+
+    {Allocate HID Descriptor}
+    HIDDevice.HIDDescriptor:=USBBufferAllocate(Device,SizeOf(THIDDescriptor));
+    if HIDDevice.HIDDescriptor = nil then Exit;
+
+    {Get HID Descriptor}
+    Status:=USBHIDGetHIDDescriptor(Device,Interrface,HIDDevice.HIDDescriptor);
+    if Status <> USB_STATUS_SUCCESS then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'HID: Failed to read HID descriptor: ' + USBStatusToString(Status));
 
