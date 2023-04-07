@@ -2610,9 +2610,9 @@ begin
            Result:=USB_STATUS_INVALID_DATA;
            Exit;
           end;
-      
-         {Check Endpoint Count}
-         if (InterfaceIndex >= 0) and (AlternateSetting = 0) and ((EndpointIndex + 1) <> Device.Configurations[Index].Interfaces[InterfaceIndex].Descriptor.bNumEndpoints) then
+
+         {Check Endpoint Count} {Moved to USB_DESCRIPTOR_TYPE_ENDPOINT section}
+         (*if (InterfaceIndex >= 0) and (AlternateSetting = 0) and ((EndpointIndex + 1) <> Device.Configurations[Index].Interfaces[InterfaceIndex].Descriptor.bNumEndpoints) then
           begin
            if USB_LOG_ENABLED then USBLogError(Device,'Invalid configuration descriptor (Number of endpoints incorrect)');
            
@@ -2625,7 +2625,7 @@ begin
            
            Result:=USB_STATUS_INVALID_DATA;
            Exit;
-          end;          
+          end;*)
           
          {Check Alternate Setting}
          if PUSBInterfaceDescriptor(Descriptor).bAlternateSetting = 0 then
@@ -2656,21 +2656,34 @@ begin
            {Reset Alternate}
            AlternateSetting:=0;
            
-           {Create Interface}
-           Device.Configurations[Index].Interfaces[InterfaceIndex]:=AllocMem(SizeOf(TUSBInterface));
-           if Device.Configurations[Index].Interfaces[InterfaceIndex] = nil then Exit;
-          
-           {Set Descriptor}
-           Device.Configurations[Index].Interfaces[InterfaceIndex].Descriptor:=PUSBInterfaceDescriptor(Descriptor);
-           
-           {Check Endpoints}
-           if Length(Device.Configurations[Index].Interfaces[InterfaceIndex].Endpoints) > 0 then Exit;
-           
-           {Create Endpoints}
-           if Device.Configurations[Index].Interfaces[InterfaceIndex].Descriptor.bNumEndpoints > 0 then
+           {Check Interface Count}
+           if InterfaceIndex < Device.Configurations[Index].Descriptor.bNumInterfaces then
             begin
-             SetLength(Device.Configurations[Index].Interfaces[InterfaceIndex].Endpoints,Device.Configurations[Index].Interfaces[InterfaceIndex].Descriptor.bNumEndpoints);
-            end; 
+             {Create Interface}
+             Device.Configurations[Index].Interfaces[InterfaceIndex]:=AllocMem(SizeOf(TUSBInterface));
+             if Device.Configurations[Index].Interfaces[InterfaceIndex] = nil then Exit;
+
+             {Set Descriptor}
+             Device.Configurations[Index].Interfaces[InterfaceIndex].Descriptor:=PUSBInterfaceDescriptor(Descriptor);
+
+             {Check Endpoints}
+             if Length(Device.Configurations[Index].Interfaces[InterfaceIndex].Endpoints) > 0 then Exit;
+
+             {Create Endpoints}
+             if Device.Configurations[Index].Interfaces[InterfaceIndex].Descriptor.bNumEndpoints > 0 then
+              begin
+               SetLength(Device.Configurations[Index].Interfaces[InterfaceIndex].Endpoints,Device.Configurations[Index].Interfaces[InterfaceIndex].Descriptor.bNumEndpoints);
+              end;
+            end
+           else
+            begin
+             {Cannot ignore the extra interface, fail the configuration and return invalid}
+             if USB_LOG_ENABLED then USBLogError(Device,'Invalid configuration descriptor (Number of interfaces incorrect)');
+             if USB_LOG_ENABLED then USBLogError(Device,' (Index=' + IntToStr(Index) + ' InterfaceIndex=' + IntToStr(InterfaceIndex) + ' bNumInterfaces=' + IntToStr(Device.Configurations[Index].Descriptor.bNumInterfaces) + ')');
+   
+             Result:=USB_STATUS_INVALID_DATA;
+             Exit;
+            end;
           end
          else
           begin
@@ -2766,18 +2779,38 @@ begin
           begin
            {Increment Endpoint}
            Inc(EndpointIndex);
-         
-           {Set Descriptor}
-           Device.Configurations[Index].Interfaces[InterfaceIndex].Endpoints[EndpointIndex]:=PUSBEndpointDescriptor(Descriptor);
+
+           {Check Endpoint Count}
+           if EndpointIndex < Device.Configurations[Index].Interfaces[InterfaceIndex].Descriptor.bNumEndpoints then 
+            begin
+             {Set Descriptor}
+             Device.Configurations[Index].Interfaces[InterfaceIndex].Endpoints[EndpointIndex]:=PUSBEndpointDescriptor(Descriptor);
+            end
+           else
+            begin
+             {Ignore the extra endpoint and issue a warning}
+             if USB_LOG_ENABLED then USBLogWarn(Device,'Invalid configuration descriptor (Number of endpoints incorrect)');
+             if USB_LOG_ENABLED then USBLogWarn(Device,' (Index=' + IntToStr(Index) + ' InterfaceIndex=' + IntToStr(InterfaceIndex) + ' EndpointIndex=' + IntToStr(EndpointIndex) + ' bNumEndpoints=' + IntToStr(Device.Configurations[Index].Interfaces[InterfaceIndex].Descriptor.bNumEndpoints) + ')');
+            end;
           end
          else
           begin
            {Increment Endpoint}
            Inc(EndpointIndex);
 
-           {Set Descriptor}
-           Device.Configurations[Index].Interfaces[InterfaceIndex].Alternates[AlternateSetting - 1].Endpoints[EndpointIndex]:=PUSBEndpointDescriptor(Descriptor);
-          end;          
+           {Check Endpoint Count}
+           if EndpointIndex < Device.Configurations[Index].Interfaces[InterfaceIndex].Alternates[AlternateSetting - 1].Descriptor.bNumEndpoints then
+            begin
+             {Set Descriptor}
+             Device.Configurations[Index].Interfaces[InterfaceIndex].Alternates[AlternateSetting - 1].Endpoints[EndpointIndex]:=PUSBEndpointDescriptor(Descriptor);
+            end
+           else
+            begin
+             {Ignore the extra endpoint and issue a warning}
+             if USB_LOG_ENABLED then USBLogWarn(Device,'Invalid configuration descriptor (Number of alternate setting endpoints incorrect)');
+             if USB_LOG_ENABLED then USBLogWarn(Device,' (Index=' + IntToStr(Index) + ' InterfaceIndex=' + IntToStr(InterfaceIndex) + ' AlternateSetting=' + IntToStr(AlternateSetting) + ' EndpointIndex=' + IntToStr(EndpointIndex) + ' bNumEndpoints=' + IntToStr(Device.Configurations[Index].Interfaces[InterfaceIndex].Alternates[AlternateSetting - 1].Descriptor.bNumEndpoints) + ')');
+            end;
+          end;
         end;
        else
         begin
@@ -2809,16 +2842,16 @@ begin
       {Get Next Descriptor}
       Offset:=Offset + Descriptor.bLength;
      end;
- 
-    {Check Interface Count}
-    if (InterfaceIndex + 1) <> Device.Configurations[Index].Descriptor.bNumInterfaces then
+
+    {Check Interface Count} {Moved to USB_DESCRIPTOR_TYPE_INTERFACE section}
+    (*if (InterfaceIndex + 1) <> Device.Configurations[Index].Descriptor.bNumInterfaces then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'Invalid configuration descriptor (Number of interfaces incorrect)');
       if USB_LOG_ENABLED then USBLogError(Device,' (Index=' + IntToStr(Index) + ' InterfaceIndex=' + IntToStr(InterfaceIndex) + ' bNumInterfaces=' + IntToStr(Device.Configurations[Index].Descriptor.bNumInterfaces) + ')');
    
       Result:=USB_STATUS_INVALID_DATA;
       Exit;
-     end;
+     end;*)
     
     {Return Result}
     Result:=USB_STATUS_SUCCESS;
