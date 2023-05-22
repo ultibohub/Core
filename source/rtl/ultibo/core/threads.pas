@@ -2423,7 +2423,11 @@ function SysBasicEventCreate(EventAttributes:Pointer;AManualReset,InitialState:B
 procedure SysBasicEventDestroy(State:PEventState);
 procedure SysBasicEventResetEvent(State:PEventState);
 procedure SysBasicEventSetEvent(State:PEventState);
+{$if defined(FPC_STABLE) or defined(FPC_FIXES) or defined(FPC_LEGACY)}
 function SysBasicEventWaitFor(Timeout:Cardinal;State:PEventState):LongInt;           {0=No Timeout}
+{$else}
+function SysBasicEventWaitFor(Timeout:Cardinal;State:PEventState;UseComWait:Boolean=False):LongInt;           {0=No Timeout}
+{$endif}
 
 function SysRTLEventCreate:PRTLEvent;
 procedure SysRTLEventDestroy(AEvent:PRTLEvent);
@@ -24843,8 +24847,11 @@ begin
 end;
 
 {==============================================================================}
-
+{$if defined(FPC_STABLE) or defined(FPC_FIXES) or defined(FPC_LEGACY)}
 function SysBasicEventWaitFor(Timeout:Cardinal;State:PEventState):LongInt;
+{$else}
+function SysBasicEventWaitFor(Timeout:Cardinal;State:PEventState;UseComWait:Boolean=False):LongInt;
+{$endif}
 const
  wrSignaled  = 0;
  wrTimeout   = 1;
