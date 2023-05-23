@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for x86_64.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -45,7 +45,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,SysUtils;
 
 {==============================================================================}
 {Global definitions}
-{$INCLUDE GlobalDefines.inc}
+{$INCLUDE ..\core\GlobalDefines.inc}
 
 {==============================================================================}
 

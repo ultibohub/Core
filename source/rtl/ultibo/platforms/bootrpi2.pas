@@ -1,19 +1,19 @@
 {
-Ultibo Initialization code for Raspberry Pi 4.
+Ultibo Initialization code for Raspberry Pi 2.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
 
- ARMv8 (Cortex A72)
+ ARMv7 (Cortex A7)
 
 Boards
 ======
 
- Raspberry Pi 4 - Model B
- Raspberry Pi 400
- Raspberry Pi CM4
+ Raspberry Pi 2 - Model B
+ Raspberry Pi 3 - Model B/B+/A+
+ Raspberry Pi CM3/CM3+
  
 Licence
 =======
@@ -24,148 +24,120 @@ Credits
 =======
 
  Information for this unit was obtained from:
-
-  Circle - https://github.com/rsta2/circle
+ 
+  rsta2 (circle) - https://github.com/rsta2/circle
   
-  Linux - https://github.com/raspberrypi/linux
+  dwelch67 (raspberrypi) - https://github.com/dwelch67/raspberrypi
+  
+  PeterLemon (RaspberryPi) - https://github.com/PeterLemon/RaspberryPi
+  
+  brianwiddas (pi-baremetal) - https://github.com/brianwiddas/pi-baremetal
   
   Linux - \arch\arm\include\asm\assembler.h  (Switching from HYP mode to SVC mode)
-
+  
+  OSDev - http://wiki.osdev.org/Raspberry_Pi_Bare_Bones
+          http://wiki.osdev.org/ARM_RaspberryPi_Tutorial_C
+ 
 References
 ==========
 
- BCM2711 ARM Peripherals
+ BCM2835 ARM Peripherals
 
  QA7 Rev3.4
  
- Cortex-A8 MPCore Technical Reference Manual (Revision: r0p4)
+ Cortex-A7 MPCore Technical Reference Manual (Revision: r0p5)
  
- ARM v8 Architecture Reference Manual
+ ARM v7 Architecture Reference Manual
  
- ARM Architecture Reference Manual (ARMv8-A)
+ ARM Architecture Reference Manual (ARMv7-A and ARMv7-R edition)
  
  Linux Device Tree files in /arch/arm/boot/dts
  
-  bcm2711.dtsi
-  bcm2711-rpi-4-b.dts
+  bcm2709.dtsi
+  bcm2709-rpi-2-b.dts
+
+ RPi Configuration
+  
+  http://elinux.org/RPi_Configuration
+  
+ RPi2 Boot Loader (Origin Unknown)
+ 
+  http://pastebin.com/rgGgBuTN
+  
+  Referenced from here and appears to be "official": https://www.raspberrypi.org/forums/viewtopic.php?f=63&t=98367&start=375#p697474
+  
+ RPi2 HYP Mode Boot Loader (Unofficial)
+ 
+  https://github.com/slp/rpi2-hyp-boot/blob/master/rpi2-hyp-boot.S
     
  Raspberry Pi Boot Stubs 
  
   https://github.com/raspberrypi/tools/tree/master/armstubs
- 
-Raspberry Pi 4
+    
+Raspberry Pi 2
 ==============
 
- SoC: Broadcom BCM2838
+ SoC: Broadcom BCM2836
  
- CPU: Cortex A72 (ARMv8) (4 @ 1500MHz)
+ CPU: Cortex A7 (ARMv7) (4 @ 900MHz)
 
- Cache: L1 32KB (Per Core) / L2 1024KB (Shared by all Cores)
+ Cache: L1 32KB (Per Core) / L2 512KB (Shared by all Cores)
  
- FPU: VFPV4
+ FPU: VFPV3
  
- GPU: Broadcom VideoCore VI (VC6)
+ GPU: Broadcom VideoCore IV (VC4)
  
- RAM: 1/2/4/8GB
+ RAM: 1GB
  
- USB: xHCI
-      Synopsys DesignWare Hi-Speed USB 2.0 On-The-Go Controller (DWCOTG)
+ USB: Synopsys DesignWare Hi-Speed USB 2.0 On-The-Go Controller (DWCOTG)
  
- LAN: Broadcom (BCM54213)
+ LAN: SMSC LAN9514 (SMSC95XX)
   
- SD/MMC: Arasan (BCM2711)
-         Broadcom (Proprietry)
-         
- WiFi: Broadcom (BCM43438)
+ SD/MMC: Arasan (BCM2709)
  
- Bluetooth: Broadcom (BCM43438)
+ WiFi: (None)
+ 
+ Bluetooth: (None)
 
- Other: GPIO / SPI / I2C / I2S / PL011 (UART) / PWM / SMI / Watchdog (PM) / Random (RNG) / Timer
+ Other: GPIO / SPI / I2C / I2S / PL011 (UART) / PWM / SMI / Watchdog (PM) / Random (RNG) / Timer ???
  
-Boot RPi4
+Boot RPi2
 =========
 
- The boot loader on the Raspberry Pi 4 will load this code at address 0x00008000 onwards and set the
+ The boot loader on the Raspberry Pi 2 will load this code at address 0x00008000 onwards and set the
  following registers before jumping to this code.
 
  R0 - Zero
- R1 - Machine Type (Raspberry Pi 4 or BCM2711 = 0x0C42) 
+ R1 - Machine Type (Raspberry Pi 2 or BCM2709 = 0x0C42) 
  R2 - Address of the ARM Tags structure (Normally 0x0100)
 
  On entry to this code the processor will be in the following state:
 
  World - Non Secure (Firmware causes a switch to Non Secure before jumping to Startup code)
- Mode - Hypervisor (ARM_MODE_HYP)
+ Mode - Supervisor (ARM_MODE_SVC) Note: Firmware later than 2/10/2015 will boot in Hypervisor mode (ARM_MODE_HYP)
  MMU - Disabled
  FPU - Disabled
- Data Cache - Disabled
- Instruction Cache - Enabled (Firmware enabled during boot) 
+ L1 Data Cache - Enabled (Firmware enabled prior to Non Secure switch) 
+ L1 Instruction Cache - Enabled (Firmware enabled prior to Non Secure switch) 
  Branch Predication - Disabled
- Unaligned Data Access - Enabled (Always enabled on ARMv8)
- SMP Coherence - Enabled (Firmware enabled during boot) 
+ Unaligned Data Access - Enabled (Always enabled on ARMv7)
+ SMP Coherence - Enabled (Firmware enabled prior to Non Secure switch) 
  
- The firmware also does initial configuration of the GIC as follows:
- 
-  Distributor interface enabled for Group 0 and Group 1 interrupts
-  CPU interface enabled for Group 1 interrupts
-  All interrupts routed to Group 1
- 
- All secondary CPUs will be executing a loop reading their designated local peripherals mailbox0
- and waiting for a start address to begin execution.
- 
- Ultibo switches from Hypervisor mode to Supervisor mode during initial boot.
+ If the processor is in Hypervisor mode (Firmware behaviour after 2/10/2015) then Ultibo switches
+ it to Supervisor mode during initial boot.
  
  If the configuration option ARMSecureBoot is set to 1 then Ultibo switches the processor back
  to Secure world during initial boot (see note below).
-
+ 
  Ultibo then switches the processor to System mode for all operations and remains in either the
  Secure or Non Secure World as per the option above.
 
  The initialization process enables the MMU, FPU, L1 Cache and other performance optimizations.
  
- Note that this code is currently almost identical to the Raspberry Pi 2 and 3 boot code but has been
- separated to allow for supporting 64 bit mode on the ARMv8 in future. Ultibo currently runs the RPi4
- in 32 bit mode which is almost identical to ARMv7.
-
- ARM64 support on Raspberry Pi 4
- -------------------------------
- 
- A 64 bit loader is included in the firmware and if the file kernel8.img exists in the boot partition
- the firmware will attempt to boot this image in 64 bit mode.
-
- The boot loader on the Raspberry Pi 4 will load this code at address 0x00080000 onwards and set the
- following registers before jumping to this code.
-
- X0 - Address of the ARM Tags or Device Tree structure
- X1 - Zero
- X2 - Zero
- X3 - Zero 
- 
- On entry to this code in 64 bit mode the processor will be in the following state: 
- 
- World - Non Secure (Firmware causes a switch to Non Secure before jumping to Startup code)
- Mode - EL2 (Hypervisor)
- MMU - Disabled
- FPU - Disabled
- Data Cache - Disabled
- Instruction Cache - Enabled (Firmware enabled during boot) 
- Branch Predication - Disabled
- Unaligned Data Access - Enabled (Always enabled on ARMv8)
- SMP Coherence - Enabled (Firmware enabled during boot) 
- 
- The boot loader also does initial configuration of the GIC as follows:
- 
-  Distributor interface enabled for Group 0 and Group 1 interrupts
-  CPU interface enabled for Group 1 interrupts
-  All interrupts routed to Group 1
- 
- All secondary CPUs will be executing a loop reading a memory address at 0xd8/e0/e8/f0 and
- waiting for a start address to begin execution.
- 
  Returning to Secure World:
  --------------------------
  
- The Raspberry Pi 4 firmware always switches to Non Secure world in order to:
+ The Raspberry Pi 2 firmware always switches to Non Secure world in order to:
  
   a) Reset CNTVOFF (Virtual Offset register) to zero
   
@@ -214,15 +186,15 @@ Boot RPi4
 {$H+}          {Default to AnsiString} 
 {$inline on}   {Allow use of Inline procedures}
 
-unit BootRPi4;
+unit BootRPi2;
 
 interface
 
 {==============================================================================}
 {Global definitions} {Must be prior to uses}
-{$INCLUDE GlobalDefines.inc}
+{$INCLUDE ..\core\GlobalDefines.inc}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2838,Platform,PlatformRPi4,{$IFDEF CPUARM}PlatformARM,PlatformARMv7,PlatformARMv7L,{$ENDIF CPUARM}{$IFDEF CPUAARCH64}PlatformAARCH64,PlatformARMv8,{$ENDIF CPUAARCH64}Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF}; 
+uses GlobalConfig,GlobalConst,GlobalTypes,BCM2836,Platform,PlatformRPi2,PlatformARM,PlatformARMv7,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF}; 
 
 {==============================================================================}
 {Boot Functions}
@@ -246,9 +218,8 @@ implementation
 {==============================================================================}
 {Boot Functions}
 procedure Startup; assembler; nostackframe; public name '_START';
-{Entry point of Ultibo on Raspberry Pi 4, this will be the very first byte executed
- and will be loaded by the GPU at address 0x00008000 (or 0x00080000 in 64-bit mode)}
-{$IFDEF CPUARM}
+{Entry point of Ultibo on Raspberry Pi 2, this will be the very first byte executed
+ and will be loaded by the GPU at address 0x00008000}
 asm
  //Save the pointer to the ARM Tags that the bootloader should have passed
  //to us in R2.
@@ -275,16 +246,11 @@ asm
  str r0, [r3] 
  
  //Check ARM stub for Secure Boot support
- mov r0, #RPI4_SECURE_BOOT_OFFSET
+ mov r0, #RPI2_SECURE_BOOT_OFFSET
  ldr r0, [r0]
  
  //Check for "RPIX" marker
- ldr r3, =RPI4_SECURE_BOOT_MARKER
- cmp r0, r3
- beq StartupHandler 
- 
- //Check for "FIQS" alternate marker
- ldr r3, =RPI4_SECURE_BOOT_CIRCLE
+ ldr r3, =RPI2_SECURE_BOOT_MARKER
  cmp r0, r3
  beq StartupHandler 
  
@@ -307,19 +273,12 @@ asm
 .LARMSecureBoot:
   .long ARMSecureBoot
 end;
-{$ENDIF CPUARM}
-{$IFDEF CPUAARCH64}
-asm
- //To Do
-end;
-{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure Vectors; assembler; nostackframe; 
 {ARM exception vector table which is copied to the vector base address by the
  StartupHandler. See A2.6 "Exceptions" of the ARM Architecture Reference Manual}
-{$IFDEF CPUARM}
 asm
  ldr pc, .Lreset_addr     //Reset Handler 
  ldr pc, .Lundef_addr	  //Undefined Instruction Handler 
@@ -347,19 +306,12 @@ asm
 .Lfiq_addr:       
   .long ARMv7FIQHandler        
 end;
-{$ENDIF CPUARM}
-{$IFDEF CPUAARCH64}
-asm
- //To Do
-end;
-{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure SecureVectors; assembler; nostackframe; 
 {ARM secure vector table which is copied to the sector vector base address by the
  StartupHandler. See A2.6 "Exceptions" of the ARM Architecture Reference Manual}
-{$IFDEF CPUARM}
 asm
  ldr pc, .Lreset_addr     //Reset Handler 
  ldr pc, .Lreset_addr	  //Undefined Instruction Handler 
@@ -375,18 +327,11 @@ asm
 .Lsmc_addr:       
   .long SecureMonitor        
 end;
-{$ENDIF CPUARM}
-{$IFDEF CPUAARCH64}
-asm
- //To Do
-end;
-{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure SecureMonitor; assembler; nostackframe; 
 {Secure monitor mode handler to switch to secure mode}
-{$IFDEF CPUARM}
 asm
  //Read the SCR (Secure Configuration Register)
  mrc p15, #0, r1, cr1, cr1, #0
@@ -400,18 +345,11 @@ asm
  //Return to secure SVC mode
  movs    pc, lr                          
 end;
-{$ENDIF CPUARM}
-{$IFDEF CPUAARCH64}
-asm
- //To Do
-end;
-{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure StartupSwitch; assembler; nostackframe; 
 {Startup handler routine to switch from hypervisor mode}
-{$IFDEF CPUARM}
 asm
  //Get the CPSR
  mrs r0, cpsr            
@@ -428,9 +366,9 @@ asm
  
  //Save value of CNTVOFF from boot
  mrrc p15, #4, r1, r2, cr14
- ldr r3, .LRPi4CNTVOFFLow
+ ldr r3, .LRPi2CNTVOFFLow
  str r1, [r3]
- ldr r3, .LRPi4CNTVOFFHigh
+ ldr r3, .LRPi2CNTVOFFHigh
  str r2, [r3]
  
  //Reset CNTVOFF to 0 while in HYP mode
@@ -451,23 +389,16 @@ asm
  //Return to startup 
  bx lr
  
-.LRPi4CNTVOFFLow:
-  .long RPi4CNTVOFFLow
-.LRPi4CNTVOFFHigh:
-  .long RPi4CNTVOFFHigh
+.LRPi2CNTVOFFLow:
+  .long RPi2CNTVOFFLow
+.LRPi2CNTVOFFHigh:
+  .long RPi2CNTVOFFHigh
 end;
-{$ENDIF CPUARM}
-{$IFDEF CPUAARCH64}
-asm
- //To Do
-end;
-{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
-procedure StartupSecure; assembler; nostackframe; 
+procedure StartupSecure; assembler; nostackframe;
 {Startup handler routine to switch to secure mode}
-{$IFDEF CPUARM}
 asm
  //Check the secure boot configuration
  ldr r0, .LARMSecureBoot
@@ -522,18 +453,11 @@ asm
 .LSecureVectors:
   .long SecureVectors
 end;
-{$ENDIF CPUARM}
-{$IFDEF CPUAARCH64}
-asm
- //To Do
-end;
-{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 
 procedure StartupHandler; assembler; nostackframe; 
 {Startup handler routine executed to start the Ultibo kernel}
-{$IFDEF CPUARM}
 asm
  //Call the HYP mode switch handler in case the CPU is in HYP mode
  bl StartupSwitch
@@ -544,9 +468,6 @@ asm
  //Invalidate all Caches before starting the boot process
  bl ARMv7InvalidateCache
  
- //Flush the Branch Target Cache before starting the boot process
- bl ARMv7FlushBranchTargetCache
- 
  //Invalidate the TLB before starting the boot process
  bl ARMv7InvalidateTLB
  
@@ -555,7 +476,7 @@ asm
  cpsid if, #ARM_MODE_SYS
 
  //Copy the ARM exception table from Vectors to the vector base address.
- mov r0, #RPI4_VECTOR_TABLE_BASE
+ mov r0, #RPI2_VECTOR_TABLE_BASE
  ldr r1, .L_vectors
  ldmia r1!, {r2-r9}
  stmia r0!, {r2-r9}
@@ -564,14 +485,14 @@ asm
 
  //Set the Vector Base Address register in the System Control
  //register to the address of the vector table base above.
- mov r0, #RPI4_VECTOR_TABLE_BASE
+ mov r0, #RPI2_VECTOR_TABLE_BASE
  mcr p15, #0, r0, cr12, cr0, #0
  
  //Enable Unaligned Memory Accesses (U Bit) in the System Control
  //Register to simplify memory access routines from Pascal code.
  //
  //This would normally occur in CPUInit but is done here to allow
- //calls to Pascal code during initialization. (Always enabled in ARMv8)
+ //calls to Pascal code during initialization. (Always enabled in ARMv7)
  //mrc p15, #0, r0, cr1, cr0, #0
  //orr r0, #ARMV7_CP15_C1_U_BIT
  //mcr p15, #0, r0, cr1, cr0, #0
@@ -619,8 +540,8 @@ asm
  str r2, [r0] 
 .LSkipRoundHeap:
   
- //Determine how many third level page tables are required.
- //Each one represents 2MB and is 4KB in size (512 8 byte entries).
+ //Determine how many second level page tables are required.
+ //Each one represents 1MB and is 1KB in size (256 4 byte entries).
  //R1 will contain the address of the bss_end from above.
  //Add the initial stack size to bss_end
  ldr r0, .LINITIAL_STACK_SIZE
@@ -630,31 +551,31 @@ asm
  ldr r0, .LINITIAL_HEAP_SIZE
  ldr r0, [r0]
  add r3, r3, r0
- //Divide R3 by 2MB to get the count.
- lsr r2, r3, #21 
+ //Divide R3 by 1MB to get the count.
+ lsr r2, r3, #20 
  //Add one for any leftover amount and one for safety.
  add r2, r2, #2
- //Store the third level page table used count
+ //Store the second level page table used count
  ldr r0, .LPAGE_TABLES_USED
  str r2, [r0]
-  
- //Get the third level page table free count
+ 
+ //Get the second level page table free count
  ldr r0, .LPAGE_TABLES_FREE
  ldr r0, [r0]
  //Add the free count to the used count
  add r2, r2, r0
- //Store the third level page table count
+ //Store the second level page table count
  ldr r0, .LPAGE_TABLES_COUNT
  str r2, [r0]
  
- //Put the third level page tables directly after the kernel image.
+ //Put the second level page tables directly after the kernel image.
  //R1 will contain the address of the bss_end from above.
- //Store the start address of the third level page tables.
+ //Store the start address of the second level page tables.
  ldr r0, .LPAGE_TABLES_ADDRESS
  str r1, [r0]
- //Multiply count by 4KB to get the size.
+ //Multiply count by 1KB to get the size.
  //R2 will contain the number of page tables from above.
- lsl r2, r2, #12
+ lsl r2, r2, #10
  //Round up the size to a multiple of 4KB
  //Divide by 4KB, Multiply by 4KB
  mov r3, r2
@@ -665,7 +586,7 @@ asm
  mov r2, r3
  add r2, r2, #4096
 .LSkipRoundTables:
- //Store the size of the third level page tables.
+ //Store the size of the second level page tables.
  ldr r0, .LPAGE_TABLES_LENGTH
  str r2, [r0]  
  add r1, r1, r2
@@ -689,23 +610,19 @@ asm
 
  //Move the initial stack away from the initial heap but remain 8 byte aligned.
  sub sp, sp, #8
-  
- //Initialize the RPi4 Platform specific behaviour (Memory, Peripherals, Interrupts etc).
- bl RPi4Init
+ 
+ //Initialize the RPi2 Platform specific behaviour (Memory, Peripherals, Interrupts etc).
+ bl RPi2Init
   
  //Initialize the ARM Platform specific behaviour (IRQ, FIQ, Abort etc).
  bl ARMInit
 
- //Initialize the ARMv7L Platform specific behaviour (Halt, Pause, Locks, Barriers, ContextSwitch, ThreadStack etc).
- {$IFDEF RPI4_ENABLE_LPAE}
- bl ARMv7LInit
- {$ELSE RPI4_ENABLE_LPAE}
+ //Initialize the ARMv7 Platform specific behaviour (Halt, Pause, Locks, Barriers, ContextSwitch, ThreadStack etc).
  bl ARMv7Init
- {$ENDIF RPI4_ENABLE_LPAE}
 
  //Initialize the Ultibo Platform (CPU, FPU, MMU, Heap, Clock, Interrupts, ATAGS, Power etc).
  bl PlatformInit
- 
+  
  {$IFDEF CONSOLE_EARLY_INIT}
  //Initialize the Ultibo Locking primitives
  bl LocksInit
@@ -715,13 +632,13 @@ asm
   
  //Initialize the Peripheral settings
  bl PeripheralInit
-
+ 
  //Initialize the Framebuffer device
  bl FramebufferInit
-
+  
  //Initialize the Console device
  bl ConsoleInit
-
+ 
  //Start the Boot Console device
  bl BootConsoleStart
  {$ENDIF}
@@ -771,12 +688,6 @@ asm
 .L_bss_end:
   .long _bss_end
 end;
-{$ENDIF CPUARM}
-{$IFDEF CPUAARCH64}
-asm
- //To Do
-end;
-{$ENDIF CPUAARCH64}
 
 {==============================================================================}
 {==============================================================================}

@@ -113,7 +113,7 @@ interface
 
 {==============================================================================}
 {Global definitions} {Must be prior to uses}
-{$INCLUDE GlobalDefines.inc}
+{$INCLUDE ..\core\GlobalDefines.inc}
 
 uses GlobalConfig,GlobalConst,GlobalTypes,BCM2838,Platform,{$IFDEF CPUARM}PlatformARM,PlatformARMv7,PlatformARMv7L,{$ENDIF CPUARM}{$IFDEF CPUAARCH64}PlatformAARCH64,PlatformARMv8,{$ENDIF CPUAARCH64}ARMGIC,HeapManager,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF},SysUtils;
 

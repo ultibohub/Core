@@ -1,12 +1,12 @@
 {
-Ultibo Initialization code for x86 PC.
+Ultibo Platform interface unit for x86.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
 
- x86  (i386)
+ x86 (i386)
 
 Boards
 ======
@@ -28,30 +28,28 @@ References
 ==========
 
 
-PC
-==
+Platform x86
+============
 
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
-{$H+}          {Default to AnsiString} 
+{$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit BootPCx86;
+unit Platformx86; 
 
 interface
 
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,SysUtils;
+
 {==============================================================================}
 {Global definitions}
-{$INCLUDE GlobalDefines.inc}
-
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformPC,Platformx86,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF}; 
-
-//To Do //See: \u-boot-HEAD-5745f8c\arch\x86\cpu
+{$INCLUDE ..\core\GlobalDefines.inc}
 
 {==============================================================================}
-{Boot Functions}
-procedure Startup;
+
+//To Do
 
 {==============================================================================}
 {==============================================================================}
@@ -59,14 +57,8 @@ procedure Startup;
 implementation
 
 {==============================================================================}
-{==============================================================================}
-{Boot Functions}
-procedure Startup; assembler; nostackframe; [public, alias: '_START'];
-asm
- //To Do
-end;
+
 
 {==============================================================================}
-{==============================================================================}
- 
+
 end.

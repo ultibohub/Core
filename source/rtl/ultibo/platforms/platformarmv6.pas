@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for ARMv6.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -63,7 +63,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformARM,HeapManager,Threa
          
 {==============================================================================}
 {Global definitions}
-{$INCLUDE GlobalDefines.inc}
+{$INCLUDE ..\core\GlobalDefines.inc}
 
 {==============================================================================}
 const

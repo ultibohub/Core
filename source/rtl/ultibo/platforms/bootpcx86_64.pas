@@ -1,7 +1,7 @@
 {
 Ultibo Initialization code for x86_64 PC.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -43,7 +43,7 @@ interface
 
 {==============================================================================}
 {Global definitions} {Must be prior to uses}
-{$INCLUDE GlobalDefines.inc}
+{$INCLUDE ..\core\GlobalDefines.inc}
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformPC,Platformx86_64,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF}; 
 

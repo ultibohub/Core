@@ -1,12 +1,13 @@
 {
-Ultibo Platform interface unit for x86.
+Ultibo Platform interface unit for PC.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
 
- x86 (i386)
+ x86  (i386)
+ x86_64
 
 Boards
 ======
@@ -28,8 +29,8 @@ References
 ==========
 
 
-Platform x86
-============
+Platform PC
+===========
 
 }
 
@@ -37,15 +38,15 @@ Platform x86
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit Platformx86; 
+unit PlatformPC; 
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Platformx86,Platformx86_64,HeapManager,SysUtils;
 
 {==============================================================================}
 {Global definitions}
-{$INCLUDE GlobalDefines.inc}
+{$INCLUDE ..\core\GlobalDefines.inc}
 
 {==============================================================================}
 

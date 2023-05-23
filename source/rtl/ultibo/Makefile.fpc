@@ -26,7 +26,7 @@ units=$(SYSTEMUNIT) \
        lineinfo \
        ctypes \
        $(ULTIBO_UNITS) \
-       $(ULTIBO_CPU_UNITS) \
+       $(ULTIBO_PLATFORM_UNITS) \
        $(ULTIBO_DRIVER_UNITS) \
        $(ULTIBO_KEYMAP_UNITS) \
        $(ULTIBO_CODEPAGE_UNITS) \
@@ -38,7 +38,7 @@ units=$(SYSTEMUNIT) \
        fpwidestring \
        $(ULTIBO_FONTS) \
        $(ULTIBO_EXTRAS) \
-       $(ULTIBO_CPU_EXTRAS)
+       $(ULTIBO_PLATFORM_EXTRAS)
 
 implicitunits=exeinfo \
               cp1250 \
@@ -244,8 +244,8 @@ ULTIBO_EXTRAS=ConsoleShell \
               WiringSerial \
               WiringSPI
               
-ULTIBO_CPU_UNITS=
-ULTIBO_CPU_EXTRAS=
+ULTIBO_PLATFORM_UNITS=
+ULTIBO_PLATFORM_EXTRAS=
 
 ULTIBO_DRIVER_UNITS=rtlwifi \
                     rtl8192cu \
@@ -323,43 +323,43 @@ ULTIBO_CODEPAGE_UNITS=cp720oem \
                       cp1258ansi
 
 ifeq ($(ARCH),arm)
-override ULTIBO_UNITS+=platformarm
+override ULTIBO_PLATFORM_UNITS+=platformarm
 ifeq ($(SUBARCH),armv6)
 CPU_UNITS=
 CPU_UNITS_DEFINED=1
-override ULTIBO_UNITS+=bcm2835 \
-                       platformarmv6 \
-                       platformrpi
+override ULTIBO_PLATFORM_UNITS+=bcm2835 \
+                                platformarmv6 \
+                                platformrpi
 override ULTIBO_DRIVER_UNITS+=bcm2708
-ULTIBO_CPU_UNITS=bootrpi
-ULTIBO_CPU_EXTRAS=RaspberryPi
+override ULTIBO_PLATFORM_UNITS+=bootrpi
+override ULTIBO_PLATFORM_EXTRAS+=RaspberryPi
 endif
 ifeq ($(SUBARCH),armv7a)
 CPU_UNITS=
 CPU_UNITS_DEFINED=1
-override ULTIBO_UNITS+=bcm2836 \
-                       bcm2837 \
-                       bcm2838 \
-                       armgic \
-                       versatilepb \
-                       platformarmv7 \
-                       platformarmv7l \
-                       platformarmv8 \
-                       platformrpi2 \
-                       platformrpi3 \
-                       platformrpi4 \
-                       platformqemuvpb
+override ULTIBO_PLATFORM_UNITS+=bcm2836 \
+                                bcm2837 \
+                                bcm2838 \
+                                armgic \
+                                versatilepb \
+                                platformarmv7 \
+                                platformarmv7l \
+                                platformarmv8 \
+                                platformrpi2 \
+                                platformrpi3 \
+                                platformrpi4 \
+                                platformqemuvpb
 override ULTIBO_DRIVER_UNITS+=bcm2709 \
                               bcm2710 \
                               bcm2711
-ULTIBO_CPU_UNITS=bootrpi2 \
-                 bootrpi3 \
-                 bootrpi4 \
-                 bootqemuvpb
-ULTIBO_CPU_EXTRAS=RaspberryPi2 \
-                  RaspberryPi3 \
-                  RaspberryPi4 \
-                  QEMUVersatilePB
+override ULTIBO_PLATFORM_UNITS+=bootrpi2 \
+                                bootrpi3 \
+                                bootrpi4 \
+                                bootqemuvpb
+override ULTIBO_PLATFORM_EXTRAS+=RaspberryPi2 \
+                                 RaspberryPi3 \
+                                 RaspberryPi4 \
+                                 QEMUVersatilePB
 endif
 ifeq ($(CPU_UNITS_DEFINED),)
 $(error No CPUs enabled for given SUBARCH, pass either a SUBARCH or set CPU_UNITS_DEFINED=1 if you know what you are doing)
@@ -367,48 +367,48 @@ endif
 endif
 
 ifeq ($(ARCH),i386)
-override ULTIBO_UNITS+=platformx86 \
-                       platformpc
+override ULTIBO_PLATFORM_UNITS+=platformx86 \
+                                platformpc
 CPU_UNITS=
 CPU_UNITS_DEFINED=1
-ULTIBO_CPU_UNITS=bootpcx86
+override ULTIBO_PLATFORM_UNITS+=bootpcx86
 ifeq ($(CPU_UNITS_DEFINED),)
 $(error No CPUs enabled for given SUBARCH, pass either a SUBARCH or set CPU_UNITS_DEFINED=1 if you know what you are doing)
 endif
 endif
 
 ifeq ($(ARCH),x86_64)
-override ULTIBO_UNITS+=platformx86_64 \
-                       platformpc
+override ULTIBO_PLATFORM_UNITS+=platformx86_64 \
+                                platformpc
 CPU_UNITS=
 CPU_UNITS_DEFINED=1
-ULTIBO_CPU_UNITS=bootpcx86_64
+override ULTIBO_PLATFORM_UNITS+=bootpcx86_64
 ifeq ($(CPU_UNITS_DEFINED),)
 $(error No CPUs enabled for given SUBARCH, pass either a SUBARCH or set CPU_UNITS_DEFINED=1 if you know what you are doing)
 endif
 endif
 
 ifeq ($(ARCH),aarch64)
-override ULTIBO_UNITS+=platformaarch64
+override ULTIBO_PLATFORM_UNITS+=platformaarch64
 ifeq ($(SUBARCH),armv8)
 CPU_UNITS=
 CPU_UNITS_DEFINED=1
-override ULTIBO_UNITS+=bcm2837 \
-                       bcm2838 \
-                       armgic \
-                       versatilepb \
-                       platformarmv8 \
-                       platformrpi3 \
-                       platformrpi4 \
-                       platformqemuvpb
+override ULTIBO_PLATFORM_UNITS+=bcm2837 \
+                                bcm2838 \
+                                armgic \
+                                versatilepb \
+                                platformarmv8 \
+                                platformrpi3 \
+                                platformrpi4 \
+                                platformqemuvpb
 override ULTIBO_DRIVER_UNITS+=bcm2710 \
                               bcm2711
-ULTIBO_CPU_UNITS=bootrpi3 \
-                 bootrpi4 \
-                 bootqemuvpb
-ULTIBO_CPU_EXTRAS=RaspberryPi3 \
-                  RaspberryPi4 \
-                  QEMUVersatilePB
+override ULTIBO_PLATFORM_UNITS+=bootrpi3 \
+                                bootrpi4 \
+                                bootqemuvpb
+override ULTIBO_PLATFORM_EXTRAS+=RaspberryPi3 \
+                                 RaspberryPi4 \
+                                 QEMUVersatilePB
 endif
 endif
 
@@ -668,26 +668,26 @@ $(addsuffix $(PPUEXT),$(ULTIBO_EXTRAS)):
 	$(COMPILER) $<
     
 #
-# Ultibo CPU specific rules
+# Ultibo Platform specific rules
 #
 
-define ULTIBO_CPU_UNITS_RULE
-$(1)$(PPUEXT): core/$(1).pas $(SYSTEMUNIT)$(PPUEXT)
+define ULTIBO_PLATFORM_UNITS_RULE
+$(1)$(PPUEXT): platforms/$(1).pas $(SYSTEMUNIT)$(PPUEXT)
 endef
 
-$(foreach unit,$(ULTIBO_CPU_UNITS),$(eval $(call ULTIBO_CPU_UNITS_RULE,$(unit))))
+$(foreach unit,$(ULTIBO_PLATFORM_UNITS),$(eval $(call ULTIBO_PLATFORM_UNITS_RULE,$(unit))))
 
-$(addsuffix $(PPUEXT),$(ULTIBO_CPU_UNITS)):
+$(addsuffix $(PPUEXT),$(ULTIBO_PLATFORM_UNITS)):
 	$(COMPILER) $<
 
 
-define ULTIBO_CPU_EXTRAS_RULE
+define ULTIBO_PLATFORM_EXTRAS_RULE
 $(1)$(PPUEXT): extra/$(1).pas $(SYSTEMUNIT)$(PPUEXT)
 endef
 
-$(foreach unit,$(ULTIBO_CPU_EXTRAS),$(eval $(call ULTIBO_CPU_EXTRAS_RULE,$(unit))))
+$(foreach unit,$(ULTIBO_PLATFORM_EXTRAS),$(eval $(call ULTIBO_PLATFORM_EXTRAS_RULE,$(unit))))
 
-$(addsuffix $(PPUEXT),$(ULTIBO_CPU_EXTRAS)):
+$(addsuffix $(PPUEXT),$(ULTIBO_PLATFORM_EXTRAS)):
 	$(COMPILER) $<
 
 #

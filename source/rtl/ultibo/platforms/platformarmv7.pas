@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for ARMv7.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -81,7 +81,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformARM,HeapManager,Threa
 
 {==============================================================================}
 {Global definitions}
-{$INCLUDE GlobalDefines.inc}
+{$INCLUDE ..\core\GlobalDefines.inc}
 {--$DEFINE ARMV7_SPIN_WAIT_INTERRUPT} {Use Wait For Interrupt in Spinlocks instead of Send Event / Wait For Event}
 
 {==============================================================================}

@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for ARMv7 LPAE.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -68,7 +68,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformARM,PlatformARMv7,Hea
 
 {==============================================================================}
 {Global definitions}
-{$INCLUDE GlobalDefines.inc}
+{$INCLUDE ..\core\GlobalDefines.inc}
 
 {==============================================================================}
 const

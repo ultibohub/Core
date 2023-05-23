@@ -1,7 +1,7 @@
 {
 Ultibo Definitions specific to the ARM Versatile Platform Baseboard.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -98,7 +98,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes;
 
 {==============================================================================}
 {Global definitions}
-{$INCLUDE GlobalDefines.inc}
+{$INCLUDE ..\core\GlobalDefines.inc}
  
 {==============================================================================}
 const

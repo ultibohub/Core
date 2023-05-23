@@ -1,23 +1,18 @@
 {
-Ultibo Platform interface unit for ARM.
+Ultibo Platform interface unit for AARCH64 (ARM64).
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
 
- ARMv6 (ARM1176)
- ARMv7 (Cortex A5/A7/A8/A9/A15/A17)
  ARMv8 (Cortex A53/A57/A72)
  
 Boards
 ======
 
- Raspberry Pi - Model A/B/A+/B+
- Raspberry Pi - Model Zero/ZeroW
- Raspberry Pi 2 - Model B
  Raspberry Pi 3 - Model B/B+/A+
- Raspberry Pi CM3/CM3+ 
+ Raspberry Pi CM3/CM3+
  Raspberry Pi 4 - Model B
  Raspberry Pi 400
  Raspberry Pi CM4
@@ -38,8 +33,8 @@ References
 ==========
 
 
-Platform ARM
-============
+Platform AARCH64
+================
 
 }
 
@@ -47,45 +42,20 @@ Platform ARM
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit PlatformARM; 
+unit PlatformAARCH64; 
 
 interface
 
 {==============================================================================}
 {Global definitions} {Must be prior to uses}
-{$INCLUDE GlobalDefines.inc}
+{$INCLUDE ..\core\GlobalDefines.inc}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads{$IFDEF DEVICE_TREE_ENABLE},DeviceTree{$ENDIF DEVICE_TREE_ENABLE},SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads{$IFDEF DEVICE_TREE_ENABLE},DeviceTree{$ENDIF DEVICE_TREE_ENABLE},SysUtils; 
 
 {==============================================================================}
-const
- {ARM specific constants}
- 
- {Program Status Register (CPSR and SPSR) bit definitions}
- {Definitions of Mode bits (Bits 4..0) in the ARM program status register.  See: A2.2 Processor Modes of the ARM Architecture Reference Manual and also A2.5.7 The mode bits}
- {                                                                     See also: B1.3.1 ARM processor modes of the ARM Architecture Reference Manual (ARMv7-A and ARMv7-R edition)}
- ARM_MODE_USR = $10;    {Normal User Mode}                                       
- ARM_MODE_FIQ = $11;    {FIQ Processing Fast Interrupts Mode}
- ARM_MODE_IRQ = $12;    {IRQ Processing Standard Interrupts Mode}                
- ARM_MODE_SVC = $13;    {Supervisor Processing Software Interrupts Mode}
- ARM_MODE_MON = $16;    {Secure Monitor Mode (For Secure / Non Secure Switching)} 
- ARM_MODE_ABT = $17;    {Abort Processing memory Faults Mode}                    
- ARM_MODE_HYP = $1A;    {Hypervisor Mode}                                    
- ARM_MODE_UND = $1B;    {Undefined Processing Undefined Instructions Mode}       
- ARM_MODE_SYS = $1F;    {System Running Priviledged Operating System Tasks Mode} 
- 
- ARM_MODE_BITS = $0000001F; {Mask of the mode bits in the program status register}
-  
- {Definitions of Interrupt disable bits (Bits 7 and 6) in the ARM program status register. See: A2.5.6 "The interrupt disable bits" of the ARM Architecture Reference Manual}
- ARM_I_BIT = $00000080;    {IRQs disabled when set to 1}
- ARM_F_BIT = $00000040;    {FIQs disabled when set to 1}
-
- {Definitions of Thumb and Jazelle bits (Bits 24 and 5) in the ARM program status register. See: A2.5.8 "The T and J bits" of the ARM Architecture Reference Manual}
- ARM_T_BIT = $00000020;    {Thumb mode enabled when set to 1}
- ARM_J_BIT = $01000000;    {Jazelle mode enabled when set to 1}
- 
- {Definition of Abort bit (Bit 8) in the ARM program status register}
- ARM_A_BIT = $00000100;    {Data Abort masked when set to 1}
+//const
+ {AARCH64 specific constants}
+ //To Do
  
 {==============================================================================}
 const
@@ -120,7 +90,7 @@ const
  
 {==============================================================================}
 type
- {ARM specific types}
+ {AARCH64 specific types}
  
  {ARM Boot Tag Structure Definitions} 
  {ARM Boot Tag header}
@@ -228,7 +198,7 @@ type
    8:(Command:TARMTagCommand)
  end; 
  
-{$IFNDEF DEVICE_TREE_ENABLE}  
+{$IFNDEF DEVICE_TREE_ENABLE} 
 type
  {Device Tree Blob header}
  PDTBHeader = ^TDTBHeader;
@@ -244,31 +214,31 @@ type
   StringsSize:LongWord;         {The length in bytes of the strings block section of the devicetree blob (big-endian)}
   StructureSize:LongWord;       {The length in bytes of the structure block section of the devicetree blob (big-endian)}
  end;
-{$ENDIF DEVICE_TREE_ENABLE} 
+{$ENDIF DEVICE_TREE_ENABLE}
  
 type 
  {Prototypes for Wait Handlers}
- TARMWait = procedure;
- TARMLongWait = procedure;
- TARMShortWait = procedure;
+ TAARCH64Wait = procedure;
+ TAARCH64LongWait = procedure;
+ TAARCH64ShortWait = procedure;
  
 type 
  {Prototypes for Blink Handlers}
- TARMSlowBlink = procedure;
- TARMFastBlink = procedure;
+ TAARCH64SlowBlink = procedure;
+ TAARCH64FastBlink = procedure;
  
 {==============================================================================}
 var
- {ARM specific variables}
- ARMInitialized:Boolean;
+ {AARCH64 specific variables}
+ AARCH64Initialized:Boolean;
  
- ARMBootMode:LongWord = 0;                  {The ARM Mode that the processor was in at boot time (Set by Startup)}
- ARMBootVectors:LongWord = 0;               {The Vector Base Address that was current at boot time (Set by Startup)}
- ARMTagsAddress:PtrUInt = ARMTAGS_INITIAL;  {Pointer to the ARM TAGS provided by the bootloader at startup (Set by Startup)}
- ARMMachineType:LongWord = 0;               {ARM Machine Type provided by the bootloader at startup (Set by Startup)}
- ARMSecureBoot:LongWord = 1;                {If 1 then startup will attempt to switch back to secure world during boot process (If supported by the ARM boot stub)}
- ARMEmulatorMode:LongWord = 0;              {If 1 then startup detected that the machine is running in an emulator (If applicable)}
-                                            {Note: These variables must be initialized to remain in .data or else they are rewritten to zero with .bss}
+ AARCH64BootMode:LongWord = 0;                 {The ARM Mode that the processor was in at boot time (Set by Startup)}
+ AARCH64BootVectors:LongWord = 0;              {The Vector Base Address that was current at boot time (Set by Startup)}
+ AARCH64TagsAddress:PtrUInt = ARMTAGS_INITIAL; {Pointer to the ARM TAGS provided by the bootloader at startup (Set by Startup)}
+ AARCH64MachineType:LongWord = 0;              {ARM Machine Type provided by the bootloader at startup (Set by Startup)}
+ AARCH64SecureBoot:LongWord = 1;               {If 1 then startup will attempt to switch back to secure world during boot process (If supported by the AARCH64 boot stub)} 
+ AARCH64EmulatorMode:LongWord = 0;             {If 1 then startup detected that the machine is running in an emulator (If applicable)}
+                                               {Note: These variables must be initialized to remain in .data or else they are rewritten to zero with .bss}
 var
  {ARM Tags Variables}
  ARMTagsCount:LongWord;     {Number of ARM Tags found during parse}
@@ -323,61 +293,61 @@ var
 
 var
  {Wait Handlers}
- ARMWaitHandler:TARMWait;
- ARMLongWaitHandler:TARMLongWait;
- ARMShortWaitHandler:TARMShortWait;
+ AARCH64WaitHandler:TAARCH64Wait;
+ AARCH64LongWaitHandler:TAARCH64LongWait;
+ AARCH64ShortWaitHandler:TAARCH64ShortWait;
  
 var
  {Blink Handlers}
- ARMSlowBlinkHandler:TARMSlowBlink;
- ARMFastBlinkHandler:TARMFastBlink;
+ AARCH64SlowBlinkHandler:TAARCH64SlowBlink;
+ AARCH64FastBlinkHandler:TAARCH64FastBlink;
  
 {==============================================================================}
 {Initialization Functions}
-procedure ARMInit;
+procedure AARCH64Init;
  
 {==============================================================================}
-{ARM Platform Functions}
-procedure ARMParseBootTags;
-procedure ARMParseCommandLine;
-procedure ARMParseEnvironment;
+{AARCH64 Platform Functions}
+procedure AARCH64ParseBootTags;
+procedure AARCH64ParseCommandLine;
+procedure AARCH64ParseEnvironment;
 
-function ARMGetSP:PtrUInt;
-function ARMGetPC:PtrUInt;
+function AARCH64GetSP:PtrUInt;
+function AARCH64GetPC:PtrUInt;
 
-function ARMGetIRQ:Boolean;
-procedure ARMEnableIRQ; 
-procedure ARMDisableIRQ; 
-function ARMSaveIRQ:TIRQMask;
-function ARMRestoreIRQ(IRQMask:TIRQMask):TIRQMask; 
+function AARCH64GetIRQ:Boolean;
+procedure AARCH64EnableIRQ; 
+procedure AARCH64DisableIRQ; 
+function AARCH64SaveIRQ:TIRQMask;
+function AARCH64RestoreIRQ(IRQMask:TIRQMask):TIRQMask; 
 
-function ARMGetFIQ:Boolean;
-procedure ARMEnableFIQ; 
-procedure ARMDisableFIQ; 
-function ARMSaveFIQ:TFIQMask;
-function ARMRestoreFIQ(FIQMask:TFIQMask):TFIQMask; 
+function AARCH64GetFIQ:Boolean;
+procedure AARCH64EnableFIQ; 
+procedure AARCH64DisableFIQ; 
+function AARCH64SaveFIQ:TFIQMask;
+function AARCH64RestoreFIQ(FIQMask:TFIQMask):TFIQMask; 
 
-procedure ARMEnableIRQFIQ;
-procedure ARMDisableIRQFIQ;
-function ARMSaveIRQFIQ:TIRQFIQMask;
-function ARMRestoreIRQFIQ(IRQFIQMask:TIRQFIQMask):TIRQFIQMask;
+procedure AARCH64EnableIRQFIQ;
+procedure AARCH64DisableIRQFIQ;
+function AARCH64SaveIRQFIQ:TIRQFIQMask;
+function AARCH64RestoreIRQFIQ(IRQFIQMask:TIRQFIQMask):TIRQFIQMask;
 
-function ARMGetAbort:Boolean;
-procedure ARMEnableAbort;
-procedure ARMDisableAbort;
-function ARMSaveAbort:TAbortMask;
-function ARMRestoreAbort(AbortMask:TAbortMask):TAbortMask;
+function AARCH64GetAbort:Boolean;
+procedure AARCH64EnableAbort;
+procedure AARCH64DisableAbort;
+function AARCH64SaveAbort:TAbortMask;
+function AARCH64RestoreAbort(AbortMask:TAbortMask):TAbortMask;
  
 {==============================================================================}
-{ARM Helper Functions}
-procedure ARMWait; inline;
-procedure ARMLongWait; inline;
-procedure ARMShortWait; inline;
+{AARCH64 Helper Functions}
+procedure AARCH64Wait; inline;
+procedure AARCH64LongWait; inline;
+procedure AARCH64ShortWait; inline;
 
-procedure ARMSlowBlink; inline;
-procedure ARMFastBlink; inline;
+procedure AARCH64SlowBlink; inline;
+procedure AARCH64FastBlink; inline;
 
-function ARMModeToString(ARMMode:LongWord):String;
+function AARCH64ModeToString(AARCH64Mode:LongWord):String;
 
 {==============================================================================}
 {==============================================================================}
@@ -387,61 +357,61 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
-procedure ARMInit;
+procedure AARCH64Init;
 begin
  {}
- if ARMInitialized then Exit;
+ if AARCH64Initialized then Exit;
  
  {Setup STACK_MIN_ALIGNMENT} 
- STACK_MIN_ALIGNMENT:=SIZE_8;
+ STACK_MIN_ALIGNMENT:=SIZE_16;
  
  {Register Platform ParseBootTags Handler}
- ParseBootTagsHandler:=ARMParseBootTags;
+ ParseBootTagsHandler:=AARCH64ParseBootTags;
 
  {Register Platform ParseCommandLine Handler}
- ParseCommandLineHandler:=ARMParseCommandLine;
+ ParseCommandLineHandler:=AARCH64ParseCommandLine;
 
  {Register Platform ParseEnvironment Handler}
- ParseEnvironmentHandler:=ARMParseEnvironment;
+ ParseEnvironmentHandler:=AARCH64ParseEnvironment;
  
  {Register Platform GetSP/PC Handlers}
- GetSPHandler:=ARMGetSP;
- GetPCHandler:=ARMGetPC;
+ GetSPHandler:=AARCH64GetSP;
+ GetPCHandler:=AARCH64GetPC;
  
  {Register Platform Enable/Disable/Save/RestoreIRQ Handlers}
- GetIRQHandler:=ARMGetIRQ;
- EnableIRQHandler:=ARMEnableIRQ;
- DisableIRQHandler:=ARMDisableIRQ;
- SaveIRQHandler:=ARMSaveIRQ;
- RestoreIRQHandler:=ARMRestoreIRQ;
+ GetIRQHandler:=AARCH64GetIRQ;
+ EnableIRQHandler:=AARCH64EnableIRQ;
+ DisableIRQHandler:=AARCH64DisableIRQ;
+ SaveIRQHandler:=AARCH64SaveIRQ;
+ RestoreIRQHandler:=AARCH64RestoreIRQ;
 
  {Register Platform Enable/Disable/Save/RestoreFIQ Handlers}
- GetFIQHandler:=ARMGetFIQ;
- EnableFIQHandler:=ARMEnableFIQ;
- DisableFIQHandler:=ARMDisableFIQ;
- SaveFIQHandler:=ARMSaveFIQ;
- RestoreFIQHandler:=ARMRestoreFIQ;
+ GetFIQHandler:=AARCH64GetFIQ;
+ EnableFIQHandler:=AARCH64EnableFIQ;
+ DisableFIQHandler:=AARCH64DisableFIQ;
+ SaveFIQHandler:=AARCH64SaveFIQ;
+ RestoreFIQHandler:=AARCH64RestoreFIQ;
  
  {Register Platform Enable/Disable/Save/RestoreIRQFIQ Handlers}
- EnableIRQFIQHandler:=ARMEnableIRQFIQ;
- DisableIRQFIQHandler:=ARMDisableIRQFIQ;
- SaveIRQFIQHandler:=ARMSaveIRQFIQ;
- RestoreIRQFIQHandler:=ARMRestoreIRQFIQ;
+ EnableIRQFIQHandler:=AARCH64EnableIRQFIQ;
+ DisableIRQFIQHandler:=AARCH64DisableIRQFIQ;
+ SaveIRQFIQHandler:=AARCH64SaveIRQFIQ;
+ RestoreIRQFIQHandler:=AARCH64RestoreIRQFIQ;
  
  {Register Platform Enable/Disable/Save/RestoreAbort Handlers}
- GetAbortHandler:=ARMGetAbort;
- EnableAbortHandler:=ARMEnableAbort;
- DisableAbortHandler:=ARMDisableAbort;
- SaveAbortHandler:=ARMSaveAbort;
- RestoreAbortHandler:=ARMRestoreAbort;
+ GetAbortHandler:=AARCH64GetAbort;
+ EnableAbortHandler:=AARCH64EnableAbort;
+ DisableAbortHandler:=AARCH64DisableAbort;
+ SaveAbortHandler:=AARCH64SaveAbort;
+ RestoreAbortHandler:=AARCH64RestoreAbort;
  
- ARMInitialized:=True;
+ AARCH64Initialized:=True;
 end;
-
+ 
 {==============================================================================}
 {==============================================================================}
-{ARM Platform Functions}
-procedure ARMParseBootTags;
+{AARCH64 Platform Functions}
+procedure AARCH64ParseBootTags;
 {Extract some information from the ARM boot tag list and use it to load the
  memory manager, some other information is stored in variables for future use}
  
@@ -547,7 +517,7 @@ procedure ARMParseBootTags;
   {Save Address and Size}
   TagInitRd2Start:=Address;
   TagInitRd2Size:=Size;
-
+  
   {Reserve Ramdisk memory}
   if ReserveHeapBlock(Pointer(TagInitRd2Start),TagInitRd2Size) <> nil then
    begin
@@ -555,7 +525,7 @@ procedure ARMParseBootTags;
     INITIAL_RAMDISK_BASE:=Address;
     INITIAL_RAMDISK_SIZE:=Size;
    end; 
- 
+  
   Result:=True; 
  end;
  
@@ -563,7 +533,6 @@ var
  ARMTag:PARMTag;
 
  Size:UInt64;
- Range:LongWord;
  Address:PtrUInt;
 begin
  {}
@@ -586,21 +555,21 @@ begin
    
    {$IFDEF DEVICE_TREE_ENABLE}
    {Check for valid Device Tree Blob}
-   if (ARMTagsAddress <> ARMTAGS_INITIAL) then
+   if (AARCH64TagsAddress <> ARMTAGS_INITIAL) then
     begin
-     DEVICE_TREE_VALID:=DeviceTreeValidate(ARMTagsAddress,DEVICE_TREE_SIZE);
-     if DEVICE_TREE_VALID then DEVICE_TREE_BASE:=ARMTagsAddress;
+     DEVICE_TREE_VALID:=DeviceTreeValidate(AARCH64TagsAddress,DEVICE_TREE_SIZE);
+     if DEVICE_TREE_VALID then DEVICE_TREE_BASE:=AARCH64TagsAddress;
     end;
     
    {Check for default Tag Address value or for Device Tree Blob available}
-   if (ARMTagsAddress = ARMTAGS_INITIAL) or DEVICE_TREE_VALID then
+   if (AARCH64TagsAddress = ARMTAGS_INITIAL) or DEVICE_TREE_VALID then
     begin
      {Device Tree Blob supplied or ARM tags not present}
      {Check Device Tree}
      if DEVICE_TREE_VALID then
       begin
        {Get Memory Block (First)}
-       if not DeviceTreeGetMemory(0,Range,Address,Size) then
+       if not DeviceTreeGetMemory(0,Address,Size) then
         begin
          {Get Default Block}
          Address:=CPU_MEMORY_BASE;
@@ -644,17 +613,17 @@ begin
     end
    {$ELSE DEVICE_TREE_ENABLE}
    {Check for default Tag Address value and for Device Tree Blob signature}
-   if (ARMTagsAddress = ARMTAGS_INITIAL) or (LongWordBEtoN(PLongWord(ARMTagsAddress)^) = DTB_SIGNATURE) then
+   if (AARCH64TagsAddress = ARMTAGS_INITIAL) or (LongWordBEtoN(PLongWord(AARCH64TagsAddress)^) = DTB_SIGNATURE) then
     begin
      {Device Tree Blob supplied or ARM tags not present}
      {Check Device Tree}
-     if LongWordBEtoN(PLongWord(ARMTagsAddress)^) = DTB_SIGNATURE then
+     if LongWordBEtoN(PLongWord(AARCH64TagsAddress)^) = DTB_SIGNATURE then
       begin
        DEVICE_TREE_VALID:=True;
-       DEVICE_TREE_BASE:=ARMTagsAddress;
-       DEVICE_TREE_SIZE:=LongWordBEtoN(PDTBHeader(ARMTagsAddress).TotalSize);
+       DEVICE_TREE_BASE:=AARCH64TagsAddress;
+       DEVICE_TREE_SIZE:=LongWordBEtoN(PDTBHeader(AARCH64TagsAddress).TotalSize);
       end;
-   
+
      {Get Memory Block}
      if ExtractMemoryBlock(CPU_MEMORY_BASE,CPU_MEMORY_SIZE) then
       begin
@@ -667,7 +636,7 @@ begin
     begin
      {ARM Tags address supplied}
      {Get First Tag}
-     ARMTag:=PARMTag(ARMTagsAddress);
+     ARMTag:=PARMTag(AARCH64TagsAddress);
      while (ARMTag.Header.Size >= 2) and (ARMTag.Header.Tag <> ATAG_NONE) do
       begin
        Inc(ARMTagsCount);
@@ -695,7 +664,7 @@ begin
           if ARMTag.Header.Size > 2 then
            begin
             ExtractMemoryBlock(ARMTag.Memory.Start,ARMTag.Memory.Size);
-           end;
+           end; 
          end;    
         ATAG_VIDEOTEXT:begin
           {VIDEOTEXT}
@@ -767,7 +736,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMParseCommandLine;
+procedure AARCH64ParseCommandLine;
 {Setup argc, argv and cmdline and process known command line options}
 var
  CommandStart:PChar;
@@ -861,7 +830,7 @@ end;
 
 {==============================================================================}
 
-procedure ARMParseEnvironment;
+procedure AARCH64ParseEnvironment;
 {Setup envp and process known environment options}
 var
  CommandStart:PChar;
@@ -946,429 +915,255 @@ end;
 
 {==============================================================================}
 
-function ARMGetSP:PtrUInt; assembler; nostackframe; 
+function AARCH64GetSP:PtrUInt; assembler; nostackframe; 
 {Get the current stack pointer (SP)}
 asm
- //Copy stack pointer to R0
- mov r0, sp
+ //To Do
 end;
 
 {==============================================================================}
 
-function ARMGetPC:PtrUInt; assembler; nostackframe; 
+function AARCH64GetPC:PtrUInt; assembler; nostackframe; 
 {Get the current program counter (PC)}
 asm
- //Copy link register (Return program counter) to R0
- mov r0, lr
+ //To Do
 end;
 
 {==============================================================================}
 
-function ARMGetIRQ:Boolean; assembler; nostackframe; 
+function AARCH64GetIRQ:Boolean; assembler; nostackframe; 
 {Get Interrupts (IRQ) state}
 {Return: True is enabled, False if disabled (Returned in R0)}
 asm
- //Get Current program status register
- mrs r1, cpsr
- //Mask off everything except IRQ bit
- and r1, r1, #ARM_I_BIT
- //Default return to True
- mov r0, #1
- //Check if IRQ bit is currently set
- cmp r1, #ARM_I_BIT
- //If not set then return True
- bne .LCompleted
- //Otherwise return False
- mov r0, #0
-
-.LCompleted:
+ //To Do
 end;
 
 {==============================================================================}
 
-procedure ARMEnableIRQ; assembler; nostackframe; 
+procedure AARCH64EnableIRQ; assembler; nostackframe; 
 {Enable Interrupts (IRQ) unconditionally}
 asm
- //Change program status interrupt enable
- cpsie i 
+ //To Do
 end;
 
 {==============================================================================}
 
-procedure ARMDisableIRQ; assembler; nostackframe;  
+procedure AARCH64DisableIRQ; assembler; nostackframe;  
 {Disable Interrupts (IRQ) unconditionally}
 asm
- //Change program status interrupt disable
- cpsid i 
+ //To Do
 end;
 
 {==============================================================================}
 
-function ARMSaveIRQ:TIRQMask; assembler; nostackframe; 
+function AARCH64SaveIRQ:TIRQMask; assembler; nostackframe; 
 {Disable Interrupts (IRQ) and return the previous state}
 {Return: IRQ state when called (Returned in R0)}
 asm
- //Get Current program status register
- mrs r0, cpsr
- //Mask off everything except IRQ bit
- and r0, r0, #ARM_I_BIT
- //Change program status interrupt disable
- cpsid i
+ //To Do
 end;
 
 {==============================================================================}
 
-function ARMRestoreIRQ(IRQMask:TIRQMask):TIRQMask; assembler; nostackframe;  
+function AARCH64RestoreIRQ(IRQMask:TIRQMask):TIRQMask; assembler; nostackframe;  
 {Restore Interrupts (IRQ) to a previous state}
 {IRQMask: IRQ state to restore (Passed in R0)}
 {Return: IRQ state when called (Returned in R0)}
 asm
- //Get Current program status register
- mrs r1, cpsr
- //Mask off everything except IRQ bit
- and r1, r1, #ARM_I_BIT
- //Check if the supplied IRQ bit is set
- cmp r0, #ARM_I_BIT
- //If not set then enable IRQ
- bne .LEnable
- //Otherwise disable IRQ
- //Change program status interrupt disable
- cpsid i
- b   .LCompleted
-
-.LEnable:
- //Change program status interrupt enable
- cpsie i 
-
-.LCompleted:
- //Return the previous state
- mov r0, r1
+ //To Do
 end;
 
 {==============================================================================}
 
-function ARMGetFIQ:Boolean; assembler; nostackframe; 
+function AARCH64GetFIQ:Boolean; assembler; nostackframe; 
 {Get Fast Interrupts (FIQ) state}
 {Return: True is enabled, False if disabled (Returned in R0)}
 asm
- //Get Current program status register
- mrs r1, cpsr
- //Mask off everything except FIQ bit
- and r1, r1, #ARM_F_BIT
- //Default return to True
- mov r0, #1
- //Check if FIQ bit is currently set
- cmp r1, #ARM_F_BIT
- //If not set then return True
- bne .LCompleted
- //Otherwise return False
- mov r0, #0
-
-.LCompleted:
+ //To Do
 end;
 
 {==============================================================================}
 
-procedure ARMEnableFIQ; assembler; nostackframe; 
+procedure AARCH64EnableFIQ; assembler; nostackframe; 
 {Enable Fast Interrupts (FIQ) unconditionally}
 asm
- //Change program status interrupt enable
- cpsie f 
+ //To Do
 end;
 
 {==============================================================================}
 
-procedure ARMDisableFIQ; assembler; nostackframe; 
+procedure AARCH64DisableFIQ; assembler; nostackframe; 
 {Disable Fast Interrupts (FIQ) unconditionally}
 asm
- //Change program status interrupt disable
- cpsid f 
+ //To Do
 end;
 
 {==============================================================================}
 
-function ARMSaveFIQ:TFIQMask; assembler; nostackframe; 
+function AARCH64SaveFIQ:TFIQMask; assembler; nostackframe; 
 {Disable Fast Interrupts (FIQ) and return the previous state}
 {Return: FIQ state when called (Returned in R0)}
 asm
- //Get Current program status register
- mrs r0, cpsr
- //Mask off everything except FIQ bit
- and r0, r0, #ARM_F_BIT
- //Change program status interrupt disable
- cpsid f
+ //To Do
 end;
 
 {==============================================================================}
 
-function ARMRestoreFIQ(FIQMask:TFIQMask):TFIQMask; assembler; nostackframe; 
+function AARCH64RestoreFIQ(FIQMask:TFIQMask):TFIQMask; assembler; nostackframe; 
 {Restore Fast Interrupts (FIQ) to a previous state}
 {FIQMask: FIQ state to restore (Passed in R0)}
 {Return: FIQ state when called (Returned in R0)}
 asm
- //Get Current program status register
- mrs r1, cpsr
- //Mask off everything except FIQ bit
- and r1, r1, #ARM_F_BIT
- //Check if the supplied FIQ bit is set
- cmp r0, #ARM_F_BIT
- //If not set then enable FIQ
- bne .LEnable
- //Otherwise disable FIQ
- //Change program status interrupt disable
- cpsid f
- b   .LCompleted
-
-.LEnable:
- //Change program status interrupt enable
- cpsie f 
-
-.LCompleted:
- //Return the previous state
- mov r0, r1
+ //To Do
 end;
 
 {==============================================================================}
 
-procedure ARMEnableIRQFIQ; assembler; nostackframe; 
+procedure AARCH64EnableIRQFIQ; assembler; nostackframe; 
 {Enable Interrupts and Fast Interrupts (IRQ/FIQ) unconditionally}
 asm
- //Change program status interrupt enable
- cpsie if 
+ //To Do
 end;
 
 {==============================================================================}
 
-procedure ARMDisableIRQFIQ; assembler; nostackframe; 
+procedure AARCH64DisableIRQFIQ; assembler; nostackframe; 
 {Disable Interrupts and Fast Interrupts (IRQ/FIQ) unconditionally}
 asm
- //Change program status interrupt disable
- cpsid if 
+ //To Do
 end;
 
 {==============================================================================}
 
-function ARMSaveIRQFIQ:TIRQFIQMask; assembler; nostackframe; 
+function AARCH64SaveIRQFIQ:TIRQFIQMask; assembler; nostackframe; 
 {Disable Interrupts and Fast Interrupts (IRQ/FIQ) and return the previous state}
 {Return: IRQ/FIQ state when called (Returned in R0)}
 asm
- //Get Current program status register
- mrs r0, cpsr
- //Mask off everything except IRQ/FIQ bits
- and r0, r0, #ARM_I_BIT | ARM_F_BIT
- //Change program status interrupt disable
- cpsid if
+ //To Do
 end;
 
 {==============================================================================}
 
-function ARMRestoreIRQFIQ(IRQFIQMask:TIRQFIQMask):TIRQFIQMask; assembler; nostackframe; 
+function AARCH64RestoreIRQFIQ(IRQFIQMask:TIRQFIQMask):TIRQFIQMask; assembler; nostackframe; 
 {Restore Interrupts and Fast Interrupts (IRQ/FIQ) to a previous state}
 {IRQFIQMask: IRQ/FIQ state to restore (Passed in R0)}
 {Return: IRQ/FIQ state when called (Returned in R0)}
 asm
- //Get Current program status register
- mrs r1, cpsr
- //Mask off everything except IRQ/FIQ bits
- and r1, r1, #ARM_I_BIT | ARM_F_BIT
- 
-.LCheckIRQ:
- //Extract the supplied IRQ bit
- and r2, r0, #ARM_I_BIT
- //Check if the supplied IRQ bit is set
- cmp r2, #ARM_I_BIT
- //If not set then enable IRQ
- bne .LEnableIRQ
- //Otherwise disable IRQ
- //Change program status interrupt disable
- cpsid i
- b   .LCheckFIQ
-
-.LEnableIRQ:
- //Change program status interrupt enable
- cpsie i 
- 
-.LCheckFIQ:
- //Extract the supplied FIQ bit
- and r2, r0, #ARM_F_BIT
- //Check if the supplied FIQ bit is set
- cmp r2, #ARM_F_BIT
- //If not set then enable FIQ
- bne .LEnableFIQ
- //Otherwise disable FIQ
- //Change program status interrupt disable
- cpsid f
- b   .LCompleted
- 
-.LEnableFIQ:
- //Change program status interrupt enable
- cpsie f 
- 
-.LCompleted:
- //Return the previous state
- mov r0, r1
+ //To Do
 end;
 
 {==============================================================================}
 
-function ARMGetAbort:Boolean; assembler; nostackframe; 
+function AARCH64GetAbort:Boolean; assembler; nostackframe; 
 {Get Abort state}
 {Return: True is enabled, False if disabled (Returned in R0)}
 asm
- //Get Current program status register
- mrs r1, cpsr
- //Mask off everything except Abort bit
- and r1, r1, #ARM_A_BIT
- //Default return to True
- mov r0, #1
- //Check if Abort bit is currently set
- cmp r1, #ARM_A_BIT
- //If not set then return True
- bne .LCompleted
- //Otherwise return False
- mov r0, #0
-
-.LCompleted:
+ //To Do
 end;
 
 {==============================================================================}
 
-procedure ARMEnableAbort; assembler; nostackframe; 
+procedure AARCH64EnableAbort; assembler; nostackframe; 
 {Enable Aborts unconditionally}
 asm
- //Change program status interrupt enable
- cpsie a 
+ //To Do
 end;
 
 {==============================================================================}
 
-procedure ARMDisableAbort; assembler; nostackframe; 
+procedure AARCH64DisableAbort; assembler; nostackframe; 
 {Disable Aborts unconditionally}
 asm
- //Change program status interrupt disable
- cpsid a 
+ //To Do
 end;
 
 {==============================================================================}
 
-function ARMSaveAbort:TAbortMask; assembler; nostackframe; 
+function AARCH64SaveAbort:TAbortMask; assembler; nostackframe; 
 {Disable Aborts and return the previous state}
 {Return: Abort state when called (Returned in R0)}
 asm
- //Get Current program status register
- mrs r0, cpsr
- //Mask off everything except Abort bit
- and r0, r0, #ARM_A_BIT
- //Change program status interrupt disable
- cpsid a
+ //To Do
 end;
 
 {==============================================================================}
 
-function ARMRestoreAbort(AbortMask:TAbortMask):TAbortMask; assembler; nostackframe; 
+function AARCH64RestoreAbort(AbortMask:TAbortMask):TAbortMask; assembler; nostackframe; 
 {Restore Aborts to a previous state}
 {AbortMask: Abort state to restore (Passed in R0)}
 {Return: Abort state when called (Returned in R0)}
 asm
- //Get Current program status register
- mrs r1, cpsr
- //Mask off everything except Abort bit
- and r1, r1, #ARM_A_BIT
- //Check if the supplied Abort bit is set
- cmp r0, #ARM_A_BIT
- //If not set then enable Abort
- bne .LEnable
- //Otherwise disable Abort
- //Change program status interrupt disable
- cpsid a
- b   .LCompleted
-
-.LEnable:
- //Change program status interrupt enable
- cpsie a 
-
-.LCompleted:
- //Return the previous state
- mov r0, r1
+ //To Do
 end;
 
 {==============================================================================}
 {==============================================================================}
-{ARM Helper Functions}
-procedure ARMWait; inline;
+{AARCH64 Helper Functions}
+procedure AARCH64Wait; inline;
 begin
  {}
- if Assigned(ARMWaitHandler) then
+ if Assigned(AARCH64WaitHandler) then
   begin
-   ARMWaitHandler;
+   AARCH64WaitHandler;
   end;
 end;
 
 {==============================================================================}
 
-procedure ARMLongWait; inline;
+procedure AARCH64LongWait; inline;
 begin
  {}
- if Assigned(ARMLongWaitHandler) then
+ if Assigned(AARCH64LongWaitHandler) then
   begin
-   ARMLongWaitHandler;
+   AARCH64LongWaitHandler;
   end;
 end;
 
 {==============================================================================}
 
-procedure ARMShortWait; inline;
+procedure AARCH64ShortWait; inline;
 begin
  {}
- if Assigned(ARMShortWaitHandler) then
+ if Assigned(AARCH64ShortWaitHandler) then
   begin
-   ARMShortWaitHandler;
+   AARCH64ShortWaitHandler;
   end;
 end;
 
 {==============================================================================}
 
-procedure ARMSlowBlink; inline;
+procedure AARCH64SlowBlink; inline;
 begin
  {}
- if Assigned(ARMSlowBlinkHandler) then
+ if Assigned(AARCH64SlowBlinkHandler) then
   begin
-   ARMSlowBlinkHandler;
+   AARCH64SlowBlinkHandler;
   end;
 end;
 
 {==============================================================================}
 
-procedure ARMFastBlink; inline;
+procedure AARCH64FastBlink; inline;
 begin
  {}
- if Assigned(ARMFastBlinkHandler) then
+ if Assigned(AARCH64FastBlinkHandler) then
   begin
-   ARMFastBlinkHandler;
+   AARCH64FastBlinkHandler;
   end;
 end;
 
 {==============================================================================}
 
-function ARMModeToString(ARMMode:LongWord):String;
+function AARCH64ModeToString(AARCH64Mode:LongWord):String;
 begin
  {}
- Result:='ARM_MODE_INVALID';
+ Result:='AARCH64_MODE_INVALID';
  
- case ARMMode of
-  ARM_MODE_USR:Result:='ARM_MODE_USR';
-  ARM_MODE_FIQ:Result:='ARM_MODE_FIQ';
-  ARM_MODE_IRQ:Result:='ARM_MODE_IRQ';
-  ARM_MODE_SVC:Result:='ARM_MODE_SVC';
-  ARM_MODE_MON:Result:='ARM_MODE_MON';
-  ARM_MODE_ABT:Result:='ARM_MODE_ABT';
-  ARM_MODE_HYP:Result:='ARM_MODE_HYP';
-  ARM_MODE_UND:Result:='ARM_MODE_UND';
-  ARM_MODE_SYS:Result:='ARM_MODE_SYS';
- end;
+ //To Do
 end;
 
 {==============================================================================}
 {==============================================================================}
 
 end.
+ 

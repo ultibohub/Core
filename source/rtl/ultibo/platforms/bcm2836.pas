@@ -57,7 +57,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes;
               
 {==============================================================================}
 {Global definitions}
-{$INCLUDE GlobalDefines.inc}
+{$INCLUDE ..\core\GlobalDefines.inc}
  
 {==============================================================================}
 const
