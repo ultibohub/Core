@@ -1,0 +1,1 @@
+{$INCLUDE ..\platforms\platformrpi2.pas}

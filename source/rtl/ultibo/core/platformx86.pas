@@ -1,0 +1,1 @@
+{$INCLUDE ..\platforms\platformx86.pas}

@@ -1,0 +1,1 @@
+{$INCLUDE ..\platforms\bootpcx86.pas}

@@ -1,0 +1,1 @@
+{$INCLUDE ..\platforms\bcm2838.pas}

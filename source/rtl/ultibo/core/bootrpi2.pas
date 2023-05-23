@@ -1,0 +1,1 @@
+{$INCLUDE ..\platforms\bootrpi2.pas}

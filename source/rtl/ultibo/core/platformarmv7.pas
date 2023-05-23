@@ -1,0 +1,1 @@
+{$INCLUDE ..\platforms\platformarmv7.pas}
