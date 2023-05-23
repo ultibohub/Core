@@ -1,7 +1,7 @@
 {
 Ultibo Global Configuration Defaults.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -824,6 +824,16 @@ var
  BRCMSTB_ENABLE_L1SS:LongBool;              {Enable L1 Substate control of the CLKREQ signal for the BRCMSTB PCI host}
  BRCMSTB_MAX_LINK_SPEED:LongWord;           {Limit the BRCMSTB PCI host to a specific link speed (1, 2, 3 or 4)}
  BRCMSTB_NOASPM_L0S:LongBool;               {Disable L0s mode for Active State Power Management for the BRCMSTB PCI host}
+ 
+ {BCM434XX (Broadcom / Cypress Wireless LAN Controller)}
+ BCM434XX_WLAN_CLK_PIN:LongWord = GPIO_PIN_UNKNOWN;           {Wireless LAN 32KHz Clock GPIO pin}
+ BCM434XX_WLAN_CLK_PULL:LongWord = GPIO_PULL_UNKNOWN;         {Wireless LAN 32KHz Clock GPIO pull}
+ BCM434XX_WLAN_CLK_FUNCTION:LongWord = GPIO_FUNCTION_UNKNOWN; {Wireless LAN 32KHz Clock GPIO function}
+ 
+ BCM434XX_WLAN_ON_PIN:LongWord = GPIO_PIN_UNKNOWN;            {Wireless LAN Power GPIO pin}
+ BCM434XX_WLAN_ON_FUNCTION:LongWord = GPIO_FUNCTION_UNKNOWN;  {Wireless LAN Power GPIO function}
+ BCM434XX_WLAN_ON_ACTIVE_LOW:LongBool;                        {True if Power pin is Active Low (default Active High)}
+ BCM434XX_WLAN_ON_VIRTUAL:LongBool;                           {True if Power pin is a Virtual GPIO}
  
  {LAN78XX (Microchip LAN78XX USB Gigabit Ethernet)}
  LAN78XX_MAC_ADDRESS:String;                {The preconfigured MAC address for a LAN78XX device}
