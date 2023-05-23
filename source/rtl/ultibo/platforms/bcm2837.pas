@@ -34,7 +34,12 @@ References
 ==========
 
  BCM2835 ARM Peripherals
+
+  https://datasheets.raspberrypi.com/bcm2835/bcm2835-peripherals.pdf
+
  QA7 Rev3.4
+
+  https://datasheets.raspberrypi.com/bcm2836/bcm2836-peripherals.pdf
 
  
 Broadcom BCM2837
@@ -456,7 +461,11 @@ const
  BCM2837_DMA_CS_ABORT                          = (1 shl 30);  {Abort DMA (Writing a 1 to this bit will abort the current DMA CB. The DMA will load the next CB and attempt to continue. The bit cannot be read, and will self clear)}
  BCM2837_DMA_CS_RESET                          = (1 shl 31);  {DMA Channel Reset (Writing a 1 to this bit will reset the DMA. The bit cannot be read, and will self clear)}
  
+ BCM2837_DMA_CS_PRIORITY_SHIFT = 16;
+ BCM2837_DMA_CS_PANIC_PRIORITY_SHIFT = 20;
+
  BCM2837_DMA_CS_PRIORITY_DEFAULT = 0;
+ BCM2837_DMA_CS_PRIORITY_MAX     = 15;
  
  {DMA Transfer Information bits (See Section 4)}
  BCM2837_DMA_TI_INTEN          = (1 shl 0);    {Interrupt Enable (1 = Generate an interrupt when the transfer described by the current Control Block completes)}
@@ -483,6 +492,7 @@ const
  BCM2837_DMA_TI_BURST_LENGTH_SHIFT = 12;
  
  BCM2837_DMA_TI_BURST_LENGTH_DEFAULT = 0;
+ BCM2837_DMA_TI_BURST_LENGTH_MAX     = 15;
  
  {DMA Transfer Length bits (See Section 4)}
  BCM2837_DMA_TXFR_LEN_XLENGTH = ($FFFF shl 0);  {Transfer Length in bytes}

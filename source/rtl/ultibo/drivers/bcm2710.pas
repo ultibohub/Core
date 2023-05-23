@@ -59,6 +59,8 @@ References
 
  BCM2835 ARM Peripherals
 
+  https://datasheets.raspberrypi.com/bcm2835/bcm2835-peripherals.pdf
+
  Raspberry Pi Mailboxes
  
   https://github.com/raspberrypi/firmware/wiki/Mailboxes
@@ -439,9 +441,9 @@ const
  
  BCM2710_DMA_CB_ALIGNMENT = 32;                  {Alignment required for DMA control blocks}
  
- BCM2710_DMA_LITE_BURST_LENGTH = 1;              {Burst length for DMA Lite channels}
- BCM2710_DMA_NORMAL_BURST_LENGTH = 2;            {Burst length for normal channels}
- BCM2710_DMA_BULK_BURST_LENGTH = 8;              {Burst length for DMA Bulk channels}
+ BCM2710_DMA_LITE_BURST_LENGTH = 2;              {Burst length for DMA Lite channels}
+ BCM2710_DMA_NORMAL_BURST_LENGTH = 4;            {Burst length for normal channels}
+ BCM2710_DMA_BULK_BURST_LENGTH = 16;             {Burst length for DMA Bulk channels}
  
  {BCM2710 PWM constants}
  BCM2710_PWM_MIN_PERIOD = 108;          {Default based on 19.2MHz PWM clock (Oscillator source)}
@@ -5509,8 +5511,11 @@ begin
               to the error bits in the debug register, this doesn't seem to be neccessary in practice}
               
        {Enable Channel}
-       PBCM2710DMAHost(DMA).Channels[Channel].Registers.CS:=BCM2837_DMA_CS_ACTIVE;
-       
+       PBCM2710DMAHost(DMA).Channels[Channel].Registers.CS:=BCM2837_DMA_CS_ACTIVE
+                                                         or (BCM2837_DMA_CS_PRIORITY_MAX shl BCM2837_DMA_CS_PRIORITY_SHIFT)
+                                                         or (BCM2837_DMA_CS_PRIORITY_MAX shl BCM2837_DMA_CS_PANIC_PRIORITY_SHIFT)
+                                                         or BCM2837_DMA_CS_WAIT_FOR_OUTSTANDING_WRITES;
+
        {Note: Broadcom documentation states that the BCM2837_DMA_CS_END bit will be set when a transfer
               is completed and should be cleared by writing 1 to it, this doesn't seem to be the case}
                             
@@ -5915,12 +5920,19 @@ procedure BCM2710DMADataToControlBlock(Request:PDMARequest;Data:PDMAData;Block:P
 var
  Count:LongWord;
  Offset:LongInt; {Allow for negative stride}
+ Shift:LongWord;
+ Burst:LongWord;
+ Peripheral:Boolean;
 begin
  {}
  if Request = nil then Exit;
  if Data = nil then Exit;
  if Block = nil then Exit;
  
+ {Set Defaults}
+ Shift:=0;
+ Peripheral:=False;
+
  {Clear Transfer Information}
  Block.TransferInformation:=0;
  
@@ -5929,22 +5941,36 @@ begin
   begin
    case Request.Direction of
     DMA_DIR_NONE:begin
+      {Unknown}
       Block.SourceAddress:=PtrUInt(Data.Source);
       Block.DestinationAddress:=PtrUInt(Data.Dest);
      end;
     DMA_DIR_MEM_TO_MEM:begin
+      {Memory to Memory}
       Block.SourceAddress:=PhysicalToBusAddress(Data.Source);
       Block.DestinationAddress:=PhysicalToBusAddress(Data.Dest);
      end;
     DMA_DIR_MEM_TO_DEV:begin
+      {Memory to Device}
+      Peripheral:=True;
+      Shift:=1;
+
       Block.SourceAddress:=PhysicalToBusAddress(Data.Source);
       Block.DestinationAddress:=PhysicalToIOAddress(Data.Dest);
      end;
     DMA_DIR_DEV_TO_MEM:begin
+      {Device to Memory}
+      Peripheral:=True;
+      Shift:=1;
+
       Block.SourceAddress:=PhysicalToIOAddress(Data.Source);
       Block.DestinationAddress:=PhysicalToBusAddress(Data.Dest);
      end;
     DMA_DIR_DEV_TO_DEV:begin
+      {Device to Device}
+      Peripheral:=True;
+      Shift:=1;
+
       Block.SourceAddress:=PhysicalToIOAddress(Data.Source);
       Block.DestinationAddress:=PhysicalToIOAddress(Data.Dest);
      end;     
@@ -5952,6 +5978,14 @@ begin
   end
  else
   begin
+   case Request.Direction of
+    DMA_DIR_MEM_TO_DEV,DMA_DIR_DEV_TO_MEM,DMA_DIR_DEV_TO_DEV:begin
+      {Memory to Device, Device to Memory or Device to Device}
+      Peripheral:=True;
+      Shift:=1;
+     end;     
+   end;
+
    Block.SourceAddress:=PtrUInt(Data.Source);
    Block.DestinationAddress:=PtrUInt(Data.Dest);
   end;  
@@ -6002,11 +6036,15 @@ begin
  {Source Width}
  if (Data.Flags and DMA_DATA_FLAG_SOURCE_WIDE) <> 0 then
   begin
+   Shift:=1;
+
    Block.TransferInformation:=Block.TransferInformation or BCM2837_DMA_TI_SRC_WIDTH;
   end;
  {Dest Width}
  if (Data.Flags and DMA_DATA_FLAG_DEST_WIDE) <> 0 then
   begin
+   Shift:=1;
+
    Block.TransferInformation:=Block.TransferInformation or BCM2837_DMA_TI_DEST_WIDTH;
   end;
  {Source Ignore}
@@ -6025,18 +6063,25 @@ begin
    Block.TransferInformation:=Block.TransferInformation or (BCM2710DMAPeripheralToDREQ(Request.Peripheral) shl BCM2837_DMA_TI_PERMAP_SHIFT);
   end; 
  {Burst Length}
- if Bulk then
+ if not(Peripheral) then
   begin
-   Block.TransferInformation:=Block.TransferInformation or (BCM2710_DMA_BULK_BURST_LENGTH shl BCM2837_DMA_TI_BURST_LENGTH_SHIFT);
-  end
- else if Lite then
-  begin
-   Block.TransferInformation:=Block.TransferInformation or (BCM2710_DMA_LITE_BURST_LENGTH shl BCM2837_DMA_TI_BURST_LENGTH_SHIFT);
-  end
- else
-  begin
-   Block.TransferInformation:=Block.TransferInformation or (BCM2710_DMA_NORMAL_BURST_LENGTH shl BCM2837_DMA_TI_BURST_LENGTH_SHIFT);
-  end;  
+   if Bulk then
+    begin
+     Burst:=(BCM2710_DMA_BULK_BURST_LENGTH shr Shift) - 1;
+    end
+   else if Lite then
+    begin
+     Burst:=(BCM2710_DMA_LITE_BURST_LENGTH shr Shift) - 1;
+    end
+   else
+    begin
+     Burst:=(BCM2710_DMA_NORMAL_BURST_LENGTH shr Shift) - 1;
+    end;
+   Block.TransferInformation:=Block.TransferInformation or (Burst shl BCM2837_DMA_TI_BURST_LENGTH_SHIFT);
+  end; 
+ {Wait Response}
+ Block.TransferInformation:=Block.TransferInformation or BCM2837_DMA_TI_WAIT_RESP;
+
  {Interrupt Enable}
  if Data.Next = nil then
   begin

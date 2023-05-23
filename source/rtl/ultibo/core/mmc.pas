@@ -12807,7 +12807,7 @@ begin
          {Setup DMA Data}
          SDHCI.DMAData.Source:=Command.Data.Data;
          SDHCI.DMAData.Dest:=Pointer(PtrUInt(SDHCI.Address) + PtrUInt(SDHCI_BUFFER));
-         SDHCI.DMAData.Flags:=DMA_DATA_FLAG_DEST_NOINCREMENT or DMA_DATA_FLAG_DEST_DREQ or DMA_DATA_FLAG_NOINVALIDATE;
+         SDHCI.DMAData.Flags:=DMA_DATA_FLAG_DEST_NOINCREMENT or DMA_DATA_FLAG_DEST_DREQ or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_NOINVALIDATE;
          SDHCI.DMAData.StrideLength:=0;
          SDHCI.DMAData.SourceStride:=0;
          SDHCI.DMAData.DestStride:=0;

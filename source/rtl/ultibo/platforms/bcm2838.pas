@@ -56,7 +56,12 @@ References
 ==========
 
  BCM2711 ARM Peripherals
+
+  https://datasheets.raspberrypi.com/bcm2711/bcm2711-peripherals.pdf
+
  QA7 Rev3.4
+
+  https://datasheets.raspberrypi.com/bcm2836/bcm2836-peripherals.pdf
  
 Broadcom BCM2838
 ================
@@ -752,7 +757,11 @@ const
  BCM2838_DMA_CS_ABORT                          = (1 shl 30);  {Abort DMA (Writing a 1 to this bit will abort the current DMA CB. The DMA will load the next CB and attempt to continue. The bit cannot be read, and will self clear)}
  BCM2838_DMA_CS_RESET                          = (1 shl 31);  {DMA Channel Reset (Writing a 1 to this bit will reset the DMA. The bit cannot be read, and will self clear)}
  
+ BCM2838_DMA_CS_PRIORITY_SHIFT = 16;
+ BCM2838_DMA_CS_PANIC_PRIORITY_SHIFT = 20;
+
  BCM2838_DMA_CS_PRIORITY_DEFAULT = 0;
+ BCM2838_DMA_CS_PRIORITY_MAX     = 15;
  
  {DMA Transfer Information bits (See Section 4)}
  BCM2838_DMA_TI_INTEN          = (1 shl 0);    {Interrupt Enable (1 = Generate an interrupt when the transfer described by the current Control Block completes)}
@@ -779,6 +788,7 @@ const
  BCM2838_DMA_TI_BURST_LENGTH_SHIFT = 12;
  
  BCM2838_DMA_TI_BURST_LENGTH_DEFAULT = 0;
+ BCM2838_DMA_TI_BURST_LENGTH_MAX     = 15;
  
  {DMA Transfer Length bits (See Section 4)}
  BCM2838_DMA_TXFR_LEN_XLENGTH = ($FFFF shl 0);  {Transfer Length in bytes}
@@ -886,6 +896,7 @@ const
  BCM2838_DMA4_SRCI_BURST_LENGTH_MASK    = ($F shl 8);     {Burst Transfer Length}
  BCM2838_DMA4_SRCI_BURST_LENGTH_SHIFT   = 8;
  BCM2838_DMA4_SRCI_BURST_LENGTH_DEFAULT = (0 shl 8);
+ BCM2838_DMA4_SRCI_BURST_LENGTH_MAX     = (15 shl 8);
  BCM2838_DMA4_SRCI_INC                  = (1 shl 12);     {Increment the Source Address}
  BCM2838_DMA4_SRCI_SIZE_MASK            = (3 shl 13);     {Source Transfer Width (The DMA4 will perform all AXI source reads with this AXI transfer width)}
  BCM2838_DMA4_SRCI_SIZE_256             = (3 shl 13);     {Note: On the BCM2711 the width cannot be set larger than 128}
@@ -903,6 +914,7 @@ const
  BCM2838_DMA4_DESTI_BURST_LENGTH_MASK    = ($F shl 8);     {Burst Transfer Length}
  BCM2838_DMA4_DESTI_BURST_LENGTH_SHIFT   = 8;
  BCM2838_DMA4_DESTI_BURST_LENGTH_DEFAULT = (0 shl 8);
+ BCM2838_DMA4_DESTI_BURST_LENGTH_MAX     = (15 shl 8);
  BCM2838_DMA4_DESTI_INC                  = (1 shl 12);     {Destination Address Increment}
  BCM2838_DMA4_DESTI_SIZE_MASK            = (3 shl 13);     {Destination Transfer Width (The DMA4 will perform all AXI destination writes with this AXI transfer width)}
  BCM2838_DMA4_DESTI_SIZE_256             = (3 shl 13);     {Note: On the BCM2711 the width cannot be set larger than 128}
