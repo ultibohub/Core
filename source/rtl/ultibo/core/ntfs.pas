@@ -1,7 +1,7 @@
 {
 Ultibo NTFS interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -7491,7 +7491,6 @@ end;
 function TNTFSFileSystem.CreateBoots:Boolean;
 {Create the $Boot file data}
 var
- //Size:LongWord; //To Do //Remove
  Buffer:Pointer;
  Instance:LongWord;
  NumberOfHeads:Word;
@@ -14114,7 +14113,6 @@ end;
 function TNTFSFileSystem.CreateExpansion:Boolean;
 {Create the expansion MFT entries}
 var
- //Count:LongWord; //To Do //Remove
  Counter:LongWord;
 
  Current:TNTFSDiskRecord;

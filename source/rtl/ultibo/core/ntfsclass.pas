@@ -1,7 +1,7 @@
 {
 Ultibo NTFS classes unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -733,7 +733,6 @@ type
    function GetBlank(AEntry:TBtreeObject):TBtreeObject; override;
    function GetMedian(AEntry:TBtreeObject):TBtreeObject; override;
 
-   function GetDropTest(AEntry:TBtreeObject;var ALeft:Boolean):TBtreeObject; //override; //To Do //Remove ?
    function GetDrop(AEntry:TBtreeObject;var ALeft:Boolean):TBtreeObject; override;
    function GetMerge(AEntry:TBtreeObject):TBtreeObject; override;
    function GetBorrow(AEntry:TBtreeObject):TBtreeObject; override;
@@ -743,7 +742,6 @@ type
    function PushNode(AEntry:TBtreeObject):Boolean; override;
    function SplitNode(AEntry:TBtreeObject):Boolean; override;
    function DropNode(AEntry,ADrop,ATarget:TBtreeObject;ALeft:Boolean):Boolean; override;
-   function DropNodeOld(AEntry,ADrop:TBtreeObject;ALeft:Boolean):Boolean; override; //To Do //Remove ?
    function MergeNode(AEntry,AMerge:TBtreeObject):Boolean; override;
    function BorrowEntry(AEntry,ABorrow:TBtreeObject):Boolean; override;
 
@@ -1544,7 +1542,6 @@ type
    function NewRun(const AStart,ALength:Int64):TNTFSDiskRun;
    function InsertRun(APrev:TNTFSDiskRun;const AStart,ALength:Int64):TNTFSDiskRun;
    function GetRun(const AVCN:Int64;var AStartVCN:Int64):TNTFSDiskRun;
-   function GetRunOld(const AVCN:Int64;var AStartVCN:Int64):TNTFSDiskRun; //To Do //Remove ?
    function MergeRun(ARun:TNTFSDiskRun):Boolean;
    function SplitRun(ARun:TNTFSDiskRun;const ALength:Int64):Boolean;
    function RemoveRun(ARun:TNTFSDiskRun):Boolean;
@@ -2588,7 +2585,6 @@ type
    function ReleaseLock:Boolean;
 
    function Compare(ASecurityItem:TNTFSSecurityItem):Integer; virtual;
-   function CompareOld(ASecurityItem:TNTFSSecurityItem):Integer; virtual; //To Do //Remove ?
   public
    {Public Properties}
    property SecurityHash:LongWord read FSecurityHash write FSecurityHash;
@@ -7218,91 +7214,6 @@ begin
 end;
 
 {==============================================================================}
- //To Do //Remove ?
-function TNTFSDiskIndex.GetDropTest(AEntry:TBtreeObject;var ALeft:Boolean):TBtreeObject;
-{Get the neighbour with appropriate number of keys to drop}
-{Always drop with the Righthand neighbour if available}
-
-{Note: If both lefthand and righthand nodes are nil then GetDrop will return the entry itself}
-{      to indicate success, the node should then be dropped without demoting the parent}
-
-//To Do //Testing11
-
-{Note: No account is made of whether the lefthand or righthand nodes have room for the demoted}
-{      parent, the caller must check for require push or split on the neighbour after drop}
-var
- Lefthand:TBtreeObject;
- Righthand:TBtreeObject;
-begin
- {}
- Result:=nil;
- 
- {$IFDEF NTFS_DEBUG}
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop');
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Entry = ' + PtrToHex(AEntry));
- {$ENDIF}
- 
- if AEntry = nil then Exit;
- 
- {Get Left}
- ALeft:=False;
- 
- {Get Lefthand/Righthand}
- Lefthand:=GetLefthand(AEntry);
- Righthand:=GetRighthand(AEntry);
- 
- {Check Lefthand/Righthand}
- Result:=Lefthand; //Righthand; //To Do //Testing11
- if Result = nil then Result:=Righthand; //Lefthand; //To Do //Testing11
- 
- {Return Entry}
- if Result = nil then Result:=AEntry;
- 
- {Check Left}
- if Result = Lefthand then ALeft:=True;
- 
- {$IFDEF NTFS_DEBUG}
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Entry.Blank = ' + BoolToStr(AEntry.Blank));
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Entry.Left = ' + PtrToHex(AEntry.Left));
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Entry.Right = ' + PtrToHex(AEntry.Right));
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Entry.Child = ' + PtrToHex(AEntry.Child));
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Entry.Parent = ' + PtrToHex(AEntry.Parent));
- if TNTFSDiskKey(AEntry).Node <> nil then
-  begin
-   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Entry.Node = ' + IntToHex(TNTFSDiskKey(AEntry).Node.RecordNumber,16));
-  end;
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop');
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Lefthand = ' + PtrToHex(Lefthand));
- if Lefthand <> nil then
-  begin
-   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Lefthand.Left = ' + PtrToHex(Lefthand.Left));
-   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Lefthand.Right = ' + PtrToHex(Lefthand.Right));
-   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Lefthand.Child = ' + PtrToHex(Lefthand.Child));
-   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Lefthand.Parent = ' + PtrToHex(Lefthand.Parent));
-   if TNTFSDiskKey(Lefthand).Node <> nil then
-    begin
-     if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Lefthand.Node = ' + IntToHex(TNTFSDiskKey(Lefthand).Node.RecordNumber,16));
-    end;
-  end;
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop');
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Righthand = ' + PtrToHex(Righthand));
- if Righthand <> nil then
-  begin
-   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Righthand.Left = ' + PtrToHex(Righthand.Left));
-   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Righthand.Right = ' + PtrToHex(Righthand.Right));
-   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Righthand.Child = ' + PtrToHex(Righthand.Child));
-   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Righthand.Parent = ' + PtrToHex(Righthand.Parent));
-   if TNTFSDiskKey(Righthand).Node <> nil then
-    begin
-     if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Righthand.Node = ' + IntToHex(TNTFSDiskKey(Righthand).Node.RecordNumber,16));
-    end;
-  end;
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop');
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Result = ' + PtrToHex(Result) + ' Left = ' + BoolToStr(ALeft));
- {$ENDIF}
-end;
-
-{==============================================================================}
 
 function TNTFSDiskIndex.GetDrop(AEntry:TBtreeObject;var ALeft:Boolean):TBtreeObject;
 {Get the neighbour with appropriate number of keys to drop}
@@ -7624,60 +7535,6 @@ begin
    {$ENDIF}
    
    {Update Target Node}
-   Node.Changed:=True;
-  end;
-  
- Result:=True;
- 
- {$IFDEF NTFS_DEBUG}
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode - Result = ' + BoolToStr(Result));
- {$ENDIF}
-end;
-
-{==============================================================================}
- //To Do //Remove ?
-function TNTFSDiskIndex.DropNodeOld(AEntry,ADrop:TBtreeObject;ALeft:Boolean):Boolean;
-{Note: Changed to account for Target}
-
-{Called before a node is dropped following removal of an entry}
-var
- Node:TNTFSDiskNode;
-begin
- {}
- Result:=False;
- 
- {$IFDEF NTFS_DEBUG}
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode');
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode - Entry = ' + PtrToHex(AEntry) + ' Drop = ' + PtrToHex(ADrop) + ' Left = ' + BoolToStr(ALeft));
- {$ENDIF}
- 
- if AEntry = nil then Exit; {Drop may be nil}
- 
- {Get Node}
- Node:=TNTFSDiskKey(AEntry).Node;
- if Node = nil then Exit;
- 
- {$IFDEF NTFS_DEBUG}
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode - Entry.Node = ' + IntToHex(Node.RecordNumber,16));
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode - Entry.Node.KeyCount = ' + IntToStr(Node.KeyCount));
- 
- {$ENDIF}
- {Update Node}
- Node.Changed:=True;
- 
- {Check Drop Node}
- if ADrop <> nil then
-  begin
-   {Get Drop Node}
-   Node:=TNTFSDiskKey(ADrop).Node;
-   if Node = nil then Exit;
-   
-   {$IFDEF NTFS_DEBUG}
-   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode - Drop.Node = ' + IntToHex(Node.RecordNumber,16));
-   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode - Drop.Node.KeyCount = ' + IntToStr(Node.KeyCount));
-   {$ENDIF}
-   
-   {Update Drop Node}
    Node.Changed:=True;
   end;
   
@@ -13316,8 +13173,8 @@ begin
  Run:=TNTFSDiskRun.Create(GetRunLocal,Self);
  
  {Update Recent (Only if not new)}
- if not ANew then FRuns.RecentVCN:=ntfsUnknownCluster;  //To Do //Testing6
- if not ANew then FRuns.Recent:=nil;                    //To Do //Testing6
+ if not ANew then FRuns.RecentVCN:=ntfsUnknownCluster;
+ if not ANew then FRuns.Recent:=nil;
  
  {Add Run (Only if not new)}
  if not ANew then FRuns.Add(Run);
@@ -13337,8 +13194,8 @@ begin
  if FRuns = nil then Exit;
  
  {Update Recent}
- FRuns.RecentVCN:=ntfsUnknownCluster;  //To Do //Testing6
- FRuns.Recent:=nil;                    //To Do //Testing6
+ FRuns.RecentVCN:=ntfsUnknownCluster;
+ FRuns.Recent:=nil;
  
  {Remove Run}
  FRuns.Remove(ARun);
@@ -13359,8 +13216,8 @@ begin
  if Result = nil then Exit;
  
  {Update Recent}
- FRuns.RecentVCN:=ntfsUnknownCluster;  //To Do //Testing6
- FRuns.Recent:=nil;                    //To Do //Testing6
+ FRuns.RecentVCN:=ntfsUnknownCluster;
+ FRuns.Recent:=nil;
  
  {Insert Run}
  FRuns.Insert(FRuns.GetFinal,Result);
@@ -13388,8 +13245,8 @@ begin
  if Result = nil then Exit;
  
  {Update Recent}
- FRuns.RecentVCN:=ntfsUnknownCluster;  //To Do //Testing6
- FRuns.Recent:=nil;                    //To Do //Testing6
+ FRuns.RecentVCN:=ntfsUnknownCluster;
+ FRuns.Recent:=nil;
  
  {Insert Run}
  FRuns.Insert(APrev,Result);
@@ -13419,14 +13276,14 @@ begin
  
  if FRuns = nil then Exit;
 
- {Check Recent} //To Do //Testing6
- if (FRuns.Recent <> nil) and (AVCN >= FRuns.RecentVCN) then  //To Do //Testing8
+ {Check Recent}
+ if (FRuns.Recent <> nil) and (AVCN >= FRuns.RecentVCN) then
   begin
    CurrentVCN:=FRuns.RecentVCN; {Allow for multiple instances}
    
    {Check Runs}
    Run:=FRuns.Recent;           {Start at Previous not Next}
-   Start:=FRuns.Recent;         //To Do //Only read once, see TDiskEntry.Recent handling in FileSystem
+   Start:=Run; {FRuns.Recent}   {Only read Recent once in case of change}
    while Run <> nil do
     begin
      if (AVCN >= CurrentVCN) and (AVCN < (CurrentVCN + Run.Length)) then
@@ -13468,38 +13325,6 @@ begin
      
      Run:=TNTFSDiskRun(Run.Next);
     end;
-  end;          //To Do //Testing6
-end;
-
-{==============================================================================}
- //To Do //Remove ?
-function TNTFSDiskAttribute.GetRunOld(const AVCN:Int64;var AStartVCN:Int64):TNTFSDiskRun;
-{Get the run containing the supplied VCN}
-var
- CurrentVCN:Int64;
- Run:TNTFSDiskRun;
-begin
- {}
- Result:=nil;
- 
- if FRuns = nil then Exit;
-
- CurrentVCN:=FStartVCN; {Allow for multiple instances}
- 
- {Check Runs}
- Run:=TNTFSDiskRun(FRuns.First);
- while Run <> nil do
-  begin
-   if (AVCN >= CurrentVCN) and (AVCN < (CurrentVCN + Run.Length)) then
-    begin
-     AStartVCN:=CurrentVCN;
-     Result:=Run;
-     Exit;
-    end;
-    
-   Inc(CurrentVCN,Run.Length);
-   
-   Run:=TNTFSDiskRun(Run.Next);
   end;
 end;
 
@@ -13537,8 +13362,8 @@ begin
    ARun.Length:=ARun.Length + Run.Length;
    
    {Update Recent}
-   FRuns.RecentVCN:=ntfsUnknownCluster;  //To Do //Testing6
-   FRuns.Recent:=nil;                    //To Do //Testing6
+   FRuns.RecentVCN:=ntfsUnknownCluster;
+   FRuns.Recent:=nil;
    
    {Remove Run}
    FRuns.Remove(Run);
@@ -13561,8 +13386,8 @@ begin
    ARun.Length:=ARun.Length + Run.Length;
    
    {Update Recent}
-   FRuns.RecentVCN:=ntfsUnknownCluster;  //To Do //Testing6
-   FRuns.Recent:=nil;                    //To Do //Testing6
+   FRuns.RecentVCN:=ntfsUnknownCluster;
+   FRuns.Recent:=nil;
    
    {Remove Run}
    FRuns.Remove(Run);
@@ -13662,8 +13487,8 @@ begin
  if (FLastVCN - ARun.Length) < FStartVCN then FLastVCN:=ntfsUnknownCluster else Dec(FLastVCN,ARun.Length);
  
  {Update Recent}
- FRuns.RecentVCN:=ntfsUnknownCluster;  //To Do //Testing6
- FRuns.Recent:=nil;                    //To Do //Testing6
+ FRuns.RecentVCN:=ntfsUnknownCluster;
+ FRuns.Recent:=nil;
  
  {Remove Run}
  FRuns.Remove(ARun);
@@ -13696,15 +13521,15 @@ begin
  if (FLastVCN - ARun.Length) < FStartVCN then FLastVCN:=ntfsUnknownCluster else Dec(FLastVCN,ARun.Length);
  
  {Update Recent}
- FRuns.RecentVCN:=ntfsUnknownCluster;  //To Do //Testing6
- FRuns.Recent:=nil;                    //To Do //Testing6
+ FRuns.RecentVCN:=ntfsUnknownCluster;
+ FRuns.Recent:=nil;
  
  {Remove Run}
  FRuns.Remove(ARun);
  
  {Update Recent}
- ADest.FRuns.RecentVCN:=ntfsUnknownCluster;  //To Do //Testing6
- ADest.FRuns.Recent:=nil;                    //To Do //Testing6
+ ADest.FRuns.RecentVCN:=ntfsUnknownCluster;
+ ADest.FRuns.Recent:=nil;
  
  {Insert Run}
  ADest.FRuns.Insert(nil,ARun);
@@ -20173,7 +19998,7 @@ end;
 {==============================================================================}
 
 function TNTFSSecurityItem.Compare(ASecurityItem:TNTFSSecurityItem):Integer;
-{Replaces function below, Security Items are sorted by Offset not by Id}
+{Security Items are sorted by Offset not by Id}
 begin
  {}
  Result:=ntfsCompareGreater;
@@ -20201,42 +20026,6 @@ begin
   begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSSecurityItem.Compare - Offset ' + IntToHex(ASecurityItem.SecurityOffset,16) + ' > ' + IntToHex(FSecurityOffset,16));
-   {$ENDIF}
-   
-   Result:=ntfsCompareGreater;
-  end
-end;
-
-{==============================================================================}
- //To Do //Remove ?
-function TNTFSSecurityItem.CompareOld(ASecurityItem:TNTFSSecurityItem):Integer;
-begin
- {}
- Result:=ntfsCompareGreater;
- 
- if ASecurityItem = nil then Exit;
- 
- {Check Security Id}
- if ASecurityItem.SecurityId = FSecurityId then
-  begin
-   {$IFDEF NTFS_DEBUG}
-   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSSecurityItem.Compare - Id ' + IntToHex(ASecurityItem.SecurityId,8) + ' = ' + IntToHex(FSecurityId,8));
-   {$ENDIF}
-   
-   Result:=ntfsCompareEqual;
-  end
- else if ASecurityItem.SecurityId < FSecurityId then
-  begin
-   {$IFDEF NTFS_DEBUG}
-   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSSecurityItem.Compare - Id ' + IntToHex(ASecurityItem.SecurityId,8) + ' < ' + IntToHex(FSecurityId,8));
-   {$ENDIF}
-   
-   Result:=ntfsCompareLess;
-  end
- else if ASecurityItem.SecurityId > FSecurityId then
-  begin
-   {$IFDEF NTFS_DEBUG}
-   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSSecurityItem.Compare - Id ' + IntToHex(ASecurityItem.SecurityId,8) + ' > ' + IntToHex(FSecurityId,8));
    {$ENDIF}
    
    Result:=ntfsCompareGreater;

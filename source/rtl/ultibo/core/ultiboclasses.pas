@@ -1,7 +1,7 @@
 {
 Ultibo classes unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -381,8 +381,6 @@ type
   procedure SetOrder(AOrder:LongWord);
 
   function PropogateDrop(AEntry:TBtreeObject):Boolean;
-  function PropogateDropOld(AEntry:TBtreeObject):Boolean;    //To Do //Remove ?
-  function PropogateDropOldOld(AEntry:TBtreeObject):Boolean; //To Do //Remove ?
   function PropogateMerge(AEntry:TBtreeObject):Boolean;
   function PropogateSplit(AEntry:TBtreeObject):Boolean;
  protected
@@ -429,8 +427,6 @@ type
   function Swap(AEntry,ASwap:TBtreeObject;ALeft:Boolean):Boolean;
   function Drop(AEntry,ADrop,ATarget:TBtreeObject;ALeft:Boolean):Boolean;
   function DropOld(AEntry,ADrop:TBtreeObject;ALeft:Boolean):Boolean;        //To Do //Remove ?
-  function DropOldOld(AEntry,ADrop:TBtreeObject;ALeft:Boolean):Boolean;     //To Do //Remove ?
-  function DropOldOldOld(AEntry,ADrop:TBtreeObject;ALeft:Boolean):Boolean;  //To Do //Remove ?
   function Merge(AEntry,AMerge:TBtreeObject):Boolean;
   function Borrow(AEntry,ABorrow:TBtreeObject):Boolean;
 
@@ -447,7 +443,6 @@ type
   function PushNode(AEntry:TBtreeObject):Boolean; virtual;                      {Allows descendants to monitor node push}
   function SplitNode(AEntry:TBtreeObject):Boolean; virtual;                     {Allows descendants to monitor node split}
   function DropNode(AEntry,ADrop,ATarget:TBtreeObject;ALeft:Boolean):Boolean; virtual;  {Allows descendants to monitor node drop}
-  function DropNodeOld(AEntry,ADrop:TBtreeObject;ALeft:Boolean):Boolean; virtual;  {Allows descendants to monitor node drop}      //To Do //Remove ?
   function MergeNode(AEntry,AMerge:TBtreeObject):Boolean; virtual;              {Allows descendants to monitor node merge}
   function BorrowEntry(AEntry,ABorrow:TBtreeObject):Boolean; virtual;           {Allows descendants to monitor entry borrow}
 
@@ -485,8 +480,6 @@ type
 
   function Insert(AEntry:TBtreeObject):Boolean;
   function Remove(AEntry:TBtreeObject):Boolean;
-  function RemoveOld(AEntry:TBtreeObject):Boolean;      //To Do //Remove ?
-  function RemoveOldOld(AEntry:TBtreeObject):Boolean;   //To Do //Remove ?
 
   procedure Clear;
   procedure Empty;
@@ -538,6 +531,7 @@ type
   {}
   FKeyBits:Byte;
   FKeyMask:LongWord;
+  FKeyShift:LongWord;
   FKeyBuckets:Pointer;
   function KeyLink(AValue:THashListObject):Boolean;
   function KeyUnlink(AValue:THashListObject):Boolean;
@@ -575,6 +569,7 @@ type
   {}
   FKeyBits:Byte;
   FKeyMask:LongWord;
+  FKeyShift:LongWord;
   FKeyBuckets:Pointer;
   FKeyTree:THashLinkedTree;
   FKeyPrev:THashTreeObject;
@@ -602,6 +597,7 @@ type
   {}
   FKeyBits:Byte;
   FKeyMask:LongWord;
+  FKeyShift:LongWord;
   FKeyBuckets:Pointer;
   function KeyLink(AValue,AParent:THashTreeObject):Boolean;
   function KeyUnlink(AValue,AParent:THashTreeObject):Boolean;
@@ -804,6 +800,7 @@ type
   {}
   FKeyBits:Byte;
   FKeyMask:LongWord;
+  FKeyShift:LongWord;
   FKeyBuckets:Pointer;
   function KeyLink(AValue:THashStringObject):Boolean;
   function KeyUnlink(AValue:THashStringObject):Boolean;
@@ -2296,136 +2293,6 @@ begin
 end;
 
 {==============================================================================}
-//To Do //Remove ?
-function TLinkedBtree.PropogateDropOld(AEntry:TBtreeObject):Boolean;
-{Note: Changed to account for Target}
-var
- Left:Boolean;
- Parent:TBtreeObject;
- Current:TBtreeObject;
- Neighbour:TBtreeObject;
-begin
- {}
- Result:=False;
- if AEntry = nil then Exit;
- {Get Current}
- Current:=GetStart(AEntry);
- if Current = nil then Exit;
- {Check Drop}
- if RequireDrop(Current) then  {New 7/1/2010}
-  begin
-   {Get Drop}
-   Neighbour:=GetDrop(Current,Left);
-   if Neighbour = nil then Exit;
-   if Neighbour = Current then Neighbour:=nil; {Get Drop returns Entry to indicate no Left or Right neighbour}
-   if Current.Child <> nil then Neighbour:=nil; {New 18/7/2011} {If child exists drop without neighbour}
-   {Drop Nodes}
-   if not DropNodeOld(Current,Neighbour,Left) then Exit; {New 7/1/2010}
-   if not DropOld(Current,Neighbour,Left) then Exit;     {New 7/1/2010}
-   {Check Neighbour}
-   if Neighbour <> nil then
-    begin
-     {Propogate Split}
-     if not PropogateSplit(Neighbour) then Exit;
-     {Get Parent}
-     Parent:=Neighbour.Parent;
-     {Check Parent}
-     while Parent <> nil do
-      begin
-       {Get Current}
-       Current:=Parent;
-       {Get Parent}
-       Parent:=nil;
-       {Check Drop}
-       if RequireDrop(Current) then  {New 7/1/2010}
-        begin
-         {Get Drop}
-         Neighbour:=GetDrop(Current,Left);
-         if Neighbour = nil then Exit;
-         if Neighbour = Current then Neighbour:=nil; {Get Drop returns Entry to indicate no Left or Right neighbour}
-         if Current.Child <> nil then Neighbour:=nil; {New 18/7/2011} {If child exists drop without neighbour}
-         {Drop Nodes}
-         if not DropNodeOld(Current,Neighbour,Left) then Exit; {New 7/1/2010}
-         if not DropOld(Current,Neighbour,Left) then Exit;     {New 7/1/2010}
-         {Check Neighbour}
-         if Neighbour <> nil then
-          begin
-           {Propogate Split}
-           if not PropogateSplit(Neighbour) then Exit;
-           {Get Parent}
-           Parent:=Neighbour.Parent;
-          end;
-        end;
-      end;
-    end;
-  end;
- Result:=True;
-end;
-
-{==============================================================================}
-//To Do //Remove ?
-function TLinkedBtree.PropogateDropOldOld(AEntry:TBtreeObject):Boolean;
-{Note: Changed to account for Current.Child}
-var
- Left:Boolean;
- Parent:TBtreeObject;
- Current:TBtreeObject;
- Neighbour:TBtreeObject;
-begin
- {}
- Result:=False;
- if AEntry = nil then Exit;
- {Get Current}
- Current:=GetStart(AEntry);
- if Current = nil then Exit;
- {Get Parent}
- Parent:=Current.Parent; {Parent may be nil}
- {Check Drop}
- if RequireDrop(Current) then  {New 7/1/2010}
-  begin
-   {Get Drop}
-   Neighbour:=GetDrop(Current,Left);
-   if Neighbour = nil then Exit;
-   if Neighbour = Current then Neighbour:=nil; {Get Drop returns Entry to indicate no Left or Right neighbour}
-   {Drop Nodes}
-   if not DropNodeOld(Current,Neighbour,Left) then Exit; {New 7/1/2010}
-   if not DropOld(Current,Neighbour,Left) then Exit;     {New 7/1/2010}
-   {Check Neighbour}
-   if Neighbour <> nil then
-    begin
-     {Propogate Split}
-     if not PropogateSplit(Neighbour) then Exit;
-     {Check Parent}
-     while Parent <> nil do
-      begin
-       {Get Current}
-       Current:=Parent;
-       {Get Parent}
-       Parent:=Current.Parent; {Parent may be nil}
-       {Check Drop}
-       if RequireDrop(Current) then  {New 7/1/2010}
-        begin
-         {Get Drop}
-         Neighbour:=GetDrop(Current,Left);
-         if Neighbour = nil then Exit;
-         if Neighbour = Current then Neighbour:=nil; {Get Drop returns Entry to indicate no Left or Right neighbour}
-         {Drop Nodes}
-         if not DropNodeOld(Current,Neighbour,Left) then Exit; {New 7/1/2010}
-         if not DropOld(Current,Neighbour,Left) then Exit;     {New 7/1/2010}
-         {Check Neighbour}
-         if Neighbour <> nil then
-          begin
-           {Propogate Split}
-           if not PropogateSplit(Neighbour) then Exit;
-          end;
-        end;
-      end;
-    end;
-  end;
- Result:=True;
-end;
-
-{==============================================================================}
 
 function TLinkedBtree.PropogateMerge(AEntry:TBtreeObject):Boolean;
 begin
@@ -3570,359 +3437,6 @@ begin
 end;
 
 {==============================================================================}
-//To Do //Remove ?
-function TLinkedBtree.DropOldOld(AEntry,ADrop:TBtreeObject;ALeft:Boolean):Boolean;
-{Note: This one does not account for Drop node with Child}
-
-{Drop the nodes of the supplied entries into one}
-{Will demote the parent entry to the drop node}
-
-{Drop with Right} {Entry has no child}
-{Parent of left node will become part of drop node (start)}
-{Parent of right node will remain as parent of drop node}
-{Left node will be deleted}
-
-{Drop with Right} {Entry has a child}
-{Node will be deleted}
-{Child of node will be parented by parent of node}
-
-{Drop with Left} {Entry has no child}
-{Parent of left node will become part of drop node (last before blank)}
-{Parent of right node will become parent of drop node}
-{Right node will be deleted}
-
-{Drop with Left} {Entry has a child}
-{Node will be deleted}
-{Child of node will be parented by parent of node}
-
-{Drop with no Neighbour}
-{Node will be deleted}
-{Child of node will be parented by parent of node}
-
-{Drop can propogate all the way to root since parent is demoted}
-var
- Left:TBtreeObject;
- Right:TBtreeObject;
- Last:TBtreeObject;
- Start:TBtreeObject;
- Blank:TBtreeObject;
- Child:TBtreeObject;
- Parent:TBtreeObject;
-begin
- {}
- Result:=False;
- if AEntry = nil then Exit; {Drop may be nil}
- {Check for Parent}   {Entry must have a parent}
- if AEntry.Parent = nil then Exit;
-
- if ADrop = nil then
-  begin
-   {Drop with no Neighbour}
-   {Get Blank}   {Blank key of entry node which will be deleted}
-   Blank:=GetBlank(AEntry);
-   if Blank = nil then Exit;
-   {Get Parent}  {Parent key of entry node which will be parent of child}
-   Parent:=AEntry.Parent;
-   {Get Child}   {Child key of blank which will be child of parent}
-   Child:=Blank.Child; {Child may be nil}
-
-   {Detach Blank}
-   if not DetachBlank(Blank) then Exit;
-   if not Detach(Blank) then Exit;
-   if not UnlinkBlank(Blank) then Exit;
-   if not DeleteBlank(Blank) then Exit;
-
-   {Check Child}
-   if Child <> nil then
-    begin
-     {Set Parent}
-     if not SetParent(Child,Parent) then Exit;
-     if not SetParentEntry(Child,Parent) then Exit;
-    end;
-
-   Result:=True;
-  end
- else
-  begin
-   {Check for Parent}   {Drop must have a parent}
-   if ADrop.Parent = nil then Exit;
-   {Check Left}
-   if not(ALeft) then
-    begin
-     {Drop with Right}
-     if AEntry.Child <> nil then
-      begin
-       {Convert to Drop with no Neighbour}
-       Result:=DropOldOld(AEntry,nil,ALeft);
-      end
-     else
-      begin
-       {Get Blank}   {Blank key of entry node which will be deleted}
-       Blank:=GetBlank(AEntry);
-       if Blank = nil then Exit;
-       {Get Start}   {Start key of drop node which will be linked}
-       Start:=GetStart(ADrop);
-       if Start = nil then Exit;
-       {Get Parent}  {Parent key of entry node which will be demoted}
-       Parent:=AEntry.Parent;
-       {Get Right}   {Right key of parent which will become parent}
-       Right:=Parent.Right;
-       if Right = nil then Exit;
-       {Get Child}   {Child key of blank which will be child of demoted}
-       Child:=Blank.Child; {Child may be nil}
-
-       {Detach Parent}
-       if not DetachEntry(Parent) then Exit;
-       if not Detach(Parent) then Exit;
-       Parent.Child:=nil;
-       {Detach Blank}
-       if not DetachBlank(Blank) then Exit;
-       if not Detach(Blank) then Exit;
-       if not UnlinkBlank(Blank) then Exit;
-       if not DeleteBlank(Blank) then Exit;
-       {Link Start}
-       Parent.Right:=Start;
-       Start.Left:=Parent;
-       {Set Parent} {Must pass the demoted key for NTFS}
-       if not SetParent(Parent,Right) then Exit;      {if not SetParent(Start,Right) then Exit;}
-       if not SetParentEntry(Parent,Right) then Exit; {if not SetParentEntry(Start,Right) then Exit;}
-
-       {Check Child}
-       if Child <> nil then
-        begin
-         {Set Parent}
-         if not SetParent(Child,Parent) then Exit;
-         if not SetParentEntry(Child,Parent) then Exit;
-        end;
-
-       Result:=True;
-      end;
-    end
-   else
-    begin
-     {Drop with Left}
-     if AEntry.Child <> nil then
-      begin
-       {Convert to Drop with no Neighbour}
-       Result:=DropOldOld(AEntry,nil,ALeft);
-      end
-     else
-      begin
-       {Get Blank}   {Blank key of entry node which will be deleted}
-       Blank:=GetBlank(AEntry);
-       if Blank = nil then Exit;
-       {Get Last}    {Blank key of drop node which will be linked}
-       Last:=GetBlank(ADrop);
-       if Last = nil then Exit;
-       {Get Left}    {Last key of drop node which will be linked}
-       Left:=Last.Left;
-       if Left = nil then Exit;
-       {Get Parent}  {Parent key of drop node which will be demoted}
-       Parent:=ADrop.Parent;
-       {Get Right}   {Right key of parent which will become parent}
-       Right:=Parent.Right;
-       if Right = nil then Exit;
-       {Get Child}   {Child key of blank which will be child of demoted}
-       Child:=Blank.Child; {Child may be nil}
-
-       {Detach Parent}
-       if not DetachEntry(Parent) then Exit;
-       if not Detach(Parent) then Exit;
-       Parent.Child:=nil;
-       {Detach Blank}
-       if not DetachBlank(Blank) then Exit;
-       if not Detach(Blank) then Exit;
-       if not UnlinkBlank(Blank) then Exit;
-       if not DeleteBlank(Blank) then Exit;
-       {Link Parent}
-       Left.Right:=Parent;
-       Parent.Left:=Left;
-       {Link Last}
-       Parent.Right:=Last;
-       Last.Left:=Parent;
-       {Set Parent} {Must pass the demoted key for NTFS}
-       if not SetParent(Parent,Right) then Exit;      {if not SetParent(Last,Right) then Exit;}
-       if not SetParentEntry(Parent,Right) then Exit; {if not SetParentEntry(Last,Right) then Exit;}
-
-       {Check Child}
-       if Child <> nil then
-        begin
-         {Set Parent}
-         if not SetParent(Child,Parent) then Exit;
-         if not SetParentEntry(Child,Parent) then Exit;
-        end;
-
-       Result:=True;
-      end;
-    end;
-  end;
-end;
-
-{==============================================================================}
-//To Do //Remove ?
-function TLinkedBtree.DropOldOldOld(AEntry,ADrop:TBtreeObject;ALeft:Boolean):Boolean;
-{Note: This one does not account for Entry with Child}
-
-{Drop the nodes of the supplied entries into one}
-{Will demote the parent entry to the drop node}
-
-{Drop with Right}
-{Parent of left node will become part of drop node (start)}
-{Parent of right node will remain as parent of drop node}
-{Left node will be deleted}
-
-{Drop with Left}
-{Parent of left node will become part of drop node (last before blank)}
-{Parent of right node will become parent of drop node}
-{Right node will be deleted}
-
-{Drop with no Neighbour}
-{Node will be deleted}
-
-{Drop can propogate all the way to root since parent is demoted}
-var
- Left:TBtreeObject;
- Right:TBtreeObject;
- Last:TBtreeObject;
- Start:TBtreeObject;
- Blank:TBtreeObject;
- Child:TBtreeObject;
- Parent:TBtreeObject;
-begin
- {}
- Result:=False;
- if AEntry = nil then Exit; {Drop may be nil}
- {Check for Parent}   {Entry must have a parent}
- if AEntry.Parent = nil then Exit;
-
- if ADrop = nil then
-  begin
-   {Drop with no Neighbour}
-   {Get Blank}   {Blank key of entry node which will be deleted}
-   Blank:=GetBlank(AEntry);
-   if Blank = nil then Exit;
-   {Get Parent}  {Parent key of entry node which will be parent of child}
-   Parent:=AEntry.Parent;
-   {Get Child}   {Child key of blank which will be child of parent}
-   Child:=Blank.Child; {Child may be nil}
-
-   {Detach Blank}
-   if not DetachBlank(Blank) then Exit;
-   if not Detach(Blank) then Exit;
-   if not UnlinkBlank(Blank) then Exit;
-   if not DeleteBlank(Blank) then Exit;
-
-   {Check Child}
-   if Child <> nil then
-    begin
-     {Set Parent}
-     if not SetParent(Child,Parent) then Exit;
-     if not SetParentEntry(Child,Parent) then Exit;
-    end;
-
-   Result:=True;
-  end
- else
-  begin
-   {Check for Parent}   {Drop must have a parent}
-   if ADrop.Parent = nil then Exit;
-   {Check Left}
-   if not(ALeft) then
-    begin
-     {Drop with Right}
-     {Get Blank}   {Blank key of entry node which will be deleted}
-     Blank:=GetBlank(AEntry);
-     if Blank = nil then Exit;
-     {Get Start}   {Start key of drop node which will be linked}
-     Start:=GetStart(ADrop);
-     if Start = nil then Exit;
-     {Get Parent}  {Parent key of entry node which will be demoted}
-     Parent:=AEntry.Parent;
-     {Get Right}   {Right key of parent which will become parent}
-     Right:=Parent.Right;
-     if Right = nil then Exit;
-     {Get Child}   {Child key of blank which will be child of demoted}
-     Child:=Blank.Child; {Child may be nil}
-
-     {Detach Parent}
-     if not DetachEntry(Parent) then Exit;
-     if not Detach(Parent) then Exit;
-     Parent.Child:=nil;
-     {Detach Blank}
-     if not DetachBlank(Blank) then Exit;
-     if not Detach(Blank) then Exit;
-     if not UnlinkBlank(Blank) then Exit;
-     if not DeleteBlank(Blank) then Exit;
-     {Link Start}
-     Parent.Right:=Start;
-     Start.Left:=Parent;
-     {Set Parent} {Must pass the demoted key for NTFS}
-     if not SetParent(Parent,Right) then Exit;      {if not SetParent(Start,Right) then Exit;}
-     if not SetParentEntry(Parent,Right) then Exit; {if not SetParentEntry(Start,Right) then Exit;}
-
-     {Check Child}
-     if Child <> nil then
-      begin
-       {Set Parent}
-       if not SetParent(Child,Parent) then Exit;
-       if not SetParentEntry(Child,Parent) then Exit;
-      end;
-
-     Result:=True;
-    end
-   else
-    begin
-     {Drop with Left}
-     {Get Blank}   {Blank key of entry node which will be deleted}
-     Blank:=GetBlank(AEntry);
-     if Blank = nil then Exit;
-     {Get Last}    {Blank key of drop node which will be linked}
-     Last:=GetBlank(ADrop);
-     if Last = nil then Exit;
-     {Get Left}    {Last key of drop node which will be linked}
-     Left:=Last.Left;
-     if Left = nil then Exit;
-     {Get Parent}  {Parent key of drop node which will be demoted}
-     Parent:=ADrop.Parent;
-     {Get Right}   {Right key of parent which will become parent}
-     Right:=Parent.Right;
-     if Right = nil then Exit;
-     {Get Child}   {Child key of blank which will be child of demoted}
-     Child:=Blank.Child; {Child may be nil}
-
-     {Detach Parent}
-     if not DetachEntry(Parent) then Exit;
-     if not Detach(Parent) then Exit;
-     Parent.Child:=nil;
-     {Detach Blank}
-     if not DetachBlank(Blank) then Exit;
-     if not Detach(Blank) then Exit;
-     if not UnlinkBlank(Blank) then Exit;
-     if not DeleteBlank(Blank) then Exit;
-     {Link Parent}
-     Left.Right:=Parent;
-     Parent.Left:=Left;
-     {Link Last}
-     Parent.Right:=Last;
-     Last.Left:=Parent;
-     {Set Parent} {Must pass the demoted key for NTFS}
-     if not SetParent(Parent,Right) then Exit;      {if not SetParent(Last,Right) then Exit;}
-     if not SetParentEntry(Parent,Right) then Exit; {if not SetParentEntry(Last,Right) then Exit;}
-
-     {Check Child}
-     if Child <> nil then
-      begin
-       {Set Parent}
-       if not SetParent(Child,Parent) then Exit;
-       if not SetParentEntry(Child,Parent) then Exit;
-      end;
-
-     Result:=True;
-    end;
-  end;
-end;
-
-{==============================================================================}
 
 function TLinkedBtree.Merge(AEntry,AMerge:TBtreeObject):Boolean;
 {Merge the nodes of the supplied entries into one}
@@ -4579,15 +4093,6 @@ begin
 end;
 
 {==============================================================================}
-//To Do //Remove ?
-function TLinkedBtree.DropNodeOld(AEntry,ADrop:TBtreeObject;ALeft:Boolean):Boolean;
-{Called before a node is dropped following removal of an entry}
-begin
- {Virtual Base}
- Result:=True;
-end;
-
-{==============================================================================}
 
 function TLinkedBtree.MergeNode(AEntry,AMerge:TBtreeObject):Boolean;
 {Called before a node is merged following removal of an entry}
@@ -4933,7 +4438,7 @@ begin
      if not SwapEntry(AEntry,Right,True) then Exit; {New 22/12/2009}
      if not Swap(AEntry,Right,True) then Exit;
      {Propogate Split}
-     if not PropogateSplit(Right) then Exit; //To Do //Testing12
+     if not PropogateSplit(Right) then Exit;
     end
    else
     begin
@@ -4944,7 +4449,7 @@ begin
      if not SwapEntry(AEntry,Right,False) then Exit; {New 22/12/2009}
      if not Swap(AEntry,Right,False) then Exit;
      {Propogate Split}
-     if not PropogateSplit(Right) then Exit; //To Do //Testing12
+     if not PropogateSplit(Right) then Exit;
     end;
   end;
  {Get Blank} {Since start may be deleted}
@@ -4993,412 +4498,6 @@ begin
        if not PropogateSplit(Neighbour) then Exit;
        {Propogate Drop}
        if not PropogateDrop(Neighbour.Parent) then Exit;
-      end;
-    end
-   else
-    begin
-     {Check Borrow or Merge}
-     if RequireBorrow(Current) or RequireMerge(Current) then {Modified 8/1/2010}
-      begin
-       {Get Borrow}
-       Neighbour:=GetBorrow(Current);
-       if Neighbour <> nil then
-        begin
-         {Borrow Entry}
-         if not BorrowEntry(Current,Neighbour) then Exit; {New 22/12/2009}
-         if not Borrow(Current,Neighbour) then Exit;
-         {Borrow does not propogate}
-        end
-       else
-        begin
-         {Get Merge}
-         Neighbour:=GetMerge(Current);
-         if Neighbour = nil then Exit;
-         {Merge Nodes}
-         if not MergeNode(Current,Neighbour) then Exit; {New 22/12/2009}
-         if not Merge(Current,Neighbour) then Exit;
-         {Get Current}
-         Current:=GetStart(Parent);
-         if Current = nil then Exit;
-         {Get Parent}
-         Parent:=Current.Parent; {Parent may be nil}
-         {Check Parent}
-         while Parent <> nil do
-          begin
-           {Check Borrow or Merge}
-           if RequireBorrow(Current) or RequireMerge(Current) then {Modified 8/1/2010}
-            begin
-             {Get Borrow}
-             Neighbour:=GetBorrow(Current);
-             if Neighbour <> nil then
-              begin
-               {Borrow Entry}
-               if not BorrowEntry(Current,Neighbour) then Exit; {New 22/12/2009}
-               if not Borrow(Current,Neighbour) then Exit;
-               Break; {Borrow does not propogate}
-              end
-             else
-              begin
-               {Get Merge}
-               Neighbour:=GetMerge(Current);
-               if Neighbour = nil then Exit;
-               {Merge Nodes}
-               if not MergeNode(Current,Neighbour) then Exit; {New 22/12/2009}
-               if not Merge(Current,Neighbour) then Exit;
-              end;
-            end;
-           {Get Current}
-           Current:=GetStart(Parent);
-           if Current = nil then Exit;
-           {Get Parent}
-           Parent:=Current.Parent; {Parent may be nil}
-          end;
-        end;
-      end;
-    end;
-  end;
- Result:=True;
-end;
-
-{==============================================================================}
-//To Do //Remove ?
-function TLinkedBtree.RemoveOld(AEntry:TBtreeObject):Boolean;
-{Note: Changed to account for Target}
-
-{Remove an entry from the btree by deleting it}
-{Rebalances the tree after deleting the entry}
-{Note: Blank keys cannot be removed}
-{Note: Entry must be destroyed by the caller}
-var
- Left:Boolean;
- Right:TBtreeObject;
- Blank:TBtreeObject;
- Parent:TBtreeObject;
- Current:TBtreeObject;
- Neighbour:TBtreeObject;
-begin
- {}
- Result:=False;
- if AEntry = nil then Exit;
- if AEntry.Blank then Exit;
- {Check Child}
- if AEntry.Child <> nil then
-  begin
-   if FSwapLeft then {New 12/12/2010}
-    begin
-     {Get Predecessor}
-     Right:=GetPredecessor(AEntry); {No need to check for blank as GetPredecessor will never return blank if this entry has a child}
-     if Right = nil then Exit;
-     {Swap Entry}
-     if not SwapEntry(AEntry,Right,True) then Exit; {New 22/12/2009}
-     if not Swap(AEntry,Right,True) then Exit;
-     {Propogate Split}
-     if not PropogateSplit(Right) then Exit; //To Do //Testing12
-    end
-   else
-    begin
-     {Get Successor}
-     Right:=GetSuccessor(AEntry); {No need to check for blank as GetSuccessor will never return blank if this entry has a child}
-     if Right = nil then Exit;
-     {Swap Entry}
-     if not SwapEntry(AEntry,Right,False) then Exit; {New 22/12/2009}
-     if not Swap(AEntry,Right,False) then Exit;
-     {Propogate Split}
-     if not PropogateSplit(Right) then Exit; //To Do //Testing12
-    end;
-  end;
- {Get Blank} {Since start may be deleted}
- Blank:=GetBlank(AEntry);
- {Unlink Entry}
- if not Unlink(AEntry) then Exit;
- {Detach Entry}
- if not DetachEntry(AEntry) then Exit;
- if not Detach(AEntry) then Exit;
- {Get Current}
- Current:=GetStart(Blank);
- if Current = nil then Exit;
- {Get Parent}
- Parent:=Current.Parent; {Parent may be nil}
- {Check Parent}
- if Parent <> nil then
-  begin
-   {Check Drop}
-   if RequireDrop(Current) then  {New 7/1/2010}
-    begin
-     {Get Drop}
-     Neighbour:=GetDrop(Current,Left);
-     if Neighbour = nil then Exit;
-     if Neighbour = Current then Neighbour:=nil; {Get Drop returns Entry to indicate no Left or Right neighbour}
-     if Current.Child <> nil then Neighbour:=nil; {New 18/7/2011} {If child exists drop without neighbour}
-     {Drop Nodes}
-     if not DropNodeOld(Current,Neighbour,Left) then Exit; {New 7/1/2010}
-     if not DropOld(Current,Neighbour,Left) then Exit;     {New 7/1/2010}
-     {Check Neighbour}
-     if Neighbour <> nil then
-      begin
-       {Propogate Split}
-       if not PropogateSplit(Neighbour) then Exit;
-       {Propogate Drop}
-       if not PropogateDrop(Neighbour.Parent) then Exit;
-      end;
-    end
-   else
-    begin
-     {Check Borrow or Merge}
-     if RequireBorrow(Current) or RequireMerge(Current) then {Modified 8/1/2010}
-      begin
-       {Get Borrow}
-       Neighbour:=GetBorrow(Current);
-       if Neighbour <> nil then
-        begin
-         {Borrow Entry}
-         if not BorrowEntry(Current,Neighbour) then Exit; {New 22/12/2009}
-         if not Borrow(Current,Neighbour) then Exit;
-         {Borrow does not propogate}
-        end
-       else
-        begin
-         {Get Merge}
-         Neighbour:=GetMerge(Current);
-         if Neighbour = nil then Exit;
-         {Merge Nodes}
-         if not MergeNode(Current,Neighbour) then Exit; {New 22/12/2009}
-         if not Merge(Current,Neighbour) then Exit;
-         {Get Current}
-         Current:=GetStart(Parent);
-         if Current = nil then Exit;
-         {Get Parent}
-         Parent:=Current.Parent; {Parent may be nil}
-         {Check Parent}
-         while Parent <> nil do
-          begin
-           {Check Borrow or Merge}
-           if RequireBorrow(Current) or RequireMerge(Current) then {Modified 8/1/2010}
-            begin
-             {Get Borrow}
-             Neighbour:=GetBorrow(Current);
-             if Neighbour <> nil then
-              begin
-               {Borrow Entry}
-               if not BorrowEntry(Current,Neighbour) then Exit; {New 22/12/2009}
-               if not Borrow(Current,Neighbour) then Exit;
-               Break; {Borrow does not propogate}
-              end
-             else
-              begin
-               {Get Merge}
-               Neighbour:=GetMerge(Current);
-               if Neighbour = nil then Exit;
-               {Merge Nodes}
-               if not MergeNode(Current,Neighbour) then Exit; {New 22/12/2009}
-               if not Merge(Current,Neighbour) then Exit;
-              end;
-            end;
-           {Get Current}
-           Current:=GetStart(Parent);
-           if Current = nil then Exit;
-           {Get Parent}
-           Parent:=Current.Parent; {Parent may be nil}
-          end;
-        end;
-      end;
-    end;
-  end;
- Result:=True;
-end;
-
-{==============================================================================}
-//To Do //Remove ?
-function TLinkedBtree.RemoveOldOld(AEntry:TBtreeObject):Boolean;
-{Note: Does not properly propogate split of drop}
-
-{Remove an entry from the btree by deleting it}
-{Rebalances the tree after deleting the entry}
-{Note: Blank keys cannot be removed}
-{Note: Entry must be destroyed by the caller}
-var
- Left:Boolean;
- Right:TBtreeObject;
- Blank:TBtreeObject;
- Parent:TBtreeObject;
- Current:TBtreeObject;
- Neighbour:TBtreeObject;
-begin
- {}
- Result:=False;
- if AEntry = nil then Exit;
- if AEntry.Blank then Exit;
- {Check Child}
- if AEntry.Child <> nil then
-  begin
-   if FSwapLeft then {New 12/12/2010}
-    begin
-     {Get Predecessor}
-     Right:=GetPredecessor(AEntry); {No need to check for blank as GetPredecessor will never return blank if this entry has a child}
-     if Right = nil then Exit;
-     {Swap Entry}
-     if not SwapEntry(AEntry,Right,True) then Exit; {New 22/12/2009}
-     if not Swap(AEntry,Right,True) then Exit;
-     {Propogate Split}
-     if not PropogateSplit(Right) then Exit; //To Do //Testing12
-    end
-   else
-    begin
-     {Get Successor}
-     Right:=GetSuccessor(AEntry); {No need to check for blank as GetSuccessor will never return blank if this entry has a child}
-     if Right = nil then Exit;
-     {Swap Entry}
-     if not SwapEntry(AEntry,Right,False) then Exit; {New 22/12/2009}
-     if not Swap(AEntry,Right,False) then Exit;
-     {Propogate Split}
-     if not PropogateSplit(Right) then Exit; //To Do //Testing12
-    end;
-  end;
- {Get Blank} {Since start may be deleted}
- Blank:=GetBlank(AEntry);
- {Unlink Entry}
- if not Unlink(AEntry) then Exit;
- {Detach Entry}
- if not DetachEntry(AEntry) then Exit;
- if not Detach(AEntry) then Exit;
- {Get Current}
- Current:=GetStart(Blank);
- if Current = nil then Exit;
- {Get Parent}
- Parent:=Current.Parent; {Parent may be nil}
- {Check Parent}
- if Parent <> nil then
-  begin
-   {Check Drop}
-   if RequireDrop(Current) then  {New 7/1/2010}
-    begin
-     {Get Drop}
-     Neighbour:=GetDrop(Current,Left);
-     if Neighbour = nil then Exit;
-     if Neighbour = Current then Neighbour:=nil; {Get Drop returns Entry to indicate no Left or Right neighbour}
-     {Drop Nodes}
-     if not DropNodeOld(Current,Neighbour,Left) then Exit; {New 7/1/2010}
-     if not DropOld(Current,Neighbour,Left) then Exit;     {New 7/1/2010}
-     {Check Neighbour}
-     if Neighbour <> nil then
-      begin
-
-       //To Do //Move this to PropogateSplit ?  //Yes
-       {Get Current}
-       Current:=GetStart(Neighbour);
-       if Current = nil then Exit;
-       {Get Parent}
-       Parent:=Current.Parent; {Parent will not be nil}
-       {Check Parent}
-       while Parent <> nil do
-        begin
-         {Check Push}
-         if RequirePush(Current) then
-          begin
-           {Push Node}
-           if not PushNode(Current) then Exit;
-           if not Push(Current) then Exit;
-           {Get Current}
-           Current:=Current.Parent;
-           if Current = nil then Break;
-          end
-         else
-          begin
-           {Check Split}
-           if RequireSplit(Current) then
-            begin
-             {Split Node}
-             if not SplitNode(Current) then Exit;
-             if not Split(Current) then Exit;
-             {Get Current}
-             Current:=Current.Parent;
-             if Current = nil then Break;
-            end
-           else
-            begin
-             {Get Current}
-             Current:=Parent;
-            end;
-          end;
-         {Get Parent}
-         Parent:=Current.Parent; {Parent may be nil}
-        end;
-
-       {Get Current}
-       Current:=GetStart(Neighbour.Parent);
-       if Current = nil then Exit;
-       {Get Parent}
-       Parent:=Current.Parent; {Parent will not be nil}
-       {Check Parent}
-       while Parent <> nil do
-        begin
-         {Check Drop}
-         if RequireDrop(Current) then  {New 7/1/2010}
-          begin
-           {Get Drop}
-           Neighbour:=GetDrop(Current,Left);
-           if Neighbour = nil then Exit;
-           if Neighbour = Current then Neighbour:=nil; {Get Drop returns Entry to indicate no Left or Right neighbour}
-           {Drop Nodes}
-           if not DropNodeOld(Current,Neighbour,Left) then Exit; {New 7/1/2010}
-           if not DropOld(Current,Neighbour,Left) then Exit;     {New 7/1/2010}
-           {Check Neighbour}
-           if Neighbour = nil then Break;
-
-           //To Do //Move this to PropogateSplit ?  //Yes
-           {Get Current}
-           Current:=GetStart(Neighbour);
-           if Current = nil then Exit;
-           {Get Parent}
-           Parent:=Current.Parent; {Parent will not be nil}
-           {Check Parent}
-           while Parent <> nil do
-            begin
-             {Check Push}
-             if RequirePush(Current) then
-              begin
-               {Push Node}
-               if not PushNode(Current) then Exit;
-               if not Push(Current) then Exit;
-               {Get Current}
-               Current:=Current.Parent;
-               if Current = nil then Break;
-              end
-             else
-              begin
-               {Check Split}
-               if RequireSplit(Current) then
-                begin
-                 {Split Node}
-                 if not SplitNode(Current) then Exit;
-                 if not Split(Current) then Exit;
-                 {Get Current}
-                 Current:=Current.Parent;
-                 if Current = nil then Break;
-                end
-               else
-                begin
-                 {Get Current}
-                 Current:=Parent;
-                end;
-              end;
-             {Get Parent}
-             Parent:=Current.Parent; {Parent may be nil}
-            end;
-
-           {Get Current}
-           Current:=GetStart(Neighbour.Parent);
-           if Current = nil then Exit;
-          end
-         else
-          begin
-           {Get Current}
-           Current:=GetStart(Parent);
-           if Current = nil then Exit;
-          end;
-         {Get Parent}
-         Parent:=Current.Parent; {Parent may be nil}
-        end;
       end;
     end
    else
@@ -5633,7 +4732,8 @@ begin
  if FKeyBits < keyHashMinBits then FKeyBits:=keyHashMinBits;
  if FKeyBits > keyHashMaxBits then FKeyBits:=keyHashMaxBits;
  FKeyMask:=keyHashMasks[FKeyBits];
- FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl 2); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
+ FKeyShift:=PtrShift; {Key Shift value (1 shl FKeyShift = SizeOf(Pointer))}
+ FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl FKeyShift); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
 end;
 
 {==============================================================================}
@@ -5658,7 +4758,7 @@ begin
  if AValue = nil then Exit;
  AValue.KeyList:=Self;
  {Get Offset}
- Offset:=(AValue.FKeyHash and FKeyMask) shl 2;
+ Offset:=(AValue.FKeyHash and FKeyMask) shl FKeyShift;
  {Get First Key}
  FirstKey:=THashListObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
  if FirstKey = nil then
@@ -5710,7 +4810,7 @@ begin
  else
   begin
    {Get Offset}
-   Offset:=(AValue.FKeyHash and FKeyMask) shl 2;
+   Offset:=(AValue.FKeyHash and FKeyMask) shl FKeyShift;
    {Is First Object}
    if AValue.KeyNext <> nil then
     begin
@@ -5741,7 +4841,7 @@ begin
  Result:=nil;
  if FKeyBuckets = nil then Exit;
  {Get Offset}
- Offset:=(AKeyHash and FKeyMask) shl 2;
+ Offset:=(AKeyHash and FKeyMask) shl FKeyShift;
  {Get First Key}
  Result:=THashListObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
 end;
@@ -5805,7 +4905,7 @@ procedure THashLinkedList.Clear;
 begin
  {}
  inherited Clear;
- ZeroMemory(FKeyBuckets,(keyHashMasks[FKeyBits] + 1) shl 2); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
+ ZeroMemory(FKeyBuckets,(keyHashMasks[FKeyBits] + 1) shl FKeyShift); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
 end;
 
 {==============================================================================}
@@ -5862,7 +4962,8 @@ begin
  if FKeyBits < keyHashMinBits then FKeyBits:=keyHashMinBits;
  if FKeyBits > keyHashMaxBits then FKeyBits:=keyHashMaxBits;
  FKeyMask:=keyHashMasks[FKeyBits];
- FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl 2); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
+ FKeyShift:=PtrShift; {Key Shift value (1 shl FKeyShift = SizeOf(Pointer))}
+ FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl FKeyShift); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
 end;
 
 {==============================================================================}
@@ -5912,7 +5013,7 @@ begin
  if AValue = nil then Exit;
  AValue.KeyTree:=FKeyTree;
  {Get Offset}
- Offset:=(AValue.FKeyHash and FKeyMask) shl 2;
+ Offset:=(AValue.FKeyHash and FKeyMask) shl FKeyShift;
  {Get First Key}
  FirstKey:=THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
  if FirstKey = nil then
@@ -5964,7 +5065,7 @@ begin
  else
   begin
    {Get Offset}
-   Offset:=(AValue.FKeyHash and FKeyMask) shl 2;
+   Offset:=(AValue.FKeyHash and FKeyMask) shl FKeyShift;
    {Is First Object}
    if AValue.KeyNext <> nil then
     begin
@@ -5995,7 +5096,7 @@ begin
  Result:=nil;
  if FKeyBuckets = nil then Exit;
  {Get Offset}
- Offset:=(AKeyHash and FKeyMask) shl 2;
+ Offset:=(AKeyHash and FKeyMask) shl FKeyShift;
  {Get First Key}
  Result:=THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
 end;
@@ -6012,7 +5113,8 @@ begin
  if FKeyBits < keyHashMinBits then FKeyBits:=keyHashMinBits;
  if FKeyBits > keyHashMaxBits then FKeyBits:=keyHashMaxBits;
  FKeyMask:=keyHashMasks[FKeyBits];
- FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl 2); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
+ FKeyShift:=PtrShift; {Key Shift value (1 shl FKeyShift = SizeOf(Pointer))}
+ FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl FKeyShift); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
 end;
 
 {==============================================================================}
@@ -6043,7 +5145,7 @@ begin
    if AValue = nil then Exit;
    AValue.KeyTree:=Self;
    {Get Offset}
-   Offset:=(AValue.FKeyHash and FKeyMask) shl 2;
+   Offset:=(AValue.FKeyHash and FKeyMask) shl FKeyShift;
    {Get First Key}
    FirstKey:=THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
    if FirstKey = nil then
@@ -6102,7 +5204,7 @@ begin
    else
     begin
      {Get Offset}
-     Offset:=(AValue.FKeyHash and FKeyMask) shl 2;
+     Offset:=(AValue.FKeyHash and FKeyMask) shl FKeyShift;
      {Is First Object}
      if AValue.KeyNext <> nil then
       begin
@@ -6140,7 +5242,7 @@ begin
    Result:=nil;
    if FKeyBuckets = nil then Exit;
    {Get Offset}
-   Offset:=(AKeyHash and FKeyMask) shl 2;
+   Offset:=(AKeyHash and FKeyMask) shl FKeyShift;
    {Get First Key}
    Result:=THashTreeObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
   end;
@@ -6223,7 +5325,7 @@ procedure THashLinkedTree.Clear;
 begin
  {}
  inherited Clear;
- ZeroMemory(FKeyBuckets,(keyHashMasks[FKeyBits] + 1) shl 2); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
+ ZeroMemory(FKeyBuckets,(keyHashMasks[FKeyBits] + 1) shl FKeyShift); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
 end;
 
 {==============================================================================}
@@ -6844,7 +5946,7 @@ begin
       Result.Size:=stringListDelta;
       Result.Start:=LongWord(Index);
       Result.Count:=0;
-      Result.Capacity:=stringListDelta shr 2; {Divide by SizeOf(LongWord)}
+      Result.Capacity:=stringListDelta shr PtrShift; {Divide by SizeOf(Pointer)}
       FBlocks.Add(Result);
       Inc(FCapacity,Result.Capacity);
       
@@ -6861,7 +5963,7 @@ begin
     Length:=(Block.Count shr 1); {Divide by 2}
     
     {Get Offset}
-    Offset:=(Block.Count - Length) shl 2; {Multiply by SizeOf(LongWord)}
+    Offset:=(Block.Count - Length) shl PtrShift; {Multiply by SizeOf(Pointer)}
     
     {Update Block}
     Dec(Block.Count,Length);
@@ -6872,12 +5974,12 @@ begin
     Result.Size:=stringListDelta;
     Result.Start:=0; {Set by Update Blocks}
     Result.Count:=Length;
-    Result.Capacity:=stringListDelta shr 2; {Divide by SizeOf(LongWord)}
+    Result.Capacity:=stringListDelta shr PtrShift; {Divide by SizeOf(Pointer)}
     FBlocks.Insert(Block,Result);
     Inc(FCapacity,Result.Capacity);
     
     {Copy Data}
-    System.Move(Pointer(PtrUInt(Block.Data) + Offset)^,Pointer(PtrUInt(Result.Data))^,Length shl 2);
+    System.Move(Pointer(PtrUInt(Block.Data) + Offset)^,Pointer(PtrUInt(Result.Data))^,Length shl PtrShift);
     
     {Set Recent}
     FRecent:=Result;
@@ -6965,7 +6067,7 @@ begin
   if Block = nil then Exit;
 
   {Get Offset}
-  Offset:=(LongWord(Index) - Block.Start) shl 2; {Multiply by SizeOf(LongWord)}
+  Offset:=(LongWord(Index) - Block.Start) shl PtrShift; {Multiply by SizeOf(Pointer)}
   {Get Item}
   Result:=TStringObjectEx(Pointer(PtrUInt(Block.Data) + Offset)^);
  except
@@ -6998,12 +6100,12 @@ begin
     if Current = nil then Exit;
    end;
   {Get Offset}
-  Offset:=(LongWord(Index) - Current.Start) shl 2; {Multiply by SizeOf(LongWord)}
+  Offset:=(LongWord(Index) - Current.Start) shl PtrShift; {Multiply by SizeOf(Pointer)}
   {Check Index}
   if LongWord(Index) < (Current.Start + Current.Count) then
    begin
     {Move Items}
-    System.Move(Pointer(PtrUInt(Current.Data) + Offset)^,Pointer(PtrUInt(Current.Data) + Offset + 4)^,((Current.Start + Current.Count) - LongWord(Index)) shl 2);
+    System.Move(Pointer(PtrUInt(Current.Data) + Offset)^,Pointer(PtrUInt(Current.Data) + Offset + 4)^,((Current.Start + Current.Count) - LongWord(Index)) shl PtrShift);
    end;
   {Add Item}
   TStringObjectEx(Pointer(PtrUInt(Current.Data) + Offset)^):=Item;
@@ -7042,12 +6144,12 @@ begin
   else
    begin
     {Get Offset}
-    Offset:=(LongWord(Index) - Block.Start) shl 2; {Multiply by SizeOf(LongWord)}
+    Offset:=(LongWord(Index) - Block.Start) shl PtrShift; {Multiply by SizeOf(Pointer)}
     {Check Index}
     if LongWord(Index) < (Block.Start + Block.Count) then
      begin
       {Move Items}
-      System.Move(Pointer(PtrUInt(Block.Data) + Offset + 4)^,Pointer(PtrUInt(Block.Data) + Offset)^,((Block.Start + Block.Count) - LongWord(Index)) shl 2);
+      System.Move(Pointer(PtrUInt(Block.Data) + Offset + 4)^,Pointer(PtrUInt(Block.Data) + Offset)^,((Block.Start + Block.Count) - LongWord(Index)) shl PtrShift);
      end;
     {Delete Item}
     Item.Block:=nil;
@@ -7375,7 +6477,8 @@ begin
  if FKeyBits < keyHashMinBits then FKeyBits:=keyHashMinBits;
  if FKeyBits > keyHashMaxBits then FKeyBits:=keyHashMaxBits;
  FKeyMask:=keyHashMasks[FKeyBits];
- FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl 2); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
+ FKeyShift:=PtrShift; {Key Shift value (1 shl FKeyShift = SizeOf(Pointer))}
+ FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl FKeyShift); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
 end;
 
 {==============================================================================}
@@ -7400,7 +6503,7 @@ begin
  if AValue = nil then Exit;
  AValue.List:=Self;
  {Get Offset}
- Offset:=(AValue.Hash and FKeyMask) shl 2;
+ Offset:=(AValue.Hash and FKeyMask) shl FKeyShift;
  {Get First Key}
  FirstKey:=THashStringObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
  if FirstKey = nil then
@@ -7452,7 +6555,7 @@ begin
  else
   begin
    {Get Offset}
-   Offset:=(AValue.Hash and FKeyMask) shl 2;
+   Offset:=(AValue.Hash and FKeyMask) shl FKeyShift;
    {Is First Object}
    if AValue.KeyNext <> nil then
     begin
@@ -7479,7 +6582,7 @@ procedure THashLinkedStringList.ClearList;
 begin
  {}
  inherited ClearList;
- ZeroMemory(FKeyBuckets,(keyHashMasks[FKeyBits] + 1) shl 2); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
+ ZeroMemory(FKeyBuckets,(keyHashMasks[FKeyBits] + 1) shl FKeyShift); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
 end;
 
 {==============================================================================}
@@ -7492,7 +6595,7 @@ begin
  Result:=nil;
  if FKeyBuckets = nil then Exit;
  {Get Offset}
- Offset:=(AKeyHash and FKeyMask) shl 2;
+ Offset:=(AKeyHash and FKeyMask) shl FKeyShift;
  {Get First Key}
  Result:=THashStringObject(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
 end;
@@ -8419,7 +7522,7 @@ begin
       Result.Size:=stringListDelta;
       Result.Start:=LongWord(Index);
       Result.Count:=0;
-      Result.Capacity:=stringListDelta shr 2; {Divide by SizeOf(LongWord)}
+      Result.Capacity:=stringListDelta shr PtrShift; {Divide by SizeOf(Pointer)}
       FBlocks.Add(Result);
       Inc(FCapacity,Result.Capacity);
       
@@ -8436,7 +7539,7 @@ begin
     Length:=(Block.Count shr 1);
     
     {Get Offset}
-    Offset:=(Block.Count - Length) shl 2; {Multiply by SizeOf(LongWord)}
+    Offset:=(Block.Count - Length) shl PtrShift; {Multiply by SizeOf(Pointer)}
     
     {Update Block}
     Dec(Block.Count,Length);
@@ -8447,12 +7550,12 @@ begin
     Result.Size:=stringListDelta;
     Result.Start:=0; {Set by Update Blocks}
     Result.Count:=Length;
-    Result.Capacity:=stringListDelta shr 2; {Divide by SizeOf(LongWord)}
+    Result.Capacity:=stringListDelta shr PtrShift; {Divide by SizeOf(Pointer)}
     FBlocks.Insert(Block,Result);
     Inc(FCapacity,Result.Capacity);
     
     {Copy Data}
-    System.Move(Pointer(PtrUInt(Block.Data) + Offset)^,Pointer(PtrUInt(Result.Data))^,Length shl 2);
+    System.Move(Pointer(PtrUInt(Block.Data) + Offset)^,Pointer(PtrUInt(Result.Data))^,Length shl PtrShift);
     
     {Set Recent}
     FRecent:=Result;
@@ -8537,7 +7640,7 @@ begin
   if Block = nil then Exit;
 
   {Get Offset}
-  Offset:=(LongWord(Index) - Block.Start) shl 2; {Multiply by SizeOf(LongWord)}
+  Offset:=(LongWord(Index) - Block.Start) shl PtrShift; {Multiply by SizeOf(Pointer)}
   {Get Item}
   Result:=TStringItemEx(Pointer(PtrUInt(Block.Data) + Offset)^);
  except
@@ -8570,12 +7673,12 @@ begin
     if Current = nil then Exit;
    end;
   {Get Offset}
-  Offset:=(LongWord(Index) - Current.Start) shl 2; {Multiply by SizeOf(LongWord)}
+  Offset:=(LongWord(Index) - Current.Start) shl PtrShift; {Multiply by SizeOf(Pointer)}
   {Check Index}
   if LongWord(Index) < (Current.Start + Current.Count) then
    begin
     {Move Items}
-    System.Move(Pointer(PtrUInt(Current.Data) + Offset)^,Pointer(PtrUInt(Current.Data) + Offset + 4)^,((Current.Start + Current.Count) - LongWord(Index)) shl 2);
+    System.Move(Pointer(PtrUInt(Current.Data) + Offset)^,Pointer(PtrUInt(Current.Data) + Offset + 4)^,((Current.Start + Current.Count) - LongWord(Index)) shl PtrShift);
    end;
   {Add Item}
   TStringItemEx(Pointer(PtrUInt(Current.Data) + Offset)^):=Item;
@@ -8611,12 +7714,12 @@ begin
   else
    begin
     {Get Offset}
-    Offset:=(LongWord(Index) - Block.Start) shl 2; {Multiply by SizeOf(LongWord)}
+    Offset:=(LongWord(Index) - Block.Start) shl PtrShift; {Multiply by SizeOf(Pointer)}
     {Check Index}
     if LongWord(Index) < (Block.Start + Block.Count) then
      begin
       {Move Items}
-      System.Move(Pointer(PtrUInt(Block.Data) + Offset + 4)^,Pointer(PtrUInt(Block.Data) + Offset)^,((Block.Start + Block.Count) - LongWord(Index)) shl 2);
+      System.Move(Pointer(PtrUInt(Block.Data) + Offset + 4)^,Pointer(PtrUInt(Block.Data) + Offset)^,((Block.Start + Block.Count) - LongWord(Index)) shl PtrShift);
      end;
     {Update Blocks}
     Result:=UpdateBlocks(Block);

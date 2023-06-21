@@ -1489,6 +1489,8 @@ procedure SetLastError(LastError:LongWord); inline;
 
 function StringHash(const Text:String):LongWord;
 
+function PtrShift:LongWord; inline;
+
 function PtrToHex(Value:Pointer):String; inline;
 function AddrToHex(Value:PtrUInt):String; inline;
 function HandleToHex(Value:THandle):String; inline;
@@ -2348,6 +2350,15 @@ begin
      Result:=Result + ((Value + 1) * (LongWord(Count) + 257));
     end;
   end;
+end;
+
+{==============================================================================}
+
+function PtrShift:LongWord; inline;
+{Return the pointer shift value for the current architecture (1 shl PtrShift = SizeOf(Pointer))}
+begin
+ {}
+ Result:={$IFDEF CPU64}3{$ELSE CPU64}2{$ENDIF CPU64};
 end;
 
 {==============================================================================}
