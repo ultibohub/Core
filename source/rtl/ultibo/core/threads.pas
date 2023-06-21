@@ -790,7 +790,7 @@ const
  THREAD_PRIORITY_TIME_CRITICAL = THREAD_PRIORITY_CRITICAL;
  
  {Thread name constants}
- THREAD_NAME_LENGTH = 256;       {Length of thread name}
+ THREAD_NAME_LENGTH = SIZE_64;   {Length of thread name}
  
  IRQ_THREAD_NAME             = 'IRQ';
  FIQ_THREAD_NAME             = 'FIQ';
@@ -2963,7 +2963,7 @@ begin
      ThreadTable.Affinity:=(1 shl SCHEDULER_CPU_BOOT);   {Must always run on the Boot CPU}
      ThreadTable.StackBase:=Pointer(INITIAL_STACK_BASE); {Assign the Initial Stack to the Initial Thread (This is the stack we are currently running on)}
      ThreadTable.StackSize:=INITIAL_STACK_SIZE;          {Use the Initial Stack size not the FIQ Stack size}
-     StrLCopy(ThreadTable.Name,PChar(FIQ_THREAD_NAME + IntToStr(SCHEDULER_CPU_BOOT)),THREAD_NAME_LENGTH);
+     StrLCopy(ThreadTable.Name,PChar(FIQ_THREAD_NAME + IntToStr(SCHEDULER_CPU_BOOT)),THREAD_NAME_LENGTH - 1);
      ThreadTable.Lock:=SpinCreate;
      ThreadTable.Parent:=INVALID_HANDLE_VALUE;
      ThreadTable.Messages.Maximum:=THREAD_MESSAGES_MAXIMUM;
@@ -3014,7 +3014,7 @@ begin
      ThreadTable.Affinity:=(1 shl SCHEDULER_CPU_BOOT);   {Must always run on the Boot CPU}
      ThreadTable.StackBase:=Pointer(INITIAL_STACK_BASE); {Assign the Initial Stack to the Initial Thread (This is the stack we are currently running on)}
      ThreadTable.StackSize:=INITIAL_STACK_SIZE;          {Use the Initial Stack size not the IRQ Stack size}
-     StrLCopy(ThreadTable.Name,PChar(IRQ_THREAD_NAME + IntToStr(SCHEDULER_CPU_BOOT)),THREAD_NAME_LENGTH);
+     StrLCopy(ThreadTable.Name,PChar(IRQ_THREAD_NAME + IntToStr(SCHEDULER_CPU_BOOT)),THREAD_NAME_LENGTH - 1);
      ThreadTable.Lock:=SpinCreate;
      ThreadTable.Parent:=INVALID_HANDLE_VALUE;
      ThreadTable.Messages.Maximum:=THREAD_MESSAGES_MAXIMUM;
@@ -3977,7 +3977,7 @@ begin
            ThreadEntry.Affinity:=(1 shl Count);                    {Must always run on the same Secondary CPU}
            ThreadEntry.StackBase:=Pointer(BOOT_STACK_BASE[Count]); {Assign the Boot Stack to the Boot Thread}
            ThreadEntry.StackSize:=BOOT_STACK_SIZE;                 {Use the Boot Stack size not the FIQ Stack size}
-           StrLCopy(ThreadEntry.Name,PChar(FIQ_THREAD_NAME + IntToStr(Count)),THREAD_NAME_LENGTH);
+           StrLCopy(ThreadEntry.Name,PChar(FIQ_THREAD_NAME + IntToStr(Count)),THREAD_NAME_LENGTH - 1);
            ThreadEntry.Lock:=SpinCreate;
            ThreadEntry.Parent:=INVALID_HANDLE_VALUE;
            ThreadEntry.Messages.Maximum:=THREAD_MESSAGES_MAXIMUM;
@@ -4051,7 +4051,7 @@ begin
            ThreadEntry.Affinity:=(1 shl Count);                    {Must always run on the same Secondary CPU}
            ThreadEntry.StackBase:=Pointer(BOOT_STACK_BASE[Count]); {Assign the Boot Stack to the Boot Thread}
            ThreadEntry.StackSize:=BOOT_STACK_SIZE;              {Use the Boot Stack size not the IRQ Stack size}
-           StrLCopy(ThreadEntry.Name,PChar(IRQ_THREAD_NAME + IntToStr(Count)),THREAD_NAME_LENGTH);
+           StrLCopy(ThreadEntry.Name,PChar(IRQ_THREAD_NAME + IntToStr(Count)),THREAD_NAME_LENGTH - 1);
            ThreadEntry.Lock:=SpinCreate;
            ThreadEntry.Parent:=INVALID_HANDLE_VALUE;
            ThreadEntry.Messages.Maximum:=THREAD_MESSAGES_MAXIMUM;
@@ -13771,7 +13771,7 @@ begin
  ThreadEntry.Affinity:=Affinity;
  ThreadEntry.StackBase:=StackBase;
  ThreadEntry.StackSize:=StackSize;
- StrLCopy(ThreadEntry.Name,Name,THREAD_NAME_LENGTH);
+ StrLCopy(ThreadEntry.Name,Name,THREAD_NAME_LENGTH - 1);
  ThreadEntry.Lock:=SpinCreate;
  ThreadEntry.Parent:=ThreadGetCurrent;
  ThreadEntry.Messages.Maximum:=THREAD_MESSAGES_MAXIMUM;
@@ -14200,7 +14200,7 @@ begin
  if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
  {Allocate Buffer}
- SetLength(WorkBuffer,THREAD_NAME_LENGTH);
+ SetLength(WorkBuffer,THREAD_NAME_LENGTH - 1);
  
  {Acquire the Lock}
  if SCHEDULER_FIQ_ENABLED then
@@ -14218,7 +14218,7 @@ begin
     if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
     {Copy to Buffer}
-    StrLCopy(PChar(WorkBuffer),ThreadEntry.Name,THREAD_NAME_LENGTH);
+    StrLCopy(PChar(WorkBuffer),ThreadEntry.Name,THREAD_NAME_LENGTH - 1);
     
     {Result must be returned outside lock}
    finally
@@ -14286,7 +14286,7 @@ begin
     if ThreadEntry.Signature <> THREAD_SIGNATURE then Exit;
 
     {Set Name}
-    StrLCopy(ThreadEntry.Name,PChar(Name),THREAD_NAME_LENGTH);
+    StrLCopy(ThreadEntry.Name,PChar(Name),THREAD_NAME_LENGTH - 1);
     
     {Return Result}
     Result:=ERROR_SUCCESS;
@@ -25235,7 +25235,7 @@ begin
       Current.StackBase:=ThreadEntry.StackBase;
       Current.StackSize:=ThreadEntry.StackSize;
       Current.StackPointer:=ThreadEntry.StackPointer;
-      System.Move(ThreadEntry.Name[0],Current.Name[0],THREAD_NAME_LENGTH);
+      StrLCopy(Current.Name,ThreadEntry.Name,THREAD_NAME_LENGTH - 1);
       Current.Parent:=ThreadEntry.Parent; 
       Current.ExitCode:=ThreadEntry.ExitCode;  
       Current.LastError:=ThreadEntry.LastError; 
