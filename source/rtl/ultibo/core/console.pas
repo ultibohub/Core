@@ -1,7 +1,7 @@
 {
 Ultibo Console interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -322,8 +322,8 @@ type
   CursorWidth:LongWord;                          {Cursor Width (Characters)(CONSOLE_MODE_CHARACTER only)}
   CursorHeight:LongWord;                         {Cursor Height (Characters)(CONSOLE_MODE_CHARACTER only)}
   CursorVisible:LongBool;                        {Cursor Visible On/Off (CONSOLE_MODE_CHARACTER only)}
-  CursorChars:array of Char;                     {Buffer for cursor characters (CONSOLE_MODE_CHARACTER only)}
-  CursorBuffer:array of Char;                    {Buffer for characters currently under cursor (CONSOLE_MODE_CHARACTER only)}
+  CursorChars:PChar;                             {Buffer for cursor characters (CONSOLE_MODE_CHARACTER only)}
+  CursorBuffer:PChar;                            {Buffer for characters currently under cursor (CONSOLE_MODE_CHARACTER only)}
   {Caret Properties}
   CaretFirst:PConsoleCaret;
   CaretLock:TCriticalSectionHandle;
@@ -764,7 +764,7 @@ function ConsoleStateToString(ConsoleState:LongWord):String;
 
 function ConsoleDeviceGetDefaultFont:TFontHandle;
 
-function ConsolePositiontoString(Position:LongWord):String;
+function ConsolePositionToString(Position:LongWord):String;
 
 function ConsoleFramebufferDeviceAdd(Framebuffer:PFramebufferDevice):LongWord;
 function ConsoleFramebufferDeviceRemove(Framebuffer:PFramebufferDevice):LongWord;
@@ -13033,7 +13033,7 @@ end;
 
 {==============================================================================}
 
-function ConsolePositiontoString(Position:LongWord):String;
+function ConsolePositionToString(Position:LongWord):String;
 begin
  {}
  Result:='CONSOLE_POSITION_UNKNOWN';
