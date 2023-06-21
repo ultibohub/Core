@@ -1,7 +1,7 @@
 {
 Ultibo Font interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -99,6 +99,10 @@ const
  
  {Font Signature}
  FONT_SIGNATURE = $77DE1BBC;
+
+ {Font name constants}
+ FONT_NAME_LENGTH = SIZE_64;   {Length of font name}
+ FONT_DESC_LENGTH = SIZE_128;  {Length of font description}
  
  {Font Mode constants}
  FONT_MODE_NONE   = 0;
@@ -132,8 +136,8 @@ type
   Flags:LongWord;          {Font flags (eg FONT_FLAG_UNICODE)}
   Mask:LongWord;           {Transparency mask for a bitmap font}
   CodePage:LongWord;       {Font codepage (CP_ACP if not specified)}
-  Name:String[255];        {Font name}
-  Description:String[255]; {Font description}
+  Name:String[63];         {Font name}
+  Description:String[127]; {Font description}
  end;
  
  {Font Data}
@@ -236,8 +240,8 @@ type
  TFontProperties = record
   FontMode:LongWord;       {Font mode (eg FONT_MODE_PIXEL)}
   FontFlags:LongWord;      {Font flags (eg FONT_FLAG_UNICODE)}
-  FontName:String;         {Font name}
-  FontDescription:String;  {Font description}
+  FontName:array[0..FONT_NAME_LENGTH - 1] of Char; {Font name}
+  FontDescription:array[0..FONT_DESC_LENGTH - 1] of Char; {Font description}
   CharWidth:LongWord;      {Font character width in pixels}
   CharHeight:LongWord;     {Font character height in pixels}
   CharCount:LongWord;      {Number of glyphs in font character table}
@@ -256,8 +260,8 @@ type
   Signature:LongWord;            {Signature for entry validation}
   FontMode:LongWord;             {Font mode (eg FONT_MODE_PIXEL)}
   FontFlags:LongWord;            {Font flags (eg FONT_FLAG_UNICODE)}
-  FontName:String;               {Font name}
-  FontDescription:String;        {Font description}
+  FontName:array[0..FONT_NAME_LENGTH - 1] of Char; {Font name}
+  FontDescription:array[0..FONT_DESC_LENGTH - 1] of Char; {Font description}
   {Driver Properties}
   CharWidth:LongWord;            {Font character width in pixels}
   CharHeight:LongWord;           {Font character height in pixels}
@@ -759,8 +763,8 @@ begin
    Font.Signature:=FONT_SIGNATURE;
    Font.FontMode:=Properties.FontMode;
    Font.FontFlags:=Properties.FontFlags;
-   Font.FontName:=Properties.FontName;
-   Font.FontDescription:=Properties.FontDescription;
+   StrLCopy(Font.FontName,Properties.FontName,FONT_NAME_LENGTH - 1);
+   StrLCopy(Font.FontDescription,Properties.FontDescription,FONT_DESC_LENGTH - 1);
    Font.CharWidth:=Properties.CharWidth;
    Font.CharHeight:=Properties.CharHeight;
    Font.CharCount:=Properties.CharCount;
@@ -771,8 +775,6 @@ begin
   end;
 
  {Update Font}
- UniqueString(Font.FontName);
- UniqueString(Font.FontDescription);
  Font.CharData:=GetMem(TotalSize);
  if Font.CharData = nil then
   begin
@@ -1031,10 +1033,14 @@ begin
  if CriticalSectionLock(FontTableLock) = ERROR_SUCCESS then
   begin
    try
+    {Allocate Result}
+    SetLength(Result,FONT_NAME_LENGTH - 1);
+
     {Get Name}
-    Result:=Font.FontName;
-    
-    UniqueString(Result);
+    StrLCopy(PChar(Result),Font.FontName,FONT_NAME_LENGTH - 1);
+
+    {Update Result}
+    SetLength(Result,StrLen(PChar(Result)));
    finally
     CriticalSectionUnlock(FontTableLock);
    end;
@@ -1062,10 +1068,14 @@ begin
  if CriticalSectionLock(FontTableLock) = ERROR_SUCCESS then
   begin
    try
+    {Allocate Result}
+    SetLength(Result,FONT_DESC_LENGTH - 1);
+
     {Get Description}
-    Result:=Font.FontDescription;
-    
-    UniqueString(Result);
+    StrLCopy(PChar(Result),Font.FontDescription,FONT_DESC_LENGTH - 1);
+
+    {Update Result}
+    SetLength(Result,StrLen(PChar(Result)));
    finally
     CriticalSectionUnlock(FontTableLock);
    end;
@@ -1141,16 +1151,13 @@ begin
     {Get Properties}
     Properties.FontMode:=Font.FontMode;
     Properties.FontFlags:=Font.FontFlags;
-    Properties.FontName:=Font.FontName;
-    Properties.FontDescription:=Font.FontDescription;
+    StrLCopy(Properties.FontName,Font.FontName,FONT_NAME_LENGTH - 1);
+    StrLCopy(Properties.FontDescription,Font.FontDescription,FONT_DESC_LENGTH - 1);
     Properties.CharWidth:=Font.CharWidth;
     Properties.CharHeight:=Font.CharHeight;
     Properties.CharCount:=Font.CharCount;
     Properties.CharMask:=Font.CharMask;
     Properties.CodePage:=Font.CodePage;
-    
-    UniqueString(Properties.FontName);
-    UniqueString(Properties.FontDescription);
     
     Result:=ERROR_SUCCESS;
    finally
