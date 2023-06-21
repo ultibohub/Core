@@ -1,7 +1,7 @@
 {
 Ultibo Device interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -119,6 +119,10 @@ const
  
  {Device Signature}
  DEVICE_SIGNATURE = $AD03FE3C;
+ 
+ {Device name constants}
+ DEVICE_NAME_LENGTH = SIZE_64;   {Length of device name}
+ DEVICE_DESC_LENGTH = SIZE_128;  {Length of device description}
  
  {Device Busses}
  DEVICE_BUS_NONE             = 0;
@@ -345,6 +349,9 @@ const
  DEVICE_NOTIFICATION_RESIZE     = $00100000;
  DEVICE_NOTIFICATION_RESIZING   = $00200000;
   
+ {Firmware name constants}
+ FIRMWARE_NAME_LENGTH = SIZE_256; {Length of firmware name}
+
  {Firmware Actions}
  FIRMWARE_ACTION_NONE    = 0;
  FIRMWARE_ACTION_SIZE    = 1; {Return the size in bytes of the firmware item}
@@ -392,6 +399,9 @@ const
  
  {Driver Signature}
  DRIVER_SIGNATURE = $1EB4980A;
+
+ {Driver name constants}
+ DRIVER_NAME_LENGTH = SIZE_64;  {Length of driver name}
  
  {Driver States}
  DRIVER_STATE_UNREGISTERED   = 0;
@@ -437,6 +447,9 @@ const
  
  {Host Signature}
  HOST_SIGNATURE = $F45D30FE;
+
+ {Host name constants}
+ HOST_NAME_LENGTH = SIZE_64;  {Length of host name}
  
  {Host States}
  HOST_STATE_UNREGISTERED   = 0;
@@ -652,13 +665,13 @@ type
   Signature:LongWord;       {Signature for entry validation}
   DeviceId:LongWord;        {Unique Id of this Device in the Device table}
   DeviceState:LongWord;     {Device state (eg Registered/Unregistered)}
-  DeviceName:String;        {The name of the Device (eg Keyboard0, Storage0 or Network0 etc)}
+  DeviceName:array[0..DEVICE_NAME_LENGTH - 1] of Char; {The name of the Device (eg Keyboard0, Storage0 or Network0 etc)}
   DeviceClass:LongWord;     {The class of this Device (eg DEVICE_CLASS_USB, DEVICE_CLASS_NETWORK, DEVICE_CLASS_STORAGE etc)}
   DeviceBus:LongWord;       {The Bus type for the Device (eg DEVICE_BUS_USB)}
   DeviceType:LongWord;      {A class specific Device type (eg KEYBOARD_TYPE_USB, MOUSE_TYPE_USB, NETWORK_TYPE_ETHERNET etc)}
   DeviceFlags:LongWord;     {The class specific Device flags}
   DeviceData:Pointer;       {A pointer to a class specific Device interface (eg PUSBDevice, PNetworkDevice or PStorageDevice etc) (Used by Drivers)}
-  DeviceDescription:String; {A description of the Device (eg BCM2835 PL011 UART)}
+  DeviceDescription:array[0..DEVICE_DESC_LENGTH - 1] of Char; {A description of the Device (eg BCM2835 PL011 UART)}
   {Internal Properties}
   Prev:PDevice;             {Previous entry in Device table}
   Next:PDevice;             {Next entry in Device table}
@@ -674,7 +687,7 @@ type
  {Device Firmware}
  TDeviceFirmware = record
   DeviceClass:LongWord;             {The Device class supported by this firmware (or DEVICE_CLASS_ANY for all devices)}
-  Name:String;                      {The device specific name of the firmware which may be a filename, a device model, id or type}
+  Name:array[0..FIRMWARE_NAME_LENGTH - 1] of Char; {The device specific name of the firmware which may be a filename, a device model, id or type}
   Size:LongWord;                    {For block (memory) based firmware, the size passed to Create or 0 for other firmware types}
   Buffer:Pointer;                   {For block (memory) based firmware, the buffer passed to Create or nil for other firmware types}
   Handles:PFirmwareHandle;          {List of currently open handles for this firmware}
@@ -738,7 +751,7 @@ type
   Signature:LongWord;        {Signature for entry validation}
   DriverId:LongWord;         {Unique Id of this Driver in the Driver table}
   DriverState:LongWord;      {Driver state (eg Registered/Unregistered)}
-  DriverName:String;         {Descriptive name for the Driver (eg USB Mouse Driver)}
+  DriverName:array[0..DRIVER_NAME_LENGTH - 1] of Char; {Descriptive name for the Driver (eg USB Mouse Driver)}
   DriverClass:LongWord;      {The class of this Driver (eg DRIVER_CLASS_USB etc)}
   {Internal Properties}
   Prev:PDriver;              {Previous entry in Driver table}
@@ -759,7 +772,7 @@ type
   Signature:LongWord;        {Signature for entry validation}
   HostId:LongWord;           {Unique Id of this Host in the Host table}
   HostState:LongWord;        {Host state (eg Registered/Unregistered)}
-  HostName:String;           {Descriptive name for the Host (eg DWC OTG Host)} 
+  HostName:array[0..HOST_NAME_LENGTH - 1] of Char; {Descriptive name for the Host (eg DWC OTG Host)} 
   HostClass:LongWord;        {The class of this Host (eg HOST_CLASS_USB etc)}
   {Internal Properties}
   Prev:PHost;                {Previous entry in Host table}
@@ -1736,13 +1749,7 @@ begin
   begin
    {Invalidate Device}
    Device.Signature:=0;
- 
-   {Free the Description}
-   SetLength(Device.DeviceDescription,0);
 
-   {Free the Name}
-   SetLength(Device.DeviceName,0);
- 
    {Free Device}
    FreeMem(Device);
  
@@ -1777,12 +1784,15 @@ begin
    try
     {Check Signature}
     if Device.Signature <> DEVICE_SIGNATURE then Exit;
-    
+
+    {Allocate Result}
+    SetLength(Result,DEVICE_NAME_LENGTH - 1);
+
     {Get Name}
-    Result:=Device.DeviceName;
-    
-    {Return Result}
-    UniqueString(Result);
+    StrLCopy(PChar(Result),Device.DeviceName,DEVICE_NAME_LENGTH - 1);
+
+    {Update Result}
+    SetLength(Result,StrLen(PChar(Result)));
    finally
     {Release Lock}
     CriticalSectionUnlock(DeviceNameLock);
@@ -1815,8 +1825,7 @@ begin
     if Device.Signature <> DEVICE_SIGNATURE then Exit;
     
     {Set Name}
-    Device.DeviceName:=Name;
-    UniqueString(Device.DeviceName);
+    StrLCopy(Device.DeviceName,PChar(Name),DEVICE_NAME_LENGTH - 1);
 
     {Return Result}
     Result:=ERROR_SUCCESS;
@@ -1846,12 +1855,15 @@ begin
    try
     {Check Signature}
     if Device.Signature <> DEVICE_SIGNATURE then Exit;
-    
+
+    {Allocate Result}
+    SetLength(Result,DEVICE_DESC_LENGTH - 1);
+
     {Get Description}
-    Result:=Device.DeviceDescription;
-    
-    {Return Result}
-    UniqueString(Result);
+    StrLCopy(PChar(Result),Device.DeviceDescription,DEVICE_DESC_LENGTH - 1);
+
+    {Update Result}
+    SetLength(Result,StrLen(PChar(Result)));
    finally
     {Release Lock}
     CriticalSectionUnlock(DeviceNameLock);
@@ -1884,8 +1896,7 @@ begin
     if Device.Signature <> DEVICE_SIGNATURE then Exit;
     
     {Set Description}
-    Device.DeviceDescription:=Description;
-    UniqueString(Device.DeviceDescription);
+    StrLCopy(Device.DeviceDescription,PChar(Description),DEVICE_DESC_LENGTH - 1);
 
     {Return Result}
     Result:=ERROR_SUCCESS;
@@ -1912,7 +1923,7 @@ begin
  if Device = nil then Exit;
  if Device.Signature <> DEVICE_SIGNATURE then Exit;
  if Device.DeviceId <> DEVICE_ID_ANY then Exit;
- if Length(Device.DeviceName) = 0 then Exit; 
+ if StrLen(Device.DeviceName) = 0 then Exit; 
  if Device.DeviceClass = DEVICE_CLASS_ANY then Exit;
  
  {Check Device}
@@ -2624,9 +2635,6 @@ begin
       FirmwareHandle:=NextHandle;
      end;
 
-    {Free the Name}
-    SetLength(Firmware.Name,0);
-
     {Free Firmware}
     FreeMem(Firmware);
 
@@ -2677,7 +2685,7 @@ begin
       if (DeviceClass = DEVICE_CLASS_ANY) or (Firmware.DeviceClass = DeviceClass) then
        begin
         {Check Name}
-        if (Length(Firmware.Name) > 0) and (Uppercase(Firmware.Name) = Uppercase(Name)) then
+        if (StrLen(Firmware.Name) > 0) and (Uppercase(Firmware.Name) = Uppercase(Name)) then
          begin
           Result:=Firmware;
           Exit;
@@ -3695,7 +3703,7 @@ begin
  Driver.Signature:=DRIVER_SIGNATURE;
  Driver.DriverId:=DRIVER_ID_ANY;
  Driver.DriverState:=DRIVER_STATE_UNREGISTERED;
- Driver.DriverName:=''; 
+ Driver.DriverName:='';
  Driver.DriverClass:=DRIVER_CLASS_ANY;
 
  {$IFDEF DEVICE_DEBUG}
@@ -3732,10 +3740,7 @@ begin
   begin
    {Invalidate Driver}
    Driver.Signature:=0;
- 
-   {Free the Name}
-   SetLength(Driver.DriverName,0);
- 
+
    {Free Driver}
    FreeMem(Driver);
   
@@ -3771,11 +3776,14 @@ begin
     {Check Signature}
     if Driver.Signature <> DRIVER_SIGNATURE then Exit;
 
+    {Allocate Result}
+    SetLength(Result,DRIVER_NAME_LENGTH - 1);
+
     {Get Name}
-    Result:=Driver.DriverName;
-    
-    {Return Result}
-    UniqueString(Result);
+    StrLCopy(PChar(Result),Driver.DriverName,DRIVER_NAME_LENGTH - 1);
+
+    {Update Result}
+    SetLength(Result,StrLen(PChar(Result)));
    finally
     {Release Lock}
     CriticalSectionUnlock(DriverNameLock);
@@ -3808,8 +3816,7 @@ begin
     if Driver.Signature <> DRIVER_SIGNATURE then Exit;
     
     {Set Name}
-    Driver.DriverName:=Name;
-    UniqueString(Driver.DriverName);
+    StrLCopy(Driver.DriverName,PChar(Name),DRIVER_NAME_LENGTH - 1);
 
     {Return Result}
     Result:=ERROR_SUCCESS;
@@ -3836,7 +3843,7 @@ begin
  if Driver = nil then Exit;
  if Driver.Signature <> DRIVER_SIGNATURE then Exit;
  if Driver.DriverId <> DRIVER_ID_ANY then Exit;
- if Length(Driver.DriverName) = 0 then Exit; 
+ if StrLen(Driver.DriverName) = 0 then Exit; 
  if Driver.DriverClass = DRIVER_CLASS_ANY then Exit;
  
  {Check Driver}
@@ -9017,7 +9024,7 @@ begin
   FIRMWARE_ACTION_OPEN:begin
     {Open File}
     {Check Name}
-    if Length(Firmware.Name) = 0 then Exit;
+    if StrLen(Firmware.Name) = 0 then Exit;
 
     {Check Device Class}
     if (Firmware.DeviceClass <> DEVICE_CLASS_ANY) and (Firmware.DeviceClass > DEVICE_CLASS_MAX) then Exit;
@@ -9298,7 +9305,7 @@ begin
   FIRMWARE_ACTION_OPEN:begin
     {Open Firmware}
     {Check Name}
-    if Length(Firmware.Name) = 0 then Exit;
+    if StrLen(Firmware.Name) = 0 then Exit;
 
     {Check Device Class}
     if (Firmware.DeviceClass <> DEVICE_CLASS_ANY) and (Firmware.DeviceClass > DEVICE_CLASS_MAX) then Exit;
