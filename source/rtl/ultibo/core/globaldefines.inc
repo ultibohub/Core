@@ -1,7 +1,7 @@
 {
 Ultibo Global Define Defaults.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -139,9 +139,6 @@ Global Defines
  {$DEFINE CDFS_DEBUG}
  {$DEFINE NTFS_DEBUG}
  {$DEFINE EXTFS_DEBUG} 
- {$DEFINE HPFS_DEBUG} 
- {$DEFINE NSS_DEBUG} 
- {$DEFINE NWFS_DEBUG} 
  {$DEFINE VIRTUAL_DEBUG}
  {$DEFINE CACHE_DEBUG} 
 {$ENDIF}
@@ -406,6 +403,14 @@ Global Defines
  {$DEFINE API_EXPORT_PLATFORM}
 {$ENDIF}
 
+{$IFDEF API_EXPORT_WINSOCK}
+ {$UNDEF SYSCALLS_EXPORT_SOCKETS}
+{$ENDIF}
+
+{$IFDEF API_EXPORT_WINSOCK2}
+ {$UNDEF SYSCALLS_EXPORT_SOCKETS}
+{$ENDIF}
+
 {==============================================================================}
 {==============================================================================}
 {Architecture definitions}
@@ -456,6 +461,9 @@ Global Defines
 
 {==============================================================================}
 {==============================================================================}
+{FileSystem definitions}
+{$DEFINE FILESYS_INCREMENTAL_CACHE}              {Enable use of the incremental read/write cache (Default: On)}
+
 {BigInt definitions}
 {--$DEFINE BIGINT_DEBUG}                         {Enable debug output/functions for BitInt unit (Default: Off)}
 {$DEFINE BIGINT_SQUARE}                          {Enable use of squaring instead of multiplication (Default: On)}

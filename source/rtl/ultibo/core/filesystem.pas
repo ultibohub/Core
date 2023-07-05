@@ -1,7 +1,7 @@
 {
 Ultibo FileSystem interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1292,7 +1292,11 @@ type
    {Internal Variables}
    FLock:TSynchronizerHandle;
    
+   {$IFDEF FILESYS_INCREMENTAL_CACHE}
+   FCache:TIncrementalCache;
+   {$ELSE}
    FCache:THashCache;
+   {$ENDIF}
    FImages:TFileSysList;
    FDrives:TFileSysList;
    FVolumes:TFileSysList;
@@ -1332,7 +1336,11 @@ type
    function FindMatchingFile(ADrive:TDiskDrive;AVolume:TDiskVolume;var ASearchRec:TSearchRec):Integer; 
   public
    {Public Variables}
+   {$IFDEF FILESYS_INCREMENTAL_CACHE}
+   property Cache:TIncrementalCache read FCache;
+   {$ELSE}
    property Cache:THashCache read FCache;
+   {$ENDIF}
 
    property AllowFloppy:Boolean read FAllowFloppy write FAllowFloppy;
    property AllowDrives:Boolean read FAllowDrives write FAllowDrives;
@@ -2584,7 +2592,7 @@ type
    FMultiVolume:Boolean;    {Multiple Volume Partition (eg Netware) - Set by Recognizer}
 
    FStartSector:Int64;      {Absolute Start Sector on Device}
-   FSectorCount:LongWord;   {Total Sectors in Partition}
+   FSectorCount:LongWord;   {Total Sectors in Partition}          //To Do //Int64
 
    {Protected Methods}
    function AcquireLock:Boolean;
@@ -2700,7 +2708,7 @@ type
 
    FSectorSize:Word;         {Sector Size of Device}
    FStartSector:Int64;       {Absolute Start Sector on Device}
-   FSectorCount:LongWord;    {Total Sectors in Volume}
+   FSectorCount:LongWord;    {Total Sectors in Volume}          //To Do //Int64
    FSectorShiftCount:Word;   {Sectors to Bytes Shift Count}
 
    {Protected Methods}
@@ -4276,6 +4284,7 @@ type
 
    FKeyBits:Byte;
    FKeyMask:LongWord;
+   FKeyShift:LongWord;
    FKeyBuckets:Pointer;
 
    FBuffer:Pointer;
@@ -4427,6 +4436,7 @@ type
 
    FKeyBits:Byte;
    FKeyMask:LongWord;
+   FKeyShift:LongWord;
    FKeyBuckets:Pointer;
 
    FBuffer:Pointer;
@@ -4505,6 +4515,7 @@ type
 
    function PrepareDeviceRead(ADevice:TDiskDevice;APage:TCachePage;ASector,ACount:LongWord):Boolean;
    function PrepareDeviceWrite(ADevice:TDiskDevice;APage:TCachePage;ASector,ACount:LongWord):Boolean;
+   function CompleteDeviceWrite(ADevice:TDiskDevice;APage:TCachePage;ASector,ACount:LongWord):Boolean;
    
    function CalculateDevicePage(ADevice:TDiskDevice;ASector:LongWord;var ACount:LongWord):Boolean;
   public
@@ -4574,8 +4585,8 @@ type
 
    FData:Pointer;
 
-   FSector:LongWord; //Int64;    //To Do //when changed on Drive/Volume/Device etc
-   FCount:Word;      //LongWord; //To Do //when changed on FileSystem/Drive/Volume/Device etc
+   FSector:LongWord;         {Current Starting Sector (Calculated from Device)} //Int64;    //To Do //when changed on Drive/Volume/Device etc
+   FCount:Word;              {Current Sector Count (Calculated from Device)}    //LongWord; //To Do //when changed on FileSystem/Drive/Volume/Device etc
 
    FPageTime:Int64;          {Time Page was Allocated from Empty (Ticks)}
    FWriteTime:Int64;         {Time Page was Allocated to Dirty (Ticks)}
@@ -4624,11 +4635,11 @@ type
  TIncrementalCachePage = class(THashCachePage)
   private
    {Internal Variables}
-   FReadSector:LongWord; //Int64;    //To Do //when changed on Drive/Volume/Device etc
-   FReadCount:Word;      //LongWord; //To Do //when changed on FileSystem/Drive/Volume/Device etc
+   FReadSector:LongWord;    {Current Read Start Sector}  //Int64;    //To Do //when changed on Drive/Volume/Device etc
+   FReadCount:Word;         {Current Read Sector Count}  //LongWord; //To Do //when changed on FileSystem/Drive/Volume/Device etc
 
-   FDirtySector:LongWord; //Int64;    //To Do //when changed on Drive/Volume/Device etc
-   FDirtyCount:Word;      //LongWord; //To Do //when changed on FileSystem/Drive/Volume/Device etc
+   FDirtySector:LongWord;   {Current Dirty Start Sector} //Int64;    //To Do //when changed on Drive/Volume/Device etc
+   FDirtyCount:Word;        {Current Dirty Sector Count} //LongWord; //To Do //when changed on FileSystem/Drive/Volume/Device etc
   public
    {Public Properties}
    property ReadSector:LongWord read FReadSector write FReadSector;
@@ -5505,7 +5516,11 @@ begin
  FLock:=SynchronizerCreate;
  
  {Create Cache, Lists and Buffers}
+ {$IFDEF FILESYS_INCREMENTAL_CACHE}
+ FCache:=TIncrementalCache.Create(Self);
+ {$ELSE}
  FCache:=THashCache.Create(Self); {THashCache.Create(Self);} {TCacheEx.Create(Self);} {TCache.Create(Self);}
+ {$ENDIF}
  FImages:=TFileSysList.Create;
  FDrives:=TFileSysList.Create;
  FVolumes:=TFileSysList.Create;
@@ -18025,6 +18040,9 @@ begin
          
          BytesRemain:=0;
         end;
+
+       {Yield}
+       Sleep(0);
       end;
     finally
      FreeMem(Buffer);
@@ -18131,6 +18149,9 @@ begin
          
          BytesRemain:=0;
         end;
+
+       {Yield}
+       Sleep(0);
       end;
     finally
      FreeMem(Buffer);
@@ -28930,6 +28951,9 @@ begin
     
     Inc(ASector);
     Dec(ACount);
+
+    {Yield}
+    Sleep(0);
    end;
   
   Result:=True;
@@ -29813,6 +29837,9 @@ begin
     
     Inc(ASector);
     Dec(ACount);
+
+    {Yield}
+    Sleep(0);
    end;
    
   Result:=True;
@@ -31413,6 +31440,9 @@ begin
    
     Inc(ASector);
     Dec(ACount);
+
+    {Yield}
+    Sleep(0);
    end;
   
   Result:=True;
@@ -40068,9 +40098,6 @@ begin
         OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Erase Sector}
         EraseCount:=Page.Count - OffsetCount;           {Number of Sectors to Erase from Page}
         if EraseCount > ACount then EraseCount:=ACount;
- 
-        {Erase from Device}
-        if not ADevice.Controller.Erase(ADevice,ASector,EraseCount) then Exit;
         
         {Check for Dirty}
         if Page.PageState = psDIRTY then
@@ -40081,6 +40108,9 @@ begin
          
         {Discard Page}
         if not DiscardPage(Page) then Exit;
+        
+        {Erase from Device}
+        if not ADevice.Controller.Erase(ADevice,ASector,EraseCount) then Exit;
         
         {Update Count}
         Dec(ACount,EraseCount);
@@ -40842,6 +40872,7 @@ begin
 
  FKeyBits:=0;
  FKeyMask:=0;
+ FKeyShift:=PtrShift; {Key Shift value (1 shl FKeyShift = SizeOf(Pointer))}
  FKeyBuckets:=nil;
 
  FBuffer:=nil;
@@ -41182,7 +41213,6 @@ begin
  
  if not AcquireLock then Exit;
  try
-  
   if FDriver = nil then Exit;
   if APage = nil then Exit;
 
@@ -41420,7 +41450,7 @@ begin
  if APage = nil then Exit;
  
  {Get Offset}
- Offset:=(APage.KeyHash and FKeyMask) shl 2;
+ Offset:=(APage.KeyHash and FKeyMask) shl FKeyShift;
  
  {Get First Key}
  FirstKey:=THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
@@ -41478,7 +41508,7 @@ begin
  else
   begin
    {Get Offset}
-   Offset:=(APage.KeyHash and FKeyMask) shl 2;
+   Offset:=(APage.KeyHash and FKeyMask) shl FKeyShift;
    
    {Is First Object}
    if APage.KeyNext <> nil then
@@ -41514,7 +41544,7 @@ begin
  if FKeyBuckets = nil then Exit;
  
  {Get Offset}
- Offset:=(AKeyHash and FKeyMask) shl 2;
+ Offset:=(AKeyHash and FKeyMask) shl FKeyShift;
  
  {Get First Key}
  Result:=THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
@@ -42082,7 +42112,7 @@ begin
     {Create the Buckets}
     FKeyBits:=CacheKeys;
     FKeyMask:=keyHashMasks[FKeyBits];
-    FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl 2); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
+    FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl FKeyShift); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
     
     {Allocate the Memory}
     FBuffer:=GetAlignedMem(CacheSize,PageSize);
@@ -42190,7 +42220,7 @@ begin
   FBuffer:=nil;
   
   {Free the Buckets}
-  ZeroMemory(FKeyBuckets,(keyHashMasks[FKeyBits] + 1) shl 2); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
+  ZeroMemory(FKeyBuckets,(keyHashMasks[FKeyBits] + 1) shl FKeyShift); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
   FreeMem(FKeyBuckets);
   FKeyBuckets:=nil;
   FKeyBits:=0;
@@ -42621,9 +42651,6 @@ begin
         OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Erase Sector}
         EraseCount:=Page.Count - OffsetCount;           {Number of Sectors to Erase from Page}
         if EraseCount > ACount then EraseCount:=ACount;
- 
-        {Erase from Device}
-        if not ADevice.Controller.Erase(ADevice,ASector,EraseCount) then Exit;
         
         {Check for Dirty}
         if Page.PageState = psDIRTY then
@@ -42634,6 +42661,9 @@ begin
          
         {Discard Page}
         if not DiscardPage(Page) then Exit;
+        
+        {Erase from Device}
+        if not ADevice.Controller.Erase(ADevice,ASector,EraseCount) then Exit;
         
         {Update Count}
         Dec(ACount,EraseCount);
@@ -42927,7 +42957,9 @@ begin
   if APage.PageState = psCLEAN then
    begin
     if not AddEmpty(APage) then Exit;
+
     Inc(FDiscardCount);
+
     APage.Device:=nil;
     APage.Sector:=0;
     APage.Count:=0;
@@ -42941,6 +42973,7 @@ begin
    begin
     {Return a Non Clean Page to Unknown}
     if not AddUnknown(APage) then Exit;
+
     Inc(FUnknownCount);
     
     Result:=True;
@@ -43344,6 +43377,7 @@ begin
 
  FKeyBits:=0;
  FKeyMask:=0;
+ FKeyShift:=PtrShift; {Key Shift value (1 shl FKeyShift = SizeOf(Pointer))}
  FKeyBuckets:=nil;
 
  FBuffer:=nil;
@@ -43406,7 +43440,9 @@ begin
   FLastPage:=nil;
 
   FBuffer:=nil;
+  
   FKeyBuckets:=nil;
+  
   FDriver:=nil;
   inherited Destroy;
  finally
@@ -43536,7 +43572,6 @@ begin
      Result:=True;
     end;
    psEMPTY:begin
-     
      Result:=True;
     end;
    psCLEAN:begin
@@ -43920,7 +43955,7 @@ begin
  if APage = nil then Exit;
  
  {Get Offset}
- Offset:=(APage.KeyHash and FKeyMask) shl 2;
+ Offset:=(APage.KeyHash and FKeyMask) shl FKeyShift;
  
  {Get First Key}
  FirstKey:=THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
@@ -43978,7 +44013,7 @@ begin
  else
   begin
    {Get Offset}
-   Offset:=(APage.KeyHash and FKeyMask) shl 2;
+   Offset:=(APage.KeyHash and FKeyMask) shl FKeyShift;
    
    {Is First Object}
    if APage.KeyNext <> nil then
@@ -44014,7 +44049,7 @@ begin
  if FKeyBuckets = nil then Exit;
  
  {Get Offset}
- Offset:=(AKeyHash and FKeyMask) shl 2;
+ Offset:=(AKeyHash and FKeyMask) shl FKeyShift;
  
  {Get First Key}
  Result:=THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
@@ -44106,7 +44141,7 @@ begin
      FLastPage:=nil;
     end;
   end;
-  
+ 
  APage.PrevPage:=nil;
  APage.NextPage:=nil;
  
@@ -44402,29 +44437,34 @@ function TIncrementalCache.PrepareDeviceRead(ADevice:TDiskDevice;APage:TCachePag
 {Note: Only called internally by DeviceRead}
 {Note: Caller must hold the lock}
 var
- Offset:PtrUInt;
+ ReadLast:LongWord;
+ ReadFirst:LongWord;
+ ReadCount:LongWord;
+ SectorLast:LongWord;
+ SectorFirst:LongWord;
+ OffsetCount:LongWord;
  Page:TIncrementalCachePage;
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
- 
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.PrepareDeviceRead: Page.Sector = ' + IntToStr(APage.Sector) + ' Page.Count = ' + IntToStr(APage.Count));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.PrepareDeviceRead: Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Get Page}
  Page:=TIncrementalCachePage(APage);
- 
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.PrepareDeviceRead: Page.ReadSector = ' + IntToStr(Page.ReadSector) + ' Page.ReadCount = ' + IntToStr(Page.ReadCount));
  {$ENDIF}
- 
+
  {Check Page}
  if Page.ReadCount = Page.Count then
   begin
@@ -44435,52 +44475,109 @@ begin
   begin
    {Empty Page}
    {Check Count}
-   if ACount = Page.Count then
+   if ACount < (Page.Count shr 2) then
     begin
-     {Full Read}
-     {Read from Device to Page}
-     if not ADevice.Controller.Read(ADevice,Page.Sector,Page.Count,Page.Data^) then Exit;
-     
-     Page.ReadSector:=Page.Sector;
-     Page.ReadCount:=Page.Count;
-     
-     Result:=True;
+     {Partial Read (Less than Quarter)}
+     Page.ReadSector:=ASector;
+     Page.ReadCount:=ACount;
     end
    else
     begin
-     {Partial Read}
-     {Read from Device to Page}
-     //if not ADevice.Controller.Read(ADevice,ASector,ACount,Page.ReadData^) then Exit;  //To Do
-     
-     Page.ReadSector:=ASector;
-     Page.ReadCount:=ACount;
-     Result:=True;
- 
-     //To Do
- 
+     {Full Read}
+     Page.ReadSector:=Page.Sector;
+     Page.ReadCount:=Page.Count;
     end;
+
+   {Read from Device to Page}
+   if not ADevice.Controller.Read(ADevice,Page.ReadSector,Page.ReadCount,Page.ReadData^) then Exit;
+
+   Result:=True;
   end
  else
   begin
    {Partial Page}
- 
-   //To Do
- 
+   {Get Last Sectors}
+   ReadLast:=(Page.ReadSector + Page.ReadCount) - 1;
+   SectorLast:=(ASector + ACount) - 1;
+
+   {Check for Overlap}
+   if (ASector >= Page.ReadSector) and (SectorLast <= ReadLast) then
+    begin
+     {Complete Overlap}
+     Result:=True;
+    end
+   else
+    begin
+     {Partial or No Overlap}
+     {Check Count}
+     if (ACount + Page.ReadCount) >= (Page.Count shr 2) then
+      begin
+       {Full Read (Quarter or More)}
+       {Get First Sectors}
+       ReadFirst:=Page.ReadSector;
+       SectorFirst:=Page.Sector;
+
+       {Update Last Sector}
+       SectorLast:=(Page.Sector + Page.Count) - 1;
+      end
+     else
+      begin
+       {Partial Read}
+       {Get First Sectors}
+       ReadFirst:=Page.ReadSector;
+       SectorFirst:=ASector;
+      end;
+
+     {Check Before}
+     if SectorFirst < ReadFirst then
+      begin
+       {Get Count}
+       OffsetCount:=(ReadFirst - SectorFirst);
+
+       {Update Page}
+       Page.ReadSector:=SectorFirst;
+       Page.ReadCount:=Page.ReadCount + OffsetCount;
+
+       {Read from Device to Page}
+       if not ADevice.Controller.Read(ADevice,Page.ReadSector,OffsetCount,Page.ReadData^) then Exit;
+      end;
+
+     {Check After}
+     if SectorLast > ReadLast then
+      begin
+       {Get Counts}
+       ReadCount:=Page.ReadCount;
+       OffsetCount:=(SectorLast - ReadLast);
+
+       {Update Page}
+       Page.ReadCount:=Page.ReadCount + OffsetCount;
+
+       {Read from Device to Page}
+       if not ADevice.Controller.Read(ADevice,Page.ReadSector + ReadCount,OffsetCount,Pointer(PtrUInt(Page.ReadData) + (ReadCount shl ADevice.SectorShiftCount))^) then Exit;
+      end;
+
+     Result:=True;
+    end;
   end;
 end;
 
 {==============================================================================}
 
 function TIncrementalCache.PrepareDeviceWrite(ADevice:TDiskDevice;APage:TCachePage;ASector,ACount:LongWord):Boolean;
-{Prepare an incremental Cache Page for Write by ensuring that required sectors are cached}
+{Prepare an incremental Cache Page for Write by ensuring that all required sectors are cached}
 {Passed Sector will be the starting sector for the write to this Page}
 {Passed Count will be the write count to this Page (Calculated by caller)}
 
 {Note: Only called internally by DeviceWrite}
 {Note: Caller must hold the lock}
 var
- Count:LongWord;
- Offset:PtrUInt;
+ GapFirst:LongWord;
+ GapCount:LongWord;
+ ReadLast:LongWord;
+ ReadFirst:LongWord;
+ SectorLast:LongWord;
+ SectorFirst:LongWord;
+ OffsetCount:LongWord;
  Page:TIncrementalCachePage;
 begin
  {}
@@ -44512,33 +44609,174 @@ begin
  else if Page.ReadCount = 0 then
   begin
    {Empty Page}
-   {Check Count}
-   if ACount = Page.Count then
-    begin
-     {Full Read}
-     {Read from Device to Page}
-     //if not ADevice.Controller.Read(ADevice,Page.Sector,Page.Count,Page.Data^) then Exit;
-     
-     Page.ReadSector:=Page.Sector;
-     Page.ReadCount:=Page.Count;
-     
-     Result:=True;
-    end
-   else
-    begin
-     {Partial Read}
-   
-     //To Do
-     
-    end;
+   Page.ReadSector:=ASector;
+   Page.ReadCount:=ACount;
+
+   Result:=True;
   end
  else
   begin
    {Partial Page}
+   {Get Last Sectors}
+   ReadLast:=(Page.ReadSector + Page.ReadCount) - 1;
+   SectorLast:=(ASector + ACount) - 1;
 
-   //To Do
+   {Check for Overlap}
+   if (ASector >= Page.ReadSector) and (SectorLast <= ReadLast) then
+    begin
+     {Complete Overlap}
+     Result:=True;
+    end
+   else
+    begin
+     {Partial or No Overlap}
+     {Get First Sectors}
+     ReadFirst:=Page.ReadSector;
+     SectorFirst:=ASector;
 
+     {Check Before}
+     if SectorFirst < ReadFirst then
+      begin
+       {Get Count}
+       OffsetCount:=(ReadFirst - SectorFirst);
+
+       {Update Page}
+       Page.ReadSector:=SectorFirst;
+       Page.ReadCount:=Page.ReadCount + OffsetCount;
+
+       {Check Gap}
+       GapFirst:=SectorLast + 1;
+       if GapFirst < ReadFirst then
+        begin
+         {Get Gap}
+         GapCount:=(ReadFirst - GapFirst);
+
+         {Read from Device to Page}
+         if not ADevice.Controller.Read(ADevice,GapFirst,GapCount,Pointer(PtrUInt(Page.Data) + ((GapFirst - Page.Sector) shl ADevice.SectorShiftCount))^) then Exit;
+        end; 
+      end;
+
+     {Check After}
+     if SectorLast > ReadLast then
+      begin
+       {Get Count}
+       OffsetCount:=(SectorLast - ReadLast);
+
+       {Update Page}
+       Page.ReadCount:=Page.ReadCount + OffsetCount;
+
+       {Check Gap}
+       GapFirst:=ReadLast + 1;
+       if SectorFirst > GapFirst then
+        begin
+         {Get Gap}
+         GapCount:=(SectorFirst - GapFirst);
+
+         {Read from Device to Page}
+         if not ADevice.Controller.Read(ADevice,GapFirst,GapCount,Pointer(PtrUInt(Page.Data) + ((GapFirst - Page.Sector) shl ADevice.SectorShiftCount))^) then Exit;
+        end; 
+      end;
+
+     Result:=True;
+    end;
   end;
+end;
+
+{==============================================================================}
+
+function TIncrementalCache.CompleteDeviceWrite(ADevice:TDiskDevice;APage:TCachePage;ASector,ACount:LongWord):Boolean;
+{Complete an incremental Cache Page Write by ensuring that all written sectors are marked dirty}
+{Passed Sector will be the starting sector for the write to this Page}
+{Passed Count will be the write count to this Page (Calculated by caller)}
+
+{Note: Only called internally by DeviceWrite}
+{Note: Caller must hold the lock}
+var
+ DirtyLast:LongWord;
+ DirtyFirst:LongWord;
+ SectorLast:LongWord;
+ SectorFirst:LongWord;
+ OffsetCount:LongWord;
+ Page:TIncrementalCachePage;
+begin
+ {}
+ Result:=False;
+ 
+ if FDriver = nil then Exit;
+ if APage = nil then Exit;
+ if ADevice = nil then Exit;
+ if ADevice.Controller = nil then Exit;
+
+ {$IFDEF CACHE_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.CompleteDeviceWrite: Page.Sector = ' + IntToStr(APage.Sector) + ' Page.Count = ' + IntToStr(APage.Count));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.CompleteDeviceWrite: Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
+ {$ENDIF}
+ 
+ {Get Page}
+ Page:=TIncrementalCachePage(APage);
+ 
+ {$IFDEF CACHE_DEBUG}
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.CompleteDeviceWrite: Page.DirtySector = ' + IntToStr(Page.DirtySector) + ' Page.DirtyCount = ' + IntToStr(Page.DirtyCount));
+ {$ENDIF}
+ 
+ {Check Page}
+ if Page.DirtyCount = Page.Count then
+  begin
+   {Dirty Page}
+   Result:=True;
+  end
+ else if Page.DirtyCount = 0 then
+  begin
+   {Clean Page}
+   Page.DirtySector:=ASector;
+   Page.DirtyCount:=ACount;
+     
+   Result:=True;
+  end
+ else
+  begin
+   {Partial Page}
+   {Get Last Sectors}
+   DirtyLast:=(Page.DirtySector + Page.DirtyCount) - 1;
+   SectorLast:=(ASector + ACount) - 1;
+
+   {Check for Overlap}
+   if (ASector >= Page.DirtySector) and (SectorLast <= DirtyLast) then
+    begin
+     {Complete Overlap}
+     Result:=True;
+    end
+   else
+    begin
+     {Partial or No Overlap}
+     {Get First Sectors}
+     DirtyFirst:=Page.DirtySector;
+     SectorFirst:=ASector;
+
+     {Check Before}
+     if SectorFirst < DirtyFirst then
+      begin
+       {Get Count}
+       OffsetCount:=(DirtyFirst - SectorFirst);
+
+       {Update Page}
+       Page.DirtySector:=SectorFirst;
+       Page.DirtyCount:=Page.DirtyCount + OffsetCount;
+      end;
+
+     {Check After}
+     if SectorLast > DirtyLast then
+      begin
+       {Get Count}
+       OffsetCount:=(SectorLast - DirtyLast);
+
+       {Update Page}
+       Page.DirtyCount:=Page.DirtyCount + OffsetCount;
+      end;
+
+     Result:=True;
+    end;
+  end; 
 end;
 
 {==============================================================================}
@@ -44635,7 +44873,7 @@ begin
   if ACacheSize = 0 then Exit;
   if ACacheKeys = 0 then Exit;
   if APageSize = 0 then Exit;
-  
+ 
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.OpenCache: CacheSize = ' + IntToStr(ACacheSize) + ' CacheKeys = ' + IntToStr(ACacheKeys) + ' PageSize = ' + IntToStr(APageSize));
   {$ENDIF}
@@ -44666,7 +44904,7 @@ begin
     {Create the Buckets}
     FKeyBits:=CacheKeys;
     FKeyMask:=keyHashMasks[FKeyBits];
-    FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl 2); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
+    FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl FKeyShift); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
     
     {Allocate the Memory}
     FBuffer:=GetAlignedMem(CacheSize,PageSize);
@@ -44696,7 +44934,7 @@ begin
   
   {Start Timer}
   FTimer.StartTimer(FILESYS_CACHE_TIMER_INTERVAL);
-  
+
   {Create Thread}
   FThread:=TIncrementalCacheThread.Create(Self);
   {FThread.FreeOnTerminate:=True;} {Freed by CloseCache}
@@ -44758,7 +44996,7 @@ begin
     
     FlushPage(CurrentPage);
    end;
-   
+  
   {Free the Pages}
   NextPage:=FFirstPage;
   while NextPage <> nil do
@@ -44774,7 +45012,7 @@ begin
   FBuffer:=nil;
   
   {Free the Buckets}
-  ZeroMemory(FKeyBuckets,(keyHashMasks[FKeyBits] + 1) shl 2); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
+  ZeroMemory(FKeyBuckets,(keyHashMasks[FKeyBits] + 1) shl FKeyShift); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
   FreeMem(FKeyBuckets);
   FKeyBuckets:=nil;
   FKeyBits:=0;
@@ -44839,7 +45077,8 @@ begin
         ReadCount:=Page.Count - OffsetCount;          {Number of Sectors to Read from Page}
         if ReadCount > ACount then ReadCount:=ACount;
         
-        //To Do //PrepareDeviceRead
+        {Prepare Page for Read}
+        if not PrepareDeviceRead(ADevice,Page,ASector,ReadCount) then Exit;
         
         {Read from Page to Buffer}
         System.Move(Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
@@ -44877,10 +45116,8 @@ begin
           ReadCount:=Page.Count - OffsetCount;          {Number of Sectors to Read from Page}
           if ReadCount > ACount then ReadCount:=ACount; 
           
-          //To Do //PrepareDeviceRead
-          
-          {Read from Device to Page}
-          if not ADevice.Controller.Read(ADevice,Page.Sector,Page.Count,Page.Data^) then Exit;
+          {Prepare Page for Read}
+          if not PrepareDeviceRead(ADevice,Page,ASector,ReadCount) then Exit;
           
           {Read from Page to Buffer}
           System.Move(Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
@@ -44943,13 +45180,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
  
  {$IFDEF CACHE_DEBUG}
- if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.DeviceWrite: Device = ' + ADevice.Name + ' Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.DeviceWrite: Device = ' + ADevice.Name + ' Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
  
  {Get Buffer}
@@ -44977,12 +45214,14 @@ begin
           WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
           if WriteCount > ACount then WriteCount:=ACount;
           
-          //To Do //PrepareDeviceWrite
+          {Prepare Page for Write}
+          if not PrepareDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
           
           {Write to Page from Buffer}
           System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
           
-          //To Do //CompleteDeviceWrite
+          {Complete Write for Page}
+          if not CompleteDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
           
           {Update Page}
           Page.PageTime:=GetTickCount64;
@@ -45021,17 +45260,14 @@ begin
             WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
             if WriteCount > ACount then WriteCount:=ACount;
             
-            {Check for less than Page}
-            if WriteCount < Page.Count then
-             begin
-              {Prepare Page for Write}
-              if not PrepareDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
-             end;
+            {Prepare Page for Write}
+            if not PrepareDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
             
             {Write to Page from Buffer}
             System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
             
-            //To Do //CompleteDeviceWrite
+            {Complete Write for Page}
+            if not CompleteDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
             
             {PageTime and WriteTime updated by AllocDevicePage}
             
@@ -45081,12 +45317,11 @@ begin
           WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
           if WriteCount > ACount then WriteCount:=ACount;
           
-          //To Do //PrepareDeviceWrite
+          {Prepare Page for Write}
+          if not PrepareDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
           
           {Write to Page from Buffer}
           System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
-          
-          //To Do //CompleteDeviceWrite
           
           {Write from Page to Device}
           if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
@@ -45124,17 +45359,11 @@ begin
             WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
             if WriteCount > ACount then WriteCount:=ACount;
             
-            {Check for less than Page}
-            if WriteCount < Page.Count then
-             begin
-              {Prepare Page for Write}
-              if not PrepareDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
-             end;
+            {Prepare Page for Write}
+            if not PrepareDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
             
             {Write to Page from Buffer}
             System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
-            
-            //To Do //CompleteDeviceWrite
             
             {Write from Page to Device}
             if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
@@ -45221,9 +45450,6 @@ begin
         OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Erase Sector}
         EraseCount:=Page.Count - OffsetCount;           {Number of Sectors to Erase from Page}
         if EraseCount > ACount then EraseCount:=ACount;
- 
-        {Erase from Device}
-        if not ADevice.Controller.Erase(ADevice,ASector,EraseCount) then Exit;
         
         {Check for Dirty}
         if Page.PageState = psDIRTY then
@@ -45234,6 +45460,9 @@ begin
          
         {Discard Page}
         if not DiscardPage(Page) then Exit;
+        
+        {Erase from Device}
+        if not ADevice.Controller.Erase(ADevice,ASector,EraseCount) then Exit;
         
         {Update Count}
         Dec(ACount,EraseCount);
@@ -45304,7 +45533,7 @@ begin
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
   if ADevice.PageCount = 0 then Exit;
-
+  
   {Get Hash}
   SectorStart:=(ASector and ADevice.PageMask);
   KeyHash:=(SectorStart shr ADevice.PageShift);
@@ -45312,7 +45541,7 @@ begin
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.GetDevicePage: SectorStart = ' + IntToStr(SectorStart) + ' KeyHash = ' + IntToStr(KeyHash));
   {$ENDIF}
-
+  
   {Check Pages}
   Page:=KeyFirst(KeyHash);
   while Page <> nil do
@@ -45350,14 +45579,14 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-
+  
   {Get First Empty Page}
   Result:=FFirstEmpty;
   if Result <> nil then Exit;
-
+  
   {If no Empty then Discard Oldest}
   if not DiscardCache(True,False) then Exit;
-
+  
   {Get First Empty Page}
   Result:=FFirstEmpty;
  finally
@@ -45385,12 +45614,12 @@ begin
   
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
-
+  
   {Check for Sector Size bigger than Page Size}
   if ADevice.SectorSize = 0 then Exit;
   if ADevice.SectorSize > FPageSize then Exit;
   if ASector >= ADevice.SectorCount then Exit;
-
+  
   {Calculate Page Count / Shift / Mask}
   if ADevice.PageCount = 0 then
    begin
@@ -45409,7 +45638,7 @@ begin
      end;
     {$ENDIF}
    end;
-
+   
   {Calculate Sector Count and Start Sector}
   SectorCount:=ADevice.PageCount;
   SectorStart:=(ASector and ADevice.PageMask);
@@ -45543,9 +45772,9 @@ begin
   if APage.PageState = psCLEAN then
    begin
     if not AddEmpty(APage) then Exit;
-    
+
     Inc(FDiscardCount);
-    
+
     APage.Device:=nil;
     APage.Sector:=0;
     APage.Count:=0;
@@ -45563,7 +45792,7 @@ begin
    begin
     {Return a Non Clean Page to Unknown}
     if not AddUnknown(APage) then Exit;
-    
+
     Inc(FUnknownCount);
     
     Result:=True;
@@ -45630,7 +45859,7 @@ begin
  try
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
-  
+
   {Flush Dirty Pages}
   NextPage:=FFirstDirty;
   while NextPage <> nil do
@@ -45643,7 +45872,7 @@ begin
       FlushPage(CurrentPage);
      end;
    end;
-  
+   
   {Discard Clean Pages}
   NextPage:=FFirstClean;
   while NextPage <> nil do
@@ -45656,7 +45885,7 @@ begin
       DiscardPage(CurrentPage);
      end;
    end;
-  
+   
   Result:=True;
  finally
   ReleaseLock;
@@ -45700,7 +45929,7 @@ begin
          {Write Page to Device}
          if APage.Device = nil then Exit;
          if APage.Device.Controller = nil then Exit;
-         if not APage.Device.Controller.Write(APage.Device,APage.Sector,APage.Count,APage.Data^) then Exit;
+         if not APage.Device.Controller.Write(APage.Device,TIncrementalCachePage(APage).DirtySector,TIncrementalCachePage(APage).DirtyCount,TIncrementalCachePage(APage).DirtyData^) then Exit;
          
          {Return to Clean}
          if not AddClean(APage) then Exit;
@@ -45774,7 +46003,7 @@ begin
       Page:=Page.NextLink;
      end;
    end;  
-  
+   
   {Check Page}
   if (APage = Page) and ((APage.WriteTime + FFlushTimeout) <= GetTickCount64) then
    begin
@@ -45799,7 +46028,7 @@ begin
            {Write Page to Device}
            if APage.Device = nil then Exit;
            if APage.Device.Controller = nil then Exit;
-           if not APage.Device.Controller.Write(APage.Device,APage.Sector,APage.Count,APage.Data^) then Exit;
+           if not APage.Device.Controller.Write(APage.Device,TIncrementalCachePage(APage).DirtySector,TIncrementalCachePage(APage).DirtyCount,TIncrementalCachePage(APage).DirtyData^) then Exit;
            
            {Return to Clean}
            if not AddClean(APage) then Exit;
@@ -45835,10 +46064,10 @@ begin
       
       Result:=True;
      end;
-     
+   
     {Update Cache State}
     if FFirstDirty = nil then FCacheState:=csCLEAN;
-  {$IFDEF CACHE_DEBUG}    
+  {$IFDEF CACHE_DEBUG}
    end
   else
    begin
@@ -45850,7 +46079,7 @@ begin
      begin
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.FlushPageEx - Not Ready Page (Page=' + PtrToHex(APage) + ' WriteTime=' + IntToStr(APage.WriteTime) + ' TickCount=' + IntToStr(GetTickCount64) + ')'); 
      end;
-  {$ENDIF}   
+  {$ENDIF}
    end;
  finally
   ReleaseLock;
@@ -46025,7 +46254,12 @@ function TIncrementalCachePage.ReadData:Pointer;
 begin
  {}
  Result:=nil;
- //To Do
+ 
+ if Device = nil then Exit;
+ 
+ if FReadCount = 0 then Exit;
+ 
+ Result:=Pointer(PtrUInt(Data) + ((FReadSector - Sector) shl Device.SectorShiftCount));
 end;
 
 {==============================================================================}
@@ -46034,7 +46268,12 @@ function TIncrementalCachePage.DirtyData:Pointer;
 begin
  {}
  Result:=nil;
- //To Do
+
+ if Device = nil then Exit;
+ 
+ if FDirtyCount = 0 then Exit;
+ 
+ Result:=Pointer(PtrUInt(Data) + ((FDirtySector - Sector) shl Device.SectorShiftCount));
 end;
 
 {==============================================================================}
