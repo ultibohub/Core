@@ -219,7 +219,7 @@ begin
  ParamCount:=argc - 1
 end;
 
-function ParamStr(l: longint) : string;
+function ParamStr(l: longint) : shortstring;
 begin
  {}
  if (l >= 0) and (l + 1 <= argc) then
