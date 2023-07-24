@@ -767,7 +767,14 @@ begin
 
      {Use DMA Buffer}
      SDHCI.DMAData.Dest:=SDHCI.DMABuffer;
-    end; 
+    end;
+
+   {Check Cache}
+   if not(DMA_CACHE_COHERENT) then
+    begin
+     {Clean Cache (Dest)}
+     CleanDataCacheRange(PtrUInt(SDHCI.DMAData.Dest),SDHCI.DMAData.Size);
+    end;
   end
  else
   begin
@@ -791,7 +798,9 @@ begin
      {Copy Data to DMA Buffer}
      SDHCI.DMAData.Source:=SDHCI.DMABuffer;
      System.Move(Command.Data.Data^,SDHCI.DMAData.Source^,SDHCI.DMAData.Size);
-    end; 
+    end;
+
+   {DMA Host will Clean Cache on Source Data}
   end;
 
  {The block doesn't manage the FIFO DREQs properly for multi-block transfers, so don't attempt to DMA the final few words.

@@ -1279,6 +1279,7 @@ type
  TRedirector = class;
  TFileSystem = class;
  TCache = class;
+ TCacheEx = class;
  TCachePage = class;
  THashCache = class;
  THashCachePage = class;
@@ -40278,6 +40279,15 @@ begin
   
   {Get Empty Page}
   Page:=GetEmptyPage;
+  if Page = nil then
+   begin
+    {If no Empty Page then Flush}
+    if not FlushCache(True,False) then Exit;
+
+    {Get Empty Page}
+    Page:=GetEmptyPage;
+   end;
+
   if Page <> nil then
    begin
     if AWrite then
@@ -40305,45 +40315,6 @@ begin
         Page.PageType:=ptDEVICE;
         
         Result:=Page;
-       end;
-     end;
-   end
-  else
-   begin
-    {If no Empty Page then Flush}
-    if FlushCache(True,False) then
-     begin
-      {Get Empty Page}
-      Page:=GetEmptyPage;
-      if Page <> nil then
-       begin
-        if AWrite then
-         begin
-          if AddDirty(Page) then
-           begin
-            Page.Device:=ADevice;
-            Page.Sector:=SectorStart;
-            Page.Count:=SectorCount;
-            Page.PageTime:=GetTickCount64;
-            Page.WriteTime:=GetTickCount64;
-            Page.PageType:=ptDEVICE;
-            
-            Result:=Page;
-           end;
-         end
-        else
-         begin
-          if AddClean(Page) then
-           begin
-            Page.Device:=ADevice;
-            Page.Sector:=SectorStart;
-            Page.Count:=SectorCount;
-            Page.PageTime:=GetTickCount64;
-            Page.PageType:=ptDEVICE;
-            
-            Result:=Page;
-           end;
-         end;
        end;
      end;
    end;
@@ -40550,6 +40521,9 @@ begin
     
     Result:=True;
    end;
+
+  {Update Cache State}
+  if FFirstDirty = nil then FCacheState:=csCLEAN;
  finally
   ReleaseLock;
  end;
@@ -42854,6 +42828,15 @@ begin
 
   {Get Empty Page}
   Page:=GetEmptyPage;
+  if Page = nil then
+   begin
+    {If no Empty Page then Flush}
+    if not FlushCache(True,False) then Exit;
+
+    {Get Empty Page}
+    Page:=GetEmptyPage;
+   end;
+
   if Page <> nil then
    begin
     THashCachePage(Page).KeyHash:=(SectorStart shr ADevice.PageShift);
@@ -42887,51 +42870,6 @@ begin
         Page.PageType:=ptDEVICE;
         
         Result:=Page;
-       end;
-     end;
-   end
-  else
-   begin
-    {If no Empty Page then Flush}
-    if FlushCache(True,False) then
-     begin
-      {Get Empty Page}
-      Page:=GetEmptyPage;
-      if Page <> nil then
-       begin
-        THashCachePage(Page).KeyHash:=(SectorStart shr ADevice.PageShift);
-        
-        {$IFDEF CACHE_DEBUG}
-        if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.AllocDevicePage: KeyHash = ' + IntToStr(THashCachePage(Page).KeyHash));
-        {$ENDIF}
-        
-        if AWrite then
-         begin
-          if AddDirty(Page) then
-           begin
-            Page.Device:=ADevice;
-            Page.Sector:=SectorStart;
-            Page.Count:=SectorCount;
-            Page.PageTime:=GetTickCount64;
-            Page.WriteTime:=GetTickCount64;
-            Page.PageType:=ptDEVICE;
-            
-            Result:=Page;
-           end;
-         end
-        else
-         begin
-          if AddClean(Page) then
-           begin
-            Page.Device:=ADevice;
-            Page.Sector:=SectorStart;
-            Page.Count:=SectorCount;
-            Page.PageTime:=GetTickCount64;
-            Page.PageType:=ptDEVICE;
-            
-            Result:=Page;
-           end;
-         end;
        end;
      end;
    end;
@@ -43138,6 +43076,9 @@ begin
     
     Result:=True;
    end;
+
+  {Update Cache State}
+  if FFirstDirty = nil then FCacheState:=csCLEAN;
  finally
   ReleaseLock;
  end;
@@ -45653,6 +45594,15 @@ begin
 
   {Get Empty Page}
   Page:=GetEmptyPage;
+  if Page = nil then
+   begin
+    {If no Empty Page then Flush}
+    if not FlushCache(True,False) then Exit;
+
+    {Get Empty Page}
+    Page:=GetEmptyPage;
+   end;
+
   if Page <> nil then
    begin
     THashCachePage(Page).KeyHash:=(SectorStart shr ADevice.PageShift);
@@ -45694,59 +45644,6 @@ begin
         TIncrementalCachePage(Page).DirtyCount:=0;
         
         Result:=Page;
-       end;
-     end;
-   end
-  else
-   begin
-    {If no Empty Page then Flush}
-    if FlushCache(True,False) then
-     begin
-      {Get Empty Page}
-      Page:=GetEmptyPage;
-      if Page <> nil then
-       begin
-        THashCachePage(Page).KeyHash:=(SectorStart shr ADevice.PageShift);
-        
-        {$IFDEF CACHE_DEBUG}
-        if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.AllocDevicePage: KeyHash = ' + IntToStr(THashCachePage(Page).KeyHash));
-        {$ENDIF}
-        
-        if AWrite then
-         begin
-          if AddDirty(Page) then
-           begin
-            Page.Device:=ADevice;
-            Page.Sector:=SectorStart;
-            Page.Count:=SectorCount;
-            Page.PageTime:=GetTickCount64;
-            Page.WriteTime:=GetTickCount64;
-            Page.PageType:=ptDEVICE;
-            TIncrementalCachePage(Page).ReadSector:=0;
-            TIncrementalCachePage(Page).ReadCount:=0;
-            TIncrementalCachePage(Page).DirtySector:=0;
-            TIncrementalCachePage(Page).DirtyCount:=0;
-            
-            Result:=Page;
-           end;
-         end
-        else
-         begin
-          if AddClean(Page) then
-           begin
-            Page.Device:=ADevice;
-            Page.Sector:=SectorStart;
-            Page.Count:=SectorCount;
-            Page.PageTime:=GetTickCount64;
-            Page.PageType:=ptDEVICE;
-            TIncrementalCachePage(Page).ReadSector:=0;
-            TIncrementalCachePage(Page).ReadCount:=0;
-            TIncrementalCachePage(Page).DirtySector:=0;
-            TIncrementalCachePage(Page).DirtyCount:=0;
-            
-            Result:=Page;
-           end;
-         end;
        end;
      end;
    end;
@@ -45965,6 +45862,9 @@ begin
     
     Result:=True;
    end;
+
+  {Update Cache State}
+  if FFirstDirty = nil then FCacheState:=csCLEAN;
  finally
   ReleaseLock;
  end;
@@ -55860,18 +55760,16 @@ end;
 {==============================================================================}
 
 procedure CacheCheckTimer(Data:Pointer);
-var
- Cache:THashCache;
 begin
  {}
  {Check Data}
  if Data = nil then Exit;
  
- {Get Cache}
- Cache:=THashCache(Data);
+ {Check Cache}
+ if Data <> FileSysDriver.Cache then Exit;
  
  {Check Timer}
- Cache.CheckTimer;
+ FileSysDriver.Cache.CheckTimer;
 end;
 
 {==============================================================================}

@@ -12790,13 +12790,13 @@ begin
       
            {Use DMA Buffer}
            SDHCI.DMAData.Dest:=SDHCI.DMABuffer;
-           
-           {Check Cache}
-           if not(DMA_CACHE_COHERENT) then
-            begin
-             {Clean Cache (Dest)}
-             CleanDataCacheRange(PtrUInt(SDHCI.DMABuffer),SDHCI.DMAData.Size);
-            end;
+          end;
+
+         {Check Cache}
+         if not(DMA_CACHE_COHERENT) then
+          begin
+           {Clean Cache (Dest)}
+           CleanDataCacheRange(PtrUInt(SDHCI.DMAData.Dest),SDHCI.DMAData.Size);
           end;
         end
        else
@@ -12821,7 +12821,9 @@ begin
            {Copy Data to DMA Buffer}
            SDHCI.DMAData.Source:=SDHCI.DMABuffer;
            System.Move(Command.Data.Data^,SDHCI.DMAData.Source^,SDHCI.DMAData.Size);
-          end; 
+          end;
+
+         {DMA Host will Clean Cache on Source Data}
         end;
      
        Result:=MMC_STATUS_SUCCESS;
@@ -12944,7 +12946,12 @@ begin
                CleanDataCacheRange(PtrUInt(SDHCI.ADMATable),SDHCI.ADMATableSize);
                
                {Check Direction}
-               if (Command.Data.Flags and MMC_DATA_WRITE) <> 0 then
+               if (Command.Data.Flags and MMC_DATA_READ) <> 0 then
+                begin
+                 {Clean Cache (Dest)}
+                 CleanDataCacheRange(PtrUInt(Command.Data.Data),Command.Data.BlockCount * Command.Data.BlockSize);
+                end
+               else 
                 begin
                  {Clean Cache (Data)}
                  CleanDataCacheRange(PtrUInt(Command.Data.Data),Command.Data.BlockCount * Command.Data.BlockSize);
@@ -12991,7 +12998,16 @@ begin
                    {Clean Cache (Dest)}
                    CleanDataCacheRange(PtrUInt(SDHCI.DMABuffer),Command.Data.BlockCount * Command.Data.BlockSize);
                   end;
-                end; 
+                end
+               else
+                begin
+                 {Check Cache}
+                 if not(DMA_CACHE_COHERENT) then
+                  begin
+                   {Clean Cache (Dest)}
+                   CleanDataCacheRange(PtrUInt(Command.Data.Data),Command.Data.BlockCount * Command.Data.BlockSize);
+                  end;
+                end;
               end
              else
               begin
@@ -13006,7 +13022,7 @@ begin
                  {Check Cache}
                  if not(DMA_CACHE_COHERENT) then
                   begin
-                   {Clean Cache}
+                   {Clean Cache (Data)}
                    CleanDataCacheRange(PtrUInt(SDHCI.DMABuffer),Command.Data.BlockCount * Command.Data.BlockSize);
                   end; 
                 end
@@ -13015,7 +13031,7 @@ begin
                  {Check Cache}
                  if not(DMA_CACHE_COHERENT) then
                   begin
-                   {Clean Cache}
+                   {Clean Cache (Data)}
                    CleanDataCacheRange(PtrUInt(Command.Data.Data),Command.Data.BlockCount * Command.Data.BlockSize);
                   end; 
                 end;
