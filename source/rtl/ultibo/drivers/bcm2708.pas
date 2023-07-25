@@ -190,7 +190,7 @@ BCM2708 PWM0/1 Device
  PWM1 is available on GPIO pins 13 (function 0), 19 (function 5), 41, 45 (function 0) and 53 (function 1).
  
  On the Raspberry Pi A and B only pin 18 is exposed on the 26 pin header.
- On the Raspberry Pi A+/B+/Zero/2B/3B pins 12, 18 and 19 are exposed on the 40 pin header.
+ On the Raspberry Pi A+/B+/Zero/2B/3B pins 12, 13, 18 and 19 are exposed on the 40 pin header.
 
 
 BCM2708 PCM Device

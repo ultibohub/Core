@@ -296,7 +296,7 @@ BCM2711 PWM0/1 Device
  PWM1       PWM1_0    GPIO_PIN_40  GPIO_FUNCTION_ALT0 
             PWM1_1    GPIO_PIN_41  GPIO_FUNCTION_ALT0 
 
- On the Raspberry Pi 4B pins 12, 18 and 19 are exposed on the 40 pin header.
+ On the Raspberry Pi 4B pins 12, 13, 18 and 19 are exposed on the 40 pin header.
 
 
 BCM2711 PCM Device
