@@ -15,7 +15,7 @@ set myfpc=%mypath%\bin\i386-win32
 IF not exist %mypath%\nul.x GOTO PathError
 IF not exist %myfpc%\fpc.exe GOTO FPCError
 
-set path=%mypath%\bin\i386-win32
+set path=%mypath%\bin\i386-win32;
 
 echo .
 echo ======================Start of Build Script======================
