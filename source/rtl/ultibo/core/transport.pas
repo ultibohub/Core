@@ -1,7 +1,7 @@
 {
 Ultibo Network Transport interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -7233,13 +7233,23 @@ function StringToInAddr(const AAddress:String):TInAddr;
 {Convert a String to an InAddr}
 {Note: Returns Address in Network order}
 var
+ Count:Integer;
  PosIdx:Integer;
  WorkBuffer:String;
 begin
  {}
- LongWord(Result.S_addr):=INADDR_ANY;
  try
   WorkBuffer:=AAddress;
+
+  LongWord(Result.S_addr):=INADDR_NONE;
+
+  {Check for Numeric Address}
+  for Count:=1 to Length(WorkBuffer) do
+   begin
+    if not (WorkBuffer[Count] in ['.', '0'..'9']) then Exit;
+   end;
+
+  LongWord(Result.S_addr):=INADDR_ANY;
   
   {First Octet}
   PosIdx:=Pos('.',WorkBuffer);
