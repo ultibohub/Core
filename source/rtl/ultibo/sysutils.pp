@@ -15,8 +15,15 @@
 
 {$MODE objfpc}
 {$MODESWITCH OUT}
+{$IFDEF UNICODERTL}
+{$MODESWITCH UNICODESTRINGS}
+{$ELSE}
 {$H+}
+{$ENDIF}
+
+{$IFNDEF FPC_DOTTEDUNITS}
 unit sysutils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
@@ -194,8 +201,13 @@ var
  
 implementation
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  System.SysConst;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   sysconst;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {****************************************************************************
                               Time Functions
