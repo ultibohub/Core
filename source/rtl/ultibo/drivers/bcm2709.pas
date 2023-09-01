@@ -1134,7 +1134,7 @@ function BCM2709FramebufferCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt
 
 function BCM2709FramebufferWaitSync(Framebuffer:PFramebufferDevice):LongWord;
  
-function BCM2709FramebufferSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
+function BCM2709FramebufferSetOffsetEx(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan,Switch:Boolean):LongWord;
 
 function BCM2709FramebufferGetPalette(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
 function BCM2709FramebufferSetPalette(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
@@ -2331,7 +2331,7 @@ begin
          BCM2709Framebuffer.Framebuffer.DeviceBlank:=BCM2709FramebufferBlank;
          BCM2709Framebuffer.Framebuffer.DeviceCommit:=BCM2709FramebufferCommit;
          BCM2709Framebuffer.Framebuffer.DeviceWaitSync:=BCM2709FramebufferWaitSync;
-         BCM2709Framebuffer.Framebuffer.DeviceSetOffset:=BCM2709FramebufferSetOffset;
+         BCM2709Framebuffer.Framebuffer.DeviceSetOffsetEx:=BCM2709FramebufferSetOffsetEx;
          BCM2709Framebuffer.Framebuffer.DeviceGetPalette:=BCM2709FramebufferGetPalette;
          BCM2709Framebuffer.Framebuffer.DeviceSetPalette:=BCM2709FramebufferSetPalette;
          BCM2709Framebuffer.Framebuffer.DeviceSetBacklight:=BCM2709FramebufferSetBacklight;
@@ -12064,9 +12064,9 @@ end;
  
 {==============================================================================}
 
-function BCM2709FramebufferSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
-{Implementation of FramebufferDeviceSetOffset API for BCM2709 Framebuffer}
-{Note: Not intended to be called directly by applications, use FramebufferDeviceSetOffset instead}
+function BCM2709FramebufferSetOffsetEx(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan,Switch:Boolean):LongWord;
+{Implementation of FramebufferDeviceSetOffsetEx API for BCM2709 Framebuffer}
+{Note: Not intended to be called directly by applications, use FramebufferDeviceSetOffsetEx instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -12088,15 +12088,21 @@ begin
     if Y > (Framebuffer.VirtualHeight - Framebuffer.PhysicalHeight) then Exit;
     
     {Set Offset}
-    Result:=FramebufferSetOffset(X,Y);
-    if Result <> ERROR_SUCCESS then Exit;
-    
+    if Switch then
+     begin
+      Result:=FramebufferSetOffset(X,Y);
+      if Result <> ERROR_SUCCESS then Exit;
+     end; 
+
     {Update Offset}
     if not(Pan) then
      begin
       Framebuffer.OffsetX:=X;
       Framebuffer.OffsetY:=Y;
      end; 
+
+    {Return Result}
+    Result:=ERROR_SUCCESS;
    finally
     {Set Default Display}
     if PBCM2709Framebuffer(Framebuffer).MultiDisplay then

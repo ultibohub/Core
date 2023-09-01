@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL110 Color LCD Controller Driver.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -231,7 +231,7 @@ function PL110FramebufferBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):Lon
 
 function PL110FramebufferCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
 
-function PL110FramebufferSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
+function PL110FramebufferSetOffsetEx(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan,Switch:Boolean):LongWord;
 
 {==============================================================================}
 {PL110 Helper Functions}
@@ -305,7 +305,7 @@ begin
    PL110Framebuffer.Framebuffer.DeviceRelease:=PL110FramebufferRelease;
    PL110Framebuffer.Framebuffer.DeviceBlank:=PL110FramebufferBlank;
    PL110Framebuffer.Framebuffer.DeviceCommit:=PL110FramebufferCommit;
-   PL110Framebuffer.Framebuffer.DeviceSetOffset:=PL110FramebufferSetOffset;
+   PL110Framebuffer.Framebuffer.DeviceSetOffsetEx:=PL110FramebufferSetOffsetEx;
    {PL110}
    PL110Framebuffer.Mode:=PL110_MODE_VGA;
    PL110Framebuffer.Depth:=Depth;
@@ -418,7 +418,7 @@ begin
    PL110Framebuffer.Framebuffer.DeviceRelease:=PL110FramebufferRelease;
    PL110Framebuffer.Framebuffer.DeviceBlank:=PL110FramebufferBlank;
    PL110Framebuffer.Framebuffer.DeviceCommit:=PL110FramebufferCommit;
-   PL110Framebuffer.Framebuffer.DeviceSetOffset:=PL110FramebufferSetOffset;
+   PL110Framebuffer.Framebuffer.DeviceSetOffsetEx:=PL110FramebufferSetOffsetEx;
    {PL110}
    PL110Framebuffer.Mode:=PL110_MODE_SVGA;
    PL110Framebuffer.Depth:=Depth;
@@ -996,9 +996,9 @@ end;
 
 {==============================================================================}
 
-function PL110FramebufferSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
-{Implementation of FramebufferDeviceSetOffset API for PL110 Framebuffer}
-{Note: Not intended to be called directly by applications, use FramebufferDeviceSetOffset instead}
+function PL110FramebufferSetOffsetEx(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan,Switch:Boolean):LongWord;
+{Implementation of FramebufferDeviceSetOffsetEx API for PL110 Framebuffer}
+{Note: Not intended to be called directly by applications, use FramebufferDeviceSetOffsetEx instead}
 var
  UpperBase:LongWord;
  LowerBase:LongWord;
@@ -1028,9 +1028,12 @@ begin
     DataMemoryBarrier; {Before the First Write}
     
     {Update PL110}
-    PPL110Framebuffer(Framebuffer).Registers.UPBASE:=UpperBase;
-    PPL110Framebuffer(Framebuffer).Registers.LPBASE:=LowerBase;
-    
+    if Switch then
+     begin
+      PPL110Framebuffer(Framebuffer).Registers.UPBASE:=UpperBase;
+      PPL110Framebuffer(Framebuffer).Registers.LPBASE:=LowerBase;
+     end; 
+
     {Update Offset}
     if not(Pan) then
      begin

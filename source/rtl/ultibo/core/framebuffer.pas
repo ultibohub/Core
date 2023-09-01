@@ -1,7 +1,7 @@
 {
 Ultibo Framebuffer interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -167,6 +167,7 @@ type
  
  TFramebufferDeviceGetOffset = function(Framebuffer:PFramebufferDevice;var X,Y:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TFramebufferDeviceSetOffset = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TFramebufferDeviceSetOffsetEx = function(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan,Switch:Boolean):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
  TFramebufferDeviceGetPalette = function(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TFramebufferDeviceSetPalette = function(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -202,8 +203,9 @@ type
   DeviceWaitSync:TFramebufferDeviceWaitSync;     {A device specific DeviceWaitSync method implementing a standard framebuffer device interface (Optional)}
   DeviceGetOffset:TFramebufferDeviceGetOffset;   {A device specific DeviceGetOffset method implementing a standard framebuffer device interface (Optional)}
   DeviceSetOffset:TFramebufferDeviceSetOffset;   {A device specific DeviceSetOffset method implementing a standard framebuffer device interface (Optional)}
-  DeviceGetPalette:TFramebufferDeviceGetPalette; {A device specific DeviceGetPalette method implementing a standard framebuffer device interface (Optional)}
-  DeviceSetPalette:TFramebufferDeviceSetPalette; {A device specific DeviceSetPalette method implementing a standard framebuffer device interface (Optional)}
+  DeviceSetOffsetEx:TFramebufferDeviceSetOffsetEx;     {A device specific DeviceSetOffsetEx method implementing a standard framebuffer device interface (Optional)}
+  DeviceGetPalette:TFramebufferDeviceGetPalette;       {A device specific DeviceGetPalette method implementing a standard framebuffer device interface (Optional)}
+  DeviceSetPalette:TFramebufferDeviceSetPalette;       {A device specific DeviceSetPalette method implementing a standard framebuffer device interface (Optional)}
   DeviceSetBacklight:TFramebufferDeviceSetBacklight;   {A device specific DeviceSetBacklight method implementing a standard framebuffer device interface (Optional)}
   DeviceSetCursor:TFramebufferDeviceSetCursor;         {A device specific DeviceSetCursor method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
   DeviceUpdateCursor:TFramebufferDeviceUpdateCursor;   {A device specific DeviceUpdateCursor method implementing a standard framebuffer device interface (Or nil if the default method is suitable)}
@@ -297,7 +299,8 @@ function FramebufferDeviceGetPoint(Framebuffer:PFramebufferDevice;X,Y:LongWord):
 function FramebufferDeviceWaitSync(Framebuffer:PFramebufferDevice):LongWord;
  
 function FramebufferDeviceGetOffset(Framebuffer:PFramebufferDevice;var X,Y:LongWord):LongWord;
-function FramebufferDeviceSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
+function FramebufferDeviceSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord; inline;
+function FramebufferDeviceSetOffsetEx(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan,Switch:Boolean):LongWord;
 
 function FramebufferDeviceGetPalette(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
 function FramebufferDeviceSetPalette(Framebuffer:PFramebufferDevice;Palette:PFramebufferPalette):LongWord;
@@ -2068,12 +2071,32 @@ end;
 
 {==============================================================================}
 
-function FramebufferDeviceSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord;
+function FramebufferDeviceSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan:Boolean):LongWord; inline;
 {Set the virtual offset X and Y of a framebuffer device}
 {Framebuffer: The framebuffer device to set the offset for}
 {X: The X (Column) offset value in pixels to set}
 {Y: The Y (Row) offset value in pixels to set}
 {Pan: If True then pan the display without updating the Offset X and/or Y}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: X and Y are relative to the virtual buffer and NOT the physical screen (Where applicable)}
+{Note: Not all framebuffer devices support X and/or Y offset, returns ERROR_CALL_NOT_IMPLEMENTED if not supported}
+{      Devices that support offset X should set the flag FRAMEBUFFER_FLAG_OFFSETX}
+{      Devices that support offset Y should set the flag FRAMEBUFFER_FLAG_OFFSETY}
+begin
+ {}
+ Result:=FramebufferDeviceSetOffsetEx(Framebuffer,X,Y,Pan,True);
+end;
+
+{==============================================================================}
+
+function FramebufferDeviceSetOffsetEx(Framebuffer:PFramebufferDevice;X,Y:LongWord;Pan,Switch:Boolean):LongWord;
+{Set the virtual offset X and Y of a framebuffer device}
+{Framebuffer: The framebuffer device to set the offset for}
+{X: The X (Column) offset value in pixels to set}
+{Y: The Y (Row) offset value in pixels to set}
+{Pan: If True then pan the display without updating the Offset X and/or Y}
+{Switch: If False then update the Offset X and/or Y without moving the display}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: X and Y are relative to the virtual buffer and NOT the physical screen (Where applicable)}
@@ -2096,7 +2119,11 @@ begin
  Result:=ERROR_NOT_SUPPORTED;
  if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
  
- if Assigned(Framebuffer.DeviceSetOffset) then
+ if Assigned(Framebuffer.DeviceSetOffsetEx) then
+  begin
+   Result:=Framebuffer.DeviceSetOffsetEx(Framebuffer,X,Y,Pan,Switch);
+  end
+ else if Assigned(Framebuffer.DeviceSetOffset) then
   begin
    Result:=Framebuffer.DeviceSetOffset(Framebuffer,X,Y,Pan);
   end
@@ -2713,6 +2740,7 @@ begin
  Result.DeviceWaitSync:=nil;
  Result.DeviceGetOffset:=nil;
  Result.DeviceSetOffset:=nil;
+ Result.DeviceSetOffsetEx:=nil;
  Result.DeviceGetPalette:=nil;
  Result.DeviceSetPalette:=nil;
  Result.DeviceSetBacklight:=nil;
