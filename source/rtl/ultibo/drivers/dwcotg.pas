@@ -1236,7 +1236,7 @@ begin
    end;
 
   {$IF DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)}
-  if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG: Channel Count = ' + PtrToHex(PDWCUSBHost(Host).ChannelCount));
+  if USB_LOG_ENABLED then USBLogDebug(nil,'DWCOTG: Channel Count = ' + IntToStr(PDWCUSBHost(Host).ChannelCount));
   {$ENDIF}
 
   {Allocate DMA Buffers}

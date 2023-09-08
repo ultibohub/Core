@@ -1,7 +1,7 @@
 {
 Ultibo HTTP interface unit.
 
-Copyright (C) 2023- SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====

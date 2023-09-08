@@ -1,7 +1,7 @@
 {
 Ultibo Touch interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1314,7 +1314,7 @@ end;
 {==============================================================================}
 
 function TouchDeviceDeregister(Touch:PTouchDevice):LongWord;
-{Deregister an Touch device from the Touch device table}
+{Deregister a Touch device from the Touch device table}
 {Touch: The Touch device to deregister}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var

@@ -1,7 +1,7 @@
 {
 Ultibo Graphics Console interface unit.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2353,12 +2353,8 @@ begin
   LineY2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y2;
  
   {Check X1,Y1,X2,Y2}
-  if (X1 = X2) or (Y1 = Y2) then
+  if ((X1 = X2) and (Y2 > Y1)) or ((Y1 = Y2) and (X2 > X1)) then
    begin
-    {Check X1,Y1,X2,Y2}
-    if X1 > X2 then Exit;
-    if Y1 > Y2 then Exit;
-    
     {Console Draw Line}
     Result:=ConsoleDeviceDrawLine(Window.Console,LineX1,LineY1,LineX2,LineY2,Color,Width);
    end

@@ -1,7 +1,7 @@
 {
 Ultibo GPIO interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -75,6 +75,12 @@ const
  {GPIO Device Types}
  GPIO_TYPE_NONE      = 0;
  
+ GPIO_TYPE_MAX       = 0;
+
+ {GPIO Type Names}
+ GPIO_TYPE_NAMES:array[GPIO_TYPE_NONE..GPIO_TYPE_MAX] of String = (
+  'GPIO_TYPE_NONE');
+
  {GPIO Device States}
  GPIO_STATE_DISABLED = 0;
  GPIO_STATE_ENABLED  = 1;
@@ -313,6 +319,7 @@ function GPIODeviceSetDefault(GPIO:PGPIODevice):LongWord;
 
 function GPIODeviceCheck(GPIO:PGPIODevice):PGPIODevice;
 
+function GPIOTypeToString(GPIOType:LongWord):String;
 function GPIOStateToString(GPIOState:LongWord):String;
 
 function GPIODeviceCreateEvent(GPIO:PGPIODevice;Pin:PGPIOPin;Callback:TGPIOCallback;Data:Pointer;Timeout:LongWord):PGPIOEvent;
@@ -1642,6 +1649,20 @@ begin
     {Release the Lock}
     CriticalSectionUnlock(GPIODeviceTableLock);
    end;
+  end;
+end;
+
+{==============================================================================}
+
+function GPIOTypeToString(GPIOType:LongWord):String;
+{Convert a GPIO type value to a string}
+begin
+ {}
+ Result:='GPIO_TYPE_UNKNOWN';
+ 
+ if GPIOType <= GPIO_TYPE_MAX then
+  begin
+   Result:=GPIO_TYPE_NAMES[GPIOType];
   end;
 end;
 
