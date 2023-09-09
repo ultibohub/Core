@@ -1,7 +1,7 @@
 {
 Ultibo Keymap interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -135,6 +135,10 @@ const
  
  {Keymap Signature}
  KEYMAP_SIGNATURE = $863FDBA1;
+
+ {Keymap name constants}
+ KEYMAP_NAME_LENGTH = SIZE_64;   {Length of keymap name}
+ KEYMAP_DESC_LENGTH = SIZE_128;  {Length of keymap description}
  
  {Keymap Mode constants}
  KEYMAP_MODE_NONE = 0;
@@ -220,8 +224,8 @@ type
   KeymapFlags:LongWord;          {Keymap flags (eg KEYMAP_FLAG_ALTGR)}
   KeyCount:LongWord;             {Number of keys in keymap (Default: KEYMAP_KEY_COUNT)}
   RowCount:LongWord;             {Number of index rows in keymap (Default: KEYMAP_ROW_COUNT)}
-  KeymapName:String;             {Keymap name}
-  KeymapDescription:String;      {Keymap description}
+  KeymapName:array[0..KEYMAP_NAME_LENGTH - 1] of Char; {Keymap name}
+  KeymapDescription:array[0..KEYMAP_DESC_LENGTH - 1] of Char; {Keymap description}
  end;
 
  PKeymapEntry = ^TKeymapEntry;
@@ -235,8 +239,8 @@ type
   Signature:LongWord;            {Signature for entry validation}
   KeymapMode:LongWord;           {Keymap mode (eg KEYMAP_MODE_NONE)}
   KeymapFlags:LongWord;          {Keymap flags (eg KEYMAP_FLAG_ALTGR)}
-  KeymapName:String;             {Keymap name}
-  KeymapDescription:String;      {Keymap description}
+  KeymapName:array[0..KEYMAP_NAME_LENGTH - 1] of Char; {Keymap name}
+  KeymapDescription:array[0..KEYMAP_DESC_LENGTH - 1] of Char; {Keymap description}
   {Driver Properties}
   KeyData:Pointer;               {Keymap key data}
   KeyCount:LongWord;             {Number of keys in key data (Default: KEYMAP_KEY_COUNT)}
@@ -704,8 +708,8 @@ begin
    Keymap.Signature:=KEYMAP_SIGNATURE;
    Keymap.KeymapMode:=Properties.KeymapMode;
    Keymap.KeymapFlags:=Properties.KeymapFlags;
-   Keymap.KeymapName:=Properties.KeymapName;
-   Keymap.KeymapDescription:=Properties.KeymapDescription;
+   StrLCopy(Keymap.KeymapName,Properties.KeymapName,KEYMAP_NAME_LENGTH - 1);
+   StrLCopy(Keymap.KeymapDescription,Properties.KeymapDescription,KEYMAP_DESC_LENGTH - 1);
    Keymap.KeyData:=nil;
    Keymap.KeyCount:=Properties.KeyCount;
    Keymap.RowCount:=Properties.RowCount;
@@ -714,8 +718,6 @@ begin
   end;
  
  {Update Keymap}
- UniqueString(Keymap.KeymapName);
- UniqueString(Keymap.KeymapDescription);
  Keymap.KeyData:=GetMem(TotalSize);
  if Keymap.KeyData = nil then
   begin
@@ -932,10 +934,14 @@ begin
  {Acquire Lock}
  if CriticalSectionLock(KeymapTableLock) <> ERROR_SUCCESS then Exit;
 
+ {Allocate Result}
+ SetLength(Result,KEYMAP_NAME_LENGTH - 1);
+ 
  {Get Name}
- Result:=Keymap.KeymapName;
+ StrLCopy(PChar(Result),Keymap.KeymapName,KEYMAP_NAME_LENGTH - 1);
     
- UniqueString(Result);
+ {Update Result}
+ SetLength(Result,StrLen(PChar(Result)));
 
  {Release Lock}
  CriticalSectionUnlock(KeymapTableLock);
@@ -964,10 +970,14 @@ begin
  {Acquire Lock}
  if CriticalSectionLock(KeymapTableLock) <> ERROR_SUCCESS then Exit;
 
+ {Allocate Result}
+ SetLength(Result,KEYMAP_DESC_LENGTH - 1);
+
  {Get Description}
- Result:=Keymap.KeymapDescription;
-    
- UniqueString(Result);
+ StrLCopy(PChar(Result),Keymap.KeymapDescription,KEYMAP_DESC_LENGTH - 1);
+
+ {Update Result}
+ SetLength(Result,StrLen(PChar(Result)));
 
  {Release Lock}
  CriticalSectionUnlock(KeymapTableLock);
@@ -1329,12 +1339,11 @@ begin
     {Get Properties}
     Properties.KeymapMode:=Keymap.KeymapMode;
     Properties.KeymapFlags:=Keymap.KeymapFlags;
-    Properties.KeymapName:=Keymap.KeymapName;
-    Properties.KeymapDescription:=Keymap.KeymapDescription;
-    
-    UniqueString(Properties.KeymapName);
-    UniqueString(Properties.KeymapDescription);
-    
+    StrLCopy(Properties.KeymapName,Keymap.KeymapName,KEYMAP_NAME_LENGTH - 1);
+    StrLCopy(Properties.KeymapDescription,Keymap.KeymapDescription,KEYMAP_DESC_LENGTH - 1);
+    Properties.KeyCount:=Keymap.KeyCount;
+    Properties.RowCount:=Keymap.RowCount;
+
     Result:=ERROR_SUCCESS;
    finally
     CriticalSectionUnlock(KeymapTableLock);
