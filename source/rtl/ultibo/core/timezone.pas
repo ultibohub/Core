@@ -57,6 +57,10 @@ const
  
  {Timezone Signature}
  TIMEZONE_SIGNATURE = $ED9A1BC3;
+
+ {Timezone name constants}
+ TIMEZONE_NAME_LENGTH = SIZE_64;   {Length of timezone name}
+ TIMEZONE_DESC_LENGTH = SIZE_128;  {Length of timezone description}
  
 {==============================================================================}
 type
@@ -118,13 +122,13 @@ type
  TTimezoneEntry = record
   {Timezone Properties}
   Signature:LongWord;            {Signature for entry validation}
-  Name:String;
-  Description:String;
+  Name:array[0..TIMEZONE_NAME_LENGTH - 1] of Char; {Timezone name}
+  Description:array[0..TIMEZONE_DESC_LENGTH - 1] of Char; {Timezone description}
   Bias:LongInt;
-  StandardName:String;
+  StandardName:array[0..TIMEZONE_NAME_LENGTH - 1] of Char; {Standard name}
   StandardBias:LongInt;
   StandardStart:SYSTEMTIME;
-  DaylightName:String;
+  DaylightName:array[0..TIMEZONE_NAME_LENGTH - 1] of Char; {Daylight name}
   DaylightBias:LongInt;
   DaylightStart:SYSTEMTIME;
   {Internal Properties}
@@ -1997,12 +2001,6 @@ begin
  Timezone.DaylightBias:=Data.DaylightBias;
  Timezone.DaylightStart:=Data.DaylightStart;
  
- {Update Timezone}
- UniqueString(Timezone.Name);
- UniqueString(Timezone.Description);
- UniqueString(Timezone.StandardName);
- UniqueString(Timezone.DaylightName);
- 
  {Insert Timezone}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2027,10 +2025,15 @@ begin
      begin
       TimezoneDefault:=Timezone;
       
-      {Set Timezone Defaults}
-      TIMEZONE_DEFAULT_NAME:=Timezone.Name;
-      UniqueString(TIMEZONE_DEFAULT_NAME);
+      {Allocate Default Name}
+      SetLength(TIMEZONE_DEFAULT_NAME,TIMEZONE_NAME_LENGTH - 1);
       
+      {Set Timezone Defaults}
+      StrLCopy(PChar(TIMEZONE_DEFAULT_NAME),TimezoneDefault.Name,TIMEZONE_NAME_LENGTH - 1);
+      
+      {Update Default Name}
+      SetLength(TIMEZONE_DEFAULT_NAME,StrLen(PChar(TIMEZONE_DEFAULT_NAME)));
+
       {Update Timezone Offset}
       TimezoneUpdateOffset;
      end;
@@ -2101,9 +2104,14 @@ begin
       
       if TimezoneDefault <> nil then
        begin
+        {Allocate Default Name}
+        SetLength(TIMEZONE_DEFAULT_NAME,TIMEZONE_NAME_LENGTH - 1);
+      
         {Set Timezone Defaults}
-        TIMEZONE_DEFAULT_NAME:=TimezoneDefault.Name;
-        UniqueString(TIMEZONE_DEFAULT_NAME);
+        StrLCopy(PChar(TIMEZONE_DEFAULT_NAME),TimezoneDefault.Name,TIMEZONE_NAME_LENGTH - 1);
+      
+        {Update Default Name}
+        SetLength(TIMEZONE_DEFAULT_NAME,StrLen(PChar(TIMEZONE_DEFAULT_NAME)));
         
         {Update Timezone Offset}
         TimezoneUpdateOffset;
@@ -2147,9 +2155,14 @@ begin
     {Check Timezone}
     if TimezoneCheck(Timezone) <> Timezone then Exit;
 
+    {Allocate Result}
+    SetLength(Result,TIMEZONE_NAME_LENGTH - 1);
+
     {Get Name}
-    Result:=Timezone.Name;
-    UniqueString(Result);
+    StrLCopy(PChar(Result),Timezone.Name,TIMEZONE_NAME_LENGTH - 1);
+
+    {Update Result}
+    SetLength(Result,StrLen(PChar(Result)));
    finally
     {Release the Lock}
     CriticalSectionUnlock(TimezoneTableLock);
@@ -2175,9 +2188,14 @@ begin
     {Check Timezone}
     if TimezoneCheck(Timezone) <> Timezone then Exit;
 
+    {Allocate Result}
+    SetLength(Result,TIMEZONE_DESC_LENGTH - 1);
+
     {Get Description}
-    Result:=Timezone.Description;
-    UniqueString(Result);
+    StrLCopy(PChar(Result),Timezone.Description,TIMEZONE_DESC_LENGTH - 1);
+
+    {Update Result}
+    SetLength(Result,StrLen(PChar(Result)));
    finally
     {Release the Lock}
     CriticalSectionUnlock(TimezoneTableLock);
@@ -2446,9 +2464,14 @@ begin
     {Check Timezone}
     if TimezoneCheck(Timezone) <> Timezone then Exit;
 
+    {Allocate Result}
+    SetLength(Result,TIMEZONE_NAME_LENGTH - 1);
+
     {Get Standard Name}
-    Result:=Timezone.StandardName;
-    UniqueString(Result);
+    StrLCopy(PChar(Result),Timezone.StandardName,TIMEZONE_NAME_LENGTH - 1);
+
+    {Update Result}
+    SetLength(Result,StrLen(PChar(Result)));
    finally
     {Release the Lock}
     CriticalSectionUnlock(TimezoneTableLock);
@@ -2571,9 +2594,14 @@ begin
     {Check Timezone}
     if TimezoneCheck(Timezone) <> Timezone then Exit;
 
+    {Allocate Result}
+    SetLength(Result,TIMEZONE_NAME_LENGTH - 1);
+
     {Get Daylight Name}
-    Result:=Timezone.DaylightName;
-    UniqueString(Result);
+    StrLCopy(PChar(Result),Timezone.DaylightName,TIMEZONE_NAME_LENGTH - 1);
+
+    {Update Result}
+    SetLength(Result,StrLen(PChar(Result)));
    finally
     {Release the Lock}
     CriticalSectionUnlock(TimezoneTableLock);
@@ -2876,9 +2904,14 @@ begin
     {Set Timezone Default}
     TimezoneDefault:=Timezone;
     
+    {Allocate Default Name}
+    SetLength(TIMEZONE_DEFAULT_NAME,TIMEZONE_NAME_LENGTH - 1);
+
     {Set Timezone Defaults}
-    TIMEZONE_DEFAULT_NAME:=TimezoneDefault.Name;
-    UniqueString(TIMEZONE_DEFAULT_NAME);
+    StrLCopy(PChar(TIMEZONE_DEFAULT_NAME),Timezone.Name,TIMEZONE_NAME_LENGTH - 1);
+
+    {Update Default Name}
+    SetLength(TIMEZONE_DEFAULT_NAME,StrLen(PChar(TIMEZONE_DEFAULT_NAME)));
     
     {Update Timezone Offset}
     TimezoneUpdateOffset;
