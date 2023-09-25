@@ -982,7 +982,7 @@ type
  end;
 
  TDiskSearchRec = record
-  Name:String;
+  Name:array[0..MAX_PATH - 1] of Char;
   MediaType:TMediaType;
   FloppyType:TFloppyType;
   FindHandle:THandle;
@@ -991,7 +991,7 @@ type
  end;
 
  TPartitionSearchRec = record
-  Name:String;
+  Name:array[0..MAX_PATH - 1] of Char;
   Index:LongWord;
   FindHandle:THandle;
   Context:LongWord;
@@ -999,10 +999,10 @@ type
  end;
  
  TVolumeSearchRec = record
-  Name:String;
+  Name:array[0..MAX_PATH - 1] of Char;
   Attributes:LongWord;
-  VolumeLabel:String;
-  VolumeGUID:String;
+  VolumeLabel:array[0..63] of Char;
+  VolumeGUID:array[0..63] of Char;
   VolumeSerial:LongWord;
   DriveType:TDriveType;
   FileSysType:TFileSysType;
@@ -1012,10 +1012,10 @@ type
  end;
  
  TDriveSearchRec = record
-  Name:String;
+  Name:array[0..MAX_PATH - 1] of Char;
   Attributes:LongWord;
-  VolumeLabel:String;
-  VolumeGUID:String;
+  VolumeLabel:array[0..63] of Char;
+  VolumeGUID:array[0..63] of Char;
   VolumeSerial:LongWord;
   DriveType:TDriveType;
   FileSysType:TFileSysType;
@@ -1025,7 +1025,7 @@ type
  end;
  
  TImageSearchRec = record
-  Name:String;
+  Name:array[0..MAX_PATH - 1] of Char;
   ImageNo:Integer;
   ImageType:TImageType;
   MediaType:TMediaType;
@@ -1043,8 +1043,8 @@ type
  end;
  
  TCatalogSearchRec = record
-  Name:String;
-  Path:String;
+  Name:array[0..MAX_PATH - 1] of Char;
+  Path:array[0..MAX_PATH - 1] of Char;
   CatalogNo:LongWord;
   MediaType:TMediaType;
   FloppyType:TFloppyType;
@@ -1056,13 +1056,13 @@ type
  end;
  
  TMountSearchRec = record
-  Name:String;
+  Name:array[0..MAX_PATH - 1] of Char;
   FindHandle:THandle;
   Context:LongWord;
  end;
 
  TJunctionSearchRec = record
-  Name:String;
+  Name:array[0..MAX_PATH - 1] of Char;
   FindHandle:THandle;
   Context:LongWord;
  end;
@@ -1074,7 +1074,7 @@ type
  end;
  
  TLinkSearchRec = record
-  Name:String;
+  Name:array[0..MAX_PATH - 1] of Char;
   FindHandle:THandle;
   Context:Pointer;
  end;
@@ -11361,7 +11361,7 @@ begin
   
    {Return Device}
    ASearchRec.FindHandle:=Handle.Handle;
-   ASearchRec.Name:=Current.Name;
+   StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
    ASearchRec.MediaType:=Current.MediaType;
    ASearchRec.FloppyType:=Current.FloppyType;
   
@@ -11411,7 +11411,7 @@ begin
   
    {Return Device}
    ASearchRec.FindHandle:=Handle.Handle;
-   ASearchRec.Name:=Current.Name;
+   StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
    ASearchRec.MediaType:=Current.MediaType;
    ASearchRec.FloppyType:=Current.FloppyType;
   
@@ -11911,7 +11911,7 @@ begin
   
     {Return Partition}
     ASearchRec.FindHandle:=Handle.Handle;
-    ASearchRec.Name:=Current.Name;
+    StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
   
     Result:=0;
     
@@ -11986,7 +11986,7 @@ begin
   
    {Return Partition}
    ASearchRec.FindHandle:=Handle.Handle;
-   ASearchRec.Name:=Current.Name;
+   StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
   
    {Unlock Partition}
    Current.ReaderUnlock;
@@ -12645,10 +12645,10 @@ begin
   
    {Return Volume}
    ASearchRec.FindHandle:=Handle.Handle;
-   ASearchRec.Name:=Current.Name;
+   StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
    ASearchRec.Attributes:=Current.Attributes;
-   ASearchRec.VolumeLabel:=Current.VolumeName;
-   ASearchRec.VolumeGUID:=Current.VolumeGUID;
+   StrLCopy(ASearchRec.VolumeLabel,PChar(Current.VolumeName),63);
+   StrLCopy(ASearchRec.VolumeGUID,PChar(Current.VolumeGUID),63);
    ASearchRec.VolumeSerial:=Current.VolumeSerial;
    ASearchRec.DriveType:=Current.DriveType;
    ASearchRec.FileSysType:=Current.FileSysType;
@@ -12699,10 +12699,10 @@ begin
   
    {Return Volume}
    ASearchRec.FindHandle:=Handle.Handle;
-   ASearchRec.Name:=Current.Name;
+   StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
    ASearchRec.Attributes:=Current.Attributes;
-   ASearchRec.VolumeLabel:=Current.VolumeName;
-   ASearchRec.VolumeGUID:=Current.VolumeGUID;
+   StrLCopy(ASearchRec.VolumeLabel,PChar(Current.VolumeName),63);
+   StrLCopy(ASearchRec.VolumeGUID,PChar(Current.VolumeGUID),63);
    ASearchRec.VolumeSerial:=Current.VolumeSerial;
    ASearchRec.DriveType:=Current.DriveType;
    ASearchRec.FileSysType:=Current.FileSysType;
@@ -13165,10 +13165,10 @@ begin
   
    {Return Drive}
    ASearchRec.FindHandle:=Handle.Handle;
-   ASearchRec.Name:=Current.Name;
+   StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
    ASearchRec.Attributes:=Current.Attributes;
-   ASearchRec.VolumeLabel:=Current.VolumeName;
-   ASearchRec.VolumeGUID:=Current.VolumeGUID;
+   StrLCopy(ASearchRec.VolumeLabel,PChar(Current.VolumeName),63);
+   StrLCopy(ASearchRec.VolumeGUID,PChar(Current.VolumeGUID),63);
    ASearchRec.VolumeSerial:=Current.VolumeSerial;
    ASearchRec.DriveType:=Current.DriveType;
    ASearchRec.FileSysType:=Current.FileSysType;
@@ -13219,10 +13219,10 @@ begin
   
    {Return Drive}
    ASearchRec.FindHandle:=Handle.Handle;
-   ASearchRec.Name:=Current.Name;
+   StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
    ASearchRec.Attributes:=Current.Attributes;
-   ASearchRec.VolumeLabel:=Current.VolumeName;
-   ASearchRec.VolumeGUID:=Current.VolumeGUID;
+   StrLCopy(ASearchRec.VolumeLabel,PChar(Current.VolumeName),63);
+   StrLCopy(ASearchRec.VolumeGUID,PChar(Current.VolumeGUID),63);
    ASearchRec.VolumeSerial:=Current.VolumeSerial;
    ASearchRec.DriveType:=Current.DriveType;
    ASearchRec.FileSysType:=Current.FileSysType;
@@ -13835,7 +13835,7 @@ begin
   
    {Return Image}
    ASearchRec.FindHandle:=Handle.Handle;
-   ASearchRec.Name:=Current.Name;
+   StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
    ASearchRec.ImageNo:=Current.ImageNo;
    ASearchRec.ImageType:=Current.ImageType;
    ASearchRec.MediaType:=Current.MediaType;
@@ -13894,7 +13894,7 @@ begin
   
    {Return Image}
    ASearchRec.FindHandle:=Handle.Handle;
-   ASearchRec.Name:=Current.Name;
+   StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
    ASearchRec.ImageNo:=Current.ImageNo;
    ASearchRec.ImageType:=Current.ImageType;
    ASearchRec.MediaType:=Current.MediaType;
@@ -33495,8 +33495,8 @@ begin
   
    {Return Catalog}
    ASearchRec.FindHandle:=Handle.Handle;
-   ASearchRec.Name:=Current.Name;
-   ASearchRec.Path:=Current.Path;
+   StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
+   StrLCopy(ASearchRec.Path,PChar(Current.Path),MAX_PATH - 1);
    ASearchRec.CatalogNo:=Current.CatalogNo;
    ASearchRec.MediaType:=Current.MediaType;
    ASearchRec.FloppyType:=Current.FloppyType;
@@ -33547,8 +33547,8 @@ begin
   
    {Return Catalog}
    ASearchRec.FindHandle:=Handle.Handle;
-   ASearchRec.Name:=Current.Name;
-   ASearchRec.Path:=Current.Path;
+   StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
+   StrLCopy(ASearchRec.Path,PChar(Current.Path),MAX_PATH - 1);
    ASearchRec.CatalogNo:=Current.CatalogNo;
    ASearchRec.MediaType:=Current.MediaType;
    ASearchRec.FloppyType:=Current.FloppyType;
@@ -35461,8 +35461,8 @@ begin
      SearchRec.FindData.nFileSizeHigh:=TULargeInteger(Current.Size).HighPart;
      SearchRec.FindData.nFileSizeLow:=TULargeInteger(Current.Size).LowPart;
      SearchRec.FindData.dwReserved0:=Current.ReparseTag;
-     StrLCopy(SearchRec.FindData.cFileName,PChar(Current.Name),MAX_PATH);
-     StrLCopy(SearchRec.FindData.cAlternateFileName,PChar(Current.AltName),14);
+     StrLCopy(SearchRec.FindData.cFileName,PChar(Current.Name),MAX_PATH - 1);
+     StrLCopy(SearchRec.FindData.cAlternateFileName,PChar(Current.AltName),13);
      
      Result:=0;
      
@@ -35520,8 +35520,8 @@ begin
    SearchRec.FindData.nFileSizeHigh:=TULargeInteger(Current.Size).HighPart;
    SearchRec.FindData.nFileSizeLow:=TULargeInteger(Current.Size).LowPart;
    SearchRec.FindData.dwReserved0:=Current.ReparseTag;
-   StrLCopy(SearchRec.FindData.cFileName,PChar(Current.Name),MAX_PATH);
-   StrLCopy(SearchRec.FindData.cAlternateFileName,PChar(Current.AltName),14);
+   StrLCopy(SearchRec.FindData.cFileName,PChar(Current.Name),MAX_PATH - 1);
+   StrLCopy(SearchRec.FindData.cAlternateFileName,PChar(Current.AltName),13);
   
    Result:=0;
    
@@ -35806,7 +35806,7 @@ begin
      
       {Return Entry}
       SearchRec.FindHandle:=FindHandle.Handle;
-      SearchRec.Name:=Current.Name;
+      StrLCopy(SearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
     
       Result:=0;
     
@@ -35860,7 +35860,7 @@ begin
   
    {Return Entry}
    SearchRec.FindHandle:=FindHandle.Handle;
-   SearchRec.Name:=Current.Name;
+   StrLCopy(SearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
   
    Result:=0;
    

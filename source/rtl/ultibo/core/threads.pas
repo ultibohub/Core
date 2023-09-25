@@ -15026,6 +15026,7 @@ begin
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
+
 {==============================================================================}
 
 function ThreadGetStackPointer(Thread:TThreadHandle):PtrUInt;
@@ -25790,7 +25791,7 @@ function SchedulerGetThreadPreempt(CPUID:LongWord):LongWord;
 {Get the current thread preempt setting for the specified CPU}
 begin
  {}
- Result:=0;
+ Result:=SCHEDULER_PREEMPT_DISABLED;
 
  {Check CPU}
  if CPUID > (SCHEDULER_CPU_COUNT - 1) then Exit;
@@ -25805,7 +25806,7 @@ function SchedulerGetThreadAllocation(CPUID:LongWord):LongWord;
 {Get the current thread allocation setting for the specified CPU}
 begin
  {}
- Result:=0;
+ Result:=SCHEDULER_ALLOCATION_DISABLED;
 
  {Check CPU}
  if CPUID > (SCHEDULER_CPU_COUNT - 1) then Exit;

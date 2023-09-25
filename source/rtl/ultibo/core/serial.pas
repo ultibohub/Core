@@ -376,8 +376,8 @@ procedure SerialLogWarn(Serial:PSerialDevice;const AText:String); inline;
 procedure SerialLogError(Serial:PSerialDevice;const AText:String); inline;
 procedure SerialLogDebug(Serial:PSerialDevice;const AText:String); inline;
 
-function SerialDataBitsToString(Parity:LongWord):String;
-function SerialStopBitsToString(Parity:LongWord):String;
+function SerialDataBitsToString(Bits:LongWord):String;
+function SerialStopBitsToString(Bits:LongWord):String;
 function SerialParityToString(Parity:LongWord):String;
 function SerialFlowControlToString(Flow:LongWord):String;
 
@@ -2213,12 +2213,12 @@ end;
 
 {==============================================================================}
 
-function SerialDataBitsToString(Parity:LongWord):String;
+function SerialDataBitsToString(Bits:LongWord):String;
 begin
  {}
  Result:='SERIAL_DATA_UNKNOWN';
  
- case Parity of
+ case Bits of
   SERIAL_DATA_8BIT:Result:='SERIAL_DATA_8BIT';
   SERIAL_DATA_7BIT:Result:='SERIAL_DATA_7BIT';
   SERIAL_DATA_6BIT:Result:='SERIAL_DATA_6BIT';
@@ -2228,12 +2228,12 @@ end;
 
 {==============================================================================}
 
-function SerialStopBitsToString(Parity:LongWord):String;
+function SerialStopBitsToString(Bits:LongWord):String;
 begin
  {}
  Result:='SERIAL_STOP_UNKNOWN';
  
- case Parity of
+ case Bits of
   SERIAL_STOP_1BIT:Result:='SERIAL_STOP_1BIT';
   SERIAL_STOP_2BIT:Result:='SERIAL_STOP_2BIT';
   SERIAL_STOP_1BIT5:Result:='SERIAL_STOP_1BIT5';
