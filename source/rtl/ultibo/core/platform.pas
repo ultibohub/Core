@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1201,6 +1201,7 @@ type
 type
  {Prototypes for Module Handlers}
  TModuleLoad = function(const AName:String):THandle;
+ TModuleLoadEx = function(const AName:String;AFlags:LongWord):THandle;
  TModuleUnload = function(AHandle:THandle):Boolean;
  TModuleGetName = function(AHandle:THandle):String;
  
@@ -2018,6 +2019,7 @@ var
 var
  {Module Handlers}
  ModuleLoadHandler:TModuleLoad;
+ ModuleLoadExHandler:TModuleLoadEx;
  ModuleUnloadHandler:TModuleUnload;
  ModuleGetNameHandler:TModuleGetName;
  
@@ -2755,6 +2757,7 @@ function HostSetDomain(const ADomain:String):Boolean; inline;
 {==============================================================================}
 {Module Functions}
 function ModuleLoad(const AName:String):THandle; inline;
+function ModuleLoadEx(const AName:String;AFlags:LongWord):THandle; inline;
 function ModuleUnload(AHandle:THandle):Boolean; inline;
 function ModuleGetName(AHandle:THandle):String; inline;
 
@@ -11813,6 +11816,21 @@ begin
  if Assigned(ModuleLoadHandler) then
   begin
    Result:=ModuleLoadHandler(AName);
+  end
+ else
+  begin
+   Result:=INVALID_HANDLE_VALUE; 
+  end;  
+end;
+
+{==============================================================================}
+
+function ModuleLoadEx(const AName:String;AFlags:LongWord):THandle; inline;
+begin
+ {}
+ if Assigned(ModuleLoadExHandler) then
+  begin
+   Result:=ModuleLoadExHandler(AName,AFlags);
   end
  else
   begin
