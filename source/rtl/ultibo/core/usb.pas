@@ -1326,9 +1326,6 @@ type
   CompleteSplitNAKs:LongWord;
   {$ENDIF}
  end;
-  
- PUSBRequests = ^TUSBRequests;
- TUSBRequests = array[0..0] of PUSBRequest;
  
 {==============================================================================}
 type

@@ -520,7 +520,8 @@ ULTIBO_UNITS=globalconfig \
 	     services \
 	     shell \
 	     graphicsconsole \
-	     syscalls
+	     syscalls \
+	     api
 ULTIBO_FONTS=Latin1_8x8 \
 	     Latin1_8x10 \
 	     Latin1_8x12 \
