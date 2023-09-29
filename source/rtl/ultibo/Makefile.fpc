@@ -24,6 +24,7 @@ units=$(SYSTEMUNIT) \
        rtlconsts \
        getopts \
        lineinfo \
+       lnfodwrf \
        ctypes \
        $(ULTIBO_UNITS) \
        $(ULTIBO_PLATFORM_UNITS) \
@@ -550,6 +551,11 @@ heaptrc$(PPUEXT) : $(INC)/heaptrc.pp $(SYSTEMUNIT)$(PPUEXT)
 
 lineinfo$(PPUEXT) : $(INC)/lineinfo.pp strings$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
 	$(COMPILER) $(INC)/lineinfo.pp
+
+#lnfodwrf$(PPUEXT) : $(INC)/lnfodwrf.pp $(SYSTEMUNIT)$(PPUEXT) heaptrc$(PPUEXT)
+#	$(COMPILER) $(INC)/lnfodwrf.pp
+lnfodwrf$(PPUEXT) : $(INC)/lnfodwrf.pp $(SYSTEMUNIT)$(PPUEXT)
+	$(COMPILER) $(INC)/lnfodwrf.pp
 
 charset$(PPUEXT) : $(INC)/charset.pp objpas$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
 	$(COMPILER) $<

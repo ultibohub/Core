@@ -702,16 +702,16 @@ endif
 OBJPASDIR=$(RTL)/objpas
 GRAPHDIR=$(INC)/graph
 ifeq ($(CPU_OS_TARGET),i386-ultibo)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils sortbase math classes fgl macpas typinfo types rtlconsts getopts lineinfo ctypes $(ULTIBO_UNITS) $(ULTIBO_PLATFORM_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_KEYMAP_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos charset cpall sysconst character fpwidestring $(ULTIBO_FONTS) $(ULTIBO_EXTRAS) $(ULTIBO_PLATFORM_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils sortbase math classes fgl macpas typinfo types rtlconsts getopts lineinfo lnfodwrf ctypes $(ULTIBO_UNITS) $(ULTIBO_PLATFORM_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_KEYMAP_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos charset cpall sysconst character fpwidestring $(ULTIBO_FONTS) $(ULTIBO_EXTRAS) $(ULTIBO_PLATFORM_EXTRAS)
 endif
 ifeq ($(CPU_OS_TARGET),x86_64-ultibo)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils sortbase math classes fgl macpas typinfo types rtlconsts getopts lineinfo ctypes $(ULTIBO_UNITS) $(ULTIBO_PLATFORM_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_KEYMAP_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos charset cpall sysconst character fpwidestring $(ULTIBO_FONTS) $(ULTIBO_EXTRAS) $(ULTIBO_PLATFORM_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils sortbase math classes fgl macpas typinfo types rtlconsts getopts lineinfo lnfodwrf ctypes $(ULTIBO_UNITS) $(ULTIBO_PLATFORM_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_KEYMAP_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos charset cpall sysconst character fpwidestring $(ULTIBO_FONTS) $(ULTIBO_EXTRAS) $(ULTIBO_PLATFORM_EXTRAS)
 endif
 ifeq ($(CPU_OS_TARGET),arm-ultibo)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils sortbase math classes fgl macpas typinfo types rtlconsts getopts lineinfo ctypes $(ULTIBO_UNITS) $(ULTIBO_PLATFORM_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_KEYMAP_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos charset cpall sysconst character fpwidestring $(ULTIBO_FONTS) $(ULTIBO_EXTRAS) $(ULTIBO_PLATFORM_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils sortbase math classes fgl macpas typinfo types rtlconsts getopts lineinfo lnfodwrf ctypes $(ULTIBO_UNITS) $(ULTIBO_PLATFORM_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_KEYMAP_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos charset cpall sysconst character fpwidestring $(ULTIBO_FONTS) $(ULTIBO_EXTRAS) $(ULTIBO_PLATFORM_EXTRAS)
 endif
 ifeq ($(CPU_OS_TARGET),aarch64-ultibo)
-override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils sortbase math classes fgl macpas typinfo types rtlconsts getopts lineinfo ctypes $(ULTIBO_UNITS) $(ULTIBO_PLATFORM_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_KEYMAP_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos charset cpall sysconst character fpwidestring $(ULTIBO_FONTS) $(ULTIBO_EXTRAS) $(ULTIBO_PLATFORM_EXTRAS)
+override TARGET_UNITS+=$(SYSTEMUNIT) $(CPU_UNITS) uuchar objpas iso7185 extpas strings sysutils sortbase math classes fgl macpas typinfo types rtlconsts getopts lineinfo lnfodwrf ctypes $(ULTIBO_UNITS) $(ULTIBO_PLATFORM_UNITS) $(ULTIBO_DRIVER_UNITS) $(ULTIBO_KEYMAP_UNITS) $(ULTIBO_CODEPAGE_UNITS) dos charset cpall sysconst character fpwidestring $(ULTIBO_FONTS) $(ULTIBO_EXTRAS) $(ULTIBO_PLATFORM_EXTRAS)
 endif
 ifeq ($(CPU_OS_TARGET),i386-ultibo)
 override TARGET_IMPLICITUNITS+=exeinfo cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257 cp1258 cp437 cp646 cp850 cp856 cp866 cp874 cp8859_1 cp8859_5 cp8859_2 cp852 unicodenumtable unicodedata
@@ -2041,6 +2041,8 @@ heaptrc$(PPUEXT) : $(INC)/heaptrc.pp $(SYSTEMUNIT)$(PPUEXT)
 	$(COMPILER) -Sg $(INC)/heaptrc.pp $(REDIR)
 lineinfo$(PPUEXT) : $(INC)/lineinfo.pp strings$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
 	$(COMPILER) $(INC)/lineinfo.pp
+lnfodwrf$(PPUEXT) : $(INC)/lnfodwrf.pp $(SYSTEMUNIT)$(PPUEXT)
+	$(COMPILER) $(INC)/lnfodwrf.pp
 charset$(PPUEXT) : $(INC)/charset.pp objpas$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
 	$(COMPILER) $<
 cpall$(PPUEXT): $(RTL)/charmaps/cpall.pas system$(PPUEXT) charset$(PPUEXT)
