@@ -7159,7 +7159,7 @@ function USBControlTransfer(Device:PUSBDevice;Endpoint:PUSBEndpointDescriptor;bR
 {Timeout: Milliseconds to wait for request to complete (INFINITE to wait forever)}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 
-{Note: This function is very similar to USBControlRequest(Ex) but also returns the actual number of bytes tranferred}
+{Note: This function is very similar to USBControlRequest(Ex) but also returns the actual number of bytes transferred}
 var
  Status:LongWord;
  Request:PUSBRequest;
@@ -8023,7 +8023,7 @@ end;
 
 procedure USBHubUnbindDevices(Device:PUSBDevice;Driver:PUSBDriver;Callback:TUSBDeviceUnbind);
 {Enumerate each device in the USB tree and call an unbind callback for each one}
-{Device: USB device at which to start the enueration}
+{Device: USB device at which to start the enumeration}
 {Driver: The driver to unbind the device from (nil to unbind from current driver)}
 {Callback: Unbind callback function to execute for each device}
 var
@@ -8073,7 +8073,7 @@ end;
 
 procedure USBHubEnumerateDevices(Device:PUSBDevice;Callback:TUSBDeviceEnumerate;Data:Pointer);
 {Enumerate each device in the USB tree and call an enumerate callback for each one}
-{Device: USB device at which to start the enueration}
+{Device: USB device at which to start the enumeration}
 {Callback: Enumerate callback function to execute for each device}
 var
  Hub:PUSBHub;

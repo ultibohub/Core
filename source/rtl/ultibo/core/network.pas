@@ -5939,7 +5939,7 @@ end;
 
 function NetworkBufferAllocate(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
 {Allocate a transmit buffer from the specified network device, the returned entry will
- include a buffer for writing data to as well as an offfset value to allow the driver
+ include a buffer for writing data to as well as an offset value to allow the driver
  data to be written to the start of the buffer.
  
  When the data has been copied to the buffer, pass the entry to NetworkBufferTransmit}
@@ -6575,7 +6575,7 @@ end;
 {==============================================================================}
 
 function NetworkEventRelease(Event:PNetworkEvent):LongWord;
-{Deregister and Destroy a Event from the Event table}
+{Deregister and Destroy an Event from the Event table}
 var
  Prev:PNetworkEvent;
  Next:PNetworkEvent;

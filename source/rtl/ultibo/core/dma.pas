@@ -1024,8 +1024,8 @@ function DMABufferValidate(DMA:PDMAHost;Buffer:Pointer;Size:LongWord):LongWord;
 {Return: ERROR_SUCCESS on success or another error code on failure (ERROR_NOT_COMPATIBLE if not compatible with host)}
 
 {Note: Does not check for cache coherency requirements (Shared, Non Cached) only alignment and size.
-       Buffers used as the source of a DMA request do not neccessarily need to meet alignment and size
-       requirements, however buffers used as a destintation must meet these requirements or the caller
+       Buffers used as the source of a DMA request do not necessarily need to meet alignment and size
+       requirements, however buffers used as a destination must meet these requirements or the caller
        must take appropriate actions to prevent undesirable side effects from cache invalidation.}
 begin
  {}

@@ -6850,7 +6850,7 @@ function register_interrupt(number, mask, priority, flags: uint32_t; handler: sh
 {Request registration of the supplied handler to the specified interrupt number (Where Applicable)}
 {Number: The interrupt number to register the hanlder for}
 {Mask: The mask of CPUs to register the handler for (eg CPU_MASK_0, CPU_MASK_1) (Where Applicable)}
-{Priority: The priroty level of the interrupt to be registered (eg INTERRUPT_PRIORITY_MAXIMUM) (Where Applicable)}
+{Priority: The priority level of the interrupt to be registered (eg INTERRUPT_PRIORITY_MAXIMUM) (Where Applicable)}
 {Flags: The flags to control the registration of the interrupt (eg INTERRUPT_FLAG_SHARED) (Where Applicable)}
 {Handler: The shared interrupt handler to be called when the interrupt occurs}
 {Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
@@ -6866,7 +6866,7 @@ function deregister_interrupt(number, mask, priority, flags: uint32_t; handler: 
 {Request deregistration of the supplied handler from the specified interrupt number (Where Applicable)}
 {Number: The interrupt number to deregister the hanlder for}
 {Mask: The mask of CPUs to deregister the handler for (eg CPU_MASK_0, CPU_MASK_1) (Where Applicable)}
-{Priority: The priroty level of the interrupt to be deregistered (eg INTERRUPT_PRIORITY_MAXIMUM) (Where Applicable)}
+{Priority: The priority level of the interrupt to be deregistered (eg INTERRUPT_PRIORITY_MAXIMUM) (Where Applicable)}
 {Flags: The flags to control the deregistration of the interrupt (eg INTERRUPT_FLAG_SHARED, INTERRUPT_FLAG_LOCAL, INTERRUPT_FLAG_FIQ) (Where Applicable)}
 {Handler: The shared interrupt handler to be called when the interrupt occurs}
 {Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
@@ -7476,7 +7476,7 @@ end;
 {==============================================================================}
 
 function cpu_get_percentage(cpuid: uint32_t): double_t; stdcall;
-{Get the last second ulitization of the specified CPU in percentage}
+{Get the last second utilization of the specified CPU in percentage}
 {CPUID: The CPU to get utilization from or CPU_ID_ALL for average of all CPUs}
 begin
  {}
@@ -7486,7 +7486,7 @@ end;
 {==============================================================================}
 
 function cpu_get_utilization(cpuid: uint32_t): uint32_t; stdcall;
-{Get the last second ulitization of the specified CPU}
+{Get the last second utilization of the specified CPU}
 {CPUID: The CPU to get utilization from or CPU_ID_ALL for average of all CPUs}
 begin
  {}
@@ -8594,7 +8594,7 @@ end;
 {==============================================================================}
 
 function dispmanx_handle_get(resource: THANDLE): THANDLE; stdcall;
-{Convert a Dispmanx Resouse handle to a Memory handle (Which can be passed to Lock/Unlock above)}
+{Convert a Dispmanx Resource handle to a Memory handle (Which can be passed to Lock/Unlock above)}
 begin
  {}
  if Assigned(DispmanxHandleGetHandler) then
@@ -9455,8 +9455,8 @@ end;
 {==============================================================================}
 
 function dma_read_peripheral(address, dest: PVOID; size, peripheral: uint32_t): uint32_t; stdcall;
-{Read from a periperal address to the destination address using DMA}
-{Address: The address of the periperhal register to read from}
+{Read from a peripheral address to the destination address using DMA}
+{Address: The address of the peripheral register to read from}
 {Dest: The destination address to start writing to}
 {Size: The size of the read in bytes}
 {Peripheral: The peripheral ID for data request gating (eg DMA_DREQ_ID_UART_RX)}
@@ -15568,7 +15568,7 @@ end;
 {==============================================================================}
 
 function event_wait(event: EVENT_HANDLE): uint32_t; stdcall;
-{Wait on a existing Event entry
+{Wait on an existing Event entry
 
  If the Event is currently signaled then simply return immediately
 
@@ -15584,7 +15584,7 @@ end;
 {==============================================================================}
 
 function event_wait_ex(event: EVENT_HANDLE; timeout: uint32_t): uint32_t; stdcall;
-{Wait on a existing Event entry
+{Wait on an existing Event entry
 
  If the Event is currently signaled then simply return immediately
 
@@ -17520,7 +17520,7 @@ end;
 
 function device_tree_get_property_length(handle: THANDLE): uint32_t; stdcall;
 {Get the length of the raw value of the specified property}
-{Handle: The handle of the property to get the value lenth of}
+{Handle: The handle of the property to get the value length of}
 {Return: The length of the specified property value in bytes or -1 if the property was not valid}
 begin
  {}
@@ -19784,7 +19784,7 @@ function console_device_put_text(console: PCONSOLE_DEVICE; handle: FONT_HANDLE; 
 {Height: The height of the area to be output (Characters)}
 {Skip: The number of characters to skip in the buffer after each row (Optional)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
-{Note: Source, Width, Heigth and Skip are based on character rows and columns not screen pixels}
+{Note: Source, Width, Height and Skip are based on character rows and columns not screen pixels}
 begin
  {}
  Result:=ConsoleDevicePutText(console,handle,source,dest,buffer,width,height,skip);
@@ -21155,8 +21155,8 @@ function console_window_write_ex(handle: WINDOW_HANDLE; text: PCHAR; x, y, forec
 {Text: The text to write}
 {X: The column to start writing the text at}
 {Y: The row to start writing the text at}
-{Forecolor: The foreround color to use (eg COLOR_WHITE)}
-{Backcolor: The foreround color to use (eg COLOR_BLACK)}
+{Forecolor: The foreground color to use (eg COLOR_WHITE)}
+{Backcolor: The background color to use (eg COLOR_BLACK)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 {Note: For Text Console functions, X and Y are based on screen character rows and columns not screen pixels}
 {Note: The window will not scroll up at the end of the line}
@@ -21186,8 +21186,8 @@ function console_window_write_ln_ex(handle: WINDOW_HANDLE; text: PCHAR; x, y, fo
 {Text: The text to write}
 {X: The column to start writing the text at}
 {Y: The row to start writing the text at}
-{Forecolor: The foreround color to use (eg COLOR_WHITE)}
-{Backcolor: The foreround color to use (eg COLOR_BLACK)}
+{Forecolor: The foreground color to use (eg COLOR_WHITE)}
+{Backcolor: The background color to use (eg COLOR_BLACK)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 {Note: For Text Console functions, X and Y are based on character rows and columns not screen pixels}
 {Note: The window will scroll up at the end of the line}
@@ -21216,8 +21216,8 @@ function console_window_write_chr_ex(handle: WINDOW_HANDLE; ch: CHAR; x, y, fore
 {Chr: The character to write}
 {X: The column to start writing the character at}
 {Y: The row to start writing the character at}
-{Forecolor: The foreround color to use (eg COLOR_WHITE)}
-{Backcolor: The foreround color to use (eg COLOR_BLACK)}
+{Forecolor: The foreground color to use (eg COLOR_WHITE)}
+{Backcolor: The background color to use (eg COLOR_BLACK)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 {Note: For Text Console functions, X and Y are based on character rows and columns not screen pixels}
 begin
@@ -22212,8 +22212,8 @@ function dma_buffer_validate(dma: PDMA_HOST; buffer: PVOID; size: uint32_t): uin
 {Size: The size of the data buffer}
 {Return: ERROR_SUCCESS on success or another error code on failure (ERROR_NOT_COMPATIBLE if not compatible with host)}
 {Note: Does not check for cache coherency requirements (Shared, Non Cached) only alignment and size.
-       Buffers used as the source of a DMA request do not neccessarily need to meet alignment and size
-       requirements, however buffers used as a destintation must meet these requirements or the caller
+       Buffers used as the source of a DMA request do not necessarily need to meet alignment and size
+       requirements, however buffers used as a destination must meet these requirements or the caller
        must take appropriate actions to prevent undesirable side effects from cache invalidation.}
 begin
  {}
@@ -23427,7 +23427,7 @@ function usb_control_transfer(device: PUSB_DEVICE; endpoint: PUSB_ENDPOINT_DESCR
 {Count: The actual number of bytes transferred on completion (May apply even on failure or timeout)}
 {Timeout: Milliseconds to wait for request to complete (INFINITE to wait forever)}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
-{Note: This function is very similar to USBControlRequest(Ex) but also returns the actual number of bytes tranferred}
+{Note: This function is very similar to USBControlRequest(Ex) but also returns the actual number of bytes transferred}
 begin
  {}
  Result:=USBControlTransfer(device,endpoint,brequest,bmrequesttype,wvalue,windex,data,wlength,count,timeout);
@@ -23624,7 +23624,7 @@ end;
 
 procedure usb_hub_unbind_devices(device: PUSB_DEVICE; driver: PUSB_DRIVER; callback: usb_device_unbind_proc); stdcall;
 {Enumerate each device in the USB tree and call an unbind callback for each one}
-{Device: USB device at which to start the enueration}
+{Device: USB device at which to start the enumeration}
 {Driver: The driver to unbind the device from (nil to unbind from current driver)}
 {Callback: Unbind callback function to execute for each device}
 begin
@@ -23636,7 +23636,7 @@ end;
 
 procedure usb_hub_enumerate_devices(device: PUSB_DEVICE; callback: usb_device_enumerate_cb; data: PVOID); stdcall;
 {Enumerate each device in the USB tree and call an enumerate callback for each one}
-{Device: USB device at which to start the enueration}
+{Device: USB device at which to start the enumeration}
 {Callback: Enumerate callback function to execute for each device}
 begin
  {}
@@ -25569,7 +25569,7 @@ end;
 {==============================================================================}
 
 procedure sdhci_host_set_adma_address(sdhci: PSDHCI_HOST; address: SIZE_T); stdcall;
-{Set the address of the transfer data in the Advanded DMA (ADMA) registers}
+{Set the address of the transfer data in the Advanced DMA (ADMA) registers}
 {Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
 begin
  {}
@@ -25980,7 +25980,7 @@ end;
 {==============================================================================}
 
 function sdio_device_get_max_clock(mmc: PMMC_DEVICE): uint32_t; stdcall;
-{Determine the Maximum Clock (DTR) for the current SDIo device}
+{Determine the Maximum Clock (DTR) for the current SDIO device}
 begin
  {}
  Result:=SDIODeviceGetMaxClock(mmc);
@@ -26243,7 +26243,7 @@ end;
 
 function spi_device_write(spi: PSPI_DEVICE; chipselect: uint16_t; source: PVOID; size, flags: uint32_t; var count: uint32_t): uint32_t; stdcall;
 {Write data to the specified SPI device}
-{Because SPI writes and then reads for each byte, received data will be discarded for each by written}
+{Because SPI writes and then reads for each byte, received data will be discarded for each byte written}
 {SPI: The SPI device to write to}
 {ChipSelect: The chip select for the slave to write to (eg SPI_CS_0)}
 {Source: Pointer to a buffer of data to transmit}
@@ -29301,7 +29301,7 @@ end;
 {==============================================================================}
 
 function framebuffer_device_mark(framebuffer: PFRAMEBUFFER_DEVICE; x, y, width, height, flags: uint32_t): uint32_t; stdcall;
-{Mark a region written to the framebuffer and signal the device to take any neccessary actions}
+{Mark a region written to the framebuffer and signal the device to take any necessary actions}
 {Framebuffer: The framebuffer device to mark}
 {X: The starting column of the mark}
 {Y: The starting row of the mark}
@@ -29320,7 +29320,7 @@ end;
 {==============================================================================}
 
 function framebuffer_device_commit(framebuffer: PFRAMEBUFFER_DEVICE; address: SIZE_T; size, flags: uint32_t): uint32_t; stdcall;
-{Commit a region written to the framebuffer and signal the device to take any neccessary actions}
+{Commit a region written to the framebuffer and signal the device to take any necessary actions}
 {Framebuffer: The framebuffer device to commit}
 {Address: The starting address of the commit}
 {Size: The size in bytes of the commit}
@@ -30792,7 +30792,7 @@ end;
 {==============================================================================}
 
 function graphics_window_copy_image(handle: WINDOW_HANDLE; const source, dest: TCONSOLE_POINT; width, height: uint32_t): uint32_t; stdcall;
-{Copy an image from one place to another in a existing console window}
+{Copy an image from one place to another in an existing console window}
 {Handle: The handle of the window to copy from and to}
 {Source: The starting point (X,Y) to copy the image from}
 {Dest: The starting point (X,Y) to copy the image to}
@@ -30808,7 +30808,7 @@ end;
 {==============================================================================}
 
 function graphics_window_move_image(handle: WINDOW_HANDLE; const source, dest: TCONSOLE_POINT; width, height, fillcolor: uint32_t): uint32_t; stdcall;
-{Move an image from one place to another in a existing console window}
+{Move an image from one place to another in an existing console window}
 {Handle: The handle of the window to copy from and to}
 {Source: The starting point (X,Y) to copy the image from}
 {Dest: The starting point (X,Y) to copy the image to}
@@ -30876,7 +30876,7 @@ end;
 {HID Functions}
 {$IFDEF API_EXPORT_HID}
 function hid_parser_parse_collections(device: PHID_DEVICE; var collections: PHID_COLLECTIONS; var count: uint32_t): uint32_t; stdcall;
-{Parse the HID report descriptor of the provided device and popuplate the collections, reports and usages}
+{Parse the HID report descriptor of the provided device and populate the collections, reports and usages}
 {Device: The HID device to parse collections for}
 {Collections: A pointer to the top level collections array to be populated}
 {Count: A variable to return the number of top level collections}
@@ -32424,7 +32424,7 @@ function keyboard_insert_data(keyboard: PKEYBOARD_DEVICE; data: PKEYBOARD_DATA; 
 {Insert a TKeyboardData entry into the keyboard buffer (Direct or Global)}
 {Keyboard: The keyboard device to insert data for}
 {Data: The TKeyboardData entry to insert}
-{Signal: If True then signal that new data is availale in the buffer}
+{Signal: If True then signal that new data is available in the buffer}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 {Note: Caller must hold the keyboard lock}
 begin
@@ -33814,7 +33814,7 @@ end;
 
 function network_buffer_allocate(network: PNETWORK_DEVICE; var entry: PNETWORK_ENTRY): uint32_t; stdcall;
 {Allocate a transmit buffer from the specified network device, the returned entry will
- include a buffer for writing data to as well as an offfset value to allow the driver
+ include a buffer for writing data to as well as an offset value to allow the driver
  data to be written to the start of the buffer.
 
  When the data has been copied to the buffer, pass the entry to NetworkBufferTransmit}
@@ -33983,7 +33983,7 @@ end;
 {==============================================================================}
 
 function network_event_release(event: PNETWORK_EVENT): uint32_t; stdcall;
-{Deregister and Destroy a Event from the Event table}
+{Deregister and Destroy an Event from the Event table}
 begin
  {}
  Result:=NetworkEventRelease(event);

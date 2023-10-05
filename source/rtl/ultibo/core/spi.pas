@@ -586,7 +586,7 @@ end;
 
 function SPIDeviceWrite(SPI:PSPIDevice;ChipSelect:Word;Source:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 {Write data to the specified SPI device}
-{Because SPI writes and then reads for each byte, received data will be discarded for each by written}
+{Because SPI writes and then reads for each byte, received data will be discarded for each byte written}
 {SPI: The SPI device to write to}
 {ChipSelect: The chip select for the slave to write to (eg SPI_CS_0)}
 {Source: Pointer to a buffer of data to transmit}
@@ -1773,7 +1773,7 @@ end;
 
 function SysSPIWrite(ChipSelect:Word;Source:Pointer;Size:LongWord;var Count:LongWord):LongWord;
 {Write data to the default SPI device}
-{Because SPI writes and then reads for each byte, received data will be discarded for each by written}
+{Because SPI writes and then reads for each byte, received data will be discarded for each byte written}
 {ChipSelect: The chip select for the slave to write to (eg SPI_CS_0)}
 {Source: Pointer to a buffer of data to transmit}
 {Size: The size of the buffer}

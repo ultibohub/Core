@@ -1102,7 +1102,7 @@ end;
 {==============================================================================}
 {HID Functions}
 function HIDParserParseCollections(Device:PHIDDevice;var Collections:PHIDCollections;var Count:LongWord):LongWord;
-{Parse the HID report descriptor of the provided device and popuplate the collections, reports and usages}
+{Parse the HID report descriptor of the provided device and populate the collections, reports and usages}
 {Device: The HID device to parse collections for}
 {Collections: A pointer to the top level collections array to be populated}
 {Count: A variable to return the number of top level collections}

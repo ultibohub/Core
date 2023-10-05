@@ -1519,7 +1519,7 @@ end;
 
 function DeviceTreeGetPropertyLength(Handle:THandle):LongWord;
 {Get the length of the raw value of the specified property}
-{Handle: The handle of the property to get the value lenth of}
+{Handle: The handle of the property to get the value length of}
 {Return: The length of the specified property value in bytes or -1 if the property was not valid}
 var
  DTBProperty:PDTBProperty;

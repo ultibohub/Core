@@ -4868,7 +4868,7 @@ function DeregisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TShared
 {Request deregistration of the supplied handler from the specified interrupt number (Where Applicable)}
 {Number: The interrupt number to deregister the hanlder for}
 {Mask: The mask of CPUs to deregister the handler for (eg CPU_MASK_0, CPU_MASK_1) (Where Applicable)}
-{Priority: The priroty level of the interrupt to be deregistered (eg INTERRUPT_PRIORITY_MAXIMUM) (Where Applicable)}
+{Priority: The priority level of the interrupt to be deregistered (eg INTERRUPT_PRIORITY_MAXIMUM) (Where Applicable)}
 {Flags: The flags to control the deregistration of the interrupt (eg INTERRUPT_FLAG_SHARED, INTERRUPT_FLAG_LOCAL, INTERRUPT_FLAG_FIQ) (Where Applicable)}
 {Handler: The shared interrupt handler to be called when the interrupt occurs}
 {Parameter: A pointer to be passed to the handler when the interrupt occurs (Optional)}
@@ -5686,7 +5686,7 @@ end;
 {==============================================================================}
 
 function CPUGetPercentage(CPUID:LongWord):Double; inline;
-{Get the last second ulitization of the specified CPU in percentage}
+{Get the last second utilization of the specified CPU in percentage}
 {CPUID: The CPU to get utilization from or CPU_ID_ALL for average of all CPUs}
 var
  Count:LongWord;
@@ -5739,7 +5739,7 @@ end;
 {==============================================================================}
 
 function CPUGetUtilization(CPUID:LongWord):LongWord; inline;
-{Get the last second ulitization of the specified CPU}
+{Get the last second utilization of the specified CPU}
 {CPUID: The CPU to get utilization from or CPU_ID_ALL for average of all CPUs}
 var
  Count:LongWord;
@@ -7020,7 +7020,7 @@ end;
 {==============================================================================}
 
 function DispmanxHandleGet(Resource:THandle):THandle; inline;
-{Convert a Dispmanx Resouse handle to a Memory handle (Which can be passed to Lock/Unlock above)}
+{Convert a Dispmanx Resource handle to a Memory handle (Which can be passed to Lock/Unlock above)}
 begin
  {}
  if Assigned(DispmanxHandleGetHandler) then
@@ -7951,8 +7951,8 @@ end;
 {==============================================================================}
  
 function DMAReadPeripheral(Address,Dest:Pointer;Size,Peripheral:LongWord):LongWord; inline;
-{Read from a periperal address to the destination address using DMA}
-{Address: The address of the periperhal register to read from}
+{Read from a peripheral address to the destination address using DMA}
+{Address: The address of the peripheral register to read from}
 {Dest: The destination address to start writing to}
 {Size: The size of the read in bytes}
 {Peripheral: The peripheral ID for data request gating (eg DMA_DREQ_ID_UART_RX)}

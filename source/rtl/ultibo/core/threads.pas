@@ -21366,7 +21366,7 @@ end;
 {==============================================================================}
 
 function EventWait(Event:TEventHandle):LongWord;
-{Wait on a existing Event entry
+{Wait on an existing Event entry
 
  If the Event is currently signaled then simply return immediately
  
@@ -21421,7 +21421,7 @@ end;
 {==============================================================================}
 
 function EventWaitEx(Event:TEventHandle;Timeout:LongWord):LongWord;
-{Wait on a existing Event entry
+{Wait on an existing Event entry
 
  If the Event is currently signaled then simply return immediately
  

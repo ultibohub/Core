@@ -888,7 +888,7 @@ end;
 {==============================================================================}
 
 function FramebufferDeviceMark(Framebuffer:PFramebufferDevice;X,Y,Width,Height,Flags:LongWord):LongWord;
-{Mark a region written to the framebuffer and signal the device to take any neccessary actions}
+{Mark a region written to the framebuffer and signal the device to take any necessary actions}
 {Framebuffer: The framebuffer device to mark}
 {X: The starting column of the mark}
 {Y: The starting row of the mark}
@@ -929,7 +929,7 @@ end;
 {==============================================================================}
 
 function FramebufferDeviceCommit(Framebuffer:PFramebufferDevice;Address:PtrUInt;Size,Flags:LongWord):LongWord;
-{Commit a region written to the framebuffer and signal the device to take any neccessary actions}
+{Commit a region written to the framebuffer and signal the device to take any necessary actions}
 {Framebuffer: The framebuffer device to commit}
 {Address: The starting address of the commit}
 {Size: The size in bytes of the commit}

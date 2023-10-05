@@ -14914,7 +14914,7 @@ end;
 {==============================================================================}
 
 procedure SDHCIHostSetADMAAddress(SDHCI:PSDHCIHost;Address:PtrUInt);
-{Set the address of the transfer data in the Advanded DMA (ADMA) registers}
+{Set the address of the transfer data in the Advanced DMA (ADMA) registers}
 
 {Note: Not intended to be called directly by applications, may be used by SDHCI drivers}
 begin
@@ -16397,7 +16397,7 @@ end;
 {==============================================================================}
 
 function SDIODeviceGetMaxClock(MMC:PMMCDevice):LongWord;
-{Determine the Maximum Clock (DTR) for the current SDIo device}
+{Determine the Maximum Clock (DTR) for the current SDIO device}
 var
  MaxClock:LongWord;
 begin

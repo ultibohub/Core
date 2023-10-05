@@ -3199,7 +3199,7 @@ end;
 {==============================================================================}
 
 function GraphicsWindowCopyImage(Handle:TWindowHandle;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord; inline;
-{Copy an image from one place to another in a existing console window}
+{Copy an image from one place to another in an existing console window}
 {Handle: The handle of the window to copy from and to}
 {Source: The starting point (X,Y) to copy the image from}
 {Dest: The starting point (X,Y) to copy the image to}
@@ -3216,7 +3216,7 @@ end;
 {==============================================================================}
 
 function GraphicsWindowMoveImage(Handle:TWindowHandle;const Source,Dest:TConsolePoint;Width,Height,Fillcolor:LongWord):LongWord;
-{Move an image from one place to another in a existing console window}
+{Move an image from one place to another in an existing console window}
 {Handle: The handle of the window to copy from and to}
 {Source: The starting point (X,Y) to copy the image from}
 {Dest: The starting point (X,Y) to copy the image to}

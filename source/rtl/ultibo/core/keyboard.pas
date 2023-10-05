@@ -3228,7 +3228,7 @@ function KeyboardInsertData(Keyboard:PKeyboardDevice;Data:PKeyboardData;Signal:B
 {Insert a TKeyboardData entry into the keyboard buffer (Direct or Global)}
 {Keyboard: The keyboard device to insert data for}
 {Data: The TKeyboardData entry to insert}
-{Signal: If True then signal that new data is availale in the buffer}
+{Signal: If True then signal that new data is available in the buffer}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: Caller must hold the keyboard lock}

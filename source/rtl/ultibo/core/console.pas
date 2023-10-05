@@ -1832,7 +1832,7 @@ function ConsoleDevicePutText(Console:PConsoleDevice;Handle:TFontHandle;const So
 {Skip: The number of characters to skip in the buffer after each row (Optional)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
-{Note: Source, Width, Heigth and Skip are based on character rows and columns not screen pixels}
+{Note: Source, Width, Height and Skip are based on character rows and columns not screen pixels}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -7933,8 +7933,8 @@ function ConsoleWindowWriteEx(Handle:TWindowHandle;const AText:String;X,Y,Foreco
 {Text: The text to write}
 {X: The column to start writing the text at}
 {Y: The row to start writing the text at}
-{Forecolor: The foreround color to use (eg COLOR_WHITE)}
-{Backcolor: The foreround color to use (eg COLOR_BLACK)}
+{Forecolor: The foreground color to use (eg COLOR_WHITE)}
+{Backcolor: The background color to use (eg COLOR_BLACK)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: For Text Console functions, X and Y are based on screen character rows and columns not screen pixels}
@@ -8187,8 +8187,8 @@ function ConsoleWindowWriteLnEx(Handle:TWindowHandle;const AText:String;X,Y,Fore
 {Text: The text to write}
 {X: The column to start writing the text at}
 {Y: The row to start writing the text at}
-{Forecolor: The foreround color to use (eg COLOR_WHITE)}
-{Backcolor: The foreround color to use (eg COLOR_BLACK)}
+{Forecolor: The foreground color to use (eg COLOR_WHITE)}
+{Backcolor: The background color to use (eg COLOR_BLACK)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: For Text Console functions, X and Y are based on character rows and columns not screen pixels}
@@ -8468,8 +8468,8 @@ function ConsoleWindowWriteChrEx(Handle:TWindowHandle;AChr:Char;X,Y,Forecolor,Ba
 {Chr: The character to write}
 {X: The column to start writing the character at}
 {Y: The row to start writing the character at}
-{Forecolor: The foreround color to use (eg COLOR_WHITE)}
-{Backcolor: The foreround color to use (eg COLOR_BLACK)}
+{Forecolor: The foreground color to use (eg COLOR_WHITE)}
+{Backcolor: The background color to use (eg COLOR_BLACK)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 {Note: For Text Console functions, X and Y are based on character rows and columns not screen pixels}
