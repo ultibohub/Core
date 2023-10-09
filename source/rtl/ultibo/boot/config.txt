@@ -42,14 +42,19 @@ armstub=armstub32-rpi3.bin
 armstub=armstub32-rpi3.bin
 
 [pi4]
+#Uncomment this line to enable the XHCI controller on the USB-C port
+#otg_mode=1
 enable_gic=1
 armstub=armstub32-rpi4.bin
 
 [pi400]
+#Uncomment this line to enable the XHCI controller on the USB-C port
+#otg_mode=1
 enable_gic=1
 armstub=armstub32-rpi4.bin
 
 [cm4]
+#Uncomment this line to enable the XHCI controller on the USB-C port
 #otg_mode=1
 enable_gic=1
 armstub=armstub32-rpi4.bin
