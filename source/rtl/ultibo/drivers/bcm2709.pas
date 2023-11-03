@@ -5062,6 +5062,17 @@ begin
    {$ENDIF}
 
    Result:=INTERRUPT_RETURN_HANDLED;
+  end
+ else
+  begin
+   {$IF (DEFINED(BCM2709_DEBUG) or DEFINED(I2C_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
+   if Status <> 0 then
+    begin
+     if I2C_LOG_ENABLED then I2CLogWarn(I2C,'BCM2709: I2C Slave Spurious Interrupt (MIS=' + IntToHex(Status,8) + ')');
+    end;
+   {$ENDIF}
+
+   Result:=INTERRUPT_RETURN_HANDLED;
   end;
 
  {Memory Barrier}

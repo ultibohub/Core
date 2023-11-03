@@ -52,10 +52,10 @@ const
  {Version constants}
  ULTIBO_RELEASE_DATE             = '3 November 2023';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.5.777';
+ ULTIBO_RELEASE_VERSION          = '2.5.779';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 5;
- ULTIBO_RELEASE_VERSION_REVISION = 777;
+ ULTIBO_RELEASE_VERSION_REVISION = 779;
  
  FPC_COMPILER_VERSION = {$I %FPCVERSION%}; {The version of FPC used to compile the RTL}
  
