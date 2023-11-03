@@ -798,9 +798,9 @@ type
  gid_t = Word;      {unsigned short}             
  uid_t = Word;      {unsigned short}
  {$IFDEF SYSCALLS_USE_LONG_TIME_T}
- time_t = PtrInt;   {long}       
+ {time_t = PtrInt;} {long} {time_t is now defined in GlobalTypes}
  {$ELSE}
- time_t = Int64;    {int64_t}
+ {time_t = Int64;}  {int64_t} {time_t is now defined in GlobalTypes}
  {$ENDIF}
  off_t = PtrInt;    {long}
  off64_t = Int64;   {long long} 

@@ -1,7 +1,7 @@
 {
 Ultibo Global Type Definitions.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -374,6 +374,12 @@ type
  atomic64_t = record
   counter: Int64;
  end;
+
+ {$IFDEF SYSCALLS_USE_LONG_TIME_T}
+ time_t = PtrInt;   {long}       
+ {$ELSE}
+ time_t = Int64;    {int64_t}
+ {$ENDIF}
 
 {==============================================================================}
 type

@@ -1028,6 +1028,9 @@ const
 {==============================================================================}
 {Ultibo types}
 type
+ TUnixTime = time_t;
+ 
+type
  TDriveType = (dtUNKNOWN,dtINVALID,dtFIXED,dtFLOPPY,dtREMOVABLE,dtNETWORK,dtSUBSTITUTED,dtRAMDRIVE,dtCDROM);
 
  TFileSysType = (fsUNKNOWN,fsINVALID,fsFAT12,fsFAT16,fsFAT32,fsEXFAT,fsHPFS,fsNTFS,fsNTFS5,fsNTFS51,fsCDFS,fsUDF,fsEXT2,fsEXT3,fsEXT4);
@@ -1296,11 +1299,11 @@ function DateTimeToLocalFileTime(ADateTime:TDateTime):TFileTime;
 function SystemFileTimeToDateTime(const AFileTime:TFileTime):TDateTime;
 function DateTimeToSystemFileTime(ADateTime:TDateTime):TFileTime;
 
-function FileTimeToUnixTime(const AFileTime:TFileTime):LongInt;
-function UnixTimeToFileTime(AUnixTime:LongInt):TFileTime;
+function FileTimeToUnixTime(const AFileTime:TFileTime):TUnixTime;
+function UnixTimeToFileTime(AUnixTime:TUnixTime):TFileTime;
 
-function UnixTimeToDateTime(AUnixTime:LongInt):TDateTime;
-function DateTimeToUnixTime(ADateTime:TDateTime):LongInt;
+function UnixTimeToDateTime(AUnixTime:TUnixTime):TDateTime;
+function DateTimeToUnixTime(ADateTime:TDateTime):TUnixTime;
 
 function FileTimeToFileDate(const AFileTime:TFileTime):Integer;
 function FileDateToFileTime(AFileDate:Integer):TFileTime;
@@ -3244,7 +3247,7 @@ end;
 
 {==============================================================================}
 
-function FileTimeToUnixTime(const AFileTime:TFileTime):LongInt;
+function FileTimeToUnixTime(const AFileTime:TFileTime):TUnixTime;
 {Convert a FileTime value to a Unix/Linux time value}
 {Note: FileTime is assumed to be Local / UnixTime is returned as Local}
 {Note: If FileTime is less than 1/1/1970 then Result will be zero}
@@ -3259,7 +3262,7 @@ end;
 
 {==============================================================================}
 
-function UnixTimeToFileTime(AUnixTime:LongInt):TFileTime;
+function UnixTimeToFileTime(AUnixTime:TUnixTime):TFileTime;
 {Convert a Unix/Linux time value to a FileTime value}
 {Note: UnixTime is assumed to be Local / FileTime is returned as Local}
 begin
@@ -3270,7 +3273,7 @@ end;
 
 {==============================================================================}
 
-function UnixTimeToDateTime(AUnixTime:LongInt):TDateTime;
+function UnixTimeToDateTime(AUnixTime:TUnixTime):TDateTime;
 {Convert a Unix/Linux time value to a DateTime value}
 {Note: UnixTime is assumed to be Local / DateTime is returned as Local}
 begin
@@ -3280,7 +3283,7 @@ end;
 
 {==============================================================================}
 
-function DateTimeToUnixTime(ADateTime:TDateTime):LongInt;
+function DateTimeToUnixTime(ADateTime:TDateTime):TUnixTime;
 {Convert a DateTime value to a Unix/Linux time value}
 {Note: DateTime is assumed to be Local / UnixTime is returned as Local}
 {Note: If DateTime is less than 1/1/1970 then Result will be zero}

@@ -1265,8 +1265,8 @@ type
   HaveWins: BOOL;
   PrimaryWinsServer: WSA_IP_ADDR_STRING;
   SecondaryWinsServer: WSA_IP_ADDR_STRING;
-  LeaseObtained: LongInt;  {time_t}
-  LeaseExpires: LongInt;   {time_t}
+  LeaseObtained: time_t;
+  LeaseExpires: time_t;
  end;
  TWSAIpAdapterInfo = WSA_IP_ADAPTER_INFO;
  PWSAIpAdapterInfo = PWSA_IP_ADAPTER_INFO;

@@ -1,7 +1,7 @@
 {
 Ultibo Network Sockets interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2023 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -469,7 +469,11 @@ type
  PFDSet = ^TFDSet;
  
  {TimeVal type for select (Socket only)}
- time_t = PtrInt;
+ {$IFDEF SYSCALLS_USE_LONG_TIME_T}
+ {time_t = PtrInt;} {long} {time_t is now defined in GlobalTypes}
+ {$ELSE}
+ {time_t = Int64;}  {int64_t} {time_t is now defined in GlobalTypes}
+ {$ENDIF}
  
  timeval = record
   tv_sec:time_t;

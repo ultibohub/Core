@@ -5223,11 +5223,11 @@ function DateTimeToLocalFileTime(datetime: double_t): FILETIME; stdcall; public 
 function SystemFileTimeToDateTime(const filetime: FILETIME): double_t; stdcall; public name 'SystemFileTimeToDateTime';
 function DateTimeToSystemFileTime(datetime: double_t): FILETIME; stdcall; public name 'DateTimeToSystemFileTime';
 
-function FileTimeToUnixTime(const filetime: FILETIME): int32_t; stdcall; public name 'FileTimeToUnixTime';
-function UnixTimeToFileTime(unixtime: int32_t): FILETIME; stdcall; public name 'UnixTimeToFileTime';
+function FileTimeToUnixTime(const filetime: FILETIME): time_t; stdcall; public name 'FileTimeToUnixTime';
+function UnixTimeToFileTime(unixtime: time_t): FILETIME; stdcall; public name 'UnixTimeToFileTime';
 
-function UnixTimeToDateTime(unixtime: int32_t): double_t; stdcall; public name 'UnixTimeToDateTime';
-function DateTimeToUnixTime(datetime: double_t): int32_t; stdcall; public name 'DateTimeToUnixTime';
+function UnixTimeToDateTime(unixtime: time_t): double_t; stdcall; public name 'UnixTimeToDateTime';
+function DateTimeToUnixTime(datetime: double_t): time_t; stdcall; public name 'DateTimeToUnixTime';
 
 function FileTimeToFileDate(const filetime: FILETIME): int; stdcall; public name 'FileTimeToFileDate';
 function FileDateToFileTime(filedate: int): FILETIME; stdcall; public name 'FileDateToFileTime';
@@ -38219,7 +38219,7 @@ end;
 
 {==============================================================================}
 
-function FileTimeToUnixTime(const filetime: FILETIME): int32_t; stdcall;
+function FileTimeToUnixTime(const filetime: FILETIME): time_t; stdcall;
 {Convert a FileTime value to a Unix/Linux time value}
 {Note: FileTime is assumed to be Local / UnixTime is returned as Local}
 {Note: If FileTime is less than 1/1/1970 then Result will be zero}
@@ -38230,7 +38230,7 @@ end;
 
 {==============================================================================}
 
-function UnixTimeToFileTime(unixtime: int32_t): FILETIME; stdcall;
+function UnixTimeToFileTime(unixtime: time_t): FILETIME; stdcall;
 {Convert a Unix/Linux time value to a FileTime value}
 {Note: UnixTime is assumed to be Local / FileTime is returned as Local}
 begin
@@ -38240,7 +38240,7 @@ end;
 
 {==============================================================================}
 
-function UnixTimeToDateTime(unixtime: int32_t): double_t; stdcall;
+function UnixTimeToDateTime(unixtime: time_t): double_t; stdcall;
 {Convert a Unix/Linux time value to a DateTime value}
 {Note: UnixTime is assumed to be Local / DateTime is returned as Local}
 begin
@@ -38250,7 +38250,7 @@ end;
 
 {==============================================================================}
 
-function DateTimeToUnixTime(datetime: double_t): int32_t; stdcall;
+function DateTimeToUnixTime(datetime: double_t): time_t; stdcall;
 {Convert a DateTime value to a Unix/Linux time value}
 {Note: DateTime is assumed to be Local / UnixTime is returned as Local}
 {Note: If DateTime is less than 1/1/1970 then Result will be zero}
