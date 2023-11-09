@@ -252,6 +252,7 @@ Global Defines
 {--$DEFINE HD44780_DEBUG}         {Enable debug output/counters for HD44780 driver (Default: Off)}
 {--$DEFINE ILI9340_DEBUG}         {Enable debug output/counters for ILI9340 driver (Default: Off)}
 {--$DEFINE HX8357D_DEBUG}         {Enable debug output/counters for HX8357D driver (Default: Off)}
+{--$DEFINE ST77XX_DEBUG}         {Enable debug output/counters for ST77XX driver (Default: Off)}
 {--$DEFINE PL110_DEBUG}           {Enable debug output/counters for PL110 driver (Default: Off)}
 {--$DEFINE HYPERPIXEL_DEBUG}      {Enable debug output/counters for HyperPixel driver (Default: Off)}
 {--$DEFINE MEMORYFB_DEBUG}        {Enable debug output/counters for Memory Framebuffer driver (Default: Off)}
@@ -262,7 +263,7 @@ Global Defines
 {--$DEFINE AF16X2LCD_DEBUG}       {Enable debug output/counters for AF16X2LCD driver (Default: Off)}
 {--$DEFINE PITFT28_DEBUG}         {Enable debug output/counters for PITFT28 driver (Default: Off)}
 {--$DEFINE PITFT35_DEBUG}         {Enable debug output/counters for PITFT35 driver (Default: Off)}
-
+{--$DEFINE IPSTFT19_DEBUG}         {Enable debug output/counters for IPSTFT19 driver (Default: Off)} 
 {Keyboard/Mouse/Touch}
 {--$DEFINE PL050_DEBUG}           {Enable debug output/counters for PL050 driver (Default: Off)}
 {--$DEFINE RPIFT5406_DEBUG}       {Enable debug output/counters for RPIFT5406 driver (Default: Off)}
