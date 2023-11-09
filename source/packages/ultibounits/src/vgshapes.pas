@@ -279,6 +279,7 @@ begin
   begin
    Layers[Count].LayerId:=VGSHAPES_NOLAYER;
    Layers[Count].DisplayId:=DISPMANX_ID_MAIN_LCD;
+   Layers[Count].SharedContextWithLayer:=VGSHAPES_NOLAYER;
 
    {Initialize application font list}
    SetLength(Layers[Count].AppFontList,0);
@@ -527,12 +528,6 @@ begin
    {$ifdef VGSHAPES_LOG}
    VGShapesLogDebug('Initializing shared context for layer '+LayerId.ToString+' (shared with layer '+ShareContextWithLayer.ToString+')');
    {$endif}
-   {share with layer must be a valid index}
-   if (ShareContextWithLayer < 0) or (ShareContextWithLayer >= VGSHAPES_MAXLAYERS) then Exit;
-
-   {shared layer must have been initialised}
-   if (not Layers[ShareContextWithLayer].Initialized) then Exit;
-
    State.Context:=eglCreateContext(State.Display,Config,Layers[ShareContextWithLayer].State.Context,nil)
   end;
 
@@ -814,6 +809,15 @@ begin
    VGShapesSetLayer(layer);
   end;
 
+ {Check share context layer}
+ if (ShareContextWithLayer <> VGSHAPES_NOLAYER) then
+  begin
+   if (ShareContextWithLayer < 0) or (ShareContextWithLayer >= VGSHAPES_MAXLAYERS) then Exit;
+
+   {shared layer must have been initialised}
+   if (not Layers[ShareContextWithLayer].Initialized) then Exit;
+  end;
+
  {Check First Layer}
  First:=not(Initialized);
 
@@ -964,14 +968,14 @@ begin
 
    if (Layers[Layer].AppFontList[Index].FontInfoP <> nil) then
    begin
-     VGShapesUnloadFont(Layers[Layer].AppFontList[Index].FontInfoP^.Glyphs,Layers[Layer].AppFontList[Index].FontInfoP^.Count);
-
      dec(Layers[Layer].AppFontList[Index].FontInfoP^.ReferenceCount);
      if (Layers[Layer].AppFontList[Index].FontInfoP^.ReferenceCount = 0) then
      begin
        {$ifdef VGSHAPES_LOG}
-       VGShapesLogDebug('VGShapesFinish reference count of font '+Layers[Layer].AppFontList[Index].Fontname+' is zero; releasing memory [layer='+Layer.ToString+']');
+       VGShapesLogDebug('VGShapesFinish reference count of font '+Layers[Layer].AppFontList[Index].Fontname+' is zero; releasing memory and unloading font [layer='+Layer.ToString+']');
        {$endif}
+
+       VGShapesUnloadFont(Layers[Layer].AppFontList[Index].FontInfoP^.Glyphs,Layers[Layer].AppFontList[Index].FontInfoP^.Count);
        FreeMem(Layers[Layer].AppFontList[Index].FontInfoP);
      end
      else
@@ -992,6 +996,14 @@ begin
  SetLength(Layers[Layer].AppFontList,0);
  Layers[Layer].AppFontListCount:=0;
 
+ {check whether other layers use this layer as a share conext and remove it}
+ for Index:=0 to VGSHAPES_MAXLAYERS - 1 do
+ begin
+  if (Layers[Layer].SharedContextWithLayer = Layer) then
+    Layers[Layer].SharedContextWithLayer := VGSHAPES_NOLAYER;
+ end;
+
+ Layers[Layer].SharedContextWithLayer := VGSHAPES_NOLAYER;
  Layers[Layer].Initialized:=False;
 
  {Swap Buffers}
@@ -1171,56 +1183,52 @@ begin
   {$ifdef VGSHAPES_LOG}
   VGShapesLogDebug('VGShapesSansTypeface is a shared context layer='+Current.ToString);
   {$endif}
-  {check source layer initialised}
-  if (Layers[Layers[Current].SharedContextWithLayer].Initialized) then
+  {check font shared context layer has a font already created}
+  if (Layers[Layers[Current].SharedContextWithLayer].SansTypeface <> nil) then
    begin
-    {check font shared context layer has a font already created}
-    if (Layers[Layers[Current].SharedContextWithLayer].SansTypeface <> nil) then
+    {check font reference not already copied}
+    if (Layers[Current].SansTypeFace = nil) then
      begin
-      {check font reference not already copied}
-      if (Layers[Current].SansTypeFace = nil) then
-       begin
-        {$ifdef VGSHAPES_LOG}
-        VGShapesLogDebug('VGShapesSansTypeface layer '+Current.ToString+', assiging copy of the font from layer '+IntToStr(Layers[Current].SharedContextWithLayer));
-        {$endif}
-        Layers[Current].SansTypeface := Layers[Layers[Current].SharedContextWithLayer].SansTypeface;
+      {$ifdef VGSHAPES_LOG}
+      VGShapesLogDebug('VGShapesSansTypeface layer '+Current.ToString+', assiging copy of the font from layer '+IntToStr(Layers[Current].SharedContextWithLayer));
+      {$endif}
+      Layers[Current].SansTypeface := Layers[Layers[Current].SharedContextWithLayer].SansTypeface;
 
-        {Patch app font entry with font info pointer}
-        for Index := 0 to Layers[Current].AppFontListCount-1 do
+      {Patch app font entry with font info pointer}
+      for Index := 0 to Layers[Current].AppFontListCount-1 do
+       begin
+        if (Layers[Current].AppFontList[Index].Fontname=VGSHAPES_FONTNAME_SANSSERIF) then
          begin
-          if (Layers[Current].AppFontList[Index].Fontname=VGSHAPES_FONTNAME_SANSSERIF) then
-           begin
-            {$ifdef VGSHAPES_LOG}
-            VGShapesLogDebug('VGShapesSansTypeface: Patching app font list for layer '+Current.ToString+' font '+VGSHAPES_FONTNAME_SANSSERIF+' incrementing reference count of sans typeface address '+IntToHex(LongWord(Layers[Current].SansTypeface),8));
-            {$endif}
-            Layers[Current].AppFontList[Index].FontInfoP:=Layers[Current].SansTypeface;
-            inc(Layers[Current].SansTypeface.ReferenceCount);
-            break;
-           end;
+          {$ifdef VGSHAPES_LOG}
+          VGShapesLogDebug('VGShapesSansTypeface: Patching app font list for layer '+Current.ToString+' font '+VGSHAPES_FONTNAME_SANSSERIF+' incrementing reference count of sans typeface address '+IntToHex(LongWord(Layers[Current].SansTypeface),8));
+          {$endif}
+          Layers[Current].AppFontList[Index].FontInfoP:=Layers[Current].SansTypeface;
+          inc(Layers[Current].SansTypeface.ReferenceCount);
+          break;
          end;
-
-        {$ifdef VGSHAPES_LOG}
-        VGShapesLogDebug('VGShapesSansTypeface Sans typeface reference count of layer '+
-           IntToStr(Layers[Current].SharedContextWithLayer)+' set to '+
-           IntToStr(Layers[Layers[Current].SharedContextWithLayer].SansTypeface.ReferenceCount));
-        {$endif}
-       end
-       else
-       begin
-        {$ifdef VGSHAPES_LOG}
-        VGShapesLogDebug('VGShapesSansTypeface sans typeface already assigned. Other context='+inttohex(longword(Layers[Layers[Current].SharedContextWithLayer].SansTypeface),8)+' ours = '+IntToHex(LongWord(Layers[Current].SansTypeface),8));
-        {$endif}
-       end
-     end
-      else
-       begin
-        {source layer's font has not been created yet; reverse creation not supported}
-        {$ifdef VGSHAPES_LOG}
-        VGShapesLogDebug('VGShapesSansTypeface: Unable to return a font as the shared context layer''s font has not be created yet.');
-        {$endif}
-        exit;
        end;
-   end;
+
+      {$ifdef VGSHAPES_LOG}
+      VGShapesLogDebug('VGShapesSansTypeface Sans typeface reference count of layer '+
+         IntToStr(Layers[Current].SharedContextWithLayer)+' set to '+
+         IntToStr(Layers[Layers[Current].SharedContextWithLayer].SansTypeface.ReferenceCount));
+      {$endif}
+     end
+     else
+     begin
+      {$ifdef VGSHAPES_LOG}
+      VGShapesLogDebug('VGShapesSansTypeface sans typeface already assigned. Other context='+inttohex(longword(Layers[Layers[Current].SharedContextWithLayer].SansTypeface),8)+' ours = '+IntToHex(LongWord(Layers[Current].SansTypeface),8));
+      {$endif}
+     end
+   end
+    else
+     begin
+      {source layer's font has not been created yet; reverse creation not supported}
+      {$ifdef VGSHAPES_LOG}
+      VGShapesLogDebug('VGShapesSansTypeface: Unable to return a font as the shared context layer''s font has not be created yet.');
+      {$endif}
+      exit;
+     end;
  end
  else
  begin
@@ -1279,30 +1287,26 @@ begin
  {Check egl context sharing}
  if (Layers[Current].SharedContextWithLayer <> VGSHAPES_NOLAYER) then
  begin
-  {check source layer initialised}
-  if (Layers[Layers[Current].SharedContextWithLayer].Initialized) then
+  {check font shared context layer has a font already created}
+  if (Layers[Layers[Current].SharedContextWithLayer].SerifTypeface <> nil) then
    begin
-    {check font shared context layer has a font already created}
-    if (Layers[Layers[Current].SharedContextWithLayer].SerifTypeface <> nil) then
+    {check font reference not already copied}
+    if (Layers[Current].SerifTypeFace = nil) then
      begin
-      {check font reference not already copied}
-      if (Layers[Current].SerifTypeFace = nil) then
-       begin
-        Layers[Current].SerifTypeface := Layers[Layers[Current].SharedContextWithLayer].SerifTypeface;
+      Layers[Current].SerifTypeface := Layers[Layers[Current].SharedContextWithLayer].SerifTypeface;
 
-        {Patch app font entry with font info pointer}
-        for Index := 0 to Layers[Current].AppFontListCount-1 do
+      {Patch app font entry with font info pointer}
+      for Index := 0 to Layers[Current].AppFontListCount-1 do
+       begin
+        if (Layers[Current].AppFontList[Index].Fontname=VGSHAPES_FONTNAME_SERIF) then
          begin
-          if (Layers[Current].AppFontList[Index].Fontname=VGSHAPES_FONTNAME_SERIF) then
-           begin
-            Layers[Current].AppFontList[Index].FontInfoP:=Layers[Current].SerifTypeface;
-            inc(Layers[Current].SerifTypeface.ReferenceCount);
-            break;
-           end;
+          Layers[Current].AppFontList[Index].FontInfoP:=Layers[Current].SerifTypeface;
+          inc(Layers[Current].SerifTypeface.ReferenceCount);
+          break;
          end;
        end;
-     end
-   end;
+     end;
+   end
  end
  else
  begin
@@ -1358,30 +1362,26 @@ begin
  {Check egl context sharing}
  if (Layers[Current].SharedContextWithLayer <> VGSHAPES_NOLAYER) then
  begin
-  {check source layer initialised}
-  if (Layers[Layers[Current].SharedContextWithLayer].Initialized) then
+  {check font shared context layer has a font already created}
+  if (Layers[Layers[Current].SharedContextWithLayer].MonoTypeface <> nil) then
    begin
-    {check font shared context layer has a font already created}
-    if (Layers[Layers[Current].SharedContextWithLayer].MonoTypeface <> nil) then
+    {check font reference not already copied}
+    if (Layers[Current].MonoTypeFace = nil) then
      begin
-      {check font reference not already copied}
-      if (Layers[Current].MonoTypeFace = nil) then
-       begin
-        Layers[Current].MonoTypeface := Layers[Layers[Current].SharedContextWithLayer].MonoTypeface;
+      Layers[Current].MonoTypeface := Layers[Layers[Current].SharedContextWithLayer].MonoTypeface;
 
-        {Patch app font entry with font info pointer}
-        for Index := 0 to Layers[Current].AppFontListCount-1 do
+      {Patch app font entry with font info pointer}
+      for Index := 0 to Layers[Current].AppFontListCount-1 do
+       begin
+        if (Layers[Current].AppFontList[Index].Fontname=VGSHAPES_FONTNAME_MONO) then
          begin
-          if (Layers[Current].AppFontList[Index].Fontname=VGSHAPES_FONTNAME_MONO) then
-           begin
-            Layers[Current].AppFontList[Index].FontInfoP:=Layers[Current].MonoTypeface;
-            inc(Layers[Current].MonoTypeface.ReferenceCount);
-            break;
-           end;
+          Layers[Current].AppFontList[Index].FontInfoP:=Layers[Current].MonoTypeface;
+          inc(Layers[Current].MonoTypeface.ReferenceCount);
+          break;
          end;
        end;
-     end
-   end;
+     end;
+   end
  end
  else
  begin
@@ -1467,22 +1467,22 @@ begin
   end
   else
    Exit;
+
+  {Update font count}
+  Inc(Layers[Current].AppFontListCount);
+
+  {Add space for application font}
+  SetLength(Layers[Current].AppFontList,Layers[Current].AppFontListCount);
+
+  {Insert font into application font list}
+  Index:=Layers[Current].AppFontListCount - 1;
+  Layers[Current].AppFontList[Index].Fontname:=appfontname;
+  Layers[Current].AppFontList[Index].FontInfoP:=appFontInfoP;
+  Layers[Current].AppFontList[Index].IsInternal:=false;
+
+  {Return font}
+  Result:=appFontInfoP;
  end;
-
- {Update font count}
- Inc(Layers[Current].AppFontListCount);
-
- {Add space for application font}
- SetLength(Layers[Current].AppFontList,Layers[Current].AppFontListCount);
-
- {Insert font into application font list}
- Index:=Layers[Current].AppFontListCount - 1;
- Layers[Current].AppFontList[Index].Fontname:=appfontname;
- Layers[Current].AppFontList[Index].FontInfoP:=appFontInfoP;
- Layers[Current].AppFontList[Index].IsInternal:=false;
-
- {Return font}
- Result:=appFontInfoP;
 end;
 
 {==============================================================================}
