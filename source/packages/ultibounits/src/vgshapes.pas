@@ -87,6 +87,8 @@ procedure VGShapesFinish;
 function VGShapesGetLayer:LongInt;
 procedure VGShapesSetLayer(layer:LongInt);
 
+function VGShapesLayerHasSharedEGLContext(LayerId:Longint = VGSHAPES_NOLAYER):Boolean;
+
 {Font}
 function VGShapesLoadFont(Points,PointIndices:PInteger;Instructions:PByte;InstructionIndices,InstructionCounts,adv:PInteger;cmap:PSmallInt;ng:Integer):TVGShapesFontInfo;
 procedure VGShapesUnloadFont(glyphs:PVGPath;n:Integer);
@@ -330,6 +332,20 @@ begin
       end; 
     end;
   end;
+end;
+
+{==============================================================================}
+function VGShapesLayerHasSharedEGLContext(LayerId:Longint = VGSHAPES_NOLAYER):Boolean;
+begin
+ Result:=false;
+
+ {use current layer if none specified}
+ if (LayerId=VGSHAPES_NOLAYER) then
+  LayerId:=Current;
+
+ {check layer initialized}
+ if Layers[Current].Initialized then
+   Result:=Layers[Current].SharedContextWithLayer<>VGSHAPES_NOLAYER;
 end;
 
 {==============================================================================}
