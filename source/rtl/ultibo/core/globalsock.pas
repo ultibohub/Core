@@ -69,7 +69,7 @@ const
  IOC_IN       = $80000000;
  IOC_INOUT    = (IOC_IN or IOC_OUT);
 
- FIONREAD =Cardinal( IOC_OUT or { get # bytes to read }
+ FIONREAD = Cardinal( IOC_OUT or { get # bytes to read }
   ((4 and IOCPARM_MASK) shl 16) or
   (102 shl 8) or 127);
  FIONBIO = Cardinal(IOC_IN or { set/clear non-blocking i/o }

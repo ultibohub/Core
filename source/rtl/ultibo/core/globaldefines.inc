@@ -406,10 +406,12 @@ Global Defines
 
 {$IFDEF API_EXPORT_WINSOCK}
  {$UNDEF SYSCALLS_EXPORT_SOCKETS}
+ {$UNDEF API_EXPORT_WINSOCK2}
 {$ENDIF}
 
 {$IFDEF API_EXPORT_WINSOCK2}
  {$UNDEF SYSCALLS_EXPORT_SOCKETS}
+ {$UNDEF API_EXPORT_WINSOCK}
 {$ENDIF}
 
 {==============================================================================}

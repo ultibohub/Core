@@ -5118,6 +5118,20 @@ function GetRTTAndHopCount(destipaddress: IPAddr; var hopcount: uint32_t; maxhop
 function GetFriendlyIfIndex(ifindex: uint32_t): uint32_t; stdcall; public name 'GetFriendlyIfIndex';
 function EnableRouter(var phandle: THANDLE; poverlapped: POVERLAPPED): uint32_t; stdcall; public name 'EnableRouter';
 function UnenableRouter(poverlapped: POVERLAPPED; lpdwenablecount: LPDWORD): uint32_t; stdcall; public name 'UnenableRouter';
+
+{==============================================================================}
+{IP Helper Helper Functions}
+function MIBIFOperStatusToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'MIBIFOperStatusToString';
+function MIBIFTypeToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'MIBIFTypeToString';
+function MIBIFAdminStatusToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'MIBIFAdminStatusToString';
+
+function MIBTCPRTOToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'MIBTCPRTOToString';
+function MIBTCPStateToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'MIBTCPStateToString';
+
+function MIBIPForwardingToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'MIBIPForwardingToString';
+function MIBIPRouteTypeToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'MIBIPRouteTypeToString';
+function MIBIPProtoToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'MIBIPProtoToString';
+function MIBIPNetTypeToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'MIBIPNetTypeToString';
 {$ENDIF}
 {==============================================================================}
 {Ultibo Functions}
@@ -37631,6 +37645,78 @@ function UnenableRouter(poverlapped: POVERLAPPED; lpdwenablecount: LPDWORD): uin
 begin
  {}
  Result:=Iphlpapi.UnenableRouter(poverlapped,lpdwenablecount);
+end;
+
+{==============================================================================}
+{IP Helper Helper Functions}
+function MIBIFOperStatusToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
+begin
+ {}
+ Result:=APIStringToPCharBuffer(Iphlpapi.MIBIFOperStatusToString(value),_string,len);
+end;
+
+{==============================================================================}
+
+function MIBIFTypeToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
+begin
+ {}
+ Result:=APIStringToPCharBuffer(Iphlpapi.MIBIFTypeToString(value),_string,len);
+end;
+
+{==============================================================================}
+
+function MIBIFAdminStatusToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
+begin
+ {}
+ Result:=APIStringToPCharBuffer(Iphlpapi.MIBIFAdminStatusToString(value),_string,len);
+end;
+
+{==============================================================================}
+
+function MIBTCPRTOToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
+begin
+ {}
+ Result:APIStringToPCharBuffer(=Iphlpapi.MIBTCPRTOToString(value),_string,len);
+end;
+
+{==============================================================================}
+
+function MIBTCPStateToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
+begin
+ {}
+ Result:=APIStringToPCharBuffer(Iphlpapi.MIBTCPStateToString(value),_string,len);
+end;
+
+{==============================================================================}
+
+function MIBIPForwardingToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
+begin
+ {}
+ Result:=APIStringToPCharBuffer(Iphlpapi.MIBIPForwardingToString(value),_string,len);
+end;
+
+{==============================================================================}
+
+function MIBIPRouteTypeToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
+begin
+ {}
+ Result:=APIStringToPCharBuffer(Iphlpapi.MIBIPRouteTypeToString(value),_string,len);
+end;
+
+{==============================================================================}
+
+function MIBIPProtoToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
+begin
+ {}
+ Result:=APIStringToPCharBuffer(Iphlpapi.MIBIPProtoToString(value),_string,len);
+end;
+
+{==============================================================================}
+
+function MIBIPNetTypeToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
+begin
+ {}
+ Result:=APIStringToPCharBuffer(Iphlpapi.MIBIPNetTypeToString(value),_string,len);
 end;
 {$ENDIF}
 {==============================================================================}
