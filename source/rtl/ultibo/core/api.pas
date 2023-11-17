@@ -16595,8 +16595,8 @@ end;
 {==============================================================================}
 
 function get_aligned_mem(size, alignment: SIZE_T): PVOID; stdcall;
-{Allocate a block of normal memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate a block of normal memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=GetAlignedMem(size,alignment);
@@ -16606,8 +16606,8 @@ end;
 
 function get_aligned_mem_ex(size, alignment: SIZE_T; flags, affinity: uint32_t): PVOID; stdcall;
 {Allocate a block of memory aligned on a multiple of the alignment value with the
- flags and affinity requested
- (Alignment must be a multiple of the minimum alignment configuration)}
+ flags and affinity requested}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=GetAlignedMemEx(size,alignment,flags,affinity);
@@ -16625,8 +16625,8 @@ end;
 {==============================================================================}
 
 function get_shared_aligned_mem(size, alignment: SIZE_T): PVOID; stdcall;
-{Allocate a block of shared memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate a block of shared memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=GetSharedAlignedMem(size,alignment);
@@ -16644,8 +16644,8 @@ end;
 {==============================================================================}
 
 function get_local_aligned_mem(size, alignment: SIZE_T; affinity: uint32_t): PVOID; stdcall;
-{Allocate a block of local memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate a block of local memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=GetLocalAlignedMem(size,alignment,affinity);
@@ -16663,8 +16663,8 @@ end;
 {==============================================================================}
 
 function get_code_aligned_mem(size, alignment: SIZE_T; affinity: uint32_t): PVOID; stdcall;
-{Allocate a block of code memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate a block of code memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=GetCodeAlignedMem(size,alignment,affinity);
@@ -16682,8 +16682,8 @@ end;
 {==============================================================================}
 
 function get_device_aligned_mem(size, alignment: SIZE_T): PVOID; stdcall;
-{Allocate a block of device memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate a block of device memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=GetDeviceAlignedMem(size,alignment);
@@ -16701,8 +16701,8 @@ end;
 {==============================================================================}
 
 function get_nocache_aligned_mem(size, alignment: SIZE_T): PVOID; stdcall;
-{Allocate a block of non cached memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate a block of non cached memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=GetNoCacheAlignedMem(size,alignment);
@@ -16720,8 +16720,8 @@ end;
 {==============================================================================}
 
 function get_nonshared_aligned_mem(size, alignment: SIZE_T): PVOID; stdcall;
-{Allocate a block of non shared memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate a block of non shared memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=GetNonSharedAlignedMem(size,alignment);
@@ -16731,6 +16731,7 @@ end;
 
 function get_irq_mem(size: SIZE_T; affinity: uint32_t): PVOID; stdcall;
 {Allocate a block of IRQ memory}
+{Note: The memory must be freed using FreeIRQMem}
 begin
  {}
  Result:=GetIRQMem(size,affinity);
@@ -16739,8 +16740,9 @@ end;
 {==============================================================================}
 
 function get_irq_aligned_mem(size, alignment: SIZE_T; affinity: uint32_t): PVOID; stdcall;
-{Allocate a block of IRQ memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate a block of IRQ memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
+{Note: The memory must be freed using FreeIRQMem}
 begin
  {}
  Result:=GetIRQAlignedMem(size,alignment,affinity);
@@ -16750,6 +16752,7 @@ end;
 
 function get_fiq_mem(size: SIZE_T; affinity: uint32_t): PVOID; stdcall;
 {Allocate a block of FIQ memory}
+{Note: The memory must be freed using FreeFIQMem}
 begin
  {}
  Result:=GetFIQMem(size,affinity);
@@ -16758,8 +16761,9 @@ end;
 {==============================================================================}
 
 function get_fiq_aligned_mem(size, alignment: SIZE_T; affinity: uint32_t): PVOID; stdcall;
-{Allocate a block of FIQ memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate a block of FIQ memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
+{Note: The memory must be freed using FreeFIQMem}
 begin
  {}
  Result:=GetFIQAlignedMem(size,alignment,affinity);
@@ -16831,9 +16835,8 @@ end;
 {==============================================================================}
 
 function alloc_aligned_mem(size, alignment: SIZE_T): PVOID; stdcall;
-{Allocate and clear a block of normal memory aligned on a multiple of the
- alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate and clear a block of normal memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=AllocAlignedMem(size,alignment);
@@ -16843,8 +16846,8 @@ end;
 
 function alloc_aligned_mem_ex(size, alignment: SIZE_T; flags, affinity: uint32_t): PVOID; stdcall;
 {Allocate and clear a block of normal memory aligned on a multiple of the
- alignment value with the flags and affinity requested
- (Alignment must be a multiple of the minimum alignment configuration)}
+ alignment value with the flags and affinity requested}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=AllocAlignedMemEx(size,alignment,flags,affinity);
@@ -16853,8 +16856,8 @@ end;
 {==============================================================================}
 
 function realloc_aligned_mem(var addr: PVOID; size, alignment: SIZE_T): PVOID; stdcall;
-{Reallocate a block of normal memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Reallocate a block of normal memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=ReAllocAlignedMem(addr,size,alignment);
@@ -16864,8 +16867,8 @@ end;
 
 function realloc_aligned_mem_ex(var addr: PVOID; size, alignment: SIZE_T; flags, affinity: uint32_t): PVOID; stdcall;
 {Reallocate a block of memory aligned on a multiple of the alignment value with the
- flags and affinity requested
- (Alignment must be a multiple of the minimum alignment configuration)}
+ flags and affinity requested}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=ReAllocAlignedMemEx(addr,size,alignment,flags,affinity);
@@ -16883,9 +16886,8 @@ end;
 {==============================================================================}
 
 function alloc_shared_aligned_mem(size, alignment: SIZE_T): PVOID; stdcall;
-{Allocate and clear a block of shared memory aligned on a multiple of the
- alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate and clear a block of shared memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=AllocSharedAlignedMem(size,alignment);
@@ -16903,8 +16905,8 @@ end;
 {==============================================================================}
 
 function realloc_shared_aligned_mem(var addr: PVOID; size, alignment: SIZE_T): PVOID; stdcall;
-{Reallocate a block of shared memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Reallocate a block of shared memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=ReAllocSharedAlignedMem(addr,size,alignment);
@@ -16922,9 +16924,8 @@ end;
 {==============================================================================}
 
 function alloc_local_aligned_mem(size, alignment: SIZE_T; affinity: uint32_t): PVOID; stdcall;
-{Allocate and clear a block of local memory aligned on a multiple of the
- alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate and clear a block of local memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=AllocLocalAlignedMem(size,alignment,affinity);
@@ -16942,8 +16943,8 @@ end;
 {==============================================================================}
 
 function realloc_local_aligned_mem(var addr: PVOID; size, alignment: SIZE_T; affinity: uint32_t): PVOID; stdcall;
-{Reallocate a block of local memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Reallocate a block of local memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=ReAllocLocalAlignedMem(addr,size,alignment,affinity);
@@ -16961,9 +16962,8 @@ end;
 {==============================================================================}
 
 function alloc_code_aligned_mem(size, alignment: SIZE_T; affinity: uint32_t): PVOID; stdcall;
-{Allocate and clear a block of code memory aligned on a multiple of the
- alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate and clear a block of code memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=AllocCodeAlignedMem(size,alignment,affinity);
@@ -16981,8 +16981,8 @@ end;
 {==============================================================================}
 
 function realloc_code_aligned_mem(var addr: PVOID; size, alignment: SIZE_T; affinity: uint32_t): PVOID; stdcall;
-{Reallocate a block of code memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Reallocate a block of code memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=ReAllocCodeAlignedMem(addr,size,alignment,affinity);
@@ -17000,9 +17000,8 @@ end;
 {==============================================================================}
 
 function alloc_device_aligned_mem(size, alignment: SIZE_T): PVOID; stdcall;
-{Allocate and clear a block of device memory aligned on a multiple of the
- alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate and clear a block of device memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=AllocDeviceAlignedMem(size,alignment);
@@ -17020,8 +17019,8 @@ end;
 {==============================================================================}
 
 function realloc_device_aligned_mem(var addr: PVOID; size, alignment: SIZE_T): PVOID; stdcall;
-{Reallocate a block of device memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Reallocate a block of device memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=ReAllocDeviceAlignedMem(addr,size,alignment);
@@ -17039,9 +17038,8 @@ end;
 {==============================================================================}
 
 function alloc_nocache_aligned_mem(size, alignment: SIZE_T): PVOID; stdcall;
-{Allocate and clear a block of non cached memory aligned on a multiple of the
- alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate and clear a block of non cached memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=AllocNoCacheAlignedMem(size,alignment);
@@ -17059,8 +17057,8 @@ end;
 {==============================================================================}
 
 function realloc_nocache_aligned_mem(var addr: PVOID; size, alignment: SIZE_T): PVOID; stdcall;
-{Reallocate a block of non cached memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Reallocate a block of non cached memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=ReAllocNoCacheAlignedMem(addr,size,alignment);
@@ -17078,9 +17076,8 @@ end;
 {==============================================================================}
 
 function alloc_nonshared_aligned_mem(size, alignment: SIZE_T): PVOID; stdcall;
-{Allocate and clear a block of non shared memory aligned on a multiple of the
- alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate and clear a block of non shared memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=AllocNonSharedAlignedMem(size,alignment);
@@ -17098,8 +17095,8 @@ end;
 {==============================================================================}
 
 function realloc_nonshared_aligned_mem(var addr: PVOID; size, alignment: SIZE_T): PVOID; stdcall;
-{Reallocate a block of non shared memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Reallocate a block of non shared memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 begin
  {}
  Result:=ReAllocNonSharedAlignedMem(addr,size,alignment);
@@ -17118,9 +17115,8 @@ end;
 {==============================================================================}
 
 function alloc_irq_aligned_mem(size, alignment: SIZE_T; affinity: uint32_t): PVOID; stdcall;
-{Allocate and clear a block of IRQ memory aligned on a multiple of the
- alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate and clear a block of IRQ memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 {Note: The memory must be freed using FreeIRQMem}
 begin
  {}
@@ -17131,6 +17127,7 @@ end;
 
 function realloc_irq_mem(var addr: PVOID; size: SIZE_T; affinity: uint32_t): PVOID; stdcall;
 {Reallocate a block of IRQ memory}
+{Note: The memory must be freed using FreeIRQMem}
 begin
  {}
  Result:=ReAllocIRQMem(addr,size,affinity);
@@ -17139,8 +17136,9 @@ end;
 {==============================================================================}
 
 function realloc_irq_aligned_mem(var addr: PVOID; size, alignment: SIZE_T; affinity: uint32_t): PVOID; stdcall;
-{Reallocate a block of IRQ memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Reallocate a block of IRQ memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
+{Note: The memory must be freed using FreeIRQMem}
 begin
  {}
  Result:=ReAllocIRQAlignedMem(addr,size,alignment,affinity);
@@ -17159,9 +17157,8 @@ end;
 {==============================================================================}
 
 function alloc_fiq_aligned_mem(size, alignment: SIZE_T; affinity: uint32_t): PVOID; stdcall;
-{Allocate and clear a block of FIQ memory aligned on a multiple of the
- alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Allocate and clear a block of FIQ memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
 {Note: The memory must be freed using FreeFIQMem}
 begin
  {}
@@ -17172,6 +17169,7 @@ end;
 
 function realloc_fiq_mem(var addr: PVOID; size: SIZE_T; affinity: uint32_t): PVOID; stdcall;
 {Reallocate a block of FIQ memory}
+{Note: The memory must be freed using FreeFIQMem}
 begin
  {}
  Result:=ReAllocFIQMem(addr,size,affinity);
@@ -17180,8 +17178,9 @@ end;
 {==============================================================================}
 
 function realloc_fiq_aligned_mem(var addr: PVOID; size, alignment: SIZE_T; affinity: uint32_t): PVOID; stdcall;
-{Reallocate a block of FIQ memory aligned on a multiple of the alignment value
- (Alignment must be a multiple of the minimum alignment configuration)}
+{Reallocate a block of FIQ memory aligned on a multiple of the alignment value}
+{Note: Alignment must be a power of 2}
+{Note: The memory must be freed using FreeFIQMem}
 begin
  {}
  Result:=ReAllocFIQAlignedMem(addr,size,alignment,affinity);
