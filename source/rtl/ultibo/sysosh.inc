@@ -26,7 +26,7 @@ type
   { A thread id is the same as a thread handle }
   TThreadID = THandle;
   
-  TOSTimestamp = {$if defined(FPC_STABLE) or defined(FPC_FIXES) or defined(FPC_LEGACY)}Longint{$else}Int64{$endif};
+  TOSTimestamp = {$if defined(FPC_STABLE) or defined(FPC_LEGACY)}Longint{$else}Int64{$endif};
 
   { pthread_mutex_t }
   PRTLCriticalSection = ^TRTLCriticalSection;
