@@ -535,7 +535,7 @@ begin
   end;
 end;
 
-{$IF NOT DEFINED(FPC_STABLE) AND NOT DEFINED(FPC_FIXES) AND NOT DEFINED(FPC_LEGACY)}
+{$IF NOT DEFINED(FPC_STABLE) AND NOT DEFINED(FPC_LEGACY)}
 function FileGetDateTimeInfo(const FileName: string; out DateTime: TDateTimeInfoRec; FollowLink: Boolean = True): Boolean;
 var
  Info:TSearchRec;
