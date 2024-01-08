@@ -1,7 +1,7 @@
 {
 Ultibo USB Human Interface Device (HID) driver unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -113,6 +113,7 @@ type
   ReportRequest:PUSBRequest;             {The USB request submitted for this endpoint}
   ReportRequests:PUSBHIDRequests;        {Active input report requests from consumers}
   ReportEndpoint:PUSBEndpointDescriptor; {The USB endpoint for receiving input reports}
+  OutputEndpoint:PUSBEndpointDescriptor; {The USB endpoint for receiving ouput reports}
   PendingCount:LongWord;                 {Number of USB requests pending for this HID device}
   WaiterThread:TThreadId;                {Thread waiting for pending requests to complete (for device detachment)}
  end;
@@ -457,6 +458,9 @@ begin
   {Check Endpoint (Must be IN interrupt)}
   HIDDevice.ReportEndpoint:=USBDeviceFindEndpointByType(Device,Interrface,USB_DIRECTION_IN,USB_TRANSFER_TYPE_INTERRUPT);
   if HIDDevice.ReportEndpoint = nil then Exit;
+
+  {Check Endpoint (Optional OUT interrupt)}
+  HIDDevice.OutputEndpoint:=USBDeviceFindEndpointByType(Device,Interrface,USB_DIRECTION_OUT,USB_TRANSFER_TYPE_INTERRUPT);
 
   {$IF DEFINED(USB_DEBUG) or DEFINED(HID_DEBUG)}
   if USB_LOG_ENABLED then USBLogDebug(Device,'HID: Checking class specific data');
@@ -1038,9 +1042,12 @@ function USBHIDDeviceSetReport(Device:PHIDDevice;ReportType,ReportId:Byte;Report
 {ReportSize: The size in bytes of the buffer pointed to by report data}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
-{Note: HID_REQUEST_SET_REPORT is optional for all HID devices}
+{Note: HID_REQUEST_SET_REPORT is optional for all HID devices, if a device declares
+       an interrupt out endpoint then output reports are sent to the device using it}
 var
+ Count:LongWord;
  USBDevice:PUSBDevice;
+ HIDDevice:PUSBHIDDevice;
  USBInterface:PUSBInterface;
 begin
  {}
@@ -1057,11 +1064,29 @@ begin
  if USBDevice = nil then Exit;
  if USBInterface = nil then Exit;
 
+ {Get USB HID Device}
+ HIDDevice:=PUSBHIDDevice(Device);
+
  {Check Report Data}
  if ReportData = nil then Exit;
 
- {Set Report}
- Result:=USBHIDStatusToErrorCode(USBControlRequest(USBDevice,nil,HID_REQUEST_SET_REPORT,USB_BMREQUESTTYPE_TYPE_CLASS or USB_BMREQUESTTYPE_DIR_OUT or USB_BMREQUESTTYPE_RECIPIENT_INTERFACE,(ReportType shl 8) or ReportId,USBInterface.Descriptor.bInterfaceNumber,ReportData,ReportSize));
+ {Check Report Size}
+ if ReportSize < 1 then Exit;
+
+ {Check Report Type}
+ if (ReportType = HID_REPORT_OUTPUT) and (HIDDevice.OutputEndpoint <> nil) then
+  begin
+   {Set Report Id}
+   if HIDDevice.ReportMaximum > 0 then PByte(ReportData)^:=ReportId;
+
+   {Set Report}
+   Result:=USBHIDStatusToErrorCode(USBInterruptTransfer(USBDevice,HIDDevice.OutputEndpoint,ReportData,ReportSize,Count,INFINITE));
+  end
+ else
+  begin
+   {Set Report}
+   Result:=USBHIDStatusToErrorCode(USBControlRequest(USBDevice,nil,HID_REQUEST_SET_REPORT,USB_BMREQUESTTYPE_TYPE_CLASS or USB_BMREQUESTTYPE_DIR_OUT or USB_BMREQUESTTYPE_RECIPIENT_INTERFACE,(ReportType shl 8) or ReportId,USBInterface.Descriptor.bInterfaceNumber,ReportData,ReportSize));
+  end;
 end;
 
 {==============================================================================}
