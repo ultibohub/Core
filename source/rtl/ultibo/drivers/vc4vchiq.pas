@@ -1,7 +1,7 @@
 {
 Ultibo Broadcom VideoCoreIV VCHIQ driver unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -10299,7 +10299,7 @@ begin
  {Partial cache lines (fragments) require special measures}
  if (PageType = VCHIQ_PAGELIST_READ) and (((Pagelist.offset and (VCHIQDevice.CacheLineSize - 1)) <> 0) or (((Pagelist.offset + Pagelist.length) and (VCHIQDevice.CacheLineSize - 1)) <> 0)) then
   begin
-   if DEVICE_LOG_ENABLED then DeviceLogWarn(nil,'VCHIQ: VCHIQCreatePagelist - Fragments'); //To Do //Testing, should now be resolved
+   if DEVICE_LOG_ENABLED and not(DeviceTreeValid) then DeviceLogWarn(nil,'VCHIQ: VCHIQCreatePagelist - Fragments may cause corruption without a valid device tree');
    
    {Wait Free Fragments}
    if SemaphoreWait(VCHIQDevice.FragmentsSemaphore) <> ERROR_SUCCESS then
@@ -10423,7 +10423,7 @@ begin
  {Deal with any partial cache lines (fragments)}
  if Pagelist.pagetype >= VCHIQ_PAGELIST_READ_WITH_FRAGMENTS then
   begin
-   if DEVICE_LOG_ENABLED then DeviceLogWarn(nil,'VCHIQ: VCHIQFreePagelist - Fragments'); //To Do //Testing, should now be resolved
+   if DEVICE_LOG_ENABLED and not(DeviceTreeValid) then DeviceLogWarn(nil,'VCHIQ: VCHIQFreePagelist - Fragments may cause corruption without a valid device tree');
    
    {Get Fragments}
    Fragments:=VCHIQDevice.FragmentsBase + ((Pagelist.pagetype - VCHIQ_PAGELIST_READ_WITH_FRAGMENTS) * VCHIQDevice.FragmentsSize);
