@@ -1,7 +1,7 @@
 {
 Ultibo Winsock2 interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -9892,8 +9892,6 @@ end;
 
 function select(nfds: Longint; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): Longint; 
 {Note: All sockets contained by the FDSet must be of the same type}
-var
- Socket:TProtocolSocket;
 begin
  {}
  Result:=SOCKET_ERROR;
@@ -12522,15 +12520,21 @@ begin
              FillChar(WSAIfRow^,SizeOf(TWSAIfRow),0);
              WSAIfRow.wszName:=Adapter.Name;
              WSAIfRow.dwIndex:=Adapter.Index;
-             case Adapter.Adapter.MediaType of
-              MEDIA_TYPE_ETHERNET:WSAIfRow.dwType:=WSA_IF_TYPE_ETHERNET_CSMACD;
-              MEDIA_TYPE_TOKENRING:WSAIfRow.dwType:=WSA_IF_TYPE_ISO88025_TOKENRING;
-              MEDIA_TYPE_IEEE80211:WSAIfRow.dwType:=WSA_IF_TYPE_IEEE80211;
-              MEDIA_TYPE_LOOPBACK:WSAIfRow.dwType:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
-              MEDIA_TYPE_PPP:WSAIfRow.dwType:=WSA_IF_TYPE_PPP;
-              MEDIA_TYPE_SLIP:WSAIfRow.dwType:=WSA_IF_TYPE_SLIP;
-             else  
-              WSAIfRow.dwType:=WSA_IF_TYPE_OTHER;
+             case Adapter.Adapter.AdapterType of
+              ADAPTER_TYPE_LOOPBACK:WSAIfRow.dwType:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
+             else
+              begin
+               case Adapter.Adapter.MediaType of
+                MEDIA_TYPE_ETHERNET:WSAIfRow.dwType:=WSA_IF_TYPE_ETHERNET_CSMACD;
+                MEDIA_TYPE_TOKENRING:WSAIfRow.dwType:=WSA_IF_TYPE_ISO88025_TOKENRING;
+                MEDIA_TYPE_IEEE80211:WSAIfRow.dwType:=WSA_IF_TYPE_IEEE80211;
+                MEDIA_TYPE_LOOPBACK:WSAIfRow.dwType:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
+                MEDIA_TYPE_PPP:WSAIfRow.dwType:=WSA_IF_TYPE_PPP;
+                MEDIA_TYPE_SLIP:WSAIfRow.dwType:=WSA_IF_TYPE_SLIP;
+               else  
+                WSAIfRow.dwType:=WSA_IF_TYPE_OTHER;
+               end;
+              end;
              end;
              WSAIfRow.dwMtu:=Adapter.MTU;
              WSAIfRow.dwPhysAddrLen:=SizeOf(THardwareAddress);
@@ -12585,15 +12589,21 @@ begin
            FillChar(WSAIfRow^,SizeOf(TWSAIfRow),0);
            WSAIfRow.wszName:=Adapter.Name;
            WSAIfRow.dwIndex:=Adapter.Index;
-           case Adapter.Adapter.MediaType of
-            MEDIA_TYPE_ETHERNET:WSAIfRow.dwType:=WSA_IF_TYPE_ETHERNET_CSMACD;
-            MEDIA_TYPE_TOKENRING:WSAIfRow.dwType:=WSA_IF_TYPE_ISO88025_TOKENRING;
-            MEDIA_TYPE_IEEE80211:WSAIfRow.dwType:=WSA_IF_TYPE_IEEE80211;
-            MEDIA_TYPE_LOOPBACK:WSAIfRow.dwType:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
-            MEDIA_TYPE_PPP:WSAIfRow.dwType:=WSA_IF_TYPE_PPP;
-            MEDIA_TYPE_SLIP:WSAIfRow.dwType:=WSA_IF_TYPE_SLIP;
-           else  
-            WSAIfRow.dwType:=WSA_IF_TYPE_OTHER;
+           case Adapter.Adapter.AdapterType of
+            ADAPTER_TYPE_LOOPBACK:WSAIfRow.dwType:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
+           else
+            begin
+             case Adapter.Adapter.MediaType of
+              MEDIA_TYPE_ETHERNET:WSAIfRow.dwType:=WSA_IF_TYPE_ETHERNET_CSMACD;
+              MEDIA_TYPE_TOKENRING:WSAIfRow.dwType:=WSA_IF_TYPE_ISO88025_TOKENRING;
+              MEDIA_TYPE_IEEE80211:WSAIfRow.dwType:=WSA_IF_TYPE_IEEE80211;
+              MEDIA_TYPE_LOOPBACK:WSAIfRow.dwType:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
+              MEDIA_TYPE_PPP:WSAIfRow.dwType:=WSA_IF_TYPE_PPP;
+              MEDIA_TYPE_SLIP:WSAIfRow.dwType:=WSA_IF_TYPE_SLIP;
+             else  
+              WSAIfRow.dwType:=WSA_IF_TYPE_OTHER;
+             end;
+            end;
            end;
            WSAIfRow.dwMtu:=Adapter.MTU;
            WSAIfRow.dwPhysAddrLen:=SizeOf(THardwareAddress);
@@ -12644,7 +12654,7 @@ begin
            if WSAIpAddrRow = nil then Exit;
            FillChar(WSAIpAddrRow^,SizeOf(TWSAIpAddrRow),0);
            WSAIpAddrRow.dwAddr:=LongWordNtoBE(TIPTransportAdapter(Adapter).Address.S_addr); 
-           WSAIpAddrRow.dwIndex:=TIPTransportAdapter(Adapter).Index;
+           WSAIpAddrRow.dwIndex:=Adapter.Index;
            WSAIpAddrRow.dwMask:=LongWordNtoBE(TIPTransportAdapter(Adapter).Netmask.S_addr); 
            WSAIpAddrRow.dwBCastAddr:=LongWordNtoBE(TIPTransportAdapter(Adapter).Directed.S_addr);
            WSAIpAddrRow.dwReasmSize:=0;
@@ -12773,7 +12783,7 @@ begin
              Adapter:=IPTransport.GetAdapterByAdapter(IPAddress.Adapter,True,NETWORK_LOCK_READ);
              if Adapter <> nil then
               begin
-               WSAIpForwardRow.dwForwardIfIndex:=TIPTransportAdapter(Adapter).Index;
+               WSAIpForwardRow.dwForwardIfIndex:=Adapter.Index;
                
                Adapter.ReaderUnlock;
               end;
@@ -13179,23 +13189,29 @@ begin
          while Adapter <> nil do
           begin
            {Get IpAdapterInfo}
-           WSAIpAdapterInfo.AdapterName:=TIPTransportAdapter(Adapter).Name;
-           {WSAIpAdapterInfo.Description:=TIPTransportAdapter(Adapter).Description;} {Not supported}
+           WSAIpAdapterInfo.AdapterName:=Adapter.Name;
+           {WSAIpAdapterInfo.Description:=Adapter.Description;} {Not supported}
            WSAIpAdapterInfo.AddressLength:=SizeOf(THardwareAddress);
-           System.Move(TIPTransportAdapter(Adapter).Hardware[0],WSAIpAdapterInfo.Address[0],SizeOf(THardwareAddress));
-           WSAIpAdapterInfo.Index:=TIPTransportAdapter(Adapter).Index;
-           case TIPTransportAdapter(Adapter).Adapter.MediaType of
-            MEDIA_TYPE_ETHERNET:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_ETHERNET_CSMACD;
-            MEDIA_TYPE_TOKENRING:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_ISO88025_TOKENRING;
-            MEDIA_TYPE_IEEE80211:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_IEEE80211;
-            MEDIA_TYPE_LOOPBACK:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
-            MEDIA_TYPE_PPP:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_PPP;
-            MEDIA_TYPE_SLIP:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_SLIP;
-           else  
-            WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_OTHER;
-           end;
+           System.Move(Adapter.Hardware[0],WSAIpAdapterInfo.Address[0],SizeOf(THardwareAddress));
+           WSAIpAdapterInfo.Index:=Adapter.Index;
+           case Adapter.Adapter.AdapterType of
+            ADAPTER_TYPE_LOOPBACK:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
+           else
+            begin
+             case Adapter.Adapter.MediaType of
+              MEDIA_TYPE_ETHERNET:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_ETHERNET_CSMACD;
+              MEDIA_TYPE_TOKENRING:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_ISO88025_TOKENRING;
+              MEDIA_TYPE_IEEE80211:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_IEEE80211;
+              MEDIA_TYPE_LOOPBACK:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
+              MEDIA_TYPE_PPP:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_PPP;
+              MEDIA_TYPE_SLIP:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_SLIP;
+             else  
+              WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_OTHER;
+             end;
+            end;
+           end; 
            WSAIpAdapterInfo.DhcpEnabled:=0;
-           if TIPTransportAdapter(Adapter).ConfigType = CONFIG_TYPE_DHCP then WSAIpAdapterInfo.DhcpEnabled:=1;
+           if Adapter.ConfigType = CONFIG_TYPE_DHCP then WSAIpAdapterInfo.DhcpEnabled:=1;
            WSAIpAdapterInfo.CurrentIpAddress:=@WSAIpAdapterInfo.IpAddressList;
            WSAIpAdapterInfo.IpAddressList.Next:=nil;
            StrLCopy(WSAIpAdapterInfo.IpAddressList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Address))),15);

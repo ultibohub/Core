@@ -1,7 +1,7 @@
 {
 Ultibo Winsock interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1586,8 +1586,6 @@ end;
 
 function select(nfds:tOS_INT; readfds,writefds,exceptfds : PFDSet;timeout: PTimeVal):tOS_INT;
 {Note: All sockets contained by the FDSet must be of the same type}
-var
- Socket:TProtocolSocket;
 begin
  {}
  Result:=SOCKET_ERROR;
@@ -2657,12 +2655,31 @@ var
  Binding:TTransportBinding;
  Protocol:TNetworkProtocol;
  Transport:TNetworkTransport;
+ 
+ IPRoute:TIPRouteEntry;
+ IPAddress:TIPAddressEntry;
+ IPTransport:TIPTransport;
+ 
+ ARPAddress:TARPAddressEntry;
+ ARPTransport:TARPTransport;
 
+ TCPSocket:TTCPSocket;
+ UDPSocket:TUDPSocket;
+ 
  WSAIfRow:PWSAIfRow;
  WSAIfTable:PWSAIfTable;
  WSAIpAddrRow:PWSAIpAddrRow;
  WSAIpAddrTable:PWSAIpAddrTable;
+ WSAIpNetRow:PWSAIpNetRow;
+ WSAIpNetTable:PWSAIpNetTable;
+ WSAIpForwardRow:PWSAIpForwardRow;
+ WSAIpForwardTable:PWSAIpForwardTable;
 
+ WSATcpRow:PWSATcpRow;
+ WSATcpTable:PWSATcpTable;
+ WSAUdpRow:PWSAUdpRow;
+ WSAUdpTable:PWSAUdpTable;
+ 
  WSATTL:LongWord;
  WSAIpStats:PWSAIpStats;
  WSAFixedInfo:PWSAFixedInfo;
@@ -2686,278 +2703,861 @@ begin
      {Set Error}
      NetworkSetLastError(WSAEOPNOTSUPP);
      
-     //To Do //See Winsock2
-     
-     {Check Action}
-     case Action of
-      WSA_GETIFTABLE:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-        
-        {Get IfTable}
-        NetworkSetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAIfTable) then Exit;
-        WSAIfTable:=PWSAIfTable(pRequestInfo);
-        if WSAIfTable = nil then Exit;
-        WSAIfTable.dwNumEntries:=0;
-        
-        {Scan Adapters} //To Do //Change to Bindings when Done ?? - No !
-        //To Do //Use GetAdapterByNext etc
-        (*Adapter:=TTransportAdapter(Transport.Adapters.First); //To Do
-        while Adapter <> nil do
-         begin
-          Inc(WSAIfTable.dwNumEntries);
-          if pcbRequestInfoLen < (SizeOf(TWSAIfTable) + (WSAIfTable.dwNumEntries * SizeOf(TWSAIfRow))) then Exit;
-          
-          {Get IfRow}
-          WSAIfRow:=PWSAIfRow(@WSAIfTable.table[WSAIfTable.dwNumEntries - 1]);
-          if WSAIfRow = nil then Exit;
-          //WSAIfRow.wszName:=Adapter.Name; //To Do
-          WSAIfRow.dwIndex:=Adapter.Index;
-          WSAIfRow.dwType:=Adapter.ConfigType;
-          WSAIfRow.dwMtu:=Adapter.Mtu;
-          WSAIfRow.dwSpeed:=0;
-          WSAIfRow.dwPhysAddrLen:=SizeOf(THardwareAddress);
-          System.Move(Adapter.Hardware[0],WSAIfRow.bPhysAddr[0],SizeOf(THardwareAddress));
-          
-          {Get Next Adapter}
-          Adapter:=TTransportAdapter(Adapter.Next);
-         end;*)
+     {Get Transport}
+     Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
+     if Transport = nil then Exit;
+     try
+      {Check Action}
+      case Action of
+       WSA_GETNUMBEROFINTERFACES:begin
+         {Get NumberOfInterfaces}
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=SizeOf(DWORD);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
          
-        {Return Result} 
-        Result:=NO_ERROR;
-        NetworkSetLastError(ERROR_SUCCESS);
-       end;
-      WSA_GETIPADDRTABLE:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-        
-        {Get IpAddrTable}
-        NetworkSetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAIpAddrTable) then Exit;
-        WSAIpAddrTable:=PWSAIpAddrTable(pRequestInfo);
-        if WSAIpAddrTable = nil then Exit;
-        WSAIpAddrTable.dwNumEntries:=0;
-        
-        {Scan Adapters} //To Do //Change to Bindings when Done ?? - Yes !
-        //To Do //Use GetAdapterByNext etc
-        (*Adapter:=TTransportAdapter(Transport.Adapters.First); //To Do
-        while Adapter <> nil do
-         begin
-          Inc(WSAIpAddrTable.dwNumEntries);
-          if pcbRequestInfoLen < (SizeOf(TWSAIpAddrTable) + (WSAIpAddrTable.dwNumEntries * SizeOf(TWSAIpAddrRow))) then Exit;
-          
-          {Get IpAddrRow}
-          WSAIpAddrRow:=PWSAIpAddrRow(@WSAIpAddrTable.table[WSAIpAddrTable.dwNumEntries - 1]);
-          if WSAIpAddrRow = nil then Exit;
-          WSAIpAddrRow.dwAddr:=LongWordNtoBE(TIPTransportAdapter(Adapter).Address.S_addr);
-          WSAIpAddrRow.dwIndex:=TIPTransportAdapter(Adapter).Index;
-          WSAIpAddrRow.dwMask:=LongWordNtoBE(TIPTransportAdapter(Adapter).Netmask.S_addr); 
-          WSAIpAddrRow.dwBCastAddr:=LongWordNtoBE(TIPTransportAdapter(Adapter).Directed.S_addr);
-          WSAIpAddrRow.dwReasmSize:=0;
-          
-          {Get Next Adapter}
-          Adapter:=TTransportAdapter(Adapter.Next);
-         end;*)
+         NetworkSetLastError(WSAEINVAL);
+         if pRequestInfo = nil then Exit;
          
-        {Return Result} 
-        Result:=NO_ERROR;
-        NetworkSetLastError(ERROR_SUCCESS);
-       end;
-      WSA_SETIPSTATISTICS:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-        
-        {Get IpStats}
-        NetworkSetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAIpStats) then Exit;
-        WSAIpStats:=PWSAIpStats(pRequestInfo);
-        if WSAIpStats = nil then Exit;
-        
-        {Set Forwarding}
-        if WSAIpStats.dwForwarding <> WSA_USE_CURRENT_FORWARDING then
-         begin
-          if WSAIpStats.dwForwarding < WSA_IP_FORWARDING then Exit;
-          if WSAIpStats.dwForwarding > WSA_IP_NOT_FORWARDING then Exit;
-          TIPTransport(Transport).Forwarding:=WSAIpStats.dwForwarding;
-         end;
-        
-        {Set DefaultTTL}
-        if WSAIpStats.dwDefaultTTL <> WSA_USE_CURRENT_TTL then
-         begin
-          if WSAIpStats.dwDefaultTTL = 0 then Exit;
-          if WSAIpStats.dwDefaultTTL > 512 then Exit;
-          TIPTransport(Transport).DefaultTTL:=WSAIpStats.dwDefaultTTL;
-         end;
+         Count:=0;
          
-        {Return Result} 
-        Result:=NO_ERROR;
-        NetworkSetLastError(ERROR_SUCCESS);
-       end;
-      WSA_SETIPTTL:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
+         {Count Adapters}
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(Count);
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end; 
+         
+         {Return Count}
+         PDWORD(pRequestInfo)^:=Count;
+         
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_GETIFENTRY:begin
+         {Get IfEntry}
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=SizeOf(TWSAIfRow);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
 
-        {Get Value}
-        NetworkSetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(LongWord) then Exit;
-        WSATTL:=LongWord(pRequestInfo);
-        if WSATTL = 0 then Exit;
-        if WSATTL > 512 then Exit;
+         NetworkSetLastError(WSAEINVAL);
+         WSAIfRow:=PWSAIfRow(pRequestInfo);
+         if WSAIfRow = nil then Exit;
+         
+         NetworkSetLastError(WSAENOTSOCK);
+         
+         {Scan Adapters} 
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           {Check Adapter}
+           if Adapter.Index = WSAIfRow.dwIndex then 
+            begin
+             {Get IfRow}
+             FillChar(WSAIfRow^,SizeOf(TWSAIfRow),0);
+             WSAIfRow.wszName:=Adapter.Name;
+             WSAIfRow.dwIndex:=Adapter.Index;
+             case Adapter.Adapter.AdapterType of
+              ADAPTER_TYPE_LOOPBACK:WSAIfRow.dwType:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
+             else
+              begin
+               case Adapter.Adapter.MediaType of
+                MEDIA_TYPE_ETHERNET:WSAIfRow.dwType:=WSA_IF_TYPE_ETHERNET_CSMACD;
+                MEDIA_TYPE_TOKENRING:WSAIfRow.dwType:=WSA_IF_TYPE_ISO88025_TOKENRING;
+                MEDIA_TYPE_IEEE80211:WSAIfRow.dwType:=WSA_IF_TYPE_IEEE80211;
+                MEDIA_TYPE_LOOPBACK:WSAIfRow.dwType:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
+                MEDIA_TYPE_PPP:WSAIfRow.dwType:=WSA_IF_TYPE_PPP;
+                MEDIA_TYPE_SLIP:WSAIfRow.dwType:=WSA_IF_TYPE_SLIP;
+               else  
+                WSAIfRow.dwType:=WSA_IF_TYPE_OTHER;
+               end;
+              end;
+             end;
+             WSAIfRow.dwMtu:=Adapter.MTU;
+             WSAIfRow.dwPhysAddrLen:=SizeOf(THardwareAddress);
+             System.Move(Adapter.Hardware[0],WSAIfRow.bPhysAddr[0],SizeOf(THardwareAddress));
+             WSAIfRow.dwAdminStatus:=WSA_IF_ADMIN_STATUS_UP;
+             WSAIfRow.dwOperStatus:=WSA_IF_OPER_STATUS_OPERATIONAL;
+             Break;
+            end;
+            
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
+         if Adapter = nil then Exit;
+         
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_GETIFTABLE:begin
+         {Get IfTable}
+         Count:=0;
+         
+         {Count Adapters} 
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(Count);
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
+         
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=(SizeOf(TWSAIfTable) + (Count * SizeOf(TWSAIfRow))); 
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+         
+         NetworkSetLastError(WSAEINVAL);
+         WSAIfTable:=PWSAIfTable(pRequestInfo);
+         if WSAIfTable = nil then Exit;
 
-        {Set Value}
-        TIPTransport(Transport).DefaultTTL:=WSATTL;
+         WSAIfTable.dwNumEntries:=0;
          
-        {Return Result} 
-        Result:=NO_ERROR;
-        NetworkSetLastError(ERROR_SUCCESS);
-       end;
-      WSA_GETINTERFACEINFO:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-        
-        {Get IpInterfaceInfo}
-        NetworkSetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAIpInterfaceInfo) then Exit;
-        WSAIpInterfaceInfo:=PWSAIpInterfaceInfo(pRequestInfo);
-        if WSAIpInterfaceInfo = nil then Exit;
-        WSAIpInterfaceInfo.NumAdapters:=0;
-        
-        {Scan Adapters} //To Do //Change to Bindings when Done ?? - No !
-        //To Do //Use GetAdapterByNext etc
-        (*Adapter:=TTransportAdapter(Transport.Adapters.First); //To Do
-        while Adapter <> nil do
-         begin
-          Inc(WSAIpInterfaceInfo.NumAdapters);
-          if pcbRequestInfoLen < (SizeOf(TWSAIpInterfaceInfo) + (WSAIpInterfaceInfo.NumAdapters * SizeOf(TWSAIpAdapterIndexMap))) then Exit;
-          
-          {Get IpAdapterIndexMap}
-          WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(@WSAIpInterfaceInfo.Adapter[WSAIpInterfaceInfo.NumAdapters - 1]);
-          if WSAIpAdapterIndexMap = nil then Exit;
-          WSAIpAdapterIndexMap.Index:=Adapter.Index;
-          //WSAIpAdapterIndexMap.Name:=Adapter.Name; //To Do
-          
-          {Get Next Adapter}
-          Adapter:=TTransportAdapter(Adapter.Next);
-         end;*)
-         
-        {Return Result} 
-        Result:=NO_ERROR;
-        NetworkSetLastError(ERROR_SUCCESS);
-       end;
-      WSA_GETNETWORKPARAMS:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-        
-        {Get FixedInfo}
-        NetworkSetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAFixedInfo) then Exit;
-        WSAFixedInfo:=PWSAFixedInfo(pRequestInfo);
-        if WSAFixedInfo = nil then Exit;
-        StrLCopy(WSAFixedInfo.HostName,PChar(Transport.Manager.Settings.HostName),WSA_MAX_HOSTNAME_LEN);
-        StrLCopy(WSAFixedInfo.DomainName,PChar(Transport.Manager.Settings.DomainName),WSA_MAX_DOMAIN_NAME_LEN);
-        WSAFixedInfo.DnsServerList.Next:=nil;
-        StrLCopy(WSAFixedInfo.DnsServerList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransport(Transport).Nameservers[0]))),15);
-         
-        {Return Result} 
-        Result:=NO_ERROR;
-        NetworkSetLastError(ERROR_SUCCESS);
-       end;
-      WSA_GETADAPTERSINFO:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-        
-        {Get IpAdapterInfo}
-        NetworkSetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAIpAdapterInfo) then Exit;
-        WSAIpAdapterInfo:=PWSAIpAdapterInfo(pRequestInfo);
-        if WSAIpAdapterInfo = nil then Exit;
-        WSAIpAdapterInfo.Next:=nil;
-        Count:=0;
-        
-        {Scan Adapters} //To Do //Change to Bindings when Done ?? - No !
-        //To Do //Use GetAdapterByNext etc
-        (*Adapter:=TTransportAdapter(Transport.Adapters.First); //To Do
-        while Adapter <> nil do
-         begin
-          Inc(Count);
-          if pcbRequestInfoLen < (SizeOf(TWSAIpAdapterInfo) * Count) then Exit;
-          
-          {Get IpAdapterInfo}
-          //WSAIpAdapterInfo.AdapterName:=TIPTransportAdapter(Adapter).Name;       //To Do
-          //WSAIpAdapterInfo.Description:=TIPTransportAdapter(Adapter).Description; //To Do
-          WSAIpAdapterInfo.AddressLength:=SizeOf(THardwareAddress);
-          System.Move(TIPTransportAdapter(Adapter).Hardware[0],WSAIpAdapterInfo.Address[0],SizeOf(THardwareAddress));
-          WSAIpAdapterInfo.Index:=TIPTransportAdapter(Adapter).Index;
-          WSAIpAdapterInfo.DhcpEnabled:=0;
-          if TIPTransportAdapter(Adapter).ConfigType = CONFIG_TYPE_DHCP then WSAIpAdapterInfo.DhcpEnabled:=1;
-          WSAIpAdapterInfo.IpAddressList.Next:=nil;
-          StrLCopy(WSAIpAdapterInfo.IpAddressList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Address))),15);
-          StrLCopy(WSAIpAdapterInfo.IpAddressList.IpMask.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Netmask))),15);
-          WSAIpAdapterInfo.GatewayList.Next:=nil;
-          StrLCopy(WSAIpAdapterInfo.GatewayList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Gateway))),15);
-          WSAIpAdapterInfo.DhcpServer.Next:=nil;
-          StrLCopy(WSAIpAdapterInfo.DhcpServer.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Server))),15);
-          WSAIpAdapterInfo.LeaseObtained:=TIPTransportAdapter(Adapter).LeaseTime;
-          WSAIpAdapterInfo.LeaseExpires:=TIPTransportAdapter(Adapter).ExpiryTime;
-          
-          {Get Next Adapter}
-          Adapter:=TTransportAdapter(Adapter.Next);
-          
-          {Get Next IpAdapterInfo}
-          if Adapter <> nil then
-           begin
-            WSAIpAdapterInfo.Next:=Pointer(PtrUInt(WSAIpAdapterInfo) + SizeOf(TWSAIpAdapterInfo));
-            WSAIpAdapterInfo:=WSAIpAdapterInfo.Next;
+         {Scan Adapters} 
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(WSAIfTable.dwNumEntries);
+           
+           {Get IfRow}
+           WSAIfRow:=PWSAIfRow(@WSAIfTable.table[WSAIfTable.dwNumEntries - 1]);
+           if WSAIfRow = nil then Exit;
+           FillChar(WSAIfRow^,SizeOf(TWSAIfRow),0);
+           WSAIfRow.wszName:=Adapter.Name;
+           WSAIfRow.dwIndex:=Adapter.Index;
+           case Adapter.Adapter.AdapterType of
+            ADAPTER_TYPE_LOOPBACK:WSAIfRow.dwType:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
+           else
+            begin
+             case Adapter.Adapter.MediaType of
+              MEDIA_TYPE_ETHERNET:WSAIfRow.dwType:=WSA_IF_TYPE_ETHERNET_CSMACD;
+              MEDIA_TYPE_TOKENRING:WSAIfRow.dwType:=WSA_IF_TYPE_ISO88025_TOKENRING;
+              MEDIA_TYPE_IEEE80211:WSAIfRow.dwType:=WSA_IF_TYPE_IEEE80211;
+              MEDIA_TYPE_LOOPBACK:WSAIfRow.dwType:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
+              MEDIA_TYPE_PPP:WSAIfRow.dwType:=WSA_IF_TYPE_PPP;
+              MEDIA_TYPE_SLIP:WSAIfRow.dwType:=WSA_IF_TYPE_SLIP;
+             else  
+              WSAIfRow.dwType:=WSA_IF_TYPE_OTHER;
+             end;
+            end;
            end;
-         end;*)
-         
-        {Return Result} 
-        Result:=NO_ERROR;
-        NetworkSetLastError(ERROR_SUCCESS);
-       end;
-      WSA_IPRELEASEADDRESS:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-
-        {Get IpAdapterIndexMap}
-        NetworkSetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAIpAdapterIndexMap) then Exit;
-        WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(pRequestInfo);
-        if WSAIpAdapterIndexMap = nil then Exit;
-
-        {Get Adapter} //To Do //Get Binding ??
+           WSAIfRow.dwMtu:=Adapter.MTU;
+           WSAIfRow.dwPhysAddrLen:=SizeOf(THardwareAddress);
+           System.Move(Adapter.Hardware[0],WSAIfRow.bPhysAddr[0],SizeOf(THardwareAddress));
+           WSAIfRow.dwAdminStatus:=WSA_IF_ADMIN_STATUS_UP;
+           WSAIfRow.dwOperStatus:=WSA_IF_OPER_STATUS_OPERATIONAL;
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_GETIPADDRTABLE:begin
+         {Get IpAddrTable}
+         Count:=0;
         
+         {Count Adapters}
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(Count);
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
          
-        {Return Result} 
-        Result:=NO_ERROR;
-        NetworkSetLastError(ERROR_SUCCESS);
-       end;
-      WSA_IPRENEWADDRESS:begin
-        {Get Transport}
-        Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,False,NETWORK_LOCK_READ); //To Do
-        if Transport = nil then Exit;
-
-        {Get IpAdapterIndexMap}
-        NetworkSetLastError(WSAEINVAL);
-        if pcbRequestInfoLen < SizeOf(TWSAIpAdapterIndexMap) then Exit;
-        WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(pRequestInfo);
-        if WSAIpAdapterIndexMap = nil then Exit;
-
-        {Get Adapter} //To Do //Get Binding ??
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=(SizeOf(TWSAIpAddrTable) + (Count * SizeOf(TWSAIpAddrRow)));
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
          
-        {Return Result} 
-        Result:=NO_ERROR;
-        NetworkSetLastError(ERROR_SUCCESS);
-       end;
+         NetworkSetLastError(WSAEINVAL);
+         WSAIpAddrTable:=PWSAIpAddrTable(pRequestInfo);
+         if WSAIpAddrTable = nil then Exit;
+
+         WSAIpAddrTable.dwNumEntries:=0;
+         
+         {Scan Adapters} //To Do //Change to Bindings
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(WSAIpAddrTable.dwNumEntries);
+           
+           {Get IpAddrRow}
+           WSAIpAddrRow:=PWSAIpAddrRow(@WSAIpAddrTable.table[WSAIpAddrTable.dwNumEntries - 1]);
+           if WSAIpAddrRow = nil then Exit;
+           FillChar(WSAIpAddrRow^,SizeOf(TWSAIpAddrRow),0);
+           WSAIpAddrRow.dwAddr:=LongWordNtoBE(TIPTransportAdapter(Adapter).Address.S_addr); 
+           WSAIpAddrRow.dwIndex:=Adapter.Index;
+           WSAIpAddrRow.dwMask:=LongWordNtoBE(TIPTransportAdapter(Adapter).Netmask.S_addr); 
+           WSAIpAddrRow.dwBCastAddr:=LongWordNtoBE(TIPTransportAdapter(Adapter).Directed.S_addr);
+           WSAIpAddrRow.dwReasmSize:=0;
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_GETIPNETTABLE:begin
+         {Get ARP Transport}
+         NetworkSetLastError(WSAEOPNOTSUPP);
+         ARPTransport:=TARPTransport(TransportManager.GetTransportByType(AF_UNSPEC,PACKET_TYPE_ARP,True,NETWORK_LOCK_READ));
+         if ARPTransport = nil then Exit;
+         try
+          {Get IpNetTable}
+          Count:=0;
+         
+          {Count Addresses}
+          ARPAddress:=ARPTransport.GetAddressByNext(nil,True,False,NETWORK_LOCK_READ);
+          while ARPAddress <> nil do
+           begin
+            Inc(Count);
+            
+            {Get Next Address}
+            ARPAddress:=ARPTransport.GetAddressByNext(ARPAddress,True,True,NETWORK_LOCK_READ);
+           end;
+          
+          NetworkSetLastError(WSAENOBUFS);
+          pcbResponseInfoLen:=(SizeOf(TWSAIpNetTable) + (Count * SizeOf(TWSAIpNetRow)));
+          if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+
+          NetworkSetLastError(WSAEINVAL);
+          WSAIpNetTable:=PWSAIpNetTable(pRequestInfo);
+          if (WSAIpNetTable = nil) and (pcbRequestInfoLen > 0) then Exit;
+          
+          WSAIpNetTable.dwNumEntries:=0;
+          
+          {Scan Addresses} 
+          ARPAddress:=ARPTransport.GetAddressByNext(nil,True,False,NETWORK_LOCK_READ);
+          while ARPAddress <> nil do
+           begin
+            Inc(WSAIpNetTable.dwNumEntries);
+            
+            {Get IpNetRow}
+            WSAIpNetRow:=PWSAIpNetRow(@WSAIpNetTable.table[WSAIpNetTable.dwNumEntries - 1]);
+            if WSAIpNetRow = nil then Exit;
+            FillChar(WSAIpNetRow^,SizeOf(TWSAIpNetRow),0);
+            WSAIpNetRow.dwIndex:=WSAIpNetTable.dwNumEntries;
+            WSAIpNetRow.dwPhysAddrLen:=SizeOf(THardwareAddress);
+            System.Move(ARPAddress.Hardware[0],WSAIpNetRow.bPhysAddr[0],SizeOf(THardwareAddress));
+            WSAIpNetRow.dwAddr:=LongWordNtoBE(ARPAddress.Address.S_addr); 
+            case ARPAddress.AddressType of
+             ADDRESS_TYPE_DYNAMIC:WSAIpNetRow.dwType:=WSA_IPNET_TYPE_DYNAMIC;
+             ADDRESS_TYPE_STATIC:WSAIpNetRow.dwType:=WSA_IPNET_TYPE_STATIC;
+            else
+             begin
+              WSAIpNetRow.dwType:=WSA_IPNET_TYPE_OTHER;
+             end;
+            end; 
+          
+           {Get Next Address}
+           ARPAddress:=ARPTransport.GetAddressByNext(ARPAddress,True,True,NETWORK_LOCK_READ);
+          end;
+          
+          {Return Result} 
+          Result:=NO_ERROR;
+          NetworkSetLastError(ERROR_SUCCESS);
+         finally
+          ARPTransport.ReaderUnlock;
+         end;
+        end; 
+       WSA_GETIPFORWARDTABLE:begin
+         {Get IP Transport}
+         IPTransport:=TIPTransport(Transport);
+         
+         {Get IpForwardTable}
+         Count:=0;
+         
+         {Count Routes}
+         IPRoute:=IPTransport.GetRouteByNext(nil,True,False,NETWORK_LOCK_READ);
+         while IPRoute <> nil do
+          begin
+           Inc(Count);
+           
+           {Get Next Route}
+           IPRoute:=IPTransport.GetRouteByNext(IPRoute,True,True,NETWORK_LOCK_READ);
+          end;
+         
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=(SizeOf(TWSAIpForwardTable) + (Count * SizeOf(TWSAIpForwardRow)));
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+         
+         NetworkSetLastError(WSAEINVAL);
+         WSAIpForwardTable:=PWSAIpForwardTable(pRequestInfo);
+         if WSAIpForwardTable = nil then Exit;
+
+         WSAIpForwardTable.dwNumEntries:=0;
+         
+         {Scan Routes}
+         IPRoute:=IPTransport.GetRouteByNext(nil,True,False,NETWORK_LOCK_READ);
+         while IPRoute <> nil do
+          begin
+           Inc(WSAIpForwardTable.dwNumEntries);
+         
+           {Get IpForwardRow}
+           WSAIpForwardRow:=PWSAIpForwardRow(@WSAIpForwardTable.table[WSAIpForwardTable.dwNumEntries - 1]);
+           if WSAIpForwardRow = nil then Exit;
+           FillChar(WSAIpForwardRow^,SizeOf(TWSAIpForwardRow),0);
+           WSAIpForwardRow.dwForwardDest:=LongWordNtoBE(IPRoute.Network.S_addr); 
+           WSAIpForwardRow.dwForwardMask:=LongWordNtoBE(IPRoute.Netmask.S_addr); 
+           WSAIpForwardRow.dwForwardPolicy:=IPRoute.TOS;
+           WSAIpForwardRow.dwForwardNextHop:=0;
+           WSAIpForwardRow.dwForwardType:=WSA_IPROUTE_TYPE_DIRECT;
+           if not IPTransport.CompareAddress(IPRoute.Gateway,IPRoute.Address) then
+            begin
+             WSAIpForwardRow.dwForwardNextHop:=LongWordNtoBE(IPRoute.Gateway.S_addr); 
+             WSAIpForwardRow.dwForwardType:=WSA_IPROUTE_TYPE_INDIRECT;
+            end;
+           IPAddress:=IPTransport.GetAddressByAddress(IPRoute.Address,True,NETWORK_LOCK_READ);
+           if IPAddress <> nil then
+            begin
+             Adapter:=IPTransport.GetAdapterByAdapter(IPAddress.Adapter,True,NETWORK_LOCK_READ);
+             if Adapter <> nil then
+              begin
+               WSAIpForwardRow.dwForwardIfIndex:=Adapter.Index;
+               
+               Adapter.ReaderUnlock;
+              end;
+             IPAddress.ReaderUnlock;
+            end;
+           WSAIpForwardRow.dwForwardProto:=WSA_IPPROTO_LOCAL;
+           WSAIpForwardRow.dwForwardAge:=(GetTickCount64 - IPRoute.RouteTime) div MILLISECONDS_PER_SECOND;
+           WSAIpForwardRow.dwForwardMetric1:=IPRoute.Metric;
+           
+           {Get Next Route}
+           IPRoute:=IPTransport.GetRouteByNext(IPRoute,True,True,NETWORK_LOCK_READ);
+          end;
+         
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;       
+       WSA_GETTCPTABLE:begin
+         {Get TCP Protocol}
+         NetworkSetLastError(WSAEOPNOTSUPP);
+         Protocol:=ProtocolManager.GetProtocolByType(IPPROTO_TCP,SOCK_STREAM,True,NETWORK_LOCK_READ);
+         if Protocol = nil then Exit;
+         try
+          {Get TcpTable}
+          Count:=0;
+          
+          {Count Sockets}
+          TCPSocket:=TTCPSocket(Protocol.GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
+          while TCPSocket <> nil do
+           begin
+            {Check Family, Struct and Proto}
+            if (TCPSocket.Family = AF_INET) and (TCPSocket.Struct = SOCK_STREAM) and (TCPSocket.Proto = IPPROTO_TCP) then
+             begin
+              Inc(Count);
+             end;
+           
+            {Get Next Socket}
+            TCPSocket:=TTCPSocket(Protocol.GetSocketByNext(TCPSocket,True,True,NETWORK_LOCK_READ));
+           end;
+
+          NetworkSetLastError(WSAENOBUFS);
+          pcbResponseInfoLen:=(SizeOf(TWSATcpTable) + (Count * SizeOf(TWSATcpRow)));
+          if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+          
+          NetworkSetLastError(WSAEINVAL);
+          WSATcpTable:=PWSATcpTable(pRequestInfo);
+          if WSATcpTable = nil then Exit;
+ 
+          WSATcpTable.dwNumEntries:=0;
+           
+          {Scan Sockets}
+          TCPSocket:=TTCPSocket(Protocol.GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
+          while TCPSocket <> nil do
+           begin
+            {Check Family, Struct and Proto}
+            if (TCPSocket.Family = AF_INET) and (TCPSocket.Struct = SOCK_STREAM) and (TCPSocket.Proto = IPPROTO_TCP) then
+             begin
+              Inc(WSATcpTable.dwNumEntries);
+              
+              {Get TcpRow}
+              WSATcpRow:=PWSATcpRow(@WSATcpTable.table[WSATcpTable.dwNumEntries - 1]);
+              if WSATcpRow = nil then Exit;
+              FillChar(WSATcpRow^,SizeOf(TWSATcpRow),0);
+              case TTCPState(TCPSocket.ProtocolState).State of
+               TCP_STATE_LISTEN:WSATcpRow.dwState:=WSA_TCP_STATE_LISTEN;
+               TCP_STATE_SYNSENT:WSATcpRow.dwState:=WSA_TCP_STATE_SYN_SENT;
+               TCP_STATE_SYNREC:WSATcpRow.dwState:=WSA_TCP_STATE_SYN_RCVD;
+               TCP_STATE_ESTAB:WSATcpRow.dwState:=WSA_TCP_STATE_ESTAB;
+               TCP_STATE_FINWAIT1:WSATcpRow.dwState:=WSA_TCP_STATE_FIN_WAIT1;
+               TCP_STATE_FINWAIT2:WSATcpRow.dwState:=WSA_TCP_STATE_FIN_WAIT2;
+               TCP_STATE_CLOSWAIT:WSATcpRow.dwState:=WSA_TCP_STATE_CLOSE_WAIT;
+               TCP_STATE_CLOSING:WSATcpRow.dwState:=WSA_TCP_STATE_CLOSING;
+               TCP_STATE_LASTACK:WSATcpRow.dwState:=WSA_TCP_STATE_LAST_ACK;
+               TCP_STATE_TIMEWAIT:WSATcpRow.dwState:=WSA_TCP_STATE_TIME_WAIT;
+               TCP_STATE_CLOSED:WSATcpRow.dwState:=WSA_TCP_STATE_CLOSED;
+              end;
+              WSATcpRow.dwLocalPort:=WordNtoBE(TCPSocket.ProtocolState.LocalPort);
+              WSATcpRow.dwRemotePort:=WordNtoBE(TCPSocket.ProtocolState.RemotePort);
+              WSATcpRow.dwLocalAddr:=LongWordNtoBE(TIPState(TCPSocket.TransportState).LocalAddress.S_addr);
+              WSATcpRow.dwRemoteAddr:=LongWordNtoBE(TIPState(TCPSocket.TransportState).RemoteAddress.S_addr);
+             end;
+             
+            {Get Next Socket}
+            TCPSocket:=TTCPSocket(Protocol.GetSocketByNext(TCPSocket,True,True,NETWORK_LOCK_READ));
+           end;
+          
+          {Return Result} 
+          Result:=NO_ERROR;
+          NetworkSetLastError(ERROR_SUCCESS);
+         finally
+          Protocol.ReaderUnlock;
+         end;
+        end;       
+       WSA_GETUDPTABLE:begin
+         {Get UDP Protocol}
+         NetworkSetLastError(WSAEOPNOTSUPP);
+         Protocol:=ProtocolManager.GetProtocolByType(IPPROTO_UDP,SOCK_DGRAM,True,NETWORK_LOCK_READ);
+         if Protocol = nil then Exit;
+         try
+          {Get UdpTable}
+          Count:=0;
+         
+          {Count Sockets}
+          UDPSocket:=TUDPSocket(Protocol.GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
+          while UDPSocket <> nil do
+           begin
+            {Check Family, Struct and Proto}
+            if (UDPSocket.Family = AF_INET) and (UDPSocket.Struct = SOCK_DGRAM) and (UDPSocket.Proto = IPPROTO_UDP) then
+             begin
+              Inc(Count);
+             end;
+           
+            {Get Next Socket}
+            UDPSocket:=TUDPSocket(Protocol.GetSocketByNext(UDPSocket,True,True,NETWORK_LOCK_READ));
+           end;
+
+          NetworkSetLastError(WSAENOBUFS);
+          pcbResponseInfoLen:=(SizeOf(TWSAUdpTable) + (Count * SizeOf(TWSAUdpRow)));
+          if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+          
+          NetworkSetLastError(WSAEINVAL);
+          WSAUdpTable:=PWSAUdpTable(pRequestInfo);
+          if WSAUdpTable = nil then Exit;
+ 
+          WSAUdpTable.dwNumEntries:=0;
+           
+          {Scan Sockets}
+          UDPSocket:=TUDPSocket(Protocol.GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
+          while UDPSocket <> nil do
+           begin
+            {Check Family, Struct and Proto}
+            if (UDPSocket.Family = AF_INET) and (UDPSocket.Struct = SOCK_DGRAM) and (UDPSocket.Proto = IPPROTO_UDP) then
+             begin
+              Inc(WSAUdpTable.dwNumEntries);
+              
+              {Get UdpRow}
+              WSAUdpRow:=PWSAUdpRow(@WSAUdpTable.table[WSAUdpTable.dwNumEntries - 1]);
+              if WSAUdpRow = nil then Exit;
+              FillChar(WSAUdpRow^,SizeOf(TWSAUdpRow),0);
+              WSAUdpRow.dwLocalPort:=WordNtoBE(UDPSocket.ProtocolState.LocalPort);
+              WSAUdpRow.dwLocalAddr:=LongWordNtoBE(TIPState(UDPSocket.TransportState).LocalAddress.S_addr);
+             end;
+             
+            {Get Next Socket}
+            UDPSocket:=TUDPSocket(Protocol.GetSocketByNext(UDPSocket,True,True,NETWORK_LOCK_READ));
+           end;
+          
+          {Return Result} 
+          Result:=NO_ERROR;
+          NetworkSetLastError(ERROR_SUCCESS);
+         finally
+          Protocol.ReaderUnlock;
+         end;
+        end;       
+       WSA_GETIPSTATISTICS:begin
+         {Get IpStatistics}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;   
+       WSA_GETICMPSTATISTICS:begin
+         {Get IcmpStatistics}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;   
+       WSA_GETTCPSTATISTICS:begin
+         {Get TcpStatistics}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;   
+       WSA_GETUDPSTATISTICS:begin
+         {Get UdpStatistics}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;   
+       WSA_SETIFENTRY:begin
+         {Set IfEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end; 
+       WSA_CREATEIPFORWARDENTRY:begin
+         {Create IpForwardEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;
+       WSA_SETIPFORWARDENTRY:begin       
+         {Set IpForwardEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;
+       WSA_DELETEIPFORWARDENTRY:begin       
+         {Delete IpForwardEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;
+       WSA_SETIPSTATISTICS:begin
+         {Get IpStatistics}
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=SizeOf(TWSAIpStats);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+         
+         NetworkSetLastError(WSAEINVAL);
+         WSAIpStats:=PWSAIpStats(pRequestInfo);
+         if WSAIpStats = nil then Exit;
+         
+         {Set Forwarding}
+         if WSAIpStats.dwForwarding <> WSA_USE_CURRENT_FORWARDING then
+          begin
+           if WSAIpStats.dwForwarding < WSA_IP_FORWARDING then Exit;
+           if WSAIpStats.dwForwarding > WSA_IP_NOT_FORWARDING then Exit;
+           TIPTransport(Transport).Forwarding:=WSAIpStats.dwForwarding;
+          end;
+         
+         {Set DefaultTTL}
+         if WSAIpStats.dwDefaultTTL <> WSA_USE_CURRENT_TTL then
+          begin
+           NetworkSetLastError(WSAEINVAL);
+           if WSAIpStats.dwDefaultTTL = 0 then Exit;
+           if WSAIpStats.dwDefaultTTL > 512 then Exit;
+           TIPTransport(Transport).DefaultTTL:=WSAIpStats.dwDefaultTTL;
+          end;
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_SETIPTTL:begin
+         {Get Value}
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=SizeOf(LongWord);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+         
+         NetworkSetLastError(WSAEINVAL);
+         WSATTL:=LongWord(pRequestInfo);
+         
+         {Set DefaultTTL}
+         NetworkSetLastError(WSAEINVAL);
+         if WSATTL = 0 then Exit;
+         if WSATTL > 512 then Exit;
+         TIPTransport(Transport).DefaultTTL:=WSATTL;
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_CREATEIPNETENTRY:begin
+         {Create IpNetEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;
+       WSA_SETIPNETENTRY:begin
+         {Set IpNetEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;
+       WSA_DELETEIPNETENTRY:begin
+         {Delete IpNetEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;
+       WSA_FLUSHIPNETTABLE:begin
+         {Flush IpNetEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;
+       WSA_SETTCPENTRY:begin
+         {Set TcpEntry}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;
+       WSA_GETINTERFACEINFO:begin
+         {Get IpInterfaceInfo}
+         Count:=0;
+         
+         {Count Adapters}
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(Count);
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
+         
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=(SizeOf(TWSAIpInterfaceInfo) + (Count * SizeOf(TWSAIpAdapterIndexMap)));
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+         
+         NetworkSetLastError(WSAEINVAL);
+         WSAIpInterfaceInfo:=PWSAIpInterfaceInfo(pRequestInfo);
+         if WSAIpInterfaceInfo = nil then Exit;
+         
+         WSAIpInterfaceInfo.NumAdapters:=0;
+         
+         {Scan Adapters} 
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(WSAIpInterfaceInfo.NumAdapters);
+           
+           {Get IpAdapterIndexMap}
+           WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(@WSAIpInterfaceInfo.Adapter[WSAIpInterfaceInfo.NumAdapters - 1]);
+           if WSAIpAdapterIndexMap = nil then Exit;
+           WSAIpAdapterIndexMap.Index:=Adapter.Index;
+           WSAIpAdapterIndexMap.Name:=Adapter.Name;
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_GETBESTINTERFACE:begin
+         {Get BestInterface}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;
+       WSA_GETBESTROUTE:begin
+         {Get BestRoute}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;
+       WSA_GETADAPTERINDEX:begin
+         {Get AdapterIndex}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;
+       WSA_ADDIPADDRESS:begin
+         {Add IPAddress}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;
+       WSA_DELETEIPADDRESS:begin
+         {Delete IPAddress}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;
+       WSA_GETNETWORKPARAMS:begin
+         {Get FixedInfo}
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=SizeOf(TWSAFixedInfo);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+
+         NetworkSetLastError(WSAEINVAL);
+         WSAFixedInfo:=PWSAFixedInfo(pRequestInfo);
+         if WSAFixedInfo = nil then Exit;
+         
+         StrLCopy(WSAFixedInfo.HostName,PChar(Transport.Manager.Settings.HostName),WSA_MAX_HOSTNAME_LEN);
+         StrLCopy(WSAFixedInfo.DomainName,PChar(Transport.Manager.Settings.DomainName),WSA_MAX_DOMAIN_NAME_LEN);
+         WSAFixedInfo.CurrentDnsServer:=@WSAFixedInfo.DnsServerList;
+         WSAFixedInfo.DnsServerList.Next:=nil;
+         StrLCopy(WSAFixedInfo.DnsServerList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransport(Transport).Nameservers[0]))),15);
+         
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_GETADAPTERSINFO:begin
+         {Get IpAdapterInfo}
+         Count:=0;
+         
+         {Count Adapters}
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           Inc(Count);
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+          end;
+         
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=(SizeOf(TWSAIpAdapterInfo) * Count);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+
+         NetworkSetLastError(WSAEINVAL);
+         WSAIpAdapterInfo:=PWSAIpAdapterInfo(pRequestInfo);
+         if WSAIpAdapterInfo = nil then Exit;
+         
+         FillChar(WSAIpAdapterInfo^,SizeOf(TWSAIpAdapterInfo),0);
+         
+         {Scan Adapters} 
+         Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
+         while Adapter <> nil do
+          begin
+           {Get IpAdapterInfo}
+           WSAIpAdapterInfo.AdapterName:=Adapter.Name;
+           {WSAIpAdapterInfo.Description:=Adapter.Description;} {Not supported}
+           WSAIpAdapterInfo.AddressLength:=SizeOf(THardwareAddress);
+           System.Move(Adapter.Hardware[0],WSAIpAdapterInfo.Address[0],SizeOf(THardwareAddress));
+           WSAIpAdapterInfo.Index:=Adapter.Index;
+           case Adapter.Adapter.AdapterType of
+            ADAPTER_TYPE_LOOPBACK:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
+           else
+            begin
+             case Adapter.Adapter.MediaType of
+              MEDIA_TYPE_ETHERNET:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_ETHERNET_CSMACD;
+              MEDIA_TYPE_TOKENRING:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_ISO88025_TOKENRING;
+              MEDIA_TYPE_IEEE80211:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_IEEE80211;
+              MEDIA_TYPE_LOOPBACK:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
+              MEDIA_TYPE_PPP:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_PPP;
+              MEDIA_TYPE_SLIP:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_SLIP;
+             else  
+              WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_OTHER;
+             end;
+            end;
+           end; 
+           WSAIpAdapterInfo.DhcpEnabled:=0;
+           if Adapter.ConfigType = CONFIG_TYPE_DHCP then WSAIpAdapterInfo.DhcpEnabled:=1;
+           WSAIpAdapterInfo.CurrentIpAddress:=@WSAIpAdapterInfo.IpAddressList;
+           WSAIpAdapterInfo.IpAddressList.Next:=nil;
+           StrLCopy(WSAIpAdapterInfo.IpAddressList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Address))),15);
+           StrLCopy(WSAIpAdapterInfo.IpAddressList.IpMask.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Netmask))),15);
+           WSAIpAdapterInfo.GatewayList.Next:=nil;
+           StrLCopy(WSAIpAdapterInfo.GatewayList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Gateway))),15);
+           WSAIpAdapterInfo.DhcpServer.Next:=nil;
+           StrLCopy(WSAIpAdapterInfo.DhcpServer.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Server))),15);
+           WSAIpAdapterInfo.LeaseObtained:=TIPTransportAdapter(Adapter).LeaseTime;
+           WSAIpAdapterInfo.LeaseExpires:=TIPTransportAdapter(Adapter).ExpiryTime;
+           
+           {Get Next Adapter}
+           Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
+           
+           {Get Next IpAdapterInfo}
+           if Adapter <> nil then
+            begin
+             WSAIpAdapterInfo.Next:=PWSAIpAdapterInfo(PtrUInt(WSAIpAdapterInfo) + SizeOf(TWSAIpAdapterInfo));
+             WSAIpAdapterInfo:=WSAIpAdapterInfo.Next;
+             
+             FillChar(WSAIpAdapterInfo^,SizeOf(TWSAIpAdapterInfo),0);
+            end;
+          end;
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_GETPERADAPTERINFO:begin
+         {Get PerAdapterInfo}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+        end;
+       WSA_IPRELEASEADDRESS:begin
+         {Get IpAdapterIndexMap}
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=SizeOf(TWSAIpAdapterIndexMap);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+
+         NetworkSetLastError(WSAEINVAL);
+         WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(pRequestInfo);
+         if WSAIpAdapterIndexMap = nil then Exit;
+         
+         {Get Adapter}
+         //To Do //IPHLPAPI
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_IPRENEWADDRESS:begin
+         {Get IpAdapterIndexMap}
+         NetworkSetLastError(WSAENOBUFS);
+         pcbResponseInfoLen:=SizeOf(TWSAIpAdapterIndexMap);
+         if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
+
+         NetworkSetLastError(WSAEINVAL);
+         WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(pRequestInfo);
+         if WSAIpAdapterIndexMap = nil then Exit;
+         
+         {Get Adapter}
+         //To Do //IPHLPAPI
+          
+         {Return Result} 
+         Result:=NO_ERROR;
+         NetworkSetLastError(ERROR_SUCCESS);
+        end;
+       WSA_SENDARP:begin
+         {Send ARP}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+
+        end;
+       WSA_GETRTTANDHOPCOUNT:begin
+         {Get RTTAndHopCount}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+
+        end;
+       WSA_GETFRIENDLYIFINDEX:begin
+         {Get FriendlyIfIndex}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+
+        end;
+       WSA_ENABLEROUTER:begin 
+         {Enable Router}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+
+        end;
+       WSA_UNENABLEROUTER:begin
+         {Unenable Router}
+         NetworkSetLastError(WSAEINVAL);
+         
+         //To Do //IPHLPAPI
+
+        end;
+      end;
+     finally
+      Transport.ReaderUnlock;
      end;
     end;
    IPPROTO_IPV6:begin
