@@ -1,7 +1,7 @@
 {
 Ultibo Graphics Console interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3570,7 +3570,7 @@ begin
        if Count = 0 then Break;
 
        {Update Count}
-       Dec(Count);;
+       Dec(Count);
       end;      
     end;
 

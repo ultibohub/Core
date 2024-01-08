@@ -1,7 +1,7 @@
 {
 Ultibo Big Integer interface unit.
 
-Copyright (C) 2018 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1305,7 +1305,7 @@ begin
  if IsMod then
   begin
    {Get the remainder}
-   BIFree(Context,Quotient);;
+   BIFree(Context,Quotient);
 
    Result:=BIIntDivide(Context,BITrim(U),D);
   end

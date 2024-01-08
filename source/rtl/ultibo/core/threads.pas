@@ -1,7 +1,7 @@
 {
 Ultibo Threads interface unit.
            
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -8663,7 +8663,7 @@ var
  SynchronizerEntry:PSynchronizerEntry;
 begin
  {}
- Result:=INVALID_HANDLE_VALUE;;
+ Result:=INVALID_HANDLE_VALUE;
 
  {Check Synchronizer}
  if Synchronizer = INVALID_HANDLE_VALUE then Exit;

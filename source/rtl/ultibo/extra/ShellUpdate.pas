@@ -1,7 +1,7 @@
 {
 Ultibo Update Shell extension unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -294,21 +294,21 @@ begin
  if Length(AParameter) > 0 then
   begin
    {Check Parameter}
-   if WorkBuffer = Uppercase('/' + AParameter) then Exit;;
+   if WorkBuffer = Uppercase('/' + AParameter) then Exit;
   end
  else
   begin 
    {Check Reboot}
-   if WorkBuffer = '/' + SHELL_UPDATE_PARAMETER_REBOOT then Exit;;
+   if WorkBuffer = '/' + SHELL_UPDATE_PARAMETER_REBOOT then Exit;
 
    {Check Force}
-   if WorkBuffer = '/' + SHELL_UPDATE_PARAMETER_FORCE then Exit;;
+   if WorkBuffer = '/' + SHELL_UPDATE_PARAMETER_FORCE then Exit;
   
    {Check Current}
-   if WorkBuffer = '/' + SHELL_UPDATE_PARAMETER_CURRENT then Exit;;
+   if WorkBuffer = '/' + SHELL_UPDATE_PARAMETER_CURRENT then Exit;
 
    {Check DTB}
-   if WorkBuffer = '/' + SHELL_UPDATE_PARAMETER_DTB then Exit;;
+   if WorkBuffer = '/' + SHELL_UPDATE_PARAMETER_DTB then Exit;
   end;
  
  Result:=False;

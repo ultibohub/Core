@@ -1,7 +1,7 @@
 {
 Ultibo MMC/SD/SDIO interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -16845,7 +16845,7 @@ begin
            Result:=ERROR_OPERATION_FAILED;
            Exit;
           end;
-        end;;  
+        end;
        
        {Start Read}
        ReadOffset:=0;

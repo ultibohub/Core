@@ -1,7 +1,7 @@
 {
 Goodix I2C Touchscreen Driver.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1500,7 +1500,7 @@ begin
      end;
 
     Result:=ERROR_SUCCESS;
-    Exit;;
+    Exit;
    end;
 
   {Delay between polls}

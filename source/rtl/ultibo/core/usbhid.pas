@@ -946,7 +946,7 @@ begin
 
  {Get Device and Interface}
  USBDevice:=PUSBHIDDevice(Device).USBDevice;
- USBInterface:=PUSBHIDDevice(Device).USBInterface;;
+ USBInterface:=PUSBHIDDevice(Device).USBInterface;
 
  {Check USB Device and Interface}
  if USBDevice = nil then Exit;
@@ -981,7 +981,7 @@ begin
 
  {Get Device and Interface}
  USBDevice:=PUSBHIDDevice(Device).USBDevice;
- USBInterface:=PUSBHIDDevice(Device).USBInterface;;
+ USBInterface:=PUSBHIDDevice(Device).USBInterface;
 
  {Check USB Device and Interface}
  if USBDevice = nil then Exit;
@@ -1018,7 +1018,7 @@ begin
 
  {Get Device and Interface}
  USBDevice:=PUSBHIDDevice(Device).USBDevice;
- USBInterface:=PUSBHIDDevice(Device).USBInterface;;
+ USBInterface:=PUSBHIDDevice(Device).USBInterface;
 
  {Check USB Device and Interface}
  if USBDevice = nil then Exit;
@@ -1058,7 +1058,7 @@ begin
 
  {Get Device and Interface}
  USBDevice:=PUSBHIDDevice(Device).USBDevice;
- USBInterface:=PUSBHIDDevice(Device).USBInterface;;
+ USBInterface:=PUSBHIDDevice(Device).USBInterface;
 
  {Check USB Device and Interface}
  if USBDevice = nil then Exit;
@@ -1326,7 +1326,7 @@ begin
 
  {Get Device and Interface}
  USBDevice:=PUSBHIDDevice(Device).USBDevice;
- USBInterface:=PUSBHIDDevice(Device).USBInterface;;
+ USBInterface:=PUSBHIDDevice(Device).USBInterface;
 
  {Check USB Device and Interface}
  if USBDevice = nil then Exit;
@@ -1357,7 +1357,7 @@ begin
 
  {Get Device and Interface}
  USBDevice:=PUSBHIDDevice(Device).USBDevice;
- USBInterface:=PUSBHIDDevice(Device).USBInterface;;
+ USBInterface:=PUSBHIDDevice(Device).USBInterface;
 
  {Check USB Device and Interface}
  if USBDevice = nil then Exit;
@@ -1473,7 +1473,7 @@ begin
 
  {Get Device and Interface}
  USBDevice:=PUSBHIDDevice(Device).USBDevice;
- USBInterface:=PUSBHIDDevice(Device).USBInterface;;
+ USBInterface:=PUSBHIDDevice(Device).USBInterface;
 
  {Check USB Device and Interface}
  if USBDevice = nil then Exit;
@@ -1519,7 +1519,7 @@ begin
 
  {Get Device and Interface}
  USBDevice:=PUSBHIDDevice(Device).USBDevice;
- USBInterface:=PUSBHIDDevice(Device).USBInterface;;
+ USBInterface:=PUSBHIDDevice(Device).USBInterface;
 
  {Check USB Device and Interface}
  if USBDevice = nil then Exit;
