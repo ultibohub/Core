@@ -1,7 +1,7 @@
 {
 USB Host Controller Driver for the Synopsys DesignWare Hi-Speed USB 2.0 On-The-Go Controller.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3024,10 +3024,15 @@ begin
   end;
  
  {Remember the actual size and number of packets we are attempting to transfer}
- Request.AttemptedSize:=((Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) shr 0);
+ Request.AttemptedBytes:=((Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) shr 0);
+ Request.AttemptedPackets:=((Transfer and DWC_HOST_CHANNEL_TRANSFER_PACKET_COUNT) shr 19);
  Request.AttemptedBytesRemaining:=((Transfer and DWC_HOST_CHANNEL_TRANSFER_SIZE) shr 0);
  Request.AttemptedPacketsRemaining:=((Transfer and DWC_HOST_CHANNEL_TRANSFER_PACKET_COUNT) shr 19);
- if not(Request.CompleteSplit) then Request.BytesAttempted:=Request.BytesAttempted + Request.AttemptedSize;
+ if not(Request.CompleteSplit) then
+  begin
+   Request.TotalBytesAttempted:=Request.TotalBytesAttempted + Request.AttemptedBytes;
+   Request.TotalPacketsAttempted:=Request.TotalPacketsAttempted + Request.AttemptedPackets;
+  end; 
  
  {Save the request for the interrupt handler}
  Host.ChannelRequests[Channel]:=Request;
@@ -3043,7 +3048,7 @@ begin
    USBLogDebug(Request.Device,'DWCOTG:   TRANSFER_PACKET_ID=' + IntToStr((Transfer and DWC_HOST_CHANNEL_TRANSFER_PACKET_ID) shr 29) + ', SPLIT_CONTROL_SPLIT_ENABLE=' + IntToStr((SplitControl and DWC_HOST_CHANNEL_SPLIT_CONTROL_SPLIT_ENABLE) shr 31) + ',');
    USBLogDebug(Request.Device,'DWCOTG:   CompleteSplit=' + BooleanToString(Request.CompleteSplit));
    USBLogDebug(Request.Device,'DWCOTG:   DMAAddress=' + IntToHex(HostChannel.DMAAddress,8) + ', CurrentData=' + PtrToHex(Request.CurrentData));
-   USBLogDebug(Request.Device,'DWCOTG:   AttemptedSize=' + IntToStr(Request.AttemptedSize) + ', AttemptedBytesRemaining=' + IntToStr(Request.AttemptedBytesRemaining) + ', AttemptedPacketsRemaining=' + IntToStr(Request.AttemptedPacketsRemaining));
+   USBLogDebug(Request.Device,'DWCOTG:   AttemptedBytes=' + IntToStr(Request.AttemptedBytes) + ', AttemptedPackets=' + IntToStr(Request.AttemptedPackets) + ', AttemptedBytesRemaining=' + IntToStr(Request.AttemptedBytesRemaining) + ', AttemptedPacketsRemaining=' + IntToStr(Request.AttemptedPacketsRemaining));
   end; 
  {$ENDIF}
  
@@ -5323,7 +5328,7 @@ begin
  PacketsTransferred:=(Request.AttemptedPacketsRemaining - PacketsRemaining);
  
  {Check for Emulator (QEMU misreports the packets remaining on a 0 byte request)}
- if EMULATOR_MODE and (PacketsTransferred = 0) and (Request.AttemptedSize = 0) then
+ if EMULATOR_MODE and (PacketsTransferred = 0) and (Request.AttemptedBytes = 0) then
   begin
    PacketsRemaining:=0;
    PacketsTransferred:=(Request.AttemptedPacketsRemaining - PacketsRemaining);
@@ -5368,7 +5373,7 @@ begin
        if not(DWCOTG_DMA_CACHE_COHERENT) then
         begin
          {Invalidate the data cache}
-         InvalidateDataCacheRange(PtrUInt(PtrUInt(Request.CurrentData) + PtrUInt(Request.AttemptedSize - Request.AttemptedBytesRemaining)),BytesTransferred);
+         InvalidateDataCacheRange(PtrUInt(PtrUInt(Request.CurrentData) + PtrUInt(Request.AttemptedBytes - Request.AttemptedBytesRemaining)),BytesTransferred);
         end;
       end
      else 
@@ -5383,11 +5388,11 @@ begin
        if not(DWCOTG_DMA_CACHE_COHERENT) then
         begin
          {Invalidate the data cache}
-         InvalidateDataCacheRange(PtrUInt(PtrUInt(Host.DMABuffers[Channel]) + PtrUInt(Request.AttemptedSize - Request.AttemptedBytesRemaining)),BytesTransferred);
+         InvalidateDataCacheRange(PtrUInt(PtrUInt(Host.DMABuffers[Channel]) + PtrUInt(Request.AttemptedBytes - Request.AttemptedBytesRemaining)),BytesTransferred);
         end; 
        
        {Copy the data from the DMA buffer}
-       System.Move(Pointer(PtrUInt(Host.DMABuffers[Channel]) + PtrUInt(Request.AttemptedSize - Request.AttemptedBytesRemaining))^,Request.CurrentData^,BytesTransferred);
+       System.Move(Pointer(PtrUInt(Host.DMABuffers[Channel]) + PtrUInt(Request.AttemptedBytes - Request.AttemptedBytesRemaining))^,Request.CurrentData^,BytesTransferred);
       end;
     end
    else
@@ -5400,9 +5405,9 @@ begin
       end;
 
      {If the last packet in this transfer attempt was transmitted, its size is the remainder of the attempted transfer size. Otherwise, it's another MaxPacketSize}      
-     if (PacketsRemaining = 0) and (((Request.AttemptedSize mod MaxPacketSize) <> 0) or (Request.AttemptedSize = 0)) then
+     if (PacketsRemaining = 0) and (((Request.AttemptedBytes mod MaxPacketSize) <> 0) or (Request.AttemptedBytes = 0)) then
       begin
-       BytesTransferred:=BytesTransferred + (Request.AttemptedSize mod MaxPacketSize);
+       BytesTransferred:=BytesTransferred + (Request.AttemptedBytes mod MaxPacketSize);
       end
      else
       begin
@@ -5417,6 +5422,7 @@ begin
    {Account for packets and bytes transferred}   
    Request.AttemptedPacketsRemaining:=(Request.AttemptedPacketsRemaining - PacketsTransferred);
    Request.AttemptedBytesRemaining:=(Request.AttemptedBytesRemaining - BytesTransferred);
+   Request.PacketsTransferred:=(Request.PacketsTransferred + PacketsTransferred);
    Request.BytesTransferred:=(Request.BytesTransferred + BytesTransferred);
    PtrUInt(Request.CurrentData):=(PtrUInt(Request.CurrentData) + BytesTransferred);
    
@@ -5444,17 +5450,21 @@ begin
        Exit;
       end;
       
-     {If we programmed less than the desired transfer size into the channels (for one of several reasons--- see dwc_channel_start_xfer()), continue to attempt the transfer,
-      unless it was an interrupt transfer, in which case at most one attempt should be made, or if fewer bytes were transferred than attempted (for an IN transfer), indicating
-      the transfer is already done}
-     if (Request.ShortAttempt) and (Request.AttemptedBytesRemaining = 0) and (TransferType <> USB_TRANSFER_TYPE_INTERRUPT) then
+     {If we programmed less than the desired transfer size into the channels (for one of several reasons--- see dwc_channel_start_xfer()), continue
+      to attempt the transfer, unless fewer bytes were transferred than attempted (for an IN transfer), indicating the transfer is already done}
+     if (Request.ShortAttempt) and (Request.AttemptedBytesRemaining = 0) then
       begin
        {$IF (DEFINED(DWCOTG_DEBUG) or DEFINED(USB_DEBUG)) and DEFINED(INTERRUPT_DEBUG)}
-       if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Starting next part of ' + IntToStr(Request.Size) + '-byte transfer after short attempt of ' + IntToStr(Request.AttemptedSize) + ' bytes');
+       if USB_LOG_ENABLED then USBLogDebug(Request.Device,'DWCOTG: Starting next part of ' + IntToStr(Request.Size) + '-byte transfer after short attempt of ' + IntToStr(Request.AttemptedBytes) + ' bytes');
        {$ENDIF}
        
+       {Reset the CompleteSplit flag}
        Request.CompleteSplit:=False;
+
+       {Save the data packet ID}
        Request.NextDataPID:=((HostChannel.Transfer and DWC_HOST_CHANNEL_TRANSFER_PACKET_ID) shr 29);
+
+       {Record bytes transferred}
        if not(USBIsControlRequest(Request)) or (Request.ControlPhase = USB_CONTROL_PHASE_DATA) then
         begin
          Request.ActualSize:=PtrUInt(Request.CurrentData) - PtrUInt(Request.Data);

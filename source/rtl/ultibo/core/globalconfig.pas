@@ -1,7 +1,7 @@
 {
 Ultibo Global Configuration Defaults.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -779,6 +779,9 @@ var
  {USB Mouse}
  USB_MOUSE_POLLING_INTERVAL:LongWord = 10;   {Override the default polling interval for a USB mouse (Milliseconds)}
  USB_MOUSE_REGISTER_DRIVER:LongBool = False; {If True then register the USB Mouse driver during boot (Only if Mouse unit included)(Note: Replaced by USB HID driver)}
+
+ {USB Touch}
+ USB_TOUCH_POLLING_INTERVAL:LongWord = 0;    {Override the default polling interval for a USB touch screen (Milliseconds)}
  
  {USB Storage}
  USB_STORAGE_FORCE_REMOVABLE:LongBool;        {If True then all USB storage devices will be assumed to be removable}

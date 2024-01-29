@@ -1,7 +1,7 @@
 {
 Ultibo Human Interface Device (HID) interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -924,6 +924,7 @@ function HIDParserCleanState(State:PHIDState):LongWord;
 function HIDFindCollection(Device:PHIDDevice;Page,Usage:Word):PHIDCollection;
 
 function HIDFindReportIds(Device:PHIDDevice;Collection:PHIDCollection;var MinId,MaxId:Byte):LongWord;
+function HIDFindReportSizes(Device:PHIDDevice;Collection:PHIDCollection;Kind:Byte;var MinSize,MaxSize:LongWord):LongWord;
 
 function HIDCountReports(Device:PHIDDevice;Collection:PHIDCollection;Kind,Id:Byte;var Count:LongWord):LongWord;
 function HIDFindReports(Device:PHIDDevice;Collection:PHIDCollection;Kind,Id:Byte;Reports:PHIDReports;Count:LongWord):LongWord;
@@ -2880,8 +2881,8 @@ function HIDFindReportIds(Device:PHIDDevice;Collection:PHIDCollection;var MinId,
 
  function HIDFindInternal(Parent:PHIDCollection):Boolean;
  var
-   Index:LongWord;
-   Report:PHIDReport;
+  Index:LongWord;
+  Report:PHIDReport;
  begin
   {}
   Result:=False;
@@ -2978,6 +2979,125 @@ begin
 
     {$IFDEF HID_DEBUG}
     if HID_LOG_ENABLED then HIDLogDebug(Device,'Found Report Ids (Minimum=' + IntToStr(MinId) + ' Maximum=' + IntToStr(MaxId) + ')');
+    {$ENDIF}
+
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    MutexUnlock(Device.Lock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+  end;
+end;
+
+{==============================================================================}
+
+function HIDFindReportSizes(Device:PHIDDevice;Collection:PHIDCollection;Kind:Byte;var MinSize,MaxSize:LongWord):LongWord;
+{Find the minimum and maximum report sizes contained in the specified HID collection or all collections}
+{Device: The HID device to find report sizes from}
+{Collection: The HID collection to find report sizes from (or nil to find from all collections)}
+{Kind: The report kind to find sizes for (eg HID_REPORT_INPUT)}
+{MinSize: A variable to receive the minimum report size}
+{MaxSize: A variable to receive the maximum report size}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+ function HIDFindInternal(Collection:PHIDCollection):Boolean;
+ var
+  MinId:Byte;
+  MaxId:Byte;
+  Index:LongWord;
+  Definition:PHIDDefinition;
+ begin
+  Result:=False;
+
+  {Check Collection}
+  if Collection = nil then Exit;
+
+  {Get Report Ids}
+  if HIDFindReportIds(Device,Collection,MinId,MaxId) = ERROR_SUCCESS then
+   begin
+    {Allocate Definitions}
+    for Index:=MinId to MaxId do
+     begin
+      {Allocate Definition}
+      Definition:=HIDAllocateDefinition(Device,Collection,Kind,Index);
+      if Definition <> nil then
+       begin
+        {Check Definition}
+        if Definition.Size < MinSize then
+         begin
+          MinSize:=Definition.Size;
+         end;
+
+        if Definition.Size > MaxSize then
+         begin
+          MaxSize:=Definition.Size;
+         end;
+
+        {Free Definition}
+        HIDFreeDefinition(Definition);
+       end;
+     end;
+   end;
+
+  Result:=True;
+ end;
+
+var
+ Index:LongWord;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Set Defaults}
+ MinSize:=$FFFFFFFF;
+ MaxSize:=$00;
+
+ {Check Device}
+ if Device = nil then Exit;
+ if Device.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
+ {Acquire the Lock}
+ if MutexLock(Device.Lock) = ERROR_SUCCESS then
+  begin
+   try
+    {Set Result}
+    Result:=ERROR_OPERATION_FAILED;
+
+    {Find Report Sizes}
+    if Collection = nil then
+     begin
+      {Check Collections}
+      if Device.Collections = nil then Exit;
+
+      {Check Collections}
+      if Device.CollectionCount > 0 then
+       begin
+        for Index:=0 to Device.CollectionCount - 1 do
+         begin
+          if (Device.Collections[Index] <> nil) and (Device.Collections[Index].Parent = nil) then
+           begin
+            {Check Collection}
+            if not HIDFindInternal(Device.Collections[Index]) then Exit;
+           end;
+         end;
+       end;
+     end
+    else
+     begin
+      {Check Collection}
+      if not HIDFindInternal(Collection) then Exit;
+     end;
+
+    {Check Result}
+    if MinSize > MaxSize then MinSize:=MaxSize;
+
+    {$IFDEF HID_DEBUG}
+    if HID_LOG_ENABLED then HIDLogDebug(Device,'Found Report Sizes (Minimum=' + IntToStr(MinSize) + ' Maximum=' + IntToStr(MaxSize) + ')');
     {$ENDIF}
 
     {Return Result}

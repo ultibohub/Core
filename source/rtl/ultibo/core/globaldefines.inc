@@ -107,7 +107,7 @@ Global Defines
 {--$DEFINE PLATFORM_DEBUG}        {Enable debug output/counters for platform internals (Default: Off)}
 {--$DEFINE SYSCALLS_DEBUG}        {Enable debug output/counters for C library syscalls (Default: Off)}
 {--$DEFINE DEVICE_TREE_DEBUG}     {Enable debug output/counters for device tree internals (Default: Off)}
-{$DEFINE API_DEBUG}             {Enable debug output/counters for library API internals (Default: Off)}
+{--$DEFINE API_DEBUG}             {Enable debug output/counters for library API internals (Default: Off)}
 {$DEFINE LOADER_DEBUG}          {Enable debug output/counters for dynamic loader internals (Default: Off)}
 {--$DEFINE CONSOLE_DEBUG}         {Enable debug output/counters for console devices (Default: Off) (Do not enable when console logging is active)}
 {--$DEFINE LOGGING_DEBUG}         {Enable debug output/counters for logging devices (Default: Off)}

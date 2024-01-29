@@ -1,7 +1,7 @@
 {
 Ultibo USB interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1307,23 +1307,26 @@ type
   StartOfFrame:LongBool;                     {The request needs to wait for the next start of frame to be started}
   ControlPhase:LongWord;                     {The currently processing phase of a control request}
   NextDataPID:LongWord;                      {The next Data PID for the data toggle during IN or OUT (Data0/Data1 etc)}
-  AttemptedSize:LongWord;
-  AttemptedPacketsRemaining:LongWord;
-  AttemptedBytesRemaining:LongWord;
-  BytesAttempted:LongWord;
-  BytesTransferred:LongWord;
-  SplitErrorCount:LongWord;
-  CompleteSplitRetries:LongWord;
+  AttemptedPackets:LongWord;                 {The number of packets attempted in the current transaction}
+  AttemptedBytes:LongWord;                   {The number of bytes attempted in the current transaction}
+  AttemptedPacketsRemaining:LongWord;        {The number of packets remaining in the current transaction}
+  AttemptedBytesRemaining:LongWord;          {The number of bytes remaining in the current transaction}
+  TotalPacketsAttempted:LongWord;            {The total number of packets attempted for this request}
+  TotalBytesAttempted:LongWord;              {The total number of bytes attempted for this request}
+  PacketsTransferred:LongWord;               {The number of packets transferred for this request}
+  BytesTransferred:LongWord;                 {The number of bytes transferred for this request}
+  SplitErrorCount:LongWord;                  {The number of split transaction errors for this request}
+  CompleteSplitRetries:LongWord;             {The number of complete split retries for this request}
   ResubmitThread:TThreadHandle;              {The handle of the thread performing resubmit for this request (or INVALID_HANDLE_VALUE)}
   ResubmitSemaphore:TSemaphoreHandle;        {The handle of the semaphore used to signal the resubmit thread (or INVALID_HANDLE_VALUE)}
   {$IFDEF USB_DEBUG}
   {Debug Statistics}
-  StartSplitAttempts:LongWord;
-  CompleteSplitAttempts:LongWord;
-  CompleteSplitRestarts:LongWord;
-  StartSplitNAKs:LongWord;
-  CompleteSplitNYETs:LongWord;
-  CompleteSplitNAKs:LongWord;
+  StartSplitAttempts:LongWord;               {The number of start split attempts started for this request}
+  CompleteSplitAttempts:LongWord;            {The number of complete split attempts started for this request}
+  CompleteSplitRestarts:LongWord;            {The number of complete split restarts processed for this request}
+  StartSplitNAKs:LongWord;                   {The number of start split NAK responses received for this request}
+  CompleteSplitNYETs:LongWord;               {The number of complete split NYET responses received for this request}
+  CompleteSplitNAKs:LongWord;                {The number of complete split NAK responses received for this request}
   {$ENDIF}
  end;
  
@@ -6554,7 +6557,9 @@ begin
  Request.ShortAttempt:=False;
  Request.StartOfFrame:=False;
  Request.ControlPhase:=USB_CONTROL_PHASE_SETUP;
- Request.BytesAttempted:=0;
+ Request.TotalPacketsAttempted:=0;
+ Request.TotalBytesAttempted:=0;
+ Request.PacketsTransferred:=0;
  Request.BytesTransferred:=0;
  Request.SplitErrorCount:=0;
  Request.CompleteSplitRetries:=0;
@@ -6940,10 +6945,13 @@ begin
    USBLogDebug(Device,'USBControlRequestEx: StartOfFrame = ' + BoolToStr(Request.StartOfFrame));
    USBLogDebug(Device,'USBControlRequestEx: ControlPhase = ' + IntToStr(Request.ControlPhase));
    USBLogDebug(Device,'USBControlRequestEx: NextDataPID = ' + IntToStr(Request.NextDataPID));
-   USBLogDebug(Device,'USBControlRequestEx: AttemptedSize = ' + IntToStr(Request.AttemptedSize));
+   USBLogDebug(Device,'USBControlRequestEx: AttemptedPackets = ' + IntToStr(Request.AttemptedPackets));
+   USBLogDebug(Device,'USBControlRequestEx: AttemptedBytes = ' + IntToStr(Request.AttemptedBytes));
    USBLogDebug(Device,'USBControlRequestEx: AttemptedPacketsRemaining = ' + IntToStr(Request.AttemptedPacketsRemaining));
    USBLogDebug(Device,'USBControlRequestEx: AttemptedBytesRemaining = ' + IntToStr(Request.AttemptedBytesRemaining));
-   USBLogDebug(Device,'USBControlRequestEx: BytesAttempted = ' + IntToStr(Request.BytesAttempted));
+   USBLogDebug(Device,'USBControlRequestEx: TotalPacketsAttempted = ' + IntToStr(Request.TotalPacketsAttempted));
+   USBLogDebug(Device,'USBControlRequestEx: TotalBytesAttempted = ' + IntToStr(Request.TotalBytesAttempted));
+   USBLogDebug(Device,'USBControlRequestEx: PacketsTransferred = ' + IntToStr(Request.PacketsTransferred));
    USBLogDebug(Device,'USBControlRequestEx: BytesTransferred = ' + IntToStr(Request.BytesTransferred));
    USBLogDebug(Device,'USBControlRequestEx: SplitErrorCount = ' + IntToStr(Request.SplitErrorCount));
    USBLogDebug(Device,'USBControlRequestEx: CompleteSplitRetries = ' + IntToStr(Request.CompleteSplitRetries));
@@ -7098,10 +7106,13 @@ begin
    USBLogDebug(Device,'USBTransfer: ShortAttempt = ' + BoolToStr(Request.ShortAttempt));
    USBLogDebug(Device,'USBTransfer: StartOfFrame = ' + BoolToStr(Request.StartOfFrame));
    USBLogDebug(Device,'USBTransfer: NextDataPID = ' + IntToStr(Request.NextDataPID));
-   USBLogDebug(Device,'USBTransfer: AttemptedSize = ' + IntToStr(Request.AttemptedSize));
+   USBLogDebug(Device,'USBTransfer: AttemptedPackets = ' + IntToStr(Request.AttemptedPackets));
+   USBLogDebug(Device,'USBTransfer: AttemptedBytes = ' + IntToStr(Request.AttemptedBytes));
    USBLogDebug(Device,'USBTransfer: AttemptedPacketsRemaining = ' + IntToStr(Request.AttemptedPacketsRemaining));
    USBLogDebug(Device,'USBTransfer: AttemptedBytesRemaining = ' + IntToStr(Request.AttemptedBytesRemaining));
-   USBLogDebug(Device,'USBTransfer: BytesAttempted = ' + IntToStr(Request.BytesAttempted));
+   USBLogDebug(Device,'USBTransfer: TotalPacketsAttempted = ' + IntToStr(Request.TotalPacketsAttempted));
+   USBLogDebug(Device,'USBTransfer: TotalBytesAttempted = ' + IntToStr(Request.TotalBytesAttempted));
+   USBLogDebug(Device,'USBTransfer: PacketsTransferred = ' + IntToStr(Request.PacketsTransferred));
    USBLogDebug(Device,'USBTransfer: BytesTransferred = ' + IntToStr(Request.BytesTransferred));
    USBLogDebug(Device,'USBTransfer: SplitErrorCount = ' + IntToStr(Request.SplitErrorCount));
    USBLogDebug(Device,'USBTransfer: CompleteSplitRetries = ' + IntToStr(Request.CompleteSplitRetries));
@@ -7290,10 +7301,13 @@ begin
    USBLogDebug(Device,'USBControlTransfer: StartOfFrame = ' + BoolToStr(Request.StartOfFrame));
    USBLogDebug(Device,'USBControlTransfer: ControlPhase = ' + IntToStr(Request.ControlPhase));
    USBLogDebug(Device,'USBControlTransfer: NextDataPID = ' + IntToStr(Request.NextDataPID));
-   USBLogDebug(Device,'USBControlTransfer: AttemptedSize = ' + IntToStr(Request.AttemptedSize));
+   USBLogDebug(Device,'USBControlTransfer: AttemptedPackets = ' + IntToStr(Request.AttemptedPackets));
+   USBLogDebug(Device,'USBControlTransfer: AttemptedBytes = ' + IntToStr(Request.AttemptedBytes));
    USBLogDebug(Device,'USBControlTransfer: AttemptedPacketsRemaining = ' + IntToStr(Request.AttemptedPacketsRemaining));
    USBLogDebug(Device,'USBControlTransfer: AttemptedBytesRemaining = ' + IntToStr(Request.AttemptedBytesRemaining));
-   USBLogDebug(Device,'USBControlTransfer: BytesAttempted = ' + IntToStr(Request.BytesAttempted));
+   USBLogDebug(Device,'USBControlTransfer: TotalPacketsAttempted = ' + IntToStr(Request.TotalPacketsAttempted));
+   USBLogDebug(Device,'USBControlTransfer: TotalBytesAttempted = ' + IntToStr(Request.TotalBytesAttempted));
+   USBLogDebug(Device,'USBControlTransfer: PacketsTransferred = ' + IntToStr(Request.PacketsTransferred));
    USBLogDebug(Device,'USBControlTransfer: BytesTransferred = ' + IntToStr(Request.BytesTransferred));
    USBLogDebug(Device,'USBControlTransfer: SplitErrorCount = ' + IntToStr(Request.SplitErrorCount));
    USBLogDebug(Device,'USBControlTransfer: CompleteSplitRetries = ' + IntToStr(Request.CompleteSplitRetries));

@@ -1,7 +1,7 @@
 {
 Ultibo HID Touch consumer unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -738,6 +738,13 @@ begin
     if HID_LOG_ENABLED then HIDLogError(Device,'Touch: Failed to register new touch device: ' + ErrorToString(Status));
 
     Exit;
+   end;
+
+  {Check Interval}
+  if USB_TOUCH_POLLING_INTERVAL > 0 then
+   begin
+    {Set Interval}
+    HIDDeviceSetInterval(Device,USB_TOUCH_POLLING_INTERVAL);
    end;
 
   {Update Collection}

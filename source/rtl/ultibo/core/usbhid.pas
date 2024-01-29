@@ -109,7 +109,8 @@ type
   HIDDescriptor:PHIDDescriptor;          {The USB HID descriptor from the interface}
   {Driver Properties}
   ReportActive:LongWord;                 {The number of currently active report requests}
-  ReportMaximum:LongWord;                {The maximum report id number this device supports}
+  ReportMaxId:LongWord;                  {The maximum report id number this device supports}
+  ReportMaxSize:LongWord;                {The maximum report size in bytes this device sends}
   ReportRequest:PUSBRequest;             {The USB request submitted for this endpoint}
   ReportRequests:PUSBHIDRequests;        {Active input report requests from consumers}
   ReportEndpoint:PUSBEndpointDescriptor; {The USB endpoint for receiving input reports}
@@ -374,6 +375,8 @@ var
  MinId:Byte;
  MaxId:Byte;
  Status:LongWord;
+ MinSize:LongWord;
+ MaxSize:LongWord;
  HIDDevice:PUSBHIDDevice;
 begin
  {}
@@ -527,7 +530,7 @@ begin
       Exit;
      end;
 
-    {Get Maximum Report}
+    {Get Maximum Report Id}
     Status:=HIDFindReportIds(@HIDDevice.HID,nil,MinId,MaxId);
     if Status <> ERROR_SUCCESS then
      begin
@@ -535,14 +538,30 @@ begin
 
       Exit;
      end;
+    {$IF DEFINED(USB_DEBUG) or DEFINED(HID_DEBUG)}
+    if USB_LOG_ENABLED then USBLogDebug(Device,'HID: Maximum HID report id = ' + IntToStr(MaxId));
+    {$ENDIF}
+
+    {Get Maximum Report Size}
+    Status:=HIDFindReportSizes(@HIDDevice.HID,nil,HID_REPORT_INPUT,MinSize,MaxSize);
+    if Status <> ERROR_SUCCESS then
+     begin
+      if USB_LOG_ENABLED then USBLogError(Device,'HID: Failed to determine maximum report size from HID report descriptor: ' + ErrorToString(Status));
+
+      Exit;
+     end;
+    {$IF DEFINED(USB_DEBUG) or DEFINED(HID_DEBUG)}
+    if USB_LOG_ENABLED then USBLogDebug(Device,'HID: Maximum HID report size = ' + IntToStr(MaxSize));
+    {$ENDIF}
 
     {Allocate Requests}
-    HIDDevice.ReportMaximum:=MaxId;
+    HIDDevice.ReportMaxId:=MaxId;
+    HIDDevice.ReportMaxSize:=MaxSize;
     HIDDevice.ReportRequests:=AllocMem((MaxId + 1) * SizeOf(PUSBHIDRequest));
     if HIDDevice.ReportRequests = nil then Exit;
 
     {Allocate Request}
-    HIDDevice.ReportRequest:=USBRequestAllocate(HIDDevice.USBDevice,HIDDevice.ReportEndpoint,USBHIDDeviceReportComplete,USB_MAX_PACKET_SIZE,HIDDevice);
+    HIDDevice.ReportRequest:=USBRequestAllocate(HIDDevice.USBDevice,HIDDevice.ReportEndpoint,USBHIDDeviceReportComplete,HIDDevice.ReportMaxSize,HIDDevice);
     if HIDDevice.ReportRequest = nil then Exit;
 
     {Check Interface SubClass (Get/SetProtocol only required for boot devices)}
@@ -675,7 +694,7 @@ begin
  if MutexLock(HIDDevice.HID.Lock) <> ERROR_SUCCESS then Exit;
 
  {Cancel Reports}
- for Count:=0 to HIDDevice.ReportMaximum do
+ for Count:=0 to HIDDevice.ReportMaxId do
   begin
    HIDDeviceCancelReport(@HIDDevice.HID,Count);
   end;
@@ -714,7 +733,7 @@ begin
  HIDDeviceUnbindDevice(@HIDDevice.HID,nil);
 
  {Release Reports}
- for Count:=0 to HIDDevice.ReportMaximum do
+ for Count:=0 to HIDDevice.ReportMaxId do
   begin
    HIDDeviceReleaseReport(@HIDDevice.HID,Count);
   end;
@@ -797,7 +816,7 @@ begin
 
         {Get Report Id}
         ReportId:=0;
-        if HIDDevice.ReportMaximum > 0 then
+        if HIDDevice.ReportMaxId > 0 then
          begin
           ReportId:=PByte(Request.Data)^;
 
@@ -807,7 +826,7 @@ begin
          end;
 
         {Check Report Id}
-        if ReportId <= HIDDevice.ReportMaximum then
+        if ReportId <= HIDDevice.ReportMaxId then
          begin
           {Get Request}
           HIDRequest:=HIDDevice.ReportRequests[ReportId];
@@ -1077,7 +1096,7 @@ begin
  if (ReportType = HID_REPORT_OUTPUT) and (HIDDevice.OutputEndpoint <> nil) then
   begin
    {Set Report Id}
-   if HIDDevice.ReportMaximum > 0 then PByte(ReportData)^:=ReportId;
+   if HIDDevice.ReportMaxId > 0 then PByte(ReportData)^:=ReportId;
 
    {Set Report}
    Result:=USBHIDStatusToErrorCode(USBInterruptTransfer(USBDevice,HIDDevice.OutputEndpoint,ReportData,ReportSize,Count,INFINITE));
@@ -1117,7 +1136,7 @@ begin
  HIDDevice:=PUSBHIDDevice(Device);
 
  {Check Report Id}
- if ReportId > HIDDevice.ReportMaximum then Exit;
+ if ReportId > HIDDevice.ReportMaxId then Exit;
 
  {Check Report Size}
  if ReportSize = 0 then Exit;
@@ -1167,7 +1186,7 @@ begin
  HIDDevice:=PUSBHIDDevice(Device);
 
  {Check Report Id}
- if ReportId > HIDDevice.ReportMaximum then Exit;
+ if ReportId > HIDDevice.ReportMaxId then Exit;
 
  {Set Result}
  Result:=ERROR_NOT_VALID;
@@ -1210,7 +1229,7 @@ begin
  HIDDevice:=PUSBHIDDevice(Device);
 
  {Check Report Id}
- if ReportId > HIDDevice.ReportMaximum then Exit;
+ if ReportId > HIDDevice.ReportMaxId then Exit;
 
  {Set Result}
  Result:=ERROR_NOT_VALID;
@@ -1273,7 +1292,7 @@ begin
  HIDDevice:=PUSBHIDDevice(Device);
 
  {Check Report Id}
- if ReportId > HIDDevice.ReportMaximum then Exit;
+ if ReportId > HIDDevice.ReportMaxId then Exit;
 
  {Set Result}
  Result:=ERROR_NOT_VALID;
