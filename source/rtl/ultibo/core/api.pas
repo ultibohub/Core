@@ -1,7 +1,7 @@
 {
 Ultibo Library API interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3996,6 +3996,7 @@ function hid_parser_clean_state(state: PHID_STATE): uint32_t; stdcall; public na
 function hid_find_collection(device: PHID_DEVICE; page, usage: uint16_t): PHID_COLLECTION; stdcall; public name 'hid_find_collection';
 
 function hid_find_report_ids(device: PHID_DEVICE; collection: PHID_COLLECTION; var minid, maxid: uint8_t): uint32_t; stdcall; public name 'hid_find_report_ids';
+function hid_find_report_sizes(device: PHID_DEVICE; collection: PHID_COLLECTION; kind: uint8_t; var minsize, maxsize: uint32_t): uint32_t; stdcall; public name 'hid_find_report_sizes';
 
 function hid_count_reports(device: PHID_DEVICE; collection: PHID_COLLECTION; kind, id: uint8_t; var count: uint32_t): uint32_t; stdcall; public name 'hid_count_reports';
 function hid_find_reports(device: PHID_DEVICE; collection: PHID_COLLECTION; kind, id: uint8_t; reports: PHID_REPORTS; count: uint32_t): uint32_t; stdcall; public name 'hid_find_reports';
@@ -31102,6 +31103,21 @@ function hid_find_report_ids(device: PHID_DEVICE; collection: PHID_COLLECTION; v
 begin
  {}
  Result:=HIDFindReportIds(device,collection,minid,maxid);
+end;
+
+{==============================================================================}
+
+function hid_find_report_sizes(device: PHID_DEVICE; collection: PHID_COLLECTION; kind: uint8_t; var minsize, maxsize: uint32_t): uint32_t; stdcall;
+{Find the minimum and maximum report sizes contained in the specified HID collection or all collections}
+{Device: The HID device to find report sizes from}
+{Collection: The HID collection to find report sizes from (or nil to find from all collections)}
+{Kind: The report kind to find sizes for (eg HID_REPORT_INPUT)}
+{MinSize: A variable to receive the minimum report size}
+{MaxSize: A variable to receive the maximum report size}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=HIDFindReportSizes(device,collection,kind,minsize,maxsize);
 end;
 
 {==============================================================================}
