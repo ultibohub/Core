@@ -88,6 +88,11 @@ const
  VGSHAPES_FONTNAME_SERIF = 'serif';
  VGSHAPES_FONTNAME_MONO = 'mono';
 
+ {Text Rotation}
+ VGSHAPES_ROTATE_START = 0; {Rotate around the start point of the text}
+ VGSHAPES_ROTATE_MID = 1;   {Rotate around the mid point of the text}
+ VGSHAPES_ROTATE_END = 2;   {Rotate around the end point of the text}
+
 {==============================================================================}
 type
  {Font Information}
@@ -167,9 +172,10 @@ procedure VGShapesClipEnd;
 
 {Text}
 procedure VGShapesText(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer);
-function VGShapesTextWidth(const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer):VGfloat;
 procedure VGShapesTextMid(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer);
 procedure VGShapesTextEnd(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer);
+procedure VGShapesTextRotate(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer;angle:VGfloat;position:Integer);
+function VGShapesTextWidth(const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer):VGfloat;
 function VGShapesTextHeight(f:PVGShapesFontInfo;pointsize:Integer):VGfloat;
 function VGShapesTextDepth(f:PVGShapesFontInfo;pointsize:Integer):VGfloat;
 
@@ -2422,6 +2428,81 @@ end;
 
 {==============================================================================}
 
+procedure VGShapesTextMid(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer);
+{TextMid draws text, centered on (x,y)}
+var
+ Width:VGfloat;
+begin
+ {}
+ {Get Width}
+ Width:=VGShapesTextWidth(s,f,pointsize);
+ 
+ {Draw Text}
+ VGShapesText(x - (Width / 2.0),y,s,f,pointsize);
+end;
+
+{==============================================================================}
+
+procedure VGShapesTextEnd(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer);
+{TextEnd draws text, with its end aligned to (x,y)}
+var
+ Width:VGfloat;
+begin
+ {}
+ {Get Width}
+ Width:=VGShapesTextWidth(s,f,pointsize);
+ 
+ {Draw Text}
+ VGShapesText(x - Width,y,s,f,pointsize);
+end;
+
+{==============================================================================}
+
+procedure VGShapesTextRotate(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer;angle:VGfloat;position:Integer);
+{TextRotate renders a string of text at a specified location, size and angle using the specified font glyphs}
+var
+ Width:VGfloat;
+ Matrix:array[0..8] of VGfloat;
+begin
+ {}
+ {Setup Angle}
+ if angle > 360 then angle:=0;
+
+ {Save Matrix}
+ vgGetMatrix(Matrix);
+
+ {Translate}
+ vgTranslate(x,y);
+
+ {Rotate}
+ vgRotate(angle); 
+
+ {Get Width}
+ Width:=VGShapesTextWidth(s,f,pointsize);
+
+ {Check Position}
+ if position = VGSHAPES_ROTATE_MID then
+  begin
+   {Draw Text}
+   VGShapesText(0 - (Width / 2.0),0,s,f,pointsize);
+  end
+ else if position = VGSHAPES_ROTATE_END then
+  begin
+   {Draw Text}
+   VGShapesText(0 - Width,0,s,f,pointsize);
+  end
+ else
+  begin
+   {Draw Text}
+   VGShapesText(0,0,s,f,pointsize);
+  end;  
+
+ {Restore Matrix}
+ vgLoadMatrix(Matrix);
+end;
+
+{==============================================================================}
+
 function VGShapesTextWidth(const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer):VGfloat;
 {TextWidth returns the width of a text string at the specified font and size}
 var
@@ -2461,36 +2542,6 @@ begin
   end;
   
  Result:=Width;
-end;
-
-{==============================================================================}
-
-procedure VGShapesTextMid(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer);
-{TextMid draws text, centered on (x,y)}
-var
- Width:VGfloat;
-begin
- {}
- {Get Width}
- Width:=VGShapesTextWidth(s,f,pointsize);
- 
- {Draw Text}
- VGShapesText(x - (Width / 2.0),y,s,f,pointsize);
-end;
-
-{==============================================================================}
-
-procedure VGShapesTextEnd(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer);
-{TextEnd draws text, with its end aligned to (x,y)}
-var
- Width:VGfloat;
-begin
- {}
- {Get Width}
- Width:=VGShapesTextWidth(s,f,pointsize);
- 
- {Draw Text}
- VGShapesText(x - Width,y,s,f,pointsize);
 end;
 
 {==============================================================================}
