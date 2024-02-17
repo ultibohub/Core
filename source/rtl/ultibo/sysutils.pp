@@ -1,6 +1,6 @@
 {
     This file is part of the Free Pascal run time library.
-    Copyright (c) 2023 by the Free Pascal development team
+    Copyright (c) 2024 by the Free Pascal development team
 
     Sysutils unit for Ultibo target.
 
@@ -34,6 +34,7 @@ interface
 {$DEFINE HAS_GETTICKCOUNT64}
 {$DEFINE HAS_LOCALTIMEZONEOFFSET}
 {$DEFINE HAS_FILEGETDATETIMEINFO}
+{$DEFINE HAS_INVALIDHANDLE}
 {$modeswitch typehelpers}
 {$modeswitch advancedrecords}
 
@@ -45,7 +46,10 @@ interface
 {const}
   {Max Path (Exactly equivalent to Win32}
   {MAX_PATH = 260;} {Defined in sysutilh.inc}
-  
+
+const
+  INVALID_HANDLE_VALUE = THandle(-1);
+
 type
   {File Time (Exactly equivalent to Win32}
   FILETIME = record

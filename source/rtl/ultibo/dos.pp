@@ -1,6 +1,6 @@
 {
     This file is part of the Free Pascal run time library.
-    Copyright (c) 2015 by Free Pascal development team
+    Copyright (c) 2024 by Free Pascal development team
 
     Dos unit for Ultibo target.
     
@@ -24,7 +24,10 @@ interface
 {const}
   {Max Path (Exactly equivalent to Win32}
   {MAX_PATH = 260;} {Defined in sysutilh.inc}
-  
+
+const
+  INVALID_HANDLE_VALUE = THandle(-1);
+
 type
   {File Time (Exactly equivalent to Win32}
   FILETIME = record
