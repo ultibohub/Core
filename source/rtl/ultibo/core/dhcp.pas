@@ -1,7 +1,7 @@
 {
 Ultibo DHCP/BOOTP Protocol client unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1432,6 +1432,7 @@ begin
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
+   Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=IP_DEFAULT_ADDRESS;
    
    {Add the Options}
@@ -1513,6 +1514,7 @@ begin
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
+   Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=IP_DEFAULT_ADDRESS;
    
    {Add the Options}
@@ -1601,6 +1603,7 @@ begin
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
+   Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=IP_DEFAULT_ADDRESS;
    
    {Add the Options}
@@ -1738,6 +1741,7 @@ begin
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
+   Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Address);
    
    {Add the Options}
@@ -1793,6 +1797,7 @@ function TDHCPConfig.SendDHCPRenew(ASocket:TProtocolSocket;ATransport:TDHCPConfi
 var
  Size:Integer;
  Option:Pointer;
+ HostName:String;
  SockAddr:TSockAddr;
  Header:TDHCPHeader;
  ClientId:TDHCPClientId;
@@ -1830,6 +1835,10 @@ begin
     {Client Identifier}
     ClientId:=GetDHCPClientId(AAdapter);
     if not InsertDHCPOption(DHCP_CLIENT_ID,@Header,@ClientId,SizeOf(TDHCPClientId)) then Exit;
+
+    {Host Name}
+    HostName:=Manager.Settings.HostName;
+    if Length(HostName) <> 0 then if not InsertDHCPOption(HOST_NAME,@Header,PChar(HostName),Length(HostName)) then Exit;
     
     {Requested Options}
     PByte(Option)^:=DHCP_IP_ADDR_LEASE_TIME;
@@ -1863,6 +1872,7 @@ function TDHCPConfig.SendDHCPRebind(ASocket:TProtocolSocket;ATransport:TDHCPConf
 var
  Size:Integer;
  Option:Pointer;
+ HostName:String;
  SockAddr:TSockAddr;
  Header:TDHCPHeader;
  ClientId:TDHCPClientId;
@@ -1887,6 +1897,7 @@ begin
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
+   Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Address);
    
    {Add the Options}
@@ -1900,6 +1911,10 @@ begin
     {Client Identifier}
     ClientId:=GetDHCPClientId(AAdapter);
     if not InsertDHCPOption(DHCP_CLIENT_ID,@Header,@ClientId,SizeOf(TDHCPClientId)) then Exit;
+
+    {Host Name}
+    HostName:=Manager.Settings.HostName;
+    if Length(HostName) <> 0 then if not InsertDHCPOption(HOST_NAME,@Header,PChar(HostName),Length(HostName)) then Exit;
     
     {Requested Options}
     PByte(Option)^:=DHCP_IP_ADDR_LEASE_TIME;
@@ -1958,6 +1973,7 @@ begin
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
+   Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=IP_DEFAULT_ADDRESS;
    
    {Add the Options}
