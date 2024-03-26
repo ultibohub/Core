@@ -471,6 +471,8 @@ const
  USB_DEVICE_REQUEST_GET_INTERFACE     = 10;
  USB_DEVICE_REQUEST_SET_INTERFACE     = 11;
  USB_DEVICE_REQUEST_SYNCH_FRAME       = 12;
+ USB_DEVICE_REQUEST_SET_SEL           = 48;
+ USB_DEVICE_REQUEST_SET_ISOC_DELAY    = 49;
  
  {Values for wValue in type TUSBControlSetupData}
  {USB Device Features (See Table 9-6 in Section 9.4 of the USB 2.0 specification)}
@@ -486,23 +488,23 @@ const
  USB_DEVICE_TEST_MODE_PACKET       = $04;
  USB_DEVICE_TEST_MODE_FORCE_ENABLE = $05;
  
- {USB Packet ID values (See ????????)} //To Do //Not used ?, not part of spec ?
- USB_PACKETID_UNDEF_0           =  $f0;
- USB_PACKETID_OUT               =  $e1;
- USB_PACKETID_ACK               =  $d2;
- USB_PACKETID_DATA0             =  $c3;
- USB_PACKETID_UNDEF_4           =  $b4;
- USB_PACKETID_SOF               =  $a5;
- USB_PACKETID_UNDEF_6           =  $96;
- USB_PACKETID_UNDEF_7           =  $87;
- USB_PACKETID_UNDEF_8           =  $78;
- USB_PACKETID_IN                =  $69;
- USB_PACKETID_NAK               =  $5a;
- USB_PACKETID_DATA1             =  $4b;
- USB_PACKETID_PREAMBLE          =  $3c;
- USB_PACKETID_SETUP             =  $2d;
- USB_PACKETID_STALL             =  $1e;
- USB_PACKETID_UNDEF_F           =  $0f;
+ {USB Packet ID values}
+ {USB_PACKETID_UNDEF_0           =  $f0;}
+ {USB_PACKETID_OUT               =  $e1;}
+ {USB_PACKETID_ACK               =  $d2;}
+ {USB_PACKETID_DATA0             =  $c3;}
+ {USB_PACKETID_UNDEF_4           =  $b4;}
+ {USB_PACKETID_SOF               =  $a5;}
+ {USB_PACKETID_UNDEF_6           =  $96;}
+ {USB_PACKETID_UNDEF_7           =  $87;}
+ {USB_PACKETID_UNDEF_8           =  $78;}
+ {USB_PACKETID_IN                =  $69;}
+ {USB_PACKETID_NAK               =  $5a;}
+ {USB_PACKETID_DATA1             =  $4b;}
+ {USB_PACKETID_PREAMBLE          =  $3c;}
+ {USB_PACKETID_SETUP             =  $2d;}
+ {USB_PACKETID_STALL             =  $1e;}
+ {USB_PACKETID_UNDEF_F           =  $0f;}
  
  {USB Class Codes (bDeviceClass / bInterfaceClass) (See: https://www.usb.org/defined-class-codes) (Note that only the hub class is defined in the USB 2.0 specification itself the other standard class codes are defined in additional specifications)}
  USB_CLASS_CODE_INTERFACE_SPECIFIC             = $00; {Use class code info from Interface Descriptors }
@@ -1625,15 +1627,15 @@ function USBHubDriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord
 
 {==============================================================================}
 {USB Device, Driver and Host Helper Functions}
-function USBDeviceGetCount:LongWord; inline;
+function USBDeviceGetCount:LongWord;
 
 function USBDeviceCheck(Device:PUSBDevice):PUSBDevice;
 
-function USBDriverGetCount:LongWord; inline;
+function USBDriverGetCount:LongWord;
 
 function USBDriverCheck(Driver:PUSBDriver):PUSBDriver;
 
-function USBHostGetCount:LongWord; inline;
+function USBHostGetCount:LongWord;
 
 function USBHostCheck(Host:PUSBHost):PUSBHost;
 
@@ -1704,7 +1706,7 @@ function USBLogTreeCallback(Device:PUSBDevice;Data:Pointer):LongWord;
 
 {==============================================================================}
 {USB Hub Helper Functions}
-function USBHubGetCount:LongWord; inline;
+function USBHubGetCount:LongWord;
 
 function USBHubCheck(Hub:PUSBHub):PUSBHub;
 
@@ -4379,8 +4381,9 @@ var
  Delay:LongWord;
  Status:LongWord;
  Buffer:String;
- PacketSize:Word;
  LanguageId:Word;
+ PacketSize:Word;
+ MaxPacketSize:Word;
  LanguageIds:TUSBStringDescriptorLANGIDs;
 begin
  {}
@@ -4410,64 +4413,58 @@ begin
    Result:=Status;
    Exit;
   end;  
- 
+
+ {Set Default bMaxPacketSize0}
+ MaxPacketSize:=0;
+ case Device.Speed of
+  USB_SPEED_HIGH:begin
+    MaxPacketSize:=64; {Always 64}
+   end;  
+  USB_SPEED_FULL:begin
+    MaxPacketSize:=64; {Can be 8, 16, 32, or 64}
+   end;  
+  USB_SPEED_LOW:begin
+    MaxPacketSize:=8;  {Always 8}
+   end;
+ end;
+ Device.Descriptor.bMaxPacketSize0:=MaxPacketSize;
+
  {$IFDEF USB_DEBUG}
- if USB_LOG_ENABLED then USBLogDebug(Device,'Getting maximum packet size');
+ if USB_LOG_ENABLED then USBLogDebug(Device,'Getting maximum packet size, initial size is ' + IntToStr(MaxPacketSize) + ' bytes');
  {$ENDIF}
  
  {Setup Retry}
  Count:=3;
  while Count > 0 do
   begin
-   {Note: Both Linux and Windows always use a 64 byte bMaxPacketSize0 for the initial get descriptor request due to bugs in various implementations}
+   {Note: Both Linux and Windows try to read 64 bytes for the initial get descriptor request due to bugs in various implementations}
+   {      Use the same strategy unless USB_LEGACY_DEVICE_INIT is defined which will revert to using an 8 byte initial request size}
    
    {$IFDEF USB_LEGACY_DEVICE_INIT}
    {Determine packet size for initial request}
-   PacketSize:=USB_DEFAULT_MAX_PACKET_SIZE;
+   PacketSize:=8;
    {$ELSE}
    {Determine packet size for initial request}
-   if Device.Speed = USB_SPEED_LOW then
-    begin
-     PacketSize:=USB_DEFAULT_MAX_PACKET_SIZE;
-    end
-   else
-    begin   
-     PacketSize:=USB_ALTERNATE_MAX_PACKET_SIZE;
-    end; 
+   PacketSize:=64;
    {$ENDIF}
    
-   {Read Device Descriptor (Start with PacketSize maximum)}
-   Device.Descriptor.bMaxPacketSize0:=PacketSize;
-   Status:=USBDeviceReadDeviceDescriptorEx(Device,Device.Descriptor.bMaxPacketSize0,True);
+   {Read Device Descriptor (Using PacketSize maximum)}
+   Device.Descriptor.bMaxPacketSize0:=MaxPacketSize;
+   Status:=USBDeviceReadDeviceDescriptorEx(Device,PacketSize,True);
    if Status <> USB_STATUS_SUCCESS then
     begin
-     {$IFDEF USB_DEBUG}
-     if USB_LOG_ENABLED then USBLogDebug(Device,'Retrying with maximum packet size ' + IntToStr(PacketSize) + ' bytes');
-     {$ENDIF}
-     
-     {Read Device Descriptor (Retry with PacketSize maximum)}
-     Device.Descriptor.bMaxPacketSize0:=PacketSize;
-     Status:=USBDeviceReadDeviceDescriptorEx(Device,Device.Descriptor.bMaxPacketSize0,True);
-     if Status <> USB_STATUS_SUCCESS then
+     if USB_LOG_ENABLED then USBLogError(Device,'Failed to read start of device descriptor: ' + USBStatusToString(Status));
+
+     ThreadSleep(50);
+
+     {Update Count}
+     Dec(Count);
+     if Count < 1 then
       begin
-       if USB_LOG_ENABLED then USBLogError(Device,'Failed to read start of device descriptor: ' + USBStatusToString(Status));
-   
-       ThreadSleep(50);
-       
-       {Update Count}
-       Dec(Count);
-       if Count < 1 then
-        begin
-         {Return Result}
-         Result:=Status;
-         Exit;
-        end; 
-      end
-     else
-      begin
-       {Continue}
-       Break;
-      end;    
+       {Return Result}
+       Result:=Status;
+       Exit;
+      end; 
     end
    else
     begin
@@ -4567,7 +4564,7 @@ begin
  {$ENDIF}
 
  {Read Device Descriptor}
- Status:=USBDeviceReadDeviceDescriptorEx(Device,USB_ALTERNATE_MAX_PACKET_SIZE,True);
+ Status:=USBDeviceReadDeviceDescriptorEx(Device,SizeOf(TUSBDeviceDescriptor),True);
  if Status <> USB_STATUS_SUCCESS then
   begin
    if USB_LOG_ENABLED then USBLogError(Device,'Failed to read device descriptor: ' + USBStatusToString(Status));
@@ -7438,6 +7435,7 @@ function USBHubPowerOnPorts(Hub:PUSBHub):LongWord;
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
  Count:LongWord;
+ Delay:LongWord;
  Status:LongWord;
  Device:PUSBDevice;
 begin
@@ -7459,7 +7457,19 @@ begin
     {$IFDEF USB_DEBUG}
     if USB_LOG_ENABLED then USBLogDebug(Device,'Hub: Powering on ' + IntToStr(Hub.Descriptor.bNbrPorts) + ' USB ports');
     {$ENDIF}
- 
+
+    {Check Root Hub}
+    if Device.Parent = nil then
+     begin
+      {Get Delay}
+      Delay:=2 * Hub.Descriptor.bPwrOn2PwrGood;
+     end
+    else 
+     begin
+      {Get Delay (Ensure at least 100ms delay after power on)}
+      Delay:=Max(2 * Hub.Descriptor.bPwrOn2PwrGood,100);
+     end;
+
     {Power on Ports}
     for Count:=0 to Hub.Descriptor.bNbrPorts - 1 do
      begin
@@ -7471,11 +7481,15 @@ begin
         Exit;
        end;
      end;
+
+    {$IFDEF USB_DEBUG}
+    if USB_LOG_ENABLED then USBLogDebug(Device,'Hub: Waiting for ' + IntToStr(Delay) + 'ms after powering on ports');
+    {$ENDIF}
  
     {Wait for Power Good}
     {According to the section 11.11 of the USB 2.0 specification, bPwrOn2PwrGood of the hub descriptor is the
      time (in 2 ms intervals) from the time the power-on sequence begins on a port until power is good on that port}
-    ThreadSleep(2 * Hub.Descriptor.bPwrOn2PwrGood);
+    ThreadSleep(Delay);
  
     {Return Result}
     Result:=USB_STATUS_SUCCESS;
@@ -8251,7 +8265,7 @@ begin
  {Wait for Power Good}
  {According to the section 11.11 of the USB 2.0 specification, bPwrOn2PwrGood of the hub descriptor is the
   time (in 2 ms intervals) from the time the power-on sequence begins on a port until power is good on that port}
- ThreadSleep(2 * Port.Hub.Descriptor.bPwrOn2PwrGood);
+ ThreadSleep(Max(2 * Port.Hub.Descriptor.bPwrOn2PwrGood,100));
  
  {Return Result}
  Result:=USB_STATUS_SUCCESS;
@@ -9327,7 +9341,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {USB Device, Driver and Host Helper Functions}
-function USBDeviceGetCount:LongWord; inline;
+function USBDeviceGetCount:LongWord;
 {Get the current device count}
 begin
  {}
@@ -9375,7 +9389,7 @@ end;
 
 {==============================================================================}
 
-function USBDriverGetCount:LongWord; inline;
+function USBDriverGetCount:LongWord;
 {Get the current USB driver count}
 begin
  {}
@@ -9423,7 +9437,7 @@ end;
 
 {==============================================================================}
 
-function USBHostGetCount:LongWord; inline;
+function USBHostGetCount:LongWord;
 {Get the current host count}
 begin
  {}
@@ -10489,7 +10503,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {USB Hub Helper Functions}
-function USBHubGetCount:LongWord; inline;
+function USBHubGetCount:LongWord;
 {Get the current hub count}
 begin
  {}

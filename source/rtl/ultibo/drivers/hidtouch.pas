@@ -99,6 +99,7 @@ type
   LastCount:LongWord;               {Number of touch points for last touch report}
   LastPoints:PHIDTouchPoints;       {Touch points for last touch report}
   TouchPoints:PHIDTouchPoints;      {Touch points for current touch report}
+  FirstIdentifier:LongWord;         {Id number of first touch point identifier}
   {HID Properties}
   Timer:TTimerHandle;               {Handle for touch release timer}
   Collection:PHIDCollection;        {The HID collection this touch is bound to}
@@ -378,6 +379,9 @@ begin
        end;
       PHIDTouchDevice(Touch).LastCount:=0;
       PHIDTouchDevice(Touch).LastPoints:=AllocMem(MaxPoints * SizeOf(THIDTouchPoint));
+
+      {Reset First Identifier}
+      PHIDTouchDevice(Touch).FirstIdentifier:=INFINITE;
      end;
 
     {Check Rotation}
@@ -659,6 +663,7 @@ begin
  Touch.Touch.Properties.MaxPoints:=0;
  {General}
  Touch.MaxPoints:=1;
+ Touch.FirstIdentifier:=INFINITE;
  {HID}
  Touch.Timer:=INVALID_HANDLE_VALUE;
  Touch.Collection:=Collection;
@@ -935,6 +940,12 @@ begin
          begin
           if Total > 0 then
            begin
+            {Check First Identifier}
+            if Touch.FirstIdentifier = INFINITE then
+             begin
+              Touch.FirstIdentifier:=Touch.TouchPoints[0].Identifier;
+             end;
+
             for Count:=0 to Total - 1 do
              begin
               {Check Swap}
@@ -969,7 +980,7 @@ begin
                 {Create Touch Data}
                 TouchData.Info:=0;
                 if Touch.TouchPoints[Count].TipSwitch then TouchData.Info:=TOUCH_FINGER;
-                TouchData.PointID:=Touch.TouchPoints[Count].Identifier + 1;
+                TouchData.PointID:=Touch.TouchPoints[Count].Identifier + 1 - Touch.FirstIdentifier;
 
                 {Check Rotation}
                 case Touch.Touch.Properties.Rotation of
@@ -1028,7 +1039,7 @@ begin
               else
                begin
                 {For mouse report the first point}
-                if Touch.TouchPoints[Count].Identifier = 0 then
+                if Touch.TouchPoints[Count].Identifier = Touch.FirstIdentifier then
                  begin
                   {Create Mouse Data}
                   MouseData.Buttons:=MOUSE_ABSOLUTE_X or MOUSE_ABSOLUTE_Y; {Absolute X and Y}
