@@ -113,10 +113,6 @@ procedure RaspberryPi4Init;
 
 {Note: Called only during system startup}
 var
- Path:String;
- Buses:PPCIBuses;
- Ranges:PPCIRange;
- Windows:PPCIWindow;
  BoardType:LongWord;
 begin
  {}
@@ -141,91 +137,34 @@ begin
    //PCF85063RTCCreate(PCF85063_I2C_DEVICE,PCF85063_I2C_ADDRESS,PCF85063_CHIP_TYPE); //To Do
   end;
   
- BCM2711_REGISTER_PCI:=False; //To Do
- 
  {Check PCI}
  if BCM2711_REGISTER_PCI then
   begin
-   {Get PCI Alias}
-   DeviceTreeReadString('/aliases','pcie0',Path);
-   
-   {Parse Bus Range}
-   PCIParseDeviceTreeBuses(Path,Buses);
-   
-   {Parse DMA Ranges}
-   if not PCIParseDeviceTreeDMARanges(Path,Ranges) then 
-    begin
-     {Use Defaults}
-     {Inbound DMA Range (CPU 0x00000000 to PCI 0x400000000 for up to 4GB)}
-     Ranges:=AllocMem(SizeOf(TPCIRange));
-     Ranges.PCIAddress:=BCM2838_PCI_DMA_RANGE_BASE;
-     Ranges.CPUAddress:=BCM2838_PCI_INBOUND_BASE;
-     Ranges.Size:=BCM2838_PCI_INBOUND_SIZE;
-     Ranges.Flags:=PCI_RANGE_FLAG_MEMORY32;
-     
-     {Limit the DMA range to 3GB on older chip revisions}
-     if ((ChipGetRevision and $FF) < $20) then Ranges.Size:=SIZE_1G + SIZE_2G;
-     
-     {Limit the DMA range to the maximum memory on the board}
-     if MEMORY_SIZE < Ranges.Size then Ranges.Size:=MEMORY_SIZE;
-    end;
-   
-   {Parse Outbound Windows}
-   if PCIParseDeviceTreeWindows(Path,Windows) then 
-    begin
-     {Adjust Outbound Windows}
-     if PCICountOutboundWindows(Windows) = 1 then
-      begin
-       {Check PCI Address}
-       if Windows.PCIAddress < BCM2838_PCI_OUTBOUND_BASE then
-        begin
-         {Ensure Window is not lower than 0xF8000000}
-         Windows.PCIAddress:=BCM2838_PCI_OUTBOUND_BASE;
-        end;
-       {Check Window Size}
-       if Windows.Size > BCM2838_PCI_OUTBOUND_SIZE then
-        begin
-         {Ensure Window is not larger than 64MB}
-         Windows.Size:=BCM2838_PCI_OUTBOUND_SIZE;
-        end;
-      end;
-    end
-   else 
-    begin
-     {Use Defaults}
-     {Outbound Window (CPU 0x600000000 to PCI 0xF8000000 for 64MB}
-     Windows:=AllocMem(SizeOf(TPCIWindow));
-     Windows.PCIAddress:=BCM2838_PCI_OUTBOUND_BASE;
-     Windows.CPUAddress:=BCM2838_PCI_ADDRESS_BASE;
-     Windows.Size:=BCM2838_PCI_OUTBOUND_SIZE;
-     Windows.Flags:=PCI_RANGE_FLAG_MEMORY32;
-    end;
-   
-   {Map Outbound Windows}
-   PCIMapOutboundWindows(Windows);
-
    {Set Parameters}
-   //brcm,enable-ssc (from DeviceTree)
-   //brcm,enable-l1ss (from DeviceTree)
-   //max-link-speed (from DeviceTree)
-   //aspm-no-l0s (from DeviceTree)
-   //msi-parent
    //To Do
-   
+ 
    {Create Host}
-   //BRCMSTBHostCreate(BCM2838_PCIE_REGS_BASE,BCM2838_IRQ_PCIE_MSI,BRCMSTB_MODEL_BCM2711,Buses,Ranges,Windows); //To Do
+   //BRCMSTBHostCreate(BCM2838_PCIE_REGS_BASE,BCM2838_IRQ_PCIE_MSI); //To Do
   end;
   
- {Check XHCI (Internal)}
- if BCM2711_REGISTER_XHCI then
+ {Check PCI XHCI}
+ if BCM2711_REGISTER_PCI_XHCI then
   begin
    {Set Parameters}
    //To Do
-   //Power On USB if not a Pi4B ?
-   //Pass to XHCIHostCreate as POWER_ID_USB0 etc ?
   
    {Create Host}
-   //XHCIHostCreate(BCM2838_XHCI_REGS_BASE,BCM2838_IRQ_XHCI,0); //To Do 
+   //To Do
+  end;
+  
+ {Check Internal XHCI}
+ if BCM2711_REGISTER_INTERNAL_XHCI then
+  begin
+   {Set Parameters}
+   //To Do
+  
+   {Create Host}
+   //To Do
   end;
  
  {Check Network}
