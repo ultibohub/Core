@@ -1,7 +1,7 @@
 {
 Ultibo QEMU VersatilePB unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -74,6 +74,7 @@ uses GlobalConfig,
      PL18X,        {ARM PrimeCell PL181 SDHCI driver}
      USB,
      //OHCI,         {USB OHCI Controller driver}  //To Do //Continuing
+     USBStorage,
      Network,
      SMC91X,       {SMC LAN91C11 Network driver}
      Framebuffer,

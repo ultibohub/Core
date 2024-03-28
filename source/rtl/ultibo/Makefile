@@ -581,6 +581,7 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    hidkeyboard \
 		    hidtouch \
 		    hidjoystick \
+		    usbstorage \
 		    usbmouse \
 		    usbkeyboard \
 		    rpigpioexpander \

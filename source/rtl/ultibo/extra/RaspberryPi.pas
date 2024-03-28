@@ -1,7 +1,7 @@
 {
 Ultibo Raspberry Pi unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -64,6 +64,7 @@ uses GlobalConfig,
      USB,
      DWCOTG,
      SMSC95XX,
+     USBStorage,
      Framebuffer,
      Console,
      Keyboard,
