@@ -260,8 +260,11 @@ begin
    Definition:=Definition.Next;
   end;
 
- {Create Timer}
- PHIDTouchDevice(Touch).Timer:=TimerCreateEx(100,TIMER_STATE_DISABLED,TIMER_FLAG_WORKER,TTimerEvent(HIDTouchTimer),Touch); {Scheduled by Report Worker}
+ {Create Timer} {Handled by HIDTouchUpdate}
+ {if (Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) <> 0 then
+  begin
+   PHIDTouchDevice(Touch).Timer:=TimerCreateEx(100,TIMER_STATE_DISABLED,TIMER_FLAG_WORKER,TTimerEvent(HIDTouchTimer),Touch);} {Scheduled by Report Worker}
+  {end;}
 
  {Return Result}
  Result:=ERROR_SUCCESS;
@@ -291,8 +294,11 @@ begin
  if Device = nil then Exit;
 
  {Cancel Timer}
- TimerDestroy(PHIDTouchDevice(Touch).Timer);
- PHIDTouchDevice(Touch).Timer:=INVALID_HANDLE_VALUE;
+ if (Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) <> 0 then
+  begin
+   TimerDestroy(PHIDTouchDevice(Touch).Timer);
+   PHIDTouchDevice(Touch).Timer:=INVALID_HANDLE_VALUE;
+  end; 
 
  {Cancel Reports}
  Definition:=PHIDTouchDevice(Touch).Definitions;
@@ -382,6 +388,16 @@ begin
 
       {Reset First Identifier}
       PHIDTouchDevice(Touch).FirstIdentifier:=INFINITE;
+      
+      {Update Flags}
+      if MaxPoints > 1 then
+       begin
+        Touch.Device.DeviceFlags:=Touch.Device.DeviceFlags or TOUCH_FLAG_MULTI_POINT;
+       end
+      else
+       begin
+        Touch.Device.DeviceFlags:=Touch.Device.DeviceFlags and not TOUCH_FLAG_MULTI_POINT;
+       end;
      end;
 
     {Check Rotation}
@@ -436,6 +452,19 @@ begin
     {$IF DEFINED(TOUCH_DEBUG) or DEFINED(HID_DEBUG)}
     if TOUCH_LOG_ENABLED then TouchLogDebug(Touch,'HID:  Max Points: ' + IntToStr(Touch.Properties.MaxPoints) + ' Max X: ' + IntToStr(Touch.Properties.MaxX) + ' Max Y: ' + IntToStr(Touch.Properties.MaxY) + ' Max Z: ' + IntToStr(Touch.Properties.MaxZ));
     {$ENDIF}
+
+    {Check Timer}
+    if ((Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) <> 0) and (PHIDTouchDevice(Touch).Timer = INVALID_HANDLE_VALUE) then
+     begin
+      {Create Timer}
+      PHIDTouchDevice(Touch).Timer:=TimerCreateEx(100,TIMER_STATE_DISABLED,TIMER_FLAG_WORKER,TTimerEvent(HIDTouchTimer),Touch); {Scheduled by Report Worker}
+     end
+    else if ((Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) = 0) and (PHIDTouchDevice(Touch).Timer <> INVALID_HANDLE_VALUE) then
+     begin
+      {Cancel Timer}
+      TimerDestroy(PHIDTouchDevice(Touch).Timer);
+      PHIDTouchDevice(Touch).Timer:=INVALID_HANDLE_VALUE;
+     end;
 
     {Return Result}
     Result:=ERROR_SUCCESS;
@@ -900,7 +929,10 @@ begin
       Inc(Touch.Touch.ReceiveCount);
 
       {Disable Timer}
-      TimerDisable(Touch.Timer);
+      if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) <> 0 then
+       begin
+        TimerDisable(Touch.Timer);
+       end; 
 
       {Check State}
       if Touch.Touch.TouchState <> TOUCH_STATE_ENABLED then
@@ -1109,7 +1141,10 @@ begin
        end;
 
       {Enable Timer}
-      TimerEnable(Touch.Timer);
+      if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) <> 0 then
+       begin
+        TimerEnable(Touch.Timer);
+       end; 
 
       Result:=ERROR_SUCCESS;
      finally

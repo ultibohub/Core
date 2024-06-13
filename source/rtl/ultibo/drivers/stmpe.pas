@@ -1,7 +1,7 @@
 {
 ST Microelectronics STMPE Driver.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1685,7 +1685,7 @@ begin
    STMPETouch.Touch.Device.DeviceBus:=DEVICE_BUS_I2C; 
    if SPI <> nil then STMPETouch.Touch.Device.DeviceBus:=DEVICE_BUS_SPI;
    STMPETouch.Touch.Device.DeviceType:=TOUCH_TYPE_RESISTIVE;
-   STMPETouch.Touch.Device.DeviceFlags:=STMPETouch.Touch.Device.DeviceFlags or TOUCH_FLAG_PRESSURE;
+   STMPETouch.Touch.Device.DeviceFlags:=STMPETouch.Touch.Device.DeviceFlags or TOUCH_FLAG_PRESSURE or TOUCH_FLAG_RELEASE_TIMER;
    STMPETouch.Touch.Device.DeviceData:=nil;
    STMPETouch.Touch.Device.DeviceDescription:=STMPE610_TOUCH_DESCRIPTION;
    {Touch}
@@ -1809,7 +1809,7 @@ begin
    STMPETouch.Touch.Device.DeviceBus:=DEVICE_BUS_I2C; 
    if SPI <> nil then STMPETouch.Touch.Device.DeviceBus:=DEVICE_BUS_SPI;
    STMPETouch.Touch.Device.DeviceType:=TOUCH_TYPE_RESISTIVE;
-   STMPETouch.Touch.Device.DeviceFlags:=STMPETouch.Touch.Device.DeviceFlags or TOUCH_FLAG_PRESSURE;
+   STMPETouch.Touch.Device.DeviceFlags:=STMPETouch.Touch.Device.DeviceFlags or TOUCH_FLAG_PRESSURE or TOUCH_FLAG_RELEASE_TIMER;
    STMPETouch.Touch.Device.DeviceData:=nil;
    STMPETouch.Touch.Device.DeviceDescription:=STMPE811_TOUCH_DESCRIPTION;
    {Touch}
@@ -3165,7 +3165,10 @@ begin
     end;
    
    {Create Timer}
-   PSTMPETouch(Touch).Timer:=TimerCreateEx(50,TIMER_STATE_DISABLED,TIMER_FLAG_WORKER,TTimerEvent(STMPETouchTimer),Touch); {Scheduled by GPIO Event Callback}
+   if (Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) <> 0 then
+    begin
+     PSTMPETouch(Touch).Timer:=TimerCreateEx(50,TIMER_STATE_DISABLED,TIMER_FLAG_WORKER,TTimerEvent(STMPETouchTimer),Touch); {Scheduled by GPIO Event Callback}
+    end; 
    
    {Enable Interrupt (FIFO Threshold)}
    if STMPESetBits(@PSTMPETouch(Touch).Control,PSTMPETouch(Touch).Offsets.IntEnable,STMPE811_INT_EN_FIFO_TH,STMPE811_INT_EN_FIFO_TH) <> ERROR_SUCCESS then
@@ -3241,7 +3244,11 @@ begin
  GPIODeviceInputCancel(PSTMPETouch(Touch).Control.IRQ.GPIO,PSTMPETouch(Touch).Control.IRQ.Pin);
  
  {Cancel Timer} 
- TimerDestroy(PSTMPETouch(Touch).Timer);
+ if (Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) <> 0 then
+  begin
+   TimerDestroy(PSTMPETouch(Touch).Timer);
+   PSTMPETouch(Touch).Timer:=INVALID_HANDLE_VALUE;
+  end; 
   
  {Check Chip}
  case PSTMPETouch(Touch).Control.Chip of
@@ -3432,7 +3439,10 @@ begin
    Inc(Touch.Touch.ReceiveCount); 
    
    {Disable Timer}
-   TimerDisable(Touch.Timer);
+   if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) <> 0 then
+    begin
+     TimerDisable(Touch.Timer);
+    end; 
    
    {Disable Interrupt}
    STMPESetBits(@Touch.Control,Touch.Offsets.IntEnable,STMPE811_INT_EN_FIFO_TH,0);
@@ -3617,7 +3627,10 @@ begin
    STMPEWriteByte(@Touch.Control,Touch.Offsets.IntStatus,STMPE811_INT_STA_FIFO_TH);
    
    {Enable Timer}
-   TimerEnable(Touch.Timer);
+   if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) <> 0 then
+    begin
+     TimerEnable(Touch.Timer);
+    end; 
    
    {Release Lock}
    MutexUnlock(Touch.Touch.Lock);
@@ -3940,6 +3953,19 @@ begin
  if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'STMPE:  Width: ' + IntToStr(Touch.Touch.Properties.Width) + ' Height: ' + IntToStr(Touch.Touch.Properties.Height));
  if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'STMPE:  Max Points: ' + IntToStr(Touch.Touch.Properties.MaxPoints) + ' Max X: ' + IntToStr(Touch.Touch.Properties.MaxX) + ' Max Y: ' + IntToStr(Touch.Touch.Properties.MaxY));
  {$ENDIF}
+
+ {Check Timer}
+ if ((Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) <> 0) and (Touch.Timer = INVALID_HANDLE_VALUE) then
+  begin
+   {Create Timer}
+   Touch.Timer:=TimerCreateEx(50,TIMER_STATE_DISABLED,TIMER_FLAG_WORKER,TTimerEvent(STMPETouchTimer),Touch); {Scheduled by GPIO Event Callback}
+  end
+ else if ((Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) = 0) and (Touch.Timer <> INVALID_HANDLE_VALUE) then
+  begin
+   {Cancel Timer}
+   TimerDestroy(Touch.Timer);
+   Touch.Timer:=INVALID_HANDLE_VALUE;
+  end;
 
  Result:=ERROR_SUCCESS;
 end;

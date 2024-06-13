@@ -1,7 +1,7 @@
 {
 Ultibo Web Status unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -5307,6 +5307,10 @@ begin
  if (AFlags and TOUCH_FLAG_SWAP_MAX_XY) = TOUCH_FLAG_SWAP_MAX_XY then
   begin
    Result.Add('TOUCH_FLAG_SWAP_MAX_XY');
+  end;
+ if (AFlags and TOUCH_FLAG_RELEASE_TIMER) = TOUCH_FLAG_RELEASE_TIMER then
+  begin
+   Result.Add('TOUCH_FLAG_RELEASE_TIMER');
   end;
 
  {Check Flags}
@@ -11730,6 +11734,10 @@ begin
  if (AFlags and TOUCH_FLAG_SWAP_MAX_XY) = TOUCH_FLAG_SWAP_MAX_XY then
   begin
    Result.Add('TOUCH_FLAG_SWAP_MAX_XY');
+  end;
+ if (AFlags and TOUCH_FLAG_RELEASE_TIMER) = TOUCH_FLAG_RELEASE_TIMER then
+  begin
+   Result.Add('TOUCH_FLAG_RELEASE_TIMER');
   end;
 
  {Check Flags}

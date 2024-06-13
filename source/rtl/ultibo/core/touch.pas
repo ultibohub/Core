@@ -1,7 +1,7 @@
 {
 Ultibo Touch interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -77,19 +77,20 @@ const
   'TOUCH_STATE_ENABLED');
  
  {Touch Device Flags}
- TOUCH_FLAG_NONE         = $00000000;
- TOUCH_FLAG_NON_BLOCK    = $00000001; {If set device reads are non blocking (Also supported in Flags parameter of TouchDeviceRead)}
- TOUCH_FLAG_PEEK_BUFFER  = $00000002; {Peek at the buffer to see if any data is available, don't remove it (Used only in Flags parameter of TouchDeviceRead)}
- TOUCH_FLAG_MOUSE_DATA   = $00000004; {If set the device will write a mouse data event for each touch event}
- TOUCH_FLAG_MULTI_POINT  = $00000008; {If set the device supports multi point touch}
- TOUCH_FLAG_PRESSURE     = $00000010; {If set the device supports pressure value on touch points}
- TOUCH_FLAG_SWAP_XY      = $00000020; {If set swap the X and Y coordinates}
- TOUCH_FLAG_INVERT_X     = $00000040; {If set invert the X coordinate}
- TOUCH_FLAG_INVERT_Y     = $00000080; {If set invert the Y coordinate}
- TOUCH_FLAG_SWAP_MAX_XY  = $00000100; {If set swap the maximum X and Y values}
+ TOUCH_FLAG_NONE          = $00000000;
+ TOUCH_FLAG_NON_BLOCK     = $00000001; {If set device reads are non blocking (Also supported in Flags parameter of TouchDeviceRead)}
+ TOUCH_FLAG_PEEK_BUFFER   = $00000002; {Peek at the buffer to see if any data is available, don't remove it (Used only in Flags parameter of TouchDeviceRead)}
+ TOUCH_FLAG_MOUSE_DATA    = $00000004; {If set the device will write a mouse data event for each touch event}
+ TOUCH_FLAG_MULTI_POINT   = $00000008; {If set the device supports multi point touch}
+ TOUCH_FLAG_PRESSURE      = $00000010; {If set the device supports pressure value on touch points}
+ TOUCH_FLAG_SWAP_XY       = $00000020; {If set swap the X and Y coordinates}
+ TOUCH_FLAG_INVERT_X      = $00000040; {If set invert the X coordinate}
+ TOUCH_FLAG_INVERT_Y      = $00000080; {If set invert the Y coordinate}
+ TOUCH_FLAG_SWAP_MAX_XY   = $00000100; {If set swap the maximum X and Y values}
+ TOUCH_FLAG_RELEASE_TIMER = $00000200; {If set enable the touch release timer for devices that don't provide release events}
  
  {Flags supported by TOUCH_CONTROL_GET/SET/CLEAR_FLAG}
- TOUCH_FLAG_MASK = TOUCH_FLAG_NON_BLOCK or TOUCH_FLAG_MOUSE_DATA or TOUCH_FLAG_MULTI_POINT or TOUCH_FLAG_PRESSURE or TOUCH_FLAG_SWAP_XY or TOUCH_FLAG_INVERT_X or TOUCH_FLAG_INVERT_Y or TOUCH_FLAG_SWAP_MAX_XY;
+ TOUCH_FLAG_MASK = TOUCH_FLAG_NON_BLOCK or TOUCH_FLAG_MOUSE_DATA or TOUCH_FLAG_MULTI_POINT or TOUCH_FLAG_PRESSURE or TOUCH_FLAG_SWAP_XY or TOUCH_FLAG_INVERT_X or TOUCH_FLAG_INVERT_Y or TOUCH_FLAG_SWAP_MAX_XY or TOUCH_FLAG_RELEASE_TIMER;
  
  {Touch Device Control Codes}
  TOUCH_CONTROL_GET_FLAG         = 1;  {Get Flag}
