@@ -1,7 +1,7 @@
 {
 Ultibo Logging interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1438,6 +1438,10 @@ begin
     begin
      WorkBuffer:=IntToHex(LoggingOutputCount,8) + ' - ' + WorkBuffer;
     end; 
+
+   {Remove CRLF}
+   if WorkBuffer[Length(WorkBuffer)] = Chr(10) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
+   if WorkBuffer[Length(WorkBuffer)] = Chr(13) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
    
    {Output Logging}
    LoggingDeviceOutput(LoggingDeviceDefault,WorkBuffer);
@@ -1483,6 +1487,10 @@ begin
        WorkBuffer:=SystemTimeToString(Now) + ' - ' + WorkBuffer;
       end;
     end; 
+
+   {Remove CRLF}
+   if WorkBuffer[Length(WorkBuffer)] = Chr(10) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
+   if WorkBuffer[Length(WorkBuffer)] = Chr(13) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
    
    {Create Logging Entry}
    LoggingEntry:=PLoggingEntry(@Message); {Do not free}
@@ -1548,6 +1556,10 @@ begin
     begin
      WorkBuffer:=IntToHex(LoggingOutputCount,8) + ' - ' + WorkBuffer;
     end; 
+
+   {Remove CRLF}
+   if WorkBuffer[Length(WorkBuffer)] = Chr(10) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
+   if WorkBuffer[Length(WorkBuffer)] = Chr(13) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
    
    {Output Logging}
    LoggingDeviceOutputEx(LoggingDeviceDefault,AFacility,ASeverity,ATag,WorkBuffer);
@@ -1593,6 +1605,10 @@ begin
        WorkBuffer:=SystemTimeToString(Now) + ' - ' + WorkBuffer;
       end;
     end; 
+
+   {Remove CRLF}
+   if WorkBuffer[Length(WorkBuffer)] = Chr(10) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
+   if WorkBuffer[Length(WorkBuffer)] = Chr(13) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
    
    {Create Logging Entry}
    LoggingEntryEx:=PLoggingEntryEx(@Message); {Do not free}
