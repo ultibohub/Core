@@ -2,7 +2,7 @@
 Ultibo Newlib C Library Syscalls interface unit.
 
 Copyright (C) 2016 - Paul Jervois.
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2514,6 +2514,9 @@ function _link_r(ptr: P_reent; old: PChar; new: PChar): int; cdecl;
 {See: \newlib\libc\reent\linkr.c}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+  OldName:String;
+  NewName:String;
 begin
  {}
  Result:=-1;
@@ -2525,7 +2528,36 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _link_r (ptr=' + PtrToHex(ptr) + ' old=' + StrPas(old) + ' new=' + StrPas(new) + ')');
  {$ENDIF}
  
- if FSCreateSymbolicLink(new,old,FSDirectoryExists(old)) then
+ {Get Names}
+ OldName:=StrPas(old);
+ NewName:=StrPas(new);
+
+ {Check Names}
+ if (Length(OldName) = 0) or (Length(NewName) = 0) then
+  begin
+   {Return Error}
+   ptr^._errno:=ENOENT;
+   Exit;
+  end;
+
+ {Check Old}
+ if not FSFileExists(OldName) and not FSDirectoryExists(OldName) then
+  begin
+   {Return Error}
+   ptr^._errno:=ENOENT;
+   Exit;
+  end;
+
+ {Check New}
+ if FSFileExists(NewName) or FSDirectoryExists(NewName) then
+  begin
+   {Return Error}
+   ptr^._errno:=EEXIST;
+   Exit;
+  end;
+
+ {Create Link}
+ if FSCreateSymbolicLink(NewName,OldName,FSDirectoryExists(OldName)) then
   begin
    {Return Result}
    Result:=0;
@@ -2624,6 +2656,8 @@ function _mkdir_r(ptr: P_reent; path: PChar; mode: int): int; cdecl;
 {See: \newlib\libc\reent\mkdirr.c}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ PathName:String;
 begin
  {}
  Result:=-1;
@@ -2635,8 +2669,27 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _mkdir_r (ptr=' + PtrToHex(ptr) + ' path=' + StrPas(path) + ' mode=' + IntToStr(mode) + ')');
  {$ENDIF}
  
+ {Get Name}
+ PathName:=StrPas(path);
+ 
+ {Check Name}
+ if Length(PathName) = 0 then
+  begin
+   {Return Error}
+   ptr^._errno:=ENOENT;
+   Exit;
+  end;
+ 
+ {Check Path}
+ if FSFileExists(PathName) or FSDirectoryExists(PathName) then
+  begin
+   {Return Error}
+   ptr^._errno:=EEXIST;
+   Exit;
+  end;
+
  {Create Directory}
- if FSCreateDir(path) then
+ if FSCreateDir(PathName) then
   begin
    {Return Result}
    Result:=0;
@@ -2644,7 +2697,7 @@ begin
  else
   begin
    {Return Error}
-   ptr^._errno:=EEXIST;
+   ptr^._errno:=EINVAL;
   end;  
  
  {$IFDEF SYSCALLS_DEBUG}
@@ -2690,6 +2743,7 @@ function _open_r(ptr: P_reent; name: PChar; flags: int; mode: int): int; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  Handle:THandle;
+ FileName:String;
  AccessMode:LongWord;
  ShareMode:LongWord;
  CreateFlags:LongWord;
@@ -2704,6 +2758,17 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _open_r (ptr=' + PtrToHex(ptr) + ' name=' + StrPas(name) + ' flags=' + IntToStr(flags) + ' mode=' + IntToStr(mode) + ')');
  {$ENDIF}
+
+ {Get Name}
+ FileName:=StrPas(name);
+
+ {Check Name}
+ if Length(FileName) = 0 then
+  begin
+   {Return Error}
+   ptr^._errno:=ENOENT;
+   Exit;
+  end;
 
  {Check Flags}
  if (flags and O_DIRECTORY) = O_DIRECTORY then
@@ -2737,18 +2802,37 @@ begin
  ShareMode:=FILE_SHARE_READ or FILE_SHARE_WRITE;
  
  {Get Create Flags} 
- CreateFlags:=OPEN_EXISTING;
  if (flags and (O_CREAT or O_EXCL)) = (O_CREAT or O_EXCL) then
   begin
    CreateFlags:=CREATE_NEW;
+   
+   {Check File}
+   if FSFileExists(FileName) or FSDirectoryExists(FileName) then
+    begin
+     {Return Error}
+     ptr^._errno:=EEXIST;
+     Exit;
+    end;
   end
  else if (flags and O_CREAT) = O_CREAT then  
   begin
    CreateFlags:=OPEN_ALWAYS;
+  end
+ else
+  begin
+   CreateFlags:=OPEN_EXISTING;
+
+   {Check File}
+   if not FSFileExists(FileName) then
+    begin
+     {Return Error}
+     ptr^._errno:=ENOENT;
+     Exit;
+    end;
   end;
  
  {Create File}
- Handle:=FSCreateFile(name,AccessMode,ShareMode,CreateFlags,FILE_ATTRIBUTE_NORMAL);
+ Handle:=FSCreateFile(FileName,AccessMode,ShareMode,CreateFlags,FILE_ATTRIBUTE_NORMAL);
  if Handle = INVALID_HANDLE_VALUE then
   begin
    {Return Error}
@@ -2868,6 +2952,9 @@ function _rename_r(ptr: P_reent; old: PChar; new: PChar): int; cdecl;
 {See: \newlib\libc\reent\renamer.c}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+  OldName:String;
+  NewName:String;
 begin
  {}
  Result:=-1;
@@ -2879,8 +2966,36 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _rename_r (ptr=' + PtrToHex(ptr) + ' old=' + StrPas(old) + ' new=' + StrPas(new) + ')');
  {$ENDIF}
  
+ {Get Names}
+ OldName:=StrPas(old);
+ NewName:=StrPas(new);
+
+ {Check Names}
+ if (Length(OldName) = 0) or (Length(NewName) = 0) then
+  begin
+   {Return Error}
+   ptr^._errno:=ENOENT;
+   Exit;
+  end;
+
+ {Check File}
+ if not FSFileExists(OldName) then
+  begin
+   {Return Error}
+   ptr^._errno:=ENOENT;
+   Exit;
+  end;
+
+ {Check File}
+ if FSFileExists(NewName) then
+  begin
+   {Return Error}
+   ptr^._errno:=EEXIST;
+   Exit;
+  end;
+
  {Rename File}
- if FSRenameFile(old,new) then
+ if FSRenameFile(OldName,NewName) then
   begin
    {Return Result}
    Result:=0;
@@ -3172,6 +3287,8 @@ function _unlink_r(ptr: P_reent; name: PChar): int; cdecl;
 {See: \newlib\libc\reent\unlinkr.c}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ FileName:String;
 begin
  {}
  Result:=-1;
@@ -3183,8 +3300,27 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _unlink_r (ptr=' + PtrToHex(ptr) + ' name=' + StrPas(name) + ')');
  {$ENDIF}
  
+ {Get Name}
+ FileName:=StrPas(name);
+
+ {Check Name}
+ if Length(FileName) = 0 then
+  begin
+   {Return Error}
+   ptr^._errno:=ENOENT;
+   Exit;
+  end;
+
+ {Check File}
+ if not FSFileExists(FileName) then
+  begin
+   {Return Error}
+   ptr^._errno:=ENOENT;
+   Exit;
+  end;
+
  {Delete File}
- if FSDeleteFile(name) then
+ if FSDeleteFile(FileName) then
   begin
    {Return Result}
    Result:=0;
