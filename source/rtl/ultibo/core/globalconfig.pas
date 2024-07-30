@@ -1374,6 +1374,9 @@ var
  {IPSTFT19}
  IPSTFT19_AUTOSTART:LongBool = True;             {If True then auto start the IPSTFT19 device on boot (Only if IPSTFT19 unit included)}
 
+ {ADS1X15}
+ ADS1X15_AUTOSTART:LongBool = True;             {If True then auto start the ADS1X15 device on boot (Only if ADS1X15 unit included)}
+ 
  {RPiSenseHat}
  RPISENSE_AUTOSTART:LongBool = True;            {If True then auto start the RPiSenseHat device on boot (Only if RPiSenseHat unit included)}
  

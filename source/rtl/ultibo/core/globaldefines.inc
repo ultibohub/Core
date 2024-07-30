@@ -264,6 +264,8 @@ Global Defines
 {--$DEFINE PITFT28_DEBUG}         {Enable debug output/counters for PITFT28 driver (Default: Off)}
 {--$DEFINE PITFT35_DEBUG}         {Enable debug output/counters for PITFT35 driver (Default: Off)}
 {--$DEFINE IPSTFT19_DEBUG}         {Enable debug output/counters for IPSTFT19 driver (Default: Off)} 
+{--$DEFINE ADS1X15_DEBUG}         {Enable debug output/counters for ADS1X15 driver (Default: Off)} 
+ 
 {Keyboard/Mouse/Touch}
 {--$DEFINE PL050_DEBUG}           {Enable debug output/counters for PL050 driver (Default: Off)}
 {--$DEFINE RPIFT5406_DEBUG}       {Enable debug output/counters for RPIFT5406 driver (Default: Off)}
