@@ -1,7 +1,7 @@
 {
 Ultibo BCM2709 interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3773,6 +3773,10 @@ begin
   end
  else
   begin
+   {Update Statistics}
+   Inc(I2C.WriteCount);
+   Inc(I2C.ReadCount);
+
    {Write from Initial}
    if Len > 0 then
     begin
@@ -3924,6 +3928,10 @@ begin
  {Check Sizes}
  if Len > BCM2836_BSC_FIFO_SIZE then Exit;
  if Size > BCM2709_BSCI2C_MAX_SIZE then Exit;
+
+ {Update Statistics}
+ Inc(I2C.WriteCount);
+ Inc(I2C.WriteCount);
 
  {Write from Initial and Data}
  if (Len > 0) and (Size > 0) then
