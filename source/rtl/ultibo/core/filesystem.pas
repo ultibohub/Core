@@ -1,7 +1,7 @@
 {
 Ultibo FileSystem interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -5249,6 +5249,9 @@ function FSFileCopyEx(const ASourceFile,ADestFile:String;AFailIfExists:Boolean;A
 function FSGetShortName(const AFileName:String):String; inline;
 function FSGetLongName(const AFileName:String):String; inline;
 function FSGetTrueName(const AFileName:String):String; inline;
+
+function FSAddSlash(const AFilePath:String;ALeading,ATrailing:Boolean):String; inline;
+function FSDeleteSlash(const AFilePath:String;ALeading,ATrailing:Boolean):String; inline;
 
 {Extended Functions}
 function FSFileSeekEx(AHandle:THandle;const AOffset:Int64;AOrigin:LongInt):Int64; inline;
@@ -53014,6 +53017,34 @@ begin
 
  {Get True Name}
  Result:=FileSysDriver.GetTrueName(AFileName);
+end;
+
+{==============================================================================}
+
+function FSAddSlash(const AFilePath:String;ALeading,ATrailing:Boolean):String; inline;
+begin
+ {}
+ Result:=AFilePath;
+
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+
+ {Add Slash}
+ Result:=FileSysDriver.AddSlash(AFilePath,ALeading,ATrailing);
+end;
+
+{==============================================================================}
+
+function FSDeleteSlash(const AFilePath:String;ALeading,ATrailing:Boolean):String; inline;
+begin
+ {}
+ Result:=AFilePath;
+
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+
+ {Delete Slash}
+ Result:=FileSysDriver.DeleteSlash(AFilePath,ALeading,ATrailing);
 end;
 
 {==============================================================================}

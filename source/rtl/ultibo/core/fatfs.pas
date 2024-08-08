@@ -1,7 +1,7 @@
 {
 Ultibo FAT12/16/32/exFAT interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2799,7 +2799,7 @@ begin
        if (PFATInfoSector(FInfoBuffer).FreeClusterCount <> fatUnknownCluster) or
           (PFATInfoSector(FInfoBuffer).LastFreeCluster <> fatUnknownCluster) then
         begin
-         {Resut Free Count and Last Free}
+         {Reset Free Count and Last Free}
          PFATInfoSector(FInfoBuffer).FreeClusterCount:=fatUnknownCluster;
          PFATInfoSector(FInfoBuffer).LastFreeCluster:=fatUnknownCluster;
 
