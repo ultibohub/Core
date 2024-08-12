@@ -2006,7 +2006,7 @@ type
   WriteBlockMisalign:Boolean;       {Write block misalignment}
   ReadBlockMisalign:Boolean;        {Read block misalignment}
   DSRImplemented:Boolean;           {DSR implemented}
-  DeviceSize:Word;                  {Device size}
+  DeviceSize:LongWord;              {Device size}
   VDDReadCurrentMin:Byte;           {Max. read current @VDD min}
   VDDReadCurrentMax:Byte;           {Max. read current @VDD max}
   VDDWriteCurrentMin:Byte;          {Max. write current @VDD min}
@@ -8715,7 +8715,7 @@ begin
      MMCLogDebug(nil,'  WriteBlockMisalign = ' + BoolToStr(MMC.CardSpecificData.WriteBlockMisalign,True));
      MMCLogDebug(nil,'  ReadBlockMisalign = ' + BoolToStr(MMC.CardSpecificData.ReadBlockMisalign,True));
      MMCLogDebug(nil,'  DSRImplemented = ' + BoolToStr(MMC.CardSpecificData.DSRImplemented,True));
-     MMCLogDebug(nil,'  DeviceSize = ' + IntToStr(MMC.CardSpecificData.DeviceSize));
+     MMCLogDebug(nil,'  DeviceSize = ' + IntToHex(MMC.CardSpecificData.DeviceSize,8));
      MMCLogDebug(nil,'  VDDReadCurrentMin = ' + IntToStr(MMC.CardSpecificData.VDDReadCurrentMin));
      MMCLogDebug(nil,'  VDDReadCurrentMax = ' + IntToStr(MMC.CardSpecificData.VDDReadCurrentMax));
      MMCLogDebug(nil,'  VDDWriteCurrentMin = ' + IntToStr(MMC.CardSpecificData.VDDWriteCurrentMin));
@@ -15743,7 +15743,7 @@ begin
  Result:=PLongWord(PtrUInt(Buffer) + PtrUInt(Offset shl 2))^ shr Shift;
  if (Size + Shift) > 32 then
   begin
-   Result:=Result or (PLongWord(PtrUInt(Buffer) + PtrUInt((Offset - 1) shl 2))^ shl ((32 - Shift) mod (Length - 1))); 
+   Result:=Result or (PLongWord(PtrUInt(Buffer) + PtrUInt((Offset - 1) shl 2))^ shl ((32 - Shift) mod 32));
   end;
 
  Result:=Result and Mask;
