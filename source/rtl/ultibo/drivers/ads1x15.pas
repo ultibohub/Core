@@ -22,20 +22,22 @@
 unit ADS1X15;
 
 interface
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,I2C,GPIO,Console,Classes,ctypes,SysUtils;
+
+uses GlobalConfig, GlobalConst, GlobalTypes, Platform, Threads, Devices,
+  I2C, GPIO, Console, Classes, ctypes, SysUtils;
 
 {==============================================================================}
 {Global definitions}
-//{$INCLUDE ..\core\GlobalDefines.inc}   
-
-
+{$INCLUDE ..\core\GlobalDefines.inc}
 
 const
   { ####################################################################################### }
   { ## I2C general data                                                                  ## }
   { ####################################################################################### }
+  
   {ADS1X15 specific constants}
-  ADS1X15_FRAMEBUFFER_DESCRIPTION = 'ADS1X15 ADC DRIVER';  {Description of ADS1X15 device}
+  ADS1X15_FRAMEBUFFER_DESCRIPTION = 'ADS1X15 ADC DRIVER';
+  {Description of ADS1X15 device}
   ADS1X15_SIGNATURE = $000AF163;
 
   ADS1015 = False;
@@ -142,94 +144,66 @@ const
   ADS1X15_REGISTER_CONFIG_CQUE_NONE = $0003;
 // Disable the comparator and put ALERT/RDY in high state (default)
 
-
-
 type
+  
+  T_I2C_Buffer_A = packed array [0 .. ADS1X15_I2C_BUFFER_MAX_SIZE + 1] of uint8_t;
+  Mux_By_Channel_Array = packed array [0 .. 3] of uint16_t;
+  Data_Rates_Array = packed array [0 .. 7] of uint16_t;
+
   { ####################################################################################### }
-  { ## Number types                                                                      ## }
+  { ## PADS1X15                                                                         ## }
   { ####################################################################################### }
-  Int_8 = shortint;
-  P_Int_8 = ^Int_8;
-  U_Int_8 = byte;
-  P_U_Int_8 = ^U_Int_8;
-  char = Int_8;
-  P_Char = ^char;
-  U_Char = U_Int_8;
-  P_U_Char = ^U_Char;
-
-  Int_16 = smallint;
-  P_Int_16 = ^Int_16;
-  U_Int_16 = word;
-  P_U_Int_16 = ^U_Int_16;
-
-  Int_32 = longint;
-  P_Int_32 = ^Int_32;
-  U_Int_32 = longword;
-  P_U_Int_32 = ^U_Int_32;
-
-  Int_64 = int64;
-  P_Int_64 = ^Int_64;
-  U_Int_64 = QWord;
-  P_U_Int_64 = ^U_Int_64;
-
-  Bool = bytebool;
-  P_Bool = ^Bool;
-
-  T_I2C_Buffer_A = packed array [0 .. ADS1X15_I2C_BUFFER_MAX_SIZE + 1] of U_Int_8;
-  Mux_By_Channel_Array = packed array [0 .. 3] of U_Int_16;
-  Data_Rates_Array = packed array [0 .. 7] of U_Int_16;
-
   PADS1X15 = class(TObject)
   protected
-    M_I2C_Address: U_Int_8;
-    M_Gain: U_Int_16;
-    M_Data_Rate: U_Int_16;
+    M_I2C_Address: uint8_t;
+    M_Gain: uint16_t;
+    M_Data_Rate: uint16_t;
     M_I2C_Handle: CInt;
-    M_BitShift: U_Int_8; 
+    M_BitShift: uint8_t;
 
   public
-
-    constructor Create(I2C_Adress: U_Int_8 = ADS1X15_ADDRESS;
-      Gain: U_Int_16 = ADS1X15_REGISTER_CONFIG_PGA_4_096V;
-      Is_ADS1015: boolean = False; DATA_RATE: U_Int_8 = ADS1X15_DEFAULT_DATA_RATE);
+    constructor Create(I2C_Adress: uint8_t = ADS1X15_ADDRESS;
+      Gain: uint16_t = ADS1X15_REGISTER_CONFIG_PGA_4_096V;
+      Is_ADS1015: boolean = False; DATA_RATE: uint8_t = ADS1X15_DEFAULT_DATA_RATE);
     destructor Destroy; override;
 
- 
-    function I2C_Write_Register(I2C_Register: U_Int_8; Value: U_Int_16;
-      I2C_Adress: U_Int_8 = ADS1X15_ADDRESS): integer;
-    function I2C_Read_Register(I2C_Register: U_Int_8;
-      I2C_Adress: U_Int_8 = ADS1X15_ADDRESS): integer;
+    function I2C_Write_Register(I2C_Register: uint8_t; Value: uint16_t;
+      I2C_Adress: uint8_t = ADS1X15_ADDRESS): integer;
+    function I2C_Read_Register(I2C_Register: uint8_t;
+      I2C_Adress: uint8_t = ADS1X15_ADDRESS): integer;
 
-    procedure Start_ADC_Reading(Mux: U_Int_16 = ADS1X15_REGISTER_CONFIG_MUX_SINGLE_0;
-      Continuous: boolean = False);
+    procedure Start_ADC_Reading(Mux: uint16_t = ADS1X15_REGISTER_CONFIG_MUX_SINGLE_0;
+      Continuous: boolean = False; RDY_Mode_Enabled: boolean = False);
     procedure Start_ALERT_RDY();
     procedure Stop_ALERT_RDY();
 
-    function Read_ADC_Single_Ended(Channel: U_Int_8 = ADS1X15_DEFAULT_CHANNEL)
-      : integer;
+    function Read_ADC_Single_Ended(Channel: uint8_t = ADS1X15_DEFAULT_CHANNEL;
+      Continuous: boolean = False; RDY_Mode_Enabled: boolean = False): integer;
     function Read_ADC_Differential_0_1_Conversion(): integer;
     function Read_ADC_Differential_0_3_Conversion(): integer;
     function Read_ADC_Differential_1_3_Conversion(): integer;
     function Read_ADC_Differential_2_3_Conversion(): integer;
 
-    procedure Start_Comparator_Single_Ended(Channel: U_Int_8; Threshold: U_Int_16);
+    procedure Start_Comparator_Single_Ended(Channel: uint8_t; Threshold: uint16_t);
     function Get_Last_Conversion_Result(): integer;
     function Conversion_Complete(): boolean;
-    function Compute_Volts(Counts: Int_16): double;
+    function Compute_Volts(Counts: int16_t): double;
   published
-  end; { PADS1X15 }
+  end;
+{ PADS1X15 }
+
 procedure ADS1X15_Init;
+
 implementation
 
-const   
-
- MUX_BY_CHANNEL: Mux_By_Channel_Array = (
+const
+  MUX_BY_CHANNEL: Mux_By_Channel_Array = (
     ADS1X15_REGISTER_CONFIG_MUX_SINGLE_0,
     ADS1X15_REGISTER_CONFIG_MUX_SINGLE_1,
     ADS1X15_REGISTER_CONFIG_MUX_SINGLE_2,
     ADS1X15_REGISTER_CONFIG_MUX_SINGLE_3);
 
-    ADS1115_DATA_RATES: Data_Rates_Array = (
+  ADS1115_DATA_RATES: Data_Rates_Array = (
     ADS1115_REGISTER_CONFIG_DR_8SPS,
     ADS1115_REGISTER_CONFIG_DR_16SPS,
     ADS1115_REGISTER_CONFIG_DR_32SPS,
@@ -240,7 +214,7 @@ const
     ADS1115_REGISTER_CONFIG_DR_860SPS
     );
 
-    ADS1015_DATA_RATES: Data_Rates_Array = (
+  ADS1015_DATA_RATES: Data_Rates_Array = (
     ADS1015_REGISTER_CONFIG_DR_128SPS,
     ADS1015_REGISTER_CONFIG_DR_250SPS,
     ADS1015_REGISTER_CONFIG_DR_490SPS,
@@ -250,36 +224,34 @@ const
     ADS1015_REGISTER_CONFIG_DR_3300SPS,
     ADS1015_REGISTER_CONFIG_DR_3300SPS
     );
+
 var
-  ADS1X15_ThreadI2CHandle: TThreadHandle = INVALID_HANDLE_VALUE;
+  //ADS1X15_ThreadI2CHandle: TThreadHandle = INVALID_HANDLE_VALUE;
   ADS1X15_I2CDevice: PI2CDevice;
   ADS1X15_Count: longword;
-  ADS1X15_Debug: Boolean = True;
-  ADS1X15Initialized:Boolean= True;
-{ ####################################################################################### }
-{ ## PADS1X15                                                                         ## }
-{ ####################################################################################### }
+  ADS1X15_Debug: boolean = False;
+  ADS1X15Initialized: boolean = True;
 
-{==============================================================================}
 {==============================================================================}
 {Initialization Functions}
 procedure ADS1X15_Init;
-{Initialize the ADS1X15 unit and create, register and start the device} 
+{Initialize the ADS1X15 unit and create, register and start the device}
 {Note: Called only during system startup}
 begin
- {Check Initialized}
- if ADS1X15Initialized then Exit;
- ADS1X15Initialized:=True;
+  {Check Initialized}
+  if ADS1X15Initialized then Exit;
+  ADS1X15Initialized := True;
 end;
-
+{==============================================================================}
 { --------------------------------------------------------------------------------------- }
-constructor PADS1X15.Create(I2C_Adress: U_Int_8 = ADS1X15_ADDRESS;
-  Gain: U_Int_16 = ADS1X15_REGISTER_CONFIG_PGA_4_096V; Is_ADS1015: boolean = False; DATA_RATE: U_Int_8 = ADS1X15_DEFAULT_DATA_RATE);
+constructor PADS1X15.Create(I2C_Adress: uint8_t = ADS1X15_ADDRESS;
+  Gain: uint16_t = ADS1X15_REGISTER_CONFIG_PGA_4_096V; Is_ADS1015: boolean = False;
+  DATA_RATE: uint8_t = ADS1X15_DEFAULT_DATA_RATE);
   { Initialization of the object                                                            }
   { --------------------------------------------------------------------------------------- }
 begin { PADS1X15.Create }
   inherited Create();
-  
+
   { Initialize data }
   M_I2C_Address := I2C_Adress;
   M_Gain := Gain;
@@ -300,18 +272,23 @@ begin { PADS1X15.Create }
   {$IFDEF RPI}
   BCM2708I2C_COMBINED_WRITEREAD := True;
   {$ENDIF}
+  {$ifdef ZERO}
+  BCM2708I2C_COMBINED_WRITEREAD := True;
+  {$ENDIF} 
   {$IFDEF RPI2}
   BCM2709I2C_COMBINED_WRITEREAD := True;
   {$ENDIF}
   {$IFDEF RPI3}
   BCM2710I2C_COMBINED_WRITEREAD := True;
   {$ENDIF}
+  {$IFDEF ZERO2W}
+  BCM2710I2C_COMBINED_WRITEREAD := True;    
+  {$ENDIF}
   {$IFDEF RPI4}
   BCM2711I2C_COMBINED_WRITEREAD := True;
   {$ENDIF}
 
- {Check I2C Device} 
-
+  {Check I2C Device}
   ADS1X15_I2CDevice := PI2CDevice(I2CDeviceFindByDescription(I2CGetDescription(1)));
   if ADS1X15_I2CDevice = nil then Exit;
 
@@ -325,7 +302,7 @@ begin { PADS1X15.Create }
   begin
     Writeln('I2C bus is started successfully !!');
   end;
-  sleep(100);
+ sleep(100);
 
 end; { PADS1X15.Create }
 
@@ -341,12 +318,12 @@ end; { PADS1X15.Destroy }
 
 
 { --------------------------------------------------------------------------------------- }
-function PADS1X15.I2C_Write_Register(I2C_Register: U_Int_8; Value: U_Int_16;
-  I2C_Adress: U_Int_8 = ADS1X15_ADDRESS): integer; inline;
+function PADS1X15.I2C_Write_Register(I2C_Register: uint8_t; Value: uint16_t;
+  I2C_Adress: uint8_t = ADS1X15_ADDRESS): integer; inline;
   { Return last conversion result                                                           }
   { --------------------------------------------------------------------------------------- }
 var
-  I2C_Buffer: packed array [0 .. 9] of U_Int_8;
+  I2C_Buffer: packed array [0 .. 9] of uint8_t;
 begin { PADS1X15.I2C_Write_Register }
 
   I2C_Buffer[0] := Value shr 8;
@@ -359,12 +336,11 @@ begin { PADS1X15.I2C_Write_Register }
     if ADS1X15_Debug then Writeln('I2C_Write_Register, error!!');
   end;
 
-  sleep(100);
 end; { PADS1X15.I2C_Write_Register }
 
 { --------------------------------------------------------------------------------------- }
-function PADS1X15.I2C_Read_Register(I2C_Register: U_Int_8;
-  I2C_Adress: U_Int_8 = ADS1X15_ADDRESS): integer; inline;
+function PADS1X15.I2C_Read_Register(I2C_Register: uint8_t;
+  I2C_Adress: uint8_t = ADS1X15_ADDRESS): integer; inline;
   { Return last conversion result                                                           }
   { --------------------------------------------------------------------------------------- }
 var
@@ -372,23 +348,20 @@ var
 
 begin { PADS1X15.I2C_Read_Buffer }
 
-
   I2C_Buffer[0] := I2C_Register;
 
   if I2CDeviceWriteRead(ADS1X15_I2CDevice, I2C_Adress, @I2C_Register,
-    SizeOf(byte), @I2C_Buffer, SizeOf(ADS1X15_I2C_BUFFER_MAX_SIZE), ADS1X15_Count) =
-    ERROR_SUCCESS then
-  begin
-    // if Debug then  Writeln('I2C_Read_Buffer, Success!!');
-    Result := (I2C_Buffer[0] shl 8) or I2C_Buffer[1];
+    SizeOf(byte), @I2C_Buffer, 2, ADS1X15_Count) <> ERROR_SUCCESS then
+  begin 
+    Result := -1;
+    if ADS1X15_Debug then  Writeln('I2C_Buffer, Error!!');
   end
   else
   begin
-
-    if ADS1X15_Debug then  Writeln('I2C_Buffer, Error!!');
-    Result := -1;
+    // if Debug then  Writeln('I2C_Read_Buffer, Success!!');
+    Result := (I2C_Buffer[0] shl 8) or I2C_Buffer[1];   
   end;
-  sleep(100);
+
 end; { PADS1X15.I2C_Read_Buffer }
 
 
@@ -397,27 +370,26 @@ procedure PADS1X15.Start_ALERT_RDY();
 { Start ALERT/RDY interupt signal                                                         }
 { --------------------------------------------------------------------------------------- }
 var
-  Result_Value: integer;
+  Result: integer;
 
 begin { PADS1X15.Start_ALERT_RDY }
-  { Turn on ALERT/RDY : Set MSB of Hi_thresh to 1 }
 
-  Result_Value := I2C_Write_Register(ADS1X15_REGISTER_POINTER_HIGH_THRESHOLD, $8000);
-  if Result_Value < 0 then
-  begin { then }
+  { Turn on ALERT/RDY : Set MSB of Hi_thresh to 1 }
+  Result := I2C_Write_Register(ADS1X15_REGISTER_POINTER_HIGH_THRESHOLD, $8000);
+  if Result < 0 then
+  begin  
     if ADS1X15_Debug then Writeln('Error writing to I2C (Set MSB of Hi_thresh to 1)');
-    //Halt;
-  end; { then }
+   Exit;
+  end; 
 
   { Turn on ALERT/RDY : Set MSB of Lo_thresh to 0 }
-  Result_Value := I2C_Write_Register(ADS1X15_REGISTER_POINTER_LOW_THRESHOLD, $0000);
-  if Result_Value < 0 then
-  begin { then }
+  Result := I2C_Write_Register(ADS1X15_REGISTER_POINTER_LOW_THRESHOLD, $0000);
+  if Result < 0 then
+  begin  
     if ADS1X15_Debug then Writeln('Error writing to I2C (Set MSB of Lo_thresh to 0)');
-    //Halt;
-  end; { then }
+    Exit;
+  end;  
 
-  Sleep(100);
 end; { PADS1X15.Start_ALERT_RDY }
 
 { --------------------------------------------------------------------------------------- }
@@ -425,31 +397,29 @@ procedure PADS1X15.Stop_ALERT_RDY();
 { Stop ALERT/RDY interupt signal                                                          }
 { --------------------------------------------------------------------------------------- }
 var
-  Result_Value: integer;
-
+  Result: integer;
 begin { PADS1X15.Stop_ALERT_RDY }
+  
   { Turn off ALERT/RDY : Set MSB of Hi_thresh to 0 }
-
-
-  Result_Value := I2C_Write_Register(ADS1X15_REGISTER_POINTER_HIGH_THRESHOLD, $0000);
-  if Result_Value < 0 then
-  begin { then }
+  Result := I2C_Write_Register(ADS1X15_REGISTER_POINTER_HIGH_THRESHOLD, $0000);
+  if Result < 0 then
+  begin  
     if ADS1X15_Debug then Writeln('Error writing to I2C (Set MSB of Hi_thresh to 0)');
-    //Halt;
-  end; { then }
+    Exit;
+  end;  
 
   { Turn off ALERT/RDY : Set MSB of Lo_thresh to 1 }
-
-  Result_Value := I2C_Write_Register(ADS1X15_REGISTER_POINTER_LOW_THRESHOLD, $FFFF);
-  if Result_Value < 0 then
-  begin { then }
+  Result := I2C_Write_Register(ADS1X15_REGISTER_POINTER_LOW_THRESHOLD, $FFFF);
+  if Result < 0 then
+  begin  
     if ADS1X15_Debug then Writeln('Error writing to I2C (Set MSB of Lo_thresh to 1)');
-    //Halt;
-  end; { then }
+    Exit;
+  end;
+
 end; { PADS1X15.Stop_ALERT_RDY }
 
 { --------------------------------------------------------------------------------------- }
-procedure PADS1X15.Start_Comparator_Single_Ended(Channel: U_Int_8; Threshold: U_Int_16);
+procedure PADS1X15.Start_Comparator_Single_Ended(Channel: uint8_t; Threshold: uint16_t);
 {
       @brief  Sets up the comparator to operate in basic mode, causing the
             ALERT/RDY pin to assert (go from high to low) when the ADC
@@ -462,7 +432,7 @@ procedure PADS1X15.Start_Comparator_Single_Ended(Channel: U_Int_8; Threshold: U_
 }
 { --------------------------------------------------------------------------------------- }
 var
-  Config: U_Int_16;
+  Config: uint16_t;
 
 begin { PADS1X15.Start_Comparator_Single_Ended }
 
@@ -504,11 +474,16 @@ function PADS1X15.Get_Last_Conversion_Result(): integer;
             results without changing the config value.
 
     @return the last ADC reading
-}
-  { --------------------------------------------------------------------------------------- }
+} 
 begin { PADS1X15.Get_Last_Conversion_Result }
 
-  Result := I2C_Read_Register(ADS1X15_REGISTER_POINTER_CONVERT) shr M_BitShift;
+  Result := I2C_Read_Register(ADS1X15_REGISTER_POINTER_CONVERT); 
+  if Result < 0 then
+  begin  
+    Exit;
+  end;  
+
+  Result := Result shr M_BitShift;
 
   if M_BitShift <> 0 then
   begin
@@ -519,7 +494,7 @@ begin { PADS1X15.Get_Last_Conversion_Result }
       Result := Result or $F000;
     end;
   end;
-  Result := Int_16(Result);
+  Result := int16_t(Result);
 
 end; { PADS1X15.Get_Last_Conversion_Result }
 
@@ -529,14 +504,21 @@ function PADS1X15.Conversion_Complete(): boolean;
    @brief  Returns true if conversion is complete, false otherwise.
 
    @return True if conversion is complete, false otherwise.
-}
-{ --------------------------------------------------------------------------------------- }
+} 
+var
+Result_Value: integer;
 begin
-  Result := (I2C_Read_Register(ADS1X15_REGISTER_POINTER_CONFIG) and $8000) <> 0;
+  Result_Value := I2C_Read_Register(ADS1X15_REGISTER_POINTER_CONFIG);
+  if Result_Value < 0 then
+  begin
+    Result := False;
+    Exit;
+  end;
+  Result := (Result_Value and $8000) <> 0;
 end;  { PADS1X15.Conversion_Complete }
 
 { --------------------------------------------------------------------------------------- }
-function PADS1X15.Compute_Volts(Counts: Int_16): double;
+function PADS1X15.Compute_Volts(Counts: int16_t): double;
   {
    @brief  Compute volts for the given raw counts.
 
@@ -580,7 +562,7 @@ end; { PADS1X15.Compute_Volts }
 
 
 { --------------------------------------------------------------------------------------- }
-procedure PADS1X15.Start_ADC_Reading(Mux: U_Int_16; Continuous: boolean = False);
+procedure PADS1X15.Start_ADC_Reading(Mux: uint16_t; Continuous: boolean = False; RDY_Mode_Enabled: boolean = False);
 {
 @brief  Non-blocking start conversion function
 
@@ -595,7 +577,7 @@ procedure PADS1X15.Start_ADC_Reading(Mux: U_Int_16; Continuous: boolean = False)
 }
 { --------------------------------------------------------------------------------------- }
 var
-  Config: U_Int_16;
+  Config: uint16_t;
 
 begin { PADS1X15.Start_ADC_Reading }
 
@@ -629,16 +611,19 @@ begin { PADS1X15.Start_ADC_Reading }
   // Write config register to the ADC
   I2C_Write_Register(ADS1X15_REGISTER_POINTER_CONFIG, Config);
 
-  // Set ALERT/RDY to RDY mode.
-  I2C_Write_Register(ADS1X15_REGISTER_POINTER_HIGH_THRESHOLD, Config);
-  I2C_Write_Register(ADS1X15_REGISTER_POINTER_LOW_THRESHOLD, Config);
+  // Set ALERT/RDY to RDY mode. 
+  if RDY_Mode_Enabled then
+  begin
+    I2C_Write_Register(ADS1X15_REGISTER_POINTER_HIGH_THRESHOLD, Config);
+    I2C_Write_Register(ADS1X15_REGISTER_POINTER_LOW_THRESHOLD, Config);
+  end;
 
 end; { PADS1X15.Start_ADC_Reading }
 
 
 { --------------------------------------------------------------------------------------- }
-function PADS1X15.Read_ADC_Single_Ended(Channel: U_Int_8 =
-  ADS1X15_DEFAULT_CHANNEL): integer;
+function PADS1X15.Read_ADC_Single_Ended(Channel: uint8_t = ADS1X15_DEFAULT_CHANNEL;
+  Continuous: boolean = False; RDY_Mode_Enabled: boolean = False): integer;
   { --------------------------------------------------------------------------------------- }
 
 begin { PADS1X15.Read_ADC_Single_Ended }
@@ -648,11 +633,23 @@ begin { PADS1X15.Read_ADC_Single_Ended }
     Exit(0);
   end;
 
-  Start_ADC_Reading(MUX_BY_CHANNEL[channel], False);
+  Start_ADC_Reading(MUX_BY_CHANNEL[channel], Continuous, RDY_Mode_Enabled);
 
-  // Wait for the conversion to complete
-  while not Conversion_Complete() do
+  if not Continuous then
   begin
+    // Wait for conversion to complete
+    // ADS1x1x devices settle within a single conversion cycle
+    // Continuously poll conversion complete status bit
+    // Wait for the conversion to complete
+    while not Conversion_Complete() do
+    begin
+    end;
+  end
+  else
+  begin
+    // Can't poll registers in CONTINUOUS mode
+    // Wait expected time for two conversions to complete
+    sleep(2 div M_Data_Rate);
   end;
 
   // Read the conversion results
@@ -760,16 +757,14 @@ begin { PADS1X15.Read_ADC_Differential_2_3_Conversion }
   Result := Get_Last_Conversion_Result();
 end; { PADS1X15.Read_ADC_Differential_1_3_Conversion }
 
-
-{==============================================================================}
 {==============================================================================}
 
 initialization
- ADS1X15_Init;
- 
-{==============================================================================}
- 
-{finalization}
- {Nothing}
+  ADS1X15_Init;
+
+  {==============================================================================}
+
+  {finalization}
+  {Nothing}
 
 end.
