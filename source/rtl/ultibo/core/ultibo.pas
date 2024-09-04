@@ -1,7 +1,7 @@
 {
 Ultibo interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -5512,7 +5512,7 @@ begin
   begin
    if nSize <> 0 then Exit;
    
-   Value:=SysUtils.GetEnvironmentVariable(lpName);
+   Value:=EnvironmentGet(lpName);
    if Length(Value) <> 0 then
     begin
      Result:=Length(Value);
@@ -5522,7 +5522,7 @@ begin
   begin 
    if nSize = 0 then Exit;
  
-   Value:=SysUtils.GetEnvironmentVariable(lpName);
+   Value:=EnvironmentGet(lpName);
    if Length(Value) <> 0 then
     begin
      if Length(Value) < nSize then
@@ -5551,7 +5551,7 @@ begin
    
    Name:=WideCharToString(lpName);
    
-   Value:=SysUtils.GetEnvironmentVariable(Name);
+   Value:=EnvironmentGet(Name);
    if Length(Value) <> 0 then
     begin
      Result:=Length(Value);
@@ -5563,7 +5563,7 @@ begin
  
    Name:=WideCharToString(lpName);
    
-   Value:=SysUtils.GetEnvironmentVariable(Name);
+   Value:=EnvironmentGet(Name);
    if Length(Value) <> 0 then
     begin
      if Length(Value) < nSize then
@@ -5592,11 +5592,14 @@ end;
 {==============================================================================}
 
 function SetEnvironmentVariableA(lpName,lpValue:LPCSTR):BOOL;
+var
+ Status:LongWord;
 begin
  {}
- Result:=False;
- 
- //To Do
+ Status:=EnvironmentSet(lpName,lpValue);
+
+ SetLastError(Status);
+ Result:=(Status = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
@@ -5605,11 +5608,16 @@ function SetEnvironmentVariableW(lpName,lpValue:LPCWSTR):BOOL;
 var
  Name:String;
  Value:String;
+ Status:LongWord;
 begin
  {}
- Result:=False;
- 
- //To Do
+ Name:=WideCharToString(lpName);
+ Value:=WideCharToString(lpValue);
+
+ Status:=EnvironmentSet(Name,Value);
+
+ SetLastError(Status);
+ Result:=(Status = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
@@ -5624,20 +5632,20 @@ end;
 
 function ExpandEnvironmentStringsA(lpSrc:LPCSTR;lpDst:LPSTR;nSize:DWORD):DWORD;
 begin
- {}
+ {Not Supported}
  Result:=0;
  
- //To Do
+ SetLastError(ERROR_NOT_SUPPORTED);
 end;
 
 {==============================================================================}
 
 function ExpandEnvironmentStringsW(lpSrc:LPCWSTR;lpDst:LPWSTR;nSize:DWORD):DWORD;
 begin
- {}
+ {Not Supported}
  Result:=0;
  
- //To Do
+ SetLastError(ERROR_NOT_SUPPORTED);
 end;
 
 {==============================================================================}

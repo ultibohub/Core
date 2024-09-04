@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1212,9 +1212,17 @@ type
  TSymbolGetAddress = function(AHandle:THandle;const AName:String):PtrUInt;
  
 type
- {Prototype for Logging Handlers}
+ {Prototypes for Logging Handlers}
  TLoggingOutput = procedure(const AText:String);
  TLoggingOutputEx = procedure(AFacility,ASeverity:LongWord;const ATag,AContent:String);
+
+type
+ {Prototypes for Environment Handlers}
+ TEnvironmentGet = function(const AName:String):String;
+ TEnvironmentSet = function(const AName,AValue:String):LongWord;
+ TEnvironmentCount = function(AReset:Boolean):LongWord;
+ TEnvironmentIndex = function(const AName:String):LongWord;
+ TEnvironmentString = function(AIndex:LongWord):String;
  
 type
  {Text IO Data}
@@ -1296,6 +1304,7 @@ var
  ShutdownTableLock:TPlatformLock;
  
  UtilityLock:TPlatformLock;
+ EnvironmentLock:TPlatformLock;
  
 var
  {Semaphore Variables}
@@ -2033,6 +2042,14 @@ var
  {Logging Handlers}
  LoggingOutputHandler:TLoggingOutput;
  LoggingOutputExHandler:TLoggingOutputEx;
+
+var 
+ {Environment Handlers}
+ EnvironmentGetHandler:TEnvironmentGet;
+ EnvironmentSetHandler:TEnvironmentSet;
+ EnvironmentCountHandler:TEnvironmentCount;
+ EnvironmentIndexHandler:TEnvironmentIndex;
+ EnvironmentStringHandler:TEnvironmentString;
 
 {==============================================================================}
 {Initialization Functions}
@@ -2773,6 +2790,14 @@ procedure LoggingOutput(const AText:String); inline;
 procedure LoggingOutputEx(AFacility,ASeverity:LongWord;const ATag,AContent:String); inline;
 
 {==============================================================================}
+{Environment Functions}
+function EnvironmentGet(const AName:String):String; inline;
+function EnvironmentSet(const AName,AValue:String):LongWord; inline;
+function EnvironmentCount(AReset:Boolean):LongWord; inline;
+function EnvironmentIndex(const AName:String):LongWord; inline;
+function EnvironmentString(AIndex:LongWord):String; inline;
+
+{==============================================================================}
 {Utility Functions}
 function FirstBitSet(Value:LongWord):LongWord; inline;
 function LastBitSet(Value:LongWord):LongWord; inline;
@@ -2854,6 +2879,8 @@ var
 {==============================================================================}
 {==============================================================================}
 {Forward Declarations}
+function EnvironmentSetDefault(const AName,AValue:String):LongWord; forward;
+
 function FirstBitSetDefault(Value:LongWord):LongWord; forward;
 function LastBitSetDefault(Value:LongWord):LongWord; forward;
 function CountLeadingZerosDefault(Value:LongWord):LongWord; forward;
@@ -2934,6 +2961,11 @@ begin
  UtilityLock.Lock:=INVALID_HANDLE_VALUE;
  UtilityLock.AcquireLock:=nil;
  UtilityLock.ReleaseLock:=nil;
+
+ {Initialize Environment Lock}
+ EnvironmentLock.Lock:=INVALID_HANDLE_VALUE;
+ EnvironmentLock.AcquireLock:=nil;
+ EnvironmentLock.ReleaseLock:=nil;
  
  {Initialize Shutdown Semaphore}
  ShutdownSemaphore.Semaphore:=INVALID_HANDLE_VALUE;
@@ -2973,6 +3005,8 @@ begin
  SysUtilsGetTickCount64Handler:=SysUtilsGetTickCount64;
  
  {Setup Default Handlers}
+ if not Assigned(EnvironmentSetHandler) then EnvironmentSetHandler:=EnvironmentSetDefault;
+
  if not Assigned(FirstBitSetHandler) then FirstBitSetHandler:=FirstBitSetDefault;
  if not Assigned(LastBitSetHandler) then LastBitSetHandler:=LastBitSetDefault;
 
@@ -11936,7 +11970,219 @@ begin
    LoggingOutputExHandler(AFacility,ASeverity,ATag,AContent);
   end;
 end;
- 
+
+{==============================================================================}
+{==============================================================================}
+{Environment Functions}
+function EnvironmentGet(const AName:String):String; inline;
+{Locate an environment variable and return the current value}
+{Name: The name of the variable to locate (eg TZ)}
+{Return: The value of the variable or an empty string if not found}
+begin
+ {}
+ if Assigned(EnvironmentGetHandler) then
+  begin
+   Result:=EnvironmentGetHandler(AName);
+  end
+ else
+  begin
+   {Acquire Lock}
+   if EnvironmentLock.Lock <> INVALID_HANDLE_VALUE then EnvironmentLock.AcquireLock(EnvironmentLock.Lock);
+
+   Result:=SysUtils.GetEnvironmentVariable(AName);
+
+   {Release Lock}
+   if EnvironmentLock.Lock <> INVALID_HANDLE_VALUE then EnvironmentLock.ReleaseLock(EnvironmentLock.Lock);
+  end;
+end;
+
+{==============================================================================}
+
+function EnvironmentSet(const AName,AValue:String):LongWord; inline;
+{Add an environment variable or update an existing variable}
+{Name: The name of the variable to add or update (eg TZ)}
+{Value: The new value of the variable (eg EST+5)}
+{Return: ERROR_SUCCESS if the value was set or another error code on failure}
+begin
+ {}
+ if Assigned(EnvironmentSetHandler) then
+  begin
+   Result:=EnvironmentSetHandler(AName,AValue);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
+function EnvironmentCount(AReset:Boolean):LongWord; inline;
+{Get the current number of environment variables}
+{Reset: If True then force a recount}
+{Return: The number of environment variables}
+begin
+ {}
+ if Assigned(EnvironmentCountHandler) then
+  begin
+   Result:=EnvironmentCountHandler(AReset);
+  end
+ else
+  begin
+   {Acquire Lock}
+   if EnvironmentLock.Lock <> INVALID_HANDLE_VALUE then EnvironmentLock.AcquireLock(EnvironmentLock.Lock);
+
+   if AReset then SysUtils.ResetEnvironmentVariableCount;
+   
+   Result:=SysUtils.GetEnvironmentVariableCount;
+
+   {Release Lock}
+   if EnvironmentLock.Lock <> INVALID_HANDLE_VALUE then EnvironmentLock.ReleaseLock(EnvironmentLock.Lock);
+  end;
+end;
+
+{==============================================================================}
+
+function EnvironmentIndex(const AName:String):LongWord; inline;
+{Locate an environment variable and return the index}
+{Name: The name of the variable to locate (eg TZ)}
+{Return: The index of the environment variable or 0 if not found}
+begin
+ {}
+ if Assigned(EnvironmentIndexHandler) then
+  begin
+   Result:=EnvironmentIndexHandler(AName);
+  end
+ else
+  begin
+   {Acquire Lock}
+   if EnvironmentLock.Lock <> INVALID_HANDLE_VALUE then EnvironmentLock.AcquireLock(EnvironmentLock.Lock);
+
+   Result:=SysUtils.GetEnvironmentIndex(AName);
+
+   {Release Lock}
+   if EnvironmentLock.Lock <> INVALID_HANDLE_VALUE then EnvironmentLock.ReleaseLock(EnvironmentLock.Lock);
+  end;
+end;
+
+{==============================================================================}
+
+function EnvironmentString(AIndex:LongWord):String; inline;
+{Get an environment variable by index}
+{Index: The index of the variable to get (1 to EnvironmentCount)}
+{Return: The environment variable or an empty string of index is not valid}
+begin
+ {}
+ if Assigned(EnvironmentStringHandler) then
+  begin
+   Result:=EnvironmentStringHandler(AIndex);
+  end
+ else
+  begin
+   {Acquire Lock}
+   if EnvironmentLock.Lock <> INVALID_HANDLE_VALUE then EnvironmentLock.AcquireLock(EnvironmentLock.Lock);
+
+   Result:=SysUtils.GetEnvironmentString(AIndex);
+
+   {Release Lock}
+   if EnvironmentLock.Lock <> INVALID_HANDLE_VALUE then EnvironmentLock.ReleaseLock(EnvironmentLock.Lock);
+  end;
+end;
+
+{==============================================================================}
+
+function EnvironmentSetDefault(const AName,AValue:String):LongWord;
+{Default version of EnvironmentSet function used if no handler is registered}
+{Note: Not intended to be called directly by applications, use EnvironmentSet instead}
+var
+ Count:LongWord;
+ Index:LongWord;
+ Buffer:String;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Name}
+ if Length(AName) = 0 then Exit;
+
+ {Acquire Lock}
+ if EnvironmentLock.Lock <> INVALID_HANDLE_VALUE then EnvironmentLock.AcquireLock(EnvironmentLock.Lock);
+ try
+  {Get Existing Count}
+  Count:=SysUtils.GetEnvironmentVariableCount;
+
+  {Find Existing Index}
+  Index:=SysUtils.GetEnvironmentIndex(AName);
+
+  {Check for Delete}
+  if Length(AValue) = 0 then
+   begin
+    if Index > 0 then
+     begin
+      {Delete Value}
+      FreeMem(envp[Index - 1]);
+
+      {Move Values}
+      while Index < Count do
+       begin
+        envp[Index - 1]:=envp[Index];
+
+        Inc(Index);
+       end; 
+
+      {Mark End}
+      envp[Index - 1]:=nil;
+
+      {Reset Count}
+      SysUtils.ResetEnvironmentVariableCount;
+     end;
+   end
+  else
+   begin
+    {Get Buffer}
+    Buffer:=AName + '=' + AValue;
+
+    if Index = 0 then
+     begin
+      Result:=ERROR_NOT_ENOUGH_MEMORY;
+
+      {Check Count}
+      if Count >= ENVIRONMENT_STRING_COUNT then Exit;
+
+      {Add Value}
+      {Allocate New}
+      envp[Count]:=AllocMem(SizeOf(AnsiChar) * (Length(Buffer) + 1)); {Add one for null terminator}
+
+      {Copy Buffer}
+      StrLCopy(PAnsiChar(envp[Count]),PAnsiChar(Buffer),Length(Buffer));
+
+      {Mark End}
+      envp[Count + 1]:=nil;
+
+      {Reset Count}
+      SysUtils.ResetEnvironmentVariableCount;
+     end
+    else
+     begin
+      {Update Value}
+      {Free Existing}
+      FreeMem(envp[Index - 1]);
+
+      {Allocate New}
+      envp[Index - 1]:=AllocMem(SizeOf(AnsiChar) * (Length(Buffer) + 1)); {Add one for null terminator}
+
+      {Copy Buffer}
+      StrLCopy(PAnsiChar(envp[Index - 1]),PAnsiChar(Buffer),Length(Buffer));
+     end;
+   end;
+
+  Result:=ERROR_SUCCESS;
+ finally
+  {Release Lock}
+  if EnvironmentLock.Lock <> INVALID_HANDLE_VALUE then EnvironmentLock.ReleaseLock(EnvironmentLock.Lock);
+ end;
+end;
+
 {==============================================================================}
 {==============================================================================}
 {Utility Functions}

@@ -1,6 +1,6 @@
 {
     This file is part of the Free Pascal run time library.
-    Copyright (c) 2015 by Free Pascal development team
+    Copyright (c) 2024 by Free Pascal development team
 
     System unit for Ultibo target.
 
@@ -74,9 +74,9 @@ const
 {$ifdef FPC_HAS_FEATURE_COMMANDARGS}
 var
   argc: LongInt = 0;
-  argv: PPChar = nil;
-  envp: PPChar = nil;
-  cmdline: PChar = nil;
+  argv: PPAnsiChar = nil;
+  envp: PPAnsiChar = nil;
+  cmdline: PAnsiChar = nil;
 {$endif FPC_HAS_FEATURE_COMMANDARGS}
 
 {$ifndef FPUNONE}

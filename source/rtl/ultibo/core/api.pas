@@ -1431,6 +1431,13 @@ function symbol_get_address(handle: THANDLE; name: PCHAR): SIZE_T; stdcall; publ
 procedure logging_output(text: PCHAR); stdcall; public name 'logging_output';
 procedure logging_output_ex(facility, severity: uint32_t; tag, content: PCHAR); stdcall; public name 'logging_output_ex';
 
+{Environment Functions}
+function environment_get(name: PCHAR; value: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'environment_get';
+function environment_set(name, value: PCHAR): uint32_t; stdcall; public name 'environment_set';
+function environment_count(reset: BOOL): uint32_t; stdcall; public name 'environment_count';
+function environment_index(name: PCHAR): uint32_t; stdcall; public name 'environment_index';
+function environment_string(index: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'environment_string';
+
 {Utility Functions}
 function first_bit_set(value: uint32_t): uint32_t; stdcall; public name 'first_bit_set';
 function last_bit_set(value: uint32_t): uint32_t; stdcall; public name 'last_bit_set';
@@ -12610,6 +12617,62 @@ begin
   begin
    LoggingOutputExHandler(facility,severity,String(tag),String(content));
   end;
+end;
+
+{==============================================================================}
+{Environment Functions}
+function environment_get(name: PCHAR; value: PCHAR; len: uint32_t): uint32_t; stdcall;
+{Locate an environment variable and return the current value}
+{Name: The name of the variable to locate (eg TZ)}
+{Return: The value of the variable or an empty string if not found}
+begin
+ {}
+ Result:=APIStringToPCharBuffer(EnvironmentGet(name),value,len);
+end;
+
+{==============================================================================}
+
+function environment_set(name, value: PCHAR): uint32_t; stdcall;
+{Add an environment variable or update an existing variable}
+{Name: The name of the variable to add or update (eg TZ)}
+{Value: The new value of the variable (eg EST+5)}
+{Return: ERROR_SUCCESS if the value was set or another error code on failure}
+begin
+ {}
+ Result:=EnvironmentSet(name,value);
+end;
+
+{==============================================================================}
+
+function environment_count(reset: BOOL): uint32_t; stdcall;
+{Get the current number of environment variables}
+{Reset: If True then force a recount}
+{Return: The number of environment variables}
+begin
+ {}
+ Result:=EnvironmentCount(reset);
+end;
+
+{==============================================================================}
+
+function environment_index(name: PCHAR): uint32_t; stdcall;
+{Locate an environment variable and return the index}
+{Name: The name of the variable to locate (eg TZ)}
+{Return: The index of the environment variable or 0 if not found}
+begin
+ {}
+ Result:=EnvironmentIndex(name);
+end;
+
+{==============================================================================}
+
+function environment_string(index: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
+{Get an environment variable by index}
+{Index: The index of the variable to get (1 to EnvironmentCount)}
+{Return: The environment variable or an empty string of index is not valid}
+begin
+ {}
+ Result:=APIStringToPCharBuffer(EnvironmentString(index),_string,len);
 end;
 
 {==============================================================================}

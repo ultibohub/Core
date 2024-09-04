@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for AARCH64 (ARM64).
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -179,7 +179,7 @@ type
  {Commandline for the kernel (ATAG_CMDLINE)}
  PARMTagCommand = ^TARMTagCommand;
  TARMTagCommand = record
-  Cmdline:array[0..0] of Char;     {This is the minimum size} 
+  Cmdline:array[0..0] of AnsiChar;     {This is the minimum size} 
  end;
  
  {Format of ARM Boot Tag}
@@ -241,55 +241,55 @@ var
                                                {Note: These variables must be initialized to remain in .data or else they are rewritten to zero with .bss}
 var
  {ARM Tags Variables}
- ARMTagsCount:LongWord;     {Number of ARM Tags found during parse}
+ ARMTagsCount:LongWord;       {Number of ARM Tags found during parse}
  
  {Tag None Variables}
- TagNoneCount:LongWord;     {Number of ARM NONE Tags found during parse}
+ TagNoneCount:LongWord;       {Number of ARM NONE Tags found during parse}
  
  {Tag Core Variables}
- TagCoreCount:LongWord;     {Number of ARM CORE Tags found during parse}
+ TagCoreCount:LongWord;       {Number of ARM CORE Tags found during parse}
  TagCoreFlags:LongWord;
  TagCorePageSize:LongWord;
  TagCoreRootDevice:LongWord;
 
  {Tag Memory Variables}
- TagMemoryCount:LongWord;   {Number of ARM MEM Tags found during parse}
- TagMemorySize:LongWord;    {Size of the last block reported by ARM Tags}
- TagMemoryStart:PtrUInt;    {Start of the last block reported by ARM Tags}
- TagMemoryLength:LongWord;  {Adjusted Size of the last block reported by ARM Tags}
- TagMemoryAddress:PtrUInt;  {Adjusted Address of the last block reported by ARM Tags}
+ TagMemoryCount:LongWord;     {Number of ARM MEM Tags found during parse}
+ TagMemorySize:LongWord;      {Size of the last block reported by ARM Tags}
+ TagMemoryStart:PtrUInt;      {Start of the last block reported by ARM Tags}
+ TagMemoryLength:LongWord;    {Adjusted Size of the last block reported by ARM Tags}
+ TagMemoryAddress:PtrUInt;    {Adjusted Address of the last block reported by ARM Tags}
 
  {Tag Video Text Variables}
- TagVideoTextCount:LongWord;{Number of ARM VIDEOTEXT Tags found during parse}
+ TagVideoTextCount:LongWord;  {Number of ARM VIDEOTEXT Tags found during parse}
  
  {Tag Ramdisk Variables}
- TagRamdiskCount:LongWord;  {Number of ARM RAMDISK Tags found during parse}
+ TagRamdiskCount:LongWord;    {Number of ARM RAMDISK Tags found during parse}
  
  {Tag Init RD Variables}
- TagInitRdCount:LongWord;   {Number of ARM INITRD Tags found during parse (Deprecated)}
+ TagInitRdCount:LongWord;     {Number of ARM INITRD Tags found during parse (Deprecated)}
  
  {Tag Init RD2 Variables}
- TagInitRd2Count:LongWord;  {Number of ARM INITRD2 Tags found during parse}
+ TagInitRd2Count:LongWord;    {Number of ARM INITRD2 Tags found during parse}
  TagInitRd2Start:LongWord;
  TagInitRd2Size:LongWord;
  
  {Tag Serial Variables}
- TagSerialCount:LongWord;   {Number of ARM SERIAL Tags found during parse}
+ TagSerialCount:LongWord;     {Number of ARM SERIAL Tags found during parse}
  TagSerialNoLow:LongWord;
  TagSerialNoHigh:LongWord;
 
  {Tag Revision Variables}
- TagRevisionCount:LongWord; {Number of ARM REVISION Tags found during parse}
+ TagRevisionCount:LongWord;   {Number of ARM REVISION Tags found during parse}
  TagRevisionNo:LongWord;
 
  {Tag Video FB Variables}
- TagVideoFBCount:LongWord;  {Number of ARM VIDEOLFB Tags found during parse}
+ TagVideoFBCount:LongWord;    {Number of ARM VIDEOLFB Tags found during parse}
 
  {Tag Command Variables}
- TagCmdCount:LongWord;      {Number of ARM CMDLINE Tags found during parse}
- TagCommandSize:LongWord;   {Length of the command line in characters (Including null terminator)}
- TagCommandCount:LongInt;   {Count of parameters (space delimited) in the command line}
- TagCommandAddress:PChar;   {Pointer to the start of the command line}
+ TagCmdCount:LongWord;        {Number of ARM CMDLINE Tags found during parse}
+ TagCommandSize:LongWord;     {Length of the command line in characters (Including null terminator)}
+ TagCommandCount:LongInt;     {Count of parameters (space delimited) in the command line}
+ TagCommandAddress:PAnsiChar; {Pointer to the start of the command line}
 
 var
  {Wait Handlers}
@@ -415,9 +415,9 @@ procedure AARCH64ParseBootTags;
 {Extract some information from the ARM boot tag list and use it to load the
  memory manager, some other information is stored in variables for future use}
  
- function ExtractCommandLine(Value:PChar):Boolean;
+ function ExtractCommandLine(Value:PAnsiChar):Boolean;
  var
-  CommandOffset:PChar;
+  CommandOffset:PAnsiChar;
   CommandLength:LongWord;
  begin
   {}
@@ -429,7 +429,7 @@ procedure AARCH64ParseBootTags;
   TagCommandAddress:=Value;
   
   {Count the command line parameters}
-  TagCommandSize:=SizeOf(Char); {Must be at least the null terminator}
+  TagCommandSize:=SizeOf(AnsiChar); {Must be at least the null terminator}
   TagCommandCount:=0;
   CommandOffset:=TagCommandAddress;
   CommandLength:=0;
@@ -448,8 +448,8 @@ procedure AARCH64ParseBootTags;
      begin
       Inc(CommandLength);
      end;             
-    Inc(TagCommandSize,SizeOf(Char));
-    Inc(CommandOffset,SizeOf(Char)); 
+    Inc(TagCommandSize,SizeOf(AnsiChar));
+    Inc(CommandOffset,SizeOf(AnsiChar)); 
    end; 
   
   {Check last paramter}
@@ -739,8 +739,8 @@ end;
 procedure AARCH64ParseCommandLine;
 {Setup argc, argv and cmdline and process known command line options}
 var
- CommandStart:PChar;
- CommandOffset:PChar;
+ CommandStart:PAnsiChar;
+ CommandOffset:PAnsiChar;
  CommandCount:LongWord;
  CommandLength:LongWord;
 begin
@@ -752,7 +752,7 @@ begin
    argc:=TagCommandCount + 1; {Add one for ParamStr(0)}
      
    {Update argv}
-   argv:=AllocMem(SizeOf(PChar) * (TagCommandCount + 1)); {Add one for ParamStr(0)}
+   argv:=AllocMem(SizeOf(PAnsiChar) * (TagCommandCount + 1)); {Add one for ParamStr(0)}
    
    {Get Kernal Name}
    CommandCount:=0;
@@ -777,14 +777,14 @@ begin
             begin
              {Allocate Command}
              Inc(CommandCount);
-             argv[CommandCount]:=AllocMem(SizeOf(Char) * (CommandLength + 1)); {Add one for null terminator}
+             argv[CommandCount]:=AllocMem(SizeOf(AnsiChar) * (CommandLength + 1)); {Add one for null terminator}
              
              {Copy Command}
              System.Move(CommandStart^,argv[CommandCount]^,CommandLength);
             end;
             
            {Update Offset}
-           Inc(CommandOffset,SizeOf(Char));  
+           Inc(CommandOffset,SizeOf(AnsiChar));  
            
            {Get Next Command}
            CommandStart:=CommandOffset;
@@ -793,7 +793,7 @@ begin
          else
           begin
            {Update Offset}
-           Inc(CommandOffset,SizeOf(Char));  
+           Inc(CommandOffset,SizeOf(AnsiChar));  
            
            {Update Length}
            Inc(CommandLength);
@@ -805,7 +805,7 @@ begin
         begin
          {Allocate Command}
          Inc(CommandCount);
-         argv[CommandCount]:=AllocMem(SizeOf(Char) * (CommandLength + 1)); {Add one for null terminator}
+         argv[CommandCount]:=AllocMem(SizeOf(AnsiChar) * (CommandLength + 1)); {Add one for null terminator}
          
          {Copy Command}
          System.Move(CommandStart^,argv[CommandCount]^,CommandLength);
@@ -833,8 +833,8 @@ end;
 procedure AARCH64ParseEnvironment;
 {Setup envp and process known environment options}
 var
- CommandStart:PChar;
- CommandOffset:PChar;
+ CommandStart:PAnsiChar;
+ CommandOffset:PAnsiChar;
  CommandCount:LongWord;
  CommandLength:LongWord;
 begin
@@ -849,7 +849,7 @@ begin
     end;
     
    {Update envp}
-   envp:=AllocMem(SizeOf(PChar) * (ENVIRONMENT_STRING_COUNT + 1)); {Add one for terminating null}
+   envp:=AllocMem(SizeOf(PAnsiChar) * (ENVIRONMENT_STRING_COUNT + 1)); {Add one for terminating null}
    
    {Check Command Line}
    if TagCommandAddress <> nil then
@@ -870,7 +870,7 @@ begin
            if CommandLength > 0 then
             begin
              {Allocate Command}
-             envp[CommandCount]:=AllocMem(SizeOf(Char) * (CommandLength + 1)); {Add one for null terminator}
+             envp[CommandCount]:=AllocMem(SizeOf(AnsiChar) * (CommandLength + 1)); {Add one for null terminator}
              
              {Copy Command}
              System.Move(CommandStart^,envp[CommandCount]^,CommandLength);
@@ -880,7 +880,7 @@ begin
             end;
             
            {Update Offset}
-           Inc(CommandOffset,SizeOf(Char));  
+           Inc(CommandOffset,SizeOf(AnsiChar));  
            
            {Get Next Command}
            CommandStart:=CommandOffset;
@@ -889,7 +889,7 @@ begin
          else
           begin
            {Update Offset}
-           Inc(CommandOffset,SizeOf(Char));  
+           Inc(CommandOffset,SizeOf(AnsiChar));  
            
            {Update Length}
            Inc(CommandLength);
@@ -900,7 +900,7 @@ begin
        if CommandLength > 0 then
         begin
          {Allocate Command}
-         envp[CommandCount]:=AllocMem(SizeOf(Char) * (CommandLength + 1)); {Add one for null terminator}
+         envp[CommandCount]:=AllocMem(SizeOf(AnsiChar) * (CommandLength + 1)); {Add one for null terminator}
          
          {Copy Command}
          System.Move(CommandStart^,envp[CommandCount]^,CommandLength);

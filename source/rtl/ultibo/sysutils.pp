@@ -201,7 +201,10 @@ var
  SysUtilsFileTimeToSystemTimeHandler:TSysUtilsFileTimeToSystemTime;
  SysUtilsFileTimeToLocalFileTimeHandler:TSysUtilsFileTimeToLocalFileTime;
  
- procedure SysUtilsInitExceptions;
+procedure ResetEnvironmentVariableCount;
+function GetEnvironmentIndex(Const EnvVar : AnsiString) : Integer;
+
+procedure SysUtilsInitExceptions;
  
 implementation
 
@@ -729,7 +732,7 @@ end;
                               OS utility functions
 ****************************************************************************}
 
-Function GetEnvironmentVariable(Const EnvVar : String) : String;
+Function GetEnvironmentVariable(Const EnvVar : AnsiString) : AnsiString;
 begin
  Result:=FPCGetEnvVarFromP(envp,EnvVar);
 end;
@@ -739,9 +742,50 @@ begin
  Result:=FPCCountEnvVar(envp);
 end;
 
+Procedure ResetEnvironmentVariableCount;
+begin
+ FPC_EnvCount:=-1;
+end;
+
+Function FPCGetEnvIdxFromP(EP : PPAnsiChar; EnvVar : String) : Integer;
+// Modified from FPCGetEnvVarFromP
+var
+  hp         : PPAnsiChar;
+  lenvvar,hs : string;
+  eqpos      : longint;
+  idx        : Integer;
+
+begin
+  lenvvar:=upcase(envvar);
+  hp:=EP;
+  idx:=0;
+  Result:=idx;
+  If (hp<>Nil) then
+    while assigned(hp^) do
+     begin
+       inc(idx);
+       hs:=strpas(hp^);
+       eqpos:=pos('=',hs);
+       if upcase(copy(hs,1,eqpos-1))=lenvvar then
+        begin
+          Result:=idx;
+          exit;
+        end;
+       inc(hp);
+     end;
+end;
+
+Function GetEnvironmentIndex(Const EnvVar : AnsiString) : Integer;
+begin
+ Result:=FPCGetEnvIdxFromP(envp,EnvVar);
+end;
+
 Function GetEnvironmentString(Index : Integer) : {$ifdef FPC_RTL_UNICODE}UnicodeString{$else}AnsiString{$endif};
 begin
- Result:=FPCGetEnvStrFromP(envp,Index);
+ Result:='';
+ 
+ if Index >= 1 then
+   Result:=FPCGetEnvStrFromP(envp,Index);
 end;
 
 {$ifdef FPC_LEGACY}

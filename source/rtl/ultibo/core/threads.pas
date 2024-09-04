@@ -3171,6 +3171,11 @@ begin
  UtilityLock.AcquireLock:=SpinLock;
  UtilityLock.ReleaseLock:=SpinUnlock;
  
+ {Initialize Environment Lock}
+ EnvironmentLock.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
+ EnvironmentLock.AcquireLock:=MutexLock;
+ EnvironmentLock.ReleaseLock:=MutexUnlock;
+
  {Initialize Shutdown Semaphore}
  ShutdownSemaphore.Semaphore:=SemaphoreCreate(0);
  ShutdownSemaphore.WaitSemaphore:=SemaphoreWaitEx;
