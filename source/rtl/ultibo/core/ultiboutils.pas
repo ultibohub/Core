@@ -1,7 +1,7 @@
 {
 Ultibo utils unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -145,8 +145,8 @@ function AddQuotesIfSpaced(const AValue:String):String;
 function ExtractCommand(const ACommandLine:String):String;
 function ExtractParameters(const ACommandLine:String):String;
 
-function AllocateCommandLine(const ACommandLine:String;out AArgC:Integer):PPChar;
-procedure ReleaseCommandLine(AArgV:PPChar);
+function AllocateCommandLine(const ACommandLine:String;out AArgC:Integer):PPAnsiChar;
+procedure ReleaseCommandLine(AArgV:PPAnsiChar);
 
 function MultiStringToStrings(ABuffer:Pointer;ASize:Integer;AStrings:TStrings):Boolean;
 function StringsToMultiString(AStrings:TStrings;var ABuffer:Pointer;var ASize:Integer):Boolean;
@@ -154,10 +154,10 @@ function StringsToMultiString(AStrings:TStrings;var ABuffer:Pointer;var ASize:In
 function MultiStringToDelimited(ABuffer:PChar;ADelimiter:String):String;
 function DelimitedToMultiString(const AString:String;ADelimiter:String):PChar;
 
-function DuplicateString(AString:PChar):PChar;
+function DuplicateString(AString:PAnsiChar):PAnsiChar;
 function DuplicateWideString(AString:PWideChar):PWideChar;
 
-function DuplicateMultiString(AString:PChar):PChar;
+function DuplicateMultiString(AString:PAnsiChar):PAnsiChar;
 function DuplicateMultiWideString(AString:PWideChar):PWideChar;
 
 {==============================================================================}
@@ -1720,7 +1720,7 @@ end;
 
 {==============================================================================}
 
-function AllocateCommandLine(const ACommandLine:String;out AArgC:Integer):PPChar;
+function AllocateCommandLine(const ACommandLine:String;out AArgC:Integer):PPAnsiChar;
 {Allocate a C style command line and return ArgC and ArgV in the correct format}
 {CommandLine: The command line to be formatted into C style ArgV and ArgC}
 {ArgC: The count of command line parameters in the result}
@@ -1730,7 +1730,7 @@ var
  Size:LongWord;
  Index:LongWord;
  Offset:LongWord;
- Buffer:PPChar;
+ Buffer:PPAnsiChar;
  Counter:Integer;
  Params:TStringList;
 begin
@@ -1742,7 +1742,7 @@ begin
  
  {Setup Defaults (Include argv[0])}
  AArgC:=1; 
- Size:=Length(Name) + SizeOf(Char);
+ Size:=(Length(Name) + 1) * SizeOf(AnsiChar);
  
  Params:=TStringList.Create;
  try
@@ -1756,19 +1756,19 @@ begin
     if Length(Param) > 0 then
      begin
       Inc(AArgC);
-      Inc(Size,Length(Param) + SizeOf(Char));
+      Inc(Size,(Length(Param) + 1) * SizeOf(AnsiChar));
      end;
    end;
    
   {Allocate Command Line}
-  Buffer:=AllocMem(((AArgC + 1) * SizeOf(PChar)) + Size);
+  Buffer:=AllocMem(((AArgC + 1) * SizeOf(PAnsiChar)) + Size);
 
   {Copy Name}
   Index:=0;
-  Offset:=(AArgC + 1) * SizeOf(PChar);
-  Buffer[Index]:=PChar(Pointer(Buffer) + Offset);
-  StrLCopy(Buffer[Index],PChar(Name),Length(Name));
-  Inc(Offset,Length(Name) + SizeOf(Char));
+  Offset:=(AArgC + 1) * SizeOf(PAnsiChar);
+  Buffer[Index]:=PAnsiChar(Pointer(Buffer) + Offset);
+  StrLCopy(Buffer[Index],PAnsiChar(AnsiString(Name)),Length(Name));
+  Inc(Offset,(Length(Name) + 1) * SizeOf(AnsiChar));
   
   {Copy Params}
   for Counter:=0 to Params.Count - 1 do
@@ -1777,9 +1777,9 @@ begin
     if Length(Param) > 0 then
      begin
       Inc(Index);
-      Buffer[Index]:=PChar(Pointer(Buffer) + Offset);
-      StrLCopy(Buffer[Index],PChar(Param),Length(Param));
-      Inc(Offset,Length(Param) + SizeOf(Char));
+      Buffer[Index]:=PAnsiChar(Pointer(Buffer) + Offset);
+      StrLCopy(Buffer[Index],PAnsiChar(AnsiString(Param)),Length(Param));
+      Inc(Offset,(Length(Param) + 1) * SizeOf(AnsiChar));
      end;
    end;
   
@@ -1795,7 +1795,7 @@ end;
 
 {==============================================================================}
 
-procedure ReleaseCommandLine(AArgV:PPChar);
+procedure ReleaseCommandLine(AArgV:PPAnsiChar);
 {Free a C command line allocated by AllocateCommandLine}
 {ArgV: The command line to be freed}
 begin
@@ -1966,7 +1966,7 @@ end;
 
 {==============================================================================}
 
-function DuplicateString(AString:PChar):PChar;
+function DuplicateString(AString:PAnsiChar):PAnsiChar;
 {Note: The returned string must be freed using LocalFree}
 var
  Len:DWORD;
@@ -1975,8 +1975,8 @@ begin
  Result:=nil;
  if AString = nil then Exit;
 
- Len:=(lstrlenA(AString) + 1) * SizeOf(CHAR);
- Result:=PChar(LocalAlloc(LMEM_FIXED,Len));
+ Len:=(lstrlenA(AString) + 1) * SizeOf(AnsiCHAR);
+ Result:=PAnsiChar(LocalAlloc(LMEM_FIXED,Len));
  if (Result <> nil) then
   begin
    CopyMemory(Result,AString,Len);
@@ -2005,7 +2005,7 @@ end;
 
 {==============================================================================}
 
-function DuplicateMultiString(AString:PChar):PChar;
+function DuplicateMultiString(AString:PAnsiChar):PAnsiChar;
 {Note: The returned string must be freed using LocalFree}
 var
  Size:LongWord;
@@ -2026,7 +2026,7 @@ begin
   end;
   
  {Duplicate String}
- Result:=PChar(LocalAlloc(LMEM_FIXED,Size + SizeOf(Byte)));
+ Result:=PAnsiChar(LocalAlloc(LMEM_FIXED,Size + SizeOf(Byte)));
  if (Result <> nil) then
   begin
    CopyMemory(Result,AString,Size + SizeOf(Byte));

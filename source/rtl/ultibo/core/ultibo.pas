@@ -380,7 +380,7 @@ type
    dwMinorVersion:DWORD;
    dwBuildNumber:DWORD;
    dwPlatformId:DWORD;
-   szCSDVersion:array [0..127] of CHAR;
+   szCSDVersion:array [0..127] of AnsiCHAR;
  end;
  OSVERSIONINFOA = _OSVERSIONINFOA;
  TOsVersionInfoA = OSVERSIONINFOA;
@@ -482,8 +482,8 @@ type
    nFileSizeLow:DWORD;
    dwReserved0:DWORD;
    dwReserved1:DWORD;
-   cFileName:array [0..MAX_PATH - 1] of CHAR;
-   cAlternateFileName:array [0..13] of CHAR;
+   cFileName:array [0..MAX_PATH - 1] of AnsiCHAR;
+   cAlternateFileName:array [0..13] of AnsiCHAR;
  end;} {TWin32FindDataA is now defined in SysUtils}
  WIN32_FIND_DATAA = _WIN32_FIND_DATAA;
  LPWIN32_FIND_DATAA = ^WIN32_FIND_DATAA;
@@ -5438,21 +5438,87 @@ end;
 {==============================================================================}
 
 function GetEnvironmentStringsA:LPSTR;
+var
+ Size:LongWord;
+ Index:LongWord;
+ Count:LongWord;
+ Offset:PtrUInt;
+ Buffer:String;
 begin
  {}
  Result:=nil;
+
+ {Get Count}
+ Count:=EnvironmentCount(False);
+ if Count = 0 then Exit;
+
+ Size:=1 * SizeOf(AnsiChar);
+ Offset:=0;
  
- //To Do
+ {Calculate Size}
+ for Index:=1 to Count do
+  begin
+   Buffer:=EnvironmentString(Index);
+   Inc(Size,(Length(Buffer) + 1) * SizeOf(AnsiChar));
+  end;
+
+ {Allocate Environment}
+ Result:=AllocMem(Size);
+ if Result = nil then Exit;
+ 
+ {Copy Environment}
+ for Index:=1 to Count do
+  begin
+   Buffer:=EnvironmentString(Index);
+   StrLCopy(PAnsiChar(Result + Offset),PAnsiChar(AnsiString(Buffer)),Length(Buffer));
+   Inc(Offset,(Length(Buffer) + 1) * SizeOf(AnsiChar));
+  end;
+  
+ {Add Final Null} 
+ PByte(Result + Offset)^:=0;
 end;
 
 {==============================================================================}
 
 function GetEnvironmentStringsW:LPWSTR;
+var
+ Size:LongWord;
+ Index:LongWord;
+ Count:LongWord;
+ Offset:PtrUInt;
+ Buffer:String;
 begin
  {}
  Result:=nil;
- 
- //To Do
+
+ {Get Count}
+ Count:=EnvironmentCount(False);
+ if Count = 0 then Exit;
+
+ Size:=1 * SizeOf(WideChar);
+ Offset:=0;
+
+ {Calculate Size}
+ for Index:=1 to Count do
+  begin
+   Buffer:=EnvironmentString(Index);
+   Inc(Size,(Length(Buffer) + 1) * SizeOf(WideChar));
+  end;
+
+ {Allocate Environment}
+ Result:=AllocMem(Size);
+ if Result = nil then Exit;
+
+ {Copy Environment}
+ for Index:=1 to Count do
+  begin
+   Buffer:=EnvironmentString(Index);
+   StringToWideChar(Buffer,PWideChar(Result + Offset),(Length(Buffer) + 1) shl 1); {Buffer length in chars, Multiply by SizeOf(WideChar)}
+   Inc(Offset,(Length(Buffer) + 1) * SizeOf(WideChar));
+  end;
+  
+ {Add Final Null} 
+ PWord(Result + Offset)^:=0;
 end;
 
 {==============================================================================}
@@ -5472,6 +5538,7 @@ begin
  
  if pstr = nil then Exit;
  
+ {Free Environment}
  FreeMem(pstr);
  
  Result:=True;
@@ -5486,6 +5553,7 @@ begin
  
  if pstr = nil then Exit;
  
+ {Free Environment}
  FreeMem(pstr);
  
  Result:=True;

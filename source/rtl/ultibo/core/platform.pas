@@ -12003,6 +12003,8 @@ function EnvironmentSet(const AName,AValue:String):LongWord; inline;
 {Name: The name of the variable to add or update (eg TZ)}
 {Value: The new value of the variable (eg EST+5)}
 {Return: ERROR_SUCCESS if the value was set or another error code on failure}
+
+{Note: Passing an empty value will delete the environment variable if it exists}
 begin
  {}
  if Assigned(EnvironmentSetHandler) then
@@ -12070,7 +12072,7 @@ end;
 function EnvironmentString(AIndex:LongWord):String; inline;
 {Get an environment variable by index}
 {Index: The index of the variable to get (1 to EnvironmentCount)}
-{Return: The environment variable or an empty string of index is not valid}
+{Return: The environment variable or an empty string if index is not valid}
 begin
  {}
  if Assigned(EnvironmentStringHandler) then
@@ -12154,7 +12156,7 @@ begin
       envp[Count]:=AllocMem(SizeOf(AnsiChar) * (Length(Buffer) + 1)); {Add one for null terminator}
 
       {Copy Buffer}
-      StrLCopy(PAnsiChar(envp[Count]),PAnsiChar(Buffer),Length(Buffer));
+      StrLCopy(PAnsiChar(envp[Count]),PAnsiChar(AnsiString(Buffer)),Length(Buffer));
 
       {Mark End}
       envp[Count + 1]:=nil;
@@ -12172,7 +12174,7 @@ begin
       envp[Index - 1]:=AllocMem(SizeOf(AnsiChar) * (Length(Buffer) + 1)); {Add one for null terminator}
 
       {Copy Buffer}
-      StrLCopy(PAnsiChar(envp[Index - 1]),PAnsiChar(Buffer),Length(Buffer));
+      StrLCopy(PAnsiChar(envp[Index - 1]),PAnsiChar(AnsiString(Buffer)),Length(Buffer));
      end;
    end;
 

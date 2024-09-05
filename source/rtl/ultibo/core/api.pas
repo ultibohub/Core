@@ -12637,6 +12637,8 @@ function environment_set(name, value: PCHAR): uint32_t; stdcall;
 {Name: The name of the variable to add or update (eg TZ)}
 {Value: The new value of the variable (eg EST+5)}
 {Return: ERROR_SUCCESS if the value was set or another error code on failure}
+
+{Note: Passing an empty value will delete the environment variable if it exists}
 begin
  {}
  Result:=EnvironmentSet(name,value);
@@ -12669,7 +12671,7 @@ end;
 function environment_string(index: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
 {Get an environment variable by index}
 {Index: The index of the variable to get (1 to EnvironmentCount)}
-{Return: The environment variable or an empty string of index is not valid}
+{Return: The environment variable or an empty string if index is not valid}
 begin
  {}
  Result:=APIStringToPCharBuffer(EnvironmentString(index),_string,len);

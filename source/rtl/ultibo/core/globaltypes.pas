@@ -1,7 +1,7 @@
 {
 Ultibo Global Type Definitions.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -308,8 +308,8 @@ type
  SSIZE_T = SizeInt; {LONG_PTR;}
  
  {String types}
- LPSTR = ^CHAR;
- LPCSTR = ^CHAR;
+ LPSTR = ^AnsiCHAR;
+ LPCSTR = ^AnsiCHAR;
  
  {Wide String types}
  WCHAR = WideChar;

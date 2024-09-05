@@ -178,7 +178,11 @@ Syscalls
   \newlib\libc\stdlib\environ.c 
   
    char **environ = &initial_env[0];
-   
+
+  The environ variable is allocated by this unit during initialization and the existing 
+  system environment is copied to it. The environ variable must not be modified directly
+  by applications, the only access to it should be using getenv(), setenv() and unsetenv().
+
   The TZ environment variable is used by a number of functions in Newlib including tzset and
   strftime. This variable can be set on the command line or using the SetEnvironmentVariable()
   function in the Ultibo unit. See the GNU C library reference for details of the format and
@@ -1405,7 +1409,7 @@ type
 {==============================================================================}
 var
  {Syscalls specific variables}
- environ:PPChar; external;  {Pointer to the global environment block in the C library}
+ environ:PPAnsiChar; external;  {Pointer to the global environment block in the C library}
  
 var
  {Static initialization variables}
@@ -1498,6 +1502,9 @@ function memalign(alignment, size: size_t): Pointer; cdecl; external libc name '
 function posix_memalign(memptr: PPointer; alignment, size: size_t): int; cdecl; public name 'posix_memalign';
 
 function realpath(path, resolved_path: PChar): PChar; cdecl; public name 'realpath';
+
+function setenv(name, value: PChar; overwrite: int): int; cdecl; public name 'setenv';
+function unsetenv(name: PChar): int; cdecl; public name 'unsetenv';
 
 {==============================================================================}
 {Syscalls Functions (Unistd)}
@@ -1874,6 +1881,8 @@ var
  
  SyscallsKeyDestructor:array[0..THREAD_TLS_MAXIMUM - 1] of Tpthread_destructor_routine;
  
+ SyscallsEnvSetHandler:TEnvironmentSet;  {System EnvironmentSet handler (Replaced to allow updating C environment)}
+ 
  //To Do //Continuing 
  
  //__exidx_end //__exidx_start //__dso_handle //TestingLIBSTDC++ //Possibly not required, used internally by Libgcc etc?
@@ -1896,6 +1905,8 @@ function SyscallsGetPthread:PSyscallsPthread; forward;
 
 function SyscallsPthreadStart(Data:PSyscallsPthreadData):PtrInt; forward;
 procedure SyscallsPthreadEnd(Value:Pointer); forward;
+
+function SyscallsEnvironmentSet(const Name,Value:String):LongWord; forward;
 
 {==============================================================================}
 {==============================================================================}
@@ -1975,8 +1986,11 @@ begin
    if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to initialize Syscalls heap');
   end;
 
+ {Lock Mutex}
+ MutexLock(SyscallsEnvLock);
+
  {Allocate Environment}
- environ:=AllocMem(SizeOf(PChar) * (ENVIRONMENT_STRING_COUNT + 1)); {Add one for terminating null}
+ environ:=AllocMem(SizeOf(PAnsiChar) * (ENVIRONMENT_STRING_COUNT + 1)); {Add one for terminating null}
  if environ = nil then
   begin
    if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to allocate Syscalls environment');
@@ -1987,6 +2001,13 @@ begin
   begin
    environ[Count]:=StrNew(envp[Count]);
   end;
+  
+ {Setup Environment Handler}
+ SyscallsEnvSetHandler:=EnvironmentSetHandler;
+ EnvironmentSetHandler:=@SyscallsEnvironmentSet;
+
+ {Unlock Mutex}
+ MutexUnlock(SyscallsEnvLock);
 
  {Execute Preinit functions}
  TableStart:=@__preinit_array_start;
@@ -3505,7 +3526,92 @@ begin
  {Return Result}
  Result:=Buffer;
 end;
+
+{==============================================================================}
+
+function setenv(name, value: PChar; overwrite: int): int; cdecl;
+{Change or add an environment variable}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=-1;
+
+ {Check Overwrite Existing}
+ if (overwrite = 0) and (EnvironmentIndex(name) <> 0) then
+  begin
+    Result:=0;
+    Exit;
+  end;
+  
+ {Set Environment}
+ ResultCode:=SyscallsEnvironmentSet(name,value);
+ if ResultCode = ERROR_SUCCESS then 
+  begin
+   Result:=0;
+  end
+ else if ResultCode = ERROR_INVALID_PARAMETER then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+  end
+ else if ResultCode = ERROR_NOT_ENOUGH_MEMORY then 
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOMEM;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+  end;
+end;
+
+{==============================================================================}
+
+function unsetenv(name: PChar): int; cdecl;
+{Delete an environment variable}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=-1;
  
+ {Set Environment}
+ ResultCode:=SyscallsEnvironmentSet(name,'');
+ if ResultCode = ERROR_SUCCESS then 
+  begin
+   Result:=0;
+  end
+ else if ResultCode = ERROR_INVALID_PARAMETER then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+  end
+ else if ResultCode = ERROR_NOT_ENOUGH_MEMORY then 
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOMEM;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+  end;
+end;
+
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Unistd)}
@@ -10163,6 +10269,95 @@ begin
  
  {Call End Thread}
  EndThread(PtrUInt(Value));
+end;
+
+{==============================================================================}
+
+function SyscallsEnvironmentSet(const Name,Value:String):LongWord;
+var
+ Count:LongWord;
+ Index:LongWord;
+ Buffer:String;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Name}
+ if Length(Name) = 0 then Exit;
+
+ {Lock Mutex}
+ MutexLock(SyscallsEnvLock);
+ try
+  {Get Existing Count}
+  Count:=EnvironmentCount(False);
+
+  {Find Existing Index}
+  Index:=EnvironmentIndex(Name);
+
+  {Check Count and Index}
+  if environ[Count] <> nil then Exit;
+  if (Index > 0) and (environ[Index - 1] = nil) then Exit;
+
+  {Check System Handler}
+  if Assigned(SyscallsEnvSetHandler) then
+   begin
+    {Call System Handler}
+    Result:=SyscallsEnvSetHandler(Name,Value);
+    if Result <> ERROR_SUCCESS then Exit;
+   end;
+
+  {Check for Delete}
+  if Length(Value) = 0 then
+   begin
+    if Index > 0 then
+     begin
+      {Delete Value}
+      StrDispose(environ[Index - 1]);
+
+      {Move Values}
+      while Index < Count do
+       begin
+        environ[Index - 1]:=environ[Index];
+
+        Inc(Index);
+       end; 
+
+      {Mark End}
+      environ[Index - 1]:=nil;
+     end;
+   end
+  else
+   begin
+    {Get Buffer}
+    Buffer:=Name + '=' + Value;
+    
+    if Index = 0 then
+     begin
+      Result:=ERROR_NOT_ENOUGH_MEMORY;
+
+      {Check Count}
+      if Count >= ENVIRONMENT_STRING_COUNT then Exit;
+
+      {Add Value}
+      environ[Count]:=StrNew(PAnsiChar(AnsiString(Buffer)));
+
+      {Mark End}
+      environ[Count + 1]:=nil;
+     end
+    else
+     begin
+      {Update Value}
+      StrDispose(environ[Index - 1]);
+
+      environ[Index - 1]:=StrNew(PAnsiChar(AnsiString(Buffer)));
+     end;
+   end;
+
+  Result:=ERROR_SUCCESS;
+ finally
+  {Unlock Mutex}
+  MutexUnlock(SyscallsEnvLock);
+ end; 
 end;
 
 {==============================================================================}
