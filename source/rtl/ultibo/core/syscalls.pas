@@ -420,25 +420,26 @@ const
  
 const 
  {Newlib constants from sys/stat.h}
- _IFMT             = $0170000; // type of file
- _IFDIR            = $0040000; // directory
- _IFCHR            = $0020000; // character special
- _IFBLK            = $0060000; // block special
- _IFREG            = $0100000; // regular
- _IFLNK            = $0120000; // symbolic link
- _IFSOCK           = $0140000; // socket
- _IFIFO            = $0010000; // fifo
+ {Note these values are Octal not Hexadecimal}
+ _IFMT             = &0170000; // type of file
+ _IFDIR            = &0040000; // directory
+ _IFCHR            = &0020000; // character special
+ _IFBLK            = &0060000; // block special
+ _IFREG            = &0100000; // regular
+ _IFLNK            = &0120000; // symbolic link
+ _IFSOCK           = &0140000; // socket
+ _IFIFO            = &0010000; // fifo
 
  S_BLKSIZE         = 1024;     // size of a block
 
- S_ISUID           = $0004000; // set user id on execution
- S_ISGID           = $0002000; // set group id on execution
- S_ISVTX           = $0001000; // save swapped text even after use
+ S_ISUID           = &0004000; // set user id on execution
+ S_ISGID           = &0002000; // set group id on execution
+ S_ISVTX           = &0001000; // save swapped text even after use
 
- S_IREAD           = $0000400; // read permission, owner
- S_IWRITE          = $0000200; // write permission, owner
- S_IEXEC           = $0000100; // execute/search permission, owner
- S_ENFMT           = $0002000; // enforcement-mode locking
+ S_IREAD           = &0000400; // read permission, owner
+ S_IWRITE          = &0000200; // write permission, owner
+ S_IEXEC           = &0000100; // execute/search permission, owner
+ S_ENFMT           = &0002000; // enforcement-mode locking
 
  S_IFMT            = _IFMT;
  S_IFDIR           = _IFDIR;
@@ -454,20 +455,20 @@ const
  _S_IFCHR          = _IFCHR;
  _S_IFIFO          = _IFIFO;
  _S_IFREG          = _IFREG;
- _S_IREAD          = $0000400;
- _S_IWRITE         = $0000200;
+ _S_IREAD          = &0000400;
+ _S_IWRITE         = &0000200;
  {Open modes}
- S_IRUSR           = $0000400; // read permission, owner
- S_IWUSR           = $0000200; // write permission, owner
- S_IXUSR           = $0000100; // execute / search permission, owner
+ S_IRUSR           = &0000400; // read permission, owner
+ S_IWUSR           = &0000200; // write permission, owner
+ S_IXUSR           = &0000100; // execute / search permission, owner
  S_IRWXU           = S_IRUSR or S_IWUSR or S_IXUSR;
- S_IRGRP           = $0000040; // read permission, group
- S_IWGRP           = $0000020; // write permission, grougroup
- S_IXGRP           = $0000010; // execute / search permission, group
+ S_IRGRP           = &0000040; // read permission, group
+ S_IWGRP           = &0000020; // write permission, grougroup
+ S_IXGRP           = &0000010; // execute / search permission, group
  S_IRWXG           = S_IRGRP or S_IWGRP or S_IXGRP;
- S_IROTH           = $0000004; // read permission, other
- S_IWOTH           = $0000002; // write permission, other
- S_IXOTH           = $0000001; // execute / search permission, other
+ S_IROTH           = &0000004; // read permission, other
+ S_IWOTH           = &0000002; // write permission, other
+ S_IXOTH           = &0000001; // execute / search permission, other
  S_IRWXO           = S_IROTH or S_IWOTH or S_IXOTH;
  
 const 
