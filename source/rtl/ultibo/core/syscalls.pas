@@ -167,7 +167,7 @@ Syscalls
   however internally Newlib stores these into the _file member of a _FILE structure (see
   below) and this is defined as short which is only 16-bit. Because of this we have to map
   each Ultibo handle to a TSyscallsEntry and use the functions SyscallsAddEntry, 
-  SyscallsRemoveEntry and SyscallsGetEntry which start at zero and increment to 65535.
+  SyscallsRemoveEntry and SyscallsGetEntry which start at zero and increment to 1023 (was 65535).
   
   The global errno variable (not used for reentrant version ) is defined in 
   \newlib\libc\reent\reent.c 
@@ -767,6 +767,13 @@ const
  _IOC_WRITE = 1;
  _IOC_READ = 2;
 
+{$IFDEF SYSCALLS_EXPORT_SOCKETS} 
+const
+ {FD set constants from sys/select.h}
+ FD_SETSIZE = 1024;
+ NFDBITS = 8 * SizeOf(PtrUInt); {fd_mask}
+{$ENDIF}
+
 const
  {Library names}
  libc = 'c';
@@ -1130,22 +1137,21 @@ type
  {From sys/_timeval.h}
  suseconds_t = __suseconds_t;
  
-{$IFNDEF SYSCALLS_EXPORT_SOCKETS} 
  Ptimeval = ^Ttimeval;
  Ttimeval = record
   tv_sec: time_t;       {seconds}
   tv_usec: suseconds_t; {and microseconds}
  end;
-{$ELSE}
- Ptimeval = Sockets.PTimeVal;
- Ttimeval = Sockets.TTimeVal;
-{$ENDIF}
 
 {$IFDEF SYSCALLS_EXPORT_SOCKETS} 
 type
  {From sys/select.h}
- Tfd_set = Sockets.TFDSet;
- Pfd_set = Sockets.PFDSet;
+ fd_mask = PtrUInt; {unsigned long}
+ 
+ Pfd_set = ^Tfd_set;
+ Tfd_set = record
+  fds_bits: array[0..(FD_SETSIZE div NFDBITS) - 1] of fd_mask
+ end;
 {$ENDIF}
  
 type
@@ -1774,7 +1780,13 @@ function _IOC_DIR(nr: LongWord): LongWord;
 function _IOC_TYPE(nr: LongWord): LongWord;
 function _IOC_NR(nr: LongWord): LongWord;
 function _IOC_SIZE(nr: LongWord): LongWord;
-  
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
+{Syscalls Macro Functions (FD sets)}
+function FD_CLR(fdno: int; var nset: Tfd_set): int;
+function FD_ISSET(fdno: int; const nset: Tfd_set): int;
+function FD_SET(fdno: int; var nset: Tfd_set): int;
+function FD_ZERO(out nset: Tfd_set): int;
+{$ENDIF}  
 {==============================================================================}
 {==============================================================================}
 {Syscalls Libraries}
@@ -1793,9 +1805,23 @@ const
  SYSCALLS_THREAD_NAME = 'POSIX Thread'; {Name of a Posix Thread}
  
  SYSCALLS_TABLE_MIN = 3;     {Skip Stdin, Stdout, Stderr}
- SYSCALLS_TABLE_MAX = 65535; {Only support 16-bit handles}
+ SYSCALLS_TABLE_MAX = 1023;  {Only support 16-bit handles} {Reduced from 65535}
  SYSCALLS_TABLE_MASK = $F;   {16 buckets for handle lookups}
  
+ SYSCALLS_ENTRY_NONE   = 0;
+ SYSCALLS_ENTRY_FILE   = 1;
+ SYSCALLS_ENTRY_SOCKET = 2;
+ 
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}  
+ {Syscalls FD set constants}
+ {$IFDEF CPU32}
+ FDSET_SHIFT = 5; {32bit : ln(32)/ln(2)=5}
+ {$ENDIF CPU32}
+ {$IFDEF CPU64}
+ FDSET_SHIFT = 6; {64bit : ln(64)/ln(2)=6}
+ {$ENDIF CPU64}
+ FDSET_MASK = 1 shl FDSET_SHIFT - 1; 
+{$ENDIF}
 {==============================================================================}
 {==============================================================================}
 type
@@ -1812,6 +1838,7 @@ type
  TSyscallsEntry = record
   Number:LongWord;
   Handle:THandle;
+  Source:LongWord;
   Prev:PSyscallsEntry;
   Next:PSyscallsEntry;
  end;
@@ -1891,11 +1918,14 @@ var
 {==============================================================================}
 {==============================================================================}
 {Forward Declarations}
+function socket_get_error(error: int): int; forward;
+
 function SyscallsGetStat(Handle:THandle;stat:Pstat):Boolean; forward;
 function SyscallsGetStat64(Handle:THandle;stat64:Pstat64):Boolean; forward;
 
 function SyscallsGetEntry(Number:LongWord):PSyscallsEntry; forward;
-function SyscallsAddEntry(Handle:THandle):PSyscallsEntry; forward;
+function SyscallsFindEntry(Handle:THandle):PSyscallsEntry; forward;
+function SyscallsAddEntry(Handle:THandle;Source:LongWord):PSyscallsEntry; forward;
 function SyscallsRemoveEntry(Entry:PSyscallsEntry):Boolean; forward;
 
 function SyscallsInitializeHeap:Boolean; forward;
@@ -2148,14 +2178,32 @@ begin
    Entry:=SyscallsGetEntry(fd);
    if Entry <> nil then
     begin
-     {Close file}
-     FSFileClose(Entry^.Handle);
-     
+     if Entry^.Source = SYSCALLS_ENTRY_FILE then
+      begin
+       {Close file}
+       FSFileClose(Entry^.Handle);
+
+       {Return Result}
+       Result:=0;
+      end
+     {$IFDEF SYSCALLS_EXPORT_SOCKETS}
+     else if Entry^.Source = SYSCALLS_ENTRY_SOCKET then
+      begin
+       {Close socket}
+       Result:=Sockets.CloseSocket(Entry^.Handle);
+       
+       {Check Error}
+       if Result = SOCKET_ERROR then ptr^._errno:=socket_get_error(SocketError());
+      end
+     {$ENDIF}
+     else
+      begin
+       {Return Error}
+       ptr^._errno:=EINVAL;
+      end;
+
      {Remove Entry}
      SyscallsRemoveEntry(Entry); 
-     
-     {Return Result}
-     Result:=0;
     end
    else
     begin
@@ -2269,7 +2317,7 @@ begin
  
  {Get Entry}
  Entry:=SyscallsGetEntry(fd);
- if Entry <> nil then
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
   begin
   
    //To Do //Implement any that are required
@@ -2323,7 +2371,7 @@ begin
   begin
    {Normal file}
    Entry:=SyscallsGetEntry(fd);
-   if Entry <> nil then
+   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
     begin
      {Get Stat}
      if not SyscallsGetStat64(Entry^.Handle,stat) then Exit;
@@ -2378,7 +2426,7 @@ begin
   begin
    {Normal file}
    Entry:=SyscallsGetEntry(fd);
-   if Entry <> nil then
+   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
     begin
      {Get Stat}
      if not SyscallsGetStat(Entry^.Handle,stat) then Exit;
@@ -2617,7 +2665,7 @@ begin
  
  {Get Entry}
  Entry:=SyscallsGetEntry(fd);
- if Entry <> nil then
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
   begin
    {Seek file}
    Result:=FSFileSeekEx(Entry^.Handle,pos,whence);
@@ -2655,7 +2703,7 @@ begin
  
  {Get Entry}
  Entry:=SyscallsGetEntry(fd);
- if Entry <> nil then
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
   begin
    {Seek file}
    Result:=FSFileSeek(Entry^.Handle,pos,whence);
@@ -2863,7 +2911,7 @@ begin
   end;
 
  {Add Entry}  
- Entry:=SyscallsAddEntry(Handle);
+ Entry:=SyscallsAddEntry(Handle,SYSCALLS_ENTRY_FILE);
  if Entry = nil then
   begin
    {Return Error}
@@ -2950,7 +2998,7 @@ begin
   begin
    {Normal file}
    Entry:=SyscallsGetEntry(fd);
-   if Entry <> nil then
+   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
     begin
      {Read file}
      Result:=FSFileRead(Entry^.Handle,buf^,cnt);
@@ -3393,7 +3441,7 @@ begin
   begin
    {Normal file}
    Entry:=SyscallsGetEntry(fd);
-   if Entry <> nil then
+   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
     begin
      {Write file}
      Result:=FSFileWrite(Entry^.Handle,buf^,cnt);
@@ -3833,7 +3881,7 @@ begin
   begin
    {Normal file}
    Entry:=SyscallsGetEntry(fd);
-   if Entry <> nil then
+   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
     begin
      {Truncate}
      FSFileSeekEx(Entry^.Handle,length,FILE_BEGIN);
@@ -3941,7 +3989,7 @@ begin
   begin
    {Normal file}
    Entry:=SyscallsGetEntry(fd);
-   if Entry <> nil then
+   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
     begin
      {Flush}
      if not FSFileFlush(Entry^.Handle) then
@@ -3993,7 +4041,7 @@ begin
   begin
    {Normal file}
    Entry:=SyscallsGetEntry(fd);
-   if Entry <> nil then
+   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
     begin
      {Flush}
      if not FSFileFlush(Entry^.Handle) then
@@ -8585,19 +8633,54 @@ function socket_accept(socket: int; address: psockaddr; address_len: Psocklen_t)
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Handle:TSocket;
+ Entry:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls accept (socket=' + IntToHex(socket,8) + ' address=' + PtrToHex(address) + ' address_len=' + PtrToHex(address_len) + ')');
  {$ENDIF}
- 
- Result:=fpaccept(socket,address,psocklen(address_len));
- if Result = SOCKET_ERROR then
+
+ {Get Entry}
+ Entry:=SyscallsGetEntry(socket);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   Result:=SOCKET_ERROR;
+   
+   {Accept Socket}
+   Handle:=Sockets.fpaccept(Entry^.Handle,address,psocklen(address_len));
+   if Handle = Integer(INVALID_SOCKET) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+     Exit;
+    end;
+
+   {Add Entry}  
+   Entry:=SyscallsAddEntry(Handle,SYSCALLS_ENTRY_SOCKET);
+   if Entry = nil then
+    begin
+     {Close Socket}
+     Sockets.CloseSocket(Handle);
+
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=ENOMEM;
+     Exit;
+    end;
+
+   {Return Result}
+   Result:=Entry^.Number;
+  end
+ else
+  begin
+   Result:=SOCKET_ERROR;
+
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
-  end;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;  
 end;
 
 {==============================================================================}
@@ -8608,19 +8691,34 @@ function socket_bind(socket: int; address: psockaddr; address_len: socklen_t): i
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Entry:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls bind (socket=' + IntToHex(socket,8) + ' address=' + PtrToHex(address) + ' address_len=' + IntToStr(address_len) + ')');
  {$ENDIF}
  
- Result:=fpbind(socket,address,address_len);
- if Result = SOCKET_ERROR then
+ {Get Entry}
+ Entry:=SyscallsGetEntry(socket);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Bind Socket}
+   Result:=Sockets.fpbind(Entry^.Handle,address,address_len);
+   if Result = SOCKET_ERROR then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+    end;
+  end
+ else
+  begin
+   Result:=SOCKET_ERROR;
+
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
-  end;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;  
 end;
 
 {==============================================================================}
@@ -8631,19 +8729,34 @@ function socket_connect(socket: int; address: psockaddr; address_len: socklen_t)
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Entry:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls connect (socket=' + IntToHex(socket,8) + ' address=' + PtrToHex(address) + ' address_len=' + IntToStr(address_len) + ')');
  {$ENDIF}
  
- Result:=fpconnect(socket,address,address_len);
- if Result = SOCKET_ERROR then
+ {Get Entry}
+ Entry:=SyscallsGetEntry(socket);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Connect Socket}
+   Result:=Sockets.fpconnect(Entry^.Handle,address,address_len);
+   if Result = SOCKET_ERROR then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+    end;
+  end
+ else
+  begin
+   Result:=SOCKET_ERROR;
+
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
-  end;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;  
 end;
 
 {==============================================================================}
@@ -8654,19 +8767,34 @@ function socket_getpeername(socket: int; address: psockaddr; address_len: Psockl
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Entry:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getpeername (socket=' + IntToHex(socket,8) + ' address=' + PtrToHex(address) + ' address_len=' + PtrToHex(address_len) + ')');
  {$ENDIF}
- 
- Result:=fpgetpeername(socket,address,psocklen(address_len));
- if Result = SOCKET_ERROR then
+
+ {Get Entry}
+ Entry:=SyscallsGetEntry(socket);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Get Peer Name}
+   Result:=Sockets.fpgetpeername(Entry^.Handle,address,psocklen(address_len));
+   if Result = SOCKET_ERROR then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+    end;
+  end
+ else
+  begin
+   Result:=SOCKET_ERROR;
+
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
-  end;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;  
 end;
 
 {==============================================================================}
@@ -8677,19 +8805,34 @@ function socket_getsockname(socket: int; address: psockaddr; address_len: Psockl
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Entry:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getsockname (socket=' + IntToHex(socket,8) + ' address=' + PtrToHex(address) + ' address_len=' + PtrToHex(address_len) + ')');
  {$ENDIF}
  
- Result:=fpgetsockname(socket,address,psocklen(address_len));
- if Result = SOCKET_ERROR then
+ {Get Entry}
+ Entry:=SyscallsGetEntry(socket);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Get Sock Name}
+   Result:=Sockets.fpgetsockname(Entry^.Handle,address,psocklen(address_len));
+   if Result = SOCKET_ERROR then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+    end;
+  end
+ else
+  begin
+   Result:=SOCKET_ERROR;
+
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
-  end;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;  
 end;
 
 {==============================================================================}
@@ -8700,19 +8843,34 @@ function socket_getsockopt(socket: int; level, option_name: int; option_value: P
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Entry:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getsockopt (socket=' + IntToHex(socket,8) + ' level=' + IntToStr(level) + ' option_name=' + IntToStr(option_name) + ' option_value=' + PtrToHex(option_value) + ' option_len=' + PtrToHex(option_len) + ')');
  {$ENDIF}
  
- Result:=fpgetsockopt(socket,level,option_name,option_value,psocklen(option_len));
- if Result = SOCKET_ERROR then
+ {Get Entry}
+ Entry:=SyscallsGetEntry(socket);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Get Socket Option}
+   Result:=Sockets.fpgetsockopt(Entry^.Handle,level,option_name,option_value,psocklen(option_len));
+   if Result = SOCKET_ERROR then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+    end;
+  end
+ else
+  begin
+   Result:=SOCKET_ERROR;
+
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
-  end;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;  
 end;
 
 {==============================================================================}
@@ -8723,19 +8881,34 @@ function socket_listen(socket: int; backlog: int): int; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Entry:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls listen (socket=' + IntToHex(socket,8) + ' backlog=' + IntToStr(backlog) + ')');
  {$ENDIF}
  
- Result:=fplisten(socket,backlog);
- if Result = SOCKET_ERROR then
+ {Get Entry}
+ Entry:=SyscallsGetEntry(socket);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Listen Socket}
+   Result:=Sockets.fplisten(Entry^.Handle,backlog);
+   if Result = SOCKET_ERROR then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+    end;
+  end
+ else
+  begin
+   Result:=SOCKET_ERROR;
+
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
-  end;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;  
 end;
 
 {==============================================================================}
@@ -8746,19 +8919,34 @@ function socket_recv(socket: int; buffer: Pointer; len: size_t; flags: int): ssi
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Entry:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls recv (socket=' + IntToHex(socket,8) + ' buffer=' + PtrToHex(buffer) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ')');
  {$ENDIF}
  
- Result:=fprecv(socket,buffer,len,flags);
- if Result = SOCKET_ERROR then
+ {Get Entry}
+ Entry:=SyscallsGetEntry(socket);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Recv Socket}
+   Result:=Sockets.fprecv(Entry^.Handle,buffer,len,flags);
+   if Result = SOCKET_ERROR then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+    end;
+  end
+ else
+  begin
+   Result:=SOCKET_ERROR;
+
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
-  end;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;  
 end;
 
 {==============================================================================}
@@ -8769,19 +8957,34 @@ function socket_recvfrom(socket: int; buffer: Pointer; len: size_t; flags: int; 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Entry:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls recv (socket=' + IntToHex(socket,8) + ' buffer=' + PtrToHex(buffer) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ' address=' + PtrToHex(address) + ' address_len=' + PtrToHex(address_len) + ')');
  {$ENDIF}
  
- Result:=fprecvfrom(socket,buffer,len,flags,address,psocklen(address_len));
- if Result = SOCKET_ERROR then
+ {Get Entry}
+ Entry:=SyscallsGetEntry(socket);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Recv From Socket}
+   Result:=Sockets.fprecvfrom(Entry^.Handle,buffer,len,flags,address,psocklen(address_len));
+   if Result = SOCKET_ERROR then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+    end;
+  end
+ else
+  begin
+   Result:=SOCKET_ERROR;
+
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
-  end;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;  
 end;
 
 {==============================================================================}
@@ -8792,19 +8995,34 @@ function socket_send(socket: int; buffer: Pointer; len: size_t; flags: int): ssi
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Entry:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls send (socket=' + IntToHex(socket,8) + ' buffer=' + PtrToHex(buffer) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ')');
  {$ENDIF}
  
- Result:=fpsend(socket,buffer,len,flags);
- if Result = SOCKET_ERROR then
+ {Get Entry}
+ Entry:=SyscallsGetEntry(socket);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Send Socket}
+   Result:=Sockets.fpsend(Entry^.Handle,buffer,len,flags);
+   if Result = SOCKET_ERROR then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+    end;
+  end
+ else
+  begin
+   Result:=SOCKET_ERROR;
+
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
-  end;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;  
 end;
 
 {==============================================================================}
@@ -8815,19 +9033,34 @@ function socket_sendto(socket: int; buffer: Pointer; len: size_t; flags: int; de
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Entry:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sendto (socket=' + IntToHex(socket,8) + ' buffer=' + PtrToHex(buffer) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ' dest_addr=' + PtrToHex(dest_addr) + ' dest_len=' + IntToStr(dest_len) + ')');
  {$ENDIF}
  
- Result:=fpsendto(socket,buffer,len,flags,dest_addr,dest_len);
- if Result = SOCKET_ERROR then
+ {Get Entry}
+ Entry:=SyscallsGetEntry(socket);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Send To Socket}
+   Result:=Sockets.fpsendto(Entry^.Handle,buffer,len,flags,dest_addr,dest_len);
+   if Result = SOCKET_ERROR then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+    end;
+  end
+ else
+  begin
+   Result:=SOCKET_ERROR;
+
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
-  end;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;  
 end;
 
 {==============================================================================}
@@ -8838,19 +9071,34 @@ function socket_setsockopt(socket: int; level, option_name: int; option_value: P
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Entry:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls setsockopt (socket=' + IntToHex(socket,8) + ' level=' + IntToStr(level) + ' option_name=' + IntToStr(option_name) + ' option_value=' + PtrToHex(option_value) + ' option_len=' + IntToStr(option_len) + ')');
  {$ENDIF}
  
- Result:=fpsetsockopt(socket,level,option_name,option_value,option_len);
- if Result = SOCKET_ERROR then
+ {Get Entry}
+ Entry:=SyscallsGetEntry(socket);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Set Socket Option}
+   Result:=Sockets.fpsetsockopt(Entry^.Handle,level,option_name,option_value,option_len);
+   if Result = SOCKET_ERROR then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+    end;
+  end
+ else
+  begin
+   Result:=SOCKET_ERROR;
+
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
-  end;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;  
 end;
 
 {==============================================================================}
@@ -8861,19 +9109,34 @@ function socket_shutdown(socket: int; how: int): int; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Entry:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls shutdown (socket=' + IntToHex(socket,8) + ' how=' + IntToStr(how) + ')');
  {$ENDIF}
  
- Result:=fpshutdown(socket,how);
- if Result = SOCKET_ERROR then
+ {Get Entry}
+ Entry:=SyscallsGetEntry(socket);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Shutdown Socket}
+   Result:=Sockets.fpshutdown(Entry^.Handle,how);
+   if Result = SOCKET_ERROR then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+    end;
+  end
+ else
+  begin
+   Result:=SOCKET_ERROR;
+
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
-  end;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;  
 end;
 
 {==============================================================================}
@@ -8884,19 +9147,41 @@ function socket_socket(domain, sockettype, protocol: int): int; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Handle:TSocket;
+ Entry:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls socket (domain=' + IntToStr(domain) + ' type=' + IntToStr(sockettype) + ' protocol=' + IntToStr(protocol) + ')');
  {$ENDIF}
  
- Result:=fpsocket(domain,sockettype,protocol);
- if Result = Integer(INVALID_SOCKET) then
+ Result:=SOCKET_ERROR;
+ 
+ {Create Socket}
+ Handle:=Sockets.fpsocket(domain,sockettype,protocol);
+ if Handle = Integer(INVALID_SOCKET) then
   begin
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+   if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+   Exit;
   end;
+
+ {Add Entry}  
+ Entry:=SyscallsAddEntry(Handle,SYSCALLS_ENTRY_SOCKET);
+ if Entry = nil then
+  begin
+   {Close Socket}
+   Sockets.CloseSocket(Handle);
+   
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOMEM;
+   Exit;
+  end;
+
+ {Return Result}
+ Result:=Entry^.Number;
 end;
 
 {==============================================================================}
@@ -8907,19 +9192,58 @@ function socket_socketpair(domain, sockettype, protocol: int; socket_vector: Pin
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Pair:TSockArray;
+ Entry1:PSyscallsEntry;
+ Entry2:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls socketpair (domain=' + IntToStr(domain) + ' type=' + IntToStr(sockettype) + ' protocol=' + IntToStr(protocol) + ' socket_vector=' + PtrToHex(socket_vector) + ')');
  {$ENDIF}
  
- Result:=fpsocketpair(domain,sockettype,protocol,socket_vector);
+ {Create Socket Pair}
+ Result:=Sockets.fpsocketpair(domain,sockettype,protocol,@Pair[1]);
  if Result = SOCKET_ERROR then
   begin
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+   if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+   Exit;
   end;
+
+ {Add First Entry}  
+ Entry1:=SyscallsAddEntry(Pair[1],SYSCALLS_ENTRY_SOCKET);
+ if Entry1 = nil then
+  begin
+   {Close Socket}
+   Sockets.CloseSocket(Pair[1]);
+
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOMEM;
+   Exit;
+  end;
+
+ {Add Second Entry}  
+ Entry2:=SyscallsAddEntry(Pair[2],SYSCALLS_ENTRY_SOCKET);
+ if Entry2 = nil then
+  begin
+   {Remove First Entry}
+   SyscallsRemoveEntry(Entry1);
+   
+   {Close Sockets}
+   Sockets.CloseSocket(Pair[1]);
+   Sockets.CloseSocket(Pair[2]);
+
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOMEM;
+   Exit;
+  end;
+
+ {Return Results}
+ socket_vector[0]:=Entry1^.Number;
+ socket_vector[1]:=Entry2^.Number;
 end;
 
 {==============================================================================}
@@ -8929,19 +9253,118 @@ function socket_select(nfds: int; readfds, writefds, exceptfds: Pfd_set; timeout
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
+ fd:int;
  ptr:P_reent;
+ Count:u_int;
+ ReadFDSet:TFDSet;
+ WriteFDSet:TFDSet;
+ ExceptFDSet:TFDSet;
+ Entry:PSyscallsEntry;
+ TimeVal:Sockets.TTimeVal;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls socket (nfds=' + IntToStr(nfds) + ')');
  {$ENDIF}
  
- Result:=fpselect(nfds,readfds,writefds,exceptfds,timeout);
+ {Clear Read/Write/Except FDs}
+ fpFD_ZERO(ReadFDSet);
+ fpFD_ZERO(WriteFDSet);
+ fpFD_ZERO(ExceptFDSet);
+ 
+ {Convert Read/Write/Except FDs}
+ for fd:=0 to FD_SETSIZE - 1 do
+  begin
+   {Check Read FDs}
+   if FD_ISSET(fd,readfds^) = 1 then
+    begin
+     {Get Entry}
+     Entry:=SyscallsGetEntry(fd);
+     if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
+      begin
+       {Set Read FD}
+       fpFD_SET(Entry^.Handle,ReadFDSet);
+      end; 
+    end; 
+
+   {Check Write FDs}
+   if FD_ISSET(fd,writefds^) = 1 then
+    begin
+     {Get Entry}
+     Entry:=SyscallsGetEntry(fd);
+     if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
+      begin
+       {Set Write FD}
+       fpFD_SET(Entry^.Handle,WriteFDSet);
+      end; 
+    end; 
+
+   {Check Except FDs}
+   if FD_ISSET(fd,exceptfds^) = 1 then
+    begin
+     {Get Entry}
+     Entry:=SyscallsGetEntry(fd);
+     if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
+      begin
+       {Set Except FD}
+       fpFD_SET(Entry^.Handle,ExceptFDSet);
+      end; 
+    end; 
+  end;
+ 
+ {Convert Timeout}
+ TimeVal.tv_sec:=timeout^.tv_sec;
+ TimeVal.tv_usec:=timeout^.tv_usec;
+ 
+ {Select Socket}
+ Result:=Sockets.fpselect(nfds,@ReadFDSet,@WriteFDSet,@ExceptFDSet,@TimeVal);
  if Result = SOCKET_ERROR then
   begin
    {Return Error}
    ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=socket_get_error(SocketError());
+   if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+   Exit;
+  end;
+  
+ {Clear Read/Write/Except FDs}
+ FD_ZERO(readfds^);
+ FD_ZERO(writefds^);
+ FD_ZERO(exceptfds^);
+ 
+ {Update Read FDs}
+ for Count:=0 to ReadFDSet.fd_count - 1 do
+  begin
+   {Find Entry}
+   Entry:=SyscallsFindEntry(ReadFDSet.fd_array[Count]);
+   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
+    begin
+     {Set Read FD}
+     FD_SET(Entry^.Number,readfds^);
+    end; 
+  end;
+ 
+ {Update Write FDs}
+ for Count:=0 to WriteFDSet.fd_count - 1 do
+  begin
+   {Find Entry}
+   Entry:=SyscallsFindEntry(WriteFDSet.fd_array[Count]);
+   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
+    begin
+     {Set Write FD}
+     FD_SET(Entry^.Number,writefds^);
+    end; 
+  end;
+ 
+ {Update Except FDs}
+ for Count:=0 to ExceptFDSet.fd_count - 1 do
+  begin
+   {Find Entry}
+   Entry:=SyscallsFindEntry(ExceptFDSet.fd_array[Count]);
+   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
+    begin
+     {Set Except FD}
+     FD_SET(Entry^.Number,exceptfds^);
+    end; 
   end;
 end;
 
@@ -8953,7 +9376,7 @@ function socket_htonl(hostlong: uint32_t): uint32_t; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
- Result:=htonl(hostlong);
+ Result:=Sockets.htonl(hostlong);
 end;
 
 {==============================================================================}
@@ -8964,7 +9387,7 @@ function socket_htons(hostshort: uint16_t): uint16_t; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
- Result:=htons(hostshort);
+ Result:=Sockets.htons(hostshort);
 end;
 
 {==============================================================================}
@@ -8975,7 +9398,7 @@ function socket_ntohl(netlong: uint32_t): uint32_t; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
- Result:=ntohl(netlong);
+ Result:=Sockets.ntohl(netlong);
 end;
 
 {==============================================================================}
@@ -8986,7 +9409,7 @@ function socket_ntohs(netshort: uint16_t): uint16_t; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
- Result:=ntohs(netshort);
+ Result:=Sockets.ntohs(netshort);
 end;
 
 {==============================================================================}
@@ -8997,7 +9420,7 @@ function socket_inet_addr(cp: PChar): in_addr_t; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
- Result:=Inet_Addr(cp);
+ Result:=Sockets.Inet_Addr(cp);
 end;
 {==============================================================================}
 
@@ -9007,7 +9430,7 @@ function socket_inet_ntoa(inaddr: TInAddr): PChar; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
- Result:=Inet_Ntoa(inaddr);
+ Result:=Sockets.Inet_Ntoa(inaddr);
 end;
 
 {==============================================================================}
@@ -9018,7 +9441,7 @@ function socket_inet_aton(cp: PChar; inaddr: PInAddr): int; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
- Result:=Inet_Aton(cp,inaddr);
+ Result:=Sockets.Inet_Aton(cp,inaddr);
 end;
 
 {==============================================================================}
@@ -9029,7 +9452,7 @@ function socket_inet_pton(af: int; src: PChar; dst: Pointer): int; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
- Result:=Inet_Pton(af,src,dst);
+ Result:=Sockets.Inet_Pton(af,src,dst);
 end;
 
 {==============================================================================}
@@ -9040,7 +9463,7 @@ function socket_inet_ntop(af: int; src: Pointer; dst: PChar; size: socklen_t): P
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
- Result:=Inet_Ntop(af,src,dst,size);
+ Result:=Sockets.Inet_Ntop(af,src,dst,size);
 end;
 
 {==============================================================================}
@@ -9057,7 +9480,7 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getservbyport (addr=' + PtrToHex(addr) + ' len=' + IntToStr(len) + ' family=' + IntToStr(family) + ')');
  {$ENDIF}
  
- Result:=GetHostByAddr(addr,len,family);
+ Result:=Sockets.GetHostByAddr(addr,len,family);
 end;
 
 {==============================================================================}
@@ -9074,7 +9497,7 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls gethostbyname (name=' + StrPas(name) + ')');
  {$ENDIF}
  
- Result:=GetHostByName(name);
+ Result:=Sockets.GetHostByName(name);
 end;
 
 {==============================================================================}
@@ -9095,7 +9518,7 @@ begin
  
  Addr.S_addr:=htonl(net);
  
- Result:=GetNetByAddr(@Addr,SizeOf(TInAddr),family);
+ Result:=Sockets.GetNetByAddr(@Addr,SizeOf(TInAddr),family);
 end;
 
 {==============================================================================}
@@ -9112,7 +9535,7 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getnetbyname (name=' + StrPas(name) + ')');
  {$ENDIF}
  
- Result:=GetNetByName(name);
+ Result:=Sockets.GetNetByName(name);
 end;
 
 {==============================================================================}
@@ -9129,7 +9552,7 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getservbyport (port=' + IntToStr(port) + ' proto=' + StrPas(proto) + ')');
  {$ENDIF}
  
- Result:=GetServByPort(port,proto);
+ Result:=Sockets.GetServByPort(port,proto);
 end;
 
 {==============================================================================}
@@ -9146,7 +9569,7 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getservbyname (name=' + StrPas(name) + ' proto=' + StrPas(proto) + ')');
  {$ENDIF}
  
- Result:=GetServByName(name,proto);
+ Result:=Sockets.GetServByName(name,proto);
 end;
 
 {==============================================================================}
@@ -9163,7 +9586,7 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getprotobynumber (proto=' + IntToStr(proto) + ')');
  {$ENDIF}
  
- Result:=GetProtoByNumber(proto);
+ Result:=Sockets.GetProtoByNumber(proto);
 end;
 
 {==============================================================================}
@@ -9180,7 +9603,7 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getprotobyname (name=' + StrPas(name) + ')');
  {$ENDIF}
  
- Result:=GetProtoByName(name);
+ Result:=Sockets.GetProtoByName(name);
 end;
 
 {==============================================================================}
@@ -9195,7 +9618,7 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getaddrinfo (node=' + StrPas(node) + ' service=' + StrPas(service) + ')');
  {$ENDIF}
  
- Result:=GetAddrInfo(node,service,hints,res);
+ Result:=Sockets.GetAddrInfo(node,service,hints,res);
 end;
 
 {==============================================================================}
@@ -9210,7 +9633,7 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getnameinfo');
  {$ENDIF}
  
- Result:=GetNameInfo(addr,addrlen,host,hostlen,serv,servlen,flags);
+ Result:=Sockets.GetNameInfo(addr,addrlen,host,hostlen,serv,servlen,flags);
 end;
 
 {==============================================================================}
@@ -9225,7 +9648,7 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls freeaddrinfo');
  {$ENDIF}
  
- FreeAddrInfo(res);
+ Sockets.FreeAddrInfo(res);
 end;
 {$ENDIF}
 {==============================================================================}
@@ -9419,6 +9842,62 @@ begin
 end; 
 
 {==============================================================================}
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
+{Syscalls Macro Functions (FD sets)}
+function FD_CLR(fdno: int; var nset: Tfd_set): int;
+begin
+ {}
+ Result:=-1;
+
+ if (fdno < 0) or (fdno >= FD_SETSIZE) then Exit;
+
+ nset.fds_bits[fdno shr FDSET_SHIFT]:=nset.fds_bits[fdno shr FDSET_SHIFT] and not fd_mask(1 shl (fdno and FDSET_MASK));
+
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function FD_ISSET(fdno: int; const nset: Tfd_set): int;
+begin
+ {}
+ Result:=-1;
+
+ if (fdno < 0) or (fdno >= FD_SETSIZE) then Exit;
+
+ if ((nset.fds_bits[fdno shr FDSET_SHIFT]) and fd_mask(1 shl (fdno and FDSET_MASK))) <> 0 then
+  Result:=1
+ else
+  Result:=0;
+end;
+
+{==============================================================================}
+
+function FD_SET(fdno: int; var nset: Tfd_set): int;
+begin
+ {}
+ Result:=-1;
+
+ if (fdno < 0) or (fdno >= FD_SETSIZE) then Exit;
+
+ nset.fds_bits[fdno shr FDSET_SHIFT]:=nset.fds_bits[fdno shr FDSET_SHIFT] or fd_mask(1 shl (fdno and FDSET_MASK));
+
+ Result:=0;
+end;
+ 
+{==============================================================================}
+
+function FD_ZERO(out nset: Tfd_set): int;
+var
+ i: LongInt;
+begin
+ {}
+ for i:=0 to (FD_SETSIZE div NFDBITS) - 1 do nset.fds_bits[i]:=0;
+
+ Result:=0;
+end;
+{$ENDIF}  
+{==============================================================================}
 {==============================================================================}
 {Syscalls Internal Functions}
 function SyscallsGetStat(Handle:THandle;stat:Pstat):Boolean; 
@@ -9553,7 +10032,58 @@ end;
 
 {==============================================================================}
 
-function SyscallsAddEntry(Handle:THandle):PSyscallsEntry; 
+function SyscallsFindEntry(Handle:THandle):PSyscallsEntry;
+var
+ Count:LongWord;
+ First:PSyscallsEntry;
+ Next:PSyscallsEntry;
+begin
+ {}
+ Result:=nil;
+
+ {Check Handle}
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Find Entry (Handle=' + HandleToHex(Handle) + ')');
+ {$ENDIF}
+
+ {Lock Table}
+ if MutexLock(SyscallsTableLock) <> ERROR_SUCCESS then Exit;
+
+ {Check Entries}
+ for Count:=0 to SYSCALLS_TABLE_MASK do
+  begin
+   {Get First}
+   First:=SyscallsTable.Entries[Count];
+   if First <> nil then
+    begin
+     Next:=First;
+     while Next <> nil do
+      begin
+       {Check Handle}
+       if Next^.Handle = Handle then
+        begin
+         Result:=Next;
+         Break;
+        end; 
+
+       Next:=Next^.Next; 
+      end; 
+    end;  
+  end;
+
+ {Unlock Table}
+ MutexUnlock(SyscallsTableLock);
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Find Entry (Result=' + PtrToHex(Result) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function SyscallsAddEntry(Handle:THandle;Source:LongWord):PSyscallsEntry; 
 
  procedure SyscallsIncrementNext;
  begin
@@ -9618,6 +10148,7 @@ begin
      {Update Entry}
      Next^.Number:=SyscallsTable.Next;
      Next^.Handle:=Handle;
+     Next^.Source:=Source;
      Next^.Prev:=nil;
      
      {Get First}

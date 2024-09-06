@@ -1,7 +1,7 @@
 {
 Ultibo Network Sockets interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -391,9 +391,8 @@ const
  NoNet6    : in6_addr = (u6_addr16:(0,0,0,0,0,0,0,0));
   
 const
- {FD set sizes for select (Socket only)}
- FD_MAXFDSET = 1024;
- BITSINWORD = 8 * SizeOf(culong);
+ {FD set sizes for select}
+ FD_MAXFDSET = GlobalSock.FD_SETSIZE;
   
 {==============================================================================}
 type
@@ -452,8 +451,8 @@ type
  PInetSockAddr6 = psockaddr_in6;
  
 type 
- TSockPairArray = array[0..1] of Longint;
- TSockArray  = array[1..2] of Longint;              {Legacy}
+ TSockPairArray = array[0..1] of clong;
+ TSockArray  = array[1..2] of clong;              {Legacy}
 
  psockaddr_un = ^sockaddr_un;
  sockaddr_un = packed record
@@ -461,26 +460,16 @@ type
   sun_path:array[0..107] of char;
  end;
 
- {Tsocket = LongInt;}  {To ease porting code from Kylix libc unit to sockets unit.}
+ {Tsocket = clong;}  {To ease porting code from Kylix libc unit to sockets unit.}
 
 type
- {FD set type for select (Socket only)}
- TFDSet = array[0..(FD_MAXFDSET div BITSINWORD) - 1] of culong;
- PFDSet = ^TFDSet;
+ {FD set type for select}
+ PFDSet = GlobalSock.PFDSet;
+ TFDSet = GlobalSock.TFDSet;
  
- {TimeVal type for select (Socket only)}
- {$IFDEF SYSCALLS_USE_LONG_TIME_T}
- {time_t = PtrInt;} {long} {time_t is now defined in GlobalTypes}
- {$ELSE}
- {time_t = Int64;}  {int64_t} {time_t is now defined in GlobalTypes}
- {$ENDIF}
- 
- timeval = record
-  tv_sec:time_t;
-  tv_usec:clong;
- end;
- PTimeVal = ^timeval;
- TTimeVal = timeval;
+ {TimeVal type for select}
+ TTimeVal = GlobalSock.TTimeVal;
+ PTimeVal = GlobalSock.PTimeVal;
  
 type
  {Structure used in getaddrinfo() call}
@@ -503,23 +492,23 @@ procedure SocketsAsyncStart(Data:Pointer);
 {Sockets Functions}
 function SocketError: cint;
 
-function Socket(Domain,SocketType,Protocol:Longint):Longint;
-function Send(Sock:Longint;const Buf;BufLen,Flags:Longint):Longint;
-function SendTo(Sock:Longint;const Buf;BufLen,Flags:Longint;var Addr; AddrLen : Longint):Longint;
-function Recv(Sock:Longint;var Buf;BufLen,Flags:Longint):Longint;
-function RecvFrom(Sock : Longint; var Buf; Buflen,Flags : Longint; var Addr; var AddrLen : longint) : longint;
-function Connect(Sock:Longint;const Addr;Addrlen:Longint):Boolean; overload;
-function Shutdown(Sock:Longint;How:Longint):Longint;
-function Bind(Sock:Longint;const Addr;AddrLen:Longint):Boolean;
-function Listen(Sock,MaxConnect:Longint):Boolean;
-function Accept(Sock:Longint;var Addr;var Addrlen:Longint):Longint; overload;
-function GetSocketName(Sock:Longint;var Addr;var Addrlen:Longint):Longint;
-function GetPeerName(Sock:Longint;var Addr;var Addrlen:Longint):Longint;
-function GetSocketOptions(Sock,Level,OptName:Longint;var OptVal;var optlen:longint):Longint;
-function SetSocketOptions(Sock,Level,OptName:Longint;const OptVal;optlen:longint):Longint;
+function Socket(Domain,SocketType,Protocol:Longint):clong;
+function Send(Sock:clong;const Buf;BufLen,Flags:Longint):Longint;
+function SendTo(Sock:clong;const Buf;BufLen,Flags:Longint;var Addr; AddrLen : Longint):Longint;
+function Recv(Sock:clong;var Buf;BufLen,Flags:Longint):Longint;
+function RecvFrom(Sock : clong; var Buf; Buflen,Flags : Longint; var Addr; var AddrLen : longint) : longint;
+function Connect(Sock:clong;const Addr;Addrlen:Longint):Boolean; overload;
+function Shutdown(Sock:clong;How:Longint):Longint;
+function Bind(Sock:clong;const Addr;AddrLen:Longint):Boolean;
+function Listen(Sock:clong;MaxConnect:Longint):Boolean;
+function Accept(Sock:clong;var Addr;var Addrlen:Longint):clong; overload;
+function GetSocketName(Sock:clong;var Addr;var Addrlen:Longint):Longint;
+function GetPeerName(Sock:clong;var Addr;var Addrlen:Longint):Longint;
+function GetSocketOptions(Sock:clong;Level,OptName:Longint;var OptVal;var optlen:longint):Longint;
+function SetSocketOptions(Sock:clong;Level,OptName:Longint;const OptVal;optlen:longint):Longint;
 function SocketPair(Domain,SocketType,Protocol:Longint;var Pair:TSockArray):Longint;
 
-function CloseSocket(Sock:Longint):Longint;
+function CloseSocket(Sock:clong):Longint;
 
 function Inet_Addr(cp: PChar): Longint;
 function Inet_Ntoa(inaddr: TInAddr): PChar; 
@@ -544,34 +533,39 @@ function GetNameInfo(sa: PSockAddr; salen: Longint; host: PChar; hostlen: DWORD;
 
 {==============================================================================}
 {RTL Sockets Functions}
-function fpsocket(domain:cint; xtype:cint; protocol: cint):cint;
-function fpsend(s:cint; msg:pointer; len:size_t; flags:cint):ssize_t;
-function fpsendto(s:cint; msg:pointer; len:size_t; flags:cint; tox :psockaddr; tolen: tsocklen):ssize_t;
-function fprecv(s:cint; buf: pointer; len: size_t; flags: cint):ssize_t;
-function fprecvfrom(s:cint; buf: pointer; len: size_t; flags: cint; from : psockaddr; fromlen : psocklen):ssize_t;
-function fpconnect(s:cint; name  : psockaddr; namelen : tsocklen):cint;
-function fpshutdown(s:cint; how:cint):cint;
-function fpbind(s:cint; addrx : psockaddr; addrlen : tsocklen):cint;
-function fplisten(s:cint; backlog : cint):cint;
-function fpaccept(s:cint; addrx : psockaddr; addrlen : psocklen):cint;
-function fpgetsockname(s:cint; name  : psockaddr; namelen : psocklen):cint;
-function fpgetpeername(s:cint; name  : psockaddr; namelen : psocklen):cint;
-function fpgetsockopt(s:cint; level:cint; optname:cint; optval:pointer; optlen : psocklen):cint;
-function fpsetsockopt(s:cint; level:cint; optname:cint; optval:pointer; optlen :tsocklen):cint;
-function fpsocketpair(d:cint; xtype:cint; protocol:cint; sv:pcint):cint;
+function fpsocket(domain:cint; xtype:cint; protocol: cint):clong;
+function fpsend(s:clong; msg:pointer; len:size_t; flags:cint):ssize_t;
+function fpsendto(s:clong; msg:pointer; len:size_t; flags:cint; tox :psockaddr; tolen: tsocklen):ssize_t;
+function fprecv(s:clong; buf: pointer; len: size_t; flags: cint):ssize_t;
+function fprecvfrom(s:clong; buf: pointer; len: size_t; flags: cint; from : psockaddr; fromlen : psocklen):ssize_t;
+function fpconnect(s:clong; name  : psockaddr; namelen : tsocklen):cint;
+function fpshutdown(s:clong; how:cint):cint;
+function fpbind(s:clong; addrx : psockaddr; addrlen : tsocklen):cint;
+function fplisten(s:clong; backlog : cint):cint;
+function fpaccept(s:clong; addrx : psockaddr; addrlen : psocklen):clong;
+function fpgetsockname(s:clong; name  : psockaddr; namelen : psocklen):cint;
+function fpgetpeername(s:clong; name  : psockaddr; namelen : psocklen):cint;
+function fpgetsockopt(s:clong; level:cint; optname:cint; optval:pointer; optlen : psocklen):cint;
+function fpsetsockopt(s:clong; level:cint; optname:cint; optval:pointer; optlen :tsocklen):cint;
+function fpsocketpair(d:cint; xtype:cint; protocol:cint; sv:pclong):cint;
 
 {==============================================================================}
 {RTL Select Function (Sockets only)}
 function fpselect(n:cint; readfds, writefds, exceptfds: PFDSet; TimeOut: PTimeVal):cint;
 
+function fpFD_SET(fdno:clong; var nset: TFDSet):cint;
+function fpFD_CLR(fdno:clong; var nset: TFDSet):cint;
+function fpFD_ZERO(out nset: TFDSet):cint;
+function fpFD_ISSET(fdno:clong; const nset: TFDSet): cint;
+
 {==============================================================================}
 {RTL File/Text Sockets Functions}
-procedure Sock2Text(Sock:Longint;Var SockIn,SockOut:Text); deprecated;
-function Accept(Sock:longint;var addr:TInetSockAddr;var SockIn,SockOut:File):Boolean; deprecated; overload;
-function Accept(Sock:longint;var addr:TInetSockAddr;var SockIn,SockOut:text):Boolean; deprecated; overload;
-function Connect(Sock:longint;const addr:TInetSockAddr;var SockIn,SockOut:text):Boolean; deprecated; overload;
-function Connect(Sock:longint;const addr:TInetSockAddr;var SockIn,SockOut:file):Boolean; deprecated; overload;
-procedure Sock2File(Sock:Longint;Var SockIn,SockOut:File); deprecated;
+procedure Sock2Text(Sock:clong;Var SockIn,SockOut:Text); deprecated;
+function Accept(Sock:clong;var addr:TInetSockAddr;var SockIn,SockOut:File):Boolean; deprecated; overload;
+function Accept(Sock:clong;var addr:TInetSockAddr;var SockIn,SockOut:text):Boolean; deprecated; overload;
+function Connect(Sock:clong;const addr:TInetSockAddr;var SockIn,SockOut:text):Boolean; deprecated; overload;
+function Connect(Sock:clong;const addr:TInetSockAddr;var SockIn,SockOut:file):Boolean; deprecated; overload;
+procedure Sock2File(Sock:clong;Var SockIn,SockOut:File); deprecated;
 
 {==============================================================================}
 {Sockets Helper Functions}
@@ -951,7 +945,7 @@ end;
 
 {==============================================================================}
 
-function Socket(Domain,SocketType,Protocol:Longint):Longint;
+function Socket(Domain,SocketType,Protocol:Longint):clong;
 begin
  {}
  Result:=fpsocket(Domain,SocketType,Protocol);
@@ -959,7 +953,7 @@ end;
 
 {==============================================================================}
 
-function Send(Sock:Longint;const Buf;BufLen,Flags:Longint):Longint;
+function Send(Sock:clong;const Buf;BufLen,Flags:Longint):Longint;
 begin
  {}
  Result:=fpsend(sock,@buf,buflen,flags);
@@ -967,7 +961,7 @@ end;
 
 {==============================================================================}
 
-function SendTo(Sock:Longint;const Buf;BufLen,Flags:Longint;var Addr; AddrLen : Longint):Longint;
+function SendTo(Sock:clong;const Buf;BufLen,Flags:Longint;var Addr; AddrLen : Longint):Longint;
 begin
  {}
  Result:=fpsendto(sock,@buf,buflen,flags,@addr,addrlen);
@@ -975,7 +969,7 @@ end;
 
 {==============================================================================}
 
-function Recv(Sock:Longint;var Buf;BufLen,Flags:Longint):Longint;
+function Recv(Sock:clong;var Buf;BufLen,Flags:Longint):Longint;
 begin
  {}
  Result:=fpRecv(Sock,@Buf,BufLen,Flags);
@@ -983,7 +977,7 @@ end;
 
 {==============================================================================}
 
-function RecvFrom(Sock : Longint; var Buf; Buflen,Flags : Longint; var Addr; var AddrLen : longint) : longint;
+function RecvFrom(Sock : clong; var Buf; Buflen,Flags : Longint; var Addr; var AddrLen : longint) : longint;
 begin
  {}
  Result:=fpRecvFrom(Sock,@Buf,BufLen,Flags,@Addr,@AddrLen);
@@ -991,7 +985,7 @@ end;
 
 {==============================================================================}
 
-function Connect(Sock:Longint;const Addr;Addrlen:Longint):Boolean;
+function Connect(Sock:clong;const Addr;Addrlen:Longint):Boolean;
 begin
  {}
  Result:=(fpconnect(sock,@addr,addrlen) = ERROR_SUCCESS);
@@ -999,7 +993,7 @@ end;
 
 {==============================================================================}
 
-function Shutdown(Sock:Longint;How:Longint):Longint;
+function Shutdown(Sock:clong;How:Longint):Longint;
 begin
  {}
  Result:=fpshutdown(sock,how);
@@ -1007,7 +1001,7 @@ end;
 
 {==============================================================================}
 
-function Bind(Sock:Longint;const Addr;AddrLen:Longint):Boolean;
+function Bind(Sock:clong;const Addr;AddrLen:Longint):Boolean;
 begin
  {}
  Result:=(fpBind(Sock,@Addr,AddrLen) = ERROR_SUCCESS);
@@ -1015,7 +1009,7 @@ end;
 
 {==============================================================================}
 
-function Listen(Sock,MaxConnect:Longint):Boolean;
+function Listen(Sock:clong;MaxConnect:Longint):Boolean;
 begin
  {}
  Result:=(fplisten(Sock,MaxConnect) = ERROR_SUCCESS);
@@ -1023,7 +1017,7 @@ end;
 
 {==============================================================================}
 
-function Accept(Sock:Longint;var Addr;var Addrlen:Longint):Longint;
+function Accept(Sock:clong;var Addr;var Addrlen:Longint):clong;
 begin
  {}
  Result:=fpaccept(sock,@addr,@addrlen);
@@ -1031,7 +1025,7 @@ end;
 
 {==============================================================================}
 
-function GetSocketName(Sock:Longint;var Addr;var Addrlen:Longint):Longint;
+function GetSocketName(Sock:clong;var Addr;var Addrlen:Longint):Longint;
 begin
  {}
  Result:=fpGetSockName(sock,@addr,@addrlen);
@@ -1039,7 +1033,7 @@ end;
 
 {==============================================================================}
 
-function GetPeerName(Sock:Longint;var Addr;var Addrlen:Longint):Longint;
+function GetPeerName(Sock:clong;var Addr;var Addrlen:Longint):Longint;
 begin
  {}
  Result:=fpGetPeerName(Sock,@addr,@addrlen);
@@ -1047,7 +1041,7 @@ end;
 
 {==============================================================================}
 
-function GetSocketOptions(Sock,Level,OptName:Longint;var OptVal;var optlen:longint):Longint;
+function GetSocketOptions(Sock:clong;Level,OptName:Longint;var OptVal;var optlen:longint):Longint;
 begin
  {}
  Result:=fpGetSockOpt(sock,level,optname,@optval,@optlen);
@@ -1055,7 +1049,7 @@ end;
 
 {==============================================================================}
 
-function SetSocketOptions(Sock,Level,OptName:Longint;const OptVal;optlen:longint):Longint;
+function SetSocketOptions(Sock:clong;Level,OptName:Longint;const OptVal;optlen:longint):Longint;
 begin
  {}
  Result:=fpsetsockopt(sock,level,optname,@optval,optlen);
@@ -1071,7 +1065,7 @@ end;
 
 {==============================================================================}
 
-function CloseSocket(Sock:Longint):Longint;
+function CloseSocket(Sock:clong):Longint;
 var
  Socket:TProtocolSocket;
 begin
@@ -1600,7 +1594,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RTL Sockets Functions}
-function fpsocket(domain:cint; xtype:cint; protocol: cint):cint;
+function fpsocket(domain:cint; xtype:cint; protocol: cint):clong;
 begin
  {}
  Result:=LongInt(INVALID_SOCKET);
@@ -1629,7 +1623,7 @@ end;
 
 {==============================================================================}
 
-function fpsend(s:cint; msg:pointer; len:size_t; flags:cint):ssize_t;
+function fpsend(s:clong; msg:pointer; len:size_t; flags:cint):ssize_t;
 var
  Socket:TProtocolSocket;
 begin
@@ -1670,7 +1664,7 @@ end;
 
 {==============================================================================}
 
-function fpsendto(s:cint; msg:pointer; len:size_t; flags:cint; tox :psockaddr; tolen: tsocklen):ssize_t;
+function fpsendto(s:clong; msg:pointer; len:size_t; flags:cint; tox :psockaddr; tolen: tsocklen):ssize_t;
 var
  Socket:TProtocolSocket;
 begin
@@ -1711,7 +1705,7 @@ end;
 
 {==============================================================================}
 
-function fprecv(s:cint; buf: pointer; len: size_t; flags: cint):ssize_t;
+function fprecv(s:clong; buf: pointer; len: size_t; flags: cint):ssize_t;
 var
  Socket:TProtocolSocket;
 begin
@@ -1752,7 +1746,7 @@ end;
 
 {==============================================================================}
 
-function fprecvfrom(s:cint; buf: pointer; len: size_t; flags: cint; from : psockaddr; fromlen : psocklen):ssize_t;
+function fprecvfrom(s:clong; buf: pointer; len: size_t; flags: cint; from : psockaddr; fromlen : psocklen):ssize_t;
 var
  Socket:TProtocolSocket;
 begin
@@ -1793,7 +1787,7 @@ end;
 
 {==============================================================================}
 
-function fpconnect(s:cint; name  : psockaddr; namelen : tsocklen):cint;
+function fpconnect(s:clong; name  : psockaddr; namelen : tsocklen):cint;
 var
  Socket:TProtocolSocket;
 begin
@@ -1834,7 +1828,7 @@ end;
 
 {==============================================================================}
 
-function fpshutdown(s:cint; how:cint):cint;
+function fpshutdown(s:clong; how:cint):cint;
 var
  Socket:TProtocolSocket;
 begin
@@ -1875,7 +1869,7 @@ end;
 
 {==============================================================================}
 
-function fpbind(s:cint; addrx : psockaddr; addrlen : tsocklen):cint;
+function fpbind(s:clong; addrx : psockaddr; addrlen : tsocklen):cint;
 var
  Socket:TProtocolSocket;
 begin
@@ -1916,7 +1910,7 @@ end;
 
 {==============================================================================}
 
-function fplisten(s:cint; backlog : cint):cint;
+function fplisten(s:clong; backlog : cint):cint;
 var
  Socket:TProtocolSocket;
 begin
@@ -1957,7 +1951,7 @@ end;
 
 {==============================================================================}
 
-function fpaccept(s:cint; addrx : psockaddr; addrlen : psocklen):cint;
+function fpaccept(s:clong; addrx : psockaddr; addrlen : psocklen):clong;
 var
  Socket:TProtocolSocket;
 begin
@@ -1998,7 +1992,7 @@ end;
 
 {==============================================================================}
 
-function fpgetsockname(s:cint; name  : psockaddr; namelen : psocklen):cint;
+function fpgetsockname(s:clong; name  : psockaddr; namelen : psocklen):cint;
 var
  Socket:TProtocolSocket;
 begin
@@ -2039,7 +2033,7 @@ end;
 
 {==============================================================================}
 
-function fpgetpeername(s:cint; name  : psockaddr; namelen : psocklen):cint;
+function fpgetpeername(s:clong; name  : psockaddr; namelen : psocklen):cint;
 var
  Socket:TProtocolSocket;
 begin
@@ -2080,7 +2074,7 @@ end;
 
 {==============================================================================}
 
-function fpgetsockopt(s:cint; level:cint; optname:cint; optval:pointer; optlen : psocklen):cint;
+function fpgetsockopt(s:clong; level:cint; optname:cint; optval:pointer; optlen : psocklen):cint;
 var
  Socket:TProtocolSocket;
 begin
@@ -2121,7 +2115,7 @@ end;
 
 {==============================================================================}
 
-function fpsetsockopt(s:cint; level:cint; optname:cint; optval:pointer; optlen :tsocklen):cint;
+function fpsetsockopt(s:clong; level:cint; optname:cint; optval:pointer; optlen :tsocklen):cint;
 var
  Socket:TProtocolSocket;
 begin
@@ -2162,7 +2156,7 @@ end;
 
 {==============================================================================}
 
-function fpsocketpair(d:cint; xtype:cint; protocol:cint; sv:pcint):cint;
+function fpsocketpair(d:cint; xtype:cint; protocol:cint; sv:pclong):cint;
 begin
  {}
  {Not Implemented}
@@ -2174,17 +2168,114 @@ end;
 {==============================================================================}
 {RTL Select Function (Sockets only)}
 function fpselect(n:cint; readfds, writefds, exceptfds: PFDSet; TimeOut: PTimeVal):cint;
+{Note: All sockets contained by the FDSet must be of the same type}
 begin
  {}
  Result:=SOCKET_ERROR;
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if SocketsStartupError <> ERROR_SUCCESS then Exit;
+  
+  {Check Manager}
+  NetworkSetLastError(WSASYSNOTREADY);
+  if ProtocolManager = nil then Exit;
+  
+  {Select Socket}
+  Result:=ProtocolManager.Select(n,readfds,writefds,exceptfds,TimeOut);
+ except
+  on E: Exception do
+   begin
+    Result:=SOCKET_ERROR;
+    NetworkSetLastError(WSAENOTSOCK);
+    {$IFDEF SOCKET_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpselect ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
+end;
+
+{==============================================================================}
+
+function fpFD_SET(fdno:clong; var nset: TFDSet):cint;
+begin
+ {}
+ Result:=-1;
+
+ if nset.fd_count < FD_MAXFDSET then
+  begin
+   nset.fd_array[nset.fd_count]:=fdno;
+   Inc(nset.fd_count);
+
+   Result:=0;
+  end;
+end;
+
+{==============================================================================}
+
+function fpFD_CLR(fdno:clong; var nset: TFDSet):cint;
+var
+ I: Integer;
+begin
+ {}
+ Result:=-1;
  
- //To Do //Implement select as per POSIX with conversion of FDSet structure
+ I:=0;
+ while I < nset.fd_count do
+  begin
+   if nset.fd_array[I] = fdno then
+    begin
+     while I < nset.fd_count - 1 do
+      begin
+       nset.fd_array[I]:=nset.fd_array[I + 1];
+       Inc(I);
+      end;
+      
+     Dec(nset.fd_count);
+     
+     Result:=0;
+     Break;
+    end;
+    
+   Inc(I);
+  end;
+end;
+
+{==============================================================================}
+
+function fpFD_ZERO(out nset: TFDSet):cint;
+begin
+ {}
+ nset.fd_count:=0;
+
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function fpFD_ISSET(fdno:clong; const nset: TFDSet): cint;
+var
+ I:Integer;
+begin
+ {}
+ I:=nset.fd_count;
+ while I > 0 do
+  begin
+   Dec(I);
+   if nset.fd_array[I] = fdno then
+    begin
+     Result:=1;
+     Exit;
+    end;
+  end;
+  
+ Result:=0;
 end;
 
 {==============================================================================}
 {==============================================================================}
 {RTL File/Text Sockets Functions}
-function fpRead(Handle:LongInt;var BufPtr;Size:DWORD):DWORD;
+function fpRead(Handle:clong;var BufPtr;Size:DWORD):DWORD;
 var
  Available:DWORD;
  Socket:TProtocolSocket;
@@ -2234,7 +2325,7 @@ end;
 
 {==============================================================================}
 
-function fpWrite(Handle:LongInt;var BufPtr;Size:DWORD):DWORD;
+function fpWrite(Handle:clong;var BufPtr;Size:DWORD):DWORD;
 var
  Socket:TProtocolSocket;
 begin
@@ -2366,7 +2457,7 @@ end;
 
 {==============================================================================}
 
-procedure Sock2Text(Sock:Longint;Var SockIn,SockOut:Text); 
+procedure Sock2Text(Sock:clong;Var SockIn,SockOut:Text); 
 {Set up two Pascal Text file descriptors for reading and writing}
 begin
  {First the reading part.}
@@ -2404,7 +2495,7 @@ end;
 
 {==============================================================================}
 
-function DoAccept(Sock:longint;var addr:TInetSockAddr):longint;
+function DoAccept(Sock:clong;var addr:TInetSockAddr):longint;
 var
  AddrLen:Longint;
 begin
@@ -2417,7 +2508,7 @@ end;
 
 {==============================================================================}
 
-function Accept(Sock:longint;var addr:TInetSockAddr;var SockIn,SockOut:File):Boolean; 
+function Accept(Sock:clong;var addr:TInetSockAddr;var SockIn,SockOut:File):Boolean; 
 var
  S:longint;
 begin
@@ -2436,7 +2527,7 @@ end;
 
 {==============================================================================}
 
-function Accept(Sock:longint;var addr:TInetSockAddr;var SockIn,SockOut:text):Boolean; 
+function Accept(Sock:clong;var addr:TInetSockAddr;var SockIn,SockOut:text):Boolean; 
 var
  S:longint;
 begin
@@ -2455,7 +2546,7 @@ end;
 
 {==============================================================================}
 
-function DoConnect(Sock:longint;const addr:TInetSockAddr):Boolean;
+function DoConnect(Sock:clong;const addr:TInetSockAddr):Boolean;
 var
  Res:longint;
 begin
@@ -2468,7 +2559,7 @@ end;
 
 {==============================================================================}
 
-function Connect(Sock:longint;const addr:TInetSockAddr;var SockIn,SockOut:text):Boolean; 
+function Connect(Sock:clong;const addr:TInetSockAddr;var SockIn,SockOut:text):Boolean; 
 begin
  {}
  Result:=DoConnect(Sock,addr);
@@ -2477,7 +2568,7 @@ end;
 
 {==============================================================================}
 
-function Connect(Sock:longint;const addr:TInetSockAddr;var SockIn,SockOut:file):Boolean; 
+function Connect(Sock:clong;const addr:TInetSockAddr;var SockIn,SockOut:file):Boolean; 
 begin
  {}
  Result:=DoConnect(Sock,addr);
@@ -2486,7 +2577,7 @@ end;
 
 {==============================================================================}
 
-procedure Sock2File(Sock:Longint;Var SockIn,SockOut:File); 
+procedure Sock2File(Sock:clong;Var SockIn,SockOut:File); 
 begin
  {Input}
  Assign(SockIn,'.');
@@ -3285,7 +3376,7 @@ begin
  Result[4]:=DigitTab[1 +(Value and 15)];
  Result[3]:=DigitTab[1 +((Value shr 4) and 15)];
  Result[2]:=DigitTab[1 +((Value shr 8) and 15)];
- Result[1]:=DigitTab[1 +((Value shr 12) and 15)];;
+ Result[1]:=DigitTab[1 +((Value shr 12) and 15)];
 end;
 
 {==============================================================================}
