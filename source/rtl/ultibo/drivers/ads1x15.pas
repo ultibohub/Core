@@ -246,7 +246,6 @@ function ADS1X15_Get_Last_Conversion_Result(Handle: TThreadHandle): integer;
 function ADS1X15_Conversion_Complete(Handle: TThreadHandle): boolean;
 function ADS1X15_Compute_Volts(Handle: TThreadHandle; Counts: int16_t): double;
 
-
 implementation
 
 {==============================================================================}
@@ -278,6 +277,11 @@ begin
   {ADS1X15_I2C_DEVICE}
   WorkBuffer := SysUtils.GetEnvironmentVariable('ADS1X15_I2C_DEVICE');
   if Length(WorkBuffer) <> 0 then ADS1X15_I2C_DEVICE := WorkBuffer;
+
+   if BCM2711_REGISTER_I2C0 or BCM2710_REGISTER_I2C0 or BCM2709_REGISTER_I2C0 or BCM2708_REGISTER_I2C0 then
+   begin
+       ADS1X15_I2C_DEVICE := 'I2C1';
+   end;
 
   {Start ADS1X15 ADC}
   if ADS1X15_AUTOSTART then
@@ -347,6 +351,7 @@ begin
   MADS1X15.M_Gain := ADS1X15_REGISTER_CONFIG_PGA_4_096V;
   MADS1X15.M_Data_Rate := ADS1115_DATA_RATES[ADS1X15_DEFAULT_DATA_RATE];
   MADS1X15.M_BitShift := ADS1115_M_BitShift;
+
 
   { Connect as I2C slave }
   if I2CDeviceStart(MADS1X15.I2C, ADS1X15_I2C_SPEED) <> ERROR_SUCCESS then
@@ -425,7 +430,7 @@ function ADS1X15_Create(Handle: TThreadHandle; I2C_Adress: uint8_t = ADS1X15_ADD
   Gain: uint16_t = ADS1X15_REGISTER_CONFIG_PGA_4_096V; Is_ADS1015: boolean = False;
   DATA_RATE: uint8_t = ADS1X15_DEFAULT_DATA_RATE): TThreadHandle;
   { Initialization of the object                                                 }
-  {==============================================================================}
+
 var
   MADS1X15: PADS1X15;
   I2C: PI2CDevice;
@@ -470,7 +475,7 @@ end;
 function ADS1X15_I2C_Write_Register(Handle: TThreadHandle; I2C_Register: uint8_t;
   Value: uint16_t; I2C_Adress: uint8_t = ADS1X15_ADDRESS): integer; inline;
   { Return last conversion result                                                }
-  {==============================================================================}
+
 var
   Count: longword;
   MADS1X15: PADS1X15;
@@ -495,11 +500,11 @@ begin
 
 end;
 
-{ --------------------------------------------------------------------------------------- }
+{==============================================================================}
 function ADS1X15_I2C_Read_Register(Handle: TThreadHandle; I2C_Register: uint8_t;
   I2C_Adress: uint8_t = ADS1X15_ADDRESS): integer; inline;
   { Return last conversion result                                                           }
-  { --------------------------------------------------------------------------------------- }
+
 var
   Count: longword;
   MADS1X15: PADS1X15;
@@ -532,7 +537,7 @@ end;
 {==============================================================================}
 procedure ADS1X15_Start_ALERT_RDY(Handle: TThreadHandle);
 { Start ALERT/RDY interupt signal                                              }
-{==============================================================================}
+
 var
   Result: integer;
 
@@ -608,7 +613,7 @@ procedure ADS1X15_Start_Comparator_Single_Ended(Handle: TThreadHandle;
     @param channel ADC channel to use
     @param threshold comparator threshold
 }
-{==============================================================================}
+
 var
   MADS1X15: PADS1X15;
   Config: uint16_t;
@@ -712,7 +717,7 @@ function ADS1X15_Compute_Volts(Handle: TThreadHandle; Counts: int16_t): double;
 
     @return the ADC reading in volts
 }
-  {==============================================================================}
+
 var
   MADS1X15: PADS1X15;
   Fs_Range: double;
@@ -767,7 +772,7 @@ procedure ADS1X15_Start_ADC_Reading(Handle: TThreadHandle; Mux: uint16_t;
  @param mux mux field value
  @param continuous continuous if set, otherwise single shot
 }
-{==============================================================================}
+
 var
   MADS1X15: PADS1X15;
   Config: uint16_t;
@@ -821,7 +826,7 @@ end; { PADS1X15.Start_ADC_Reading }
 function ADS1X15_Read_ADC_Single_Ended(Handle: TThreadHandle;
   Channel: uint8_t = ADS1X15_DEFAULT_CHANNEL; Continuous: boolean = False;
   RDY_Mode_Enabled: boolean = False): integer;
-  {==============================================================================}
+
 var
   MADS1X15: PADS1X15;
 begin { PADS1X15.Read_ADC_Single_Ended }
@@ -869,7 +874,7 @@ function ADS1X15_Read_ADC_Differential_0_1_Conversion(Handle: TThreadHandle): in
 
   @return the ADC reading
  }
-  {==============================================================================}
+
 
 begin { PADS1X15.Start_ADC_Differential_0_1_Conversion }
 
@@ -895,7 +900,7 @@ function ADS1X15_Read_ADC_Differential_0_3_Conversion(Handle: TThreadHandle): in
           positive or negative.
   @return the ADC reading
 }
-  {==============================================================================}
+
 
 begin { PADS1X15.Read_ADC_Differential_0_3_Conversion }
 
@@ -919,7 +924,7 @@ function ADS1X15_Read_ADC_Differential_1_3_Conversion(Handle: TThreadHandle): in
             positive or negative.
     @return the ADC reading
 }
-  {==============================================================================}
+
 
 begin { PADS1X15.Read_ADC_Differential_1_3_Conversion }
 
@@ -944,7 +949,7 @@ function ADS1X15_Read_ADC_Differential_2_3_Conversion(Handle: TThreadHandle): in
 
 @return the ADC reading
 }
-  {==============================================================================}
+
 
 begin { PADS1X15.Read_ADC_Differential_2_3_Conversion }
 
