@@ -6271,6 +6271,9 @@ begin
  if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2708: PWM Write (Value=' + IntToHex(Value,4) + ')');
  {$ENDIF}
  
+ {Update Statistics}
+ Inc(PWM.WriteCount);
+
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
  
@@ -6408,6 +6411,9 @@ begin
    end;   
  end;
  
+ {Update Statistics}
+ Inc(PWM.SetCount);
+
  {Update Properties}
  PWM.GPIO:=GPIO;
  PWM.Properties.GPIO:=GPIO;
@@ -6580,6 +6586,9 @@ begin
  {Memory Barrier}
  DataMemoryBarrier; {After the Last Read} 
  
+ {Update Statistics}
+ Inc(PWM.SetCount);
+
  {Update Properties}
  PWM.Mode:=Mode;
  PWM.Properties.Mode:=Mode;
@@ -6626,6 +6635,9 @@ begin
    end;   
  end;
  
+ {Update Statistics}
+ Inc(PWM.SetCount);
+
  {Update Properties}
  PWM.Range:=Range;
  PWM.Properties.Range:=Range;
@@ -6678,6 +6690,9 @@ begin
  if PWM_LOG_ENABLED then PWMLogDebug(PWM,'BCM2708:  Scaler=' + IntToStr(PBCM2708PWMDevice(PWM).Scaler));
  {$ENDIF}
  
+ {Update Statistics}
+ Inc(PWM.SetCount);
+
  {Update Properties}
  PWM.Frequency:=Frequency;
  PWM.Properties.Frequency:=Frequency;
@@ -6753,6 +6768,9 @@ begin
    end;   
  end;
     
+ {Update Statistics}
+ Inc(PWM.SetCount);
+
  {Update Properties}
  PWM.Polarity:=Polarity;
  PWM.Properties.Polarity:=Polarity;
@@ -6784,6 +6802,9 @@ begin
  {Check Scaler}
  if PBCM2708PWMDevice(PWM).Scaler = 0 then Exit;
  
+ {Update Statistics}
+ Inc(PWM.ConfigCount);
+
  {Get Data}
  Data:=DutyNS div PBCM2708PWMDevice(PWM).Scaler;
 

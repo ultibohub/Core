@@ -1,7 +1,7 @@
 {
 Ultibo PWM interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -540,6 +540,9 @@ begin
     end
    else
     begin
+     {Update Statistics}
+     Inc(PWM.GetCount);
+
      {Get GPIO}
      Result:=PWM.GPIO;
     end;    
@@ -619,6 +622,9 @@ begin
     end
    else
     begin
+     {Update Statistics}
+     Inc(PWM.GetCount);
+
      {Get Mode}
      Result:=PWM.Mode;
     end;  
@@ -698,6 +704,9 @@ begin
     end
    else
     begin
+     {Update Statistics}
+     Inc(PWM.GetCount);
+
      {Get Range}
      Result:=PWM.Range;
     end;  
@@ -781,6 +790,9 @@ begin
     end
    else
     begin
+     {Update Statistics}
+     Inc(PWM.GetCount);
+
      {Get Frequency}
      Result:=PWM.Frequency;
     end;  
@@ -860,6 +872,9 @@ begin
     end
    else
     begin
+     {Update Statistics}
+     Inc(PWM.GetCount);
+
      {Get Polarity}
      Result:=PWM.Polarity;
     end;  
