@@ -1,7 +1,7 @@
 {
 Ultibo Timezone interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -183,11 +183,13 @@ function TimezoneSetDefault(Timezone:PTimezoneEntry):LongWord;
 function TimezoneCheck(Timezone:PTimezoneEntry):PTimezoneEntry;
 
 function TimezoneUpdateOffset:LongWord;
+function TimezoneUpdateEnvironment:LongWord;
 
 function TimezoneStartToDateTime(const AStart:SYSTEMTIME;AYear:Word):TDateTime;
 function TimezoneStartToDescription(const AStart:SYSTEMTIME):String;
 
 function TimezoneNameReplaceChar(const AName:String;AChar,AReplace:Char):String;
+function TimezoneNameToAbbreviation(const AName:String):String;
 
 {==============================================================================}
 {==============================================================================}
@@ -2034,6 +2036,9 @@ begin
       {Update Default Name}
       SetLength(TIMEZONE_DEFAULT_NAME,StrLen(PChar(TIMEZONE_DEFAULT_NAME)));
 
+      {Update TZ Environment}
+      TimezoneUpdateEnvironment;
+      
       {Update Timezone Offset}
       TimezoneUpdateOffset;
      end;
@@ -2112,6 +2117,9 @@ begin
       
         {Update Default Name}
         SetLength(TIMEZONE_DEFAULT_NAME,StrLen(PChar(TIMEZONE_DEFAULT_NAME)));
+
+        {Update TZ Environment}
+        TimezoneUpdateEnvironment;
         
         {Update Timezone Offset}
         TimezoneUpdateOffset;
@@ -2912,6 +2920,9 @@ begin
 
     {Update Default Name}
     SetLength(TIMEZONE_DEFAULT_NAME,StrLen(PChar(TIMEZONE_DEFAULT_NAME)));
+
+    {Update TZ Environment}
+    TimezoneUpdateEnvironment;
     
     {Update Timezone Offset}
     TimezoneUpdateOffset;
@@ -3023,6 +3034,101 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;  
+end;
+
+{==============================================================================}
+
+function TimezoneUpdateEnvironment:LongWord;
+{Update the TZ environment variable to represent the current timezone}
+{See: https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html}
+var
+ Bias:LongInt;
+ StandardName:String;
+ DaylightName:String;
+ StandardBias:String;
+ DaylightBias:String;
+ StandardStart:String;
+ DaylightStart:String;
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Default}
+ if TimezoneDefault = nil then Exit;
+
+ {Acquire the Lock}
+ if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Timezone}
+    if TimezoneDefault = nil then Exit;
+    if TimezoneDefault.Signature <> TIMEZONE_SIGNATURE then Exit;
+     
+    {Check Timezone}
+    if TimezoneCheck(TimezoneDefault) <> TimezoneDefault then Exit;
+
+    {Get Standard Name}
+    StandardName:=TimezoneNameToAbbreviation(TimezoneDefault.StandardName);
+
+    {Get Standard Bias}
+    StandardBias:='+';
+    if TimezoneDefault.Bias < 0 then StandardBias:='-';
+    StandardBias:=StandardBias + IntToStr(Abs(TimezoneDefault.Bias) div 60);
+    if Abs(TimezoneDefault.Bias) mod 60 > 0 then StandardBias:=StandardBias + ':' + IntToStr(Abs(TimezoneDefault.Bias) mod 60);
+
+    {Get Daylight Defaults}
+    DaylightName:='';
+    DaylightBias:='';
+    DaylightStart:='';
+    StandardStart:='';
+    if (TimezoneDefault.DaylightBias <> 0) and (TimezoneDefault.DaylightStart.wMonth > 0) and (TimezoneDefault.DaylightStart.wDay > 0) then
+     begin
+      {Get Daylight Name}
+      DaylightName:=TimezoneNameToAbbreviation(TimezoneDefault.DaylightName);
+
+      {Get Daylight Bias}
+      DaylightBias:='';
+      if Abs(TimezoneDefault.DaylightBias) <> 60 then
+       begin
+        Bias:=TimezoneDefault.Bias + TimezoneDefault.DaylightBias;
+        
+        DaylightBias:='+'; 
+        if Bias < 0 then DaylightBias:='-';
+        DaylightBias:=DaylightBias + IntToStr(Abs(Bias) div 60);
+        if Abs(Bias) mod 60 > 0 then DaylightBias:=DaylightBias + ':' + IntToStr(Abs(Bias) mod 60);
+       end;
+
+      {Get Daylight Start}
+      DaylightStart:=',M' + IntToStr(TimezoneDefault.DaylightStart.wMonth) + '.' + IntToStr(TimezoneDefault.DaylightStart.wDay) + '.' + IntToStr(TimezoneDefault.DaylightStart.wDayOfWeek);
+      if TimezoneDefault.DaylightStart.wHour <> 2 then
+       begin
+        DaylightStart:=DaylightStart + '/' + IntToStr(TimezoneDefault.DaylightStart.wHour);
+        if TimezoneDefault.DaylightStart.wMinute <> 0 then DaylightStart:=DaylightStart + ':' + IntToStr(TimezoneDefault.DaylightStart.wMinute);
+       end;
+
+      {Get Standard Start}
+      StandardStart:=',M' + IntToStr(TimezoneDefault.StandardStart.wMonth) + '.' + IntToStr(TimezoneDefault.StandardStart.wDay) + '.' + IntToStr(TimezoneDefault.StandardStart.wDayOfWeek);
+      if TimezoneDefault.StandardStart.wHour <> 2 then
+       begin
+        StandardStart:=StandardStart + '/' + IntToStr(TimezoneDefault.StandardStart.wHour);
+        if TimezoneDefault.StandardStart.wMinute <> 0 then StandardStart:=StandardStart + ':' + IntToStr(TimezoneDefault.StandardStart.wMinute);
+       end;
+     end;
+
+    {Set TZ Environment}
+    EnvironmentSet('TZ',StandardName + StandardBias + DaylightName + DaylightBias + DaylightStart + StandardStart);
+
+    {Return Result}
+    Result:=ERROR_SUCCESS;
+   finally
+    {Release the Lock}
+    CriticalSectionUnlock(TimezoneTableLock);
+   end;
+  end
+ else
+  begin
+   Result:=ERROR_CAN_NOT_COMPLETE;
+  end;
 end;
 
 {==============================================================================}
@@ -3183,6 +3289,34 @@ begin
  
  {Return Result}
  Result:=WorkBuffer;
+end;
+
+{==============================================================================}
+
+function TimezoneNameToAbbreviation(const AName:String):String;
+{Get the abbreviation of a timezone name (eg Central Standard Time = CST)}
+var
+ Count:Integer;
+ WorkBuffer:String;
+begin
+ {}
+ {Abbreviate Name}
+ WorkBuffer:='';
+ for Count:=1 to Length(AName) do
+  begin
+   {Check for first character or space}
+   if Count = 1 then
+    begin
+     WorkBuffer:=AName[Count];
+    end
+   else if (AName[Count] = ' ') and (Count < Length(AName)) then
+    begin
+     WorkBuffer:=WorkBuffer + AName[Count + 1];
+    end;
+  end;
+
+ {Return Result}
+ Result:=Uppercase(WorkBuffer);
 end;
 
 {==============================================================================}
