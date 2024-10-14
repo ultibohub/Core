@@ -1372,10 +1372,13 @@ var
  PITFT35_AUTOSTART:LongBool = True;             {If True then auto start the PiTFT35 device on boot (Only if PiTFT35 unit included)}
 
  {IPSTFT19}
- IPSTFT19_AUTOSTART:LongBool = True;             {If True then auto start the IPSTFT19 device on boot (Only if IPSTFT19 unit included)}
+ IPSTFT19_AUTOSTART:LongBool = True;            {If True then auto start the IPSTFT19 device on boot (Only if IPSTFT19 unit included)}
 
  {RPiSenseHat}
  RPISENSE_AUTOSTART:LongBool = True;            {If True then auto start the RPiSenseHat device on boot (Only if RPiSenseHat unit included)}
+
+ {VideoCore VCHIQ}
+ VCHIQ_FRAGMENT_WARNING:LongBool = True;        {If True then issue warnings when VCHIQ fragment handling may cause data corruption, only applies when device tree is not in use (Only if VCHIQ unit included)}
  
 {==============================================================================}
 {Global handlers}
