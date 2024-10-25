@@ -35417,7 +35417,7 @@ end;
 function FileRead(handle: THANDLE; buffer: PVOID; count: int32_t): int32_t; stdcall;
 begin
  {}
- Result:=FileSystem.FSFileRead(handle,buffer,count);
+ Result:=FileSystem.FSFileRead(handle,buffer^,count);
 end;
 
 {==============================================================================}
@@ -35425,7 +35425,7 @@ end;
 function FileWrite(handle: THANDLE; buffer: PVOID; count: int32_t): int32_t; stdcall;
 begin
  {}
- Result:=FileSystem.FSFileWrite(handle,buffer,count);
+ Result:=FileSystem.FSFileWrite(handle,buffer^,count);
 end;
 
 {==============================================================================}
