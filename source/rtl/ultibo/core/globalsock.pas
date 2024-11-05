@@ -1,7 +1,7 @@
 {
 Ultibo Global Socket Definitions.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -214,8 +214,12 @@ const
  SO_USELOOPBACK  = $0040;          { bypass hardware when possible }
  SO_LINGER       = $0080;          { linger on close if data present }
  SO_OOBINLINE    = $0100;          { leave received OOB data in line }
+ SO_REUSEPORT    = $0200;          { allow local address & port reuse }
+ SO_TIMESTAMP    = $0400;          { timestamp received dgram traffic }
+ SO_ACCEPTFILTER = $1000;          { there is an accept filter }
 
- SO_DONTLINGER  =   $ff7f;
+ SO_DONTLINGER       = not(SO_LINGER);    { ($ff7f) }
+ SO_EXCLUSIVEADDRUSE = not(SO_REUSEADDR); { disallow local address reuse ($fffb) }
 
 { Additional options. }
  SO_SNDBUF       = $1001;          { send buffer size }

@@ -2193,7 +2193,7 @@ begin
        Result:=Sockets.CloseSocket(Entry^.Handle);
        
        {Check Error}
-       if Result = SOCKET_ERROR then ptr^._errno:=socket_get_error(SocketError());
+       if Result = SOCKET_ERROR then ptr^._errno:=socket_get_error(Sockets.SocketError());
       end
      {$ENDIF}
      else
@@ -2998,10 +2998,28 @@ begin
   begin
    {Normal file}
    Entry:=SyscallsGetEntry(fd);
-   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
+   if Entry <> nil then
     begin
-     {Read file}
-     Result:=FSFileRead(Entry^.Handle,buf^,cnt);
+     if Entry^.Source = SYSCALLS_ENTRY_FILE then
+      begin
+       {Read file}
+       Result:=FSFileRead(Entry^.Handle,buf^,cnt);
+      end
+     {$IFDEF SYSCALLS_EXPORT_SOCKETS}
+     else if Entry^.Source = SYSCALLS_ENTRY_SOCKET then
+      begin
+       {Read socket}
+       Result:=Sockets.fprecv(Entry^.Handle,buf,cnt,0);
+
+       {Check Error}
+       if Result = SOCKET_ERROR then ptr^._errno:=socket_get_error(Sockets.SocketError());
+      end
+     {$ENDIF}
+     else
+      begin
+       {Return Error}
+       ptr^._errno:=EINVAL;
+      end;
     end
    else
     begin
@@ -3441,10 +3459,28 @@ begin
   begin
    {Normal file}
    Entry:=SyscallsGetEntry(fd);
-   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
+   if Entry <> nil then
     begin
-     {Write file}
-     Result:=FSFileWrite(Entry^.Handle,buf^,cnt);
+     if Entry^.Source = SYSCALLS_ENTRY_FILE then
+      begin
+       {Write file}
+       Result:=FSFileWrite(Entry^.Handle,buf^,cnt);
+      end
+     {$IFDEF SYSCALLS_EXPORT_SOCKETS}
+     else if Entry^.Source = SYSCALLS_ENTRY_SOCKET then
+      begin
+       {Write socket}
+       Result:=Sockets.fpsend(Entry^.Handle,buf,cnt,0);
+
+       {Check Error}
+       if Result = SOCKET_ERROR then ptr^._errno:=socket_get_error(Sockets.SocketError());
+      end
+     {$ENDIF}
+     else
+      begin
+       {Return Error}
+       ptr^._errno:=EINVAL;
+      end;
     end
    else
     begin

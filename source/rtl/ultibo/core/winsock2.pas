@@ -200,7 +200,8 @@ const
  SO_LINGER       = GlobalSock.SO_LINGER;
  SO_OOBINLINE    = GlobalSock.SO_OOBINLINE;
 
- SO_DONTLINGER  =   GlobalSock.SO_DONTLINGER;
+ SO_DONTLINGER       = GlobalSock.SO_DONTLINGER;
+ SO_EXCLUSIVEADDRUSE = GlobalSock.SO_EXCLUSIVEADDRUSE;
 
 { Additional options. }
  SO_SNDBUF       = GlobalSock.SO_SNDBUF;

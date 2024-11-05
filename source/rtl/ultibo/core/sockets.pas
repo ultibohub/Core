@@ -265,8 +265,12 @@ const
  SO_USELOOPBACK  = GlobalSock.SO_USELOOPBACK;
  SO_LINGER       = GlobalSock.SO_LINGER;
  SO_OOBINLINE    = GlobalSock.SO_OOBINLINE;
+ SO_REUSEPORT    = GlobalSock.SO_REUSEPORT;
+ SO_TIMESTAMP    = GlobalSock.SO_TIMESTAMP;
+ SO_ACCEPTFILTER = GlobalSock.SO_ACCEPTFILTER;
 
- SO_DONTLINGER  =   GlobalSock.SO_DONTLINGER;
+ SO_DONTLINGER       = GlobalSock.SO_DONTLINGER;
+ SO_EXCLUSIVEADDRUSE = GlobalSock.SO_EXCLUSIVEADDRUSE;
 
 { Additional options. }
  SO_SNDBUF       = GlobalSock.SO_SNDBUF;
@@ -1597,7 +1601,7 @@ end;
 function fpsocket(domain:cint; xtype:cint; protocol: cint):clong;
 begin
  {}
- Result:=LongInt(INVALID_SOCKET);
+ Result:=clong(INVALID_SOCKET);
  try
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
@@ -1612,7 +1616,7 @@ begin
  except
   on E: Exception do
    begin
-    Result:=LongInt(INVALID_SOCKET);
+    Result:=clong(INVALID_SOCKET);
     NetworkSetLastError(WSAEPROTONOSUPPORT);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpsocket ' + E.Message);
@@ -1628,7 +1632,7 @@ var
  Socket:TProtocolSocket;
 begin
  {}
- Result:=Word(SOCKET_ERROR);
+ Result:=SOCKET_ERROR;
  try
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
@@ -1653,7 +1657,7 @@ begin
  except
   on E: Exception do
    begin
-    Result:=Word(SOCKET_ERROR);
+    Result:=SOCKET_ERROR;
     NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpsend ' + E.Message);
@@ -1669,7 +1673,7 @@ var
  Socket:TProtocolSocket;
 begin
  {}
- Result:=Word(SOCKET_ERROR);
+ Result:=SOCKET_ERROR;
  try
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
@@ -1694,7 +1698,7 @@ begin
  except
   on E: Exception do
    begin
-    Result:=Word(SOCKET_ERROR);
+    Result:=SOCKET_ERROR;
     NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpsendto ' + E.Message);
@@ -1710,7 +1714,7 @@ var
  Socket:TProtocolSocket;
 begin
  {}
- Result:=Word(SOCKET_ERROR);
+ Result:=SOCKET_ERROR;
  try
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
@@ -1735,7 +1739,7 @@ begin
  except
   on E: Exception do
    begin
-    Result:=Word(SOCKET_ERROR);
+    Result:=SOCKET_ERROR;
     NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fprecv ' + E.Message);
@@ -1751,7 +1755,7 @@ var
  Socket:TProtocolSocket;
 begin
  {}
- Result:=Word(SOCKET_ERROR);
+ Result:=SOCKET_ERROR;
  try
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
@@ -1776,7 +1780,7 @@ begin
  except
   on E: Exception do
    begin
-    Result:=Word(SOCKET_ERROR);
+    Result:=SOCKET_ERROR;
     NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fprecvfrom ' + E.Message);
@@ -1956,7 +1960,7 @@ var
  Socket:TProtocolSocket;
 begin
  {}
- Result:=LongInt(INVALID_SOCKET);
+ Result:=clong(INVALID_SOCKET);
  try
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
@@ -1981,7 +1985,7 @@ begin
  except
   on E: Exception do
    begin
-    Result:=LongInt(INVALID_SOCKET);
+    Result:=clong(INVALID_SOCKET);
     NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF SOCKET_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: fpaccept ' + E.Message);
