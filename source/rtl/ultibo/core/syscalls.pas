@@ -1418,6 +1418,8 @@ var
  {Syscalls specific variables}
  environ:PPAnsiChar; external;  {Pointer to the global environment block in the C library}
  
+ __dso_handle:Pointer; cvar;    {Dynamic shared object handle for C++ library support}
+ 
 var
  {Static initialization variables}
  PTHREAD_MUTEX_INITIALIZER:pthread_mutex_t = $FFFFFFFF; {This is used to statically initialize a pthread_mutex_t}
@@ -1436,6 +1438,7 @@ procedure SyscallsQuit;
 {==============================================================================}
 {Syscalls Functions (Standard)}
 procedure _exit; cdecl; public name '_exit';
+procedure __sync_synchronize; cdecl; public name '__sync_synchronize';
 
 {==============================================================================}
 {Syscalls Functions (Recursive)}
@@ -2145,6 +2148,22 @@ begin
  HaltThread(0);
 end;
  
+{==============================================================================}
+
+procedure __sync_synchronize; cdecl;
+{Perform a full memory barrier}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls __sync_synchronize');
+ {$ENDIF}
+
+ {Data Synchronization Barrier}
+ DataSynchronizationBarrier
+end;
+
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Recursive)}
