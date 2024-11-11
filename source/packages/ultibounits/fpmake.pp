@@ -41,6 +41,10 @@ begin
     T:=P.Targets.AddUnit('openvg.pas');
     T:=P.Targets.AddUnit('vgshapes.pas');
     
+{$if FPC_FULLVERSION>=30301}
+    P.NamespaceMap:='namespaces.lst';
+{$endif}
+
 {$ifndef ALLPACKAGES}
     Run;
     end;

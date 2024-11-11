@@ -1,0 +1,8 @@
+src/dispmanx.pas=namespaced/Ultibo.DispmanX.pas
+{s*:src/}=namespaced/
+{i+:src/}
+src/egl.pas=namespaced/Ultibo.EGL.pas
+src/openvg.pas=namespaced/Ultibo.OpenVG.pas
+src/ubitmap.pas=namespaced/Ultibo.uBitmap.pas
+src/uscreenshot.pas=namespaced/Ultibo.uScreenshot.pas
+src/vgshapes.pas=namespaced/Ultibo.VGShapes.pas

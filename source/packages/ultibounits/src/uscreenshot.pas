@@ -1,7 +1,7 @@
 {
 Ultibo Screenshot utility unit.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -45,12 +45,36 @@ uScreenshot
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit uScreenshot; 
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Console,GraphicsConsole,Classes,SysUtils,BMPcomn;
-            
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Console,
+  Core.GraphicsConsole,
+  System.Classes,
+  System.SysUtils,
+  FpImage.Common.Bitmap;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Console,
+  GraphicsConsole,
+  Classes,
+  SysUtils,
+  BMPcomn;
+{$ENDIF FPC_DOTTEDUNITS}
+
 {==============================================================================}
 
 function SaveScreen(const Filename:String;X,Y,Width,Height,BPP:LongWord):Boolean;

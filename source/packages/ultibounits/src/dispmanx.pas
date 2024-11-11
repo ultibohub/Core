@@ -31,7 +31,9 @@
   
  }
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit DispmanX;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {$mode objfpc} {Default to ObjFPC compatible syntax}
 {$H+}          {Default to AnsiString}
@@ -39,7 +41,23 @@ unit DispmanX;
  
 interface
  
-uses {$ifdef ultibo}GlobalTypes,{$endif}SysUtils{$ifdef ultibo},Syscalls{$endif},VC4;
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  {$ifdef ultibo}
+  Core.GlobalTypes,
+  Core.Syscalls,
+  Drivers.VC4,
+  {$endif}
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  {$ifdef ultibo}
+  GlobalTypes,
+  Syscalls,
+  VC4,
+  {$endif}
+  SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
  
 {$PACKRECORDS C}
 

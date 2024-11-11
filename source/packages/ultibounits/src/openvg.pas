@@ -30,7 +30,9 @@
    
 }
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit OpenVG;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {$mode objfpc} {Default to ObjFPC compatible syntax}
 {$H+}          {Default to AnsiString}
@@ -38,7 +40,21 @@ unit OpenVG;
  
 interface
  
-uses {$ifdef ultibo}GlobalTypes,{$endif}SysUtils{$ifdef ultibo},Syscalls{$endif};
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  {$ifdef ultibo}
+  Core.GlobalTypes,
+  Core.Syscalls,
+  {$endif}
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  {$ifdef ultibo}
+  GlobalTypes,
+  Syscalls,
+  {$endif}
+  SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
  
 {$PACKRECORDS C}
 

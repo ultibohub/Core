@@ -29,7 +29,9 @@
  
 }
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit EGL;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {$mode objfpc} {Default to ObjFPC compatible syntax}
 {$H+}          {Default to AnsiString}
@@ -37,7 +39,45 @@ unit EGL;
  
 interface
  
-uses {$ifdef ultibo}GlobalTypes,{$endif}SysUtils{$ifndef ultibo},dynlibs{$endif}{$ifdef X},x,xlib{$endif}{$ifdef windows},Windows{$endif}{$ifdef ultibo},Syscalls{$endif};
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  {$ifdef ultibo}
+  Core.GlobalTypes,
+  {$endif}
+  {$ifndef ultibo}
+  System.DynLibs,
+  {$endif}
+  {$ifdef X}
+  Api.X11.X,
+  Api.X11.Xlib,
+  {$endif}
+  {$ifdef windows}
+  WinApi.Windows,
+  {$endif}
+  {$ifdef ultibo}
+  Core.Syscalls,
+  {$endif}
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
+  {$ifdef ultibo}
+  GlobalTypes,
+  {$endif}
+  {$ifndef ultibo}
+  dynlibs,
+  {$endif}
+  {$ifdef X}
+  x,
+  xlib,
+  {$endif}
+  {$ifdef windows}
+  Windows,
+  {$endif}
+  {$ifdef ultibo}
+  Syscalls,
+  {$endif}
+  SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
  
 {$IFDEF FPC}
 {$PACKRECORDS C}
