@@ -1,7 +1,7 @@
 {
 Ultibo Global Define Defaults.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -347,7 +347,7 @@ Global Defines
                                      {Note: Not currently supported by Newlib, need to modify \newlib\configure.host to enable stdio64 support for arm-none-eabi or aarch64-none-elf}
 {$DEFINE SYSCALLS_EXPORT_SOCKETS}    {Enable export of POSIX standard socket functions by the Syscalls unit (Default: On)}
                                      {Note: Must be disabled in order to enable export of the Winsock or Winsock2 API below}
-{$DEFINE SYSCALLS_USE_LONG_TIME_T}   {Define time_t as a long (32-bit) instead of int64_t (64-bit) for compatibility with older GCC and NewLib (Default: On)}                                  
+{--$DEFINE SYSCALLS_USE_LONG_TIME_T} {Define time_t as a long (32-bit) instead of int64_t (64-bit) for compatibility with older GCC and NewLib (Default: Off)}                                  
 
 {==============================================================================}
 {==============================================================================}

@@ -94,10 +94,20 @@ Syscalls
     
   Build:
   
-   Download Newlib (currently 2.4.0) from ftp://sourceware.org/pub/newlib/index.html
+   Download Newlib (currently 4.4.0.20231231) from https://www.sourceware.org/ftp/newlib/index.html
    
-   Unpack to folder $HOME/newlib-2.4.0
+   Unpack to folder $HOME/newlib-4.4.0.20231231
   
+
+   Build with GCC arm-none-eabi 10.3-2021.07
+
+   Extracted to folder $HOME/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi
+
+
+   Build with GCC aarch64-none-elf 10.3-2021.07
+
+   Extracted to folder $HOME/gcc-arm-10.3-2021.07-x86_64-aarch64-none-elf
+
   Build ARMv6: 
    
    cd
@@ -106,9 +116,9 @@ Syscalls
    
    cd build-newlib-armv6
    
-   export PATH=$HOME/gcc-arm-none-eabi-5_4-2016q2/bin:$PATH
+   export PATH=$HOME/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi/bin:$PATH
    
-   ../newlib-2.4.0/configure --disable-multilib --target=arm-none-eabi CFLAGS_FOR_TARGET="-O2 -mabi=aapcs -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__"
+   ../newlib-4.4.0.20231231/configure --disable-multilib --target=arm-none-eabi CFLAGS_FOR_TARGET="-O2 -mabi=aapcs -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__"
    
    make all
    
@@ -127,9 +137,9 @@ Syscalls
  
    cd build-newlib-armv7
  
-   export PATH=$HOME/gcc-arm-none-eabi-5_4-2016q2/bin:$PATH
+   export PATH=$HOME/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi/bin:$PATH
  
-   ../newlib-2.4.0/configure --disable-multilib --target=arm-none-eabi CFLAGS_FOR_TARGET="-O2 -mabi=aapcs -marm -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__"
+   ../newlib-4.4.0.20231231/configure --disable-multilib --target=arm-none-eabi CFLAGS_FOR_TARGET="-O2 -mabi=aapcs -marm -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__"
    
    make all
    
@@ -148,9 +158,9 @@ Syscalls
  
    cd build-newlib-armv8
   
-   export PATH=$HOME/gcc-linaro-aarch64-none-elf-4.8-2014.04_linux/bin:$PATH
+   export PATH=$HOME/gcc-arm-10.3-2021.07-x86_64-aarch64-none-elf/bin:$PATH
   
-   ../newlib-2.4.0/configure --disable-multilib --target=aarch64-none-elf CFLAGS_FOR_TARGET="-O2 -march=armv8-a -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__"
+   ../newlib-4.4.0.20231231/configure --disable-multilib --target=aarch64-none-elf CFLAGS_FOR_TARGET="-O2 -march=armv8-a -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__"
   
    make all
   

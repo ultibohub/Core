@@ -1,7 +1,7 @@
 {
 Ultibo Broadcom VideoCoreIV interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -112,13 +112,22 @@ VideoCore IV
    
    (or git clone https://github.com/ultibohub/userland.git)
 
+   Build with GCC arm-none-eabi 10.3-2021.07
+
+   Extracted to folder $HOME/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi
+
+
+   Build with GCC aarch64-none-elf 10.3-2021.07
+
+   Extracted to folder $HOME/gcc-arm-10.3-2021.07-x86_64-aarch64-none-elf
+
   Build ARMv6: 
    
    cd
   
    cd userland
   
-   export PATH=$HOME/gcc-arm-none-eabi-5_4-2016q2/bin:$PATH
+   export PATH=$HOME/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi/bin:$PATH
    
    ./buildme.armv6-ultibo
    
@@ -128,7 +137,7 @@ VideoCore IV
   
    cd userland
   
-   export PATH=$HOME/gcc-arm-none-eabi-5_4-2016q2/bin:$PATH
+   export PATH=$HOME/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi/bin:$PATH
    
    ./buildme.armv7-ultibo
   
@@ -138,7 +147,7 @@ VideoCore IV
   
    cd userland
   
-   export PATH=$HOME/gcc-linaro-aarch64-none-elf-4.8-2014.04_linux/bin:$PATH
+   export PATH=$HOME/gcc-arm-10.3-2021.07-x86_64-aarch64-none-elf/bin:$PATH
    
    ./buildme.armv8-ultibo
   
