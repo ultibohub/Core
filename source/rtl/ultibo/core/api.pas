@@ -4685,23 +4685,23 @@ procedure file_sys_async_start(data: PVOID); stdcall; public name 'file_sys_asyn
 function FileOpen(filename: PCHAR; mode: int): THANDLE; stdcall; public name 'FileOpen';
 function FileCreate(filename: PCHAR): THANDLE; stdcall; public name 'FileCreate';
 {function DeleteFile(filename: PCHAR): BOOL; stdcall; public name 'DeleteFile';} {Exported in Ultibo}
-procedure FileClose(handle: int); stdcall; public name 'FileClose';
+procedure FileClose(handle: THANDLE); stdcall; public name 'FileClose';
 function RenameFile(const oldname, newname: PCHAR): BOOL; stdcall; public name 'RenameFile';
 function FileSeek(handle: THANDLE; offset, origin: int32_t): int32_t; stdcall; public name 'FileSeek';
-function FileFlush(handle: int): BOOL; stdcall; public name 'FileFlush';
-function FileTruncate(handle: int): BOOL; stdcall; public name 'FileTruncate';
+function FileFlush(handle: THANDLE): BOOL; stdcall; public name 'FileFlush';
+function FileTruncate(handle: THANDLE): BOOL; stdcall; public name 'FileTruncate';
 {function SetEndOfFile(handle: THANDLE): BOOL; stdcall; public name 'SetEndOfFile';} {Exported in Ultibo}
 
-function EndOfFile(handle: int): BOOL; stdcall; public name 'EndOfFile';
+function EndOfFile(handle: THANDLE): BOOL; stdcall; public name 'EndOfFile';
 function FilePos(handle: THANDLE): int32_t; stdcall; public name 'FilePos';
 function FileSize(handle: THANDLE): int32_t; stdcall; public name 'FileSize';
 
 function FileAge(filename: PCHAR): int; stdcall; public name 'FileAge';
 function FileExists(filename: PCHAR): BOOL; stdcall; public name 'FileExists';
 function FileGetAttr(filename: PCHAR): int; stdcall; public name 'FileGetAttr';
-function FileGetDate(handle: int): int; stdcall; public name 'FileGetDate';
+function FileGetDate(handle: THANDLE): int; stdcall; public name 'FileGetDate';
 function FileSetAttr(filename: PCHAR; attr: int): int; stdcall; public name 'FileSetAttr';
-function FileSetDate(handle: int; age: int): int; stdcall; public name 'FileSetDate';
+function FileSetDate(handle: THANDLE; age: int): int; stdcall; public name 'FileSetDate';
 
 function FileRead(handle: THANDLE; buffer: PVOID; count: int32_t): int32_t; stdcall; public name 'FileRead';
 function FileWrite(handle: THANDLE; buffer: PVOID; count: int32_t): int32_t; stdcall; public name 'FileWrite';
@@ -4729,16 +4729,16 @@ function GetTrueName(filename: PCHAR; truename: PCHAR; len: uint32_t): uint32_t;
 {Extended Functions}
 function FileSeekEx(handle: THANDLE; const offset: int64_t; origin: int32_t): int64_t; stdcall; public name 'FileSeekEx';
 
-function EndOfFileEx(handle: int): BOOL; stdcall; public name 'EndOfFileEx';
+function EndOfFileEx(handle: THANDLE): BOOL; stdcall; public name 'EndOfFileEx';
 function FilePosEx(handle: THANDLE): int64_t; stdcall; public name 'FilePosEx';
 function FileSizeEx(handle: THANDLE): int64_t; stdcall; public name 'FileSizeEx';
 
 function FileAgeEx(filename: PCHAR): FILETIME; stdcall; public name 'FileAgeEx';
 
-function FileGetAttrEx(handle: int): int; stdcall; public name 'FileGetAttrEx';
+function FileGetAttrEx(handle: THANDLE): int; stdcall; public name 'FileGetAttrEx';
 
-function FileGetDateEx(handle: int): FILETIME; stdcall; public name 'FileGetDateEx';
-function FileSetDateEx(handle: int; age: FILETIME): int; stdcall; public name 'FileSetDateEx';
+function FileGetDateEx(handle: THANDLE): FILETIME; stdcall; public name 'FileGetDateEx';
+function FileSetDateEx(handle: THANDLE; age: FILETIME): int; stdcall; public name 'FileSetDateEx';
 
 {function GetFileTime(handle: THANDLE; createtime, accesstime, writetime: PFILETIME): BOOL; stdcall; public name 'GetFileTime';} {Exported in Ultibo}
 {function SetFileTime(handle: THANDLE; createtime, accesstime, writetime: PFILETIME): BOOL; stdcall; public name 'SetFileTime';} {Exported in Ultibo}
@@ -35302,7 +35302,7 @@ end;
 
 {==============================================================================}
 
-procedure FileClose(handle: int); stdcall;
+procedure FileClose(handle: THANDLE); stdcall;
 begin
  {}
  FileSystem.FSFileClose(handle);
@@ -35326,7 +35326,7 @@ end;
 
 {==============================================================================}
 
-function FileFlush(handle: int): BOOL; stdcall;
+function FileFlush(handle: THANDLE): BOOL; stdcall;
 begin
  {}
  Result:=FileSystem.FSFileFlush(handle);
@@ -35334,7 +35334,7 @@ end;
 
 {==============================================================================}
 
-function FileTruncate(handle: int): BOOL; stdcall;
+function FileTruncate(handle: THANDLE): BOOL; stdcall;
 begin
  {}
  Result:=FileSystem.FSFileTruncate(handle);
@@ -35342,7 +35342,7 @@ end;
 
 {==============================================================================}
 
-function EndOfFile(handle: int): BOOL; stdcall;
+function EndOfFile(handle: THANDLE): BOOL; stdcall;
 begin
  {}
  Result:=FileSystem.FSEndOfFile(handle);
@@ -35390,7 +35390,7 @@ end;
 
 {==============================================================================}
 
-function FileGetDate(handle: int): int; stdcall;
+function FileGetDate(handle: THANDLE): int; stdcall;
 begin
  {}
  Result:=FileSystem.FSFileGetDate(handle);
@@ -35406,7 +35406,7 @@ end;
 
 {==============================================================================}
 
-function FileSetDate(handle: int; age: int): int; stdcall;
+function FileSetDate(handle: THANDLE; age: int): int; stdcall;
 begin
  {}
  Result:=FileSystem.FSFileSetDate(handle,age);
@@ -35546,7 +35546,7 @@ end;
 
 {==============================================================================}
 
-function EndOfFileEx(handle: int): BOOL; stdcall;
+function EndOfFileEx(handle: THANDLE): BOOL; stdcall;
 begin
  {}
  Result:=FileSystem.FSEndOfFileEx(handle);
@@ -35578,7 +35578,7 @@ end;
 
 {==============================================================================}
 
-function FileGetAttrEx(handle: int): int; stdcall;
+function FileGetAttrEx(handle: THANDLE): int; stdcall;
 begin
  {}
  Result:=FileSystem.FSFileGetAttrEx(handle);
@@ -35586,7 +35586,7 @@ end;
 
 {==============================================================================}
 
-function FileGetDateEx(handle: int): FILETIME; stdcall;
+function FileGetDateEx(handle: THANDLE): FILETIME; stdcall;
 begin
  {}
  Result:=FileSystem.FSFileGetDateEx(handle);
@@ -35594,7 +35594,7 @@ end;
 
 {==============================================================================}
 
-function FileSetDateEx(handle: int; age: FILETIME): int; stdcall;
+function FileSetDateEx(handle: THANDLE; age: FILETIME): int; stdcall;
 begin
  {}
  Result:=FileSystem.FSFileSetDateEx(handle,age);
