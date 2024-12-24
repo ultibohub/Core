@@ -18502,6 +18502,13 @@ begin
    if ResultCode = ERROR_SUCCESS then
     begin
      try
+      {Check Thread Quantum}
+      if SchedulerThreadQuantum[CPUID] > 0 then
+       begin
+        {Decrement Thread Quantum}
+        Dec(SchedulerThreadQuantum[CPUID]);
+       end;
+
       {Select New Thread}
       NewThread:=SchedulerSelect(CPUID,Thread,False);
       if NewThread <> INVALID_HANDLE_VALUE then
@@ -18681,9 +18688,6 @@ begin
      else if (SchedulerThreadQuantum[CPUID] > 0) and (ThreadEntry.Priority >= FirstBitSet(SchedulerPriorityMask[CPUID])) then
      {$ENDIF}
       begin
-       {Decrement Thread Quantum}
-       Dec(SchedulerThreadQuantum[CPUID]);  
-       
        {Return Thread}
        Result:=Thread;
        Exit;
