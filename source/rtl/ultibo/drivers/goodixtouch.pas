@@ -250,27 +250,27 @@ begin
 
  {Check Environment Variables}
  {GOODIX_SWAP_CONFIG_XY}
- WorkBool:=StrToBoolDef(SysUtils.GetEnvironmentVariable('GOODIX_SWAP_CONFIG_XY'),GOODIX_SWAP_CONFIG_XY);
+ WorkBool:=StrToBoolDef(EnvironmentGet('GOODIX_SWAP_CONFIG_XY'),GOODIX_SWAP_CONFIG_XY);
  if WorkBool <> GOODIX_SWAP_CONFIG_XY then GOODIX_SWAP_CONFIG_XY:=WorkBool;
 
  {GOODIX_SWAP_REPORT_XY}
- WorkBool:=StrToBoolDef(SysUtils.GetEnvironmentVariable('GOODIX_SWAP_REPORT_XY'),GOODIX_SWAP_REPORT_XY);
+ WorkBool:=StrToBoolDef(EnvironmentGet('GOODIX_SWAP_REPORT_XY'),GOODIX_SWAP_REPORT_XY);
  if WorkBool <> GOODIX_SWAP_REPORT_XY then GOODIX_SWAP_REPORT_XY:=WorkBool;
 
  {GOODIX_INVERT_REPORT_X}
- WorkBool:=StrToBoolDef(SysUtils.GetEnvironmentVariable('GOODIX_INVERT_REPORT_X'),GOODIX_INVERT_REPORT_X);
+ WorkBool:=StrToBoolDef(EnvironmentGet('GOODIX_INVERT_REPORT_X'),GOODIX_INVERT_REPORT_X);
  if WorkBool <> GOODIX_INVERT_REPORT_X then GOODIX_INVERT_REPORT_X:=WorkBool;
 
  {GOODIX_INVERT_REPORT_Y}
- WorkBool:=StrToBoolDef(SysUtils.GetEnvironmentVariable('GOODIX_INVERT_REPORT_Y'),GOODIX_INVERT_REPORT_Y);
+ WorkBool:=StrToBoolDef(EnvironmentGet('GOODIX_INVERT_REPORT_Y'),GOODIX_INVERT_REPORT_Y);
  if WorkBool <> GOODIX_INVERT_REPORT_Y then GOODIX_INVERT_REPORT_Y:=WorkBool;
 
  {GOODIX_LOAD_CONFIG_FILE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('GOODIX_LOAD_CONFIG_FILE');
+ WorkBuffer:=EnvironmentGet('GOODIX_LOAD_CONFIG_FILE');
  if Length(WorkBuffer) <> 0 then GOODIX_LOAD_CONFIG_FILE:=WorkBuffer;
 
  {GOODIX_RESET_CONTROLLER}
- WorkBool:=StrToBoolDef(SysUtils.GetEnvironmentVariable('GOODIX_RESET_CONTROLLER'),GOODIX_RESET_CONTROLLER);
+ WorkBool:=StrToBoolDef(EnvironmentGet('GOODIX_RESET_CONTROLLER'),GOODIX_RESET_CONTROLLER);
  if WorkBool <> GOODIX_RESET_CONTROLLER then GOODIX_RESET_CONTROLLER:=WorkBool;
 
  GOODIXInitialized:=True;

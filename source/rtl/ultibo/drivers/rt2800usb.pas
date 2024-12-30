@@ -1,7 +1,7 @@
 {
 Ralink RT2800 USB Wireless Driver.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1609,15 +1609,15 @@ begin
 
  {Check Environment Variables}
  {RT2800USB_FIRMWARE_FILENAME}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('RT2800USB_FIRMWARE_FILENAME');
+ WorkBuffer:=EnvironmentGet('RT2800USB_FIRMWARE_FILENAME');
  if Length(WorkBuffer) <> 0 then RT2800USB_FIRMWARE_FILENAME:=WorkBuffer;
  
  {RT2800USB_FIRMWARE_INTERNAL}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('RT2800USB_FIRMWARE_INTERNAL'),1);
+ WorkInt:=StrToIntDef(EnvironmentGet('RT2800USB_FIRMWARE_INTERNAL'),1);
  if WorkInt = 0 then RT2800USB_FIRMWARE_INTERNAL:=False;
  
  {RT2800USB_HARDWARE_ENCRYPTION_DISABLED}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('RT2800USB_HARDWARE_ENCRYPTION_DISABLED'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('RT2800USB_HARDWARE_ENCRYPTION_DISABLED'),0);
  if WorkInt <> 0 then RT2800USB_HARDWARE_ENCRYPTION_DISABLED:=True;
  
  {Create RT2800USB Wireless Driver}
@@ -1711,7 +1711,7 @@ begin
      
     try 
      {Allocate Receive Queue Buffer}
-     Network.ReceiveQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry) + SizeOf(TIEEE80211RXStatus),RT2800USB_MAX_RX_ENTRIES);
+     Network.ReceiveQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry) + SizeOf(TIEEE80211RXStatus),RT2800USB_MAX_RX_ENTRIES + Length(PRT2800USBWiFiDevice(Network).ReceiveRequests));
      if Network.ReceiveQueue.Buffer = INVALID_HANDLE_VALUE then
       begin
        if NETWORK_LOG_ENABLED then NetworkLogError(Network,'RT2800USB: Failed to create receive queue buffer');
@@ -1764,7 +1764,7 @@ begin
      SetLength(Network.ReceiveQueue.Entries,RT2800USB_MAX_RX_ENTRIES);
      
      {Allocate Transmit Queue Buffer}
-     Network.TransmitQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry) + SizeOf(TIEEE80211TXInfo),RT2800USB_MAX_TX_ENTRIES);
+     Network.TransmitQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry) + SizeOf(TIEEE80211TXInfo),RT2800USB_MAX_TX_ENTRIES + Length(PRT2800USBWiFiDevice(Network).TransmitRequests));
      if Network.TransmitQueue.Buffer = INVALID_HANDLE_VALUE then
       begin
        if NETWORK_LOG_ENABLED then NetworkLogError(Network,'RT2800USB: Failed to create transmit queue buffer');

@@ -1,7 +1,7 @@
 {
 Ultibo Services interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3584,68 +3584,68 @@ begin
  
  {Check Environment Variables (NTP)}
  {NTP_SERVER_DEFAULT}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('NTP_SERVER_DEFAULT');
+ WorkBuffer:=EnvironmentGet('NTP_SERVER_DEFAULT');
  if Length(WorkBuffer) <> 0 then NTP_SERVER_DEFAULT:=WorkBuffer;
  
  {NTP_PORT_DEFAULT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('NTP_PORT_DEFAULT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('NTP_PORT_DEFAULT'),0);
  if WorkInt > 0 then NTP_PORT_DEFAULT:=WorkInt;
  
  {NTP_POLLING_INTERVAL}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('NTP_POLLING_INTERVAL'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('NTP_POLLING_INTERVAL'),0);
  if WorkInt > 0 then NTP_POLLING_INTERVAL:=WorkInt;
  
  {NTP_POLLING_TIMEOUT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('NTP_POLLING_TIMEOUT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('NTP_POLLING_TIMEOUT'),0);
  if WorkInt > 0 then NTP_POLLING_TIMEOUT:=WorkInt;
  
  {NTP_POLLING_RETRIES}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('NTP_POLLING_RETRIES'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('NTP_POLLING_RETRIES'),0);
  if WorkInt > 0 then NTP_POLLING_RETRIES:=WorkInt;
  
  {NTP_RETRY_TIMEOUT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('NTP_RETRY_TIMEOUT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('NTP_RETRY_TIMEOUT'),0);
  if WorkInt > 0 then NTP_RETRY_TIMEOUT:=WorkInt;
  
  {NTP_AUTOSTART}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('NTP_AUTOSTART'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('NTP_AUTOSTART'),0);
  if WorkInt <> 0 then NTP_AUTOSTART:=True;
  
  {Check Environment Variables (SYSLOG)}
  {SYSLOG_BOUND_PORT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('SYSLOG_BOUND_PORT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_BOUND_PORT'),0);
  if WorkInt > 0 then SYSLOG_BOUND_PORT:=WorkInt;
  
  {SYSLOG_SERVER_DEFAULT}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('SYSLOG_SERVER_DEFAULT');
+ WorkBuffer:=EnvironmentGet('SYSLOG_SERVER_DEFAULT');
  if Length(WorkBuffer) <> 0 then SYSLOG_SERVER_DEFAULT:=WorkBuffer;
  
  {SYSLOG_PORT_DEFAULT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('SYSLOG_PORT_DEFAULT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_PORT_DEFAULT'),0);
  if WorkInt > 0 then SYSLOG_PORT_DEFAULT:=WorkInt;
  
  {SYSLOG_PROTOCOL_DEFAULT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('SYSLOG_PROTOCOL_DEFAULT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_PROTOCOL_DEFAULT'),0);
  if WorkInt > 0 then SYSLOG_PROTOCOL_DEFAULT:=WorkInt;
  
  {SYSLOG_OCTET_COUNTING}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('SYSLOG_OCTET_COUNTING'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_OCTET_COUNTING'),0);
  if WorkInt <> 0 then SYSLOG_OCTET_COUNTING:=True;
  
  {SYSLOG_BROADCAST_ENABLED}
- WorkBool:=StrToBoolDef(SysUtils.GetEnvironmentVariable('SYSLOG_BROADCAST_ENABLED'),SYSLOG_BROADCAST_ENABLED);
+ WorkBool:=StrToBoolDef(EnvironmentGet('SYSLOG_BROADCAST_ENABLED'),SYSLOG_BROADCAST_ENABLED);
  if WorkBool <> SYSLOG_BROADCAST_ENABLED then SYSLOG_BROADCAST_ENABLED:=WorkBool;
  
  {SYSLOG_REGISTER_LOGGING}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('SYSLOG_REGISTER_LOGGING'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_REGISTER_LOGGING'),0);
  if WorkInt <> 0 then SYSLOG_REGISTER_LOGGING:=True;
  
  {SYSLOG_LOGGING_DEFAULT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('SYSLOG_LOGGING_DEFAULT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_LOGGING_DEFAULT'),0);
  if WorkInt <> 0 then SYSLOG_LOGGING_DEFAULT:=True;
  
  {SYSLOG_AUTOSTART}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('SYSLOG_AUTOSTART'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_AUTOSTART'),0);
  if WorkInt <> 0 then SYSLOG_AUTOSTART:=True;
  
  {Check NTP Auto Start}

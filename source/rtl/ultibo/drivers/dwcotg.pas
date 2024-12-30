@@ -943,15 +943,15 @@ begin
   
  {Check Environment Variables}
  {DWCOTG_FULL_SPEED_ONLY}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('DWCOTG_FULL_SPEED_ONLY'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('DWCOTG_FULL_SPEED_ONLY'),0);
  if WorkInt <> 0 then DWCOTG_FULL_SPEED_ONLY:=True;
 
  {DWCOTG_FS_LS_LOW_POWER_CLOCK}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('DWCOTG_FS_LS_LOW_POWER_CLOCK'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('DWCOTG_FS_LS_LOW_POWER_CLOCK'),0);
  if WorkInt <> 0 then DWCOTG_FS_LS_LOW_POWER_CLOCK:=True;
 
  {DWCOTG_LS_LOW_PWR_PHY_CLOCK_6MHZ}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('DWCOTG_LS_LOW_PWR_PHY_CLOCK_6MHZ'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('DWCOTG_LS_LOW_PWR_PHY_CLOCK_6MHZ'),0);
  if WorkInt <> 0 then DWCOTG_LS_LOW_PWR_PHY_CLOCK_6MHZ:=True;
   
  {Create USB Host}

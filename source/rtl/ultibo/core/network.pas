@@ -4946,7 +4946,7 @@ end;
 function TNetworkSettings.FindFromEnvironment(const AName:String):String;
 begin
  {}
- Result:=SysUtils.GetEnvironmentVariable(AName);
+ Result:=EnvironmentGet(AName);
 end;
 
 {==============================================================================}

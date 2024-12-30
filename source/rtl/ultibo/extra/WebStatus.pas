@@ -28,7 +28,6 @@ References
 ==========
 
  
-
 Web Status
 ==========
 
@@ -12354,11 +12353,11 @@ begin
  {Add Environment Variables}
  AddBold(AResponse,'Environment Variables','');
  AddBlank(AResponse);
- AddItemEx(AResponse,'GetEnvironmentVariableCount:',IntToStr(GetEnvironmentVariableCount),2);
+ AddItemEx(AResponse,'EnvironmentCount:',IntToStr(EnvironmentCount(False)),2);
  AddBlank(AResponse);
- for Count:=1 to GetEnvironmentVariableCount do
+ for Count:=1 to EnvironmentCount(False) do
   begin
-   AddItemEx(AResponse,'GetEnvironmentString(' + IntToStr(Count) + '):',GetEnvironmentString(Count),2);
+   AddItemEx(AResponse,'EnvironmentString(' + IntToStr(Count) + '):',EnvironmentString(Count),2);
   end;
  AddBlank(AResponse);
  
@@ -14587,19 +14586,19 @@ begin
   
  {Check Environment Variables}
  {WEBSTATUS_HEAP_FREE_COUNT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('WEBSTATUS_HEAP_FREE_COUNT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('WEBSTATUS_HEAP_FREE_COUNT'),0);
  if WorkInt > 0 then WEBSTATUS_HEAP_FREE_COUNT:=WorkInt;
   
  {WEBSTATUS_HEAP_USED_COUNT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('WEBSTATUS_HEAP_USED_COUNT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('WEBSTATUS_HEAP_USED_COUNT'),0);
  if WorkInt > 0 then WEBSTATUS_HEAP_USED_COUNT:=WorkInt;
  
  {WEBSTATUS_ALLOW_RESTART}
- WorkBool:=StrToBoolDef(SysUtils.GetEnvironmentVariable('WEBSTATUS_ALLOW_RESTART'),WEBSTATUS_ALLOW_RESTART);
+ WorkBool:=StrToBoolDef(EnvironmentGet('WEBSTATUS_ALLOW_RESTART'),WEBSTATUS_ALLOW_RESTART);
  if WorkBool <> WEBSTATUS_ALLOW_RESTART then WEBSTATUS_ALLOW_RESTART:=WorkBool;
 
  {WEBSTATUS_ALLOW_SHUTDOWN}
- WorkBool:=StrToBoolDef(SysUtils.GetEnvironmentVariable('WEBSTATUS_ALLOW_SHUTDOWN'),WEBSTATUS_ALLOW_SHUTDOWN);
+ WorkBool:=StrToBoolDef(EnvironmentGet('WEBSTATUS_ALLOW_SHUTDOWN'),WEBSTATUS_ALLOW_SHUTDOWN);
  if WorkBool <> WEBSTATUS_ALLOW_SHUTDOWN then WEBSTATUS_ALLOW_SHUTDOWN:=WorkBool;
  
  {Return Result}

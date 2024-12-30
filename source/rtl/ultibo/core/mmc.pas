@@ -14480,7 +14480,7 @@ begin
     end;
   
    {Check Non Removeable}
-   if StrToIntDef(SysUtils.GetEnvironmentVariable(DeviceGetName(@MMC.Device) + '_NON_REMOVABLE'),0) = 1 then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_NON_REMOVABLE;
+   if StrToIntDef(EnvironmentGet(DeviceGetName(@MMC.Device) + '_NON_REMOVABLE'),0) = 1 then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_NON_REMOVABLE;
    
    {Enable Host}
    SDHCI.SDHCIState:=SDHCI_STATE_ENABLED;

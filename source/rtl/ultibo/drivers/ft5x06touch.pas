@@ -1,7 +1,7 @@
 {
 EDT FocalTech FT5x06 I2C Touchscreen Driver.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -259,39 +259,39 @@ begin
 
  {Check Environment Variables}
  {FT5X06_GAIN}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FT5X06_GAIN'),FT5X06_GAIN);
+ WorkInt:=StrToIntDef(EnvironmentGet('FT5X06_GAIN'),FT5X06_GAIN);
  if WorkInt <> FT5X06_GAIN then FT5X06_GAIN:=WorkInt;
 
  {FT5X06_OFFSET}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FT5X06_OFFSET'),FT5X06_OFFSET);
+ WorkInt:=StrToIntDef(EnvironmentGet('FT5X06_OFFSET'),FT5X06_OFFSET);
  if WorkInt <> FT5X06_OFFSET then FT5X06_OFFSET:=WorkInt;
 
  {FT5X06_OFFSET_X}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FT5X06_OFFSET_X'),FT5X06_OFFSET_X);
+ WorkInt:=StrToIntDef(EnvironmentGet('FT5X06_OFFSET_X'),FT5X06_OFFSET_X);
  if WorkInt <> FT5X06_OFFSET_X then FT5X06_OFFSET_X:=WorkInt;
 
  {FT5X06_OFFSET_Y}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FT5X06_OFFSET_Y'),FT5X06_OFFSET_Y);
+ WorkInt:=StrToIntDef(EnvironmentGet('FT5X06_OFFSET_Y'),FT5X06_OFFSET_Y);
  if WorkInt <> FT5X06_OFFSET_Y then FT5X06_OFFSET_Y:=WorkInt;
 
  {FT5X06_THRESHOLD}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FT5X06_THRESHOLD'),FT5X06_THRESHOLD);
+ WorkInt:=StrToIntDef(EnvironmentGet('FT5X06_THRESHOLD'),FT5X06_THRESHOLD);
  if WorkInt <> FT5X06_THRESHOLD then FT5X06_THRESHOLD:=WorkInt;
 
  {FT5X06_SWAP_REPORT_XY}
- WorkBool:=StrToBoolDef(SysUtils.GetEnvironmentVariable('FT5X06_SWAP_REPORT_XY'),FT5X06_SWAP_REPORT_XY);
+ WorkBool:=StrToBoolDef(EnvironmentGet('FT5X06_SWAP_REPORT_XY'),FT5X06_SWAP_REPORT_XY);
  if WorkBool <> FT5X06_SWAP_REPORT_XY then FT5X06_SWAP_REPORT_XY:=WorkBool;
 
  {FT5X06_INVERT_REPORT_X}
- WorkBool:=StrToBoolDef(SysUtils.GetEnvironmentVariable('FT5X06_INVERT_REPORT_X'),FT5X06_INVERT_REPORT_X);
+ WorkBool:=StrToBoolDef(EnvironmentGet('FT5X06_INVERT_REPORT_X'),FT5X06_INVERT_REPORT_X);
  if WorkBool <> FT5X06_INVERT_REPORT_X then FT5X06_INVERT_REPORT_X:=WorkBool;
 
  {FT5X06_INVERT_REPORT_Y}
- WorkBool:=StrToBoolDef(SysUtils.GetEnvironmentVariable('FT5X06_INVERT_REPORT_Y'),FT5X06_INVERT_REPORT_Y);
+ WorkBool:=StrToBoolDef(EnvironmentGet('FT5X06_INVERT_REPORT_Y'),FT5X06_INVERT_REPORT_Y);
  if WorkBool <> FT5X06_INVERT_REPORT_Y then FT5X06_INVERT_REPORT_Y:=WorkBool;
 
  {FT5X06_MAX_TOUCH_POINTS}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FT5X06_MAX_TOUCH_POINTS'),FT5X06_MAX_TOUCH_POINTS);
+ WorkInt:=StrToIntDef(EnvironmentGet('FT5X06_MAX_TOUCH_POINTS'),FT5X06_MAX_TOUCH_POINTS);
  if WorkInt <> FT5X06_MAX_TOUCH_POINTS then FT5X06_MAX_TOUCH_POINTS:=WorkInt;
 
  FT5X06Initialized:=True;

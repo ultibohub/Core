@@ -1,7 +1,7 @@
 {
 Raspberry Pi Sense HAT Driver.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -286,27 +286,27 @@ begin
  
  {Check Environment Variables}
  {RPISENSE_AUTOSTART}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('RPISENSE_AUTOSTART'),1);
+ WorkInt:=StrToIntDef(EnvironmentGet('RPISENSE_AUTOSTART'),1);
  if WorkInt = 0 then RPISENSE_AUTOSTART:=False;
  
  {RPISENSE_I2C_DEVICE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('RPISENSE_I2C_DEVICE');
+ WorkBuffer:=EnvironmentGet('RPISENSE_I2C_DEVICE');
  if Length(WorkBuffer) <> 0 then RPISENSE_I2C_DEVICE:=WorkBuffer;
  
  {RPISENSE_GPIO_DEVICE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('RPISENSE_GPIO_DEVICE');
+ WorkBuffer:=EnvironmentGet('RPISENSE_GPIO_DEVICE');
  if Length(WorkBuffer) <> 0 then RPISENSE_GPIO_DEVICE:=WorkBuffer;
  
  {RPISENSE_FRAMEBUFFER_ROTATION}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('RPISENSE_FRAMEBUFFER_ROTATION'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('RPISENSE_FRAMEBUFFER_ROTATION'),0);
  if WorkInt > FRAMEBUFFER_ROTATION_0 then RPISENSE_FRAMEBUFFER_ROTATION:=WorkInt;
 
  {RPISENSE_FRAMEBUFFER_WIDTH}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('RPISENSE_FRAMEBUFFER_WIDTH'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('RPISENSE_FRAMEBUFFER_WIDTH'),0);
  if WorkInt > 0 then RPISENSE_FRAMEBUFFER_WIDTH:=WorkInt;
 
  {RPISENSE_FRAMEBUFFER_HEIGHT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('RPISENSE_FRAMEBUFFER_HEIGHT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('RPISENSE_FRAMEBUFFER_HEIGHT'),0);
  if WorkInt > 0 then RPISENSE_FRAMEBUFFER_HEIGHT:=WorkInt;
  
  {Start RPiSense} 

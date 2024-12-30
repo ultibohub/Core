@@ -16345,6 +16345,10 @@ function ThreadTerminate(Thread:TThreadHandle;ExitCode:LongWord):LongWord;
 {Thread: Handle of thread to terminate}
 {ExitCode: The return code of the thread}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
+{Note: Terminating a thread from another thread is not safe unless specific precautions are taken
+       to prevent deadlocks
+       It is normally safe for a thread to terminate itself as long as it releases any locks it is
+       holding that may be required by other threads before terminating}
 var
  ExitTime:Int64;
  Reschedule:Boolean;
@@ -16465,9 +16469,10 @@ begin
     ThreadEntry.State:=THREAD_STATE_TERMINATED;
     
     {$IFDEF THREAD_STATISTICS}
-    {Update Kernel Time}
-    if Thread = ThreadGetCurrent then //To Do //What about running thread on another CPU
+    {Check Current Thread (It is normally considered unsafe to terminate another thread that is running)}
+    if Thread = ThreadGetCurrent then
      begin
+      {Update Kernel Time}
       if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
        begin
         Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
@@ -17390,9 +17395,10 @@ begin
       ThreadEntry.State:=THREAD_STATE_SUSPENDED;
       
       {$IFDEF THREAD_STATISTICS}
-      {Update Kernel Time}
-      if Thread = ThreadGetCurrent then //To Do  //To Do //What about running thread on another CPU
+      {Check Current Thread (It is normally considered unsafe to suspend another thread that is running)}
+      if Thread = ThreadGetCurrent then
        begin
+        {Update Kernel Time}
         if SchedulerThreadQuantum[ThreadEntry.CurrentCPU] <= (SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority]) then
          begin
           Inc(ThreadEntry.KernelTime,((SCHEDULER_THREAD_QUANTUM + SCHEDULER_PRIORITY_QUANTUM[ThreadEntry.Priority] - SchedulerThreadQuantum[ThreadEntry.CurrentCPU]) * TIME_TICKS_PER_SCHEDULER_INTERRUPT));
@@ -22409,8 +22415,6 @@ begin
       if TimerEntry = nil then Exit;
       if TimerEntry.Signature <> TIMER_SIGNATURE then Exit;
       
-      //To Do //Critical //Lock the timer for SMP ? //Can't lock here unless it is an IRQ/FIQ spin lock !
-                            //.TimerList is only ever touched within lock on TimerList (IRQ/FIQ), should be ok ? //Same applies to QueueDequeue ?
       {Set TimerList}
       TimerEntry.TimerList:=nil;
      end;

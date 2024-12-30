@@ -51951,15 +51951,15 @@ begin
  
  {Check Environment Variables (Cache)}
  {FILESYS_CACHE_SIZE}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_CACHE_SIZE'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_CACHE_SIZE'),0);
  if WorkInt > 0 then FILESYS_CACHE_SIZE:=WorkInt;
  
  {FILESYS_CACHE_PAGE}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_CACHE_PAGE'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_CACHE_PAGE'),0);
  if WorkInt > 0 then FILESYS_CACHE_PAGE:=WorkInt;
  
  {FILESYS_CACHE_KEYS}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_CACHE_KEYS'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_CACHE_KEYS'),0);
  if WorkInt > 0 then FILESYS_CACHE_KEYS:=WorkInt;
  
  {FILESYS_CACHE_MODE}
@@ -51967,27 +51967,27 @@ begin
  
  {Check Environment Variables (Logging)}
  {FILESYS_REGISTER_LOGGING}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_REGISTER_LOGGING'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_REGISTER_LOGGING'),0);
  if WorkInt <> 0 then FILESYS_REGISTER_LOGGING:=True;
  
  {FILESYS_LOGGING_DEFAULT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_LOGGING_DEFAULT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_DEFAULT'),0);
  if WorkInt <> 0 then FILESYS_LOGGING_DEFAULT:=True;
  
  {FILESYS_LOGGING_FILE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('FILESYS_LOGGING_FILE');
+ WorkBuffer:=EnvironmentGet('FILESYS_LOGGING_FILE');
  if Length(WorkBuffer) <> 0 then FILESYS_LOGGING_FILE:=WorkBuffer;
  
  {FILESYS_LOGGING_MAXSIZE}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_LOGGING_MAXSIZE'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_MAXSIZE'),0);
  if WorkInt > 0 then FILESYS_LOGGING_MAXSIZE:=WorkInt;
  
  {FILESYS_LOGGING_MAXCOPIES}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_LOGGING_MAXCOPIES'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_MAXCOPIES'),0);
  if WorkInt > 0 then FILESYS_LOGGING_MAXCOPIES:=WorkInt;
 
  {FILESYS_LOGGING_RESET}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_LOGGING_RESET'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_RESET'),0);
  if WorkInt <> 0 then FILESYS_LOGGING_RESET:=True;
 
  {Create Logging}

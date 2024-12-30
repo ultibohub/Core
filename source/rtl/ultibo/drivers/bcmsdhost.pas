@@ -1,7 +1,7 @@
 {
 Broadcom BCM27XX SDHOST driver
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -300,19 +300,19 @@ begin
 
  {Check Environment Variables}
  {BCMSDHOST_DELAY_AFTER_STOP}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('BCMSDHOST_DELAY_AFTER_STOP'),BCMSDHOST_DELAY_AFTER_STOP);
+ WorkInt:=StrToIntDef(EnvironmentGet('BCMSDHOST_DELAY_AFTER_STOP'),BCMSDHOST_DELAY_AFTER_STOP);
  if WorkInt <> BCMSDHOST_DELAY_AFTER_STOP then BCMSDHOST_DELAY_AFTER_STOP:=WorkInt;
 
  {BCMSDHOST_OVERCLOCK_50}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('BCMSDHOST_OVERCLOCK_50'),BCMSDHOST_OVERCLOCK_50);
+ WorkInt:=StrToIntDef(EnvironmentGet('BCMSDHOST_OVERCLOCK_50'),BCMSDHOST_OVERCLOCK_50);
  if WorkInt <> BCMSDHOST_OVERCLOCK_50 then BCMSDHOST_OVERCLOCK_50:=WorkInt;
 
  {BCMSDHOST_PIO_LIMIT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('BCMSDHOST_PIO_LIMIT'),BCMSDHOST_PIO_LIMIT);
+ WorkInt:=StrToIntDef(EnvironmentGet('BCMSDHOST_PIO_LIMIT'),BCMSDHOST_PIO_LIMIT);
  if WorkInt <> BCMSDHOST_PIO_LIMIT then BCMSDHOST_PIO_LIMIT:=WorkInt;
 
  {BCMSDHOST_FORCE_PIO}
- WorkBool:=StrToBoolDef(SysUtils.GetEnvironmentVariable('BCMSDHOST_FORCE_PIO'),BCMSDHOST_FORCE_PIO);
+ WorkBool:=StrToBoolDef(EnvironmentGet('BCMSDHOST_FORCE_PIO'),BCMSDHOST_FORCE_PIO);
  if WorkBool <> BCMSDHOST_FORCE_PIO then BCMSDHOST_FORCE_PIO:=WorkBool;
 
  BCMSDHOSTInitialized:=True;
@@ -2791,7 +2791,7 @@ begin
   end;
 
  {Check Non Removeable}
- if StrToIntDef(SysUtils.GetEnvironmentVariable(DeviceGetName(@MMC.Device) + '_NON_REMOVABLE'),0) = 1 then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_NON_REMOVABLE;
+ if StrToIntDef(EnvironmentGet(DeviceGetName(@MMC.Device) + '_NON_REMOVABLE'),0) = 1 then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_NON_REMOVABLE;
 
  {Enable Host}
  SDHCI.SDHCIState:=SDHCI_STATE_ENABLED;

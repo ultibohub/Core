@@ -2091,7 +2091,7 @@ begin
      {Setup Flags}
      if BCM2711FRAMEBUFFER_CACHED then RPi4Framebuffer.Framebuffer.Device.DeviceFlags:=RPi4Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_COMMIT;
      if BCM2711FRAMEBUFFER_CACHED then RPi4Framebuffer.Framebuffer.Device.DeviceFlags:=RPi4Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
-     {if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then RPi4Framebuffer.Framebuffer.Device.DeviceFlags:=RPi4Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;} {Handled by FramebufferAllocate}
+     {if EnvironmentGet('bcm2708_fb.fbswap') <> '1' then RPi4Framebuffer.Framebuffer.Device.DeviceFlags:=RPi4Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;} {Handled by FramebufferAllocate}
      
      {Register Framebuffer}
      Status:=FramebufferDeviceRegister(@RPi4Framebuffer.Framebuffer);
@@ -9870,7 +9870,7 @@ begin
       end;
     
      {Get Order}
-     if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then
+     if EnvironmentGet('bcm2708_fb.fbswap') <> '1' then
       begin
        Framebuffer.Order:=FRAMEBUFFER_ORDER_BGR;
       end

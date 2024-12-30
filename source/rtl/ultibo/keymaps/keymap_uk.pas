@@ -1,7 +1,7 @@
 {
 Ultibo Keymap (UK) interface unit.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -371,7 +371,7 @@ begin
   end;
   
  {Check Environment Variables}
- if (Uppercase(SysUtils.GetEnvironmentVariable('KEYMAP_DEFAULT')) = 'UK') or (Uppercase(KEYMAP_DEFAULT) = 'UK') then
+ if (Uppercase(EnvironmentGet('KEYMAP_DEFAULT')) = 'UK') or (Uppercase(KEYMAP_DEFAULT) = 'UK') then
   begin
    {Update Default}
    KEYMAP_DEFAULT:='UK';

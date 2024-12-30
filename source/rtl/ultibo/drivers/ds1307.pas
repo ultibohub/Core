@@ -1,7 +1,7 @@
 {
 Maxim DS1307 Real Time Clock Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -239,15 +239,15 @@ begin
 
  {Check Environment Variables}
  {DS1307_CHIP_TYPE}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('DS1307_CHIP_TYPE'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('DS1307_CHIP_TYPE'),0);
  if WorkInt > 0 then DS1307_CHIP_TYPE:=WorkInt;
  
  {DS1307_I2C_ADDRESS}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('DS1307_I2C_ADDRESS'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('DS1307_I2C_ADDRESS'),0);
  if WorkInt > 0 then DS1307_I2C_ADDRESS:=WorkInt;
 
  {DS1307_I2C_DEVICE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('DS1307_I2C_DEVICE');
+ WorkBuffer:=EnvironmentGet('DS1307_I2C_DEVICE');
  if Length(WorkBuffer) <> 0 then DS1307_I2C_DEVICE:=WorkBuffer;
  
  {Create RTC}

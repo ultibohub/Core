@@ -1,7 +1,7 @@
 {
 Adafruit 1.9" 320x170 Color IPS TFT Display LCD Driver.
 
-Copyright (C) 2023 - EL Mahiri Nabil.
+Copyright (C) 2024 - EL Mahiri Nabil.
 
 Arch
 ====
@@ -162,15 +162,15 @@ begin
 
  {Check Environment Variables}
  {IPSTFT19_AUTOSTART}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('IPSTFT19_AUTOSTART'),1);
+ WorkInt:=StrToIntDef(EnvironmentGet('IPSTFT19_AUTOSTART'),1);
  if WorkInt = 0 then IPSTFT19_AUTOSTART:=False;
 
  {IPSTFT19_SPI_DEVICE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('IPSTFT19_SPI_DEVICE');
+ WorkBuffer:=EnvironmentGet('IPSTFT19_SPI_DEVICE');
  if Length(WorkBuffer) <> 0 then IPSTFT19_SPI_DEVICE:=WorkBuffer;
 
  {IPSTFT19_LCD_CHIPSELECT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('IPSTFT19_LCD_CHIPSELECT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('IPSTFT19_LCD_CHIPSELECT'),0);
  if WorkInt > 0 then IPSTFT19_LCD_CHIPSELECT:=WorkInt;
 
  {Start IPSTFT19}

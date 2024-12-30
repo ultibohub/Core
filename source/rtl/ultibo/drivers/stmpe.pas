@@ -885,39 +885,39 @@ begin
  
  {Check Environment Variables}
  {STMPE_SAMPLE_TIME}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('STMPE_SAMPLE_TIME'),STMPE_SAMPLE_TIME);
+ WorkInt:=StrToIntDef(EnvironmentGet('STMPE_SAMPLE_TIME'),STMPE_SAMPLE_TIME);
  if WorkInt <> STMPE_SAMPLE_TIME then STMPE_SAMPLE_TIME:=WorkInt;
 
  {STMPE_MOD_12B}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('STMPE_MOD_12B'),STMPE_MOD_12B);
+ WorkInt:=StrToIntDef(EnvironmentGet('STMPE_MOD_12B'),STMPE_MOD_12B);
  if WorkInt <> STMPE_MOD_12B then STMPE_MOD_12B:=WorkInt;
  
  {STMPE_REF_SEL}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('STMPE_REF_SEL'),STMPE_REF_SEL);
+ WorkInt:=StrToIntDef(EnvironmentGet('STMPE_REF_SEL'),STMPE_REF_SEL);
  if WorkInt <> STMPE_REF_SEL then STMPE_REF_SEL:=WorkInt;
 
  {STMPE_ADC_FREQ}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('STMPE_ADC_FREQ'),STMPE_ADC_FREQ);
+ WorkInt:=StrToIntDef(EnvironmentGet('STMPE_ADC_FREQ'),STMPE_ADC_FREQ);
  if WorkInt <> STMPE_ADC_FREQ then STMPE_ADC_FREQ:=WorkInt;
 
  {STMPE_AVE_CTRL}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('STMPE_AVE_CTRL'),STMPE_AVE_CTRL);
+ WorkInt:=StrToIntDef(EnvironmentGet('STMPE_AVE_CTRL'),STMPE_AVE_CTRL);
  if WorkInt <> STMPE_AVE_CTRL then STMPE_AVE_CTRL:=WorkInt;
 
  {STMPE_TOUCH_DET_DELAY}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('STMPE_TOUCH_DET_DELAY'),STMPE_TOUCH_DET_DELAY);
+ WorkInt:=StrToIntDef(EnvironmentGet('STMPE_TOUCH_DET_DELAY'),STMPE_TOUCH_DET_DELAY);
  if WorkInt <> STMPE_TOUCH_DET_DELAY then STMPE_TOUCH_DET_DELAY:=WorkInt;
  
  {STMPE_SETTLING}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('STMPE_SETTLING'),STMPE_SETTLING);
+ WorkInt:=StrToIntDef(EnvironmentGet('STMPE_SETTLING'),STMPE_SETTLING);
  if WorkInt <> STMPE_SETTLING then STMPE_SETTLING:=WorkInt;
  
  {STMPE_FRACTION_Z}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('STMPE_FRACTION_Z'),STMPE_FRACTION_Z);
+ WorkInt:=StrToIntDef(EnvironmentGet('STMPE_FRACTION_Z'),STMPE_FRACTION_Z);
  if WorkInt <> STMPE_FRACTION_Z then STMPE_FRACTION_Z:=WorkInt;
  
  {STMPE_I_DRIVE}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('STMPE_I_DRIVE'),STMPE_I_DRIVE);
+ WorkInt:=StrToIntDef(EnvironmentGet('STMPE_I_DRIVE'),STMPE_I_DRIVE);
  if WorkInt <> STMPE_I_DRIVE then STMPE_I_DRIVE:=WorkInt;
  
  STMPEInitialized:=True;

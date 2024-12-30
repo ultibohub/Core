@@ -1,7 +1,7 @@
 {
 Broadcom GENET Gigabit Ethernet Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1175,19 +1175,19 @@ begin
 
  {Check Environment Variables}
  {GENET_PHY_MODE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('GENET_PHY_MODE');
+ WorkBuffer:=EnvironmentGet('GENET_PHY_MODE');
  if Length(WorkBuffer) <> 0 then GENET_PHY_MODE:=WorkBuffer;
 
  {GENET_PHY_ADDR}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('GENET_PHY_ADDR'),GENET_PHY_ADDR);
+ WorkInt:=StrToIntDef(EnvironmentGet('GENET_PHY_ADDR'),GENET_PHY_ADDR);
  if WorkInt <> GENET_PHY_ADDR then GENET_PHY_ADDR:=WorkInt;
 
  {GENET_SKIP_UMAC_RESET}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('GENET_SKIP_UMAC_RESET'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('GENET_SKIP_UMAC_RESET'),0);
  if WorkInt <> 0 then GENET_SKIP_UMAC_RESET:=True;
 
  {GENET_NO_PHY_INTERRUPT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('GENET_NO_PHY_INTERRUPT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('GENET_NO_PHY_INTERRUPT'),0);
  if WorkInt <> 0 then GENET_NO_PHY_INTERRUPT:=True;
 
  {Create Network}
@@ -1400,7 +1400,7 @@ begin
 
     try
      {Allocate Receive Queue Buffer}
-     Network.ReceiveQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry),GENET_MAX_RX_ENTRIES);
+     Network.ReceiveQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry),GENET_MAX_RX_ENTRIES + GENET_TOTAL_DESC);
      if Network.ReceiveQueue.Buffer = INVALID_HANDLE_VALUE then
       begin
        if NETWORK_LOG_ENABLED then NetworkLogError(Network,'GENET: Failed to create receive queue buffer');
@@ -1463,7 +1463,7 @@ begin
      SetLength(Network.ReceiveQueue.Entries,GENET_MAX_RX_ENTRIES);
 
      {Allocate Transmit Queue Buffer}
-     Network.TransmitQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry),GENET_MAX_TX_ENTRIES);
+     Network.TransmitQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry),GENET_MAX_TX_ENTRIES + GENET_TOTAL_DESC);
      if Network.TransmitQueue.Buffer = INVALID_HANDLE_VALUE then
       begin
        if NETWORK_LOG_ENABLED then NetworkLogError(Network,'GENET: Failed to create transmit queue buffer');

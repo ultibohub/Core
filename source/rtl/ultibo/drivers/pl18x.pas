@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL180/181 Multimedia Card Interface Driver.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1520,7 +1520,7 @@ begin
   end;
 
  {Check Non Removeable}
- if StrToIntDef(SysUtils.GetEnvironmentVariable(DeviceGetName(@MMC.Device) + '_NON_REMOVABLE'),0) = 1 then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_NON_REMOVABLE;
+ if StrToIntDef(EnvironmentGet(DeviceGetName(@MMC.Device) + '_NON_REMOVABLE'),0) = 1 then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_NON_REMOVABLE;
 
  {Enable Host}
  SDHCI.SDHCIState:=SDHCI_STATE_ENABLED;
