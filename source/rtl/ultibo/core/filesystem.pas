@@ -1,7 +1,7 @@
 {
 Ultibo FileSystem interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -117,6 +117,8 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,L
 //) = Uppercase(  //Use WorkBuffer
 
 //API
+
+//shl SectorShiftCount / Device.SectorShiftCount etc
 
 {==============================================================================}
 {Global definitions}
@@ -1513,6 +1515,7 @@ type
    {File Handle Methods}
    function OpenFileHandle(AVolume:TDiskVolume;ADrive:TDiskDrive;AParent,AEntry:TDiskEntry;AMode:Integer;ALock:Boolean;AState:LongWord):TFileHandle;
    function CloseFileHandle(AHandle:TFileHandle):Boolean;
+   function ReopenFileHandle(AHandle:TFileHandle):Boolean;
    function GetFileHandleByNext(APrevious:TFileHandle;ALock,AUnlock:Boolean;AState:LongWord):TFileHandle;
    
    function CheckFileHandles(AEntry:TDiskEntry):Boolean;
@@ -1857,7 +1860,11 @@ type
    //function WriteFileEx //To Do
    function GetLongPathName(const AShortPath:String):String;
    {function SetFileShortName}    {Already Defined}
+   function GetFinalPathNameByHandle(AHandle:THandle;AFlags:LongWord):String;
 
+    {Handle Methods}
+   function DuplicateHandle(AHandle:THandle):THandle;
+   
     {Directory Methods}
    function CreateDirectory(const APathName:String):Boolean;
    //function CreateDirectoryEx //To Do
@@ -2112,6 +2119,7 @@ type
 
    Size:Int64;
    Position:Int64;
+
    Handle:THandle;
    
    {Public Methods}
@@ -2167,7 +2175,9 @@ type
    ShareMode:Integer;
 
    Position:Int64;
+
    Handle:THandle;
+   Count:Integer;
 
    DataValue:LongWord;     {Available to FileSystem for private use}
    DataOffset:LongWord;    {Available to FileSystem for private use}
@@ -3534,7 +3544,7 @@ type
    function LoadNameChar:String; virtual;
    function LoadFileChar:String; virtual;
    function LoadRootChar:String; virtual;
-   function LoadRootName:String; virtual;
+   function LoadRootName(AVolumeName:Boolean):String; virtual;
    function LoadRootPath:String; virtual;
    function LoadMaxFile:Integer; virtual;
    function LoadMaxPath:Integer; virtual;
@@ -3633,8 +3643,8 @@ type
    function MatchEntry(AParent,APrevious:TDiskEntry;const AName:String;AAttributes:LongWord;AAny:Boolean):TDiskEntry; virtual;
    function MatchEntryEx(AParent,APrevious:TDiskEntry;const AName:String;AAttributes:LongWord;AAny,AAdd,ARemove,AWrite:Boolean):TDiskEntry; virtual;
 
-   function GetEntryPath(AEntry:TDiskEntry;AAltName:Boolean):String;
-   function GetEntryName(AEntry:TDiskEntry;AAltName:Boolean):String;
+   function GetEntryPath(AEntry:TDiskEntry;AAltName,AVolumePath,ADevicePath:Boolean):String;
+   function GetEntryName(AEntry:TDiskEntry;AAltName,AVolumePath,ADevicePath:Boolean):String;
 
    function SplitPath(const APath:String;var ARelative:Boolean;AFolders:TStrings;var AName:String):Boolean; virtual;
    function SplitName(const AName:String;var AFile,AStream:String):Boolean; virtual;
@@ -5309,11 +5319,15 @@ function FSSetFilePointer(AHandle:THandle;ADistanceToMove:LongInt;var ADistanceT
 function FSSetFilePointerEx(AHandle:THandle;const ADistanceToMove:Int64;var ANewFilePointer:Int64;AMoveMethod:LongWord):Boolean; inline;
 function FSWriteFile(AHandle:THandle;const ABuffer;ABytesToWrite:LongWord;var ABytesWritten:LongWord):Boolean; inline;
 function FSGetLongPathName(const AShortPath:String):String; inline;
+function FSGetFinalPathNameByHandle(AHandle:THandle;AFlags:LongWord):String; inline;
 
 function FSSetFileShortName(const AFileName,AShortName:String):Boolean; inline;
 function FSSetFileShortNameEx(AHandle:THandle;const AShortName:String):Boolean; inline;
 function FSCreateHardLink(const ALinkName,AFileName:String):Boolean; inline;
 function FSCreateSymbolicLink(const ALinkName,ATargetName:String;ADirectory:Boolean):Boolean; inline;
+
+{Handle Functions}
+function FSDuplicateHandle(AHandle:THandle):THandle;
 
 {Directory Functions}
 function FSCreateDirectory(const APathName:String):Boolean; inline;
@@ -10321,16 +10335,50 @@ begin
  try
   if AHandle = nil then Exit;
   
-  {Acquire Lock}
-  FFileHandles.WriterLock;
-  
-  {Remove and Free Handle}
-  FFileHandles.Remove(AHandle);
+  {Check Count}
+  if AHandle.Count > 1 then
+   begin
+    {Decrement Count}
+    Dec(AHandle.Count);
 
-  {Release Lock}
-  FFileHandles.WriterUnlock;
+    {Unlock Handle}
+    AHandle.WriterUnlock;
+   end
+  else
+   begin
+    {Acquire Lock}
+    FFileHandles.WriterLock;
 
-  AHandle.Free;
+    {Remove and Free Handle}
+    FFileHandles.Remove(AHandle);
+
+    {Release Lock}
+    FFileHandles.WriterUnlock;
+
+    AHandle.Free;
+   end;
+
+  Result:=True;
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TFileSysDriver.ReopenFileHandle(AHandle:TFileHandle):Boolean;
+{Reopen (Duplicate) an existing handle}
+{Note: Caller must hold the handle writer lock}
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  if AHandle = nil then Exit;
+
+  {Increment Count}
+  Inc(AHandle.Count);
   
   Result:=True;
  finally  
@@ -17143,25 +17191,26 @@ begin
    begin
     Volume:=GetVolumeFromPath(APathName,True,FILESYS_LOCK_READ);
     if Volume = nil then Exit;
-    try
-     FileSystem:=Volume.FileSystem;
-     
-     //To Do //Lock
-    finally 
-     {Unlock Volume}
-     Volume.ReaderUnlock;
-    end; 
+
+    {Get the FileSystem}
+    FileSystem:=Volume.FileSystem;
+
+    {Check FileSystem}
+    if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+    {Unlock Volume}
+    Volume.ReaderUnlock;
    end
   else
    begin
-    try
-     FileSystem:=Drive.FileSystem;
-     
-     //To Do //Lock
-    finally 
-     {Unlock Drive}
-     Drive.ReaderUnlock;
-    end; 
+    {Get the FileSystem}
+    FileSystem:=Drive.FileSystem;
+
+    {Check FileSystem}
+    if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+    {Unlock Drive}
+    Drive.ReaderUnlock;
    end;
   if FileSystem = nil then Exit;
 
@@ -17180,8 +17229,9 @@ begin
    end;
   
   FileSystem.FindCloseEx(SearchRec);
-  
-  //To Do //Unlock FileSystem
+
+  {Unlock FileSystem}
+  FileSystem.ReaderUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -17300,25 +17350,26 @@ begin
    begin
     Volume:=GetVolumeFromPath(APathName,True,FILESYS_LOCK_READ);
     if Volume = nil then Exit;
-    try
-     FileSystem:=Volume.FileSystem;
-     //To Do //Lock
-     
-    finally 
-     {Unlock Volume}
-     Volume.ReaderUnlock;
-    end; 
+
+    {Get the FileSystem}
+    FileSystem:=Volume.FileSystem;
+
+    {Check FileSystem}
+    if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+    {Unlock Volume}
+    Volume.ReaderUnlock;
    end
   else
    begin
-    try
-     FileSystem:=Drive.FileSystem;
-     //To Do //Lock
-     
-    finally 
-     {Unlock Drive}
-     Drive.ReaderUnlock;
-    end; 
+    {Get the FileSystem}
+    FileSystem:=Drive.FileSystem;
+
+    {Check FileSystem}
+    if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+    {Unlock Drive}
+    Drive.ReaderUnlock;
    end;
   if FileSystem = nil then Exit;
 
@@ -17337,8 +17388,9 @@ begin
    end;
   
   FileSystem.FindCloseEx(SearchRec);
-  
-  //To Do //Unlock FileSystem
+
+  {Unlock FileSystem}
+  FileSystem.ReaderUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -17456,25 +17508,26 @@ begin
    begin
     Volume:=GetVolumeFromPath(ALinkName,True,FILESYS_LOCK_READ);
     if Volume = nil then Exit;
-    try
-     FileSystem:=Volume.FileSystem;
-     //To Do //Lock
-     
-    finally 
-     {Unlock Volume}
-     Volume.ReaderUnlock;
-    end; 
+
+    {Get the FileSystem}
+    FileSystem:=Volume.FileSystem;
+
+    {Check FileSystem}
+    if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+    {Unlock Volume}
+    Volume.ReaderUnlock;
    end
   else
    begin
-    try
-     FileSystem:=Drive.FileSystem;
-     //To Do //Lock
-     
-    finally 
-     {Unlock Drive}
-     Drive.ReaderUnlock;
-    end; 
+    {Get the FileSystem}
+    FileSystem:=Drive.FileSystem;
+
+    {Check FileSystem}
+    if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+    {Unlock Drive}
+    Drive.ReaderUnlock;
    end;
   if FileSystem = nil then Exit;
 
@@ -17491,8 +17544,9 @@ begin
    end;
   
   FileSystem.FindCloseEx(SearchRec);
-  
-  //To Do //Unlock FileSystem
+
+  {Unlock FileSystem}
+  FileSystem.ReaderUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -19914,6 +19968,7 @@ function TFileSysDriver.GetFileInformationByHandle(AHandle:THandle;var AFileInfo
 {Note: Returned times are UTC}
 var
  FileHandle:TFileHandle;
+ FileSystem:TFileSystem;
 begin
  {}
  Result:=False;
@@ -19925,7 +19980,7 @@ begin
   {$ENDIF}
  
   {Get the Handle}
-  FileHandle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_WRITE); //To Do //Reader
+  FileHandle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_READ);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
@@ -19947,27 +20002,51 @@ begin
    {Check Drive}
    if FileHandle.Drive <> nil then
     begin
-     if FileHandle.Drive.FileSystem = nil then Exit;
-     
-     AFileInformation.dwFileAttributes:=(FileHandle.HandleEntry.Attributes and FileHandle.Drive.FileSystem.MaskAttributes);
+     {Lock Drive}
+     if not CheckDrive(FileHandle.Drive,True,FILESYS_LOCK_READ) then Exit;
+
+     {Get Information}
      AFileInformation.dwVolumeSerialNumber:=FileHandle.Drive.VolumeSerial;
+
+     {Lock FileSystem}
+     FileSystem:=FileHandle.Drive.FileSystem;
+     if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+     {Unlock Drive}
+     FileHandle.Drive.ReaderUnlock;
     end
+   {Check Volume}
    else if FileHandle.Volume <> nil then  
     begin
-     if FileHandle.Volume.FileSystem = nil then Exit;
-     
-     AFileInformation.dwFileAttributes:=(FileHandle.HandleEntry.Attributes and FileHandle.Volume.FileSystem.MaskAttributes);
+     {Lock Volume}
+     if not CheckVolume(FileHandle.Volume,True,FILESYS_LOCK_READ) then Exit;
+
+     {Get Information}
      AFileInformation.dwVolumeSerialNumber:=FileHandle.Volume.VolumeSerial;
+
+     {Lock FileSystem}
+     FileSystem:=FileHandle.Volume.FileSystem;
+     if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+     {Unlock Volume}
+     FileHandle.Volume.ReaderUnlock;
     end;
-  
+   if FileSystem = nil then Exit;
+
+   {Get Information}
+   AFileInformation.dwFileAttributes:=(FileHandle.HandleEntry.Attributes and FileSystem.MaskAttributes);
+
+   {Unlock FileSystem}
+   FileSystem.ReaderUnlock;
+
    Result:=True;
   finally
    {Unlock Handle}
-   FileHandle.WriterUnlock;
-  end; 
- finally  
+   FileHandle.ReaderUnlock;
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20127,6 +20206,120 @@ function TFileSysDriver.GetLongPathName(const AShortPath:String):String;
 begin
  {}
  Result:=GetLongName(AShortPath);
+end;
+
+{==============================================================================}
+
+function TFileSysDriver.GetFinalPathNameByHandle(AHandle:THandle;AFlags:LongWord):String;
+{Retrieves the final path for the specified open file handle}
+var
+ FileHandle:TFileHandle;
+ FileSystem:TFileSystem;
+begin
+ {}
+ Result:='';
+
+ if not ReaderLock then Exit;
+ try
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetFinalPathNameByHandle Handle = ' + HandleToHex(AHandle) + ' Flags = ' + IntToHex(AFlags,8));
+  {$ENDIF}
+
+  {Get the Handle}
+  FileHandle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_READ);
+  if FileHandle = nil then Exit;
+  try
+   {Check the Handle}
+   if FileHandle.HandleEntry = nil then Exit;
+
+   {Check Drive}
+   if FileHandle.Drive <> nil then
+    begin
+     {Lock Drive}
+     if not CheckDrive(FileHandle.Drive,True,FILESYS_LOCK_READ) then Exit;
+
+     {Lock FileSystem}
+     FileSystem:=FileHandle.Drive.FileSystem;
+     if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+     
+     {Unlock Drive}
+     FileHandle.Drive.ReaderUnlock;
+    end
+   {Check Volume}
+   else if FileHandle.Volume <> nil then
+    begin
+     {Lock Volume}
+     if not CheckVolume(FileHandle.Volume,True,FILESYS_LOCK_READ) then Exit;
+     
+     {Lock FileSystem}
+     FileSystem:=FileHandle.Volume.FileSystem;
+     if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+     {Unlock Volume}
+     FileHandle.Volume.ReaderUnlock;
+    end;
+   if FileSystem = nil then Exit;
+
+   {Check Flags}
+   if (AFlags and VOLUME_NAME_NT) <> 0 then
+    begin
+     {Return the path with the device path instead of the drive letter}
+     Result:=FileSystem.GetEntryName(FileHandle.HandleEntry,False,False,True);
+    end
+   else if (AFlags and VOLUME_NAME_GUID) <> 0 then 
+    begin
+     {Return the path with the volume path instead of the drive letter}
+     Result:=FileSystem.GetEntryName(FileHandle.HandleEntry,False,True,False);
+    end
+   else
+    begin
+     {Return the path with the drive letter}
+     Result:=FileSystem.GetEntryName(FileHandle.HandleEntry,False,False,False);
+    end;
+
+   {Unlock FileSystem}
+   FileSystem.ReaderUnlock;
+  finally
+   {Unlock Handle}
+   FileHandle.ReaderUnlock;
+  end;
+ finally
+  ReaderUnlock;
+ end;
+end;
+
+{==============================================================================}
+
+function TFileSysDriver.DuplicateHandle(AHandle:THandle):THandle;
+{Duplicate open handle}
+var
+ FileHandle:TFileHandle;
+begin
+ {}
+ Result:=INVALID_HANDLE_VALUE;
+
+ if not ReaderLock then Exit;
+ try
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.DuplicateHandle Handle = ' + HandleToHex(AHandle));
+  {$ENDIF}
+
+  {Get the Handle}
+  FileHandle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_WRITE);
+  if FileHandle = nil then Exit;
+  try
+   {Reopen (Duplicate) the Handle}
+   if not ReopenFileHandle(FileHandle) then Exit;
+
+   {Return the Handle}
+   Result:=FileHandle.Handle;
+  finally
+   {Unlock Handle}
+   FileHandle.WriterUnlock;
+  end; 
+ finally  
+  ReaderUnlock;
+ end; 
 end;
 
 {==============================================================================}
@@ -20305,9 +20498,10 @@ begin
          if FileSystem <> nil then
           begin
            Result:=FileSystem.Volume;
-           //To Do //Lock
-           //Dont need to do check volume, the lock on FileSystem prevents changes so can go ahead and lock the Volume ? (Search Result.WriterLock elsewhere)
-           
+
+           {Check Volume}
+           if not CheckVolume(Result,ALock,AState) then Result:=nil;
+
            {Unlock FileSystem}
            FileSystem.ReaderUnlock;
           end; 
@@ -20365,9 +20559,10 @@ begin
              if FileSystem <> nil then
               begin
                Result:=FileSystem.Volume;
-               //To Do //Lock
-               //Dont need to do check volume, the lock on FileSystem prevents changes so can go ahead and lock the Volume ? (Search Result.WriterLock elsewhere)
-               
+
+               {Check Volume}
+               if not CheckVolume(Result,ALock,AState) then Result:=nil;
+
                {Unlock FileSystem}
                FileSystem.ReaderUnlock;
               end; 
@@ -20384,9 +20579,10 @@ begin
              if FileSystem <> nil then
               begin
                Result:=FileSystem.Volume;
-               //To Do //Lock
-               //Dont need to do check volume, the lock on FileSystem prevents changes so can go ahead and lock the Volume ? (Search Result.WriterLock elsewhere)
-               
+
+               {Check Volume}
+               if not CheckVolume(Result,ALock,AState) then Result:=nil;
+
                {Unlock FileSystem}
                FileSystem.ReaderUnlock;
               end; 
@@ -20425,8 +20621,9 @@ begin
          if FileSystem <> nil then
           begin
            Result:=FileSystem.Volume;
-           //To Do //Lock
-           //Dont need to do check volume, the lock on FileSystem prevents changes so can go ahead and lock the Volume ? (Search Result.WriterLock elsewhere)
+
+           {Check Volume}
+           if not CheckVolume(Result,ALock,AState) then Result:=nil;
 
            {Unlock FileSystem}
            FileSystem.ReaderUnlock;
@@ -20461,9 +20658,10 @@ begin
          if FileSystem <> nil then
           begin
            Result:=FileSystem.Volume;
-           //To Do //Lock
-           //Dont need to do check volume, the lock on FileSystem prevents changes so can go ahead and lock the Volume ? (Search Result.WriterLock elsewhere)
-           
+
+           {Check Volume}
+           if not CheckVolume(Result,ALock,AState) then Result:=nil;
+
            {Unlock FileSystem}
            FileSystem.ReaderUnlock;
           end; 
@@ -20497,9 +20695,10 @@ begin
          if FileSystem <> nil then
           begin
            Result:=FileSystem.Volume;
-           //To Do //Lock
-           //Dont need to do check volume, the lock on FileSystem prevents changes so can go ahead and lock the Volume ? (Search Result.WriterLock elsewhere)
-           
+
+           {Check Volume}
+           if not CheckVolume(Result,ALock,AState) then Result:=nil;
+
            {Unlock FileSystem}
            FileSystem.ReaderUnlock;
           end; 
@@ -20910,24 +21109,36 @@ begin
  Result:=nil;
  
  {Get the Handle}
- Handle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_READ); //To Do //Lock //GetDriveFromFile/GetVolumeFromFile etc ?
+ Handle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
  try
   if Handle.Drive = nil then
    begin
-    if Handle.Volume = nil then Exit;
+    {Lock Volume}
+    if not CheckVolume(Handle.Volume,True,FILESYS_LOCK_READ) then Exit;
    
     {Get the FileSystem}
     Result:=Handle.Volume.FileSystem;
-    //To Do //Lock
     
+    {Check FileSystem}
+    if not CheckFileSystem(Result,ALock,AState) then Result:=nil;
+
+    {Unlock Volume}
+    Handle.Volume.ReaderUnlock;
    end
   else
    begin
+    {Lock Drive}
+    if not CheckDrive(Handle.Drive,True,FILESYS_LOCK_READ) then Exit;
+    
     {Get the FileSystem}
     Result:=Handle.Drive.FileSystem;
-    //To Do //Lock
-    
+
+    {Check FileSystem}
+    if not CheckFileSystem(Result,ALock,AState) then Result:=nil;
+
+    {Unlock Drive}
+    Handle.Drive.ReaderUnlock;
    end;
  finally
   {Unlock Handle}
@@ -20945,24 +21156,36 @@ begin
  Result:=nil;
  
  {Get the Handle}
- Handle:=GetFindFromHandle(AHandle,True,FILESYS_LOCK_READ);//To Do //Lock //GetDriveFromFind/GetVolumeFromFind etc ?
+ Handle:=GetFindFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
  try 
   if Handle.Drive = nil then
    begin
-    if Handle.Volume = nil then Exit;
-   
+    {Lock Volume}
+    if not CheckVolume(Handle.Volume,True,FILESYS_LOCK_READ) then Exit;
+
     {Get the FileSystem}
     Result:=Handle.Volume.FileSystem;
-    //To Do //Lock
-    
+
+    {Check FileSystem}
+    if not CheckFileSystem(Result,ALock,AState) then Result:=nil;
+
+    {Unlock Volume}
+    Handle.Volume.ReaderUnlock;
    end
   else
    begin
+    {Lock Drive}
+    if not CheckDrive(Handle.Drive,True,FILESYS_LOCK_READ) then Exit;
+
     {Get the FileSystem}
     Result:=Handle.Drive.FileSystem;
-    //To Do //Lock
-    
+
+    {Check FileSystem}
+    if not CheckFileSystem(Result,ALock,AState) then Result:=nil;
+
+    {Unlock Drive}
+    Handle.Drive.ReaderUnlock;
    end;
  finally
   {Unlock Handle}
@@ -22040,7 +22263,7 @@ begin
 
  Size:=0;
  Position:=0;
- Handle:=Integer(Self);
+ Handle:=THandle(Self);
 end;
 
 {==============================================================================}
@@ -22118,7 +22341,7 @@ begin
  
  FileSystem:=nil;
 
- Handle:=Integer(Self);
+ Handle:=THandle(Self);
 
  CurrentDevice:=nil;
  CurrentPartition:=nil;
@@ -22208,7 +22431,9 @@ begin
  ShareMode:=fmShareCompat;
 
  Position:=0;
- Handle:=Integer(Self);
+ 
+ Handle:=THandle(Self);
+ Count:=1;
 
  DataValue:=0;
  DataOffset:=0;
@@ -22297,7 +22522,7 @@ begin
  Mask:='';
  Attr:=faNone;
  Flags:=FIND_FLAG_NONE;
- Handle:=Integer(Self);
+ Handle:=THandle(Self);
 
  ParentEntry:=nil;
  CurrentEntry:=nil;
@@ -30867,7 +31092,7 @@ begin
     
     {Setup Defaults}
     FRootChar:=LoadRootChar;
-    FRootName:=LoadRootName;
+    FRootName:=LoadRootName(False);
     FRootPath:=LoadRootPath;
     
     {Bind to Drive}
@@ -30894,7 +31119,7 @@ begin
     
     {Setup Defaults}
     FRootChar:=LoadRootChar;
-    FRootName:=LoadRootName;
+    FRootName:=LoadRootName(False);
     FRootPath:=LoadRootPath;
     
     {Check Root}
@@ -31108,7 +31333,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.LoadRootName:String;
+function TFileSystem.LoadRootName(AVolumeName:Boolean):String;
 {Load Root Name from Drive or Volume (eg C:\ or \\?\Volume1)}
 begin
  {Base Implementation}
@@ -31118,15 +31343,22 @@ begin
  try
   if FDriver = nil then Exit;
   
-  if FDrive <> nil then
+  if AVolumeName and (FVolume <> nil) then
    begin
-    Result:=FDrive.Name;
+    Result:=VOLUME_PATH_PREFIX + FVolume.Name;
    end
   else
    begin
-    if FVolume = nil then Exit;
+    if FDrive <> nil then
+     begin
+      Result:=FDrive.Name;
+     end
+    else
+     begin
+      if FVolume = nil then Exit;
     
-    Result:=VOLUME_PATH_PREFIX + FVolume.Name;
+      Result:=VOLUME_PATH_PREFIX + FVolume.Name;
+     end;
    end;
  finally  
   ReleaseLock;
@@ -32718,7 +32950,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.GetEntryPath(AEntry:TDiskEntry;AAltName:Boolean):String;
+function TFileSystem.GetEntryPath(AEntry:TDiskEntry;AAltName,AVolumePath,ADevicePath:Boolean):String;
 {Get the Full Path of an Entry (Not including Entry itself)}
 {Note: Path ends with a trailing slash of PathChar unless Entry is a stream}
 var
@@ -32746,7 +32978,21 @@ begin
        if Parent = FRoot then
         begin
          {Root Entry}
-         Result:=AddTrailingChar(FRoot.Name,WorkChar) + Result;
+         if AVolumePath then
+          begin
+           {Volume Path}
+           Result:=AddTrailingChar(LoadRootName(True),WorkChar) + Result;
+          end
+         else if ADevicePath then
+          begin
+           {Device Path}
+           Result:=AddTrailingChar(FRoot.AltName,WorkChar) + Result;
+          end
+         else
+          begin
+           {Drive Path}
+           Result:=AddTrailingChar(FRoot.Name,WorkChar) + Result;
+          end;
         end
        else
         begin
@@ -32768,7 +33014,7 @@ begin
      {Stream}
      Parent:=TDiskEntry(AEntry.Parent);
      
-     Result:=GetEntryName(Parent,AAltName);
+     Result:=GetEntryName(Parent,AAltName,AVolumePath,ADevicePath);
     end;
   end;
  finally
@@ -32778,7 +33024,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.GetEntryName(AEntry:TDiskEntry;AAltName:Boolean):String;
+function TFileSystem.GetEntryName(AEntry:TDiskEntry;AAltName,AVolumePath,ADevicePath:Boolean):String;
 {Get the Full Name of an Entry (Including Entry itself)}
 begin
  {}
@@ -32795,10 +33041,26 @@ begin
      {File, Folder, Label}
      if AEntry = FRoot then
       begin
-       Result:=FRoot.Name;
+       {Root Entry}
+       if AVolumePath then
+        begin
+         {Volume Path}
+         Result:=LoadRootName(True);
+        end
+       else if ADevicePath then
+        begin
+         {Device Path}
+         Result:=FRoot.AltName;
+        end
+       else
+        begin
+         {Drive Path}
+         Result:=FRoot.Name;
+        end;
       end
      else
       begin
+       {Folder or File Entry}
        if (AAltName) and (Length(AEntry.AltName) <> 0) then
         begin
          Result:=AEntry.AltName;
@@ -32816,7 +33078,7 @@ begin
   end;
  
   {Get Entry Path}
-  Result:=GetEntryPath(AEntry,AAltName) + Result;
+  Result:=GetEntryPath(AEntry,AAltName,AVolumePath,ADevicePath) + Result;
  finally
   FEntries.ReaderUnlock;
  end; 
@@ -34507,7 +34769,7 @@ begin
   if FDriver = nil then Exit;
 
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
  
   {Flush the Cache}
@@ -34536,7 +34798,7 @@ begin
   if FDriver = nil then Exit;
 
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
  
   {Set the Size at Current Position}
@@ -34573,14 +34835,14 @@ begin
   if FDriver = nil then Exit;
 
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader   
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_READ);
   if FileHandle = nil then Exit;
  
   {Get the Position}
   Result:=FileHandle.Position;
  
   {Unlock Handle}
-  FileHandle.WriterUnlock;
+  FileHandle.ReaderUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -34730,7 +34992,7 @@ begin
   if FDriver = nil then Exit;
 
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader   
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_READ);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
@@ -34743,7 +35005,7 @@ begin
    Result:=FileHandle.HandleEntry.Size;
   finally
    {Unlock Handle}
-   FileHandle.WriterUnlock;
+   FileHandle.ReaderUnlock;
   end; 
  finally  
   ReaderUnlock;
@@ -34894,7 +35156,7 @@ begin
   if Size < 0 then Exit;
  
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader   
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
@@ -35266,7 +35528,7 @@ begin
   Current:=GetCurrent;
   if Current = nil then Exit;
  
-  Result:=GetEntryName(Current,False);
+  Result:=GetEntryName(Current,False,False,False);
  finally  
   ReaderUnlock;
  end; 
@@ -36803,7 +37065,7 @@ begin
   if (Length(ShortName) <> 0) and not(CheckAltName(ShortName)) then Exit;
   
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader   
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
@@ -37069,7 +37331,7 @@ begin
       end;
      
      {Get Parent Name}
-     Result:=GetEntryName(Parent,False);
+     Result:=GetEntryName(Parent,False,False,False);
 
      {Remove Reference}
      Current.RemoveReference;
@@ -37168,7 +37430,7 @@ begin
       end;
      
      {Get Entry Short Name}
-     Result:=GetEntryName(Current,True);
+     Result:=GetEntryName(Current,True,False,False);
      
      {Remove Reference}
      Current.RemoveReference;
@@ -37267,7 +37529,7 @@ begin
       end;
      
      {Get Entry Long Name}
-     Result:=GetEntryName(Current,False);
+     Result:=GetEntryName(Current,False,False,False);
 
      {Remove Reference}
      Current.RemoveReference;
@@ -37367,7 +37629,7 @@ begin
       end;
      
      {Get Entry Short Name}
-     Result:=GetEntryName(Current,True);
+     Result:=GetEntryName(Current,True,False,False);
      
      {Remove Reference}
      Current.RemoveReference;
@@ -37675,7 +37937,7 @@ begin
   if FDriver = nil then Exit;
  
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader   
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_READ);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
@@ -37688,7 +37950,7 @@ begin
    Result:=(FileHandle.HandleEntry.Attributes and FMaskAttributes); {faFindMask}
   finally
    {Unlock Handle}
-   FileHandle.WriterUnlock;
+   FileHandle.ReaderUnlock;
   end; 
  finally  
   ReaderUnlock;
@@ -37746,7 +38008,7 @@ begin
   if (CreateTime = nil) and (AccessTime = nil) and (ModifyTime = nil) then Exit;
  
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader   
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_READ);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
@@ -37763,7 +38025,7 @@ begin
    Result:=True;
   finally
    {Unlock Handle}
-   FileHandle.WriterUnlock;
+   FileHandle.ReaderUnlock;
   end; 
  finally  
   ReaderUnlock;
@@ -37789,7 +38051,7 @@ begin
   if (CreateTime = nil) and (AccessTime = nil) and (ModifyTime = nil) then Exit;
  
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader   
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
@@ -51735,7 +51997,7 @@ end;
 destructor TFSFileStreamEx.Destroy;
 begin
  {}
- if FHandle <> Integer(INVALID_HANDLE_VALUE) then FSFileClose(FHandle);
+ if FHandle <> INVALID_HANDLE_VALUE then FSFileClose(FHandle);
 end;
 
 {==============================================================================}
@@ -51937,6 +52199,9 @@ begin
  UltiboCreateHardLinkAHandler:=FSCreateHardLink;
  UltiboCreateSymbolicLinkAHandler:=FSCreateSymbolicLink;
  UltiboGetFileInformationByHandleHandler:=FSGetFileInformationByHandle;
+ UltiboGetFinalPathNameByHandleAHandler:=FSGetFinalPathNameByHandle;
+ {Handle Functions (Compatibility)}
+ UltiboDuplicateHandleHandler:=FSDuplicateHandle;
  {Directory Functions (Compatibility)}
  UltiboCreateDirectoryAHandler:=FSCreateDirectory;
  UltiboRemoveDirectoryAHandler:=FSRemoveDirectory;
@@ -53664,6 +53929,20 @@ end;
 
 {==============================================================================}
 
+function FSGetFinalPathNameByHandle(AHandle:THandle;AFlags:LongWord):String; inline;
+begin
+ {}
+ Result:='';
+ 
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+
+ {Get Final Path Name}
+ Result:=FileSysDriver.GetFinalPathNameByHandle(AHandle,AFlags);
+end;
+
+{==============================================================================}
+
 function FSSetFileShortName(const AFileName,AShortName:String):Boolean; inline;
 begin
  {}
@@ -53716,6 +53995,20 @@ begin
 
  {Create Symbolic Link}
  Result:=FileSysDriver.CreateSymbolicLink(ALinkName,ATargetName,ADirectory);
+end;
+
+{==============================================================================}
+{Handle Functions}
+function FSDuplicateHandle(AHandle:THandle):THandle;
+begin
+ {}
+ Result:=INVALID_HANDLE_VALUE;
+
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+
+ {Duplicate Handle}
+ Result:=FileSysDriver.DuplicateHandle(AHandle);
 end;
  
 {==============================================================================}

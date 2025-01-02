@@ -1,7 +1,7 @@
 {
 Ultibo interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -284,6 +284,16 @@ const
  DDD_NO_BROADCAST_SYSTEM   = $00000008;
  DDD_LUID_BROADCAST_DRIVE  = $00000010;
  
+const
+ {Final Path Flag Constants}
+ FILE_NAME_NORMALIZED = $00000000; {Return the normalized file name. This is the default}
+ FILE_NAME_OPENED     = $00000008; {Return the opened file name (not normalized) (Not Supported by Ultibo)}
+ 
+ VOLUME_NAME_DOS      = $00000000; {Return the path with the drive letter. This is the default}
+ VOLUME_NAME_GUID     = $00000001; {Return the path with a volume GUID path instead of the drive name (Ultibo returns the volume path, not GUID path)}
+ VOLUME_NAME_NONE     = $00000004; {Return the path with no drive information (Not Supported by Ultibo)}
+ VOLUME_NAME_NT       = $00000002; {Return the NT device object path (Ultibo returns the device path)}
+
 {==============================================================================}
 {Compatibility types}
 type
@@ -1110,6 +1120,10 @@ type
  TUltiboCreateHardLinkA = function(const ALinkName,AFileName:String):Boolean;
  TUltiboCreateSymbolicLinkA = function(const ALinkName,ATargetName:String;ADirectory:Boolean):Boolean;
  TUltiboGetFileInformationByHandle = function(AHandle:THandle;var AFileInformation:TByHandleFileInformation):Boolean;
+ TUltiboGetFinalPathNameByHandleA = function(AHandle:THandle;AFlags:LongWord):String;
+
+ {Handle Functions (Compatibility)}
+ TUltiboDuplicateHandle = function(AHandle:THandle):THandle;
 
  {Directory Functions (Compatibility)}
  TUltiboCreateDirectoryA = function(const APathName:String):Boolean;
@@ -1183,6 +1197,10 @@ var
  UltiboCreateHardLinkAHandler:TUltiboCreateHardLinkA;
  UltiboCreateSymbolicLinkAHandler:TUltiboCreateSymbolicLinkA;
  UltiboGetFileInformationByHandleHandler:TUltiboGetFileInformationByHandle;
+ UltiboGetFinalPathNameByHandleAHandler:TUltiboGetFinalPathNameByHandleA;
+
+ {Handle Functions (Compatibility)}
+ UltiboDuplicateHandleHandler:TUltiboDuplicateHandle;
 
  {Directory Functions (Compatibility)}
  UltiboCreateDirectoryAHandler:TUltiboCreateDirectoryA;
@@ -1444,6 +1462,10 @@ function CreateSymbolicLinkA(lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:D
 function CreateSymbolicLinkW(lpSymlinkFileName,lpTargetFileName:LPCWSTR;dwFlags:DWORD):BOOL;
 
 function GetFileInformationByHandle(hFile:HANDLE;var lpFileInformation:BY_HANDLE_FILE_INFORMATION):BOOL;
+
+function GetFinalPathNameByHandle(hFile:HANDLE;lpszFilePath:LPCSTR;cchFilePath,dwFlags:DWORD):DWORD;
+function GetFinalPathNameByHandleA(hFile:HANDLE;lpszFilePath:LPCSTR;cchFilePath,dwFlags:DWORD):DWORD;
+function GetFinalPathNameByHandleW(hFile:HANDLE;lpszFilePath:LPCWSTR;cchFilePath,dwFlags:DWORD):DWORD;
 
 {==============================================================================}
 {File Functions (Ultibo)}
@@ -4904,7 +4926,73 @@ begin
    Result:=False;
   end; 
 end;
-  
+
+{==============================================================================}
+
+function GetFinalPathNameByHandle(hFile:HANDLE;lpszFilePath:LPCSTR;cchFilePath,dwFlags:DWORD):DWORD;
+{Retrieves the final path for the specified open file handle}
+begin
+ {}
+ Result:=GetFinalPathNameByHandleA(hFile,lpszFilePath,cchFilePath,dwFlags);
+end;
+
+{==============================================================================}
+
+function GetFinalPathNameByHandleA(hFile:HANDLE;lpszFilePath:LPCSTR;cchFilePath,dwFlags:DWORD):DWORD;
+{Retrieves the final path for the specified open file handle}
+var
+ Value:String;
+begin
+ {}
+ if Assigned(UltiboGetFinalPathNameByHandleAHandler) then
+  begin
+   SetLastError(ERROR_INVALID_PARAMETER);
+
+   Result:=0;
+   if lpszFilePath = nil then Exit;
+
+   Value:=UltiboGetFinalPathNameByHandleAHandler(hFile,dwFlags);
+   StrLCopy(lpszFilePath,PChar(Value),cchFilePath);
+
+   Result:=Length(Value);
+  end
+ else
+  begin
+   SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+
+   Result:=0;
+  end;  
+end;
+
+{==============================================================================}
+
+function GetFinalPathNameByHandleW(hFile:HANDLE;lpszFilePath:LPCWSTR;cchFilePath,dwFlags:DWORD):DWORD;
+{Retrieves the final path for the specified open file handle}
+var
+ Value:String;
+begin
+ {}
+ if Assigned(UltiboGetFinalPathNameByHandleAHandler) then
+  begin
+   SetLastError(ERROR_INVALID_PARAMETER);
+
+   Result:=0;
+   if lpszFilePath = nil then Exit;
+
+   Value:=UltiboGetFinalPathNameByHandleAHandler(hFile,dwFlags);
+   if StringToWideChar(Value,lpszFilePath,cchFilePath shl 1) then {Buffer length in chars, Multiply by SizeOf(WideChar)} //To Do //Use default StringToWideChar from System ? //Watch for difference in size parameter (Bytes/Chars)
+    begin
+     Result:=Length(Value);
+    end; 
+  end
+ else
+  begin
+   SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+
+   Result:=0;
+  end;  
+end;
+
 {==============================================================================}
 {==============================================================================}
 {File Functions (Ultibo)}

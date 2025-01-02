@@ -1,7 +1,7 @@
 {
 Ultibo Global Constant Definitions.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '30 December 2024';
+ ULTIBO_RELEASE_DATE             = '3 January 2025';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.6.007';
+ ULTIBO_RELEASE_VERSION          = '2.6.009';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 6;
- ULTIBO_RELEASE_VERSION_REVISION = 007;
+ ULTIBO_RELEASE_VERSION_REVISION = 009;
  
  FPC_COMPILER_VERSION = {$I %FPCVERSION%}; {The version of FPC used to compile the RTL}
  

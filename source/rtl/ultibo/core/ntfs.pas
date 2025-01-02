@@ -1,7 +1,7 @@
 {
 Ultibo NTFS interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -24673,7 +24673,7 @@ begin
   FNameChar:=LoadNameChar;
   FFileChar:=LoadFileChar;
   FRootChar:=LoadRootChar;
-  FRootName:=LoadRootName;
+  FRootName:=LoadRootName(False);
   FRootPath:=LoadRootPath;
   FMaxFile:=LoadMaxFile;
   FMaxPath:=LoadMaxPath;

@@ -1,7 +1,7 @@
 {
 Ultibo Library API interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -4783,6 +4783,7 @@ procedure FindCloseEx(var searchrec: TFILE_SEARCH_REC); stdcall; public name 'Fi
 {function SetFilePointerEx(hfile: HANDLE; lidistancetomove: LARGE_INTEGER; lpnewfilepointer: PLARGE_INTEGER; dwmovemethod: uint32_t): BOOL; stdcall; public name 'SetFilePointerEx';} {Exported in Ultibo}
 {function WriteFile(hfile: HANDLE; lpbuffer: LPCVOID; nnumberofbytestowrite: uint32_t; lpnumberofbyteswritten: LPDWORD; lpoverlapped: LPOVERLAPPED): BOOL; stdcall; public name 'WriteFile';} {Exported in Ultibo}
 {function GetLongPathName(lpszshortpath: LPCSTR; lpszlongpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetLongPathName';} {Exported in Ultibo}
+{function GetFinalPathNameByHandle(hfile: HANDLE; lpszfilepath: LPCSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall; public name 'GetFinalPathNameByHandle';} {Exported in Ultibo}
 
 {function SetFileShortName(hfile: HANDLE; lpshortname: LPCSTR): BOOL; stdcall; public name 'SetFileShortName';} {Exported in Ultibo}
 {function CreateHardLink(lpfilename, lpexistingfilename: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateHardLink';} {Exported in Ultibo}
@@ -5390,6 +5391,10 @@ function CreateSymbolicLinkA(lpsymlinkfilename, lptargetfilename: LPCSTR; dwflag
 function CreateSymbolicLinkW(lpsymlinkfilename, lptargetfilename: LPCWSTR; dwflags: uint32_t): BOOL; stdcall; public name 'CreateSymbolicLinkW';
 
 function GetFileInformationByHandle(hfile: HANDLE; var lpfileinformation: BY_HANDLE_FILE_INFORMATION): BOOL; stdcall; public name 'GetFileInformationByHandle';
+
+function GetFinalPathNameByHandle(hfile: HANDLE; lpszfilepath: LPCSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall; public name 'GetFinalPathNameByHandle';
+function GetFinalPathNameByHandleA(hfile: HANDLE; lpszfilepath: LPCSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall; public name 'GetFinalPathNameByHandleA';
+function GetFinalPathNameByHandleW(hfile: HANDLE; lpszfilepath: LPCWSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall; public name 'GetFinalPathNameByHandleW';
 
 {==============================================================================}
 {File Functions (Ultibo)}
@@ -39228,6 +39233,30 @@ function GetFileInformationByHandle(hfile: HANDLE; var lpfileinformation: BY_HAN
 begin
  {}
  Result:=Ultibo.GetFileInformationByHandle(hfile,lpfileinformation);
+end;
+
+{==============================================================================}
+
+function GetFinalPathNameByHandle(hfile: HANDLE; lpszfilepath: LPCSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall;
+begin
+ {}
+ Result:=Ultibo.GetFinalPathNameByHandle(hfile,lpszfilepath,cchfilepath,dwflags);
+end;
+
+{==============================================================================}
+
+function GetFinalPathNameByHandleA(hfile: HANDLE; lpszfilepath: LPCSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall;
+begin
+ {}
+ Result:=Ultibo.GetFinalPathNameByHandleA(hfile,lpszfilepath,cchfilepath,dwflags);
+end;
+
+{==============================================================================}
+
+function GetFinalPathNameByHandleW(hfile: HANDLE; lpszfilepath: LPCWSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall;
+begin
+ {}
+ Result:=Ultibo.GetFinalPathNameByHandleW(hfile,lpszfilepath,cchfilepath,dwflags);
 end;
 
 {==============================================================================}
