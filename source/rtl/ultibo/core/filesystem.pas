@@ -1514,7 +1514,7 @@ type
 
    {File Handle Methods}
    function OpenFileHandle(AVolume:TDiskVolume;ADrive:TDiskDrive;AParent,AEntry:TDiskEntry;AMode:Integer;ALock:Boolean;AState:LongWord):TFileHandle;
-   function CloseFileHandle(AHandle:TFileHandle):Boolean;
+   function CloseFileHandle(AHandle:TFileHandle;AAll:Boolean):Boolean;
    function ReopenFileHandle(AHandle:TFileHandle):Boolean;
    function GetFileHandleByNext(APrevious:TFileHandle;ALock,AUnlock:Boolean;AState:LongWord):TFileHandle;
    
@@ -10324,7 +10324,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.CloseFileHandle(AHandle:TFileHandle):Boolean;
+function TFileSysDriver.CloseFileHandle(AHandle:TFileHandle;AAll:Boolean):Boolean;
 {Close an existing handle}
 {Note: Caller must hold the handle writer lock}
 begin
@@ -10336,7 +10336,7 @@ begin
   if AHandle = nil then Exit;
   
   {Check Count}
-  if AHandle.Count > 1 then
+  if not(AAll) and (AHandle.Count > 1) then
    begin
     {Decrement Count}
     Dec(AHandle.Count);
@@ -10505,7 +10505,7 @@ begin
       CurrentHandle.ReaderConvert;
       
       {Close Handle}
-      CloseFileHandle(CurrentHandle);
+      CloseFileHandle(CurrentHandle,True);
       CurrentHandle:=nil;
      end
     else if (ADrive <> nil) and (CurrentHandle.Drive = ADrive) then
@@ -10514,10 +10514,9 @@ begin
       CurrentHandle.ReaderConvert;
       
       {Close Handle}
-      CloseFileHandle(CurrentHandle);
+      CloseFileHandle(CurrentHandle,True);
       CurrentHandle:=nil;
      end;
-     
      
     {Unlock Handle}
     if CurrentHandle <> nil then CurrentHandle.ReaderUnlock;
@@ -10574,7 +10573,7 @@ begin
         CurrentHandle.ReaderConvert;
         
         {Close Handle}
-        CloseFileHandle(CurrentHandle);
+        CloseFileHandle(CurrentHandle,True);
         CurrentHandle:=nil;
        end;
      end
@@ -10597,11 +10596,10 @@ begin
         CurrentHandle.ReaderConvert;
         
         {Close Handle}
-        CloseFileHandle(CurrentHandle);
+        CloseFileHandle(CurrentHandle,True);
         CurrentHandle:=nil;
        end;
      end;
-     
      
     {Unlock Handle}
     if CurrentHandle <> nil then CurrentHandle.ReaderUnlock;
@@ -34416,7 +34414,7 @@ begin
   if FileHandle.OpenMode <> fmOpenRead then SetEntry(FileHandle.ParentEntry,FileHandle.HandleEntry);
 
   {Close the Handle} {Do not unlock}
-  FDriver.CloseFileHandle(FileHandle);
+  FDriver.CloseFileHandle(FileHandle,False);
  finally  
   ReaderUnlock;
  end; 
@@ -38097,7 +38095,7 @@ begin
   if FileHandle.OpenMode <> fmOpenRead then SetEntry(FileHandle.ParentEntry,FileHandle.HandleEntry);
 
   {Close the Handle} {Do not unlock}
-  FDriver.CloseFileHandle(FileHandle);
+  FDriver.CloseFileHandle(FileHandle,False);
   
   Result:=True;
  finally  
