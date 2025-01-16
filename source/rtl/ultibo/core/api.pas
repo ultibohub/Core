@@ -5847,6 +5847,13 @@ function lstrlenW(lpstring: LPCWSTR): int; stdcall; public name 'lstrlenW';
 {$ENDIF}
 {==============================================================================}
 {==============================================================================}
+{API Libraries}
+{$if defined(API_EXPORT_PLATFORM) or defined(API_EXPORT_CONSOLE) or defined(API_EXPORT_LOGGING)}
+{$linklib ultiboapi}
+{$ENDIF}
+
+{==============================================================================}
+{==============================================================================}
 
 implementation
 
