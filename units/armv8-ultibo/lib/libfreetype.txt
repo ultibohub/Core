@@ -1,0 +1,129 @@
+FreeType2 Library
+=================
+
+Licence
+-------
+
+The FreeType  2 font  engine is  copyrighted work  and cannot  be used
+legally without  a software  license.  In order  to make  this project
+usable to  a vast majority of  developers, we distribute it  under two
+mutually exclusive open-source licenses.
+
+This means that *you* must choose  *one* of the two licenses described
+below, then obey all its terms and conditions when using FreeType 2 in
+any of your projects or products.
+
+  - The FreeType License,  found in the file  `docs/FTL.TXT`, which is
+    similar to the  original BSD license *with*  an advertising clause
+    that forces  you to explicitly  cite the FreeType project  in your
+    product's  documentation.  All  details are  in the  license file.
+    This license is suited to products which don't use the GNU General
+    Public License.
+
+    Note that  this license  is compatible to  the GNU  General Public
+    License version 3, but not version 2.
+
+  - The   GNU   General   Public   License   version   2,   found   in
+    `docs/GPLv2.TXT`  (any  later  version  can  be  used  also),  for
+    programs  which  already  use  the  GPL.  Note  that  the  FTL  is
+    incompatible with GPLv2 due to its advertisement clause.
+
+The contributed  BDF and PCF  drivers come  with a license  similar to
+that  of the  X Window  System.   It is  compatible to  the above  two
+licenses (see files `src/bdf/README`  and `src/pcf/README`).  The same
+holds   for   the   source    code   files   `src/base/fthash.c`   and
+`include/freetype/internal/fthash.h`; they were part of the BDF driver
+in earlier FreeType versions.
+
+The gzip  module uses the  zlib license (see  `src/gzip/zlib.h`) which
+too is compatible to the above two licenses.
+
+The files `src/autofit/ft-hb.c` and `src/autofit/ft-hb.h` contain code
+taken almost  verbatim from the  HarfBuzz file `hb-ft.cc`,  which uses
+the 'Old MIT' license, compatible to the above two licenses.
+
+The  MD5 checksum  support  (only used  for  debugging in  development
+builds) is in the public domain.
+
+
+Version
+-------
+
+ 2.13.3
+
+Download
+--------
+
+ https://www.freetype.org/download.html
+
+Build
+-----
+
+ARMv6
+
+ Build with GCC arm-none-eabi 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
+
+
+ cd
+
+ cd libraries/freetype-2.13.3
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
+
+ ./configure --build=x86_64-pc-linux-gnu --host=arm-none-eabi --prefix=$HOME/libraries/freetype-2.13.3/armv6 --enable-static=yes --enable-shared=no --without-png --without-bzip2 --without-harfbuzz --without-zlib --without-brotli CFLAGS="--specs=nosys.specs -O2 -mabi=aapcs -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS"
+
+ make
+
+ make install
+
+ make clean
+
+
+
+ARMv7
+
+ Build with GCC arm-none-eabi 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
+
+
+ cd
+
+ cd libraries/freetype-2.13.3
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
+
+ ./configure --build=x86_64-pc-linux-gnu --host=arm-none-eabi --prefix=$HOME/libraries/freetype-2.13.3/armv7 --enable-static=yes --enable-shared=no --without-png --without-bzip2 --without-harfbuzz --without-zlib --without-brotli CFLAGS="--specs=nosys.specs -O2 -mabi=aapcs -marm -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS"
+
+ make
+
+ make install
+
+ make clean
+
+
+
+ARMv8
+
+ Build with GCC aarch64-none-elf 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf
+
+
+ cd
+
+ cd libraries/freetype-2.13.3
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf/bin:$PATH
+
+ ./configure --build=x86_64-pc-linux-gnu --host=aarch64-none-elf --prefix=$HOME/libraries/freetype-2.13.3/armv8 --enable-static=yes --enable-shared=no --without-png --without-bzip2 --without-harfbuzz --without-zlib --without-brotli CFLAGS="--specs=rdimon.specs -O2 -march=armv8-a -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS"
+
+ make
+
+ make install
+
+ make clean
+
+

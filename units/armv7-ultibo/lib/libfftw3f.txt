@@ -1,0 +1,108 @@
+FFTW Library
+============
+
+Licence
+-------
+
+/*
+ * Copyright (c) 2003, 2007-14 Matteo Frigo
+ * Copyright (c) 2003, 2007-14 Massachusetts Institute of Technology
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ */
+ 
+ 
+Version
+-------
+
+ 3.3.10
+
+Download
+--------
+
+ http://www.fftw.org/download.html
+
+ (Do not use the GitHub version)
+
+Build
+-----
+
+ARMv6
+
+ Build with GCC arm-none-eabi 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
+
+
+ cd
+
+ cd libraries/fftw-3.3.10
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
+
+ ./configure --build=x86_64-pc-linux-gnu --host=arm-none-eabi --prefix=$HOME/libraries/fftw-3.3.10/armv6 --enable-static=yes --enable-shared=no --enable-single CFLAGS="--specs=nosys.specs -O2 -mabi=aapcs -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS"
+
+ make
+
+ make install
+
+ make clean
+
+
+
+ARMv7
+
+ Build with GCC arm-none-eabi 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
+
+
+ cd
+
+ cd libraries/fftw-3.3.10
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
+
+ ./configure --build=x86_64-pc-linux-gnu --host=arm-none-eabi --prefix=$HOME/libraries/fftw-3.3.10/armv7 --enable-static=yes --enable-shared=no --enable-single --enable-armv7a-cntvct CFLAGS="--specs=nosys.specs -O2 -mabi=aapcs -marm -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS"
+
+ make
+
+ make install
+
+ make clean
+
+
+
+ARMv8
+
+ Build with GCC aarch64-none-elf 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf
+
+
+ cd
+
+ cd libraries/fftw-3.3.10
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf/bin:$PATH
+
+ ./configure --build=x86_64-pc-linux-gnu --host=aarch64-none-elf --prefix=$HOME/libraries/fftw-3.3.10/armv8 --enable-static=yes --enable-shared=no --enable-single --enable-armv8-cntvct-el0 CFLAGS="--specs=rdimon.specs -O2 -march=armv8-a -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS"
+
+ make
+
+ make install
+
+ make clean

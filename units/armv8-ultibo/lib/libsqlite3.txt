@@ -1,0 +1,83 @@
+SQLite Library
+==============
+
+Licence
+-------
+
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+
+Version
+-------
+
+ 3.47.2 (sqlite-amalgamation-3470000)
+
+Download
+--------
+
+ https://sqlite.org/download.html
+
+Build
+-----
+
+ARMv6
+
+ Build with GCC arm-none-eabi 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
+
+
+ cd
+
+ cd libraries/sqlite-amalgamation-3470000
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
+
+ arm-none-eabi-gcc -O2 -mabi=aapcs -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -DSQLITE_OS_OTHER=1 -DSQLITE_OMIT_LOAD_EXTENSION -c sqlite3.c
+
+ arm-none-eabi-ar rcs libsqlite3.a sqlite3.o
+
+
+
+ARMv7
+
+ Build with GCC arm-none-eabi 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
+
+
+ cd
+
+ cd libraries/sqlite-amalgamation-3470000
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
+
+ arm-none-eabi-gcc -O2 -mabi=aapcs -marm -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -DSQLITE_OS_OTHER=1 -DSQLITE_OMIT_LOAD_EXTENSION -c sqlite3.c
+
+ arm-none-eabi-ar rcs libsqlite3.a sqlite3.o
+
+
+
+ARMv8
+
+ Build with GCC aarch64-none-elf 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf
+
+
+ cd
+
+ cd libraries/sqlite-amalgamation-3470000
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf/bin:$PATH
+
+ aarch64-none-elf-gcc -O2 -march=armv8-a -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -DSQLITE_OS_OTHER=1 -DSQLITE_OMIT_LOAD_EXTENSION -c sqlite3.c
+
+ aarch64-none-elf-ar rcs libsqlite3.a sqlite3.o
+

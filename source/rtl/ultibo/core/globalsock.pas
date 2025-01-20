@@ -1,7 +1,7 @@
 {
 Ultibo Global Socket Definitions.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -800,7 +800,7 @@ type
   h_length: Smallint;
   case Byte of
    0: (h_addr_list: ^PChar);
-   1: (h_addr: ^PChar)
+   1: (h_addr: ^PChar);
  end;
  THostEnt = hostent;
 

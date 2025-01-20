@@ -2,7 +2,7 @@
 Ultibo Newlib C Library Syscalls interface unit.
 
 Copyright (C) 2016 - Paul Jervois.
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -46,7 +46,7 @@ Syscalls
  
  The Newlib C library is a portable C library designed to be used in embedded environments as well
  as many other situations. It is made available by RedHat from the sourceware.org website, new
- releases are made at least yearly and this unit has been developed using 2.4.0 but should 
+ releases are made at least yearly and this unit has been developed using 4.4.0 but should 
  work mostly unchanged with future releases.
  
  The build process below creates the libc.a, libm.a and libg.a static libraries, in addition
@@ -66,7 +66,9 @@ Syscalls
  
   Flags: REENTRANT_SYSCALLS_PROVIDED
          __DYNAMIC_REENT__
-         __LARGE64_FILES (Note: Not currently supported by Newlib, need to modify \newlib\configure.host to enable stdio64 support for arm-none-eabi or aarch64-none-elf)
+         __LARGE64_FILES
+         _REENT_BACKWARD_BINARY_COMPAT
+         _POSIX_THREADS
       
   Options: 
   
@@ -79,7 +81,7 @@ Syscalls
     -mfpu=vfp
     -mfloat-abi=hard
    
-   Raspberry Pi2/3 and QEMU VersatilePB (32-bit)
+   Raspberry Pi2/3/4 and QEMU VersatilePB (32-bit)
 
     -mabi=aapcs
     -marm
@@ -87,7 +89,7 @@ Syscalls
     -mfpu=vfpv3-d16
     -mfloat-abi=hard
    
-   Raspberry Pi3 and QEMU VersatilePB (64-bit)
+   Raspberry Pi3/4 and QEMU VersatilePB (64-bit)
    
     -mabi=lp64 (Note: Supported only by later versions of GCC)
     -march=armv8-a
@@ -99,14 +101,22 @@ Syscalls
    Unpack to folder $HOME/newlib-4.4.0.20231231
   
 
-   Build with GCC arm-none-eabi 10.3-2021.07
+   Build with GCC arm-none-eabi 13.3.rel1
 
-   Extracted to folder $HOME/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi
+   Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
 
 
-   Build with GCC aarch64-none-elf 10.3-2021.07
+   Build with GCC aarch64-none-elf 13.3.rel1
 
-   Extracted to folder $HOME/gcc-arm-10.3-2021.07-x86_64-aarch64-none-elf
+   Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf
+
+
+   Edit $HOME/libraries/newlib-4.4.0.20231231/configure.host
+
+   Change stdio64_dir= to stdio64_dir=stdio64 
+
+
+   Install Ultibo API to $HOME/ultibo/api
 
   Build ARMv6: 
    
@@ -116,9 +126,9 @@ Syscalls
    
    cd build-newlib-armv6
    
-   export PATH=$HOME/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi/bin:$PATH
+   export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
    
-   ../newlib-4.4.0.20231231/configure --disable-multilib --target=arm-none-eabi CFLAGS_FOR_TARGET="-O2 -mabi=aapcs -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__"
+   ../newlib-4.4.0.20231231/configure --disable-multilib --target=arm-none-eabi CFLAGS_FOR_TARGET="-O2 -mabi=aapcs -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard -I$HOME/ultibo/api/include -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS"
    
    make all
    
@@ -137,9 +147,9 @@ Syscalls
  
    cd build-newlib-armv7
  
-   export PATH=$HOME/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi/bin:$PATH
+   export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
  
-   ../newlib-4.4.0.20231231/configure --disable-multilib --target=arm-none-eabi CFLAGS_FOR_TARGET="-O2 -mabi=aapcs -marm -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__"
+   ../newlib-4.4.0.20231231/configure --disable-multilib --target=arm-none-eabi CFLAGS_FOR_TARGET="-O2 -mabi=aapcs -marm -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard -I$HOME/ultibo/api/include -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS"
    
    make all
    
@@ -158,9 +168,9 @@ Syscalls
  
    cd build-newlib-armv8
   
-   export PATH=$HOME/gcc-arm-10.3-2021.07-x86_64-aarch64-none-elf/bin:$PATH
+   export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf/bin:$PATH
   
-   ../newlib-4.4.0.20231231/configure --disable-multilib --target=aarch64-none-elf CFLAGS_FOR_TARGET="-O2 -march=armv8-a -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__"
+   ../newlib-4.4.0.20231231/configure --disable-multilib --target=aarch64-none-elf CFLAGS_FOR_TARGET="-O2 -march=armv8-a -I$HOME/ultibo/api/include -DREENTRANT_SYSCALLS_PROVIDED -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS"
   
    make all
   
@@ -179,7 +189,7 @@ Syscalls
   each Ultibo handle to a TSyscallsEntry and use the functions SyscallsAddEntry, 
   SyscallsRemoveEntry and SyscallsGetEntry which start at zero and increment to 1023 (was 65535).
   
-  The global errno variable (not used for reentrant version ) is defined in 
+  The global errno variable (not used for reentrant version) is defined in 
   \newlib\libc\reent\reent.c 
    
    int errno;
@@ -234,21 +244,19 @@ unit Syscalls;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,HeapManager,Devices,FileSystem,Sockets,SysUtils;
+uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,HeapManager,Devices,FileSystem,Sockets,Crypto,Ultibo,SysUtils;
 
-//To Do //Libstdc++ support
-        
 //To Do //Which Pthreads functions are cancellation points? (Find a list)
         //See: http://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_09_05
 
-//To Do //Implementation (dummy / wrapper) for pthread_kill() and others from later specifications (barrier, spinlock etc) ?
+//To Do //Dummy / wrapper for pthread_kill()
         //See: http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/pthread.h.html
-        
-//To Do //statfs / fstatfs / statfs64 / fstatfs64      
-
-//To Do //lseek64 etc
-
-//To Do //statvfs / fstatvfs
+        //And: pthread.h
+        // pthread_atfork
+        // pthread_barrier_init / pthread_barrier_destroy / pthread_barrier_wait
+        // pthread_cond_clockwait
+        // pthread_rwlock_clockrdlock / pthread_rwlock_clockwrlock
+        // pthread_sigmask ?
 
 {==============================================================================}
 {Global definitions}
@@ -262,7 +270,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,HeapManage
 {$DEFINE SYSCALLS_CREATE_UNINITIALIZED}     {Allow uninitialized mutex, condition and rwlock variables to be created on first use (Default: On)}
 
 {--$DEFINE SYSCALLS_FILE_OFFSET64}          {Enable 64-bit file offsets for Libc calls (Default: Off)}
-{--$DEFINE SYSCALLS_LARGE64_FILES}          {Enable 64-bit file support for Libc calls (Default: Off)}
+{$DEFINE SYSCALLS_LARGE64_FILES}            {Enable 64-bit file support for Libc calls (Default: On)}
 
 {--$DEFINE _POSIX_THREAD_GUARDSIZE}         {Enable Pthread Guard Size attribute (Default: Off) (Not used by Ultibo}
 {--$DEFINE _POSIX_THREAD_CPUTIME}           {Enable Pthread CPU Time Clock Allowed attribute (Default: Off) (Not used by Ultibo}
@@ -272,6 +280,8 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,HeapManage
 {--$DEFINE _POSIX_THREAD_PROCESS_SHARED}    {Enable Pthread Mutex Process Shared attribute (Default: Off) (Not used by Ultibo}
 {--$DEFINE _POSIX_THREAD_PRIO_PROTECT}      {Enable Pthread Mutex Priority Ceiling Shared attribute (Default: Off) (Not used by Ultibo}
 {$DEFINE _UNIX98_THREAD_MUTEX_ATTRIBUTES}   {Enable Pthread Mutex Type attribute (Default: On)}
+
+{$DEFINE SYSCALLS_REENT_BACKWARD_BINARY_COMPAT} {Maintain backward compatibility (by adding reserved fields) for _reent structure (Default: On)}
 
 {==============================================================================}
 const
@@ -516,6 +526,23 @@ const
  O_EXEC            = $0400000;
  O_SEARCH          = $0400000;
  
+ {Fcntl requests}
+ F_DUPFD         = 0;  {Duplicate fildes}
+ F_GETFD         = 1;  {Get fildes flags (close on exec)}
+ F_SETFD         = 2;  {Set fildes flags (close on exec)}
+ F_GETFL         = 3;  {Get file flags}
+ F_SETFL         = 4;  {Set file flags}
+ F_GETOWN        = 5;  {Get owner - for ASYNC}
+ F_SETOWN        = 6;  {Set owner - for ASYNC}
+ F_GETLK         = 7;  {Get record-locking information}
+ F_SETLK         = 8;  {Set or Clear a record-lock (Non-Blocking)}
+ F_SETLKW        = 9;  {Set or Clear a record-lock (Blocking)}
+ F_RGETLK        = 10; {Test a remote lock to see if it is blocked}
+ F_RSETLK        = 11; {Set or unlock a remote lock}
+ F_CNVT          = 12; {Convert a fhandle to an open fd}
+ F_RSETLKW       = 13; {Set or Clear remote record-lock(Blocking)}
+ F_DUPFD_CLOEXEC = 14; {As F_DUPFD, but set close-on-exec flag}
+ 
 const 
  {Handle constants from sys/unistd.h}
  STDIN_FILENO  = 0;       {standard input file descriptor}
@@ -539,7 +566,7 @@ const
  _SC_NPROCESSORS_ONLN              = 10;
  _SC_PHYS_PAGES                    = 11;
  _SC_AVPHYS_PAGES                  = 12;
- // End of non-POSIX values.
+ {End of non-POSIX values}
  _SC_MQ_OPEN_MAX                   = 13;
  _SC_MQ_PRIO_MAX                   = 14;
  _SC_RTSIG_MAX                     = 15;
@@ -574,7 +601,7 @@ const
  _SC_THREAD_ATTR_STACKSIZE         = 44;
  _SC_THREAD_PRIORITY_SCHEDULING    = 45;
  _SC_THREAD_PRIO_INHERIT           = 46;
- // _SC_THREAD_PRIO_PROTECT was _SC_THREAD_PRIO_CEILING in early drafts
+ {_SC_THREAD_PRIO_PROTECT was _SC_THREAD_PRIO_CEILING in early drafts}
  _SC_THREAD_PRIO_PROTECT           = 47;
  _SC_THREAD_PRIO_CEILING           = _SC_THREAD_PRIO_PROTECT;
  _SC_THREAD_PROCESS_SHARED         = 48;
@@ -679,10 +706,25 @@ const
  _REENT_ASCTIME_SIZE = 26;
  _REENT_SIGNAL_SIZE = 24;
 
- _N_LISTS = 30;
- 
  _ATEXIT_SIZE = 32;  {Must be at least 32 to guarantee ANSI conformance}
  
+const
+ {Filesystem constants from sys/statfs.h}
+ {Filesystem types}
+ EXT_SUPER_MAGIC   = $137D;
+ EXT2_SUPER_MAGIC  = $EF53;
+ EXT3_SUPER_MAGIC  = $EF53;
+ EXT4_SUPER_MAGIC  = $EF53;
+ MSDOS_SUPER_MAGIC = $4d44;
+ NTFS_SB_MAGIC     = $5346544e;
+ SMB_SUPER_MAGIC   = $517b;
+
+const
+ {Filesystem constants from sys/statvfs.h}
+ {Filesystem flags}
+ ST_RDONLY = 1;
+ ST_NOSUID = 2;
+
 const
  {Scheduler constants from sched.h}
  {Scheduling Policies}
@@ -692,6 +734,12 @@ const
  {$IFDEF _POSIX_THREAD_SPORADIC_SERVER}
  SCHED_SPORADIC = 4;
  {$ENDIF}
+
+const
+ {CPU set constants from cpuset.h}
+ CPU_SETSIZE = 32;
+ _NCPUBITS = SizeOf(LongWord) * 8; {uint32_t}
+ _NCPUWORDS = (CPU_SETSIZE + _NCPUBITS - 1) div _NCPUBITS;
  
 const
  {Directory constants from dirent.h} 
@@ -824,12 +872,16 @@ type
  {$ELSE}
  {time_t = Int64;}  {int64_t} {time_t is now defined in GlobalTypes}
  {$ENDIF}
+ pid_t = int;
  off_t = PtrInt;    {long}
  off64_t = Int64;   {long long} 
  clock_t = PtrUInt; {_CLOCK_T_ in machine/types.h}{unsigned long}
  clockid_t = PtrUInt; {_CLOCK_T_ in machine/types.h}{unsigned long}
  useconds_t = PtrUInt; {unsigned long}
 
+ blkcnt_t = PtrInt;    {long}
+ blksize_t = PtrInt;    {long}
+ 
  fsblkcnt_t = uint64_t;
  fsfilcnt_t = uint32_t;
  
@@ -849,6 +901,7 @@ type
  _flock_t = int;    {_LOCK_RECURSIVE_T in lock.h}
  _fpos64_t = Int64; {long long}
  _off64_t = Int64;  {long long}
+ _pid_t = int;
  
  {Conversion state information}
  P_mbstate_value = ^T_mbstate_value;
@@ -880,6 +933,11 @@ type
  P_reent = ^T_reent;
  
  __ULong = long;
+ 
+ P__locale_t = ^T__locale_t;
+ T__locale_t = record
+  {To be defined for future use, currently treated as opaque}
+ end;
  
  P_Bigint = ^T_Bigint;
  T_Bigint = record
@@ -1041,7 +1099,10 @@ type
  {From sys/reent.h} {Note that reent.h uses an alternate version of this if _REENT_SMALL if defined however that version is not supported}
  T_reent_new = record
   case Integer of
-   0:(_unused_rand:Cardinal; {unsigned int}
+   0:(
+      {$IFDEF SYSCALLS_REENT_BACKWARD_BINARY_COMPAT}
+      _reserved_2:uint; {unsigned int}
+      {$ENDIF}  
       _strtok_last:PChar;
       _asctime_buf:array[0.._REENT_ASCTIME_SIZE - 1] of Char;
       _localtime_buf:T__tm;
@@ -1061,22 +1122,33 @@ type
       _wcsrtombs_state:T_mbstate_t;
    _h_errno:int;
      ); {_reent}
-   {Two next two fields were once used by malloc.  They are no longer used. They are used to preserve the space used before so as to allow addition of new reent fields and keep binary compatibility}
-   1:(_nextf:array[0.._N_LISTS - 1] of PChar;
-      _nmalloc:array[0.._N_LISTS - 1] of Cardinal; {unsigned int}
-     ); {_unused}
+   {$IFDEF SYSCALLS_REENT_BACKWARD_BINARY_COMPAT}
+   1:(_reserved_3:array[0..30 - 1] of PChar;
+      _reserved_4:array[0..30 - 1] of uint; {unsigned int}
+     ); {_reserved_5}
+   {$ENDIF}  
  end;
 
  T_reent = record
   _errno:int;                    {local copy of errno}
+  
   _stdin:P__FILE;                {FILE is a big struct and may change over time.  To try to achieve binary}
   _stdout:P__FILE;               {compatibility with future versions, put stdin,stdout,stderr here.}
   _stderr:P__FILE;               {These are pointers into member __sf defined below.}
+  
   _inc:int;                      {used by tmpnam}
   _emergency:array[0.._REENT_EMERGENCY_SIZE - 1] of Char;
-  _current_category:int;         {used by setlocale}
-  _current_locale:PChar;
-  __sdidinit:int;                {1 means stdio has been init'd}
+  
+  {$IFDEF SYSCALLS_REENT_BACKWARD_BINARY_COMPAT}
+  _reserved_1:int;
+  {$ENDIF}  
+  
+  _locale:P__locale_t;           {per-thread locale}
+  
+  {$IFDEF SYSCALLS_REENT_BACKWARD_BINARY_COMPAT}
+  _reserved_0:int;
+  {$ENDIF}  
+  
   __cleanup:procedure(ptr: P_reent); cdecl;
 
   {used by mprec routines}
@@ -1091,16 +1163,26 @@ type
 
   _new:T_reent_new;
   
-  {atexit stuff}
-  _atexit:P_atexit;  {points to head of LIFO stack}
-  _atexit0:T_atexit; {one guaranteed table, required by ANSI}
+  {$IFDEF SYSCALLS_REENT_BACKWARD_BINARY_COMPAT}
+  _reserved_6:P_atexit;
+  _reserved_7:T_atexit;
+  {$ENDIF}  
   
   {signal info}
   _sig_func:function(param: int): PPointer; cdecl;
   
-  {These are here last so that __FILE can grow without changing the offsets  of the above members (on the off chance that future binary compatibility  would be broken otherwise)}
-  __sglue:T_glue;             {root of glue chain}
-  __sf:array[0..2] of T__FILE;   {first three file descriptors}
+  {$IFDEF SYSCALLS_REENT_BACKWARD_BINARY_COMPAT}
+  _reserved_8:T_glue;
+  _reserved_9:array[0..2] of T__FILE;
+  {$ENDIF}  
+ end;
+
+type
+ {From sys/_timespec.h} 
+ Ptimespec = ^Ttimespec;
+ Ttimespec = record
+  tv_sec: time_t; {seconds}
+  tv_nsec: long;  {and nanoseconds}
  end;
 
 type 
@@ -1115,14 +1197,11 @@ type
   st_gid:gid_t;            // group ID of owner
   st_rdev:dev_t;           // device ID (if special file)
   st_size:off_t;           // total size, in bytes
-  st_atime:time_t;         // time of last access
-  st_spare1:long;          // spare - access nsecs
-  st_mtime:time_t;         // time of last modification
-  st_spare2:long;          // spare - mod nsecs
-  st_ctime:time_t;         // time of last status change
-  st_spare3:long;          // spare - change nsecs
-  st_blksize:long;         // blocksize for file system I/O
-  st_blocks:long;          // number of 512B blocks allocated
+  st_atime:Ttimespec;      // time of last access
+  st_mtime:Ttimespec;      // time of last modification
+  st_ctime:Ttimespec;      // time of last status change
+  st_blksize:blksize_t;    // blocksize for file system I/O
+  st_blocks:blkcnt_t;      // number of 512B blocks allocated
   st_spare4:array [0..1] of long;
  end;
 
@@ -1155,6 +1234,50 @@ type
 
 {$IFDEF SYSCALLS_EXPORT_SOCKETS} 
 type
+ {From linux/netdb.h} 
+ {Socket types}
+ Psocklen_t = ^socklen_t;
+ socklen_t = uint;
+ 
+ {Structures returned by network data base library}
+ P_hostent = ^T_hostent;
+ T_hostent = record
+  h_name: PChar;             {official name of host}
+  h_aliases: ^PChar;         {alias list}
+  h_addrtype: int;           {host address type}
+  h_length: int;             {length of address}
+  case Byte of
+   0: (h_addr_list: ^PChar); {list of addresses from name server}
+   1: (h_addr: ^PChar);      {address, for backward compatibility}
+ end;
+
+ P_netent = ^T_netent;
+ T_netent = record
+  n_name: PChar;     {official name of net}
+  n_aliases: ^PChar; {alias list}
+  n_addrtype: int;   {net address type}
+  n_net: uint32_t;   {network #}
+ end;
+
+ P_servent = ^T_servent;
+ T_servent = record
+  s_name: PChar;     {official service name}
+  s_aliases: ^PChar; {alias list}
+  s_port: int;       {port #}
+  s_proto: PChar;    {protocol to use}
+ end;
+ 
+ P_protoent = ^T_protoent;
+ T_protoent = record
+  p_name: PChar;     {official protocol name}
+  p_aliases: ^PChar; {alias list}
+  p_proto: int;      {protocol #}
+ end;
+ 
+ {From linux/arpa/inet.h}
+ in_addr_t = Cardinal; {uint32_t}
+
+type
  {From sys/select.h}
  fd_mask = PtrUInt; {unsigned long}
  
@@ -1162,15 +1285,41 @@ type
  Tfd_set = record
   fds_bits: array[0..(FD_SETSIZE div NFDBITS) - 1] of fd_mask
  end;
-{$ENDIF}
  
 type
- {From sys/_timespec.h} 
- Ptimespec = ^Ttimespec;
- Ttimespec = record
-  tv_sec: time_t; {seconds}
-  tv_nsec: long;  {and nanoseconds}
+ {From sys/_iovec.h} 
+ Piovec = ^Tiovec;
+ Tiovec = record
+  iov_base: Pointer;  {Base address}
+  iov_len: size_t;    {Length}
  end;
+
+type
+ {From sys/socket.h} 
+ {Message header for recvmsg and sendmsg calls}
+ {Used value-result for recvmsg, value only for sendmsg}
+ Pmsghdr = ^Tmsghdr;
+ Tmsghdr = record
+  msg_name: Pointer;         {optional address}
+  msg_namelen: socklen_t;    {size of address}
+  msg_iov: Piovec;           {scatter/gather array}
+  msg_iovlen: int;           {elements in msg_iov}
+  msg_control: Pointer;      {ancillary data, see below}
+  msg_controllen: socklen_t; {ancillary data buffer len}
+  msg_flags: int;            {flags on received message}
+ end;
+ 
+ {Header for ancillary data objects in msg_control buffer}
+ {Used for additional information with/about a datagram}
+ {not expressible by flags.  The format is a sequence}
+ {of message elements headed by Tcmsghdr structures}
+ Pcmsghdr = ^Tcmsghdr;
+ Tcmsghdr = record
+  cmsg_len: socklen_t; {data byte count, including hdr}
+  cmsg_level: int;     {originating protocol}
+  cmsg_type: int;      {protocol-specific type}
+ end;
+{$ENDIF}
  
 type 
  {From sys/statfs.h}
@@ -1180,78 +1329,88 @@ type
 
  Pstatfs = ^Tstatfs;
  Tstatfs = record
-  f_type: uint32_t;
-  f_bsize: uint32_t;
-  f_blocks: uint32_t;
-  f_bfree: uint32_t;
-  f_bavail: uint32_t;
-  f_files: uint32_t;
-  f_ffree: uint32_t;
-  f_fsid: fsid_t;
-  f_namelen: uint32_t;
-  f_frsize: uint32_t;
-  f_flags: uint32_t;
-  f_spare: array[0..3] of uint32_t;
+  f_type: uint32_t;    {Type of filesystem (see above)}
+  f_bsize: uint32_t;   {Optimal transfer block size}
+  {$IFNDEF SYSCALLS_FILE_OFFSET64}  
+  f_blocks: uint32_t;  {Total data blocks in filesystem}
+  f_bfree: uint32_t;   {Free blocks in filesystem}
+  f_bavail: uint32_t;  {Free blocks available to unprivileged user}
+  f_files: uint32_t;   {Total inodes in filesystem}
+  f_ffree: uint32_t;   {Free inodes in filesystem}
+  {$ELSE}
+  f_blocks: uint64_t;  {Total data blocks in filesystem}
+  f_bfree: uint64_t;   {Free blocks in filesystem}
+  f_bavail: uint64_t;  {Free blocks available to unprivileged user}
+  f_files: uint64_t;   {Total inodes in filesystem}
+  f_ffree: uint64_t;   {Free inodes in filesystem}
+  {$ENDIF}
+  f_fsid: fsid_t;      {Filesystem ID}
+  f_namelen: uint32_t; {Maximum length of filenames}
+  f_frsize: uint32_t;  {Fragment size (since Linux 2.6)}
+  f_flags: uint32_t;   {Mount flags of filesystem (since Linux 2.6.36)}
+  f_spare: array[0..3] of uint32_t; {Padding bytes reserved for future use}
  end;
 
+ {$IFDEF SYSCALLS_LARGE64_FILES}
  Pstatfs64 = ^Tstatfs64;
  Tstatfs64 = record
-  f_type: uint64_t;
-  f_bsize: uint64_t;
-  f_blocks: uint64_t;
-  f_bfree: uint64_t;
-  f_bavail: uint64_t;
-  f_files: uint64_t;
-  f_ffree: uint64_t;
-  f_fsid: fsid_t;
-  f_namelen: uint32_t;
-  f_frsize: uint32_t;
-  f_flags: uint32_t;
-  f_spare: array[0..3] of uint32_t;
+  f_type: uint32_t;    {Type of filesystem (see above)}
+  f_bsize: uint32_t;   {Optimal transfer block size}
+  f_blocks: uint64_t;  {Total data blocks in filesystem}
+  f_bfree: uint64_t;   {Free blocks in filesystem}
+  f_bavail: uint64_t;  {Free blocks available to unprivileged user}
+  f_files: uint64_t;   {Total inodes in filesystem}
+  f_ffree: uint64_t;   {Free inodes in filesystem}
+  f_fsid: fsid_t;      {Filesystem ID}
+  f_namelen: uint32_t; {Maximum length of filenames}
+  f_frsize: uint32_t;  {Fragment size (since Linux 2.6)}
+  f_flags: uint32_t;   {Mount flags of filesystem (since Linux 2.6.36)}
+  f_spare: array[0..3] of uint32_t; {Padding bytes reserved for future use}
  end;
+ {$ENDIF}
  
 type 
  {From sys/statvfs.h}
  Pstatvfs = ^Tstatvfs;
  Tstatvfs = record
-  f_bsize: PtrUInt;
-  f_frsize: PtrUInt;
-  {$IFNDEF SYSCALLS_FILE_OFFSET64}  
-  f_blocks: fsblkcnt_t;
-  f_bfree: fsblkcnt_t;
-  f_bavail: fsblkcnt_t;
-  f_files: fsfilcnt_t;
-  f_ffree: fsfilcnt_t;
-  f_favail: fsfilcnt_t;
+  f_bsize: PtrUInt;       {File system block size} {unsigned long}
+  f_frsize: PtrUInt;      {Fundamental file system block size} {unsigned long}
+  {$IFNDEF SYSCALLS_FILE_OFFSET64}
+  f_blocks: fsblkcnt_t;   {Total number of blocks on file system in units of f_frsize}
+  f_bfree: fsblkcnt_t;    {Total number of free blocks}
+  f_bavail: fsblkcnt_t;   {Number of free blocks available to non-privileged process}
+  f_files: fsfilcnt_t;    {Total number of file serial numbers}
+  f_ffree: fsfilcnt_t;    {Total number of free file serial numbers}
+  f_favail: fsfilcnt_t;   {Number of file serial numbers available to non-privileged process.}
   {$ELSE}
-  f_blocks: fsblkcnt64_t;
-  f_bfree: fsblkcnt64_t;
-  f_bavail: fsblkcnt64_t;
-  f_files: fsfilcnt64_t;
-  f_ffree: fsfilcnt64_t;
-  f_favail: fsfilcnt64_t;
+  f_blocks: fsblkcnt64_t; {Total number of blocks on file system in units of f_frsize}
+  f_bfree: fsblkcnt64_t;  {Total number of free blocks}
+  f_bavail: fsblkcnt64_t; {Number of free blocks available to non-privileged process}
+  f_files: fsfilcnt64_t;  {Total number of file serial numbers}
+  f_ffree: fsfilcnt64_t;  {Total number of free file serial numbers}
+  f_favail: fsfilcnt64_t; {Number of file serial numbers available to non-privileged process.}
   {$ENDIF}
-  f_fsid: PtrUInt;
-  f_flag: PtrUInt;
-  f_namemax: PtrUInt;
-  __f_spare: array[0..5] of int;
+  f_fsid: fsid_t;         {File system ID}
+  f_flag: PtrUInt;        {Bit mask of f_flag values} {unsigned long}
+  f_namemax: PtrUInt;     { Maximum filename length} {unsigned long}
+  __f_spare: array[0..5] of uint; {Padding bytes reserved for future use} {unsigned int}
  end;
  
- {$IFDEF SYSCALLS_LARGE64_FILES}  
+ {$IFDEF SYSCALLS_LARGE64_FILES}
  Pstatvfs64 = ^Tstatvfs64;
  Tstatvfs64 = record
-  f_bsize: PtrUInt;
-  f_frsize: PtrUInt;
-  f_blocks: fsblkcnt64_t;
-  f_bfree: fsblkcnt64_t;
-  f_bavail: fsblkcnt64_t;
-  f_files: fsfilcnt64_t;
-  f_ffree: fsfilcnt64_t;
-  f_favail: fsfilcnt64_t;
-  f_fsid: PtrUInt;
-  f_flag: PtrUInt;
-  f_namemax: PtrUInt;
-  __f_spare[6]: array[0..5] of int;
+  f_bsize: PtrUInt;       {File system block size} {unsigned long}
+  f_frsize: PtrUInt;      {Fundamental file system block size} {unsigned long}
+  f_blocks: fsblkcnt64_t; {Total number of blocks on file system in units of f_frsize}
+  f_bfree: fsblkcnt64_t;  {Total number of free blocks}
+  f_bavail: fsblkcnt64_t; {Number of free blocks available to non-privileged process}
+  f_files: fsfilcnt64_t;  {Total number of file serial numbers}
+  f_ffree: fsfilcnt64_t;  {Total number of free file serial numbers}
+  f_favail: fsfilcnt64_t; {Number of file serial numbers available to non-privileged process.}
+  f_fsid: fsid_t;         {File system ID}
+  f_flag: PtrUInt;        {Bit mask of f_flag values} {unsigned long}
+  f_namemax: PtrUInt;     { Maximum filename length} {unsigned long}
+  __f_spare: array[0..5] of uint; {Padding bytes reserved for future use} {unsigned int}
  end;
  {$ENDIF}
  
@@ -1267,6 +1426,14 @@ type
   sched_ss_max_repl: int;          {Maximum pending replenishments for sporadic server}
   {$ENDIF}
  end;
+
+type
+ {From cpuset.h}
+ cpu_set_word_t = uint32_t;
+ cpu_set_t = record
+  __bits: array[0.._NCPUWORDS - 1] of cpu_set_word_t;
+ end;
+ Pcpu_set_t = ^cpu_set_t;
 
 type
  {From dirent.h}
@@ -1311,7 +1478,7 @@ type
 type
  {From sys/types.h}
  {Pthread types}
- pthread_t = Cardinal; {uint32_t}
+ pthread_t = PtrUInt; {unsigned long}
  Ppthread_t = ^pthread_t;
  
  Ppthread_attr_t = ^Tpthread_attr_t;
@@ -1333,7 +1500,7 @@ type
  end;
  
  {Pthread Mutex types}
- pthread_mutex_t = Cardinal; {uint32_t}
+ pthread_mutex_t = PtrUInt; {unsigned long}
  Ppthread_mutex_t = ^pthread_mutex_t;
  
  Ppthread_mutexattr_t = ^Tpthread_mutexattr_t;
@@ -1353,7 +1520,7 @@ type
  end;  
  
  {Pthread Condition Variable types}
- pthread_cond_t = Cardinal; {uint32_t}
+ pthread_cond_t = PtrUInt; {unsigned long}
  Ppthread_cond_t = ^pthread_cond_t;
  
  Ppthread_condattr_t = ^Tpthread_condattr_t;
@@ -1366,7 +1533,7 @@ type
  end;
  
  {Pthread Key types}
- pthread_key_t = Cardinal; {uint32_t}
+ pthread_key_t = PtrUInt; {unsigned long}
  Ppthread_key_t = ^pthread_key_t;
  
  Ppthread_once_t = ^Tpthread_once_t;
@@ -1376,7 +1543,7 @@ type
  end;
  
  {Pthread Barrier types}
- pthread_barrier_t = Cardinal; {uint32_t}
+ pthread_barrier_t = PtrUInt; {unsigned long}
  Ppthread_barrier_t = ^pthread_barrier_t;
  
  Ppthread_barrierattr_t = ^Tpthread_barrierattr_t;
@@ -1388,11 +1555,11 @@ type
  end; 
  
  {Pthread Spin Lock types}
- pthread_spinlock_t = Cardinal; {uint32_t}
+ pthread_spinlock_t = PtrUInt; {unsigned long}
  Ppthread_spinlock_t = ^pthread_spinlock_t;
  
  {Pthread Reader/Writer Lock types}
- pthread_rwlock_t = Cardinal; {uint32_t}
+ pthread_rwlock_t = PtrUInt; {unsigned long}
  Ppthread_rwlock_t = ^pthread_rwlock_t;
  
  Ppthread_rwlockattr_t = ^Tpthread_rwlockattr_t;
@@ -1414,21 +1581,14 @@ type
  sem_t = Cardinal; {uint32_t} {sem_t should be opaque to the user}
  Psem_t = ^sem_t;
  
-type
- {From linux/netdb.h} 
- {Socket types}
- Psocklen_t = ^socklen_t;
- socklen_t = uint;
- 
- {From linux/arpa/inet.h}
- in_addr_t = Cardinal; {uint32_t}
- 
 {==============================================================================}
 var
  {Syscalls specific variables}
- environ:PPAnsiChar; external;  {Pointer to the global environment block in the C library}
+ environ:PPAnsiChar; external;           {Pointer to the global environment block in the C library (\newlib\libc\stdlib\environ.c)}
+ __sf:array[0..2] of T__FILE; external;  {First three file descriptors in the C library (\newlib\libc\stdio\findfp.c)}
+ __sglue:T_glue; external;               {Root of glue chain in the C library (\newlib\libc\stdio\findfp.c)}
  
- __dso_handle:Pointer; cvar;    {Dynamic shared object handle for C++ library support}
+ __dso_handle:Pointer; cvar;             {Dynamic shared object handle for C++ library support}
  
 var
  {Static initialization variables}
@@ -1508,12 +1668,18 @@ function _times_r(ptr: P_reent; tms: Ptms): clock_t; cdecl; public name '_times_
 function _unlink_r(ptr: P_reent; name: PChar): int; cdecl; public name '_unlink_r';
 
 function _write_r(ptr: P_reent; fd: int; buf: Pointer; cnt: size_t): _ssize_t; cdecl; public name '_write_r';
+
+function _getentropy_r(ptr: P_reent; buffer: Pointer; length: size_t): int; cdecl; public name '_getentropy_r';
        
 {==============================================================================}
 {Syscalls Functions (Stat)}
 function mkdir(path: PChar; mode: mode_t): int; cdecl; public name 'mkdir';
 function chmod(path: PChar; mode: mode_t): int; cdecl; public name 'chmod';
-     
+
+{==============================================================================}
+{Syscalls Functions (Stdio)}
+procedure __sinit(ptr: P_reent); cdecl; external libc name '__sinit';
+
 {==============================================================================}
 {Syscalls Functions (Stdlib)}
 function malloc(size: size_t): Pointer; cdecl; external libc name 'malloc';
@@ -1528,9 +1694,17 @@ function unsetenv(name: PChar): int; cdecl; public name 'unsetenv';
 
 {==============================================================================}
 {Syscalls Functions (Unistd)}
+function chdir(path: PChar): int; cdecl; public name 'chdir';
+
 function dup(oldfd: int): int; cdecl; public name 'dup';
 function dup2(oldfd, newfd: int): int; cdecl; public name 'dup2';
 function dup3(oldfd, newfd, flags: int): int; cdecl; public name 'dup3';
+ 
+function getentropy(buffer: Pointer; length: size_t): int; cdecl; public name 'getentropy';
+ 
+function link(path1, path2: PChar): int; cdecl; public name 'link';
+
+function rmdir(path: PChar): int; cdecl; public name 'rmdir';
  
 function sysconf(name: int): int; cdecl; public name 'sysconf';
 
@@ -1540,6 +1714,8 @@ function ssleep(seconds: uint): uint; cdecl; public name 'sleep';
 function usleep(useconds: useconds_t): int; cdecl; public name 'usleep';
 
 function symlink(path1, path2: PChar): int; cdecl; public name 'symlink';
+
+function unlink(path: PChar): int; cdecl; public name 'unlink';
 
 function ftruncate(fd: int; length: off_t): int; cdecl; public name 'ftruncate';
 function truncate(path: PChar; length: off_t): int; cdecl; public name 'truncate';
@@ -1567,22 +1743,30 @@ function nanosleep(req, rem: Ptimespec): int; cdecl; public name 'nanosleep';
 function statfs(path: PChar; buf: Pstatfs): int; cdecl; public name 'statfs';
 function fstatfs(fd: int; buf: Pstatfs): int; cdecl; public name 'fstatfs';
 
+{$IFDEF SYSCALLS_LARGE64_FILES}  
 function statfs64(path: PChar; buf: Pstatfs64): int; cdecl; public name 'statfs64';
 function fstatfs64(fd: int; buf: Pstatfs64): int; cdecl; public name 'fstatfs64';
-    
+{$ENDIF}
 {==============================================================================}
 {Syscalls Functions (Statvfs)}
 function statvfs(path: PChar; buf: Pstatvfs): int; cdecl; public name 'statvfs';
 function fstatvfs(fd: int; buf: Pstatvfs): int; cdecl; public name 'fstatvfs';
-    
+
+{$IFDEF SYSCALLS_LARGE64_FILES}  
+function statvfs64(path: PChar; buf: Pstatvfs64): int; cdecl; public name 'statvfs64';
+function fstatvfs64(fd: int; buf: Pstatvfs64): int; cdecl; public name 'fstatvfs64';
+{$ENDIF}
 {==============================================================================}
 {Syscalls Functions (Sched)}
-//To Do //http://man7.org/linux/man-pages/man2/sched_setaffinity.2.html
-//int sched_getaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask);
-//int sched_setaffinity(pid_t pid, size_t cpusetsize, const cpu_set_t *mask);
+function sched_yield: int; cdecl; public name 'sched_yield';
 
-function sched_get_priority_max(policy: int): int; cdecl; public name 'sched_get_priority_max'; 
-function sched_get_priority_min(policy: int): int; cdecl; public name 'sched_get_priority_min';  
+function sched_getcpu: int; cdecl; public name 'sched_getcpu';
+
+function sched_getaffinity(pid: pid_t; cpusetsize: size_t; mask: Pcpu_set_t): int; cdecl; public name 'sched_getaffinity';
+function sched_setaffinity(pid: pid_t; cpusetsize: size_t; mask: Pcpu_set_t): int; cdecl; public name 'sched_setaffinity';
+
+function sched_get_priority_max(policy: int): int; cdecl; public name 'sched_get_priority_max';
+function sched_get_priority_min(policy: int): int; cdecl; public name 'sched_get_priority_min';
 
 {==============================================================================}
 {Syscalls Functions (Dirent)}
@@ -1643,10 +1827,13 @@ procedure pthread_exit(value_ptr: Pointer); cdecl; public name 'pthread_exit';
 function pthread_equal(t1: pthread_t; t2: pthread_t): int; cdecl; public name 'pthread_equal';
 function pthread_join(thread: pthread_t; value_ptr: PPointer): int; cdecl; public name 'pthread_join';
 function pthread_self: pthread_t; cdecl; public name 'pthread_self';
+procedure pthread_yield; cdecl; public name 'pthread_yield';
 function pthread_getconcurrency: int; cdecl; public name 'pthread_getconcurrency';
 function pthread_setconcurrency(new_level: int): int; cdecl; public name 'pthread_setconcurrency';
 function pthread_getschedparam(thread: pthread_t; policy: Pint; param: Psched_param): int; cdecl; public name 'pthread_getschedparam';
 function pthread_setschedparam(thread: pthread_t; policy: int; param: Psched_param): int; cdecl; public name 'pthread_setschedparam';
+function pthread_setschedprio(thread: pthread_t; prio: int): int; cdecl; public name 'pthread_setschedprio';
+function pthread_getcpuclockid(thread: pthread_t; var clock_id: clockid_t): int; cdecl; public name 'pthread_getcpuclockid';
 
 function pthread_key_create(key: Ppthread_key_t; destructor_routine: Tpthread_destructor_routine): int; cdecl; public name 'pthread_key_create';
 function pthread_key_delete(key: pthread_key_t): int; cdecl; public name 'pthread_key_delete';
@@ -1673,6 +1860,12 @@ function pthread_mutexattr_gettype(attr: Ppthread_mutexattr_t; _type: Pint): int
 function pthread_mutexattr_settype(attr: Ppthread_mutexattr_t; _type: int): int; cdecl; public name 'pthread_mutexattr_settype';
 
 function pthread_once(once_control: Ppthread_once_t; init_routine: Tpthread_init_routine): int; cdecl; public name 'pthread_once';
+
+function pthread_spin_init(spinlock: Ppthread_spinlock_t; pshared: Pint): int; cdecl; public name 'pthread_spin_init';
+function pthread_spin_destroy(spinlock: Ppthread_spinlock_t): int; cdecl; public name 'pthread_spin_destroy';
+function pthread_spin_lock(_spinlock: Ppthread_spinlock_t): int; cdecl; public name 'pthread_spin_lock';
+function pthread_spin_trylock(_spinlock: Ppthread_spinlock_t): int; cdecl; public name 'pthread_spin_trylock';
+function pthread_spin_unlock(spinlock: Ppthread_spinlock_t): int; cdecl; public name 'pthread_spin_unlock';
 
 function pthread_rwlock_init(rwlock: Ppthread_rwlock_t ; attr: Ppthread_rwlockattr_t): int; cdecl; public name 'pthread_rwlock_init';
 function pthread_rwlock_destroy(rwlock: Ppthread_rwlock_t): int; cdecl; public name 'pthread_rwlock_destroy';
@@ -1721,10 +1914,10 @@ function socket_getsockopt(socket: int; level, option_name: int; option_value: P
 function socket_listen(socket: int; backlog: int): int; cdecl; public name 'listen';
 function socket_recv(socket: int; buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl; public name 'recv';
 function socket_recvfrom(socket: int; buffer: Pointer; len: size_t; flags: int; address: psockaddr; address_len: Psocklen_t): ssize_t; cdecl; public name 'recvfrom';
-//function socket_recvmsg //ssize_t recvmsg(int socket, struct msghdr *message, int flags); //To Do
+function socket_recvmsg(socket: int; message: Pmsghdr; flags: int): ssize_t; cdecl; public name 'recvmsg';
 function socket_send(socket: int; buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl; public name 'send';
 function socket_sendto(socket: int; buffer: Pointer; len: size_t; flags: int; dest_addr: psockaddr; dest_len: socklen_t): ssize_t; cdecl; public name 'sendto';
-//function socket_sendmsg //ssize_t sendmsg(int socket, const struct msghdr *message, int flags); //To Do
+function socket_sendmsg(socket: int; message: Pmsghdr; flags: int): ssize_t; cdecl; public name 'sendmsg';
 function socket_setsockopt(socket: int; level, option_name: int; option_value: Pointer; option_len: socklen_t): int; cdecl; public name 'setsockopt';
 function socket_shutdown(socket: int; how: int): int; cdecl; public name 'shutdown';
 function socket_socket(domain, sockettype, protocol: int): int; cdecl; public name 'socket';
@@ -1747,17 +1940,17 @@ function socket_inet_pton(af: int; src: PChar; dst: Pointer): int; cdecl; public
 function socket_inet_ntop(af: int; src: Pointer; dst: PChar; size: socklen_t): PChar; cdecl; public name '__inet_ntop';  
 
 {From netdb.h}
-function socket_gethostbyaddr(addr: Pointer; len: socklen_t; family: int): PHostEnt; cdecl; public name 'gethostbyaddr';
-function socket_gethostbyname(name: PChar): PHostEnt; cdecl; public name 'gethostbyname';
+function socket_gethostbyaddr(addr: Pointer; len: socklen_t; family: int): P_hostent; cdecl; public name 'gethostbyaddr';
+function socket_gethostbyname(name: PChar): P_hostent; cdecl; public name 'gethostbyname';
 
-function socket_getnetbyaddr(net: uint32_t; family: int): PNetEnt; cdecl; public name 'getnetbyaddr';
-function socket_getnetbyname(name: PChar): PNetEnt; cdecl; public name 'getnetbyname';
+function socket_getnetbyaddr(net: uint32_t; family: int): P_netent; cdecl; public name 'getnetbyaddr';
+function socket_getnetbyname(name: PChar): P_netent; cdecl; public name 'getnetbyname';
 
-function socket_getservbyport(port: int; proto: PChar): PServEnt; cdecl; public name 'getservbyport';
-function socket_getservbyname(name, proto: PChar): PServEnt; cdecl; public name 'getservbyname';
+function socket_getservbyport(port: int; proto: PChar): P_servent; cdecl; public name 'getservbyport';
+function socket_getservbyname(name, proto: PChar): P_servent; cdecl; public name 'getservbyname';
 
-function socket_getprotobynumber(proto: int): PProtoEnt; cdecl; public name 'getprotobynumber';
-function socket_getprotobyname(name: PChar): PProtoEnt; cdecl; public name 'getprotobyname';
+function socket_getprotobynumber(proto: int): P_protoent; cdecl; public name 'getprotobynumber';
+function socket_getprotobyname(name: PChar): P_protoent; cdecl; public name 'getprotobyname';
        
 function socket_getaddrinfo(node: PChar; service: PChar; hints: PAddrInfo; var res: PAddrInfo): int; cdecl; public name 'getaddrinfo';   
 function socket_getnameinfo(addr: PSockAddr; addrlen: socklen_t; host: PChar; hostlen: socklen_t; serv: PChar; servlen: socklen_t; flags: int): int; cdecl; public name 'getnameinfo';   
@@ -1771,6 +1964,7 @@ procedure _longjmp(var env: jmp_buf; val: int); cdecl; public name '_longjmp';
 {==============================================================================}
 {Syscalls Functions (Non Standard)}
 procedure msleep(msecs: uint); cdecl; public name 'msleep';
+function gettid: pid_t; cdecl; public name 'gettid';
 
 {==============================================================================}
 {Syscalls Helper Functions}
@@ -1817,13 +2011,15 @@ const
  {Syscalls specific constants}
  SYSCALLS_THREAD_NAME = 'POSIX Thread'; {Name of a Posix Thread}
  
- SYSCALLS_TABLE_MIN = 3;     {Skip Stdin, Stdout, Stderr}
- SYSCALLS_TABLE_MAX = 1023;  {Only support 16-bit handles} {Reduced from 65535}
- SYSCALLS_TABLE_MASK = $F;   {16 buckets for handle lookups}
- 
+ SYSCALLS_TABLE_MIN  = 3;    {Skip Stdin, Stdout, Stderr}
+ SYSCALLS_TABLE_MAX  = 1023; {Only support 16-bit handles} {Reduced from 65535}
+ SYSCALLS_TABLE_MASK = $1F;  {32 buckets for handle lookups}
+  
  SYSCALLS_ENTRY_NONE   = 0;
  SYSCALLS_ENTRY_FILE   = 1;
  SYSCALLS_ENTRY_SOCKET = 2;
+ 
+ SYSCALLS_INVALID_FILENO = LongWord(-1);
  
 {$IFDEF SYSCALLS_EXPORT_SOCKETS}  
  {Syscalls FD set constants}
@@ -1855,6 +2051,16 @@ type
   Prev:PSyscallsEntry;
   Next:PSyscallsEntry;
  end;
+ 
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
+ PSyscallsNetdb = ^TSyscallsNetdb;
+ TSyscallsNetdb = record
+  HostEnt:T_hostent;
+  NetEnt:T_netent;
+  ServEnt:T_servent;
+  ProtoEnt:T_protoent;
+ end;
+{$ENDIF} 
  
  PSyscallsHeapBlock = ^TSyscallsHeapBlock;
  TSyscallsHeapBlock = record
@@ -1903,6 +2109,11 @@ var
  SyscallsReentSize:LongWord;
  SyscallsReentIndex:LongWord;     {Newlib reent structure TLS index} 
  
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
+ SyscallsNetdbSize:LongWord;
+ SyscallsNetdbIndex:LongWord;     {Sockets netdb structure TLS index}
+{$ENDIF} 
+ 
  SyscallsMallocLock:TMutexHandle = INVALID_HANDLE_VALUE;
  SyscallsEnvLock:TMutexHandle = INVALID_HANDLE_VALUE;
 
@@ -1924,10 +2135,6 @@ var
  
  SyscallsEnvSetHandler:TEnvironmentSet;  {System EnvironmentSet handler (Replaced to allow updating C environment)}
  
- //To Do //Continuing 
- 
- //__exidx_end //__exidx_start //__dso_handle //TestingLIBSTDC++ //Possibly not required, used internally by Libgcc etc?
- 
 {==============================================================================}
 {==============================================================================}
 {Forward Declarations}
@@ -1936,9 +2143,17 @@ function socket_get_error(error: int): int; forward;
 function SyscallsGetStat(Handle:THandle;stat:Pstat):Boolean; forward;
 function SyscallsGetStat64(Handle:THandle;stat64:Pstat64):Boolean; forward;
 
+function SyscallsGetStatfs(const Path:String;statfs:Pstatfs):Boolean; forward;
+{$IFDEF SYSCALLS_LARGE64_FILES}
+function SyscallsGetStatfs64(const Path:String;statfs64:Pstatfs64):Boolean; forward;
+{$ENDIF}
+function SyscallsGetStatvfs(const Path:String;statvfs:Pstatvfs):Boolean; forward;
+{$IFDEF SYSCALLS_LARGE64_FILES}
+function SyscallsGetStatvfs64(const Path:String;statvfs64:Pstatvfs64):Boolean; forward;
+{$ENDIF}
 function SyscallsGetEntry(Number:LongWord):PSyscallsEntry; forward;
 function SyscallsFindEntry(Handle:THandle):PSyscallsEntry; forward;
-function SyscallsAddEntry(Handle:THandle;Source:LongWord):PSyscallsEntry; forward;
+function SyscallsAddEntry(Handle:THandle;Source,Origin,Number:LongWord):PSyscallsEntry; forward;
 function SyscallsRemoveEntry(Entry:PSyscallsEntry):Boolean; forward;
 
 function SyscallsInitializeHeap:Boolean; forward;
@@ -1979,6 +2194,18 @@ begin
    if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to allocate Syscalls Reent TLS index');
   end;
  
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
+ {Set Netdb TLS Size}
+ SyscallsNetdbSize:=SizeOf(TSyscallsNetdb);
+ 
+ {Allocate Netdb TLS Index}
+ SyscallsNetdbIndex:=ThreadAllocTlsIndexEx(THREAD_TLS_FLAG_FREE);
+ if SyscallsNetdbIndex = TLS_OUT_OF_INDEXES then
+  begin
+   if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to allocate Syscalls Netdb TLS index');
+  end;
+{$ENDIF} 
+
  {Set Pthread TLS Size}
  SyscallsPthreadSize:=SizeOf(TSyscallsPthread);
  
@@ -2196,43 +2423,43 @@ begin
  {$ENDIF}
  
  {Check descriptor}
- if (fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO) then
+ Entry:=SyscallsGetEntry(fd);
+ if Entry <> nil then
   begin
-   {Stdin, Stdout, Stderr}
-   Result:=0;
+   {Normal descriptor}
+   if Entry^.Source = SYSCALLS_ENTRY_FILE then
+    begin
+     {Close file}
+     FSFileClose(Entry^.Handle);
+
+     {Return Result}
+     Result:=0;
+    end
+   {$IFDEF SYSCALLS_EXPORT_SOCKETS}
+   else if Entry^.Source = SYSCALLS_ENTRY_SOCKET then
+    begin
+     {Close socket}
+     Result:=Sockets.CloseSocket(Entry^.Handle);
+
+     {Check Error}
+     if Result = SOCKET_ERROR then ptr^._errno:=socket_get_error(Sockets.SocketError());
+    end
+   {$ENDIF}
+   else
+    begin
+     {Return Error}
+     ptr^._errno:=EINVAL;
+    end;
+
+   {Remove Entry}
+   SyscallsRemoveEntry(Entry);
   end
  else
   begin
-   {Normal file}
-   Entry:=SyscallsGetEntry(fd);
-   if Entry <> nil then
+   if (fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO) then
     begin
-     if Entry^.Source = SYSCALLS_ENTRY_FILE then
-      begin
-       {Close file}
-       FSFileClose(Entry^.Handle);
-
-       {Return Result}
-       Result:=0;
-      end
-     {$IFDEF SYSCALLS_EXPORT_SOCKETS}
-     else if Entry^.Source = SYSCALLS_ENTRY_SOCKET then
-      begin
-       {Close socket}
-       Result:=Sockets.CloseSocket(Entry^.Handle);
-       
-       {Check Error}
-       if Result = SOCKET_ERROR then ptr^._errno:=socket_get_error(Sockets.SocketError());
-      end
-     {$ENDIF}
-     else
-      begin
-       {Return Error}
-       ptr^._errno:=EINVAL;
-      end;
-
-     {Remove Entry}
-     SyscallsRemoveEntry(Entry); 
+     {Stdin, Stdout, Stderr}
+     Result:=0;
     end
    else
     begin
@@ -2240,7 +2467,7 @@ begin
      ptr^._errno:=EBADF;
     end;
   end;
-  
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _close_r (Result=' + IntToStr(Result) + ')');
  {$ENDIF}
@@ -2332,7 +2559,9 @@ function _fcntl_r(ptr: P_reent; fd: int; cmd:int; arg:int): int; cdecl;
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
+ Handle:THandle;
  Entry:PSyscallsEntry;
+ Duplicate:PSyscallsEntry;
 begin
  {}
  Result:=-1;
@@ -2341,18 +2570,43 @@ begin
  if ptr = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _fcntl_r (ptr=' + PtrToHex(ptr) + ' cmd=' + IntToStr(cmd) + ' arg=' + IntToStr(arg) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _fcntl_r (ptr=' + PtrToHex(ptr) + ' fd=' + IntToStr(fd) + ' cmd=' + IntToStr(cmd) + ' arg=' + IntToStr(arg) + ')');
  {$ENDIF}
  
  {Get Entry}
  Entry:=SyscallsGetEntry(fd);
  if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
   begin
-  
-   //To Do //Implement any that are required
-   
-   {Return Error}
-   ptr^._errno:=EINVAL;
+   case cmd of
+    F_DUPFD,
+    F_DUPFD_CLOEXEC:begin
+      {Duplicate file descriptor}
+      Handle:=FSDuplicateHandle(Entry^.Handle);
+      if Handle = INVALID_HANDLE_VALUE then
+       begin
+        {Return Error}
+        ptr^._errno:=EINVAL;
+        Exit;
+       end;
+
+      {Add Duplicate Entry (Lowest file number greater than or equal to arg)}
+      Duplicate:=SyscallsAddEntry(Handle,SYSCALLS_ENTRY_FILE,arg,SYSCALLS_INVALID_FILENO);
+      if Duplicate = nil then
+       begin
+        {Return Error}
+        ptr^._errno:=ENOMEM;
+        Exit;
+       end;
+
+      {Return Result}
+      Result:=Duplicate^.Number;
+     end;
+    else
+     begin
+      {Return Error}
+      ptr^._errno:=EINVAL;
+     end; 
+   end;
   end
  else 
   begin
@@ -2389,32 +2643,32 @@ begin
  if stat = nil then Exit;
  
  {Check descriptor}
- if (fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO) then
+ Entry:=SyscallsGetEntry(fd);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
   begin
-   {Stdin, Stdout, Stderr}
-   FillChar(stat^,SizeOf(Tstat64),0);
-   stat^.st_mode:=_S_IFCHR;
+   {Normal descriptor}
+   {Get Stat}
+   if not SyscallsGetStat64(Entry^.Handle,stat) then Exit;
+
+   {Return Result}
    Result:=0;
   end
  else
   begin
-   {Normal file}
-   Entry:=SyscallsGetEntry(fd);
-   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
+   if (Entry = nil) and ((fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO)) then
     begin
-     {Get Stat}
-     if not SyscallsGetStat64(Entry^.Handle,stat) then Exit;
-     
-     {Return Result}
+     {Stdin, Stdout, Stderr}
+     FillChar(stat^,SizeOf(Tstat64),0);
+     stat^.st_mode:=_S_IFCHR;
      Result:=0;
     end
    else
     begin
      {Return Error}
      ptr^._errno:=EBADF;
-    end;    
+    end;
   end;
- 
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _fstat64_r (Result=' + IntToStr(Result) + ')');
  {$ENDIF}
@@ -2444,32 +2698,32 @@ begin
  if stat = nil then Exit;
  
  {Check descriptor}
- if (fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO) then
+ Entry:=SyscallsGetEntry(fd);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
   begin
-   {Stdin, Stdout, Stderr}
-   FillChar(stat^,SizeOf(Tstat),0);
-   stat^.st_mode:=_S_IFCHR;
+   {Normal descriptor}
+   {Get Stat}
+   if not SyscallsGetStat(Entry^.Handle,stat) then Exit;
+
+   {Return Result}
    Result:=0;
   end
  else
   begin
-   {Normal file}
-   Entry:=SyscallsGetEntry(fd);
-   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
+   if (Entry = nil) and ((fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO)) then
     begin
-     {Get Stat}
-     if not SyscallsGetStat(Entry^.Handle,stat) then Exit;
-     
-     {Return Result}
+     {Stdin, Stdout, Stderr}
+     FillChar(stat^,SizeOf(Tstat),0);
+     stat^.st_mode:=_S_IFCHR;
      Result:=0;
     end
    else
     begin
      {Return Error}
      ptr^._errno:=EBADF;
-    end;    
+    end;
   end;
-  
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _fstat_r (Result=' + IntToStr(Result) + ')');
  {$ENDIF}
@@ -2509,10 +2763,9 @@ begin
 
    {Initialize reent structure} 
    {See: _REENT_INIT_PTR_ZEROED in \newlib\libc\include\sys\reent.h}
-   reent^._stdin:=@reent^.__sf[0];
-   reent^._stdout:=@reent^.__sf[1];
-   reent^._stderr:=@reent^.__sf[2];
-   reent^._current_locale:='C';
+   reent^._stdin:=@__sf[0];
+   reent^._stdout:=@__sf[1];
+   reent^._stderr:=@__sf[2];
    reent^._new._rand_next:=1;
    reent^._new._r48._seed[0]:=_RAND48_SEED_0;
    reent^._new._r48._seed[1]:=_RAND48_SEED_1; 
@@ -2521,6 +2774,9 @@ begin
    reent^._new._r48._mult[1]:=_RAND48_MULT_1; 
    reent^._new._r48._mult[2]:=_RAND48_MULT_2; 
    reent^._new._r48._add:=_RAND48_ADD; 
+  
+   {Initialize stdio} 
+   __sinit(reent);
   end;
  
  {Return Result}
@@ -2583,6 +2839,8 @@ function _isatty_r(ptr: P_reent; fd: int): int; cdecl;
 {See: \newlib\libc\reent\isattyr.c}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Entry:PSyscallsEntry;
 begin
  {}
  Result:=-1;
@@ -2593,9 +2851,10 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _isatty_r (ptr=' + PtrToHex(ptr) + ' fd=' + IntToStr(fd) + ')');
  {$ENDIF}
- 
+
  {Check descriptor}
- if (fd = STDOUT_FILENO) or (fd = STDERR_FILENO) then
+ Entry:=SyscallsGetEntry(fd);
+ if (Entry = nil) and ((fd = STDOUT_FILENO) or (fd = STDERR_FILENO)) then
   begin
    {Stdout, Stderr}
    Result:=1;
@@ -2614,8 +2873,8 @@ function _link_r(ptr: P_reent; old: PChar; new: PChar): int; cdecl;
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
-  OldName:String;
-  NewName:String;
+ OldName:String;
+ NewName:String;
 begin
  {}
  Result:=-1;
@@ -2655,8 +2914,8 @@ begin
    Exit;
   end;
 
- {Create Link}
- if FSCreateSymbolicLink(NewName,OldName,FSDirectoryExists(OldName)) then
+ {Create Hard Link}
+ if FSCreateHardLink(NewName,OldName) then
   begin
    {Return Result}
    Result:=0;
@@ -2940,7 +3199,7 @@ begin
   end;
 
  {Add Entry}  
- Entry:=SyscallsAddEntry(Handle,SYSCALLS_ENTRY_FILE);
+ Entry:=SyscallsAddEntry(Handle,SYSCALLS_ENTRY_FILE,SYSCALLS_INVALID_FILENO,SYSCALLS_INVALID_FILENO);
  if Entry = nil then
   begin
    {Return Error}
@@ -2994,67 +3253,67 @@ begin
  {$ENDIF}
  
  {Check descriptor}
- if fd = STDIN_FILENO then
+ Entry:=SyscallsGetEntry(fd);
+ if Entry <> nil then
   begin
-   {Stdin}
-   Count:=0;
-   EndChar:=False;
-   Next:=PChar(buf);
-   while (Count < cnt) and not(EndChar) do
+   {Normal descriptor}
+   if Entry^.Source = SYSCALLS_ENTRY_FILE then
     begin
-     if TextIOReadChar(Ch,nil) then
-      begin
-       if Ch = #13 then EndChar:=True;
-       
-       Next^:=Ch;
-       
-       Inc(Next);
-       Inc(Count);
-       
-       if EndChar and (Count < cnt) then
-        begin
-         Next^:=#10;
-         
-         Inc(Next);
-         Inc(Count);
-        end;
-      end;
+     {Read file}
+     Result:=FSFileRead(Entry^.Handle,buf^,cnt);
+    end
+   {$IFDEF SYSCALLS_EXPORT_SOCKETS}
+   else if Entry^.Source = SYSCALLS_ENTRY_SOCKET then
+    begin
+     {Read socket}
+     Result:=Sockets.fprecv(Entry^.Handle,buf,cnt,0);
+
+     {Check Error}
+     if Result = SOCKET_ERROR then ptr^._errno:=socket_get_error(Sockets.SocketError());
+    end
+   {$ENDIF}
+   else
+    begin
+     {Return Error}
+     ptr^._errno:=EINVAL;
     end;
-   
-   Result:=Count;   
   end
  else
   begin
-   {Normal file}
-   Entry:=SyscallsGetEntry(fd);
-   if Entry <> nil then
+   if fd = STDIN_FILENO then
     begin
-     if Entry^.Source = SYSCALLS_ENTRY_FILE then
+     {Stdin}
+     Count:=0;
+     EndChar:=False;
+     Next:=PChar(buf);
+     while (Count < cnt) and not(EndChar) do
       begin
-       {Read file}
-       Result:=FSFileRead(Entry^.Handle,buf^,cnt);
-      end
-     {$IFDEF SYSCALLS_EXPORT_SOCKETS}
-     else if Entry^.Source = SYSCALLS_ENTRY_SOCKET then
-      begin
-       {Read socket}
-       Result:=Sockets.fprecv(Entry^.Handle,buf,cnt,0);
+       if TextIOReadChar(Ch,nil) then
+        begin
+         if Ch = #13 then EndChar:=True;
 
-       {Check Error}
-       if Result = SOCKET_ERROR then ptr^._errno:=socket_get_error(Sockets.SocketError());
-      end
-     {$ENDIF}
-     else
-      begin
-       {Return Error}
-       ptr^._errno:=EINVAL;
+         Next^:=Ch;
+
+         Inc(Next);
+         Inc(Count);
+
+         if EndChar and (Count < cnt) then
+          begin
+           Next^:=#10;
+
+           Inc(Next);
+           Inc(Count);
+          end;
+        end;
       end;
+
+     Result:=Count;
     end
    else
     begin
      {Return Error}
      ptr^._errno:=EBADF;
-    end;    
+    end;
   end;
   
  {$IFDEF SYSCALLS_DEBUG}
@@ -3384,7 +3643,7 @@ begin
    {$ENDIF}
    
    {Return Result}
-   Result:=GetTickCount64;
+   Result:=(GetTickCount64 div MILLISECONDS_PER_SECOND) * SCHEDULER_INTERRUPTS_PER_SECOND;
   end
  else
   begin
@@ -3400,7 +3659,7 @@ end;
 {==============================================================================}
 
 function _unlink_r(ptr: P_reent; name: PChar): int; cdecl;
-{Remove a file’s directory entry}
+{Remove a file or directory entry}
 {See: \newlib\libc\reent\unlinkr.c}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
@@ -3429,24 +3688,41 @@ begin
   end;
 
  {Check File}
- if not FSFileExists(FileName) then
+ if FSFileExists(FileName) then
+  begin
+   {Delete File}
+   if FSDeleteFile(FileName) then
+    begin
+     {Return Result}
+     Result:=0;
+    end
+   else
+    begin
+     {Return Error}
+     ptr^._errno:=EINVAL;
+    end;  
+  end
+ {Check Directory}
+ else if FSDirectoryExists(FileName) then
+  begin
+   {Remove Directory}
+   if FSRemoveDir(FileName) then
+    begin
+     {Return Result}
+     Result:=0;
+    end
+   else
+    begin
+     {Return Error}
+     ptr^._errno:=EINVAL;
+    end;  
+  end
+ else 
   begin
    {Return Error}
    ptr^._errno:=ENOENT;
    Exit;
   end;
-
- {Delete File}
- if FSDeleteFile(FileName) then
-  begin
-   {Return Result}
-   Result:=0;
-  end
- else
-  begin
-   {Return Error}
-   ptr^._errno:=EINVAL;
-  end;  
  
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _unlink_r (Result=' + IntToStr(Result) + ')');
@@ -3474,52 +3750,103 @@ begin
  {$ENDIF}
  
  {Check descriptor}
- if fd = STDOUT_FILENO then
+ Entry:=SyscallsGetEntry(fd);
+ if Entry <> nil then
   begin
-   {Stdout}
-   Result:=TextIOWriteBuffer(PChar(buf),cnt,nil);
-  end
- else if fd = STDERR_FILENO then
-  begin
-   {Stderr}
-   Result:=TextIOWriteBuffer(PChar(buf),cnt,nil);
+   {Normal descriptor}
+   if Entry^.Source = SYSCALLS_ENTRY_FILE then
+    begin
+     {Write file}
+     Result:=FSFileWrite(Entry^.Handle,buf^,cnt);
+    end
+   {$IFDEF SYSCALLS_EXPORT_SOCKETS}
+   else if Entry^.Source = SYSCALLS_ENTRY_SOCKET then
+    begin
+     {Write socket}
+     Result:=Sockets.fpsend(Entry^.Handle,buf,cnt,0);
+
+     {Check Error}
+     if Result = SOCKET_ERROR then ptr^._errno:=socket_get_error(Sockets.SocketError());
+    end
+   {$ENDIF}
+   else
+    begin
+     {Return Error}
+     ptr^._errno:=EINVAL;
+    end;
   end
  else
   begin
-   {Normal file}
-   Entry:=SyscallsGetEntry(fd);
-   if Entry <> nil then
+   if fd = STDOUT_FILENO then
     begin
-     if Entry^.Source = SYSCALLS_ENTRY_FILE then
-      begin
-       {Write file}
-       Result:=FSFileWrite(Entry^.Handle,buf^,cnt);
-      end
-     {$IFDEF SYSCALLS_EXPORT_SOCKETS}
-     else if Entry^.Source = SYSCALLS_ENTRY_SOCKET then
-      begin
-       {Write socket}
-       Result:=Sockets.fpsend(Entry^.Handle,buf,cnt,0);
-
-       {Check Error}
-       if Result = SOCKET_ERROR then ptr^._errno:=socket_get_error(Sockets.SocketError());
-      end
-     {$ENDIF}
-     else
-      begin
-       {Return Error}
-       ptr^._errno:=EINVAL;
-      end;
+     {Stdout}
+     Result:=TextIOWriteBuffer(PChar(buf),cnt,nil);
+    end
+   else if fd = STDERR_FILENO then
+    begin
+     {Stderr}
+     Result:=TextIOWriteBuffer(PChar(buf),cnt,nil);
     end
    else
     begin
      {Return Error}
      ptr^._errno:=EBADF;
-    end;    
-  end;  
+    end;
+  end;
   
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _write_r (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function _getentropy_r(ptr: P_reent; buffer: Pointer; length: size_t): int; cdecl;
+{Fill a buffer with random bytes}
+{See: \newlib\libc\reent\getentropyr.c}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=-1;
+
+ {Check reent}
+ if ptr = nil then Exit;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _getentropy_r (ptr=' + PtrToHex(ptr) + ' buffer=' + PtrToHex(buf) + ' length=' + IntToStr(length) + ')');
+ {$ENDIF}
+
+ {Check buffer}
+ if buffer = nil then
+  begin
+   {Return Error}
+   ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {Check length}
+ if length > 256 then
+  begin
+   {Return Error}
+   ptr^._errno:=EIO;
+   Exit;
+  end;
+
+ {Get Random Bytes}
+ if GetRandomBytes(buffer,length) then
+  begin
+   {Return Result}
+   Result:=0;
+  end
+ else
+  begin
+   {Return Error}
+   ptr^._errno:=EIO;
+  end;  
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _getentropy_r (Result=' + IntToStr(Result) + ')');
  {$ENDIF}
 end;
 
@@ -3729,8 +4056,8 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Unistd)}
-function dup(oldfd: int): int; cdecl;
-{Duplicate a file descriptor}
+function chdir(path: PChar): int; cdecl;
+{Change working directory}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
@@ -3739,14 +4066,89 @@ begin
  {}
  Result:=-1;
 
+ {Check path}
+ if path = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls chdir (path=' + StrPas(path) + ')');
+ {$ENDIF}
+
+ {Set Current Directory}
+ if FSSetCurrentDir(path) then
+  begin
+   Result:=0;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EIO;
+  end;
+end;
+
+{==============================================================================}
+
+function dup(oldfd: int): int; cdecl;
+{Duplicate a file descriptor}
+{The new file descriptor number will be the lowest-numbered file descriptor that was unused}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Handle:THandle;
+ Entry:PSyscallsEntry;
+ Duplicate:PSyscallsEntry;
+begin 
+ {}
+ Result:=-1;
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls dup (oldfd=' + IntToStr(oldfd) + ')');
  {$ENDIF}
- 
- //To Do //Continuing //Add DuplicateHandle to FileSystem
-         //http://man7.org/linux/man-pages/man2/dup.2.html
-         
-         //Also fcntl() F_DUPFD
+
+ {Get Existing Entry}
+ Entry:=SyscallsGetEntry(oldfd);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
+  begin
+   {Duplicate Handle}
+   Handle:=FSDuplicateHandle(Entry^.Handle);
+   if Handle = INVALID_HANDLE_VALUE then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+
+   {Add Duplicate Entry (Lowest file number)}
+   Duplicate:=SyscallsAddEntry(Handle,SYSCALLS_ENTRY_FILE,SYSCALLS_TABLE_MIN,SYSCALLS_INVALID_FILENO);
+   if Duplicate = nil then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=ENOMEM;
+     Exit;
+    end;
+
+   {Return Result}
+   Result:=Duplicate^.Number;
+  end
+ else 
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls dup (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
 end;
 
 {==============================================================================}
@@ -3757,6 +4159,9 @@ function dup2(oldfd, newfd: int): int; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Handle:THandle;
+ Entry:PSyscallsEntry;
+ Duplicate:PSyscallsEntry;
 begin 
  {}
  Result:=-1;
@@ -3764,11 +4169,101 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls dup2 (oldfd=' + IntToStr(oldfd) + ' newfd=' + IntToStr(newfd) + ')');
  {$ENDIF}
- 
- //To Do //Continuing //Add DuplicateHandle to FileSystem
-         //http://man7.org/linux/man-pages/man2/dup.2.html
-         
-         //Also fcntl() F_DUPFD
+
+ {Check newfd}
+ if (newfd < 0) or (newfd > SYSCALLS_TABLE_MAX) then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+   Exit;
+  end;
+
+ {Get Existing Entry}
+ Entry:=SyscallsGetEntry(oldfd);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
+  begin
+   {Check fds}
+   if oldfd = newfd then
+    begin
+     {Return Result}
+     Result:=newfd;
+     Exit;
+    end;
+
+   {Lock Table}
+   if MutexLock(SyscallsTableLock) = ERROR_SUCCESS then
+    begin
+     try
+       {Get Duplicate Entry}
+       Duplicate:=SyscallsGetEntry(newfd);
+       if Duplicate <> nil then
+        begin
+         if Duplicate^.Source = SYSCALLS_ENTRY_FILE then
+          begin
+           {Close file}
+           FSFileClose(Duplicate^.Handle);
+          end
+         {$IFDEF SYSCALLS_EXPORT_SOCKETS}
+         else if Duplicate^.Source = SYSCALLS_ENTRY_SOCKET then
+          begin
+           {Close socket}
+           Sockets.CloseSocket(Duplicate^.Handle);
+          end
+         {$ENDIF}
+         else
+          begin
+           {Return Error}
+           ptr:=__getreent;
+           if ptr <> nil then ptr^._errno:=EINVAL;
+           Exit;
+          end;
+        end;
+
+       {Duplicate Handle}
+       Handle:=FSDuplicateHandle(Entry^.Handle);
+       if Handle = INVALID_HANDLE_VALUE then
+        begin
+         {Return Error}
+         ptr:=__getreent;
+         if ptr <> nil then ptr^._errno:=EINVAL;
+         Exit;
+        end;
+
+       {Add Duplicate Entry (Specified file number)}
+       Duplicate:=SyscallsAddEntry(Handle,SYSCALLS_ENTRY_FILE,SYSCALLS_INVALID_FILENO,newfd);
+       if Duplicate = nil then
+        begin
+         {Return Error}
+         ptr:=__getreent;
+         if ptr <> nil then ptr^._errno:=ENOMEM;
+         Exit;
+        end;
+
+      {Return Result}
+      Result:=Duplicate^.Number;
+     finally 
+      {Unlock Table}
+      MutexUnlock(SyscallsTableLock);
+     end; 
+    end
+   else
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+    end;
+  end
+ else 
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls dup2 (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
 end;
 
 {==============================================================================}
@@ -3786,9 +4281,94 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls dup3 (oldfd=' + IntToStr(oldfd) + ' newfd=' + IntToStr(newfd) + ' flags=' + IntToHex(flags,8) + ')');
  {$ENDIF}
- 
- //To Do //Continuing //Add DuplicateHandle to FileSystem
-         //http://man7.org/linux/man-pages/man2/dup.2.html
+
+ {Check fds}
+ if oldfd = newfd then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end;
+
+ {Duplicate file descriptor}
+ Result:=dup2(oldfd,newfd);
+end;
+
+{==============================================================================}
+
+function getentropy(buffer: Pointer; length: size_t): int; cdecl;
+{Fill a buffer with random bytes}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getentropy (buffer=' + PtrToHex(buffer) + ' length=' + IntToStr(length) + ')');
+ {$ENDIF}
+
+ Result:=_getentropy_r(__getreent,buffer,length);
+end;
+
+{==============================================================================}
+
+function link(path1, path2: PChar): int; cdecl;
+{Link to a file}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls link (path1=' + StrPas(path1) + ' path2=' + StrPas(path2) + ')');
+ {$ENDIF}
+
+ Result:=_link_r(__getreent,path1,path2);
+end;
+
+{==============================================================================}
+
+function rmdir(path: PChar): int; cdecl;
+{Delete a directory, which must be empty}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin 
+ {}
+ Result:=-1;
+
+ {Check path}
+ if path = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls rmdir (path=' + StrPas(path) + ')');
+ {$ENDIF}
+
+ {Check Directory}
+ if not FSDirectoryExists(path) then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOTDIR;
+   Exit;
+  end;
+
+ {Remove Directory}
+ if FSRemoveDir(path) then
+  begin
+   Result:=0;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOTEMPTY;
+  end;
 end;
 
 {==============================================================================}
@@ -3799,6 +4379,7 @@ function sysconf(name: int):int; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ FPCStatus:TFPCHeapStatus;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
@@ -3811,13 +4392,40 @@ begin
     {Clock ticks per second (Scheduler ticks)}
     Result:=SCHEDULER_INTERRUPTS_PER_SECOND;
    end;
+  _SC_OPEN_MAX:begin
+    {The maximum number of files that can be open at any time (Applies only to functions that utilize file descriptors)}
+    Result:=SYSCALLS_TABLE_MAX + 1;
+   end;
   _SC_PAGESIZE:begin
     {Size of a page in bytes}
     Result:=MEMORY_PAGE_SIZE;
    end;
-   
-  //To Do //Implement any others that are required
-  
+  _SC_PHYS_PAGES:begin
+    {The number of pages of physical memory}
+    Result:=MEMORY_SIZE div MEMORY_PAGE_SIZE;
+   end;
+  _SC_AVPHYS_PAGES:begin
+    {The number of available pages of physical memory}
+    FPCStatus:=GetFPCHeapStatus;
+    
+    Result:=FPCStatus.CurrHeapFree div MEMORY_PAGE_SIZE;
+   end;
+  _SC_NPROCESSORS_CONF:begin
+    {The number of processors configured}
+    Result:=CPU_COUNT;
+   end;
+  _SC_NPROCESSORS_ONLN:begin
+    {The number of processors currently online (available)}
+    Result:=SCHEDULER_CPU_COUNT;
+   end;
+  _SC_TZNAME_MAX:begin
+    {The maximum number of bytes in a timezone name}
+    Result:=SIZE_64; {TIMEZONE_NAME_LENGTH}
+   end;
+  _SC_HOST_NAME_MAX:begin
+    {Maximum length of a hostname}
+    Result:=255;
+   end;
  else
   begin
    {Return Error}
@@ -3899,13 +4507,72 @@ function symlink(path1, path2: PChar): int; cdecl;
 {Make a symbolic link to a file}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ LinkName:String;
+ TargetName:String;
 begin
  {}
+ Result:=-1;
+ 
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls symlink (path1=' + StrPas(path1) + ' path2=' + StrPas(path2) + ')');
  {$ENDIF}
+ 
+ {Get Names}
+ LinkName:=StrPas(path2);
+ TargetName:=StrPas(path1);
 
- Result:=_link_r(__getreent,path1,path2);
+ {Check Names}
+ if (Length(TargetName) = 0) or (Length(LinkName) = 0) then
+  begin
+   {Return Error}
+   ptr^._errno:=ENOENT;
+   Exit;
+  end;
+
+ {Check Link}
+ if FSFileExists(LinkName) or FSDirectoryExists(LinkName) then
+  begin
+   {Return Error}
+   ptr^._errno:=EEXIST;
+   Exit;
+  end;
+
+ {Check Target}
+ if not FSFileExists(TargetName) and not FSDirectoryExists(TargetName) then
+  begin
+   {Return Error}
+   ptr^._errno:=ENOENT;
+   Exit;
+  end;
+
+ {Create Symbolic Link}
+ if FSCreateSymbolicLink(LinkName,TargetName,FSDirectoryExists(TargetName)) then
+  begin
+   {Return Result}
+   Result:=0;
+  end
+ else
+  begin
+   {Return Error}
+   ptr^._errno:=EINVAL;
+  end;  
+end;
+
+{==============================================================================}
+
+function unlink(path: PChar): int; cdecl;
+{Delete a name and possibly the file it refers to}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls unlink (path=' + StrPas(path) + ')');
+ {$ENDIF}
+
+ Result:=_unlink_r(__getreent,path);
 end;
 
 {==============================================================================}
@@ -3935,39 +4602,39 @@ begin
   end;
   
  {Check descriptor}
- if (fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO) then
+ Entry:=SyscallsGetEntry(fd);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
   begin
-   {Stdin, Stdout, Stderr}
-   ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=EBADF;
-   Exit;
+   {Normal descriptor}
+   {Truncate}
+   FSFileSeekEx(Entry^.Handle,length,FILE_BEGIN);
+   if not FSFileTruncate(Entry^.Handle) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EIO;
+     Exit;
+    end;
+
+   {Return Result}
+   Result:=0;
   end
  else
   begin
-   {Normal file}
-   Entry:=SyscallsGetEntry(fd);
-   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
+   if (Entry = nil) and ((fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO)) then
     begin
-     {Truncate}
-     FSFileSeekEx(Entry^.Handle,length,FILE_BEGIN);
-     if not FSFileTruncate(Entry^.Handle) then
-      begin
-       {Return Error}
-       ptr:=__getreent;
-       if ptr <> nil then ptr^._errno:=EIO;
-       Exit;
-      end;
-     
-     {Return Result}
-     Result:=0;
+     {Stdin, Stdout, Stderr}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EBADF;
+     Exit;
     end
    else
     begin
      {Return Error}
      ptr:=__getreent;
      if ptr <> nil then ptr^._errno:=EBADF;
-    end;    
-  end;  
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -4043,39 +4710,39 @@ begin
  {$ENDIF}
 
  {Check descriptor}
- if (fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO) then
+ Entry:=SyscallsGetEntry(fd);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
   begin
-   {Stdin, Stdout, Stderr}
-   ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=EINVAL;
-   Exit;
+   {Normal descriptor}
+   {Flush}
+   if not FSFileFlush(Entry^.Handle) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EIO;
+     Exit;
+    end;
+
+   {Return Result}
+   Result:=0;
   end
  else
   begin
-   {Normal file}
-   Entry:=SyscallsGetEntry(fd);
-   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
+   if (Entry = nil) and ((fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO)) then
     begin
-     {Flush}
-     if not FSFileFlush(Entry^.Handle) then
-      begin
-       {Return Error}
-       ptr:=__getreent;
-       if ptr <> nil then ptr^._errno:=EIO;
-       Exit;
-      end;
-     
-     {Return Result}
-     Result:=0;
+     {Stdin, Stdout, Stderr}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
     end
    else
     begin
      {Return Error}
      ptr:=__getreent;
      if ptr <> nil then ptr^._errno:=EBADF;
-    end;    
-  end;  
-end; 
+    end;
+  end;
+end;
 
 {==============================================================================}
 
@@ -4095,39 +4762,39 @@ begin
  {$ENDIF}
 
  {Check descriptor}
- if (fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO) then
+ Entry:=SyscallsGetEntry(fd);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
   begin
-   {Stdin, Stdout, Stderr}
-   ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=EINVAL;
-   Exit;
+   {Normal descriptor}
+   {Flush}
+   if not FSFileFlush(Entry^.Handle) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EIO;
+     Exit;
+    end;
+
+   {Return Result}
+   Result:=0;
   end
  else
   begin
-   {Normal file}
-   Entry:=SyscallsGetEntry(fd);
-   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
+   if (Entry = nil) and ((fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO)) then
     begin
-     {Flush}
-     if not FSFileFlush(Entry^.Handle) then
-      begin
-       {Return Error}
-       ptr:=__getreent;
-       if ptr <> nil then ptr^._errno:=EIO;
-       Exit;
-      end;
-     
-     {Return Result}
-     Result:=0;
+     {Stdin, Stdout, Stderr}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
     end
    else
     begin
      {Return Error}
      ptr:=__getreent;
      if ptr <> nil then ptr^._errno:=EBADF;
-    end;    
-  end;  
-end; 
+    end;
+  end;
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -4226,7 +4893,7 @@ begin
  
  {Check Clock}
  case clk_id of
-  CLOCK_REALTIME:begin
+  CLOCK_REALTIME,CLOCK_THREAD_CPUTIME_ID:begin
     if res <> nil then
      begin
       res^.tv_sec:=0;
@@ -4235,7 +4902,7 @@ begin
      
     Result:=0;
    end;
-  CLOCK_MONOTONIC,CLOCK_PROCESS_CPUTIME_ID,CLOCK_THREAD_CPUTIME_ID:begin
+  CLOCK_MONOTONIC:begin
     if res <> nil then
      begin
       res^.tv_sec:=0;
@@ -4260,6 +4927,12 @@ begin
   
     Result:=0;
    end; 
+  CLOCK_PROCESS_CPUTIME_ID:begin
+    {Return Error}
+    Result:=-1;
+    ptr:=__getreent;
+    if ptr <> nil then ptr^._errno:=EINVAL;
+   end;
   else
    begin
     {Return Error}
@@ -4279,6 +4952,9 @@ function clock_gettime(clk_id: clockid_t; tp: Ptimespec): int; cdecl;
 var
  ptr:P_reent;
  Value:Int64;
+ CreateTime:Int64;
+ ExitTime:Int64;
+ KernelTime:Int64;
 begin
  {}
  {Check tp}
@@ -4299,7 +4975,7 @@ begin
  {Check Clock}
  case clk_id of
   CLOCK_REALTIME:begin
-    {Get Time}
+    {Get Clock Time}
     Value:=ClockGetTime;
     if Value <  TIME_TICKS_TO_1970 then
      begin
@@ -4321,7 +4997,7 @@ begin
     
     Result:=0;
    end;
-  CLOCK_MONOTONIC,CLOCK_PROCESS_CPUTIME_ID,CLOCK_THREAD_CPUTIME_ID:begin
+  CLOCK_MONOTONIC:begin
     if CLOCK_FREQUENCY = 0 then
      begin
       tp^.tv_sec:=0;
@@ -4329,6 +5005,7 @@ begin
      end
     else
      begin    
+      {Get Clock Total}
       Value:=ClockGetTotal;
       
       tp^.tv_sec:=Value div CLOCK_FREQUENCY;
@@ -4351,6 +5028,34 @@ begin
     {$ENDIF}
      
     Result:=0;
+   end;
+  CLOCK_THREAD_CPUTIME_ID:begin
+    {Get Thread Times}
+    if ThreadGetTimes(ThreadGetCurrent,CreateTime,ExitTime,KernelTime) <> ERROR_SUCCESS then
+     begin
+      tp^.tv_sec:=0;
+      tp^.tv_nsec:=0;
+     end
+    else
+     begin
+      {Convert to timespec}
+      Value:=KernelTime - TIME_TICKS_TO_1899;
+      
+      tp^.tv_sec:=Value div TIME_TICKS_PER_SECOND;
+      tp^.tv_nsec:=(Value mod TIME_TICKS_PER_SECOND) * 100;
+     end;
+
+    {$IFDEF SYSCALLS_DEBUG}
+    if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls clock_gettime (tv_sec=' + IntToStr(tp^.tv_sec) + ' tv_nsec=' + IntToStr(tp^.tv_nsec) + ')');
+    {$ENDIF}
+
+    Result:=0;
+   end;
+  CLOCK_PROCESS_CPUTIME_ID:begin
+    {Return Error}
+    Result:=-1;
+    ptr:=__getreent;
+    if ptr <> nil then ptr^._errno:=EINVAL;
    end;
   else
    begin
@@ -4449,11 +5154,34 @@ var
 begin
  {}
  Result:=-1;
- 
- ptr:=__getreent;
- if ptr <> nil then ptr^._errno:=ENOSYS;
- 
- {Not yet implemented}
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls statfs (path=' + StrPas(path) + ' buf=' + PtrToHex(buf) + ')');
+ {$ENDIF}
+
+ {Check buf}
+ if buf = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {Get Statfs}
+ if not SyscallsGetStatfs(StrPas(path),buf) then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOENT;
+   Exit;
+  end;
+
+ Result:=0;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls statfs (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
 end;
 
 {==============================================================================}
@@ -4464,18 +5192,57 @@ function fstatfs(fd: int; buf: Pstatfs): int; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Path:String;
+ Entry:PSyscallsEntry;
 begin
  {}
  Result:=-1;
- 
- ptr:=__getreent;
- if ptr <> nil then ptr^._errno:=ENOSYS;
- 
- {Not yet implemented}
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls fstatfs (fd=' + IntToStr(fd) + ' buf=' + PtrToHex(buf) + ')');
+ {$ENDIF}
+
+ {Check buf}
+ if buf = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {Get Entry}
+ Entry:=SyscallsGetEntry(fd);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
+  begin
+   {Get Path}
+   Path:=FSGetFinalPathNameByHandle(Entry^.Handle,0);
+
+   {Get Statfs}
+   if not SyscallsGetStatfs(Path,buf) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=ENOENT;
+     Exit;
+    end;
+
+   Result:=0;
+  end
+ else 
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls fstatfs (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
 end;
 
 {==============================================================================}
-
+{$IFDEF SYSCALLS_LARGE64_FILES}
 function statfs64(path: PChar; buf: Pstatfs64): int; cdecl;
 {Get filesystem statistics}
 
@@ -4485,11 +5252,34 @@ var
 begin
  {}
  Result:=-1;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls statfs64 (path=' + StrPas(path) + ' buf=' + PtrToHex(buf) + ')');
+ {$ENDIF}
+
+ {Check buf}
+ if buf = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {Get Statfs64}
+ if not SyscallsGetStatfs64(StrPas(path),buf) then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOENT;
+   Exit;
+  end;
+
+ Result:=0;
  
- ptr:=__getreent;
- if ptr <> nil then ptr^._errno:=ENOSYS;
- 
- {Not yet implemented}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls statfs64 (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
 end;
 
 {==============================================================================}
@@ -4500,16 +5290,55 @@ function fstatfs64(fd: int; buf: Pstatfs64): int; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Path:String;
+ Entry:PSyscallsEntry;
 begin
  {}
  Result:=-1;
- 
- ptr:=__getreent;
- if ptr <> nil then ptr^._errno:=ENOSYS;
- 
- {Not yet implemented}
-end;
 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls fstatfs64 (fd=' + IntToStr(fd) + ' buf=' + PtrToHex(buf) + ')');
+ {$ENDIF}
+
+ {Check buf}
+ if buf = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {Get Entry}
+ Entry:=SyscallsGetEntry(fd);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
+  begin
+   {Get Path}
+   Path:=FSGetFinalPathNameByHandle(Entry^.Handle,0);
+
+   {Get Statfs64}
+   if not SyscallsGetStatfs64(Path,buf) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=ENOENT;
+     Exit;
+    end;
+
+   Result:=0;
+  end
+ else 
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls fstatfs64 (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
+end;
+{$ENDIF}
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Statvfs)}
@@ -4522,11 +5351,34 @@ var
 begin
  {}
  Result:=-1;
- 
- ptr:=__getreent;
- if ptr <> nil then ptr^._errno:=ENOSYS;
- 
- {Not yet implemented}
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls statvfs (path=' + StrPas(path) + ' buf=' + PtrToHex(buf) + ')');
+ {$ENDIF}
+
+ {Check buf}
+ if buf = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {Get Statvfs}
+ if not SyscallsGetStatvfs(StrPas(path),buf) then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOENT;
+   Exit;
+  end;
+
+ Result:=0;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls statvfs (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
 end;
 
 {==============================================================================}
@@ -4537,19 +5389,298 @@ function fstatvfs(fd: int; buf: Pstatvfs): int; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Path:String;
+ Entry:PSyscallsEntry;
+begin
+ {}
+ Result:=-1;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls fstatvfs (fd=' + IntToStr(fd) + ' buf=' + PtrToHex(buf) + ')');
+ {$ENDIF}
+
+ {Check buf}
+ if buf = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {Get Entry}
+ Entry:=SyscallsGetEntry(fd);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
+  begin
+   {Get Path}
+   Path:=FSGetFinalPathNameByHandle(Entry^.Handle,0);
+
+   {Get Statvfs}
+   if not SyscallsGetStatvfs(Path,buf) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=ENOENT;
+     Exit;
+    end;
+
+   Result:=0;
+  end
+ else 
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls fstatvfs (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+{$IFDEF SYSCALLS_LARGE64_FILES}
+function statvfs64(path: PChar; buf: Pstatvfs64): int; cdecl;
+{Get file system information}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ Result:=-1;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls statvfs64 (path=' + StrPas(path) + ' buf=' + PtrToHex(buf) + ')');
+ {$ENDIF}
+
+ {Check buf}
+ if buf = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {Get Statvfs64}
+ if not SyscallsGetStatvfs64(StrPas(path),buf) then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=ENOENT;
+   Exit;
+  end;
+
+ Result:=0;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls statvfs64 (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function fstatvfs64(fd: int; buf: Pstatvfs64): int; cdecl;
+{Get file system information}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Path:String;
+ Entry:PSyscallsEntry;
+begin
+ {}
+ Result:=-1;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls fstatvfs64 (fd=' + IntToStr(fd) + ' buf=' + PtrToHex(buf) + ')');
+ {$ENDIF}
+
+ {Check buf}
+ if buf = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {Get Entry}
+ Entry:=SyscallsGetEntry(fd);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
+  begin
+   {Get Path}
+   Path:=FSGetFinalPathNameByHandle(Entry^.Handle,0);
+
+   {Get Statvfs64}
+   if not SyscallsGetStatvfs64(Path,buf) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=ENOENT;
+     Exit;
+    end;
+
+   Result:=0;
+  end
+ else 
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls fstatvfs64 (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
+end;
+{$ENDIF}
+{==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Sched)}
+function sched_yield: int; cdecl;
+{Yield the processor}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
  Result:=-1;
  
- ptr:=__getreent;
- if ptr <> nil then ptr^._errno:=ENOSYS;
- 
- {Not yet implemented}
+ if ThreadYield = ERROR_SUCCESS then Result:=0;
 end;
 
 {==============================================================================}
+
+function sched_getcpu: int; cdecl;
+{Determine CPU on which the calling thread is}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=CPUGetCurrent;
+end;
+
 {==============================================================================}
-{Syscalls Functions (Sched)}
+
+function sched_getaffinity(pid: pid_t; cpusetsize: size_t; mask: Pcpu_set_t): int; cdecl;
+{Get the CPU affinity mask of a process or thread}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sched_getaffinity (pid=' + IntToHex(pid,8) + ' cpusetsize=' + IntToStr(cpusetsize) + ' mask' IntToHex(mask,8) + ')');
+ {$ENDIF}
+ 
+ {Check size}
+ if cpusetsize <> SizeOf(cpu_set_t) then
+  begin
+   {Return Error}
+   Result:=-1;
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end; 
+
+ {Check mask}
+ if mask = nil then
+  begin
+   {Return Error}
+   Result:=-1;
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end; 
+
+ {Check pid}
+ if pid = 0 then
+  begin
+   {Get Affinity}
+   mask^.__bits[0]:=ThreadGetAffinity(ThreadGetCurrent);
+  end
+ else
+  begin
+   {Get Affinity}
+   mask^.__bits[0]:=ThreadGetAffinity(pid);
+   if mask^.__bits[0] = INVALID_HANDLE_VALUE then
+    begin
+     Result:=-1;
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=ESRCH;
+     Exit;
+    end;
+  end; 
+
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function sched_setaffinity(pid: pid_t; cpusetsize: size_t; mask: Pcpu_set_t): int; cdecl;
+{Set the CPU affinity mask of a process or thread}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sched_setaffinity (pid=' + IntToHex(pid,8) + ' cpusetsize=' + IntToStr(cpusetsize) + ' mask' IntToHex(mask,8) + ')');
+ {$ENDIF}
+ 
+ {Check size}
+ if cpusetsize <> SizeOf(cpu_set_t) then
+  begin
+   {Return Error}
+   Result:=-1;
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end; 
+
+ {Check mask}
+ if mask = nil then
+  begin
+   {Return Error}
+   Result:=-1;
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end; 
+
+ {Check pid}
+ if pid = 0 then
+  begin
+   {Set Affinity}
+   if ThreadSetAffinity(ThreadGetCurrent,mask^.__bits[0]) = INVALID_HANDLE_VALUE then
+    begin
+     {Return Error}
+     Result:=-1;
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+  end
+ else
+  begin
+   {Set Affinity}
+   if ThreadSetAffinity(pid,mask^.__bits[0]) = INVALID_HANDLE_VALUE then
+    begin
+     Result:=-1;
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=ESRCH;
+     Exit;
+    end;
+  end; 
+
+ Result:=0;
+end;
+
+{==============================================================================}
+
 function sched_get_priority_max(policy: int): int; cdecl;
 {Get scheduler priority range maximum}
 
@@ -4683,11 +5814,8 @@ begin
  StrLCopy(NameBuffer,PChar(Path),Length(Path));
  
  {Check Path}
- if Path[Length(Path)] <> '\' then 
-  begin
-   Path:=Path + '\'; //To Do //Add a new FSAddSlash function to provide the correct delimiter
-  end;
-  
+ Path:=FSAddSlash(Path,False,True);
+
  {Find First File} 
  if FSFindFirstEx(Path + '*.*',SearchRec^) <> 0 then
   begin
@@ -5093,11 +6221,8 @@ begin
  Path:=StrPas(NameBuffer);
  
  {Check Path}
- if Path[Length(Path)] <> '\' then 
-  begin
-   Path:=Path + '\'; //To Do //Add a new FSAddSlash function to provide the correct delimiter
-  end;
-  
+ Path:=FSAddSlash(Path,False,True);
+
  {Find First File} 
  if FSFindFirstEx(Path + '*.*',SearchRec^) <> 0 then Exit;
 
@@ -5745,7 +6870,7 @@ begin
  if cond = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_init (cond=' + IntToHex(cond^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_init (cond=' + PtrToHex(cond) + ')');
  {$ENDIF}
  
  Result:=EAGAIN;
@@ -5762,7 +6887,7 @@ begin
  Result:=0;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_init (Result=' + IntToStr(Result) + ' cond=' + IntToHex(cond^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_init (Result=' + IntToStr(Result) + ' cond=' + PtrToHex(cond) + ')');
  {$ENDIF}
 end;
 
@@ -5780,7 +6905,7 @@ begin
  if cond = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_destroy (cond=' + IntToHex(cond^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_destroy (cond=' + PtrToHex(cond) + ')');
  {$ENDIF}
  
  {Destroy Condition}
@@ -5806,7 +6931,7 @@ begin
  if cond = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_broadcast (cond=' + IntToHex(cond^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_broadcast (cond=' + PtrToHex(cond) + ')');
  {$ENDIF}
 
  {Check cond}
@@ -5852,7 +6977,7 @@ begin
  if cond = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_signal (cond=' + IntToHex(cond^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_signal (cond=' + PtrToHex(cond) + ')');
  {$ENDIF}
  
  {Check cond}
@@ -5901,7 +7026,7 @@ begin
  if cond = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_wait (cond=' + IntToHex(cond^,8) + ' mutex=' + IntToHex(mutex^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_wait (cond=' + PtrToHex(cond) + ' mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
  
  {Check cond}
@@ -5966,7 +7091,7 @@ begin
  if cond = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_timedwait (cond=' + IntToHex(cond^,8) + ' mutex=' + IntToHex(mutex^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_timedwait (cond=' + PtrToHex(cond) + ' mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
  
  {Check mutex}
@@ -6166,7 +7291,7 @@ begin
  if thread = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_create (thread=' + IntToHex(thread^,8) + ' attr=' + PtrToHex(attr) + ' start_routine=' + PtrToHex(start_routine) + ' arg=' + PtrToHex(arg) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_create (thread=' + PtrToHex(thread) + ' attr=' + PtrToHex(attr) + ' start_routine=' + PtrToHex(start_routine) + ' arg=' + PtrToHex(arg) + ')');
  {$ENDIF}
  
  {Check attr}
@@ -6207,7 +7332,7 @@ begin
  Result:=0;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_create (Result=' + IntToStr(Result) + ' thread=' + IntToHex(thread^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_create (Result=' + IntToStr(Result) + ' thread=' + PtrToHex(thread) + ')');
  {$ENDIF}
 end;
 
@@ -6438,6 +7563,17 @@ end;
 
 {==============================================================================}
 
+procedure pthread_yield; cdecl;
+{Yield the processor}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ ThreadYield;
+end;
+
+{==============================================================================}
+
 function pthread_getconcurrency: int; cdecl;
 {Get the level of concurrency}
 
@@ -6476,7 +7612,6 @@ function pthread_getschedparam(thread: pthread_t; policy: Pint; param: Psched_pa
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  Priority:LongWord;
- Pthread:PSyscallsPthread;
 begin
  {}
  Result:=ESRCH;
@@ -6517,7 +7652,6 @@ function pthread_setschedparam(thread: pthread_t; policy: int; param: Psched_par
 var
  MaxPriority:int;
  MinPriority:int;
- Pthread:PSyscallsPthread;
 begin
  {}
  Result:=ESRCH;
@@ -6549,6 +7683,61 @@ end;
 
 {==============================================================================}
 
+function pthread_setschedprio(thread: pthread_t; prio: int): int; cdecl;
+{Set scheduling priority of a thread}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ MaxPriority:int;
+ MinPriority:int;
+begin
+ {}
+ Result:=ESRCH;
+
+ {Check thread}
+ if thread = pthread_t(INVALID_HANDLE_VALUE) then Exit;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_setschedprio (thread=' + IntToHex(thread,8) + ')');
+ {$ENDIF}
+
+ Result:=EINVAL;
+
+ {Get Min/Max}
+ MaxPriority:=sched_get_priority_max(SCHED_OTHER);
+ MinPriority:=sched_get_priority_min(SCHED_OTHER);
+
+ {Check Priority}
+ if (prio < MinPriority) or (prio > MaxPriority) then Exit;
+
+ {Set Priority}
+ if ThreadSetPriority(TThreadHandle(thread),prio) = LongWord(INVALID_HANDLE_VALUE) then Exit;
+
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_getcpuclockid(thread: pthread_t; var clock_id: clockid_t): int; cdecl;
+{Retrieve ID of a thread's CPU time clock}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=ESRCH;
+
+ {Check thread}
+ if thread = pthread_t(INVALID_HANDLE_VALUE) then Exit;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_getcpuclockid (thread=' + IntToHex(thread,8) + ')');
+ {$ENDIF}
+
+ Result:=CLOCK_THREAD_CPUTIME_ID;
+end;
+
+{==============================================================================}
+
 function pthread_key_create(key: Ppthread_key_t; destructor_routine: Tpthread_destructor_routine): int; cdecl;
 {Create a thread-specific data key (TLS Index)}
 
@@ -6561,7 +7750,7 @@ begin
  if key = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_key_create (key=' + IntToHex(key^,8) + ' destructor_routine=' + PtrToHex(destructor_routine) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_key_create (key=' + PtrToHex(key) + ' destructor_routine=' + PtrToHex(destructor_routine) + ')');
  {$ENDIF}
  
  Result:=EAGAIN;
@@ -6578,7 +7767,7 @@ begin
   Result:=0;
   
   {$IFDEF SYSCALLS_DEBUG}
-  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_key_create (Result=' + IntToStr(Result) + ' key=' + IntToHex(key^,8) + ')');
+  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_key_create (Result=' + IntToStr(Result) + ' key=' + PtrToHex(key) + ')');
   {$ENDIF}
  finally
   MutexUnlock(SyscallsPthreadLock);
@@ -6668,7 +7857,7 @@ begin
  if mutex = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_init (mutex=' + IntToHex(mutex^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_init (mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
  
  Result:=EAGAIN;
@@ -6703,7 +7892,7 @@ begin
  Result:=0;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_init (Result=' + IntToStr(Result) + ' mutex=' + IntToHex(mutex^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_init (Result=' + IntToStr(Result) + ' mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
 end;
 
@@ -6721,7 +7910,7 @@ begin
  if mutex = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_destroy (mutex=' + IntToHex(mutex^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_destroy (mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
  
  {Destroy Mutex}
@@ -6749,7 +7938,7 @@ begin
  if mutex = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_lock (mutex=' + IntToHex(mutex^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_lock (mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
  
  {Check mutex}
@@ -6803,7 +7992,7 @@ begin
  if mutex = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_trylock (mutex=' + IntToHex(mutex^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_trylock (mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
  
  {Check mutex}
@@ -6857,7 +8046,7 @@ begin
  if mutex = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_unlock (mutex=' + IntToHex(mutex^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_unlock (mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
  
  {Check mutex}
@@ -6913,7 +8102,7 @@ begin
  if mutex = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_setprioceiling (mutex=' + IntToHex(mutex^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_setprioceiling (mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
  
  {Check mutex}
@@ -6962,7 +8151,7 @@ begin
  if mutex = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_getprioceiling (mutex=' + IntToHex(mutex^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_getprioceiling (mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
  
  {Check mutex}
@@ -7366,6 +8555,233 @@ end;
 
 {==============================================================================}
 
+function pthread_spin_init(spinlock: Ppthread_spinlock_t; pshared: Pint): int; cdecl;
+{Initialize a spin lock}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Handle:TSpinHandle;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check spinlock}
+ if spinlock = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_spin_init (spinlock=' + PtrToHex(spinlock) + ')');
+ {$ENDIF}
+ 
+ Result:=EAGAIN;
+
+ {Note: pshared not used}
+ 
+ {Create Spin}
+ Handle:=SpinCreate;
+ if Handle = INVALID_HANDLE_VALUE then Exit;
+ 
+ {Return spinlock}
+ spinlock^:=Handle;
+ 
+ Result:=0;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_spin_init (Result=' + IntToStr(Result) + ' spinlock=' + PtrToHex(spinlock) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function pthread_spin_destroy(spinlock: Ppthread_spinlock_t): int; cdecl;
+{Destroy a spin lock}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check spinlock}
+ if spinlock = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_spin_destroy (spinlock=' + PtrToHex(spinlock) + ')');
+ {$ENDIF}
+ 
+ Result:=EBUSY;
+ 
+ {Check Owner}
+ if SpinOwner(TSpinHandle(spinlock^)) <> INVALID_HANDLE_VALUE then Exit;
+
+ Result:=EINVAL;
+
+ {Destroy Spin}
+ if SpinDestroy(TSpinHandle(spinlock^)) <> ERROR_SUCCESS then Exit;
+ 
+ {Invalidate spinlock}
+ spinlock^:=INVALID_HANDLE_VALUE;
+ 
+ Result:=0;
+end;
+
+{==============================================================================}
+
+function pthread_spin_lock(_spinlock: Ppthread_spinlock_t): int; cdecl;
+{Lock a spin lock object}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check spinlock}
+ if _spinlock = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_spin_lock (spinlock=' + PtrToHex(_spinlock) + ')');
+ {$ENDIF}
+
+ {Check spinlock}
+ if (_spinlock^ = 0) or (_spinlock^ = INVALID_HANDLE_VALUE) then
+  begin
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
+   {Uninitialized spinlock}
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized spinlock in call to pthread_spin_lock');
+   {$ENDIF}
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize spinlock}
+   Result:=pthread_spin_init(_spinlock,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
+  end;
+
+ {Check Owner}
+ if SpinOwner(TSpinHandle(_spinlock^)) = ThreadGetCurrent then
+  begin
+   Result:=EDEADLK;
+  end
+ else
+  begin 
+   {Lock Spin}
+   ResultCode:=SpinLock(TSpinHandle(_spinlock^));
+   if ResultCode = ERROR_SUCCESS then
+    begin
+     Result:=0;
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function pthread_spin_trylock(_spinlock: Ppthread_spinlock_t): int; cdecl;
+{Try to lock a spin lock object}
+
+{Note: Use of pthread_spin_trylock is discouraged as there is no underlying SpinTryLock function}
+{      therefore it is possible to encounter a race condition between multiple calling threads}
+{      Use of an alternative lock type such as a mutex or a rwlock is the recommended option}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ResultCode:LongWord;
+begin
+ {}
+ Result:=EINVAL;
+ 
+ {Check spinlock}
+ if _spinlock = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_spin_trylock (spinlock=' + PtrToHex(_spinlock) + ')');
+ {$ENDIF}
+ 
+ {Check spinlock}
+ if (_spinlock^ = 0) or (_spinlock^ = INVALID_HANDLE_VALUE) then
+  begin
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
+   {Uninitialized spinlock}
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized spinlock in call to pthread_spin_trylock');
+   {$ENDIF}
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize spinlock}
+   Result:=pthread_spin_init(_spinlock,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
+  end;
+
+ {Check Owner}
+ if SpinOwner(TSpinHandle(_spinlock^)) = ThreadGetCurrent then
+  begin
+   Result:=EDEADLK;
+  end
+ else if SpinOwner(TSpinHandle(_spinlock^)) <> INVALID_HANDLE_VALUE then
+  begin
+   Result:=EBUSY;
+  end
+ else
+  begin 
+   {Lock Spin}
+   ResultCode:=SpinLock(TSpinHandle(_spinlock^));
+   if ResultCode = ERROR_SUCCESS then
+    begin
+     Result:=0;
+    end
+  end;
+end;
+
+{==============================================================================}
+
+function pthread_spin_unlock(spinlock: Ppthread_spinlock_t): int; cdecl;
+{Unlock a spin lock object}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ResultCode:LongWord;
+begin
+ Result:=EINVAL;
+
+ {Check spinlock}
+ if spinlock = nil then Exit;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_spin_unlock (spinlock=' + PtrToHex(spinlock) + ')');
+ {$ENDIF}
+ 
+ {Check spinlock}
+ if (spinlock^ = 0) or (spinlock^ = INVALID_HANDLE_VALUE) then
+  begin
+   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
+   {Uninitialized spinlock}
+   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized spinlock in call to pthread_spin_unlock');
+   {$ENDIF}
+   
+   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+   {Initialize spinlock}
+   Result:=pthread_spin_init(spinlock,nil);
+   if Result <> 0 then Exit;
+   {$ENDIF}  
+  end;
+
+ {Check Owner}
+ if SpinOwner(TSpinHandle(spinlock^)) <> ThreadGetCurrent then
+  begin
+   Result:=EPERM;
+  end
+ else
+  begin
+   {Unlock Spin}
+   ResultCode:=SpinUnlock(TSpinHandle(spinlock^));
+   if ResultCode = ERROR_SUCCESS then
+    begin
+     Result:=0;
+    end
+  end;  
+end;
+
+{==============================================================================}
+
 function pthread_rwlock_init(rwlock: Ppthread_rwlock_t ; attr: Ppthread_rwlockattr_t): int; cdecl;
 {Initialize a read-write lock}
 
@@ -7380,7 +8796,7 @@ begin
  if rwlock = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_init (rwlock=' + IntToHex(rwlock^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_init (rwlock=' + PtrToHex(rwlock) + ')');
  {$ENDIF}
  
  Result:=EAGAIN;
@@ -7397,7 +8813,7 @@ begin
  Result:=0;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_init (Result=' + IntToStr(Result) + ' rwlock=' + IntToHex(rwlock^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_init (Result=' + IntToStr(Result) + ' rwlock=' + PtrToHex(rwlock) + ')');
  {$ENDIF}
 end;
 
@@ -7415,7 +8831,7 @@ begin
  if rwlock = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_destroy (rwlock=' + IntToHex(rwlock^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_destroy (rwlock=' + PtrToHex(rwlock) + ')');
  {$ENDIF}
  
  {Destroy Synchronizer}
@@ -7443,7 +8859,7 @@ begin
  if rwlock = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_rdlock (rwlock=' + IntToHex(rwlock^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_rdlock (rwlock=' + PtrToHex(rwlock) + ')');
  {$ENDIF}
  
  {Check rwlock}
@@ -7501,7 +8917,7 @@ begin
  if rwlock = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_wrlock (rwlock=' + IntToHex(rwlock^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_wrlock (rwlock=' + PtrToHex(rwlock) + ')');
  {$ENDIF}
  
  {Check rwlock}
@@ -7559,7 +8975,7 @@ begin
  if rwlock = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_tryrdlock (rwlock=' + IntToHex(rwlock^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_tryrdlock (rwlock=' + PtrToHex(rwlock) + ')');
  {$ENDIF}
 
  {Check rwlock}
@@ -7621,7 +9037,7 @@ begin
  if rwlock = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_trywrlock (rwlock=' + IntToHex(rwlock^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_trywrlock (rwlock=' + PtrToHex(rwlock) + ')');
  {$ENDIF}
  
  {Check rwlock}
@@ -7683,7 +9099,7 @@ begin
  if rwlock = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_unlock (rwlock=' + IntToHex(rwlock^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_unlock (rwlock=' + PtrToHex(rwlock) + ')');
  {$ENDIF}
  
  {Check rwlock}
@@ -8007,7 +9423,7 @@ begin
  if sem = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_close (sem=' + IntToHex(sem^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_close (sem=' + PtrToHex(sem) + ')');
  {$ENDIF}
 
  {Get Handle}
@@ -8072,7 +9488,7 @@ begin
  if sem = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_destroy (sem=' + IntToHex(sem^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_destroy (sem=' + PtrToHex(sem) + ')');
  {$ENDIF}
  
  {Get Handle}
@@ -8135,7 +9551,7 @@ begin
  if sem = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_getvalue (sem=' + IntToHex(sem^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_getvalue (sem=' + PtrToHex(sem) + ')');
  {$ENDIF}
  
  {Check sval}
@@ -8176,7 +9592,7 @@ begin
  if sem = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_init (sem=' + IntToHex(sem^,8) + ' value=' + IntToStr(value) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_init (sem=' + PtrToHex(sem) + ' value=' + IntToStr(value) + ')');
  {$ENDIF}
  
  {Note: pshared not used}
@@ -8219,7 +9635,7 @@ begin
  Result:=0;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_init (Result=' + IntToStr(Result) + ' sem=' + IntToHex(sem^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_init (Result=' + IntToStr(Result) + ' sem=' + PtrToHex(sem) + ')');
  {$ENDIF}
 end;
 
@@ -8358,7 +9774,7 @@ begin
  if sem = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_post (sem=' + IntToHex(sem^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_post (sem=' + PtrToHex(sem) + ')');
  {$ENDIF}
  
  {Get Handle}
@@ -8406,7 +9822,7 @@ begin
  if sem = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_timedwait (sem=' + IntToHex(sem^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_timedwait (sem=' + PtrToHex(sem) + ')');
  {$ENDIF}
  
  {Check abs timeout}
@@ -8478,7 +9894,7 @@ begin
  if sem = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_trywait (sem=' + IntToHex(sem^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_trywait (sem=' + PtrToHex(sem) + ')');
  {$ENDIF}
  
  {Get Handle}
@@ -8588,7 +10004,7 @@ begin
  if sem = nil then Exit;
  
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_wait (sem=' + IntToHex(sem^,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sem_wait (sem=' + PtrToHex(sem) + ')');
  {$ENDIF}
  
  {Get Handle}
@@ -8723,7 +10139,7 @@ begin
     end;
 
    {Add Entry}  
-   Entry:=SyscallsAddEntry(Handle,SYSCALLS_ENTRY_SOCKET);
+   Entry:=SyscallsAddEntry(Handle,SYSCALLS_ENTRY_SOCKET,SYSCALLS_INVALID_FILENO,SYSCALLS_INVALID_FILENO);
    if Entry = nil then
     begin
      {Close Socket}
@@ -9054,6 +10470,43 @@ end;
 
 {==============================================================================}
 
+function socket_recvmsg(socket: int; message: Pmsghdr; flags: int): ssize_t; cdecl;
+{Receive a message from a socket}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Entry:PSyscallsEntry;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls recvmsg (socket=' + IntToHex(socket,8) + ' message=' + PtrToHex(message) + ' flags=' + IntToHex(flags,8) + ')');
+ {$ENDIF}
+ 
+ {Get Entry}
+ Entry:=SyscallsGetEntry(socket);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
+  begin
+   //To Do // Not yet supported
+    
+   Result:=SOCKET_ERROR;
+
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end
+ else
+  begin
+   Result:=SOCKET_ERROR;
+
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;  
+end;
+
+{==============================================================================}
+
 function socket_send(socket: int; buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl;
 {Send a message on a socket}
 
@@ -9117,6 +10570,43 @@ begin
      ptr:=__getreent;
      if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
     end;
+  end
+ else
+  begin
+   Result:=SOCKET_ERROR;
+
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
+  end;  
+end;
+
+{==============================================================================}
+
+function socket_sendmsg(socket: int; message: Pmsghdr; flags: int): ssize_t; cdecl;
+{Send a message on a socket}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ Entry:PSyscallsEntry;
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sendmsg (socket=' + IntToHex(socket,8) + ' message=' + PtrToHex(message) + ' flags=' + IntToHex(flags,8) + ')');
+ {$ENDIF}
+ 
+ {Get Entry}
+ Entry:=SyscallsGetEntry(socket);
+ if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
+  begin
+   //To Do // Not yet supported
+    
+   Result:=SOCKET_ERROR;
+
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EBADF;
   end
  else
   begin
@@ -9233,7 +10723,7 @@ begin
   end;
 
  {Add Entry}  
- Entry:=SyscallsAddEntry(Handle,SYSCALLS_ENTRY_SOCKET);
+ Entry:=SyscallsAddEntry(Handle,SYSCALLS_ENTRY_SOCKET,SYSCALLS_INVALID_FILENO,SYSCALLS_INVALID_FILENO);
  if Entry = nil then
   begin
    {Close Socket}
@@ -9277,7 +10767,7 @@ begin
   end;
 
  {Add First Entry}  
- Entry1:=SyscallsAddEntry(Pair[1],SYSCALLS_ENTRY_SOCKET);
+ Entry1:=SyscallsAddEntry(Pair[1],SYSCALLS_ENTRY_SOCKET,SYSCALLS_INVALID_FILENO,SYSCALLS_INVALID_FILENO);
  if Entry1 = nil then
   begin
    {Close Socket}
@@ -9290,7 +10780,7 @@ begin
   end;
 
  {Add Second Entry}  
- Entry2:=SyscallsAddEntry(Pair[2],SYSCALLS_ENTRY_SOCKET);
+ Entry2:=SyscallsAddEntry(Pair[2],SYSCALLS_ENTRY_SOCKET,SYSCALLS_INVALID_FILENO,SYSCALLS_INVALID_FILENO);
  if Entry2 = nil then
   begin
    {Remove First Entry}
@@ -9533,142 +11023,381 @@ end;
 
 {==============================================================================}
 
-function socket_gethostbyaddr(addr: Pointer; len: socklen_t; family: int): PHostEnt; cdecl;
+function socket_gethostbyaddr(addr: Pointer; len: socklen_t; family: int): P_hostent; cdecl;
 {Network host database functions}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ HostEnt:PHostEnt;
+ Netdb:PSyscallsNetdb;
 begin
  {}
- //To Do //Resolve the discrepency in field sizes between PHostEnt from Winsock and hostent from POSIX (short versus int)
- 
+ Result:=nil;
+
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getservbyport (addr=' + PtrToHex(addr) + ' len=' + IntToStr(len) + ' family=' + IntToStr(family) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls gethostbyaddr (addr=' + PtrToHex(addr) + ' len=' + IntToStr(len) + ' family=' + IntToStr(family) + ')');
  {$ENDIF}
- 
- Result:=Sockets.GetHostByAddr(addr,len,family);
+
+ HostEnt:=Sockets.GetHostByAddr(addr,len,family);
+ if HostEnt <> nil then
+  begin
+   {Get TLS Value}
+   Netdb:=ThreadGetTlsValue(SyscallsNetdbIndex);
+   if Netdb = nil then
+    begin
+     {Allocate TLS Value}
+     Netdb:=AllocMem(SyscallsNetdbSize);
+     if Netdb = nil then Exit;
+
+     {$IFDEF SYSCALLS_DEBUG}
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls gethostbyaddr (Allocated Netdb=' + PtrToHex(Netdb) + ')');
+     {$ENDIF}
+
+     {Set TLS Value}
+     if ThreadSetTlsValue(SyscallsNetdbIndex,Netdb) <> ERROR_SUCCESS then Exit;
+    end;
+
+   {Get Host Ent}
+   Result:=@Netdb^.HostEnt;
+
+   {Update Host Ent}
+   Result^.h_name:=HostEnt^.h_name;
+   Result^.h_aliases:=HostEnt^.h_aliases;
+   Result^.h_addrtype:=HostEnt^.h_addrtype;
+   Result^.h_length:=HostEnt^.h_length;
+   Result^.h_addr_list:=HostEnt^.h_addr_list;
+  end;
 end;
 
 {==============================================================================}
 
-function socket_gethostbyname(name: PChar): PHostEnt; cdecl;
+function socket_gethostbyname(name: PChar): P_hostent; cdecl;
 {Network host database functions}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ HostEnt:PHostEnt;
+ Netdb:PSyscallsNetdb;
 begin
  {}
- //To Do //Resolve the discrepency in field sizes between PHostEnt from Winsock and hostent from POSIX (short versus int)
- 
+ Result:=nil;
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls gethostbyname (name=' + StrPas(name) + ')');
  {$ENDIF}
- 
- Result:=Sockets.GetHostByName(name);
+
+ HostEnt:=Sockets.GetHostByName(name);
+ if HostEnt <> nil then
+  begin
+   {Get TLS Value}
+   Netdb:=ThreadGetTlsValue(SyscallsNetdbIndex);
+   if Netdb = nil then
+    begin
+     {Allocate TLS Value}
+     Netdb:=AllocMem(SyscallsNetdbSize);
+     if Netdb = nil then Exit;
+
+     {$IFDEF SYSCALLS_DEBUG}
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls gethostbyname (Allocated Netdb=' + PtrToHex(Netdb) + ')');
+     {$ENDIF}
+
+     {Set TLS Value}
+     if ThreadSetTlsValue(SyscallsNetdbIndex,Netdb) <> ERROR_SUCCESS then Exit;
+    end;
+
+   {Get Host Ent}
+   Result:=@Netdb^.HostEnt;
+
+   {Update Host Ent}
+   Result^.h_name:=HostEnt^.h_name;
+   Result^.h_aliases:=HostEnt^.h_aliases;
+   Result^.h_addrtype:=HostEnt^.h_addrtype;
+   Result^.h_length:=HostEnt^.h_length;
+   Result^.h_addr_list:=HostEnt^.h_addr_list;
+  end;
 end;
 
 {==============================================================================}
 
-function socket_getnetbyaddr(net: uint32_t; family: int): PNetEnt; cdecl;
+function socket_getnetbyaddr(net: uint32_t; family: int): P_netent; cdecl;
 {Network database functions}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  Addr:TInAddr;
+ NetEnt:PNetEnt;
+ Netdb:PSyscallsNetdb;
 begin
  {}
- //To Do //Resolve the discrepency in field sizes between PNetEnt from Winsock and netent from POSIX (short versus int)
- 
+ Result:=nil;
+
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getservbyport (net=' + IntToHex(net,8) + ' family=' + IntToStr(family) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getnetbyaddr (net=' + IntToHex(net,8) + ' family=' + IntToStr(family) + ')');
  {$ENDIF}
- 
+
  Addr.S_addr:=htonl(net);
- 
- Result:=Sockets.GetNetByAddr(@Addr,SizeOf(TInAddr),family);
+
+ NetEnt:=Sockets.GetNetByAddr(@Addr,SizeOf(TInAddr),family);
+ if NetEnt <> nil then
+  begin
+   {Get TLS Value}
+   Netdb:=ThreadGetTlsValue(SyscallsNetdbIndex);
+   if Netdb = nil then
+    begin
+     {Allocate TLS Value}
+     Netdb:=AllocMem(SyscallsNetdbSize);
+     if Netdb = nil then Exit;
+
+     {$IFDEF SYSCALLS_DEBUG}
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getnetbyaddr (Allocated Netdb=' + PtrToHex(Netdb) + ')');
+     {$ENDIF}
+
+     {Set TLS Value}
+     if ThreadSetTlsValue(SyscallsNetdbIndex,Netdb) <> ERROR_SUCCESS then Exit;
+    end;
+
+   {Get Net Ent}
+   Result:=@Netdb^.NetEnt;
+
+   {Update Net Ent}
+   Result^.n_name:=NetEnt^.n_name;
+   Result^.n_aliases:=NetEnt^.n_aliases;
+   Result^.n_addrtype:=NetEnt^.n_addrtype;
+   Result^.n_net:=NetEnt^.n_net;
+  end;
 end;
 
 {==============================================================================}
 
-function socket_getnetbyname(name: PChar): PNetEnt; cdecl;
+function socket_getnetbyname(name: PChar): P_netent; cdecl;
 {Network database functions}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ NetEnt:PNetEnt;
+ Netdb:PSyscallsNetdb;
 begin
  {}
- //To Do //Resolve the discrepency in field sizes between PNetEnt from Winsock and netent from POSIX (short versus int)
- 
+ Result:=nil;
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getnetbyname (name=' + StrPas(name) + ')');
  {$ENDIF}
- 
- Result:=Sockets.GetNetByName(name);
+
+ NetEnt:=Sockets.GetNetByName(name);
+ if NetEnt <> nil then
+  begin
+   {Get TLS Value}
+   Netdb:=ThreadGetTlsValue(SyscallsNetdbIndex);
+   if Netdb = nil then
+    begin
+     {Allocate TLS Value}
+     Netdb:=AllocMem(SyscallsNetdbSize);
+     if Netdb = nil then Exit;
+
+     {$IFDEF SYSCALLS_DEBUG}
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getnetbyname (Allocated Netdb=' + PtrToHex(Netdb) + ')');
+     {$ENDIF}
+
+     {Set TLS Value}
+     if ThreadSetTlsValue(SyscallsNetdbIndex,Netdb) <> ERROR_SUCCESS then Exit;
+    end;
+
+   {Get Net Ent}
+   Result:=@Netdb^.NetEnt;
+
+   {Update Net Ent}
+   Result^.n_name:=NetEnt^.n_name;
+   Result^.n_aliases:=NetEnt^.n_aliases;
+   Result^.n_addrtype:=NetEnt^.n_addrtype;
+   Result^.n_net:=NetEnt^.n_net;
+  end;
 end;
 
 {==============================================================================}
 
-function socket_getservbyport(port: int; proto: PChar): PServEnt; cdecl;
+function socket_getservbyport(port: int; proto: PChar): P_servent; cdecl;
 {Network services database functions}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ServEnt:PServEnt;
+ Netdb:PSyscallsNetdb;
 begin
  {}
- //To Do //Resolve the discrepency in field sizes between PServEnt from Winsock and servent from POSIX (short versus int)
- 
+ Result:=nil;
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getservbyport (port=' + IntToStr(port) + ' proto=' + StrPas(proto) + ')');
  {$ENDIF}
  
- Result:=Sockets.GetServByPort(port,proto);
+ ServEnt:=Sockets.GetServByPort(port,proto);
+ if ServEnt <> nil then
+  begin
+   {Get TLS Value}
+   Netdb:=ThreadGetTlsValue(SyscallsNetdbIndex);
+   if Netdb = nil then
+    begin
+     {Allocate TLS Value}
+     Netdb:=AllocMem(SyscallsNetdbSize);
+     if Netdb = nil then Exit;
+
+     {$IFDEF SYSCALLS_DEBUG}
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getservbyport (Allocated Netdb=' + PtrToHex(Netdb) + ')');
+     {$ENDIF}
+
+     {Set TLS Value}
+     if ThreadSetTlsValue(SyscallsNetdbIndex,Netdb) <> ERROR_SUCCESS then Exit;
+    end;
+
+   {Get Serv Ent}
+   Result:=@Netdb^.ServEnt;
+
+   {Update Serv Ent}
+   Result^.s_name:=ServEnt^.s_name;
+   Result^.s_aliases:=ServEnt^.s_aliases;
+   Result^.s_port:=ServEnt^.s_port;
+   Result^.s_proto:=ServEnt^.s_proto;
+  end;
 end;
 
 {==============================================================================}
 
-function socket_getservbyname(name, proto: PChar): PServEnt; cdecl;
+function socket_getservbyname(name, proto: PChar): P_servent; cdecl;
 {Network services database functions}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ServEnt:PServEnt;
+ Netdb:PSyscallsNetdb;
 begin
  {}
- //To Do //Resolve the discrepency in field sizes between PServEnt from Winsock and servent from POSIX (short versus int)
+ Result:=nil;
  
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getservbyname (name=' + StrPas(name) + ' proto=' + StrPas(proto) + ')');
  {$ENDIF}
  
- Result:=Sockets.GetServByName(name,proto);
+ ServEnt:=Sockets.GetServByName(name,proto);
+ if ServEnt <> nil then
+  begin
+   {Get TLS Value}
+   Netdb:=ThreadGetTlsValue(SyscallsNetdbIndex);
+   if Netdb = nil then
+    begin
+     {Allocate TLS Value}
+     Netdb:=AllocMem(SyscallsNetdbSize);
+     if Netdb = nil then Exit;
+
+     {$IFDEF SYSCALLS_DEBUG}
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getservbyname (Allocated Netdb=' + PtrToHex(Netdb) + ')');
+     {$ENDIF}
+
+     {Set TLS Value}
+     if ThreadSetTlsValue(SyscallsNetdbIndex,Netdb) <> ERROR_SUCCESS then Exit;
+    end;
+
+   {Get Serv Ent}
+   Result:=@Netdb^.ServEnt;
+
+   {Update Serv Ent}
+   Result^.s_name:=ServEnt^.s_name;
+   Result^.s_aliases:=ServEnt^.s_aliases;
+   Result^.s_port:=ServEnt^.s_port;
+   Result^.s_proto:=ServEnt^.s_proto;
+  end;
 end;
 
 {==============================================================================}
 
-function socket_getprotobynumber(proto: int): PProtoEnt; cdecl;
+function socket_getprotobynumber(proto: int): P_protoent; cdecl;
 {Network protocol database functions}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ProtoEnt:PProtoEnt;
+ Netdb:PSyscallsNetdb;
 begin
  {}
- //To Do //Resolve the discrepency in field sizes between PProtoEnt from Winsock and protoent from POSIX (short versus int)
- 
+ Result:=nil;
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getprotobynumber (proto=' + IntToStr(proto) + ')');
  {$ENDIF}
- 
- Result:=Sockets.GetProtoByNumber(proto);
+
+ ProtoEnt:=Sockets.GetProtoByNumber(proto);
+ if ProtoEnt <> nil then
+  begin
+   {Get TLS Value}
+   Netdb:=ThreadGetTlsValue(SyscallsNetdbIndex);
+   if Netdb = nil then
+    begin
+     {Allocate TLS Value}
+     Netdb:=AllocMem(SyscallsNetdbSize);
+     if Netdb = nil then Exit;
+
+     {$IFDEF SYSCALLS_DEBUG}
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getprotobynumber (Allocated Netdb=' + PtrToHex(Netdb) + ')');
+     {$ENDIF}
+
+     {Set TLS Value}
+     if ThreadSetTlsValue(SyscallsNetdbIndex,Netdb) <> ERROR_SUCCESS then Exit;
+    end;
+
+   {Get Proto Ent}
+   Result:=@Netdb^.ProtoEnt;
+
+   {Update Proto Ent}
+   Result^.p_name:=ProtoEnt^.p_name;
+   Result^.p_aliases:=ProtoEnt^.p_aliases;
+   Result^.p_proto:=ProtoEnt^.p_proto;
+  end;
 end;
 
 {==============================================================================}
 
-function socket_getprotobyname(name: PChar): PProtoEnt; cdecl;
+function socket_getprotobyname(name: PChar): P_protoent; cdecl;
 {Network protocol database functions}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ProtoEnt:PProtoEnt;
+ Netdb:PSyscallsNetdb;
 begin
  {}
- //To Do //Resolve the discrepency in field sizes between PProtoEnt from Winsock and protoent from POSIX (short versus int)
- 
+ Result:=nil;
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getprotobyname (name=' + StrPas(name) + ')');
  {$ENDIF}
- 
- Result:=Sockets.GetProtoByName(name);
+
+ ProtoEnt:=Sockets.GetProtoByName(name);
+ if ProtoEnt <> nil then
+  begin
+   {Get TLS Value}
+   Netdb:=ThreadGetTlsValue(SyscallsNetdbIndex);
+   if Netdb = nil then
+    begin
+     {Allocate TLS Value}
+     Netdb:=AllocMem(SyscallsNetdbSize);
+     if Netdb = nil then Exit;
+
+     {$IFDEF SYSCALLS_DEBUG}
+     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getprotobyname (Allocated Netdb=' + PtrToHex(Netdb) + ')');
+     {$ENDIF}
+
+     {Set TLS Value}
+     if ThreadSetTlsValue(SyscallsNetdbIndex,Netdb) <> ERROR_SUCCESS then Exit;
+    end;
+
+   {Get Proto Ent}
+   Result:=@Netdb^.ProtoEnt;
+
+   {Update Proto Ent}
+   Result^.p_name:=ProtoEnt^.p_name;
+   Result^.p_aliases:=ProtoEnt^.p_aliases;
+   Result^.p_proto:=ProtoEnt^.p_proto;
+  end;
 end;
 
 {==============================================================================}
@@ -9762,6 +11491,17 @@ begin
  {$ENDIF}
  
  ThreadSleep(msecs);
+end;
+
+{==============================================================================}
+
+function gettid: pid_t; cdecl;
+{Get thread identification}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ Result:=ThreadGetCurrent;
 end;
 
 {==============================================================================}
@@ -9997,9 +11737,12 @@ begin
  stat^.st_size:=FSFileSize(Handle);
  if FSGetFileTime(Handle,@CreateTime,@AccessTime,@WriteTime) then
   begin
-   stat^.st_ctime:=(Int64(CreateTime) - TIME_TICKS_TO_1970) div TIME_TICKS_PER_SECOND;
-   stat^.st_atime:=(Int64(AccessTime) - TIME_TICKS_TO_1970) div TIME_TICKS_PER_SECOND;
-   stat^.st_mtime:=(Int64(WriteTime) - TIME_TICKS_TO_1970) div TIME_TICKS_PER_SECOND;
+   stat^.st_ctime.tv_sec:=(Int64(CreateTime) - TIME_TICKS_TO_1970) div TIME_TICKS_PER_SECOND;
+   stat^.st_ctime.tv_nsec:=((Int64(CreateTime) - TIME_TICKS_TO_1970) mod TIME_TICKS_PER_SECOND) * 100;
+   stat^.st_atime.tv_sec:=(Int64(AccessTime) - TIME_TICKS_TO_1970) div TIME_TICKS_PER_SECOND;
+   stat^.st_atime.tv_nsec:=((Int64(AccessTime) - TIME_TICKS_TO_1970) mod TIME_TICKS_PER_SECOND) * 100;
+   stat^.st_mtime.tv_sec:=(Int64(WriteTime) - TIME_TICKS_TO_1970) div TIME_TICKS_PER_SECOND;
+   stat^.st_mtime.tv_nsec:=((Int64(WriteTime) - TIME_TICKS_TO_1970) mod TIME_TICKS_PER_SECOND) * 100;
   end;
  
  {Return Result}
@@ -10040,15 +11783,232 @@ begin
  stat64^.st_size:=FSFileSize(Handle);
  if FSGetFileTime(Handle,@CreateTime,@AccessTime,@WriteTime) then
   begin
-   stat64^.st_ctime:=(Int64(CreateTime) - TIME_TICKS_TO_1970) div TIME_TICKS_PER_SECOND;
-   stat64^.st_atime:=(Int64(AccessTime) - TIME_TICKS_TO_1970) div TIME_TICKS_PER_SECOND;
-   stat64^.st_mtime:=(Int64(WriteTime) - TIME_TICKS_TO_1970) div TIME_TICKS_PER_SECOND;
+   stat64^.st_ctime.tv_sec:=(Int64(CreateTime) - TIME_TICKS_TO_1970) div TIME_TICKS_PER_SECOND;
+   stat64^.st_ctime.tv_nsec:=((Int64(CreateTime) - TIME_TICKS_TO_1970) mod TIME_TICKS_PER_SECOND) * 100;
+   stat64^.st_atime.tv_sec:=(Int64(AccessTime) - TIME_TICKS_TO_1970) div TIME_TICKS_PER_SECOND;
+   stat64^.st_atime.tv_nsec:=((Int64(AccessTime) - TIME_TICKS_TO_1970) mod TIME_TICKS_PER_SECOND) * 100;
+   stat64^.st_mtime.tv_sec:=(Int64(WriteTime) - TIME_TICKS_TO_1970) div TIME_TICKS_PER_SECOND;
+   stat64^.st_mtime.tv_nsec:=((Int64(WriteTime) - TIME_TICKS_TO_1970) mod TIME_TICKS_PER_SECOND) * 100;
   end;
  
  {Return Result}
  Result:=True; 
 end;
 
+{==============================================================================}
+
+function SyscallsGetStatfs(const Path:String;statfs:Pstatfs):Boolean;
+var
+ Volume:String;
+ DriveData:TDriveData;
+ ClusterSize:LongWord;
+ TotalClusterCount:Int64;
+ FreeClusterCount:Int64;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Statfs (Path=' + Path + ')');
+ {$ENDIF}
+
+ {Check statfs}
+ if statfs = nil then Exit;
+
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+
+ {Get Volume (or Drive)}
+ Volume:=FileSysDriver.GetPathVolume(Path);
+ if Volume = '' then Exit;
+
+ {Get Volume Data}
+ DriveData:=FileSysDriver.GetVolumeData(Volume);
+
+ {Get Volume Information}
+ if not FileSysDriver.GetDriveInformation(Volume,ClusterSize,TotalClusterCount,FreeClusterCount) then Exit;
+
+ {Get statfs}
+ FillChar(statfs^,SizeOf(Tstatfs),0);
+ case DriveData.FileSysType of 
+  {FAT}
+  fsFAT12,
+  fsFAT16,
+  fsFAT32,
+  fsEXFAT:statfs^.f_type:=MSDOS_SUPER_MAGIC;
+  {NTFS}
+  fsHPFS,
+  fsNTFS,
+  fsNTFS5,
+  fsNTFS51:statfs^.f_type:=NTFS_SB_MAGIC;
+  {EXTFS}
+  fsEXT2:statfs^.f_type:=EXT2_SUPER_MAGIC;
+  fsEXT3:statfs^.f_type:=EXT3_SUPER_MAGIC;
+  fsEXT4:statfs^.f_type:=EXT4_SUPER_MAGIC;
+ end;
+ statfs^.f_bsize:=ClusterSize;
+ statfs^.f_blocks:=TotalClusterCount;
+ statfs^.f_bfree:=FreeClusterCount;
+ statfs^.f_bavail:=FreeClusterCount;
+ if (DriveData.Attributes and vaReadOnly) <> 0 then statfs^.f_flags:=ST_RDONLY;
+ statfs^.f_namelen:=DriveData.MaxFile;
+
+ Result:=True;
+end;
+
+{==============================================================================}
+{$IFDEF SYSCALLS_LARGE64_FILES}
+function SyscallsGetStatfs64(const Path:String;statfs64:Pstatfs64):Boolean;
+var
+ Volume:String;
+ DriveData:TDriveData;
+ ClusterSize:LongWord;
+ TotalClusterCount:Int64;
+ FreeClusterCount:Int64;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Statfs64 (Path=' + Path + ')');
+ {$ENDIF}
+
+ {Check statfs64}
+ if statfs64 = nil then Exit;
+
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+
+ {Get Volume (or Drive)}
+ Volume:=FileSysDriver.GetPathVolume(Path);
+ if Volume = '' then Exit;
+
+ {Get Volume Data}
+ DriveData:=FileSysDriver.GetVolumeData(Volume);
+
+ {Get Volume Information}
+ if not FileSysDriver.GetDriveInformation(Volume,ClusterSize,TotalClusterCount,FreeClusterCount) then Exit;
+
+ {Get statfs64}
+ FillChar(statfs64^,SizeOf(Tstatfs64),0);
+ case DriveData.FileSysType of 
+  {FAT}
+  fsFAT12,
+  fsFAT16,
+  fsFAT32,
+  fsEXFAT:statfs64^.f_type:=MSDOS_SUPER_MAGIC;
+  {NTFS}
+  fsHPFS,
+  fsNTFS,
+  fsNTFS5,
+  fsNTFS51:statfs64^.f_type:=NTFS_SB_MAGIC;
+  {EXTFS}
+  fsEXT2:statfs64^.f_type:=EXT2_SUPER_MAGIC;
+  fsEXT3:statfs64^.f_type:=EXT3_SUPER_MAGIC;
+  fsEXT4:statfs64^.f_type:=EXT4_SUPER_MAGIC;
+ end;
+ statfs64^.f_bsize:=ClusterSize;
+ statfs64^.f_blocks:=TotalClusterCount;
+ statfs64^.f_bfree:=FreeClusterCount;
+ statfs64^.f_bavail:=FreeClusterCount;
+ if (DriveData.Attributes and vaReadOnly) <> 0 then statfs64^.f_flags:=ST_RDONLY;
+ statfs64^.f_namelen:=DriveData.MaxFile;
+
+ Result:=True;
+end;
+{$ENDIF}
+{==============================================================================}
+
+function SyscallsGetStatvfs(const Path:String;statvfs:Pstatvfs):Boolean;
+var
+ Volume:String;
+ DriveData:TDriveData;
+ ClusterSize:LongWord;
+ TotalClusterCount:Int64;
+ FreeClusterCount:Int64;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Statvfs (Path=' + Path + ')');
+ {$ENDIF}
+
+ {Check statvfs}
+ if statvfs = nil then Exit;
+
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+
+ {Get Volume (or Drive)}
+ Volume:=FileSysDriver.GetPathVolume(Path);
+ if Volume = '' then Exit;
+
+ {Get Volume Data}
+ DriveData:=FileSysDriver.GetVolumeData(Volume);
+
+ {Get Volume Information}
+ if not FileSysDriver.GetDriveInformation(Volume,ClusterSize,TotalClusterCount,FreeClusterCount) then Exit;
+
+ {Get statvfs}
+ FillChar(statvfs^,SizeOf(Tstatfs),0);
+ statvfs^.f_bsize:=ClusterSize;
+ statvfs^.f_frsize:=ClusterSize;
+ statvfs^.f_blocks:=TotalClusterCount;
+ statvfs^.f_bfree:=FreeClusterCount;
+ statvfs^.f_bavail:=FreeClusterCount;
+ if (DriveData.Attributes and vaReadOnly) <> 0 then statvfs^.f_flag:=ST_RDONLY;
+ statvfs^.f_namemax:=DriveData.MaxFile;
+
+ Result:=True;
+end;
+
+{==============================================================================}
+{$IFDEF SYSCALLS_LARGE64_FILES}
+function SyscallsGetStatvfs64(const Path:String;statvfs64:Pstatvfs64):Boolean;
+var
+ Volume:String;
+ DriveData:TDriveData;
+ ClusterSize:LongWord;
+ TotalClusterCount:Int64;
+ FreeClusterCount:Int64;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Get Statvfs64 (Path=' + Path + ')');
+ {$ENDIF}
+
+ {Check statvfs64}
+ if statvfs64 = nil then Exit;
+
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+
+ {Get Volume (or Drive)}
+ Volume:=FileSysDriver.GetPathVolume(Path);
+ if Volume = '' then Exit;
+
+ {Get Volume Data}
+ DriveData:=FileSysDriver.GetVolumeData(Volume);
+
+ {Get Volume Information}
+ if not FileSysDriver.GetDriveInformation(Volume,ClusterSize,TotalClusterCount,FreeClusterCount) then Exit;
+
+ {Get statvfs64}
+ FillChar(statvfs64^,SizeOf(Tstatfs),0);
+ statvfs64^.f_bsize:=ClusterSize;
+ statvfs64^.f_frsize:=ClusterSize;
+ statvfs64^.f_blocks:=TotalClusterCount;
+ statvfs64^.f_bfree:=FreeClusterCount;
+ statvfs64^.f_bavail:=FreeClusterCount;
+ if (DriveData.Attributes and vaReadOnly) <> 0 then statvfs64^.f_flag:=ST_RDONLY;
+ statvfs64^.f_namemax:=DriveData.MaxFile;
+
+ Result:=True;
+end;
+{$ENDIF}
 {==============================================================================}
 
 function SyscallsGetEntry(Number:LongWord):PSyscallsEntry; 
@@ -10148,7 +12108,7 @@ end;
 
 {==============================================================================}
 
-function SyscallsAddEntry(Handle:THandle;Source:LongWord):PSyscallsEntry; 
+function SyscallsAddEntry(Handle:THandle;Source,Origin,Number:LongWord):PSyscallsEntry; 
 
  procedure SyscallsIncrementNext;
  begin
@@ -10172,6 +12132,7 @@ var
  Start:LongWord;
  First:PSyscallsEntry;
  Next:PSyscallsEntry;
+ Entry:PSyscallsEntry;
 begin
  {}
  Result:=nil;
@@ -10186,59 +12147,117 @@ begin
  {Lock Table}
  if MutexLock(SyscallsTableLock) <> ERROR_SUCCESS then Exit;
 
- {Get Start}
- Start:=SyscallsTable.Next;
- 
- {Find Next}
- Next:=SyscallsGetEntry(SyscallsTable.Next);
- while Next <> nil do
+ {Check Number}
+ if Number = SYSCALLS_INVALID_FILENO then
   begin
-   {Increment Next}
-   SyscallsIncrementNext;
-   
-   {Check Next}
-   if SyscallsTable.Next = Start then Break;
-   
+   {Check Origin}
+   if Origin <> SYSCALLS_INVALID_FILENO then
+    begin
+     if (Origin >= SYSCALLS_TABLE_MIN) and (Origin < SYSCALLS_TABLE_MAX) then
+      begin
+       {Update Next}
+       SyscallsTable.Next:=Origin;
+      end;
+    end;
+
+   {Get Start}
+   Start:=SyscallsTable.Next;
+
    {Find Next}
    Next:=SyscallsGetEntry(SyscallsTable.Next);
-  end;
-  
- {Check Next}
- if Next = nil then
-  begin
-   {Create Entry}
-   Next:=AllocMem(SizeOf(TSyscallsEntry));
-   if Next <> nil then 
+   while Next <> nil do
     begin
-     {Update Entry}
-     Next^.Number:=SyscallsTable.Next;
-     Next^.Handle:=Handle;
-     Next^.Source:=Source;
-     Next^.Prev:=nil;
-     
-     {Get First}
-     First:=SyscallsTable.Entries[Next^.Number and SYSCALLS_TABLE_MASK];
-     
-     {Link Entry}
-     Next^.Next:=First;
-     if First <> nil then First^.Prev:=Next;
-     SyscallsTable.Entries[Next^.Number and SYSCALLS_TABLE_MASK]:=Next;
-     
-     {Increment Count}
-     Inc(SyscallsTable.Count);
-     
      {Increment Next}
      SyscallsIncrementNext;
-     
-     {$IFDEF SYSCALLS_DEBUG}
-     if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Add Entry Number=' + IntToStr(Next^.Number));
-     {$ENDIF}
-     
-     {Return Result}
-     Result:=Next;
-    end; 
-  end;  
- 
+
+     {Check Next}
+     if SyscallsTable.Next = Start then Break;
+
+     {Find Next}
+     Next:=SyscallsGetEntry(SyscallsTable.Next);
+    end;
+
+   {Check Next}
+   if Next = nil then
+    begin
+     {Create Entry}
+     Next:=AllocMem(SizeOf(TSyscallsEntry));
+     if Next <> nil then 
+      begin
+       {Update Entry}
+       Next^.Number:=SyscallsTable.Next;
+       Next^.Handle:=Handle;
+       Next^.Source:=Source;
+       Next^.Prev:=nil;
+
+       {Get First}
+       First:=SyscallsTable.Entries[Next^.Number and SYSCALLS_TABLE_MASK];
+
+       {Link Entry}
+       Next^.Next:=First;
+       if First <> nil then First^.Prev:=Next;
+       SyscallsTable.Entries[Next^.Number and SYSCALLS_TABLE_MASK]:=Next;
+
+       {Increment Count}
+       Inc(SyscallsTable.Count);
+
+       {Increment Next}
+       SyscallsIncrementNext;
+
+       {$IFDEF SYSCALLS_DEBUG}
+       if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Add Entry Number=' + IntToStr(Next^.Number));
+       {$ENDIF}
+
+       {Return Result}
+       Result:=Next;
+      end;
+    end;
+  end
+ else
+  begin
+   {Find Entry}
+   Entry:=SyscallsGetEntry(Number);
+
+   {Check Entry}
+   if Entry = nil then
+    begin
+     {Create Entry}
+     Entry:=AllocMem(SizeOf(TSyscallsEntry));
+     if Entry <> nil then 
+      begin
+       {Update Entry}
+       Entry^.Number:=Number;
+       Entry^.Handle:=Handle;
+       Entry^.Source:=Source;
+       Entry^.Prev:=nil;
+
+       {Get First}
+       First:=SyscallsTable.Entries[Entry^.Number and SYSCALLS_TABLE_MASK];
+
+       {Link Entry}
+       Entry^.Next:=First;
+       if First <> nil then First^.Prev:=Entry;
+       SyscallsTable.Entries[Entry^.Number and SYSCALLS_TABLE_MASK]:=Entry;
+
+       {Increment Count}
+       Inc(SyscallsTable.Count);
+      end;
+    end
+   else
+    begin
+     {Update Entry}
+     Entry^.Handle:=Handle;
+     Entry^.Source:=Source;
+    end;
+
+   {$IFDEF SYSCALLS_DEBUG}
+   if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls Add Entry Number=' + IntToStr(Number));
+   {$ENDIF}
+
+   {Return Result}
+   Result:=Entry;
+  end;
+
  {Unlock Table}
  MutexUnlock(SyscallsTableLock);
  
