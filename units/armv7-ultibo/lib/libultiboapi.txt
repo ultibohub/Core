@@ -555,8 +555,10 @@ ARMv6
  arm-none-eabi-gcc -O2 -mabi=aapcs -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard -I$HOME/ultibo/api/include -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -c $HOME/ultibo/api/src/console/consolewindowprintf.c
  arm-none-eabi-gcc -O2 -mabi=aapcs -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard -I$HOME/ultibo/api/include -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -c $HOME/ultibo/api/src/logging/loggingdeviceoutputf.c
  arm-none-eabi-gcc -O2 -mabi=aapcs -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard -I$HOME/ultibo/api/include -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -c $HOME/ultibo/api/src/platform/loggingoutputf.c
+ arm-none-eabi-gcc -O2 -mabi=aapcs -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard -I$HOME/ultibo/api/include -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -c $HOME/ultibo/api/src/platform/serialprintf.c
+ arm-none-eabi-gcc -O2 -mabi=aapcs -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard -I$HOME/ultibo/api/include -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -c $HOME/ultibo/api/src/serial/serialdeviceprintf.c
 
- arm-none-eabi-ar rcs libultiboapi.a consoleprintf.o consolewindowprintf.o loggingdeviceoutputf.o loggingoutputf.o
+ arm-none-eabi-ar rcs libultiboapi.a consoleprintf.o consolewindowprintf.o loggingdeviceoutputf.o loggingoutputf.o serialprintf.o serialdeviceprintf.o
 
 
 
@@ -580,8 +582,10 @@ ARMv7
  arm-none-eabi-gcc -O2 -mabi=aapcs -marm -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard -I$HOME/ultibo/api/include -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -c $HOME/ultibo/api/src/console/consolewindowprintf.c
  arm-none-eabi-gcc -O2 -mabi=aapcs -marm -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard -I$HOME/ultibo/api/include -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -c $HOME/ultibo/api/src/logging/loggingdeviceoutputf.c
  arm-none-eabi-gcc -O2 -mabi=aapcs -marm -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard -I$HOME/ultibo/api/include -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -c $HOME/ultibo/api/src/platform/loggingoutputf.c
+ arm-none-eabi-gcc -O2 -mabi=aapcs -marm -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard -I$HOME/ultibo/api/include -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -c $HOME/ultibo/api/src/platform/serialprintf.c
+ arm-none-eabi-gcc -O2 -mabi=aapcs -marm -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard -I$HOME/ultibo/api/include -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -c $HOME/ultibo/api/src/serial/serialdeviceprintf.c
 
- arm-none-eabi-ar rcs libultiboapi.a consoleprintf.o consolewindowprintf.o loggingdeviceoutputf.o loggingoutputf.o
+ arm-none-eabi-ar rcs libultiboapi.a consoleprintf.o consolewindowprintf.o loggingdeviceoutputf.o loggingoutputf.o serialprintf.o serialdeviceprintf.o
 
 
 
@@ -605,6 +609,8 @@ ARMv8
  aarch64-none-elf-gcc -O2 -march=armv8-a -I$HOME/ultibo/api/include -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -c $HOME/ultibo/api/src/console/consolewindowprintf.c
  aarch64-none-elf-gcc -O2 -march=armv8-a -I$HOME/ultibo/api/include -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -c $HOME/ultibo/api/src/logging/loggingdeviceoutputf.c
  aarch64-none-elf-gcc -O2 -march=armv8-a -I$HOME/ultibo/api/include -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -c $HOME/ultibo/api/src/platform/loggingoutputf.c
+ aarch64-none-elf-gcc -O2 -march=armv8-a -I$HOME/ultibo/api/include -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -c $HOME/ultibo/api/src/platform/serialprintf.c
+ aarch64-none-elf-gcc -O2 -march=armv8-a -I$HOME/ultibo/api/include -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS -c $HOME/ultibo/api/src/serial/serialdeviceprintf.c
 
- aarch64-none-elf-ar rcs libultiboapi.a consoleprintf.o consolewindowprintf.o loggingdeviceoutputf.o loggingoutputf.o
+ aarch64-none-elf-ar rcs libultiboapi.a consoleprintf.o consolewindowprintf.o loggingdeviceoutputf.o loggingoutputf.o serialprintf.o serialdeviceprintf.o
 
