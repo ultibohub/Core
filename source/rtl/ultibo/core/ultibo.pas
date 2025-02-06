@@ -1231,17 +1231,17 @@ function GetComputerName(lpBuffer:LPSTR;var nSize:DWORD):BOOL; inline;
 function GetComputerNameA(lpBuffer:LPSTR;var nSize:DWORD):BOOL;
 function GetComputerNameW(lpBuffer:LPWSTR;var nSize:DWORD):BOOL;
 
-function SetComputerName(lpComputerName:LPCSTR):BOOL; inline;
-function SetComputerNameA(lpComputerName:LPCSTR):BOOL;
-function SetComputerNameW(lpComputerName:LPCWSTR):BOOL;
+function SetComputerName(const lpComputerName:LPCSTR):BOOL; inline;
+function SetComputerNameA(const lpComputerName:LPCSTR):BOOL;
+function SetComputerNameW(const lpComputerName:LPCWSTR):BOOL;
 
 function GetComputerNameEx(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPSTR;var nSize:DWORD):BOOL; inline;
 function GetComputerNameExA(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPSTR;var nSize:DWORD):BOOL;
 function GetComputerNameExW(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPWSTR;var nSize:DWORD):BOOL;
 
-function SetComputerNameEx(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPCSTR):BOOL; inline;
-function SetComputerNameExA(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPCSTR):BOOL;
-function SetComputerNameExW(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPCWSTR):BOOL;
+function SetComputerNameEx(NameType:COMPUTER_NAME_FORMAT;const lpBuffer:LPCSTR):BOOL; inline;
+function SetComputerNameExA(NameType:COMPUTER_NAME_FORMAT;const lpBuffer:LPCSTR):BOOL;
+function SetComputerNameExW(NameType:COMPUTER_NAME_FORMAT;const lpBuffer:LPCWSTR):BOOL;
 
 function ExitUltibo(dwReserved:DWORD;uReserved:UINT):BOOL;
 function ExitUltiboEx(uFlags:UINT;dwReserved:DWORD):BOOL;
@@ -1336,9 +1336,9 @@ function ConvertDateTime(ADateTime:TDateTime;AOffset:Integer;ALocal:Boolean):TDa
 
 {==============================================================================}
 {Drive Functions (Compatibility)}
-function GetDiskType(lpRootPathName:LPCSTR):UINT; inline; {GetDriveType - Already defined below}
-function GetDriveTypeA(lpRootPathName:LPCSTR):UINT; 
-function GetDriveTypeW(lpRootPathName:LPCWSTR):UINT;
+function GetDiskType(const lpRootPathName:LPCSTR):UINT; inline; {GetDriveType - Already defined below}
+function GetDriveTypeA(const lpRootPathName:LPCSTR):UINT; 
+function GetDriveTypeW(const lpRootPathName:LPCWSTR):UINT;
 
 function GetLogicalDrives:DWORD;
 
@@ -1346,29 +1346,29 @@ function GetLogicalDriveStrings(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD; inlin
 function GetLogicalDriveStringsA(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD;
 function GetLogicalDriveStringsW(nBufferLength:DWORD;lpBuffer:LPWSTR):DWORD;
 
-function DefineDosDevice(dwFlags:DWORD;lpDeviceName,lpTargetPath:LPCSTR):BOOL;  inline;
-function DefineDosDeviceA(dwFlags:DWORD;lpDeviceName,lpTargetPath:LPCSTR):BOOL; 
-function DefineDosDeviceW(dwFlags:DWORD;lpDeviceName,lpTargetPath:LPCWSTR):BOOL; 
+function DefineDosDevice(dwFlags:DWORD;const lpDeviceName,lpTargetPath:LPCSTR):BOOL;  inline;
+function DefineDosDeviceA(dwFlags:DWORD;const lpDeviceName,lpTargetPath:LPCSTR):BOOL; 
+function DefineDosDeviceW(dwFlags:DWORD;const lpDeviceName,lpTargetPath:LPCWSTR):BOOL; 
 
-function QueryDosDevice(lpDeviceName,lpTargetPath:LPSTR;ucchMax:DWORD):DWORD; inline;
-function QueryDosDeviceA(lpDeviceName,lpTargetPath:LPSTR;ucchMax:DWORD):DWORD;
-function QueryDosDeviceW(lpDeviceName,lpTargetPath:LPWSTR;ucchMax:DWORD):DWORD;
+function QueryDosDevice(const lpDeviceName:LPCSTR;lpTargetPath:LPSTR;ucchMax:DWORD):DWORD; inline;
+function QueryDosDeviceA(const lpDeviceName:LPCSTR;lpTargetPath:LPSTR;ucchMax:DWORD):DWORD;
+function QueryDosDeviceW(const lpDeviceName:LPCWSTR;lpTargetPath:LPWSTR;ucchMax:DWORD):DWORD;
 
-function SetVolumeLabel(lpRootPathName,lpVolumeName:LPCSTR):BOOL;  inline;
-function SetVolumeLabelA(lpRootPathName,lpVolumeName:LPCSTR):BOOL; 
-function SetVolumeLabelW(lpRootPathName,lpVolumeName:LPCWSTR):BOOL;
+function SetVolumeLabel(const lpRootPathName,lpVolumeName:LPCSTR):BOOL;  inline;
+function SetVolumeLabelA(const lpRootPathName,lpVolumeName:LPCSTR):BOOL; 
+function SetVolumeLabelW(const lpRootPathName,lpVolumeName:LPCWSTR):BOOL;
 
-function GetVolumeInformation(lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; inline;
-function GetVolumeInformationA(lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; 
-function GetVolumeInformationW(lpRootPathName:LPCWSTR;lpVolumeNameBuffer:LPWSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPWSTR;nFileSystemNameSize:DWORD):BOOL;
+function GetVolumeInformation(const lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; inline;
+function GetVolumeInformationA(const lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; 
+function GetVolumeInformationW(const lpRootPathName:LPCWSTR;lpVolumeNameBuffer:LPWSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPWSTR;nFileSystemNameSize:DWORD):BOOL;
 
-function GetDiskFreeSpace(lpRootPathName:LPCSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL; inline;
-function GetDiskFreeSpaceA(lpRootPathName:LPCSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL;
-function GetDiskFreeSpaceW(lpRootPathName:LPCWSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL;
+function GetDiskFreeSpace(const lpRootPathName:LPCSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL; inline;
+function GetDiskFreeSpaceA(const lpRootPathName:LPCSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL;
+function GetDiskFreeSpaceW(const lpRootPathName:LPCWSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL;
 
-function GetDiskFreeSpaceEx(lpDirectoryName:LPCSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL; inline;
-function GetDiskFreeSpaceExA(lpDirectoryName:LPCSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
-function GetDiskFreeSpaceExW(lpDirectoryName:LPCWSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
+function GetDiskFreeSpaceEx(const lpDirectoryName:LPCSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL; inline;
+function GetDiskFreeSpaceExA(const lpDirectoryName:LPCSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
+function GetDiskFreeSpaceExW(const lpDirectoryName:LPCWSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
 
 {==============================================================================}
 {Drive Functions (Ultibo)}
@@ -1399,29 +1399,29 @@ function AreFileApisANSI:BOOL;
 procedure SetFileApisToOEM;
 procedure SetFileApisToANSI;
 
-function CreateFile(lpFileName:LPCSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE; inline;
-function CreateFileA(lpFileName:LPCSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE;
-function CreateFileW(lpFileName:LPCWSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE;
+function CreateFile(const lpFileName:LPCSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE; inline;
+function CreateFileA(const lpFileName:LPCSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE;
+function CreateFileW(const lpFileName:LPCWSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE;
 
-function SetFileAttributes(lpFileName:LPCSTR;dwFileAttributes:DWORD):BOOL; inline;
-function SetFileAttributesA(lpFileName:LPCSTR;dwFileAttributes:DWORD):BOOL;
-function SetFileAttributesW(lpFileName:LPCWSTR;dwFileAttributes:DWORD):BOOL;
+function SetFileAttributes(const lpFileName:LPCSTR;dwFileAttributes:DWORD):BOOL; inline;
+function SetFileAttributesA(const lpFileName:LPCSTR;dwFileAttributes:DWORD):BOOL;
+function SetFileAttributesW(const lpFileName:LPCWSTR;dwFileAttributes:DWORD):BOOL;
 
-function GetFileAttributes(lpFileName:LPCSTR):DWORD; inline;
-function GetFileAttributesA(lpFileName:LPCSTR):DWORD;
-function GetFileAttributesW(lpFileName:LPCWSTR):DWORD;
+function GetFileAttributes(const lpFileName:LPCSTR):DWORD; inline;
+function GetFileAttributesA(const lpFileName:LPCSTR):DWORD;
+function GetFileAttributesW(const lpFileName:LPCWSTR):DWORD;
 
-function DeleteFile(lpFileName:LPCSTR):BOOL; inline;
-function DeleteFileA(lpFileName:LPCSTR):BOOL;
-function DeleteFileW(lpFileName:LPCWSTR):BOOL;
+function DeleteFile(const lpFileName:LPCSTR):BOOL; inline;
+function DeleteFileA(const lpFileName:LPCSTR):BOOL;
+function DeleteFileW(const lpFileName:LPCWSTR):BOOL;
 
-function MoveFile(lpExistingFileName,lpNewFileName:LPCSTR):BOOL; inline;
-function MoveFileA(lpExistingFileName,lpNewFileName:LPCSTR):BOOL;
-function MoveFileW(lpExistingFileName,lpNewFileName:LPCWSTR):BOOL;
+function MoveFile(const lpExistingFileName,lpNewFileName:LPCSTR):BOOL; inline;
+function MoveFileA(const lpExistingFileName,lpNewFileName:LPCSTR):BOOL;
+function MoveFileW(const lpExistingFileName,lpNewFileName:LPCWSTR):BOOL;
 
-function FindFirstFile(lpFileName:LPCSTR;var lpFindFileData:WIN32_FIND_DATAA):HANDLE; inline;
-function FindFirstFileA(lpFileName:LPCSTR;var lpFindFileData:WIN32_FIND_DATAA):HANDLE;
-function FindFirstFileW(lpFileName:LPCWSTR;var lpFindFileData:WIN32_FIND_DATAW):HANDLE;
+function FindFirstFile(const lpFileName:LPCSTR;var lpFindFileData:WIN32_FIND_DATAA):HANDLE; inline;
+function FindFirstFileA(const lpFileName:LPCSTR;var lpFindFileData:WIN32_FIND_DATAA):HANDLE;
+function FindFirstFileW(const lpFileName:LPCWSTR;var lpFindFileData:WIN32_FIND_DATAW):HANDLE;
 
 function FindNextFile(hFindFile:HANDLE;var lpFindFileData:WIN32_FIND_DATAA):BOOL; inline;
 function FindNextFileA(hFindFile:HANDLE;var lpFindFileData:WIN32_FIND_DATAA):BOOL;
@@ -1445,60 +1445,60 @@ function SetFilePointerEx(hFile:HANDLE;liDistanceToMove:LARGE_INTEGER;lpNewFileP
 
 function FlushFileBuffers(hFile:HANDLE):BOOL;
 
-function CopyFile(lpExistingFileName,lpNewFileName:LPCSTR;bFailIfExists:BOOL):BOOL; inline;
-function CopyFileA(lpExistingFileName,lpNewFileName:LPCSTR;bFailIfExists:BOOL):BOOL;
-function CopyFileW(lpExistingFileName,lpNewFileName:LPCWSTR;bFailIfExists:BOOL):BOOL;
+function CopyFile(const lpExistingFileName,lpNewFileName:LPCSTR;bFailIfExists:BOOL):BOOL; inline;
+function CopyFileA(const lpExistingFileName,lpNewFileName:LPCSTR;bFailIfExists:BOOL):BOOL;
+function CopyFileW(const lpExistingFileName,lpNewFileName:LPCWSTR;bFailIfExists:BOOL):BOOL;
 
-function SetFileShortName(hFile:HANDLE;lpShortName:LPCSTR):BOOL; inline;
-function SetFileShortNameA(hFile:HANDLE;lpShortName:LPCSTR):BOOL;
-function SetFileShortNameW(hFile:HANDLE;lpShortName:LPCWSTR):BOOL;
+function SetFileShortName(hFile:HANDLE;const lpShortName:LPCSTR):BOOL; inline;
+function SetFileShortNameA(hFile:HANDLE;const lpShortName:LPCSTR):BOOL;
+function SetFileShortNameW(hFile:HANDLE;const lpShortName:LPCWSTR):BOOL;
 
-function CreateHardLink(lpFileName,lpExistingFileName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL; inline;
-function CreateHardLinkA(lpFileName,lpExistingFileName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
-function CreateHardLinkW(lpFileName,lpExistingFileName:LPCWSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
+function CreateHardLink(const lpFileName,lpExistingFileName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL; inline;
+function CreateHardLinkA(const lpFileName,lpExistingFileName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
+function CreateHardLinkW(const lpFileName,lpExistingFileName:LPCWSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
 
-function CreateSymbolicLink(lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:DWORD):BOOL; inline;
-function CreateSymbolicLinkA(lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:DWORD):BOOL;
-function CreateSymbolicLinkW(lpSymlinkFileName,lpTargetFileName:LPCWSTR;dwFlags:DWORD):BOOL;
+function CreateSymbolicLink(const lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:DWORD):BOOL; inline;
+function CreateSymbolicLinkA(const lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:DWORD):BOOL;
+function CreateSymbolicLinkW(const lpSymlinkFileName,lpTargetFileName:LPCWSTR;dwFlags:DWORD):BOOL;
 
 function GetFileInformationByHandle(hFile:HANDLE;var lpFileInformation:BY_HANDLE_FILE_INFORMATION):BOOL;
 
-function GetFinalPathNameByHandle(hFile:HANDLE;lpszFilePath:LPCSTR;cchFilePath,dwFlags:DWORD):DWORD;
-function GetFinalPathNameByHandleA(hFile:HANDLE;lpszFilePath:LPCSTR;cchFilePath,dwFlags:DWORD):DWORD;
-function GetFinalPathNameByHandleW(hFile:HANDLE;lpszFilePath:LPCWSTR;cchFilePath,dwFlags:DWORD):DWORD;
+function GetFinalPathNameByHandle(hFile:HANDLE;lpszFilePath:LPSTR;cchFilePath,dwFlags:DWORD):DWORD;
+function GetFinalPathNameByHandleA(hFile:HANDLE;lpszFilePath:LPSTR;cchFilePath,dwFlags:DWORD):DWORD;
+function GetFinalPathNameByHandleW(hFile:HANDLE;lpszFilePath:LPWSTR;cchFilePath,dwFlags:DWORD):DWORD;
 
 {==============================================================================}
 {File Functions (Ultibo)}
 
 {==============================================================================}
 {Directory Functions (Compatibility)}
-function CreateDirectory(lpPathName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL; inline;
-function CreateDirectoryA(lpPathName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
-function CreateDirectoryW(lpPathName:LPCWSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
+function CreateDirectory(const lpPathName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL; inline;
+function CreateDirectoryA(const lpPathName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
+function CreateDirectoryW(const lpPathName:LPCWSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
 
-function RemoveDirectory(lpPathName:LPCSTR):BOOL; inline;
-function RemoveDirectoryA(lpPathName:LPCSTR):BOOL;
-function RemoveDirectoryW(lpPathName:LPCWSTR):BOOL;
+function RemoveDirectory(const lpPathName:LPCSTR):BOOL; inline;
+function RemoveDirectoryA(const lpPathName:LPCSTR):BOOL;
+function RemoveDirectoryW(const lpPathName:LPCWSTR):BOOL;
 
-function SetCurrentDirectory(lpPathName:LPCSTR):BOOL; inline;
-function SetCurrentDirectoryA(lpPathName:LPCSTR):BOOL;
-function SetCurrentDirectoryW(lpPathName:LPCWSTR):BOOL; 
+function SetCurrentDirectory(const lpPathName:LPCSTR):BOOL; inline;
+function SetCurrentDirectoryA(const lpPathName:LPCSTR):BOOL;
+function SetCurrentDirectoryW(const lpPathName:LPCWSTR):BOOL; 
 
 function GetCurrentDirectory(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD; inline;
 function GetCurrentDirectoryA(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD;
 function GetCurrentDirectoryW(nBufferLength:DWORD;lpBuffer:LPWSTR):DWORD;
 
-function GetLongPathName(lpszShortPath:LPCSTR;lpszLongPath:LPSTR;cchBuffer:DWORD):DWORD; inline;
-function GetLongPathNameA(lpszShortPath:LPCSTR;lpszLongPath:LPSTR;cchBuffer:DWORD):DWORD;
-function GetLongPathNameW(lpszShortPath:LPCWSTR;lpszLongPath:LPWSTR;cchBuffer:DWORD):DWORD;
+function GetLongPathName(const lpszShortPath:LPCSTR;lpszLongPath:LPSTR;cchBuffer:DWORD):DWORD; inline;
+function GetLongPathNameA(const lpszShortPath:LPCSTR;lpszLongPath:LPSTR;cchBuffer:DWORD):DWORD;
+function GetLongPathNameW(const lpszShortPath:LPCWSTR;lpszLongPath:LPWSTR;cchBuffer:DWORD):DWORD;
 
-function GetShortPathName(lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD;  inline;
-function GetShortPathNameA(lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD; 
-function GetShortPathNameW(lpszLongPath:LPCWSTR;lpszShortPath:LPWSTR;cchBuffer:DWORD):DWORD;
+function GetShortPathName(const lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD;  inline;
+function GetShortPathNameA(const lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD; 
+function GetShortPathNameW(const lpszLongPath:LPCWSTR;lpszShortPath:LPWSTR;cchBuffer:DWORD):DWORD;
 
-function GetFullPathName(lpFileName:LPCSTR;nBufferLength:DWORD;lpBuffer:LPSTR;var lpFilePart:LPSTR):DWORD; inline;
-function GetFullPathNameA(lpFileName:LPCSTR;nBufferLength:DWORD;lpBuffer:LPSTR;var lpFilePart:LPSTR):DWORD;
-function GetFullPathNameW(lpFileName:LPCWSTR;nBufferLength:DWORD;lpBuffer:LPWSTR;var lpFilePart:LPWSTR):DWORD;
+function GetFullPathName(const lpFileName:LPCSTR;nBufferLength:DWORD;lpBuffer:LPSTR;var lpFilePart:LPSTR):DWORD; inline;
+function GetFullPathNameA(const lpFileName:LPCSTR;nBufferLength:DWORD;lpBuffer:LPSTR;var lpFilePart:LPSTR):DWORD;
+function GetFullPathNameW(const lpFileName:LPCWSTR;nBufferLength:DWORD;lpBuffer:LPWSTR;var lpFilePart:LPWSTR):DWORD;
 
 {==============================================================================}
 {Directory Functions (Ultibo)}
@@ -1530,17 +1530,17 @@ function FreeEnvironmentStrings(pstr:LPSTR):BOOL; inline;
 function FreeEnvironmentStringsA(pstr:LPSTR):BOOL;
 function FreeEnvironmentStringsW(pstr:LPWSTR):BOOL;
 
-function GetEnvironmentVariable(lpName:LPCSTR;lpBuffer:LPSTR;nSize:DWORD):DWORD; inline;
-function GetEnvironmentVariableA(lpName:LPCSTR;lpBuffer:LPSTR;nSize:DWORD):DWORD;
-function GetEnvironmentVariableW(lpName:LPCWSTR;lpBuffer:LPWSTR;nSize:DWORD):DWORD;
+function GetEnvironmentVariable(const lpName:LPCSTR;lpBuffer:LPSTR;nSize:DWORD):DWORD; inline;
+function GetEnvironmentVariableA(const lpName:LPCSTR;lpBuffer:LPSTR;nSize:DWORD):DWORD;
+function GetEnvironmentVariableW(const lpName:LPCWSTR;lpBuffer:LPWSTR;nSize:DWORD):DWORD;
 
-function SetEnvironmentVariable(lpName,lpValue:LPCSTR):BOOL; inline;
-function SetEnvironmentVariableA(lpName,lpValue:LPCSTR):BOOL;
-function SetEnvironmentVariableW(lpName,lpValue:LPCWSTR):BOOL;
+function SetEnvironmentVariable(const lpName,lpValue:LPCSTR):BOOL; inline;
+function SetEnvironmentVariableA(const lpName,lpValue:LPCSTR):BOOL;
+function SetEnvironmentVariableW(const lpName,lpValue:LPCWSTR):BOOL;
 
-function ExpandEnvironmentStrings(lpSrc:LPCSTR;lpDst:LPSTR;nSize:DWORD):DWORD; inline;
-function ExpandEnvironmentStringsA(lpSrc:LPCSTR;lpDst:LPSTR;nSize:DWORD):DWORD;
-function ExpandEnvironmentStringsW(lpSrc:LPCWSTR;lpDst:LPWSTR;nSize:DWORD):DWORD;
+function ExpandEnvironmentStrings(const lpSrc:LPCSTR;lpDst:LPSTR;nSize:DWORD):DWORD; inline;
+function ExpandEnvironmentStringsA(const lpSrc:LPCSTR;lpDst:LPSTR;nSize:DWORD):DWORD;
+function ExpandEnvironmentStringsW(const lpSrc:LPCWSTR;lpDst:LPWSTR;nSize:DWORD):DWORD;
 
 {==============================================================================}
 {Error Functions (Compatibility)}
@@ -1613,8 +1613,8 @@ function SetThreadLocale(LocaleID:LCID):BOOL;
 {Locale Functions (Ultibo)}
 function SetSystemDefaultLCID(LocaleID:LCID):BOOL; inline; 
 
-function WideCharToString(ABuffer:PWideChar):String;
-function WideCharLenToString(ABuffer:PWideChar;ALength:Integer):String;
+function WideCharToString(const ABuffer:PWideChar):String;
+function WideCharLenToString(const ABuffer:PWideChar;ALength:Integer):String;
 function StringToWideChar(const AString:String;ABuffer:PWideChar;ASize:Integer):Boolean;
 
 {==============================================================================}
@@ -1805,7 +1805,7 @@ function WaitForMultipleObjectsEx(nCount:DWORD;lpHandles:PHANDLE;bWaitAll:BOOL;d
 
 {==============================================================================}
 {Thread Functions (Ultibo)}
-function BeginThreadEx(ThreadFunction:TThreadFunc;Parameter:Pointer;var ThreadId:TThreadID;const StackSize:SizeUInt;Priority,Affinity,CPU:LongWord;Name:PChar):TThreadID;
+function BeginThreadEx(ThreadFunction:TThreadFunc;Parameter:Pointer;var ThreadId:TThreadID;const StackSize:SizeUInt;Priority,Affinity,CPU:LongWord;const Name:PChar):TThreadID;
 
 {==============================================================================}
 {Message Functions (Compatibility)}
@@ -1839,25 +1839,25 @@ function InterlockedCompareExchangePointer(var Destination: PVOID; Exchange, Com
 
 {==============================================================================}
 {Mutex Functions (Compatibility)}
-function CreateMutex(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;lpName:LPCSTR):HANDLE; inline;
-function CreateMutexA(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;lpName:LPCSTR):HANDLE;
-function CreateMutexW(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;lpName:LPCWSTR):HANDLE;
+function CreateMutex(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;const lpName:LPCSTR):HANDLE; inline;
+function CreateMutexA(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;const lpName:LPCSTR):HANDLE;
+function CreateMutexW(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;const lpName:LPCWSTR):HANDLE;
 
-function OpenMutex(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE; inline;
-function OpenMutexA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE;
-function OpenMutexW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCWSTR):HANDLE;
+function OpenMutex(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCSTR):HANDLE; inline;
+function OpenMutexA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCSTR):HANDLE;
+function OpenMutexW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCWSTR):HANDLE;
 
 function ReleaseMutex(hMutex:HANDLE):BOOL;
 
 {==============================================================================}
 {Semaphore Functions (Compatibility)}
-function CreateSemaphore(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;lpName:LPCSTR):HANDLE; inline;
-function CreateSemaphoreA(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;lpName:LPCSTR):HANDLE;
-function CreateSemaphoreW(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;lpName:LPCWSTR):HANDLE;
+function CreateSemaphore(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;const lpName:LPCSTR):HANDLE; inline;
+function CreateSemaphoreA(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;const lpName:LPCSTR):HANDLE;
+function CreateSemaphoreW(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;const lpName:LPCWSTR):HANDLE;
 
-function OpenSemaphore(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE; inline;
-function OpenSemaphoreA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE;
-function OpenSemaphoreW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCWSTR):HANDLE;
+function OpenSemaphore(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCSTR):HANDLE; inline;
+function OpenSemaphoreA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCSTR):HANDLE;
+function OpenSemaphoreW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCWSTR):HANDLE;
 
 function ReleaseSemaphore(hSemaphore:HANDLE;lReleaseCount:LONG;lpPreviousCount:LPLONG):BOOL;
 
@@ -1886,13 +1886,13 @@ procedure DeleteConditionVariable(var ConditionVariable:CONDITION_VARIABLE);
 
 {==============================================================================}
 {Event Functions (Compatibility)}
-function CreateEvent(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;lpName:LPCSTR):HANDLE; inline;
-function CreateEventA(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;lpName:LPCSTR):HANDLE;
-function CreateEventW(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;lpName:LPCWSTR):HANDLE;
+function CreateEvent(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;const lpName:LPCSTR):HANDLE; inline;
+function CreateEventA(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;const lpName:LPCSTR):HANDLE;
+function CreateEventW(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;const lpName:LPCWSTR):HANDLE;
 
-function OpenEvent(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE; inline;
-function OpenEventA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE;
-function OpenEventW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCWSTR):HANDLE;
+function OpenEvent(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCSTR):HANDLE; inline;
+function OpenEventA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCSTR):HANDLE;
+function OpenEventW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCWSTR):HANDLE;
 
 function SetEvent(hEvent:HANDLE):BOOL;
 function ResetEvent(hEvent:HANDLE):BOOL;
@@ -1916,9 +1916,9 @@ function TerminateProcess(hProcess:HANDLE;uExitCode:UINT):BOOL;
 
 {==============================================================================}
 {Debug Functions (Compatibility)} 
-procedure OutputDebugString(lpOutputString:LPCSTR); inline;
-procedure OutputDebugStringA(lpOutputString:LPCSTR);
-procedure OutputDebugStringW(lpOutputString:LPCWSTR);
+procedure OutputDebugString(const lpOutputString:LPCSTR); inline;
+procedure OutputDebugStringA(const lpOutputString:LPCSTR);
+procedure OutputDebugStringW(const lpOutputString:LPCWSTR);
 
 {==============================================================================}
 {Library Functions (Compatibility)} 
@@ -2163,7 +2163,7 @@ end;
 
 {==============================================================================}
 
-function SetComputerName(lpComputerName:LPCSTR):BOOL; inline;
+function SetComputerName(const lpComputerName:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=SetComputerNameA(lpComputerName);
@@ -2171,7 +2171,7 @@ end;
 
 {==============================================================================}
 
-function SetComputerNameA(lpComputerName:LPCSTR):BOOL;
+function SetComputerNameA(const lpComputerName:LPCSTR):BOOL;
 begin
  {}
  Result:=False;
@@ -2179,12 +2179,12 @@ begin
  if lpComputerName = nil then Exit;
  
  {Set Host Name}
- Result:=Platform.HostSetName(lpComputerName);
+ Result:=Platform.HostSetName(String(lpComputerName));
 end;
 
 {==============================================================================}
 
-function SetComputerNameW(lpComputerName:LPCWSTR):BOOL;
+function SetComputerNameW(const lpComputerName:LPCWSTR):BOOL;
 var
  ComputerName:String;
 begin
@@ -2354,7 +2354,7 @@ end;
 
 {==============================================================================}
 
-function SetComputerNameEx(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPCSTR):BOOL; inline;
+function SetComputerNameEx(NameType:COMPUTER_NAME_FORMAT;const lpBuffer:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=SetComputerNameExA(NameType,lpBuffer);
@@ -2362,7 +2362,7 @@ end;
 
 {==============================================================================}
 
-function SetComputerNameExA(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPCSTR):BOOL;
+function SetComputerNameExA(NameType:COMPUTER_NAME_FORMAT;const lpBuffer:LPCSTR):BOOL;
 var
  Name:String;
  Domain:String;
@@ -2377,15 +2377,15 @@ begin
  case NameType of
   ComputerNameNetBIOS,ComputerNamePhysicalNetBIOS,ComputerNameDnsHostname,ComputerNamePhysicalDnsHostname:begin
    {Set Host Name}
-   Result:=Platform.HostSetName(lpBuffer);
+   Result:=Platform.HostSetName(String(lpBuffer));
   end;
   ComputerNameDnsDomain,ComputerNamePhysicalDnsDomain:begin
    {Set Host Domain}
-   Result:=Platform.HostSetDomain(lpBuffer);
+   Result:=Platform.HostSetDomain(String(lpBuffer));
   end;
   ComputerNameDnsFullyQualified,ComputerNamePhysicalDnsFullyQualified:begin
    {Set Host Name/Domain}
-   Name:=lpBuffer;
+   Name:=String(lpBuffer);
    PosIdx:=Pos('.',Name);
    if PosIdx > 0 then
     begin
@@ -2401,7 +2401,7 @@ end;
 
 {==============================================================================}
 
-function SetComputerNameExW(NameType:COMPUTER_NAME_FORMAT;lpBuffer:LPCWSTR):BOOL;
+function SetComputerNameExW(NameType:COMPUTER_NAME_FORMAT;const lpBuffer:LPCWSTR):BOOL;
 var
  Name:String;
  Domain:String;
@@ -3485,7 +3485,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Drive Functions (Compatibility)}
-function GetDiskType(lpRootPathName:LPCSTR):UINT; inline;
+function GetDiskType(const lpRootPathName:LPCSTR):UINT; inline;
 begin
  {}
  Result:=GetDriveTypeA(lpRootPathName);
@@ -3493,12 +3493,12 @@ end;
 
 {==============================================================================}
 
-function GetDriveTypeA(lpRootPathName:LPCSTR):UINT; 
+function GetDriveTypeA(const lpRootPathName:LPCSTR):UINT; 
 begin
  {}
  if Assigned(UltiboGetDriveTypeAHandler) then
   begin
-   Result:=UltiboGetDriveTypeAHandler(lpRootPathName);
+   Result:=UltiboGetDriveTypeAHandler(String(lpRootPathName));
   end
  else
   begin
@@ -3508,7 +3508,7 @@ end;
 
 {==============================================================================}
 
-function GetDriveTypeW(lpRootPathName:LPCWSTR):UINT;
+function GetDriveTypeW(const lpRootPathName:LPCWSTR):UINT;
 var
  RootPath:String;
 begin
@@ -3598,7 +3598,7 @@ end;
 
 {==============================================================================}
 
-function DefineDosDevice(dwFlags:DWORD;lpDeviceName,lpTargetPath:LPCSTR):BOOL; inline;
+function DefineDosDevice(dwFlags:DWORD;const lpDeviceName,lpTargetPath:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=DefineDosDeviceA(dwFlags,lpDeviceName,lpTargetPath);
@@ -3606,12 +3606,12 @@ end;
 
 {==============================================================================}
 
-function DefineDosDeviceA(dwFlags:DWORD;lpDeviceName,lpTargetPath:LPCSTR):BOOL; 
+function DefineDosDeviceA(dwFlags:DWORD;const lpDeviceName,lpTargetPath:LPCSTR):BOOL; 
 begin
  {}
  if Assigned(UltiboDefineDosDeviceAHandler) then
   begin
-   Result:=UltiboDefineDosDeviceAHandler(lpDeviceName,lpTargetPath,dwFlags);
+   Result:=UltiboDefineDosDeviceAHandler(String(lpDeviceName),String(lpTargetPath),dwFlags);
   end
  else
   begin
@@ -3621,7 +3621,7 @@ end;
 
 {==============================================================================}
 
-function DefineDosDeviceW(dwFlags:DWORD;lpDeviceName,lpTargetPath:LPCWSTR):BOOL; 
+function DefineDosDeviceW(dwFlags:DWORD;const lpDeviceName,lpTargetPath:LPCWSTR):BOOL; 
 var
  DeviceName:String;
  TargetPath:String;
@@ -3642,7 +3642,7 @@ end;
 
 {==============================================================================}
 
-function QueryDosDevice(lpDeviceName,lpTargetPath:LPSTR;ucchMax:DWORD):DWORD; inline;
+function QueryDosDevice(const lpDeviceName:LPCSTR;lpTargetPath:LPSTR;ucchMax:DWORD):DWORD; inline;
 begin
  {}
  Result:=QueryDosDeviceA(lpDeviceName,lpTargetPath,ucchMax);
@@ -3650,7 +3650,7 @@ end;
 
 {==============================================================================}
 
-function QueryDosDeviceA(lpDeviceName,lpTargetPath:LPSTR;ucchMax:DWORD):DWORD;
+function QueryDosDeviceA(const lpDeviceName:LPCSTR;lpTargetPath:LPSTR;ucchMax:DWORD):DWORD;
 var
  Value:String;
 begin
@@ -3660,7 +3660,7 @@ begin
    Result:=0;
    if lpTargetPath = nil then Exit;
 
-   Value:=UltiboQueryDosDeviceAHandler(lpDeviceName);
+   Value:=UltiboQueryDosDeviceAHandler(String(lpDeviceName));
    StrLCopy(lpTargetPath,PChar(Value),ucchMax);
    
    Result:=Length(Value);
@@ -3673,7 +3673,7 @@ end;
 
 {==============================================================================}
 
-function QueryDosDeviceW(lpDeviceName,lpTargetPath:LPWSTR;ucchMax:DWORD):DWORD;
+function QueryDosDeviceW(const lpDeviceName:LPCWSTR;lpTargetPath:LPWSTR;ucchMax:DWORD):DWORD;
 var
  Value:String;
  DeviceName:String;
@@ -3700,7 +3700,7 @@ end;
 
 {==============================================================================}
 
-function SetVolumeLabel(lpRootPathName,lpVolumeName:LPCSTR):BOOL; inline;
+function SetVolumeLabel(const lpRootPathName,lpVolumeName:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=SetVolumeLabelA(lpRootPathName,lpVolumeName);
@@ -3708,12 +3708,12 @@ end;
 
 {==============================================================================}
 
-function SetVolumeLabelA(lpRootPathName,lpVolumeName:LPCSTR):BOOL; 
+function SetVolumeLabelA(const lpRootPathName,lpVolumeName:LPCSTR):BOOL; 
 begin
  {}
  if Assigned(UltiboSetVolumeLabelAHandler) then
   begin
-   Result:=UltiboSetVolumeLabelAHandler(lpRootPathName,lpVolumeName);
+   Result:=UltiboSetVolumeLabelAHandler(String(lpRootPathName),String(lpVolumeName));
   end
  else
   begin
@@ -3723,7 +3723,7 @@ end;
 
 {==============================================================================}
 
-function SetVolumeLabelW(lpRootPathName,lpVolumeName:LPCWSTR):BOOL;
+function SetVolumeLabelW(const lpRootPathName,lpVolumeName:LPCWSTR):BOOL;
 var
  RootPath:String;
  VolumeName:String;
@@ -3744,7 +3744,7 @@ end;
 
 {==============================================================================}
 
-function GetVolumeInformation(lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; inline;
+function GetVolumeInformation(const lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; inline;
 begin
  {}
  Result:=GetVolumeInformationA(lpRootPathName,lpVolumeNameBuffer,nVolumeNameSize,lpVolumeSerialNumber,lpMaximumComponentLength,lpFileSystemFlags,lpFileSystemNameBuffer,nFileSystemNameSize);
@@ -3752,7 +3752,7 @@ end;
 
 {==============================================================================}
 
-function GetVolumeInformationA(lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; 
+function GetVolumeInformationA(const lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; 
 var
  VolumeName:String;
  SystemName:String;
@@ -3767,7 +3767,7 @@ begin
    VolumeName:='';
    SystemName:='';
    
-   Result:=UltiboGetVolumeInformationAHandler(lpRootPathName,VolumeName,lpVolumeSerialNumber^,lpMaximumComponentLength,lpFileSystemFlags,SystemName);
+   Result:=UltiboGetVolumeInformationAHandler(String(lpRootPathName),VolumeName,lpVolumeSerialNumber^,lpMaximumComponentLength,lpFileSystemFlags,SystemName);
    if Result then
     begin
      StrLCopy(lpVolumeNameBuffer,PChar(VolumeName),nVolumeNameSize);
@@ -3782,7 +3782,7 @@ end;
 
 {==============================================================================}
 
-function GetVolumeInformationW(lpRootPathName:LPCWSTR;lpVolumeNameBuffer:LPWSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPWSTR;nFileSystemNameSize:DWORD):BOOL;
+function GetVolumeInformationW(const lpRootPathName:LPCWSTR;lpVolumeNameBuffer:LPWSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPWSTR;nFileSystemNameSize:DWORD):BOOL;
 var
  RootPath:String;
  VolumeName:String;
@@ -3814,7 +3814,7 @@ end;
 
 {==============================================================================}
 
-function GetDiskFreeSpace(lpRootPathName:LPCSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL; inline;
+function GetDiskFreeSpace(const lpRootPathName:LPCSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL; inline;
 begin
  {}
  Result:=GetDiskFreeSpaceA(lpRootPathName,lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters);
@@ -3822,12 +3822,12 @@ end;
 
 {==============================================================================}
 
-function GetDiskFreeSpaceA(lpRootPathName:LPCSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL;
+function GetDiskFreeSpaceA(const lpRootPathName:LPCSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL;
 begin
  {}
  if Assigned(UltiboGetDiskFreeSpaceAHandler) then
   begin
-   Result:=UltiboGetDiskFreeSpaceAHandler(lpRootPathName,lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters);
+   Result:=UltiboGetDiskFreeSpaceAHandler(String(lpRootPathName),lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters);
   end
  else
   begin
@@ -3837,7 +3837,7 @@ end;
 
 {==============================================================================}
 
-function GetDiskFreeSpaceW(lpRootPathName:LPCWSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL;
+function GetDiskFreeSpaceW(const lpRootPathName:LPCWSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL;
 var
  RootPath:String;
 begin
@@ -3856,7 +3856,7 @@ end;
 
 {==============================================================================}
 
-function GetDiskFreeSpaceEx(lpDirectoryName:LPCSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL; inline;
+function GetDiskFreeSpaceEx(const lpDirectoryName:LPCSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL; inline;
 begin
  {}
  Result:=GetDiskFreeSpaceExA(lpDirectoryName,lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes,lpTotalNumberOfFreeBytes);
@@ -3864,14 +3864,14 @@ end;
 
 {==============================================================================}
 
-function GetDiskFreeSpaceExA(lpDirectoryName:LPCSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
+function GetDiskFreeSpaceExA(const lpDirectoryName:LPCSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
 var
  TotalNumberOfFreeBytes:QWord;
 begin
  {}
  if Assigned(UltiboGetDiskFreeSpaceExAHandler) then
   begin
-   Result:=UltiboGetDiskFreeSpaceExAHandler(lpDirectoryName,QWord(lpFreeBytesAvailableToCaller),QWord(lpTotalNumberOfBytes),TotalNumberOfFreeBytes);
+   Result:=UltiboGetDiskFreeSpaceExAHandler(String(lpDirectoryName),QWord(lpFreeBytesAvailableToCaller),QWord(lpTotalNumberOfBytes),TotalNumberOfFreeBytes);
    if Result and (lpTotalNumberOfFreeBytes <> nil) then
     begin
      PQWord(lpTotalNumberOfFreeBytes)^:=TotalNumberOfFreeBytes;
@@ -3885,7 +3885,7 @@ end;
 
 {==============================================================================}
 
-function GetDiskFreeSpaceExW(lpDirectoryName:LPCWSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
+function GetDiskFreeSpaceExW(const lpDirectoryName:LPCWSTR;var lpFreeBytesAvailableToCaller,lpTotalNumberOfBytes:ULARGE_INTEGER;lpTotalNumberOfFreeBytes:PULARGE_INTEGER):BOOL;
 var
  DirectoryName:String;
  TotalNumberOfFreeBytes:QWord;
@@ -4234,7 +4234,7 @@ end;
 
 {==============================================================================}
 
-function CreateFile(lpFileName:LPCSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE; inline;
+function CreateFile(const lpFileName:LPCSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE; inline;
 begin
  {}
  Result:=CreateFileA(lpFileName,dwDesiredAccess,dwShareMode,lpSecurityAttributes,dwCreationDisposition,dwFlagsAndAttributes,hTemplateFile);
@@ -4242,13 +4242,13 @@ end;
 
 {==============================================================================}
 
-function CreateFileA(lpFileName:LPCSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE;
+function CreateFileA(const lpFileName:LPCSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE;
 {Note: lpSecurityAttributes and hTemplateFile are currently ignored by Ultibo}
 begin
  {}
  if Assigned(UltiboCreateFileAHandler) then
   begin
-   Result:=UltiboCreateFileAHandler(lpFileName,dwDesiredAccess,dwShareMode,dwCreationDisposition,dwFlagsAndAttributes);
+   Result:=UltiboCreateFileAHandler(String(lpFileName),dwDesiredAccess,dwShareMode,dwCreationDisposition,dwFlagsAndAttributes);
   end
  else
   begin
@@ -4258,7 +4258,7 @@ end;
 
 {==============================================================================}
 
-function CreateFileW(lpFileName:LPCWSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE;
+function CreateFileW(const lpFileName:LPCWSTR;dwDesiredAccess,dwShareMode:DWORD;lpSecurityAttributes:LPSECURITY_ATTRIBUTES;dwCreationDisposition:DWORD;dwFlagsAndAttributes:DWORD;hTemplateFile:HANDLE):HANDLE;
 {Note: lpSecurityAttributes and hTemplateFile are currently ignored by Ultibo}
 var
  FileName:String;
@@ -4278,7 +4278,7 @@ end;
 
 {==============================================================================}
 
-function SetFileAttributes(lpFileName:LPCSTR;dwFileAttributes:DWORD):BOOL; inline;
+function SetFileAttributes(const lpFileName:LPCSTR;dwFileAttributes:DWORD):BOOL; inline;
 begin
  {}
  Result:=SetFileAttributesA(lpFileName,dwFileAttributes);
@@ -4286,12 +4286,12 @@ end;
 
 {==============================================================================}
 
-function SetFileAttributesA(lpFileName:LPCSTR;dwFileAttributes:DWORD):BOOL;
+function SetFileAttributesA(const lpFileName:LPCSTR;dwFileAttributes:DWORD):BOOL;
 begin
  {}
  if Assigned(UltiboSetFileAttributesAHandler) then
   begin
-   Result:=UltiboSetFileAttributesAHandler(lpFileName,dwFileAttributes);
+   Result:=UltiboSetFileAttributesAHandler(String(lpFileName),dwFileAttributes);
   end
  else
   begin
@@ -4301,7 +4301,7 @@ end;
 
 {==============================================================================}
 
-function SetFileAttributesW(lpFileName:LPCWSTR;dwFileAttributes:DWORD):BOOL;
+function SetFileAttributesW(const lpFileName:LPCWSTR;dwFileAttributes:DWORD):BOOL;
 var
  FileName:String;
 begin
@@ -4320,7 +4320,7 @@ end;
 
 {==============================================================================}
 
-function GetFileAttributes(lpFileName:LPCSTR):DWORD; inline;
+function GetFileAttributes(const lpFileName:LPCSTR):DWORD; inline;
 begin
  {}
  Result:=GetFileAttributesA(lpFileName);
@@ -4328,12 +4328,12 @@ end;
 
 {==============================================================================}
 
-function GetFileAttributesA(lpFileName:LPCSTR):DWORD;
+function GetFileAttributesA(const lpFileName:LPCSTR):DWORD;
 begin
  {}
  if Assigned(UltiboGetFileAttributesAHandler) then
   begin
-   Result:=UltiboGetFileAttributesAHandler(lpFileName);
+   Result:=UltiboGetFileAttributesAHandler(String(lpFileName));
   end
  else
   begin
@@ -4343,7 +4343,7 @@ end;
 
 {==============================================================================}
 
-function GetFileAttributesW(lpFileName:LPCWSTR):DWORD;
+function GetFileAttributesW(const lpFileName:LPCWSTR):DWORD;
 var
  FileName:String;
 begin
@@ -4362,7 +4362,7 @@ end;
 
 {==============================================================================}
 
-function DeleteFile(lpFileName:LPCSTR):BOOL; inline;
+function DeleteFile(const lpFileName:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=DeleteFileA(lpFileName);
@@ -4370,12 +4370,12 @@ end;
 
 {==============================================================================}
 
-function DeleteFileA(lpFileName:LPCSTR):BOOL;
+function DeleteFileA(const lpFileName:LPCSTR):BOOL;
 begin
  {}
  if Assigned(UltiboDeleteFileAHandler) then
   begin
-   Result:=UltiboDeleteFileAHandler(lpFileName);
+   Result:=UltiboDeleteFileAHandler(String(lpFileName));
   end
  else
   begin
@@ -4385,7 +4385,7 @@ end;
 
 {==============================================================================}
 
-function DeleteFileW(lpFileName:LPCWSTR):BOOL;
+function DeleteFileW(const lpFileName:LPCWSTR):BOOL;
 var
  FileName:String;
 begin
@@ -4404,7 +4404,7 @@ end;
 
 {==============================================================================}
 
-function MoveFile(lpExistingFileName,lpNewFileName:LPCSTR):BOOL; inline;
+function MoveFile(const lpExistingFileName,lpNewFileName:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=MoveFileA(lpExistingFileName,lpNewFileName);
@@ -4412,12 +4412,12 @@ end;
 
 {==============================================================================}
 
-function MoveFileA(lpExistingFileName,lpNewFileName:LPCSTR):BOOL;
+function MoveFileA(const lpExistingFileName,lpNewFileName:LPCSTR):BOOL;
 begin
  {}
  if Assigned(UltiboMoveFileAHandler) then
   begin
-   Result:=UltiboMoveFileAHandler(lpExistingFileName,lpNewFileName);
+   Result:=UltiboMoveFileAHandler(String(lpExistingFileName),String(lpNewFileName));
   end
  else
   begin
@@ -4427,7 +4427,7 @@ end;
 
 {==============================================================================}
 
-function MoveFileW(lpExistingFileName,lpNewFileName:LPCWSTR):BOOL;
+function MoveFileW(const lpExistingFileName,lpNewFileName:LPCWSTR):BOOL;
 var
  NewFileName:String;
  ExistingFileName:String; 
@@ -4448,7 +4448,7 @@ end;
 
 {==============================================================================}
 
-function FindFirstFile(lpFileName:LPCSTR;var lpFindFileData:WIN32_FIND_DATAA):HANDLE; inline;
+function FindFirstFile(const lpFileName:LPCSTR;var lpFindFileData:WIN32_FIND_DATAA):HANDLE; inline;
 begin
  {}
  Result:=FindFirstFileA(lpFileName,lpFindFileData);
@@ -4456,12 +4456,12 @@ end;
 
 {==============================================================================}
 
-function FindFirstFileA(lpFileName:LPCSTR;var lpFindFileData:WIN32_FIND_DATAA):HANDLE;
+function FindFirstFileA(const lpFileName:LPCSTR;var lpFindFileData:WIN32_FIND_DATAA):HANDLE;
 begin
  {}
  if Assigned(UltiboFindFirstFileAHandler) then
   begin
-   Result:=UltiboFindFirstFileAHandler(lpFileName,lpFindFileData);
+   Result:=UltiboFindFirstFileAHandler(String(lpFileName),lpFindFileData);
   end
  else
   begin
@@ -4471,7 +4471,7 @@ end;
 
 {==============================================================================}
 
-function FindFirstFileW(lpFileName:LPCWSTR;var lpFindFileData:WIN32_FIND_DATAW):HANDLE;
+function FindFirstFileW(const lpFileName:LPCWSTR;var lpFindFileData:WIN32_FIND_DATAW):HANDLE;
 var
  FileName:String;
  FindFileData:TWin32FindDataA;
@@ -4738,7 +4738,7 @@ end;
 
 {==============================================================================}
 
-function CopyFile(lpExistingFileName,lpNewFileName:LPCSTR;bFailIfExists:BOOL):BOOL; inline;
+function CopyFile(const lpExistingFileName,lpNewFileName:LPCSTR;bFailIfExists:BOOL):BOOL; inline;
 begin
  {}
  Result:=CopyFileA(lpExistingFileName,lpNewFileName,bFailIfExists);
@@ -4746,12 +4746,12 @@ end;
 
 {==============================================================================}
 
-function CopyFileA(lpExistingFileName,lpNewFileName:LPCSTR;bFailIfExists:BOOL):BOOL;
+function CopyFileA(const lpExistingFileName,lpNewFileName:LPCSTR;bFailIfExists:BOOL):BOOL;
 begin
  {}
  if Assigned(UltiboCopyFileAHandler) then
   begin
-   Result:=UltiboCopyFileAHandler(lpExistingFileName,lpNewFileName,bFailIfExists);
+   Result:=UltiboCopyFileAHandler(String(lpExistingFileName),String(lpNewFileName),bFailIfExists);
   end
  else
   begin
@@ -4761,7 +4761,7 @@ end;
 
 {==============================================================================}
 
-function CopyFileW(lpExistingFileName,lpNewFileName:LPCWSTR;bFailIfExists:BOOL):BOOL;
+function CopyFileW(const lpExistingFileName,lpNewFileName:LPCWSTR;bFailIfExists:BOOL):BOOL;
 var
  NewFileName:String;
  ExistingFileName:String;
@@ -4782,7 +4782,7 @@ end;
 
 {==============================================================================}
 
-function SetFileShortName(hFile:HANDLE;lpShortName:LPCSTR):BOOL; inline;
+function SetFileShortName(hFile:HANDLE;const lpShortName:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=SetFileShortNameA(hFile,lpShortName);
@@ -4790,12 +4790,12 @@ end;
 
 {==============================================================================}
 
-function SetFileShortNameA(hFile:HANDLE;lpShortName:LPCSTR):BOOL;
+function SetFileShortNameA(hFile:HANDLE;const lpShortName:LPCSTR):BOOL;
 begin
  {}
  if Assigned(UltiboSetFileShortNameAHandler) then
   begin
-   Result:=UltiboSetFileShortNameAHandler(hFile,lpShortName);
+   Result:=UltiboSetFileShortNameAHandler(hFile,String(lpShortName));
   end
  else
   begin
@@ -4805,7 +4805,7 @@ end;
 
 {==============================================================================}
 
-function SetFileShortNameW(hFile:HANDLE;lpShortName:LPCWSTR):BOOL;
+function SetFileShortNameW(hFile:HANDLE;const lpShortName:LPCWSTR):BOOL;
 var
  ShortName:String;
 begin
@@ -4824,7 +4824,7 @@ end;
 
 {==============================================================================}
 
-function CreateHardLink(lpFileName,lpExistingFileName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL; inline;
+function CreateHardLink(const lpFileName,lpExistingFileName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL; inline;
 begin
  {}
  Result:=CreateHardLinkA(lpFileName,lpExistingFileName,lpSecurityAttributes);
@@ -4832,13 +4832,13 @@ end;
 
 {==============================================================================}
 
-function CreateHardLinkA(lpFileName,lpExistingFileName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
+function CreateHardLinkA(const lpFileName,lpExistingFileName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
 {Note: lpSecurityAttributes is currently ignored by Ultibo}
 begin
  {}
  if Assigned(UltiboCreateHardLinkAHandler) then
   begin
-   Result:=UltiboCreateHardLinkAHandler(lpFileName,lpExistingFileName);
+   Result:=UltiboCreateHardLinkAHandler(String(lpFileName),String(lpExistingFileName));
   end
  else
   begin
@@ -4848,7 +4848,7 @@ end;
 
 {==============================================================================}
 
-function CreateHardLinkW(lpFileName,lpExistingFileName:LPCWSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
+function CreateHardLinkW(const lpFileName,lpExistingFileName:LPCWSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
 {Note: lpSecurityAttributes is currently ignored by Ultibo}
 var
  FileName:String;
@@ -4870,7 +4870,7 @@ end;
 
 {==============================================================================}
 
-function CreateSymbolicLink(lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:DWORD):BOOL; inline;
+function CreateSymbolicLink(const lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:DWORD):BOOL; inline;
 begin
  {}
  Result:=CreateSymbolicLinkA(lpSymlinkFileName,lpTargetFileName,dwFlags);
@@ -4878,12 +4878,12 @@ end;
 
 {==============================================================================}
 
-function CreateSymbolicLinkA(lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:DWORD):BOOL;
+function CreateSymbolicLinkA(const lpSymlinkFileName,lpTargetFileName:LPCSTR;dwFlags:DWORD):BOOL;
 begin
  {}
  if Assigned(UltiboCreateSymbolicLinkAHandler) then
   begin
-   Result:=UltiboCreateSymbolicLinkAHandler(lpSymlinkFileName,lpTargetFileName,(dwFlags = SYMBOLIC_LINK_FLAG_DIRECTORY));
+   Result:=UltiboCreateSymbolicLinkAHandler(String(lpSymlinkFileName),String(lpTargetFileName),(dwFlags = SYMBOLIC_LINK_FLAG_DIRECTORY));
   end
  else
   begin
@@ -4893,7 +4893,7 @@ end;
 
 {==============================================================================}
 
-function CreateSymbolicLinkW(lpSymlinkFileName,lpTargetFileName:LPCWSTR;dwFlags:DWORD):BOOL;
+function CreateSymbolicLinkW(const lpSymlinkFileName,lpTargetFileName:LPCWSTR;dwFlags:DWORD):BOOL;
 var
  TargetFileName:String;
  SymlinkFileName:String;
@@ -4929,7 +4929,7 @@ end;
 
 {==============================================================================}
 
-function GetFinalPathNameByHandle(hFile:HANDLE;lpszFilePath:LPCSTR;cchFilePath,dwFlags:DWORD):DWORD;
+function GetFinalPathNameByHandle(hFile:HANDLE;lpszFilePath:LPSTR;cchFilePath,dwFlags:DWORD):DWORD;
 {Retrieves the final path for the specified open file handle}
 begin
  {}
@@ -4938,7 +4938,7 @@ end;
 
 {==============================================================================}
 
-function GetFinalPathNameByHandleA(hFile:HANDLE;lpszFilePath:LPCSTR;cchFilePath,dwFlags:DWORD):DWORD;
+function GetFinalPathNameByHandleA(hFile:HANDLE;lpszFilePath:LPSTR;cchFilePath,dwFlags:DWORD):DWORD;
 {Retrieves the final path for the specified open file handle}
 var
  Value:String;
@@ -4966,7 +4966,7 @@ end;
 
 {==============================================================================}
 
-function GetFinalPathNameByHandleW(hFile:HANDLE;lpszFilePath:LPCWSTR;cchFilePath,dwFlags:DWORD):DWORD;
+function GetFinalPathNameByHandleW(hFile:HANDLE;lpszFilePath:LPWSTR;cchFilePath,dwFlags:DWORD):DWORD;
 {Retrieves the final path for the specified open file handle}
 var
  Value:String;
@@ -4999,7 +4999,7 @@ end;
 
 {==============================================================================}
 {Directory Functions (Compatibility)}
-function CreateDirectory(lpPathName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL; inline;
+function CreateDirectory(const lpPathName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL; inline;
 begin
  {}
  Result:=CreateDirectoryA(lpPathName,lpSecurityAttributes);
@@ -5007,13 +5007,13 @@ end;
 
 {==============================================================================}
 
-function CreateDirectoryA(lpPathName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
+function CreateDirectoryA(const lpPathName:LPCSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
 {Note: lpSecurityAttributes is currently ignored by Ultibo}
 begin
  {}
  if Assigned(UltiboCreateDirectoryAHandler) then
   begin
-   Result:=UltiboCreateDirectoryAHandler(lpPathName);
+   Result:=UltiboCreateDirectoryAHandler(String(lpPathName));
   end
  else
   begin
@@ -5023,7 +5023,7 @@ end;
 
 {==============================================================================}
 
-function CreateDirectoryW(lpPathName:LPCWSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
+function CreateDirectoryW(const lpPathName:LPCWSTR;lpSecurityAttributes:LPSECURITY_ATTRIBUTES):BOOL;
 {Note: lpSecurityAttributes is currently ignored by Ultibo}
 var
  PathName:String;
@@ -5043,7 +5043,7 @@ end;
 
 {==============================================================================}
 
-function RemoveDirectory(lpPathName:LPCSTR):BOOL; inline;
+function RemoveDirectory(const lpPathName:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=RemoveDirectoryA(lpPathName);
@@ -5051,12 +5051,12 @@ end;
 
 {==============================================================================}
 
-function RemoveDirectoryA(lpPathName:LPCSTR):BOOL;
+function RemoveDirectoryA(const lpPathName:LPCSTR):BOOL;
 begin
  {}
  if Assigned(UltiboRemoveDirectoryAHandler) then
   begin
-   Result:=UltiboRemoveDirectoryAHandler(lpPathName);
+   Result:=UltiboRemoveDirectoryAHandler(String(lpPathName));
   end
  else
   begin
@@ -5066,7 +5066,7 @@ end;
 
 {==============================================================================}
 
-function RemoveDirectoryW(lpPathName:LPCWSTR):BOOL;
+function RemoveDirectoryW(const lpPathName:LPCWSTR):BOOL;
 var
  PathName:String;
 begin
@@ -5085,7 +5085,7 @@ end;
 
 {==============================================================================}
 
-function SetCurrentDirectory(lpPathName:LPCSTR):BOOL; inline;
+function SetCurrentDirectory(const lpPathName:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=SetCurrentDirectoryA(lpPathName);
@@ -5093,12 +5093,12 @@ end;
 
 {==============================================================================}
 
-function SetCurrentDirectoryA(lpPathName:LPCSTR):BOOL;
+function SetCurrentDirectoryA(const lpPathName:LPCSTR):BOOL;
 begin
  {}
  if Assigned(UltiboSetCurrentDirectoryAHandler) then
   begin
-   Result:=UltiboSetCurrentDirectoryAHandler(lpPathName);
+   Result:=UltiboSetCurrentDirectoryAHandler(String(lpPathName));
   end
  else
   begin
@@ -5108,7 +5108,7 @@ end;
 
 {==============================================================================}
 
-function SetCurrentDirectoryW(lpPathName:LPCWSTR):BOOL; 
+function SetCurrentDirectoryW(const lpPathName:LPCWSTR):BOOL; 
 var
  PathName:String;
 begin
@@ -5182,7 +5182,7 @@ end;
 
 {==============================================================================}
 
-function GetLongPathName(lpszShortPath:LPCSTR;lpszLongPath:LPSTR;cchBuffer:DWORD):DWORD; inline;
+function GetLongPathName(const lpszShortPath:LPCSTR;lpszLongPath:LPSTR;cchBuffer:DWORD):DWORD; inline;
 begin
  {}
  Result:=GetLongPathNameA(lpszShortPath,lpszLongPath,cchBuffer);
@@ -5190,7 +5190,7 @@ end;
 
 {==============================================================================}
 
-function GetLongPathNameA(lpszShortPath:LPCSTR;lpszLongPath:LPSTR;cchBuffer:DWORD):DWORD;
+function GetLongPathNameA(const lpszShortPath:LPCSTR;lpszLongPath:LPSTR;cchBuffer:DWORD):DWORD;
 var
  Value:String;
 begin
@@ -5200,7 +5200,7 @@ begin
    Result:=0;
    if lpszLongPath = nil then Exit;
 
-   Value:=UltiboGetLongPathNameAHandler(lpszShortPath);
+   Value:=UltiboGetLongPathNameAHandler(String(lpszShortPath));
    StrLCopy(lpszLongPath,PChar(Value),cchBuffer);
    
    Result:=Length(Value);
@@ -5213,7 +5213,7 @@ end;
 
 {==============================================================================}
 
-function GetLongPathNameW(lpszShortPath:LPCWSTR;lpszLongPath:LPWSTR;cchBuffer:DWORD):DWORD;
+function GetLongPathNameW(const lpszShortPath:LPCWSTR;lpszLongPath:LPWSTR;cchBuffer:DWORD):DWORD;
 var
  Value:String;
  ShortPath:String;
@@ -5240,7 +5240,7 @@ end;
 
 {==============================================================================}
 
-function GetShortPathName(lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD; inline;
+function GetShortPathName(const lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD; inline;
 begin
  {}
  Result:=GetShortPathNameA(lpszLongPath,lpszShortPath,cchBuffer);
@@ -5248,7 +5248,7 @@ end;
 
 {==============================================================================}
 
-function GetShortPathNameA(lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD; 
+function GetShortPathNameA(const lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD; 
 var
  Value:String;
 begin
@@ -5258,7 +5258,7 @@ begin
    Result:=0;
    if lpszShortPath = nil then Exit;
 
-   Value:=UltiboGetShortPathNameAHandler(lpszLongPath);
+   Value:=UltiboGetShortPathNameAHandler(String(lpszLongPath));
    StrLCopy(lpszShortPath,PChar(Value),cchBuffer);
    
    Result:=Length(Value);
@@ -5271,7 +5271,7 @@ end;
 
 {==============================================================================}
 
-function GetShortPathNameW(lpszLongPath:LPCWSTR;lpszShortPath:LPWSTR;cchBuffer:DWORD):DWORD;
+function GetShortPathNameW(const lpszLongPath:LPCWSTR;lpszShortPath:LPWSTR;cchBuffer:DWORD):DWORD;
 var
  Value:String;
  LongPath:String;
@@ -5298,7 +5298,7 @@ end;
 
 {==============================================================================}
 
-function GetFullPathName(lpFileName:LPCSTR;nBufferLength:DWORD;lpBuffer:LPSTR;var lpFilePart:LPSTR):DWORD; inline;
+function GetFullPathName(const lpFileName:LPCSTR;nBufferLength:DWORD;lpBuffer:LPSTR;var lpFilePart:LPSTR):DWORD; inline;
 begin
  {}
  Result:=GetFullPathNameA(lpFileName,nBufferLength,lpBuffer,lpFilePart);
@@ -5306,7 +5306,7 @@ end;
 
 {==============================================================================}
 
-function GetFullPathNameA(lpFileName:LPCSTR;nBufferLength:DWORD;lpBuffer:LPSTR;var lpFilePart:LPSTR):DWORD;
+function GetFullPathNameA(const lpFileName:LPCSTR;nBufferLength:DWORD;lpBuffer:LPSTR;var lpFilePart:LPSTR):DWORD;
 {Note: lpFilePart is currently ignored by Ultibo}
 var
  Value:String;
@@ -5317,7 +5317,7 @@ begin
    Result:=0;
    if lpBuffer = nil then Exit;
 
-   Value:=UltiboGetFullPathNameAHandler(lpFileName);
+   Value:=UltiboGetFullPathNameAHandler(String(lpFileName));
    StrLCopy(lpBuffer,PChar(Value),nBufferLength);
    
    Result:=Length(Value);
@@ -5330,7 +5330,7 @@ end;
 
 {==============================================================================}
 
-function GetFullPathNameW(lpFileName:LPCWSTR;nBufferLength:DWORD;lpBuffer:LPWSTR;var lpFilePart:LPWSTR):DWORD;
+function GetFullPathNameW(const lpFileName:LPCWSTR;nBufferLength:DWORD;lpBuffer:LPWSTR;var lpFilePart:LPWSTR):DWORD;
 {Note: lpFilePart is currently ignored by Ultibo}
 var
  Value:String;
@@ -5649,7 +5649,7 @@ end;
 
 {==============================================================================}
 
-function GetEnvironmentVariable(lpName:LPCSTR;lpBuffer:LPSTR;nSize:DWORD):DWORD; inline;
+function GetEnvironmentVariable(const lpName:LPCSTR;lpBuffer:LPSTR;nSize:DWORD):DWORD; inline;
 begin
  {}
  Result:=GetEnvironmentVariableA(lpName,lpBuffer,nSize);
@@ -5657,7 +5657,7 @@ end;
 
 {==============================================================================}
 
-function GetEnvironmentVariableA(lpName:LPCSTR;lpBuffer:LPSTR;nSize:DWORD):DWORD;
+function GetEnvironmentVariableA(const lpName:LPCSTR;lpBuffer:LPSTR;nSize:DWORD):DWORD;
 var
  Value:String;
 begin
@@ -5668,7 +5668,7 @@ begin
   begin
    if nSize <> 0 then Exit;
    
-   Value:=EnvironmentGet(lpName);
+   Value:=EnvironmentGet(String(lpName));
    if Length(Value) <> 0 then
     begin
      Result:=Length(Value);
@@ -5678,7 +5678,7 @@ begin
   begin 
    if nSize = 0 then Exit;
  
-   Value:=EnvironmentGet(lpName);
+   Value:=EnvironmentGet(String(lpName));
    if Length(Value) <> 0 then
     begin
      if Length(Value) < nSize then
@@ -5693,7 +5693,7 @@ end;
 
 {==============================================================================}
 
-function GetEnvironmentVariableW(lpName:LPCWSTR;lpBuffer:LPWSTR;nSize:DWORD):DWORD;
+function GetEnvironmentVariableW(const lpName:LPCWSTR;lpBuffer:LPWSTR;nSize:DWORD):DWORD;
 var
  Name:String;
  Value:String;
@@ -5739,7 +5739,7 @@ end;
 
 {==============================================================================}
 
-function SetEnvironmentVariable(lpName,lpValue:LPCSTR):BOOL; inline;
+function SetEnvironmentVariable(const lpName,lpValue:LPCSTR):BOOL; inline;
 begin
  {}
  Result:=SetEnvironmentVariableA(lpName,lpValue);
@@ -5747,12 +5747,12 @@ end;
 
 {==============================================================================}
 
-function SetEnvironmentVariableA(lpName,lpValue:LPCSTR):BOOL;
+function SetEnvironmentVariableA(const lpName,lpValue:LPCSTR):BOOL;
 var
  Status:LongWord;
 begin
  {}
- Status:=EnvironmentSet(lpName,lpValue);
+ Status:=EnvironmentSet(String(lpName),String(lpValue));
 
  SetLastError(Status);
  Result:=(Status = ERROR_SUCCESS);
@@ -5760,7 +5760,7 @@ end;
 
 {==============================================================================}
 
-function SetEnvironmentVariableW(lpName,lpValue:LPCWSTR):BOOL;
+function SetEnvironmentVariableW(const lpName,lpValue:LPCWSTR):BOOL;
 var
  Name:String;
  Value:String;
@@ -5778,7 +5778,7 @@ end;
 
 {==============================================================================}
 
-function ExpandEnvironmentStrings(lpSrc:LPCSTR;lpDst:LPSTR;nSize:DWORD):DWORD; inline;
+function ExpandEnvironmentStrings(const lpSrc:LPCSTR;lpDst:LPSTR;nSize:DWORD):DWORD; inline;
 begin
  {}
  Result:=ExpandEnvironmentStringsA(lpSrc,lpDst,nSize);
@@ -5786,7 +5786,7 @@ end;
 
 {==============================================================================}
 
-function ExpandEnvironmentStringsA(lpSrc:LPCSTR;lpDst:LPSTR;nSize:DWORD):DWORD;
+function ExpandEnvironmentStringsA(const lpSrc:LPCSTR;lpDst:LPSTR;nSize:DWORD):DWORD;
 begin
  {Not Supported}
  Result:=0;
@@ -5796,7 +5796,7 @@ end;
 
 {==============================================================================}
 
-function ExpandEnvironmentStringsW(lpSrc:LPCWSTR;lpDst:LPWSTR;nSize:DWORD):DWORD;
+function ExpandEnvironmentStringsW(const lpSrc:LPCWSTR;lpDst:LPWSTR;nSize:DWORD):DWORD;
 begin
  {Not Supported}
  Result:=0;
@@ -6283,7 +6283,7 @@ end;
 
 {==============================================================================}
 
-function WideCharToString(ABuffer:PWideChar):String;
+function WideCharToString(const ABuffer:PWideChar):String;
 {A replacement for WideCharToString in System unit to allow cross platform compatibility}
 {Note: The WideStringManager installed by the Unicode unit should make the System version equivalent}
 var
@@ -6308,7 +6308,7 @@ end;
 
 {==============================================================================}
 
-function WideCharLenToString(ABuffer:PWideChar;ALength:Integer):String;
+function WideCharLenToString(const ABuffer:PWideChar;ALength:Integer):String;
 {A replacement for WideCharLenToString in System unit to allow cross platform compatibility}
 {Note: Length is the size of the Buffer in WideChars (not Bytes)}
 {Note: The WideStringManager installed by the Unicode unit should make the System version equivalent}
@@ -7532,7 +7532,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Thread Functions (Ultibo)}
-function BeginThreadEx(ThreadFunction:TThreadFunc;Parameter:Pointer;var ThreadId:TThreadID;const StackSize:SizeUInt;Priority,Affinity,CPU:LongWord;Name:PChar):TThreadID;
+function BeginThreadEx(ThreadFunction:TThreadFunc;Parameter:Pointer;var ThreadId:TThreadID;const StackSize:SizeUInt;Priority,Affinity,CPU:LongWord;const Name:PChar):TThreadID;
 begin
  {}
  Result:=SysBeginThreadEx(nil,StackSize,ThreadFunction,Parameter,0,Priority,Affinity,CPU,Name,ThreadId);
@@ -7698,7 +7698,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Mutex Functions (Compatibility)}
-function CreateMutex(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;lpName:LPCSTR):HANDLE; inline;
+function CreateMutex(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;const lpName:LPCSTR):HANDLE; inline;
 begin
  {}
  Result:=CreateMutexA(lpMutexAttributes,bInitialOwner,lpName);
@@ -7706,7 +7706,7 @@ end;
 
 {==============================================================================}
 
-function CreateMutexA(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;lpName:LPCSTR):HANDLE;
+function CreateMutexA(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;const lpName:LPCSTR):HANDLE;
 begin
  {}
  Result:=Threads.MutexCreateEx(bInitialOwner,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_NONE);
@@ -7717,7 +7717,7 @@ end;
 
 {==============================================================================}
 
-function CreateMutexW(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;lpName:LPCWSTR):HANDLE;
+function CreateMutexW(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL;const lpName:LPCWSTR):HANDLE;
 begin
  {}
  Result:=Threads.MutexCreateEx(bInitialOwner,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_NONE);
@@ -7728,7 +7728,7 @@ end;
 
 {==============================================================================}
 
-function OpenMutex(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE; inline;
+function OpenMutex(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCSTR):HANDLE; inline;
 begin
  {}
  Result:=OpenMutexA(dwDesiredAccess,bInheritHandle,lpName);
@@ -7736,7 +7736,7 @@ end;
 
 {==============================================================================}
 
-function OpenMutexA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE;
+function OpenMutexA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCSTR):HANDLE;
 begin
  {}
  Result:=0;
@@ -7747,7 +7747,7 @@ end;
 
 {==============================================================================}
 
-function OpenMutexW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCWSTR):HANDLE;
+function OpenMutexW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCWSTR):HANDLE;
 begin
  {}
  Result:=0;
@@ -7767,7 +7767,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Semaphore Functions (Compatibility)}
-function CreateSemaphore(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;lpName:LPCSTR):HANDLE; inline;
+function CreateSemaphore(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;const lpName:LPCSTR):HANDLE; inline;
 begin
  {}
  Result:=CreateSemaphoreA(lpSemaphoreAttributes,lInitialCount,lMaximumCount,lpName);
@@ -7775,7 +7775,7 @@ end;
 
 {==============================================================================}
 
-function CreateSemaphoreA(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;lpName:LPCSTR):HANDLE;
+function CreateSemaphoreA(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;const lpName:LPCSTR):HANDLE;
 begin
  {}
  Result:=Threads.SemaphoreCreateEx(lInitialCount,lMaximumCount,SEMAPHORE_FLAG_NONE);
@@ -7786,7 +7786,7 @@ end;
 
 {==============================================================================}
 
-function CreateSemaphoreW(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;lpName:LPCWSTR):HANDLE;
+function CreateSemaphoreW(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCount,lMaximumCount:LONG;const lpName:LPCWSTR):HANDLE;
 begin
  {}
  Result:=Threads.SemaphoreCreateEx(lInitialCount,lMaximumCount,SEMAPHORE_FLAG_NONE);
@@ -7797,7 +7797,7 @@ end;
 
 {==============================================================================}
 
-function OpenSemaphore(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE; inline;
+function OpenSemaphore(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCSTR):HANDLE; inline;
 begin
  {}
  Result:=OpenSemaphoreA(dwDesiredAccess,bInheritHandle,lpName);
@@ -7805,7 +7805,7 @@ end;
 
 {==============================================================================}
 
-function OpenSemaphoreA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE;
+function OpenSemaphoreA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCSTR):HANDLE;
 begin
  {}
  Result:=0;
@@ -7816,7 +7816,7 @@ end;
 
 {==============================================================================}
 
-function OpenSemaphoreW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCWSTR):HANDLE;
+function OpenSemaphoreW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCWSTR):HANDLE;
 begin
  {}
  Result:=0;
@@ -7970,7 +7970,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Event Functions (Compatibility)}
-function CreateEvent(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;lpName:LPCSTR):HANDLE; inline;
+function CreateEvent(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;const lpName:LPCSTR):HANDLE; inline;
 begin
  {}
  Result:=CreateEventA(lpEventAttributes,bManualReset,bInitialState,lpName);
@@ -7978,7 +7978,7 @@ end;
 
 {==============================================================================}
 
-function CreateEventA(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;lpName:LPCSTR):HANDLE;
+function CreateEventA(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;const lpName:LPCSTR):HANDLE;
 begin
  {}
  Result:=Threads.EventCreate(bManualReset,bInitialState);
@@ -7989,7 +7989,7 @@ end;
 
 {==============================================================================}
 
-function CreateEventW(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;lpName:LPCWSTR):HANDLE;
+function CreateEventW(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInitialState:BOOL;const lpName:LPCWSTR):HANDLE;
 begin
  {}
  Result:=Threads.EventCreate(bManualReset,bInitialState);
@@ -8000,7 +8000,7 @@ end;
 
 {==============================================================================}
 
-function OpenEvent(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE; inline;
+function OpenEvent(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCSTR):HANDLE; inline;
 begin
  {}
  Result:=OpenEventA(dwDesiredAccess,bInheritHandle,lpName);
@@ -8008,7 +8008,7 @@ end;
 
 {==============================================================================}
 
-function OpenEventA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCSTR):HANDLE;
+function OpenEventA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCSTR):HANDLE;
 begin
  {}
  Result:=0;
@@ -8019,7 +8019,7 @@ end;
 
 {==============================================================================}
 
-function OpenEventW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;lpName:LPCWSTR):HANDLE;
+function OpenEventW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCWSTR):HANDLE;
 begin
  {}
  Result:=0;
@@ -8155,7 +8155,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Debug Functions (Compatibility)} 
-procedure OutputDebugString(lpOutputString:LPCSTR); inline;
+procedure OutputDebugString(const lpOutputString:LPCSTR); inline;
 begin
  {}
  OutputDebugStringA(lpOutputString);
@@ -8163,15 +8163,15 @@ end;
 
 {==============================================================================}
 
-procedure OutputDebugStringA(lpOutputString:LPCSTR);
+procedure OutputDebugStringA(const lpOutputString:LPCSTR);
 begin
  {}
- LoggingOutput(lpOutputString);
+ LoggingOutput(String(lpOutputString));
 end;
 
 {==============================================================================}
 
-procedure OutputDebugStringW(lpOutputString:LPCWSTR);
+procedure OutputDebugStringW(const lpOutputString:LPCWSTR);
 var
  Value:String;
 begin

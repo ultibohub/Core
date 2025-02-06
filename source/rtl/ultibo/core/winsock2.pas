@@ -1,7 +1,7 @@
 {
 Ultibo Winsock2 interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2000,7 +2000,7 @@ function getsockopt( const s: TSocket; const level, optname: Longint; optval: Po
 function getsockopt( const s: TSocket; const level, optname: Longint; var optval; var optlen: Longint ): Longint; overload;
 function htonl(hostlong: u_long): u_long;
 function htons(hostshort: u_short): u_short;
-function inet_addr(cp: PChar): u_long;
+function inet_addr(const cp: PChar): u_long;
 function inet_ntoa(inaddr: TInAddr): PChar; 
 function listen(s: TSocket; backlog: Longint): Longint; 
 function ntohl(netlong: u_long): u_long;
@@ -2013,24 +2013,24 @@ function recvfrom(s: TSocket; Buf: Pointer; len, flags: Longint; from: PSockAddr
 function recvfrom(s: TSocket; var Buf; len, flags: Longint; var from: TSockAddr; var fromlen: Longint): Longint; overload;
 function select(nfds: Longint; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): Longint; 
 function send(s: TSocket; var Buf; len, flags: Longint): Longint; overload;
-function send(s: TSocket; Buf: PChar; len, flags: Longint): Longint; overload;
+function send(s: TSocket; const Buf: PChar; len, flags: Longint): Longint; overload;
 function send(s: TSocket; Buf: Pointer; len, flags: Longint): Longint; overload;
 function sendto(s: TSocket; var Buf; len, flags: Longint; var addrto: TSockAddr; tolen: Longint): Longint; overload;
-function sendto(s: TSocket; Buf: PChar; len, flags: Longint; addrto: PSockAddr; tolen: Longint): Longint; overload;
+function sendto(s: TSocket; const Buf: PChar; len, flags: Longint; addrto: PSockAddr; tolen: Longint): Longint; overload;
 function sendto(s: TSocket; Buf: Pointer; len, flags: Longint; addrto: PSockAddr; tolen: Longint): Longint; overload;
 function setsockopt(s: TSocket; level, optname: Longint; const optval; optlen: Longint): Longint; overload;
-function setsockopt(s: TSocket; level, optname: Longint; optval: PChar; optlen: Longint): Longint; overload;
+function setsockopt(s: TSocket; level, optname: Longint; const optval: PChar; optlen: Longint): Longint; overload;
 function setsockopt(s: TSocket; level, optname: Longint; optval: Pointer; optlen: Longint): Longint; overload;
 function shutdown(s: TSocket; how: Longint): Longint; 
 function socket(af, struct, protocol: Longint): TSocket; 
 
 function gethostbyaddr(addr: Pointer; len, family: Longint): PHostEnt; 
-function gethostbyname(name: PChar): PHostEnt; 
+function gethostbyname(const name: PChar): PHostEnt; 
 function gethostname(name: PChar; len: Longint): Longint; 
-function getservbyport(port: Longint; proto: PChar): PServEnt; 
-function getservbyname(name, proto: PChar): PServEnt; 
+function getservbyport(port: Longint; const proto: PChar): PServEnt; 
+function getservbyname(const name, proto: PChar): PServEnt; 
 function getprotobynumber(proto: Longint): PProtoEnt; 
-function getprotobyname(name: PChar): PProtoEnt; 
+function getprotobyname(const name: PChar): PProtoEnt; 
 
 function getaddrinfo(pNodeName, pServiceName: PChar; pHints: PAddrInfo; var ppResult: PAddrInfo): LongInt;
 procedure freeaddrinfo(ai: PAddrInfo);
@@ -2044,12 +2044,12 @@ function WSAIsBlocking: BOOL;
 function WSAUnhookBlockingHook: Longint; 
 function WSASetBlockingHook(lpBlockFunc: TFarProc): TFarProc;
 function WSACancelBlockingCall: Longint;
-function WSAAsyncGetServByName(HWindow: HWND; wMsg: u_int; name, proto, buf: PChar; buflen: Longint): THandle;
+function WSAAsyncGetServByName(HWindow: HWND; wMsg: u_int; const name, proto: PChar; buf: PChar; buflen: Longint): THandle;
 function WSAAsyncGetServByPort( HWindow: HWND; wMsg, port: u_int; proto, buf: PChar; buflen: Longint): THandle;
-function WSAAsyncGetProtoByName(HWindow: HWND; wMsg: u_int; name, buf: PChar; buflen: Longint): THandle;
+function WSAAsyncGetProtoByName(HWindow: HWND; wMsg: u_int; const name: PChar; buf: PChar; buflen: Longint): THandle;
 function WSAAsyncGetProtoByNumber(HWindow: HWND; wMsg: u_int; number: Longint; buf: PChar; buflen: Longint): THandle;
-function WSAAsyncGetHostByName(HWindow: HWND; wMsg: u_int; name, buf: PChar; buflen: Longint): THandle;
-function WSAAsyncGetHostByAddr(HWindow: HWND; wMsg: u_int; addr: PChar; len, family: Longint; buf: PChar; buflen: Longint): THandle;
+function WSAAsyncGetHostByName(HWindow: HWND; wMsg: u_int; const name: PChar; buf: PChar; buflen: Longint): THandle;
+function WSAAsyncGetHostByAddr(HWindow: HWND; wMsg: u_int; const addr: PChar; len, family: Longint; buf: PChar; buflen: Longint): THandle;
 function WSACancelAsyncRequest(hAsyncTaskHandle: THandle): Longint;
 function WSAAsyncSelect(s: TSocket; HWindow: HWND; wMsg: u_int; lEvent: Longint): Longint;
 function __WSAFDIsSet(s: TSOcket; var FDSet: TFDSet): Bool;
@@ -2139,7 +2139,7 @@ procedure FD_ZERO(var FDSet: TFDSet);
 function WsControl(Proto:DWORD;Action:DWORD;pRequestInfo:Pointer; var pcbRequestInfoLen:DWORD;pResponseInfo:Pointer; var pcbResponseInfoLen:DWORD):Integer; 
 
 function getnetbyaddr(addr: Pointer; len, Struct: Integer): PNetEnt; 
-function getnetbyname(name: PChar): PNetEnt; 
+function getnetbyname(const name: PChar): PNetEnt; 
 
 {==============================================================================}
 {Winsock2 Enhanced Functions}
@@ -9677,7 +9677,7 @@ end;
 
 {==============================================================================}
 
-function inet_addr(cp: PChar): u_long;
+function inet_addr(const cp: PChar): u_long;
 begin
  {}
  Result:=LongWord(StringToInAddr(cp));
@@ -9962,7 +9962,7 @@ end;
 
 {==============================================================================}
 
-function send(s: TSocket; Buf: PChar; len, flags: Longint): Longint; 
+function send(s: TSocket; const Buf: PChar; len, flags: Longint): Longint; 
 begin
  {}
  Result:=send(s,Buf^,len,flags);
@@ -10019,7 +10019,7 @@ end;
 
 {==============================================================================}
 
-function sendto(s: TSocket; Buf: PChar; len, flags: Longint; addrto: PSockAddr; tolen: Longint): Longint; 
+function sendto(s: TSocket; const Buf: PChar; len, flags: Longint; addrto: PSockAddr; tolen: Longint): Longint; 
 begin
  {}
  Result:=sendto(s,buf^,len,flags,addrto^,tolen);
@@ -10043,7 +10043,7 @@ end;
 
 {==============================================================================}
 
-function setsockopt(s: TSocket; level, optname: Longint; optval: PChar; optlen: Longint): Longint; 
+function setsockopt(s: TSocket; level, optname: Longint; const optval: PChar; optlen: Longint): Longint; 
 var
  Socket:TProtocolSocket;
 begin
@@ -10191,7 +10191,7 @@ end;
 
 {==============================================================================}
 
-function gethostbyname(name: PChar): PHostEnt; 
+function gethostbyname(const name: PChar): PHostEnt; 
 begin
  {}
  Result:=nil;
@@ -10249,7 +10249,7 @@ end;
 
 {==============================================================================}
 
-function getservbyport(port: Longint; proto: PChar): PServEnt; 
+function getservbyport(port: Longint; const proto: PChar): PServEnt; 
 begin
  {}
  Result:=nil;
@@ -10278,7 +10278,7 @@ end;
 
 {==============================================================================}
 
-function getservbyname(name, proto: PChar): PServEnt; 
+function getservbyname(const name, proto: PChar): PServEnt; 
 begin
  {}
  Result:=nil;
@@ -10336,7 +10336,7 @@ end;
 
 {==============================================================================}
 
-function getprotobyname(name: PChar): PProtoEnt; 
+function getprotobyname(const name: PChar): PProtoEnt; 
 begin
  {}
  Result:=nil;
@@ -11315,7 +11315,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetServByName(HWindow: HWND; wMsg: u_int; name, proto, buf: PChar; buflen: Longint): THandle;
+function WSAAsyncGetServByName(HWindow: HWND; wMsg: u_int; const name, proto: PChar; buf: PChar; buflen: Longint): THandle;
 begin
  {}
  {Not Implemented}
@@ -11335,7 +11335,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetProtoByName(HWindow: HWND; wMsg: u_int; name, buf: PChar; buflen: Longint): THandle;
+function WSAAsyncGetProtoByName(HWindow: HWND; wMsg: u_int; const name: PChar; buf: PChar; buflen: Longint): THandle;
 begin
  {}
  {Not Implemented}
@@ -11355,7 +11355,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetHostByName(HWindow: HWND; wMsg: u_int; name, buf: PChar; buflen: Longint): THandle;
+function WSAAsyncGetHostByName(HWindow: HWND; wMsg: u_int; const name: PChar; buf: PChar; buflen: Longint): THandle;
 begin
  {}
  {Not Implemented}
@@ -11365,7 +11365,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetHostByAddr(HWindow: HWND; wMsg: u_int; addr: PChar; len, family: Longint; buf: PChar; buflen: Longint): THandle;
+function WSAAsyncGetHostByAddr(HWindow: HWND; wMsg: u_int; const addr: PChar; len, family: Longint; buf: PChar; buflen: Longint): THandle;
 begin
  {}
  {Not Implemented}
@@ -12378,7 +12378,7 @@ end;
 
 {==============================================================================}
 
-function getnetbyname(name: PChar): PNetEnt; 
+function getnetbyname(const name: PChar): PNetEnt; 
 begin
  {}
  Result:=nil;

@@ -1906,8 +1906,8 @@ function sem_wait(sem: Psem_t): int; cdecl; public name 'sem_wait';
 {$IFDEF SYSCALLS_EXPORT_SOCKETS}
 {From sys/socket.h}
 function socket_accept(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl; public name 'accept';
-function socket_bind(socket: int; address: psockaddr; address_len: socklen_t): int; cdecl; public name 'bind';
-function socket_connect(socket: int; address: psockaddr; address_len: socklen_t): int; cdecl; public name 'connect';
+function socket_bind(socket: int; const address: psockaddr; address_len: socklen_t): int; cdecl; public name 'bind';
+function socket_connect(socket: int; const address: psockaddr; address_len: socklen_t): int; cdecl; public name 'connect';
 function socket_getpeername(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl; public name 'getpeername';
 function socket_getsockname(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl; public name 'getsockname';
 function socket_getsockopt(socket: int; level, option_name: int; option_value: Pointer; option_len: Psocklen_t): int; cdecl; public name 'getsockopt';
@@ -1915,10 +1915,10 @@ function socket_listen(socket: int; backlog: int): int; cdecl; public name 'list
 function socket_recv(socket: int; buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl; public name 'recv';
 function socket_recvfrom(socket: int; buffer: Pointer; len: size_t; flags: int; address: psockaddr; address_len: Psocklen_t): ssize_t; cdecl; public name 'recvfrom';
 function socket_recvmsg(socket: int; message: Pmsghdr; flags: int): ssize_t; cdecl; public name 'recvmsg';
-function socket_send(socket: int; buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl; public name 'send';
-function socket_sendto(socket: int; buffer: Pointer; len: size_t; flags: int; dest_addr: psockaddr; dest_len: socklen_t): ssize_t; cdecl; public name 'sendto';
-function socket_sendmsg(socket: int; message: Pmsghdr; flags: int): ssize_t; cdecl; public name 'sendmsg';
-function socket_setsockopt(socket: int; level, option_name: int; option_value: Pointer; option_len: socklen_t): int; cdecl; public name 'setsockopt';
+function socket_send(socket: int; const buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl; public name 'send';
+function socket_sendto(socket: int; const buffer: Pointer; len: size_t; flags: int; dest_addr: psockaddr; dest_len: socklen_t): ssize_t; cdecl; public name 'sendto';
+function socket_sendmsg(socket: int; const message: Pmsghdr; flags: int): ssize_t; cdecl; public name 'sendmsg';
+function socket_setsockopt(socket: int; level, option_name: int; const option_value: Pointer; option_len: socklen_t): int; cdecl; public name 'setsockopt';
 function socket_shutdown(socket: int; how: int): int; cdecl; public name 'shutdown';
 function socket_socket(domain, sockettype, protocol: int): int; cdecl; public name 'socket';
 function socket_socketpair(domain, sockettype, protocol: int; socket_vector: Pint): int; cdecl; public name 'socketpair';
@@ -2138,8 +2138,9 @@ var
 {==============================================================================}
 {==============================================================================}
 {Forward Declarations}
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
 function socket_get_error(error: int): int; forward;
-
+{$ENDIF}
 function SyscallsGetStat(Handle:THandle;stat:Pstat):Boolean; forward;
 function SyscallsGetStat64(Handle:THandle;stat64:Pstat64):Boolean; forward;
 
@@ -10166,7 +10167,7 @@ end;
 
 {==============================================================================}
 
-function socket_bind(socket: int; address: psockaddr; address_len: socklen_t): int; cdecl;
+function socket_bind(socket: int; const address: psockaddr; address_len: socklen_t): int; cdecl;
 {Bind a name to a socket}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
@@ -10204,7 +10205,7 @@ end;
 
 {==============================================================================}
 
-function socket_connect(socket: int; address: psockaddr; address_len: socklen_t): int; cdecl;
+function socket_connect(socket: int; const address: psockaddr; address_len: socklen_t): int; cdecl;
 {Connect a socket}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
@@ -10507,7 +10508,7 @@ end;
 
 {==============================================================================}
 
-function socket_send(socket: int; buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl;
+function socket_send(socket: int; const buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl;
 {Send a message on a socket}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
@@ -10545,7 +10546,7 @@ end;
 
 {==============================================================================}
 
-function socket_sendto(socket: int; buffer: Pointer; len: size_t; flags: int; dest_addr: psockaddr; dest_len: socklen_t): ssize_t; cdecl;
+function socket_sendto(socket: int; const buffer: Pointer; len: size_t; flags: int; dest_addr: psockaddr; dest_len: socklen_t): ssize_t; cdecl;
 {Send a message on a socket}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
@@ -10583,7 +10584,7 @@ end;
 
 {==============================================================================}
 
-function socket_sendmsg(socket: int; message: Pmsghdr; flags: int): ssize_t; cdecl;
+function socket_sendmsg(socket: int; const message: Pmsghdr; flags: int): ssize_t; cdecl;
 {Send a message on a socket}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
@@ -10620,7 +10621,7 @@ end;
 
 {==============================================================================}
 
-function socket_setsockopt(socket: int; level, option_name: int; option_value: Pointer; option_len: socklen_t): int; cdecl;
+function socket_setsockopt(socket: int; level, option_name: int; const option_value: Pointer; option_len: socklen_t): int; cdecl;
 {Set the socket options}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}

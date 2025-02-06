@@ -804,17 +804,17 @@ function device_tree_valid: BOOL; stdcall; public name 'device_tree_valid';
 function device_tree_get_base: SIZE_T; stdcall; public name 'device_tree_get_base';
 function device_tree_get_size: uint32_t; stdcall; public name 'device_tree_get_size';
 
-function device_tree_read(path, name: PCHAR; buffer: PVOID; var size: uint32_t): uint32_t; stdcall; public name 'device_tree_read';
-function device_tree_read32(path, name: PCHAR; var value: uint32_t): uint32_t; stdcall; public name 'device_tree_read32';
-function device_tree_read64(path, name: PCHAR; var value: uint64_t): uint32_t; stdcall; public name 'device_tree_read64';
-function device_tree_read_string(path, name: PCHAR; value: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'device_tree_read_string';
+function device_tree_read(const path, name: PCHAR; buffer: PVOID; var size: uint32_t): uint32_t; stdcall; public name 'device_tree_read';
+function device_tree_read32(const path, name: PCHAR; var value: uint32_t): uint32_t; stdcall; public name 'device_tree_read32';
+function device_tree_read64(const path, name: PCHAR; var value: uint64_t): uint32_t; stdcall; public name 'device_tree_read64';
+function device_tree_read_string(const path, name: PCHAR; value: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'device_tree_read_string';
 
 {Boot Functions}
 procedure boot_blink; stdcall; public name 'boot_blink';
 procedure boot_output(value: uint32_t); stdcall; public name 'boot_output';
 procedure boot_console_start; stdcall; public name 'boot_console_start';
-procedure boot_console_write(value: PCHAR); stdcall; public name 'boot_console_write';
-procedure boot_console_write_ex(value: PCHAR; x, y: uint32_t); stdcall; public name 'boot_console_write_ex';
+procedure boot_console_write(const value: PCHAR); stdcall; public name 'boot_console_write';
+procedure boot_console_write_ex(const value: PCHAR; x, y: uint32_t); stdcall; public name 'boot_console_write_ex';
 function boot_console_get_x: uint32_t; stdcall; public name 'boot_console_get_x';
 function boot_console_get_y: uint32_t; stdcall; public name 'boot_console_get_y';
 
@@ -1152,14 +1152,14 @@ function dma_get_channels: uint32_t; stdcall; public name 'dma_get_channels';
 
 {Handle Functions}
 function handle_create(data: THANDLE; _type: uint32_t): THANDLE; stdcall; public name 'handle_create';
-function handle_create_ex(name: PCHAR; flags: uint32_t; data: THANDLE; _type: uint32_t): PHANDLE_ENTRY;  stdcall; public name 'handle_create_ex';
+function handle_create_ex(const name: PCHAR; flags: uint32_t; data: THANDLE; _type: uint32_t): PHANDLE_ENTRY;  stdcall; public name 'handle_create_ex';
 function handle_destroy(handle: THANDLE): uint32_t; stdcall; public name 'handle_destroy';
 
 function handle_get(handle: THANDLE): PHANDLE_ENTRY; stdcall; public name 'handle_get';
-function handle_find(name: PCHAR): PHANDLE_ENTRY; stdcall; public name 'handle_find';
+function handle_find(const name: PCHAR): PHANDLE_ENTRY; stdcall; public name 'handle_find';
 function handle_enumerate(callback: handle_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'handle_enumerate';
 
-function handle_open(name: PCHAR): THANDLE; stdcall; public name 'handle_open';
+function handle_open(const name: PCHAR): THANDLE; stdcall; public name 'handle_open';
 function handle_close(handle: THANDLE): uint32_t; stdcall; public name 'handle_close';
 function handle_duplicate(handle: THANDLE): THANDLE; stdcall; public name 'handle_duplicate';
 
@@ -1413,29 +1413,30 @@ function widechar_to_codepage(ch: WIDECHAR): CHAR; stdcall; public name 'widecha
 
 {Name Functions}
 function host_get_name(name: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'host_get_name';
-function host_set_name(name: PCHAR): BOOL; stdcall; public name 'host_set_name';
+function host_set_name(const name: PCHAR): BOOL; stdcall; public name 'host_set_name';
 function host_get_domain(domain: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'host_get_domain';
-function host_set_domain(domain: PCHAR): BOOL; stdcall; public name 'host_set_domain';
+function host_set_domain(const domain: PCHAR): BOOL; stdcall; public name 'host_set_domain';
 
 {Module Functions}
-function module_load(name: PCHAR): THANDLE; stdcall; public name 'module_load';
+function module_load(const name: PCHAR): THANDLE; stdcall; public name 'module_load';
+function module_load_ex(const name: PCHAR; flags: uint32_t): THANDLE; stdcall; public name 'module_load_ex';
 function module_unload(handle: THANDLE): BOOL; stdcall; public name 'module_unload';
 function module_get_name(handle: THANDLE; name: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'module_get_name';
 
 {Symbol Functions}
-function symbol_add(handle: THANDLE; name: PCHAR; address: SIZE_T): BOOL; stdcall; public name 'symbol_add';
-function symbol_remove(handle: THANDLE; name: PCHAR): BOOL; stdcall; public name 'symbol_remove';
-function symbol_get_address(handle: THANDLE; name: PCHAR): SIZE_T; stdcall; public name 'symbol_get_address';
+function symbol_add(handle: THANDLE; const name: PCHAR; address: SIZE_T): BOOL; stdcall; public name 'symbol_add';
+function symbol_remove(handle: THANDLE; const name: PCHAR): BOOL; stdcall; public name 'symbol_remove';
+function symbol_get_address(handle: THANDLE; const name: PCHAR): SIZE_T; stdcall; public name 'symbol_get_address';
 
 {Logging Functions}
-procedure logging_output(text: PCHAR); stdcall; public name 'logging_output';
-procedure logging_output_ex(facility, severity: uint32_t; tag, content: PCHAR); stdcall; public name 'logging_output_ex';
+procedure logging_output(const text: PCHAR); stdcall; public name 'logging_output';
+procedure logging_output_ex(facility, severity: uint32_t; const tag, content: PCHAR); stdcall; public name 'logging_output_ex';
 
 {Environment Functions}
-function environment_get(name: PCHAR; value: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'environment_get';
-function environment_set(name, value: PCHAR): uint32_t; stdcall; public name 'environment_set';
+function environment_get(const name: PCHAR; value: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'environment_get';
+function environment_set(const name, value: PCHAR): uint32_t; stdcall; public name 'environment_set';
 function environment_count(reset: BOOL): uint32_t; stdcall; public name 'environment_count';
-function environment_index(name: PCHAR): uint32_t; stdcall; public name 'environment_index';
+function environment_index(const name: PCHAR): uint32_t; stdcall; public name 'environment_index';
 function environment_string(index: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'environment_string';
 
 {Utility Functions}
@@ -1630,15 +1631,15 @@ function queue_lock(queue: QUEUE_HANDLE): uint32_t; stdcall; public name 'queue_
 function queue_unlock(queue: QUEUE_HANDLE): uint32_t; stdcall; public name 'queue_unlock';
 
 {Thread Functions}
-function thread_create(startproc: thread_start_proc; stacksize, priority: uint32_t; name: PCHAR; parameter: PVOID): THREAD_HANDLE; stdcall; public name 'thread_create';
-function thread_create_ex(startproc: thread_start_proc; stacksize, priority, affinity, cpu: uint32_t; name: PCHAR; parameter: PVOID): THREAD_HANDLE; stdcall; public name 'thread_create_ex';
+function thread_create(startproc: thread_start_proc; stacksize, priority: uint32_t; const name: PCHAR; parameter: PVOID): THREAD_HANDLE; stdcall; public name 'thread_create';
+function thread_create_ex(startproc: thread_start_proc; stacksize, priority, affinity, cpu: uint32_t; const name: PCHAR; parameter: PVOID): THREAD_HANDLE; stdcall; public name 'thread_create_ex';
 function thread_destroy(thread: THREAD_HANDLE): uint32_t; stdcall; public name 'thread_destroy';
 
 function thread_get_current: THREAD_HANDLE; stdcall; public name 'thread_get_current';
 function thread_set_current(thread: THREAD_HANDLE): uint32_t; stdcall; public name 'thread_set_current';
 
 function thread_get_name(thread: THREAD_HANDLE; name: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'thread_get_name';
-function thread_set_name(thread: THREAD_HANDLE; name: PCHAR): uint32_t; stdcall; public name 'thread_set_name';
+function thread_set_name(thread: THREAD_HANDLE; const name: PCHAR): uint32_t; stdcall; public name 'thread_set_name';
 
 function thread_get_cpu(thread: THREAD_HANDLE): uint32_t; stdcall; public name 'thread_get_cpu';
 function thread_set_cpu(thread: THREAD_HANDLE; cpu: uint32_t): uint32_t; stdcall; public name 'thread_set_cpu';
@@ -1838,7 +1839,7 @@ function tasker_trigger: uint32_t; stdcall; public name 'tasker_trigger';
 
 {RTL Thread Functions}
 function begin_thread(signalaction: PVOID; stacksize: SIZE_T; threadfunction: thread_func; threadparameter: PVOID; creationflags: uint32_t; var threadid: TTHREAD_ID): TTHREAD_ID; stdcall; public name 'begin_thread';
-function begin_thread_ex(signalaction: PVOID; stacksize: SIZE_T; threadfunction: thread_func; threadparameter: PVOID; creationflags: uint32_t; priority, affinity, cpu: uint32_t; name: PCHAR; var threadid: TTHREAD_ID): TTHREAD_ID; stdcall; public name 'begin_thread_ex';
+function begin_thread_ex(signalaction: PVOID; stacksize: SIZE_T; threadfunction: thread_func; threadparameter: PVOID; creationflags: uint32_t; priority, affinity, cpu: uint32_t; const name: PCHAR; var threadid: TTHREAD_ID): TTHREAD_ID; stdcall; public name 'begin_thread_ex';
 
 procedure end_thread(exitcode: uint32_t); stdcall; public name 'end_thread';
 
@@ -2030,8 +2031,8 @@ function device_tree_validate(address: SIZE_T; var size: uint32_t): BOOL; stdcal
 function device_tree_next_node(parent, previous: THANDLE): THANDLE; stdcall; public name 'device_tree_next_node';
 function device_tree_next_property(node, previous: THANDLE): THANDLE; stdcall; public name 'device_tree_next_property';
 
-function device_tree_get_node(path: PCHAR; parent: THANDLE): THANDLE; stdcall; public name 'device_tree_get_node';
-function device_tree_get_property(node: THANDLE; name: PCHAR): THANDLE; stdcall; public name 'device_tree_get_property';
+function device_tree_get_node(const path: PCHAR; parent: THANDLE): THANDLE; stdcall; public name 'device_tree_get_node';
+function device_tree_get_property(node: THANDLE; const name: PCHAR): THANDLE; stdcall; public name 'device_tree_get_property';
 
 function device_tree_get_node_name(handle: THANDLE; name: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'device_tree_get_node_name';
 function device_tree_split_node_name(handle: THANDLE; nodename: PCHAR; namelen: uint32_t; unitaddress: PCHAR; addresslen: uint32_t): uint32_t; stdcall; public name 'device_tree_split_node_name';
@@ -2070,40 +2071,40 @@ function device_create_ex(size: uint32_t): PDEVICE; stdcall; public name 'device
 function device_destroy(device: PDEVICE): uint32_t; stdcall; public name 'device_destroy';
 
 function device_get_name(device: PDEVICE; name: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'device_get_name';
-function device_set_name(device: PDEVICE; name: PCHAR): uint32_t; stdcall; public name 'device_set_name';
+function device_set_name(device: PDEVICE; const name: PCHAR): uint32_t; stdcall; public name 'device_set_name';
 
 function device_get_description(device: PDEVICE; name: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'device_get_description';
-function device_set_description(device: PDEVICE; description: PCHAR): uint32_t; stdcall; public name 'device_set_description';
+function device_set_description(device: PDEVICE; const description: PCHAR): uint32_t; stdcall; public name 'device_set_description';
 
 function device_register(device: PDEVICE): uint32_t; stdcall; public name 'device_register';
 function device_deregister(device: PDEVICE): uint32_t; stdcall; public name 'device_deregister';
 
 function device_find(deviceclass, deviceid: uint32_t): PDEVICE; stdcall; public name 'device_find';
 function device_find_by_devicedata(devicedata: PVOID): PDEVICE; stdcall; public name 'device_find_by_devicedata';
-function device_find_by_name(name: PCHAR): PDEVICE; stdcall; public name 'device_find_by_name';
-function device_find_by_name_ex(deviceclass: uint32_t; name: PCHAR): PDEVICE; stdcall; public name 'device_find_by_name_ex';
-function device_find_by_description(description: PCHAR): PDEVICE; stdcall; public name 'device_find_by_description';
-function device_find_by_description_ex(deviceclass: uint32_t; description: PCHAR): PDEVICE; stdcall; public name 'device_find_by_description_ex';
+function device_find_by_name(const name: PCHAR): PDEVICE; stdcall; public name 'device_find_by_name';
+function device_find_by_name_ex(deviceclass: uint32_t; const name: PCHAR): PDEVICE; stdcall; public name 'device_find_by_name_ex';
+function device_find_by_description(const description: PCHAR): PDEVICE; stdcall; public name 'device_find_by_description';
+function device_find_by_description_ex(deviceclass: uint32_t; const description: PCHAR): PDEVICE; stdcall; public name 'device_find_by_description_ex';
 function device_enumerate(deviceclass: uint32_t; callback: device_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'device_enumerate';
 
 function device_notification(device: PDEVICE; deviceclass: uint32_t; callback: device_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'device_notification';
 
-function device_firmware_create(deviceclass: uint32_t; name: PCHAR; buffer: PVOID; size: uint32_t): BOOL; stdcall; public name 'device_firmware_create';
+function device_firmware_create(deviceclass: uint32_t; const name: PCHAR; buffer: PVOID; size: uint32_t): BOOL; stdcall; public name 'device_firmware_create';
 
-function device_firmware_register(deviceclass: uint32_t; name: PCHAR; handler: device_firmware_handler): THANDLE; stdcall; public name 'device_firmware_register';
+function device_firmware_register(deviceclass: uint32_t; const name: PCHAR; handler: device_firmware_handler): THANDLE; stdcall; public name 'device_firmware_register';
 function device_firmware_deregister(handle: THANDLE): uint32_t; stdcall; public name 'device_firmware_deregister';
 
-function device_firmware_find(deviceclass: uint32_t; name: PCHAR): PDEVICE_FIRMWARE; stdcall; public name 'device_firmware_find';
+function device_firmware_find(deviceclass: uint32_t; const name: PCHAR): PDEVICE_FIRMWARE; stdcall; public name 'device_firmware_find';
 function device_firmware_find_by_handle(handle: THANDLE): PDEVICE_FIRMWARE; stdcall; public name 'device_firmware_find_by_handle';
 
-function device_firmware_open(deviceclass: uint32_t; name: PCHAR; timeout: uint32_t; var handle: THANDLE): uint32_t; stdcall; public name 'device_firmware_open';
+function device_firmware_open(deviceclass: uint32_t; const name: PCHAR; timeout: uint32_t; var handle: THANDLE): uint32_t; stdcall; public name 'device_firmware_open';
 function device_firmware_close(handle: THANDLE): uint32_t; stdcall; public name 'device_firmware_close';
 
 function device_firmware_size(handle: THANDLE): int32_t; stdcall; public name 'device_firmware_size';
 function device_firmware_seek(handle: THANDLE; position: int32_t): int32_t; stdcall; public name 'device_firmware_seek';
 function device_firmware_read(handle: THANDLE; buffer: PVOID; count: int32_t): int32_t; stdcall; public name 'device_firmware_read';
 
-function device_firmware_acquire(deviceclass: uint32_t; name: PCHAR; timeout: uint32_t; var handle: THANDLE; var buffer: PVOID; var size: uint32_t): uint32_t; stdcall; public name 'device_firmware_acquire';
+function device_firmware_acquire(deviceclass: uint32_t; const name: PCHAR; timeout: uint32_t; var handle: THANDLE; var buffer: PVOID; var size: uint32_t): uint32_t; stdcall; public name 'device_firmware_acquire';
 function device_firmware_release(handle: THANDLE; buffer: PVOID; size: uint32_t): uint32_t; stdcall; public name 'device_firmware_release';
 
 function notifier_allocate(device: PDEVICE; deviceclass: uint32_t; callback: device_notification_cb; data: PVOID; notification, flags: uint32_t): PNOTIFIER; stdcall; public name 'notifier_allocate';
@@ -2122,13 +2123,13 @@ function driver_create_ex(size: uint32_t): PDRIVER; stdcall; public name 'driver
 function driver_destroy(driver: PDRIVER): uint32_t; stdcall; public name 'driver_destroy';
 
 function driver_get_name(driver: PDRIVER; name: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'driver_get_name';
-function driver_set_name(driver: PDRIVER; name: PCHAR): uint32_t; stdcall; public name 'driver_set_name';
+function driver_set_name(driver: PDRIVER; const name: PCHAR): uint32_t; stdcall; public name 'driver_set_name';
 
 function driver_register(driver: PDRIVER): uint32_t; stdcall; public name 'driver_register';
 function driver_deregister(driver: PDRIVER): uint32_t; stdcall; public name 'driver_deregister';
 
 function driver_find(driverclass, driverid: uint32_t): PDRIVER; stdcall; public name 'driver_find';
-function driver_find_by_name(name: PCHAR): PDRIVER; stdcall; public name 'driver_find_by_name';
+function driver_find_by_name(const name: PCHAR): PDRIVER; stdcall; public name 'driver_find_by_name';
 function driver_enumerate(driverclass: uint32_t; callback: driver_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'driver_enumerate';
 
 {==============================================================================}
@@ -2154,8 +2155,8 @@ function clock_device_register(clock: PCLOCK_DEVICE): uint32_t; stdcall; public 
 function clock_device_deregister(clock: PCLOCK_DEVICE): uint32_t; stdcall; public name 'clock_device_deregister';
 
 function clock_device_find(clockid: uint32_t): PCLOCK_DEVICE; stdcall; public name 'clock_device_find';
-function clock_device_find_by_name(name: PCHAR): PCLOCK_DEVICE; stdcall; public name 'clock_device_find_by_name';
-function clock_device_find_by_description(description: PCHAR): PCLOCK_DEVICE; stdcall; public name 'clock_device_find_by_description';
+function clock_device_find_by_name(const name: PCHAR): PCLOCK_DEVICE; stdcall; public name 'clock_device_find_by_name';
+function clock_device_find_by_description(const description: PCHAR): PCLOCK_DEVICE; stdcall; public name 'clock_device_find_by_description';
 function clock_device_enumerate(callback: clock_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'clock_device_enumerate';
 
 function clock_device_notification(clock: PCLOCK_DEVICE; callback: clock_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'clock_device_notification';
@@ -2185,8 +2186,8 @@ function timer_device_register(timer: PTIMER_DEVICE): uint32_t; stdcall; public 
 function timer_device_deregister(timer: PTIMER_DEVICE): uint32_t; stdcall; public name 'timer_device_deregister';
 
 function timer_device_find(timerid: uint32_t): PTIMER_DEVICE; stdcall; public name 'timer_device_find';
-function timer_device_find_by_name(name: PCHAR): PTIMER_DEVICE; stdcall; public name 'timer_device_find_by_name';
-function timer_device_find_by_description(description: PCHAR): PTIMER_DEVICE; stdcall; public name 'timer_device_find_by_description';
+function timer_device_find_by_name(const name: PCHAR): PTIMER_DEVICE; stdcall; public name 'timer_device_find_by_name';
+function timer_device_find_by_description(const description: PCHAR): PTIMER_DEVICE; stdcall; public name 'timer_device_find_by_description';
 function timer_device_enumerate(callback: timer_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'timer_device_enumerate';
 
 function timer_device_notification(timer: PTIMER_DEVICE; callback: timer_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'timer_device_notification';
@@ -2212,8 +2213,8 @@ function random_device_register(random: PRANDOM_DEVICE): uint32_t; stdcall; publ
 function random_device_deregister(random: PRANDOM_DEVICE): uint32_t; stdcall; public name 'random_device_deregister';
 
 function random_device_find(randomid: uint32_t): PRANDOM_DEVICE; stdcall; public name 'random_device_find';
-function random_device_find_by_name(name: PCHAR): PRANDOM_DEVICE; stdcall; public name 'random_device_find_by_name';
-function random_device_find_by_description(description: PCHAR): PRANDOM_DEVICE; stdcall; public name 'random_device_find_by_description';
+function random_device_find_by_name(const name: PCHAR): PRANDOM_DEVICE; stdcall; public name 'random_device_find_by_name';
+function random_device_find_by_description(const description: PCHAR): PRANDOM_DEVICE; stdcall; public name 'random_device_find_by_description';
 function random_device_enumerate(callback: random_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'random_device_enumerate';
 
 function random_device_notification(random: PRANDOM_DEVICE; callback: random_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'random_device_notification';
@@ -2236,8 +2237,8 @@ function mailbox_device_register(mailbox: PMAILBOX_DEVICE): uint32_t; stdcall; p
 function mailbox_device_deregister(mailbox: PMAILBOX_DEVICE): uint32_t; stdcall; public name 'mailbox_device_deregister';
 
 function mailbox_device_find(mailboxid: uint32_t): PMAILBOX_DEVICE; stdcall; public name 'mailbox_device_find';
-function mailbox_device_find_by_name(name: PCHAR): PMAILBOX_DEVICE; stdcall; public name 'mailbox_device_find_by_name';
-function mailbox_device_find_by_description(description: PCHAR): PMAILBOX_DEVICE; stdcall; public name 'mailbox_device_find_by_description';
+function mailbox_device_find_by_name(const name: PCHAR): PMAILBOX_DEVICE; stdcall; public name 'mailbox_device_find_by_name';
+function mailbox_device_find_by_description(const description: PCHAR): PMAILBOX_DEVICE; stdcall; public name 'mailbox_device_find_by_description';
 function mailbox_device_enumerate(callback: mailbox_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'mailbox_device_enumerate';
 
 function mailbox_device_notification(mailbox: PMAILBOX_DEVICE; callback: mailbox_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'mailbox_device_notification';
@@ -2260,8 +2261,8 @@ function watchdog_device_register(watchdog: PWATCHDOG_DEVICE): uint32_t; stdcall
 function watchdog_device_deregister(watchdog: PWATCHDOG_DEVICE): uint32_t; stdcall; public name 'watchdog_device_deregister';
 
 function watchdog_device_find(watchdogid: uint32_t): PWATCHDOG_DEVICE; stdcall; public name 'watchdog_device_find';
-function watchdog_device_find_by_name(name: PCHAR): PWATCHDOG_DEVICE; stdcall; public name 'watchdog_device_find_by_name';
-function watchdog_device_find_by_description(description: PCHAR): PWATCHDOG_DEVICE; stdcall; public name 'watchdog_device_find_by_description';
+function watchdog_device_find_by_name(const name: PCHAR): PWATCHDOG_DEVICE; stdcall; public name 'watchdog_device_find_by_name';
+function watchdog_device_find_by_description(const description: PCHAR): PWATCHDOG_DEVICE; stdcall; public name 'watchdog_device_find_by_description';
 function watchdog_device_enumerate(callback: watchdog_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'watchdog_device_enumerate';
 
 function watchdog_device_notification(watchdog: PWATCHDOG_DEVICE; callback: watchdog_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'watchdog_device_notification';
@@ -2356,7 +2357,7 @@ function console_device_draw_box(console: PCONSOLE_DEVICE; x1, y1, x2, y2, color
 function console_device_draw_line(console: PCONSOLE_DEVICE; x1, y1, x2, y2, color, width: uint32_t): uint32_t; stdcall; public name 'console_device_draw_line';
 function console_device_plot_line(console: PCONSOLE_DEVICE; x1, y1, x2, y2, color, width: uint32_t): uint32_t; stdcall; public name 'console_device_plot_line';
 function console_device_draw_char(console: PCONSOLE_DEVICE; handle: FONT_HANDLE; ch: CHAR; x, y, forecolor, backcolor: uint32_t): uint32_t; stdcall; public name 'console_device_draw_char';
-function console_device_draw_text(console: PCONSOLE_DEVICE; handle: FONT_HANDLE; text: PCHAR; x, y, forecolor, backcolor, len: uint32_t): uint32_t; stdcall; public name 'console_device_draw_text';
+function console_device_draw_text(console: PCONSOLE_DEVICE; handle: FONT_HANDLE; const text: PCHAR; x, y, forecolor, backcolor, len: uint32_t): uint32_t; stdcall; public name 'console_device_draw_text';
 function console_device_draw_pixel(console: PCONSOLE_DEVICE; x, y, color: uint32_t): uint32_t; stdcall; public name 'console_device_draw_pixel';
 function console_device_draw_block(console: PCONSOLE_DEVICE; x1, y1, x2, y2, color: uint32_t): uint32_t; stdcall; public name 'console_device_draw_block';
 function console_device_draw_circle(console: PCONSOLE_DEVICE; x, y, color, width, radius: uint32_t): uint32_t; stdcall; public name 'console_device_draw_circle';
@@ -2396,8 +2397,8 @@ function console_device_deregister(console: PCONSOLE_DEVICE): uint32_t; stdcall;
 
 function console_device_find(consoleid: uint32_t): PCONSOLE_DEVICE; stdcall; public name 'console_device_find';
 function console_device_find_by_device(device: PDEVICE): PCONSOLE_DEVICE; stdcall; public name 'console_device_find_by_device';
-function console_device_find_by_name(name: PCHAR): PCONSOLE_DEVICE; stdcall; public name 'console_device_find_by_name';
-function console_device_find_by_description(description: PCHAR): PCONSOLE_DEVICE; stdcall; public name 'console_device_find_by_description';
+function console_device_find_by_name(const name: PCHAR): PCONSOLE_DEVICE; stdcall; public name 'console_device_find_by_name';
+function console_device_find_by_description(const description: PCHAR): PCONSOLE_DEVICE; stdcall; public name 'console_device_find_by_description';
 function console_device_enumerate(callback: console_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'console_device_enumerate';
 
 function console_device_notification(console: PCONSOLE_DEVICE; callback: console_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'console_device_notification';
@@ -2496,7 +2497,7 @@ function console_window_cursor_blink(handle: WINDOW_HANDLE; enabled: BOOL): uint
 function console_window_cursor_color(handle: WINDOW_HANDLE; color: uint32_t): uint32_t; stdcall; public name 'console_window_cursor_color';
 function console_window_cursor_reverse(handle: WINDOW_HANDLE; enabled: BOOL): uint32_t; stdcall; public name 'console_window_cursor_reverse';
 
-function console_window_add_history(handle: WINDOW_HANDLE; value: PCHAR): uint32_t; stdcall; public name 'console_window_add_history';
+function console_window_add_history(handle: WINDOW_HANDLE; const value: PCHAR): uint32_t; stdcall; public name 'console_window_add_history';
 function console_window_clear_history(handle: WINDOW_HANDLE): uint32_t; stdcall; public name 'console_window_clear_history';
 function console_window_first_history(handle: WINDOW_HANDLE; value: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'console_window_first_history';
 function console_window_last_history(handle: WINDOW_HANDLE; value: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'console_window_last_history';
@@ -2513,11 +2514,11 @@ function console_window_scroll_right(handle: WINDOW_HANDLE; row, col, lines, cha
 function console_window_clear(handle: WINDOW_HANDLE): uint32_t; stdcall; public name 'console_window_clear';
 function console_window_clear_ex(handle: WINDOW_HANDLE; x1, y1, x2, y2: uint32_t; cursor: BOOL): uint32_t; stdcall; public name 'console_window_clear_ex';
 
-function console_window_write(handle: WINDOW_HANDLE; text: PCHAR): uint32_t; stdcall; public name 'console_window_write';
-function console_window_write_ex(handle: WINDOW_HANDLE; text: PCHAR; x, y, forecolor, backcolor: uint32_t): uint32_t; stdcall; public name 'console_window_write_ex';
+function console_window_write(handle: WINDOW_HANDLE; const text: PCHAR): uint32_t; stdcall; public name 'console_window_write';
+function console_window_write_ex(handle: WINDOW_HANDLE; const text: PCHAR; x, y, forecolor, backcolor: uint32_t): uint32_t; stdcall; public name 'console_window_write_ex';
 
-function console_window_write_ln(handle: WINDOW_HANDLE; text: PCHAR): uint32_t; stdcall; public name 'console_window_write_ln';
-function console_window_write_ln_ex(handle: WINDOW_HANDLE; text: PCHAR; x, y, forecolor, backcolor: uint32_t): uint32_t; stdcall; public name 'console_window_write_ln_ex';
+function console_window_write_ln(handle: WINDOW_HANDLE; const text: PCHAR): uint32_t; stdcall; public name 'console_window_write_ln';
+function console_window_write_ln_ex(handle: WINDOW_HANDLE; const text: PCHAR; x, y, forecolor, backcolor: uint32_t): uint32_t; stdcall; public name 'console_window_write_ln_ex';
 
 function console_window_write_chr(handle: WINDOW_HANDLE; ch: CHAR): uint32_t; stdcall; public name 'console_window_write_chr';
 function console_window_write_chr_ex(handle: WINDOW_HANDLE; ch: CHAR; x, y, forecolor, backcolor: uint32_t): uint32_t; stdcall; public name 'console_window_write_chr_ex';
@@ -2556,8 +2557,8 @@ procedure console_window(x1, y1, x2, y2: int); stdcall; public name 'console_win
 procedure console_scroll_up(row, lines: int); stdcall; public name 'console_scroll_up';
 procedure console_scroll_down(row, lines: int); stdcall; public name 'console_scroll_down';
 
-procedure console_write(text: PCHAR); stdcall; public name 'console_write';
-procedure console_write_ln(text: PCHAR); stdcall; public name 'console_write_ln';
+procedure console_write(const text: PCHAR); stdcall; public name 'console_write';
+procedure console_write_ln(const text: PCHAR); stdcall; public name 'console_write_ln';
 procedure console_write_chr(ch: CHAR); stdcall; public name 'console_write_chr';
 
 procedure console_read(text: PCHAR; var len: uint32_t); stdcall; public name 'console_read';
@@ -2602,11 +2603,11 @@ function console_window_redirect_output(handle: WINDOW_HANDLE): BOOL; stdcall; p
 function logging_device_start(logging: PLOGGING_DEVICE): uint32_t; stdcall; public name 'logging_device_start';
 function logging_device_stop(logging: PLOGGING_DEVICE): uint32_t; stdcall; public name 'logging_device_stop';
 
-function logging_device_output(logging: PLOGGING_DEVICE; data: PCHAR): uint32_t; stdcall; public name 'logging_device_output';
-function logging_device_output_ex(logging: PLOGGING_DEVICE; facility, severity: uint32_t; tag, content: PCHAR): uint32_t; stdcall; public name 'logging_device_output_ex';
+function logging_device_output(logging: PLOGGING_DEVICE; const data: PCHAR): uint32_t; stdcall; public name 'logging_device_output';
+function logging_device_output_ex(logging: PLOGGING_DEVICE; facility, severity: uint32_t; const tag, content: PCHAR): uint32_t; stdcall; public name 'logging_device_output_ex';
 
 function logging_device_get_target(logging: PLOGGING_DEVICE; target: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'logging_device_get_target';
-function logging_device_set_target(logging: PLOGGING_DEVICE; target: PCHAR): uint32_t; stdcall; public name 'logging_device_set_target';
+function logging_device_set_target(logging: PLOGGING_DEVICE; const target: PCHAR): uint32_t; stdcall; public name 'logging_device_set_target';
 
 function logging_device_create(default: BOOL): PLOGGING_DEVICE; stdcall; public name 'logging_device_create';
 function logging_device_create_ex(size: uint32_t; default: BOOL): PLOGGING_DEVICE; stdcall; public name 'logging_device_create_ex';
@@ -2618,8 +2619,8 @@ function logging_device_deregister(logging: PLOGGING_DEVICE): uint32_t; stdcall;
 function logging_device_find(loggingid: uint32_t): PLOGGING_DEVICE; stdcall; public name 'logging_device_find';
 function logging_device_find_by_type(loggingtype: uint32_t): PLOGGING_DEVICE; stdcall; public name 'logging_device_find_by_type';
 function logging_device_find_by_device(device: PDEVICE): PLOGGING_DEVICE; stdcall; public name 'logging_device_find_by_device';
-function logging_device_find_by_name(name: PCHAR): PLOGGING_DEVICE; stdcall; public name 'logging_device_find_by_name';
-function logging_device_find_by_description(description: PCHAR): PLOGGING_DEVICE; stdcall; public name 'logging_device_find_by_description';
+function logging_device_find_by_name(const name: PCHAR): PLOGGING_DEVICE; stdcall; public name 'logging_device_find_by_name';
+function logging_device_find_by_description(const description: PCHAR): PLOGGING_DEVICE; stdcall; public name 'logging_device_find_by_description';
 
 function logging_device_enumerate(callback: logging_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'logging_device_enumerate';
 
@@ -2790,8 +2791,8 @@ function usb_device_release(device: PUSB_DEVICE): uint32_t; stdcall; public name
 
 function usb_device_find(usbid: uint32_t): PUSB_DEVICE; stdcall; public name 'usb_device_find';
 function usb_device_find_by_id(vendorid, productid: uint16_t): PUSB_DEVICE; stdcall; public name 'usb_device_find_by_id';
-function usb_device_find_by_name(name: PCHAR): PUSB_DEVICE; stdcall; public name 'usb_device_find_by_name';
-function usb_device_find_by_description(description: PCHAR): PUSB_DEVICE; stdcall; public name 'usb_device_find_by_description';
+function usb_device_find_by_name(const name: PCHAR): PUSB_DEVICE; stdcall; public name 'usb_device_find_by_name';
+function usb_device_find_by_description(const description: PCHAR): PUSB_DEVICE; stdcall; public name 'usb_device_find_by_description';
 function usb_device_enumerate(callback: usb_device_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'usb_device_enumerate';
 
 function usb_device_notification(device: PUSB_DEVICE; callback: usb_device_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'usb_device_notification';
@@ -2805,7 +2806,7 @@ function usb_driver_register(driver: PUSB_DRIVER): uint32_t; stdcall; public nam
 function usb_driver_deregister(driver: PUSB_DRIVER): uint32_t; stdcall; public name 'usb_driver_deregister';
 
 function usb_driver_find(driverid: uint32_t): PUSB_DRIVER; stdcall; public name 'usb_driver_find';
-function usb_driver_find_by_name(name: PCHAR): PUSB_DRIVER; stdcall; public name 'usb_driver_find_by_name';
+function usb_driver_find_by_name(const name: PCHAR): PUSB_DRIVER; stdcall; public name 'usb_driver_find_by_name';
 function usb_driver_enumerate(callback: usb_driver_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'usb_driver_enumerate';
 
 //Host Methods
@@ -2819,8 +2820,8 @@ function usb_host_register(host: PUSB_HOST): uint32_t; stdcall; public name 'usb
 function usb_host_deregister(host: PUSB_HOST): uint32_t; stdcall; public name 'usb_host_deregister';
 
 function usb_host_find(hostid: uint32_t): PUSB_HOST; stdcall; public name 'usb_host_find';
-function usb_host_find_by_name(name: PCHAR): PUSB_HOST; stdcall; public name 'usb_host_find_by_name';
-function usb_host_find_by_description(description: PCHAR): PUSB_HOST; stdcall; public name 'usb_host_find_by_description';
+function usb_host_find_by_name(const name: PCHAR): PUSB_HOST; stdcall; public name 'usb_host_find_by_name';
+function usb_host_find_by_description(const description: PCHAR): PUSB_HOST; stdcall; public name 'usb_host_find_by_description';
 function usb_host_enumerate(callback: usb_host_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'usb_host_enumerate';
 
 function usb_host_notification(host: PUSB_HOST; callback: usb_host_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'usb_host_notification';
@@ -2867,8 +2868,8 @@ function usb_hub_allocate(device: PUSB_DEVICE): PUSB_HUB; stdcall; public name '
 function usb_hub_release(hub: PUSB_HUB): uint32_t; stdcall; public name 'usb_hub_release';
 
 function usb_hub_find(hubid: uint32_t): PUSB_HUB; stdcall; public name 'usb_hub_find';
-function usb_hub_find_by_name(name: PCHAR): PUSB_HUB; stdcall; public name 'usb_hub_find_by_name';
-function usb_hub_find_by_description(description: PCHAR): PUSB_HUB; stdcall; public name 'usb_hub_find_by_description';
+function usb_hub_find_by_name(const name: PCHAR): PUSB_HUB; stdcall; public name 'usb_hub_find_by_name';
+function usb_hub_find_by_description(const description: PCHAR): PUSB_HUB; stdcall; public name 'usb_hub_find_by_description';
 function usb_hub_enumerate(callback: usb_hub_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'usb_hub_enumerate';
 
 function usb_hub_notification(hub: PUSB_HUB; callback: usb_hub_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'usb_hub_notification';
@@ -3047,8 +3048,8 @@ function mmc_device_deregister(mmc: PMMC_DEVICE): uint32_t; stdcall; public name
 
 function mmc_device_find(mmcid: uint32_t): PMMC_DEVICE; stdcall; public name 'mmc_device_find';
 function mmc_device_find_by_device(device: PDEVICE): PMMC_DEVICE; stdcall; public name 'mmc_device_find_by_device';
-function mmc_device_find_by_name(name: PCHAR): PMMC_DEVICE; stdcall; public name 'mmc_device_find_by_name';
-function mmc_device_find_by_description(description: PCHAR): PMMC_DEVICE; stdcall; public name 'mmc_device_find_by_description';
+function mmc_device_find_by_name(const name: PCHAR): PMMC_DEVICE; stdcall; public name 'mmc_device_find_by_name';
+function mmc_device_find_by_description(const description: PCHAR): PMMC_DEVICE; stdcall; public name 'mmc_device_find_by_description';
 function mmc_device_enumerate(callback: mmc_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'mmc_device_enumerate';
 
 function mmc_device_notification(mmc: PMMC_DEVICE; callback: mmc_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'mmc_device_notification';
@@ -3165,7 +3166,7 @@ function sdio_driver_register(driver: PSDIO_DRIVER): uint32_t; stdcall; public n
 function sdio_driver_deregister(driver: PSDIO_DRIVER): uint32_t; stdcall; public name 'sdio_driver_deregister';
 
 function sdio_driver_find(driverid: uint32_t): PSDIO_DRIVER; stdcall; public name 'sdio_driver_find';
-function sdio_driver_find_by_name(name: PCHAR): PSDIO_DRIVER; stdcall; public name 'sdio_driver_find_by_name';
+function sdio_driver_find_by_name(const name: PCHAR): PSDIO_DRIVER; stdcall; public name 'sdio_driver_find_by_name';
 function sdio_driver_enumerate(callback: sdio_driver_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'sdio_driver_enumerate';
 
 {==============================================================================}
@@ -3369,8 +3370,8 @@ function spi_device_register(spi: PSPI_DEVICE): uint32_t; stdcall; public name '
 function spi_device_deregister(spi: PSPI_DEVICE): uint32_t; stdcall; public name 'spi_device_deregister';
 
 function spi_device_find(spiid: uint32_t): PSPI_DEVICE; stdcall; public name 'spi_device_find';
-function spi_device_find_by_name(name: PCHAR): PSPI_DEVICE; stdcall; public name 'spi_device_find_by_name';
-function spi_device_find_by_description(description: PCHAR): PSPI_DEVICE; stdcall; public name 'spi_device_find_by_description';
+function spi_device_find_by_name(const name: PCHAR): PSPI_DEVICE; stdcall; public name 'spi_device_find_by_name';
+function spi_device_find_by_description(const description: PCHAR): PSPI_DEVICE; stdcall; public name 'spi_device_find_by_description';
 function spi_device_enumerate(callback: spi_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'spi_device_enumerate';
 
 function spi_device_notification(spi: PSPI_DEVICE; callback: spi_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'spi_device_notification';
@@ -3420,8 +3421,8 @@ function i2c_device_register(i2c: PI2C_DEVICE): uint32_t; stdcall; public name '
 function i2c_device_deregister(i2c: PI2C_DEVICE): uint32_t; stdcall; public name 'i2c_device_deregister';
 
 function i2c_device_find(i2cid: uint32_t): PI2C_DEVICE; stdcall; public name 'i2c_device_find';
-function i2c_device_find_by_name(name: PCHAR): PI2C_DEVICE; stdcall; public name 'i2c_device_find_by_name';
-function i2c_device_find_by_description(description: PCHAR): PI2C_DEVICE; stdcall; public name 'i2c_device_find_by_description';
+function i2c_device_find_by_name(const name: PCHAR): PI2C_DEVICE; stdcall; public name 'i2c_device_find_by_name';
+function i2c_device_find_by_description(const description: PCHAR): PI2C_DEVICE; stdcall; public name 'i2c_device_find_by_description';
 function i2c_device_enumerate(callback: i2c_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'i2c_device_enumerate';
 
 function i2c_device_notification(i2c: PI2C_DEVICE; callback: i2c_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'i2c_device_notification';
@@ -3447,8 +3448,8 @@ function i2c_slave_register(i2c: PI2C_DEVICE): uint32_t; stdcall; public name 'i
 function i2c_slave_deregister(i2c: PI2C_DEVICE): uint32_t; stdcall; public name 'i2c_slave_deregister';
 
 function i2c_slave_find(i2cid: uint32_t): PI2C_DEVICE; stdcall; public name 'i2c_slave_find';
-function i2c_slave_find_by_name(name: PCHAR): PI2C_DEVICE; stdcall; public name 'i2c_slave_find_by_name';
-function i2c_slave_find_by_description(description: PCHAR): PI2C_DEVICE; stdcall; public name 'i2c_slave_find_by_description';
+function i2c_slave_find_by_name(const name: PCHAR): PI2C_DEVICE; stdcall; public name 'i2c_slave_find_by_name';
+function i2c_slave_find_by_description(const description: PCHAR): PI2C_DEVICE; stdcall; public name 'i2c_slave_find_by_description';
 
 {==============================================================================}
 {I2C Helper Functions}
@@ -3498,8 +3499,8 @@ function pwm_device_register(pwm: PPWM_DEVICE): uint32_t; stdcall; public name '
 function pwm_device_deregister(pwm: PPWM_DEVICE): uint32_t; stdcall; public name 'pwm_device_deregister';
 
 function pwm_device_find(pwmid: uint32_t): PPWM_DEVICE; stdcall; public name 'pwm_device_find';
-function pwm_device_find_by_name(name: PCHAR): PPWM_DEVICE; stdcall; public name 'pwm_device_find_by_name';
-function pwm_device_find_by_description(description: PCHAR): PPWM_DEVICE; stdcall; public name 'pwm_device_find_by_description';
+function pwm_device_find_by_name(const name: PCHAR): PPWM_DEVICE; stdcall; public name 'pwm_device_find_by_name';
+function pwm_device_find_by_description(const description: PCHAR): PPWM_DEVICE; stdcall; public name 'pwm_device_find_by_description';
 function pwm_device_enumerate(callback: pwm_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'pwm_device_enumerate';
 
 function pwm_device_notification(pwm: PPWM_DEVICE; callback: pwm_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'pwm_device_notification';
@@ -3561,8 +3562,8 @@ function gpio_device_register(gpio: PGPIO_DEVICE): uint32_t; stdcall; public nam
 function gpio_device_deregister(gpio: PGPIO_DEVICE): uint32_t; stdcall; public name 'gpio_device_deregister';
 
 function gpio_device_find(gpioid: uint32_t): PGPIO_DEVICE; stdcall; public name 'gpio_device_find';
-function gpio_device_find_by_name(name: PCHAR): PGPIO_DEVICE; stdcall; public name 'gpio_device_find_by_name';
-function gpio_device_find_by_description(description: PCHAR): PGPIO_DEVICE; stdcall; public name 'gpio_device_find_by_description';
+function gpio_device_find_by_name(const name: PCHAR): PGPIO_DEVICE; stdcall; public name 'gpio_device_find_by_name';
+function gpio_device_find_by_description(const description: PCHAR): PGPIO_DEVICE; stdcall; public name 'gpio_device_find_by_description';
 function gpio_device_enumerate(callback: gpio_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'gpio_device_enumerate';
 
 function gpio_device_notification(gpio: PGPIO_DEVICE; callback: gpio_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'gpio_device_notification';
@@ -3618,8 +3619,8 @@ function uart_device_register(uart: PUART_DEVICE): uint32_t; stdcall; public nam
 function uart_device_deregister(uart: PUART_DEVICE): uint32_t; stdcall; public name 'uart_device_deregister';
 
 function uart_device_find(uartid: uint32_t): PUART_DEVICE; stdcall; public name 'uart_device_find';
-function uart_device_find_by_name(name: PCHAR): PUART_DEVICE; stdcall; public name 'uart_device_find_by_name';
-function uart_device_find_by_description(description: PCHAR): PUART_DEVICE; stdcall; public name 'uart_device_find_by_description';
+function uart_device_find_by_name(const name: PCHAR): PUART_DEVICE; stdcall; public name 'uart_device_find_by_name';
+function uart_device_find_by_description(const description: PCHAR): PUART_DEVICE; stdcall; public name 'uart_device_find_by_description';
 function uart_device_enumerate(callback: uart_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'uart_device_enumerate';
 
 function uart_device_notification(uart: PUART_DEVICE; callback: uart_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'uart_device_notification';
@@ -3669,8 +3670,8 @@ function serial_device_register(serial: PSERIAL_DEVICE): uint32_t; stdcall; publ
 function serial_device_deregister(serial: PSERIAL_DEVICE): uint32_t; stdcall; public name 'serial_device_deregister';
 
 function serial_device_find(serialid: uint32_t): PSERIAL_DEVICE; stdcall; public name 'serial_device_find';
-function serial_device_find_by_name(name: PCHAR): PSERIAL_DEVICE; stdcall; public name 'serial_device_find_by_name';
-function serial_device_find_by_description(description: PCHAR): PSERIAL_DEVICE; stdcall; public name 'serial_device_find_by_description';
+function serial_device_find_by_name(const name: PCHAR): PSERIAL_DEVICE; stdcall; public name 'serial_device_find_by_name';
+function serial_device_find_by_description(const description: PCHAR): PSERIAL_DEVICE; stdcall; public name 'serial_device_find_by_description';
 function serial_device_enumerate(callback: serial_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'serial_device_enumerate';
 
 function serial_device_notification(serial: PSERIAL_DEVICE; callback: serial_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'serial_device_notification';
@@ -3705,7 +3706,7 @@ function serial_flow_control_to_string(flow: uint32_t; _string: PCHAR; len: uint
 {Serial Logging Helper Functions}
 function serial_logging_device_add(serial: PSERIAL_DEVICE): uint32_t; stdcall; public name 'serial_logging_device_add';
 function serial_logging_device_remove(serial: PSERIAL_DEVICE): uint32_t; stdcall; public name 'serial_logging_device_remove';
-function serial_logging_device_parameters(serial: PSERIAL_DEVICE; parameters: PCHAR; var baudrate, parity, databits, stopbits: uint32_t): uint32_t; stdcall; public name 'serial_logging_device_parameters';
+function serial_logging_device_parameters(serial: PSERIAL_DEVICE; const parameters: PCHAR; var baudrate, parity, databits, stopbits: uint32_t): uint32_t; stdcall; public name 'serial_logging_device_parameters';
 {$ENDIF}
 {==============================================================================}
 {RTC Functions}
@@ -3727,8 +3728,8 @@ function rtc_device_register(rtc: PRTC_DEVICE): uint32_t; stdcall; public name '
 function rtc_device_deregister(rtc: PRTC_DEVICE): uint32_t; stdcall; public name 'rtc_device_deregister';
 
 function rtc_device_find(rtcid: uint32_t): PRTC_DEVICE; stdcall; public name 'rtc_device_find';
-function rtc_device_find_by_name(name: PCHAR): PRTC_DEVICE; stdcall; public name 'rtc_device_find_by_name';
-function rtc_device_find_by_description(description: PCHAR): PRTC_DEVICE; stdcall; public name 'rtc_device_find_by_description';
+function rtc_device_find_by_name(const name: PCHAR): PRTC_DEVICE; stdcall; public name 'rtc_device_find_by_name';
+function rtc_device_find_by_description(const description: PCHAR): PRTC_DEVICE; stdcall; public name 'rtc_device_find_by_description';
 function rtc_device_enumerate(callback: rtc_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'rtc_device_enumerate';
 
 function rtc_device_notification(rtc: PRTC_DEVICE; callback: rtc_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'rtc_device_notification';
@@ -3767,16 +3768,16 @@ function font_get_properties(handle: FONT_HANDLE; properties: PFONT_PROPERTIES):
 function font_char_width(handle: FONT_HANDLE; character: uint16_t): uint32_t; stdcall; public name 'font_char_width';
 function font_char_height(handle: FONT_HANDLE; character: uint16_t): uint32_t; stdcall; public name 'font_char_height';
 
-function font_text_width(handle: FONT_HANDLE; text: PCHAR): uint32_t; stdcall; public name 'font_text_width';
-function font_text_height(handle: FONT_HANDLE; text: PCHAR): uint32_t; stdcall; public name 'font_text_height';
+function font_text_width(handle: FONT_HANDLE; const text: PCHAR): uint32_t; stdcall; public name 'font_text_width';
+function font_text_height(handle: FONT_HANDLE; const text: PCHAR): uint32_t; stdcall; public name 'font_text_height';
 
-function font_find_by_name(name: PCHAR): FONT_HANDLE; stdcall; public name 'font_find_by_name';
-function font_find_by_description(description: PCHAR): FONT_HANDLE; stdcall; public name 'font_find_by_description';
+function font_find_by_name(const name: PCHAR): FONT_HANDLE; stdcall; public name 'font_find_by_name';
+function font_find_by_description(const description: PCHAR): FONT_HANDLE; stdcall; public name 'font_find_by_description';
 function font_enumerate(callback: font_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'font_enumerate';
 
 {==============================================================================}
 {PSF Font Functions}
-function psf_font_load(filename: PCHAR): FONT_HANDLE; stdcall; public name 'psf_font_load';
+function psf_font_load(const filename: PCHAR): FONT_HANDLE; stdcall; public name 'psf_font_load';
 function psf_font_load_ex(data: PVOID; size: uint32_t): FONT_HANDLE; stdcall; public name 'psf_font_load_ex';
 
 {==============================================================================}
@@ -3838,8 +3839,8 @@ function framebuffer_device_register(framebuffer: PFRAMEBUFFER_DEVICE): uint32_t
 function framebuffer_device_deregister(framebuffer: PFRAMEBUFFER_DEVICE): uint32_t; stdcall; public name 'framebuffer_device_deregister';
 
 function framebuffer_device_find(framebufferid: uint32_t): PFRAMEBUFFER_DEVICE; stdcall; public name 'framebuffer_device_find';
-function framebuffer_device_find_by_name(name: PCHAR): PFRAMEBUFFER_DEVICE; stdcall; public name 'framebuffer_device_find_by_name';
-function framebuffer_device_find_by_description(description: PCHAR): PFRAMEBUFFER_DEVICE; stdcall; public name 'framebuffer_device_find_by_description';
+function framebuffer_device_find_by_name(const name: PCHAR): PFRAMEBUFFER_DEVICE; stdcall; public name 'framebuffer_device_find_by_name';
+function framebuffer_device_find_by_description(const description: PCHAR): PFRAMEBUFFER_DEVICE; stdcall; public name 'framebuffer_device_find_by_description';
 function framebuffer_device_enumerate(callback: framebuffer_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'framebuffer_device_enumerate';
 
 function framebuffer_device_notification(framebuffer: PFRAMEBUFFER_DEVICE; callback: framebuffer_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'framebuffer_device_notification';
@@ -3956,8 +3957,8 @@ function graphics_window_draw_circle(handle: WINDOW_HANDLE; x, y, color, width, 
 function graphics_window_draw_char(handle: WINDOW_HANDLE; ch: CHAR; x, y: uint32_t): uint32_t; stdcall; public name 'graphics_window_draw_char';
 function graphics_window_draw_char_ex(handle: WINDOW_HANDLE; font: FONT_HANDLE; ch: CHAR; x, y, forecolor, backcolor: uint32_t): uint32_t; stdcall; public name 'graphics_window_draw_char_ex';
 
-function graphics_window_draw_text(handle: WINDOW_HANDLE; text: PCHAR; x, y: uint32_t): uint32_t; stdcall; public name 'graphics_window_draw_text';
-function graphics_window_draw_text_ex(handle: WINDOW_HANDLE; font: FONT_HANDLE; text: PCHAR; x, y, forecolor, backcolor: uint32_t): uint32_t; stdcall; public name 'graphics_window_draw_text_ex';
+function graphics_window_draw_text(handle: WINDOW_HANDLE; const text: PCHAR; x, y: uint32_t): uint32_t; stdcall; public name 'graphics_window_draw_text';
+function graphics_window_draw_text_ex(handle: WINDOW_HANDLE; font: FONT_HANDLE; const text: PCHAR; x, y, forecolor, backcolor: uint32_t): uint32_t; stdcall; public name 'graphics_window_draw_text_ex';
 
 function graphics_window_draw_pixel(handle: WINDOW_HANDLE; x, y, color: uint32_t): uint32_t; stdcall; public name 'graphics_window_draw_pixel';
 function graphics_window_draw_image(handle: WINDOW_HANDLE; x, y: uint32_t; image: PVOID; width, height, format: uint32_t): uint32_t; stdcall; public name 'graphics_window_draw_image';
@@ -4059,8 +4060,8 @@ function hid_device_register(device: PHID_DEVICE): uint32_t; stdcall; public nam
 function hid_device_deregister(device: PHID_DEVICE): uint32_t; stdcall; public name 'hid_device_deregister';
 
 function hid_device_find(hidid: uint32_t): PHID_DEVICE; stdcall; public name 'hid_device_find';
-function hid_device_find_by_name(name: PCHAR): PHID_DEVICE; stdcall; public name 'hid_device_find_by_name';
-function hid_device_find_by_description(description: PCHAR): PHID_DEVICE; stdcall; public name 'hid_device_find_by_description';
+function hid_device_find_by_name(const name: PCHAR): PHID_DEVICE; stdcall; public name 'hid_device_find_by_name';
+function hid_device_find_by_description(const description: PCHAR): PHID_DEVICE; stdcall; public name 'hid_device_find_by_description';
 function hid_device_enumerate(callback: hid_device_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'hid_device_enumerate';
 
 function hid_device_notification(device: PHID_DEVICE; callback: hid_device_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'hid_device_notification';
@@ -4075,7 +4076,7 @@ function hid_consumer_register(consumer: PHID_CONSUMER): uint32_t; stdcall; publ
 function hid_consumer_deregister(consumer: PHID_CONSUMER): uint32_t; stdcall; public name 'hid_consumer_deregister';
 
 function hid_consumer_find(consumerid: uint32_t): PHID_CONSUMER; stdcall; public name 'hid_consumer_find';
-function hid_consumer_find_by_name(name: PCHAR): PHID_CONSUMER; stdcall; public name 'hid_consumer_find_by_name';
+function hid_consumer_find_by_name(const name: PCHAR): PHID_CONSUMER; stdcall; public name 'hid_consumer_find_by_name';
 function hid_consumer_enumerate(callback: hid_consumer_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'hid_consumer_enumerate';
 
 {==============================================================================}
@@ -4137,8 +4138,8 @@ function keymap_resolve_deadkey(handle: KEYMAP_HANDLE; deadcode, scancode: uint1
 
 function keymap_get_properties(handle: KEYMAP_HANDLE; properties: PKEYMAP_PROPERTIES): uint32_t; stdcall; public name 'keymap_get_properties';
 
-function keymap_find_by_name(name: PCHAR): KEYMAP_HANDLE; stdcall; public name 'keymap_find_by_name';
-function keymap_find_by_description(description: PCHAR): KEYMAP_HANDLE; stdcall; public name 'keymap_find_by_description';
+function keymap_find_by_name(const name: PCHAR): KEYMAP_HANDLE; stdcall; public name 'keymap_find_by_name';
+function keymap_find_by_description(const description: PCHAR): KEYMAP_HANDLE; stdcall; public name 'keymap_find_by_description';
 function keymap_enumerate(callback: keymap_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'keymap_enumerate';
 
 {==============================================================================}
@@ -4176,8 +4177,8 @@ function keyboard_device_register(keyboard: PKEYBOARD_DEVICE): uint32_t; stdcall
 function keyboard_device_deregister(keyboard: PKEYBOARD_DEVICE): uint32_t; stdcall; public name 'keyboard_device_deregister';
 
 function keyboard_device_find(keyboardid: uint32_t): PKEYBOARD_DEVICE; stdcall; public name 'keyboard_device_find';
-function keyboard_device_find_by_name(name: PCHAR): PKEYBOARD_DEVICE; stdcall; public name 'keyboard_device_find_by_name';
-function keyboard_device_find_by_description(description: PCHAR): PKEYBOARD_DEVICE; stdcall; public name 'keyboard_device_find_by_description';
+function keyboard_device_find_by_name(const name: PCHAR): PKEYBOARD_DEVICE; stdcall; public name 'keyboard_device_find_by_name';
+function keyboard_device_find_by_description(const description: PCHAR): PKEYBOARD_DEVICE; stdcall; public name 'keyboard_device_find_by_description';
 function keyboard_device_enumerate(callback: keyboard_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'keyboard_device_enumerate';
 
 function keyboard_device_notification(keyboard: PKEYBOARD_DEVICE; callback: keyboard_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'keyboard_device_notification';
@@ -4226,8 +4227,8 @@ function mouse_device_register(mouse: PMOUSE_DEVICE): uint32_t; stdcall; public 
 function mouse_device_deregister(mouse: PMOUSE_DEVICE): uint32_t; stdcall; public name 'mouse_device_deregister';
 
 function mouse_device_find(mouseid: uint32_t): PMOUSE_DEVICE; stdcall; public name 'mouse_device_find';
-function mouse_device_find_by_name(name: PCHAR): PMOUSE_DEVICE; stdcall; public name 'mouse_device_find_by_name';
-function mouse_device_find_by_description(description: PCHAR): PMOUSE_DEVICE; stdcall; public name 'mouse_device_find_by_description';
+function mouse_device_find_by_name(const name: PCHAR): PMOUSE_DEVICE; stdcall; public name 'mouse_device_find_by_name';
+function mouse_device_find_by_description(const description: PCHAR): PMOUSE_DEVICE; stdcall; public name 'mouse_device_find_by_description';
 function mouse_device_enumerate(callback: mouse_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'mouse_device_enumerate';
 
 function mouse_device_notification(mouse: PMOUSE_DEVICE; callback: mouse_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'mouse_device_notification';
@@ -4276,8 +4277,8 @@ function touch_device_register(touch: PTOUCH_DEVICE): uint32_t; stdcall; public 
 function touch_device_deregister(touch: PTOUCH_DEVICE): uint32_t; stdcall; public name 'touch_device_deregister';
 
 function touch_device_find(touchid: uint32_t): PTOUCH_DEVICE; stdcall; public name 'touch_device_find';
-function touch_device_find_by_name(name: PCHAR): PTOUCH_DEVICE; stdcall; public name 'touch_device_find_by_name';
-function touch_device_find_by_description(description: PCHAR): PTOUCH_DEVICE; stdcall; public name 'touch_device_find_by_description';
+function touch_device_find_by_name(const name: PCHAR): PTOUCH_DEVICE; stdcall; public name 'touch_device_find_by_name';
+function touch_device_find_by_description(const description: PCHAR): PTOUCH_DEVICE; stdcall; public name 'touch_device_find_by_description';
 function touch_device_enumerate(callback: touch_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'touch_device_enumerate';
 
 function touch_device_notification(touch: PTOUCH_DEVICE; callback: touch_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'touch_device_notification';
@@ -4329,8 +4330,8 @@ function joystick_device_register(joystick: PJOYSTICK_DEVICE): uint32_t; stdcall
 function joystick_device_deregister(joystick: PJOYSTICK_DEVICE): uint32_t; stdcall; public name 'joystick_device_deregister';
 
 function joystick_device_find(joystickid: uint32_t): PJOYSTICK_DEVICE; stdcall; public name 'joystick_device_find';
-function joystick_device_find_by_name(name: PCHAR): PJOYSTICK_DEVICE; stdcall; public name 'joystick_device_find_by_name';
-function joystick_device_find_by_description(description: PCHAR): PJOYSTICK_DEVICE; stdcall; public name 'joystick_device_find_by_description';
+function joystick_device_find_by_name(const name: PCHAR): PJOYSTICK_DEVICE; stdcall; public name 'joystick_device_find_by_name';
+function joystick_device_find_by_description(const description: PCHAR): PJOYSTICK_DEVICE; stdcall; public name 'joystick_device_find_by_description';
 function joystick_device_enumerate(callback: joystick_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'joystick_device_enumerate';
 
 function joystick_device_notification(joystick: PJOYSTICK_DEVICE; callback: joystick_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'joystick_device_notification';
@@ -4387,8 +4388,8 @@ function storage_device_deregister(storage: PSTORAGE_DEVICE): uint32_t; stdcall;
 
 function storage_device_find(storageid: uint32_t): PSTORAGE_DEVICE; stdcall; public name 'storage_device_find';
 function storage_device_find_by_device(device: PDEVICE): PSTORAGE_DEVICE; stdcall; public name 'storage_device_find_by_device';
-function storage_device_find_by_name(name: PCHAR): PSTORAGE_DEVICE; stdcall; public name 'storage_device_find_by_name';
-function storage_device_find_by_description(description: PCHAR): PSTORAGE_DEVICE; stdcall; public name 'storage_device_find_by_description';
+function storage_device_find_by_name(const name: PCHAR): PSTORAGE_DEVICE; stdcall; public name 'storage_device_find_by_name';
+function storage_device_find_by_description(const description: PCHAR): PSTORAGE_DEVICE; stdcall; public name 'storage_device_find_by_description';
 function storage_device_enumerate(callback: storage_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'storage_device_enumerate';
 
 function storage_device_notification(storage: PSTORAGE_DEVICE; callback: storage_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'storage_device_notification';
@@ -4434,8 +4435,8 @@ function network_device_register(network: PNETWORK_DEVICE): uint32_t; stdcall; p
 function network_device_deregister(network: PNETWORK_DEVICE): uint32_t; stdcall; public name 'network_device_deregister';
 
 function network_device_find(networkid: uint32_t): PNETWORK_DEVICE; stdcall; public name 'network_device_find';
-function network_device_find_by_name(name: PCHAR): PNETWORK_DEVICE; stdcall; public name 'network_device_find_by_name';
-function network_device_find_by_description(description: PCHAR): PNETWORK_DEVICE; stdcall; public name 'network_device_find_by_description';
+function network_device_find_by_name(const name: PCHAR): PNETWORK_DEVICE; stdcall; public name 'network_device_find_by_name';
+function network_device_find_by_description(const description: PCHAR): PNETWORK_DEVICE; stdcall; public name 'network_device_find_by_description';
 function network_device_enumerate(callback: network_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'network_device_enumerate';
 
 function network_device_notification(network: PNETWORK_DEVICE; callback: network_notification_cb; data: PVOID; notification, flags: uint32_t): uint32_t; stdcall; public name 'network_device_notification';
@@ -4524,9 +4525,9 @@ function timezone_get_daylight_bias(timezone: PTIMEZONE_ENTRY): int32_t; stdcall
 function timezone_get_daylight_date(timezone: PTIMEZONE_ENTRY; next: BOOL): double_t; stdcall; public name 'timezone_get_daylight_date';
 function timezone_get_daylight_start(timezone: PTIMEZONE_ENTRY): SYSTEMTIME; stdcall; public name 'timezone_get_daylight_start';
 
-function timezone_find(name: PCHAR): PTIMEZONE_ENTRY; stdcall; public name 'timezone_find';
-function timezone_find_by_standard(standardname: PCHAR): PTIMEZONE_ENTRY; stdcall; public name 'timezone_find_by_standard';
-function timezone_find_by_daylight(daylightname: PCHAR): PTIMEZONE_ENTRY; stdcall; public name 'timezone_find_by_daylight';
+function timezone_find(const name: PCHAR): PTIMEZONE_ENTRY; stdcall; public name 'timezone_find';
+function timezone_find_by_standard(const standardname: PCHAR): PTIMEZONE_ENTRY; stdcall; public name 'timezone_find_by_standard';
+function timezone_find_by_daylight(const daylightname: PCHAR): PTIMEZONE_ENTRY; stdcall; public name 'timezone_find_by_daylight';
 
 function timezone_enumerate(callback: timezone_enumerate_cb; data: PVOID): uint32_t; stdcall; public name 'timezone_enumerate';
 
@@ -4660,12 +4661,12 @@ function file_sys_start_completed: BOOL; stdcall; public name 'file_sys_start_co
 procedure file_sys_async_start(data: PVOID); stdcall; public name 'file_sys_async_start';
 
 {Drive Functions}
-{function GetPathDrive(path: PCHAR): uint8_t; stdcall; public name 'GetPathDrive';} {Exported in Ultibo}
+{function GetPathDrive(const path: PCHAR): uint8_t; stdcall; public name 'GetPathDrive';} {Exported in Ultibo}
 {function GetDriveType(drive: uint8_t): TDRIVE_TYPE; stdcall; public name 'GetDriveType';} {Exported in Ultibo}
 {procedure GetDriveData(drive: uint8_t; var data: TDRIVE_DATA); stdcall; public name 'GetDriveData';} {Exported in Ultibo}
 {function GetDriveAttr(drive: uint8_t): uint32_t; stdcall; public name 'GetDriveAttr';} {Exported in Ultibo}
 {function GetDriveLabel(drive: uint8_t; _label: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'GetDriveLabel';} {Exported in Ultibo}
-{function SetDriveLabel(drive: uint8_t; _label: PCHAR): BOOL; stdcall; public name 'SetDriveLabel';} {Exported in Ultibo}
+{function SetDriveLabel(drive: uint8_t; const _label: PCHAR): BOOL; stdcall; public name 'SetDriveLabel';} {Exported in Ultibo}
 {function GetDriveSerial(drive: uint8_t): uint32_t; stdcall; public name 'GetDriveSerial';} {Exported in Ultibo}
 {function SetDriveSerial(drive: uint8_t; serial: uint32_t): BOOL; stdcall; public name 'SetDriveSerial';} {Exported in Ultibo}
 {function IsDriveValid(drive: uint8_t): BOOL; stdcall; public name 'IsDriveValid';} {Exported in Ultibo}
@@ -4676,15 +4677,15 @@ procedure file_sys_async_start(data: PVOID); stdcall; public name 'file_sys_asyn
 {function GetDriveTotalSpace(drive: uint8_t): uint32_t; stdcall; public name 'GetDriveTotalSpace';} {Exported in Ultibo}
 {function GetDriveTotalSpaceEx(drive: uint8_t): int64_t; stdcall; public name 'GetDriveTotalSpaceEx';} {Exported in Ultibo}
 
-{function GetDriveInformation(path: PCHAR; var clustersize: uint32_t; var totalclustercount, freeclustercount: int64_t): BOOL; stdcall; public name 'GetDriveInformation';} {Exported in Ultibo}
+{function GetDriveInformation(const path: PCHAR; var clustersize: uint32_t; var totalclustercount, freeclustercount: int64_t): BOOL; stdcall; public name 'GetDriveInformation';} {Exported in Ultibo}
 
 {function GetCurrentDrive: uint8_t; stdcall; public name 'GetCurrentDrive';} {Exported in Ultibo}
-{function SetCurrentDrive(drive: PCHAR): BOOL; stdcall; public name 'SetCurrentDrive';} {Exported in Ultibo}
+{function SetCurrentDrive(const drive: PCHAR): BOOL; stdcall; public name 'SetCurrentDrive';} {Exported in Ultibo}
 
 {File Functions}
-function FileOpen(filename: PCHAR; mode: int): THANDLE; stdcall; public name 'FileOpen';
-function FileCreate(filename: PCHAR): THANDLE; stdcall; public name 'FileCreate';
-{function DeleteFile(filename: PCHAR): BOOL; stdcall; public name 'DeleteFile';} {Exported in Ultibo}
+function FileOpen(const filename: PCHAR; mode: int): THANDLE; stdcall; public name 'FileOpen';
+function FileCreate(const filename: PCHAR): THANDLE; stdcall; public name 'FileCreate';
+{function DeleteFile(const filename: PCHAR): BOOL; stdcall; public name 'DeleteFile';} {Exported in Ultibo}
 procedure FileClose(handle: THANDLE); stdcall; public name 'FileClose';
 function RenameFile(const oldname, newname: PCHAR): BOOL; stdcall; public name 'RenameFile';
 function FileSeek(handle: THANDLE; offset, origin: int32_t): int32_t; stdcall; public name 'FileSeek';
@@ -4696,25 +4697,25 @@ function EndOfFile(handle: THANDLE): BOOL; stdcall; public name 'EndOfFile';
 function FilePos(handle: THANDLE): int32_t; stdcall; public name 'FilePos';
 function FileSize(handle: THANDLE): int32_t; stdcall; public name 'FileSize';
 
-function FileAge(filename: PCHAR): int; stdcall; public name 'FileAge';
-function FileExists(filename: PCHAR): BOOL; stdcall; public name 'FileExists';
-function FileGetAttr(filename: PCHAR): int; stdcall; public name 'FileGetAttr';
+function FileAge(const filename: PCHAR): int; stdcall; public name 'FileAge';
+function FileExists(const filename: PCHAR): BOOL; stdcall; public name 'FileExists';
+function FileGetAttr(const filename: PCHAR): int; stdcall; public name 'FileGetAttr';
 function FileGetDate(handle: THANDLE): int; stdcall; public name 'FileGetDate';
-function FileSetAttr(filename: PCHAR; attr: int): int; stdcall; public name 'FileSetAttr';
+function FileSetAttr(const filename: PCHAR; attr: int): int; stdcall; public name 'FileSetAttr';
 function FileSetDate(handle: THANDLE; age: int): int; stdcall; public name 'FileSetDate';
 
 function FileRead(handle: THANDLE; buffer: PVOID; count: int32_t): int32_t; stdcall; public name 'FileRead';
 function FileWrite(handle: THANDLE; buffer: PVOID; count: int32_t): int32_t; stdcall; public name 'FileWrite';
 
 {Directory Functions}
-function CreateDir(dirname: PCHAR): BOOL; stdcall; public name 'CreateDir';
-function RemoveDir(dirname: PCHAR): BOOL; stdcall; public name 'RemoveDir';
+function CreateDir(const dirname: PCHAR): BOOL; stdcall; public name 'CreateDir';
+function RemoveDir(const dirname: PCHAR): BOOL; stdcall; public name 'RemoveDir';
 function RenameDir(const oldname, newname: PCHAR): BOOL; stdcall; public name 'RenameDir';
 function GetCurrentDir(dirname: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'GetCurrentDir';
-function SetCurrentDir(dirname: PCHAR): BOOL; stdcall; public name 'SetCurrentDir';
-function DirectoryExists(dirname: PCHAR): BOOL; stdcall; public name 'DirectoryExists';
+function SetCurrentDir(const dirname: PCHAR): BOOL; stdcall; public name 'SetCurrentDir';
+function DirectoryExists(const dirname: PCHAR): BOOL; stdcall; public name 'DirectoryExists';
 procedure ForceDirectories(dirname: PCHAR); stdcall; public name 'ForceDirectories';
-procedure DeleteTree(dirname: PCHAR); stdcall; public name 'DeleteTree';
+procedure DeleteTree(const dirname: PCHAR); stdcall; public name 'DeleteTree';
 
 {Search Functions}
 
@@ -4722,9 +4723,9 @@ procedure DeleteTree(dirname: PCHAR); stdcall; public name 'DeleteTree';
 function FileCopy(const sourcefile, destfile: PCHAR; failifexists: BOOL): BOOL; stdcall; public name 'FileCopy';
 function FileCopyEx(const sourcefile, destfile: PCHAR; failifexists: BOOL; usesourcedate: BOOL; destdate: int; usesourceattr: BOOL; destattr: int): BOOL; stdcall; public name 'FileCopyEx';
 
-function GetShortName(filename: PCHAR; shortname: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'GetShortName';
-function GetLongName(filename: PCHAR; longname: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'GetLongName';
-function GetTrueName(filename: PCHAR; truename: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'GetTrueName';
+function GetShortName(const filename: PCHAR; shortname: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'GetShortName';
+function GetLongName(const filename: PCHAR; longname: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'GetLongName';
+function GetTrueName(const filename: PCHAR; truename: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'GetTrueName';
 
 {Extended Functions}
 function FileSeekEx(handle: THANDLE; const offset: int64_t; origin: int32_t): int64_t; stdcall; public name 'FileSeekEx';
@@ -4733,7 +4734,7 @@ function EndOfFileEx(handle: THANDLE): BOOL; stdcall; public name 'EndOfFileEx';
 function FilePosEx(handle: THANDLE): int64_t; stdcall; public name 'FilePosEx';
 function FileSizeEx(handle: THANDLE): int64_t; stdcall; public name 'FileSizeEx';
 
-function FileAgeEx(filename: PCHAR): FILETIME; stdcall; public name 'FileAgeEx';
+function FileAgeEx(const filename: PCHAR): FILETIME; stdcall; public name 'FileAgeEx';
 
 function FileGetAttrEx(handle: THANDLE): int; stdcall; public name 'FileGetAttrEx';
 
@@ -4743,57 +4744,57 @@ function FileSetDateEx(handle: THANDLE; age: FILETIME): int; stdcall; public nam
 {function GetFileTime(handle: THANDLE; createtime, accesstime, writetime: PFILETIME): BOOL; stdcall; public name 'GetFileTime';} {Exported in Ultibo}
 {function SetFileTime(handle: THANDLE; createtime, accesstime, writetime: PFILETIME): BOOL; stdcall; public name 'SetFileTime';} {Exported in Ultibo}
 
-function FindFirstEx(path: PCHAR; var searchrec: TFILE_SEARCH_REC): int; stdcall; public name 'FindFirstEx';
+function FindFirstEx(const path: PCHAR; var searchrec: TFILE_SEARCH_REC): int; stdcall; public name 'FindFirstEx';
 function FindNextEx(var searchrec: TFILE_SEARCH_REC): int; stdcall; public name 'FindNextEx';
 procedure FindCloseEx(var searchrec: TFILE_SEARCH_REC); stdcall; public name 'FindCloseEx';
 
 {==============================================================================}
 {FileSystem Functions (Win32 Compatibility)}
 {Drive Functions}
-{function DefineDosDevice(dwflags: uint32_t; lpdevicename, lptargetpath: LPCSTR): BOOL; stdcall; public name 'DefineDosDevice';} {Exported in Ultibo}
-{function GetDiskType(lprootpathname: LPCSTR): UINT; stdcall; public name 'GetDiskType'; // GetDriveType - Already defined above} {Exported in Ultibo}
-{function GetDiskFreeSpace(lprootpathname: LPCSTR; var lpsectorspercluster, lpbytespersector, lpnumberoffreeclusters, lptotalnumberofclusters: uint32_t): BOOL; stdcall; public name 'GetDiskFreeSpace';} {Exported in Ultibo}
-{function GetDiskFreeSpaceEx(lpdirectoryname: LPCSTR; var lpfreebytesavailabletocaller, lptotalnumberofbytes: ULARGE_INTEGER; lptotalnumberoffreebytes: PULARGE_INTEGER): BOOL; stdcall; public name 'GetDiskFreeSpaceEx';} {Exported in Ultibo}
+{function DefineDosDevice(dwflags: uint32_t; const lpdevicename, lptargetpath: LPCSTR): BOOL; stdcall; public name 'DefineDosDevice';} {Exported in Ultibo}
+{function GetDiskType(const lprootpathname: LPCSTR): UINT; stdcall; public name 'GetDiskType'; // GetDriveType - Already defined above} {Exported in Ultibo}
+{function GetDiskFreeSpace(const lprootpathname: LPCSTR; var lpsectorspercluster, lpbytespersector, lpnumberoffreeclusters, lptotalnumberofclusters: uint32_t): BOOL; stdcall; public name 'GetDiskFreeSpace';} {Exported in Ultibo}
+{function GetDiskFreeSpaceEx(const lpdirectoryname: LPCSTR; var lpfreebytesavailabletocaller, lptotalnumberofbytes: ULARGE_INTEGER; lptotalnumberoffreebytes: PULARGE_INTEGER): BOOL; stdcall; public name 'GetDiskFreeSpaceEx';} {Exported in Ultibo}
 {function GetLogicalDrives: uint32_t; stdcall; public name 'GetLogicalDrives';} {Exported in Ultibo}
 {function GetLogicalDriveStrings(nbufferlength: uint32_t; lpbuffer: LPSTR): uint32_t; stdcall; public name 'GetLogicalDriveStrings';} {Exported in Ultibo}
-{function GetVolumeInformation(lprootpathname: LPCSTR; lpvolumenamebuffer: LPSTR; nvolumenamesize: uint32_t; lpvolumeserialnumber: LPDWORD; var lpmaximumcomponentlength, lpfilesystemflags: uint32_t; lpfilesystemnamebuffer: LPSTR; nfilesystemnamesize: uint32_t): BOOL; stdcall; public name 'GetVolumeInformation';} {Exported in Ultibo}
-{function QueryDosDevice(lpdevicename, lptargetpath: LPSTR; ucchmax: uint32_t): uint32_t; stdcall; public name 'QueryDosDevice';} {Exported in Ultibo}
-{function SetVolumeLabel(lprootpathname, lpvolumename: LPCSTR): BOOL; stdcall; public name 'SetVolumeLabel';} {Exported in Ultibo}
+{function GetVolumeInformation(const lprootpathname: LPCSTR; lpvolumenamebuffer: LPSTR; nvolumenamesize: uint32_t; lpvolumeserialnumber: LPDWORD; var lpmaximumcomponentlength, lpfilesystemflags: uint32_t; lpfilesystemnamebuffer: LPSTR; nfilesystemnamesize: uint32_t): BOOL; stdcall; public name 'GetVolumeInformation';} {Exported in Ultibo}
+{function QueryDosDevice(const lpdevicename: LPCSTR; lptargetpath: LPSTR; ucchmax: uint32_t): uint32_t; stdcall; public name 'QueryDosDevice';} {Exported in Ultibo}
+{function SetVolumeLabel(const lprootpathname, lpvolumename: LPCSTR): BOOL; stdcall; public name 'SetVolumeLabel';} {Exported in Ultibo}
 
 {File Functions}
 {function AreFileApisANSI: BOOL; stdcall; public name 'AreFileApisANSI';} {Exported in Ultibo}
 {function CloseHandle(hobject: HANDLE): BOOL; stdcall; public name 'CloseHandle';} {Exported in Ultibo}
-{function CopyFile(lpexistingfilename, lpnewfilename: LPCSTR; bfailifexists: BOOL): BOOL; stdcall; public name 'CopyFile';} {Exported in Ultibo}
-{function CreateFile(lpfilename: LPCSTR; dwdesiredaccess, dwsharemode: uint32_t; lpsecurityattributes: LPSECURITY_ATTRIBUTES; dwcreationdisposition: uint32_t; dwflagsandattributes: uint32_t; htemplatefile: HANDLE): HANDLE; stdcall; public name 'CreateFile';} {Exported in Ultibo}
+{function CopyFile(const lpexistingfilename, lpnewfilename: LPCSTR; bfailifexists: BOOL): BOOL; stdcall; public name 'CopyFile';} {Exported in Ultibo}
+{function CreateFile(const lpfilename: LPCSTR; dwdesiredaccess, dwsharemode: uint32_t; lpsecurityattributes: LPSECURITY_ATTRIBUTES; dwcreationdisposition: uint32_t; dwflagsandattributes: uint32_t; htemplatefile: HANDLE): HANDLE; stdcall; public name 'CreateFile';} {Exported in Ultibo}
 {function FindCloseFile(hfindfile: HANDLE): BOOL; stdcall; public name 'FindCloseFile';} {Exported in Ultibo}
-{function FindFirstFile(lpfilename: LPCSTR; var lpfindfiledata: WIN32_FIND_DATAA): HANDLE; stdcall; public name 'FindFirstFile';} {Exported in Ultibo}
+{function FindFirstFile(const lpfilename: LPCSTR; var lpfindfiledata: WIN32_FIND_DATAA): HANDLE; stdcall; public name 'FindFirstFile';} {Exported in Ultibo}
 {function FindNextFile(hfindfile: HANDLE; var lpfindfiledata: WIN32_FIND_DATAA): BOOL; stdcall; public name 'FindNextFile';} {Exported in Ultibo}
 {function FlushFileBuffers(hfile: HANDLE): BOOL; stdcall; public name 'FlushFileBuffers';} {Exported in Ultibo}
-{function GetFileAttributes(lpfilename: LPCSTR): uint32_t; stdcall; public name 'GetFileAttributes';} {Exported in Ultibo}
+{function GetFileAttributes(const lpfilename: LPCSTR): uint32_t; stdcall; public name 'GetFileAttributes';} {Exported in Ultibo}
 {function GetFileInformationByHandle(hfile: HANDLE; var lpfileinformation: BY_HANDLE_FILE_INFORMATION): BOOL; stdcall; public name 'GetFileInformationByHandle';} {Exported in Ultibo}
 {function GetFileSize(hfile: HANDLE; lpfilesizehigh: LPDWORD): uint32_t; stdcall; public name 'GetFileSize';} {Exported in Ultibo}
-{function GetFullPathName(lpfilename: LPCSTR; nbufferlength: uint32_t; lpbuffer: LPSTR; var lpfilepart: LPSTR): uint32_t; stdcall; public name 'GetFullPathName';} {Exported in Ultibo}
-{function GetShortPathName(lpszlongpath: LPCSTR; lpszshortpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetShortPathName';} {Exported in Ultibo}
-{function MoveFile(lpexistingfilename, lpnewfilename: LPCSTR): BOOL; stdcall; public name 'MoveFile';} {Exported in Ultibo}
+{function GetFullPathName(const lpfilename: LPCSTR; nbufferlength: uint32_t; lpbuffer: LPSTR; var lpfilepart: LPSTR): uint32_t; stdcall; public name 'GetFullPathName';} {Exported in Ultibo}
+{function GetShortPathName(const lpszlongpath: LPCSTR; lpszshortpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetShortPathName';} {Exported in Ultibo}
+{function MoveFile(const lpexistingfilename, lpnewfilename: LPCSTR): BOOL; stdcall; public name 'MoveFile';} {Exported in Ultibo}
 {function ReadFile(hfile: HANDLE; lpbuffer: LPVOID; nnumberofbytestoread: uint32_t; lpnumberofbytesread: LPDWORD; lpoverlapped: LPOVERLAPPED): BOOL; stdcall; public name 'ReadFile';} {Exported in Ultibo}
 {procedure SetFileApisToANSI; stdcall; public name 'SetFileApisToANSI';} {Exported in Ultibo}
 {procedure SetFileApisToOEM; stdcall; public name 'SetFileApisToOEM';} {Exported in Ultibo}
-{function SetFileAttributes(lpfilename: LPCSTR; dwfileattributes: uint32_t): BOOL; stdcall; public name 'SetFileAttributes';} {Exported in Ultibo}
+{function SetFileAttributes(const lpfilename: LPCSTR; dwfileattributes: uint32_t): BOOL; stdcall; public name 'SetFileAttributes';} {Exported in Ultibo}
 {function SetFilePointer(hfile: HANDLE; ldistancetomove: LONG; lpdistancetomovehigh: PLONG; dwmovemethod: uint32_t): uint32_t; stdcall; public name 'SetFilePointer';} {Exported in Ultibo}
 {function SetFilePointerEx(hfile: HANDLE; lidistancetomove: LARGE_INTEGER; lpnewfilepointer: PLARGE_INTEGER; dwmovemethod: uint32_t): BOOL; stdcall; public name 'SetFilePointerEx';} {Exported in Ultibo}
 {function WriteFile(hfile: HANDLE; lpbuffer: LPCVOID; nnumberofbytestowrite: uint32_t; lpnumberofbyteswritten: LPDWORD; lpoverlapped: LPOVERLAPPED): BOOL; stdcall; public name 'WriteFile';} {Exported in Ultibo}
-{function GetLongPathName(lpszshortpath: LPCSTR; lpszlongpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetLongPathName';} {Exported in Ultibo}
-{function GetFinalPathNameByHandle(hfile: HANDLE; lpszfilepath: LPCSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall; public name 'GetFinalPathNameByHandle';} {Exported in Ultibo}
+{function GetLongPathName(const lpszshortpath: LPCSTR; lpszlongpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetLongPathName';} {Exported in Ultibo}
+{function GetFinalPathNameByHandle(hfile: HANDLE; lpszfilepath: LPSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall; public name 'GetFinalPathNameByHandle';} {Exported in Ultibo}
 
-{function SetFileShortName(hfile: HANDLE; lpshortname: LPCSTR): BOOL; stdcall; public name 'SetFileShortName';} {Exported in Ultibo}
-{function CreateHardLink(lpfilename, lpexistingfilename: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateHardLink';} {Exported in Ultibo}
-{function CreateSymbolicLink(lpsymlinkfilename, lptargetfilename: LPCSTR; dwflags: uint32_t): BOOL; stdcall; public name 'CreateSymbolicLink';} {Exported in Ultibo}
+{function SetFileShortName(hfile: HANDLE; const lpshortname: LPCSTR): BOOL; stdcall; public name 'SetFileShortName';} {Exported in Ultibo}
+{function CreateHardLink(const lpfilename, lpexistingfilename: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateHardLink';} {Exported in Ultibo}
+{function CreateSymbolicLink(const lpsymlinkfilename, lptargetfilename: LPCSTR; dwflags: uint32_t): BOOL; stdcall; public name 'CreateSymbolicLink';} {Exported in Ultibo}
 
 {Directory Functions}
-{function CreateDirectory(lppathname: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateDirectory';} {Exported in Ultibo}
+{function CreateDirectory(const lppathname: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateDirectory';} {Exported in Ultibo}
 {function GetCurrentDirectory(nbufferlength: uint32_t; lpbuffer: LPSTR): uint32_t; stdcall; public name 'GetCurrentDirectory';} {Exported in Ultibo}
-{function RemoveDirectory(lppathname: LPCSTR): BOOL; stdcall; public name 'RemoveDirectory';} {Exported in Ultibo}
-{function SetCurrentDirectory(lppathname: LPCSTR): BOOL; stdcall; public name 'SetCurrentDirectory';} {Exported in Ultibo}
+{function RemoveDirectory(const lppathname: LPCSTR): BOOL; stdcall; public name 'RemoveDirectory';} {Exported in Ultibo}
+{function SetCurrentDirectory(const lppathname: LPCSTR): BOOL; stdcall; public name 'SetCurrentDirectory';} {Exported in Ultibo}
 
 {==============================================================================}
 {FileSystem Helper Functions}
@@ -4835,7 +4836,7 @@ function getsockname(s: TSOCKET; name: PSockaddr; namelen: ptOS_INT): tOS_INT; s
 function getsockopt(s: TSOCKET; level: tOS_INT; optname: tOS_INT; optval: PCHAR; optlen: ptOS_INT): tOS_INT; stdcall; public name 'getsockopt';
 function htonl(hostlong: u_long): u_long; stdcall; public name 'htonl';
 function htons(hostshort: u_short): u_short; stdcall; public name 'htons';
-function inet_addr(cp: PCHAR): u_long; stdcall; public name 'inet_addr';
+function inet_addr(const cp: PCHAR): u_long; stdcall; public name 'inet_addr';
 function inet_ntoa(inaddr: TInAddr): PCHAR; stdcall; public name 'inet_ntoa';
 function listen(s: TSOCKET; backlog: tOS_INT): tOS_INT; stdcall; public name 'listen';
 function ntohl(netlong: u_long): u_long; stdcall; public name 'ntohl';
@@ -4843,19 +4844,19 @@ function ntohs(netshort: u_short): u_short; stdcall; public name 'ntohs';
 function recv(s: TSOCKET; buf: PCHAR; len: tOS_INT; flags: tOS_INT): tOS_INT; stdcall; public name 'recv';
 function recvfrom(s: TSOCKET; buf: PCHAR; len: tOS_INT; flags: tOS_INT; from: PSockAddr; fromlen: ptOS_INT): tOS_INT; stdcall; public name 'recvfrom';
 function select(nfds: tOS_INT; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): tOS_INT; stdcall; public name 'select';
-function send(s: TSOCKET; buf: PCHAR; len: tOS_INT; flags: tOS_INT): tOS_INT; stdcall; public name 'send';
-function sendto(s: TSOCKET; buf: PCHAR; len: tOS_INT; flags: tOS_INT; toaddr: PSockAddr; tolen: tOS_INT): tOS_INT; stdcall; public name 'sendto';
-function setsockopt(s: TSOCKET; level: tOS_INT; optname: tOS_INT; optval: PCHAR; optlen: tOS_INT): tOS_INT; stdcall; public name 'setsockopt';
+function send(s: TSOCKET; const buf: PCHAR; len: tOS_INT; flags: tOS_INT): tOS_INT; stdcall; public name 'send';
+function sendto(s: TSOCKET; const buf: PCHAR; len: tOS_INT; flags: tOS_INT; toaddr: PSockAddr; tolen: tOS_INT): tOS_INT; stdcall; public name 'sendto';
+function setsockopt(s: TSOCKET; level: tOS_INT; optname: tOS_INT; const optval: PCHAR; optlen: tOS_INT): tOS_INT; stdcall; public name 'setsockopt';
 function shutdown(s: TSOCKET; how: tOS_INT): tOS_INT; stdcall; public name 'shutdown';
 function socket(af: tOS_INT; struct: tOS_INT; protocol: tOS_INT): TSOCKET; stdcall; public name 'socket';
 
-function gethostbyaddr(addr: PCHAR; len: tOS_INT; family: tOS_INT): PHostEnt; stdcall; public name 'gethostbyaddr';
-function gethostbyname(name: PCHAR): PHostEnt; stdcall; public name 'gethostbyname';
+function gethostbyaddr(const addr: PCHAR; len: tOS_INT; family: tOS_INT): PHostEnt; stdcall; public name 'gethostbyaddr';
+function gethostbyname(const name: PCHAR): PHostEnt; stdcall; public name 'gethostbyname';
 function gethostname(name: PCHAR; namelen: tOS_INT): tOS_INT; stdcall; public name 'gethostname';
-function getservbyport(port: tOS_INT; proto: PCHAR): PServEnt; stdcall; public name 'getservbyport';
-function getservbyname(name, proto: PCHAR): PServEnt; stdcall; public name 'getservbyname';
+function getservbyport(port: tOS_INT; const proto: PCHAR): PServEnt; stdcall; public name 'getservbyport';
+function getservbyname(const name, proto: PCHAR): PServEnt; stdcall; public name 'getservbyname';
 function getprotobynumber(proto: tOS_INT): PProtoEnt; stdcall; public name 'getprotobynumber';
-function getprotobyname(name: PCHAR): PProtoEnt; stdcall; public name 'getprotobyname';
+function getprotobyname(const name: PCHAR): PProtoEnt; stdcall; public name 'getprotobyname';
 
 function WSAStartup(wversionrequired: uint16_t; var wsadata: TWSADATA): tOS_INT; stdcall; public name 'WSAStartup';
 function WSACleanup: tOS_INT; stdcall; public name 'WSACleanup';
@@ -4865,12 +4866,12 @@ function WSAIsBlocking: BOOL; stdcall; public name 'WSAIsBlocking';
 function WSAUnhookBlockingHook: tOS_INT; stdcall; public name 'WSAUnhookBlockingHook';
 function WSASetBlockingHook(lpblockfunc: TFarProc): TFarProc; stdcall; public name 'WSASetBlockingHook';
 function WSACancelBlockingCall: tOS_INT; stdcall; public name 'WSACancelBlockingCall';
-function WSAAsyncGetServByName(hwnd: HWND; wmsg: u_int; name: PCHAR; proto: PCHAR; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall; public name 'WSAAsyncGetServByName';
+function WSAAsyncGetServByName(hwnd: HWND; wmsg: u_int; const name: PCHAR; const proto: PCHAR; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall; public name 'WSAAsyncGetServByName';
 function WSAAsyncGetServByPort(hwnd: HWND; wmsg: u_int; port: tOS_INT; proto: PCHAR; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall; public name 'WSAAsyncGetServByPort';
-function WSAAsyncGetProtoByName(hwnd: HWND; wmsg: u_int; name: PCHAR; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall; public name 'WSAAsyncGetProtoByName';
+function WSAAsyncGetProtoByName(hwnd: HWND; wmsg: u_int; const name: PCHAR; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall; public name 'WSAAsyncGetProtoByName';
 function WSAAsyncGetProtoByNumber(hwnd: HWND; wmsg: u_int; number: tOS_INT; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall; public name 'WSAAsyncGetProtoByNumber';
-function WSAAsyncGetHostByName(hwnd: HWND; wmsg: u_int; name: PCHAR; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall; public name 'WSAAsyncGetHostByName';
-function WSAAsyncGetHostByAddr(hwnd: HWND; wmsg: u_int; addr: PCHAR; len: tOS_INT; family: tOS_INT; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall; public name 'WSAAsyncGetHostByAddr';
+function WSAAsyncGetHostByName(hwnd: HWND; wmsg: u_int; const name: PCHAR; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall; public name 'WSAAsyncGetHostByName';
+function WSAAsyncGetHostByAddr(hwnd: HWND; wmsg: u_int; const addr: PCHAR; len: tOS_INT; family: tOS_INT; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall; public name 'WSAAsyncGetHostByAddr';
 function WSACancelAsyncRequest(hasynctaskhandle: THANDLE): tOS_INT; stdcall; public name 'WSACancelAsyncRequest';
 function WSAAsyncSelect(s: TSOCKET; hwnd: HWND; wmsg: u_int; levent: int32_t): tOS_INT; stdcall; public name 'WSAAsyncSelect'; //  really a c-long
 function WSARecvEx(s: TSOCKET; buf: PVOID; len: tOS_INT; flags: ptOS_INT): tOS_INT; stdcall; public name 'WSARecvEx';
@@ -4900,7 +4901,7 @@ procedure FD_ZERO(var fdset: TFDSet); stdcall; public name 'FD_ZERO';
 function WsControl(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; var pcbrequestinfolen: uint32_t; presponseinfo: PVOID; var pcbresponseinfolen: uint32_t): int; stdcall; public name 'WsControl';
 
 function getnetbyaddr(addr: PVOID; len, struct: int): PNetEnt; stdcall; public name 'getnetbyaddr';
-function getnetbyname(name: PCHAR): PNetEnt; stdcall; public name 'getnetbyname';
+function getnetbyname(const name: PCHAR): PNetEnt; stdcall; public name 'getnetbyname';
 
 {==============================================================================}
 {Winsock Enhanced Functions}
@@ -4931,7 +4932,7 @@ function getsockname(s: TSOCKET; name: PSockAddr; namelen: Pint32_t): int32_t; s
 function getsockopt(s: TSOCKET; level, optname: int32_t; optval: PCHAR; optlen: Pint32_t): int32_t; stdcall; public name 'getsockopt';
 function htonl(hostlong: u_long): u_long; stdcall; public name 'htonl';
 function htons(hostshort: u_short): u_short; stdcall; public name 'htons';
-function inet_addr(cp: PCHAR): u_long; stdcall; public name 'inet_addr';
+function inet_addr(const cp: PCHAR): u_long; stdcall; public name 'inet_addr';
 function inet_ntoa(inaddr: TInAddr): PCHAR; stdcall; public name 'inet_ntoa';
 function listen(s: TSOCKET; backlog: int32_t): int32_t; stdcall; public name 'listen';
 function ntohl(netlong: u_long): u_long; stdcall; public name 'ntohl';
@@ -4939,19 +4940,19 @@ function ntohs(netshort: u_short): u_short; stdcall; public name 'ntohs';
 function recv(s: TSOCKET; buf: PCHAR; len, flags: int32_t): int32_t; stdcall; public name 'recv';
 function recvfrom(s: TSOCKET; buf: PCHAR; len, flags: int32_t; from: PSockAddr; fromlen: Pint32_t): int32_t; stdcall; public name 'recvfrom';
 function select(nfds: int32_t; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): int32_t; stdcall; public name 'select';
-function send(s: TSOCKET; buf: PCHAR; len, flags: int32_t): int32_t; stdcall; public name 'send';
-function sendto(s: TSOCKET; buf: PCHAR; len, flags: int32_t; addrto: PSockAddr; tolen: int32_t): int32_t; stdcall; public name 'sendto';
-function setsockopt(s: TSOCKET; level, optname: int32_t; optval: PCHAR; optlen: int32_t): int32_t; stdcall; public name 'setsockopt';
+function send(s: TSOCKET; const buf: PCHAR; len, flags: int32_t): int32_t; stdcall; public name 'send';
+function sendto(s: TSOCKET; const buf: PCHAR; len, flags: int32_t; addrto: PSockAddr; tolen: int32_t): int32_t; stdcall; public name 'sendto';
+function setsockopt(s: TSOCKET; level, optname: int32_t; const optval: PCHAR; optlen: int32_t): int32_t; stdcall; public name 'setsockopt';
 function shutdown(s: TSOCKET; how: int32_t): int32_t; stdcall; public name 'shutdown';
 function socket(af, struct, protocol: int32_t): TSOCKET; stdcall; public name 'socket';
 
 function gethostbyaddr(addr: PVOID; len, family: int32_t): PHostEnt; stdcall; public name 'gethostbyaddr';
-function gethostbyname(name: PCHAR): PHostEnt; stdcall; public name 'gethostbyname';
+function gethostbyname(const name: PCHAR): PHostEnt; stdcall; public name 'gethostbyname';
 function gethostname(name: PCHAR; len: int32_t): int32_t; stdcall; public name 'gethostname';
-function getservbyport(port: int32_t; proto: PCHAR): PServEnt; stdcall; public name 'getservbyport';
-function getservbyname(name, proto: PCHAR): PServEnt; stdcall; public name 'getservbyname';
+function getservbyport(port: int32_t; const proto: PCHAR): PServEnt; stdcall; public name 'getservbyport';
+function getservbyname(const name, proto: PCHAR): PServEnt; stdcall; public name 'getservbyname';
 function getprotobynumber(proto: int32_t): PProtoEnt; stdcall; public name 'getprotobynumber';
-function getprotobyname(name: PCHAR): PProtoEnt; stdcall; public name 'getprotobyname';
+function getprotobyname(const name: PCHAR): PProtoEnt; stdcall; public name 'getprotobyname';
 
 function getaddrinfo(pnodename, pservicename: PCHAR; phints: PAddrInfo; var ppresult: PAddrInfo): int32_t; stdcall; public name 'getaddrinfo';
 procedure freeaddrinfo(ai: PAddrInfo); stdcall; public name 'freeaddrinfo';
@@ -4965,12 +4966,12 @@ function WSAIsBlocking: BOOL; stdcall; public name 'WSAIsBlocking';
 function WSAUnhookBlockingHook: int32_t; stdcall; public name 'WSAUnhookBlockingHook';
 function WSASetBlockingHook(lpblockfunc: TFarProc): TFarProc; stdcall; public name 'WSASetBlockingHook';
 function WSACancelBlockingCall: int32_t; stdcall; public name 'WSACancelBlockingCall';
-function WSAAsyncGetServByName(hwindow: HWND; wmsg: u_int; name, proto, buf: PCHAR; buflen: int32_t): THANDLE; stdcall; public name 'WSAAsyncGetServByName';
+function WSAAsyncGetServByName(hwindow: HWND; wmsg: u_int; const name, proto: PCHAR; buf: PCHAR; buflen: int32_t): THANDLE; stdcall; public name 'WSAAsyncGetServByName';
 function WSAAsyncGetServByPort(hwindow: HWND; wmsg, port: u_int; proto, buf: PCHAR; buflen: int32_t): THANDLE; stdcall; public name 'WSAAsyncGetServByPort';
-function WSAAsyncGetProtoByName(hwindow: HWND; wmsg: u_int; name, buf: PCHAR; buflen: int32_t): THANDLE; stdcall; public name 'WSAAsyncGetProtoByName';
+function WSAAsyncGetProtoByName(hwindow: HWND; wmsg: u_int; const name: PCHAR; buf: PCHAR; buflen: int32_t): THANDLE; stdcall; public name 'WSAAsyncGetProtoByName';
 function WSAAsyncGetProtoByNumber(hwindow: HWND; wmsg: u_int; number: int32_t; buf: PCHAR; buflen: int32_t): THANDLE; stdcall; public name 'WSAAsyncGetProtoByNumber';
-function WSAAsyncGetHostByName(hwindow: HWND; wmsg: u_int; name, buf: PCHAR; buflen: int32_t): THANDLE; stdcall; public name 'WSAAsyncGetHostByName';
-function WSAAsyncGetHostByAddr(hwindow: HWND; wmsg: u_int; addr: PCHAR; len, family: int32_t; buf: PCHAR; buflen: int32_t): THANDLE; stdcall; public name 'WSAAsyncGetHostByAddr';
+function WSAAsyncGetHostByName(hwindow: HWND; wmsg: u_int; const name: PCHAR; buf: PCHAR; buflen: int32_t): THANDLE; stdcall; public name 'WSAAsyncGetHostByName';
+function WSAAsyncGetHostByAddr(hwindow: HWND; wmsg: u_int; const addr: PCHAR; len, family: int32_t; buf: PCHAR; buflen: int32_t): THANDLE; stdcall; public name 'WSAAsyncGetHostByAddr';
 function WSACancelAsyncRequest(hasynctaskhandle: THANDLE): int32_t; stdcall; public name 'WSACancelAsyncRequest';
 function WSAAsyncSelect(s: TSOCKET; hwindow: HWND; wmsg: u_int; levent: int32_t): int32_t; stdcall; public name 'WSAAsyncSelect';
 function __WSAFDIsSet(s: TSOCKET; var fdset: TFDSet): BOOL; stdcall; public name '__WSAFDIsSet';
@@ -5060,7 +5061,7 @@ procedure FD_ZERO(var fdset: TFDSet); stdcall; public name 'FD_ZERO';
 function WsControl(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; var pcbrequestinfolen: uint32_t; presponseinfo: PVOID; var pcbresponseinfolen: uint32_t): int; stdcall; public name 'WsControl';
 
 function getnetbyaddr(addr: PVOID; len, struct: int): PNetEnt; stdcall; public name 'getnetbyaddr';
-function getnetbyname(name: PCHAR): PNetEnt; stdcall; public name 'getnetbyname';
+function getnetbyname(const name: PCHAR): PNetEnt; stdcall; public name 'getnetbyname';
 
 {==============================================================================}
 {Winsock2 Enhanced Functions}
@@ -5160,17 +5161,17 @@ function GetComputerName(lpbuffer: LPSTR; var nsize: uint32_t): BOOL; stdcall; p
 function GetComputerNameA(lpbuffer: LPSTR; var nsize: uint32_t): BOOL; stdcall; public name 'GetComputerNameA';
 function GetComputerNameW(lpbuffer: LPWSTR; var nsize: uint32_t): BOOL; stdcall; public name 'GetComputerNameW';
 
-function SetComputerName(lpcomputername: LPCSTR): BOOL; stdcall; public name 'SetComputerName';
-function SetComputerNameA(lpcomputername: LPCSTR): BOOL; stdcall; public name 'SetComputerNameA';
-function SetComputerNameW(lpcomputername: LPCWSTR): BOOL; stdcall; public name 'SetComputerNameW';
+function SetComputerName(const lpcomputername: LPCSTR): BOOL; stdcall; public name 'SetComputerName';
+function SetComputerNameA(const lpcomputername: LPCSTR): BOOL; stdcall; public name 'SetComputerNameA';
+function SetComputerNameW(const lpcomputername: LPCWSTR): BOOL; stdcall; public name 'SetComputerNameW';
 
 function GetComputerNameEx(nametype: COMPUTER_NAME_FORMAT; lpbuffer: LPSTR; var nsize: uint32_t): BOOL; stdcall; public name 'GetComputerNameEx';
 function GetComputerNameExA(nametype: COMPUTER_NAME_FORMAT; lpbuffer: LPSTR; var nsize: uint32_t): BOOL; stdcall; public name 'GetComputerNameExA';
 function GetComputerNameExW(nametype: COMPUTER_NAME_FORMAT; lpbuffer: LPWSTR; var nsize: uint32_t): BOOL; stdcall; public name 'GetComputerNameExW';
 
-function SetComputerNameEx(nametype: COMPUTER_NAME_FORMAT; lpbuffer: LPCSTR): BOOL; stdcall; public name 'SetComputerNameEx';
-function SetComputerNameExA(nametype: COMPUTER_NAME_FORMAT; lpbuffer: LPCSTR): BOOL; stdcall; public name 'SetComputerNameExA';
-function SetComputerNameExW(nametype: COMPUTER_NAME_FORMAT; lpbuffer: LPCWSTR): BOOL; stdcall; public name 'SetComputerNameExW';
+function SetComputerNameEx(nametype: COMPUTER_NAME_FORMAT; const lpbuffer: LPCSTR): BOOL; stdcall; public name 'SetComputerNameEx';
+function SetComputerNameExA(nametype: COMPUTER_NAME_FORMAT; const lpbuffer: LPCSTR): BOOL; stdcall; public name 'SetComputerNameExA';
+function SetComputerNameExW(nametype: COMPUTER_NAME_FORMAT; const lpbuffer: LPCWSTR): BOOL; stdcall; public name 'SetComputerNameExW';
 
 function ExitUltibo(dwreserved: uint32_t; ureserved: UINT): BOOL; stdcall; public name 'ExitUltibo';
 function ExitUltiboEx(uflags: UINT; dwreserved: uint32_t): BOOL; stdcall; public name 'ExitUltiboEx';
@@ -5223,7 +5224,7 @@ function GetTimeAdjust: int32_t; stdcall; public name 'GetTimeAdjust';
 procedure SetTimeAdjust(adjust: int32_t); stdcall; public name 'SetTimeAdjust';
 
 function GetCurrentTimezone(name: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'GetCurrentTimezone';
-function SetCurrentTimezone(name: PCHAR): BOOL; stdcall; public name 'SetCurrentTimezone';
+function SetCurrentTimezone(const name: PCHAR): BOOL; stdcall; public name 'SetCurrentTimezone';
 
 function GetTimezoneActiveOffset: int32_t; stdcall; public name 'GetTimezoneActiveOffset';
 function GetTimezoneStandardOffset: int32_t; stdcall; public name 'GetTimezoneStandardOffset';
@@ -5265,9 +5266,9 @@ function ConvertDateTime(datetime: double_t; offset: int; local: BOOL): double_t
 
 {==============================================================================}
 {Drive Functions (Compatibility)}
-function GetDiskType(lprootpathname: LPCSTR): UINT; stdcall; public name 'GetDiskType'; // GetDriveType - Already defined below
-function GetDriveTypeA(lprootpathname: LPCSTR): UINT; stdcall; public name 'GetDriveTypeA';
-function GetDriveTypeW(lprootpathname: LPCWSTR): UINT; stdcall; public name 'GetDriveTypeW';
+function GetDiskType(const lprootpathname: LPCSTR): UINT; stdcall; public name 'GetDiskType'; // GetDriveType - Already defined below
+function GetDriveTypeA(const lprootpathname: LPCSTR): UINT; stdcall; public name 'GetDriveTypeA';
+function GetDriveTypeW(const lprootpathname: LPCWSTR): UINT; stdcall; public name 'GetDriveTypeW';
 
 function GetLogicalDrives: uint32_t; stdcall; public name 'GetLogicalDrives';
 
@@ -5275,38 +5276,38 @@ function GetLogicalDriveStrings(nbufferlength: uint32_t; lpbuffer: LPSTR): uint3
 function GetLogicalDriveStringsA(nbufferlength: uint32_t; lpbuffer: LPSTR): uint32_t; stdcall; public name 'GetLogicalDriveStringsA';
 function GetLogicalDriveStringsW(nbufferlength: uint32_t; lpbuffer: LPWSTR): uint32_t; stdcall; public name 'GetLogicalDriveStringsW';
 
-function DefineDosDevice(dwflags: uint32_t; lpdevicename, lptargetpath: LPCSTR): BOOL; stdcall; public name 'DefineDosDevice';
-function DefineDosDeviceA(dwflags: uint32_t; lpdevicename, lptargetpath: LPCSTR): BOOL; stdcall; public name 'DefineDosDeviceA';
-function DefineDosDeviceW(dwflags: uint32_t; lpdevicename, lptargetpath: LPCWSTR): BOOL; stdcall; public name 'DefineDosDeviceW';
+function DefineDosDevice(dwflags: uint32_t; const lpdevicename, lptargetpath: LPCSTR): BOOL; stdcall; public name 'DefineDosDevice';
+function DefineDosDeviceA(dwflags: uint32_t; const lpdevicename, lptargetpath: LPCSTR): BOOL; stdcall; public name 'DefineDosDeviceA';
+function DefineDosDeviceW(dwflags: uint32_t; const lpdevicename, lptargetpath: LPCWSTR): BOOL; stdcall; public name 'DefineDosDeviceW';
 
-function QueryDosDevice(lpdevicename, lptargetpath: LPSTR; ucchmax: uint32_t): uint32_t; stdcall; public name 'QueryDosDevice';
-function QueryDosDeviceA(lpdevicename, lptargetpath: LPSTR; ucchmax: uint32_t): uint32_t; stdcall; public name 'QueryDosDeviceA';
-function QueryDosDeviceW(lpdevicename, lptargetpath: LPWSTR; ucchmax: uint32_t): uint32_t; stdcall; public name 'QueryDosDeviceW';
+function QueryDosDevice(const lpdevicename: LPCSTR; lptargetpath: LPSTR; ucchmax: uint32_t): uint32_t; stdcall; public name 'QueryDosDevice';
+function QueryDosDeviceA(const lpdevicename: LPCSTR; lptargetpath: LPSTR; ucchmax: uint32_t): uint32_t; stdcall; public name 'QueryDosDeviceA';
+function QueryDosDeviceW(const lpdevicename: LPCWSTR; lptargetpath: LPWSTR; ucchmax: uint32_t): uint32_t; stdcall; public name 'QueryDosDeviceW';
 
-function SetVolumeLabel(lprootpathname, lpvolumename: LPCSTR): BOOL; stdcall; public name 'SetVolumeLabel';
-function SetVolumeLabelA(lprootpathname, lpvolumename: LPCSTR): BOOL; stdcall; public name 'SetVolumeLabelA';
-function SetVolumeLabelW(lprootpathname, lpvolumename: LPCWSTR): BOOL; stdcall; public name 'SetVolumeLabelW';
+function SetVolumeLabel(const lprootpathname, lpvolumename: LPCSTR): BOOL; stdcall; public name 'SetVolumeLabel';
+function SetVolumeLabelA(const lprootpathname, lpvolumename: LPCSTR): BOOL; stdcall; public name 'SetVolumeLabelA';
+function SetVolumeLabelW(const lprootpathname, lpvolumename: LPCWSTR): BOOL; stdcall; public name 'SetVolumeLabelW';
 
-function GetVolumeInformation(lprootpathname: LPCSTR; lpvolumenamebuffer: LPSTR; nvolumenamesize: uint32_t; lpvolumeserialnumber: LPDWORD; var lpmaximumcomponentlength, lpfilesystemflags: uint32_t; lpfilesystemnamebuffer: LPSTR; nfilesystemnamesize: uint32_t): BOOL; stdcall; public name 'GetVolumeInformation';
-function GetVolumeInformationA(lprootpathname: LPCSTR; lpvolumenamebuffer: LPSTR; nvolumenamesize: uint32_t; lpvolumeserialnumber: LPDWORD; var lpmaximumcomponentlength, lpfilesystemflags: uint32_t; lpfilesystemnamebuffer: LPSTR; nfilesystemnamesize: uint32_t): BOOL; stdcall; public name 'GetVolumeInformationA';
-function GetVolumeInformationW(lprootpathname: LPCWSTR; lpvolumenamebuffer: LPWSTR; nvolumenamesize: uint32_t; lpvolumeserialnumber: LPDWORD; var lpmaximumcomponentlength, lpfilesystemflags: uint32_t; lpfilesystemnamebuffer: LPWSTR; nfilesystemnamesize: uint32_t): BOOL; stdcall; public name 'GetVolumeInformationW';
+function GetVolumeInformation(const lprootpathname: LPCSTR; lpvolumenamebuffer: LPSTR; nvolumenamesize: uint32_t; lpvolumeserialnumber: LPDWORD; var lpmaximumcomponentlength, lpfilesystemflags: uint32_t; lpfilesystemnamebuffer: LPSTR; nfilesystemnamesize: uint32_t): BOOL; stdcall; public name 'GetVolumeInformation';
+function GetVolumeInformationA(const lprootpathname: LPCSTR; lpvolumenamebuffer: LPSTR; nvolumenamesize: uint32_t; lpvolumeserialnumber: LPDWORD; var lpmaximumcomponentlength, lpfilesystemflags: uint32_t; lpfilesystemnamebuffer: LPSTR; nfilesystemnamesize: uint32_t): BOOL; stdcall; public name 'GetVolumeInformationA';
+function GetVolumeInformationW(const lprootpathname: LPCWSTR; lpvolumenamebuffer: LPWSTR; nvolumenamesize: uint32_t; lpvolumeserialnumber: LPDWORD; var lpmaximumcomponentlength, lpfilesystemflags: uint32_t; lpfilesystemnamebuffer: LPWSTR; nfilesystemnamesize: uint32_t): BOOL; stdcall; public name 'GetVolumeInformationW';
 
-function GetDiskFreeSpace(lprootpathname: LPCSTR; var lpsectorspercluster, lpbytespersector, lpnumberoffreeclusters, lptotalnumberofclusters: uint32_t): BOOL; stdcall; public name 'GetDiskFreeSpace';
-function GetDiskFreeSpaceA(lprootpathname: LPCSTR; var lpsectorspercluster, lpbytespersector, lpnumberoffreeclusters, lptotalnumberofclusters: uint32_t): BOOL; stdcall; public name 'GetDiskFreeSpaceA';
-function GetDiskFreeSpaceW(lprootpathname: LPCWSTR; var lpsectorspercluster, lpbytespersector, lpnumberoffreeclusters, lptotalnumberofclusters: uint32_t): BOOL; stdcall; public name 'GetDiskFreeSpaceW';
+function GetDiskFreeSpace(const lprootpathname: LPCSTR; var lpsectorspercluster, lpbytespersector, lpnumberoffreeclusters, lptotalnumberofclusters: uint32_t): BOOL; stdcall; public name 'GetDiskFreeSpace';
+function GetDiskFreeSpaceA(const lprootpathname: LPCSTR; var lpsectorspercluster, lpbytespersector, lpnumberoffreeclusters, lptotalnumberofclusters: uint32_t): BOOL; stdcall; public name 'GetDiskFreeSpaceA';
+function GetDiskFreeSpaceW(const lprootpathname: LPCWSTR; var lpsectorspercluster, lpbytespersector, lpnumberoffreeclusters, lptotalnumberofclusters: uint32_t): BOOL; stdcall; public name 'GetDiskFreeSpaceW';
 
-function GetDiskFreeSpaceEx(lpdirectoryname: LPCSTR; var lpfreebytesavailabletocaller, lptotalnumberofbytes: ULARGE_INTEGER; lptotalnumberoffreebytes: PULARGE_INTEGER): BOOL; stdcall; public name 'GetDiskFreeSpaceEx';
-function GetDiskFreeSpaceExA(lpdirectoryname: LPCSTR; var lpfreebytesavailabletocaller, lptotalnumberofbytes: ULARGE_INTEGER; lptotalnumberoffreebytes: PULARGE_INTEGER): BOOL; stdcall; public name 'GetDiskFreeSpaceExA';
-function GetDiskFreeSpaceExW(lpdirectoryname: LPCWSTR; var lpfreebytesavailabletocaller, lptotalnumberofbytes: ULARGE_INTEGER; lptotalnumberoffreebytes: PULARGE_INTEGER): BOOL; stdcall; public name 'GetDiskFreeSpaceExW';
+function GetDiskFreeSpaceEx(const lpdirectoryname: LPCSTR; var lpfreebytesavailabletocaller, lptotalnumberofbytes: ULARGE_INTEGER; lptotalnumberoffreebytes: PULARGE_INTEGER): BOOL; stdcall; public name 'GetDiskFreeSpaceEx';
+function GetDiskFreeSpaceExA(const lpdirectoryname: LPCSTR; var lpfreebytesavailabletocaller, lptotalnumberofbytes: ULARGE_INTEGER; lptotalnumberoffreebytes: PULARGE_INTEGER): BOOL; stdcall; public name 'GetDiskFreeSpaceExA';
+function GetDiskFreeSpaceExW(const lpdirectoryname: LPCWSTR; var lpfreebytesavailabletocaller, lptotalnumberofbytes: ULARGE_INTEGER; lptotalnumberoffreebytes: PULARGE_INTEGER): BOOL; stdcall; public name 'GetDiskFreeSpaceExW';
 
 {==============================================================================}
 {Drive Functions (Ultibo)}
-function GetPathDrive(path: PCHAR): uint8_t; stdcall; public name 'GetPathDrive';
+function GetPathDrive(const path: PCHAR): uint8_t; stdcall; public name 'GetPathDrive';
 function GetDriveType(drive: uint8_t): TDRIVE_TYPE; stdcall; public name 'GetDriveType';
 procedure GetDriveData(drive: uint8_t; var data: TDRIVE_DATA); stdcall; public name 'GetDriveData';
 function GetDriveAttr(drive: uint8_t): uint32_t; stdcall; public name 'GetDriveAttr';
 function GetDriveLabel(drive: uint8_t; _label: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'GetDriveLabel';
-function SetDriveLabel(drive: uint8_t; _label: PCHAR): BOOL; stdcall; public name 'SetDriveLabel';
+function SetDriveLabel(drive: uint8_t; const _label: PCHAR): BOOL; stdcall; public name 'SetDriveLabel';
 function GetDriveSerial(drive: uint8_t): uint32_t; stdcall; public name 'GetDriveSerial';
 function SetDriveSerial(drive: uint8_t; serial: uint32_t): BOOL; stdcall; public name 'SetDriveSerial';
 function IsDriveValid(drive: uint8_t): BOOL; stdcall; public name 'IsDriveValid';
@@ -5317,10 +5318,10 @@ function GetDriveFreeSpaceEx(drive: uint8_t): int64_t; stdcall; public name 'Get
 function GetDriveTotalSpace(drive: uint8_t): uint32_t; stdcall; public name 'GetDriveTotalSpace';
 function GetDriveTotalSpaceEx(drive: uint8_t): int64_t; stdcall; public name 'GetDriveTotalSpaceEx';
 
-function GetDriveInformation(path: PCHAR; var clustersize: uint32_t; var totalclustercount, freeclustercount: int64_t): BOOL; stdcall; public name 'GetDriveInformation';
+function GetDriveInformation(const path: PCHAR; var clustersize: uint32_t; var totalclustercount, freeclustercount: int64_t): BOOL; stdcall; public name 'GetDriveInformation';
 
 function GetCurrentDrive: uint8_t; stdcall; public name 'GetCurrentDrive';
-function SetCurrentDrive(drive: PCHAR): BOOL; stdcall; public name 'SetCurrentDrive';
+function SetCurrentDrive(const drive: PCHAR): BOOL; stdcall; public name 'SetCurrentDrive';
 
 {==============================================================================}
 {File Functions (Compatibility)}
@@ -5328,29 +5329,29 @@ function AreFileApisANSI: BOOL; stdcall; public name 'AreFileApisANSI';
 procedure SetFileApisToOEM; stdcall; public name 'SetFileApisToOEM';
 procedure SetFileApisToANSI; stdcall; public name 'SetFileApisToANSI';
 
-function CreateFile(lpfilename: LPCSTR; dwdesiredaccess, dwsharemode: uint32_t; lpsecurityattributes: LPSECURITY_ATTRIBUTES; dwcreationdisposition: uint32_t; dwflagsandattributes: uint32_t; htemplatefile: HANDLE): HANDLE; stdcall; public name 'CreateFile';
-function CreateFileA(lpfilename: LPCSTR; dwdesiredaccess, dwsharemode: uint32_t; lpsecurityattributes: LPSECURITY_ATTRIBUTES; dwcreationdisposition: uint32_t; dwflagsandattributes: uint32_t; htemplatefile: HANDLE): HANDLE; stdcall; public name 'CreateFileA';
-function CreateFileW(lpfilename: LPCWSTR; dwdesiredaccess, dwsharemode: uint32_t; lpsecurityattributes: LPSECURITY_ATTRIBUTES; dwcreationdisposition: uint32_t; dwflagsandattributes: uint32_t; htemplatefile: HANDLE): HANDLE; stdcall; public name 'CreateFileW';
+function CreateFile(const lpfilename: LPCSTR; dwdesiredaccess, dwsharemode: uint32_t; lpsecurityattributes: LPSECURITY_ATTRIBUTES; dwcreationdisposition: uint32_t; dwflagsandattributes: uint32_t; htemplatefile: HANDLE): HANDLE; stdcall; public name 'CreateFile';
+function CreateFileA(const lpfilename: LPCSTR; dwdesiredaccess, dwsharemode: uint32_t; lpsecurityattributes: LPSECURITY_ATTRIBUTES; dwcreationdisposition: uint32_t; dwflagsandattributes: uint32_t; htemplatefile: HANDLE): HANDLE; stdcall; public name 'CreateFileA';
+function CreateFileW(const lpfilename: LPCWSTR; dwdesiredaccess, dwsharemode: uint32_t; lpsecurityattributes: LPSECURITY_ATTRIBUTES; dwcreationdisposition: uint32_t; dwflagsandattributes: uint32_t; htemplatefile: HANDLE): HANDLE; stdcall; public name 'CreateFileW';
 
-function SetFileAttributes(lpfilename: LPCSTR; dwfileattributes: uint32_t): BOOL; stdcall; public name 'SetFileAttributes';
-function SetFileAttributesA(lpfilename: LPCSTR; dwfileattributes: uint32_t): BOOL; stdcall; public name 'SetFileAttributesA';
-function SetFileAttributesW(lpfilename: LPCWSTR; dwfileattributes: uint32_t): BOOL; stdcall; public name 'SetFileAttributesW';
+function SetFileAttributes(const lpfilename: LPCSTR; dwfileattributes: uint32_t): BOOL; stdcall; public name 'SetFileAttributes';
+function SetFileAttributesA(const lpfilename: LPCSTR; dwfileattributes: uint32_t): BOOL; stdcall; public name 'SetFileAttributesA';
+function SetFileAttributesW(const lpfilename: LPCWSTR; dwfileattributes: uint32_t): BOOL; stdcall; public name 'SetFileAttributesW';
 
-function GetFileAttributes(lpfilename: LPCSTR): uint32_t; stdcall; public name 'GetFileAttributes';
-function GetFileAttributesA(lpfilename: LPCSTR): uint32_t; stdcall; public name 'GetFileAttributesA';
-function GetFileAttributesW(lpfilename: LPCWSTR): uint32_t; stdcall; public name 'GetFileAttributesW';
+function GetFileAttributes(const lpfilename: LPCSTR): uint32_t; stdcall; public name 'GetFileAttributes';
+function GetFileAttributesA(const lpfilename: LPCSTR): uint32_t; stdcall; public name 'GetFileAttributesA';
+function GetFileAttributesW(const lpfilename: LPCWSTR): uint32_t; stdcall; public name 'GetFileAttributesW';
 
-function DeleteFile(lpfilename: LPCSTR): BOOL; stdcall; public name 'DeleteFile';
-function DeleteFileA(lpfilename: LPCSTR): BOOL; stdcall; public name 'DeleteFileA';
-function DeleteFileW(lpfilename: LPCWSTR): BOOL; stdcall; public name 'DeleteFileW';
+function DeleteFile(const lpfilename: LPCSTR): BOOL; stdcall; public name 'DeleteFile';
+function DeleteFileA(const lpfilename: LPCSTR): BOOL; stdcall; public name 'DeleteFileA';
+function DeleteFileW(const lpfilename: LPCWSTR): BOOL; stdcall; public name 'DeleteFileW';
 
-function MoveFile(lpexistingfilename, lpnewfilename: LPCSTR): BOOL; stdcall; public name 'MoveFile';
-function MoveFileA(lpexistingfilename, lpnewfilename: LPCSTR): BOOL; stdcall; public name 'MoveFileA';
-function MoveFileW(lpexistingfilename, lpnewfilename: LPCWSTR): BOOL; stdcall; public name 'MoveFileW';
+function MoveFile(const lpexistingfilename, lpnewfilename: LPCSTR): BOOL; stdcall; public name 'MoveFile';
+function MoveFileA(const lpexistingfilename, lpnewfilename: LPCSTR): BOOL; stdcall; public name 'MoveFileA';
+function MoveFileW(const lpexistingfilename, lpnewfilename: LPCWSTR): BOOL; stdcall; public name 'MoveFileW';
 
-function FindFirstFile(lpfilename: LPCSTR; var lpfindfiledata: WIN32_FIND_DATAA): HANDLE; stdcall; public name 'FindFirstFile';
-function FindFirstFileA(lpfilename: LPCSTR; var lpfindfiledata: WIN32_FIND_DATAA): HANDLE; stdcall; public name 'FindFirstFileA';
-function FindFirstFileW(lpfilename: LPCWSTR; var lpfindfiledata: WIN32_FIND_DATAW): HANDLE; stdcall; public name 'FindFirstFileW';
+function FindFirstFile(const lpfilename: LPCSTR; var lpfindfiledata: WIN32_FIND_DATAA): HANDLE; stdcall; public name 'FindFirstFile';
+function FindFirstFileA(const lpfilename: LPCSTR; var lpfindfiledata: WIN32_FIND_DATAA): HANDLE; stdcall; public name 'FindFirstFileA';
+function FindFirstFileW(const lpfilename: LPCWSTR; var lpfindfiledata: WIN32_FIND_DATAW): HANDLE; stdcall; public name 'FindFirstFileW';
 
 function FindNextFile(hfindfile: HANDLE; var lpfindfiledata: WIN32_FIND_DATAA): BOOL; stdcall; public name 'FindNextFile';
 function FindNextFileA(hfindfile: HANDLE; var lpfindfiledata: WIN32_FIND_DATAA): BOOL; stdcall; public name 'FindNextFileA';
@@ -5374,60 +5375,60 @@ function SetFilePointerEx(hfile: HANDLE; lidistancetomove: LARGE_INTEGER; lpnewf
 
 function FlushFileBuffers(hfile: HANDLE): BOOL; stdcall; public name 'FlushFileBuffers';
 
-function CopyFile(lpexistingfilename, lpnewfilename: LPCSTR; bfailifexists: BOOL): BOOL; stdcall; public name 'CopyFile';
-function CopyFileA(lpexistingfilename, lpnewfilename: LPCSTR; bfailifexists: BOOL): BOOL; stdcall; public name 'CopyFileA';
-function CopyFileW(lpexistingfilename, lpnewfilename: LPCWSTR; bfailifexists: BOOL): BOOL; stdcall; public name 'CopyFileW';
+function CopyFile(const lpexistingfilename, lpnewfilename: LPCSTR; bfailifexists: BOOL): BOOL; stdcall; public name 'CopyFile';
+function CopyFileA(const lpexistingfilename, lpnewfilename: LPCSTR; bfailifexists: BOOL): BOOL; stdcall; public name 'CopyFileA';
+function CopyFileW(const lpexistingfilename, lpnewfilename: LPCWSTR; bfailifexists: BOOL): BOOL; stdcall; public name 'CopyFileW';
 
-function SetFileShortName(hfile: HANDLE; lpshortname: LPCSTR): BOOL; stdcall; public name 'SetFileShortName';
-function SetFileShortNameA(hfile: HANDLE; lpshortname: LPCSTR): BOOL; stdcall; public name 'SetFileShortNameA';
-function SetFileShortNameW(hfile: HANDLE; lpshortname: LPCWSTR): BOOL; stdcall; public name 'SetFileShortNameW';
+function SetFileShortName(hfile: HANDLE; const lpshortname: LPCSTR): BOOL; stdcall; public name 'SetFileShortName';
+function SetFileShortNameA(hfile: HANDLE; const lpshortname: LPCSTR): BOOL; stdcall; public name 'SetFileShortNameA';
+function SetFileShortNameW(hfile: HANDLE; const lpshortname: LPCWSTR): BOOL; stdcall; public name 'SetFileShortNameW';
 
-function CreateHardLink(lpfilename, lpexistingfilename: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateHardLink';
-function CreateHardLinkA(lpfilename, lpexistingfilename: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateHardLinkA';
-function CreateHardLinkW(lpfilename, lpexistingfilename: LPCWSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateHardLinkW';
+function CreateHardLink(const lpfilename, lpexistingfilename: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateHardLink';
+function CreateHardLinkA(const lpfilename, lpexistingfilename: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateHardLinkA';
+function CreateHardLinkW(const lpfilename, lpexistingfilename: LPCWSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateHardLinkW';
 
-function CreateSymbolicLink(lpsymlinkfilename, lptargetfilename: LPCSTR; dwflags: uint32_t): BOOL; stdcall; public name 'CreateSymbolicLink';
-function CreateSymbolicLinkA(lpsymlinkfilename, lptargetfilename: LPCSTR; dwflags: uint32_t): BOOL; stdcall; public name 'CreateSymbolicLinkA';
-function CreateSymbolicLinkW(lpsymlinkfilename, lptargetfilename: LPCWSTR; dwflags: uint32_t): BOOL; stdcall; public name 'CreateSymbolicLinkW';
+function CreateSymbolicLink(const lpsymlinkfilename, lptargetfilename: LPCSTR; dwflags: uint32_t): BOOL; stdcall; public name 'CreateSymbolicLink';
+function CreateSymbolicLinkA(const lpsymlinkfilename, lptargetfilename: LPCSTR; dwflags: uint32_t): BOOL; stdcall; public name 'CreateSymbolicLinkA';
+function CreateSymbolicLinkW(const lpsymlinkfilename, lptargetfilename: LPCWSTR; dwflags: uint32_t): BOOL; stdcall; public name 'CreateSymbolicLinkW';
 
 function GetFileInformationByHandle(hfile: HANDLE; var lpfileinformation: BY_HANDLE_FILE_INFORMATION): BOOL; stdcall; public name 'GetFileInformationByHandle';
 
-function GetFinalPathNameByHandle(hfile: HANDLE; lpszfilepath: LPCSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall; public name 'GetFinalPathNameByHandle';
-function GetFinalPathNameByHandleA(hfile: HANDLE; lpszfilepath: LPCSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall; public name 'GetFinalPathNameByHandleA';
-function GetFinalPathNameByHandleW(hfile: HANDLE; lpszfilepath: LPCWSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall; public name 'GetFinalPathNameByHandleW';
+function GetFinalPathNameByHandle(hfile: HANDLE; lpszfilepath: LPSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall; public name 'GetFinalPathNameByHandle';
+function GetFinalPathNameByHandleA(hfile: HANDLE; lpszfilepath: LPSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall; public name 'GetFinalPathNameByHandleA';
+function GetFinalPathNameByHandleW(hfile: HANDLE; lpszfilepath: LPWSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall; public name 'GetFinalPathNameByHandleW';
 
 {==============================================================================}
 {File Functions (Ultibo)}
 
 {==============================================================================}
 {Directory Functions (Compatibility)}
-function CreateDirectory(lppathname: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateDirectory';
-function CreateDirectoryA(lppathname: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateDirectoryA';
-function CreateDirectoryW(lppathname: LPCWSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateDirectoryW';
+function CreateDirectory(const lppathname: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateDirectory';
+function CreateDirectoryA(const lppathname: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateDirectoryA';
+function CreateDirectoryW(const lppathname: LPCWSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall; public name 'CreateDirectoryW';
 
-function RemoveDirectory(lppathname: LPCSTR): BOOL; stdcall; public name 'RemoveDirectory';
-function RemoveDirectoryA(lppathname: LPCSTR): BOOL; stdcall; public name 'RemoveDirectoryA';
-function RemoveDirectoryW(lppathname: LPCWSTR): BOOL; stdcall; public name 'RemoveDirectoryW';
+function RemoveDirectory(const lppathname: LPCSTR): BOOL; stdcall; public name 'RemoveDirectory';
+function RemoveDirectoryA(const lppathname: LPCSTR): BOOL; stdcall; public name 'RemoveDirectoryA';
+function RemoveDirectoryW(const lppathname: LPCWSTR): BOOL; stdcall; public name 'RemoveDirectoryW';
 
-function SetCurrentDirectory(lppathname: LPCSTR): BOOL; stdcall; public name 'SetCurrentDirectory';
-function SetCurrentDirectoryA(lppathname: LPCSTR): BOOL; stdcall; public name 'SetCurrentDirectoryA';
-function SetCurrentDirectoryW(lppathname: LPCWSTR): BOOL; stdcall; public name 'SetCurrentDirectoryW';
+function SetCurrentDirectory(const lppathname: LPCSTR): BOOL; stdcall; public name 'SetCurrentDirectory';
+function SetCurrentDirectoryA(const lppathname: LPCSTR): BOOL; stdcall; public name 'SetCurrentDirectoryA';
+function SetCurrentDirectoryW(const lppathname: LPCWSTR): BOOL; stdcall; public name 'SetCurrentDirectoryW';
 
 function GetCurrentDirectory(nbufferlength: uint32_t; lpbuffer: LPSTR): uint32_t; stdcall; public name 'GetCurrentDirectory';
 function GetCurrentDirectoryA(nbufferlength: uint32_t; lpbuffer: LPSTR): uint32_t; stdcall; public name 'GetCurrentDirectoryA';
 function GetCurrentDirectoryW(nbufferlength: uint32_t; lpbuffer: LPWSTR): uint32_t; stdcall; public name 'GetCurrentDirectoryW';
 
-function GetLongPathName(lpszshortpath: LPCSTR; lpszlongpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetLongPathName';
-function GetLongPathNameA(lpszshortpath: LPCSTR; lpszlongpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetLongPathNameA';
-function GetLongPathNameW(lpszshortpath: LPCWSTR; lpszlongpath: LPWSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetLongPathNameW';
+function GetLongPathName(const lpszshortpath: LPCSTR; lpszlongpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetLongPathName';
+function GetLongPathNameA(const lpszshortpath: LPCSTR; lpszlongpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetLongPathNameA';
+function GetLongPathNameW(const lpszshortpath: LPCWSTR; lpszlongpath: LPWSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetLongPathNameW';
 
-function GetShortPathName(lpszlongpath: LPCSTR; lpszshortpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetShortPathName';
-function GetShortPathNameA(lpszlongpath: LPCSTR; lpszshortpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetShortPathNameA';
-function GetShortPathNameW(lpszlongpath: LPCWSTR; lpszshortpath: LPWSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetShortPathNameW';
+function GetShortPathName(const lpszlongpath: LPCSTR; lpszshortpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetShortPathName';
+function GetShortPathNameA(const lpszlongpath: LPCSTR; lpszshortpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetShortPathNameA';
+function GetShortPathNameW(const lpszlongpath: LPCWSTR; lpszshortpath: LPWSTR; cchbuffer: uint32_t): uint32_t; stdcall; public name 'GetShortPathNameW';
 
-function GetFullPathName(lpfilename: LPCSTR; nbufferlength: uint32_t; lpbuffer: LPSTR; var lpfilepart: LPSTR): uint32_t; stdcall; public name 'GetFullPathName';
-function GetFullPathNameA(lpfilename: LPCSTR; nbufferlength: uint32_t; lpbuffer: LPSTR; var lpfilepart: LPSTR): uint32_t; stdcall; public name 'GetFullPathNameA';
-function GetFullPathNameW(lpfilename: LPCWSTR; nbufferlength: uint32_t; lpbuffer: LPWSTR; var lpfilepart: LPWSTR): uint32_t; stdcall; public name 'GetFullPathNameW';
+function GetFullPathName(const lpfilename: LPCSTR; nbufferlength: uint32_t; lpbuffer: LPSTR; var lpfilepart: LPSTR): uint32_t; stdcall; public name 'GetFullPathName';
+function GetFullPathNameA(const lpfilename: LPCSTR; nbufferlength: uint32_t; lpbuffer: LPSTR; var lpfilepart: LPSTR): uint32_t; stdcall; public name 'GetFullPathNameA';
+function GetFullPathNameW(const lpfilename: LPCWSTR; nbufferlength: uint32_t; lpbuffer: LPWSTR; var lpfilepart: LPWSTR): uint32_t; stdcall; public name 'GetFullPathNameW';
 
 {==============================================================================}
 {Directory Functions (Ultibo)}
@@ -5440,9 +5441,9 @@ function GetCommandLineW: LPWSTR; stdcall; public name 'GetCommandLineW';
 
 {==============================================================================}
 {Command Line Functions (Ultibo)}
-function IsParamPresent(param: PCHAR): BOOL; stdcall; public name 'IsParamPresent';
-function GetParamIndex(param: PCHAR): int; stdcall; public name 'GetParamIndex';
-function GetParamValue(param: PCHAR; value: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'GetParamValue';
+function IsParamPresent(const param: PCHAR): BOOL; stdcall; public name 'IsParamPresent';
+function GetParamIndex(const param: PCHAR): int; stdcall; public name 'GetParamIndex';
+function GetParamValue(const param: PCHAR; value: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'GetParamValue';
 
 {==============================================================================}
 {Environment Functions (Compatibility)}
@@ -5454,17 +5455,17 @@ function FreeEnvironmentStrings(pstr: LPSTR): BOOL; stdcall; public name 'FreeEn
 function FreeEnvironmentStringsA(pstr: LPSTR): BOOL; stdcall; public name 'FreeEnvironmentStringsA';
 function FreeEnvironmentStringsW(pstr: LPWSTR): BOOL; stdcall; public name 'FreeEnvironmentStringsW';
 
-function GetEnvironmentVariable(lpname: LPCSTR; lpbuffer: LPSTR; nsize: uint32_t): uint32_t; stdcall; public name 'GetEnvironmentVariable';
-function GetEnvironmentVariableA(lpname: LPCSTR; lpbuffer: LPSTR; nsize: uint32_t): uint32_t; stdcall; public name 'GetEnvironmentVariableA';
-function GetEnvironmentVariableW(lpname: LPCWSTR; lpbuffer: LPWSTR; nsize: uint32_t): uint32_t; stdcall; public name 'GetEnvironmentVariableW';
+function GetEnvironmentVariable(const lpname: LPCSTR; lpbuffer: LPSTR; nsize: uint32_t): uint32_t; stdcall; public name 'GetEnvironmentVariable';
+function GetEnvironmentVariableA(const lpname: LPCSTR; lpbuffer: LPSTR; nsize: uint32_t): uint32_t; stdcall; public name 'GetEnvironmentVariableA';
+function GetEnvironmentVariableW(const lpname: LPCWSTR; lpbuffer: LPWSTR; nsize: uint32_t): uint32_t; stdcall; public name 'GetEnvironmentVariableW';
 
-function SetEnvironmentVariable(lpname, lpvalue: LPCSTR): BOOL; stdcall; public name 'SetEnvironmentVariable';
-function SetEnvironmentVariableA(lpname, lpvalue: LPCSTR): BOOL; stdcall; public name 'SetEnvironmentVariableA';
-function SetEnvironmentVariableW(lpname, lpvalue: LPCWSTR): BOOL; stdcall; public name 'SetEnvironmentVariableW';
+function SetEnvironmentVariable(const lpname, lpvalue: LPCSTR): BOOL; stdcall; public name 'SetEnvironmentVariable';
+function SetEnvironmentVariableA(const lpname, lpvalue: LPCSTR): BOOL; stdcall; public name 'SetEnvironmentVariableA';
+function SetEnvironmentVariableW(const lpname, lpvalue: LPCWSTR): BOOL; stdcall; public name 'SetEnvironmentVariableW';
 
-function ExpandEnvironmentStrings(lpsrc: LPCSTR; lpdst: LPSTR; nsize: uint32_t): uint32_t; stdcall; public name 'ExpandEnvironmentStrings';
-function ExpandEnvironmentStringsA(lpsrc: LPCSTR; lpdst: LPSTR; nsize: uint32_t): uint32_t; stdcall; public name 'ExpandEnvironmentStringsA';
-function ExpandEnvironmentStringsW(lpsrc: LPCWSTR; lpdst: LPWSTR; nsize: uint32_t): uint32_t; stdcall; public name 'ExpandEnvironmentStringsW';
+function ExpandEnvironmentStrings(const lpsrc: LPCSTR; lpdst: LPSTR; nsize: uint32_t): uint32_t; stdcall; public name 'ExpandEnvironmentStrings';
+function ExpandEnvironmentStringsA(const lpsrc: LPCSTR; lpdst: LPSTR; nsize: uint32_t): uint32_t; stdcall; public name 'ExpandEnvironmentStringsA';
+function ExpandEnvironmentStringsW(const lpsrc: LPCWSTR; lpdst: LPWSTR; nsize: uint32_t): uint32_t; stdcall; public name 'ExpandEnvironmentStringsW';
 
 {==============================================================================}
 {Error Functions (Compatibility)}
@@ -5478,7 +5479,7 @@ procedure SetLastError(dwerrcode: uint32_t); stdcall; public name 'SetLastError'
 {GUID Functions (Ultibo)}
 function CreateGUID: TGUID; stdcall; public name 'CreateGUID';
 function GUIDToString(const value: TGUID; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'GUIDToString';
-function StringToGUID(value: PCHAR): TGUID; stdcall; public name 'StringToGUID';
+function StringToGUID(const value: PCHAR): TGUID; stdcall; public name 'StringToGUID';
 function NullGUID(const guid: TGUID): BOOL; stdcall; public name 'NullGUID';
 function CompareGUID(const guid1, guid2: TGUID): BOOL; stdcall; public name 'CompareGUID';
 
@@ -5516,8 +5517,8 @@ function BufferSwap(buffer: PVOID; size: uint32_t): BOOL; stdcall; public name '
 
 {==============================================================================}
 {Hash Functions (Ultibo)}
-function GenerateNameHash(name: PCHAR; size: int): uint32_t; stdcall; public name 'GenerateNameHash';
-function GenerateStringHash(value: PCHAR; casesensitive: BOOL): uint32_t; stdcall; public name 'GenerateStringHash';
+function GenerateNameHash(const name: PCHAR; size: int): uint32_t; stdcall; public name 'GenerateNameHash';
+function GenerateStringHash(const value: PCHAR; casesensitive: BOOL): uint32_t; stdcall; public name 'GenerateStringHash';
 
 {==============================================================================}
 {Locale Functions (Compatibility)}
@@ -5533,9 +5534,9 @@ function SetThreadLocale(localeid: LCID): BOOL; stdcall; public name 'SetThreadL
 {Locale Functions (Ultibo)}
 {function SetSystemDefaultLCID(localeid: LCID): BOOL; stdcall; public name 'SetSystemDefaultLCID';} {Exported in Locale}
 
-function WideCharToString(buffer: PWCHAR; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'WideCharToString';
-function WideCharLenToString(buffer: PWCHAR; _length: int; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'WideCharLenToString';
-function StringToWideChar(_string: PCHAR; buffer: PWCHAR; size: int): BOOL; stdcall; public name 'StringToWideChar';
+function WideCharToString(const buffer: PWCHAR; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'WideCharToString';
+function WideCharLenToString(const buffer: PWCHAR; _length: int; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'WideCharLenToString';
+function StringToWideChar(const _string: PCHAR; buffer: PWCHAR; size: int): BOOL; stdcall; public name 'StringToWideChar';
 
 {==============================================================================}
 {Code Page Functions (Compatibility)}
@@ -5708,7 +5709,7 @@ function WaitForMultipleObjectsEx(ncount: uint32_t; lphandles: PHANDLE; bwaitall
 
 {==============================================================================}
 {Thread Functions (Ultibo)}
-function BeginThreadEx(threadfunction: thread_func; parameter: PVOID; var threadid: TTHREAD_ID; const stacksize: SIZE_T; priority, affinity, cpu: uint32_t; name: PCHAR): TTHREAD_ID; stdcall; public name 'BeginThreadEx';
+function BeginThreadEx(threadfunction: thread_func; parameter: PVOID; var threadid: TTHREAD_ID; const stacksize: SIZE_T; priority, affinity, cpu: uint32_t; const name: PCHAR): TTHREAD_ID; stdcall; public name 'BeginThreadEx';
 
 {==============================================================================}
 {Message Functions (Compatibility)}
@@ -5738,25 +5739,25 @@ function InterlockedCompareExchangePointer(var destination: PVOID; exchange, com
 
 {==============================================================================}
 {Mutex Functions (Compatibility)}
-function CreateMutex(lpmutexattributes: LPSECURITY_ATTRIBUTES; binitialowner: BOOL; lpname: LPCSTR): HANDLE; stdcall; public name 'CreateMutex';
-function CreateMutexA(lpmutexattributes: LPSECURITY_ATTRIBUTES; binitialowner: BOOL; lpname: LPCSTR): HANDLE; stdcall; public name 'CreateMutexA';
-function CreateMutexW(lpmutexattributes: LPSECURITY_ATTRIBUTES; binitialowner: BOOL; lpname: LPCWSTR): HANDLE; stdcall; public name 'CreateMutexW';
+function CreateMutex(lpmutexattributes: LPSECURITY_ATTRIBUTES; binitialowner: BOOL; const lpname: LPCSTR): HANDLE; stdcall; public name 'CreateMutex';
+function CreateMutexA(lpmutexattributes: LPSECURITY_ATTRIBUTES; binitialowner: BOOL; const lpname: LPCSTR): HANDLE; stdcall; public name 'CreateMutexA';
+function CreateMutexW(lpmutexattributes: LPSECURITY_ATTRIBUTES; binitialowner: BOOL; const lpname: LPCWSTR): HANDLE; stdcall; public name 'CreateMutexW';
 
-function OpenMutex(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCSTR): HANDLE; stdcall; public name 'OpenMutex';
-function OpenMutexA(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCSTR): HANDLE; stdcall; public name 'OpenMutexA';
-function OpenMutexW(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCWSTR): HANDLE; stdcall; public name 'OpenMutexW';
+function OpenMutex(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCSTR): HANDLE; stdcall; public name 'OpenMutex';
+function OpenMutexA(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCSTR): HANDLE; stdcall; public name 'OpenMutexA';
+function OpenMutexW(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCWSTR): HANDLE; stdcall; public name 'OpenMutexW';
 
 function ReleaseMutex(hmutex: HANDLE): BOOL; stdcall; public name 'ReleaseMutex';
 
 {==============================================================================}
 {Semaphore Functions (Compatibility)}
-function CreateSemaphore(lpsemaphoreattributes: LPSECURITY_ATTRIBUTES; linitialcount, lmaximumcount: LONG; lpname: LPCSTR): HANDLE; stdcall; public name 'CreateSemaphore';
-function CreateSemaphoreA(lpsemaphoreattributes: LPSECURITY_ATTRIBUTES; linitialcount, lmaximumcount: LONG; lpname: LPCSTR): HANDLE; stdcall; public name 'CreateSemaphoreA';
-function CreateSemaphoreW(lpsemaphoreattributes: LPSECURITY_ATTRIBUTES; linitialcount, lmaximumcount: LONG; lpname: LPCWSTR): HANDLE; stdcall; public name 'CreateSemaphoreW';
+function CreateSemaphore(lpsemaphoreattributes: LPSECURITY_ATTRIBUTES; linitialcount, lmaximumcount: LONG; const lpname: LPCSTR): HANDLE; stdcall; public name 'CreateSemaphore';
+function CreateSemaphoreA(lpsemaphoreattributes: LPSECURITY_ATTRIBUTES; linitialcount, lmaximumcount: LONG; const lpname: LPCSTR): HANDLE; stdcall; public name 'CreateSemaphoreA';
+function CreateSemaphoreW(lpsemaphoreattributes: LPSECURITY_ATTRIBUTES; linitialcount, lmaximumcount: LONG; const lpname: LPCWSTR): HANDLE; stdcall; public name 'CreateSemaphoreW';
 
-function OpenSemaphore(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCSTR): HANDLE; stdcall; public name 'OpenSemaphore';
-function OpenSemaphoreA(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCSTR): HANDLE; stdcall; public name 'OpenSemaphoreA';
-function OpenSemaphoreW(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCWSTR): HANDLE; stdcall; public name 'OpenSemaphoreW';
+function OpenSemaphore(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCSTR): HANDLE; stdcall; public name 'OpenSemaphore';
+function OpenSemaphoreA(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCSTR): HANDLE; stdcall; public name 'OpenSemaphoreA';
+function OpenSemaphoreW(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCWSTR): HANDLE; stdcall; public name 'OpenSemaphoreW';
 
 function ReleaseSemaphore(hsemaphore: HANDLE; lreleasecount: LONG; lppreviouscount: LPLONG): BOOL; stdcall; public name 'ReleaseSemaphore';
 
@@ -5785,13 +5786,13 @@ procedure DeleteConditionVariable(var conditionvariable: CONDITION_VARIABLE); st
 
 {==============================================================================}
 {Event Functions (Compatibility)}
-function CreateEvent(lpeventattributes: LPSECURITY_ATTRIBUTES; bmanualreset, binitialstate: BOOL; lpname: LPCSTR): HANDLE; stdcall; public name 'CreateEvent';
-function CreateEventA(lpeventattributes: LPSECURITY_ATTRIBUTES; bmanualreset, binitialstate: BOOL; lpname: LPCSTR): HANDLE; stdcall; public name 'CreateEventA';
-function CreateEventW(lpeventattributes: LPSECURITY_ATTRIBUTES; bmanualreset, binitialstate: BOOL; lpname: LPCWSTR): HANDLE; stdcall; public name 'CreateEventW';
+function CreateEvent(lpeventattributes: LPSECURITY_ATTRIBUTES; bmanualreset, binitialstate: BOOL; const lpname: LPCSTR): HANDLE; stdcall; public name 'CreateEvent';
+function CreateEventA(lpeventattributes: LPSECURITY_ATTRIBUTES; bmanualreset, binitialstate: BOOL; const lpname: LPCSTR): HANDLE; stdcall; public name 'CreateEventA';
+function CreateEventW(lpeventattributes: LPSECURITY_ATTRIBUTES; bmanualreset, binitialstate: BOOL; const lpname: LPCWSTR): HANDLE; stdcall; public name 'CreateEventW';
 
-function OpenEvent(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCSTR): HANDLE; stdcall; public name 'OpenEvent';
-function OpenEventA(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCSTR): HANDLE; stdcall; public name 'OpenEventA';
-function OpenEventW(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCWSTR): HANDLE; stdcall; public name 'OpenEventW';
+function OpenEvent(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCSTR): HANDLE; stdcall; public name 'OpenEvent';
+function OpenEventA(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCSTR): HANDLE; stdcall; public name 'OpenEventA';
+function OpenEventW(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCWSTR): HANDLE; stdcall; public name 'OpenEventW';
 
 function SetEvent(hevent: HANDLE): BOOL; stdcall; public name 'SetEvent';
 function ResetEvent(hevent: HANDLE): BOOL; stdcall; public name 'ResetEvent';
@@ -5815,9 +5816,9 @@ function TerminateProcess(hprocess: HANDLE; uexitcode: UINT): BOOL; stdcall; pub
 
 {==============================================================================}
 {Debug Functions (Compatibility)}
-procedure OutputDebugString(lpoutputstring: LPCSTR); stdcall; public name 'OutputDebugString';
-procedure OutputDebugStringA(lpoutputstring: LPCSTR); stdcall; public name 'OutputDebugStringA';
-procedure OutputDebugStringW(lpoutputstring: LPCWSTR); stdcall; public name 'OutputDebugStringW';
+procedure OutputDebugString(const lpoutputstring: LPCSTR); stdcall; public name 'OutputDebugString';
+procedure OutputDebugStringA(const lpoutputstring: LPCSTR); stdcall; public name 'OutputDebugStringA';
+procedure OutputDebugStringW(const lpoutputstring: LPCWSTR); stdcall; public name 'OutputDebugStringW';
 
 {==============================================================================}
 {Library Functions (Compatibility)}
@@ -6059,7 +6060,7 @@ end;
 
 {==============================================================================}
 
-function device_tree_read(path, name: PCHAR; buffer: PVOID; var size: uint32_t): uint32_t; stdcall;
+function device_tree_read(const path, name: PCHAR; buffer: PVOID; var size: uint32_t): uint32_t; stdcall;
 {Read the raw value of a Device Tree property (Where Applicable)}
 {Path: The path of the requested property}
 {Name: The name of the requested property}
@@ -6080,7 +6081,7 @@ end;
 
 {==============================================================================}
 
-function device_tree_read32(path, name: PCHAR; var value: uint32_t): uint32_t; stdcall;
+function device_tree_read32(const path, name: PCHAR; var value: uint32_t): uint32_t; stdcall;
 {Read a 32-bit value from a Device Tree property (Where Applicable)}
 {Path: The path of the requested property}
 {Name: The name of the requested property}
@@ -6100,7 +6101,7 @@ end;
 
 {==============================================================================}
 
-function device_tree_read64(path, name: PCHAR; var value: uint64_t): uint32_t; stdcall;
+function device_tree_read64(const path, name: PCHAR; var value: uint64_t): uint32_t; stdcall;
 {Read a 64-bit value from a Device Tree property (Where Applicable)}
 {Path: The path of the requested property}
 {Name: The name of the requested property}
@@ -6120,7 +6121,7 @@ end;
 
 {==============================================================================}
 
-function device_tree_read_string(path, name: PCHAR; value: PCHAR; len: uint32_t): uint32_t; stdcall;
+function device_tree_read_string(const path, name: PCHAR; value: PCHAR; len: uint32_t): uint32_t; stdcall;
 {Read a string value from a Device Tree property (Where Applicable)}
 {Path: The path of the requested property}
 {Name: The name of the requested property}
@@ -6182,7 +6183,7 @@ end;
 
 {==============================================================================}
 
-procedure boot_console_write(value: PCHAR); stdcall;
+procedure boot_console_write(const value: PCHAR); stdcall;
 {Output text to the boot time console display (Where Applicable)}
 {Note: Intended for startup diagnostics when bootstrapping a new board}
 begin
@@ -6195,7 +6196,7 @@ end;
 
 {==============================================================================}
 
-procedure boot_console_write_ex(value: PCHAR; x, y: uint32_t); stdcall;
+procedure boot_console_write_ex(const value: PCHAR; x, y: uint32_t); stdcall;
 {Output text to the boot time console display at the specified X and Y position (Where Applicable)}
 {Note: Intended for startup diagnostics when bootstrapping a new board}
 begin
@@ -9616,7 +9617,7 @@ end;
 
 {==============================================================================}
 
-function handle_create_ex(name: PCHAR; flags: uint32_t; data: THANDLE; _type: uint32_t): PHANDLE_ENTRY;  stdcall;
+function handle_create_ex(const name: PCHAR; flags: uint32_t; data: THANDLE; _type: uint32_t): PHANDLE_ENTRY;  stdcall;
 {Create and Open a new named or unnamed handle of the supplied type}
 {Name: The name of the new handle (Optional)}
 {Flags: The flags for the new handle (eg HANDLE_FLAG_DUPLICATE)}
@@ -9655,7 +9656,7 @@ end;
 
 {==============================================================================}
 
-function handle_find(name: PCHAR): PHANDLE_ENTRY; stdcall;
+function handle_find(const name: PCHAR): PHANDLE_ENTRY; stdcall;
 {Find an existing named handle of the supplied type}
 {Name: The name of the handle to find}
 {Return: The handle entry on success or nil on failure}
@@ -9678,7 +9679,7 @@ end;
 
 {==============================================================================}
 
-function handle_open(name: PCHAR): THANDLE; stdcall;
+function handle_open(const name: PCHAR): THANDLE; stdcall;
 {Open an existing named handle}
 {Name: The name of the handle to open}
 {Return: The handle matching the name or INVALID_HANDLE_VALUE on failure}
@@ -12448,7 +12449,7 @@ end;
 
 {==============================================================================}
 
-function host_set_name(name: PCHAR): BOOL; stdcall;
+function host_set_name(const name: PCHAR): BOOL; stdcall;
 var
  Buffer:String;
 begin
@@ -12492,7 +12493,7 @@ end;
 
 {==============================================================================}
 
-function host_set_domain(domain: PCHAR): BOOL; stdcall;
+function host_set_domain(const domain: PCHAR): BOOL; stdcall;
 var
  Buffer:String;
 begin
@@ -12517,12 +12518,27 @@ end;
 
 {==============================================================================}
 {Module Functions}
-function module_load(name: PCHAR): THANDLE; stdcall;
+function module_load(const name: PCHAR): THANDLE; stdcall;
 begin
  {}
  if Assigned(ModuleLoadHandler) then
   begin
    Result:=ModuleLoadHandler(String(name));
+  end
+ else
+  begin
+   Result:=INVALID_HANDLE_VALUE;
+  end;
+end;
+
+{==============================================================================}
+
+function module_load_ex(const name: PCHAR; flags: uint32_t): THANDLE; stdcall;
+begin
+ {}
+ if Assigned(ModuleLoadExHandler) then
+  begin
+   Result:=ModuleLoadExHandler(String(name),flags);
   end
  else
   begin
@@ -12566,7 +12582,7 @@ end;
 
 {==============================================================================}
 {Symbol Functions}
-function symbol_add(handle: THANDLE; name: PCHAR; address: SIZE_T): BOOL; stdcall;
+function symbol_add(handle: THANDLE; const name: PCHAR; address: SIZE_T): BOOL; stdcall;
 begin
  {}
  if Assigned(SymbolAddHandler) then
@@ -12581,7 +12597,7 @@ end;
 
 {==============================================================================}
 
-function symbol_remove(handle: THANDLE; name: PCHAR): BOOL; stdcall;
+function symbol_remove(handle: THANDLE; const name: PCHAR): BOOL; stdcall;
 begin
  {}
  if Assigned(SymbolRemoveHandler) then
@@ -12596,7 +12612,7 @@ end;
 
 {==============================================================================}
 
-function symbol_get_address(handle: THANDLE; name: PCHAR): SIZE_T; stdcall;
+function symbol_get_address(handle: THANDLE; const name: PCHAR): SIZE_T; stdcall;
 begin
  {}
  if Assigned(SymbolGetAddressHandler) then
@@ -12611,7 +12627,7 @@ end;
 
 {==============================================================================}
 {Logging Functions}
-procedure logging_output(text: PCHAR); stdcall;
+procedure logging_output(const text: PCHAR); stdcall;
 begin
  {}
  if Assigned(LoggingOutputHandler) then
@@ -12622,7 +12638,7 @@ end;
 
 {==============================================================================}
 
-procedure logging_output_ex(facility, severity: uint32_t; tag, content: PCHAR); stdcall;
+procedure logging_output_ex(facility, severity: uint32_t; const tag, content: PCHAR); stdcall;
 begin
  {}
  if Assigned(LoggingOutputExHandler) then
@@ -12633,18 +12649,18 @@ end;
 
 {==============================================================================}
 {Environment Functions}
-function environment_get(name: PCHAR; value: PCHAR; len: uint32_t): uint32_t; stdcall;
+function environment_get(const name: PCHAR; value: PCHAR; len: uint32_t): uint32_t; stdcall;
 {Locate an environment variable and return the current value}
 {Name: The name of the variable to locate (eg TZ)}
 {Return: The value of the variable or an empty string if not found}
 begin
  {}
- Result:=APIStringToPCharBuffer(EnvironmentGet(name),value,len);
+ Result:=APIStringToPCharBuffer(EnvironmentGet(String(name)),value,len);
 end;
 
 {==============================================================================}
 
-function environment_set(name, value: PCHAR): uint32_t; stdcall;
+function environment_set(const name, value: PCHAR): uint32_t; stdcall;
 {Add an environment variable or update an existing variable}
 {Name: The name of the variable to add or update (eg TZ)}
 {Value: The new value of the variable (eg EST+5)}
@@ -12653,7 +12669,7 @@ function environment_set(name, value: PCHAR): uint32_t; stdcall;
 {Note: Passing an empty value will delete the environment variable if it exists}
 begin
  {}
- Result:=EnvironmentSet(name,value);
+ Result:=EnvironmentSet(String(name),String(value));
 end;
 
 {==============================================================================}
@@ -12669,13 +12685,13 @@ end;
 
 {==============================================================================}
 
-function environment_index(name: PCHAR): uint32_t; stdcall;
+function environment_index(const name: PCHAR): uint32_t; stdcall;
 {Locate an environment variable and return the index}
 {Name: The name of the variable to locate (eg TZ)}
 {Return: The index of the environment variable or 0 if not found}
 begin
  {}
- Result:=EnvironmentIndex(name);
+ Result:=EnvironmentIndex(String(name));
 end;
 
 {==============================================================================}
@@ -14374,7 +14390,7 @@ end;
 
 {==============================================================================}
 {Thread Functions}
-function thread_create(startproc: thread_start_proc; stacksize, priority: uint32_t; name: PCHAR; parameter: PVOID): THREAD_HANDLE; stdcall;
+function thread_create(startproc: thread_start_proc; stacksize, priority: uint32_t; const name: PCHAR; parameter: PVOID): THREAD_HANDLE; stdcall;
 {Create and insert a new Thread entry
 
  The new thread will be created suspended so it will not start running until it is
@@ -14403,7 +14419,7 @@ end;
 
 {==============================================================================}
 
-function thread_create_ex(startproc: thread_start_proc; stacksize, priority, affinity, cpu: uint32_t; name: PCHAR; parameter: PVOID): THREAD_HANDLE; stdcall;
+function thread_create_ex(startproc: thread_start_proc; stacksize, priority, affinity, cpu: uint32_t; const name: PCHAR; parameter: PVOID): THREAD_HANDLE; stdcall;
 {Create and insert a new Thread entry
 
  The new thread will be created suspended so it will not start running until it is
@@ -14481,7 +14497,7 @@ end;
 
 {==============================================================================}
 
-function thread_set_name(thread: THREAD_HANDLE; name: PCHAR): uint32_t; stdcall;
+function thread_set_name(thread: THREAD_HANDLE; const name: PCHAR): uint32_t; stdcall;
 {Set the name of a Thread}
 {Thread: Handle of thread to set}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -16172,7 +16188,7 @@ end;
 
 {==============================================================================}
 
-function begin_thread_ex(signalaction: PVOID; stacksize: SIZE_T; threadfunction: thread_func; threadparameter: PVOID; creationflags: uint32_t; priority, affinity, cpu: uint32_t; name: PCHAR; var threadid: TTHREAD_ID): TTHREAD_ID; stdcall;
+function begin_thread_ex(signalaction: PVOID; stacksize: SIZE_T; threadfunction: thread_func; threadparameter: PVOID; creationflags: uint32_t; priority, affinity, cpu: uint32_t; const name: PCHAR; var threadid: TTHREAD_ID): TTHREAD_ID; stdcall;
 begin
  {}
  Result:=SysBeginThreadEx(signalaction,stacksize,threadfunction,threadparameter,creationflags,priority,affinity,cpu,name,threadid);
@@ -17465,26 +17481,26 @@ end;
 
 {==============================================================================}
 
-function device_tree_get_node(path: PCHAR; parent: THANDLE): THANDLE; stdcall;
+function device_tree_get_node(const path: PCHAR; parent: THANDLE): THANDLE; stdcall;
 {Get the handle of the node matching the specified path, optionally within a specified parent}
 {Path: The path of the node to find, relative to parent node or fully qualified if parent not specified (eg /chosen or /cpus/cpu0)}
 {Parent: Handle of the parent node to search in, INVALID_HANDLE_VALUE to search the entire tree}
 {Return: The handle of the node which matches the path or INVALID_HANDLE_VALUE if no node was found}
 begin
  {}
- Result:=DeviceTreeGetNode(path,parent);
+ Result:=DeviceTreeGetNode(String(path),parent);
 end;
 
 {==============================================================================}
 
-function device_tree_get_property(node: THANDLE; name: PCHAR): THANDLE; stdcall;
+function device_tree_get_property(node: THANDLE; const name: PCHAR): THANDLE; stdcall;
 {Get the handle of the property matching the specified name}
 {Node: Handle of the node to search in}
 {Name: The name of the node to find (eg compatible)}
 {Return: The handle of the property which matches the name or INVALID_HANDLE_VALUE if no property was found}
 begin
  {}
- Result:=DeviceTreeGetProperty(node,name);
+ Result:=DeviceTreeGetProperty(node,String(name));
 end;
 
 {==============================================================================}
@@ -17777,7 +17793,7 @@ end;
 
 {==============================================================================}
 
-function device_set_name(device: PDEVICE; name: PCHAR): uint32_t; stdcall;
+function device_set_name(device: PDEVICE; const name: PCHAR): uint32_t; stdcall;
 {Set the name of the supplied Device}
 {Device: The device to set the name for}
 {Name: The device name to set}
@@ -17800,7 +17816,7 @@ end;
 
 {==============================================================================}
 
-function device_set_description(device: PDEVICE; description: PCHAR): uint32_t; stdcall;
+function device_set_description(device: PDEVICE; const description: PCHAR): uint32_t; stdcall;
 {Set the description of the supplied Device}
 {Device: The device to set the description for}
 {Description: The device description to set}
@@ -17857,7 +17873,7 @@ end;
 
 {==============================================================================}
 
-function device_find_by_name(name: PCHAR): PDEVICE; stdcall;
+function device_find_by_name(const name: PCHAR): PDEVICE; stdcall;
 {Find a device by name in the device table}
 {Name: The name of the device to find (eg Timer0)}
 {Return: Pointer to device entry or nil if not found}
@@ -17868,7 +17884,7 @@ end;
 
 {==============================================================================}
 
-function device_find_by_name_ex(deviceclass: uint32_t; name: PCHAR): PDEVICE; stdcall;
+function device_find_by_name_ex(deviceclass: uint32_t; const name: PCHAR): PDEVICE; stdcall;
 {Find a device by class and name in the device table}
 {DeviceClass: The class of the device to find (eg DEVICE_CLASS_USB) (DEVICE_CLASS_ANY for all classes)}
 {Name: The name of the device to find (eg USB0)}
@@ -17880,7 +17896,7 @@ end;
 
 {==============================================================================}
 
-function device_find_by_description(description: PCHAR): PDEVICE; stdcall;
+function device_find_by_description(const description: PCHAR): PDEVICE; stdcall;
 {Find a device by description in the device table}
 {Description: The description of the device to find (eg BCM2836 ARM Timer)}
 {Return: Pointer to device entry or nil if not found}
@@ -17891,7 +17907,7 @@ end;
 
 {==============================================================================}
 
-function device_find_by_description_ex(deviceclass: uint32_t; description: PCHAR): PDEVICE; stdcall;
+function device_find_by_description_ex(deviceclass: uint32_t; const description: PCHAR): PDEVICE; stdcall;
 {Find a device by class and description in the device table}
 {DeviceClass: The class of the device to find (eg DEVICE_CLASS_USB) (DEVICE_CLASS_ANY for all classes)}
 {Description: The description of the device to find (eg BCM2836 ARM Timer)}
@@ -17931,7 +17947,7 @@ end;
 
 {==============================================================================}
 
-function device_firmware_create(deviceclass: uint32_t; name: PCHAR; buffer: PVOID; size: uint32_t): BOOL; stdcall;
+function device_firmware_create(deviceclass: uint32_t; const name: PCHAR; buffer: PVOID; size: uint32_t): BOOL; stdcall;
 {Create a new block (memory) based firmware entry using the standard block firmware handler}
 {DeviceClass: The class of device this firmware applies to (eg DEVICE_CLASS_NETWORK)(or DEVICE_CLASS_ANY for all devices)}
 {Buffer: A pointer to a block of memory containing the firmware to be provided to requesting devices}
@@ -17946,7 +17962,7 @@ end;
 
 {==============================================================================}
 
-function device_firmware_register(deviceclass: uint32_t; name: PCHAR; handler: device_firmware_handler): THANDLE; stdcall;
+function device_firmware_register(deviceclass: uint32_t; const name: PCHAR; handler: device_firmware_handler): THANDLE; stdcall;
 {Register a new device firmware handler for acquiring device specific firmware}
 {DeviceClass: The class of device this firmware applies to (eg DEVICE_CLASS_NETWORK)(or DEVICE_CLASS_ANY for all devices)}
 {Name: The name of the device firmware, device specific may be a filename, a device model, id or type}
@@ -17972,7 +17988,7 @@ end;
 
 {==============================================================================}
 
-function device_firmware_find(deviceclass: uint32_t; name: PCHAR): PDEVICE_FIRMWARE; stdcall;
+function device_firmware_find(deviceclass: uint32_t; const name: PCHAR): PDEVICE_FIRMWARE; stdcall;
 {Find an existing device firmware handler for a specified device}
 {DeviceClass: The class of device for the firmware (eg DEVICE_CLASS_NETWORK)(or DEVICE_CLASS_ANY for any class)}
 {Name: The name of the device firmware which is a device specific value such as a filename, a device model, id or type}
@@ -17997,7 +18013,7 @@ end;
 
 {==============================================================================}
 
-function device_firmware_open(deviceclass: uint32_t; name: PCHAR; timeout: uint32_t; var handle: THANDLE): uint32_t; stdcall;
+function device_firmware_open(deviceclass: uint32_t; const name: PCHAR; timeout: uint32_t; var handle: THANDLE): uint32_t; stdcall;
 {Open the firmware for a specified device from a registered handler}
 {DeviceClass: The class of device for the firmware (eg DEVICE_CLASS_NETWORK)(or DEVICE_CLASS_ANY for any class)}
 {Name: The name of the device firmware which is a device specific value such as a filename, a device model, id or type}
@@ -18059,7 +18075,7 @@ end;
 
 {==============================================================================}
 
-function device_firmware_acquire(deviceclass: uint32_t; name: PCHAR; timeout: uint32_t; var handle: THANDLE; var buffer: PVOID; var size: uint32_t): uint32_t; stdcall;
+function device_firmware_acquire(deviceclass: uint32_t; const name: PCHAR; timeout: uint32_t; var handle: THANDLE; var buffer: PVOID; var size: uint32_t): uint32_t; stdcall;
 {Acquire a memory block containing the firmware for a specified device from a registered handler}
 {DeviceClass: The class of device for the firmware (eg DEVICE_CLASS_NETWORK)(or DEVICE_CLASS_ANY for any class)}
 {Name: The name of the device firmware which is a device specific value such as a filename, a device model, id or type}
@@ -18183,7 +18199,7 @@ end;
 
 {==============================================================================}
 
-function driver_set_name(driver: PDRIVER; name: PCHAR): uint32_t; stdcall;
+function driver_set_name(driver: PDRIVER; const name: PCHAR): uint32_t; stdcall;
 {Set the name of the supplied Driver}
 {Driver: The driver to set the name for}
 {Name: The driver name to set}
@@ -18229,7 +18245,7 @@ end;
 
 {==============================================================================}
 
-function driver_find_by_name(name: PCHAR): PDRIVER; stdcall;
+function driver_find_by_name(const name: PCHAR): PDRIVER; stdcall;
 {Find a driver by name in the driver table}
 {Name: The name of the driver to find (eg USB Hub Driver)}
 {Return: Pointer to driver entry or nil if not found}
@@ -18427,7 +18443,7 @@ end;
 
 {==============================================================================}
 
-function clock_device_find_by_name(name: PCHAR): PCLOCK_DEVICE; stdcall;
+function clock_device_find_by_name(const name: PCHAR): PCLOCK_DEVICE; stdcall;
 {Find a clock device by name in the clock table}
 {Name: The name of the clock to find (eg Clock0)}
 {Return: Pointer to clock device entry or nil if not found}
@@ -18438,7 +18454,7 @@ end;
 
 {==============================================================================}
 
-function clock_device_find_by_description(description: PCHAR): PCLOCK_DEVICE; stdcall;
+function clock_device_find_by_description(const description: PCHAR): PCLOCK_DEVICE; stdcall;
 {Find a clock device by description in the clock table}
 {Description: The description of the clock to find (eg BCM2836 ARM Timer Clock)}
 {Return: Pointer to clock device entry or nil if not found}
@@ -18696,7 +18712,7 @@ end;
 
 {==============================================================================}
 
-function timer_device_find_by_name(name: PCHAR): PTIMER_DEVICE; stdcall;
+function timer_device_find_by_name(const name: PCHAR): PTIMER_DEVICE; stdcall;
 {Find a timer device by name in the timer table}
 {Name: The name of the timer to find (eg Timer0)}
 {Return: Pointer to timer device entry or nil if not found}
@@ -18707,7 +18723,7 @@ end;
 
 {==============================================================================}
 
-function timer_device_find_by_description(description: PCHAR): PTIMER_DEVICE; stdcall;
+function timer_device_find_by_description(const description: PCHAR): PTIMER_DEVICE; stdcall;
 {Find a timer device by description in the timer table}
 {Description: The description of the timer to find (eg BCM2836 ARM Timer)}
 {Return: Pointer to timer device entry or nil if not found}
@@ -18873,7 +18889,7 @@ end;
 
 {==============================================================================}
 
-function random_device_find_by_name(name: PCHAR): PRANDOM_DEVICE; stdcall;
+function random_device_find_by_name(const name: PCHAR): PRANDOM_DEVICE; stdcall;
 begin
  {}
  Result:=RandomDeviceFindByName(String(name));
@@ -18881,7 +18897,7 @@ end;
 
 {==============================================================================}
 
-function random_device_find_by_description(description: PCHAR): PRANDOM_DEVICE; stdcall;
+function random_device_find_by_description(const description: PCHAR): PRANDOM_DEVICE; stdcall;
 begin
  {}
  Result:=RandomDeviceFindByDescription(String(description));
@@ -19017,7 +19033,7 @@ end;
 
 {==============================================================================}
 
-function mailbox_device_find_by_name(name: PCHAR): PMAILBOX_DEVICE; stdcall;
+function mailbox_device_find_by_name(const name: PCHAR): PMAILBOX_DEVICE; stdcall;
 begin
  {}
  Result:=MailboxDeviceFindByName(String(name));
@@ -19025,7 +19041,7 @@ end;
 
 {==============================================================================}
 
-function mailbox_device_find_by_description(description: PCHAR): PMAILBOX_DEVICE; stdcall;
+function mailbox_device_find_by_description(const description: PCHAR): PMAILBOX_DEVICE; stdcall;
 begin
  {}
  Result:=MailboxDeviceFindByDescription(String(description));
@@ -19153,7 +19169,7 @@ end;
 
 {==============================================================================}
 
-function watchdog_device_find_by_name(name: PCHAR): PWATCHDOG_DEVICE; stdcall;
+function watchdog_device_find_by_name(const name: PCHAR): PWATCHDOG_DEVICE; stdcall;
 begin
  {}
  Result:=WatchdogDeviceFindByName(String(name));
@@ -19161,7 +19177,7 @@ end;
 
 {==============================================================================}
 
-function watchdog_device_find_by_description(description: PCHAR): PWATCHDOG_DEVICE; stdcall;
+function watchdog_device_find_by_description(const description: PCHAR): PWATCHDOG_DEVICE; stdcall;
 begin
  {}
  Result:=WatchdogDeviceFindByDescription(String(description));
@@ -19732,7 +19748,7 @@ end;
 
 {==============================================================================}
 
-function console_device_draw_text(console: PCONSOLE_DEVICE; handle: FONT_HANDLE; text: PCHAR; x, y, forecolor, backcolor, len: uint32_t): uint32_t; stdcall;
+function console_device_draw_text(console: PCONSOLE_DEVICE; handle: FONT_HANDLE; const text: PCHAR; x, y, forecolor, backcolor, len: uint32_t): uint32_t; stdcall;
 {Draw a text string on a console device}
 {Console: The console device to draw on}
 {Handle: The handle of the font to draw with}
@@ -20144,7 +20160,7 @@ end;
 
 {==============================================================================}
 
-function console_device_find_by_name(name: PCHAR): PCONSOLE_DEVICE; stdcall;
+function console_device_find_by_name(const name: PCHAR): PCONSOLE_DEVICE; stdcall;
 {Find a console device by name in the console table}
 {Name: The name of the console to find (eg Console0)}
 {Return: Pointer to console device entry or nil if not found}
@@ -20155,7 +20171,7 @@ end;
 
 {==============================================================================}
 
-function console_device_find_by_description(description: PCHAR): PCONSOLE_DEVICE; stdcall;
+function console_device_find_by_description(const description: PCHAR): PCONSOLE_DEVICE; stdcall;
 {Find a console device by description in the console table}
 {Description: The description of the console to find (eg Framebuffer Console (Framebuffer0))}
 {Return: Pointer to console device entry or nil if not found}
@@ -21058,7 +21074,7 @@ end;
 
 {==============================================================================}
 
-function console_window_add_history(handle: WINDOW_HANDLE; value: PCHAR): uint32_t; stdcall;
+function console_window_add_history(handle: WINDOW_HANDLE; const value: PCHAR): uint32_t; stdcall;
 {Add a value to the command history table of an existing console window}
 {Handle: The handle of the window to add to}
 {Value: The text to add to the command history}
@@ -21227,7 +21243,7 @@ end;
 
 {==============================================================================}
 
-function console_window_write(handle: WINDOW_HANDLE; text: PCHAR): uint32_t; stdcall;
+function console_window_write(handle: WINDOW_HANDLE; const text: PCHAR): uint32_t; stdcall;
 {Write text on an existing console window at the current position in the current color}
 {Handle: The handle of the window to write text on}
 {Text: The text to write}
@@ -21240,7 +21256,7 @@ end;
 
 {==============================================================================}
 
-function console_window_write_ex(handle: WINDOW_HANDLE; text: PCHAR; x, y, forecolor, backcolor: uint32_t): uint32_t; stdcall;
+function console_window_write_ex(handle: WINDOW_HANDLE; const text: PCHAR; x, y, forecolor, backcolor: uint32_t): uint32_t; stdcall;
 {Write text on an existing console window}
 {Handle: The handle of the window to write text on}
 {Text: The text to write}
@@ -21258,7 +21274,7 @@ end;
 
 {==============================================================================}
 
-function console_window_write_ln(handle: WINDOW_HANDLE; text: PCHAR): uint32_t; stdcall;
+function console_window_write_ln(handle: WINDOW_HANDLE; const text: PCHAR): uint32_t; stdcall;
 {Write text on an existing console window at the current position in the current color}
 {Handle: The handle of the window to write text on}
 {Text: The text to write}
@@ -21271,7 +21287,7 @@ end;
 
 {==============================================================================}
 
-function console_window_write_ln_ex(handle: WINDOW_HANDLE; text: PCHAR; x, y, forecolor, backcolor: uint32_t): uint32_t; stdcall;
+function console_window_write_ln_ex(handle: WINDOW_HANDLE; const text: PCHAR; x, y, forecolor, backcolor: uint32_t): uint32_t; stdcall;
 {Write text on an existing console window}
 {Handle: The handle of the window to write text on}
 {Text: The text to write}
@@ -21642,7 +21658,7 @@ end;
 
 {==============================================================================}
 
-procedure console_write(text: PCHAR); stdcall;
+procedure console_write(const text: PCHAR); stdcall;
 {Write text on the default console window at the current position in the current color}
 {Text: The text to write}
 {Note: The window will not scroll up at the end of the line}
@@ -21653,7 +21669,7 @@ end;
 
 {==============================================================================}
 
-procedure console_write_ln(text: PCHAR); stdcall;
+procedure console_write_ln(const text: PCHAR); stdcall;
 {Write text on the default console window at the current position in the current color}
 {Text: The text to write}
 {Note: The window will scroll up at the end of the line}
@@ -21907,7 +21923,7 @@ end;
 
 {==============================================================================}
 
-function logging_device_output(logging: PLOGGING_DEVICE; data: PCHAR): uint32_t; stdcall;
+function logging_device_output(logging: PLOGGING_DEVICE; const data: PCHAR): uint32_t; stdcall;
 begin
  {}
  Result:=LoggingDeviceOutput(logging,String(data));
@@ -21915,7 +21931,7 @@ end;
 
 {==============================================================================}
 
-function logging_device_output_ex(logging: PLOGGING_DEVICE; facility, severity: uint32_t; tag, content: PCHAR): uint32_t; stdcall;
+function logging_device_output_ex(logging: PLOGGING_DEVICE; facility, severity: uint32_t; const tag, content: PCHAR): uint32_t; stdcall;
 begin
  {}
  Result:=LoggingDeviceOutputEx(logging,facility,severity,String(tag),String(content));
@@ -21931,7 +21947,7 @@ end;
 
 {==============================================================================}
 
-function logging_device_set_target(logging: PLOGGING_DEVICE; target: PCHAR): uint32_t; stdcall;
+function logging_device_set_target(logging: PLOGGING_DEVICE; const target: PCHAR): uint32_t; stdcall;
 begin
  {}
  Result:=LoggingDeviceSetTarget(logging,String(target));
@@ -22013,7 +22029,7 @@ end;
 
 {==============================================================================}
 
-function logging_device_find_by_name(name: PCHAR): PLOGGING_DEVICE; stdcall;
+function logging_device_find_by_name(const name: PCHAR): PLOGGING_DEVICE; stdcall;
 begin
  {}
  Result:=LoggingDeviceFindByName(String(name));
@@ -22021,7 +22037,7 @@ end;
 
 {==============================================================================}
 
-function logging_device_find_by_description(description: PCHAR): PLOGGING_DEVICE; stdcall;
+function logging_device_find_by_description(const description: PCHAR): PLOGGING_DEVICE; stdcall;
 begin
  {}
  Result:=LoggingDeviceFindByDescription(String(description));
@@ -23129,7 +23145,7 @@ end;
 
 {==============================================================================}
 
-function usb_device_find_by_name(name: PCHAR): PUSB_DEVICE; stdcall;
+function usb_device_find_by_name(const name: PCHAR): PUSB_DEVICE; stdcall;
 begin
  {}
  Result:=USBDeviceFindByName(String(name));
@@ -23137,7 +23153,7 @@ end;
 
 {==============================================================================}
 
-function usb_device_find_by_description(description: PCHAR): PUSB_DEVICE; stdcall;
+function usb_device_find_by_description(const description: PCHAR): PUSB_DEVICE; stdcall;
 begin
  {}
  Result:=USBDeviceFindByDescription(String(description));
@@ -23218,7 +23234,7 @@ end;
 
 {==============================================================================}
 
-function usb_driver_find_by_name(name: PCHAR): PUSB_DRIVER; stdcall;
+function usb_driver_find_by_name(const name: PCHAR): PUSB_DRIVER; stdcall;
 {Find a driver by name in the Driver table}
 begin
  {}
@@ -23304,7 +23320,7 @@ end;
 
 {==============================================================================}
 
-function usb_host_find_by_name(name: PCHAR): PUSB_HOST; stdcall;
+function usb_host_find_by_name(const name: PCHAR): PUSB_HOST; stdcall;
 begin
  {}
  Result:=USBHostFindByName(String(name));
@@ -23312,7 +23328,7 @@ end;
 
 {==============================================================================}
 
-function usb_host_find_by_description(description: PCHAR): PUSB_HOST; stdcall;
+function usb_host_find_by_description(const description: PCHAR): PUSB_HOST; stdcall;
 begin
  {}
  Result:=USBHostFindByDescription(String(description));
@@ -23670,7 +23686,7 @@ end;
 
 {==============================================================================}
 
-function usb_hub_find_by_name(name: PCHAR): PUSB_HUB; stdcall;
+function usb_hub_find_by_name(const name: PCHAR): PUSB_HUB; stdcall;
 begin
  {}
  Result:=USBHubFindByName(String(name));
@@ -23678,7 +23694,7 @@ end;
 
 {==============================================================================}
 
-function usb_hub_find_by_description(description: PCHAR): PUSB_HUB; stdcall;
+function usb_hub_find_by_description(const description: PCHAR): PUSB_HUB; stdcall;
 begin
  {}
  Result:=USBHubFindByDescription(String(description));
@@ -24706,7 +24722,7 @@ end;
 
 {==============================================================================}
 
-function mmc_device_find_by_name(name: PCHAR): PMMC_DEVICE; stdcall;
+function mmc_device_find_by_name(const name: PCHAR): PMMC_DEVICE; stdcall;
 begin
  {}
  Result:=MMCDeviceFindByName(String(name));
@@ -24714,7 +24730,7 @@ end;
 
 {==============================================================================}
 
-function mmc_device_find_by_description(description: PCHAR): PMMC_DEVICE; stdcall;
+function mmc_device_find_by_description(const description: PCHAR): PMMC_DEVICE; stdcall;
 begin
  {}
  Result:=MMCDeviceFindByDescription(String(description));
@@ -25310,7 +25326,7 @@ end;
 
 {==============================================================================}
 
-function sdio_driver_find_by_name(name: PCHAR): PSDIO_DRIVER; stdcall;
+function sdio_driver_find_by_name(const name: PCHAR): PSDIO_DRIVER; stdcall;
 {Find a driver by name in the Driver table}
 begin
  {}
@@ -26599,7 +26615,7 @@ end;
 
 {==============================================================================}
 
-function spi_device_find_by_name(name: PCHAR): PSPI_DEVICE; stdcall;
+function spi_device_find_by_name(const name: PCHAR): PSPI_DEVICE; stdcall;
 {Find an SPI device by name in the device table}
 {Name: The name of the SPI device to find (eg SPI0)}
 {Return: Pointer to SPI device entry or nil if not found}
@@ -26610,7 +26626,7 @@ end;
 
 {==============================================================================}
 
-function spi_device_find_by_description(description: PCHAR): PSPI_DEVICE; stdcall;
+function spi_device_find_by_description(const description: PCHAR): PSPI_DEVICE; stdcall;
 {Find an SPI device by description in the device table}
 {Description: The description of the SPI to find (eg BCM2837 SPI0 Master)}
 {Return: Pointer to SPI device entry or nil if not found}
@@ -26968,7 +26984,7 @@ end;
 
 {==============================================================================}
 
-function i2c_device_find_by_name(name: PCHAR): PI2C_DEVICE; stdcall;
+function i2c_device_find_by_name(const name: PCHAR): PI2C_DEVICE; stdcall;
 {Find an I2C device by name in the device table}
 {Name: The name of the I2C device to find (eg I2C0)}
 {Return: Pointer to I2C device entry or nil if not found}
@@ -26979,7 +26995,7 @@ end;
 
 {==============================================================================}
 
-function i2c_device_find_by_description(description: PCHAR): PI2C_DEVICE; stdcall;
+function i2c_device_find_by_description(const description: PCHAR): PI2C_DEVICE; stdcall;
 {Find an I2C device by description in the device table}
 {Description: The description of the I2C to find (eg BCM2837 BSC1 Master I2C)}
 {Return: Pointer to I2C device entry or nil if not found}
@@ -27166,7 +27182,7 @@ end;
 
 {==============================================================================}
 
-function i2c_slave_find_by_name(name: PCHAR): PI2C_DEVICE; stdcall;
+function i2c_slave_find_by_name(const name: PCHAR): PI2C_DEVICE; stdcall;
 {Find an I2C slave by name in the device table}
 {Name: The name of the I2C slave to find (eg I2CSlave0)}
 {Return: Pointer to I2C slave entry or nil if not found}
@@ -27177,7 +27193,7 @@ end;
 
 {==============================================================================}
 
-function i2c_slave_find_by_description(description: PCHAR): PI2C_DEVICE; stdcall;
+function i2c_slave_find_by_description(const description: PCHAR): PI2C_DEVICE; stdcall;
 {Find an I2C slave by description in the device table}
 {Description: The description of the I2C slave to find (eg BCM2837 I2C Slave)}
 {Return: Pointer to I2C slave entry or nil if not found}
@@ -27520,7 +27536,7 @@ end;
 
 {==============================================================================}
 
-function pwm_device_find_by_name(name: PCHAR): PPWM_DEVICE; stdcall;
+function pwm_device_find_by_name(const name: PCHAR): PPWM_DEVICE; stdcall;
 begin
  {}
  Result:=PWMDeviceFindByName(String(name));
@@ -27528,7 +27544,7 @@ end;
 
 {==============================================================================}
 
-function pwm_device_find_by_description(description: PCHAR): PPWM_DEVICE; stdcall;
+function pwm_device_find_by_description(const description: PCHAR): PPWM_DEVICE; stdcall;
 begin
  {}
  Result:=PWMDeviceFindByDescription(String(description));
@@ -27921,7 +27937,7 @@ end;
 
 {==============================================================================}
 
-function gpio_device_find_by_name(name: PCHAR): PGPIO_DEVICE; stdcall;
+function gpio_device_find_by_name(const name: PCHAR): PGPIO_DEVICE; stdcall;
 {Find a GPIO device by name in the GPIO table}
 {Name: The name of the GPIO to find (eg GPIO0)}
 {Return: Pointer to GPIO device entry or nil if not found}
@@ -27932,7 +27948,7 @@ end;
 
 {==============================================================================}
 
-function gpio_device_find_by_description(description: PCHAR): PGPIO_DEVICE; stdcall;
+function gpio_device_find_by_description(const description: PCHAR): PGPIO_DEVICE; stdcall;
 {Find a GPIO device by description in the GPIO table}
 {Description: The description of the GPIO to find (eg BCM2836 GPIO)}
 {Return: Pointer to GPIO device entry or nil if not found}
@@ -28318,7 +28334,7 @@ end;
 
 {==============================================================================}
 
-function uart_device_find_by_name(name: PCHAR): PUART_DEVICE; stdcall;
+function uart_device_find_by_name(const name: PCHAR): PUART_DEVICE; stdcall;
 {Find a UART device by name in the UART table}
 {Name: The name of the UART to find (eg UART0)}
 {Return: Pointer to UART device entry or nil if not found}
@@ -28329,7 +28345,7 @@ end;
 
 {==============================================================================}
 
-function uart_device_find_by_description(description: PCHAR): PUART_DEVICE; stdcall;
+function uart_device_find_by_description(const description: PCHAR): PUART_DEVICE; stdcall;
 {Find a UART device by description in the UART table}
 {Description: The description of the UART to find (eg BCM2836 PL011 UART)}
 {Return: Pointer to UART device entry or nil if not found}
@@ -28677,7 +28693,7 @@ end;
 
 {==============================================================================}
 
-function serial_device_find_by_name(name: PCHAR): PSERIAL_DEVICE; stdcall;
+function serial_device_find_by_name(const name: PCHAR): PSERIAL_DEVICE; stdcall;
 {Find a serial device by name in the serial table}
 {Name: The name of the serial to find (eg Serial0)}
 {Return: Pointer to serial device entry or nil if not found}
@@ -28688,7 +28704,7 @@ end;
 
 {==============================================================================}
 
-function serial_device_find_by_description(description: PCHAR): PSERIAL_DEVICE; stdcall;
+function serial_device_find_by_description(const description: PCHAR): PSERIAL_DEVICE; stdcall;
 {Find a serial device by description in the serial table}
 {Description: The description of the serial to find (eg BCM2836 PL011 UART)}
 {Return: Pointer to serial device entry or nil if not found}
@@ -28895,12 +28911,12 @@ end;
 
 {==============================================================================}
 
-function serial_logging_device_parameters(serial: PSERIAL_DEVICE; parameters: PCHAR; var baudrate, parity, databits, stopbits: uint32_t): uint32_t; stdcall;
+function serial_logging_device_parameters(serial: PSERIAL_DEVICE; const parameters: PCHAR; var baudrate, parity, databits, stopbits: uint32_t): uint32_t; stdcall;
 {Break down the serial parameters value into component parts of baud rate, parity, data bits and stop bits}
 {The parameters must be in the form 'BaudRate,Parity,DataBits,StopBits' (eg '115200,N,8,1')}
 begin
  {}
- Result:=SerialLoggingDeviceParameters(serial,parameters,baudrate,parity,databits,stopbits);
+ Result:=SerialLoggingDeviceParameters(serial,String(parameters),baudrate,parity,databits,stopbits);
 end;
 {$ENDIF}
 {==============================================================================}
@@ -29020,7 +29036,7 @@ end;
 
 {==============================================================================}
 
-function rtc_device_find_by_name(name: PCHAR): PRTC_DEVICE; stdcall;
+function rtc_device_find_by_name(const name: PCHAR): PRTC_DEVICE; stdcall;
 begin
  {}
  Result:=RTCDeviceFindByName(String(name));
@@ -29028,7 +29044,7 @@ end;
 
 {==============================================================================}
 
-function rtc_device_find_by_description(description: PCHAR): PRTC_DEVICE; stdcall;
+function rtc_device_find_by_description(const description: PCHAR): PRTC_DEVICE; stdcall;
 begin
  {}
  Result:=RTCDeviceFindByDescription(String(description));
@@ -29222,7 +29238,7 @@ end;
 
 {==============================================================================}
 
-function font_text_width(handle: FONT_HANDLE; text: PCHAR): uint32_t; stdcall;
+function font_text_width(handle: FONT_HANDLE; const text: PCHAR): uint32_t; stdcall;
 begin
  {}
  Result:=FontTextWidth(handle,String(text));
@@ -29230,7 +29246,7 @@ end;
 
 {==============================================================================}
 
-function font_text_height(handle: FONT_HANDLE; text: PCHAR): uint32_t; stdcall;
+function font_text_height(handle: FONT_HANDLE; const text: PCHAR): uint32_t; stdcall;
 begin
  {}
  Result:=FontTextHeight(handle,String(text));
@@ -29238,7 +29254,7 @@ end;
 
 {==============================================================================}
 
-function font_find_by_name(name: PCHAR): FONT_HANDLE; stdcall;
+function font_find_by_name(const name: PCHAR): FONT_HANDLE; stdcall;
 begin
  {}
  Result:=FontFindByName(String(name));
@@ -29246,7 +29262,7 @@ end;
 
 {==============================================================================}
 
-function font_find_by_description(description: PCHAR): FONT_HANDLE; stdcall;
+function font_find_by_description(const description: PCHAR): FONT_HANDLE; stdcall;
 begin
  {}
  Result:=FontFindByDescription(String(description));
@@ -29262,7 +29278,7 @@ end;
 
 {==============================================================================}
 {PSF Font Functions}
-function psf_font_load(filename: PCHAR): FONT_HANDLE; stdcall;
+function psf_font_load(const filename: PCHAR): FONT_HANDLE; stdcall;
 begin
  {}
  Result:=PSFFontLoad(String(filename));
@@ -29790,7 +29806,7 @@ end;
 
 {==============================================================================}
 
-function framebuffer_device_find_by_name(name: PCHAR): PFRAMEBUFFER_DEVICE; stdcall;
+function framebuffer_device_find_by_name(const name: PCHAR): PFRAMEBUFFER_DEVICE; stdcall;
 {Find a framebuffer device by name in the framebuffer table}
 {Name: The name of the framebuffer to find (eg Framebuffer0)}
 {Return: Pointer to framebuffer device entry or nil if not found}
@@ -29801,7 +29817,7 @@ end;
 
 {==============================================================================}
 
-function framebuffer_device_find_by_description(description: PCHAR): PFRAMEBUFFER_DEVICE; stdcall;
+function framebuffer_device_find_by_description(const description: PCHAR): PFRAMEBUFFER_DEVICE; stdcall;
 {Find a framebuffer device by description in the framebuffer table}
 {Description: The description of the framebuffer to find (eg BCM2836 Framebuffer)}
 {Return: Pointer to framebuffer device entry or nil if not found}
@@ -30784,7 +30800,7 @@ end;
 
 {==============================================================================}
 
-function graphics_window_draw_text(handle: WINDOW_HANDLE; text: PCHAR; x, y: uint32_t): uint32_t; stdcall;
+function graphics_window_draw_text(handle: WINDOW_HANDLE; const text: PCHAR; x, y: uint32_t): uint32_t; stdcall;
 {Draw a text string on an existing console window}
 {Handle: The handle of the window to draw on}
 {Text: The text to draw}
@@ -30799,7 +30815,7 @@ end;
 
 {==============================================================================}
 
-function graphics_window_draw_text_ex(handle: WINDOW_HANDLE; font: FONT_HANDLE; text: PCHAR; x, y, forecolor, backcolor: uint32_t): uint32_t; stdcall;
+function graphics_window_draw_text_ex(handle: WINDOW_HANDLE; font: FONT_HANDLE; const text: PCHAR; x, y, forecolor, backcolor: uint32_t): uint32_t; stdcall;
 {Draw a text string on an existing console window}
 {Handle: The handle of the window to draw on}
 {Font: The handle of the font to draw the text with}
@@ -31668,7 +31684,7 @@ end;
 
 {==============================================================================}
 
-function hid_device_find_by_name(name: PCHAR): PHID_DEVICE; stdcall;
+function hid_device_find_by_name(const name: PCHAR): PHID_DEVICE; stdcall;
 {Find a HID device by name in the device table}
 {Name: The name of the HID device to find (eg HID0)}
 {Return: Pointer to HID device entry or nil if not found}
@@ -31679,7 +31695,7 @@ end;
 
 {==============================================================================}
 
-function hid_device_find_by_description(description: PCHAR): PHID_DEVICE; stdcall;
+function hid_device_find_by_description(const description: PCHAR): PHID_DEVICE; stdcall;
 {Find a HID device by description in the device table}
 {Description: The description of the HID to find (eg Optical USB Mouse)}
 {Return: Pointer to HID device entry or nil if not found}
@@ -31773,7 +31789,7 @@ end;
 
 {==============================================================================}
 
-function hid_consumer_find_by_name(name: PCHAR): PHID_CONSUMER; stdcall;
+function hid_consumer_find_by_name(const name: PCHAR): PHID_CONSUMER; stdcall;
 {Find a consumer by name in the Driver table}
 begin
  {}
@@ -32119,7 +32135,7 @@ end;
 
 {==============================================================================}
 
-function keymap_find_by_name(name: PCHAR): KEYMAP_HANDLE; stdcall;
+function keymap_find_by_name(const name: PCHAR): KEYMAP_HANDLE; stdcall;
 {Find a keymap by name}
 {Name: The name of the keymap to find (eg US)}
 {Return: The handle of the matching keymap or INVALID_HANDLE_VALUE if not found}
@@ -32130,7 +32146,7 @@ end;
 
 {==============================================================================}
 
-function keymap_find_by_description(description: PCHAR): KEYMAP_HANDLE; stdcall;
+function keymap_find_by_description(const description: PCHAR): KEYMAP_HANDLE; stdcall;
 {Find a keymap by description}
 {Description: The description of the keymap to find (eg US English)}
 {Return: The handle of the matching keymap or INVALID_HANDLE_VALUE if not found}
@@ -32399,7 +32415,7 @@ end;
 
 {==============================================================================}
 
-function keyboard_device_find_by_name(name: PCHAR): PKEYBOARD_DEVICE; stdcall;
+function keyboard_device_find_by_name(const name: PCHAR): PKEYBOARD_DEVICE; stdcall;
 {Find a keyboard device by name in the keyboard table}
 {Name: The name of the keyboard to find (eg Keyboard0)}
 {Return: Pointer to keyboard device entry or nil if not found}
@@ -32410,7 +32426,7 @@ end;
 
 {==============================================================================}
 
-function keyboard_device_find_by_description(description: PCHAR): PKEYBOARD_DEVICE; stdcall;
+function keyboard_device_find_by_description(const description: PCHAR): PKEYBOARD_DEVICE; stdcall;
 {Find a keyboard device by description in the keyboard table}
 {Description: The description of the keyboard to find (eg USB HID Keyboard)}
 {Return: Pointer to keyboard device entry or nil if not found}
@@ -32731,7 +32747,7 @@ end;
 
 {==============================================================================}
 
-function mouse_device_find_by_name(name: PCHAR): PMOUSE_DEVICE; stdcall;
+function mouse_device_find_by_name(const name: PCHAR): PMOUSE_DEVICE; stdcall;
 {Find a mouse device by name in the mouse table}
 {Name: The name of the mouse to find (eg Mouse0)}
 {Return: Pointer to mouse device entry or nil if not found}
@@ -32742,7 +32758,7 @@ end;
 
 {==============================================================================}
 
-function mouse_device_find_by_description(description: PCHAR): PMOUSE_DEVICE; stdcall;
+function mouse_device_find_by_description(const description: PCHAR): PMOUSE_DEVICE; stdcall;
 {Find a mouse device by description in the mouse table}
 {Description: The description of the mouse to find (eg USB HID Mouse)}
 {Return: Pointer to mouse device entry or nil if not found}
@@ -33046,7 +33062,7 @@ end;
 
 {==============================================================================}
 
-function touch_device_find_by_name(name: PCHAR): PTOUCH_DEVICE; stdcall;
+function touch_device_find_by_name(const name: PCHAR): PTOUCH_DEVICE; stdcall;
 {Find a Touch device by name in the device table}
 {Name: The name of the Touch device to find (eg Touch0)}
 {Return: Pointer to Touch device entry or nil if not found}
@@ -33057,7 +33073,7 @@ end;
 
 {==============================================================================}
 
-function touch_device_find_by_description(description: PCHAR): PTOUCH_DEVICE; stdcall;
+function touch_device_find_by_description(const description: PCHAR): PTOUCH_DEVICE; stdcall;
 {Find a Touch device by description in the device table}
 {Description: The description of the Touch to find (eg USB Touchscreen)}
 {Return: Pointer to Touch device entry or nil if not found}
@@ -33393,7 +33409,7 @@ end;
 
 {==============================================================================}
 
-function joystick_device_find_by_name(name: PCHAR): PJOYSTICK_DEVICE; stdcall;
+function joystick_device_find_by_name(const name: PCHAR): PJOYSTICK_DEVICE; stdcall;
 {Find a Joystick device by name in the device table}
 {Name: The name of the Joystick device to find (eg Joystick0)}
 {Return: Pointer to Joystick device entry or nil if not found}
@@ -33404,7 +33420,7 @@ end;
 
 {==============================================================================}
 
-function joystick_device_find_by_description(description: PCHAR): PJOYSTICK_DEVICE; stdcall;
+function joystick_device_find_by_description(const description: PCHAR): PJOYSTICK_DEVICE; stdcall;
 {Find a Joystick device by description in the device table}
 {Description: The description of the Joystick to find (eg USB Gamepad)}
 {Return: Pointer to Joystick device entry or nil if not found}
@@ -33776,7 +33792,7 @@ end;
 
 {==============================================================================}
 
-function storage_device_find_by_name(name: PCHAR): PSTORAGE_DEVICE; stdcall;
+function storage_device_find_by_name(const name: PCHAR): PSTORAGE_DEVICE; stdcall;
 begin
  {}
  Result:=StorageDeviceFindByName(String(name));
@@ -33784,7 +33800,7 @@ end;
 
 {==============================================================================}
 
-function storage_device_find_by_description(description: PCHAR): PSTORAGE_DEVICE; stdcall;
+function storage_device_find_by_description(const description: PCHAR): PSTORAGE_DEVICE; stdcall;
 begin
  {}
  Result:=StorageDeviceFindByDescription(String(description));
@@ -34047,7 +34063,7 @@ end;
 
 {==============================================================================}
 
-function network_device_find_by_name(name: PCHAR): PNETWORK_DEVICE; stdcall;
+function network_device_find_by_name(const name: PCHAR): PNETWORK_DEVICE; stdcall;
 begin
  {}
  Result:=NetworkDeviceFindByName(String(name));
@@ -34055,7 +34071,7 @@ end;
 
 {==============================================================================}
 
-function network_device_find_by_description(description: PCHAR): PNETWORK_DEVICE; stdcall;
+function network_device_find_by_description(const description: PCHAR): PNETWORK_DEVICE; stdcall;
 begin
  {}
  Result:=NetworkDeviceFindByDescription(String(description));
@@ -34555,7 +34571,7 @@ end;
 
 {==============================================================================}
 
-function timezone_find(name: PCHAR): PTIMEZONE_ENTRY; stdcall;
+function timezone_find(const name: PCHAR): PTIMEZONE_ENTRY; stdcall;
 begin
  {}
  Result:=TimezoneFind(String(name));
@@ -34563,7 +34579,7 @@ end;
 
 {==============================================================================}
 
-function timezone_find_by_standard(standardname: PCHAR): PTIMEZONE_ENTRY; stdcall;
+function timezone_find_by_standard(const standardname: PCHAR): PTIMEZONE_ENTRY; stdcall;
 begin
  {}
  Result:=TimezoneFindByStandard(String(standardname));
@@ -34571,7 +34587,7 @@ end;
 
 {==============================================================================}
 
-function timezone_find_by_daylight(daylightname: PCHAR): PTIMEZONE_ENTRY; stdcall;
+function timezone_find_by_daylight(const daylightname: PCHAR): PTIMEZONE_ENTRY; stdcall;
 begin
  {}
  Result:=TimezoneFindByDaylight(String(daylightname));
@@ -35298,7 +35314,7 @@ end;
 
 {==============================================================================}
 {File Functions}
-function FileOpen(filename: PCHAR; mode: int): THANDLE; stdcall;
+function FileOpen(const filename: PCHAR; mode: int): THANDLE; stdcall;
 begin
  {}
  Result:=FileSystem.FSFileOpen(String(filename),mode);
@@ -35306,7 +35322,7 @@ end;
 
 {==============================================================================}
 
-function FileCreate(filename: PCHAR): THANDLE; stdcall;
+function FileCreate(const filename: PCHAR): THANDLE; stdcall;
 begin
  {}
  Result:=FileSystem.FSFileCreate(String(filename));
@@ -35378,7 +35394,7 @@ end;
 
 {==============================================================================}
 
-function FileAge(filename: PCHAR): int; stdcall;
+function FileAge(const filename: PCHAR): int; stdcall;
 begin
  {}
  Result:=FileSystem.FSFileAge(String(filename));
@@ -35386,7 +35402,7 @@ end;
 
 {==============================================================================}
 
-function FileExists(filename: PCHAR): BOOL; stdcall;
+function FileExists(const filename: PCHAR): BOOL; stdcall;
 begin
  {}
  Result:=FileSystem.FSFileExists(String(filename));
@@ -35394,7 +35410,7 @@ end;
 
 {==============================================================================}
 
-function FileGetAttr(filename: PCHAR): int; stdcall;
+function FileGetAttr(const filename: PCHAR): int; stdcall;
 begin
  {}
  Result:=FileSystem.FSFileGetAttr(String(filename));
@@ -35410,7 +35426,7 @@ end;
 
 {==============================================================================}
 
-function FileSetAttr(filename: PCHAR; attr: int): int; stdcall;
+function FileSetAttr(const filename: PCHAR; attr: int): int; stdcall;
 begin
  {}
  Result:=FileSystem.FSFileSetAttr(String(filename),attr);
@@ -35442,7 +35458,7 @@ end;
 
 {==============================================================================}
 {Directory Functions}
-function CreateDir(dirname: PCHAR): BOOL; stdcall;
+function CreateDir(const dirname: PCHAR): BOOL; stdcall;
 begin
  {}
  Result:=FileSystem.FSCreateDir(String(dirname));
@@ -35450,7 +35466,7 @@ end;
 
 {==============================================================================}
 
-function RemoveDir(dirname: PCHAR): BOOL; stdcall;
+function RemoveDir(const dirname: PCHAR): BOOL; stdcall;
 begin
  {}
  Result:=FileSystem.FSRemoveDir(String(dirname));
@@ -35475,7 +35491,7 @@ end;
 
 {==============================================================================}
 
-function SetCurrentDir(dirname: PCHAR): BOOL; stdcall;
+function SetCurrentDir(const dirname: PCHAR): BOOL; stdcall;
 begin
  {}
  Result:=FileSystem.FSSetCurrentDir(String(dirname));
@@ -35483,7 +35499,7 @@ end;
 
 {==============================================================================}
 
-function DirectoryExists(dirname: PCHAR): BOOL; stdcall;
+function DirectoryExists(const dirname: PCHAR): BOOL; stdcall;
 begin
  {}
  Result:=FileSystem.FSDirectoryExists(String(dirname));
@@ -35499,7 +35515,7 @@ end;
 
 {==============================================================================}
 
-procedure DeleteTree(dirname: PCHAR); stdcall;
+procedure DeleteTree(const dirname: PCHAR); stdcall;
 begin
  {}
  FileSystem.FSDeleteTree(String(dirname));
@@ -35526,7 +35542,7 @@ end;
 
 {==============================================================================}
 
-function GetShortName(filename: PCHAR; shortname: PCHAR; len: uint32_t): uint32_t; stdcall;
+function GetShortName(const filename: PCHAR; shortname: PCHAR; len: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=APIStringToPCharBuffer(FileSystem.FSGetShortName(String(filename)),shortname,len);
@@ -35534,7 +35550,7 @@ end;
 
 {==============================================================================}
 
-function GetLongName(filename: PCHAR; longname: PCHAR; len: uint32_t): uint32_t; stdcall;
+function GetLongName(const filename: PCHAR; longname: PCHAR; len: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=APIStringToPCharBuffer(FileSystem.FSGetLongName(String(filename)),longname,len);
@@ -35542,7 +35558,7 @@ end;
 
 {==============================================================================}
 
-function GetTrueName(filename: PCHAR; truename: PCHAR; len: uint32_t): uint32_t; stdcall;
+function GetTrueName(const filename: PCHAR; truename: PCHAR; len: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=APIStringToPCharBuffer(FileSystem.FSGetTrueName(String(filename)),truename,len);
@@ -35582,7 +35598,7 @@ end;
 
 {==============================================================================}
 
-function FileAgeEx(filename: PCHAR): FILETIME; stdcall;
+function FileAgeEx(const filename: PCHAR): FILETIME; stdcall;
 begin
  {}
  Result:=FileSystem.FSFileAgeEx(String(filename));
@@ -35614,7 +35630,7 @@ end;
 
 {==============================================================================}
 
-function FindFirstEx(path: PCHAR; var searchrec: TFileSearchRec): int; stdcall;
+function FindFirstEx(const path: PCHAR; var searchrec: TFileSearchRec): int; stdcall;
 begin
  {}
  Result:=FileSystem.FSFindFirstEx(String(path),searchrec);
@@ -35869,7 +35885,7 @@ end;
 
 {==============================================================================}
 
-function inet_addr(cp: PCHAR): u_long; stdcall; // PInAddr;
+function inet_addr(const cp: PCHAR): u_long; stdcall; // PInAddr;
 begin
  {}
  Result:=Winsock.inet_addr(cp);
@@ -35937,7 +35953,7 @@ end;
 
 {==============================================================================}
 
-function send(s: TSOCKET; buf: PCHAR; len: tOS_INT; flags: tOS_INT): tOS_INT; stdcall;
+function send(s: TSOCKET; const buf: PCHAR; len: tOS_INT; flags: tOS_INT): tOS_INT; stdcall;
 begin
  {}
  Result:=Winsock.send(s,buf^,len,flags);
@@ -35945,7 +35961,7 @@ end;
 
 {==============================================================================}
 
-function sendto(s: TSOCKET; buf: PCHAR; len: tOS_INT; flags: tOS_INT; toaddr: PSockAddr; tolen: tOS_INT): tOS_INT; stdcall;
+function sendto(s: TSOCKET; const buf: PCHAR; len: tOS_INT; flags: tOS_INT; toaddr: PSockAddr; tolen: tOS_INT): tOS_INT; stdcall;
 begin
  {}
  Result:=Winsock.sendto(s,buf^,len,flags,toaddr^,tolen);
@@ -35953,7 +35969,7 @@ end;
 
 {==============================================================================}
 
-function setsockopt(s: TSOCKET; level: tOS_INT; optname: tOS_INT; optval: PCHAR; optlen: tOS_INT): tOS_INT; stdcall;
+function setsockopt(s: TSOCKET; level: tOS_INT; optname: tOS_INT; const optval: PCHAR; optlen: tOS_INT): tOS_INT; stdcall;
 begin
  {}
  Result:=Winsock.setsockopt(s,level,optname,optval,optlen);
@@ -35977,7 +35993,7 @@ end;
 
 {==============================================================================}
 
-function gethostbyaddr(addr: PCHAR; len: tOS_INT; family: tOS_INT): PHostEnt; stdcall;
+function gethostbyaddr(const addr: PCHAR; len: tOS_INT; family: tOS_INT): PHostEnt; stdcall;
 begin
  {}
  Result:=Winsock.gethostbyaddr(addr,len,family);
@@ -35985,7 +36001,7 @@ end;
 
 {==============================================================================}
 
-function gethostbyname(name: PCHAR): PHostEnt; stdcall;
+function gethostbyname(const name: PCHAR): PHostEnt; stdcall;
 begin
  {}
  Result:=Winsock.gethostbyname(name);
@@ -36001,7 +36017,7 @@ end;
 
 {==============================================================================}
 
-function getservbyport(port: tOS_INT; proto: PCHAR): PServEnt; stdcall;
+function getservbyport(port: tOS_INT; const proto: PCHAR): PServEnt; stdcall;
 begin
  {}
  Result:=Winsock.getservbyport(port,proto);
@@ -36009,7 +36025,7 @@ end;
 
 {==============================================================================}
 
-function getservbyname(name, proto: PCHAR): PServEnt; stdcall;
+function getservbyname(const name, proto: PCHAR): PServEnt; stdcall;
 begin
  {}
  Result:=Winsock.getservbyname(name,proto);
@@ -36025,7 +36041,7 @@ end;
 
 {==============================================================================}
 
-function getprotobyname(name: PCHAR): PProtoEnt; stdcall;
+function getprotobyname(const name: PCHAR): PProtoEnt; stdcall;
 begin
  {}
  Result:=Winsock.getprotobyname(name);
@@ -36097,7 +36113,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetServByName(hwnd: HWND; wmsg: u_int; name: PCHAR; proto: PCHAR; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall;
+function WSAAsyncGetServByName(hwnd: HWND; wmsg: u_int; const name: PCHAR; const proto: PCHAR; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall;
 begin
  {}
  Result:=Winsock.WSAAsyncGetServByName(hwnd,wmsg,name,proto,buf,buflen);
@@ -36113,7 +36129,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetProtoByName(hwnd: HWND; wmsg: u_int; name: PCHAR; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall;
+function WSAAsyncGetProtoByName(hwnd: HWND; wmsg: u_int; const name: PCHAR; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall;
 begin
  {}
  Result:=Winsock.WSAAsyncGetProtoByName(hwnd,wmsg,name,buf,buflen);
@@ -36129,7 +36145,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetHostByName(hwnd: HWND; wmsg: u_int; name: PCHAR; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall;
+function WSAAsyncGetHostByName(hwnd: HWND; wmsg: u_int; const name: PCHAR; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall;
 begin
  {}
  Result:=Winsock.WSAAsyncGetHostByName(hwnd,wmsg,name,buf,buflen);
@@ -36137,7 +36153,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetHostByAddr(hwnd: HWND; wmsg: u_int; addr: PCHAR; len: tOS_INT; family: tOS_INT; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall;
+function WSAAsyncGetHostByAddr(hwnd: HWND; wmsg: u_int; const addr: PCHAR; len: tOS_INT; family: tOS_INT; buf: PCHAR; buflen: tOS_INT): THANDLE; stdcall;
 begin
  {}
  Result:=Winsock.WSAAsyncGetHostByAddr(hwnd,wmsg,addr,len,family,buf,buflen);
@@ -36305,7 +36321,7 @@ end;
 
 {==============================================================================}
 
-function getnetbyname(name: PCHAR): PNetEnt; stdcall;
+function getnetbyname(const name: PCHAR): PNetEnt; stdcall;
 begin
  {}
  Result:=Winsock.getnetbyname(name);
@@ -36461,7 +36477,7 @@ end;
 
 {==============================================================================}
 
-function inet_addr(cp: PCHAR): u_long; stdcall;
+function inet_addr(const cp: PCHAR): u_long; stdcall;
 begin
  {}
  Result:=Winsock2.inet_addr(cp);
@@ -36529,7 +36545,7 @@ end;
 
 {==============================================================================}
 
-function send(s: TSOCKET; buf: PCHAR; len, flags: int32_t): int32_t; stdcall;
+function send(s: TSOCKET; const buf: PCHAR; len, flags: int32_t): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.send(s,buf^,len,flags);
@@ -36537,7 +36553,7 @@ end;
 
 {==============================================================================}
 
-function sendto(s: TSOCKET; buf: PCHAR; len, flags: int32_t; addrto: PSockAddr; tolen: int32_t): int32_t; stdcall;
+function sendto(s: TSOCKET; const buf: PCHAR; len, flags: int32_t; addrto: PSockAddr; tolen: int32_t): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.sendto(s,buf^,len,flags,addrto^,tolen);
@@ -36545,7 +36561,7 @@ end;
 
 {==============================================================================}
 
-function setsockopt(s: TSOCKET; level, optname: int32_t; optval: PCHAR; optlen: int32_t): int32_t; stdcall;
+function setsockopt(s: TSOCKET; level, optname: int32_t; const optval: PCHAR; optlen: int32_t): int32_t; stdcall;
 begin
  {}
  Result:=Winsock2.setsockopt(s,level,optname,optval,optlen);
@@ -36577,7 +36593,7 @@ end;
 
 {==============================================================================}
 
-function gethostbyname(name: PCHAR): PHostEnt; stdcall;
+function gethostbyname(const name: PCHAR): PHostEnt; stdcall;
 begin
  {}
  Result:=Winsock2.gethostbyname(name);
@@ -36593,7 +36609,7 @@ end;
 
 {==============================================================================}
 
-function getservbyport(port: int32_t; proto: PCHAR): PServEnt; stdcall;
+function getservbyport(port: int32_t; const proto: PCHAR): PServEnt; stdcall;
 begin
  {}
  Result:=Winsock2.getservbyport(port,proto);
@@ -36601,7 +36617,7 @@ end;
 
 {==============================================================================}
 
-function getservbyname(name, proto: PCHAR): PServEnt; stdcall;
+function getservbyname(const name, proto: PCHAR): PServEnt; stdcall;
 begin
  {}
  Result:=Winsock2.getservbyname(name,proto);
@@ -36617,7 +36633,7 @@ end;
 
 {==============================================================================}
 
-function getprotobyname(name: PCHAR): PProtoEnt; stdcall;
+function getprotobyname(const name: PCHAR): PProtoEnt; stdcall;
 begin
  {}
  Result:=Winsock2.getprotobyname(name);
@@ -36713,7 +36729,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetServByName(hwindow: HWND; wmsg: u_int; name, proto, buf: PCHAR; buflen: int32_t): THANDLE; stdcall;
+function WSAAsyncGetServByName(hwindow: HWND; wmsg: u_int; const name, proto: PCHAR; buf: PCHAR; buflen: int32_t): THANDLE; stdcall;
 begin
  {}
  Result:=Winsock2.WSAAsyncGetServByName(hwindow,wmsg,name,proto,buf,buflen);
@@ -36729,7 +36745,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetProtoByName(hwindow: HWND; wmsg: u_int; name, buf: PCHAR; buflen: int32_t): THANDLE; stdcall;
+function WSAAsyncGetProtoByName(hwindow: HWND; wmsg: u_int; const name: PCHAR; buf: PCHAR; buflen: int32_t): THANDLE; stdcall;
 begin
  {}
  Result:=Winsock2.WSAAsyncGetProtoByName(hwindow,wmsg,name,buf,buflen);
@@ -36745,7 +36761,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetHostByName(hwindow: HWND; wmsg: u_int; name, buf: PCHAR; buflen: int32_t): THANDLE; stdcall;
+function WSAAsyncGetHostByName(hwindow: HWND; wmsg: u_int; const name: PCHAR; buf: PCHAR; buflen: int32_t): THANDLE; stdcall;
 begin
  {}
  Result:=Winsock2.WSAAsyncGetHostByName(hwindow,wmsg,name,buf,buflen);
@@ -36753,7 +36769,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetHostByAddr(hwindow: HWND; wmsg: u_int; addr: PCHAR; len, family: int32_t; buf: PCHAR; buflen: int32_t): THANDLE; stdcall;
+function WSAAsyncGetHostByAddr(hwindow: HWND; wmsg: u_int; const addr: PCHAR; len, family: int32_t; buf: PCHAR; buflen: int32_t): THANDLE; stdcall;
 begin
  {}
  Result:=Winsock2.WSAAsyncGetHostByAddr(hwindow,wmsg,addr,len,family,buf,buflen);
@@ -37337,7 +37353,7 @@ end;
 
 {==============================================================================}
 
-function getnetbyname(name: PCHAR): PNetEnt; stdcall;
+function getnetbyname(const name: PCHAR): PNetEnt; stdcall;
 begin
  {}
  Result:=Winsock2.getnetbyname(name);
@@ -37768,7 +37784,7 @@ end;
 function MIBTCPRTOToString(value: uint32_t; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
 begin
  {}
- Result:APIStringToPCharBuffer(=Iphlpapi.MIBTCPRTOToString(value),_string,len);
+ Result:=APIStringToPCharBuffer(Iphlpapi.MIBTCPRTOToString(value),_string,len);
 end;
 
 {==============================================================================}
@@ -37896,7 +37912,7 @@ end;
 
 {==============================================================================}
 
-function SetComputerName(lpcomputername: LPCSTR): BOOL; stdcall;
+function SetComputerName(const lpcomputername: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetComputerName(lpcomputername);
@@ -37904,7 +37920,7 @@ end;
 
 {==============================================================================}
 
-function SetComputerNameA(lpcomputername: LPCSTR): BOOL; stdcall;
+function SetComputerNameA(const lpcomputername: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetComputerNameA(lpcomputername);
@@ -37912,7 +37928,7 @@ end;
 
 {==============================================================================}
 
-function SetComputerNameW(lpcomputername: LPCWSTR): BOOL; stdcall;
+function SetComputerNameW(const lpcomputername: LPCWSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetComputerNameW(lpcomputername);
@@ -37944,7 +37960,7 @@ end;
 
 {==============================================================================}
 
-function SetComputerNameEx(nametype: COMPUTER_NAME_FORMAT; lpbuffer: LPCSTR): BOOL; stdcall;
+function SetComputerNameEx(nametype: COMPUTER_NAME_FORMAT; const lpbuffer: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetComputerNameEx(nametype,lpbuffer);
@@ -37952,7 +37968,7 @@ end;
 
 {==============================================================================}
 
-function SetComputerNameExA(nametype: COMPUTER_NAME_FORMAT; lpbuffer: LPCSTR): BOOL; stdcall;
+function SetComputerNameExA(nametype: COMPUTER_NAME_FORMAT; const lpbuffer: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetComputerNameExA(nametype,lpbuffer);
@@ -37960,7 +37976,7 @@ end;
 
 {==============================================================================}
 
-function SetComputerNameExW(nametype: COMPUTER_NAME_FORMAT; lpbuffer: LPCWSTR): BOOL; stdcall;
+function SetComputerNameExW(nametype: COMPUTER_NAME_FORMAT; const lpbuffer: LPCWSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetComputerNameExW(nametype,lpbuffer);
@@ -38242,7 +38258,7 @@ end;
 
 {==============================================================================}
 
-function SetCurrentTimezone(name: PCHAR): BOOL; stdcall;
+function SetCurrentTimezone(const name: PCHAR): BOOL; stdcall;
 {Set the current Timezone by name}
 begin
  {}
@@ -38512,7 +38528,7 @@ end;
 
 {==============================================================================}
 {Drive Functions (Compatibility)}
-function GetDiskType(lprootpathname: LPCSTR): UINT; stdcall;
+function GetDiskType(const lprootpathname: LPCSTR): UINT; stdcall;
 begin
  {}
  Result:=Ultibo.GetDiskType(lprootpathname);
@@ -38520,7 +38536,7 @@ end;
 
 {==============================================================================}
 
-function GetDriveTypeA(lprootpathname: LPCSTR): UINT; stdcall;
+function GetDriveTypeA(const lprootpathname: LPCSTR): UINT; stdcall;
 begin
  {}
  Result:=Ultibo.GetDriveTypeA(lprootpathname);
@@ -38528,7 +38544,7 @@ end;
 
 {==============================================================================}
 
-function GetDriveTypeW(lprootpathname: LPCWSTR): UINT; stdcall;
+function GetDriveTypeW(const lprootpathname: LPCWSTR): UINT; stdcall;
 begin
  {}
  Result:=Ultibo.GetDriveTypeW(lprootpathname);
@@ -38568,7 +38584,7 @@ end;
 
 {==============================================================================}
 
-function DefineDosDevice(dwflags: uint32_t; lpdevicename, lptargetpath: LPCSTR): BOOL; stdcall;
+function DefineDosDevice(dwflags: uint32_t; const lpdevicename, lptargetpath: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.DefineDosDevice(dwflags,lpdevicename,lptargetpath);
@@ -38576,7 +38592,7 @@ end;
 
 {==============================================================================}
 
-function DefineDosDeviceA(dwflags: uint32_t; lpdevicename, lptargetpath: LPCSTR): BOOL; stdcall;
+function DefineDosDeviceA(dwflags: uint32_t; const lpdevicename, lptargetpath: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.DefineDosDeviceA(dwflags,lpdevicename,lptargetpath);
@@ -38584,7 +38600,7 @@ end;
 
 {==============================================================================}
 
-function DefineDosDeviceW(dwflags: uint32_t; lpdevicename, lptargetpath: LPCWSTR): BOOL; stdcall;
+function DefineDosDeviceW(dwflags: uint32_t; const lpdevicename, lptargetpath: LPCWSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.DefineDosDeviceW(dwflags,lpdevicename,lptargetpath);
@@ -38592,7 +38608,7 @@ end;
 
 {==============================================================================}
 
-function QueryDosDevice(lpdevicename, lptargetpath: LPSTR; ucchmax: uint32_t): uint32_t; stdcall;
+function QueryDosDevice(const lpdevicename: LPCSTR; lptargetpath: LPSTR; ucchmax: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.QueryDosDevice(lpdevicename,lptargetpath,ucchmax);
@@ -38600,7 +38616,7 @@ end;
 
 {==============================================================================}
 
-function QueryDosDeviceA(lpdevicename, lptargetpath: LPSTR; ucchmax: uint32_t): uint32_t; stdcall;
+function QueryDosDeviceA(const lpdevicename: LPCSTR; lptargetpath: LPSTR; ucchmax: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.QueryDosDeviceA(lpdevicename,lptargetpath,ucchmax);
@@ -38608,7 +38624,7 @@ end;
 
 {==============================================================================}
 
-function QueryDosDeviceW(lpdevicename, lptargetpath: LPWSTR; ucchmax: uint32_t): uint32_t; stdcall;
+function QueryDosDeviceW(const lpdevicename: LPCWSTR; lptargetpath: LPWSTR; ucchmax: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.QueryDosDeviceW(lpdevicename,lptargetpath,ucchmax);
@@ -38616,7 +38632,7 @@ end;
 
 {==============================================================================}
 
-function SetVolumeLabel(lprootpathname, lpvolumename: LPCSTR): BOOL; stdcall;
+function SetVolumeLabel(const lprootpathname, lpvolumename: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetVolumeLabel(lprootpathname,lpvolumename);
@@ -38624,7 +38640,7 @@ end;
 
 {==============================================================================}
 
-function SetVolumeLabelA(lprootpathname, lpvolumename: LPCSTR): BOOL; stdcall;
+function SetVolumeLabelA(const lprootpathname, lpvolumename: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetVolumeLabelA(lprootpathname,lpvolumename);
@@ -38632,7 +38648,7 @@ end;
 
 {==============================================================================}
 
-function SetVolumeLabelW(lprootpathname, lpvolumename: LPCWSTR): BOOL; stdcall;
+function SetVolumeLabelW(const lprootpathname, lpvolumename: LPCWSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetVolumeLabelW(lprootpathname,lpvolumename);
@@ -38640,7 +38656,7 @@ end;
 
 {==============================================================================}
 
-function GetVolumeInformation(lprootpathname: LPCSTR; lpvolumenamebuffer: LPSTR; nvolumenamesize: uint32_t; lpvolumeserialnumber: LPDWORD; var lpmaximumcomponentlength, lpfilesystemflags: uint32_t; lpfilesystemnamebuffer: LPSTR; nfilesystemnamesize: uint32_t): BOOL; stdcall;
+function GetVolumeInformation(const lprootpathname: LPCSTR; lpvolumenamebuffer: LPSTR; nvolumenamesize: uint32_t; lpvolumeserialnumber: LPDWORD; var lpmaximumcomponentlength, lpfilesystemflags: uint32_t; lpfilesystemnamebuffer: LPSTR; nfilesystemnamesize: uint32_t): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.GetVolumeInformation(lprootpathname,lpvolumenamebuffer,nvolumenamesize,lpvolumeserialnumber,lpmaximumcomponentlength,lpfilesystemflags,lpfilesystemnamebuffer,nfilesystemnamesize);
@@ -38648,7 +38664,7 @@ end;
 
 {==============================================================================}
 
-function GetVolumeInformationA(lprootpathname: LPCSTR; lpvolumenamebuffer: LPSTR; nvolumenamesize: uint32_t; lpvolumeserialnumber: LPDWORD; var lpmaximumcomponentlength, lpfilesystemflags: uint32_t; lpfilesystemnamebuffer: LPSTR; nfilesystemnamesize: uint32_t): BOOL; stdcall;
+function GetVolumeInformationA(const lprootpathname: LPCSTR; lpvolumenamebuffer: LPSTR; nvolumenamesize: uint32_t; lpvolumeserialnumber: LPDWORD; var lpmaximumcomponentlength, lpfilesystemflags: uint32_t; lpfilesystemnamebuffer: LPSTR; nfilesystemnamesize: uint32_t): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.GetVolumeInformationA(lprootpathname,lpvolumenamebuffer,nvolumenamesize,lpvolumeserialnumber,lpmaximumcomponentlength,lpfilesystemflags,lpfilesystemnamebuffer,nfilesystemnamesize);
@@ -38656,7 +38672,7 @@ end;
 
 {==============================================================================}
 
-function GetVolumeInformationW(lprootpathname: LPCWSTR; lpvolumenamebuffer: LPWSTR; nvolumenamesize: uint32_t; lpvolumeserialnumber: LPDWORD; var lpmaximumcomponentlength, lpfilesystemflags: uint32_t; lpfilesystemnamebuffer: LPWSTR; nfilesystemnamesize: uint32_t): BOOL; stdcall;
+function GetVolumeInformationW(const lprootpathname: LPCWSTR; lpvolumenamebuffer: LPWSTR; nvolumenamesize: uint32_t; lpvolumeserialnumber: LPDWORD; var lpmaximumcomponentlength, lpfilesystemflags: uint32_t; lpfilesystemnamebuffer: LPWSTR; nfilesystemnamesize: uint32_t): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.GetVolumeInformationW(lprootpathname,lpvolumenamebuffer,nvolumenamesize,lpvolumeserialnumber,lpmaximumcomponentlength,lpfilesystemflags,lpfilesystemnamebuffer,nfilesystemnamesize);
@@ -38664,7 +38680,7 @@ end;
 
 {==============================================================================}
 
-function GetDiskFreeSpace(lprootpathname: LPCSTR; var lpsectorspercluster, lpbytespersector, lpnumberoffreeclusters, lptotalnumberofclusters: uint32_t): BOOL; stdcall;
+function GetDiskFreeSpace(const lprootpathname: LPCSTR; var lpsectorspercluster, lpbytespersector, lpnumberoffreeclusters, lptotalnumberofclusters: uint32_t): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.GetDiskFreeSpace(lprootpathname,lpsectorspercluster,lpbytespersector,lpnumberoffreeclusters,lptotalnumberofclusters);
@@ -38672,7 +38688,7 @@ end;
 
 {==============================================================================}
 
-function GetDiskFreeSpaceA(lprootpathname: LPCSTR; var lpsectorspercluster, lpbytespersector, lpnumberoffreeclusters, lptotalnumberofclusters: uint32_t): BOOL; stdcall;
+function GetDiskFreeSpaceA(const lprootpathname: LPCSTR; var lpsectorspercluster, lpbytespersector, lpnumberoffreeclusters, lptotalnumberofclusters: uint32_t): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.GetDiskFreeSpaceA(lprootpathname,lpsectorspercluster,lpbytespersector,lpnumberoffreeclusters,lptotalnumberofclusters);
@@ -38680,7 +38696,7 @@ end;
 
 {==============================================================================}
 
-function GetDiskFreeSpaceW(lprootpathname: LPCWSTR; var lpsectorspercluster, lpbytespersector, lpnumberoffreeclusters, lptotalnumberofclusters: uint32_t): BOOL; stdcall;
+function GetDiskFreeSpaceW(const lprootpathname: LPCWSTR; var lpsectorspercluster, lpbytespersector, lpnumberoffreeclusters, lptotalnumberofclusters: uint32_t): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.GetDiskFreeSpaceW(lprootpathname,lpsectorspercluster,lpbytespersector,lpnumberoffreeclusters,lptotalnumberofclusters);
@@ -38688,7 +38704,7 @@ end;
 
 {==============================================================================}
 
-function GetDiskFreeSpaceEx(lpdirectoryname: LPCSTR; var lpfreebytesavailabletocaller, lptotalnumberofbytes: ULARGE_INTEGER; lptotalnumberoffreebytes: PULARGE_INTEGER): BOOL; stdcall;
+function GetDiskFreeSpaceEx(const lpdirectoryname: LPCSTR; var lpfreebytesavailabletocaller, lptotalnumberofbytes: ULARGE_INTEGER; lptotalnumberoffreebytes: PULARGE_INTEGER): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.GetDiskFreeSpaceEx(lpdirectoryname,lpfreebytesavailabletocaller,lptotalnumberofbytes,lptotalnumberoffreebytes);
@@ -38696,7 +38712,7 @@ end;
 
 {==============================================================================}
 
-function GetDiskFreeSpaceExA(lpdirectoryname: LPCSTR; var lpfreebytesavailabletocaller, lptotalnumberofbytes: ULARGE_INTEGER; lptotalnumberoffreebytes: PULARGE_INTEGER): BOOL; stdcall;
+function GetDiskFreeSpaceExA(const lpdirectoryname: LPCSTR; var lpfreebytesavailabletocaller, lptotalnumberofbytes: ULARGE_INTEGER; lptotalnumberoffreebytes: PULARGE_INTEGER): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.GetDiskFreeSpaceExA(lpdirectoryname,lpfreebytesavailabletocaller,lptotalnumberofbytes,lptotalnumberoffreebytes);
@@ -38704,7 +38720,7 @@ end;
 
 {==============================================================================}
 
-function GetDiskFreeSpaceExW(lpdirectoryname: LPCWSTR; var lpfreebytesavailabletocaller, lptotalnumberofbytes: ULARGE_INTEGER; lptotalnumberoffreebytes: PULARGE_INTEGER): BOOL; stdcall;
+function GetDiskFreeSpaceExW(const lpdirectoryname: LPCWSTR; var lpfreebytesavailabletocaller, lptotalnumberofbytes: ULARGE_INTEGER; lptotalnumberoffreebytes: PULARGE_INTEGER): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.GetDiskFreeSpaceExW(lpdirectoryname,lpfreebytesavailabletocaller,lptotalnumberofbytes,lptotalnumberoffreebytes);
@@ -38712,7 +38728,7 @@ end;
 
 {==============================================================================}
 {Drive Functions (Ultibo)}
-function GetPathDrive(path: PCHAR): uint8_t; stdcall;
+function GetPathDrive(const path: PCHAR): uint8_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetPathDrive(String(path));
@@ -38752,7 +38768,7 @@ end;
 
 {==============================================================================}
 
-function SetDriveLabel(drive: uint8_t; _label: PCHAR): BOOL; stdcall;
+function SetDriveLabel(drive: uint8_t; const _label: PCHAR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetDriveLabel(drive,String(_label));
@@ -38832,7 +38848,7 @@ end;
 
 {==============================================================================}
 
-function GetDriveInformation(path: PCHAR; var clustersize: uint32_t; var totalclustercount, freeclustercount: int64_t): BOOL; stdcall;
+function GetDriveInformation(const path: PCHAR; var clustersize: uint32_t; var totalclustercount, freeclustercount: int64_t): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.GetDriveInformation(String(path),clustersize,totalclustercount,freeclustercount);
@@ -38848,7 +38864,7 @@ end;
 
 {==============================================================================}
 
-function SetCurrentDrive(drive: PCHAR): BOOL; stdcall;
+function SetCurrentDrive(const drive: PCHAR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetCurrentDrive(String(drive));
@@ -38880,7 +38896,7 @@ end;
 
 {==============================================================================}
 
-function CreateFile(lpfilename: LPCSTR; dwdesiredaccess, dwsharemode: uint32_t; lpsecurityattributes: LPSECURITY_ATTRIBUTES; dwcreationdisposition: uint32_t; dwflagsandattributes: uint32_t; htemplatefile: HANDLE): HANDLE; stdcall;
+function CreateFile(const lpfilename: LPCSTR; dwdesiredaccess, dwsharemode: uint32_t; lpsecurityattributes: LPSECURITY_ATTRIBUTES; dwcreationdisposition: uint32_t; dwflagsandattributes: uint32_t; htemplatefile: HANDLE): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.CreateFile(lpfilename,dwdesiredaccess,dwsharemode,lpsecurityattributes,dwcreationdisposition,dwflagsandattributes,htemplatefile);
@@ -38888,7 +38904,7 @@ end;
 
 {==============================================================================}
 
-function CreateFileA(lpfilename: LPCSTR; dwdesiredaccess, dwsharemode: uint32_t; lpsecurityattributes: LPSECURITY_ATTRIBUTES; dwcreationdisposition: uint32_t; dwflagsandattributes: uint32_t; htemplatefile: HANDLE): HANDLE; stdcall;
+function CreateFileA(const lpfilename: LPCSTR; dwdesiredaccess, dwsharemode: uint32_t; lpsecurityattributes: LPSECURITY_ATTRIBUTES; dwcreationdisposition: uint32_t; dwflagsandattributes: uint32_t; htemplatefile: HANDLE): HANDLE; stdcall;
 {Note: lpSecurityAttributes and hTemplateFile are currently ignored by Ultibo}
 begin
  {}
@@ -38897,7 +38913,7 @@ end;
 
 {==============================================================================}
 
-function CreateFileW(lpfilename: LPCWSTR; dwdesiredaccess, dwsharemode: uint32_t; lpsecurityattributes: LPSECURITY_ATTRIBUTES; dwcreationdisposition: uint32_t; dwflagsandattributes: uint32_t; htemplatefile: HANDLE): HANDLE; stdcall;
+function CreateFileW(const lpfilename: LPCWSTR; dwdesiredaccess, dwsharemode: uint32_t; lpsecurityattributes: LPSECURITY_ATTRIBUTES; dwcreationdisposition: uint32_t; dwflagsandattributes: uint32_t; htemplatefile: HANDLE): HANDLE; stdcall;
 {Note: lpSecurityAttributes and hTemplateFile are currently ignored by Ultibo}
 begin
  {}
@@ -38906,7 +38922,7 @@ end;
 
 {==============================================================================}
 
-function SetFileAttributes(lpfilename: LPCSTR; dwfileattributes: uint32_t): BOOL; stdcall;
+function SetFileAttributes(const lpfilename: LPCSTR; dwfileattributes: uint32_t): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetFileAttributes(lpfilename,dwfileattributes);
@@ -38914,7 +38930,7 @@ end;
 
 {==============================================================================}
 
-function SetFileAttributesA(lpfilename: LPCSTR; dwfileattributes: uint32_t): BOOL; stdcall;
+function SetFileAttributesA(const lpfilename: LPCSTR; dwfileattributes: uint32_t): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetFileAttributesA(lpfilename,dwfileattributes);
@@ -38922,7 +38938,7 @@ end;
 
 {==============================================================================}
 
-function SetFileAttributesW(lpfilename: LPCWSTR; dwfileattributes: uint32_t): BOOL; stdcall;
+function SetFileAttributesW(const lpfilename: LPCWSTR; dwfileattributes: uint32_t): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetFileAttributesW(lpfilename,dwfileattributes);
@@ -38930,7 +38946,7 @@ end;
 
 {==============================================================================}
 
-function GetFileAttributes(lpfilename: LPCSTR): uint32_t; stdcall;
+function GetFileAttributes(const lpfilename: LPCSTR): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetFileAttributes(lpfilename);
@@ -38938,7 +38954,7 @@ end;
 
 {==============================================================================}
 
-function GetFileAttributesA(lpfilename: LPCSTR): uint32_t; stdcall;
+function GetFileAttributesA(const lpfilename: LPCSTR): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetFileAttributesA(lpfilename);
@@ -38946,7 +38962,7 @@ end;
 
 {==============================================================================}
 
-function GetFileAttributesW(lpfilename: LPCWSTR): uint32_t; stdcall;
+function GetFileAttributesW(const lpfilename: LPCWSTR): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetFileAttributesW(lpfilename);
@@ -38954,7 +38970,7 @@ end;
 
 {==============================================================================}
 
-function DeleteFile(lpfilename: LPCSTR): BOOL; stdcall;
+function DeleteFile(const lpfilename: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.DeleteFile(lpfilename);
@@ -38962,7 +38978,7 @@ end;
 
 {==============================================================================}
 
-function DeleteFileA(lpfilename: LPCSTR): BOOL; stdcall;
+function DeleteFileA(const lpfilename: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.DeleteFileA(lpfilename);
@@ -38970,7 +38986,7 @@ end;
 
 {==============================================================================}
 
-function DeleteFileW(lpfilename: LPCWSTR): BOOL; stdcall;
+function DeleteFileW(const lpfilename: LPCWSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.DeleteFileW(lpfilename);
@@ -38978,7 +38994,7 @@ end;
 
 {==============================================================================}
 
-function MoveFile(lpexistingfilename, lpnewfilename: LPCSTR): BOOL; stdcall;
+function MoveFile(const lpexistingfilename, lpnewfilename: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.MoveFile(lpexistingfilename,lpnewfilename);
@@ -38986,7 +39002,7 @@ end;
 
 {==============================================================================}
 
-function MoveFileA(lpexistingfilename, lpnewfilename: LPCSTR): BOOL; stdcall;
+function MoveFileA(const lpexistingfilename, lpnewfilename: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.MoveFileA(lpexistingfilename,lpnewfilename);
@@ -38994,7 +39010,7 @@ end;
 
 {==============================================================================}
 
-function MoveFileW(lpexistingfilename, lpnewfilename: LPCWSTR): BOOL; stdcall;
+function MoveFileW(const lpexistingfilename, lpnewfilename: LPCWSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.MoveFileW(lpexistingfilename,lpnewfilename);
@@ -39002,7 +39018,7 @@ end;
 
 {==============================================================================}
 
-function FindFirstFile(lpfilename: LPCSTR; var lpfindfiledata: WIN32_FIND_DATAA): HANDLE; stdcall;
+function FindFirstFile(const lpfilename: LPCSTR; var lpfindfiledata: WIN32_FIND_DATAA): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.FindFirstFile(lpfilename,lpfindfiledata);
@@ -39010,7 +39026,7 @@ end;
 
 {==============================================================================}
 
-function FindFirstFileA(lpfilename: LPCSTR; var lpfindfiledata: WIN32_FIND_DATAA): HANDLE; stdcall;
+function FindFirstFileA(const lpfilename: LPCSTR; var lpfindfiledata: WIN32_FIND_DATAA): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.FindFirstFileA(lpfilename,lpfindfiledata);
@@ -39018,7 +39034,7 @@ end;
 
 {==============================================================================}
 
-function FindFirstFileW(lpfilename: LPCWSTR; var lpfindfiledata: WIN32_FIND_DATAW): HANDLE; stdcall;
+function FindFirstFileW(const lpfilename: LPCWSTR; var lpfindfiledata: WIN32_FIND_DATAW): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.FindFirstFileW(lpfilename,lpfindfiledata);
@@ -39138,7 +39154,7 @@ end;
 
 {==============================================================================}
 
-function CopyFile(lpexistingfilename, lpnewfilename: LPCSTR; bfailifexists: BOOL): BOOL; stdcall;
+function CopyFile(const lpexistingfilename, lpnewfilename: LPCSTR; bfailifexists: BOOL): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.CopyFile(lpexistingfilename,lpnewfilename,bfailifexists);
@@ -39146,7 +39162,7 @@ end;
 
 {==============================================================================}
 
-function CopyFileA(lpexistingfilename, lpnewfilename: LPCSTR; bfailifexists: BOOL): BOOL; stdcall;
+function CopyFileA(const lpexistingfilename, lpnewfilename: LPCSTR; bfailifexists: BOOL): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.CopyFileA(lpexistingfilename,lpnewfilename,bfailifexists);
@@ -39154,7 +39170,7 @@ end;
 
 {==============================================================================}
 
-function CopyFileW(lpexistingfilename, lpnewfilename: LPCWSTR; bfailifexists: BOOL): BOOL; stdcall;
+function CopyFileW(const lpexistingfilename, lpnewfilename: LPCWSTR; bfailifexists: BOOL): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.CopyFileW(lpexistingfilename,lpnewfilename,bfailifexists);
@@ -39162,7 +39178,7 @@ end;
 
 {==============================================================================}
 
-function SetFileShortName(hfile: HANDLE; lpshortname: LPCSTR): BOOL; stdcall;
+function SetFileShortName(hfile: HANDLE; const lpshortname: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetFileShortName(hfile,lpshortname);
@@ -39170,7 +39186,7 @@ end;
 
 {==============================================================================}
 
-function SetFileShortNameA(hfile: HANDLE; lpshortname: LPCSTR): BOOL; stdcall;
+function SetFileShortNameA(hfile: HANDLE; const lpshortname: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetFileShortNameA(hfile,lpshortname);
@@ -39178,7 +39194,7 @@ end;
 
 {==============================================================================}
 
-function SetFileShortNameW(hfile: HANDLE; lpshortname: LPCWSTR): BOOL; stdcall;
+function SetFileShortNameW(hfile: HANDLE; const lpshortname: LPCWSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetFileShortNameW(hfile,lpshortname);
@@ -39186,7 +39202,7 @@ end;
 
 {==============================================================================}
 
-function CreateHardLink(lpfilename, lpexistingfilename: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall;
+function CreateHardLink(const lpfilename, lpexistingfilename: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.CreateHardLink(lpfilename,lpexistingfilename,lpsecurityattributes);
@@ -39194,7 +39210,7 @@ end;
 
 {==============================================================================}
 
-function CreateHardLinkA(lpfilename, lpexistingfilename: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall;
+function CreateHardLinkA(const lpfilename, lpexistingfilename: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall;
 {Note: lpSecurityAttributes is currently ignored by Ultibo}
 begin
  {}
@@ -39203,7 +39219,7 @@ end;
 
 {==============================================================================}
 
-function CreateHardLinkW(lpfilename, lpexistingfilename: LPCWSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall;
+function CreateHardLinkW(const lpfilename, lpexistingfilename: LPCWSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall;
 {Note: lpSecurityAttributes is currently ignored by Ultibo}
 begin
  {}
@@ -39212,7 +39228,7 @@ end;
 
 {==============================================================================}
 
-function CreateSymbolicLink(lpsymlinkfilename, lptargetfilename: LPCSTR; dwflags: uint32_t): BOOL; stdcall;
+function CreateSymbolicLink(const lpsymlinkfilename, lptargetfilename: LPCSTR; dwflags: uint32_t): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.CreateSymbolicLink(lpsymlinkfilename,lptargetfilename,dwflags);
@@ -39220,7 +39236,7 @@ end;
 
 {==============================================================================}
 
-function CreateSymbolicLinkA(lpsymlinkfilename, lptargetfilename: LPCSTR; dwflags: uint32_t): BOOL; stdcall;
+function CreateSymbolicLinkA(const lpsymlinkfilename, lptargetfilename: LPCSTR; dwflags: uint32_t): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.CreateSymbolicLinkA(lpsymlinkfilename,lptargetfilename,dwflags);
@@ -39228,7 +39244,7 @@ end;
 
 {==============================================================================}
 
-function CreateSymbolicLinkW(lpsymlinkfilename, lptargetfilename: LPCWSTR; dwflags: uint32_t): BOOL; stdcall;
+function CreateSymbolicLinkW(const lpsymlinkfilename, lptargetfilename: LPCWSTR; dwflags: uint32_t): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.CreateSymbolicLinkW(lpsymlinkfilename,lptargetfilename,dwflags);
@@ -39244,7 +39260,7 @@ end;
 
 {==============================================================================}
 
-function GetFinalPathNameByHandle(hfile: HANDLE; lpszfilepath: LPCSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall;
+function GetFinalPathNameByHandle(hfile: HANDLE; lpszfilepath: LPSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetFinalPathNameByHandle(hfile,lpszfilepath,cchfilepath,dwflags);
@@ -39252,7 +39268,7 @@ end;
 
 {==============================================================================}
 
-function GetFinalPathNameByHandleA(hfile: HANDLE; lpszfilepath: LPCSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall;
+function GetFinalPathNameByHandleA(hfile: HANDLE; lpszfilepath: LPSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetFinalPathNameByHandleA(hfile,lpszfilepath,cchfilepath,dwflags);
@@ -39260,7 +39276,7 @@ end;
 
 {==============================================================================}
 
-function GetFinalPathNameByHandleW(hfile: HANDLE; lpszfilepath: LPCWSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall;
+function GetFinalPathNameByHandleW(hfile: HANDLE; lpszfilepath: LPWSTR; cchfilepath, dwflags: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetFinalPathNameByHandleW(hfile,lpszfilepath,cchfilepath,dwflags);
@@ -39271,7 +39287,7 @@ end;
 
 {==============================================================================}
 {Directory Functions (Compatibility)}
-function CreateDirectory(lppathname: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall;
+function CreateDirectory(const lppathname: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.CreateDirectory(lppathname,lpsecurityattributes);
@@ -39279,7 +39295,7 @@ end;
 
 {==============================================================================}
 
-function CreateDirectoryA(lppathname: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall;
+function CreateDirectoryA(const lppathname: LPCSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall;
 {Note: lpSecurityAttributes is currently ignored by Ultibo}
 begin
  {}
@@ -39288,7 +39304,7 @@ end;
 
 {==============================================================================}
 
-function CreateDirectoryW(lppathname: LPCWSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall;
+function CreateDirectoryW(const lppathname: LPCWSTR; lpsecurityattributes: LPSECURITY_ATTRIBUTES): BOOL; stdcall;
 {Note: lpSecurityAttributes is currently ignored by Ultibo}
 begin
  {}
@@ -39297,7 +39313,7 @@ end;
 
 {==============================================================================}
 
-function RemoveDirectory(lppathname: LPCSTR): BOOL; stdcall;
+function RemoveDirectory(const lppathname: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.RemoveDirectory(lppathname);
@@ -39305,7 +39321,7 @@ end;
 
 {==============================================================================}
 
-function RemoveDirectoryA(lppathname: LPCSTR): BOOL; stdcall;
+function RemoveDirectoryA(const lppathname: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.RemoveDirectoryA(lppathname);
@@ -39313,7 +39329,7 @@ end;
 
 {==============================================================================}
 
-function RemoveDirectoryW(lppathname: LPCWSTR): BOOL; stdcall;
+function RemoveDirectoryW(const lppathname: LPCWSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.RemoveDirectoryW(lppathname);
@@ -39321,7 +39337,7 @@ end;
 
 {==============================================================================}
 
-function SetCurrentDirectory(lppathname: LPCSTR): BOOL; stdcall;
+function SetCurrentDirectory(const lppathname: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetCurrentDirectory(lppathname);
@@ -39329,7 +39345,7 @@ end;
 
 {==============================================================================}
 
-function SetCurrentDirectoryA(lppathname: LPCSTR): BOOL; stdcall;
+function SetCurrentDirectoryA(const lppathname: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetCurrentDirectoryA(lppathname);
@@ -39337,7 +39353,7 @@ end;
 
 {==============================================================================}
 
-function SetCurrentDirectoryW(lppathname: LPCWSTR): BOOL; stdcall;
+function SetCurrentDirectoryW(const lppathname: LPCWSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetCurrentDirectoryW(lppathname);
@@ -39369,7 +39385,7 @@ end;
 
 {==============================================================================}
 
-function GetLongPathName(lpszshortpath: LPCSTR; lpszlongpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall;
+function GetLongPathName(const lpszshortpath: LPCSTR; lpszlongpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetLongPathName(lpszshortpath,lpszlongpath,cchbuffer);
@@ -39377,7 +39393,7 @@ end;
 
 {==============================================================================}
 
-function GetLongPathNameA(lpszshortpath: LPCSTR; lpszlongpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall;
+function GetLongPathNameA(const lpszshortpath: LPCSTR; lpszlongpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetLongPathNameA(lpszshortpath,lpszlongpath,cchbuffer);
@@ -39385,7 +39401,7 @@ end;
 
 {==============================================================================}
 
-function GetLongPathNameW(lpszshortpath: LPCWSTR; lpszlongpath: LPWSTR; cchbuffer: uint32_t): uint32_t; stdcall;
+function GetLongPathNameW(const lpszshortpath: LPCWSTR; lpszlongpath: LPWSTR; cchbuffer: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetLongPathNameW(lpszshortpath,lpszlongpath,cchbuffer);
@@ -39393,7 +39409,7 @@ end;
 
 {==============================================================================}
 
-function GetShortPathName(lpszlongpath: LPCSTR; lpszshortpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall;
+function GetShortPathName(const lpszlongpath: LPCSTR; lpszshortpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetShortPathName(lpszlongpath,lpszshortpath,cchbuffer);
@@ -39401,7 +39417,7 @@ end;
 
 {==============================================================================}
 
-function GetShortPathNameA(lpszlongpath: LPCSTR; lpszshortpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall;
+function GetShortPathNameA(const lpszlongpath: LPCSTR; lpszshortpath: LPSTR; cchbuffer: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetShortPathNameA(lpszlongpath,lpszshortpath,cchbuffer);
@@ -39409,7 +39425,7 @@ end;
 
 {==============================================================================}
 
-function GetShortPathNameW(lpszlongpath: LPCWSTR; lpszshortpath: LPWSTR; cchbuffer: uint32_t): uint32_t; stdcall;
+function GetShortPathNameW(const lpszlongpath: LPCWSTR; lpszshortpath: LPWSTR; cchbuffer: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetShortPathNameW(lpszlongpath,lpszshortpath,cchbuffer);
@@ -39417,7 +39433,7 @@ end;
 
 {==============================================================================}
 
-function GetFullPathName(lpfilename: LPCSTR; nbufferlength: uint32_t; lpbuffer: LPSTR; var lpfilepart: LPSTR): uint32_t; stdcall;
+function GetFullPathName(const lpfilename: LPCSTR; nbufferlength: uint32_t; lpbuffer: LPSTR; var lpfilepart: LPSTR): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetFullPathName(lpfilename,nbufferlength,lpbuffer,lpfilepart);
@@ -39425,7 +39441,7 @@ end;
 
 {==============================================================================}
 
-function GetFullPathNameA(lpfilename: LPCSTR; nbufferlength: uint32_t; lpbuffer: LPSTR; var lpfilepart: LPSTR): uint32_t; stdcall;
+function GetFullPathNameA(const lpfilename: LPCSTR; nbufferlength: uint32_t; lpbuffer: LPSTR; var lpfilepart: LPSTR): uint32_t; stdcall;
 {Note: lpFilePart is currently ignored by Ultibo}
 begin
  {}
@@ -39434,7 +39450,7 @@ end;
 
 {==============================================================================}
 
-function GetFullPathNameW(lpfilename: LPCWSTR; nbufferlength: uint32_t; lpbuffer: LPWSTR; var lpfilepart: LPWSTR): uint32_t; stdcall;
+function GetFullPathNameW(const lpfilename: LPCWSTR; nbufferlength: uint32_t; lpbuffer: LPWSTR; var lpfilepart: LPWSTR): uint32_t; stdcall;
 {Note: lpFilePart is currently ignored by Ultibo}
 begin
  {}
@@ -39472,7 +39488,7 @@ end;
 
 {==============================================================================}
 {Command Line Functions (Ultibo)}
-function IsParamPresent(param: PCHAR): BOOL; stdcall;
+function IsParamPresent(const param: PCHAR): BOOL; stdcall;
 {Check if the specified parameter is present in the command line}
 begin
  {}
@@ -39481,7 +39497,7 @@ end;
 
 {==============================================================================}
 
-function GetParamIndex(param: PCHAR): int; stdcall;
+function GetParamIndex(const param: PCHAR): int; stdcall;
 {Get the index of the specified parameter in the command line}
 begin
  {}
@@ -39490,7 +39506,7 @@ end;
 
 {==============================================================================}
 
-function GetParamValue(param: PCHAR; value: PCHAR; len: uint32_t): uint32_t; stdcall;
+function GetParamValue(const param: PCHAR; value: PCHAR; len: uint32_t): uint32_t; stdcall;
 {Get the value of the specified parameter from the command line}
 begin
  {}
@@ -39547,7 +39563,7 @@ end;
 
 {==============================================================================}
 
-function GetEnvironmentVariable(lpname: LPCSTR; lpbuffer: LPSTR; nsize: uint32_t): uint32_t; stdcall;
+function GetEnvironmentVariable(const lpname: LPCSTR; lpbuffer: LPSTR; nsize: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetEnvironmentVariable(lpname,lpbuffer,nsize);
@@ -39555,7 +39571,7 @@ end;
 
 {==============================================================================}
 
-function GetEnvironmentVariableA(lpname: LPCSTR; lpbuffer: LPSTR; nsize: uint32_t): uint32_t; stdcall;
+function GetEnvironmentVariableA(const lpname: LPCSTR; lpbuffer: LPSTR; nsize: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetEnvironmentVariableA(lpname,lpbuffer,nsize);
@@ -39563,7 +39579,7 @@ end;
 
 {==============================================================================}
 
-function GetEnvironmentVariableW(lpname: LPCWSTR; lpbuffer: LPWSTR; nsize: uint32_t): uint32_t; stdcall;
+function GetEnvironmentVariableW(const lpname: LPCWSTR; lpbuffer: LPWSTR; nsize: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.GetEnvironmentVariableW(lpname,lpbuffer,nsize);
@@ -39571,7 +39587,7 @@ end;
 
 {==============================================================================}
 
-function SetEnvironmentVariable(lpname, lpvalue: LPCSTR): BOOL; stdcall;
+function SetEnvironmentVariable(const lpname, lpvalue: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetEnvironmentVariable(lpname,lpvalue);
@@ -39579,7 +39595,7 @@ end;
 
 {==============================================================================}
 
-function SetEnvironmentVariableA(lpname, lpvalue: LPCSTR): BOOL; stdcall;
+function SetEnvironmentVariableA(const lpname, lpvalue: LPCSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetEnvironmentVariableA(lpname,lpvalue);
@@ -39587,7 +39603,7 @@ end;
 
 {==============================================================================}
 
-function SetEnvironmentVariableW(lpname, lpvalue: LPCWSTR): BOOL; stdcall;
+function SetEnvironmentVariableW(const lpname, lpvalue: LPCWSTR): BOOL; stdcall;
 begin
  {}
  Result:=Ultibo.SetEnvironmentVariableW(lpname,lpvalue);
@@ -39595,7 +39611,7 @@ end;
 
 {==============================================================================}
 
-function ExpandEnvironmentStrings(lpsrc: LPCSTR; lpdst: LPSTR; nsize: uint32_t): uint32_t; stdcall;
+function ExpandEnvironmentStrings(const lpsrc: LPCSTR; lpdst: LPSTR; nsize: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.ExpandEnvironmentStrings(lpsrc,lpdst,nsize);
@@ -39603,7 +39619,7 @@ end;
 
 {==============================================================================}
 
-function ExpandEnvironmentStringsA(lpsrc: LPCSTR; lpdst: LPSTR; nsize: uint32_t): uint32_t; stdcall;
+function ExpandEnvironmentStringsA(const lpsrc: LPCSTR; lpdst: LPSTR; nsize: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.ExpandEnvironmentStringsA(lpsrc,lpdst,nsize);
@@ -39611,7 +39627,7 @@ end;
 
 {==============================================================================}
 
-function ExpandEnvironmentStringsW(lpsrc: LPCWSTR; lpdst: LPWSTR; nsize: uint32_t): uint32_t; stdcall;
+function ExpandEnvironmentStringsW(const lpsrc: LPCWSTR; lpdst: LPWSTR; nsize: uint32_t): uint32_t; stdcall;
 begin
  {}
  Result:=Ultibo.ExpandEnvironmentStringsW(lpsrc,lpdst,nsize);
@@ -39658,7 +39674,7 @@ end;
 
 {==============================================================================}
 
-function StringToGUID(value: PCHAR): TGUID; stdcall;
+function StringToGUID(const value: PCHAR): TGUID; stdcall;
 begin
  {}
  Result:=Ultibo.StringToGUID(String(value));
@@ -39831,7 +39847,7 @@ end;
 
 {==============================================================================}
 {Hash Functions (Ultibo)}
-function GenerateNameHash(name: PCHAR; size: int): uint32_t; stdcall;
+function GenerateNameHash(const name: PCHAR; size: int): uint32_t; stdcall;
 {Sum of (byte value + 1) * (position + 257) for all bytes in uppercase string}
 {Note: Case Insensitive Hash}
 begin
@@ -39841,7 +39857,7 @@ end;
 
 {==============================================================================}
 
-function GenerateStringHash(value: PCHAR; casesensitive: BOOL): uint32_t; stdcall;
+function GenerateStringHash(const value: PCHAR; casesensitive: BOOL): uint32_t; stdcall;
 {Sum of (byte value + 1) * (position + 257) for all bytes in string}
 begin
  {}
@@ -39866,7 +39882,7 @@ end;
 
 {==============================================================================}
 {Locale Functions (Ultibo)}
-function WideCharToString(buffer: PWCHAR; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
+function WideCharToString(const buffer: PWCHAR; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
 {A replacement for WideCharToString in System unit to allow cross platform compatibility}
 {Note: The WideStringManager installed by the Unicode unit should make the System version equivalent}
 begin
@@ -39876,7 +39892,7 @@ end;
 
 {==============================================================================}
 
-function WideCharLenToString(buffer: PWCHAR; _length: int; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
+function WideCharLenToString(const buffer: PWCHAR; _length: int; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
 {A replacement for WideCharLenToString in System unit to allow cross platform compatibility}
 {Note: Length is the size of the Buffer in WideChars (not Bytes)}
 {Note: The WideStringManager installed by the Unicode unit should make the System version equivalent}
@@ -39887,7 +39903,7 @@ end;
 
 {==============================================================================}
 
-function StringToWideChar(_string: PCHAR; buffer: PWCHAR; size: int): BOOL; stdcall;
+function StringToWideChar(const _string: PCHAR; buffer: PWCHAR; size: int): BOOL; stdcall;
 {A replacement for StringToWideChar in System unit to allow cross platform compatibility}
 {Note: Size is the size of the Buffer in Bytes (not WideChars)}
 {Note: The WideStringManager installed by the Unicode unit should make the System version equivalent}
@@ -40397,7 +40413,7 @@ end;
 
 {==============================================================================}
 {Thread Functions (Ultibo)}
-function BeginThreadEx(threadfunction: thread_func; parameter: PVOID; var threadid: TTHREAD_ID; const stacksize: SIZE_T; priority, affinity, cpu: uint32_t; name: PCHAR): TTHREAD_ID; stdcall;
+function BeginThreadEx(threadfunction: thread_func; parameter: PVOID; var threadid: TTHREAD_ID; const stacksize: SIZE_T; priority, affinity, cpu: uint32_t; const name: PCHAR): TTHREAD_ID; stdcall;
 begin
  {}
  Result:=Ultibo.BeginThreadEx(threadfunction,parameter,threadid,stacksize,priority,affinity,cpu,name);
@@ -40512,7 +40528,7 @@ end;
 
 {==============================================================================}
 {Mutex Functions (Compatibility)}
-function CreateMutex(lpmutexattributes: LPSECURITY_ATTRIBUTES; binitialowner: BOOL; lpname: LPCSTR): HANDLE; stdcall;
+function CreateMutex(lpmutexattributes: LPSECURITY_ATTRIBUTES; binitialowner: BOOL; const lpname: LPCSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.CreateMutex(lpmutexattributes,binitialowner,lpname);
@@ -40520,7 +40536,7 @@ end;
 
 {==============================================================================}
 
-function CreateMutexA(lpmutexattributes: LPSECURITY_ATTRIBUTES; binitialowner: BOOL; lpname: LPCSTR): HANDLE; stdcall;
+function CreateMutexA(lpmutexattributes: LPSECURITY_ATTRIBUTES; binitialowner: BOOL; const lpname: LPCSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.CreateMutexA(lpmutexattributes,binitialowner,lpname);
@@ -40528,7 +40544,7 @@ end;
 
 {==============================================================================}
 
-function CreateMutexW(lpmutexattributes: LPSECURITY_ATTRIBUTES; binitialowner: BOOL; lpname: LPCWSTR): HANDLE; stdcall;
+function CreateMutexW(lpmutexattributes: LPSECURITY_ATTRIBUTES; binitialowner: BOOL; const lpname: LPCWSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.CreateMutexW(lpmutexattributes,binitialowner,lpname);
@@ -40536,7 +40552,7 @@ end;
 
 {==============================================================================}
 
-function OpenMutex(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCSTR): HANDLE; stdcall;
+function OpenMutex(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.OpenMutex(dwdesiredaccess,binherithandle,lpname);
@@ -40544,7 +40560,7 @@ end;
 
 {==============================================================================}
 
-function OpenMutexA(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCSTR): HANDLE; stdcall;
+function OpenMutexA(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.OpenMutexA(dwdesiredaccess,binherithandle,lpname);
@@ -40552,7 +40568,7 @@ end;
 
 {==============================================================================}
 
-function OpenMutexW(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCWSTR): HANDLE; stdcall;
+function OpenMutexW(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCWSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.OpenMutexW(dwdesiredaccess,binherithandle,lpname);
@@ -40568,7 +40584,7 @@ end;
 
 {==============================================================================}
 {Semaphore Functions (Compatibility)}
-function CreateSemaphore(lpsemaphoreattributes: LPSECURITY_ATTRIBUTES; linitialcount, lmaximumcount: LONG; lpname: LPCSTR): HANDLE; stdcall;
+function CreateSemaphore(lpsemaphoreattributes: LPSECURITY_ATTRIBUTES; linitialcount, lmaximumcount: LONG; const lpname: LPCSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.CreateSemaphore(lpsemaphoreattributes,linitialcount,lmaximumcount,lpname);
@@ -40576,7 +40592,7 @@ end;
 
 {==============================================================================}
 
-function CreateSemaphoreA(lpsemaphoreattributes: LPSECURITY_ATTRIBUTES; linitialcount, lmaximumcount: LONG; lpname: LPCSTR): HANDLE; stdcall;
+function CreateSemaphoreA(lpsemaphoreattributes: LPSECURITY_ATTRIBUTES; linitialcount, lmaximumcount: LONG; const lpname: LPCSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.CreateSemaphoreA(lpsemaphoreattributes,linitialcount,lmaximumcount,lpname);
@@ -40584,7 +40600,7 @@ end;
 
 {==============================================================================}
 
-function CreateSemaphoreW(lpsemaphoreattributes: LPSECURITY_ATTRIBUTES; linitialcount, lmaximumcount: LONG; lpname: LPCWSTR): HANDLE; stdcall;
+function CreateSemaphoreW(lpsemaphoreattributes: LPSECURITY_ATTRIBUTES; linitialcount, lmaximumcount: LONG; const lpname: LPCWSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.CreateSemaphoreW(lpsemaphoreattributes,linitialcount,lmaximumcount,lpname);
@@ -40592,7 +40608,7 @@ end;
 
 {==============================================================================}
 
-function OpenSemaphore(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCSTR): HANDLE; stdcall;
+function OpenSemaphore(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.OpenSemaphore(dwdesiredaccess,binherithandle,lpname);
@@ -40600,7 +40616,7 @@ end;
 
 {==============================================================================}
 
-function OpenSemaphoreA(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCSTR): HANDLE; stdcall;
+function OpenSemaphoreA(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.OpenSemaphoreA(dwdesiredaccess,binherithandle,lpname);
@@ -40608,7 +40624,7 @@ end;
 
 {==============================================================================}
 
-function OpenSemaphoreW(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCWSTR): HANDLE; stdcall;
+function OpenSemaphoreW(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCWSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.OpenSemaphoreW(dwdesiredaccess,binherithandle,lpname);
@@ -40733,7 +40749,7 @@ end;
 
 {==============================================================================}
 {Event Functions (Compatibility)}
-function CreateEvent(lpeventattributes: LPSECURITY_ATTRIBUTES; bmanualreset, binitialstate: BOOL; lpname: LPCSTR): HANDLE; stdcall;
+function CreateEvent(lpeventattributes: LPSECURITY_ATTRIBUTES; bmanualreset, binitialstate: BOOL; const lpname: LPCSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.CreateEvent(lpeventattributes,bmanualreset,binitialstate,lpname);
@@ -40741,7 +40757,7 @@ end;
 
 {==============================================================================}
 
-function CreateEventA(lpeventattributes: LPSECURITY_ATTRIBUTES; bmanualreset, binitialstate: BOOL; lpname: LPCSTR): HANDLE; stdcall;
+function CreateEventA(lpeventattributes: LPSECURITY_ATTRIBUTES; bmanualreset, binitialstate: BOOL; const lpname: LPCSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.CreateEventA(lpeventattributes,bmanualreset,binitialstate,lpname);
@@ -40749,7 +40765,7 @@ end;
 
 {==============================================================================}
 
-function CreateEventW(lpeventattributes: LPSECURITY_ATTRIBUTES; bmanualreset, binitialstate: BOOL; lpname: LPCWSTR): HANDLE; stdcall;
+function CreateEventW(lpeventattributes: LPSECURITY_ATTRIBUTES; bmanualreset, binitialstate: BOOL; const lpname: LPCWSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.CreateEventW(lpeventattributes,bmanualreset,binitialstate,lpname);
@@ -40757,7 +40773,7 @@ end;
 
 {==============================================================================}
 
-function OpenEvent(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCSTR): HANDLE; stdcall;
+function OpenEvent(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.OpenEvent(dwdesiredaccess,binherithandle,lpname);
@@ -40765,7 +40781,7 @@ end;
 
 {==============================================================================}
 
-function OpenEventA(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCSTR): HANDLE; stdcall;
+function OpenEventA(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.OpenEventA(dwdesiredaccess,binherithandle,lpname);
@@ -40773,7 +40789,7 @@ end;
 
 {==============================================================================}
 
-function OpenEventW(dwdesiredaccess: uint32_t; binherithandle: BOOL; lpname: LPCWSTR): HANDLE; stdcall;
+function OpenEventW(dwdesiredaccess: uint32_t; binherithandle: BOOL; const lpname: LPCWSTR): HANDLE; stdcall;
 begin
  {}
  Result:=Ultibo.OpenEventW(dwdesiredaccess,binherithandle,lpname);
@@ -40887,7 +40903,7 @@ end;
 
 {==============================================================================}
 {Debug Functions (Compatibility)}
-procedure OutputDebugString(lpoutputstring: LPCSTR); stdcall;
+procedure OutputDebugString(const lpoutputstring: LPCSTR); stdcall;
 begin
  {}
  Ultibo.OutputDebugString(lpoutputstring);
@@ -40895,7 +40911,7 @@ end;
 
 {==============================================================================}
 
-procedure OutputDebugStringA(lpoutputstring: LPCSTR); stdcall;
+procedure OutputDebugStringA(const lpoutputstring: LPCSTR); stdcall;
 begin
  {}
  Ultibo.OutputDebugStringA(lpoutputstring);
@@ -40903,7 +40919,7 @@ end;
 
 {==============================================================================}
 
-procedure OutputDebugStringW(lpoutputstring: LPCWSTR); stdcall;
+procedure OutputDebugStringW(const lpoutputstring: LPCWSTR); stdcall;
 begin
  {}
  Ultibo.OutputDebugStringW(lpoutputstring);
