@@ -300,6 +300,13 @@ const
  AF_NETDES       = 28;              { Network Designers OSI & gateway enabled }
 
  AF_MAX          = 29;
+
+const
+{ Definitions used for sockaddr_storage structure paddings design. }
+ _SS_MAXSIZE   = 128;               { Maximum size. }
+ _SS_ALIGNSIZE = SizeOf(Int64);     { Alignment size. }
+ _SS_PAD1SIZE = _SS_ALIGNSIZE - SizeOf(SHORT);
+ _SS_PAD2SIZE = _SS_MAXSIZE - (SizeOf(SHORT) + _SS_PAD1SIZE + _SS_ALIGNSIZE);
  
 const
 { Protocol families, same as address families for now. }
@@ -928,6 +935,17 @@ type
   sp_protocol: u_short;
  end;
  TSockProto = sockproto;
+
+type
+ {RFC 2553: protocol-independent placeholder for socket addresses}
+ PSockAddrStorage = ^TSockAddrStorage;
+ sockaddr_storage = record
+  ss_family: word;                                { Address family. }
+  __ss_pad1: array [0.._SS_PAD1SIZE - 1] of Char; { 6 byte pad, this is to make implementation specific pad up to alignment field that follows explicit in the data structure. }
+  __ss_align: Int64;                              { Field to force desired structure. }
+  __ss_pad2: array [0.._SS_PAD2SIZE - 1] of Char; { 112 byte pad to achieve desired size (_SS_MAXSIZE value minus size of ss_family, __ss_pad1, and __ss_align fields is 112). }
+ end;
+ TSockAddrStorage = sockaddr_storage;
 
 type
 { Structure used for manipulating linger option. }

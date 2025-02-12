@@ -281,6 +281,13 @@ const
  AF_NETDES       = GlobalSock.AF_NETDES;
 
  AF_MAX          = GlobalSock.AF_MAX;
+
+const
+{ Definitions used for sockaddr_storage structure paddings design. }
+ _SS_MAXSIZE     = GlobalSock._SS_MAXSIZE;
+ _SS_ALIGNSIZE   = GlobalSock._SS_ALIGNSIZE;
+ _SS_PAD1SIZE    = GlobalSock._SS_PAD1SIZE;
+ _SS_PAD2SIZE    = GlobalSock._SS_PAD2SIZE;
  
 const
 { Protocol families, same as address families for now. }
@@ -860,6 +867,12 @@ type
  PSockProto = GlobalSock.PSockProto;
  sockproto = GlobalSock.sockproto;
  TSockProto = GlobalSock.TSockProto;
+ 
+type
+ {RFC 2553: protocol-independent placeholder for socket addresses}
+ PSockAddrStorage = GlobalSock.PSockAddrStorage;
+ sockaddr_storage = GlobalSock.sockaddr_storage;
+ TSockAddrStorage = GlobalSock.TSockAddrStorage;
  
 type
 { Structure used for manipulating linger option. }
