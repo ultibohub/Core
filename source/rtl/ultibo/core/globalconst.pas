@@ -50,12 +50,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '12 February 2025';
+ ULTIBO_RELEASE_DATE             = '24 February 2025';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.6.021';
+ ULTIBO_RELEASE_VERSION          = '2.6.023';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 6;
- ULTIBO_RELEASE_VERSION_REVISION = 021;
+ ULTIBO_RELEASE_VERSION_REVISION = 023;
  
  FPC_COMPILER_VERSION = {$I %FPCVERSION%}; {The version of FPC used to compile the RTL}
  

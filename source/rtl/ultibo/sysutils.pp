@@ -703,7 +703,11 @@ begin
   end;  
 end;
 
+{$if defined(FPC_STABLE) or defined(FPC_FIXES) or defined(FPC_LEGACY)}
 function GetLocalTimeOffset(const DateTime: TDateTime; const InputIsUTC: Boolean; out Offset: Integer): Boolean;
+{$else}
+function GetLocalTimeOffset(const DateTime: TDateTime; const InputIsUTC: Boolean; out Offset: Integer; out isDST : Boolean): Boolean;
+{$endif}
 begin
  if Assigned(SysUtilsGetLocalTimeOffsetExHandler) then
   begin
