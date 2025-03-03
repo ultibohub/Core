@@ -1,7 +1,7 @@
 {
 Ultibo Network Transport interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1061,7 +1061,8 @@ type
    {Public Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
+   function GetAlias(Index:Integer):String;
    function FindAlias(const Alias:String):Boolean;
    
    function AddAlias(const Alias:String):Boolean;
@@ -1181,7 +1182,8 @@ type
    {Public Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
+   function GetAlias(Index:Integer):String;
    function FindAlias(const Alias:String):Boolean;
    
    function AddAlias(const Alias:String):Boolean;
@@ -1218,7 +1220,8 @@ type
    {Public Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
+   function GetAlias(Index:Integer):String;
    function FindAlias(const Alias:String):Boolean;
    
    function AddAlias(const Alias:String):Boolean;
@@ -1251,7 +1254,8 @@ type
    {Public Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
+   function GetAlias(Index:Integer):String;
    function FindAlias(const Alias:String):Boolean;
    
    function AddAlias(const Alias:String):Boolean;
@@ -1318,6 +1322,7 @@ function In6AddrToString(const AAddress:TIn6Addr):String;
 function StringToIn6Addr(const AAddress:String):TIn6Addr;
 
 function In6AddrIsEqual(const AAddress1,AAddress2:TIn6Addr):Boolean;
+function In6AddrIsNone(const AAddress:TIn6Addr):Boolean;
 function In6AddrIsDefault(const AAddress:TIn6Addr):Boolean;
 function In6AddrIsLoopback(const AAddress:TIn6Addr):Boolean;
 function In6AddrIsLinkLocal(const AAddress:TIn6Addr):Boolean;
@@ -6239,6 +6244,23 @@ end;
 
 {==============================================================================}
 
+function THostEntry.GetAlias(Index:Integer):String;
+begin
+ {}
+ Result:='';
+
+ if not AcquireLock then Exit;
+ try
+  if (Index < 0) or (Index >= FAliases.Count) then Exit;
+
+  Result:=FAliases.Strings[Index];
+ finally 
+  ReleaseLock;
+ end; 
+end;
+
+{==============================================================================}
+
 function THostEntry.FindAlias(const Alias:String):Boolean;
 begin
  {}
@@ -6693,6 +6715,23 @@ end;
 
 {==============================================================================}
 
+function TNetworkEntry.GetAlias(Index:Integer):String;
+begin
+ {}
+ Result:='';
+
+ if not AcquireLock then Exit;
+ try
+  if (Index < 0) or (Index >= FAliases.Count) then Exit;
+
+  Result:=FAliases.Strings[Index];
+ finally 
+  ReleaseLock;
+ end; 
+end;
+
+{==============================================================================}
+
 function TNetworkEntry.FindAlias(const Alias:String):Boolean;
 begin
  {}
@@ -6851,6 +6890,23 @@ end;
 
 {==============================================================================}
 
+function TServEntry.GetAlias(Index:Integer):String;
+begin
+ {}
+ Result:='';
+
+ if not AcquireLock then Exit;
+ try
+  if (Index < 0) or (Index >= FAliases.Count) then Exit;
+
+  Result:=FAliases.Strings[Index];
+ finally 
+  ReleaseLock;
+ end; 
+end;
+
+{==============================================================================}
+
 function TServEntry.FindAlias(const Alias:String):Boolean;
 begin
  {}
@@ -6977,6 +7033,23 @@ function TProtoEntry.ReleaseLock:Boolean;
 begin
  {}
  Result:=(CriticalSectionUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TProtoEntry.GetAlias(Index:Integer):String;
+begin
+ {}
+ Result:='';
+
+ if not AcquireLock then Exit;
+ try
+  if (Index < 0) or (Index >= FAliases.Count) then Exit;
+
+  Result:=FAliases.Strings[Index];
+ finally 
+  ReleaseLock;
+ end; 
 end;
 
 {==============================================================================}
@@ -7239,9 +7312,12 @@ var
 begin
  {}
  try
-  WorkBuffer:=AAddress;
-
   LongWord(Result.S_addr):=INADDR_NONE;
+
+  WorkBuffer:=AAddress;
+  
+  {Check Address}
+  if Length(WorkBuffer) = 0 then Exit;
 
   {Check for Numeric Address}
   for Count:=1 to Length(WorkBuffer) do
@@ -7360,19 +7436,168 @@ end;
 {==============================================================================}
 
 function In6AddrToString(const AAddress:TIn6Addr):String;
+{Convert an In6Addr to a String}
+var
+ Count:Integer;
+ RunStart:Integer;
+ RunCount:Integer;
+ ZeroStart:Integer;
+ ZeroCount:array[0..7] of Integer;
 begin
  {}
  Result:='';
- //To Do /
+
+ {Set Defaults}
+ ZeroStart:=-1;
+ FillChar(ZeroCount,SizeOf(ZeroCount),0);
+
+ {Count runs of consecutive zeros}
+ for Count:=0 to 7 do
+  begin
+   if AAddress.u6_addr16[Count] = 0 then
+    begin
+     if ZeroStart = -1 then ZeroStart:=Count else Inc(ZeroCount[ZeroStart]);
+    end
+   else
+    begin
+     ZeroStart:=-1;
+    end;
+  end;
+
+ {Set Defaults}
+ RunStart:=-1;
+ RunCount:=0;
+
+ {Find the longest run of consecutive zeros}
+ for Count:=0 to 7 do
+  begin
+   if ZeroCount[Count] > 0 then
+    begin
+     if (RunStart = -1) or (ZeroCount[Count] > ZeroCount[RunStart]) then
+      begin
+       RunStart:=Count;
+       RunCount:=ZeroCount[Count];
+      end;
+    end;
+  end;
+
+ {Format each Word}
+ for Count:=0 to 7 do
+  begin
+   {Check for zero Word}
+   if AAddress.u6_addr16[Count] = 0 then
+    begin
+     if (RunStart <> -1) and (RunCount > 0) and (Count >= RunStart) and (Count <= RunStart + RunCount) then
+      begin
+       {Add Colon}
+       if (Count = RunStart) or (Count = 7) then Result:=Result + ':';
+      end
+     else
+      begin
+       {Add Colon}
+       if Count > 0 then Result:=Result + ':';
+
+       {Add Zero}
+       Result:=Result + '0';
+      end;
+    end
+   else
+    begin
+     {Add Colon}
+     if Count > 0 then Result:=Result + ':';
+
+     {Add non zero Word (Swapped)}
+     Result:=Result + IntToHex(WordBEtoN(AAddress.u6_addr16[Count]),1);
+    end;
+  end;
+
+ {Convert to Lowercase}
+ Result:=Lowercase(Result);
 end;
 
 {==============================================================================}
 
 function StringToIn6Addr(const AAddress:String):TIn6Addr;
+{Convert a String to an In6Addr}
+var
+ Count:Integer;
+ Index:Integer;
+ PosIdx:Integer;
+ PadBuffer:String;
+ WorkBuffer:String;
+ ColonCount:Integer;
 begin
  {}
- FillChar(Result,SizeOf(TIn6Addr),0);
- //To Do /
+ try
+  Result:=IN6ADDR_NONE;
+
+  WorkBuffer:=AAddress;
+
+  {Check Address Length}
+  if Length(WorkBuffer) = 0 then Exit;
+
+  {Check for Hexadecimal Address}
+  for Count:=1 to Length(WorkBuffer) do
+   begin
+    if not (WorkBuffer[Count] in [':', '0'..'9', 'a'..'f', 'A'..'F']) then Exit;
+   end;
+
+  {Set defaults}
+  ColonCount:=0;
+  PadBuffer:='';
+
+  {Count the number of colons}
+  for Count:=1 to Length(WorkBuffer) do
+   begin
+    if WorkBuffer[Count] = ':' then Inc(ColonCount);
+   end;
+  if (ColonCount < 2) or (ColonCount > 7) then Exit;
+
+  {Expand run of consecutive zeros}
+  if ColonCount < 7 then
+   begin
+     {Check leading colon}
+     if WorkBuffer[1] = ':' then WorkBuffer:='0' + WorkBuffer;
+
+     {Check trailing colon}
+     if WorkBuffer[Length(WorkBuffer)] = ':' then WorkBuffer:=WorkBuffer + '0';
+
+     PosIdx:=Pos('::',WorkBuffer);
+     if PosIdx = 0 then Exit;
+
+     {Create run of zeros}
+     for Count := ColonCount to 7 do
+      begin
+        if Count < 7 then PadBuffer:=PadBuffer + '0:' else PadBuffer:=PadBuffer + '0';
+      end;
+
+     {Insert run of zeros}
+     Insert(PadBuffer,WorkBuffer,PosIdx + 1);
+   end;
+  if Pos('::',WorkBuffer) <> 0 then Exit;
+
+  Result:=IN6ADDR_ANY;
+
+  {Extract each Word}
+  Index:=0;
+  PosIdx:=Pos(':',WorkBuffer);
+  while (PosIdx <> 0) and (Index <= 7) do
+   begin
+    {Extract Word (Swapped)}
+    Result.u6_addr16[Index]:=WordNtoBE(StrToInt('$' + Copy(WorkBuffer,1,PosIdx - 1)));
+    Delete(WorkBuffer,1,PosIdx);
+
+    {Get next Word}
+    Inc(Index);
+    PosIdx:=Pos(':',WorkBuffer);
+   end;
+
+  {Extract last Word (Swapped)}
+  if Index = 7 then Result.u6_addr16[Index]:=WordNtoBE(StrToInt('$' + WorkBuffer));
+ except
+  {}
+  Result:=IN6ADDR_NONE;
+ end;
 end;
 
 {==============================================================================}
@@ -7392,11 +7617,20 @@ end;
 
 {==============================================================================}
 
+function In6AddrIsNone(const AAddress:TIn6Addr):Boolean;
+{Check the supplied address to see if it is IN6ADDR_NONE}
+begin
+ {}
+ Result:=In6AddrIsEqual(AAddress,IN6ADDR_NONE);
+end;
+
+{==============================================================================}
+
 function In6AddrIsDefault(const AAddress:TIn6Addr):Boolean;
 {Check the supplied address to see if it is the default address}
 begin
  {}
- Result:=In6AddrIsEqual(AAddress,IP6_DEFAULT_ADDRESS);
+ Result:=In6AddrIsEqual(AAddress,IN6ADDR_ANY);
 end;
 
 {==============================================================================}

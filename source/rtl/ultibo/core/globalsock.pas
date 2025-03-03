@@ -274,8 +274,8 @@ const
  AF_IMPLINK      = 3;               { arpanet imp addresses }
  AF_PUP          = 4;               { pup protocols: e.g. BSP }
  AF_CHAOS        = 5;               { mit CHAOS protocols }
- AF_IPX          = 6;               { IPX and SPX }
  AF_NS           = 6;               { XEROX NS protocols }
+ AF_IPX          = AF_NS;           { IPX and SPX }
  AF_ISO          = 7;               { ISO protocols }
  AF_OSI          = AF_ISO;          { OSI is ISO }
  AF_ECMA         = 8;               { european computer manufacturers }
@@ -298,8 +298,14 @@ const
  AF_12844        = 25;              { IEEE 1284.4 WG AF }
  AF_IRDA         = 26;              { IrDA }
  AF_NETDES       = 28;              { Network Designers OSI & gateway enabled }
+ AF_TCNPROCESS   = 29;
+ AF_TCNMESSAGE   = 30;
+ AF_ICLFXBM      = 31;
+ AF_BTH          = 32;              { Bluetooth RFCOMM/L2CAP protocols }
+ AF_LINK         = 33;
+ AF_HYPERV       = 34;
 
- AF_MAX          = 29;
+ AF_MAX          = 35;
 
 const
 { Definitions used for sockaddr_storage structure paddings design. }
@@ -339,9 +345,15 @@ const
  PF_12844        = AF_12844;
  PF_IRDA         = AF_IRDA;
  PF_NETDES       = AF_NETDES;
+ PF_TCNPROCESS   = AF_TCNPROCESS;
+ PF_TCNMESSAGE   = AF_TCNMESSAGE;
+ PF_ICLFXBM      = AF_ICLFXBM;
+ PF_BTH          = AF_BTH;
+ PF_LINK         = AF_LINK;
+ PF_HYPERV       = AF_HYPERV;
 
  PF_MAX          = AF_MAX;
- 
+
 const
 { Level number for (get/set)sockopt() to apply to socket itself. }
  SOL_SOCKET      = $ffff;          {options for socket level }
@@ -752,7 +764,7 @@ const
  NI_MAXSERV = 32;   {Max size of a service name}
 
  INET_ADDRSTR_ANY = '0.0.0.0';
- INET6_ADDRSTR_INIT = '0::0';
+ INET6_ADDRSTR_ANY = '::';
 
  INET_ADDRSTR_BROADCAST = '255.255.255.255';
  
@@ -806,8 +818,8 @@ type
   h_addrtype: Smallint;
   h_length: Smallint;
   case Byte of
-   0: (h_addr_list: ^PChar);
-   1: (h_addr: ^PChar);
+   0: (h_addr_list: ^PChar); {Network order}
+   1: (h_addr: ^PChar);      {Network order}
  end;
  THostEnt = hostent;
 
@@ -816,7 +828,7 @@ type
   n_name: PChar;
   n_aliases: ^PChar;
   n_addrtype: Smallint;
-  n_net: u_long;
+  n_net: u_long; {Network order}
  end;
  TNetEnt = netent;
 
@@ -1467,7 +1479,8 @@ const
  
  IN6ADDR_ANY:TIn6Addr = (u6_addr16: (0, 0, 0, 0, 0, 0, 0, 0));
  IN6ADDR_LOOPBACK:TIn6Addr = (u6_addr8: (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1));
- 
+ IN6ADDR_NONE:TIn6Addr = (u6_addr16: ($ffff, $ffff, $ffff, $ffff, $ffff, $ffff, $ffff, $ffff));
+
 const
  {Variables for getaddrinfo()} 
  IN6ADDR_ANY_INIT:TIn6Addr = (u6_addr16: (0, 0, 0, 0, 0, 0, 0, 0));

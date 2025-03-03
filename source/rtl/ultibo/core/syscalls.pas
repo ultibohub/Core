@@ -708,6 +708,29 @@ const
 
  _ATEXIT_SIZE = 32;  {Must be at least 32 to guarantee ANSI conformance}
  
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}   
+const
+ {Error constants from netdb.h}
+ HOST_NOT_FOUND = 1; {Authoritative Answer Host not found}
+ TRY_AGAIN      = 2; {Non-Authoritative Host not found, or SERVERFAIL}
+ NO_RECOVERY    = 3; {Non recoverable errors, FORMERR, REFUSED, NOTIMP}
+ NO_DATA        = 4; {Valid name, no data record of requested type}
+ 
+ {Error constants from netdb.h}
+ EAI_AGAIN      = 2;  {name could not be resolved at this time}
+ EAI_BADFLAGS   = 3;  {flags parameter had an invalid value}
+ EAI_FAIL       = 4;  {non-recoverable failure in name resolution}
+ EAI_FAMILY     = 5;  {address family not recognized}
+ EAI_MEMORY     = 6;  {memory allocation failure}
+ EAI_NONAME     = 8;  {name does not resolve}
+ EAI_SERVICE    = 9;  {service not recognized for socket type}
+ EAI_SOCKTYPE   = 10; {intended socket type was not recognized}
+ EAI_SYSTEM     = 11; {system error returned in errno}
+ EAI_BADHINTS   = 12; {invalid value for hints}
+ EAI_PROTOCOL   = 13; {resolved protocol is unknown}
+ EAI_OVERFLOW   = 14; {argument buffer overflow}
+{$ENDIF}
+
 const
  {Filesystem constants from sys/statfs.h}
  {Filesystem types}
@@ -798,12 +821,12 @@ const
  CLOCK_MONOTONIC          = 4; {A clock whose value cannot be set via clock_settime() and which cannot have backward clock jumps}
  
 const
- {Semaphore constants from /linux/semahore.h}
+ {Semaphore constants from semahore.h}
  SEM_FAILED = nil; {Value returned if `sem_open' failed.}
  SEM_VALUE_MAX = $7FFFFFFF; {Maximum value the semaphore can have}
  
 const
- {Ioctl constants from /linux/ioctl.h}
+ {Ioctl constants from sys/ioctl.h}
  _IOC_NRBITS = 8;
  _IOC_TYPEBITS = 8;
 
@@ -1234,11 +1257,7 @@ type
 
 {$IFDEF SYSCALLS_EXPORT_SOCKETS} 
 type
- {From linux/netdb.h} 
- {Socket types}
- Psocklen_t = ^socklen_t;
- socklen_t = uint;
- 
+ {From netdb.h}
  {Structures returned by network data base library}
  P_hostent = ^T_hostent;
  T_hostent = record
@@ -1247,8 +1266,8 @@ type
   h_addrtype: int;           {host address type}
   h_length: int;             {length of address}
   case Byte of
-   0: (h_addr_list: ^PChar); {list of addresses from name server}
-   1: (h_addr: ^PChar);      {address, for backward compatibility}
+   0: (h_addr_list: ^PChar); {list of addresses from name server (Network order)}
+   1: (h_addr: ^PChar);      {address, for backward compatibility (Network order)}
  end;
 
  P_netent = ^T_netent;
@@ -1256,26 +1275,23 @@ type
   n_name: PChar;     {official name of net}
   n_aliases: ^PChar; {alias list}
   n_addrtype: int;   {net address type}
-  n_net: uint32_t;   {network #}
+  n_net: uint32_t;   {network # (Host order)}
  end;
 
  P_servent = ^T_servent;
  T_servent = record
   s_name: PChar;     {official service name}
   s_aliases: ^PChar; {alias list}
-  s_port: int;       {port #}
+  s_port: int;       {port # (Network order)}
   s_proto: PChar;    {protocol to use}
  end;
- 
+
  P_protoent = ^T_protoent;
  T_protoent = record
   p_name: PChar;     {official protocol name}
   p_aliases: ^PChar; {alias list}
   p_proto: int;      {protocol #}
  end;
- 
- {From linux/arpa/inet.h}
- in_addr_t = Cardinal; {uint32_t}
 
 type
  {From sys/select.h}
@@ -1295,7 +1311,31 @@ type
  end;
 
 type
+ {From arpa/inet.h} 
+ {Socket types}
+ Psocklen_t = ^socklen_t;
+ socklen_t = uint32_t;
+ in_addr_t = uint32_t;
+ in_port_t = uint16_t;
+
+ P_in_addr = ^T_in_addr;
+ T_in_addr = record
+  s_addr: in_addr_t;
+ end; 
+
+type
  {From sys/socket.h} 
+ {Socket types}
+ sa_family_t = uint8_t;
+
+ {Structure used by kernel to store most addresses}
+ P_sockaddr = ^T_sockaddr;
+ T_sockaddr = record
+  sa_len: uint8_t;               {total length}
+  sa_family: sa_family_t;        {address family}
+  sa_data: array[0..13] of Char; {actually longer; address value}
+ end;
+
  {Message header for recvmsg and sendmsg calls}
  {Used value-result for recvmsg, value only for sendmsg}
  Pmsghdr = ^Tmsghdr;
@@ -1318,6 +1358,56 @@ type
   cmsg_len: socklen_t; {data byte count, including hdr}
   cmsg_level: int;     {originating protocol}
   cmsg_type: int;      {protocol-specific type}
+ end;
+ 
+type
+ {From netinet/in.h} 
+ {Socket address, internet style}
+ P_sockaddr_in = ^T_sockaddr_in;
+ T_sockaddr_in = record
+  sin_len: uint8_t;
+  sin_family: sa_family_t;
+  sin_port: in_port_t;
+  sin_addr: T_in_addr;
+  sin_zero: array[0..7] of Char;
+ end;
+
+type
+ {From netinet6/in6.h} 
+ {IPv6 address}
+ P_in6_addr = ^T_in6_addr;
+ T_in6_addr = record
+  case byte of
+   0: (u6_addr8  : array[0..15] of uint8_t);
+   1: (u6_addr16 : array[0..7] of uint16_t);
+   2: (u6_addr32 : array[0..3] of uint32_t);
+   3: (u6_addr : array[0..3] of uint32_t);
+ end;
+
+ {Socket address for IPv6}
+ P_sockaddr_in6 = ^T_sockaddr_in6;
+ T_sockaddr_in6 = record
+  sin6_len: uint8_t;         {length of this struct}
+  sin6_family: sa_family_t;  {AF_INET6}
+  sin6_port: in_port_t;      {Transport layer port #}
+  sin6_flowinfo: uint32_t;   {IP6 flow information}
+  sin6_addr: T_in6_addr;     {IP6 address}
+  sin6_scope_id: uint32_t;   {scope zone index}
+ end;
+
+type
+ {From netdb.h}
+ {Structure returned by getaddrinfo()}
+ P_addrinfo = ^T_addrinfo;
+ T_addrinfo = record
+  ai_flags: int;         {AI_PASSIVE, AI_CANONNAME, AI_NUMERICHOST}
+  ai_family: int;        {AF_xxx}
+  ai_socktype: int;      {SOCK_xxx}
+  ai_protocol: int;      {0 or IPPROTO_xxx for IPv4 and IPv6}
+  ai_addrlen: socklen_t; {length of ai_addr}
+  ai_canonname: PChar;   {canonical name for hostname}
+  ai_addr: P_sockaddr;   {binary address}
+  ai_next: P_addrinfo;   {next structure in linked list}
  end;
 {$ENDIF}
  
@@ -1905,18 +1995,18 @@ function sem_wait(sem: Psem_t): int; cdecl; public name 'sem_wait';
 {Syscalls Functions (Sockets)}
 {$IFDEF SYSCALLS_EXPORT_SOCKETS}
 {From sys/socket.h}
-function socket_accept(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl; public name 'accept';
-function socket_bind(socket: int; const address: psockaddr; address_len: socklen_t): int; cdecl; public name 'bind';
-function socket_connect(socket: int; const address: psockaddr; address_len: socklen_t): int; cdecl; public name 'connect';
-function socket_getpeername(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl; public name 'getpeername';
-function socket_getsockname(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl; public name 'getsockname';
+function socket_accept(socket: int; address: P_sockaddr; address_len: Psocklen_t): int; cdecl; public name 'accept';
+function socket_bind(socket: int; const address: P_sockaddr; address_len: socklen_t): int; cdecl; public name 'bind';
+function socket_connect(socket: int; const address: P_sockaddr; address_len: socklen_t): int; cdecl; public name 'connect';
+function socket_getpeername(socket: int; address: P_sockaddr; address_len: Psocklen_t): int; cdecl; public name 'getpeername';
+function socket_getsockname(socket: int; address: P_sockaddr; address_len: Psocklen_t): int; cdecl; public name 'getsockname';
 function socket_getsockopt(socket: int; level, option_name: int; option_value: Pointer; option_len: Psocklen_t): int; cdecl; public name 'getsockopt';
 function socket_listen(socket: int; backlog: int): int; cdecl; public name 'listen';
 function socket_recv(socket: int; buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl; public name 'recv';
-function socket_recvfrom(socket: int; buffer: Pointer; len: size_t; flags: int; address: psockaddr; address_len: Psocklen_t): ssize_t; cdecl; public name 'recvfrom';
+function socket_recvfrom(socket: int; buffer: Pointer; len: size_t; flags: int; address: P_sockaddr; address_len: Psocklen_t): ssize_t; cdecl; public name 'recvfrom';
 function socket_recvmsg(socket: int; message: Pmsghdr; flags: int): ssize_t; cdecl; public name 'recvmsg';
 function socket_send(socket: int; const buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl; public name 'send';
-function socket_sendto(socket: int; const buffer: Pointer; len: size_t; flags: int; dest_addr: psockaddr; dest_len: socklen_t): ssize_t; cdecl; public name 'sendto';
+function socket_sendto(socket: int; const buffer: Pointer; len: size_t; flags: int; dest_addr: P_sockaddr; dest_len: socklen_t): ssize_t; cdecl; public name 'sendto';
 function socket_sendmsg(socket: int; const message: Pmsghdr; flags: int): ssize_t; cdecl; public name 'sendmsg';
 function socket_setsockopt(socket: int; level, option_name: int; const option_value: Pointer; option_len: socklen_t): int; cdecl; public name 'setsockopt';
 function socket_shutdown(socket: int; how: int): int; cdecl; public name 'shutdown';
@@ -1932,12 +2022,12 @@ function socket_htons(hostshort: uint16_t): uint16_t; cdecl; public name 'htons'
 function socket_ntohl(netlong: uint32_t): uint32_t; cdecl; public name 'ntohl';
 function socket_ntohs(netshort: uint16_t): uint16_t; cdecl; public name 'ntohs';
        
-function socket_inet_addr(cp: PChar): in_addr_t; cdecl; public name '__inet_addr'; {Note: Linux has defines that remap to these names}
-function socket_inet_ntoa(inaddr: TInAddr): PChar; cdecl; public name '__inet_ntoa';
-function socket_inet_aton(cp: PChar; inaddr: PInAddr): int; cdecl; public name '__inet_aton';  
+function socket_inet_addr(cp: PChar): in_addr_t; cdecl; public name 'inet_addr';
+function socket_inet_ntoa(inaddr: T_in_addr): PChar; cdecl; public name 'inet_ntoa';
+function socket_inet_aton(cp: PChar; inaddr: P_in_addr): int; cdecl; public name 'inet_aton';  
 
-function socket_inet_pton(af: int; src: PChar; dst: Pointer): int; cdecl; public name '__inet_pton';  
-function socket_inet_ntop(af: int; src: Pointer; dst: PChar; size: socklen_t): PChar; cdecl; public name '__inet_ntop';  
+function socket_inet_pton(af: int; src: PChar; dst: Pointer): int; cdecl; public name 'inet_pton';  
+function socket_inet_ntop(af: int; src: Pointer; dst: PChar; size: socklen_t): PChar; cdecl; public name 'inet_ntop';  
 
 {From netdb.h}
 function socket_gethostbyaddr(addr: Pointer; len: socklen_t; family: int): P_hostent; cdecl; public name 'gethostbyaddr';
@@ -1952,9 +2042,9 @@ function socket_getservbyname(name, proto: PChar): P_servent; cdecl; public name
 function socket_getprotobynumber(proto: int): P_protoent; cdecl; public name 'getprotobynumber';
 function socket_getprotobyname(name: PChar): P_protoent; cdecl; public name 'getprotobyname';
        
-function socket_getaddrinfo(node: PChar; service: PChar; hints: PAddrInfo; var res: PAddrInfo): int; cdecl; public name 'getaddrinfo';   
-function socket_getnameinfo(addr: PSockAddr; addrlen: socklen_t; host: PChar; hostlen: socklen_t; serv: PChar; servlen: socklen_t; flags: int): int; cdecl; public name 'getnameinfo';   
-procedure socket_freeaddrinfo(res: PAddrInfo); cdecl; public name 'freeaddrinfo';   
+function socket_getaddrinfo(node: PChar; service: PChar; hints: P_addrinfo; var res: P_addrinfo): int; cdecl; public name 'getaddrinfo';   
+function socket_getnameinfo(addr: P_sockaddr; addrlen: socklen_t; host: PChar; hostlen: socklen_t; serv: PChar; servlen: socklen_t; flags: int): int; cdecl; public name 'getnameinfo';   
+procedure socket_freeaddrinfo(res: P_addrinfo); cdecl; public name 'freeaddrinfo';   
 {$ENDIF}
 {==============================================================================}
 {Syscalls Functions (Setjmp)}
@@ -2140,6 +2230,8 @@ var
 {Forward Declarations}
 {$IFDEF SYSCALLS_EXPORT_SOCKETS}
 function socket_get_error(error: int): int; forward;
+function socket_get_db_error(error: int): int; forward;
+function socket_get_eai_error(error: int): int; forward;
 {$ENDIF}
 function SyscallsGetStat(Handle:THandle;stat:Pstat):Boolean; forward;
 function SyscallsGetStat64(Handle:THandle;stat64:Pstat64):Boolean; forward;
@@ -2167,7 +2259,12 @@ function SyscallsPthreadStart(Data:PSyscallsPthreadData):PtrInt; forward;
 procedure SyscallsPthreadEnd(Value:Pointer); forward;
 
 function SyscallsEnvironmentSet(const Name,Value:String):LongWord; forward;
-
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
+function SyscallsSockAddrToWinsock(Source:P_sockaddr;SourceLen:Psocklen_t;Dest:PSockAddr;DestLen:PLongint):Boolean; forward;
+function SyscallsWinsockToSockAddr(Source:PSockAddr;SourceLen:PLongint;Dest:P_sockaddr;DestLen:Psocklen_t):Boolean; forward;
+function SyscallsAllocateWinsock(Source:P_sockaddr;SourceLen:Psocklen_t;DestBuf:PLongInt;var Dest:PSockAddr;var DestLen:PLongint):Boolean; forward;
+function SyscallsAllocateSockAddr(Source:PSockAddr;SourceLen:PLongint;DestBuf:Psocklen_t;var Dest:P_sockaddr;var DestLen:Psocklen_t):Boolean; forward;
+{$ENDIF}
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -10104,21 +10201,69 @@ begin
   WSA_E_NO_MORE:Result:=ENOMEM;
   WSA_E_CANCELLED:Result:=ECANCELED;
   WSAEREFUSED:Result:=ECONNREFUSED;
+  
+  WSA_INVALID_PARAMETER:Result:=ENOSPC;
  end;
 end;
 
 {==============================================================================}
 
-function socket_accept(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl;
+function socket_get_db_error(error: int): int;
+{Map a Socket error to a NetDB error returned by gethostbyaddr, gethostbyname etc}
+
+{Note: Internal function, not intended to be called by applications}
+begin
+ {}
+ Result:=NO_RECOVERY;
+ 
+ case error of
+  WSAHOST_NOT_FOUND:Result:=HOST_NOT_FOUND;
+  WSATRY_AGAIN:Result:=TRY_AGAIN;
+  WSANO_RECOVERY:Result:=NO_RECOVERY;
+  WSANO_DATA:Result:=NO_DATA;
+ end;
+end;
+
+{==============================================================================}
+
+function socket_get_eai_error(error: int): int;
+{Map a Socket error to a EAI error returned by getaddrinfo and getnameinfo}
+
+{Note: Internal function, not intended to be called by applications}
+begin
+ {}
+ Result:=EAI_SYSTEM;
+
+ case error of
+  {Windows Sockets definitions of RFC 3493 error constants}
+  WSATRY_AGAIN:Result:=EAI_AGAIN;
+  WSAEINVAL:Result:=EAI_BADFLAGS;
+  WSANO_RECOVERY:Result:=EAI_FAIL;
+  WSAEAFNOSUPPORT:Result:=EAI_FAMILY;
+  WSA_NOT_ENOUGH_MEMORY:Result:=EAI_MEMORY;
+  WSAHOST_NOT_FOUND:Result:=EAI_NONAME;
+  WSATYPE_NOT_FOUND:Result:=EAI_SERVICE;
+  WSAESOCKTNOSUPPORT:Result:=EAI_SOCKTYPE;
+ end;
+end;
+
+{==============================================================================}
+
+function socket_accept(socket: int; address: P_sockaddr; address_len: Psocklen_t): int; cdecl;
 {Accept a new connection on a socket}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
  Handle:TSocket;
+ SockAddr:PSockAddr;
+ SockAddrBuf:LongInt;
+ SockAddrLen:PLongInt;
  Entry:PSyscallsEntry;
 begin
  {}
+ Result:=SOCKET_ERROR;
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls accept (socket=' + IntToHex(socket,8) + ' address=' + PtrToHex(address) + ' address_len=' + PtrToHex(address_len) + ')');
  {$ENDIF}
@@ -10127,12 +10272,22 @@ begin
  Entry:=SyscallsGetEntry(socket);
  if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
-   Result:=SOCKET_ERROR;
-   
+   {Allocate Address}
+   if not SyscallsAllocateWinsock(address,address_len,@SockAddrBuf,SockAddr,SockAddrLen) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+
    {Accept Socket}
-   Handle:=Sockets.fpaccept(Entry^.Handle,address,psocklen(address_len));
+   Handle:=Sockets.fpaccept(Entry^.Handle,SockAddr,SockAddrLen);
    if Handle = Integer(INVALID_SOCKET) then
     begin
+     {Free Address}
+     FreeMem(SockAddr);
+
      {Return Error}
      ptr:=__getreent;
      if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
@@ -10146,19 +10301,38 @@ begin
      {Close Socket}
      Sockets.CloseSocket(Handle);
 
+     {Free Address}
+     FreeMem(SockAddr);
+
      {Return Error}
      ptr:=__getreent;
      if ptr <> nil then ptr^._errno:=ENOMEM;
      Exit;
     end;
 
+   {Convert Address}
+   if not SyscallsWinsockToSockAddr(SockAddr,SockAddrLen,address,address_len) then
+    begin
+     {Close Socket}
+     Sockets.CloseSocket(Handle);
+
+     {Free Address}
+     FreeMem(SockAddr);
+
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EFAULT;
+     Exit;
+    end;
+
+   {Free Address}
+   FreeMem(SockAddr);
+
    {Return Result}
    Result:=Entry^.Number;
   end
  else
   begin
-   Result:=SOCKET_ERROR;
-
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EBADF;
@@ -10167,15 +10341,20 @@ end;
 
 {==============================================================================}
 
-function socket_bind(socket: int; const address: psockaddr; address_len: socklen_t): int; cdecl;
+function socket_bind(socket: int; const address: P_sockaddr; address_len: socklen_t): int; cdecl;
 {Bind a name to a socket}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ SockAddr:PSockAddr;
+ SockAddrBuf:LongInt;
+ SockAddrLen:PLongInt;
  Entry:PSyscallsEntry;
 begin
  {}
+ Result:=SOCKET_ERROR;
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls bind (socket=' + IntToHex(socket,8) + ' address=' + PtrToHex(address) + ' address_len=' + IntToStr(address_len) + ')');
  {$ENDIF}
@@ -10184,19 +10363,41 @@ begin
  Entry:=SyscallsGetEntry(socket);
  if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Allocate Address}
+   if (address = nil) or not SyscallsAllocateWinsock(address,@address_len,@SockAddrBuf,SockAddr,SockAddrLen) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+
+   {Convert Address}
+   if not SyscallsSockAddrToWinsock(address,@address_len,SockAddr,SockAddrLen) then
+    begin
+     {Free Address}
+     FreeMem(SockAddr);
+
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EFAULT;
+     Exit;
+    end;
+
    {Bind Socket}
-   Result:=Sockets.fpbind(Entry^.Handle,address,address_len);
+   Result:=Sockets.fpbind(Entry^.Handle,SockAddr,SockAddrLen^);
    if Result = SOCKET_ERROR then
     begin
      {Return Error}
      ptr:=__getreent;
      if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
     end;
+
+   {Free Address}
+   FreeMem(SockAddr);
   end
  else
   begin
-   Result:=SOCKET_ERROR;
-
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EBADF;
@@ -10205,15 +10406,20 @@ end;
 
 {==============================================================================}
 
-function socket_connect(socket: int; const address: psockaddr; address_len: socklen_t): int; cdecl;
+function socket_connect(socket: int; const address: P_sockaddr; address_len: socklen_t): int; cdecl;
 {Connect a socket}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ SockAddr:PSockAddr;
+ SockAddrBuf:LongInt;
+ SockAddrLen:PLongInt;
  Entry:PSyscallsEntry;
 begin
  {}
+ Result:=SOCKET_ERROR;
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls connect (socket=' + IntToHex(socket,8) + ' address=' + PtrToHex(address) + ' address_len=' + IntToStr(address_len) + ')');
  {$ENDIF}
@@ -10222,19 +10428,41 @@ begin
  Entry:=SyscallsGetEntry(socket);
  if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Allocate Address}
+   if (address = nil) or not SyscallsAllocateWinsock(address,@address_len,@SockAddrBuf,SockAddr,SockAddrLen) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+
+   {Convert Address}
+   if not SyscallsSockAddrToWinsock(address,@address_len,SockAddr,SockAddrLen) then
+    begin
+     {Free Address}
+     FreeMem(SockAddr);
+
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EFAULT;
+     Exit;
+    end;
+
    {Connect Socket}
-   Result:=Sockets.fpconnect(Entry^.Handle,address,address_len);
+   Result:=Sockets.fpconnect(Entry^.Handle,SockAddr,SockAddrLen^);
    if Result = SOCKET_ERROR then
     begin
      {Return Error}
      ptr:=__getreent;
      if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
     end;
+
+   {Free Address}
+   FreeMem(SockAddr);
   end
  else
   begin
-   Result:=SOCKET_ERROR;
-
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EBADF;
@@ -10243,15 +10471,20 @@ end;
 
 {==============================================================================}
 
-function socket_getpeername(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl;
+function socket_getpeername(socket: int; address: P_sockaddr; address_len: Psocklen_t): int; cdecl;
 {Get the name of the peer socket}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ SockAddr:PSockAddr;
+ SockAddrBuf:LongInt;
+ SockAddrLen:PLongInt;
  Entry:PSyscallsEntry;
 begin
  {}
+ Result:=SOCKET_ERROR;
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getpeername (socket=' + IntToHex(socket,8) + ' address=' + PtrToHex(address) + ' address_len=' + PtrToHex(address_len) + ')');
  {$ENDIF}
@@ -10260,19 +10493,41 @@ begin
  Entry:=SyscallsGetEntry(socket);
  if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
-   {Get Peer Name}
-   Result:=Sockets.fpgetpeername(Entry^.Handle,address,psocklen(address_len));
-   if Result = SOCKET_ERROR then
+   {Allocate Address}
+   if (address = nil) or not SyscallsAllocateWinsock(address,address_len,@SockAddrBuf,SockAddr,SockAddrLen) then
     begin
      {Return Error}
      ptr:=__getreent;
-     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
     end;
+
+   {Get Peer Name}
+   Result:=Sockets.fpgetpeername(Entry^.Handle,SockAddr,SockAddrLen);
+   if Result = SOCKET_ERROR then
+    begin
+     {Free Address}
+     FreeMem(SockAddr);
+
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+     Exit;
+    end;
+
+   {Convert Address}
+   if not SyscallsWinsockToSockAddr(SockAddr,SockAddrLen,address,address_len) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EFAULT;
+    end;
+
+   {Free Address}
+   FreeMem(SockAddr);
   end
  else
   begin
-   Result:=SOCKET_ERROR;
-
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EBADF;
@@ -10281,15 +10536,20 @@ end;
 
 {==============================================================================}
 
-function socket_getsockname(socket: int; address: psockaddr; address_len: Psocklen_t): int; cdecl;
+function socket_getsockname(socket: int; address: P_sockaddr; address_len: Psocklen_t): int; cdecl;
 {Get the socket name}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ SockAddr:PSockAddr;
+ SockAddrBuf:LongInt;
+ SockAddrLen:PLongInt;
  Entry:PSyscallsEntry;
 begin
  {}
+ Result:=SOCKET_ERROR;
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getsockname (socket=' + IntToHex(socket,8) + ' address=' + PtrToHex(address) + ' address_len=' + PtrToHex(address_len) + ')');
  {$ENDIF}
@@ -10298,19 +10558,41 @@ begin
  Entry:=SyscallsGetEntry(socket);
  if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
-   {Get Sock Name}
-   Result:=Sockets.fpgetsockname(Entry^.Handle,address,psocklen(address_len));
-   if Result = SOCKET_ERROR then
+   {Allocate Address}
+   if (address = nil) or not SyscallsAllocateWinsock(address,address_len,@SockAddrBuf,SockAddr,SockAddrLen) then
     begin
      {Return Error}
      ptr:=__getreent;
-     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
     end;
+
+   {Get Sock Name}
+   Result:=Sockets.fpgetsockname(Entry^.Handle,SockAddr,SockAddrLen);
+   if Result = SOCKET_ERROR then
+    begin
+     {Free Address}
+     FreeMem(SockAddr);
+
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+     Exit;
+    end;
+
+   {Convert Address}
+   if not SyscallsWinsockToSockAddr(SockAddr,SockAddrLen,address,address_len) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EFAULT;
+    end;
+
+   {Free Address}
+   FreeMem(SockAddr);
   end
  else
   begin
-   Result:=SOCKET_ERROR;
-
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EBADF;
@@ -10433,15 +10715,20 @@ end;
 
 {==============================================================================}
 
-function socket_recvfrom(socket: int; buffer: Pointer; len: size_t; flags: int; address: psockaddr; address_len: Psocklen_t): ssize_t; cdecl;
+function socket_recvfrom(socket: int; buffer: Pointer; len: size_t; flags: int; address: P_sockaddr; address_len: Psocklen_t): ssize_t; cdecl;
 {Receive a message from a socket}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ SockAddr:PSockAddr;
+ SockAddrBuf:LongInt;
+ SockAddrLen:PLongInt;
  Entry:PSyscallsEntry;
 begin
  {}
+ Result:=SOCKET_ERROR;
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls recv (socket=' + IntToHex(socket,8) + ' buffer=' + PtrToHex(buffer) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ' address=' + PtrToHex(address) + ' address_len=' + PtrToHex(address_len) + ')');
  {$ENDIF}
@@ -10450,19 +10737,38 @@ begin
  Entry:=SyscallsGetEntry(socket);
  if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Allocate Address}
+   if not SyscallsAllocateWinsock(address,address_len,@SockAddrBuf,SockAddr,SockAddrLen) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+
    {Recv From Socket}
-   Result:=Sockets.fprecvfrom(Entry^.Handle,buffer,len,flags,address,psocklen(address_len));
+   Result:=Sockets.fprecvfrom(Entry^.Handle,buffer,len,flags,SockAddr,SockAddrLen);
    if Result = SOCKET_ERROR then
     begin
      {Return Error}
      ptr:=__getreent;
      if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+     Exit;
     end;
+
+   {Convert Address}
+   if not SyscallsWinsockToSockAddr(SockAddr,SockAddrLen,address,address_len) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EFAULT;
+    end;
+
+   {Free Address}
+   FreeMem(SockAddr);
   end
  else
   begin
-   Result:=SOCKET_ERROR;
-
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EBADF;
@@ -10546,15 +10852,20 @@ end;
 
 {==============================================================================}
 
-function socket_sendto(socket: int; const buffer: Pointer; len: size_t; flags: int; dest_addr: psockaddr; dest_len: socklen_t): ssize_t; cdecl;
+function socket_sendto(socket: int; const buffer: Pointer; len: size_t; flags: int; dest_addr: P_sockaddr; dest_len: socklen_t): ssize_t; cdecl;
 {Send a message on a socket}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ SockAddr:PSockAddr;
+ SockAddrBuf:LongInt;
+ SockAddrLen:PLongInt;
  Entry:PSyscallsEntry;
 begin
  {}
+ Result:=SOCKET_ERROR;
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sendto (socket=' + IntToHex(socket,8) + ' buffer=' + PtrToHex(buffer) + ' len=' + IntToStr(len) + ' flags=' + IntToHex(flags,8) + ' dest_addr=' + PtrToHex(dest_addr) + ' dest_len=' + IntToStr(dest_len) + ')');
  {$ENDIF}
@@ -10563,19 +10874,41 @@ begin
  Entry:=SyscallsGetEntry(socket);
  if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
+   {Allocate Address}
+   if not SyscallsAllocateWinsock(dest_addr,@dest_len,@SockAddrBuf,SockAddr,SockAddrLen) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+
+   {Convert Address}
+   if not SyscallsSockAddrToWinsock(dest_addr,@dest_len,SockAddr,SockAddrLen) then
+    begin
+     {Free Address}
+     FreeMem(SockAddr);
+
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EFAULT;
+     Exit;
+    end;
+
    {Send To Socket}
-   Result:=Sockets.fpsendto(Entry^.Handle,buffer,len,flags,dest_addr,dest_len);
+   Result:=Sockets.fpsendto(Entry^.Handle,buffer,len,flags,SockAddr,SockAddrLen^);
    if Result = SOCKET_ERROR then
     begin
      {Return Error}
      ptr:=__getreent;
      if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
     end;
+
+   {Free Address}
+   FreeMem(SockAddr);
   end
  else
   begin
-   Result:=SOCKET_ERROR;
-
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EBADF;
@@ -10972,7 +11305,8 @@ end;
 
 function socket_inet_addr(cp: PChar): in_addr_t; cdecl;
 {IPv4 address manipulation}
-
+{Note: Address will be returned in network order}
+ 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
@@ -10980,55 +11314,85 @@ begin
 end;
 {==============================================================================}
 
-function socket_inet_ntoa(inaddr: TInAddr): PChar; cdecl;
+function socket_inet_ntoa(inaddr: T_in_addr): PChar; cdecl;
 {IPv4 address manipulation}
+{Note: Address will be in network order}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 begin
  {}
- Result:=Sockets.Inet_Ntoa(inaddr);
+ Result:=Sockets.Inet_Ntoa(TInAddr(inaddr));
 end;
 
 {==============================================================================}
 
-function socket_inet_aton(cp: PChar; inaddr: PInAddr): int; cdecl;
+function socket_inet_aton(cp: PChar; inaddr: P_in_addr): int; cdecl;
 {IPv4 address manipulation}
+{Note: Address will be returned in network order}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
 begin
  {}
- Result:=Sockets.Inet_Aton(cp,inaddr);
+ Result:=Sockets.Inet_Aton(cp,PInAddr(inaddr));
+ if Result = 0 then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+  end;
 end;
 
 {==============================================================================}
 
 function socket_inet_pton(af: int; src: PChar; dst: Pointer): int; cdecl;
 {Convert IPv4 and IPv6 addresses from text to binary form}
+{Note: Dest will be returned in network order where applicable}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
 begin
  {}
  Result:=Sockets.Inet_Pton(af,src,dst);
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+  end;
 end;
 
 {==============================================================================}
 
 function socket_inet_ntop(af: int; src: Pointer; dst: PChar; size: socklen_t): PChar; cdecl;
 {Convert IPv4 and IPv6 addresses from binary to text form}
+{Note: Source will be in network order where applicable}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
 begin
  {}
  Result:=Sockets.Inet_Ntop(af,src,dst,size);
+ if Result = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+  end;
 end;
 
 {==============================================================================}
 
 function socket_gethostbyaddr(addr: Pointer; len: socklen_t; family: int): P_hostent; cdecl;
 {Network host database functions}
+{Note: Address will be in network order where applicable}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
+ ptr:P_reent;
  HostEnt:PHostEnt;
  Netdb:PSyscallsNetdb;
 begin
@@ -11067,6 +11431,12 @@ begin
    Result^.h_addrtype:=HostEnt^.h_addrtype;
    Result^.h_length:=HostEnt^.h_length;
    Result^.h_addr_list:=HostEnt^.h_addr_list;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_db_error(Sockets.SocketError());
   end;
 end;
 
@@ -11077,6 +11447,7 @@ function socket_gethostbyname(name: PChar): P_hostent; cdecl;
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
+ ptr:P_reent;
  HostEnt:PHostEnt;
  Netdb:PSyscallsNetdb;
 begin
@@ -11115,6 +11486,12 @@ begin
    Result^.h_addrtype:=HostEnt^.h_addrtype;
    Result^.h_length:=HostEnt^.h_length;
    Result^.h_addr_list:=HostEnt^.h_addr_list;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_db_error(Sockets.SocketError());
   end;
 end;
 
@@ -11122,9 +11499,11 @@ end;
 
 function socket_getnetbyaddr(net: uint32_t; family: int): P_netent; cdecl;
 {Network database functions}
+{Note: Net will be in host order where applicable}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
+ ptr:P_reent;
  Addr:TInAddr;
  NetEnt:PNetEnt;
  Netdb:PSyscallsNetdb;
@@ -11136,6 +11515,7 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getnetbyaddr (net=' + IntToHex(net,8) + ' family=' + IntToStr(family) + ')');
  {$ENDIF}
 
+ {Convert to network order}
  Addr.S_addr:=htonl(net);
 
  NetEnt:=Sockets.GetNetByAddr(@Addr,SizeOf(TInAddr),family);
@@ -11164,7 +11544,13 @@ begin
    Result^.n_name:=NetEnt^.n_name;
    Result^.n_aliases:=NetEnt^.n_aliases;
    Result^.n_addrtype:=NetEnt^.n_addrtype;
-   Result^.n_net:=NetEnt^.n_net;
+   Result^.n_net:=ntohl(NetEnt^.n_net); {Convert to host order}
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_db_error(Sockets.SocketError());
   end;
 end;
 
@@ -11175,6 +11561,7 @@ function socket_getnetbyname(name: PChar): P_netent; cdecl;
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
+ ptr:P_reent;
  NetEnt:PNetEnt;
  Netdb:PSyscallsNetdb;
 begin
@@ -11211,7 +11598,13 @@ begin
    Result^.n_name:=NetEnt^.n_name;
    Result^.n_aliases:=NetEnt^.n_aliases;
    Result^.n_addrtype:=NetEnt^.n_addrtype;
-   Result^.n_net:=NetEnt^.n_net;
+   Result^.n_net:=ntohl(NetEnt^.n_net); {Convert to host order}
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_db_error(Sockets.SocketError());
   end;
 end;
 
@@ -11219,9 +11612,11 @@ end;
 
 function socket_getservbyport(port: int; proto: PChar): P_servent; cdecl;
 {Network services database functions}
+{Note: Port will be in network order}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
+ ptr:P_reent;
  ServEnt:PServEnt;
  Netdb:PSyscallsNetdb;
 begin
@@ -11259,6 +11654,12 @@ begin
    Result^.s_aliases:=ServEnt^.s_aliases;
    Result^.s_port:=ServEnt^.s_port;
    Result^.s_proto:=ServEnt^.s_proto;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_db_error(Sockets.SocketError());
   end;
 end;
 
@@ -11269,6 +11670,7 @@ function socket_getservbyname(name, proto: PChar): P_servent; cdecl;
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
+ ptr:P_reent;
  ServEnt:PServEnt;
  Netdb:PSyscallsNetdb;
 begin
@@ -11306,6 +11708,12 @@ begin
    Result^.s_aliases:=ServEnt^.s_aliases;
    Result^.s_port:=ServEnt^.s_port;
    Result^.s_proto:=ServEnt^.s_proto;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_db_error(Sockets.SocketError());
   end;
 end;
 
@@ -11316,6 +11724,7 @@ function socket_getprotobynumber(proto: int): P_protoent; cdecl;
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
+ ptr:P_reent;
  ProtoEnt:PProtoEnt;
  Netdb:PSyscallsNetdb;
 begin
@@ -11352,6 +11761,12 @@ begin
    Result^.p_name:=ProtoEnt^.p_name;
    Result^.p_aliases:=ProtoEnt^.p_aliases;
    Result^.p_proto:=ProtoEnt^.p_proto;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_db_error(Sockets.SocketError());
   end;
 end;
 
@@ -11362,6 +11777,7 @@ function socket_getprotobyname(name: PChar): P_protoent; cdecl;
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
+ ptr:P_reent;
  ProtoEnt:PProtoEnt;
  Netdb:PSyscallsNetdb;
 begin
@@ -11398,52 +11814,206 @@ begin
    Result^.p_name:=ProtoEnt^.p_name;
    Result^.p_aliases:=ProtoEnt^.p_aliases;
    Result^.p_proto:=ProtoEnt^.p_proto;
+  end
+ else
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_db_error(Sockets.SocketError());
   end;
 end;
 
 {==============================================================================}
 
-function socket_getaddrinfo(node: PChar; service: PChar; hints: PAddrInfo; var res: PAddrInfo): int; cdecl;
+function socket_getaddrinfo(node: PChar; service: PChar; hints: P_addrinfo; var res: P_addrinfo): int; cdecl;
 {Network address and service translation}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ addr:P_addrinfo;
+ last:P_addrinfo;
+ AddrInfo:PAddrInfo;
+ NextInfo:PAddrInfo;
+ HintsInfo:PAddrInfo;
+ SockAddr:P_sockaddr;
+ SockAddrBuf:socklen_t;
+ SockAddrLen:Psocklen_t;
 begin
  {}
+ Result:=EAI_MEMORY;
+
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getaddrinfo (node=' + StrPas(node) + ' service=' + StrPas(service) + ')');
  {$ENDIF}
- 
- Result:=Sockets.GetAddrInfo(node,service,hints,res);
+
+ {Set Defaults}
+ res:=nil;
+ last:=nil;
+ AddrInfo:=nil;
+ HintsInfo:=nil;
+
+ {Check Hints}
+ if hints <> nil then
+  begin
+   {Allocate Hints}
+   HintsInfo:=AllocMem(SizeOf(TAddrInfo));
+   if HintsInfo = nil then Exit;
+   
+   {Update Hints}
+   HintsInfo^.ai_flags:=hints^.ai_flags;
+   HintsInfo^.ai_family:=hints^.ai_family;
+   HintsInfo^.ai_socktype:=hints^.ai_socktype;
+   HintsInfo^.ai_protocol:=hints^.ai_protocol;
+  end;
+
+ {Get Address Info}
+ Result:=Sockets.GetAddrInfo(node,service,HintsInfo,AddrInfo);
+ if Result <> ERROR_SUCCESS then Result:=socket_get_eai_error(Result);
+
+ {Check Info}
+ if AddrInfo <> nil then
+  begin
+   {Get Next}
+   NextInfo:=AddrInfo;
+   while NextInfo <> nil do
+    begin
+     {Get Info}
+     AddrInfo:=NextInfo;
+     
+     {Allocate Info}
+     addr:=AllocMem(SizeOf(T_addrinfo));
+     if addr = nil then Break;
+     
+     {Update Info}
+     addr^.ai_flags:=AddrInfo^.ai_flags;
+     addr^.ai_family:=AddrInfo^.ai_family;
+     addr^.ai_socktype:=AddrInfo^.ai_socktype;
+     addr^.ai_protocol:=AddrInfo^.ai_protocol;
+     addr^.ai_canonname:=AddrInfo^.ai_canonname;
+
+     {Allocate Address}
+     if SyscallsAllocateSockAddr(AddrInfo^.ai_addr,@AddrInfo^.ai_addrlen,@SockAddrBuf,SockAddr,SockAddrLen) then
+      begin
+       {Convert Address}
+       if SyscallsWinsockToSockAddr(AddrInfo^.ai_addr,@AddrInfo^.ai_addrlen,SockAddr,SockAddrLen) then
+        begin
+         addr^.ai_addrlen:=SockAddrLen^;
+         addr^.ai_addr:=SockAddr;
+        end;
+      end;
+
+     {Link Info}
+     if res = nil then res:=addr;
+     if last <> nil then last^.ai_next:=addr;
+     last:=addr;
+
+     {Get Next}
+     NextInfo:=AddrInfo^.ai_next;
+
+     {Free Info}
+     AddrInfo^.ai_canonname:=nil;
+     AddrInfo^.ai_next:=nil;
+     Sockets.FreeAddrInfo(AddrInfo);
+    end;
+  end;
+
+ {Free Hints}
+ if HintsInfo <> nil then FreeMem(HintsInfo);
 end;
 
 {==============================================================================}
 
-function socket_getnameinfo(addr: PSockAddr; addrlen: socklen_t; host: PChar; hostlen: socklen_t; serv: PChar; servlen: socklen_t; flags: int): int; cdecl;
+function socket_getnameinfo(addr: P_sockaddr; addrlen: socklen_t; host: PChar; hostlen: socklen_t; serv: PChar; servlen: socklen_t; flags: int): int; cdecl;
 {Address-to-name  translation  in protocol-independent manner}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ SockAddr:PSockAddr;
+ SockAddrBuf:LongInt;
+ SockAddrLen:PLongInt;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getnameinfo');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getnameinfo (addr = ' + PtrToHex(addr) + ' addrlen = ' + IntToStr(addrlen) + ' hostlen = ' + IntToStr(hostlen) + ' servlen = ' + IntToStr(servlen) + ' flags = ' + IntToHex(flags,8) + ')');
  {$ENDIF}
- 
- Result:=Sockets.GetNameInfo(addr,addrlen,host,hostlen,serv,servlen,flags);
+
+ {Allocate Address}
+ if (addr = nil) or not SyscallsAllocateWinsock(addr,@addrlen,@SockAddrBuf,SockAddr,SockAddrLen) then
+  begin
+   {Return Error}
+   Result:=EAI_SYSTEM;
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end;
+
+ {Convert Address}
+ if not SyscallsSockAddrToWinsock(addr,@addrlen,SockAddr,SockAddrLen) then
+  begin
+   {Free Address}
+   FreeMem(SockAddr);
+
+   {Return Error}
+   Result:=EAI_SYSTEM;
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {Get Name Info}
+ Result:=Sockets.GetNameInfo(SockAddr,SockAddrLen^,host,hostlen,serv,servlen,flags);
+ if Result <> ERROR_SUCCESS then Result:=socket_get_eai_error(Result);
+
+ {Free Address}
+ FreeMem(SockAddr);
 end;
 
 {==============================================================================}
 
-procedure socket_freeaddrinfo(res: PAddrInfo); cdecl;
+procedure socket_freeaddrinfo(res: P_addrinfo); cdecl;
 {Network address and service translation}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls freeaddrinfo');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls freeaddrinfo (res = ' + PtrToHex(res) + ')');
  {$ENDIF}
- 
- Sockets.FreeAddrInfo(res);
+
+ {Set Error}
+ ptr:=__getreent;
+ if ptr <> nil then ptr^._errno:=EFAULT;
+
+ {Check Info}
+ if res = nil then Exit;
+
+ {Check Next}
+ if res^.ai_next <> nil then
+  begin
+   {Free Next}
+   socket_freeaddrinfo(res^.ai_next);
+  end;
+
+ {Free Name}
+ if res^.ai_canonname <> nil then
+  begin
+   FreeMem(res^.ai_canonname);
+  end;
+
+ {Free Addr}
+ if res^.ai_addr <> nil then
+  begin
+   FreeMem(res^.ai_addr);
+  end;
+
+ {Free Info}
+ FreeMem(res);
+
+ {Set Success}
+ if ptr <> nil then ptr^._errno:=0;
 end;
 {$ENDIF}
 {==============================================================================}
@@ -12977,6 +13547,180 @@ begin
  end; 
 end;
 
+{==============================================================================}
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
+function SyscallsSockAddrToWinsock(Source:P_sockaddr;SourceLen:Psocklen_t;Dest:PSockAddr;DestLen:PLongint):Boolean;
+{Convert a BSD or POSIX sockets socket address to a Winsock socket address}
+begin
+ {}
+ Result:=False;
+
+ {Check Source and Dest}
+ if (Source <> nil) and (Dest <> nil) then
+  begin
+   {Check Source and Dest Length}
+   if (SourceLen = nil) or (DestLen = nil) then Exit;
+
+   {Check Family}
+   case Source^.sa_family of
+    AF_INET:begin
+      {Check Source Length}
+      if SourceLen^ < SizeOf(T_sockaddr_in) then Exit;
+
+      {Convert Length}
+      DestLen^:=SourceLen^;
+
+      {Convert IPv4 Address}
+      Dest^.sin_family:=P_sockaddr_in(Source)^.sin_family;
+      Dest^.sin_port:=P_sockaddr_in(Source)^.sin_port;
+      Dest^.sin_addr.S_addr:=P_sockaddr_in(Source)^.sin_addr.s_addr;
+     end;
+    AF_INET6:begin
+      {Check Source Length}
+      if SourceLen^ < SizeOf(T_sockaddr_in6) then Exit;
+
+      {Convert Length}
+      DestLen^:=SourceLen^;
+
+      {Convert IPv6 Address}
+      PSockAddrIn6(Dest)^.sin6_family:=P_sockaddr_in6(Source)^.sin6_family;
+      PSockAddrIn6(Dest)^.sin6_port:=P_sockaddr_in6(Source)^.sin6_port;
+      PSockAddrIn6(Dest)^.sin6_flowinfo:=P_sockaddr_in6(Source)^.sin6_flowinfo;
+      PSockAddrIn6(Dest)^.sin6_addr.u6_addr32:=P_sockaddr_in6(Source)^.sin6_addr.u6_addr32;
+      PSockAddrIn6(Dest)^.sin6_scope_id:=P_sockaddr_in6(Source)^.sin6_scope_id;
+     end;
+    else
+     Exit;
+   end;  
+  end; 
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function SyscallsWinsockToSockAddr(Source:PSockAddr;SourceLen:PLongint;Dest:P_sockaddr;DestLen:Psocklen_t):Boolean;
+{Convert a Winsock socket address to a BSD or POSIX sockets socket address}
+begin
+ {}
+ Result:=False;
+
+ {Check Source and Dest}
+ if (Source <> nil) and (Dest <> nil) then
+  begin
+   {Check Source and Dest Length}
+   if (SourceLen = nil) or (DestLen = nil) then Exit;
+
+   {Check Family}
+   case Source^.sa_family of
+    AF_INET:begin
+      {Check Source Length}
+      if SourceLen^ < SizeOf(TSockAddrIn) then Exit;
+
+      {Convert Length}
+      DestLen^:=SourceLen^;
+
+      {Convert IPv4 Address}
+      P_sockaddr_in(Dest)^.sin_len:=SizeOf(T_sockaddr_in);
+      P_sockaddr_in(Dest)^.sin_family:=Source^.sin_family;
+      P_sockaddr_in(Dest)^.sin_port:=Source^.sin_port;
+      P_sockaddr_in(Dest)^.sin_addr.s_addr:=Source^.sin_addr.S_addr;
+     end;
+    AF_INET6:begin
+      {Check Source Length}
+      if SourceLen^ < SizeOf(TSockAddrIn6) then Exit;
+
+      {Convert Length}
+      DestLen^:=SourceLen^;
+
+      {Convert IPv6 Address}
+      P_sockaddr_in6(Dest)^.sin6_len:=SizeOf(T_sockaddr_in6);
+      P_sockaddr_in6(Dest)^.sin6_family:=PSockAddrIn6(Source)^.sin6_family;
+      P_sockaddr_in6(Dest)^.sin6_port:=PSockAddrIn6(Source)^.sin6_port;
+      P_sockaddr_in6(Dest)^.sin6_flowinfo:=PSockAddrIn6(Source)^.sin6_flowinfo;
+      P_sockaddr_in6(Dest)^.sin6_addr.u6_addr32:=PSockAddrIn6(Source)^.sin6_addr.u6_addr32;
+      P_sockaddr_in6(Dest)^.sin6_scope_id:=PSockAddrIn6(Source)^.sin6_scope_id;
+     end;
+    else
+     Exit;
+   end;  
+  end;
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function SyscallsAllocateWinsock(Source:P_sockaddr;SourceLen:Psocklen_t;DestBuf:PLongInt;var Dest:PSockAddr;var DestLen:PLongint):Boolean;
+{Allocate a Winsock socket address appropriate for the supplied BSD or POSIX sockets socket address}
+begin
+ {}
+ Result:=False;
+
+ {Set Defaults}
+ Dest:=nil;
+ DestLen:=nil;
+
+ {Check Buffer}
+ if DestBuf = nil then Exit;
+
+ {Check Source}
+ if Source <> nil then
+  begin
+   {Check Source Length}
+   if (SourceLen = nil) or (SourceLen^ <= 0) then Exit; 
+
+   {Set Length}
+   DestLen:=DestBuf;
+   DestLen^:=SourceLen^;
+
+   {Allocate Address}
+   Dest:=AllocMem(DestLen^);
+   if Dest = nil then Exit;
+
+   {Copy Family}
+   Dest^.sa_family:=Source^.sa_family;
+  end;
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function SyscallsAllocateSockAddr(Source:PSockAddr;SourceLen:PLongint;DestBuf:Psocklen_t;var Dest:P_sockaddr;var DestLen:Psocklen_t):Boolean;
+{Allocate a BSD or POSIX sockets socket address appropriate for the supplied Winsock socket address}
+begin
+ {}
+ Result:=False;
+
+ {Set Defaults}
+ Dest:=nil;
+ DestLen:=nil;
+
+ {Check Buffer}
+ if DestBuf = nil then Exit;
+
+ {Check Source}
+ if Source <> nil then
+  begin
+   {Check Source Length}
+   if (SourceLen = nil) or (SourceLen^ <= 0) then Exit; 
+
+   {Set Length}
+   DestLen:=DestBuf;
+   DestLen^:=SourceLen^;
+
+   {Allocate Address}
+   Dest:=AllocMem(DestLen^);
+   if Dest = nil then Exit;
+
+   {Copy Family}
+   Dest^.sa_family:=Source^.sa_family;
+  end;
+
+ Result:=True;
+end;
+{$ENDIF}
 {==============================================================================}
 {==============================================================================}
 

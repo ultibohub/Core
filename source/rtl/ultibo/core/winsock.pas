@@ -1372,6 +1372,7 @@ end;
 {==============================================================================}
 
 function inet_addr(const cp: PChar): u_long;  {PInAddr;}  { TInAddr }
+{Note: Address will be returned in network order}
 begin
  {}
  Result:=LongInt(StringToInAddr(cp));
@@ -1383,6 +1384,7 @@ function inet_ntoa(inaddr: TInAddr): PChar;
 {As per the Winsock specification, the buffer returned by this function is only
  guaranteed to be valid until the next Winsock function call is made within the
  same thread. Therefore, the data should be copied before another Winsock call}
+{Note: Address will be in network order}
 var
  WorkBuffer:String;
  NetToAddr:PNetToAddr;
@@ -1857,6 +1859,7 @@ end;
 {==============================================================================}
 
 function gethostbyaddr(const addr:pchar; len:tOS_INT; family:tOS_INT): PHostEnt;
+{Note: Address will be in network order where applicable}
 begin
  {}
  Result:=nil;
@@ -1899,7 +1902,7 @@ begin
   if DNSClient = nil then Exit;
 
   {Get Host By Name}
-  Result:=DNSClient.GetHostByName(name);
+  Result:=DNSClient.GetHostByName(name,AF_INET);
  except
   on E: Exception do
    begin
@@ -1944,6 +1947,7 @@ end;
 {==============================================================================}
 
 function getservbyport(port:tOS_INT; const proto: PChar):PServEnt;
+{Note: Port will be in network order}
 begin
  {}
  Result:=nil;
@@ -2590,6 +2594,7 @@ end;
 {==============================================================================}
 
 function getnetbyaddr(addr: Pointer; len, Struct: Integer): PNetEnt; 
+{Note: Address will be in network order where applicable}
 begin
  {}
  Result:=nil;
@@ -2632,7 +2637,7 @@ begin
   if DNSClient = nil then Exit;
 
   {Get Network By Name}
-  Result:=DNSClient.GetNetByName(name);
+  Result:=DNSClient.GetNetByName(name,AF_INET);
  except
   on E: Exception do
    begin

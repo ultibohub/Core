@@ -45,7 +45,7 @@ unit Winsock2;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,SysUtils,Classes,UltiboClasses,UltiboUtils,Network,Transport,Protocol,Sockets,
+uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Network,Transport,Protocol,Sockets,
      Loopback,ARP,IP,IPv6,UDP,TCP,ICMP,ICMPv6,IGMP,RAW,DHCP,DNS;
       
 {==============================================================================}
@@ -328,10 +328,11 @@ const
  INADDR_LOOPBACK  = GlobalSock.INADDR_LOOPBACK;
  INADDR_BROADCAST = GlobalSock.INADDR_BROADCAST;
  INADDR_NONE      = GlobalSock.INADDR_NONE;
- 
+
  IN6ADDR_ANY:TIn6Addr = (u6_addr16: (0, 0, 0, 0, 0, 0, 0, 0));
  IN6ADDR_LOOPBACK:TIn6Addr = (u6_addr8: (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1));
- 
+ IN6ADDR_NONE:TIn6Addr = (u6_addr16: ($ffff, $ffff, $ffff, $ffff, $ffff, $ffff, $ffff, $ffff));
+
 const
 { Level number for (get/set)sockopt() to apply to socket itself. }
  SOL_SOCKET      = GlobalSock.SOL_SOCKET;
@@ -762,7 +763,7 @@ const
  NI_MAXSERV = GlobalSock.NI_MAXSERV;
 
  INET_ADDRSTR_ANY = GlobalSock.INET_ADDRSTR_ANY;
- INET6_ADDRSTR_INIT = GlobalSock.INET6_ADDRSTR_INIT;
+ INET6_ADDRSTR_ANY = GlobalSock.INET6_ADDRSTR_ANY;
 
  INET_ADDRSTR_BROADCAST = GlobalSock.INET_ADDRSTR_BROADCAST;
  
@@ -1285,7 +1286,7 @@ type
 
   function ResolveHost(const AHost:String):String;
   function ResolveFamily(const AAddress:String):Integer;
-  function ResolveAddress(const AAddress:String):String;
+  function ResolveAddress(const AAddress:String;ANumeric:Boolean = False):String;
 
   function ResolveHostEx(const AHost:String;AFamily:Integer;AAll:Boolean):TStrings;
  end;
@@ -2939,7 +2940,7 @@ begin
      end;
     AF_INET6:begin
       {IPv6}
-      FBoundAddress:=INET6_ADDRSTR_INIT;
+      FBoundAddress:=INET6_ADDRSTR_ANY;
       FLastError:=ERROR_SUCCESS;
       Result:=True;
      end;
@@ -2970,7 +2971,7 @@ begin
       WorkInt:=ResolveFamily(FBoundAddress);
       if WorkInt <> FFamily then
        begin
-        FBoundAddress:=INET6_ADDRSTR_INIT;
+        FBoundAddress:=INET6_ADDRSTR_ANY;
        end;
       FLastError:=ERROR_SUCCESS;
       Result:=True;
@@ -3116,7 +3117,7 @@ begin
     {Setup bound address}
     PSockAddrIn6(Result).sin6_port:=Winsock2.htons(FBoundPort);
     PSockAddrIn6(Result).sin6_addr.s6_addr:=IN6ADDR_ANY_INIT.s6_addr;
-    if (Length(FBoundAddress) <> 0) and (FBoundAddress <> INET6_ADDRSTR_INIT) then
+    if (Length(FBoundAddress) <> 0) and (FBoundAddress <> INET6_ADDRSTR_ANY) then
      begin
       if Winsock2.InetPtonA(AF_INET6,PChar(FBoundAddress),@SockAddr.sin6_addr) = SOCKET_ERROR then
        begin
@@ -3691,9 +3692,10 @@ end;
 
 {==============================================================================}
 
-function TWinsock2Socket.ResolveAddress(const AAddress:String):String;
+function TWinsock2Socket.ResolveAddress(const AAddress:String;ANumeric:Boolean = False):String;
 {Resolve a numeric address to a hostname}
 var
+ Flags:Integer;
  WorkBuffer:String;
  SockAddr:PSockAddr;
  SockAddrLength:Integer;
@@ -3714,7 +3716,8 @@ begin
  try
   FLastError:=ERROR_SUCCESS;
   SetLength(WorkBuffer,NI_MAXHOST);
-  if Winsock2.getnameinfo(SockAddr,SockAddrLength,PChar(WorkBuffer),NI_MAXHOST,nil,0,NI_NAMEREQD) <> ERROR_SUCCESS then
+  if ANumeric then Flags:=NI_NUMERICHOST else Flags:=NI_NAMEREQD;
+  if Winsock2.getnameinfo(SockAddr,SockAddrLength,PChar(WorkBuffer),NI_MAXHOST,nil,0,Flags) <> ERROR_SUCCESS then
    begin
     FLastError:=Winsock2.WSAGetLastError;
     
@@ -6213,7 +6216,7 @@ begin
        end;
       AF_INET6:begin
         {IPv6}
-        FBoundAddress:=INET6_ADDRSTR_INIT;
+        FBoundAddress:=INET6_ADDRSTR_ANY;
         FLastError:=ERROR_SUCCESS;
         Result:=True;
        end;
@@ -6238,7 +6241,7 @@ begin
         WorkInt:=ResolveFamily(FBoundAddress);
         if WorkInt <> FFamily then
          begin
-          FBoundAddress:=INET6_ADDRSTR_INIT;
+          FBoundAddress:=INET6_ADDRSTR_ANY;
          end;
         FLastError:=ERROR_SUCCESS;
         Result:=True;
@@ -6725,7 +6728,7 @@ begin
        end;
       AF_INET6:begin
         {IPv6}
-        FBoundAddress:=INET6_ADDRSTR_INIT;
+        FBoundAddress:=INET6_ADDRSTR_ANY;
         FLastError:=ERROR_SUCCESS;
         Result:=True;
        end;
@@ -6750,7 +6753,7 @@ begin
         WorkInt:=ResolveFamily(FBoundAddress);
         if WorkInt <> FFamily then
          begin
-          FBoundAddress:=INET6_ADDRSTR_INIT;
+          FBoundAddress:=INET6_ADDRSTR_ANY;
          end;
         FLastError:=ERROR_SUCCESS;
         Result:=True;
@@ -7369,7 +7372,7 @@ begin
        end;
       AF_INET6:begin
         {IPv6}
-        FBoundAddress:=INET6_ADDRSTR_INIT;
+        FBoundAddress:=INET6_ADDRSTR_ANY;
         FLastError:=ERROR_SUCCESS;
         Result:=True;
        end;
@@ -7394,7 +7397,7 @@ begin
         WorkInt:=ResolveFamily(FBoundAddress);
         if WorkInt <> FFamily then
          begin
-          FBoundAddress:=INET6_ADDRSTR_INIT;
+          FBoundAddress:=INET6_ADDRSTR_ANY;
          end;
         FLastError:=ERROR_SUCCESS;
         Result:=True;
@@ -9691,6 +9694,7 @@ end;
 {==============================================================================}
 
 function inet_addr(const cp: PChar): u_long;
+{Note: Address will be returned in network order}
 begin
  {}
  Result:=LongWord(StringToInAddr(cp));
@@ -9702,6 +9706,7 @@ function inet_ntoa(inaddr: TInAddr): PChar;
 {As per the Winsock specification, the buffer returned by this function is only
  guaranteed to be valid until the next Winsock function call is made within the
  same thread. Therefore, the data should be copied before another Winsock call}
+{Note: Address will be in network order}
 var
  WorkBuffer:String;
  NetToAddr:PNetToAddr;
@@ -10176,6 +10181,7 @@ end;
 {==============================================================================}
 
 function gethostbyaddr(addr: Pointer; len, family: Longint): PHostEnt; 
+{Note: Address will be in network order where applicable}
 begin
  {}
  Result:=nil;
@@ -10218,7 +10224,7 @@ begin
   if DNSClient = nil then Exit;
 
   {Get Host By Name}
-  Result:=DNSClient.GetHostByName(name);
+  Result:=DNSClient.GetHostByName(name,AF_INET);
  except
   on E: Exception do
    begin
@@ -10263,6 +10269,7 @@ end;
 {==============================================================================}
 
 function getservbyport(port: Longint; const proto: PChar): PServEnt; 
+{Note: Port will be in network order}
 begin
  {}
  Result:=nil;
@@ -10379,21 +10386,7 @@ end;
 {==============================================================================}
 
 function getaddrinfo(pNodeName, pServiceName: PChar; pHints: PAddrInfo; var ppResult: PAddrInfo): LongInt;
-var
- Flags:LongInt;
- Family:LongInt;
- Protocol:LongInt;
- SocketType:LongInt;
- 
- Port:Word;
- Addr:PInAddr;
- Host:TInAddr;
- Addr6:PIn6Addr;
- Host6:TIn6Addr;
- HostEnt:PHostEnt;
- ServEnt:PServEnt;
- Current:PAddrInfo;
- WorkBuffer:String;
+{RFC 3493 protocol-independent translation from a host name to an address}
 begin
  {}
  Result:=WSAEAFNOSUPPORT;
@@ -10409,375 +10402,8 @@ begin
   NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
  
-  {Check Names}
-  Result:=WSAHOST_NOT_FOUND;
-  NetworkSetLastError(WSAHOST_NOT_FOUND);
-  if (pNodeName = nil) and (pServiceName = nil) then Exit;
- 
-  {Check Hints}
-  if pHints = nil then
-   begin
-    Flags:=AI_V4MAPPED or AI_ADDRCONFIG; {Linux defaults / Windows defaults to 0}
-    Family:=AF_UNSPEC;
-    Protocol:=IPPROTO_IP;
-    SocketType:=SOCK_UNSPEC;
-   end
-  else
-   begin
-    {Check Hints}
-    Result:=WSANO_RECOVERY;
-    NetworkSetLastError(WSANO_RECOVERY);
-    if pHints.ai_addrlen <> 0 then Exit;
-    if pHints.ai_canonname <> nil then Exit;
-    if pHints.ai_addr <> nil then Exit;
-    if pHints.ai_next <> nil then Exit;
-    
-    {Get Hints}
-    Flags:=pHints.ai_flags;
-    Family:=pHints.ai_family;
-    Protocol:=pHints.ai_protocol;
-    SocketType:=pHints.ai_socktype;
-   end;   
-  
-  {Check Flags (Canonical Name)}
-  if (Flags and AI_CANONNAME) = AI_CANONNAME then
-   begin
-    Result:=WSANO_RECOVERY;
-    NetworkSetLastError(WSANO_RECOVERY);
-    if pNodeName = nil then Exit;
-   end;
-  
-  {Check Flags (Numeric Host)}
-  if (Flags and AI_NUMERICHOST) = AI_NUMERICHOST then
-   begin
-    Result:=WSAHOST_NOT_FOUND;
-    NetworkSetLastError(WSAHOST_NOT_FOUND);
-    if pNodeName = nil then Exit;
-   end;
-  
-  {Check Flags (Numeric Service)}  
-  if (Flags and AI_NUMERICSERV) = AI_NUMERICSERV then
-   begin
-    Result:=WSAHOST_NOT_FOUND;
-    NetworkSetLastError(WSAHOST_NOT_FOUND);
-    if pServiceName = nil then Exit;
-   end;
-   
-  {Check Family}
-  Result:=WSAEAFNOSUPPORT;
-  NetworkSetLastError(WSAEAFNOSUPPORT);
-  if (Family <> AF_UNSPEC) and (Family <> AF_INET) and (Family <> AF_INET6) then Exit;
-  if not(IP_TRANSPORT_ENABLED) and (Family = AF_INET) then Exit;   //To Do //Need to use NetworkSettings, restructure when moved to DNSClient 
-  if not(IP6_TRANSPORT_ENABLED) and (Family = AF_INET6) then Exit; //To Do //Need to use NetworkSettings, restructure when moved to DNSClient 
-  if Family = AF_UNSPEC then
-   begin
-    if IP_TRANSPORT_ENABLED and not(IP6_TRANSPORT_ENABLED) then Family:=AF_INET;  //To Do //Need to use NetworkSettings, restructure when moved to DNSClient 
-    if not(IP_TRANSPORT_ENABLED) and IP6_TRANSPORT_ENABLED then Family:=AF_INET6; //To Do //Need to use NetworkSettings, restructure when moved to DNSClient 
-   end;
-   
-  {Check Socket Type}
-  Result:=WSAESOCKTNOSUPPORT;
-  NetworkSetLastError(WSAESOCKTNOSUPPORT);
-  if (SocketType <> SOCK_UNSPEC) and (SocketType <> SOCK_STREAM) and (SocketType <> SOCK_DGRAM) and (SocketType <> SOCK_RAW) then Exit;
-  
-  {Check Service Name}
-  Port:=IPPORT_ANY;
-  if pServiceName <> nil then
-   begin
-    {Check Flags (Numeric Service)}
-    if (Flags and AI_NUMERICSERV) = AI_NUMERICSERV then
-     begin
-      {Convert Service}
-      Result:=WSANO_RECOVERY;
-      NetworkSetLastError(WSANO_RECOVERY);
-      Port:=StrToIntDef(pServiceName,IPPORT_ANY);
-      if Port = IPPORT_ANY then Exit;
-     end
-    else
-     begin
-      {Resolve Service}
-      WorkBuffer:='TCP';
-      if Protocol = IPPROTO_UDP then WorkBuffer:='UDP';
-      
-      ServEnt:=DNSClient.GetServByName(pServiceName,PChar(WorkBuffer));
-      if ServEnt = nil then
-       begin
-        {Convert Service}
-        Result:=WSATYPE_NOT_FOUND;
-        NetworkSetLastError(WSATYPE_NOT_FOUND);
-        Port:=StrToIntDef(pServiceName,IPPORT_ANY);
-        if Port = IPPORT_ANY then Exit;
-       end
-      else
-       begin
-        Port:=WordBEtoN(ServEnt.s_port);
-       end;
-     end;
-   end;
-  
-  {Check Node Name}
-  if pNodeName <> nil then
-   begin
-    {Check Flags (Numeric Host)}
-    if (Flags and AI_NUMERICHOST) = AI_NUMERICHOST then
-     begin
-      {Check Family (AF_INET)}
-      if (Family = AF_INET) or (Family = AF_UNSPEC) then
-       begin
-        {Convert Host}
-        Host:=StringToInAddr(pNodeName);
-        if (not(InAddrIsDefault(Host)) and not(InAddrIsNone(Host))) or (pNodeName = INET_ADDRSTR_ANY) or (pNodeName = INET_ADDRSTR_BROADCAST) then
-         begin
-          {Create Address Info}
-          Result:=WSA_NOT_ENOUGH_MEMORY;
-          NetworkSetLastError(WSA_NOT_ENOUGH_MEMORY); 
-          ppResult:=AllocMem(SizeOf(TAddrInfo));
-          if ppResult = nil then Exit;
-          
-          {Update Address Info}
-          ppResult.ai_flags:=Flags;
-          ppResult.ai_family:=AF_INET; {Family}
-          ppResult.ai_socktype:=SocketType;
-          ppResult.ai_protocol:=Protocol;
-          ppResult.ai_addrlen:=SizeOf(TSockAddr);
-          
-          {Create Sock Address}
-          ppResult.ai_addr:=AllocMem(SizeOf(TSockAddr));
-          if ppResult.ai_addr = nil then Exit;
-      
-          {Return Sock Address}
-          ppResult.ai_addr.sin_family:=AF_INET; {Family}
-          ppResult.ai_addr.sin_port:=WordNtoBE(Port);
-          ppResult.ai_addr.sin_addr:=Host;
-         end;
-       end;
-       
-      {Check Family (AF_INET6)}
-      if (Family = AF_INET6) or (Family = AF_UNSPEC) then
-       begin
-        {Convert Host}
-        Host6:=StringToIn6Addr(pNodeName);
-        if (not In6AddrIsDefault(Host6)) or (pNodeName = INET6_ADDRSTR_INIT) then
-         begin
-          {Create Address Info}
-          Result:=WSA_NOT_ENOUGH_MEMORY;
-          NetworkSetLastError(WSA_NOT_ENOUGH_MEMORY); 
-          ppResult:=AllocMem(SizeOf(TAddrInfo));
-          if ppResult = nil then Exit;
-      
-          {Update Address Info}
-          ppResult.ai_flags:=Flags;
-          ppResult.ai_family:=AF_INET6; {Family}
-          ppResult.ai_socktype:=SocketType;
-          ppResult.ai_protocol:=Protocol;
-          ppResult.ai_addrlen:=SizeOf(TSockAddr6);
-          
-          {Create Sock Address}
-          ppResult.ai_addr:=AllocMem(SizeOf(TSockAddr6));
-          if ppResult.ai_addr = nil then Exit;
-      
-          {Return Sock Address}
-          PSockAddr6(ppResult.ai_addr).sin6_family:=AF_INET6; {Family}
-          PSockAddr6(ppResult.ai_addr).sin6_port:=WordNtoBE(Port);
-          PSockAddr6(ppResult.ai_addr).sin6_addr:=Host6;
-         end;
-       end;       
-     end
-    else
-     begin 
-      {Resolve Host}     
-      HostEnt:=DNSClient.GetHostByName(pNodeName);
-      if HostEnt = nil then
-       begin
-        {Check Family (AF_INET)}
-        if (Family = AF_INET) or (Family = AF_UNSPEC) then
-         begin
-          {Convert Host}
-          Host:=StringToInAddr(pNodeName);
-          if (not(InAddrIsDefault(Host)) and not(InAddrIsNone(Host))) or (pNodeName = INET_ADDRSTR_ANY) or (pNodeName = INET_ADDRSTR_BROADCAST) then
-           begin
-            {Create Address Info}
-            Result:=WSA_NOT_ENOUGH_MEMORY;
-            NetworkSetLastError(WSA_NOT_ENOUGH_MEMORY); 
-            ppResult:=AllocMem(SizeOf(TAddrInfo));
-            if ppResult = nil then Exit;
-          
-            {Update Address Info}
-            ppResult.ai_flags:=Flags;
-            ppResult.ai_family:=AF_INET; {Family}
-            ppResult.ai_socktype:=SocketType;
-            ppResult.ai_protocol:=Protocol;
-            ppResult.ai_addrlen:=SizeOf(TSockAddr);
-          
-            {Create Sock Address}
-            ppResult.ai_addr:=AllocMem(SizeOf(TSockAddr));
-            if ppResult.ai_addr = nil then Exit;
-        
-            {Return Sock Address}
-            ppResult.ai_addr.sin_family:=AF_INET; {Family}
-            ppResult.ai_addr.sin_port:=WordNtoBE(Port);
-            ppResult.ai_addr.sin_addr:=Host;
-           end;
-         end;
-       
-        {Check Family (AF_INET6)}
-        if (Family = AF_INET6) or (Family = AF_UNSPEC) then
-         begin
-          {Convert Host}
-          Host6:=StringToIn6Addr(pNodeName);
-          if not (In6AddrIsDefault(Host6)) or (pNodeName = INET6_ADDRSTR_INIT) then
-           begin
-            {Create Address Info}
-            Result:=WSA_NOT_ENOUGH_MEMORY;
-            NetworkSetLastError(WSA_NOT_ENOUGH_MEMORY); 
-            ppResult:=AllocMem(SizeOf(TAddrInfo));
-            if ppResult = nil then Exit;
-        
-            {Update Address Info}
-            ppResult.ai_flags:=Flags;
-            ppResult.ai_family:=AF_INET6; {Family}
-            ppResult.ai_socktype:=SocketType;
-            ppResult.ai_protocol:=Protocol;
-            ppResult.ai_addrlen:=SizeOf(TSockAddr6);
-            
-            {Create Sock Address}
-            ppResult.ai_addr:=AllocMem(SizeOf(TSockAddr6));
-            if ppResult.ai_addr = nil then Exit;
-        
-            {Return Sock Address}
-            PSockAddr6(ppResult.ai_addr).sin6_family:=AF_INET6; {Family}
-            PSockAddr6(ppResult.ai_addr).sin6_port:=WordNtoBE(Port);
-            PSockAddr6(ppResult.ai_addr).sin6_addr:=Host6;
-           end;
-         end;       
-       end
-      else
-       begin
-        //To do //This is not really right, can't get the info from HostEnt
-                //Need to move this whole routine to DNSClient.GetAddrInfo
-                              
-        {Check Family (AF_INET)}
-        if (Family = AF_INET) or (Family = AF_UNSPEC) then
-         begin
-          {Create Address Info}
-          Result:=WSA_NOT_ENOUGH_MEMORY;
-          NetworkSetLastError(WSA_NOT_ENOUGH_MEMORY); 
-          ppResult:=AllocMem(SizeOf(TAddrInfo));
-          if ppResult = nil then Exit;
-          
-          {Update Address Info}
-          ppResult.ai_flags:=Flags;
-          ppResult.ai_family:=HostEnt.h_addrtype; {Family}
-          ppResult.ai_socktype:=SocketType;
-          ppResult.ai_protocol:=Protocol;
-          ppResult.ai_addrlen:=SizeOf(TSockAddr);
-          
-          {Create Sock Address}
-          ppResult.ai_addr:=AllocMem(SizeOf(TSockAddr));
-          if ppResult.ai_addr = nil then Exit;
-        
-          {Return Sock Address}
-          Addr:=PInAddr(HostEnt.h_addr^);
-          ppResult.ai_addr.sin_family:=HostEnt.h_addrtype; {Family}
-          ppResult.ai_addr.sin_port:=WordNtoBE(Port);
-          ppResult.ai_addr.sin_addr:=Addr^;
-         end;
-        
-        {Check Family (AF_INET6)}
-        if (Family = AF_INET6) or (Family = AF_UNSPEC) then
-         begin
-         
-          //To do //DNSClient.GetAddrInfo
-          
-         end;
-       end;
-     end;  
-     
-    NetworkSetLastError(ERROR_SUCCESS); 
-    Result:=ERROR_SUCCESS;
-   end
-  else
-   begin
-    {Check Family (AF_INET)}
-    if (Family = AF_INET) or (Family = AF_UNSPEC) then
-     begin
-      {Create Address Info}
-      Result:=WSA_NOT_ENOUGH_MEMORY;
-      NetworkSetLastError(WSA_NOT_ENOUGH_MEMORY); 
-      ppResult:=AllocMem(SizeOf(TAddrInfo));
-      if ppResult = nil then Exit;
-      
-      {Update Address Info}
-      ppResult.ai_flags:=Flags;
-      ppResult.ai_family:=AF_INET; {Family}
-      ppResult.ai_socktype:=SocketType;
-      ppResult.ai_protocol:=Protocol;
-      ppResult.ai_addrlen:=SizeOf(TSockAddr);
-      
-      {Create Sock Address}
-      ppResult.ai_addr:=AllocMem(SizeOf(TSockAddr));
-      if ppResult.ai_addr = nil then Exit;
-      
-      {Check Flags (Passive)}
-      if (Flags and AI_PASSIVE) = AI_PASSIVE then
-       begin
-        {Return Bindable Sock Address}
-        ppResult.ai_addr.sin_family:=AF_INET; {Family}
-        ppResult.ai_addr.sin_port:=WordNtoBE(Port);
-        ppResult.ai_addr.sin_addr.S_addr:=LongWordNtoBE(INADDR_ANY);
-       end
-      else
-       begin
-        {Return Connectable Sock Address}
-        ppResult.ai_addr.sin_family:=AF_INET; {Family}
-        ppResult.ai_addr.sin_port:=WordNtoBE(Port);
-        ppResult.ai_addr.sin_addr.S_addr:=LongWordNtoBE(INADDR_LOOPBACK);
-       end;     
-     end;
-     
-    {Check Family (AF_INET6)}
-    if (Family = AF_INET6) or (Family = AF_UNSPEC) then
-     begin
-      {Create Address Info}
-      Result:=WSA_NOT_ENOUGH_MEMORY;
-      NetworkSetLastError(WSA_NOT_ENOUGH_MEMORY); 
-      Current:=AllocMem(SizeOf(TAddrInfo));
-      if Current = nil then Exit;
-      
-      {Update Address Info}
-      Current.ai_flags:=Flags;
-      Current.ai_family:=AF_INET6; {Family}
-      Current.ai_socktype:=SocketType;
-      Current.ai_protocol:=Protocol;
-      Current.ai_addrlen:=SizeOf(TSockAddr6);
-      
-      {Create Sock Address}
-      Current.ai_addr:=AllocMem(SizeOf(TSockAddr6));
-      if Current.ai_addr = nil then Exit;
-      
-      {Check Result}
-      if ppResult = nil then ppResult:=Current else ppResult.ai_next:=Current;
-      
-      {Check Flags (Passive)}
-      if (Flags and AI_PASSIVE) = AI_PASSIVE then
-       begin
-        {Return Bindable Sock Address}
-        PSockAddr6(Current.ai_addr).sin6_family:=AF_INET6; {Family}
-        PSockAddr6(Current.ai_addr).sin6_port:=WordNtoBE(Port);
-        PSockAddr6(Current.ai_addr).sin6_addr:=IN6ADDR_ANY_INIT;
-       end
-      else
-       begin
-        {Return Connectable Sock Address}
-        PSockAddr6(Current.ai_addr).sin6_family:=AF_INET6; {Family}
-        PSockAddr6(Current.ai_addr).sin6_port:=WordNtoBE(Port);
-        PSockAddr6(Current.ai_addr).sin6_addr:=IN6ADDR_LOOPBACK_INIT;
-       end;     
-     end;
-     
-    NetworkSetLastError(ERROR_SUCCESS); 
-    Result:=ERROR_SUCCESS;
-   end;   
+  {Get Address Info}
+  Result:=DNSClient.GetAddrInfo(pNodeName,pServiceName,pHints,ppResult);
  except
   on E: Exception do
    begin
@@ -10793,6 +10419,7 @@ end;
 {==============================================================================}
 
 procedure freeaddrinfo(ai: PAddrInfo);
+{Free address information that GetAddrInfo dynamically allocates in TAddrInfo structures}
 begin
  {}
  try
@@ -10800,33 +10427,12 @@ begin
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
 
-  {Check Addr}
-  NetworkSetLastError(WSAEFAULT);
-  if ai = nil then Exit;
- 
-  {Check Next}
-  if ai.ai_next <> nil then
-   begin
-    {Free Next}
-    freeaddrinfo(ai.ai_next);
-   end;
-   
-  {Free Name}
-  if ai.ai_canonname <> nil then
-   begin
-    FreeMem(ai.ai_canonname);
-   end;
-   
-  {Free Addr}
-  if ai.ai_addr <> nil then
-   begin
-    FreeMem(ai.ai_addr);
-   end;
-   
-  {Free Addr}
-  FreeMem(ai);
- 
-  NetworkSetLastError(ERROR_SUCCESS);
+  {Check Client}
+  NetworkSetLastError(WSASYSNOTREADY);
+  if DNSClient = nil then Exit;
+  
+  {Free Address Info}
+  DNSClient.FreeAddrInfo(ai);
  except
   on E: Exception do
    begin
@@ -10841,10 +10447,7 @@ end;
 {==============================================================================}
 
 function getnameinfo(sa: PSockAddr; salen: Integer; host: PChar; hostlen: DWORD; serv: PChar; servlen: DWORD; flags: Integer): Integer;
-var
- HostEnt:PHostEnt;
- ServEnt:PServEnt;
- WorkBuffer:String;
+{RFC 3493 protocol-independent name resolution from an address to a host name and a port number to a service name}
 begin
  {}
  Result:=WSAEAFNOSUPPORT;
@@ -10857,217 +10460,8 @@ begin
   NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
  
-  {Check Sock}
-  Result:=WSAEFAULT;
-  NetworkSetLastError(WSAEFAULT);
-  if sa = nil then Exit;
-  
-  {Check Names}
-  Result:=WSAHOST_NOT_FOUND;
-  NetworkSetLastError(WSAHOST_NOT_FOUND);
-  if (host = nil) and (serv = nil) then Exit;
-
-  {Check Name Lengths}
-  Result:=WSAEINVAL;
-  NetworkSetLastError(WSAEINVAL);
-  if (host <> nil) and (hostlen = 0) then Exit;
-  if (serv <> nil) and (servlen = 0) then Exit;
-  
-  {Check Length}
-  if salen >= SizeOf(TSockAddr6) then
-   begin
-    {Check AF_INET6}
-    Result:=WSAEAFNOSUPPORT;
-    NetworkSetLastError(WSAEAFNOSUPPORT);
-    if PSockAddr6(sa).sin6_family <> AF_INET6 then Exit;
-    
-    {Check Host}
-    if host <> nil then
-     begin
-      {Check Flags}
-      if (flags and NI_NUMERICHOST) = NI_NUMERICHOST then
-       begin
-        {Convert Address}
-        WorkBuffer:=In6AddrToString(PSockAddr6(sa).sin6_addr);
-        
-        {Check Host Length}
-        Result:=WSAEINVAL;
-        NetworkSetLastError(WSAEINVAL);
-        if hostlen < Length(WorkBuffer) then Exit;
-        
-        StrLCopy(host,PChar(WorkBuffer),hostlen);
-       end
-      else
-       begin      
-        {Resolve Address}
-        HostEnt:=DNSClient.GetHostByAddr(sa,salen,AF_INET6);
-        if HostEnt = nil then
-         begin
-          Result:=WSAHOST_NOT_FOUND;
-          NetworkSetLastError(WSAHOST_NOT_FOUND);
-          if (flags and NI_NAMEREQD) = NI_NAMEREQD then Exit; 
-          
-          {Convert Address}
-          WorkBuffer:=In6AddrToString(PSockAddr6(sa).sin6_addr);
-          
-          {Check Host Length}
-          Result:=WSAEINVAL;
-          NetworkSetLastError(WSAEINVAL);
-          if hostlen < Length(WorkBuffer) then Exit;
-        
-          StrLCopy(host,PChar(WorkBuffer),hostlen);
-         end
-        else
-         begin
-          StrLCopy(host,HostEnt.h_name,hostlen); 
-         end;         
-        
-        //To Do //Check NI_NOFQDN
-       end; 
-     end;
-
-    {Check Service}
-    if serv <> nil then
-     begin
-      {Check Flags}
-      if (flags and NI_NUMERICSERV) = NI_NUMERICSERV then 
-       begin
-        {Convert Service}
-        WorkBuffer:=IntToStr(WordBEtoN(PSockAddr6(sa).sin6_port));
-        
-        {Check Service Length}
-        Result:=WSAEINVAL;
-        NetworkSetLastError(WSAEINVAL);
-        if servlen < Length(WorkBuffer) then Exit;
-        
-        StrLCopy(serv,PChar(WorkBuffer),servlen);
-       end
-      else
-       begin
-        {Resolve Service}
-        WorkBuffer:='TCP';
-        if (flags and NI_DGRAM) = NI_DGRAM then WorkBuffer:='UDP';
-        
-        ServEnt:=DNSClient.GetServByPort(PSockAddr6(sa).sin6_port,PChar(WorkBuffer));
-        if ServEnt = nil then
-         begin
-          {Convert Service}
-          WorkBuffer:=IntToStr(WordBEtoN(PSockAddr6(sa).sin6_port));
-          
-          {Check Service Length}
-          Result:=WSAEINVAL;
-          NetworkSetLastError(WSAEINVAL);
-          if servlen < Length(WorkBuffer) then Exit;
-        
-          StrLCopy(serv,PChar(WorkBuffer),servlen);
-         end
-        else
-         begin        
-          StrLCopy(serv,ServEnt.s_name,servlen); 
-         end; 
-       end;       
-     end;
-     
-    NetworkSetLastError(ERROR_SUCCESS); 
-    Result:=ERROR_SUCCESS;
-   end
-  else if salen >= SizeOf(TSockAddr) then 
-   begin
-    {Check AF_INET}
-    Result:=WSAEAFNOSUPPORT;
-    NetworkSetLastError(WSAEAFNOSUPPORT);
-    if PSockAddr(sa).sin_family <> AF_INET then Exit;
-    
-    {Check Host}
-    if host <> nil then
-     begin
-      {Check Flags}
-      if (flags and NI_NUMERICHOST) = NI_NUMERICHOST then
-       begin
-        {Convert Address}
-        WorkBuffer:=InAddrToString(PSockAddr(sa).sin_addr);
-        
-        {Check Host Length}
-        Result:=WSAEINVAL;
-        NetworkSetLastError(WSAEINVAL);
-        if hostlen < Length(WorkBuffer) then Exit;
-        
-        StrLCopy(host,PChar(WorkBuffer),hostlen);
-       end
-      else
-       begin      
-        {Resolve Address}
-        HostEnt:=DNSClient.GetHostByAddr(sa,salen,AF_INET);
-        if HostEnt = nil then
-         begin
-          Result:=WSAHOST_NOT_FOUND;
-          NetworkSetLastError(WSAHOST_NOT_FOUND);
-          if (flags and NI_NAMEREQD) = NI_NAMEREQD then Exit; 
-          
-          {Convert Address}
-          WorkBuffer:=InAddrToString(PSockAddr(sa).sin_addr);
-          
-          {Check Host Length}
-          Result:=WSAEINVAL;
-          NetworkSetLastError(WSAEINVAL);
-          if hostlen < Length(WorkBuffer) then Exit;
-        
-          StrLCopy(host,PChar(WorkBuffer),hostlen);
-         end
-        else
-         begin
-          StrLCopy(host,HostEnt.h_name,hostlen); 
-         end;         
-        
-        //To Do //Check NI_NOFQDN
-       end; 
-     end;
-
-    {Check Service}
-    if serv <> nil then
-     begin
-      {Check Flags}
-      if (flags and NI_NUMERICSERV) = NI_NUMERICSERV then 
-       begin
-        {Convert Service}
-        WorkBuffer:=IntToStr(WordBEtoN(PSockAddr(sa).sin_port));
-        
-        {Check Service Length}
-        Result:=WSAEINVAL;
-        NetworkSetLastError(WSAEINVAL);
-        if servlen < (Length(WorkBuffer) + 1) then Exit;
-        
-        StrLCopy(serv,PChar(WorkBuffer),servlen);
-       end
-      else
-       begin
-        {Resolve Service}
-        WorkBuffer:='TCP';
-        if (flags and NI_DGRAM) = NI_DGRAM then WorkBuffer:='UDP';
-        
-        ServEnt:=DNSClient.GetServByPort(PSockAddr(sa).sin_port,PChar(WorkBuffer));
-        if ServEnt = nil then
-         begin
-          {Convert Service}
-          WorkBuffer:=IntToStr(WordBEtoN(PSockAddr(sa).sin_port));
-        
-          {Check Service Length}
-          Result:=WSAEINVAL;
-          NetworkSetLastError(WSAEINVAL);
-          if servlen < (Length(WorkBuffer) + 1) then Exit;
-        
-          StrLCopy(serv,PChar(WorkBuffer),servlen);
-         end
-        else
-         begin
-          StrLCopy(serv,ServEnt.s_name,servlen); 
-         end; 
-       end;       
-     end;
-
-    NetworkSetLastError(ERROR_SUCCESS); 
-    Result:=ERROR_SUCCESS;
-   end;
+  {Get Name Info}
+  Result:=DNSClient.GetNameInfo(sa,salen,host,hostlen,serv,servlen,flags);
  except
   on E: Exception do
    begin
@@ -11417,6 +10811,7 @@ end;
 {==============================================================================}
 
 function inet_pton(Family: Longint; pszAddrString: PChar; pAddrBuf: Pointer): Longint;
+{Note: Address will be returned in network order where applicable}
 begin
  {}
  Result:=InetPtonA(Family,pszAddrString,pAddrBuf);
@@ -11425,6 +10820,7 @@ end;
 {==============================================================================}
 
 function InetPtonA(Family: Longint; pszAddrString: PChar; pAddrBuf: Pointer): Longint;
+{Note: Address will be returned in network order where applicable}
 begin
  {}
  Result:=SOCKET_ERROR;
@@ -11441,21 +10837,27 @@ begin
  case Family of
   AF_INET:begin
     {IPv4}
-    PInAddr(pAddrBuf)^:=StringToInAddr(pszAddrString);
-    
-    //To Do //Check result, if not valid return 0
-    
-    Result:=1; {As per Spec}
     NetworkSetLastError(ERROR_SUCCESS);
+
+    {Convert Address}
+    PInAddr(pAddrBuf)^:=StringToInAddr(pszAddrString);
+
+    Result:=0; {As per Spec}
+    if PInAddr(pAddrBuf)^.S_addr = INADDR_NONE then Exit;
+
+    Result:=1; {As per Spec}
    end;
   AF_INET6:begin
     {IPv6}
-    PIn6Addr(pAddrBuf)^:=StringToIn6Addr(pszAddrString);
-    
-    //To Do //Check result, if not valid return 0
-    
-    Result:=1; {As per Spec}
     NetworkSetLastError(ERROR_SUCCESS);
+
+    {Convert Address}
+    PIn6Addr(pAddrBuf)^:=StringToIn6Addr(pszAddrString);
+
+    Result:=0; {As per Spec}
+    if In6AddrIsEqual(PIn6Addr(pAddrBuf)^,IN6ADDR_NONE) then Exit;
+
+    Result:=1; {As per Spec}
    end;  
  end;
 end;
@@ -11463,6 +10865,9 @@ end;
 {==============================================================================}
 
 function InetPtonW(Family: Longint; pszAddrString: PWideChar; pAddrBuf: Pointer): Longint;
+{Note: Address will be returned in network order where applicable}
+var
+ AddrString:String;
 begin
  {}
  Result:=SOCKET_ERROR;
@@ -11474,16 +10879,35 @@ begin
  {Check Buffer}
  if pAddrBuf = nil then Exit;
  
+ {Get Address}
+ AddrString:=Ultibo.WideCharToString(pszAddrString);
+ 
  {Check Family}
  NetworkSetLastError(WSAEAFNOSUPPORT);
  case Family of
   AF_INET:begin
     {IPv4}
-    //To Do
+    NetworkSetLastError(ERROR_SUCCESS);
+
+    {Convert Address}
+    PInAddr(pAddrBuf)^:=StringToInAddr(AddrString);
+
+    Result:=0; {As per Spec}
+    if PInAddr(pAddrBuf)^.S_addr = INADDR_NONE then Exit;
+
+    Result:=1; {As per Spec}
    end;
   AF_INET6:begin
     {IPv6}
-    //To Do
+    NetworkSetLastError(ERROR_SUCCESS);
+
+    {Convert Address}
+    PIn6Addr(pAddrBuf)^:=StringToIn6Addr(AddrString);
+
+    Result:=0; {As per Spec}
+    if In6AddrIsEqual(PIn6Addr(pAddrBuf)^,IN6ADDR_NONE) then Exit;
+
+    Result:=1; {As per Spec}
    end;  
  end;
 end;
@@ -11491,6 +10915,7 @@ end;
 {==============================================================================}
 
 function inet_ntop(Family: Longint; pAddr: Pointer; pStringBuf: PChar; StringBufSize: Longint): PChar;
+{Note: Address will be in network order where applicable}
 begin
  {}
  Result:=InetNtopA(Family,pAddr,pStringBuf,StringBufSize);
@@ -11499,6 +10924,7 @@ end;
 {==============================================================================}
 
 function InetNtopA(Family: Longint; pAddr: Pointer; pStringBuf: PChar; StringBufSize: Longint): PChar;
+{Note: Address will be in network order where applicable}
 var
  WorkBuffer:String;
 begin
@@ -11541,6 +10967,9 @@ end;
 {==============================================================================}
 
 function InetNtopW(Family: Longint; pAddr: Pointer; pStringBuf: PWideChar; StringBufSize: Longint): PWideChar;
+{Note: Address will be in network order where applicable}
+var
+ WorkBuffer:String;
 begin
  {}
  Result:=nil;
@@ -11557,11 +10986,23 @@ begin
  case Family of
   AF_INET:begin
     {IPv4}
-    //To Do
+    NetworkSetLastError(WSA_INVALID_PARAMETER);
+    if StringBufSize < INET_ADDRSTRLEN then Exit;
+    
+    WorkBuffer:=InAddrToString(PInAddr(pAddr)^);
+    Ultibo.StringToWideChar(WorkBuffer,pStringBuf,StringBufSize shl 1); {Buffer length in chars, Multiply by SizeOf(WideChar)}
+    
+    Result:=pStringBuf;
    end;
   AF_INET6:begin
     {IPv6}
-    //To Do
+    NetworkSetLastError(WSA_INVALID_PARAMETER);
+    if StringBufSize < INET6_ADDRSTRLEN then Exit;
+    
+    WorkBuffer:=In6AddrToString(PIn6Addr(pAddr)^);
+    Ultibo.StringToWideChar(WorkBuffer,pStringBuf,StringBufSize shl 1); {Buffer length in chars, Multiply by SizeOf(WideChar)}
+    
+    Result:=pStringBuf;
    end;  
  end;
 end;
@@ -12363,6 +11804,7 @@ end;
 {==============================================================================}
 
 function getnetbyaddr(addr: Pointer; len, Struct: Integer): PNetEnt; 
+{Note: Address will be in network order where applicable}
 begin
  {}
  Result:=nil;
@@ -12405,7 +11847,7 @@ begin
   if DNSClient = nil then Exit;
 
   {Get Network By Name}
-  Result:=DNSClient.GetNetByName(name);
+  Result:=DNSClient.GetNetByName(name,AF_INET);
  except
   on E: Exception do
    begin

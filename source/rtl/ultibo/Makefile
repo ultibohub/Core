@@ -1176,7 +1176,10 @@ endif
 ifeq ($(OS_TARGET),zxspectrum)
 OEXT=.rel
 endif
-ifeq ($(OS_TARGET),wasi)
+ifeq ($(OS_TARGET),wasip1)
+EXEEXT=.wasm
+endif
+ifeq ($(OS_TARGET),wasip1threads)
 EXEEXT=.wasm
 endif
 ifeq ($(OS_TARGET),ultibo)

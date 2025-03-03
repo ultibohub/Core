@@ -1,7 +1,7 @@
 {
 Ultibo Network Sockets interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -105,7 +105,11 @@ const
   
  INADDR_ANY   = GlobalSock.INADDR_ANY;
  INADDR_NONE  = GlobalSock.INADDR_NONE;
-  
+
+ IN6ADDR_ANY:TIn6Addr = (u6_addr16: (0, 0, 0, 0, 0, 0, 0, 0));
+ IN6ADDR_LOOPBACK:TIn6Addr = (u6_addr8: (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1));
+ IN6ADDR_NONE:TIn6Addr = (u6_addr16: ($ffff, $ffff, $ffff, $ffff, $ffff, $ffff, $ffff, $ffff));
+
 const
  { Two constants to determine whether part of soket is for in or output }
  S_IN = 0;
@@ -378,7 +382,7 @@ const
  NI_MAXSERV = GlobalSock.NI_MAXSERV;
 
  INET_ADDRSTR_ANY = GlobalSock.INET_ADDRSTR_ANY;
- INET6_ADDRSTR_INIT = GlobalSock.INET6_ADDRSTR_INIT;
+ INET6_ADDRSTR_ANY = GlobalSock.INET6_ADDRSTR_ANY;
 
  INET_ADDRSTR_BROADCAST = GlobalSock.INET_ADDRSTR_BROADCAST;
  
@@ -1111,6 +1115,7 @@ end;
 {==============================================================================}
 
 function Inet_Addr(cp: PChar): Longint;
+{Note: Address will be returned in network order}
 begin
  {}
  Result:=Longint(StringToInAddr(cp));
@@ -1122,6 +1127,7 @@ function Inet_Ntoa(inaddr: TInAddr): PChar;
 {As per the Winsock specification, the buffer returned by this function is only
  guaranteed to be valid until the next Sockets function call is made within the
  same thread. Therefore, the data should be copied before another Sockets call}
+{Note: Address will be in network order}
 var
  WorkBuffer:String;
  NetToAddr:PNetToAddr;
@@ -1154,21 +1160,22 @@ end;
 {==============================================================================}
 
 function Inet_Aton(cp: PChar; inaddr: PInAddr): Longint;
+{Note: Address will be returned in network order}
 begin
  {}
- Result:=SOCKET_ERROR;
+ Result:=0; {As per Spec}
  NetworkSetLastError(WSAEFAULT);
- 
+
  {Check Name}
  if cp = nil then Exit;
- 
+
  {Check Address}
  if inaddr = nil then Exit;
- 
+
+ {Convert Address}
  inaddr^:=StringToInAddr(cp);
- 
- //To Do //Check result, if not valid return 0
-    
+ if inaddr^.S_addr = INADDR_NONE then Exit;
+
  Result:=1; {As per Spec}
  NetworkSetLastError(ERROR_SUCCESS);
 end; 
@@ -1176,6 +1183,7 @@ end;
 {==============================================================================}
 
 function Inet_Pton(family: Longint; Source: PChar; Dest: Pointer): Longint;
+{Note: Dest will be returned in network order where applicable}
 begin
  {}
  Result:=SOCKET_ERROR;
@@ -1191,20 +1199,26 @@ begin
  NetworkSetLastError(WSAEAFNOSUPPORT);
  case Family of
   AF_INET:begin
-    PInAddr(Dest)^:=StringToInAddr(Source);
-    
-    //To Do //Check result, if not valid return 0
-    
-    Result:=1; {As per Spec}
     NetworkSetLastError(ERROR_SUCCESS);
+
+    {Convert Address}
+    PInAddr(Dest)^:=StringToInAddr(Source);
+
+    Result:=0; {As per Spec}
+    if PInAddr(Dest)^.S_addr = INADDR_NONE then Exit;
+
+    Result:=1; {As per Spec}
    end;
   AF_INET6:begin
-    PIn6Addr(Dest)^:=StringToIn6Addr(Source);
-    
-    //To Do //Check result, if not valid return 0
-    
-    Result:=1; {As per Spec}
     NetworkSetLastError(ERROR_SUCCESS);
+
+    {Convert Address}
+    PIn6Addr(Dest)^:=StringToIn6Addr(Source);
+
+    Result:=0; {As per Spec}
+    if In6AddrIsEqual(PIn6Addr(Dest)^,IN6ADDR_NONE) then Exit;
+
+    Result:=1; {As per Spec}
    end;  
  end;
 end;
@@ -1212,6 +1226,7 @@ end;
 {==============================================================================}
 
 function Inet_Ntop(family: Longint; Source: Pointer; Dest: PChar; Size: Longint): PChar;
+{Note: Source will be in network order where applicable}
 var
  WorkBuffer:String;
 begin
@@ -1252,6 +1267,7 @@ end;
 {==============================================================================}
 
 function GetHostByAddr(addr: Pointer; len, family: Longint): PHostEnt; 
+{Note: Address will be in network order where applicable}
 begin
  {}
  Result:=nil;
@@ -1294,7 +1310,7 @@ begin
   if DNSClient = nil then Exit;
 
   {Get Host By Name}
-  Result:=DNSClient.GetHostByName(name);
+  Result:=DNSClient.GetHostByName(name,AF_INET);
  except
   on E: Exception do
    begin
@@ -1339,6 +1355,7 @@ end;
 {==============================================================================}
 
 function GetNetByAddr(addr: Pointer; len, Struct: Integer): PNetEnt; 
+{Note: Address will be in network order where applicable}
 begin
  {}
  Result:=nil;
@@ -1381,7 +1398,7 @@ begin
   if DNSClient = nil then Exit;
 
   {Get Network By Name}
-  Result:=DNSClient.GetNetByName(name);
+  Result:=DNSClient.GetNetByName(name,AF_INET);
  except
   on E: Exception do
    begin
@@ -1397,6 +1414,7 @@ end;
 {==============================================================================}
 
 function GetServByPort(port: Longint; proto: PChar): PServEnt; 
+{Note: Port will be in network order}
 begin
  {}
  Result:=nil;
@@ -1513,6 +1531,7 @@ end;
 {==============================================================================}
 
 function GetAddrInfo(HostName, ServName: PChar; Hints: PAddrInfo; var Addr: PAddrInfo): Longint;
+{RFC 3493 protocol-independent translation from a host name to an address}
 begin
  {}
  Result:=WSAEAFNOSUPPORT;
@@ -1528,7 +1547,8 @@ begin
   NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
   
-  //To Do //See: DNSClient.GetAddrInfo
+  {Get Address Info}
+  Result:=DNSClient.GetAddrInfo(HostName,ServName,Hints,Addr);
  except
   on E: Exception do
    begin
@@ -1544,6 +1564,7 @@ end;
 {==============================================================================}
 
 procedure FreeAddrInfo(ai: PAddrInfo);
+{Free address information that GetAddrInfo dynamically allocates in TAddrInfo structures}
 begin
  {}
  try
@@ -1555,7 +1576,8 @@ begin
   NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
   
-  //To Do //See: DNSClient.FreeAddrInfo
+  {Free Address Info}
+  DNSClient.FreeAddrInfo(ai);
  except
   on E: Exception do
    begin
@@ -1570,6 +1592,7 @@ end;
 {==============================================================================}
 
 function GetNameInfo(sa: PSockAddr; salen: Longint; host: PChar; hostlen: DWORD; serv: PChar; servlen: DWORD; flags: Longint): Longint;
+{RFC 3493 protocol-independent name resolution from an address to a host name and a port number to a service name}
 begin
  {}
  Result:=WSAEAFNOSUPPORT;
@@ -1582,7 +1605,8 @@ begin
   NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
 
-  //To Do //See: DNSClient.GetNameInfo
+  {Get Name Info}
+  Result:=DNSClient.GetNameInfo(sa,salen,host,hostlen,serv,servlen,flags);
  except
   on E: Exception do
    begin
@@ -3370,153 +3394,18 @@ end;
 
 {==============================================================================}
 
-const 
- DigitTab:ShortString = ('0123456789ABCDEF');
- 
-function LocalIntToHex(Value:Integer;Digits:LongInt):AnsiString;
-begin
- {}
- SetLength(Result,4);
- Result[4]:=DigitTab[1 +(Value and 15)];
- Result[3]:=DigitTab[1 +((Value shr 4) and 15)];
- Result[2]:=DigitTab[1 +((Value shr 8) and 15)];
- Result[1]:=DigitTab[1 +((Value shr 12) and 15)];
-end;
-
-{==============================================================================}
-
 function HostAddrToStr6(Entry:Tin6_addr):AnsiString;
-//To Do //This needs testing
-var
- Count:Byte;
- ZC1,ZC2:Byte;
- ZR1,ZR2:set of Byte;
- Skipped:Boolean;
 begin
  {}
- ZR1:=[];
- ZR2:=[];
- ZC1:=0;
- ZC2:=0;
- 
- for Count:=0 to 7 do
-  begin
-   if Entry.u6_addr16[Count] = 0 then
-    begin
-     Include(ZR2,Count);
-     Inc(ZC2);
-    end
-   else
-    begin
-     if ZC1 < ZC2 then
-      begin
-       ZC1:=ZC2;
-       ZR1:=ZR2;
-       ZC2:=0;
-       ZR2:=[];
-      end;
-    end;
-  end;
-  
- if ZC1 < ZC2 then
-  begin
-   ZC1:=ZC2;
-   ZR1:=ZR2;
-  end;
-  
- SetLength(Result,8 * 5 - 1);
- SetLength(Result,0);
- Skipped:=False;
- 
- for Count:=0 to 7 do
-  begin
-   if not(Count in ZR1) then
-    begin
-     if Skipped then
-      begin
-       if Result = '' then Result:='::' else Result:=Result + ':';
-         
-       Skipped:=False;
-      end;
-     
-     //FIXME: is that shortnettohost really proper there? I wouldn't be too sure...
-     Result:=Result + LocalIntToHex(ShortNetToHost(Entry.u6_addr16[Count]),1) + ':';
-    end
-   else
-    begin
-     Skipped:=True;
-    end;
-  end;
-  
- if Skipped then
-  begin
-   if Result = '' then Result:='::' else Result:=Result + ':';
-  end;
-  
- if Result = '' then Result:='::';
- 
- if not(7 in ZR1) then SetLength(Result,Length(Result) - 1);
+ Result:=In6AddrToString(Entry);
 end;
 
 {==============================================================================}
 
 function StrToHostAddr6(IP:String):Tin6_addr; 
-//To Do //This needs testing
-var
- Part:String;
- Value:Word;
- Code:Integer;
- Index:Integer;
- ZeroAt:Integer;
- IPv6:TIn6_addr;
- Position:Integer;
 Begin
  {}
- FillChar(IPv6,SizeOf(IPv6),0);
- 
- { Every 16-bit block is converted at its own and stored into Result. When }
- { the '::' zero-spacer is found, its location is stored. Afterwards the   }
- { address is shifted and zero-filled.                                     }
- Index:=0;
- ZeroAt:=-1;
- Code:=0;
- Position:=Pos(':',IP);
- while (Position > 0) and (Length(IP) > 0) and (Index < 8) do
-  begin
-   Part:='$' + Copy(IP,1,Position - 1);
-   Delete(IP,1,Position);
-   
-   if Length(Part) > 1 then Val(Part,Value,Code) else Value:=0; { is there a digit after the '$'? }
-   
-   IPv6.u6_addr16[Index]:=htons(Value);
-   
-   if Code <> 0 then
-    begin
-     FillChar(IPv6,SizeOf(IPv6),0);
-     Exit;
-    end;
-    
-   if IP[1] = ':' then
-    begin
-     ZeroAt:=Index;
-     Delete(IP,1,1);
-    end;
-    
-   Inc(Index);
-   Position:=Pos(':',IP);
-   if Position = 0 then Position:=Length(IP) + 1;
-  end;
-    
- { Address      a:b:c::f:g:h }
- { Result now   a : b : c : f : g : h : 0 : 0, ZeroAt = 2, Index = 6 }
- { Result after a : b : c : 0 : 0 : f : g : h }
- if ZeroAt >= 0 then
-  begin
-   System.Move(IPv6.u6_addr16[ZeroAt + 1],IPv6.u6_addr16[(8 - Index) + ZeroAt + 1],2 * (Index - ZeroAt - 1));
-   FillChar(IPv6.u6_addr16[ZeroAt + 1],2 * (8 - Index),0);
-  end;
-
- Result:=IPv6;
+ Result:=StringToIn6Addr(IP);
 End;
 
 {==============================================================================}
