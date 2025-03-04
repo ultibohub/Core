@@ -1,7 +1,7 @@
 {
 Ultibo ICMPv6 (Internet Control Message Protocol version 6) unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1328,6 +1328,9 @@ begin
    {Read Data}
    if TICMP6Socket(ASocket).RecvData.ReadBuffer(ABuffer,Size,@SockAddr6.sin6_addr,AFlags) then
     begin
+     {Get Address Length}
+     AFromLength:=SizeOf(TSockAddr6);
+
      {Return Size}
      Result:=Size;
     end;

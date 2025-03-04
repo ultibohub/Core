@@ -1,7 +1,7 @@
 {
 Ultibo ICMP (Internet Control Message Protocol) unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2768,7 +2768,10 @@ begin
     begin
      {Get Address}
      AFromAddr.sin_addr:=InAddrToNetwork(AFromAddr.sin_addr);
-     
+
+     {Get Address Length}
+     AFromLength:=SizeOf(TSockAddr);
+
      {Return Size}
      Result:=Size;
     end;
