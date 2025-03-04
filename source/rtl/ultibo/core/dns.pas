@@ -2684,7 +2684,9 @@ begin
  
  {Create the Buffer}
  FillChar(Response,SizeOf(TDNSMessage),0);
- 
+
+ //To Do //IPv6
+
  {Receive Datagram}
  SockSize:=SizeOf(TSockAddr);
  if FProtocol.RecvFrom(ASocket,Response,Size,0,SockAddr,SockSize) > 0 then
@@ -4097,14 +4099,11 @@ begin
   if (AHost <> nil) and (AHostLength = 0) then Exit;
   if (AServ <> nil) and (AServLength = 0) then Exit;
 
-  {Check Address Length}
-  if AAddrLength >= SizeOf(TSockAddr6) then
+  {Check Address Length and Family}
+  Result:=WSAEAFNOSUPPORT;
+  NetworkSetLastError(WSAEAFNOSUPPORT);
+  if (AAddrLength >= SizeOf(TSockAddr6)) and (PSockAddr6(AAddr).sin6_family = AF_INET6) then
    begin
-    {Check AF_INET6}
-    Result:=WSAEAFNOSUPPORT;
-    NetworkSetLastError(WSAEAFNOSUPPORT);
-    if PSockAddr6(AAddr).sin6_family <> AF_INET6 then Exit;
-
     {Check Host}
     if AHost <> nil then
      begin
@@ -4201,13 +4200,8 @@ begin
     NetworkSetLastError(ERROR_SUCCESS); 
     Result:=ERROR_SUCCESS;
    end
-  else if AAddrLength >= SizeOf(TSockAddr) then 
+  else if (AAddrLength >= SizeOf(TSockAddr)) and (PSockAddr(AAddr).sin_family = AF_INET) then
    begin
-    {Check AF_INET}
-    Result:=WSAEAFNOSUPPORT;
-    NetworkSetLastError(WSAEAFNOSUPPORT);
-    if PSockAddr(AAddr).sin_family <> AF_INET then Exit;
-
     {Check Host}
     if AHost <> nil then
      begin
