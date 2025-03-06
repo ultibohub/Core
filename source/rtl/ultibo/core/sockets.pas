@@ -539,6 +539,8 @@ function GetAddrInfo(HostName, ServName: PChar; Hints: PAddrInfo; var Addr: PAdd
 procedure FreeAddrInfo(ai: PAddrInfo);
 function GetNameInfo(sa: PSockAddr; salen: Longint; host: PChar; hostlen: DWORD; serv: PChar; servlen: DWORD; flags: Longint): Longint;
 
+function Gai_StrError(ecode: Longint): PChar;
+
 {==============================================================================}
 {RTL Sockets Functions}
 function fpsocket(domain:cint; xtype:cint; protocol: cint):clong;
@@ -1618,7 +1620,27 @@ begin
    end;
  end;
 end;
-  
+
+{==============================================================================}
+
+function Gai_StrError(ecode: Longint): PChar;
+{Return an error message for an error code returned by GetAddrInfo or GetNameInfo}
+begin
+ {}
+ Result:=PChar(EAI_UNKNOWN_STR);
+
+ case ecode of
+  EAI_AGAIN:Result:=PChar(EAI_AGAIN_STR);
+  EAI_BADFLAGS:Result:=PChar(EAI_BADFLAGS_STR);
+  EAI_FAIL:Result:=PChar(EAI_FAIL_STR);
+  EAI_FAMILY:Result:=PChar(EAI_FAMILY_STR);
+  EAI_MEMORY:Result:=PChar(EAI_MEMORY_STR);
+  EAI_NONAME:Result:=PChar(EAI_NONAME_STR);
+  EAI_SERVICE:Result:=PChar(EAI_SERVICE_STR);
+  EAI_SOCKTYPE:Result:=PChar(EAI_SOCKTYPE_STR);
+ end;
+end;
+
 {==============================================================================}
 {==============================================================================}
 {RTL Sockets Functions}

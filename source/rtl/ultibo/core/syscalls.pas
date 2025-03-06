@@ -715,13 +715,15 @@ const
  TRY_AGAIN      = 2; {Non-Authoritative Host not found, or SERVERFAIL}
  NO_RECOVERY    = 3; {Non recoverable errors, FORMERR, REFUSED, NOTIMP}
  NO_DATA        = 4; {Valid name, no data record of requested type}
- 
+
  {Error constants from netdb.h}
+ EAI_ADDRFAMILY = 1;  {address family for hostname not supported (Obsolete)}
  EAI_AGAIN      = 2;  {name could not be resolved at this time}
  EAI_BADFLAGS   = 3;  {flags parameter had an invalid value}
  EAI_FAIL       = 4;  {non-recoverable failure in name resolution}
  EAI_FAMILY     = 5;  {address family not recognized}
  EAI_MEMORY     = 6;  {memory allocation failure}
+ EAI_NODATA     = 7;  {no address associated with hostname (Obsolete)}
  EAI_NONAME     = 8;  {name does not resolve}
  EAI_SERVICE    = 9;  {service not recognized for socket type}
  EAI_SOCKTYPE   = 10; {intended socket type was not recognized}
@@ -729,6 +731,25 @@ const
  EAI_BADHINTS   = 12; {invalid value for hints}
  EAI_PROTOCOL   = 13; {resolved protocol is unknown}
  EAI_OVERFLOW   = 14; {argument buffer overflow}
+ EAI_MAX        = 15;
+
+ EAI_STRERROR:array[0..EAI_MAX] of String = (
+  'No error',
+  'Address family for hostname not supported',  {EAI_ADDRFAMILY}
+  'Temporary failure in name resolution',       {EAI_AGAIN}
+  'Bad value for ai_flags',                     {EAI_BADFLAGS}
+  'Non-recoverable failure in name resolution', {EAI_FAIL}
+  'ai_family not supported',                    {EAI_FAMILY}
+  'Memory allocation failure',                  {EAI_MEMORY}
+  'No address associated with hostname',        {EAI_NODATA}
+  'Name or service not known',                  {EAI_NONAME}
+  'Servname not supported for ai_socktype',     {EAI_SERVICE}
+  'ai_socktype not supported',                  {EAI_SOCKTYPE}
+  'System error',                               {EAI_SYSTEM}
+  'Invalid value for hints',                    {EAI_BADHINTS}
+  'Resolved protocol is unknown',               {EAI_PROTOCOL}
+  'Argument buffer too small',                  {EAI_OVERFLOW}
+  'Unknown error');                             {EAI_MAX}
 {$ENDIF}
 
 const
@@ -2045,6 +2066,8 @@ function socket_getprotobyname(name: PChar): P_protoent; cdecl; public name 'get
 function socket_getaddrinfo(node: PChar; service: PChar; hints: P_addrinfo; var res: P_addrinfo): int; cdecl; public name 'getaddrinfo';   
 function socket_getnameinfo(addr: P_sockaddr; addrlen: socklen_t; host: PChar; hostlen: socklen_t; serv: PChar; servlen: socklen_t; flags: int): int; cdecl; public name 'getnameinfo';   
 procedure socket_freeaddrinfo(res: P_addrinfo); cdecl; public name 'freeaddrinfo';   
+
+function socket_gai_strerror(ecode: int): PChar; cdecl; public name 'gai_strerror';
 {$ENDIF}
 {==============================================================================}
 {Syscalls Functions (Setjmp)}
@@ -11967,6 +11990,19 @@ begin
 
  {Free Address}
  FreeMem(SockAddr);
+end;
+
+{==============================================================================}
+
+function socket_gai_strerror(ecode: int): PChar; cdecl;
+{Return an error message for an error code returned by getaddrinfo or getnameinfo}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ if (ecode < 0) or (ecode > EAI_MAX) then ecode:=EAI_MAX;
+ 
+ Result:=PChar(EAI_STRERROR[ecode]);
 end;
 
 {==============================================================================}

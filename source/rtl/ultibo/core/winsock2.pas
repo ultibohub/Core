@@ -2050,6 +2050,8 @@ function getaddrinfo(pNodeName, pServiceName: PChar; pHints: PAddrInfo; var ppRe
 procedure freeaddrinfo(ai: PAddrInfo);
 function getnameinfo(sa: PSockAddr; salen: Integer; host: PChar; hostlen: DWORD; serv: PChar; servlen: DWORD; flags: Integer): Integer;
 
+function gai_strerror(ecode: Integer): PChar;
+
 function WSAStartup(wVersionRequired: word; var WSData: TWSAData): Longint;
 function WSACleanup: Longint; 
 procedure WSASetLastError(iError: Longint); inline;
@@ -10471,6 +10473,26 @@ begin
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: getnameinfo ' + E.Message);
     {$ENDIF}
    end;
+ end;
+end;
+
+{==============================================================================}
+
+function gai_strerror(ecode: Integer): PChar;
+{Return an error message for an error code returned by getaddrinfo or getnameinfo}
+begin
+ {}
+ Result:=PChar(EAI_UNKNOWN_STR);
+
+ case ecode of
+  EAI_AGAIN:Result:=PChar(EAI_AGAIN_STR);
+  EAI_BADFLAGS:Result:=PChar(EAI_BADFLAGS_STR);
+  EAI_FAIL:Result:=PChar(EAI_FAIL_STR);
+  EAI_FAMILY:Result:=PChar(EAI_FAMILY_STR);
+  EAI_MEMORY:Result:=PChar(EAI_MEMORY_STR);
+  EAI_NONAME:Result:=PChar(EAI_NONAME_STR);
+  EAI_SERVICE:Result:=PChar(EAI_SERVICE_STR);
+  EAI_SOCKTYPE:Result:=PChar(EAI_SOCKTYPE_STR);
  end;
 end;
 

@@ -736,7 +736,18 @@ const
  EAI_SOCKTYPE = WSAESOCKTNOSUPPORT;
 
  EAI_NODATA = EAI_NONAME;
- 
+
+ {Error strings for getaddrinfo() error codes}
+ EAI_AGAIN_STR = 'Temporary failure in name resolution';
+ EAI_BADFLAGS_STR = 'Invalid parameters';
+ EAI_FAIL_STR = 'Nonrecoverable failure in name resolution';
+ EAI_FAMILY_STR = 'Address family not supported';
+ EAI_MEMORY_STR = 'Memory allocation failure';
+ EAI_NONAME_STR = 'Name does not resolve';
+ EAI_SERVICE_STR = 'Service not supported';
+ EAI_SOCKTYPE_STR = 'Socket type not supported';
+ EAI_UNKNOWN_STR = 'Unknown error';
+
 const
  {Flags used in "hints" argument to getaddrinfo()}
  {Note: Under Linux these values may be different}
