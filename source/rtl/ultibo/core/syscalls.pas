@@ -708,7 +708,7 @@ const
 
  _ATEXIT_SIZE = 32;  {Must be at least 32 to guarantee ANSI conformance}
  
-{$IFDEF SYSCALLS_EXPORT_SOCKETS}   
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
 const
  {Error constants from netdb.h}
  HOST_NOT_FOUND = 1; {Authoritative Answer Host not found}
@@ -869,7 +869,7 @@ const
  _IOC_WRITE = 1;
  _IOC_READ = 2;
 
-{$IFDEF SYSCALLS_EXPORT_SOCKETS} 
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
 const
  {FD set constants from sys/select.h}
  FD_SETSIZE = 1024;
@@ -1276,7 +1276,7 @@ type
   tv_usec: suseconds_t; {and microseconds}
  end;
 
-{$IFDEF SYSCALLS_EXPORT_SOCKETS} 
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
 type
  {From netdb.h}
  {Structures returned by network data base library}
@@ -1834,6 +1834,10 @@ function truncate(path: PChar; length: off_t): int; cdecl; public name 'truncate
 function fsync(fd: int): int; cdecl; public name 'fsync';
 function fdatasync(fd: int): int; cdecl; public name 'fdatasync';
 
+function sethostname(name: PChar; size: size_t): int; cdecl; public name 'sethostname';
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
+function gethostname(name: PChar; size: size_t): int; cdecl; public name 'gethostname';
+{$ENDIF}
 {==============================================================================}
 {Syscalls Functions (Mman)}
 function mmap(addr: Pointer; length: size_t; prot, flags, fd: int; offset: off_t): Pointer; cdecl; public name 'mmap';
@@ -2134,7 +2138,7 @@ const
  
  SYSCALLS_INVALID_FILENO = LongWord(-1);
  
-{$IFDEF SYSCALLS_EXPORT_SOCKETS}  
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
  {Syscalls FD set constants}
  {$IFDEF CPU32}
  FDSET_SHIFT = 5; {32bit : ln(32)/ln(2)=5}
@@ -4917,6 +4921,66 @@ begin
   end;
 end;
 
+{==============================================================================}
+
+function sethostname(name: PChar; size: size_t): int; cdecl;
+{Set the system host name}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ HostName:String;
+begin
+ {}
+ Result:=-1;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sethostname (name=' + StrPas(name) + ' size=' + IntToStr(size) + ')');
+ {$ENDIF}
+ 
+ {Check name}
+ if name = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {Get Name}
+ HostName:=StrPas(name);
+
+ {Set Name}
+ if not HostSetName(HostName) then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end;
+
+ Result:=0;   
+end;
+
+{==============================================================================}
+{$IFDEF SYSCALLS_EXPORT_SOCKETS}
+function gethostname(name: PChar; size: size_t): int; cdecl;
+{Get the system host name}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+begin
+ {}
+ Result:=Sockets.GetHostName(name,size);
+ if Result = SOCKET_ERROR then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+  end;
+end;
+{$ENDIF}
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Mman)}
