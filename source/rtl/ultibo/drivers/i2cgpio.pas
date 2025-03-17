@@ -1,7 +1,7 @@
 {
 GPIO based software I2C driver.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -155,8 +155,8 @@ type
 
 {==============================================================================}
 {I2CGPIO Functions}
-function I2CGPIOCreate(GPIO:PGPIODevice;SDA,SCL,Delay,Timeout:LongWord;OutputOnly,OpenDrain:Boolean):PI2CDevice;
-function I2CGPIODestroy(I2C:PI2CDevice):LongWord;
+function I2CGPIOCreate(GPIO:PGPIODevice;SDA,SCL,Delay,Timeout:LongWord;OutputOnly,OpenDrain:Boolean):PI2CDevice;{$IFDEF API_EXPORT_I2CGPIO} stdcall; public name 'i2cgpio_create';{$ENDIF}
+function I2CGPIODestroy(I2C:PI2CDevice):LongWord;{$IFDEF API_EXPORT_I2CGPIO} stdcall; public name 'i2cgpio_destroy';{$ENDIF}
 
 {==============================================================================}
 {I2CGPIO I2C Functions}
@@ -216,7 +216,7 @@ function I2CGPIOReceiveBytes(I2C:PI2CGPIODevice;Data:Pointer;Size:LongWord;var C
 {==============================================================================}
 {==============================================================================}
 {I2CGPIO Functions}
-function I2CGPIOCreate(GPIO:PGPIODevice;SDA,SCL,Delay,Timeout:LongWord;OutputOnly,OpenDrain:Boolean):PI2CDevice;
+function I2CGPIOCreate(GPIO:PGPIODevice;SDA,SCL,Delay,Timeout:LongWord;OutputOnly,OpenDrain:Boolean):PI2CDevice;{$IFDEF API_EXPORT_I2CGPIO} stdcall;{$ENDIF}
 {Create and register a new I2CGPIO I2C device connected to the specified GPIO device}
 var
  Status:LongWord;
@@ -310,7 +310,7 @@ end;
 
 {==============================================================================}
 
-function I2CGPIODestroy(I2C:PI2CDevice):LongWord;
+function I2CGPIODestroy(I2C:PI2CDevice):LongWord;{$IFDEF API_EXPORT_I2CGPIO} stdcall;{$ENDIF}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -454,6 +454,11 @@ begin
     Status:=I2CGPIOWriteAddress(I2CDevice,I2C.SlaveAddress,True);
     if Status <> ERROR_SUCCESS then
      begin
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write address failure'); 
+
+      {Update Statistics}
+      Inc(I2C.ReadErrors);
+
       Result:=Status;
       Exit;
      end;
@@ -462,6 +467,8 @@ begin
     Status:=I2CGPIOReceiveBytes(I2CDevice,Buffer,Size,Count);
     if Status <> ERROR_SUCCESS then
      begin
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Read failure or timeout'); 
+
       {Update Statistics}
       Inc(I2C.ReadErrors);
 
@@ -533,6 +540,11 @@ begin
     Status:=I2CGPIOWriteAddress(I2CDevice,I2C.SlaveAddress,False);
     if Status <> ERROR_SUCCESS then
      begin
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write address failure'); 
+
+      {Update Statistics}
+      Inc(I2C.WriteErrors);
+
       Result:=Status;
       Exit;
      end;
@@ -541,6 +553,8 @@ begin
     Status:=I2CGPIOSendBytes(I2CDevice,Buffer,Size,Count);
     if Status <> ERROR_SUCCESS then
      begin
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write failure or timeout'); 
+
       {Update Statistics}
       Inc(I2C.WriteErrors);
 
@@ -615,6 +629,11 @@ begin
     Status:=I2CGPIOWriteAddress(I2CDevice,I2C.SlaveAddress,False);
     if Status <> ERROR_SUCCESS then
      begin
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write address failure'); 
+
+      {Update Statistics}
+      Inc(I2C.WriteErrors);
+
       Result:=Status;
       Exit;
      end;
@@ -623,6 +642,8 @@ begin
     Status:=I2CGPIOSendBytes(I2CDevice,Initial,Len,Count);
     if Status <> ERROR_SUCCESS then
      begin
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write failure or timeout (Initial)'); 
+
       {Update Statistics}
       Inc(I2C.WriteErrors);
 
@@ -640,6 +661,11 @@ begin
       Status:=I2CGPIOWriteAddress(I2CDevice,I2C.SlaveAddress,True);
       if Status <> ERROR_SUCCESS then
        begin
+        if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write address failure'); 
+
+        {Update Statistics}
+        Inc(I2C.ReadErrors);
+
         Result:=Status;
         Exit;
        end;
@@ -648,6 +674,8 @@ begin
       Status:=I2CGPIOReceiveBytes(I2CDevice,Data,Size,Count);
       if Status <> ERROR_SUCCESS then
        begin
+        if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Read failure or timeout (Data)'); 
+
         {Update Statistics}
         Inc(I2C.ReadErrors);
 
@@ -723,6 +751,11 @@ begin
     Status:=I2CGPIOWriteAddress(I2CDevice,I2C.SlaveAddress,False);
     if Status <> ERROR_SUCCESS then
      begin
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write address failure'); 
+
+      {Update Statistics}
+      Inc(I2C.WriteErrors);
+
       Result:=Status;
       Exit;
      end;
@@ -731,6 +764,8 @@ begin
     Status:=I2CGPIOSendBytes(I2CDevice,Initial,Len,Count);
     if Status <> ERROR_SUCCESS then
      begin
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write failure or timeout (Initial)'); 
+
       {Update Statistics}
       Inc(I2C.WriteErrors);
 
@@ -742,6 +777,8 @@ begin
     Status:=I2CGPIOSendBytes(I2CDevice,Data,Size,Count);
     if Status <> ERROR_SUCCESS then
      begin
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write failure or timeout (Data)'); 
+
       {Update Statistics}
       Inc(I2C.WriteErrors);
 
@@ -1112,7 +1149,7 @@ begin
  if I2C_LOG_ENABLED then
   begin
    if Level = GPIO_LEVEL_LOW then Response:='ACK' else Response:='NACK';
-   I2CLogDebug(@I2C.I2C,'I2CGPIO: Output byte response is ' + Response);
+   I2CLogDebug(@I2C.I2C,'I2CGPIO: Output byte: ' + IntToHex(Data,8) + ' response is ' + Response);
   end;
  {$ENDIF}
 

@@ -394,6 +394,8 @@ Global Defines
 
 {$DEFINE API_EXPORT_ULTIBO}          {Enable the library API unit to export symbols for the Ultibo unit (Default: On)}
 
+{$DEFINE API_EXPORT_I2CGPIO}         {Enable exporting symbols for the I2CGPIO driver (Default: On)}
+
 {API dependencies}
 {$IFDEF API_EXPORT_CONSOLE}
  {$DEFINE API_EXPORT_DEVICES}
