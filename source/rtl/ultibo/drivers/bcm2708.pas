@@ -1,7 +1,7 @@
 {
 Ultibo BCM2708 interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3695,7 +3695,6 @@ end;
 function BCM2708BSCI2CWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
 var
  Status:LongWord;
- Retries:LongWord;
  Written:LongWord;
 begin
  {}
@@ -3776,20 +3775,17 @@ begin
      PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).C:=BCM2835_BSC_C_I2CEN or BCM2835_BSC_C_ST;
      
      {Poll Transfer Active}
-     Retries:=200;
      Status:=PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).S;
-     while ((Status and (BCM2835_BSC_S_TA or BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR or BCM2835_BSC_S_DONE)) = 0) and (Retries > 0) do
+     while (Status and (BCM2835_BSC_S_TA or BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR or BCM2835_BSC_S_DONE)) = 0 do
       begin
        Status:=PBCM2835BSCRegisters(PBCM2708BSCI2CDevice(I2C).Address).S;
-       
-       Dec(Retries);
       end; 
 
      {Memory Barrier}
      DataMemoryBarrier; {After the Last Read} 
       
      {Check Result}
-     if (Status and (BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR) <> 0) or (Retries = 0) then
+     if (Status and (BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR)) <> 0 then
       begin
        if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2708: Write failure or timeout'); 
        
@@ -4177,21 +4173,10 @@ begin
        if (Status and (BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR)) <> 0 then
         begin
          {Error}
-         I2C.Error:=True;
-         
-         {Update Statistics}
-         Inc(I2C.InterruptCount);
-         
-         {Reset Control (Disable I2C)} 
-         PBCM2835BSCRegisters(I2C.Address).C:=0;
-         
-         {Reset Status}
-         PBCM2835BSCRegisters(I2C.Address).S:=BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR or BCM2835_BSC_S_DONE;
-         
-         {Signal Semaphore}
-         SemaphoreSignal(I2C.I2C.Wait);
-        end
-       else if (Status and BCM2835_BSC_S_DONE) <> 0 then
+         if (Status and BCM2835_BSC_S_TA) = 0 then I2C.Error:=True;
+        end;
+
+       if (Status and BCM2835_BSC_S_DONE) <> 0 then
         begin
          {Completed}
          {Update Statistics}
@@ -4205,7 +4190,7 @@ begin
           end;
           
          {Reset Control (Disable I2C)} 
-         PBCM2835BSCRegisters(I2C.Address).C:=0;
+         PBCM2835BSCRegisters(I2C.Address).C:=BCM2835_BSC_C_CLEAR;
          
          {Reset Status}
          PBCM2835BSCRegisters(I2C.Address).S:=BCM2835_BSC_S_CLKT or BCM2835_BSC_S_ERR or BCM2835_BSC_S_DONE;
