@@ -1,7 +1,7 @@
 {
 NXP PCF857X I/O expander Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -120,9 +120,9 @@ type
  
 {==============================================================================}
 {PCF857X Functions}
-function PCF8574GPIOCreate(I2C:PI2CDevice;Address:Word):PGPIODevice;
+function PCF8574GPIOCreate(I2C:PI2CDevice;Address:Word):PGPIODevice;{$IFDEF API_EXPORT_PCF857X} stdcall; public name 'pcf8574gpio_create';{$ENDIF}
 
-function PCF857XGPIODestroy(GPIO:PGPIODevice):LongWord;
+function PCF857XGPIODestroy(GPIO:PGPIODevice):LongWord;{$IFDEF API_EXPORT_PCF857X} stdcall; public name 'pcf857xgpio_destroy';{$ENDIF}
 
 {==============================================================================}
 {PCF857X GPIO Functions}
