@@ -3400,9 +3400,16 @@ function i2c_device_start(i2c: PI2C_DEVICE; rate: uint32_t): uint32_t; stdcall; 
 function i2c_device_stop(i2c: PI2C_DEVICE): uint32_t; stdcall; public name 'i2c_device_stop';
 
 function i2c_device_read(i2c: PI2C_DEVICE; address: uint16_t; buffer: PVOID; size: uint32_t; var count: uint32_t): uint32_t; stdcall; public name 'i2c_device_read';
+function i2c_device_read_ex(i2c: PI2C_DEVICE; address: uint16_t; buffer: PVOID; size, flags: uint32_t; var count: uint32_t): uint32_t; stdcall; public name 'i2c_device_read_ex';
+
 function i2c_device_write(i2c: PI2C_DEVICE; address: uint16_t; buffer: PVOID; size: uint32_t; var count: uint32_t): uint32_t; stdcall; public name 'i2c_device_write';
+function i2c_device_write_ex(i2c: PI2C_DEVICE; address: uint16_t; buffer: PVOID; size, flags: uint32_t; var count: uint32_t): uint32_t; stdcall; public name 'i2c_device_write_ex';
+
 function i2c_device_write_read(i2c: PI2C_DEVICE; address: uint16_t; initial: PVOID; len: uint32_t; data: PVOID; size: uint32_t; var count: uint32_t): uint32_t; stdcall; public name 'i2c_device_write_read';
+function i2c_device_write_read_ex(i2c: PI2C_DEVICE; address: uint16_t; initial: PVOID; len: uint32_t; data: PVOID; size, flags: uint32_t; var count: uint32_t): uint32_t; stdcall; public name 'i2c_device_write_read_ex';
+
 function i2c_device_write_write(i2c: PI2C_DEVICE; address: uint16_t; initial: PVOID; len: uint32_t; data: PVOID; size: uint32_t; var count: uint32_t): uint32_t; stdcall; public name 'i2c_device_write_write';
+function i2c_device_write_write_ex(i2c: PI2C_DEVICE; address: uint16_t; initial: PVOID; len: uint32_t; data: PVOID; size, flags: uint32_t; var count: uint32_t): uint32_t; stdcall; public name 'i2c_device_write_write_ex';
 
 function i2c_device_get_rate(i2c: PI2C_DEVICE): uint32_t; stdcall; public name 'i2c_device_get_rate';
 function i2c_device_set_rate(i2c: PI2C_DEVICE; rate: uint32_t): uint32_t; stdcall; public name 'i2c_device_set_rate';
@@ -26792,7 +26799,23 @@ function i2c_device_read(i2c: PI2C_DEVICE; address: uint16_t; buffer: PVOID; siz
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
- Result:=I2CDeviceRead(i2c,address,buffer,size,count);
+ Result:=I2CDeviceReadEx(i2c,address,buffer,size,I2C_TRANSFER_NONE,count);
+end;
+
+{==============================================================================}
+
+function i2c_device_read_ex(i2c: PI2C_DEVICE; address: uint16_t; buffer: PVOID; size, flags: uint32_t; var count: uint32_t): uint32_t; stdcall;
+{Read data from the specified I2C device}
+{I2C: The I2C device to read from}
+{Address: The slave address to read from (I2C_ADDRESS_INVALID to use the current address)}
+{Buffer: Pointer to a buffer to receive the data}
+{Size: The size of the buffer}
+{Flags: The flags for this transfer (eg I2C_TRANSFER_DMA)}
+{Count: The number of bytes read on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceReadEx(i2c,address,buffer,size,flags,count);
 end;
 
 {==============================================================================}
@@ -26807,7 +26830,23 @@ function i2c_device_write(i2c: PI2C_DEVICE; address: uint16_t; buffer: PVOID; si
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
- Result:=I2CDeviceWrite(i2c,address,buffer,size,count);
+ Result:=I2CDeviceWriteEx(i2c,address,buffer,size,I2C_TRANSFER_NONE,count);
+end;
+
+{==============================================================================}
+
+function i2c_device_write_ex(i2c: PI2C_DEVICE; address: uint16_t; buffer: PVOID; size, flags: uint32_t; var count: uint32_t): uint32_t; stdcall;
+{Write data to the specified I2C device}
+{I2C: The I2C device to write to}
+{Address: The slave address to write to (I2C_ADDRESS_INVALID to use the current address)}
+{Buffer: Pointer to a buffer of data to transmit}
+{Size: The size of the buffer}
+{Flags: The flags for this transfer (eg I2C_TRANSFER_DMA)}
+{Count: The number of bytes written on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceWriteEx(i2c,address,buffer,size,flags,count);
 end;
 
 {==============================================================================}
@@ -26825,7 +26864,26 @@ function i2c_device_write_read(i2c: PI2C_DEVICE; address: uint16_t; initial: PVO
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
- Result:=I2CDeviceWriteRead(i2c,address,initial,len,data,size,count);
+ Result:=I2CDeviceWriteReadEx(i2c,address,initial,len,data,size,I2C_TRANSFER_NONE,count);
+end;
+
+{==============================================================================}
+
+function i2c_device_write_read_ex(i2c: PI2C_DEVICE; address: uint16_t; initial: PVOID; len: uint32_t; data: PVOID; size, flags: uint32_t; var count: uint32_t): uint32_t; stdcall;
+{Write data to and Read data from the specified I2C device in one operation}
+{Useful for devices that require a register address specified before a read (eg EEPROM devices)}
+{I2C: The I2C device to write to and read from}
+{Address: The slave address to write to (I2C_ADDRESS_INVALID to use the current address)}
+{Initial: Pointer to the initial buffer to transmit}
+{Len: The size of the initial buffer}
+{Data: Pointer to a buffer to receive the data}
+{Size: The size of the data buffer}
+{Flags: The flags for this transfer (eg I2C_TRANSFER_DMA)}
+{Count: The number of bytes read on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceWriteReadEx(i2c,address,initial,len,data,size,flags,count);
 end;
 
 {==============================================================================}
@@ -26843,7 +26901,26 @@ function i2c_device_write_write(i2c: PI2C_DEVICE; address: uint16_t; initial: PV
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
- Result:=I2CDeviceWriteWrite(i2c,address,initial,len,data,size,count);
+ Result:=I2CDeviceWriteWriteEx(i2c,address,initial,len,data,size,I2C_TRANSFER_NONE,count);
+end;
+
+{==============================================================================}
+
+function i2c_device_write_write_ex(i2c: PI2C_DEVICE; address: uint16_t; initial: PVOID; len: uint32_t; data: PVOID; size, flags: uint32_t; var count: uint32_t): uint32_t; stdcall;
+{Write 2 data blocks to the specified I2C device in one operation}
+{Useful for devices that require a register address specified before a write (eg EEPROM devices)}
+{I2C: The I2C device to write to}
+{Address: The slave address to write to (I2C_ADDRESS_INVALID to use the current address)}
+{Initial: Pointer to the initial buffer to transmit}
+{Len: The size of the initial buffer}
+{Data: Pointer to a buffer of data to transmit}
+{Size: The size of the data buffer}
+{Flags: The flags for this transfer (eg I2C_TRANSFER_DMA)}
+{Count: The number of bytes of data written on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceWriteWriteEx(i2c,address,initial,len,data,size,flags,count);
 end;
 
 {==============================================================================}

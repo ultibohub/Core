@@ -144,6 +144,8 @@ type
   Timeout:LongWord;             {Clock timeout in milliseconds}
   OutputOnly:LongBool;          {Clock line is output only, no test for SCL high}
   OpenDrain:LongBool;           {Clock and Data are open drain, no need to simulate by switching direction}
+  {Transfer Properties}
+  IgnoreNAK:LongBool;           {If True Ignore NAK responses and continue}
  end;
 
 {==============================================================================}
@@ -163,10 +165,10 @@ function I2CGPIODestroy(I2C:PI2CDevice):LongWord;{$IFDEF API_EXPORT_I2CGPIO} std
 function I2CGPIOStart(I2C:PI2CDevice;Rate:LongWord):LongWord;
 function I2CGPIOStop(I2C:PI2CDevice):LongWord;
 
-function I2CGPIORead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
-function I2CGPIOWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
-function I2CGPIOWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
-function I2CGPIOWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function I2CGPIORead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+function I2CGPIOWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+function I2CGPIOWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+function I2CGPIOWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 
 {==============================================================================}
 {I2CGPIO Helper Functions}
@@ -399,13 +401,16 @@ begin
  if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2CGPIO: I2C Stop');
  {$ENDIF}
 
+ {Reset Transfer}
+ PI2CGPIODevice(I2C).IgnoreNAK:=False;
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}
 
-function I2CGPIORead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function I2CGPIORead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 {Implementation of I2CDeviceRead API for I2CGPIO device}
 {Note: Not intended to be called directly by applications, use I2CDeviceRead instead}
 var
@@ -424,7 +429,7 @@ begin
  if I2C = nil then Exit;
 
  {$IF DEFINED(I2CGPIO_DEBUG) or DEFINED(I2C_DEBUG)}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2CGPIO: I2C Read (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ')');
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2CGPIO: I2C Read (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
 
  {Check Size}
@@ -446,6 +451,9 @@ begin
 
    {Get I2CGPIO Device}
    I2CDevice:=PI2CGPIODevice(I2C);
+
+   {Setup Data}
+   I2CDevice.IgnoreNAK:=(Flags and I2C_TRANSFER_IGNORE_NAK) <> 0;
 
    {Send START}
    I2CGPIOI2CStart(I2CDevice);
@@ -479,6 +487,9 @@ begin
     {Send STOP}
     I2CGPIOI2CStop(I2CDevice);
    end;
+
+   {Reset Data}
+   I2CDevice.IgnoreNAK:=False;
   end;
 
  {$IF DEFINED(I2CGPIO_DEBUG) or DEFINED(I2C_DEBUG)}
@@ -491,7 +502,7 @@ end;
 
 {==============================================================================}
 
-function I2CGPIOWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function I2CGPIOWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 {Implementation of I2CDeviceWrite API for I2CGPIO device}
 {Note: Not intended to be called directly by applications, use I2CDeviceWrite instead}
 var
@@ -510,7 +521,7 @@ begin
  if I2C = nil then Exit;
 
  {$IF DEFINED(I2CGPIO_DEBUG) or DEFINED(I2C_DEBUG)}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2CGPIO: I2C Write (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ')');
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2CGPIO: I2C Write (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
 
  {Check Size}
@@ -532,6 +543,9 @@ begin
 
    {Get I2CGPIO Device}
    I2CDevice:=PI2CGPIODevice(I2C);
+
+   {Setup Data}
+   I2CDevice.IgnoreNAK:=(Flags and I2C_TRANSFER_IGNORE_NAK) <> 0;
 
    {Send START}
    I2CGPIOI2CStart(I2CDevice);
@@ -565,6 +579,9 @@ begin
     {Send STOP}
     I2CGPIOI2CStop(I2CDevice);
    end;
+
+   {Reset Data}
+   I2CDevice.IgnoreNAK:=False;
   end;
 
  {$IF DEFINED(I2CGPIO_DEBUG) or DEFINED(I2C_DEBUG)}
@@ -577,7 +594,7 @@ end;
 
 {==============================================================================}
 
-function I2CGPIOWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function I2CGPIOWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 {Implementation of I2CDeviceWriteRead API for I2CGPIO device}
 {Note: Not intended to be called directly by applications, use I2CDeviceWriteRead instead}
 var
@@ -597,7 +614,7 @@ begin
  if I2C = nil then Exit;
 
  {$IF DEFINED(I2CGPIO_DEBUG) or DEFINED(I2C_DEBUG)}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2CGPIO: I2C Write Read (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ')');
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2CGPIO: I2C Write Read (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
 
  {Check Sizes}
@@ -621,6 +638,9 @@ begin
 
    {Get I2CGPIO Device}
    I2CDevice:=PI2CGPIODevice(I2C);
+
+   {Setup Data}
+   I2CDevice.IgnoreNAK:=(Flags and I2C_TRANSFER_IGNORE_NAK) <> 0;
 
    {Send START}
    I2CGPIOI2CStart(I2CDevice);
@@ -687,6 +707,9 @@ begin
     {Send STOP}
     I2CGPIOI2CStop(I2CDevice);
    end;
+
+   {Reset Data}
+   I2CDevice.IgnoreNAK:=False;
   end;
 
  {$IF DEFINED(I2CGPIO_DEBUG) or DEFINED(I2C_DEBUG)}
@@ -699,7 +722,7 @@ end;
 
 {==============================================================================}
 
-function I2CGPIOWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function I2CGPIOWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 {Implementation of I2CDeviceWriteWrite API for I2CGPIO device}
 {Note: Not intended to be called directly by applications, use I2CDeviceWriteWrite instead}
 var
@@ -719,7 +742,7 @@ begin
  if I2C = nil then Exit;
 
  {$IF DEFINED(I2CGPIO_DEBUG) or DEFINED(I2C_DEBUG)}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2CGPIO: I2C Write Write (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ')');
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2CGPIO: I2C Write Write (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
 
  {Check Sizes}
@@ -743,6 +766,9 @@ begin
 
    {Get I2CGPIO Device}
    I2CDevice:=PI2CGPIODevice(I2C);
+
+   {Setup Data}
+   I2CDevice.IgnoreNAK:=(Flags and I2C_TRANSFER_IGNORE_NAK) <> 0;
 
    {Send START}
    I2CGPIOI2CStart(I2CDevice);
@@ -789,6 +815,9 @@ begin
     {Send STOP}
     I2CGPIOI2CStop(I2CDevice);
    end;
+
+   {Reset Data}
+   I2CDevice.IgnoreNAK:=False;
   end;
 
  {$IF DEFINED(I2CGPIO_DEBUG) or DEFINED(I2C_DEBUG)}
@@ -1258,6 +1287,7 @@ function I2CGPIOWriteAddress(I2C:PI2CGPIODevice;Address:Word;Read:Boolean):LongW
 var
  Data:Byte;
  Status:LongWord;
+ Retries:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -1269,14 +1299,22 @@ begin
  {Check I2C}
  if I2C = nil then Exit;
 
+ {Setup Retries}
+ if I2C.IgnoreNAK then Retries:=0 else Retries:=I2CGPIO_RETRY_COUNT;
+
  if I2CIs10BitAddress(Address) then
   begin
    {Write 10bit address}
    Data:=$F0 or ((Address shr 7) and $06);
 
    {Try sending the first address byte}
-   Status:=I2CGPIOTryAddress(I2C,Data,I2CGPIO_RETRY_COUNT);
-   if Status <> ERROR_SUCCESS then
+   Status:=I2CGPIOTryAddress(I2C,Data,Retries);
+   if (Status = ERROR_OPERATION_FAILED) and not I2C.IgnoreNAK then
+    begin
+     Result:=Status;
+     Exit;
+    end
+   else if Status <> ERROR_SUCCESS then
     begin
      Result:=Status;
      Exit;
@@ -1284,7 +1322,12 @@ begin
 
    {Send the remaining 8bits of the address}
    Status:=I2CGPIOOutputByte(I2C,Address and $FF);
-   if Status <> ERROR_SUCCESS then
+   if (Status = ERROR_OPERATION_FAILED) and not I2C.IgnoreNAK then
+    begin
+     Result:=Status;
+     Exit;
+    end
+   else if Status <> ERROR_SUCCESS then
     begin
      Result:=Status;
      Exit;
@@ -1298,8 +1341,13 @@ begin
 
      {Try sending the first byte again with read selected}
      Data:=Data or $01;
-     Status:=I2CGPIOTryAddress(I2C,Data,I2CGPIO_RETRY_COUNT);
-     if Status <> ERROR_SUCCESS then
+     Status:=I2CGPIOTryAddress(I2C,Data,Retries);
+     if (Status = ERROR_OPERATION_FAILED) and not I2C.IgnoreNAK then
+      begin
+       Result:=Status;
+       Exit;
+      end
+     else if Status <> ERROR_SUCCESS then
       begin
        Result:=Status;
        Exit;
@@ -1313,8 +1361,13 @@ begin
    if Read then Data:=Data or $01;
 
    {Try sending the standard 7bit address format}
-   Status:=I2CGPIOTryAddress(I2C,Data,I2CGPIO_RETRY_COUNT);
-   if Status <> ERROR_SUCCESS then
+   Status:=I2CGPIOTryAddress(I2C,Data,Retries);
+   if (Status = ERROR_OPERATION_FAILED) and not I2C.IgnoreNAK then
+    begin
+     Result:=Status;
+     Exit;
+    end
+   else if Status <> ERROR_SUCCESS then
     begin
      Result:=Status;
      Exit;
@@ -1357,7 +1410,12 @@ begin
   begin
    {Send Byte}
    Status:=I2CGPIOOutputByte(I2C,Buffer^);
-   if Status <> ERROR_SUCCESS then
+   if (Status = ERROR_OPERATION_FAILED) and not I2C.IgnoreNAK then
+    begin
+     Result:=Status;
+     Exit;
+    end
+   else if Status <> ERROR_SUCCESS then
     begin
      Result:=Status;
      Exit;
