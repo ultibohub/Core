@@ -1569,6 +1569,11 @@ Download
 Build
 -----
 
+ Download source from https://www.sourceware.org/ftp/newlib/index.html
+
+ Extract to folder $HOME/libraries/newlib-4.4.0.20231231
+
+
 ARMv6
 
  Build with GCC arm-none-eabi 13.3.rel1

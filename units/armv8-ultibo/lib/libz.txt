@@ -1,6 +1,11 @@
 Zlib Library
 ============
 
+Libraries
+---------
+
+ libz.a
+
 Licence
 -------
 

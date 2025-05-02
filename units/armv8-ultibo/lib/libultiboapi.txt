@@ -1,6 +1,11 @@
 Ultibo API Library
 ==================
 
+Libraries
+---------
+
+ libultiboapi.a
+
 Licence
 -------
 

@@ -266,11 +266,11 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,HeapManage
 
 {==============================================================================}
 {Local definitions}
+{$DEFINE SYSCALLS_USE_INITFINI_ARRAY}       {Use the init_atray and fini_array sections for global constructors and initialization instead of ctors and dtors (Default: On)}
+{--$DEFINE SYSCALLS_USE_LIBC_INITFINI}      {Use the functions built into Libc to process the init_array and fini_array sections instead of processing them locally (Default: Off)}
+
 {$DEFINE SYSCALLS_WARN_UNINITIALIZED}       {Log use of uninitialized mutex, condition and rwlock variables as a warning (Default: On)}
 {$DEFINE SYSCALLS_CREATE_UNINITIALIZED}     {Allow uninitialized mutex, condition and rwlock variables to be created on first use (Default: On)}
-
-{--$DEFINE SYSCALLS_FILE_OFFSET64}          {Enable 64-bit file offsets for Libc calls (Default: Off)}
-{$DEFINE SYSCALLS_LARGE64_FILES}            {Enable 64-bit file support for Libc calls (Default: On)}
 
 {--$DEFINE _POSIX_THREAD_GUARDSIZE}         {Enable Pthread Guard Size attribute (Default: Off) (Not used by Ultibo}
 {--$DEFINE _POSIX_THREAD_CPUTIME}           {Enable Pthread CPU Time Clock Allowed attribute (Default: Off) (Not used by Ultibo}
@@ -305,6 +305,7 @@ const
  {ARG_MAX = 65536;} {max bytes for an exec function}
  NAME_MAX = 255; {max bytes in a file name}
  {PATH_MAX = 1024;} {max bytes in pathname}
+ IOV_MAX = 1024; {max elements in i/o vector}
  
 const 
  {Newlib constants from sys/errno.h}
@@ -1330,7 +1331,7 @@ type
   iov_base: Pointer;  {Base address}
   iov_len: size_t;    {Length}
  end;
-
+ 
 type
  {From arpa/inet.h} 
  {Socket types}
@@ -1526,6 +1527,30 @@ type
  {$ENDIF}
  
 type
+ {From pwd.h}
+ Ppasswd = ^Tpasswd;
+ Tpasswd = record
+  pw_name: PChar;     {user name}
+  pw_passwd: PChar;   {encrypted password}
+  pw_uid: uid_t;      {user uid}
+  pw_gid: gid_t;      {user gid}
+  pw_comment: PChar;  {comment}
+  pw_gecos: PChar;    {Honeywell login info}
+  pw_dir: PChar;      {home directory}
+  pw_shell: PChar;    {default shell}
+ end;
+
+type
+ {From grp.h}
+ Pgroup = ^Tgroup;
+ Tgroup = record
+  gr_name: PChar;     {group name}
+  gr_passwd: PChar;   {group password}
+  gr_gid: gid_t;      {group id}
+  gr_mem: PPChar;     {group members}
+ end;
+
+type
  {From sched.h}
  Psched_param = ^Tsched_param;
  Tsched_param = record
@@ -1699,7 +1724,7 @@ var
  __sf:array[0..2] of T__FILE; external;  {First three file descriptors in the C library (\newlib\libc\stdio\findfp.c)}
  __sglue:T_glue; external;               {Root of glue chain in the C library (\newlib\libc\stdio\findfp.c)}
  
- __dso_handle:Pointer; cvar;             {Dynamic shared object handle for C++ library support}
+ {__dso_handle:Pointer; cvar;}           {Dynamic shared object handle for C++ library support} {Provided by crtbegin.o}
  
 var
  {Static initialization variables}
@@ -1787,10 +1812,21 @@ function _getentropy_r(ptr: P_reent; buffer: Pointer; length: size_t): int; cdec
 function mkdir(path: PChar; mode: mode_t): int; cdecl; public name 'mkdir';
 function chmod(path: PChar; mode: mode_t): int; cdecl; public name 'chmod';
 
+function umask(mask: mode_t): mode_t; cdecl; public name 'umask';
+
 {==============================================================================}
 {Syscalls Functions (Stdio)}
 procedure __sinit(ptr: P_reent); cdecl; external libc name '__sinit';
 
+{==============================================================================}
+{Syscalls Functions (Misc)}
+{$IFDEF SYSCALLS_USE_LIBC_INITFINI}
+procedure __libc_init_array; cdecl; external libc name '__libc_init_array';
+procedure __libc_fini_array; cdecl; external libc name '__libc_fini_array';
+
+procedure _init; cdecl; public name '_init';
+procedure _fini; cdecl; public name '_fini';
+{$ENDIF}
 {==============================================================================}
 {Syscalls Functions (Stdlib)}
 function malloc(size: size_t): Pointer; cdecl; external libc name 'malloc';
@@ -1871,6 +1907,19 @@ function fstatvfs(fd: int; buf: Pstatvfs): int; cdecl; public name 'fstatvfs';
 function statvfs64(path: PChar; buf: Pstatvfs64): int; cdecl; public name 'statvfs64';
 function fstatvfs64(fd: int; buf: Pstatvfs64): int; cdecl; public name 'fstatvfs64';
 {$ENDIF}
+{==============================================================================}
+{Syscalls Functions (Uio)}
+function readv(fd: int; iov: Piovec; iovcnt: int): ssize_t; cdecl; public name 'readv';
+function writev(fd: int; iov: Piovec; iovcnt: int): ssize_t; cdecl; public name 'writev';
+
+{==============================================================================}
+{Syscalls Functions (Pwd)}
+function getpwuid(uid: uid_t): Ppasswd; cdecl; public name 'getpwuid'; 
+
+{==============================================================================}
+{Syscalls Functions (Grp)}
+function getgrgid(gid: gid_t): Pgroup; cdecl; public name 'getgrgid';
+
 {==============================================================================}
 {Syscalls Functions (Sched)}
 function sched_yield: int; cdecl; public name 'sched_yield';
@@ -2216,6 +2265,9 @@ type
  TSyscallsDtor = procedure; cdecl;
  
  PFileSearchRec = ^TFileSearchRec;
+
+ Piovecs = ^Tiovecs;
+ Tiovecs = array[0..0] of Tiovec;
  
 {==============================================================================}
 {==============================================================================}
@@ -2405,6 +2457,11 @@ begin
  {Unlock Mutex}
  MutexUnlock(SyscallsEnvLock);
 
+{$IFDEF SYSCALLS_USE_INITFINI_ARRAY}
+{$IFDEF SYSCALLS_USE_LIBC_INITFINI}
+ {Call __libc_init_array}
+ __libc_init_array();
+{$ELSE}
  {Execute Preinit functions}
  TableStart:=@__preinit_array_start;
  TableEnd:=@__preinit_array_end;
@@ -2430,7 +2487,8 @@ begin
    {Update Start}
    Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
   end;
- 
+{$ENDIF}
+{$ELSE}
  {Execute Constructor (ctor) functions}
  TableStart:=@__ctors_start;
  TableEnd:=@__ctors_end;
@@ -2443,9 +2501,10 @@ begin
    {Update Start}
    Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
   end;
- 
+{$ENDIF}
+
  //To Do //Register SyscallsQuit as a Shutdown handler
- 
+
  SyscallsInitialized:=True;
 end; 
  
@@ -2464,19 +2523,11 @@ begin
  {Check Initialized}
  if not SyscallsInitialized then Exit;
  
- {Execute Destructor (dtor) functions}
- TableStart:=@__dtors_start;
- TableEnd:=@__dtors_end;
- while TableStart < TableEnd do
-  begin
-   {Call Destructor}
-   TableProc:=TSyscallsDtor(TableStart^);
-   TableProc();
-   
-   {Update Start}
-   Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
-  end;
- 
+{$IFDEF SYSCALLS_USE_INITFINI_ARRAY}
+{$IFDEF SYSCALLS_USE_LIBC_INITFINI}
+ {Call __libc_fini_array}
+ __libc_fini_array();
+{$ELSE}
  {Execute Fini functions}
  TableStart:=@__fini_array_start;
  TableEnd:=@__fini_array_end;
@@ -2489,7 +2540,22 @@ begin
    {Update Start}
    Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
   end;
- 
+{$ENDIF}
+{$ELSE}
+ {Execute Destructor (dtor) functions}
+ TableStart:=@__dtors_start;
+ TableEnd:=@__dtors_end;
+ while TableStart < TableEnd do
+  begin
+   {Call Destructor}
+   TableProc:=TSyscallsDtor(TableStart^);
+   TableProc();
+   
+   {Update Start}
+   Inc(TableStart); {Increment PPointer increments by SizeOf(Pointer)}
+  end;
+{$ENDIF} 
+
  SyscallsInitialized:=False;
 end;
 
@@ -2523,7 +2589,7 @@ begin
  {$ENDIF}
 
  {Data Synchronization Barrier}
- DataSynchronizationBarrier
+ DataSynchronizationBarrier;
 end;
 
 {==============================================================================}
@@ -3377,6 +3443,14 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _read_r (ptr=' + PtrToHex(ptr) + ' fd=' + IntToStr(fd) + ' buf=' + PtrToHex(buf) + ' cnt=' + IntToStr(cnt) + ')');
  {$ENDIF}
  
+ {Check buffer}
+ if buf = nil then
+  begin
+   {Return Error}
+   ptr^._errno:=EFAULT;
+   Exit;
+  end;
+ 
  {Check descriptor}
  Entry:=SyscallsGetEntry(fd);
  if Entry <> nil then
@@ -3874,6 +3948,14 @@ begin
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls _write_r (ptr=' + PtrToHex(ptr) + ' fd=' + IntToStr(fd) + ' buf=' + PtrToHex(buf) + ' cnt=' + IntToStr(cnt) + ')');
  {$ENDIF}
  
+ {Check buffer}
+ if buf = nil then
+  begin
+   {Return Error}
+   ptr^._errno:=EFAULT;
+   Exit;
+  end;
+ 
  {Check descriptor}
  Entry:=SyscallsGetEntry(fd);
  if Entry <> nil then
@@ -4006,6 +4088,37 @@ begin
  Result:=0;
 end;
 
+{==============================================================================}
+
+function umask(mask: mode_t): mode_t; cdecl;
+{Set file mode creation mask}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls umask (mask=' + IntToStr(mask) + ')');
+ {$ENDIF}
+
+ Result:=0;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Misc)}
+{$IFDEF SYSCALLS_USE_LIBC_INITFINI}
+procedure _init; cdecl;
+begin
+ {Nothing, provides the _init function if _HAVE_INIT_FINI is defined in Libc}
+end;
+
+{==============================================================================}
+
+procedure _fini; cdecl;
+begin
+ {Nothing, provides the _fini function if _HAVE_INIT_FINI is defined in Libc}
+end;
+{$ENDIF}
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Stdlib)}
@@ -5721,6 +5834,355 @@ begin
  {$ENDIF}
 end;
 {$ENDIF}
+{==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Uio)}
+function readv(fd: int; iov: Piovec; iovcnt: int): ssize_t; cdecl;
+{Read a vector}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Ch:Char;
+ Next:PChar;
+ ptr:P_reent;
+ iovs:Piovecs;
+ Total:UInt64;
+ Count:LongInt;
+ Index:LongInt;
+ Buffer:Pointer;
+ EndChar:Boolean;
+ Entry:PSyscallsEntry;
+begin
+ {}
+ Result:=-1;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readv (fd=' + IntToStr(fd) + ' iov=' + PtrToHex(iov) + ' iovcnt=' + IntToStr(iovcnt) + ')');
+ {$ENDIF}
+
+ if (iovcnt <= 0) or (iovcnt > IOV_MAX) then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end; 
+
+ {Get vectors}
+ iovs:=Piovecs(iov);
+
+ {Check vectors}
+ if iovs = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {Check length}
+ Total:=0;
+ for Index:=0 to iovcnt - 1 do
+  begin
+   Total:=Total + iovs^[Index].iov_len;
+  end;
+ if Total > High(ssize_t) then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end;
+
+ {Check descriptor}
+ Entry:=SyscallsGetEntry(fd);
+ if Entry <> nil then
+  begin
+   {Normal descriptor}
+   if Entry^.Source = SYSCALLS_ENTRY_FILE then
+    begin
+     {Read Vectors}
+     Total:=0;
+     for Index:=0 to iovcnt - 1 do
+      begin
+       {Read file}
+       Count:=FSFileRead(Entry^.Handle,iovs^[Index].iov_base^,iovs^[Index].iov_len);
+
+       {Check Error}
+       if Count < 0 then
+        begin
+         {Return Error}
+         ptr:=__getreent;
+         if ptr <> nil then ptr^._errno:=EIO;
+         Exit;
+        end;
+       
+       Total:=Total + Count;
+      end; 
+
+     Result:=Total;
+    end
+   {$IFDEF SYSCALLS_EXPORT_SOCKETS}
+   else if Entry^.Source = SYSCALLS_ENTRY_SOCKET then
+    begin
+     {Read Vectors}
+     Total:=0;
+     for Index:=0 to iovcnt - 1 do
+      begin
+       {Read socket}
+       Count:=Sockets.fprecv(Entry^.Handle,iovs^[Index].iov_base,iovs^[Index].iov_len,0);
+
+       {Check Error}
+       if Count = SOCKET_ERROR then
+        begin
+         {Return Error}
+         ptr:=__getreent;
+         if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+         Exit;
+        end;
+
+       Total:=Total + Count;
+      end; 
+
+     Result:=Total;
+    end
+   {$ENDIF}
+   else
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+    end;
+  end
+ else
+  begin
+   if fd = STDIN_FILENO then
+    begin
+     {Read Vectors}
+     Total:=0;
+     for Index:=0 to iovcnt - 1 do
+      begin
+       {Stdin}
+       Count:=0;
+       EndChar:=False;
+       Next:=PChar(iovs^[Index].iov_base);
+       while (Count < iovs^[Index].iov_len) and not(EndChar) do
+        begin
+         if TextIOReadChar(Ch,nil) then
+          begin
+           if Ch = #13 then EndChar:=True;
+
+           Next^:=Ch;
+
+           Inc(Next);
+           Inc(Count);
+
+           if EndChar and (Count < iovs^[Index].iov_len) then
+            begin
+             Next^:=#10;
+
+             Inc(Next);
+             Inc(Count);
+            end;
+          end;
+        end;
+
+       Total:=Total + Count;
+      end; 
+
+     Result:=Total;
+    end
+   else
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EBADF;
+    end;
+  end;
+  
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls readv (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+
+function writev(fd: int; iov: Piovec; iovcnt: int): ssize_t; cdecl;
+{Write a vector}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ ptr:P_reent;
+ iovs:Piovecs;
+ Total:UInt64;
+ Count:LongInt;
+ Index:LongInt;
+ Entry:PSyscallsEntry;
+begin
+ {}
+ Result:=-1;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls writev (fd=' + IntToStr(fd) + ' iov=' + PtrToHex(iov) + ' iovcnt=' + IntToStr(iovcnt) + ')');
+ {$ENDIF}
+
+ if (iovcnt <= 0) or (iovcnt > IOV_MAX) then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end; 
+
+ {Get vectors}
+ iovs:=Piovecs(iov);
+
+ {Check vectors}
+ if iovs = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {Check length}
+ Total:=0;
+ for Index:=0 to iovcnt - 1 do
+  begin
+   Total:=Total + iovs^[Index].iov_len;
+  end;
+ if Total > High(ssize_t) then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end;
+
+ {Check descriptor}
+ Entry:=SyscallsGetEntry(fd);
+ if Entry <> nil then
+  begin
+   {Normal descriptor}
+   if Entry^.Source = SYSCALLS_ENTRY_FILE then
+    begin
+     {Write Vectors}
+     Total:=0;
+     for Index:=0 to iovcnt - 1 do
+      begin
+       {Write file}
+       Count:=FSFileWrite(Entry^.Handle,iovs^[Index].iov_base^,iovs^[Index].iov_len);
+
+       {Check Error}
+       if Count < 0 then
+        begin
+         {Return Error}
+         ptr:=__getreent;
+         if ptr <> nil then ptr^._errno:=EIO;
+         Exit;
+        end;
+
+       Total:=Total + Count;
+      end;
+
+     Result:=Total;
+    end
+   {$IFDEF SYSCALLS_EXPORT_SOCKETS}
+   else if Entry^.Source = SYSCALLS_ENTRY_SOCKET then
+    begin
+     {Write Vectors}
+     Total:=0;
+     for Index:=0 to iovcnt - 1 do
+      begin
+       {Write socket}
+       Count:=Sockets.fpsend(Entry^.Handle,iovs^[Index].iov_base,iovs^[Index].iov_len,0);
+
+       {Check Error}
+       if Result = SOCKET_ERROR then
+        begin
+         {Return Error}
+         ptr:=__getreent;
+         if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+         Exit;
+        end;
+
+       Total:=Total + Count;
+      end;
+
+     Result:=Total;
+    end
+   {$ENDIF}
+   else
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+    end;
+  end
+ else
+  begin
+   if (fd = STDOUT_FILENO) or (fd = STDERR_FILENO) then
+    begin
+     {Write Vectors}
+     Total:=0;
+     for Index:=0 to iovcnt - 1 do
+      begin
+       {Stdout or Stderr}
+       Count:=TextIOWriteBuffer(PChar(iovs^[Index].iov_base),iovs^[Index].iov_len,nil);
+       
+       Total:=Total + Count;
+       
+       if Count < iovs^[Index].iov_len then Break;
+      end;
+
+     Result:=Total;
+    end
+   else
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EBADF;
+    end;
+  end;
+ 
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls writev (Result=' + IntToStr(Result) + ')');
+ {$ENDIF}
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Pwd)}
+function getpwuid(uid: uid_t): Ppasswd; cdecl;
+{Search user database for a user ID}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getpwuid (uid=' + IntToStr(uid) + ')');
+ {$ENDIF}
+ 
+ Result:=nil;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Syscalls Functions (Grp)}
+function getgrgid(gid: gid_t): Pgroup; cdecl;
+{Get group database entry for a group ID}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getgrgid (gid=' + IntToStr(gid) + ')');
+ {$ENDIF}
+ 
+ Result:=nil;
+end;
+
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Sched)}

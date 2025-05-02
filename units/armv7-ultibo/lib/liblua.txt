@@ -1,6 +1,11 @@
 Lua Library
 ===========
 
+Libraries
+---------
+
+ liblua.a
+
 Licence
 -------
 

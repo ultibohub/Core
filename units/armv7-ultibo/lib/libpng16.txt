@@ -1,6 +1,11 @@
 Libpng Library
 ==============
 
+Libraries
+---------
+
+ libpng16.a
+
 Licence
 -------
 

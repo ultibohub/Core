@@ -1,6 +1,11 @@
 SQLite Library
 ==============
 
+Libraries
+---------
+
+ libsqlite3.a
+
 Licence
 -------
 

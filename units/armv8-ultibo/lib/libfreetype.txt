@@ -1,6 +1,11 @@
 FreeType2 Library
 =================
 
+Libraries
+---------
+
+ libfreetype.a
+
 Licence
 -------
 

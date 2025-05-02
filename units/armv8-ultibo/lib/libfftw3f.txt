@@ -1,6 +1,11 @@
 FFTW Library
 ============
 
+Libraries
+---------
+
+ libfftw3f.a
+
 Licence
 -------
 

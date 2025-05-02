@@ -343,9 +343,13 @@ Global Defines
 {==============================================================================}
 {==============================================================================}
 {Syscalls definitions}
-{$DEFINE SYSCALLS_LARGE64_FILES}     {Enable support for 64bit file access in Syscalls unit (Default: On)} 
+{--$DEFINE SYSCALLS_FILE_OFFSET64}   {Enable support for 64-bit file offsets in Syscalls unit (Default: Off)}
+{$DEFINE SYSCALLS_LARGE64_FILES}     {Enable support for 64-bit file access in Syscalls unit (Default: On)} 
+                                     {Note: Must match the options used to compile the standard C library (Newlib)}
+
 {$DEFINE SYSCALLS_EXPORT_SOCKETS}    {Enable export of POSIX standard socket functions by the Syscalls unit (Default: On)}
                                      {Note: Must be disabled in order to enable export of the Winsock or Winsock2 API below}
+
 {--$DEFINE SYSCALLS_USE_LONG_TIME_T} {Define time_t as a long (32-bit) instead of int64_t (64-bit) for compatibility with older GCC and NewLib (Default: Off)}                                  
 
 {==============================================================================}
