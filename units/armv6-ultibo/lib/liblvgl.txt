@@ -1,0 +1,92 @@
+LVGL Library
+============
+
+Libraries
+---------
+
+ liblvgl.a
+
+Licence
+-------
+
+MIT licence
+Copyright (c) 2021 LVGL Kft
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Version
+-------
+
+ 9.2.2
+
+Download
+--------
+
+ https://github.com/lvgl/lvgl/releases/tag/v9.2.2
+
+Build
+-----
+
+ mkdir $HOME/libraries/lvgl-9.2.2
+
+ Extract contents of download to $HOME/libraries/lvgl-9.2.2/lvgl
+
+ Copy lv_conf.h and Makefile from $API_PATH/libs/lvgl to $HOME/libraries/lvgl-9.2.2/lvgl
+
+
+ARMv6
+
+ Build with GCC arm-none-eabi 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
+
+
+ cd $HOME/libraries/lvgl-9.2.2
+
+ mkdir $HOME/libraries/lvgl-9.2.2/armv6
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
+
+ make all BOARD_TYPE=rpib ARCH_TYPE=arm
+
+ copy liblvgl.a to $HOME/libraries/lvgl-9.2.2/armv6
+
+
+ARMv7
+
+ Build with GCC arm-none-eabi 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
+
+
+ cd $HOME/libraries/lvgl-9.2.2
+
+ mkdir $HOME/libraries/lvgl-9.2.2/armv7
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
+ 
+ make all BOARD_TYPE=rpi3b ARCH_TYPE=arm
+
+ copy liblvgl.a to $HOME/libraries/lvgl-9.2.2/armv7
+
+
+ARMv8
+
+ Build with GCC aarch64-none-elf 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf
+
+
+ cd $HOME/libraries/lvgl-9.2.2
+
+ mkdir $HOME/libraries/lvgl-9.2.2/armv8
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf/bin:$PATH
+
+ make all BOARD_TYPE=rpi4b ARCH_TYPE=aarch64
+ 
+ copy liblvgl.a to $HOME/libraries/lvgl-9.2.2/armv8
