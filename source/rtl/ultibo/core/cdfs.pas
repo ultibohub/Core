@@ -1,7 +1,7 @@
 {
 Ultibo CDFS interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -7655,7 +7655,7 @@ begin
       Initial.ClusterCount:=0; {Will be set to correct value if Entry is Located}
 
       if LoadTrees then Initial.Entry:=LocateEntry(TCDFSDiskEntry(FRoot),Initial.StartCluster); //To Do //Lock
-      if Initial.Entry <> nil then Initial.Path:=GetEntryPath(Initial.Entry,False) else Initial.Path:=FRoot.Name;
+      if Initial.Entry <> nil then Initial.Path:=GetEntryPath(Initial.Entry,False,False,False) else Initial.Path:=FRoot.Name;
       
       {Add Initial}
       FCatalogs.Add(Initial);
@@ -7688,7 +7688,7 @@ begin
       Catalog.ClusterCount:=0; {Will be set to correct value if Entry is Located}
 
       if LoadTrees then Catalog.Entry:=LocateEntry(TCDFSDiskEntry(FRoot),Catalog.StartCluster); //To Do //Lock
-      if Catalog.Entry <> nil then Catalog.Path:=GetEntryPath(Catalog.Entry,False) else Catalog.Path:=FRoot.Name;
+      if Catalog.Entry <> nil then Catalog.Path:=GetEntryPath(Catalog.Entry,False,False,False) else Catalog.Path:=FRoot.Name;
       
       {Add Catalog}
       FCatalogs.Add(Catalog);
@@ -9814,7 +9814,7 @@ begin
       Catalog.LoadCount:=$01;
       Catalog.Entry:=TCDFSDiskEntry(AEntry);
       Catalog.Header:=Header;
-      Catalog.Path:=GetEntryPath(AEntry,False);
+      Catalog.Path:=GetEntryPath(AEntry,False,False,False);
       Catalog.CatalogNo:=GetNextCatalogNo;
       Catalog.MediaType:=AMediaType;
       Catalog.FloppyType:=AFloppyType;
@@ -11367,7 +11367,7 @@ begin
   FNameChar:=LoadNameChar;
   FFileChar:=LoadFileChar;
   FRootChar:=LoadRootChar;
-  FRootName:=LoadRootName;
+  FRootName:=LoadRootName(False);
   FRootPath:=LoadRootPath; 
   FMaxFile:=LoadMaxFile;
   FMaxPath:=LoadMaxPath;

@@ -1191,39 +1191,39 @@ begin
  
  {Check Environment Variables}
  {SHELL_UPDATE_HTTP_SERVER}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_HTTP_SERVER');
+ WorkBuffer:=EnvironmentGet('SHELL_UPDATE_HTTP_SERVER');
  if Length(WorkBuffer) <> 0 then SHELL_UPDATE_HTTP_SERVER:=WorkBuffer;
 
  {SHELL_UPDATE_HTTP_PROXY}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_HTTP_PROXY');
+ WorkBuffer:=EnvironmentGet('SHELL_UPDATE_HTTP_PROXY');
  if Length(WorkBuffer) <> 0 then SHELL_UPDATE_HTTP_PROXY:=WorkBuffer;
  
  {SHELL_UPDATE_HTTP_PATH}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_HTTP_PATH');
+ WorkBuffer:=EnvironmentGet('SHELL_UPDATE_HTTP_PATH');
  if Length(WorkBuffer) <> 0 then SHELL_UPDATE_HTTP_PATH:=WorkBuffer;
 
  {SHELL_UPDATE_LOCAL_PATH}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_LOCAL_PATH');
+ WorkBuffer:=EnvironmentGet('SHELL_UPDATE_LOCAL_PATH');
  if Length(WorkBuffer) <> 0 then SHELL_UPDATE_LOCAL_PATH:=WorkBuffer;
 
  {SHELL_UPDATE_KERNEL_IMAGE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_KERNEL_IMAGE');
+ WorkBuffer:=EnvironmentGet('SHELL_UPDATE_KERNEL_IMAGE');
  if Length(WorkBuffer) <> 0 then SHELL_UPDATE_KERNEL_IMAGE:=WorkBuffer;
 
  {SHELL_UPDATE_KERNEL_CONFIG}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_KERNEL_CONFIG');
+ WorkBuffer:=EnvironmentGet('SHELL_UPDATE_KERNEL_CONFIG');
  if Length(WorkBuffer) <> 0 then SHELL_UPDATE_KERNEL_CONFIG:=WorkBuffer;
 
  {SHELL_UPDATE_KERNEL_COMMAND}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_KERNEL_COMMAND');
+ WorkBuffer:=EnvironmentGet('SHELL_UPDATE_KERNEL_COMMAND');
  if Length(WorkBuffer) <> 0 then SHELL_UPDATE_KERNEL_COMMAND:=WorkBuffer;
 
  {SHELL_UPDATE_FIRMWARE_FILES}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_FIRMWARE_FILES');
+ WorkBuffer:=EnvironmentGet('SHELL_UPDATE_FIRMWARE_FILES');
  if Length(WorkBuffer) <> 0 then SHELL_UPDATE_FIRMWARE_FILES:=WorkBuffer;
 
  {SHELL_UPDATE_DTB_FILES}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('SHELL_UPDATE_DTB_FILES');
+ WorkBuffer:=EnvironmentGet('SHELL_UPDATE_DTB_FILES');
  if Length(WorkBuffer) <> 0 then SHELL_UPDATE_DTB_FILES:=WorkBuffer;
 
  ShellUpdateInitialized:=True;

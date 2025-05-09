@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit for Raspberry Pi 2.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -685,7 +685,7 @@ begin
  CLOCK_CYCLES_PER_MICROSECOND:=CLOCK_FREQUENCY div MICROSECONDS_PER_SECOND;
  CLOCK_CYCLES_PER_NANOSECOND:=CLOCK_FREQUENCY div NANOSECONDS_PER_SECOND;
  CLOCK_CYCLES_TOLERANCE:=CLOCK_CYCLES_PER_TICK div 10;
- TIME_TICKS_PER_CLOCK_INTERRUPT:=CLOCK_TICKS_PER_MILLISECOND * TIME_TICKS_PER_MILLISECOND;
+ TIME_TICKS_PER_CLOCK_INTERRUPT:=TIME_TICKS_PER_MILLISECOND div CLOCK_TICKS_PER_MILLISECOND;
  
  {Setup HEAP Behaviour}
  HEAP_NORMAL_SHARED:=True;
@@ -702,7 +702,7 @@ begin
   end; 
  SCHEDULER_CLOCKS_PER_INTERRUPT:=SchedulerFrequency div SCHEDULER_INTERRUPTS_PER_SECOND;
  SCHEDULER_CLOCKS_TOLERANCE:=SCHEDULER_CLOCKS_PER_INTERRUPT div 10;
- TIME_TICKS_PER_SCHEDULER_INTERRUPT:=SCHEDULER_INTERRUPTS_PER_MILLISECOND * TIME_TICKS_PER_MILLISECOND;
+ TIME_TICKS_PER_SCHEDULER_INTERRUPT:=TIME_TICKS_PER_MILLISECOND div SCHEDULER_INTERRUPTS_PER_MILLISECOND;
  
  {Setup SCHEDULER_IDLE}
  SCHEDULER_IDLE_WAIT:=True;
@@ -1974,7 +1974,7 @@ begin
      {Setup Flags}
      if BCM2709FRAMEBUFFER_CACHED then RPi2Framebuffer.Framebuffer.Device.DeviceFlags:=RPi2Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_COMMIT;
      if BCM2709FRAMEBUFFER_CACHED then RPi2Framebuffer.Framebuffer.Device.DeviceFlags:=RPi2Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
-     {if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then RPi2Framebuffer.Framebuffer.Device.DeviceFlags:=RPi2Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;} {Handled by FramebufferAllocate}
+     {if EnvironmentGet('bcm2708_fb.fbswap') <> '1' then RPi2Framebuffer.Framebuffer.Device.DeviceFlags:=RPi2Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;} {Handled by FramebufferAllocate}
      
      {Register Framebuffer}
      Status:=FramebufferDeviceRegister(@RPi2Framebuffer.Framebuffer);
@@ -9010,7 +9010,7 @@ begin
       end;
     
      {Get Order}
-     if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then
+     if EnvironmentGet('bcm2708_fb.fbswap') <> '1' then
       begin
        Framebuffer.Order:=FRAMEBUFFER_ORDER_BGR;
       end

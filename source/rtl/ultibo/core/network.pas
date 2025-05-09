@@ -1,7 +1,7 @@
 {
 Ultibo Network interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -4296,7 +4296,7 @@ begin
       Address:=StringToHardwareAddress(Value);
       if ValidHardwareAddress(Address) then
        begin
-         if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'WiredAdapter: Setting hardware address for adapter ' + Name + '  to ' + Value);
+         if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'WiredAdapter: Setting hardware address for adapter ' + Name + ' to ' + Value);
          
          {Convert Lock (Reader to Writer)}
          ReaderConvert;
@@ -4946,7 +4946,7 @@ end;
 function TNetworkSettings.FindFromEnvironment(const AName:String):String;
 begin
  {}
- Result:=SysUtils.GetEnvironmentVariable(AName);
+ Result:=EnvironmentGet(AName);
 end;
 
 {==============================================================================}

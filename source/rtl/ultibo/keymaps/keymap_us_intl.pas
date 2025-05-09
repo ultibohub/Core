@@ -1,7 +1,7 @@
 {
 Ultibo Keymap (US International) interface unit.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -490,7 +490,7 @@ begin
   end;
   
  {Check Environment Variables}
- if (Uppercase(SysUtils.GetEnvironmentVariable('KEYMAP_DEFAULT')) = 'US-INTL') or (Uppercase(KEYMAP_DEFAULT) = 'US-INTL') then
+ if (Uppercase(EnvironmentGet('KEYMAP_DEFAULT')) = 'US-INTL') or (Uppercase(KEYMAP_DEFAULT) = 'US-INTL') then
   begin
    {Update Default}
    KEYMAP_DEFAULT:='US-INTL';

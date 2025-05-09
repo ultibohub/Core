@@ -1,7 +1,7 @@
 {
 Ultibo Winsock interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -760,7 +760,7 @@ function getsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT;optval:pointer;va
 function getsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT;var optval;var optlen:tOS_INT):tOS_INT; overload;
 function htonl(hostlong: u_long): u_long; 
 function htons(hostshort: u_short): u_short; 
-function inet_addr(cp: PChar): u_long; 
+function inet_addr(const cp: PChar): u_long; 
 function inet_ntoa(inaddr: TInAddr): PChar; 
 function listen(s: TSocket; backlog:tOS_INT):tOS_INT;
 function ntohl(netlong: u_long): u_long; 
@@ -773,24 +773,24 @@ function recvfrom(s: TSocket;buf:pointer; len:tOS_INT; flags:tOS_INT;from:PSockA
 function recvfrom(s: TSocket;var buf; len:tOS_INT; flags:tOS_INT;var from:TSockAddr; var fromlen:tOS_INT):tOS_INT; overload;
 function select(nfds:tOS_INT; readfds,writefds,exceptfds : PFDSet;timeout: PTimeVal):tOS_INT;
 function send(s: TSocket;var buf; len:tOS_INT; flags:tOS_INT):tOS_INT; overload;
-function send(s: TSocket; buf:pchar; len:tOS_INT; flags:tOS_INT):tOS_INT; overload;
-function send(s: TSocket;buf:pointer; len:tOS_INT; flags:tOS_INT):tOS_INT; overload;
-function sendto(s: TSocket; buf:pchar; len:tOS_INT; flags:tOS_INT;toaddr:PSockAddr; tolen:tOS_INT):tOS_INT; overload;
+function send(s: TSocket; const buf:pchar; len:tOS_INT; flags:tOS_INT):tOS_INT; overload;
+function send(s: TSocket; buf:pointer; len:tOS_INT; flags:tOS_INT):tOS_INT; overload;
+function sendto(s: TSocket; const buf:pchar; len:tOS_INT; flags:tOS_INT;toaddr:PSockAddr; tolen:tOS_INT):tOS_INT; overload;
 function sendto(s: TSocket; buf:pointer; len:tOS_INT; flags:tOS_INT;toaddr:PSockAddr; tolen:tOS_INT):tOS_INT; overload;
 function sendto(s: TSocket; var buf; len:tOS_INT; flags:tOS_INT;var toaddr:TSockAddr; tolen:tOS_INT):tOS_INT; overload;
-function setsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT; optval:pchar; optlen:tOS_INT):tOS_INT; overload;
-function setsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT;optval:pointer; optlen:tOS_INT):tOS_INT; overload;
+function setsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT; const optval:pchar; optlen:tOS_INT):tOS_INT; overload;
+function setsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT; optval:pointer; optlen:tOS_INT):tOS_INT; overload;
 function setsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT; var optval; optlen:tOS_INT):tOS_INT; overload;
 function shutdown(s: TSocket; how:tOS_INT):tOS_INT;
 function socket(af:tOS_INT; struct:tOS_INT; protocol:tOS_INT):TSocket;
 
-function gethostbyaddr(addr: PChar; len:tOS_INT; family:tOS_INT): PHostEnt;
-function gethostbyname(name: PChar): PHostEnt; 
+function gethostbyaddr(const addr: PChar; len:tOS_INT; family:tOS_INT): PHostEnt;
+function gethostbyname(const name: PChar): PHostEnt; 
 function gethostname(name: PChar; namelen:tOS_INT):tOS_INT;
-function getservbyport(port:tOS_INT; proto: PChar):PServEnt;
-function getservbyname(name, proto: PChar): PServEnt; 
+function getservbyport(port:tOS_INT; const proto: PChar):PServEnt;
+function getservbyname(const name, proto: PChar): PServEnt; 
 function getprotobynumber(proto:tOS_INT):PProtoEnt;
-function getprotobyname(name: PChar): PProtoEnt; 
+function getprotobyname(const name: PChar): PProtoEnt; 
 
 function WSAStartup(wVersionRequired:word;var WSAData:TWSADATA):tOS_INT;
 function WSACleanup:tOS_INT;
@@ -800,12 +800,12 @@ function WSAIsBlocking: BOOL;
 function WSAUnhookBlockingHook:tOS_INT;
 function WSASetBlockingHook(lpBlockFunc: TFarProc): TFarProc; 
 function WSACancelBlockingCall:tOS_INT;
-function WSAAsyncGetServByName(hWnd:HWND; wMsg:u_int; name:pchar; proto:pchar; buf:pchar; buflen:tOS_INT):THandle;
+function WSAAsyncGetServByName(hWnd:HWND; wMsg:u_int; const name:pchar; const proto:pchar; buf:pchar; buflen:tOS_INT):THandle;
 function WSAAsyncGetServByPort(hWnd:HWND; wMsg:u_int; port:tOS_INT; proto:pchar; buf:pchar; buflen:tOS_INT):THandle;
-function WSAAsyncGetProtoByName(hWnd:HWND; wMsg:u_int; name:pchar; buf:pchar; buflen:tOS_INT):THandle;
+function WSAAsyncGetProtoByName(hWnd:HWND; wMsg:u_int; const name:pchar; buf:pchar; buflen:tOS_INT):THandle;
 function WSAAsyncGetProtoByNumber(hWnd:HWND; wMsg:u_int; number:tOS_INT; buf:pchar; buflen:tOS_INT):THandle;
-function WSAAsyncGetHostByName(hWnd:HWND; wMsg:u_int; name:pchar; buf:pchar; buflen:tOS_INT):THandle;
-function WSAAsyncGetHostByAddr(hWnd:HWND; wMsg:u_int; addr:pchar; len:tOS_INT; family:tOS_INT; buf:pchar; buflen:tOS_INT):THandle;
+function WSAAsyncGetHostByName(hWnd:HWND; wMsg:u_int; const name:pchar; buf:pchar; buflen:tOS_INT):THandle;
+function WSAAsyncGetHostByAddr(hWnd:HWND; wMsg:u_int; const addr:pchar; len:tOS_INT; family:tOS_INT; buf:pchar; buflen:tOS_INT):THandle;
 function WSACancelAsyncRequest(hAsyncTaskHandle:THandle):tOS_INT;
 function WSAAsyncSelect(s: TSocket; hWnd:HWND; wMsg:u_int; lEvent:longint):tOS_INT; { really a c-long }
 function WSARecvEx(s: TSocket;var buf; len:tOS_INT; flags:ptOS_INT):tOS_INT;
@@ -835,7 +835,7 @@ procedure FD_ZERO(var FDSet:TFDSet);
 function WsControl(Proto:DWORD;Action:DWORD;pRequestInfo:Pointer; var pcbRequestInfoLen:DWORD;pResponseInfo:Pointer; var pcbResponseInfoLen:DWORD):Integer; 
 
 function getnetbyaddr(addr: Pointer; len, Struct: Integer): PNetEnt; 
-function getnetbyname(name: PChar): PNetEnt; 
+function getnetbyname(const name: PChar): PNetEnt; 
 
 {==============================================================================}
 {Winsock Enhanced Functions}
@@ -1371,7 +1371,8 @@ end;
 
 {==============================================================================}
 
-function inet_addr(cp: PChar): u_long;  {PInAddr;}  { TInAddr }
+function inet_addr(const cp: PChar): u_long;  {PInAddr;}  { TInAddr }
+{Note: Address will be returned in network order}
 begin
  {}
  Result:=LongInt(StringToInAddr(cp));
@@ -1383,6 +1384,7 @@ function inet_ntoa(inaddr: TInAddr): PChar;
 {As per the Winsock specification, the buffer returned by this function is only
  guaranteed to be valid until the next Winsock function call is made within the
  same thread. Therefore, the data should be copied before another Winsock call}
+{Note: Address will be in network order}
 var
  WorkBuffer:String;
  NetToAddr:PNetToAddr;
@@ -1656,7 +1658,7 @@ end;
 
 {==============================================================================}
 
-function send(s: TSocket; buf:pchar; len:tOS_INT; flags:tOS_INT):tOS_INT; 
+function send(s: TSocket; const buf:pchar; len:tOS_INT; flags:tOS_INT):tOS_INT; 
 begin
  {}
  Result:=send(s,buf^,len,flags);
@@ -1672,7 +1674,7 @@ end;
 
 {==============================================================================}
 
-function sendto(s: TSocket; buf:pchar; len:tOS_INT; flags:tOS_INT;toaddr:PSockAddr; tolen:tOS_INT):tOS_INT; 
+function sendto(s: TSocket; const buf:pchar; len:tOS_INT; flags:tOS_INT;toaddr:PSockAddr; tolen:tOS_INT):tOS_INT; 
 begin
  {}
  Result:=sendto(s,buf^,len,flags,toaddr^,tolen);
@@ -1729,7 +1731,7 @@ end;
 
 {==============================================================================}
 
-function setsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT; optval:pchar; optlen:tOS_INT):tOS_INT; 
+function setsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT; const optval:pchar; optlen:tOS_INT):tOS_INT; 
 var
  Socket:TProtocolSocket;
 begin
@@ -1856,7 +1858,8 @@ end;
 
 {==============================================================================}
 
-function gethostbyaddr(addr:pchar; len:tOS_INT; family:tOS_INT): PHostEnt;
+function gethostbyaddr(const addr:pchar; len:tOS_INT; family:tOS_INT): PHostEnt;
+{Note: Address will be in network order where applicable}
 begin
  {}
  Result:=nil;
@@ -1885,7 +1888,7 @@ end;
 
 {==============================================================================}
 
-function gethostbyname(name: PChar): PHostEnt; 
+function gethostbyname(const name: PChar): PHostEnt; 
 begin
  {}
  Result:=nil;
@@ -1899,7 +1902,7 @@ begin
   if DNSClient = nil then Exit;
 
   {Get Host By Name}
-  Result:=DNSClient.GetHostByName(name);
+  Result:=DNSClient.GetHostByName(name,AF_INET);
  except
   on E: Exception do
    begin
@@ -1943,7 +1946,8 @@ end;
 
 {==============================================================================}
 
-function getservbyport(port:tOS_INT; proto: PChar):PServEnt;
+function getservbyport(port:tOS_INT; const proto: PChar):PServEnt;
+{Note: Port will be in network order}
 begin
  {}
  Result:=nil;
@@ -1972,7 +1976,7 @@ end;
 
 {==============================================================================}
 
-function getservbyname(name, proto: PChar): PServEnt; 
+function getservbyname(const name, proto: PChar): PServEnt; 
 begin
  {}
  Result:=nil;
@@ -2030,7 +2034,7 @@ end;
 
 {==============================================================================}
 
-function getprotobyname(name: PChar): PProtoEnt; 
+function getprotobyname(const name: PChar): PProtoEnt; 
 begin
  {}
  Result:=nil;
@@ -2305,7 +2309,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetServByName(hWnd:HWND; wMsg:u_int; name:pchar; proto:pchar; buf:pchar; buflen:tOS_INT):THandle;
+function WSAAsyncGetServByName(hWnd:HWND; wMsg:u_int; const name:pchar; const proto:pchar; buf:pchar; buflen:tOS_INT):THandle;
 begin
  {}
  {Not Implemented}
@@ -2325,7 +2329,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetProtoByName(hWnd:HWND; wMsg:u_int; name:pchar; buf:pchar; buflen:tOS_INT):THandle;
+function WSAAsyncGetProtoByName(hWnd:HWND; wMsg:u_int; const name:pchar; buf:pchar; buflen:tOS_INT):THandle;
 begin
  {}
  {Not Implemented}
@@ -2345,7 +2349,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetHostByName(hWnd:HWND; wMsg:u_int; name:pchar; buf:pchar; buflen:tOS_INT):THandle;
+function WSAAsyncGetHostByName(hWnd:HWND; wMsg:u_int; const name:pchar; buf:pchar; buflen:tOS_INT):THandle;
 begin
  {}
  {Not Implemented}
@@ -2355,7 +2359,7 @@ end;
 
 {==============================================================================}
 
-function WSAAsyncGetHostByAddr(hWnd:HWND; wMsg:u_int; addr:pchar; len:tOS_INT; family:tOS_INT; buf:pchar; buflen:tOS_INT):THandle;
+function WSAAsyncGetHostByAddr(hWnd:HWND; wMsg:u_int; const addr:pchar; len:tOS_INT; family:tOS_INT; buf:pchar; buflen:tOS_INT):THandle;
 begin
  {}
  {Not Implemented}
@@ -2590,6 +2594,7 @@ end;
 {==============================================================================}
 
 function getnetbyaddr(addr: Pointer; len, Struct: Integer): PNetEnt; 
+{Note: Address will be in network order where applicable}
 begin
  {}
  Result:=nil;
@@ -2618,7 +2623,7 @@ end;
 
 {==============================================================================}
 
-function getnetbyname(name: PChar): PNetEnt; 
+function getnetbyname(const name: PChar): PNetEnt; 
 begin
  {}
  Result:=nil;
@@ -2632,7 +2637,7 @@ begin
   if DNSClient = nil then Exit;
 
   {Get Network By Name}
-  Result:=DNSClient.GetNetByName(name);
+  Result:=DNSClient.GetNetByName(name,AF_INET);
  except
   on E: Exception do
    begin

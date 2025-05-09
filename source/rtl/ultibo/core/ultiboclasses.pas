@@ -1,7 +1,7 @@
 {
 Ultibo classes unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -939,10 +939,10 @@ end;
 type
  {THandleStreamEx - A 64bit capable Handle Stream class}
  THandleStreamEx = class(TStreamEx)
-  constructor Create(AHandle:Integer);
+  constructor Create(AHandle:THandle);
  private
   {}
-  FHandle:Integer;
+  FHandle:THandle;
  protected
   {}
   procedure SetSize(NewSize:LongInt); override;
@@ -953,7 +953,7 @@ type
   function Write(const Buffer;Count:LongInt):LongInt; override;
   function Seek(Offset:LongInt;Origin:Word):LongInt; override;
   function SeekEx(const Offset:Int64;Origin:Word):Int64; override;
-  property Handle:Integer read FHandle;
+  property Handle:THandle read FHandle;
 end;
  
 type
@@ -7330,7 +7330,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {THandleStreamEx}
-constructor THandleStreamEx.Create(AHandle:Integer);
+constructor THandleStreamEx.Create(AHandle:THandle);
 begin
  {}
  FHandle:=AHandle;
@@ -7395,13 +7395,13 @@ begin
  if Mode = fmCreate then
   begin
    FHandle:=FileCreate(FileName);
-   if FHandle < 0 then
+   if FHandle = INVALID_HANDLE_VALUE then
     raise EFCreateError.CreateFmt(SFCreateError,[FileName]);
   end
  else
   begin
    FHandle:=FileOpen(FileName,Mode);
-   if FHandle < 0 then
+   if FHandle = INVALID_HANDLE_VALUE then
     raise EFOpenError.CreateFmt(SFOpenError,[FileName]);
   end;
 end;
@@ -7411,7 +7411,7 @@ end;
 destructor TFileStreamEx.Destroy;
 begin
  {}
- if FHandle >= 0 then FileClose(FHandle);
+ if FHandle <> INVALID_HANDLE_VALUE then FileClose(FHandle);
 end;
 
 {==============================================================================}

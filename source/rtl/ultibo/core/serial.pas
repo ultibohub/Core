@@ -1,7 +1,7 @@
 {
 Ultibo Serial interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -440,15 +440,15 @@ begin
  
  {Check Environment Variables}
  {SERIAL_REGISTER_LOGGING}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('SERIAL_REGISTER_LOGGING'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('SERIAL_REGISTER_LOGGING'),0);
  if WorkInt <> 0 then SERIAL_REGISTER_LOGGING:=True;
  
  {SERIAL_LOGGING_DEFAULT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('SERIAL_LOGGING_DEFAULT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('SERIAL_LOGGING_DEFAULT'),0);
  if WorkInt <> 0 then SERIAL_LOGGING_DEFAULT:=True;
  
  {SERIAL_LOGGING_PARAMETERS}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('SERIAL_LOGGING_PARAMETERS');
+ WorkBuffer:=EnvironmentGet('SERIAL_LOGGING_PARAMETERS');
  if Length(WorkBuffer) <> 0 then SERIAL_LOGGING_PARAMETERS:=WorkBuffer;
  
  {Enumerate Serial Devices}

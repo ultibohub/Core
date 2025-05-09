@@ -1,7 +1,7 @@
 {
 FTDI USB to Serial Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2457,7 +2457,7 @@ begin
  
  {Check Environment Variables}
  {FTDISERIAL_MAX_TRANSMIT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FTDISERIAL_MAX_TRANSMIT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FTDISERIAL_MAX_TRANSMIT'),0);
  if WorkInt <> 0 then FTDISERIAL_MAX_TRANSMIT:=WorkInt;
  
  FTDISerialInitialized:=True;

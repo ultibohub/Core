@@ -1,7 +1,7 @@
 {
 Ultibo FileSystem interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -93,8 +93,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,L
 
 //To Do //Universal 64bit sectors etc
 
-//To Do //Change Handle values from Integer to THandle to match FPC
-        //Change Integer to LongInt where applicable to match FPC
+//To Do //Change Integer to LongInt where applicable to match FPC
 
 //To Do //Look for:
 
@@ -118,6 +117,8 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,L
 //) = Uppercase(  //Use WorkBuffer
 
 //API
+
+//shl SectorShiftCount / Device.SectorShiftCount etc
 
 {==============================================================================}
 {Global definitions}
@@ -1513,7 +1514,8 @@ type
 
    {File Handle Methods}
    function OpenFileHandle(AVolume:TDiskVolume;ADrive:TDiskDrive;AParent,AEntry:TDiskEntry;AMode:Integer;ALock:Boolean;AState:LongWord):TFileHandle;
-   function CloseFileHandle(AHandle:TFileHandle):Boolean;
+   function CloseFileHandle(AHandle:TFileHandle;AAll:Boolean):Boolean;
+   function ReopenFileHandle(AHandle:TFileHandle):Boolean;
    function GetFileHandleByNext(APrevious:TFileHandle;ALock,AUnlock:Boolean;AState:LongWord):TFileHandle;
    
    function CheckFileHandles(AEntry:TDiskEntry):Boolean;
@@ -1541,12 +1543,12 @@ type
    function InsertDevice(const AName:String):Boolean;
    function EjectDevice(const AName:String):Boolean;
    
-   function OpenDevice(const AName:String;AMode:Integer):Integer;
-   procedure CloseDevice(AHandle:Integer);
-   function ReadDevice(AHandle:Integer;var ABuffer;ACount:Integer):Integer;
-   function WriteDevice(AHandle:Integer;const ABuffer;ACount:Integer):Integer;
-   function EraseDevice(AHandle:Integer;ACount:Integer):Integer;
-   function SeekDevice(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64;
+   function OpenDevice(const AName:String;AMode:Integer):THandle;
+   procedure CloseDevice(AHandle:THandle);
+   function ReadDevice(AHandle:THandle;var ABuffer;ACount:Integer):Integer;
+   function WriteDevice(AHandle:THandle;const ABuffer;ACount:Integer):Integer;
+   function EraseDevice(AHandle:THandle;ACount:Integer):Integer;
+   function SeekDevice(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64;
 
    function FindFirstDevice(var ASearchRec:TDiskSearchRec;AVerbose:Boolean):Integer;
    function FindNextDevice(var ASearchRec:TDiskSearchRec):Integer;
@@ -1560,11 +1562,11 @@ type
    function ShrinkPartition(const APath:String;const AStart,ASize:Int64):Boolean;
    function ExpandPartition(const APath:String;const AStart,ASize:Int64):Boolean;
 
-   function OpenPartition(const APath:String;AMode:Integer):Integer;
-   procedure ClosePartition(AHandle:Integer);
-   function ReadPartition(AHandle:Integer;var ABuffer;ACount:Integer):Integer;
-   function WritePartition(AHandle:Integer;const ABuffer;ACount:Integer):Integer;
-   function SeekPartition(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64;
+   function OpenPartition(const APath:String;AMode:Integer):THandle;
+   procedure ClosePartition(AHandle:THandle);
+   function ReadPartition(AHandle:THandle;var ABuffer;ACount:Integer):Integer;
+   function WritePartition(AHandle:THandle;const ABuffer;ACount:Integer):Integer;
+   function SeekPartition(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64;
 
    function FindFirstPartition(const ADevice:String;var ASearchRec:TPartitionSearchRec;AVerbose:Boolean):Integer;
    function FindNextPartition(var ASearchRec:TPartitionSearchRec):Integer;
@@ -1583,11 +1585,11 @@ type
    function ShrinkVolume(const AName:String;const AStart,ASize:Int64):Boolean;
    function ExpandVolume(const AName:String;const AStart,ASize:Int64):Boolean;
 
-   function OpenVolume(const AName:String;AMode:Integer):Integer;
-   procedure CloseVolume(AHandle:Integer);
-   function ReadVolume(AHandle:Integer;var ABuffer;ACount:Integer):Integer;
-   function WriteVolume(AHandle:Integer;const ABuffer;ACount:Integer):Integer;
-   function SeekVolume(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64;
+   function OpenVolume(const AName:String;AMode:Integer):THandle;
+   procedure CloseVolume(AHandle:THandle);
+   function ReadVolume(AHandle:THandle;var ABuffer;ACount:Integer):Integer;
+   function WriteVolume(AHandle:THandle;const ABuffer;ACount:Integer):Integer;
+   function SeekVolume(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64;
 
    function FindFirstVolume(var ASearchRec:TVolumeSearchRec;AVerbose:Boolean):Integer;
    function FindNextVolume(var ASearchRec:TVolumeSearchRec):Integer;
@@ -1598,11 +1600,11 @@ type
    function DeleteDrive(const AName:String):Boolean;
    function FormatDrive(const AName:String;AFloppyType:TFloppyType;AFileSysType:TFileSysType):Boolean;
 
-   function OpenDrive(const AName:String;AMode:Integer):Integer;
-   procedure CloseDrive(AHandle:Integer);
-   function ReadDrive(AHandle:Integer;var ABuffer;ACount:Integer):Integer;
-   function WriteDrive(AHandle:Integer;const ABuffer;ACount:Integer):Integer;
-   function SeekDrive(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64;
+   function OpenDrive(const AName:String;AMode:Integer):THandle;
+   procedure CloseDrive(AHandle:THandle);
+   function ReadDrive(AHandle:THandle;var ABuffer;ACount:Integer):Integer;
+   function WriteDrive(AHandle:THandle;const ABuffer;ACount:Integer):Integer;
+   function SeekDrive(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64;
 
    function FindFirstDrive(var ASearchRec:TDriveSearchRec;AVerbose:Boolean):Integer;
    function FindNextDrive(var ASearchRec:TDriveSearchRec):Integer;
@@ -1688,23 +1690,23 @@ type
    function FileOpen(const AFileName:String;AMode:Integer):THandle;
    function FileCreate(const AFileName:String;AMode:Integer = fmOpenReadWrite or fmShareExclusive):THandle;
    function DeleteFile(const AFileName:String):Boolean;
-   procedure FileClose(AHandle:Integer);
+   procedure FileClose(AHandle:THandle);
    function RenameFile(const AOldName,ANewName:String):Boolean;
    function FileSeek(AHandle:THandle;AOffset,AOrigin:LongInt):LongInt;
-   function FileFlush(AHandle:Integer):Boolean;
-   function FileTruncate(AHandle:Integer):Boolean;
-   function SetEndOfFile(AHandle:Integer):Boolean;
+   function FileFlush(AHandle:THandle):Boolean;
+   function FileTruncate(AHandle:THandle):Boolean;
+   function SetEndOfFile(AHandle:THandle):Boolean;
 
-   function EndOfFile(AHandle:Integer):Boolean;
+   function EndOfFile(AHandle:THandle):Boolean;
    function FilePos(AHandle:THandle):LongInt;
    function FileSize(AHandle:THandle):LongInt;
 
    function FileAge(const AFileName:String):Integer;
    function FileExists(const AFileName:String):Boolean;
    function FileGetAttr(const AFileName:String):Integer;
-   function FileGetDate(AHandle:Integer):Integer;
+   function FileGetDate(AHandle:THandle):Integer;
    function FileSetAttr(const AFileName:String;AAttr:Integer):Integer;
-   function FileSetDate(AHandle:Integer;AAge:Integer):Integer;
+   function FileSetDate(AHandle:THandle;AAge:Integer):Integer;
 
    function FileRead(AHandle:THandle;var ABuffer;ACount:LongInt):LongInt;
    function FileWrite(AHandle:THandle;const ABuffer;ACount:LongInt):LongInt;
@@ -1756,7 +1758,7 @@ type
    function GetSymbolicLinkTarget(const ALinkName:String):String;
 
    function SetFileShortName(const AFileName,AShortName:String):Boolean;
-   function SetFileShortNameEx(AHandle:Integer;const AShortName:String):Boolean;
+   function SetFileShortNameEx(AHandle:THandle;const AShortName:String):Boolean;
    
    function GetFileSecurity(const AFileName:String;ADescriptor:Pointer;var ASize:LongWord):Boolean;
    function SetFileSecurity(const AFileName:String;ADescriptor:Pointer):Boolean;
@@ -1782,19 +1784,19 @@ type
 
    function FileSeekEx(AHandle:THandle;const AOffset:Int64;AOrigin:LongInt):Int64;
 
-   function EndOfFileEx(AHandle:Integer):Boolean;
+   function EndOfFileEx(AHandle:THandle):Boolean;
    function FilePosEx(AHandle:THandle):Int64;
    function FileSizeEx(AHandle:THandle):Int64;
 
    function FileAgeEx(const AFileName:String):TFileTime;
 
-   function FileGetAttrEx(AHandle:Integer):Integer;
+   function FileGetAttrEx(AHandle:THandle):Integer;
    
-   function FileGetDateEx(AHandle:Integer):TFileTime;
-   function FileSetDateEx(AHandle:Integer;AAge:TFileTime):Integer;
+   function FileGetDateEx(AHandle:THandle):TFileTime;
+   function FileSetDateEx(AHandle:THandle;AAge:TFileTime):Integer;
 
-   function GetFileTime(AHandle:Integer;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean;
-   function SetFileTime(AHandle:Integer;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean;
+   function GetFileTime(AHandle:THandle;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean;
+   function SetFileTime(AHandle:THandle;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean;
 
    //function FindOne(const APath:String;var ASearchRec:TFileSearchRec):Integer; //To Do
    //function FindAll(const APath:String;var ASearchRec:TFileSearchRec):Integer; //To Do
@@ -1858,7 +1860,11 @@ type
    //function WriteFileEx //To Do
    function GetLongPathName(const AShortPath:String):String;
    {function SetFileShortName}    {Already Defined}
+   function GetFinalPathNameByHandle(AHandle:THandle;AFlags:LongWord):String;
 
+    {Handle Methods}
+   function DuplicateHandle(AHandle:THandle):THandle;
+   
     {Directory Methods}
    function CreateDirectory(const APathName:String):Boolean;
    //function CreateDirectoryEx //To Do
@@ -1897,37 +1903,37 @@ type
    //function SetNamedSecurityInfo //To Do
 
    {Misc Methods}
-   function GetDeviceFromRaw(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskDevice;
-   function GetDeviceFromEnum(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskDevice;
+   function GetDeviceFromRaw(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskDevice;
+   function GetDeviceFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskDevice;
    
-   function GetPartitionFromRaw(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskPartition;
-   function GetPartitionFromEnum(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskPartition;
+   function GetPartitionFromRaw(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskPartition;
+   function GetPartitionFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskPartition;
    
    function GetVolumeFromPath(const APath:String;ALock:Boolean;AState:LongWord):TDiskVolume;
-   function GetVolumeFromRaw(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskVolume;
-   function GetVolumeFromEnum(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskVolume;
-   function GetVolumeFromFile(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskVolume;
-   function GetVolumeFromFind(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskVolume;
+   function GetVolumeFromRaw(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskVolume;
+   function GetVolumeFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskVolume;
+   function GetVolumeFromFile(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskVolume;
+   function GetVolumeFromFind(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskVolume;
 
    function GetDriveFromPath(const APath:String;ALock:Boolean;AState:LongWord):TDiskDrive;
-   function GetDriveFromRaw(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskDrive;
-   function GetDriveFromEnum(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskDrive;
-   function GetDriveFromFile(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskDrive;
-   function GetDriveFromFind(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskDrive;
+   function GetDriveFromRaw(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskDrive;
+   function GetDriveFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskDrive;
+   function GetDriveFromFile(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskDrive;
+   function GetDriveFromFind(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskDrive;
 
-   function GetImageFromEnum(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskImage;
+   function GetImageFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskImage;
    
-   function GetCatalogFromEnum(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskCatalog;
+   function GetCatalogFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskCatalog;
    
    function GetFileSystemFromPath(const APath:String;ALock:Boolean;AState:LongWord):TFileSystem;
-   function GetFileSystemFromEnum(AHandle:Integer;ALock:Boolean;AState:LongWord):TFileSystem;
-   function GetFileSystemFromFile(AHandle:Integer;ALock:Boolean;AState:LongWord):TFileSystem;
-   function GetFileSystemFromFind(AHandle:Integer;ALock:Boolean;AState:LongWord):TFileSystem;
+   function GetFileSystemFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TFileSystem;
+   function GetFileSystemFromFile(AHandle:THandle;ALock:Boolean;AState:LongWord):TFileSystem;
+   function GetFileSystemFromFind(AHandle:THandle;ALock:Boolean;AState:LongWord):TFileSystem;
    
-   function GetRawFromHandle(AHandle:Integer;ALock:Boolean;AState:LongWord):TRawHandle;
-   function GetEnumFromHandle(AHandle:Integer;ALock:Boolean;AState:LongWord):TEnumHandle;
-   function GetFileFromHandle(AHandle:Integer;ALock:Boolean;AState:LongWord):TFileHandle;
-   function GetFindFromHandle(AHandle:Integer;ALock:Boolean;AState:LongWord):TFindHandle;
+   function GetRawFromHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TRawHandle;
+   function GetEnumFromHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TEnumHandle;
+   function GetFileFromHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TFileHandle;
+   function GetFindFromHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TFindHandle;
  end;
 
  TFileSysList = class(TLinkedObjList)
@@ -2113,7 +2119,8 @@ type
 
    Size:Int64;
    Position:Int64;
-   Handle:Integer;
+
+   Handle:THandle;
    
    {Public Methods}
    function ReaderLock:Boolean;
@@ -2134,7 +2141,7 @@ type
    {Public Variables}
    FileSystem:TFileSystem;
 
-   Handle:Integer;
+   Handle:THandle;
    
    CurrentDevice:TDiskDevice;
    CurrentPartition:TDiskPartition;
@@ -2168,7 +2175,9 @@ type
    ShareMode:Integer;
 
    Position:Int64;
-   Handle:Integer;
+
+   Handle:THandle;
+   Count:Integer;
 
    DataValue:LongWord;     {Available to FileSystem for private use}
    DataOffset:LongWord;    {Available to FileSystem for private use}
@@ -2201,7 +2210,7 @@ type
    Mask:String;
    Attr:LongWord;
    Flags:LongWord;
-   Handle:Integer;
+   Handle:THandle;
 
    ParentEntry:TDiskEntry;
    CurrentEntry:TDiskEntry;
@@ -2546,12 +2555,12 @@ type
    function InsertDevice:Boolean; virtual;
    function EjectDevice:Boolean; virtual;
    
-   function OpenDevice(AMode:Integer):Integer; virtual;
-   procedure CloseDevice(AHandle:Integer); virtual;
-   function ReadDevice(AHandle:Integer;var ABuffer;ACount:Integer):Integer; virtual;
-   function WriteDevice(AHandle:Integer;const ABuffer;ACount:Integer):Integer; virtual;
-   function EraseDevice(AHandle:Integer;ACount:Integer):Integer; virtual;
-   function SeekDevice(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64; virtual;
+   function OpenDevice(AMode:Integer):THandle; virtual;
+   procedure CloseDevice(AHandle:THandle); virtual;
+   function ReadDevice(AHandle:THandle;var ABuffer;ACount:Integer):Integer; virtual;
+   function WriteDevice(AHandle:THandle;const ABuffer;ACount:Integer):Integer; virtual;
+   function EraseDevice(AHandle:THandle;ACount:Integer):Integer; virtual;
+   function SeekDevice(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64; virtual;
  end;
  
  TDiskPartition = class(TListObject)
@@ -2672,11 +2681,11 @@ type
    function DeleteVolume(AVolume:TDiskVolume):Boolean; virtual;
    
    {Partition Methods}
-   function OpenPartition(AMode:Integer):Integer; virtual;
-   procedure ClosePartition(AHandle:Integer); virtual;
-   function ReadPartition(AHandle:Integer;var ABuffer;ACount:Integer):Integer; virtual;
-   function WritePartition(AHandle:Integer;const ABuffer;ACount:Integer):Integer; virtual;
-   function SeekPartition(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64; virtual;
+   function OpenPartition(AMode:Integer):THandle; virtual;
+   procedure ClosePartition(AHandle:THandle); virtual;
+   function ReadPartition(AHandle:THandle;var ABuffer;ACount:Integer):Integer; virtual;
+   function WritePartition(AHandle:THandle;const ABuffer;ACount:Integer):Integer; virtual;
+   function SeekPartition(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64; virtual;
  end;
  
  TDiskVolume = class(TListObject)
@@ -2792,11 +2801,11 @@ type
    function ExpandVolume(const AStart,ASize:Int64):Boolean; virtual;
 
    {Volume Methods}
-   function OpenVolume(AMode:Integer):Integer; virtual;
-   procedure CloseVolume(AHandle:Integer); virtual;
-   function ReadVolume(AHandle:Integer;var ABuffer;ACount:Integer):Integer; virtual;
-   function WriteVolume(AHandle:Integer;const ABuffer;ACount:Integer):Integer; virtual;
-   function SeekVolume(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64; virtual;
+   function OpenVolume(AMode:Integer):THandle; virtual;
+   procedure CloseVolume(AHandle:THandle); virtual;
+   function ReadVolume(AHandle:THandle;var ABuffer;ACount:Integer):Integer; virtual;
+   function WriteVolume(AHandle:THandle;const ABuffer;ACount:Integer):Integer; virtual;
+   function SeekVolume(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64; virtual;
  end;
 
  TDiskImage = class(TListObject)
@@ -3535,7 +3544,7 @@ type
    function LoadNameChar:String; virtual;
    function LoadFileChar:String; virtual;
    function LoadRootChar:String; virtual;
-   function LoadRootName:String; virtual;
+   function LoadRootName(AVolumeName:Boolean):String; virtual;
    function LoadRootPath:String; virtual;
    function LoadMaxFile:Integer; virtual;
    function LoadMaxPath:Integer; virtual;
@@ -3634,8 +3643,8 @@ type
    function MatchEntry(AParent,APrevious:TDiskEntry;const AName:String;AAttributes:LongWord;AAny:Boolean):TDiskEntry; virtual;
    function MatchEntryEx(AParent,APrevious:TDiskEntry;const AName:String;AAttributes:LongWord;AAny,AAdd,ARemove,AWrite:Boolean):TDiskEntry; virtual;
 
-   function GetEntryPath(AEntry:TDiskEntry;AAltName:Boolean):String;
-   function GetEntryName(AEntry:TDiskEntry;AAltName:Boolean):String;
+   function GetEntryPath(AEntry:TDiskEntry;AAltName,AVolumePath,ADevicePath:Boolean):String;
+   function GetEntryName(AEntry:TDiskEntry;AAltName,AVolumePath,ADevicePath:Boolean):String;
 
    function SplitPath(const APath:String;var ARelative:Boolean;AFolders:TStrings;var AName:String):Boolean; virtual;
    function SplitName(const AName:String;var AFile,AStream:String):Boolean; virtual;
@@ -3733,22 +3742,22 @@ type
    function FileOpen(const FileName:String;Mode:Integer):THandle; virtual;
    function FileCreate(const FileName:String;Mode:Integer = fmOpenReadWrite or fmShareExclusive):THandle; virtual;
    function DeleteFile(const FileName:String):Boolean; virtual;
-   procedure FileClose(Handle:Integer); virtual;
+   procedure FileClose(Handle:THandle); virtual;
    function RenameFile(const OldName,NewName:String):Boolean; virtual;
    function FileSeek(Handle:THandle;Offset,Origin:LongInt):LongInt; virtual;
    function FileSeekEx(Handle:THandle;const Offset:Int64;Origin:LongInt):Int64; virtual;
-   function FileFlush(Handle:Integer):Boolean; virtual;
-   function FileTruncate(Handle:Integer):Boolean; virtual;
+   function FileFlush(Handle:THandle):Boolean; virtual;
+   function FileTruncate(Handle:THandle):Boolean; virtual;
 
    function FilePos(Handle:THandle):LongInt; virtual;
    function FilePosEx(Handle:THandle):Int64; virtual;
 
    function FileGetAttr(const FileName:String):Integer; virtual;
-   function FileGetDate(Handle:Integer):Integer; virtual;
+   function FileGetDate(Handle:THandle):Integer; virtual;
    function FileGetSize(Handle:THandle):LongInt; virtual;
    function FileGetSizeEx(Handle:THandle):Int64; virtual;
    function FileSetAttr(const FileName:String;Attr:Integer):Integer; virtual;
-   function FileSetDate(Handle:Integer;Age:Integer):Integer; virtual;
+   function FileSetDate(Handle:THandle;Age:Integer):Integer; virtual;
    function FileSetSize(Handle:THandle;Size:LongInt):LongInt; virtual;
    function FileSetSizeEx(Handle:THandle;const Size:Int64):LongInt; virtual;
 
@@ -3796,7 +3805,7 @@ type
    function GetSymbolicLinkTarget(const LinkName:String):String; virtual;
 
    function SetFileShortName(const FileName,ShortName:String):Boolean; virtual;
-   function SetFileShortNameEx(Handle:Integer;const ShortName:String):Boolean; virtual;
+   function SetFileShortNameEx(Handle:THandle;const ShortName:String):Boolean; virtual;
    
    function GetFileSecurity(const FileName:String;Descriptor:Pointer;var Size:LongWord):Boolean; virtual;
    function SetFileSecurity(const FileName:String;Descriptor:Pointer):Boolean; virtual;
@@ -3811,12 +3820,12 @@ type
    function FileCreateEx(const FileName,ShortName:String;Mode:Integer = fmOpenReadWrite or fmShareExclusive):THandle; virtual;
    function CreateDirEx(const DirName,ShortName:String):Boolean; virtual;
 
-   function FileGetAttrEx(Handle:Integer):Integer; virtual;
+   function FileGetAttrEx(Handle:THandle):Integer; virtual;
    
-   function FileGetDateEx(Handle:Integer):TFileTime; virtual;
-   function FileSetDateEx(Handle:Integer;Age:TFileTime):Integer; virtual;
-   function GetFileTime(Handle:Integer;CreateTime,AccessTime,ModifyTime:PFileTime):Boolean; virtual;
-   function SetFileTime(Handle:Integer;CreateTime,AccessTime,ModifyTime:PFileTime):Boolean; virtual;
+   function FileGetDateEx(Handle:THandle):TFileTime; virtual;
+   function FileSetDateEx(Handle:THandle;Age:TFileTime):Integer; virtual;
+   function GetFileTime(Handle:THandle;CreateTime,AccessTime,ModifyTime:PFileTime):Boolean; virtual;
+   function SetFileTime(Handle:THandle;CreateTime,AccessTime,ModifyTime:PFileTime):Boolean; virtual;
 
     {Win32 Compatibility Functions} {Only File/Directory/Stream/Security}
     {File Functions}
@@ -5099,10 +5108,10 @@ type
 type
  {FileSystem advanced classes}
  TFSHandleStream = class(TStream)
-   constructor Create(AHandle:Integer);
+   constructor Create(AHandle:THandle);
   private
    {}
-   FHandle:Integer;
+   FHandle:THandle;
   protected
    {}
    procedure SetSize(NewSize:LongInt); override;
@@ -5111,7 +5120,7 @@ type
    function Read(var Buffer;Count:LongInt):LongInt; override;
    function Write(const Buffer;Count:LongInt):LongInt; override;
    function Seek(Offset:LongInt;Origin:Word):LongInt; override;
-   property Handle:Integer read FHandle;
+   property Handle:THandle read FHandle;
  end;
  
  TFSFileStream = class(TFSHandleStream)
@@ -5124,10 +5133,10 @@ type
  end;
  
  TFSHandleStreamEx = class(TStreamEx)
-   constructor Create(AHandle:Integer);
+   constructor Create(AHandle:THandle);
   private
    {}
-   FHandle:Integer;
+   FHandle:THandle;
   protected
    {}
    procedure SetSize(NewSize:LongInt); override;
@@ -5138,7 +5147,7 @@ type
    function Write(const Buffer;Count:LongInt):LongInt; override;
    function Seek(Offset:LongInt;Origin:Word):LongInt; override;
    function SeekEx(const Offset:Int64;Origin:Word):Int64; override;
-   property Handle:Integer read FHandle;
+   property Handle:THandle read FHandle;
  end;
 
  TFSFileStreamEx = class(TFSHandleStreamEx)
@@ -5206,23 +5215,23 @@ function FSSetCurrentDrive(const ADrive:String):Boolean; inline;
 function FSFileOpen(const AFileName:String;AMode:Integer):THandle; inline;
 function FSFileCreate(const AFileName:String):THandle; inline;
 function FSDeleteFile(const AFileName:String):Boolean; inline;
-procedure FSFileClose(AHandle:Integer); inline;
+procedure FSFileClose(AHandle:THandle); inline;
 function FSRenameFile(const AOldName,ANewName:String):Boolean; inline;
 function FSFileSeek(AHandle:THandle;AOffset,AOrigin:LongInt):LongInt; inline;
-function FSFileFlush(AHandle:Integer):Boolean; inline;
-function FSFileTruncate(AHandle:Integer):Boolean; inline;
+function FSFileFlush(AHandle:THandle):Boolean; inline;
+function FSFileTruncate(AHandle:THandle):Boolean; inline;
 function FSSetEndOfFile(AHandle:THandle):Boolean; inline;
 
-function FSEndOfFile(AHandle:Integer):Boolean; inline;
+function FSEndOfFile(AHandle:THandle):Boolean; inline;
 function FSFilePos(AHandle:THandle):LongInt; inline;
 function FSFileSize(AHandle:THandle):LongInt; inline;
 
 function FSFileAge(const AFileName:String):Integer; inline;
 function FSFileExists(const AFileName:String):Boolean; inline;
 function FSFileGetAttr(const AFileName:String):Integer; inline;
-function FSFileGetDate(AHandle:Integer):Integer; inline;
+function FSFileGetDate(AHandle:THandle):Integer; inline;
 function FSFileSetAttr(const AFileName:String;AAttr:Integer):Integer; inline;
-function FSFileSetDate(AHandle:Integer;AAge:Integer):Integer; inline;
+function FSFileSetDate(AHandle:THandle;AAge:Integer):Integer; inline;
 
 function FSFileRead(AHandle:THandle;var ABuffer;ACount:LongInt):LongInt; inline;
 function FSFileWrite(AHandle:THandle;const ABuffer;ACount:LongInt):LongInt; inline;
@@ -5256,16 +5265,16 @@ function FSDeleteSlash(const AFilePath:String;ALeading,ATrailing:Boolean):String
 {Extended Functions}
 function FSFileSeekEx(AHandle:THandle;const AOffset:Int64;AOrigin:LongInt):Int64; inline;
 
-function FSEndOfFileEx(AHandle:Integer):Boolean; inline;
+function FSEndOfFileEx(AHandle:THandle):Boolean; inline;
 function FSFilePosEx(AHandle:THandle):Int64; inline;
 function FSFileSizeEx(AHandle:THandle):Int64; inline;
 
 function FSFileAgeEx(const AFileName:String):TFileTime; inline;
 
-function FSFileGetAttrEx(AHandle:Integer):Integer; inline;
+function FSFileGetAttrEx(AHandle:THandle):Integer; inline;
 
-function FSFileGetDateEx(AHandle:Integer):TFileTime; inline;
-function FSFileSetDateEx(AHandle:Integer;AAge:TFileTime):Integer; inline;
+function FSFileGetDateEx(AHandle:THandle):TFileTime; inline;
+function FSFileSetDateEx(AHandle:THandle;AAge:TFileTime):Integer; inline;
 
 function FSGetFileTime(AHandle:THandle;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean; inline;
 function FSSetFileTime(AHandle:THandle;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean; inline; 
@@ -5310,11 +5319,15 @@ function FSSetFilePointer(AHandle:THandle;ADistanceToMove:LongInt;var ADistanceT
 function FSSetFilePointerEx(AHandle:THandle;const ADistanceToMove:Int64;var ANewFilePointer:Int64;AMoveMethod:LongWord):Boolean; inline;
 function FSWriteFile(AHandle:THandle;const ABuffer;ABytesToWrite:LongWord;var ABytesWritten:LongWord):Boolean; inline;
 function FSGetLongPathName(const AShortPath:String):String; inline;
+function FSGetFinalPathNameByHandle(AHandle:THandle;AFlags:LongWord):String; inline;
 
 function FSSetFileShortName(const AFileName,AShortName:String):Boolean; inline;
 function FSSetFileShortNameEx(AHandle:THandle;const AShortName:String):Boolean; inline;
 function FSCreateHardLink(const ALinkName,AFileName:String):Boolean; inline;
 function FSCreateSymbolicLink(const ALinkName,ATargetName:String;ADirectory:Boolean):Boolean; inline;
+
+{Handle Functions}
+function FSDuplicateHandle(AHandle:THandle):THandle;
 
 {Directory Functions}
 function FSCreateDirectory(const APathName:String):Boolean; inline;
@@ -10311,7 +10324,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.CloseFileHandle(AHandle:TFileHandle):Boolean;
+function TFileSysDriver.CloseFileHandle(AHandle:TFileHandle;AAll:Boolean):Boolean;
 {Close an existing handle}
 {Note: Caller must hold the handle writer lock}
 begin
@@ -10322,16 +10335,50 @@ begin
  try
   if AHandle = nil then Exit;
   
-  {Acquire Lock}
-  FFileHandles.WriterLock;
-  
-  {Remove and Free Handle}
-  FFileHandles.Remove(AHandle);
+  {Check Count}
+  if not(AAll) and (AHandle.Count > 1) then
+   begin
+    {Decrement Count}
+    Dec(AHandle.Count);
 
-  {Release Lock}
-  FFileHandles.WriterUnlock;
+    {Unlock Handle}
+    AHandle.WriterUnlock;
+   end
+  else
+   begin
+    {Acquire Lock}
+    FFileHandles.WriterLock;
 
-  AHandle.Free;
+    {Remove and Free Handle}
+    FFileHandles.Remove(AHandle);
+
+    {Release Lock}
+    FFileHandles.WriterUnlock;
+
+    AHandle.Free;
+   end;
+
+  Result:=True;
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
+function TFileSysDriver.ReopenFileHandle(AHandle:TFileHandle):Boolean;
+{Reopen (Duplicate) an existing handle}
+{Note: Caller must hold the handle writer lock}
+begin
+ {}
+ Result:=False;
+
+ if not ReaderLock then Exit;
+ try
+  if AHandle = nil then Exit;
+
+  {Increment Count}
+  Inc(AHandle.Count);
   
   Result:=True;
  finally  
@@ -10458,7 +10505,7 @@ begin
       CurrentHandle.ReaderConvert;
       
       {Close Handle}
-      CloseFileHandle(CurrentHandle);
+      CloseFileHandle(CurrentHandle,True);
       CurrentHandle:=nil;
      end
     else if (ADrive <> nil) and (CurrentHandle.Drive = ADrive) then
@@ -10467,10 +10514,9 @@ begin
       CurrentHandle.ReaderConvert;
       
       {Close Handle}
-      CloseFileHandle(CurrentHandle);
+      CloseFileHandle(CurrentHandle,True);
       CurrentHandle:=nil;
      end;
-     
      
     {Unlock Handle}
     if CurrentHandle <> nil then CurrentHandle.ReaderUnlock;
@@ -10527,7 +10573,7 @@ begin
         CurrentHandle.ReaderConvert;
         
         {Close Handle}
-        CloseFileHandle(CurrentHandle);
+        CloseFileHandle(CurrentHandle,True);
         CurrentHandle:=nil;
        end;
      end
@@ -10550,11 +10596,10 @@ begin
         CurrentHandle.ReaderConvert;
         
         {Close Handle}
-        CloseFileHandle(CurrentHandle);
+        CloseFileHandle(CurrentHandle,True);
         CurrentHandle:=nil;
        end;
      end;
-     
      
     {Unlock Handle}
     if CurrentHandle <> nil then CurrentHandle.ReaderUnlock;
@@ -11146,12 +11191,12 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.OpenDevice(const AName:String;AMode:Integer):Integer;
+function TFileSysDriver.OpenDevice(const AName:String;AMode:Integer):THandle;
 var
  Device:TDiskDevice;
 begin
  {}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
 
  if not ReaderLock then Exit;
  try
@@ -11180,7 +11225,7 @@ end;
 
 {==============================================================================}
 
-procedure TFileSysDriver.CloseDevice(AHandle:Integer);
+procedure TFileSysDriver.CloseDevice(AHandle:THandle);
 var
  Device:TDiskDevice;
 begin
@@ -11189,7 +11234,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CloseDevice');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   {Get the Device}
@@ -11207,7 +11252,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.ReadDevice(AHandle:Integer;var ABuffer;ACount:Integer):Integer;
+function TFileSysDriver.ReadDevice(AHandle:THandle;var ABuffer;ACount:Integer):Integer;
 {Note: Raw Reads must be in Sector sized multiples}
 var
  Device:TDiskDevice;
@@ -11219,7 +11264,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.ReadDevice');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if ACount < 1 then Exit;
@@ -11239,7 +11284,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.WriteDevice(AHandle:Integer;const ABuffer;ACount:Integer):Integer;
+function TFileSysDriver.WriteDevice(AHandle:THandle;const ABuffer;ACount:Integer):Integer;
 {Note: Raw Writes must be in Sector sized multiples}
 var
  Device:TDiskDevice;
@@ -11251,7 +11296,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.WriteDevice');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if ACount < 1 then Exit;
@@ -11271,7 +11316,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.EraseDevice(AHandle:Integer;ACount:Integer):Integer;
+function TFileSysDriver.EraseDevice(AHandle:THandle;ACount:Integer):Integer;
 {Note: Raw Erases must be in Sector sized multiples}
 var
  Device:TDiskDevice;
@@ -11283,7 +11328,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.EraseDevice');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if ACount < 1 then Exit;
@@ -11303,7 +11348,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.SeekDevice(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64;
+function TFileSysDriver.SeekDevice(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64;
 {Note: Raw Seeks must be in Sector sized multiples}
 {Note: Raw Seeks cannot extend the size of the Device}
 var
@@ -11316,7 +11361,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SeekDevice');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   {Get the Device}
@@ -11395,7 +11440,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextDevice');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
   
   {Get the Handle}
@@ -11443,7 +11488,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindDeviceClose');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
   
   {Get the Handle}
@@ -11716,12 +11761,12 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.OpenPartition(const APath:String;AMode:Integer):Integer;
+function TFileSysDriver.OpenPartition(const APath:String;AMode:Integer):THandle;
 var
  Partition:TDiskPartition;
 begin
  {}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
 
  if not ReaderLock then Exit;
  try
@@ -11750,7 +11795,7 @@ end;
 
 {==============================================================================}
 
-procedure TFileSysDriver.ClosePartition(AHandle:Integer);
+procedure TFileSysDriver.ClosePartition(AHandle:THandle);
 var
  Partition:TDiskPartition;
 begin
@@ -11759,7 +11804,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.ClosePartition');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   {Get the Partition}
@@ -11777,7 +11822,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.ReadPartition(AHandle:Integer;var ABuffer;ACount:Integer):Integer;
+function TFileSysDriver.ReadPartition(AHandle:THandle;var ABuffer;ACount:Integer):Integer;
 {Note: Raw Reads must be in Sector sized multiples}
 var
  Partition:TDiskPartition;
@@ -11789,7 +11834,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.ReadPartition');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if ACount < 1 then Exit;
@@ -11809,7 +11854,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.WritePartition(AHandle:Integer;const ABuffer;ACount:Integer):Integer;
+function TFileSysDriver.WritePartition(AHandle:THandle;const ABuffer;ACount:Integer):Integer;
 {Note: Raw Writes must be in Sector sized multiples}
 var
  Partition:TDiskPartition;
@@ -11821,7 +11866,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.WritePartition');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if ACount < 1 then Exit;
@@ -11841,7 +11886,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.SeekPartition(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64;
+function TFileSysDriver.SeekPartition(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64;
 {Note: Raw Seeks must be in Sector sized multiples}
 {Note: Raw Seeks cannot extend the size of the Partition}
 var
@@ -11854,7 +11899,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SeekPartition');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   {Get the Partition}
@@ -11948,7 +11993,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextPartition');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
   
   {Get the Handle}
@@ -12016,7 +12061,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindPartitionClose');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
   
   {Get the Handle}
@@ -12462,12 +12507,12 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.OpenVolume(const AName:String;AMode:Integer):Integer;
+function TFileSysDriver.OpenVolume(const AName:String;AMode:Integer):THandle;
 var
  Volume:TDiskVolume;
 begin
  {}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
 
  if not ReaderLock then Exit;
  try
@@ -12496,7 +12541,7 @@ end;
 
 {==============================================================================}
 
-procedure TFileSysDriver.CloseVolume(AHandle:Integer);
+procedure TFileSysDriver.CloseVolume(AHandle:THandle);
 var
  Volume:TDiskVolume;
 begin
@@ -12505,7 +12550,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CloseVolume');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   {Get the Volume}
@@ -12523,7 +12568,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.ReadVolume(AHandle:Integer;var ABuffer;ACount:Integer):Integer;
+function TFileSysDriver.ReadVolume(AHandle:THandle;var ABuffer;ACount:Integer):Integer;
 {Note: Raw Reads must be in Sector sized multiples}
 var
  Volume:TDiskVolume;
@@ -12535,7 +12580,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.ReadVolume');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if ACount < 1 then Exit;
@@ -12555,7 +12600,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.WriteVolume(AHandle:Integer;const ABuffer;ACount:Integer):Integer;
+function TFileSysDriver.WriteVolume(AHandle:THandle;const ABuffer;ACount:Integer):Integer;
 {Note: Raw Writes must be in Sector sized multiples}
 var
  Volume:TDiskVolume;
@@ -12567,7 +12612,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.WriteVolume');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if ACount < 1 then Exit;
@@ -12587,7 +12632,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.SeekVolume(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64;
+function TFileSysDriver.SeekVolume(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64;
 {Note: Raw Seeks must be in Sector sized multiples}
 {Note: Raw Seeks cannot extend the size of the Volume}
 var
@@ -12600,7 +12645,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SeekVolume');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   {Get the Volume}
@@ -12683,7 +12728,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextVolume');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
   
   {Get the Handle}
@@ -12735,7 +12780,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindVolumeClose');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
   
   {Get the Handle}
@@ -12967,13 +13012,13 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.OpenDrive(const AName:String;AMode:Integer):Integer;
+function TFileSysDriver.OpenDrive(const AName:String;AMode:Integer):THandle;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
 begin
  {}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
 
  if not ReaderLock then Exit;
  try
@@ -13012,7 +13057,7 @@ end;
 
 {==============================================================================}
 
-procedure TFileSysDriver.CloseDrive(AHandle:Integer);
+procedure TFileSysDriver.CloseDrive(AHandle:THandle);
 var
  Volume:TDiskVolume;
 begin
@@ -13021,7 +13066,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CloseDrive');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   {Check the Volume}
@@ -13040,7 +13085,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.ReadDrive(AHandle:Integer;var ABuffer;ACount:Integer):Integer;
+function TFileSysDriver.ReadDrive(AHandle:THandle;var ABuffer;ACount:Integer):Integer;
 {Note: Raw Reads must be in Sector sized multiples}
 var
  Volume:TDiskVolume;
@@ -13052,7 +13097,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.ReadDrive');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if ACount < 1 then Exit;
@@ -13073,7 +13118,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.WriteDrive(AHandle:Integer;const ABuffer;ACount:Integer):Integer;
+function TFileSysDriver.WriteDrive(AHandle:THandle;const ABuffer;ACount:Integer):Integer;
 {Note: Raw Writes must be in Sector sized multiples}
 var
  Volume:TDiskVolume;
@@ -13085,7 +13130,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.WriteDrive');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if ACount < 1 then Exit;
@@ -13106,7 +13151,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.SeekDrive(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64;
+function TFileSysDriver.SeekDrive(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64;
 {Note: Raw Seeks must be in Sector sized multiples}
 {Note: Raw Seeks cannot extend the size of the Drive}
 var
@@ -13119,7 +13164,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SeekDrive');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   {Check the Volume}
@@ -13203,7 +13248,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextDrive');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
   
   {Get the Handle}
@@ -13255,7 +13300,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindDriveClose');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
   
   {Get the Handle}
@@ -13878,7 +13923,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextImage');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
   
   {Get the Handle}
@@ -13935,7 +13980,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindImageClose');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
  
   {Get the Handle}
@@ -14052,7 +14097,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextCatalog');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
   
   {Get the FileSystem}  
@@ -14079,7 +14124,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindCatalogClose');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
   
   {Get the FileSystem}
@@ -15603,7 +15648,7 @@ end;
 
 {==============================================================================}
 
-procedure TFileSysDriver.FileClose(AHandle:Integer);
+procedure TFileSysDriver.FileClose(AHandle:THandle);
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
@@ -15612,7 +15657,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileClose Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileClose Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -15704,7 +15749,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileFlush(AHandle:Integer):Boolean;
+function TFileSysDriver.FileFlush(AHandle:THandle):Boolean;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
@@ -15715,7 +15760,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileFlush Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileFlush Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -15752,7 +15797,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileTruncate(AHandle:Integer):Boolean;
+function TFileSysDriver.FileTruncate(AHandle:THandle):Boolean;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
@@ -15763,7 +15808,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileTruncate Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileTruncate Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -15800,11 +15845,11 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.SetEndOfFile(AHandle:Integer):Boolean;
+function TFileSysDriver.SetEndOfFile(AHandle:THandle):Boolean;
 begin
  {}
  {$IFDEF FILESYS_DEBUG}
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SetEndOfFile Handle = ' + IntToHex(AHandle,8));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SetEndOfFile Handle = ' + HandleToHex(AHandle));
  {$ENDIF}
  
  Result:=FileTruncate(AHandle);
@@ -15812,11 +15857,11 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.EndOfFile(AHandle:Integer):Boolean;
+function TFileSysDriver.EndOfFile(AHandle:THandle):Boolean;
 begin
  {}
  {$IFDEF FILESYS_DEBUG}
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.EndOfFile Handle = ' + IntToHex(AHandle,8));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.EndOfFile Handle = ' + HandleToHex(AHandle));
  {$ENDIF}
  
  Result:=FilePosEx(AHandle) >= FileSizeEx(AHandle);
@@ -15930,7 +15975,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileGetDate(AHandle:Integer):Integer;
+function TFileSysDriver.FileGetDate(AHandle:THandle):Integer;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
@@ -15941,7 +15986,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileGetDate Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileGetDate Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -16024,7 +16069,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileSetDate(AHandle:Integer;AAge:Integer):Integer;
+function TFileSysDriver.FileSetDate(AHandle:THandle;AAge:Integer):Integer;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
@@ -16035,7 +16080,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileSetDate Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileSetDate Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -16083,7 +16128,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileRead Handle = ' + IntToHex(AHandle,8) + ' Count = ' + IntToStr(ACount));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileRead Handle = ' + HandleToHex(AHandle) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
  
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -16131,7 +16176,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileWrite Handle = ' + IntToHex(AHandle,8) + ' Count = ' + IntToStr(ACount));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileWrite Handle = ' + HandleToHex(AHandle) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
  
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -16521,7 +16566,7 @@ begin
  Result:=-1;
  
  {$IFDEF FILESYS_DEBUG}
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindMatchingFile Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindMatchingFile Handle = ' + HandleToHex(ASearchRec.FindHandle));
  {$ENDIF}
  
  if (ADrive <> nil) or (AVolume <> nil) then
@@ -16653,7 +16698,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNext Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNext Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
@@ -16712,7 +16757,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindClose Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindClose Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
@@ -16810,7 +16855,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextStream Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextStream Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
@@ -16856,7 +16901,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindStreamClose Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindStreamClose Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
   
   Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
@@ -16950,7 +16995,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextFileName Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextFileName Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
@@ -16996,7 +17041,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindFileNameClose Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindFileNameClose Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
@@ -17144,25 +17189,26 @@ begin
    begin
     Volume:=GetVolumeFromPath(APathName,True,FILESYS_LOCK_READ);
     if Volume = nil then Exit;
-    try
-     FileSystem:=Volume.FileSystem;
-     
-     //To Do //Lock
-    finally 
-     {Unlock Volume}
-     Volume.ReaderUnlock;
-    end; 
+
+    {Get the FileSystem}
+    FileSystem:=Volume.FileSystem;
+
+    {Check FileSystem}
+    if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+    {Unlock Volume}
+    Volume.ReaderUnlock;
    end
   else
    begin
-    try
-     FileSystem:=Drive.FileSystem;
-     
-     //To Do //Lock
-    finally 
-     {Unlock Drive}
-     Drive.ReaderUnlock;
-    end; 
+    {Get the FileSystem}
+    FileSystem:=Drive.FileSystem;
+
+    {Check FileSystem}
+    if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+    {Unlock Drive}
+    Drive.ReaderUnlock;
    end;
   if FileSystem = nil then Exit;
 
@@ -17181,8 +17227,9 @@ begin
    end;
   
   FileSystem.FindCloseEx(SearchRec);
-  
-  //To Do //Unlock FileSystem
+
+  {Unlock FileSystem}
+  FileSystem.ReaderUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -17301,25 +17348,26 @@ begin
    begin
     Volume:=GetVolumeFromPath(APathName,True,FILESYS_LOCK_READ);
     if Volume = nil then Exit;
-    try
-     FileSystem:=Volume.FileSystem;
-     //To Do //Lock
-     
-    finally 
-     {Unlock Volume}
-     Volume.ReaderUnlock;
-    end; 
+
+    {Get the FileSystem}
+    FileSystem:=Volume.FileSystem;
+
+    {Check FileSystem}
+    if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+    {Unlock Volume}
+    Volume.ReaderUnlock;
    end
   else
    begin
-    try
-     FileSystem:=Drive.FileSystem;
-     //To Do //Lock
-     
-    finally 
-     {Unlock Drive}
-     Drive.ReaderUnlock;
-    end; 
+    {Get the FileSystem}
+    FileSystem:=Drive.FileSystem;
+
+    {Check FileSystem}
+    if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+    {Unlock Drive}
+    Drive.ReaderUnlock;
    end;
   if FileSystem = nil then Exit;
 
@@ -17338,8 +17386,9 @@ begin
    end;
   
   FileSystem.FindCloseEx(SearchRec);
-  
-  //To Do //Unlock FileSystem
+
+  {Unlock FileSystem}
+  FileSystem.ReaderUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -17457,25 +17506,26 @@ begin
    begin
     Volume:=GetVolumeFromPath(ALinkName,True,FILESYS_LOCK_READ);
     if Volume = nil then Exit;
-    try
-     FileSystem:=Volume.FileSystem;
-     //To Do //Lock
-     
-    finally 
-     {Unlock Volume}
-     Volume.ReaderUnlock;
-    end; 
+
+    {Get the FileSystem}
+    FileSystem:=Volume.FileSystem;
+
+    {Check FileSystem}
+    if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+    {Unlock Volume}
+    Volume.ReaderUnlock;
    end
   else
    begin
-    try
-     FileSystem:=Drive.FileSystem;
-     //To Do //Lock
-     
-    finally 
-     {Unlock Drive}
-     Drive.ReaderUnlock;
-    end; 
+    {Get the FileSystem}
+    FileSystem:=Drive.FileSystem;
+
+    {Check FileSystem}
+    if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+    {Unlock Drive}
+    Drive.ReaderUnlock;
    end;
   if FileSystem = nil then Exit;
 
@@ -17492,8 +17542,9 @@ begin
    end;
   
   FileSystem.FindCloseEx(SearchRec);
-  
-  //To Do //Unlock FileSystem
+
+  {Unlock FileSystem}
+  FileSystem.ReaderUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -17824,7 +17875,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.SetFileShortNameEx(AHandle:Integer;const AShortName:String):Boolean;
+function TFileSysDriver.SetFileShortNameEx(AHandle:THandle;const AShortName:String):Boolean;
 {Note: ShortName must not include drive or path (Name only)}
 var
  Drive:TDiskDrive;
@@ -17836,7 +17887,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SetFileShortNameEx Handle = ' + IntToHex(AHandle,8) + ' ShortName = ' + AShortName);
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SetFileShortNameEx Handle = ' + HandleToHex(AHandle) + ' ShortName = ' + AShortName);
   {$ENDIF}
 
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -18600,7 +18651,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileSeekEx Handle = ' + IntToHex(AHandle,8) + ' Offset = ' + IntToStr(AOffset));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileSeekEx Handle = ' + HandleToHex(AHandle) + ' Offset = ' + IntToStr(AOffset));
   {$ENDIF}
  
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -18637,11 +18688,11 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.EndOfFileEx(AHandle:Integer):Boolean;
+function TFileSysDriver.EndOfFileEx(AHandle:THandle):Boolean;
 begin
  {}
  {$IFDEF FILESYS_DEBUG}
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.EndOfFileEx Handle = ' + IntToHex(AHandle,8));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.EndOfFileEx Handle = ' + HandleToHex(AHandle));
  {$ENDIF}
  
  Result:=FilePosEx(AHandle) >= FileSizeEx(AHandle);
@@ -18660,7 +18711,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FilePosEx Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FilePosEx Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
   
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -18703,7 +18754,7 @@ var
 begin
  {}
  {$IFDEF FILESYS_DEBUG}
- if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileSizeEx Handle = ' + IntToHex(AHandle,8));
+ if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileSizeEx Handle = ' + HandleToHex(AHandle));
  {$ENDIF}
  
  Current:=FilePosEx(AHandle);
@@ -18741,7 +18792,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileGetAttrEx(AHandle:Integer):Integer;
+function TFileSysDriver.FileGetAttrEx(AHandle:THandle):Integer;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
@@ -18752,7 +18803,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileGetAttrEx Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileGetAttrEx Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -18789,7 +18840,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileGetDateEx(AHandle:Integer):TFileTime;
+function TFileSysDriver.FileGetDateEx(AHandle:THandle):TFileTime;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
@@ -18800,7 +18851,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileGetDateEx Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileGetDateEx Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -18837,7 +18888,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.FileSetDateEx(AHandle:Integer;AAge:TFileTime):Integer;
+function TFileSysDriver.FileSetDateEx(AHandle:THandle;AAge:TFileTime):Integer;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
@@ -18848,7 +18899,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileSetDateEx Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileSetDateEx Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -18885,7 +18936,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetFileTime(AHandle:Integer;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean;
+function TFileSysDriver.GetFileTime(AHandle:THandle;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
@@ -18896,7 +18947,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetFileTime Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetFileTime Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -18933,7 +18984,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.SetFileTime(AHandle:Integer;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean;
+function TFileSysDriver.SetFileTime(AHandle:THandle;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
@@ -18944,7 +18995,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SetFileTime Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SetFileTime Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -19046,7 +19097,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextEx Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextEx Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
@@ -19092,7 +19143,7 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindCloseEx Handle = ' + IntToHex(ASearchRec.FindHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindCloseEx Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
@@ -19495,7 +19546,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CloseFile');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
   
   Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
@@ -19717,7 +19768,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindCloseFile');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
  
   Drive:=GetDriveFromFind(AHandle,True,FILESYS_LOCK_READ);  
@@ -19839,7 +19890,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextFile');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   Drive:=GetDriveFromFind(AHandle,True,FILESYS_LOCK_READ);  
@@ -19915,6 +19966,7 @@ function TFileSysDriver.GetFileInformationByHandle(AHandle:THandle;var AFileInfo
 {Note: Returned times are UTC}
 var
  FileHandle:TFileHandle;
+ FileSystem:TFileSystem;
 begin
  {}
  Result:=False;
@@ -19922,11 +19974,11 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetFileInformationByHandle Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetFileInformationByHandle Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
  
   {Get the Handle}
-  FileHandle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_WRITE); //To Do //Reader
+  FileHandle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_READ);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
@@ -19948,27 +20000,51 @@ begin
    {Check Drive}
    if FileHandle.Drive <> nil then
     begin
-     if FileHandle.Drive.FileSystem = nil then Exit;
-     
-     AFileInformation.dwFileAttributes:=(FileHandle.HandleEntry.Attributes and FileHandle.Drive.FileSystem.MaskAttributes);
+     {Lock Drive}
+     if not CheckDrive(FileHandle.Drive,True,FILESYS_LOCK_READ) then Exit;
+
+     {Get Information}
      AFileInformation.dwVolumeSerialNumber:=FileHandle.Drive.VolumeSerial;
+
+     {Lock FileSystem}
+     FileSystem:=FileHandle.Drive.FileSystem;
+     if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+     {Unlock Drive}
+     FileHandle.Drive.ReaderUnlock;
     end
+   {Check Volume}
    else if FileHandle.Volume <> nil then  
     begin
-     if FileHandle.Volume.FileSystem = nil then Exit;
-     
-     AFileInformation.dwFileAttributes:=(FileHandle.HandleEntry.Attributes and FileHandle.Volume.FileSystem.MaskAttributes);
+     {Lock Volume}
+     if not CheckVolume(FileHandle.Volume,True,FILESYS_LOCK_READ) then Exit;
+
+     {Get Information}
      AFileInformation.dwVolumeSerialNumber:=FileHandle.Volume.VolumeSerial;
+
+     {Lock FileSystem}
+     FileSystem:=FileHandle.Volume.FileSystem;
+     if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+     {Unlock Volume}
+     FileHandle.Volume.ReaderUnlock;
     end;
-  
+   if FileSystem = nil then Exit;
+
+   {Get Information}
+   AFileInformation.dwFileAttributes:=(FileHandle.HandleEntry.Attributes and FileSystem.MaskAttributes);
+
+   {Unlock FileSystem}
+   FileSystem.ReaderUnlock;
+
    Result:=True;
   finally
    {Unlock Handle}
-   FileHandle.WriterUnlock;
-  end; 
- finally  
+   FileHandle.ReaderUnlock;
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20132,6 +20208,120 @@ end;
 
 {==============================================================================}
 
+function TFileSysDriver.GetFinalPathNameByHandle(AHandle:THandle;AFlags:LongWord):String;
+{Retrieves the final path for the specified open file handle}
+var
+ FileHandle:TFileHandle;
+ FileSystem:TFileSystem;
+begin
+ {}
+ Result:='';
+
+ if not ReaderLock then Exit;
+ try
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetFinalPathNameByHandle Handle = ' + HandleToHex(AHandle) + ' Flags = ' + IntToHex(AFlags,8));
+  {$ENDIF}
+
+  {Get the Handle}
+  FileHandle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_READ);
+  if FileHandle = nil then Exit;
+  try
+   {Check the Handle}
+   if FileHandle.HandleEntry = nil then Exit;
+
+   {Check Drive}
+   if FileHandle.Drive <> nil then
+    begin
+     {Lock Drive}
+     if not CheckDrive(FileHandle.Drive,True,FILESYS_LOCK_READ) then Exit;
+
+     {Lock FileSystem}
+     FileSystem:=FileHandle.Drive.FileSystem;
+     if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+     
+     {Unlock Drive}
+     FileHandle.Drive.ReaderUnlock;
+    end
+   {Check Volume}
+   else if FileHandle.Volume <> nil then
+    begin
+     {Lock Volume}
+     if not CheckVolume(FileHandle.Volume,True,FILESYS_LOCK_READ) then Exit;
+     
+     {Lock FileSystem}
+     FileSystem:=FileHandle.Volume.FileSystem;
+     if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
+
+     {Unlock Volume}
+     FileHandle.Volume.ReaderUnlock;
+    end;
+   if FileSystem = nil then Exit;
+
+   {Check Flags}
+   if (AFlags and VOLUME_NAME_NT) <> 0 then
+    begin
+     {Return the path with the device path instead of the drive letter}
+     Result:=FileSystem.GetEntryName(FileHandle.HandleEntry,False,False,True);
+    end
+   else if (AFlags and VOLUME_NAME_GUID) <> 0 then 
+    begin
+     {Return the path with the volume path instead of the drive letter}
+     Result:=FileSystem.GetEntryName(FileHandle.HandleEntry,False,True,False);
+    end
+   else
+    begin
+     {Return the path with the drive letter}
+     Result:=FileSystem.GetEntryName(FileHandle.HandleEntry,False,False,False);
+    end;
+
+   {Unlock FileSystem}
+   FileSystem.ReaderUnlock;
+  finally
+   {Unlock Handle}
+   FileHandle.ReaderUnlock;
+  end;
+ finally
+  ReaderUnlock;
+ end;
+end;
+
+{==============================================================================}
+
+function TFileSysDriver.DuplicateHandle(AHandle:THandle):THandle;
+{Duplicate open handle}
+var
+ FileHandle:TFileHandle;
+begin
+ {}
+ Result:=INVALID_HANDLE_VALUE;
+
+ if not ReaderLock then Exit;
+ try
+  {$IFDEF FILESYS_DEBUG}
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.DuplicateHandle Handle = ' + HandleToHex(AHandle));
+  {$ENDIF}
+
+  {Get the Handle}
+  FileHandle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_WRITE);
+  if FileHandle = nil then Exit;
+  try
+   {Reopen (Duplicate) the Handle}
+   if not ReopenFileHandle(FileHandle) then Exit;
+
+   {Return the Handle}
+   Result:=FileHandle.Handle;
+  finally
+   {Unlock Handle}
+   FileHandle.WriterUnlock;
+  end; 
+ finally  
+  ReaderUnlock;
+ end; 
+end;
+
+{==============================================================================}
+
 function TFileSysDriver.CreateDirectory(const APathName:String):Boolean;
 begin
  {}
@@ -20164,7 +20354,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetDeviceFromRaw(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskDevice;
+function TFileSysDriver.GetDeviceFromRaw(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskDevice;
 var
  Handle:TRawHandle;
 begin
@@ -20188,7 +20378,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetDeviceFromEnum(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskDevice;
+function TFileSysDriver.GetDeviceFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskDevice;
 var
  Handle:TEnumHandle;
 begin
@@ -20212,7 +20402,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetPartitionFromRaw(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskPartition;
+function TFileSysDriver.GetPartitionFromRaw(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskPartition;
 var
  Handle:TRawHandle;
 begin
@@ -20236,7 +20426,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetPartitionFromEnum(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskPartition;
+function TFileSysDriver.GetPartitionFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskPartition;
 var
  Handle:TEnumHandle;
 begin
@@ -20306,9 +20496,10 @@ begin
          if FileSystem <> nil then
           begin
            Result:=FileSystem.Volume;
-           //To Do //Lock
-           //Dont need to do check volume, the lock on FileSystem prevents changes so can go ahead and lock the Volume ? (Search Result.WriterLock elsewhere)
-           
+
+           {Check Volume}
+           if not CheckVolume(Result,ALock,AState) then Result:=nil;
+
            {Unlock FileSystem}
            FileSystem.ReaderUnlock;
           end; 
@@ -20366,9 +20557,10 @@ begin
              if FileSystem <> nil then
               begin
                Result:=FileSystem.Volume;
-               //To Do //Lock
-               //Dont need to do check volume, the lock on FileSystem prevents changes so can go ahead and lock the Volume ? (Search Result.WriterLock elsewhere)
-               
+
+               {Check Volume}
+               if not CheckVolume(Result,ALock,AState) then Result:=nil;
+
                {Unlock FileSystem}
                FileSystem.ReaderUnlock;
               end; 
@@ -20385,9 +20577,10 @@ begin
              if FileSystem <> nil then
               begin
                Result:=FileSystem.Volume;
-               //To Do //Lock
-               //Dont need to do check volume, the lock on FileSystem prevents changes so can go ahead and lock the Volume ? (Search Result.WriterLock elsewhere)
-               
+
+               {Check Volume}
+               if not CheckVolume(Result,ALock,AState) then Result:=nil;
+
                {Unlock FileSystem}
                FileSystem.ReaderUnlock;
               end; 
@@ -20426,8 +20619,9 @@ begin
          if FileSystem <> nil then
           begin
            Result:=FileSystem.Volume;
-           //To Do //Lock
-           //Dont need to do check volume, the lock on FileSystem prevents changes so can go ahead and lock the Volume ? (Search Result.WriterLock elsewhere)
+
+           {Check Volume}
+           if not CheckVolume(Result,ALock,AState) then Result:=nil;
 
            {Unlock FileSystem}
            FileSystem.ReaderUnlock;
@@ -20462,9 +20656,10 @@ begin
          if FileSystem <> nil then
           begin
            Result:=FileSystem.Volume;
-           //To Do //Lock
-           //Dont need to do check volume, the lock on FileSystem prevents changes so can go ahead and lock the Volume ? (Search Result.WriterLock elsewhere)
-           
+
+           {Check Volume}
+           if not CheckVolume(Result,ALock,AState) then Result:=nil;
+
            {Unlock FileSystem}
            FileSystem.ReaderUnlock;
           end; 
@@ -20498,9 +20693,10 @@ begin
          if FileSystem <> nil then
           begin
            Result:=FileSystem.Volume;
-           //To Do //Lock
-           //Dont need to do check volume, the lock on FileSystem prevents changes so can go ahead and lock the Volume ? (Search Result.WriterLock elsewhere)
-           
+
+           {Check Volume}
+           if not CheckVolume(Result,ALock,AState) then Result:=nil;
+
            {Unlock FileSystem}
            FileSystem.ReaderUnlock;
           end; 
@@ -20519,7 +20715,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetVolumeFromRaw(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskVolume;
+function TFileSysDriver.GetVolumeFromRaw(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskVolume;
 var
  Handle:TRawHandle;
 begin
@@ -20543,7 +20739,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetVolumeFromEnum(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskVolume;
+function TFileSysDriver.GetVolumeFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskVolume;
 var
  Handle:TEnumHandle;
 begin
@@ -20567,7 +20763,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetVolumeFromFile(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskVolume;
+function TFileSysDriver.GetVolumeFromFile(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskVolume;
 var
  Handle:TFileHandle;
 begin
@@ -20591,7 +20787,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetVolumeFromFind(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskVolume;
+function TFileSysDriver.GetVolumeFromFind(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskVolume;
 var
  Handle:TFindHandle;
 begin
@@ -20682,7 +20878,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetDriveFromRaw(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskDrive;
+function TFileSysDriver.GetDriveFromRaw(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskDrive;
 var
  Handle:TRawHandle;
 begin
@@ -20706,7 +20902,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetDriveFromEnum(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskDrive;
+function TFileSysDriver.GetDriveFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskDrive;
 var
  Handle:TEnumHandle;
 begin
@@ -20730,7 +20926,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetDriveFromFile(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskDrive;
+function TFileSysDriver.GetDriveFromFile(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskDrive;
 var
  Handle:TFileHandle;
 begin
@@ -20754,7 +20950,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetDriveFromFind(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskDrive;
+function TFileSysDriver.GetDriveFromFind(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskDrive;
 var
  Handle:TFindHandle;
 begin
@@ -20778,7 +20974,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetImageFromEnum(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskImage;
+function TFileSysDriver.GetImageFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskImage;
 var
  Handle:TEnumHandle;
 begin
@@ -20802,7 +20998,7 @@ end;
    
 {==============================================================================}
 
-function TFileSysDriver.GetCatalogFromEnum(AHandle:Integer;ALock:Boolean;AState:LongWord):TDiskCatalog;
+function TFileSysDriver.GetCatalogFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskCatalog;
 var
  Handle:TEnumHandle;
  FileSystem:TFileSystem;
@@ -20879,7 +21075,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetFileSystemFromEnum(AHandle:Integer;ALock:Boolean;AState:LongWord):TFileSystem;
+function TFileSysDriver.GetFileSystemFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TFileSystem;
 var
  Handle:TEnumHandle;
 begin
@@ -20903,7 +21099,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetFileSystemFromFile(AHandle:Integer;ALock:Boolean;AState:LongWord):TFileSystem;
+function TFileSysDriver.GetFileSystemFromFile(AHandle:THandle;ALock:Boolean;AState:LongWord):TFileSystem;
 var
  Handle:TFileHandle;
 begin
@@ -20911,24 +21107,36 @@ begin
  Result:=nil;
  
  {Get the Handle}
- Handle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_READ); //To Do //Lock //GetDriveFromFile/GetVolumeFromFile etc ?
+ Handle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
  try
   if Handle.Drive = nil then
    begin
-    if Handle.Volume = nil then Exit;
+    {Lock Volume}
+    if not CheckVolume(Handle.Volume,True,FILESYS_LOCK_READ) then Exit;
    
     {Get the FileSystem}
     Result:=Handle.Volume.FileSystem;
-    //To Do //Lock
     
+    {Check FileSystem}
+    if not CheckFileSystem(Result,ALock,AState) then Result:=nil;
+
+    {Unlock Volume}
+    Handle.Volume.ReaderUnlock;
    end
   else
    begin
+    {Lock Drive}
+    if not CheckDrive(Handle.Drive,True,FILESYS_LOCK_READ) then Exit;
+    
     {Get the FileSystem}
     Result:=Handle.Drive.FileSystem;
-    //To Do //Lock
-    
+
+    {Check FileSystem}
+    if not CheckFileSystem(Result,ALock,AState) then Result:=nil;
+
+    {Unlock Drive}
+    Handle.Drive.ReaderUnlock;
    end;
  finally
   {Unlock Handle}
@@ -20938,7 +21146,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetFileSystemFromFind(AHandle:Integer;ALock:Boolean;AState:LongWord):TFileSystem;
+function TFileSysDriver.GetFileSystemFromFind(AHandle:THandle;ALock:Boolean;AState:LongWord):TFileSystem;
 var
  Handle:TFindHandle;
 begin
@@ -20946,24 +21154,36 @@ begin
  Result:=nil;
  
  {Get the Handle}
- Handle:=GetFindFromHandle(AHandle,True,FILESYS_LOCK_READ);//To Do //Lock //GetDriveFromFind/GetVolumeFromFind etc ?
+ Handle:=GetFindFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
  try 
   if Handle.Drive = nil then
    begin
-    if Handle.Volume = nil then Exit;
-   
+    {Lock Volume}
+    if not CheckVolume(Handle.Volume,True,FILESYS_LOCK_READ) then Exit;
+
     {Get the FileSystem}
     Result:=Handle.Volume.FileSystem;
-    //To Do //Lock
-    
+
+    {Check FileSystem}
+    if not CheckFileSystem(Result,ALock,AState) then Result:=nil;
+
+    {Unlock Volume}
+    Handle.Volume.ReaderUnlock;
    end
   else
    begin
+    {Lock Drive}
+    if not CheckDrive(Handle.Drive,True,FILESYS_LOCK_READ) then Exit;
+
     {Get the FileSystem}
     Result:=Handle.Drive.FileSystem;
-    //To Do //Lock
-    
+
+    {Check FileSystem}
+    if not CheckFileSystem(Result,ALock,AState) then Result:=nil;
+
+    {Unlock Drive}
+    Handle.Drive.ReaderUnlock;
    end;
  finally
   {Unlock Handle}
@@ -20973,7 +21193,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetRawFromHandle(AHandle:Integer;ALock:Boolean;AState:LongWord):TRawHandle;
+function TFileSysDriver.GetRawFromHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TRawHandle;
 var
  Handle:TRawHandle;
 begin
@@ -21006,7 +21226,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetEnumFromHandle(AHandle:Integer;ALock:Boolean;AState:LongWord):TEnumHandle;
+function TFileSysDriver.GetEnumFromHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TEnumHandle;
 var
  Handle:TEnumHandle;
 begin
@@ -21039,7 +21259,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetFileFromHandle(AHandle:Integer;ALock:Boolean;AState:LongWord):TFileHandle;
+function TFileSysDriver.GetFileFromHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TFileHandle;
 var
  Handle:TFileHandle;
 begin
@@ -21072,7 +21292,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetFindFromHandle(AHandle:Integer;ALock:Boolean;AState:LongWord):TFindHandle;
+function TFileSysDriver.GetFindFromHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TFindHandle;
 var
  Handle:TFindHandle;
 begin
@@ -22041,7 +22261,7 @@ begin
 
  Size:=0;
  Position:=0;
- Handle:=Integer(Self);
+ Handle:=THandle(Self);
 end;
 
 {==============================================================================}
@@ -22119,7 +22339,7 @@ begin
  
  FileSystem:=nil;
 
- Handle:=Integer(Self);
+ Handle:=THandle(Self);
 
  CurrentDevice:=nil;
  CurrentPartition:=nil;
@@ -22209,7 +22429,9 @@ begin
  ShareMode:=fmShareCompat;
 
  Position:=0;
- Handle:=Integer(Self);
+ 
+ Handle:=THandle(Self);
+ Count:=1;
 
  DataValue:=0;
  DataOffset:=0;
@@ -22298,7 +22520,7 @@ begin
  Mask:='';
  Attr:=faNone;
  Flags:=FIND_FLAG_NONE;
- Handle:=Integer(Self);
+ Handle:=THandle(Self);
 
  ParentEntry:=nil;
  CurrentEntry:=nil;
@@ -24497,12 +24719,12 @@ end;
   
 {==============================================================================}
 
-function TDiskDevice.OpenDevice(AMode:Integer):Integer;
+function TDiskDevice.OpenDevice(AMode:Integer):THandle;
 var
  Handle:TRawHandle;
 begin
  {}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
 
  if not ReaderLock then Exit;
  try
@@ -24533,7 +24755,7 @@ end;
 
 {==============================================================================}
 
-procedure TDiskDevice.CloseDevice(AHandle:Integer);
+procedure TDiskDevice.CloseDevice(AHandle:THandle);
 var
  Handle:TRawHandle;
 begin
@@ -24542,7 +24764,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.CloseDevice (Name=' + Name + ')'); 
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if FDriver = nil then Exit;
@@ -24560,7 +24782,7 @@ end;
 
 {==============================================================================}
 
-function TDiskDevice.ReadDevice(AHandle:Integer;var ABuffer;ACount:Integer):Integer;
+function TDiskDevice.ReadDevice(AHandle:THandle;var ABuffer;ACount:Integer):Integer;
 {Note: Raw Reads must be in Sector sized multiples}
 var
  Start:Int64;
@@ -24574,7 +24796,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.ReadDevice (Name=' + Name + ')'); 
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if FDriver = nil then Exit;
@@ -24612,7 +24834,7 @@ end;
 
 {==============================================================================}
 
-function TDiskDevice.WriteDevice(AHandle:Integer;const ABuffer;ACount:Integer):Integer;
+function TDiskDevice.WriteDevice(AHandle:THandle;const ABuffer;ACount:Integer):Integer;
 {Note: Raw Writes must be in Sector sized multiples}
 var
  Start:Int64;
@@ -24626,7 +24848,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.WriteDevice (Name=' + Name + ')'); 
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if FDriver = nil then Exit;
@@ -24664,7 +24886,7 @@ end;
 
 {==============================================================================}
 
-function TDiskDevice.EraseDevice(AHandle:Integer;ACount:Integer):Integer; 
+function TDiskDevice.EraseDevice(AHandle:THandle;ACount:Integer):Integer; 
 {Note: Raw Erases must be in Sector sized multiples}
 var
  Start:Int64;
@@ -24678,7 +24900,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.EraseDevice (Name=' + Name + ')'); 
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if FDriver = nil then Exit;
@@ -24716,7 +24938,7 @@ end;
 
 {==============================================================================}
 
-function TDiskDevice.SeekDevice(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64;
+function TDiskDevice.SeekDevice(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64;
 {Note: Raw Seeks must be in Sector sized multiples}
 {Note: Raw Seeks cannot extend the size of the Device}
 var
@@ -24729,7 +24951,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.SeekDevice (Name=' + Name + ')'); 
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if FDriver = nil then Exit;
@@ -25549,13 +25771,13 @@ end;
 
 {==============================================================================}
 
-function TDiskPartition.OpenPartition(AMode:Integer):Integer;
+function TDiskPartition.OpenPartition(AMode:Integer):THandle;
 var
  Count:Int64; {Temporary until SectorCount is Int64}
  Handle:TRawHandle;
 begin
  {}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
 
  if not ReaderLock then Exit;
  try
@@ -25588,7 +25810,7 @@ end;
 
 {==============================================================================}
 
-procedure TDiskPartition.ClosePartition(AHandle:Integer);
+procedure TDiskPartition.ClosePartition(AHandle:THandle);
 var
  Handle:TRawHandle;
 begin
@@ -25597,7 +25819,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartition.ClosePartition (Name=' + Name + ')');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
   if FDriver = nil then Exit;
   
@@ -25614,7 +25836,7 @@ end;
 
 {==============================================================================}
 
-function TDiskPartition.ReadPartition(AHandle:Integer;var ABuffer;ACount:Integer):Integer;
+function TDiskPartition.ReadPartition(AHandle:THandle;var ABuffer;ACount:Integer):Integer;
 {Note: Raw Reads must be in Sector sized multiples}
 var
  Start:Int64;
@@ -25628,7 +25850,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartition.ReadPartition (Name=' + Name + ')');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if Device = nil then Exit;
@@ -25667,7 +25889,7 @@ end;
 
 {==============================================================================}
 
-function TDiskPartition.WritePartition(AHandle:Integer;const ABuffer;ACount:Integer):Integer;
+function TDiskPartition.WritePartition(AHandle:THandle;const ABuffer;ACount:Integer):Integer;
 {Note: Raw Writes must be in Sector sized multiples}
 var
  Start:Int64;
@@ -25681,7 +25903,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartition.WritePartition (Name=' + Name + ')');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if Device = nil then Exit;
@@ -25720,7 +25942,7 @@ end;
 
 {==============================================================================}
 
-function TDiskPartition.SeekPartition(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64;
+function TDiskPartition.SeekPartition(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64;
 {Note: Raw Seeks must be in Sector sized multiples}
 {Note: Raw Seeks cannot extend the size of the Partition}
 var
@@ -25733,7 +25955,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartition.SeekPartition (Name=' + Name + ')');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if Device = nil then Exit;
@@ -26686,13 +26908,13 @@ end;
 
 {==============================================================================}
 
-function TDiskVolume.OpenVolume(AMode:Integer):Integer;
+function TDiskVolume.OpenVolume(AMode:Integer):THandle;
 var
  Count:Int64; {Temporary until SectorCount is Int64}
  Handle:TRawHandle;
 begin
  {}
- Result:=-1;
+ Result:=INVALID_HANDLE_VALUE;
 
  if not ReaderLock then Exit;
  try
@@ -26725,7 +26947,7 @@ end;
 
 {==============================================================================}
 
-procedure TDiskVolume.CloseVolume(AHandle:Integer);
+procedure TDiskVolume.CloseVolume(AHandle:THandle);
 var
  Handle:TRawHandle;
 begin
@@ -26736,7 +26958,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskVolume.OpenVolume (Name= ' + Name + ')');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   {Get the Handle}
@@ -26752,7 +26974,7 @@ end;
 
 {==============================================================================}
 
-function TDiskVolume.ReadVolume(AHandle:Integer;var ABuffer;ACount:Integer):Integer;
+function TDiskVolume.ReadVolume(AHandle:THandle;var ABuffer;ACount:Integer):Integer;
 {Note: Raw Reads must be in Sector sized multiples}
 var
  Start:Int64;
@@ -26766,7 +26988,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskVolume.ReadVolume (Name= ' + Name + ')');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if Device = nil then Exit;
@@ -26805,7 +27027,7 @@ end;
 
 {==============================================================================}
 
-function TDiskVolume.WriteVolume(AHandle:Integer;const ABuffer;ACount:Integer):Integer;
+function TDiskVolume.WriteVolume(AHandle:THandle;const ABuffer;ACount:Integer):Integer;
 {Note: Raw Writes must be in Sector sized multiples}
 var
  Start:Int64;
@@ -26819,7 +27041,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskVolume.WriteVolume (Name= ' + Name + ')');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if Device = nil then Exit;
@@ -26858,7 +27080,7 @@ end;
 
 {==============================================================================}
 
-function TDiskVolume.SeekVolume(AHandle:Integer;const AOffset:Int64;AOrigin:Integer):Int64;
+function TDiskVolume.SeekVolume(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64;
 {Note: Raw Seeks must be in Sector sized multiples}
 {Note: Raw Seeks cannot extend the size of the Volume}
 var
@@ -26871,7 +27093,7 @@ begin
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskVolume.SeekVolume (Name= ' + Name + ')');
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + IntToHex(AHandle,8));
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if Device = nil then Exit;
@@ -30868,7 +31090,7 @@ begin
     
     {Setup Defaults}
     FRootChar:=LoadRootChar;
-    FRootName:=LoadRootName;
+    FRootName:=LoadRootName(False);
     FRootPath:=LoadRootPath;
     
     {Bind to Drive}
@@ -30895,7 +31117,7 @@ begin
     
     {Setup Defaults}
     FRootChar:=LoadRootChar;
-    FRootName:=LoadRootName;
+    FRootName:=LoadRootName(False);
     FRootPath:=LoadRootPath;
     
     {Check Root}
@@ -31109,7 +31331,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.LoadRootName:String;
+function TFileSystem.LoadRootName(AVolumeName:Boolean):String;
 {Load Root Name from Drive or Volume (eg C:\ or \\?\Volume1)}
 begin
  {Base Implementation}
@@ -31119,15 +31341,22 @@ begin
  try
   if FDriver = nil then Exit;
   
-  if FDrive <> nil then
+  if AVolumeName and (FVolume <> nil) then
    begin
-    Result:=FDrive.Name;
+    Result:=VOLUME_PATH_PREFIX + FVolume.Name;
    end
   else
    begin
-    if FVolume = nil then Exit;
+    if FDrive <> nil then
+     begin
+      Result:=FDrive.Name;
+     end
+    else
+     begin
+      if FVolume = nil then Exit;
     
-    Result:=VOLUME_PATH_PREFIX + FVolume.Name;
+      Result:=VOLUME_PATH_PREFIX + FVolume.Name;
+     end;
    end;
  finally  
   ReleaseLock;
@@ -32719,7 +32948,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.GetEntryPath(AEntry:TDiskEntry;AAltName:Boolean):String;
+function TFileSystem.GetEntryPath(AEntry:TDiskEntry;AAltName,AVolumePath,ADevicePath:Boolean):String;
 {Get the Full Path of an Entry (Not including Entry itself)}
 {Note: Path ends with a trailing slash of PathChar unless Entry is a stream}
 var
@@ -32747,7 +32976,21 @@ begin
        if Parent = FRoot then
         begin
          {Root Entry}
-         Result:=AddTrailingChar(FRoot.Name,WorkChar) + Result;
+         if AVolumePath then
+          begin
+           {Volume Path}
+           Result:=AddTrailingChar(LoadRootName(True),WorkChar) + Result;
+          end
+         else if ADevicePath then
+          begin
+           {Device Path}
+           Result:=AddTrailingChar(FRoot.AltName,WorkChar) + Result;
+          end
+         else
+          begin
+           {Drive Path}
+           Result:=AddTrailingChar(FRoot.Name,WorkChar) + Result;
+          end;
         end
        else
         begin
@@ -32769,7 +33012,7 @@ begin
      {Stream}
      Parent:=TDiskEntry(AEntry.Parent);
      
-     Result:=GetEntryName(Parent,AAltName);
+     Result:=GetEntryName(Parent,AAltName,AVolumePath,ADevicePath);
     end;
   end;
  finally
@@ -32779,7 +33022,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.GetEntryName(AEntry:TDiskEntry;AAltName:Boolean):String;
+function TFileSystem.GetEntryName(AEntry:TDiskEntry;AAltName,AVolumePath,ADevicePath:Boolean):String;
 {Get the Full Name of an Entry (Including Entry itself)}
 begin
  {}
@@ -32796,10 +33039,26 @@ begin
      {File, Folder, Label}
      if AEntry = FRoot then
       begin
-       Result:=FRoot.Name;
+       {Root Entry}
+       if AVolumePath then
+        begin
+         {Volume Path}
+         Result:=LoadRootName(True);
+        end
+       else if ADevicePath then
+        begin
+         {Device Path}
+         Result:=FRoot.AltName;
+        end
+       else
+        begin
+         {Drive Path}
+         Result:=FRoot.Name;
+        end;
       end
      else
       begin
+       {Folder or File Entry}
        if (AAltName) and (Length(AEntry.AltName) <> 0) then
         begin
          Result:=AEntry.AltName;
@@ -32817,7 +33076,7 @@ begin
   end;
  
   {Get Entry Path}
-  Result:=GetEntryPath(AEntry,AAltName) + Result;
+  Result:=GetEntryPath(AEntry,AAltName,AVolumePath,ADevicePath) + Result;
  finally
   FEntries.ReaderUnlock;
  end; 
@@ -34137,7 +34396,7 @@ end;
 
 {==============================================================================}
 
-procedure TFileSystem.FileClose(Handle:Integer);
+procedure TFileSystem.FileClose(Handle:THandle);
 {Close open handle}
 var
  FileHandle:TFileHandle;
@@ -34155,7 +34414,7 @@ begin
   if FileHandle.OpenMode <> fmOpenRead then SetEntry(FileHandle.ParentEntry,FileHandle.HandleEntry);
 
   {Close the Handle} {Do not unlock}
-  FDriver.CloseFileHandle(FileHandle);
+  FDriver.CloseFileHandle(FileHandle,False);
  finally  
   ReaderUnlock;
  end; 
@@ -34494,7 +34753,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.FileFlush(Handle:Integer):Boolean;
+function TFileSystem.FileFlush(Handle:THandle):Boolean;
 {Flush an open handle from Cache}
 {Note: Currently just flushes the Cache}
 var
@@ -34508,7 +34767,7 @@ begin
   if FDriver = nil then Exit;
 
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
  
   {Flush the Cache}
@@ -34523,7 +34782,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.FileTruncate(Handle:Integer):Boolean;
+function TFileSystem.FileTruncate(Handle:THandle):Boolean;
 {Truncate an open file at the current position}
 {Note: Can extend a file as well as truncate}
 var
@@ -34537,7 +34796,7 @@ begin
   if FDriver = nil then Exit;
 
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
  
   {Set the Size at Current Position}
@@ -34574,14 +34833,14 @@ begin
   if FDriver = nil then Exit;
 
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader   
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_READ);
   if FileHandle = nil then Exit;
  
   {Get the Position}
   Result:=FileHandle.Position;
  
   {Unlock Handle}
-  FileHandle.WriterUnlock;
+  FileHandle.ReaderUnlock;
  finally  
   ReaderUnlock;
  end; 
@@ -34687,7 +34946,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.FileGetDate(Handle:Integer):Integer;
+function TFileSystem.FileGetDate(Handle:THandle):Integer;
 {Get the date/time of an existing entry with an open Handle}
 {Note: Returned time is converted to Local}
 var
@@ -34731,7 +34990,7 @@ begin
   if FDriver = nil then Exit;
 
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader   
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_READ);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
@@ -34744,7 +35003,7 @@ begin
    Result:=FileHandle.HandleEntry.Size;
   finally
    {Unlock Handle}
-   FileHandle.WriterUnlock;
+   FileHandle.ReaderUnlock;
   end; 
  finally  
   ReaderUnlock;
@@ -34846,7 +35105,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.FileSetDate(Handle:Integer;Age:Integer):Integer;
+function TFileSystem.FileSetDate(Handle:THandle;Age:Integer):Integer;
 {Set the date/time of an existing entry with an open Handle}
 {Note: Passed time is assumed to be Local and is converted to UTC}
 var
@@ -34895,7 +35154,7 @@ begin
   if Size < 0 then Exit;
  
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader   
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
@@ -35267,7 +35526,7 @@ begin
   Current:=GetCurrent;
   if Current = nil then Exit;
  
-  Result:=GetEntryName(Current,False);
+  Result:=GetEntryName(Current,False,False,False);
  finally  
   ReaderUnlock;
  end; 
@@ -36788,7 +37047,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.SetFileShortNameEx(Handle:Integer;const ShortName:String):Boolean;
+function TFileSystem.SetFileShortNameEx(Handle:THandle;const ShortName:String):Boolean;
 {No Stream Support}
 var
  FileHandle:TFileHandle;
@@ -36804,7 +37063,7 @@ begin
   if (Length(ShortName) <> 0) and not(CheckAltName(ShortName)) then Exit;
   
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader   
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
@@ -37070,7 +37329,7 @@ begin
       end;
      
      {Get Parent Name}
-     Result:=GetEntryName(Parent,False);
+     Result:=GetEntryName(Parent,False,False,False);
 
      {Remove Reference}
      Current.RemoveReference;
@@ -37169,7 +37428,7 @@ begin
       end;
      
      {Get Entry Short Name}
-     Result:=GetEntryName(Current,True);
+     Result:=GetEntryName(Current,True,False,False);
      
      {Remove Reference}
      Current.RemoveReference;
@@ -37268,7 +37527,7 @@ begin
       end;
      
      {Get Entry Long Name}
-     Result:=GetEntryName(Current,False);
+     Result:=GetEntryName(Current,False,False,False);
 
      {Remove Reference}
      Current.RemoveReference;
@@ -37368,7 +37627,7 @@ begin
       end;
      
      {Get Entry Short Name}
-     Result:=GetEntryName(Current,True);
+     Result:=GetEntryName(Current,True,False,False);
      
      {Remove Reference}
      Current.RemoveReference;
@@ -37663,7 +37922,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.FileGetAttrEx(Handle:Integer):Integer; 
+function TFileSystem.FileGetAttrEx(Handle:THandle):Integer; 
 {Get the Attributes of an existing entry with an open Handle}
 var
  FileHandle:TFileHandle;
@@ -37676,7 +37935,7 @@ begin
   if FDriver = nil then Exit;
  
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader   
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_READ);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
@@ -37689,7 +37948,7 @@ begin
    Result:=(FileHandle.HandleEntry.Attributes and FMaskAttributes); {faFindMask}
   finally
    {Unlock Handle}
-   FileHandle.WriterUnlock;
+   FileHandle.ReaderUnlock;
   end; 
  finally  
   ReaderUnlock;
@@ -37698,7 +37957,7 @@ end;
  
 {==============================================================================}
 
-function TFileSystem.FileGetDateEx(Handle:Integer):TFileTime;
+function TFileSystem.FileGetDateEx(Handle:THandle):TFileTime;
 {Get the Date/Time of an existing entry with an open Handle}
 {Note: Returned time is UTC}
 var
@@ -37715,7 +37974,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.FileSetDateEx(Handle:Integer;Age:TFileTime):Integer;
+function TFileSystem.FileSetDateEx(Handle:THandle;Age:TFileTime):Integer;
 {Set the Date/Time of an existing entry with an open Handle}
 {Note: Passed time is assumed to be UTC}
 begin
@@ -37730,7 +37989,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.GetFileTime(Handle:Integer;CreateTime,AccessTime,ModifyTime:PFileTime):Boolean;
+function TFileSystem.GetFileTime(Handle:THandle;CreateTime,AccessTime,ModifyTime:PFileTime):Boolean;
 {Get the Dates and Times of an existing entry with an open Handle}
 {Note: Returned time is UTC}
 var
@@ -37747,7 +38006,7 @@ begin
   if (CreateTime = nil) and (AccessTime = nil) and (ModifyTime = nil) then Exit;
  
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader   
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_READ);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
@@ -37764,7 +38023,7 @@ begin
    Result:=True;
   finally
    {Unlock Handle}
-   FileHandle.WriterUnlock;
+   FileHandle.ReaderUnlock;
   end; 
  finally  
   ReaderUnlock;
@@ -37773,7 +38032,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.SetFileTime(Handle:Integer;CreateTime,AccessTime,ModifyTime:PFileTime):Boolean;
+function TFileSystem.SetFileTime(Handle:THandle;CreateTime,AccessTime,ModifyTime:PFileTime):Boolean;
 {Set the Dates and Times of an existing entry with an open Handle}
 {Note: Passed times are assumed to be UTC and are converted to Local}
 var
@@ -37790,7 +38049,7 @@ begin
   if (CreateTime = nil) and (AccessTime = nil) and (ModifyTime = nil) then Exit;
  
   {Get the Handle}
-  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE); //To Do //Reader   
+  FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
@@ -37836,7 +38095,7 @@ begin
   if FileHandle.OpenMode <> fmOpenRead then SetEntry(FileHandle.ParentEntry,FileHandle.HandleEntry);
 
   {Close the Handle} {Do not unlock}
-  FDriver.CloseFileHandle(FileHandle);
+  FDriver.CloseFileHandle(FileHandle,False);
   
   Result:=True;
  finally  
@@ -51581,7 +51840,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {TFSHandleStream}
-constructor TFSHandleStream.Create(AHandle:Integer);
+constructor TFSHandleStream.Create(AHandle:THandle);
 begin
  {}
  FHandle:=AHandle;
@@ -51631,13 +51890,13 @@ begin
  if Mode = fmCreate then
   begin
    FHandle:=FSFileCreate(FileName);
-   if FHandle = Integer(INVALID_HANDLE_VALUE) then
+   if FHandle = INVALID_HANDLE_VALUE then
     raise EFCreateError.CreateFmt(SFCreateError,[FileName]);
   end
  else
   begin
    FHandle:=FSFileOpen(FileName,Mode);
-   if FHandle = Integer(INVALID_HANDLE_VALUE) then
+   if FHandle = INVALID_HANDLE_VALUE then
     raise EFOpenError.CreateFmt(SFOpenError,[FileName]);
   end;
 end;
@@ -51647,13 +51906,13 @@ end;
 destructor TFSFileStream.Destroy;
 begin
  {}
- if FHandle <> Integer(INVALID_HANDLE_VALUE) then FSFileClose(FHandle);
+ if FHandle <> INVALID_HANDLE_VALUE then FSFileClose(FHandle);
 end;
 
 {=============================================================================}
 {=============================================================================}
 {TFSHandleStreamEx}
-constructor TFSHandleStreamEx.Create(AHandle:Integer);
+constructor TFSHandleStreamEx.Create(AHandle:THandle);
 begin
  {}
  FHandle:=AHandle;
@@ -51720,13 +51979,13 @@ begin
  if Mode = fmCreate then
   begin
    FHandle:=FSFileCreate(FileName);
-   if FHandle = Integer(INVALID_HANDLE_VALUE) then
+   if FHandle = INVALID_HANDLE_VALUE then
     raise EFCreateError.CreateFmt(SFCreateError,[FileName]);
   end
  else
   begin
    FHandle:=FSFileOpen(FileName,Mode);
-   if FHandle = Integer(INVALID_HANDLE_VALUE) then
+   if FHandle = INVALID_HANDLE_VALUE then
     raise EFOpenError.CreateFmt(SFOpenError,[FileName]);
   end;
 end;
@@ -51736,7 +51995,7 @@ end;
 destructor TFSFileStreamEx.Destroy;
 begin
  {}
- if FHandle <> Integer(INVALID_HANDLE_VALUE) then FSFileClose(FHandle);
+ if FHandle <> INVALID_HANDLE_VALUE then FSFileClose(FHandle);
 end;
 
 {==============================================================================}
@@ -51938,6 +52197,9 @@ begin
  UltiboCreateHardLinkAHandler:=FSCreateHardLink;
  UltiboCreateSymbolicLinkAHandler:=FSCreateSymbolicLink;
  UltiboGetFileInformationByHandleHandler:=FSGetFileInformationByHandle;
+ UltiboGetFinalPathNameByHandleAHandler:=FSGetFinalPathNameByHandle;
+ {Handle Functions (Compatibility)}
+ UltiboDuplicateHandleHandler:=FSDuplicateHandle;
  {Directory Functions (Compatibility)}
  UltiboCreateDirectoryAHandler:=FSCreateDirectory;
  UltiboRemoveDirectoryAHandler:=FSRemoveDirectory;
@@ -51952,15 +52214,15 @@ begin
  
  {Check Environment Variables (Cache)}
  {FILESYS_CACHE_SIZE}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_CACHE_SIZE'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_CACHE_SIZE'),0);
  if WorkInt > 0 then FILESYS_CACHE_SIZE:=WorkInt;
  
  {FILESYS_CACHE_PAGE}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_CACHE_PAGE'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_CACHE_PAGE'),0);
  if WorkInt > 0 then FILESYS_CACHE_PAGE:=WorkInt;
  
  {FILESYS_CACHE_KEYS}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_CACHE_KEYS'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_CACHE_KEYS'),0);
  if WorkInt > 0 then FILESYS_CACHE_KEYS:=WorkInt;
  
  {FILESYS_CACHE_MODE}
@@ -51968,27 +52230,27 @@ begin
  
  {Check Environment Variables (Logging)}
  {FILESYS_REGISTER_LOGGING}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_REGISTER_LOGGING'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_REGISTER_LOGGING'),0);
  if WorkInt <> 0 then FILESYS_REGISTER_LOGGING:=True;
  
  {FILESYS_LOGGING_DEFAULT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_LOGGING_DEFAULT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_DEFAULT'),0);
  if WorkInt <> 0 then FILESYS_LOGGING_DEFAULT:=True;
  
  {FILESYS_LOGGING_FILE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('FILESYS_LOGGING_FILE');
+ WorkBuffer:=EnvironmentGet('FILESYS_LOGGING_FILE');
  if Length(WorkBuffer) <> 0 then FILESYS_LOGGING_FILE:=WorkBuffer;
  
  {FILESYS_LOGGING_MAXSIZE}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_LOGGING_MAXSIZE'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_MAXSIZE'),0);
  if WorkInt > 0 then FILESYS_LOGGING_MAXSIZE:=WorkInt;
  
  {FILESYS_LOGGING_MAXCOPIES}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_LOGGING_MAXCOPIES'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_MAXCOPIES'),0);
  if WorkInt > 0 then FILESYS_LOGGING_MAXCOPIES:=WorkInt;
 
  {FILESYS_LOGGING_RESET}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('FILESYS_LOGGING_RESET'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_RESET'),0);
  if WorkInt <> 0 then FILESYS_LOGGING_RESET:=True;
 
  {Create Logging}
@@ -52566,7 +52828,7 @@ end;
 
 {==============================================================================}
 
-procedure FSFileClose(AHandle:Integer); inline;
+procedure FSFileClose(AHandle:THandle); inline;
 begin
  {}
  {Check Driver}
@@ -52606,7 +52868,7 @@ end;
 
 {==============================================================================}
 
-function FSFileFlush(AHandle:Integer):Boolean; inline;
+function FSFileFlush(AHandle:THandle):Boolean; inline;
 begin
  {}
  Result:=False;
@@ -52620,7 +52882,7 @@ end;
 
 {==============================================================================}
 
-function FSFileTruncate(AHandle:Integer):Boolean; inline;
+function FSFileTruncate(AHandle:THandle):Boolean; inline;
 begin
  {}
  Result:=False;
@@ -52648,7 +52910,7 @@ end;
 
 {==============================================================================}
 
-function FSEndOfFile(AHandle:Integer):Boolean; inline;
+function FSEndOfFile(AHandle:THandle):Boolean; inline;
 begin
  {}
  Result:=False;
@@ -52732,7 +52994,7 @@ end;
 
 {==============================================================================}
 
-function FSFileGetDate(AHandle:Integer):Integer; inline;
+function FSFileGetDate(AHandle:THandle):Integer; inline;
 begin
  {}
  Result:=-1;
@@ -52760,7 +53022,7 @@ end;
 
 {==============================================================================}
 
-function FSFileSetDate(AHandle:Integer;AAge:Integer):Integer; inline;
+function FSFileSetDate(AHandle:THandle;AAge:Integer):Integer; inline;
 begin
  {}
  Result:=-1;
@@ -53063,7 +53325,7 @@ end;
 
 {==============================================================================}
 
-function FSEndOfFileEx(AHandle:Integer):Boolean; inline;
+function FSEndOfFileEx(AHandle:THandle):Boolean; inline;
 begin
  {}
  Result:=False;
@@ -53119,7 +53381,7 @@ end;
 
 {==============================================================================}
 
-function FSFileGetAttrEx(AHandle:Integer):Integer; inline;
+function FSFileGetAttrEx(AHandle:THandle):Integer; inline;
 begin
  {}
  Result:=-1;
@@ -53133,7 +53395,7 @@ end;
 
 {==============================================================================}
 
-function FSFileGetDateEx(AHandle:Integer):TFileTime; inline;
+function FSFileGetDateEx(AHandle:THandle):TFileTime; inline;
 begin
  {}
  Int64(Result):=-1;
@@ -53147,7 +53409,7 @@ end;
 
 {==============================================================================}
 
-function FSFileSetDateEx(AHandle:Integer;AAge:TFileTime):Integer; inline;
+function FSFileSetDateEx(AHandle:THandle;AAge:TFileTime):Integer; inline;
 begin
  {}
  Result:=-1;
@@ -53665,6 +53927,20 @@ end;
 
 {==============================================================================}
 
+function FSGetFinalPathNameByHandle(AHandle:THandle;AFlags:LongWord):String; inline;
+begin
+ {}
+ Result:='';
+ 
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+
+ {Get Final Path Name}
+ Result:=FileSysDriver.GetFinalPathNameByHandle(AHandle,AFlags);
+end;
+
+{==============================================================================}
+
 function FSSetFileShortName(const AFileName,AShortName:String):Boolean; inline;
 begin
  {}
@@ -53717,6 +53993,20 @@ begin
 
  {Create Symbolic Link}
  Result:=FileSysDriver.CreateSymbolicLink(ALinkName,ATargetName,ADirectory);
+end;
+
+{==============================================================================}
+{Handle Functions}
+function FSDuplicateHandle(AHandle:THandle):THandle;
+begin
+ {}
+ Result:=INVALID_HANDLE_VALUE;
+
+ {Check Driver}
+ if FileSysDriver = nil then Exit;
+
+ {Duplicate Handle}
+ Result:=FileSysDriver.DuplicateHandle(AHandle);
 end;
  
 {==============================================================================}

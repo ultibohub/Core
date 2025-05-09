@@ -1,7 +1,7 @@
 {
 Generic I2C LCD Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -149,23 +149,23 @@ begin
  
  {Check Environment Variables}
  {I2CLCD_AUTOSTART}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('I2CLCD_AUTOSTART'),1);
+ WorkInt:=StrToIntDef(EnvironmentGet('I2CLCD_AUTOSTART'),1);
  if WorkInt = 0 then I2CLCD_AUTOSTART:=False;
 
  {I2CLCD_I2C_ADDRESS}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('I2CLCD_I2C_ADDRESS'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('I2CLCD_I2C_ADDRESS'),0);
  if WorkInt > 0 then I2CLCD_I2C_ADDRESS:=WorkInt;
  
  {I2CLCD_I2C_DEVICE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('I2CLCD_I2C_DEVICE');
+ WorkBuffer:=EnvironmentGet('I2CLCD_I2C_DEVICE');
  if Length(WorkBuffer) <> 0 then I2CLCD_I2C_DEVICE:=WorkBuffer;
  
  {I2CLCD_LCD_WIDTH}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('I2CLCD_LCD_WIDTH'),I2CLCD_LCD_WIDTH);
+ WorkInt:=StrToIntDef(EnvironmentGet('I2CLCD_LCD_WIDTH'),I2CLCD_LCD_WIDTH);
  if WorkInt <> I2CLCD_LCD_WIDTH then I2CLCD_LCD_WIDTH:=WorkInt;
 
  {I2CLCD_LCD_HEIGHT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('I2CLCD_LCD_HEIGHT'),I2CLCD_LCD_HEIGHT);
+ WorkInt:=StrToIntDef(EnvironmentGet('I2CLCD_LCD_HEIGHT'),I2CLCD_LCD_HEIGHT);
  if WorkInt <> I2CLCD_LCD_HEIGHT then I2CLCD_LCD_HEIGHT:=WorkInt;
  
  {Start I2CLCD} 

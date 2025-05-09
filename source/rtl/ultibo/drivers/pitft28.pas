@@ -1,7 +1,7 @@
 {
 Adafruit PiTFT 2.8" LCD Driver.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -214,31 +214,31 @@ begin
  
  {Check Environment Variables}
  {PITFT28_AUTOSTART}
- WorkBool:=StrToBoolDef(SysUtils.GetEnvironmentVariable('PITFT28_AUTOSTART'),PITFT28_AUTOSTART);
+ WorkBool:=StrToBoolDef(EnvironmentGet('PITFT28_AUTOSTART'),PITFT28_AUTOSTART);
  if WorkBool <> PITFT28_AUTOSTART then PITFT28_AUTOSTART:=WorkBool;
  
  {PITFT28_CAPACITIVE_TOUCH}
- WorkBool:=StrToBoolDef(SysUtils.GetEnvironmentVariable('PITFT28_CAPACITIVE_TOUCH'),PITFT28_CAPACITIVE_TOUCH);
+ WorkBool:=StrToBoolDef(EnvironmentGet('PITFT28_CAPACITIVE_TOUCH'),PITFT28_CAPACITIVE_TOUCH);
  if WorkBool <> PITFT28_CAPACITIVE_TOUCH then PITFT28_CAPACITIVE_TOUCH:=WorkBool;
  
  {PITFT28_SPI_DEVICE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('PITFT28_SPI_DEVICE');
+ WorkBuffer:=EnvironmentGet('PITFT28_SPI_DEVICE');
  if Length(WorkBuffer) <> 0 then PITFT28_SPI_DEVICE:=WorkBuffer;
 
  {PITFT28_I2C_DEVICE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('PITFT28_I2C_DEVICE');
+ WorkBuffer:=EnvironmentGet('PITFT28_I2C_DEVICE');
  if Length(WorkBuffer) <> 0 then PITFT28_I2C_DEVICE:=WorkBuffer;
  
  {PITFT28_LCD_CHIPSELECT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('PITFT28_LCD_CHIPSELECT'),PITFT28_LCD_CHIPSELECT);
+ WorkInt:=StrToIntDef(EnvironmentGet('PITFT28_LCD_CHIPSELECT'),PITFT28_LCD_CHIPSELECT);
  if WorkInt <> PITFT28_LCD_CHIPSELECT then PITFT28_LCD_CHIPSELECT:=WorkInt;
 
  {PITFT28_TOUCH_CHIPSELECT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('PITFT28_TOUCH_CHIPSELECT'),PITFT28_TOUCH_CHIPSELECT);
+ WorkInt:=StrToIntDef(EnvironmentGet('PITFT28_TOUCH_CHIPSELECT'),PITFT28_TOUCH_CHIPSELECT);
  if WorkInt <> PITFT28_TOUCH_CHIPSELECT then PITFT28_TOUCH_CHIPSELECT:=WorkInt;
 
  {PITFT28_TOUCH_ADDRESS}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('PITFT28_TOUCH_ADDRESS'),PITFT28_TOUCH_ADDRESS);
+ WorkInt:=StrToIntDef(EnvironmentGet('PITFT28_TOUCH_ADDRESS'),PITFT28_TOUCH_ADDRESS);
  if WorkInt <> PITFT28_TOUCH_ADDRESS then PITFT28_TOUCH_ADDRESS:=WorkInt;
 
  {Start PiTFT28} 

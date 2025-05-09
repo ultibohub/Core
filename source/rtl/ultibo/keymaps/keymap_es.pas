@@ -1,7 +1,7 @@
 {
 Ultibo Keymap (ES) interface unit.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -544,7 +544,7 @@ begin
   end;
   
  {Check Environment Variables}
- if (Uppercase(SysUtils.GetEnvironmentVariable('KEYMAP_DEFAULT')) = 'ES') or (Uppercase(KEYMAP_DEFAULT) = 'ES') then
+ if (Uppercase(EnvironmentGet('KEYMAP_DEFAULT')) = 'ES') or (Uppercase(KEYMAP_DEFAULT) = 'ES') then
   begin
    {Update Default}
    KEYMAP_DEFAULT:='ES';

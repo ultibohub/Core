@@ -1,7 +1,7 @@
 {
 Ultibo Broadcom VideoCoreIV interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -79,6 +79,9 @@ VideoCore IV
  Building the Userland libraries:
  
   Flags: __DYNAMIC_REENT__
+         __LARGE64_FILES
+         _REENT_BACKWARD_BINARY_COMPAT
+         _POSIX_THREADS
  
   Options: 
  
@@ -112,14 +115,14 @@ VideoCore IV
    
    (or git clone https://github.com/ultibohub/userland.git)
 
-   Build with GCC arm-none-eabi 10.3-2021.07
+   Build with GCC arm-none-eabi 13.3.rel1
 
-   Extracted to folder $HOME/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi
+   Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
 
 
-   Build with GCC aarch64-none-elf 10.3-2021.07
+   Build with GCC aarch64-none-elf 13.3.rel1
 
-   Extracted to folder $HOME/gcc-arm-10.3-2021.07-x86_64-aarch64-none-elf
+   Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf
 
   Build ARMv6: 
    
@@ -127,7 +130,7 @@ VideoCore IV
   
    cd userland
   
-   export PATH=$HOME/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi/bin:$PATH
+   export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
    
    ./buildme.armv6-ultibo
    
@@ -137,7 +140,7 @@ VideoCore IV
   
    cd userland
   
-   export PATH=$HOME/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi/bin:$PATH
+   export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
    
    ./buildme.armv7-ultibo
   
@@ -147,7 +150,7 @@ VideoCore IV
   
    cd userland
   
-   export PATH=$HOME/gcc-arm-10.3-2021.07-x86_64-aarch64-none-elf/bin:$PATH
+   export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf/bin:$PATH
    
    ./buildme.armv8-ultibo
   

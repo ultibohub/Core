@@ -1,7 +1,7 @@
 {
 Ultibo SPI interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -112,7 +112,7 @@ const
  
  {SPI Transfer Flags}
  SPI_TRANSFER_NONE  = $00000000;
- SPI_TRANSFER_DMA   = $00000001; {Use DMA for transfer (Write/Read) (Note: Buffers must be DMA compatible)}
+ SPI_TRANSFER_DMA   = $00000001; {Use DMA for transfer (Write/Read) (If supported) (Note: Buffers must be DMA compatible)}
  SPI_TRANSFER_PIO   = $00000002; {Use PIO (Polling) for transfer (Write/Read)}
  SPI_TRANSFER_DELAY = $00000004; {Add a delay after each byte written (Write/Read) (Note: Only available with PIO transfer unless provided directly by hardware)}
  

@@ -331,19 +331,19 @@ begin
 
  {Check Environment Variables}
  {CONSOLE_REGISTER_LOGGING}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CONSOLE_REGISTER_LOGGING'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_REGISTER_LOGGING'),0);
  if WorkInt <> 0 then CONSOLE_REGISTER_LOGGING:=True;
  
  {CONSOLE_LOGGING_DEFAULT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CONSOLE_LOGGING_DEFAULT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_LOGGING_DEFAULT'),0);
  if WorkInt <> 0 then CONSOLE_LOGGING_DEFAULT:=True;
  
  {CONSOLE_LOGGING_POSITION}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CONSOLE_LOGGING_POSITION'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_LOGGING_POSITION'),0);
  if WorkInt > 0 then CONSOLE_LOGGING_POSITION:=WorkInt;
  
  {CONSOLE_LOGGING_DEVICE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('CONSOLE_LOGGING_DEVICE');
+ WorkBuffer:=EnvironmentGet('CONSOLE_LOGGING_DEVICE');
  if Length(WorkBuffer) <> 0 then CONSOLE_LOGGING_DEVICE:=WorkBuffer;
  
  {Enumerate Consoles}

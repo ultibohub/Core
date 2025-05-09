@@ -1,7 +1,7 @@
 {
 Ultibo Timezone interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1954,7 +1954,7 @@ begin
  
  {Check Environment Variables}
  {TIMEZONE_DEFAULT_NAME}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('TIMEZONE_DEFAULT_NAME');
+ WorkBuffer:=EnvironmentGet('TIMEZONE_DEFAULT_NAME');
  if Length(WorkBuffer) <> 0 then TIMEZONE_DEFAULT_NAME:=TimezoneNameReplaceChar(WorkBuffer,'_',' ');
  
  {Load Timezone Table}
@@ -2246,7 +2246,7 @@ function TimezoneGetState(Timezone:PTimezoneEntry):LongWord; inline;
 {Return: The TIME_ZONE_ID_* constant representing the standard / daylight state of the timezone}
 begin
  {}
- TimezoneGetStateEx(Timezone,Now);
+ Result:=TimezoneGetStateEx(Timezone,Now);
 end;
 
 {==============================================================================}
@@ -2354,7 +2354,7 @@ function TimezoneGetActiveBias(Timezone:PTimezoneEntry):LongInt; inline;
 {Return: The bias in minutes offset between UTC and Local including any daylight bias if active}
 begin
  {}
- TimezoneGetActiveBiasEx(Timezone,Now);
+ Result:=TimezoneGetActiveBiasEx(Timezone,Now);
 end;
 
 {==============================================================================}

@@ -1,7 +1,7 @@
 {
 Adafruit 16x2 Character LCD + Keypad Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -167,19 +167,19 @@ begin
  
  {Check Environment Variables}
  {AF16X2LCD_AUTOSTART}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('AF16X2LCD_AUTOSTART'),1);
+ WorkInt:=StrToIntDef(EnvironmentGet('AF16X2LCD_AUTOSTART'),1);
  if WorkInt = 0 then AF16X2LCD_AUTOSTART:=False;
 
  {AF16X2LCD_MODEL}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('AF16X2LCD_MODEL'),AF16X2LCD_MODEL);
+ WorkInt:=StrToIntDef(EnvironmentGet('AF16X2LCD_MODEL'),AF16X2LCD_MODEL);
  if WorkInt <> AF16X2LCD_MODEL then AF16X2LCD_MODEL:=WorkInt;
  
  {AF16X2LCD_I2C_ADDRESS}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('AF16X2LCD_I2C_ADDRESS'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('AF16X2LCD_I2C_ADDRESS'),0);
  if WorkInt > 0 then AF16X2LCD_I2C_ADDRESS:=WorkInt;
  
  {AF16X2LCD_I2C_DEVICE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('AF16X2LCD_I2C_DEVICE');
+ WorkBuffer:=EnvironmentGet('AF16X2LCD_I2C_DEVICE');
  if Length(WorkBuffer) <> 0 then AF16X2LCD_I2C_DEVICE:=WorkBuffer;
  
  {Start 16x2 LCD} 

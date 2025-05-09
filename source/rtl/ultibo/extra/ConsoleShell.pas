@@ -1,7 +1,7 @@
 {
 Ultibo Console Shell unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1665,15 +1665,15 @@ begin
  
  {Check Environment Variables}
  {CONSOLE_SHELL_ENABLED}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CONSOLE_SHELL_ENABLED'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_SHELL_ENABLED'),0);
  if WorkInt <> 0 then CONSOLE_SHELL_ENABLED:=True;
  
  {CONSOLE_SHELL_POSITION}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CONSOLE_SHELL_POSITION'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_SHELL_POSITION'),0);
  if WorkInt > 0 then CONSOLE_SHELL_POSITION:=WorkInt;
  
  {CONSOLE_SHELL_DEVICE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('CONSOLE_SHELL_DEVICE');
+ WorkBuffer:=EnvironmentGet('CONSOLE_SHELL_DEVICE');
  if Length(WorkBuffer) <> 0 then CONSOLE_SHELL_DEVICE:=WorkBuffer;
  
  {Enumerate Consoles}

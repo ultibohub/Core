@@ -1,7 +1,7 @@
 {
 Ultibo Raw Socket Protocol unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1404,7 +1404,10 @@ begin
        begin
         {Get Address}
         AFromAddr.sin_addr:=InAddrToNetwork(AFromAddr.sin_addr);
-        
+
+        {Get Address Length}
+        AFromLength:=SizeOf(TSockAddr);
+
         {Return Size}
         Result:=Size;
        end;
@@ -1417,6 +1420,9 @@ begin
       {Read Data}
       if TRAWSocket(ASocket).RecvData.ReadBuffer(ABuffer,Size,@SockAddr6.sin6_addr,AFlags) then
        begin
+        {Get Address Length}
+        AFromLength:=SizeOf(TSockAddr6);
+
         {Return Size}
         Result:=Size;
        end;

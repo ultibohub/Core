@@ -1,7 +1,7 @@
 {
 Ultibo I2C interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -113,7 +113,13 @@ const
  I2C_FLAG_SLAVE         = $00000001; {Device is a slave not a master}
  I2C_FLAG_10BIT         = $00000002; {Device supports 10bit addressing}
  I2C_FLAG_16BIT         = $00000004; {Device supports 16bit addressing}
+ I2C_FLAG_DMA           = $00000008; {Device supports DMA transfers}
  
+ {I2C Transfer Flags}
+ I2C_TRANSFER_NONE       = $00000000;
+ I2C_TRANSFER_DMA        = $00000001; {Use DMA for transfer (Write/Read) (If supported) (Note: Buffers must be DMA compatible)}
+ I2C_TRANSFER_IGNORE_NAK = $00000002; {Ignore NAK responses and continue (For compatibility with non standard devices)}
+
  {I2C logging}
  I2C_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {I2C debugging messages}
  I2C_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {I2C informational messages, such as a device being attached or detached}
@@ -155,10 +161,10 @@ type
  TI2CDeviceStart = function(I2C:PI2CDevice;Rate:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TI2CDeviceStop = function(I2C:PI2CDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  
- TI2CDeviceRead = function(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- TI2CDeviceWrite = function(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- TI2CDeviceWriteRead = function(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- TI2CDeviceWriteWrite = function(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TI2CDeviceRead = function(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TI2CDeviceWrite = function(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TI2CDeviceWriteRead = function(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
+ TI2CDeviceWriteWrite = function(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
   
  TI2CDeviceGetRate = function(I2C:PI2CDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TI2CDeviceSetRate = function(I2C:PI2CDevice;Rate:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -214,10 +220,17 @@ procedure I2CInit;
 function I2CDeviceStart(I2C:PI2CDevice;Rate:LongWord):LongWord;
 function I2CDeviceStop(I2C:PI2CDevice):LongWord;
  
-function I2CDeviceRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
-function I2CDeviceWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
-function I2CDeviceWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
-function I2CDeviceWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function I2CDeviceRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+function I2CDeviceReadEx(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+
+function I2CDeviceWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+function I2CDeviceWriteEx(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+
+function I2CDeviceWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+function I2CDeviceWriteReadEx(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+
+function I2CDeviceWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
+function I2CDeviceWriteWriteEx(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
  
 function I2CDeviceGetRate(I2C:PI2CDevice):LongWord;
 function I2CDeviceSetRate(I2C:PI2CDevice;Rate:LongWord):LongWord;
@@ -476,12 +489,28 @@ end;
 
 {==============================================================================}
  
-function I2CDeviceRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function I2CDeviceRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
 {Read data from the specified I2C device}
 {I2C: The I2C device to read from}
 {Address: The slave address to read from (I2C_ADDRESS_INVALID to use the current address)}
 {Buffer: Pointer to a buffer to receive the data}
 {Size: The size of the buffer}
+{Count: The number of bytes read on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceReadEx(I2C,Address,Buffer,Size,I2C_TRANSFER_NONE,Count);
+end;
+
+{==============================================================================}
+
+function I2CDeviceReadEx(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Read data from the specified I2C device}
+{I2C: The I2C device to read from}
+{Address: The slave address to read from (I2C_ADDRESS_INVALID to use the current address)}
+{Buffer: Pointer to a buffer to receive the data}
+{Size: The size of the buffer}
+{Flags: The flags for this transfer (eg I2C_TRANSFER_DMA)}
 {Count: The number of bytes read on return}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
@@ -498,7 +527,7 @@ begin
  if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF I2C_DEBUG}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Read (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ')');
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Read (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
  
  {Check Enabled}
@@ -510,7 +539,7 @@ begin
    if Assigned(I2C.DeviceRead) then
     begin
      {Call Device Read}
-     Result:=I2C.DeviceRead(I2C,Address,Buffer,Size,Count);
+     Result:=I2C.DeviceRead(I2C,Address,Buffer,Size,Flags,Count);
     end
    else
     begin
@@ -527,12 +556,28 @@ end;
 
 {==============================================================================}
 
-function I2CDeviceWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function I2CDeviceWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
 {Write data to the specified I2C device}
 {I2C: The I2C device to write to}
 {Address: The slave address to write to (I2C_ADDRESS_INVALID to use the current address)}
 {Buffer: Pointer to a buffer of data to transmit}
 {Size: The size of the buffer}
+{Count: The number of bytes written on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceWriteEx(I2C,Address,Buffer,Size,I2C_TRANSFER_NONE,Count);
+end;
+
+{==============================================================================}
+
+function I2CDeviceWriteEx(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Write data to the specified I2C device}
+{I2C: The I2C device to write to}
+{Address: The slave address to write to (I2C_ADDRESS_INVALID to use the current address)}
+{Buffer: Pointer to a buffer of data to transmit}
+{Size: The size of the buffer}
+{Flags: The flags for this transfer (eg I2C_TRANSFER_DMA)}
 {Count: The number of bytes written on return}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
@@ -549,7 +594,7 @@ begin
  if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF I2C_DEBUG}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Write (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ')');
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Write (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
  
  {Check Enabled}
@@ -561,7 +606,7 @@ begin
    if Assigned(I2C.DeviceWrite) then
     begin
      {Call Device Write}
-     Result:=I2C.DeviceWrite(I2C,Address,Buffer,Size,Count);
+     Result:=I2C.DeviceWrite(I2C,Address,Buffer,Size,Flags,Count);
     end
    else
     begin
@@ -578,7 +623,7 @@ end;
 
 {==============================================================================}
 
-function I2CDeviceWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function I2CDeviceWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
 {Write data to and Read data from the specified I2C device in one operation}
 {Useful for devices that require a register address specified before a read (eg EEPROM devices)}
 {I2C: The I2C device to write to and read from}
@@ -587,6 +632,25 @@ function I2CDeviceWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:Long
 {Len: The size of the initial buffer}
 {Data: Pointer to a buffer to receive the data}
 {Size: The size of the data buffer}
+{Count: The number of bytes read on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceWriteReadEx(I2C,Address,Initial,Len,Data,Size,I2C_TRANSFER_NONE,Count);
+end;
+
+{==============================================================================}
+
+function I2CDeviceWriteReadEx(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Write data to and Read data from the specified I2C device in one operation}
+{Useful for devices that require a register address specified before a read (eg EEPROM devices)}
+{I2C: The I2C device to write to and read from}
+{Address: The slave address to write to (I2C_ADDRESS_INVALID to use the current address)}
+{Initial: Pointer to the initial buffer to transmit}
+{Len: The size of the initial buffer}
+{Data: Pointer to a buffer to receive the data}
+{Size: The size of the data buffer}
+{Flags: The flags for this transfer (eg I2C_TRANSFER_DMA)}
 {Count: The number of bytes read on return}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 var
@@ -606,7 +670,7 @@ begin
  if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF I2C_DEBUG}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Write Read (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ')');
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Write Read (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
  
  {Check Enabled}
@@ -621,7 +685,7 @@ begin
    if Assigned(I2C.DeviceWriteRead) then
     begin
      {Call Device Write Read}
-     Result:=I2C.DeviceWriteRead(I2C,Address,Initial,Len,Data,Size,Count);
+     Result:=I2C.DeviceWriteRead(I2C,Address,Initial,Len,Data,Size,Flags,Count);
     end
    else
     begin
@@ -631,11 +695,11 @@ begin
        Written:=0;
 
        {Call Device Write}
-       Result:=I2C.DeviceWrite(I2C,Address,Initial,Len,Written);
+       Result:=I2C.DeviceWrite(I2C,Address,Initial,Len,Flags,Written);
        if Result = ERROR_SUCCESS then
         begin
          {Call Device Read}
-         Result:=I2C.DeviceRead(I2C,Address,Data,Size,Count);
+         Result:=I2C.DeviceRead(I2C,Address,Data,Size,Flags,Count);
         end;
       end
      else
@@ -654,7 +718,7 @@ end;
 
 {==============================================================================}
 
-function I2CDeviceWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function I2CDeviceWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
 {Write 2 data blocks to the specified I2C device in one operation}
 {Useful for devices that require a register address specified before a write (eg EEPROM devices)}
 {I2C: The I2C device to write to}
@@ -663,6 +727,25 @@ function I2CDeviceWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:Lon
 {Len: The size of the initial buffer}
 {Data: Pointer to a buffer of data to transmit}
 {Size: The size of the data buffer}
+{Count: The number of bytes of data written on return}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=I2CDeviceWriteWriteEx(I2C,Address,Initial,Len,Data,Size,I2C_TRANSFER_NONE,Count);
+end;
+
+{==============================================================================}
+
+function I2CDeviceWriteWriteEx(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+{Write 2 data blocks to the specified I2C device in one operation}
+{Useful for devices that require a register address specified before a write (eg EEPROM devices)}
+{I2C: The I2C device to write to}
+{Address: The slave address to write to (I2C_ADDRESS_INVALID to use the current address)}
+{Initial: Pointer to the initial buffer to transmit}
+{Len: The size of the initial buffer}
+{Data: Pointer to a buffer of data to transmit}
+{Size: The size of the data buffer}
+{Flags: The flags for this transfer (eg I2C_TRANSFER_DMA)}
 {Count: The number of bytes of data written on return}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
@@ -680,7 +763,7 @@ begin
  if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
  
  {$IFDEF I2C_DEBUG}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Write Write (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ')');
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Write Write (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
  
  {Check Enabled}
@@ -695,7 +778,7 @@ begin
    if Assigned(I2C.DeviceWriteWrite) then
     begin
      {Call Device Write Write}
-     Result:=I2C.DeviceWriteWrite(I2C,Address,Initial,Len,Data,Size,Count);
+     Result:=I2C.DeviceWriteWrite(I2C,Address,Initial,Len,Data,Size,Flags,Count);
     end
    else
     begin
@@ -1414,7 +1497,7 @@ function I2CSlaveRead(I2C:PI2CDevice;Buffer:Pointer;Size:LongWord;var Count:Long
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
- Result:=I2CDeviceRead(I2C,I2C_ADDRESS_INVALID,Buffer,Size,Count);
+ Result:=I2CDeviceReadEx(I2C,I2C_ADDRESS_INVALID,Buffer,Size,I2C_TRANSFER_NONE,Count);
 end;
 
 {==============================================================================}
@@ -1428,7 +1511,7 @@ function I2CSlaveWrite(I2C:PI2CDevice;Buffer:Pointer;Size:LongWord;var Count:Lon
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
- Result:=I2CDeviceWrite(I2C,I2C_ADDRESS_INVALID,Buffer,Size,Count);
+ Result:=I2CDeviceWriteEx(I2C,I2C_ADDRESS_INVALID,Buffer,Size,I2C_TRANSFER_NONE,Count);
 end;
 
 {==============================================================================}
@@ -1652,7 +1735,7 @@ begin
  
  if I2CDeviceDefault = nil then Exit;
  
- Result:=I2CDeviceRead(I2CDeviceDefault,Address,Buffer,Size,Count);
+ Result:=I2CDeviceReadEx(I2CDeviceDefault,Address,Buffer,Size,I2C_TRANSFER_NONE,Count);
 end;
 
 {==============================================================================}
@@ -1672,7 +1755,7 @@ begin
  
  if I2CDeviceDefault = nil then Exit;
  
- Result:=I2CDeviceWrite(I2CDeviceDefault,Address,Buffer,Size,Count);
+ Result:=I2CDeviceWriteEx(I2CDeviceDefault,Address,Buffer,Size,I2C_TRANSFER_NONE,Count);
 end;
 
 {==============================================================================}
@@ -1695,7 +1778,7 @@ begin
  
  if I2CDeviceDefault = nil then Exit;
  
- Result:=I2CDeviceWriteRead(I2CDeviceDefault,Address,Initial,Len,Data,Size,Count);
+ Result:=I2CDeviceWriteReadEx(I2CDeviceDefault,Address,Initial,Len,Data,Size,I2C_TRANSFER_NONE,Count);
 end;
 
 {==============================================================================}
@@ -1718,7 +1801,7 @@ begin
  
  if I2CDeviceDefault = nil then Exit;
  
- Result:=I2CDeviceWriteWrite(I2CDeviceDefault,Address,Initial,Len,Data,Size,Count);
+ Result:=I2CDeviceWriteWriteEx(I2CDeviceDefault,Address,Initial,Len,Data,Size,I2C_TRANSFER_NONE,Count);
 end;
 
 {==============================================================================}

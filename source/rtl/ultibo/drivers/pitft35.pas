@@ -1,7 +1,7 @@
 {
 Adafruit PiTFT 3.5" LCD Driver.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -181,19 +181,19 @@ begin
  
  {Check Environment Variables}
  {PITFT35_AUTOSTART}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('PITFT35_AUTOSTART'),1);
+ WorkInt:=StrToIntDef(EnvironmentGet('PITFT35_AUTOSTART'),1);
  if WorkInt = 0 then PITFT35_AUTOSTART:=False;
  
  {PITFT35_SPI_DEVICE}
- WorkBuffer:=SysUtils.GetEnvironmentVariable('PITFT35_SPI_DEVICE');
+ WorkBuffer:=EnvironmentGet('PITFT35_SPI_DEVICE');
  if Length(WorkBuffer) <> 0 then PITFT35_SPI_DEVICE:=WorkBuffer;
  
  {PITFT35_LCD_CHIPSELECT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('PITFT35_LCD_CHIPSELECT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('PITFT35_LCD_CHIPSELECT'),0);
  if WorkInt > 0 then PITFT35_LCD_CHIPSELECT:=WorkInt;
 
  {PITFT35_TOUCH_CHIPSELECT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('PITFT35_TOUCH_CHIPSELECT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('PITFT35_TOUCH_CHIPSELECT'),0);
  if WorkInt > 0 then PITFT35_TOUCH_CHIPSELECT:=WorkInt;
  
  {Start PiTFT35} 

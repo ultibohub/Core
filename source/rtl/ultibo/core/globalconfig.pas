@@ -1,7 +1,7 @@
 {
 Ultibo Global Configuration Defaults.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -855,6 +855,7 @@ var
  BCM2708DMA_BUS_ADDRESSES:LongBool;         {BCM2708 DMA control blocks and DMA buffers are referenced by Bus addresses if True}
  BCM2708DMA_CACHE_COHERENT:LongBool;        {BCM2708 DMA control blocks and DMA buffers are considered cache coherent if True}
  
+ BCM2708I2C_CLOCK_TIMEOUT:LongWord = 35;    {The default clock stretch timeout for the BCM2708 I2C driver (milliseconds)}
  BCM2708I2C_COMBINED_WRITEREAD:LongBool;    {If True then the BCM2708 I2C driver can do combined Write/Read transactions}
  
  BCM2708FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2708 Framebuffer device}
@@ -904,6 +905,7 @@ var
  BCM2709DMA_BUS_ADDRESSES:LongBool;         {BCM2709 DMA control blocks and DMA buffers are referenced by Bus addresses if True}
  BCM2709DMA_CACHE_COHERENT:LongBool;        {BCM2709 DMA control blocks and DMA buffers are considered cache coherent if True}
 
+ BCM2709I2C_CLOCK_TIMEOUT:LongWord = 35;    {The default clock stretch timeout for the BCM2709 I2C driver (milliseconds)}
  BCM2709I2C_COMBINED_WRITEREAD:LongBool;    {If True then the BCM2709 I2C driver can do combined Write/Read transactions}
  
  BCM2709FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2709 Framebuffer device}
@@ -956,6 +958,7 @@ var
  BCM2710DMA_BUS_ADDRESSES:LongBool;         {BCM2710 DMA control blocks and DMA buffers are referenced by Bus addresses if True}
  BCM2710DMA_CACHE_COHERENT:LongBool;        {BCM2710 DMA control blocks and DMA buffers are considered cache coherent if True}
 
+ BCM2710I2C_CLOCK_TIMEOUT:LongWord = 35;    {The default clock stretch timeout for the BCM2710 I2C driver (milliseconds)}
  BCM2710I2C_COMBINED_WRITEREAD:LongBool;    {If True then the BCM2710 I2C driver can do combined Write/Read transactions}
  
  BCM2710FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2710 Framebuffer device}
@@ -1008,6 +1011,7 @@ var
  BCM2711DMA_BUS_ADDRESSES:LongBool;         {BCM2711 DMA control blocks and DMA buffers are referenced by Bus addresses if True}
  BCM2711DMA_CACHE_COHERENT:LongBool;        {BCM2711 DMA control blocks and DMA buffers are considered cache coherent if True}
 
+ BCM2711I2C_CLOCK_TIMEOUT:LongWord = 35;    {The default clock stretch timeout for the BCM2711 I2C driver (milliseconds)}
  BCM2711I2C_COMBINED_WRITEREAD:LongBool;    {If True then the BCM2711 I2C driver can do combined Write/Read transactions}
  
  BCM2711FRAMEBUFFER_ALIGNMENT:LongWord;     {The memory alignment for the BCM2711 Framebuffer device}

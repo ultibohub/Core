@@ -1,0 +1,152 @@
+Userland Library
+================
+
+Libraries
+---------
+
+ libbcm_host.a
+ libbrcmEGL.a
+ libbrcmGLESv2.a
+ libbrcmjpeg.a
+ libbrcmOpenVG.a
+ libbrcmWFC.a
+ libcontainers.a
+ libEGL.a
+ libGLESv2.a
+ libilclient.a
+ libkhrn_client.a
+ libmmal.a
+ libmmal_components.a
+ libmmal_core.a
+ libmmal_omx.a
+ libmmal_omxutil.a
+ libmmal_util.a
+ libmmal_vc_client.a
+ libopenmaxil.a
+ libOpenVG.a
+ libreader_asf.a
+ libreader_avi.a
+ libreader_binary.a
+ libreader_flv.a
+ libreader_metadata_id3.a
+ libreader_mkv.a
+ libreader_mp4.a
+ libreader_mpga.a
+ libreader_ps.a
+ libreader_qsynth.a
+ libreader_raw_video.a
+ libreader_rcv.a
+ libreader_rtp.a
+ libreader_rtsp.a
+ libreader_rv9.a
+ libreader_simple.a
+ libreader_wav.a
+ libtvservice.a
+ libvchiq_arm.a
+ libvchostif.a
+ libvcilcs.a
+ libvcos.a
+ libvcsm.a
+ libvcsmem.a
+ libWFC.a
+ libwriter_asf.a
+ libwriter_avi.a
+ libwriter_binary.a
+ libwriter_dummy.a
+ libwriter_mp4.a
+ libwriter_raw_video.a
+ libwriter_simple.a
+ 
+
+Licence
+-------
+
+Copyright (c) 2012, Broadcom Europe Ltd
+Copyright (c) 2015, Raspberry Pi (Trading) Ltd
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of the copyright holder nor the
+      names of its contributors may be used to endorse or promote products
+      derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+Version
+-------
+
+ N/A
+
+Download
+--------
+
+ https://github.com/ultibohub/Userland/archive/refs/heads/ultibo.zip
+
+Build
+-----
+
+ARMv6
+
+ Build with GCC arm-none-eabi 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
+
+
+ cd
+
+ cd libraries/userland
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
+
+ ./buildme.armv6-ultibo
+
+
+
+ARMv7
+
+ Build with GCC arm-none-eabi 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
+
+
+ cd
+
+ cd libraries/userland
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
+
+ ./buildme.armv7-ultibo
+
+
+
+ARMv8
+
+ Build with GCC aarch64-none-elf 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf
+
+
+ cd
+
+ cd libraries/userland
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf/bin:$PATH
+
+ ./buildme.armv8-ultibo
+

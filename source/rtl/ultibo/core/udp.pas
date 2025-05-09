@@ -1,7 +1,7 @@
 {
 Ultibo UDP (User Datagram Protocol) unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2115,7 +2115,10 @@ begin
         {Get Address}
         AFromAddr.sin_addr:=InAddrToNetwork(AFromAddr.sin_addr);
         AFromAddr.sin_port:=WordNtoBE(AFromAddr.sin_port);
-        
+
+        {Get Address Length}
+        AFromLength:=SizeOf(TSockAddr);
+
         {Return Size}
         Result:=Size;
        end;
@@ -2129,7 +2132,10 @@ begin
        begin
         {Get Address}
         SockAddr6.sin6_port:=WordNtoBE(SockAddr6.sin6_port);
-         
+
+        {Get Address Length}
+        AFromLength:=SizeOf(TSockAddr6);
+
         {Return Size}
         Result:=Size;
        end;

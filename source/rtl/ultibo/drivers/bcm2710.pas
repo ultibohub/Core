@@ -1,7 +1,7 @@
 {
 Ultibo BCM2710 interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -643,6 +643,7 @@ type
   Count:LongWord;                  {Count of bytes for current transfer}
   Remain:LongWord;                 {Bytes remaining for current transfer}
   Error:LongBool;                  {True if an error occurred during the transfer}
+  IgnoreNAK:LongBool;              {If True Ignore NAK responses and continue}
   {Statistics Properties}          
   InterruptCount:LongWord;         {Number of interrupt requests received by the device}
  end;
@@ -923,10 +924,10 @@ procedure BCM2710SPI0DMARequestCompleted(Request:PDMARequest);
 function BCM2710BSCI2CStart(I2C:PI2CDevice;Rate:LongWord):LongWord;
 function BCM2710BSCI2CStop(I2C:PI2CDevice):LongWord;
  
-function BCM2710BSCI2CRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
-function BCM2710BSCI2CWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
-function BCM2710BSCI2CWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
-function BCM2710BSCI2CWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function BCM2710BSCI2CRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+function BCM2710BSCI2CWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+function BCM2710BSCI2CWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+function BCM2710BSCI2CWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
  
 function BCM2710BSCI2CSetRate(I2C:PI2CDevice;Rate:LongWord):LongWord;
  
@@ -946,8 +947,8 @@ procedure BCM2710BSCI2CInterruptHandler(IRQData:PBCM2710BSCI2CIRQData);
 function BCM2710I2CSlaveStart(I2C:PI2CDevice;Rate:LongWord):LongWord;
 function BCM2710I2CSlaveStop(I2C:PI2CDevice):LongWord;
 
-function BCM2710I2CSlaveRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
-function BCM2710I2CSlaveWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function BCM2710I2CSlaveRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
+function BCM2710I2CSlaveWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 
 function BCM2710I2CSlaveSetAddress(I2C:PI2CDevice;Address:Word):LongWord;
 
@@ -2338,7 +2339,7 @@ begin
          {Setup Flags}
          if BCM2710FRAMEBUFFER_CACHED then BCM2710Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2710Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_COMMIT;
          if BCM2710FRAMEBUFFER_CACHED then BCM2710Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2710Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_CACHED;
-         {if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then BCM2710Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2710Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;} {Handled by FramebufferAllocate}
+         {if EnvironmentGet('bcm2708_fb.fbswap') <> '1' then BCM2710Framebuffer.Framebuffer.Device.DeviceFlags:=BCM2710Framebuffer.Framebuffer.Device.DeviceFlags or FRAMEBUFFER_FLAG_SWAP;} {Handled by FramebufferAllocate}
          
          {Register Framebuffer}
          Status:=FramebufferDeviceRegister(@BCM2710Framebuffer.Framebuffer);
@@ -3377,14 +3378,14 @@ begin
  Divider:=PBCM2710BSCI2CDevice(I2C).CoreClock div Rate;
  if (Divider and 1) <> 0 then Inc(Divider);
 
- {Get Timeout (35ms)}
- if Rate > ((BCM2837_BSC_CLKT_TOUT_MASK * 1000) div 35) then
+ {Get Timeout (Default 35ms)}
+ if Rate > ((BCM2837_BSC_CLKT_TOUT_MASK * 1000) div BCM2710I2C_CLOCK_TIMEOUT) then
   begin
    Timeout:=BCM2837_BSC_CLKT_TOUT_MASK;
   end
  else
   begin
-   Timeout:=35 * (Rate div 1000);
+   Timeout:=BCM2710I2C_CLOCK_TIMEOUT * (Rate div 1000);
   end;
  
  {Get Rising Edge Delay (REDL)}
@@ -3506,6 +3507,7 @@ begin
  PBCM2710BSCI2CDevice(I2C).Count:=0;
  PBCM2710BSCI2CDevice(I2C).Remain:=0;
  PBCM2710BSCI2CDevice(I2C).Error:=False;
+ PBCM2710BSCI2CDevice(I2C).IgnoreNAK:=False;
  
  {Return Result}
  Result:=ERROR_SUCCESS;
@@ -3513,7 +3515,7 @@ end;
 
 {==============================================================================}
  
-function BCM2710BSCI2CRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function BCM2710BSCI2CRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 begin
  {}
  {Setup Result}
@@ -3527,7 +3529,7 @@ begin
  if I2C = nil then Exit;
  
  {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: BSCI2C Read (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ')');
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: BSCI2C Read (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
  
  {Check Size}
@@ -3545,6 +3547,7 @@ begin
    PBCM2710BSCI2CDevice(I2C).Count:=0;
    PBCM2710BSCI2CDevice(I2C).Remain:=Size;
    PBCM2710BSCI2CDevice(I2C).Error:=False;
+   PBCM2710BSCI2CDevice(I2C).IgnoreNAK:=(Flags and I2C_TRANSFER_IGNORE_NAK) <> 0;
 
    {Memory Barrier}
    DataMemoryBarrier; {Before the First Write}
@@ -3604,6 +3607,7 @@ begin
    PBCM2710BSCI2CDevice(I2C).Count:=0;
    PBCM2710BSCI2CDevice(I2C).Remain:=0;
    PBCM2710BSCI2CDevice(I2C).Error:=False;
+   PBCM2710BSCI2CDevice(I2C).IgnoreNAK:=False;
   end;
   
  {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
@@ -3616,7 +3620,7 @@ end;
 
 {==============================================================================}
 
-function BCM2710BSCI2CWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function BCM2710BSCI2CWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 begin
  {}
  {Setup Result}
@@ -3630,7 +3634,7 @@ begin
  if I2C = nil then Exit;
  
  {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: BSCI2C Write (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ')');
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: BSCI2C Write (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
  
  {Check Size}
@@ -3648,6 +3652,7 @@ begin
    PBCM2710BSCI2CDevice(I2C).Count:=0;
    PBCM2710BSCI2CDevice(I2C).Remain:=Size;
    PBCM2710BSCI2CDevice(I2C).Error:=False;
+   PBCM2710BSCI2CDevice(I2C).IgnoreNAK:=(Flags and I2C_TRANSFER_IGNORE_NAK) <> 0;
    
    {Memory Barrier}
    DataMemoryBarrier; {Before the First Write}
@@ -3713,6 +3718,7 @@ begin
    PBCM2710BSCI2CDevice(I2C).Count:=0;
    PBCM2710BSCI2CDevice(I2C).Remain:=0;
    PBCM2710BSCI2CDevice(I2C).Error:=False;
+   PBCM2710BSCI2CDevice(I2C).IgnoreNAK:=False;
   end;
   
  {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
@@ -3725,10 +3731,9 @@ end;
 
 {==============================================================================}
 
-function BCM2710BSCI2CWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function BCM2710BSCI2CWriteRead(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 var
  Status:LongWord;
- Retries:LongWord;
  Written:LongWord;
 begin
  {}
@@ -3744,7 +3749,7 @@ begin
  if I2C = nil then Exit;
  
  {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: BSCI2C Write Read (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ')');
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: BSCI2C Write Read (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
  
  {Check Sizes}
@@ -3757,11 +3762,11 @@ begin
    Written:=0;
    
    {Write Initial}
-   Result:=BCM2710BSCI2CWrite(I2C,Address,Initial,Len,Written);
+   Result:=BCM2710BSCI2CWrite(I2C,Address,Initial,Len,Flags,Written);
    if Result = ERROR_SUCCESS then
     begin
      {Read Data}
-     Result:=BCM2710BSCI2CRead(I2C,Address,Data,Size,Count);
+     Result:=BCM2710BSCI2CRead(I2C,Address,Data,Size,Flags,Count);
     end;
   end
  else
@@ -3779,6 +3784,7 @@ begin
      PBCM2710BSCI2CDevice(I2C).Count:=0;
      PBCM2710BSCI2CDevice(I2C).Remain:=Len;
      PBCM2710BSCI2CDevice(I2C).Error:=False;
+     PBCM2710BSCI2CDevice(I2C).IgnoreNAK:=(Flags and I2C_TRANSFER_IGNORE_NAK) <> 0;
      
      {Memory Barrier}
      DataMemoryBarrier; {Before the First Write}
@@ -3809,20 +3815,17 @@ begin
      PBCM2837BSCRegisters(PBCM2710BSCI2CDevice(I2C).Address).C:=BCM2837_BSC_C_I2CEN or BCM2837_BSC_C_ST;
      
      {Poll Transfer Active}
-     Retries:=200;
      Status:=PBCM2837BSCRegisters(PBCM2710BSCI2CDevice(I2C).Address).S;
-     while ((Status and (BCM2837_BSC_S_TA or BCM2837_BSC_S_CLKT or BCM2837_BSC_S_ERR or BCM2837_BSC_S_DONE)) = 0) and (Retries > 0) do
+     while (Status and (BCM2837_BSC_S_TA or BCM2837_BSC_S_CLKT or BCM2837_BSC_S_ERR or BCM2837_BSC_S_DONE)) = 0 do
       begin
        Status:=PBCM2837BSCRegisters(PBCM2710BSCI2CDevice(I2C).Address).S;
-       
-       Dec(Retries);
       end; 
 
      {Memory Barrier}
      DataMemoryBarrier; {After the Last Read} 
       
      {Check Result}
-     if (Status and (BCM2837_BSC_S_CLKT or BCM2837_BSC_S_ERR) <> 0) or (Retries = 0) then
+     if (Status and (BCM2837_BSC_S_CLKT or BCM2837_BSC_S_ERR)) <> 0 then
       begin
        if I2C_LOG_ENABLED then I2CLogError(I2C,'BCM2710: Write failure or timeout'); 
        
@@ -3840,6 +3843,7 @@ begin
        PBCM2710BSCI2CDevice(I2C).Count:=0;
        PBCM2710BSCI2CDevice(I2C).Remain:=Size;
        PBCM2710BSCI2CDevice(I2C).Error:=False;
+       PBCM2710BSCI2CDevice(I2C).IgnoreNAK:=(Flags and I2C_TRANSFER_IGNORE_NAK) <> 0;
        
        {Memory Barrier}
        DataMemoryBarrier; {Before the First Write}
@@ -3887,6 +3891,7 @@ begin
      PBCM2710BSCI2CDevice(I2C).Count:=0;
      PBCM2710BSCI2CDevice(I2C).Remain:=0;
      PBCM2710BSCI2CDevice(I2C).Error:=False;
+     PBCM2710BSCI2CDevice(I2C).IgnoreNAK:=False;
     end;
 
    {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
@@ -3900,7 +3905,7 @@ end;
 
 {==============================================================================}
 
-function BCM2710BSCI2CWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function BCM2710BSCI2CWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 begin
  {}
  {Setup Result}
@@ -3915,7 +3920,7 @@ begin
  if I2C = nil then Exit;
  
  {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: BSCI2C Write Write (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ')');
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: BSCI2C Write Write (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
  
  {Check Sizes}
@@ -3935,6 +3940,7 @@ begin
    PBCM2710BSCI2CDevice(I2C).Count:=0;
    PBCM2710BSCI2CDevice(I2C).Remain:=Size;
    PBCM2710BSCI2CDevice(I2C).Error:=False;
+   PBCM2710BSCI2CDevice(I2C).IgnoreNAK:=(Flags and I2C_TRANSFER_IGNORE_NAK) <> 0;
    
    {Memory Barrier}
    DataMemoryBarrier; {Before the First Write}
@@ -4013,6 +4019,7 @@ begin
    PBCM2710BSCI2CDevice(I2C).Count:=0;
    PBCM2710BSCI2CDevice(I2C).Remain:=0;
    PBCM2710BSCI2CDevice(I2C).Error:=False;
+   PBCM2710BSCI2CDevice(I2C).IgnoreNAK:=False;
   end;
   
  {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
@@ -4049,14 +4056,14 @@ begin
  Divider:=PBCM2710BSCI2CDevice(I2C).CoreClock div Rate;
  if (Divider and 1) <> 0 then Inc(Divider);
 
- {Get Timeout (35ms)}
- if Rate > ((BCM2837_BSC_CLKT_TOUT_MASK * 1000) div 35) then
+ {Get Timeout (Default 35ms)}
+ if Rate > ((BCM2837_BSC_CLKT_TOUT_MASK * 1000) div BCM2710I2C_CLOCK_TIMEOUT) then
   begin
    Timeout:=BCM2837_BSC_CLKT_TOUT_MASK;
   end
  else
   begin
-   Timeout:=35 * (Rate div 1000);
+   Timeout:=BCM2710I2C_CLOCK_TIMEOUT * (Rate div 1000);
   end;
  
  {Get Rising Edge Delay (REDL)}
@@ -4184,6 +4191,7 @@ procedure BCM2710BSCI2CInterruptHandler(IRQData:PBCM2710BSCI2CIRQData);
 {Note: Thread submitting the current request will hold the I2C device lock}
 var
  Count:LongWord;
+ Error:LongWord;
  Status:LongWord;
  I2C:PBCM2710BSCI2CDevice;
 begin
@@ -4205,26 +4213,20 @@ begin
 
        {Read Status}
        Status:=PBCM2837BSCRegisters(I2C.Address).S;
-       
-       {Check Status}
-       if (Status and (BCM2837_BSC_S_CLKT or BCM2837_BSC_S_ERR)) <> 0 then
+
+       {Get Error}
+       Error:=Status and (BCM2837_BSC_S_CLKT or BCM2837_BSC_S_ERR);
+       if I2C.IgnoreNAK then Error:=Error and not(BCM2837_BSC_S_ERR);
+
+       {Check Error}
+       if Error <> 0 then
         begin
          {Error}
-         I2C.Error:=True;
-         
-         {Update Statistics}
-         Inc(I2C.InterruptCount);
-         
-         {Reset Control (Disable I2C)} 
-         PBCM2837BSCRegisters(I2C.Address).C:=0;
-         
-         {Reset Status}
-         PBCM2837BSCRegisters(I2C.Address).S:=BCM2837_BSC_S_CLKT or BCM2837_BSC_S_ERR or BCM2837_BSC_S_DONE;
-         
-         {Signal Semaphore}
-         SemaphoreSignal(I2C.I2C.Wait);
-        end
-       else if (Status and BCM2837_BSC_S_DONE) <> 0 then
+         if (Status and BCM2837_BSC_S_TA) = 0 then I2C.Error:=True;
+        end;
+
+       {Check Status}
+       if (Status and BCM2837_BSC_S_DONE) <> 0 then
         begin
          {Completed}
          {Update Statistics}
@@ -4238,7 +4240,7 @@ begin
           end;
           
          {Reset Control (Disable I2C)} 
-         PBCM2837BSCRegisters(I2C.Address).C:=0;
+         PBCM2837BSCRegisters(I2C.Address).C:=BCM2837_BSC_C_CLEAR;
          
          {Reset Status}
          PBCM2837BSCRegisters(I2C.Address).S:=BCM2837_BSC_S_CLKT or BCM2837_BSC_S_ERR or BCM2837_BSC_S_DONE;
@@ -4455,7 +4457,7 @@ end;
 
 {==============================================================================}
 
-function BCM2710I2CSlaveRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function BCM2710I2CSlaveRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 {Implementation of I2CSlaveRead API for BCM2710 I2C slave}
 {Note: Not intended to be called directly by applications, use I2CSlaveRead instead}
 
@@ -4498,7 +4500,7 @@ begin
  if I2C = nil then Exit;
 
  {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: I2C Slave Read (Size=' + IntToStr(Size) + ')');
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: I2C Slave Read (Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
 
  {Update Statistics}
@@ -4647,7 +4649,7 @@ end;
 
 {==============================================================================}
 
-function BCM2710I2CSlaveWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function BCM2710I2CSlaveWrite(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 {Implementation of I2CSlaveWrite API for BCM2710 I2C slave}
 {Note: Not intended to be called directly by applications, use I2CSlaveWrite instead}
 
@@ -4699,7 +4701,7 @@ begin
  if I2C = nil then Exit;
 
  {$IF DEFINED(BCM2710_DEBUG) or DEFINED(I2C_DEBUG)}
- if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: I2C Slave Write (Size=' + IntToStr(Size) + ')');
+ if I2C_LOG_ENABLED then I2CLogDebug(I2C,'BCM2710: I2C Slave Write (Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
 
  {Update Statistics}
@@ -11826,7 +11828,7 @@ begin
       end;
     
      {Get Order}
-     if SysUtils.GetEnvironmentVariable('bcm2708_fb.fbswap') <> '1' then
+     if EnvironmentGet('bcm2708_fb.fbswap') <> '1' then
       begin
        Framebuffer.Order:=FRAMEBUFFER_ORDER_BGR;
       end

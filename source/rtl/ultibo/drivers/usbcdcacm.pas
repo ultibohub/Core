@@ -1,7 +1,7 @@
 {
 USB CDC ACM Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -380,7 +380,7 @@ begin
  
  {Check Environment Variables}
  {CDCACM_MAX_TRANSMIT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CDCACM_MAX_TRANSMIT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('CDCACM_MAX_TRANSMIT'),0);
  if WorkInt <> 0 then CDCACM_MAX_TRANSMIT:=WorkInt;
  
  CDCACMInitialized:=True;

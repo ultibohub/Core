@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -30,7 +30,6 @@ References
 
 Platform
 ========
-
 
 }
 
@@ -3487,7 +3486,7 @@ begin
  
  {Default Environment Options}
  {CPU_COUNT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('CPU_COUNT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('CPU_COUNT'),0);
  if WorkInt > 0 then
   begin
    CPU_COUNT:=WorkInt;
@@ -3514,7 +3513,7 @@ begin
   end;
  
  {SCHEDULER_CPU_RESERVE}
- WorkInt:=StrToIntDef('0x' + SysUtils.GetEnvironmentVariable('SCHEDULER_CPU_RESERVE'),0);
+ WorkInt:=StrToIntDef('0x' + EnvironmentGet('SCHEDULER_CPU_RESERVE'),0);
  if WorkInt > 0 then
   begin
    {Set Mask}
@@ -3525,17 +3524,17 @@ begin
   end;
  
  {TIMER_THREAD_COUNT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('TIMER_THREAD_COUNT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('TIMER_THREAD_COUNT'),0);
  if WorkInt > 0 then TIMER_THREAD_COUNT:=WorkInt;
  {TIMER_PRIORITY_THREAD_COUNT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('TIMER_PRIORITY_THREAD_COUNT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('TIMER_PRIORITY_THREAD_COUNT'),0);
  if WorkInt > 0 then TIMER_PRIORITY_THREAD_COUNT:=WorkInt;
   
  {WORKER_THREAD_COUNT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('WORKER_THREAD_COUNT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('WORKER_THREAD_COUNT'),0);
  if WorkInt > 0 then WORKER_THREAD_COUNT:=WorkInt;
  {WORKER_PRIORITY_THREAD_COUNT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('WORKER_PRIORITY_THREAD_COUNT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('WORKER_PRIORITY_THREAD_COUNT'),0);
  if WorkInt > 0 then WORKER_PRIORITY_THREAD_COUNT:=WorkInt;
 
  {Check the Handler}
@@ -12675,7 +12674,7 @@ end;
 function DosEnvCount:Longint;
 begin
  {}
- Result:=SysUtils.GetEnvironmentVariableCount;
+ Result:=EnvironmentCount(False);
 end;
 
 {==============================================================================}
@@ -12683,7 +12682,7 @@ end;
 function DosEnvStr(Index:LongInt):ShortString;
 begin
  {}
- Result:=SysUtils.GetEnvironmentString(Index);
+ Result:=EnvironmentString(Index);
 end;
 
 {==============================================================================}
@@ -12691,7 +12690,7 @@ end;
 function DosGetEnv(EnvVar:ShortString):ShortString; 
 begin
  {}
- Result:=SysUtils.GetEnvironmentVariable(EnvVar);
+ Result:=EnvironmentGet(EnvVar);
 end;
 
 {==============================================================================}
@@ -12745,7 +12744,7 @@ begin
  if ClockTime < TIME_TICKS_TO_1899 then Exit;
  
  {Check for Update}
- if ClockTime >= (TIMEZONE_UPDATE_LAST + TIME_TICKS_PER_MINUTE) then
+ if (ClockTime < TIMEZONE_UPDATE_LAST) or (ClockTime >= (TIMEZONE_UPDATE_LAST + TIME_TICKS_PER_MINUTE)) then
   begin
    {Update Clock Offset}
    if ClockUpdateOffset = ERROR_SUCCESS then

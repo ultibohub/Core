@@ -1,7 +1,7 @@
 {
 Prolific PL2303 USB to Serial Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2024 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -505,7 +505,7 @@ begin
  
  {Check Environment Variables}
  {PL2303_MAX_TRANSMIT}
- WorkInt:=StrToIntDef(SysUtils.GetEnvironmentVariable('PL2303_MAX_TRANSMIT'),0);
+ WorkInt:=StrToIntDef(EnvironmentGet('PL2303_MAX_TRANSMIT'),0);
  if WorkInt <> 0 then PL2303_MAX_TRANSMIT:=WorkInt;
  
  PL2303Initialized:=True;

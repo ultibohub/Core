@@ -1,7 +1,7 @@
 {
 Ultibo FAT12/16/32/exFAT interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -7641,7 +7641,7 @@ begin
   FNameChar:=LoadNameChar;
   FFileChar:=LoadFileChar;
   FRootChar:=LoadRootChar;
-  FRootName:=LoadRootName;
+  FRootName:=LoadRootName(False);
   FRootPath:=LoadRootPath;
   FMaxFile:=LoadMaxFile;
   FMaxPath:=LoadMaxPath;
