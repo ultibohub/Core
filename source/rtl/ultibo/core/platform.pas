@@ -1,7 +1,7 @@
 {
 Ultibo Platform interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -12744,7 +12744,7 @@ begin
  if ClockTime < TIME_TICKS_TO_1899 then Exit;
  
  {Check for Update}
- if ClockTime >= (TIMEZONE_UPDATE_LAST + TIME_TICKS_PER_MINUTE) then
+ if (ClockTime < TIMEZONE_UPDATE_LAST) or (ClockTime >= (TIMEZONE_UPDATE_LAST + TIME_TICKS_PER_MINUTE)) then
   begin
    {Update Clock Offset}
    if ClockUpdateOffset = ERROR_SUCCESS then
