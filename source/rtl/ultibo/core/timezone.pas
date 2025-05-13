@@ -185,6 +185,8 @@ function TimezoneCheck(Timezone:PTimezoneEntry):PTimezoneEntry;
 function TimezoneUpdateOffset:LongWord;
 function TimezoneUpdateEnvironment:LongWord;
 
+function TimezoneCalculateOffset(const DateTime:TDateTime;var Offset:LongInt;var Daylight:Boolean):LongWord;
+
 function TimezoneStartToDateTime(const AStart:SYSTEMTIME;AYear:Word):TDateTime;
 function TimezoneStartToDescription(const AStart:SYSTEMTIME):String;
 
@@ -1969,6 +1971,7 @@ begin
  
  {Setup Platform Handlers}
  ClockUpdateOffsetHandler:=TimezoneUpdateOffset;
+ ClockCalculateOffsetHandler:=TimezoneCalculateOffset;
  
  TimezoneInitialized:=True;
 end;
@@ -2254,7 +2257,7 @@ end;
 function TimezoneGetStateEx(Timezone:PTimezoneEntry;const DateTime:TDateTime):LongWord;
 {Get the state of the supplied Timezone at the specified date and time}
 {Timezone: The timezone entry to get the state for}
-{DateTime: The date and time to get the state of the timezone at}
+{DateTime: The date and time to get the state of the timezone at (Assumed to be Local)}
 {Return: The TIME_ZONE_ID_* constant representing the standard / daylight state of the timezone}
 var
  Day:Word;
@@ -2362,7 +2365,7 @@ end;
 function TimezoneGetActiveBiasEx(Timezone:PTimezoneEntry;const DateTime:TDateTime):LongInt;
 {Get the bias (offset between UTC and Local) of the supplied Timezone at the specified date and time}
 {Timezone: The timezone entry to get the bias for}
-{DateTime: The date and time to get the bias of the timezone at}
+{DateTime: The date and time to get the bias of the timezone at (Assumed to be Local)}
 {Return: The bias in minutes offset between UTC and Local}
 var
  Day:Word;
@@ -3129,6 +3132,31 @@ begin
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
+end;
+
+{==============================================================================}
+
+function TimezoneCalculateOffset(const DateTime:TDateTime;var Offset:LongInt;var Daylight:Boolean):LongWord;
+{Calculate the Timezone Offset at the given date and time in the current timezone}
+{DateTime: The date and time to calculate the offset for (Assumed to be Local)}
+{Offset: The returned Offset in minutes}
+{Daylight: True on return if daylight savings is in effect at the specified date and time}
+{Return: ERROR_SUCCESS if the was calculated or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check Default}
+ if TimezoneDefault = nil then Exit;
+
+ {Get Offset}
+ Offset:=TimezoneGetActiveBiasEx(TimezoneDefault,DateTime);
+
+ {Get Daylight}
+ Daylight:=TimezoneGetStateEx(TimezoneDefault,DateTime) = TIME_ZONE_ID_DAYLIGHT;
+ 
+ {Return Result}
+ Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}

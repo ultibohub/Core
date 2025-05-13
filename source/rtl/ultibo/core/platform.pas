@@ -774,6 +774,7 @@ type
  TClockGetTotal = function:Int64; 
  
  TClockUpdateOffset = function:LongWord;
+ TClockCalculateOffset = function (const DateTime:TDateTime;var Offset:LongInt;var Daylight:Boolean):LongWord;
  
  TClockGetRate = function(ClockId:LongWord):LongWord;
  TClockSetRate = function(ClockId,Rate:LongWord;Turbo:Boolean):LongWord;
@@ -1602,6 +1603,7 @@ var
  ClockGetTotalHandler:TClockGetTotal;
  
  ClockUpdateOffsetHandler:TClockUpdateOffset;
+ ClockCalculateOffsetHandler:TClockCalculateOffset;
  
  ClockGetRateHandler:TClockGetRate;
  ClockSetRateHandler:TClockSetRate;
@@ -2336,6 +2338,7 @@ function ClockGetCount:LongWord; inline;
 function ClockGetTotal:Int64; inline;
 
 function ClockUpdateOffset:LongWord; inline;
+function ClockCalculateOffset(const DateTime:TDateTime;var Offset:LongInt;var Daylight:Boolean):LongWord; inline;
 
 function ClockGetRate(ClockId:LongWord):LongWord; inline;
 function ClockSetRate(ClockId,Rate:LongWord;Turbo:Boolean):LongWord; inline;
@@ -2846,7 +2849,7 @@ procedure SysUtilsGetLocalTime(var SystemTime:TSystemTime);
 procedure SysUtilsSetLocalTime(const SystemTime:TSystemTime);
 function SysUtilsGetUniversalTime(var SystemTime:TSystemTime):Boolean;
 function SysUtilsGetLocalTimeOffset:Integer;
-function SysUtilsGetLocalTimeOffsetEx(const DateTime:TDateTime;const InputIsUTC:Boolean;out Offset:Integer):Boolean;
+function SysUtilsGetLocalTimeOffsetEx(const DateTime:TDateTime;const InputIsUTC:Boolean;out Offset:Integer;out IsDST:Boolean):Boolean;
 
 {==============================================================================}
 {Platform Helper Functions}
@@ -6721,6 +6724,26 @@ begin
  else
   begin
    Result:=ERROR_SUCCESS;
+  end;
+end;
+
+{==============================================================================}
+
+function ClockCalculateOffset(const DateTime:TDateTime;var Offset:LongInt;var Daylight:Boolean):LongWord; inline;
+{Calculate the system time offset between UTC and Local at the given date and time}
+{DateTime: The date and time to calculate the offset for (Assumed to be Local)}
+{Offset: The returned Offset in minutes}
+{Daylight: True on return if daylight savings is in effect at the specified date and time}
+{Return: ERROR_SUCCESS if the was calculated or another error code on failure}
+begin
+ {}
+ if Assigned(ClockCalculateOffsetHandler) then
+  begin
+   Result:=ClockCalculateOffsetHandler(DateTime,Offset,Daylight);
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
 
@@ -12790,8 +12813,8 @@ begin
   {Convert to Local Time}
   LocalTime:=((Trunc(DateTime) * TIME_TICKS_PER_DAY) + TIME_TICKS_TO_1899) + ((Round(Frac(DateTime) * PASCAL_TIME_MILLISECONDS_PER_DAY) * TIME_TICKS_PER_MILLISECOND));
 
-  {Get Timezone Offset}
-  Offset:=TIMEZONE_TIME_OFFSET; {Avoid 32 bit overflow}
+  {Check and Get Timezone Offset}
+  Offset:=GetLocalTimeOffset; {TIMEZONE_TIME_OFFSET} {Avoid 32 bit overflow}
   Offset:=Offset * TIME_TICKS_PER_MINUTE;
   
   {Convert to Clock Time}
@@ -12837,20 +12860,69 @@ end;
 
 function SysUtilsGetLocalTimeOffset:Integer;
 {Get the current local time offset value}
+var
+ ClockTime:Int64;
 begin
  {}
+ {Get Clock Time}
+ ClockTime:=ClockGetTime;
+
+ {Check Clock Time}
+ if ClockTime >= TIME_TICKS_TO_1899 then
+  begin
+   {Check for Update}
+   if (ClockTime < TIMEZONE_UPDATE_LAST) or (ClockTime >= (TIMEZONE_UPDATE_LAST + TIME_TICKS_PER_MINUTE)) then
+    begin
+     {Update Clock Offset}
+     if ClockUpdateOffset = ERROR_SUCCESS then 
+      begin
+       TIMEZONE_UPDATE_LAST:=ClockTime;
+      end;
+    end;
+  end;
+
+ {Get Timezone Offset}
  Result:=TIMEZONE_TIME_OFFSET;
 end;
 
 {==============================================================================}
 
-function SysUtilsGetLocalTimeOffsetEx(const DateTime:TDateTime;const InputIsUTC:Boolean;out Offset:Integer):Boolean;
+function SysUtilsGetLocalTimeOffsetEx(const DateTime:TDateTime;const InputIsUTC:Boolean;out Offset:Integer;out IsDST:Boolean):Boolean;
 {Get the current local time offset value at the given date and time}
+var
+ ClockTime:Int64;
+ LocalTime:Int64;
+ ClockOffset:Int64;
+ LocalDateTime:TDateTime;
 begin
  {}
  Result:=False;
 
- {Not currently supported - See: GetLocalTimeOffset in rtl\win\sysutils.pp}
+ {Get DateTime}
+ LocalDateTime:=DateTime;
+
+ {Check UTC}
+ if InputIsUTC then
+  begin
+   {Convert to Clock Time}
+   ClockTime:=((Trunc(DateTime) * TIME_TICKS_PER_DAY) + TIME_TICKS_TO_1899) + ((Round(Frac(DateTime) * PASCAL_TIME_MILLISECONDS_PER_DAY) * TIME_TICKS_PER_MILLISECOND));
+
+   {Check and Get Timezone Offset}
+   ClockOffset:=GetLocalTimeOffset; {TIMEZONE_TIME_OFFSET} {Avoid 32 bit overflow}
+   ClockOffset:=ClockOffset * TIME_TICKS_PER_MINUTE;
+
+   {Convert to Local Time}
+   LocalTime:=ClockTime - (ClockOffset);
+
+   {Check Local Time}
+   if LocalTime < TIME_TICKS_TO_1899 then Exit;
+
+   {Convert to DateTime}
+   LocalDateTime:=((LocalTime - TIME_TICKS_TO_1899) div TIME_TICKS_PER_DAY) + (((LocalTime - TIME_TICKS_TO_1899) mod TIME_TICKS_PER_DAY) / TIME_TICKS_PER_DAY);
+  end;
+
+ {Get Timezone Offset}
+ if ClockCalculateOffset(LocalDateTime,Offset,IsDST) = ERROR_SUCCESS then Result:=True;
 end;
 
 {==============================================================================}
