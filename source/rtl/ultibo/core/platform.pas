@@ -6734,7 +6734,7 @@ function ClockCalculateOffset(const DateTime:TDateTime;var Offset:LongInt;var Da
 {DateTime: The date and time to calculate the offset for (Assumed to be Local)}
 {Offset: The returned Offset in minutes}
 {Daylight: True on return if daylight savings is in effect at the specified date and time}
-{Return: ERROR_SUCCESS if the was calculated or another error code on failure}
+{Return: ERROR_SUCCESS if the offset was calculated or another error code on failure}
 begin
  {}
  if Assigned(ClockCalculateOffsetHandler) then
