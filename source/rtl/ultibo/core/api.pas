@@ -1027,6 +1027,7 @@ function clock_get_count: uint32_t; stdcall; public name 'clock_get_count';
 function clock_get_total: int64_t; stdcall; public name 'clock_get_total';
 
 function clock_update_offset: uint32_t; stdcall; public name 'clock_update_offset';
+function clock_calculate_offset(const datetime: double_t; var offset: int32_t; var daylight: BOOL): uint32_t; stdcall; public name 'clock_calculate_offset';
 
 function clock_get_rate(clockid: uint32_t): uint32_t; stdcall; public name 'clock_get_rate';
 function clock_set_rate(clockid, rate: uint32_t; turbo: BOOL): uint32_t; stdcall; public name 'clock_set_rate';
@@ -4547,6 +4548,9 @@ function timezone_set_default(timezone: PTIMEZONE_ENTRY): uint32_t; stdcall; pub
 function timezone_check(timezone: PTIMEZONE_ENTRY): PTIMEZONE_ENTRY; stdcall; public name 'timezone_check';
 
 function timezone_update_offset: uint32_t; stdcall; public name 'timezone_update_offset';
+function timezone_update_environment: uint32_t; stdcall; public name 'timezone_update_environment';
+
+function timezone_calculate_offset(const datetime: double_t; var offset: int32_t; var daylight: BOOL): uint32_t; stdcall; public name 'timezone_calculate_offset';
 
 function timezone_start_to_date_time(const start: SYSTEMTIME; year: uint16_t): double_t; stdcall; public name 'timezone_start_to_date_time';
 function timezone_start_to_description(const start: SYSTEMTIME; description: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'timezone_start_to_description';
@@ -8314,13 +8318,37 @@ end;
 
 {==============================================================================}
 
+function clock_calculate_offset(const datetime: double_t; var offset: int32_t; var daylight: BOOL): uint32_t; stdcall;
+{Calculate the system time offset between UTC and Local at the given date and time}
+{DateTime: The date and time to calculate the offset for (Assumed to be Local)}
+{Offset: The returned Offset in minutes}
+{Daylight: True on return if daylight savings is in effect at the specified date and time}
+{Return: ERROR_SUCCESS if the was calculated or another error code on failure}
+var
+ DST:Boolean;
+begin
+ {}
+ if Assigned(ClockCalculateOffsetHandler) then
+  begin
+   Result:=ClockCalculateOffsetHandler(datetime,offset,DST);
+
+   daylight:=DST;
+  end
+ else
+  begin
+   Result:=ERROR_CALL_NOT_IMPLEMENTED;
+  end;
+end;
+
+{==============================================================================}
+
 function clock_get_rate(clockid: uint32_t): uint32_t; stdcall;
 {Get the clock rate in Hz of the specified Clock}
 begin
  {}
  if Assigned(ClockGetRateHandler) then
   begin
-   Result:=ClockGetRateHandler(ClockId);
+   Result:=ClockGetRateHandler(clockid);
   end
  else
   begin
@@ -34720,6 +34748,33 @@ function timezone_update_offset: uint32_t; stdcall;
 begin
  {}
  Result:=TimezoneUpdateOffset;
+end;
+
+{==============================================================================}
+
+function timezone_update_environment: uint32_t; stdcall;
+{Update the TZ environment variable to represent the current timezone}
+{See: https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html}
+begin
+ {}
+ Result:=TimezoneUpdateEnvironment;
+end;
+
+{==============================================================================}
+
+function timezone_calculate_offset(const datetime: double_t; var offset: int32_t; var daylight: BOOL): uint32_t; stdcall;
+{Calculate the Timezone Offset at the given date and time in the current timezone}
+{DateTime: The date and time to calculate the offset for (Assumed to be Local)}
+{Offset: The returned Offset in minutes}
+{Daylight: True on return if daylight savings is in effect at the specified date and time}
+{Return: ERROR_SUCCESS if the was calculated or another error code on failure}
+var
+ DST:Boolean;
+begin
+ {}
+ Result:=TimezoneCalculateOffset(datetime,offset,DST);
+ 
+ daylight:=DST;
 end;
 
 {==============================================================================}

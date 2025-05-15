@@ -148,7 +148,7 @@ type
  TSysUtilsSetLocalTime = procedure(const SystemTime:TSystemTime);
  TSysUtilsGetUniversalTime = function(var SystemTime:TSystemTime):Boolean;
  TSysUtilsGetLocalTimeOffset = function:Integer;
- TSysUtilsGetLocalTimeOffsetEx = function(const DateTime:TDateTime;const InputIsUTC:Boolean;out Offset:Integer):Boolean;
+ TSysUtilsGetLocalTimeOffsetEx = function(const DateTime:TDateTime;const InputIsUTC:Boolean;out Offset:Integer;out IsDST:Boolean):Boolean;
  TSysUtilsSysErrorMessage = function(ErrorCode:Integer):String;
  {FileTime Functions}
  TSysUtilsFileTimeToSystemTime = function(const lpFileTime:FILETIME;var lpSystemTime:SYSTEMTIME):ByteBool;
@@ -705,13 +705,15 @@ end;
 
 {$if defined(FPC_STABLE) or defined(FPC_FIXES) or defined(FPC_LEGACY)}
 function GetLocalTimeOffset(const DateTime: TDateTime; const InputIsUTC: Boolean; out Offset: Integer): Boolean;
+var
+ IsDST:Boolean;
 {$else}
-function GetLocalTimeOffset(const DateTime: TDateTime; const InputIsUTC: Boolean; out Offset: Integer; out isDST : Boolean): Boolean;
+function GetLocalTimeOffset(const DateTime: TDateTime; const InputIsUTC: Boolean; out Offset: Integer; out IsDST : Boolean): Boolean;
 {$endif}
 begin
  if Assigned(SysUtilsGetLocalTimeOffsetExHandler) then
   begin
-   Result:=SysUtilsGetLocalTimeOffsetExHandler(DateTime,InputIsUTC,Offset);
+   Result:=SysUtilsGetLocalTimeOffsetExHandler(DateTime,InputIsUTC,Offset,IsDST);
   end
  else
   begin

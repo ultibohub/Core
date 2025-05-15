@@ -2667,7 +2667,7 @@ begin
  if SystemTimeToFileTime(lpLocalTime,LocalTime) then
   begin
    {Get Offset}
-   Offset:=TimezoneGetActiveBiasEx(Timezone,SystemFileTimeToDateTime(UniversalTime));
+   Offset:=TimezoneGetActiveBiasEx(Timezone,SystemFileTimeToDateTime(LocalTime));
    Offset:=Offset * TIME_TICKS_PER_MINUTE;
 
    {Convert Time}
@@ -2792,10 +2792,11 @@ var
 begin
  {}
  Result:=True;
- {Get Offset}
- Offset:=TIMEZONE_TIME_OFFSET; {Avoid 32 bit overflow}
+
+ {Check and Get Timezone Offset}
+ Offset:=GetLocalTimeOffset; {TIMEZONE_TIME_OFFSET} {Avoid 32 bit overflow}
  Offset:=Offset * TIME_TICKS_PER_MINUTE;
- 
+
  {Convert Time}
  Int64(lpLocalFileTime):=Int64(lpFileTime) - (Offset);
 end;
@@ -2810,10 +2811,11 @@ var
 begin
  {}
  Result:=True;
- {Get Offset}
- Offset:=TIMEZONE_TIME_OFFSET; {Avoid 32 bit overflow}
+
+ {Check and Get Timezone Offset}
+ Offset:=GetLocalTimeOffset; {TIMEZONE_TIME_OFFSET} {Avoid 32 bit overflow}
  Offset:=Offset * TIME_TICKS_PER_MINUTE;
- 
+
  {Convert Time}
  Int64(lpFileTime):=Int64(lpLocalFileTime) + (Offset);
 end;
