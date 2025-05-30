@@ -1,7 +1,7 @@
 {
 EDT FocalTech FT5x06 I2C Touchscreen Driver.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -190,12 +190,12 @@ var
 
 {==============================================================================}
 {Initialization Functions}
-procedure FT5X06Init;
+procedure FT5X06Init;{$IFDEF API_EXPORT_FT5X06TOUCH} stdcall; public name 'ft5x06_init';{$ENDIF}
 
 {==============================================================================}
 {FT5x06 Functions}
-function FT5X06TouchCreate(I2C:PI2CDevice;Address:Word;Width,Height:LongWord;IRQ,RST:PGPIOInfo):PTouchDevice;
-function FT5X06TouchDestroy(Touch:PTouchDevice):LongWord;
+function FT5X06TouchCreate(I2C:PI2CDevice;Address:Word;Width,Height:LongWord;IRQ,RST:PGPIOInfo):PTouchDevice;{$IFDEF API_EXPORT_FT5X06TOUCH} stdcall; public name 'ft5x06_touch_create';{$ENDIF}
+function FT5X06TouchDestroy(Touch:PTouchDevice):LongWord;{$IFDEF API_EXPORT_FT5X06TOUCH} stdcall; public name 'ft5x06_touch_destroy';{$ENDIF}
 
 {==============================================================================}
 {FT5x06 Touch Functions}
@@ -245,7 +245,7 @@ function FT5X06ProcessEvents(Touch:PFT5X06Touch;Polling:Boolean):LongWord; forwa
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
-procedure FT5X06Init;
+procedure FT5X06Init;{$IFDEF API_EXPORT_FT5X06TOUCH} stdcall;{$ENDIF}
 {Initialize the FT5x06 Touch unit and parameters}
 
 {Note: Called internally by other functions}
@@ -300,7 +300,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {FT5x06 Functions}
-function FT5X06TouchCreate(I2C:PI2CDevice;Address:Word;Width,Height:LongWord;IRQ,RST:PGPIOInfo):PTouchDevice;
+function FT5X06TouchCreate(I2C:PI2CDevice;Address:Word;Width,Height:LongWord;IRQ,RST:PGPIOInfo):PTouchDevice;{$IFDEF API_EXPORT_FT5X06TOUCH} stdcall;{$ENDIF}
 {Create, register and start a new FT5x06 Touch device connected to the specified I2C device}
 {I2C: The I2C device this FT5x06 Touch device is connected to}
 {Address: The I2C address for this FT5x06 Touch device}
@@ -416,7 +416,7 @@ end;
 
 {==============================================================================}
 
-function FT5X06TouchDestroy(Touch:PTouchDevice):LongWord;
+function FT5X06TouchDestroy(Touch:PTouchDevice):LongWord;{$IFDEF API_EXPORT_FT5X06TOUCH} stdcall;{$ENDIF}
 {Stop, deregister and destroy a FT5x06 Touch device created by this driver}
 {Touch: The Touch device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

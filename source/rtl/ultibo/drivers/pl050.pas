@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL050 PS2 Keyboard/Mouse Interface Driver.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -186,13 +186,13 @@ type
  
 {==============================================================================}
 {PL050 Functions}
-function PL050KeyboardCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PKeyboardDevice;
+function PL050KeyboardCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PKeyboardDevice;{$IFDEF API_EXPORT_PL050} stdcall; public name 'pl050_keyboard_create';{$ENDIF}
 
-function PL050KeyboardDestroy(Keyboard:PKeyboardDevice):LongWord;
+function PL050KeyboardDestroy(Keyboard:PKeyboardDevice):LongWord;{$IFDEF API_EXPORT_PL050} stdcall; public name 'pl050_keyboard_destroy';{$ENDIF}
 
-function PL050MouseCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PMouseDevice;
+function PL050MouseCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PMouseDevice;{$IFDEF API_EXPORT_PL050} stdcall; public name 'pl050_mouse_create';{$ENDIF}
 
-function PL050MouseDestroy(Mouse:PMouseDevice):LongWord;
+function PL050MouseDestroy(Mouse:PMouseDevice):LongWord;{$IFDEF API_EXPORT_PL050} stdcall; public name 'pl050_mouse_destroy';{$ENDIF}
  
 {==============================================================================}
 {PL050 Keyboard Functions}
@@ -255,7 +255,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {PL050 Functions}
-function PL050KeyboardCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PKeyboardDevice;
+function PL050KeyboardCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PKeyboardDevice;{$IFDEF API_EXPORT_PL050} stdcall;{$ENDIF}
 {Create, register and attach a new PL050 Keyboard device which can be accessed using the keyboard API}
 {Address: The address of the PL050 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -400,7 +400,7 @@ end;
 
 {==============================================================================}
 
-function PL050KeyboardDestroy(Keyboard:PKeyboardDevice):LongWord;
+function PL050KeyboardDestroy(Keyboard:PKeyboardDevice):LongWord;{$IFDEF API_EXPORT_PL050} stdcall;{$ENDIF}
 {Detach, deregister and destroy a PL050 Keyboard device created by this driver}
 {Keyboard: The Keyboard device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -446,7 +446,7 @@ end;
 
 {==============================================================================}
 
-function PL050MouseCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PMouseDevice;
+function PL050MouseCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PMouseDevice;{$IFDEF API_EXPORT_PL050} stdcall;{$ENDIF}
 {Create, register and attach a new PL050 Mouse device which can be accessed using the mouse API}
 {Address: The address of the PL050 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -565,7 +565,7 @@ end;
 
 {==============================================================================}
 
-function PL050MouseDestroy(Mouse:PMouseDevice):LongWord;
+function PL050MouseDestroy(Mouse:PMouseDevice):LongWord;{$IFDEF API_EXPORT_PL050} stdcall;{$ENDIF}
 {Detach, deregister and destroy a PL050 Mouse device created by this driver}
 {Mouse: The Mouse device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

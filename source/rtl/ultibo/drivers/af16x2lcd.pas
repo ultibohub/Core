@@ -1,7 +1,7 @@
 {
 Adafruit 16x2 Character LCD + Keypad Driver.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -123,16 +123,16 @@ var
 {Initialization Functions}
 procedure AF16x2LCDInit;
 
-function AF16x2LCDStart(Model:LongWord;Invert:Boolean;const Device:String;Address:Word):THandle;
-function AF16x2LCDStop(Handle:THandle):Boolean;
+function AF16x2LCDStart(Model:LongWord;Invert:Boolean;const Device:String;Address:Word):THandle;{$IFDEF API_EXPORT_AF16X2LCD} stdcall; public name 'af16x2lcd_start';{$ENDIF}
+function AF16x2LCDStop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_AF16X2LCD} stdcall; public name 'af16x2lcd_stop';{$ENDIF}
 
 {==============================================================================}
 {AF16x2LCD Functions}
-function AF16x2LCDGetButton(Handle:THandle;Button:LongWord):LongWord;
+function AF16x2LCDGetButton(Handle:THandle;Button:LongWord):LongWord;{$IFDEF API_EXPORT_AF16X2LCD} stdcall; public name 'af16x2lcd_get_button';{$ENDIF}
 
-function AF16x2LCDBacklightOn(Handle:THandle):Boolean;
-function AF16x2LCDBacklightOff(Handle:THandle):Boolean;
-function AF16x2LCDBacklightColor(Handle:THandle;Red,Green,Blue:Byte):Boolean;
+function AF16x2LCDBacklightOn(Handle:THandle):Boolean;{$IFDEF API_EXPORT_AF16X2LCD} stdcall; public name 'af16x2lcd_backlight_on';{$ENDIF}
+function AF16x2LCDBacklightOff(Handle:THandle):Boolean;{$IFDEF API_EXPORT_AF16X2LCD} stdcall; public name 'af16x2lcd_backlight_off';{$ENDIF}
+function AF16x2LCDBacklightColor(Handle:THandle;Red,Green,Blue:Byte):Boolean;{$IFDEF API_EXPORT_AF16X2LCD} stdcall; public name 'af16x2lcd_backlight_color';{$ENDIF}
 
 {==============================================================================}
 {AF16x2LCD Helper Functions}
@@ -193,7 +193,7 @@ end;
 
 {==============================================================================}
 
-function AF16x2LCDStart(Model:LongWord;Invert:Boolean;const Device:String;Address:Word):THandle;
+function AF16x2LCDStart(Model:LongWord;Invert:Boolean;const Device:String;Address:Word):THandle;{$IFDEF API_EXPORT_AF16X2LCD} stdcall;{$ENDIF}
 {Start the AF16x2LCD driver and register the GPIO and Console devices associated with the display}
 {Model: The Adafruit 16x2 LCD Plate model (eg AF16X2LCD_MODEL_RGB)}
 {Invert: Invert the signal level for the LCD backlight (If True then GPIO_LEVEL_LOW equals On)}
@@ -289,7 +289,7 @@ end;
 
 {==============================================================================}
 
-function AF16x2LCDStop(Handle:THandle):Boolean;
+function AF16x2LCDStop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_AF16X2LCD} stdcall;{$ENDIF}
 {Stop the AF16x2LCD driver and deregister the GPIO and Console devices associated with the display}
 {Handle: The handle of the AF16x2LCD or INVALID_HANDLE_VALUE for the default display}
 {Return: True if completed or False on failure}
@@ -349,7 +349,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {AF16x2LCD Functions}
-function AF16x2LCDGetButton(Handle:THandle;Button:LongWord):LongWord;
+function AF16x2LCDGetButton(Handle:THandle;Button:LongWord):LongWord;{$IFDEF API_EXPORT_AF16X2LCD} stdcall;{$ENDIF}
 {Get the GPIO level of a button on the AF16x2LCD display}
 {Handle: The handle of the AF16x2LCD or INVALID_HANDLE_VALUE for the default display}
 {Button: The button to get the level for (eg AF16X2LCD_BUTTON_LEFT)}
@@ -379,7 +379,7 @@ end;
 
 {==============================================================================}
 
-function AF16x2LCDBacklightOn(Handle:THandle):Boolean;
+function AF16x2LCDBacklightOn(Handle:THandle):Boolean;{$IFDEF API_EXPORT_AF16X2LCD} stdcall;{$ENDIF}
 {Turn on the backlight on the AF16x2LCD display}
 {Handle: The handle of the AF16x2LCD or INVALID_HANDLE_VALUE for the default display}
 {Return: True if completed or False on failure}
@@ -413,7 +413,7 @@ end;
 
 {==============================================================================}
 
-function AF16x2LCDBacklightOff(Handle:THandle):Boolean;
+function AF16x2LCDBacklightOff(Handle:THandle):Boolean;{$IFDEF API_EXPORT_AF16X2LCD} stdcall;{$ENDIF}
 {Turn off the backlight on the AF16x2LCD display}
 {Handle: The handle of the AF16x2LCD or INVALID_HANDLE_VALUE for the default display}
 {Return: True if completed or False on failure}
@@ -447,7 +447,7 @@ end;
 
 {==============================================================================}
 
-function AF16x2LCDBacklightColor(Handle:THandle;Red,Green,Blue:Byte):Boolean;
+function AF16x2LCDBacklightColor(Handle:THandle;Red,Green,Blue:Byte):Boolean;{$IFDEF API_EXPORT_AF16X2LCD} stdcall;{$ENDIF}
 {Set the backlight color on the AF16x2LCD display}
 {Handle: The handle of the AF16x2LCD or INVALID_HANDLE_VALUE for the default display}
 {Red: The Red value (0 for Off / 1 for On)}

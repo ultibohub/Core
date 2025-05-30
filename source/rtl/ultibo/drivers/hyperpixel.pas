@@ -1,7 +1,7 @@
 {
 Pimoroni HyperPixel display driver.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -270,7 +270,7 @@ type
 
 {==============================================================================}
 {HyperPixel Functions}
-function HyperPixelInitialize(Model:LongWord):LongWord;
+function HyperPixelInitialize(Model:LongWord):LongWord;{$IFDEF API_EXPORT_HYPERPIXEL} stdcall; public name 'hyperpixel_initialize';{$ENDIF}
 
 {==============================================================================}
 {HyperPixel Helper Functions}
@@ -312,7 +312,7 @@ function HyperPixelInit21Round:LongWord; forward;
 {==============================================================================}
 {==============================================================================}
 {HyperPixel Functions}
-function HyperPixelInitialize(Model:LongWord):LongWord;
+function HyperPixelInitialize(Model:LongWord):LongWord;{$IFDEF API_EXPORT_HYPERPIXEL} stdcall;{$ENDIF}
 {Initialize an attached HyperPixel display including GPIO pin configuration}
 {Model: The model of display to be initialized (eg HYPERPIXEL40_SQUARE)}
 {Return: ERROR_SUCCESS on successful completion or another error code on failure}

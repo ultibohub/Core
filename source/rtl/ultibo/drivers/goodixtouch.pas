@@ -1,7 +1,7 @@
 {
 Goodix I2C Touchscreen Driver.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -167,12 +167,12 @@ var
 
 {==============================================================================}
 {Initialization Functions}
-procedure GOODIXInit;
+procedure GOODIXInit;{$IFDEF API_EXPORT_GOODIXTOUCH} stdcall; public name 'goodix_init';{$ENDIF}
 
 {==============================================================================}
 {Goodix Functions}
-function GOODIXTouchCreate(I2C:PI2CDevice;Address:Word;Width,Height:LongWord;IRQ,RST:PGPIOInfo):PTouchDevice;
-function GOODIXTouchDestroy(Touch:PTouchDevice):LongWord;
+function GOODIXTouchCreate(I2C:PI2CDevice;Address:Word;Width,Height:LongWord;IRQ,RST:PGPIOInfo):PTouchDevice;{$IFDEF API_EXPORT_GOODIXTOUCH} stdcall; public name 'goodix_touch_create';{$ENDIF}
+function GOODIXTouchDestroy(Touch:PTouchDevice):LongWord;{$IFDEF API_EXPORT_GOODIXTOUCH} stdcall; public name 'goodix_touch_destroy';{$ENDIF}
 
 {==============================================================================}
 {Goodix Touch Functions}
@@ -236,7 +236,7 @@ function GOODIXIntSync(Touch:PGOODIXTouch):LongWord; forward;
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
-procedure GOODIXInit;
+procedure GOODIXInit;{$IFDEF API_EXPORT_GOODIXTOUCH} stdcall;{$ENDIF}
 {Initialize the Goodix Touch unit and parameters}
 
 {Note: Called internally by other functions}
@@ -279,7 +279,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Goodix Functions}
-function GOODIXTouchCreate(I2C:PI2CDevice;Address:Word;Width,Height:LongWord;IRQ,RST:PGPIOInfo):PTouchDevice;
+function GOODIXTouchCreate(I2C:PI2CDevice;Address:Word;Width,Height:LongWord;IRQ,RST:PGPIOInfo):PTouchDevice;{$IFDEF API_EXPORT_GOODIXTOUCH} stdcall;{$ENDIF}
 {Create, register and start a new Goodix Touch device connected to the specified I2C device}
 {I2C: The I2C device this Goodix Touch device is connected to}
 {Address: The I2C address for this Goodix Touch device}
@@ -390,7 +390,7 @@ end;
 
 {==============================================================================}
 
-function GOODIXTouchDestroy(Touch:PTouchDevice):LongWord;
+function GOODIXTouchDestroy(Touch:PTouchDevice):LongWord;{$IFDEF API_EXPORT_GOODIXTOUCH} stdcall;{$ENDIF}
 {Stop, deregister and destroy a Goodix Touch device created by this driver}
 {Touch: The Touch device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

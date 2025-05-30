@@ -1,7 +1,7 @@
 {
 USB Host Controller Driver for the Synopsys DesignWare Hi-Speed USB 2.0 On-The-Go Controller.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -840,8 +840,8 @@ procedure DWCInit;
 
 {==============================================================================}
 {DWCOTG Functions}
-function DWCHostCreate(Address:PtrUInt;IRQ,PowerID:LongWord):PUSBHost;
-function DWCHostDestroy(Host:PUSBHost):LongWord;
+function DWCHostCreate(Address:PtrUInt;IRQ,PowerID:LongWord):PUSBHost;{$IFDEF API_EXPORT_DWCOTG} stdcall; public name 'dwc_host_create';{$ENDIF}
+function DWCHostDestroy(Host:PUSBHost):LongWord;{$IFDEF API_EXPORT_DWCOTG} stdcall; public name 'dwc_host_destroy';{$ENDIF}
 
 {==============================================================================}
 {DWCOTG USB Functions}
@@ -965,7 +965,7 @@ end;
 
 {==============================================================================}
 
-function DWCHostCreate(Address:PtrUInt;IRQ,PowerID:LongWord):PUSBHost;
+function DWCHostCreate(Address:PtrUInt;IRQ,PowerID:LongWord):PUSBHost;{$IFDEF API_EXPORT_DWCOTG} stdcall;{$ENDIF}
 {Create and register a new DWCOTG host which can be accessed using the USB API}
 {Address: The address of the DWCOTG registers}
 {IRQ: The interrupt number for the DWCOTG host}
@@ -1158,7 +1158,7 @@ end;
 
 {==============================================================================}
 
-function DWCHostDestroy(Host:PUSBHost):LongWord;
+function DWCHostDestroy(Host:PUSBHost):LongWord;{$IFDEF API_EXPORT_DWCOTG} stdcall;{$ENDIF}
 {Stop, deregister and destroy a DWCOTG USB host created by this driver}
 {Host: The USB host to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

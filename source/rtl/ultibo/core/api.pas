@@ -211,6 +211,10 @@ uses
   TFTFramebuffer,
   {$ENDIF}
 
+  {$IFDEF API_EXPORT_PS2}
+  PS2,
+  {$ENDIF}
+
   {$IFDEF API_EXPORT_FILESYSTEM}
   FileSystem,
   {$ENDIF}
@@ -752,6 +756,12 @@ type
 {$IFDEF API_EXPORT_TFTFRAMEBUFFER}
 type
  PTFT_FRAMEBUFFER = PTFTFramebuffer;
+{$ENDIF}
+
+{$IFDEF API_EXPORT_PS2}
+type
+ PPS2_KEYBOARD_SCANCODE = PPS2KeyboardScancode;
+ PPS2_MOUSE_PACKET = PPS2MousePacket;
 {$ENDIF}
 
 {$IFDEF API_EXPORT_FILESYSTEM}
@@ -4660,6 +4670,21 @@ function tft_framebuffer_mark(framebuffer: PFRAMEBUFFER_DEVICE; x, y, width, hei
 function tft_framebuffer_commit(framebuffer: PFRAMEBUFFER_DEVICE; address: SIZE_T; size, flags: uint32_t): uint32_t; stdcall; public name 'tft_framebuffer_commit';
 
 procedure tft_framebuffer_update_display(framebuffer: PTFT_FRAMEBUFFER); stdcall; public name 'tft_framebuffer_update_display';
+{$ENDIF}
+{==============================================================================}
+{PS2 Helper Functions}
+{$IFDEF API_EXPORT_PS2}
+function keyboard_leds_to_ps2_leds(leds: uint32_t; var ps2leds: uint8_t): uint32_t; stdcall; public name 'keyboard_leds_to_ps2_leds';
+function keyboard_rate_and_delay_to_ps2_typematic(rate, delay: uint32_t; var ps2typematic: uint8_t): uint32_t; stdcall; public name 'keyboard_rate_and_delay_to_ps2_typematic';
+
+function ps2_keyboard_scancode_match(keyboardscancode: PPS2_KEYBOARD_SCANCODE; var index: int32_t): uint32_t; stdcall; public name 'ps2_keyboard_scancode_match';
+
+function ps2_keyboard_scancode_to_scan_code(keyboardscancode: PPS2_KEYBOARD_SCANCODE; index: int32_t; var scancode: uint16_t): uint32_t; stdcall; public name 'ps2_keyboard_scancode_to_scan_code';
+function ps2_keyboard_scancode_to_modifiers(keyboardscancode: PPS2_KEYBOARD_SCANCODE; index: int32_t; var modifiers: uint32_t): uint32_t; stdcall; public name 'ps2_keyboard_scancode_to_modifiers';
+
+function mouse_sample_rate_to_ps2_sample_rate(rate: uint32_t; var ps2rate: uint8_t): uint32_t; stdcall; public name 'mouse_sample_rate_to_ps2_sample_rate';
+
+function ps2_mouse_packet_to_mouse_data(mousepacket: PPS2_MOUSE_PACKET; mousedata: PMOUSE_DATA; flags, rotation: uint32_t): uint32_t; stdcall; public name 'ps2_mouse_packet_to_mouse_data';
 {$ENDIF}
 {==============================================================================}
 {FileSystem Functions (Ultibo)}
@@ -35404,6 +35429,97 @@ procedure tft_framebuffer_update_display(framebuffer: PTFT_FRAMEBUFFER); stdcall
 begin
  {}
  TFTFramebufferUpdateDisplay(framebuffer);
+end;
+{$ENDIF}
+{==============================================================================}
+{==============================================================================}
+{PS2 Helper Functions}
+{$IFDEF API_EXPORT_PS2}
+function keyboard_leds_to_ps2_leds(leds: uint32_t; var ps2leds: uint8_t): uint32_t; stdcall;
+{Map the Keyboard LED values to the PS/2 Keyboard LED values}
+{LEDs: The Keyboard LED values to map (eg KEYBOARD_LED_NUMLOCK)}
+{PS2LEDs: The returned PS/2 Keyboard LED values (eg PS2_KEYBOARD_SET_LEDS_NUMLOCK)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=KeyboardLEDsToPS2LEDs(leds,ps2leds);
+end;
+
+{==============================================================================}
+
+function keyboard_rate_and_delay_to_ps2_typematic(rate, delay: uint32_t; var ps2typematic: uint8_t): uint32_t; stdcall;
+{Translate the Keyboard Repeat Rate and Delay values to the PS/2 Keyboard Typematic value}
+{Rate: The Keyboard Repeat Rate to translate (Milliseconds between repeats)}
+{Delay: The Keyboard Repeat Delay to translate (Number of Repeat Rate intervals before first repeat)}
+{PS2Typematic: The translated PS/2 Typematic value returned}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=KeyboardRateAndDelayToPS2Typematic(rate,delay,ps2typematic);
+end;
+
+{==============================================================================}
+
+function ps2_keyboard_scancode_match(keyboardscancode: PPS2_KEYBOARD_SCANCODE; var index: int32_t): uint32_t; stdcall;
+{Check a set of scancode bytes against the specified PS/2 Scancode set for a match}
+{KeyboardScancode: Pointer to the scancode bytes and scancode set information}
+{Index: The index of the matching scancode on success or the nearest match on not found
+        (Pass -1 to start search from first entry, on subsequent calls pass the previous value to continue)}
+{Return: ERROR_SUCCESS if matched, ERROR_NOT_FOUND if not matched or another error code on failure}
+begin
+ {}
+ Result:=PS2KeyboardScancodeMatch(keyboardscancode,index);
+end;
+
+{==============================================================================}
+
+function ps2_keyboard_scancode_to_scan_code(keyboardscancode: PPS2_KEYBOARD_SCANCODE; index: int32_t; var scancode: uint16_t): uint32_t; stdcall;
+{Return the Keyboard Scan Code value for a PS/2 scancode value}
+{KeyboardScancode: Pointer to the scancode bytes and scancode set information}
+{Index: The index value returned by PS2KeyboardScancodeMatch (-1 to search for match)}
+{ScanCode: The returned keyboard scan code value (eg SCAN_CODE_A)}
+{Return: ERROR_SUCCESS if completed or another error code on failure (ERROR_NOT_FOUND if not matched)}
+begin
+ {}
+ Result:=PS2KeyboardScancodeToScanCode(keyboardscancode,index,scancode);
+end;
+
+{==============================================================================}
+
+function ps2_keyboard_scancode_to_modifiers(keyboardscancode: PPS2_KEYBOARD_SCANCODE; index: int32_t; var modifiers: uint32_t): uint32_t; stdcall;
+{Return the Keyboard Modifiers flags for a PS/2 scancode value}
+{Index: The index value returned by PS2KeyboardScancodeMatch (-1 to search for match)}
+{Modifiers: The returned keyboard modifiers flags (eg KEYBOARD_LEFT_CTRL)}
+{Return: ERROR_SUCCESS if completed or another error code on failure (ERROR_NOT_FOUND if not matched)}
+begin
+ {}
+ Result:=PS2KeyboardScancodeToModifiers(keyboardscancode,index,modifiers);
+end;
+
+{==============================================================================}
+
+function mouse_sample_rate_to_ps2_sample_rate(rate: uint32_t; var ps2rate: uint8_t): uint32_t; stdcall;
+{Translate a Mouse Sample Rate value to the PS/2 Mouse Sample Rate value}
+{Rate: The Mouse Sample Rate to translate (Samples per second)}
+{PS2Rate: The translated PS/2 Sample Rate value returned}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=MouseSampleRateToPS2SampleRate(rate,ps2rate);
+end;
+
+{==============================================================================}
+
+function ps2_mouse_packet_to_mouse_data(mousepacket: PPS2_MOUSE_PACKET; mousedata: PMOUSE_DATA; flags, rotation: uint32_t): uint32_t; stdcall;
+{Translate a PS/2 Mouse Packet into a Mouse Data structure}
+{MousePacket: Pointer to the PS/2 Mouse Packet received from the mouse}
+{MouseData: Pointer to the Mouse Data structure to return}
+{Flags: The Mouse device flags (eg MOUSE_FLAG_SWAP_BUTTONS)}
+{Rotation: The Mouse device rotation setting (eg MOUSE_ROTATION_180)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=PS2MousePacketToMouseData(mousepacket,mousedata,flags,rotation);
 end;
 {$ENDIF}
 {==============================================================================}

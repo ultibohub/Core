@@ -1,7 +1,7 @@
 {
 Adafruit 1.9" 320x170 Color IPS TFT Display LCD Driver.
 
-Copyright (C) 2024 - EL Mahiri Nabil.
+Copyright (C) 2025 - EL Mahiri Nabil.
 
 Arch
 ====
@@ -119,8 +119,8 @@ var
 {Initialization Functions}
 procedure IPSTFT19Init;
 
-function IPSTFT19Start(Rotation:LongWord;const Device:String;DisplaySelect:word):THandle;
-function IPSTFT19Stop(Handle:THandle):Boolean;
+function IPSTFT19Start(Rotation:LongWord;const Device:String;DisplaySelect:word):THandle;{$IFDEF API_EXPORT_IPSTFT19} stdcall; public name 'ipstft19_start';{$ENDIF}
+function IPSTFT19Stop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_IPSTFT19} stdcall; public name 'ipstft19_stop';{$ENDIF}
 
 {==============================================================================}
 {IPSTFT19 Functions}
@@ -184,7 +184,7 @@ end;
 
 {==============================================================================}
 
-function IPSTFT19Start(Rotation:LongWord;const Device:String;DisplaySelect:word):THandle;
+function IPSTFT19Start(Rotation:LongWord;const Device:String;DisplaySelect:word):THandle;{$IFDEF API_EXPORT_IPSTFT19} stdcall;{$ENDIF}
 {Start the IPSTFT19 driver and Framebuffer device associated with the display}
 {Rotation: The rotation of the display (eg FRAMEBUFFER_ROTATION_180)}
 {Device: The SPI device that the ST7789 device is connected to}
@@ -283,7 +283,7 @@ end;
 
 {==============================================================================}
 
-function IPSTFT19Stop(Handle:THandle):Boolean;
+function IPSTFT19Stop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_IPSTFT19} stdcall;{$ENDIF}
 {Stop the IPSTFT19 driver and Framebuffer device associated with the display}
 {Handle: The handle of the IPSTFT19 or INVALID_HANDLE_VALUE for the default display}
 {Return: True if completed or False on failure}

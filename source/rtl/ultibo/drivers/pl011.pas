@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL011 UART Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -286,9 +286,9 @@ var
  
 {==============================================================================}
 {PL011 Functions}
-function PL011UARTCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PUARTDevice;
+function PL011UARTCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PUARTDevice;{$IFDEF API_EXPORT_PL011} stdcall; public name 'pl011_uart_create';{$ENDIF}
 
-function PL011UARTDestroy(UART:PUARTDevice):LongWord;
+function PL011UARTDestroy(UART:PUARTDevice):LongWord;{$IFDEF API_EXPORT_PL011} stdcall; public name 'pl011_uart_destroy';{$ENDIF}
 
 {==============================================================================}
 {PL011 UART Functions}
@@ -329,7 +329,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {PL011 Functions}
-function PL011UARTCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PUARTDevice;
+function PL011UARTCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PUARTDevice;{$IFDEF API_EXPORT_PL011} stdcall;{$ENDIF}
 {Create and register a new PL011 UART device which can be accessed using the UART API}
 {Address: The address of the PL011 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -415,7 +415,7 @@ end;
 
 {==============================================================================}
 
-function PL011UARTDestroy(UART:PUARTDevice):LongWord;
+function PL011UARTDestroy(UART:PUARTDevice):LongWord;{$IFDEF API_EXPORT_PL011} stdcall;{$ENDIF}
 {Close, deregister and destroy a PL011 UART device created by this driver}
 {UART: The UART device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
