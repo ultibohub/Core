@@ -1,7 +1,7 @@
 {
 Ultibo TCP (Transmission Control Protocol) unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2531,8 +2531,8 @@ begin
            {Check for Timeout}
            if GetTickCount64 >= (StartTime + ATimeout) then
             begin
-             {Return Error}
-             Result:=SOCKET_ERROR;
+             {Return Zero}
+             Result:=0;
              Exit;
             end;
           end;           
@@ -2587,8 +2587,8 @@ begin
            {Check for Timeout}
            if GetTickCount64 >= (StartTime + ATimeout) then
             begin
-             {Return Error}
-             Result:=SOCKET_ERROR;
+             {Return Zero}
+             Result:=0;
              Exit;
             end;
           end;           
@@ -2641,8 +2641,8 @@ begin
          {Check for Timeout}
          if GetTickCount64 >= (StartTime + ATimeout) then
           begin
-           {Return Error}
-           Result:=SOCKET_ERROR;
+           {Return Zero}
+           Result:=0;
            Exit;
           end;
         end;           
@@ -2693,8 +2693,8 @@ begin
          {Check for Timeout}
          if GetTickCount64 >= (StartTime + ATimeout) then
           begin
-           {Return Error}
-           Result:=SOCKET_ERROR;
+           {Return Zero}
+           Result:=0;
            Exit;
           end;
         end;           
