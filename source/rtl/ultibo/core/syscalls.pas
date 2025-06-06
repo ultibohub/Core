@@ -11858,6 +11858,27 @@ begin
   end;
  if nfds > FD_SETSIZE then nfds:=FD_SETSIZE;
 
+ {Check Read/Write/Except FDs}
+ if (readfds = nil) and (writefds = nil) and (exceptfds = nil) then
+  begin
+   if timeout <> nil then
+    begin
+     {Sleep}
+     ThreadSleep((timeout^.tv_sec * 1000) + (timeout^.tv_usec div 1000));
+
+     {Return Zero}
+     Result:=0;
+    end
+   else
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+    end;
+
+   Exit;
+  end;
+
  {Clear Read/Write/Except FDs}
  fpFD_ZERO(ReadFDSet);
  fpFD_ZERO(WriteFDSet);
