@@ -2195,7 +2195,7 @@ const
  {$IFDEF CPU64}
  FDSET_SHIFT = 6; {64bit : ln(64)/ln(2)=6}
  {$ENDIF CPU64}
- FDSET_MASK = 1 shl FDSET_SHIFT - 1; 
+ FDSET_MASK = (1 shl FDSET_SHIFT) - 1; 
 {$ENDIF}
 {==============================================================================}
 {==============================================================================}
@@ -11699,22 +11699,35 @@ var
  ExceptFDSet:TFDSet;
  Entry:PSyscallsEntry;
  TimeVal:Sockets.TTimeVal;
+ TimePtr:Sockets.PTimeVal;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls socket (nfds=' + IntToStr(nfds) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls select (nfds=' + IntToStr(nfds) + ')');
  {$ENDIF}
- 
+
+ Result:=SOCKET_ERROR;
+
+ {Check Nfds}
+ if nfds < 0 then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end;
+ if nfds > FD_SETSIZE then nfds:=FD_SETSIZE;
+
  {Clear Read/Write/Except FDs}
  fpFD_ZERO(ReadFDSet);
  fpFD_ZERO(WriteFDSet);
  fpFD_ZERO(ExceptFDSet);
- 
+
  {Convert Read/Write/Except FDs}
- for fd:=0 to FD_SETSIZE - 1 do
+ for fd:=0 to nfds - 1 do
   begin
    {Check Read FDs}
-   if FD_ISSET(fd,readfds^) = 1 then
+   if (readfds <> nil) and (FD_ISSET(fd,readfds^) = 1) then
     begin
      {Get Entry}
      Entry:=SyscallsGetEntry(fd);
@@ -11722,11 +11735,11 @@ begin
       begin
        {Set Read FD}
        fpFD_SET(Entry^.Handle,ReadFDSet);
-      end; 
-    end; 
+      end;
+    end;
 
    {Check Write FDs}
-   if FD_ISSET(fd,writefds^) = 1 then
+   if (writefds <> nil) and (FD_ISSET(fd,writefds^) = 1) then
     begin
      {Get Entry}
      Entry:=SyscallsGetEntry(fd);
@@ -11734,11 +11747,11 @@ begin
       begin
        {Set Write FD}
        fpFD_SET(Entry^.Handle,WriteFDSet);
-      end; 
-    end; 
+      end;
+    end;
 
    {Check Except FDs}
-   if FD_ISSET(fd,exceptfds^) = 1 then
+   if (exceptfds <> nil) and (FD_ISSET(fd,exceptfds^) = 1) then
     begin
      {Get Entry}
      Entry:=SyscallsGetEntry(fd);
@@ -11746,16 +11759,23 @@ begin
       begin
        {Set Except FD}
        fpFD_SET(Entry^.Handle,ExceptFDSet);
-      end; 
-    end; 
+      end;
+    end;
   end;
- 
- {Convert Timeout}
- TimeVal.tv_sec:=timeout^.tv_sec;
- TimeVal.tv_usec:=timeout^.tv_usec;
- 
+
+ {Check Timeout}
+ TimePtr:=nil;
+ if timeout <> nil then
+  begin
+   {Convert Timeout}
+   TimeVal.tv_sec:=timeout^.tv_sec;
+   TimeVal.tv_usec:=timeout^.tv_usec;
+
+   TimePtr:=@TimeVal;
+  end;
+
  {Select Socket}
- Result:=Sockets.fpselect(nfds,@ReadFDSet,@WriteFDSet,@ExceptFDSet,@TimeVal);
+ Result:=Sockets.fpselect(nfds,@ReadFDSet,@WriteFDSet,@ExceptFDSet,TimePtr);
  if Result = SOCKET_ERROR then
   begin
    {Return Error}
@@ -11763,46 +11783,68 @@ begin
    if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
    Exit;
   end;
-  
- {Clear Read/Write/Except FDs}
- FD_ZERO(readfds^);
- FD_ZERO(writefds^);
- FD_ZERO(exceptfds^);
- 
- {Update Read FDs}
- for Count:=0 to ReadFDSet.fd_count - 1 do
+
+ if readfds <> nil then
   begin
-   {Find Entry}
-   Entry:=SyscallsFindEntry(ReadFDSet.fd_array[Count]);
-   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
+   {Clear Read FDs}
+   FD_ZERO(readfds^);
+
+   {Update Read FDs}
+   if ReadFDSet.fd_count > 0 then
     begin
-     {Set Read FD}
-     FD_SET(Entry^.Number,readfds^);
-    end; 
+     for Count:=0 to ReadFDSet.fd_count - 1 do
+      begin
+       {Find Entry}
+       Entry:=SyscallsFindEntry(ReadFDSet.fd_array[Count]);
+       if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
+        begin
+         {Set Read FD}
+         FD_SET(Entry^.Number,readfds^);
+        end;
+      end;
+    end;
   end;
- 
- {Update Write FDs}
- for Count:=0 to WriteFDSet.fd_count - 1 do
+
+ if writefds <> nil then
   begin
-   {Find Entry}
-   Entry:=SyscallsFindEntry(WriteFDSet.fd_array[Count]);
-   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
+   {Clear Write FDs}
+   FD_ZERO(writefds^);
+
+   {Update Write FDs}
+   if WriteFDSet.fd_count > 0 then
     begin
-     {Set Write FD}
-     FD_SET(Entry^.Number,writefds^);
-    end; 
+     for Count:=0 to WriteFDSet.fd_count - 1 do
+      begin
+       {Find Entry}
+       Entry:=SyscallsFindEntry(WriteFDSet.fd_array[Count]);
+       if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
+        begin
+         {Set Write FD}
+         FD_SET(Entry^.Number,writefds^);
+        end;
+      end;
+    end;
   end;
- 
- {Update Except FDs}
- for Count:=0 to ExceptFDSet.fd_count - 1 do
+
+ if exceptfds <> nil then
   begin
-   {Find Entry}
-   Entry:=SyscallsFindEntry(ExceptFDSet.fd_array[Count]);
-   if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
+   {Clear Except FDs}
+   FD_ZERO(exceptfds^);
+
+   {Update Except FDs}
+   if ExceptFDSet.fd_count > 0 then
     begin
-     {Set Except FD}
-     FD_SET(Entry^.Number,exceptfds^);
-    end; 
+     for Count:=0 to ExceptFDSet.fd_count - 1 do
+      begin
+       {Find Entry}
+       Entry:=SyscallsFindEntry(ExceptFDSet.fd_array[Count]);
+       if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
+        begin
+         {Set Except FD}
+         FD_SET(Entry^.Number,exceptfds^);
+        end;
+      end;
+    end;
   end;
 end;
 
