@@ -526,7 +526,12 @@ const
  O_DIRECTORY       = $0200000;
  O_EXEC            = $0400000;
  O_SEARCH          = $0400000;
+
+ O_ACCMODE         = (O_RDONLY or O_WRONLY or O_RDWR);
  
+ {Close on exec request}
+ FD_CLOEXEC      = 1;  {Posix}
+
  {Fcntl requests}
  F_DUPFD         = 0;  {Duplicate fildes}
  F_GETFD         = 1;  {Get fildes flags (close on exec)}
@@ -1812,6 +1817,8 @@ function _getentropy_r(ptr: P_reent; buffer: Pointer; length: size_t): int; cdec
 function mkdir(path: PChar; mode: mode_t): int; cdecl; public name 'mkdir';
 function chmod(path: PChar; mode: mode_t): int; cdecl; public name 'chmod';
 
+function lstat(path: PChar; stat: Pstat): int; cdecl; public name 'lstat';
+
 function umask(mask: mode_t): mode_t; cdecl; public name 'umask';
 
 {==============================================================================}
@@ -2214,6 +2221,8 @@ type
   Number:LongWord;
   Handle:THandle;
   Source:LongWord;
+  StatusFlags:LongWord;
+  DescriptorFlags:LongWord;
   Prev:PSyscallsEntry;
   Next:PSyscallsEntry;
  end;
@@ -2749,8 +2758,15 @@ function _fcntl_r(ptr: P_reent; fd: int; cmd:int; arg:int): int; cdecl;
 {See: \newlib\libc\reent\fcntlr.c}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
+const
+ STATUS_FLAGS = O_APPEND or O_DIRECT or O_NONBLOCK or O_SYNC or O_DSYNC;
+ DESCRIPTOR_FLAGS = FD_CLOEXEC;
+
 var
  Handle:THandle;
+ {$IFDEF SYSCALLS_EXPORT_SOCKETS}
+ Argument:LongWord;
+ {$ENDIF}
  Entry:PSyscallsEntry;
  Duplicate:PSyscallsEntry;
 begin
@@ -2766,43 +2782,142 @@ begin
  
  {Get Entry}
  Entry:=SyscallsGetEntry(fd);
- if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_FILE) then
+ if Entry <> nil  then
   begin
-   case cmd of
-    F_DUPFD,
-    F_DUPFD_CLOEXEC:begin
-      {Duplicate file descriptor}
-      Handle:=FSDuplicateHandle(Entry^.Handle);
-      if Handle = INVALID_HANDLE_VALUE then
+   {Normal descriptor}
+   if Entry^.Source = SYSCALLS_ENTRY_FILE then
+    begin
+     {File}
+     case cmd of
+      F_DUPFD,
+      F_DUPFD_CLOEXEC:begin
+        {Duplicate file descriptor}
+        Handle:=FSDuplicateHandle(Entry^.Handle);
+        if Handle = INVALID_HANDLE_VALUE then
+         begin
+          {Return Error}
+          ptr^._errno:=EINVAL;
+          Exit;
+         end;
+
+        {Add Duplicate Entry (Lowest file number greater than or equal to arg)}
+        Duplicate:=SyscallsAddEntry(Handle,SYSCALLS_ENTRY_FILE,arg,SYSCALLS_INVALID_FILENO);
+        if Duplicate = nil then
+         begin
+          {Return Error}
+          ptr^._errno:=ENOMEM;
+          Exit;
+         end;
+
+        {Return Result}
+        Result:=Duplicate^.Number;
+       end;
+      F_GETFD:begin
+        {Get Descriptor Flags}
+        Result:=Entry^.DescriptorFlags;
+       end;
+      F_SETFD:begin
+        {Set Descriptor Flags}
+        arg:=arg and DESCRIPTOR_FLAGS;
+        Entry^.DescriptorFlags:=(Entry^.DescriptorFlags and not DESCRIPTOR_FLAGS) or arg;
+
+        {Return Result}
+        Result:=0;
+       end;
+      F_GETFL:begin
+        {Get Status Flags}
+        Result:=Entry^.StatusFlags;
+       end;
+      F_SETFL:begin
+        {Set Status Flags}
+        arg:=arg and STATUS_FLAGS;
+        Entry^.StatusFlags:=(Entry^.StatusFlags and not STATUS_FLAGS) or arg;
+
+        {Return Result}
+        Result:=0;
+       end;
+      else
        begin
         {Return Error}
         ptr^._errno:=EINVAL;
-        Exit;
-       end;
-
-      {Add Duplicate Entry (Lowest file number greater than or equal to arg)}
-      Duplicate:=SyscallsAddEntry(Handle,SYSCALLS_ENTRY_FILE,arg,SYSCALLS_INVALID_FILENO);
-      if Duplicate = nil then
-       begin
-        {Return Error}
-        ptr^._errno:=ENOMEM;
-        Exit;
-       end;
-
-      {Return Result}
-      Result:=Duplicate^.Number;
+       end; 
      end;
-    else
-     begin
-      {Return Error}
-      ptr^._errno:=EINVAL;
-     end; 
-   end;
+    end
+   {$IFDEF SYSCALLS_EXPORT_SOCKETS}
+   else if Entry^.Source = SYSCALLS_ENTRY_SOCKET then
+    begin
+     {Socket}
+     case cmd of
+      F_GETFD:begin
+        {Get Descriptor Flags}
+        Result:=Entry^.DescriptorFlags;
+       end;
+      F_SETFD:begin
+        {Set Descriptor Flags}
+        arg:=arg and DESCRIPTOR_FLAGS;
+        Entry^.DescriptorFlags:=(Entry^.DescriptorFlags and not DESCRIPTOR_FLAGS) or arg;
+
+        {Return Result}
+        Result:=0;
+       end;
+      F_GETFL:begin
+        {Get Status Flags}
+        Result:=Entry^.StatusFlags;
+       end;
+      F_SETFL:begin
+        {Set Status Flags}
+        arg:=arg and STATUS_FLAGS;
+
+        {Check Status Flags}
+        if (arg and O_NONBLOCK) <> (Entry^.StatusFlags and O_NONBLOCK) then
+         begin
+          if (arg and O_NONBLOCK) <> 0 then
+           begin
+            {Enable Non Blocking}
+            Argument:=1;
+           end
+          else
+           begin
+            {Disable Non Blocking}
+            Argument:=0;
+           end;
+
+          {Ioctl Socket}
+          if Sockets.IoCtlSocket(Entry^.Handle,FIONBIO,Argument) = SOCKET_ERROR then
+           begin
+            {Return Error}
+            ptr^._errno:=socket_get_error(Sockets.SocketError());
+            Exit;
+           end;
+         end;
+
+        {Update Status Flags}
+        Entry^.StatusFlags:=(Entry^.StatusFlags and not STATUS_FLAGS) or arg;
+
+        {Return Result}
+        Result:=0;
+       end;
+     end;
+    end
+   {$ENDIF}
+   else
+    begin
+     {Return Error}
+     ptr^._errno:=EINVAL;
+    end;
   end
  else 
   begin
-   {Return Error}
-   ptr^._errno:=EBADF;
+   if (fd = STDIN_FILENO) or (fd = STDOUT_FILENO) or (fd = STDERR_FILENO) then
+    begin
+     {Stdin, Stdout, Stderr}
+     Result:=0;
+    end
+   else
+    begin
+     {Return Error}
+     ptr^._errno:=EBADF;
+    end;
   end;  
  
  {$IFDEF SYSCALLS_DEBUG}
@@ -3398,11 +3513,11 @@ begin
    Exit;
   end;
   
- {Check Append}
- if (flags and O_APPEND) = O_APPEND then    
+ {Check Append} {Happens on each write}
+ {if (flags and O_APPEND) = O_APPEND then    
   begin
    FSFileSeekEx(Handle,0,FILE_END);
-  end; 
+  end;}
  
  {Check Truncate}
  if (flags and O_TRUNC) = O_TRUNC then   
@@ -3410,7 +3525,10 @@ begin
    FSFileSeekEx(Handle,0,FILE_BEGIN);
    FSFileTruncate(Handle);
   end;
- 
+
+ {Save Status Flags}
+ Entry^.StatusFlags:=flags;
+
  {Return Result}
  Result:=Entry^.Number;
  
@@ -3711,7 +3829,7 @@ begin
  if stat = nil then Exit;
  
  {Open file}
- Handle:=FSCreateFile(name,GENERIC_READ,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL);
+ Handle:=FSCreateFile(name,GENERIC_READ,FILE_SHARE_READ or FILE_SHARE_WRITE,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL);
  if Handle = INVALID_HANDLE_VALUE then
   begin
    {Return Error}
@@ -3763,7 +3881,7 @@ begin
  if stat = nil then Exit;
  
  {Open file}
- Handle:=FSCreateFile(name,GENERIC_READ,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL);
+ Handle:=FSCreateFile(name,GENERIC_READ,FILE_SHARE_READ or FILE_SHARE_WRITE,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL);
  if Handle = INVALID_HANDLE_VALUE then
   begin
    {Return Error}
@@ -3963,6 +4081,13 @@ begin
    {Normal descriptor}
    if Entry^.Source = SYSCALLS_ENTRY_FILE then
     begin
+     {Check Append}
+     if (Entry^.StatusFlags and O_APPEND) = O_APPEND then
+      begin
+       {Seek to End}
+       FSFileSeekEx(Entry^.Handle,0,FILE_END);
+      end;
+
      {Write file}
      Result:=FSFileWrite(Entry^.Handle,buf^,cnt);
     end
@@ -4086,6 +4211,21 @@ begin
  {$ENDIF}
 
  Result:=0;
+end;
+
+{==============================================================================}
+
+function lstat(path: PChar; stat: Pstat): int; cdecl; public name 'lstat';
+{Get symbolic link status}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+begin
+ {}
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls lstat (path=' + StrPas(path) + ')');
+ {$ENDIF}
+
+ Result:=_stat_r(__getreent,path,stat);
 end;
 
 {==============================================================================}
@@ -4902,7 +5042,7 @@ begin
   end;
  
  {Open file}
- Handle:=FSCreateFile(path,GENERIC_READ or GENERIC_WRITE,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL);
+ Handle:=FSCreateFile(path,GENERIC_READ or GENERIC_WRITE,FILE_SHARE_READ or FILE_SHARE_WRITE,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL);
  if Handle = INVALID_HANDLE_VALUE then
   begin
    {Return Error}

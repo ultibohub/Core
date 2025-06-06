@@ -401,7 +401,24 @@ const
 const
  {FD set sizes for select}
  FD_MAXFDSET = GlobalSock.FD_SETSIZE;
-  
+
+const
+ IOCPARM_MASK = GlobalSock.IOCPARM_MASK;
+ IOC_VOID     = GlobalSock.IOC_VOID;
+ IOC_OUT      = GlobalSock.IOC_OUT;
+ IOC_IN       = GlobalSock.IOC_IN;
+ IOC_INOUT    = GlobalSock.IOC_INOUT;
+
+ FIONREAD = GlobalSock.FIONREAD; 
+ FIONBIO = GlobalSock.FIONBIO;
+ FIOASYNC = GlobalSock.FIOASYNC;
+
+ SIOCSHIWAT = GlobalSock.SIOCSHIWAT;
+ SIOCGHIWAT = GlobalSock.SIOCGHIWAT;
+ SIOCSLOWAT = GlobalSock.SIOCSLOWAT;
+ SIOCGLOWAT = GlobalSock.SIOCGLOWAT;
+ SIOCATMARK = GlobalSock.SIOCATMARK;
+
 {==============================================================================}
 type
  {Sockets specific types}
@@ -515,6 +532,8 @@ function GetPeerName(Sock:clong;var Addr;var Addrlen:Longint):Longint;
 function GetSocketOptions(Sock:clong;Level,OptName:Longint;var OptVal;var optlen:longint):Longint;
 function SetSocketOptions(Sock:clong;Level,OptName:Longint;const OptVal;optlen:longint):Longint;
 function SocketPair(Domain,SocketType,Protocol:Longint;var Pair:TSockArray):Longint;
+
+function IoctlSocket(Sock:clong;Cmd:Longint;var Arg:LongWord):Longint; 
 
 function CloseSocket(Sock:clong):Longint;
 
@@ -1071,6 +1090,47 @@ function SocketPair(Domain,SocketType,Protocol:Longint;var Pair:TSockArray):Long
 begin
  {}
  Result:=fpsocketpair(domain,sockettype,protocol,@pair[1]);
+end;
+
+{==============================================================================}
+
+function IoctlSocket(Sock:clong;Cmd:Longint;var Arg:LongWord):Longint; 
+var
+ Socket:TProtocolSocket;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if SocketsStartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Socket}
+  NetworkSetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(Sock);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(Sock,True,NETWORK_LOCK_READ) then Exit;
+
+  {IOCTL Socket}
+  Result:=Socket.Protocol.IoctlSocket(Socket,Cmd,Arg);
+
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    Result:=SOCKET_ERROR;
+    NetworkSetLastError(WSAENOTSOCK);
+    {$IFDEF SOCKET_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Sockets: Exception: IoctlSocket ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
 end;
 
 {==============================================================================}
