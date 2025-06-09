@@ -809,7 +809,7 @@ function WSAAsyncGetHostByAddr(hWnd:HWND; wMsg:u_int; const addr:pchar; len:tOS_
 function WSACancelAsyncRequest(hAsyncTaskHandle:THandle):tOS_INT;
 function WSAAsyncSelect(s: TSocket; hWnd:HWND; wMsg:u_int; lEvent:longint):tOS_INT; { really a c-long }
 function WSARecvEx(s: TSocket;var buf; len:tOS_INT; flags:ptOS_INT):tOS_INT;
-function __WSAFDIsSet(s: TSocket; var FDSet:TFDSet):Bool;
+function __WSAFDIsSet(s: TSocket; var FDSet:TFDSet):BOOL;
 function __WSAFDIsSet_(s: TSocket; var FDSet:TFDSet):tOS_INT;
       
 function TransmitFile(hSocket: TSocket; hFile: THandle; nNumberOfBytesToWrite: DWORD; nNumberOfBytesPerSend: DWORD; lpOverlapped: POverlapped; lpTransmitBuffers: PTransmitFileBuffers; dwReserved: DWORD): BOOL; 
@@ -2399,7 +2399,7 @@ end;
 
 {==============================================================================}
 
-function __WSAFDIsSet(s: TSocket; var FDSet:TFDSet):Bool;
+function __WSAFDIsSet(s: TSocket; var FDSet:TFDSet):BOOL;
 begin
  {}
  Result:=FD_ISSET(s,FDSet);
