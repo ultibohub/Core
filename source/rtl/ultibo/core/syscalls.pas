@@ -1282,6 +1282,14 @@ type
   tv_usec: suseconds_t; {and microseconds}
  end;
 
+type
+ {From sys/_iovec.h} 
+ Piovec = ^Tiovec;
+ Tiovec = record
+  iov_base: Pointer;  {Base address}
+  iov_len: size_t;    {Length}
+ end;
+
 {$IFDEF SYSCALLS_EXPORT_SOCKETS}
 type
  {From netdb.h}
@@ -1327,14 +1335,6 @@ type
  Pfd_set = ^Tfd_set;
  Tfd_set = record
   fds_bits: array[0..(FD_SETSIZE div NFDBITS) - 1] of fd_mask
- end;
- 
-type
- {From sys/_iovec.h} 
- Piovec = ^Tiovec;
- Tiovec = record
-  iov_base: Pointer;  {Base address}
-  iov_len: size_t;    {Length}
  end;
  
 type
@@ -1878,9 +1878,8 @@ function fsync(fd: int): int; cdecl; public name 'fsync';
 function fdatasync(fd: int): int; cdecl; public name 'fdatasync';
 
 function sethostname(name: PChar; size: size_t): int; cdecl; public name 'sethostname';
-{$IFDEF SYSCALLS_EXPORT_SOCKETS}
 function gethostname(name: PChar; size: size_t): int; cdecl; public name 'gethostname';
-{$ENDIF}
+
 {==============================================================================}
 {Syscalls Functions (Mman)}
 function mmap(addr: Pointer; length: size_t; prot, flags, fd: int; offset: off_t): Pointer; cdecl; public name 'mmap';
@@ -5216,15 +5215,19 @@ begin
 end;
 
 {==============================================================================}
-{$IFDEF SYSCALLS_EXPORT_SOCKETS}
+
 function gethostname(name: PChar; size: size_t): int; cdecl;
 {Get the system host name}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ {$IFNDEF SYSCALLS_EXPORT_SOCKETS}
+ HostName:String;
+ {$ENDIF}
 begin
  {}
+ {$IFDEF SYSCALLS_EXPORT_SOCKETS}
  Result:=Sockets.GetHostName(name,size);
  if Result = SOCKET_ERROR then
   begin
@@ -5232,8 +5235,36 @@ begin
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
   end;
+ {$ELSE}
+ Result:=-1;
+
+ {Check name}
+ if name = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EFAULT;
+   Exit;
+  end;
+
+ {Get Name}
+ HostName:=HostGetName;
+
+ {Check Name}
+ if size < Length(HostName) then
+  begin
+   {Check Size}
+   if size > 0 then size:=size - 1;
+  end;
+
+ {Copy Name}
+ StrLCopy(name,PChar(HostName),size);
+
+ {Return Result}
+ Result:=0;
+ {$ENDIF}
 end;
-{$ENDIF}
+
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Mman)}
