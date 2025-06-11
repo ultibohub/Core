@@ -1878,8 +1878,9 @@ function fsync(fd: int): int; cdecl; public name 'fsync';
 function fdatasync(fd: int): int; cdecl; public name 'fdatasync';
 
 function sethostname(name: PChar; size: size_t): int; cdecl; public name 'sethostname';
+{$IF not(DEFINED(API_EXPORT_WINSOCK)) and not(DEFINED(API_EXPORT_WINSOCK2))}
 function gethostname(name: PChar; size: size_t): int; cdecl; public name 'gethostname';
-
+{$ENDIF}
 {==============================================================================}
 {Syscalls Functions (Mman)}
 function mmap(addr: Pointer; length: size_t; prot, flags, fd: int; offset: off_t): Pointer; cdecl; public name 'mmap';
@@ -5215,7 +5216,7 @@ begin
 end;
 
 {==============================================================================}
-
+{$IF not(DEFINED(API_EXPORT_WINSOCK)) and not(DEFINED(API_EXPORT_WINSOCK2))}
 function gethostname(name: PChar; size: size_t): int; cdecl;
 {Get the system host name}
 
@@ -5264,7 +5265,7 @@ begin
  Result:=0;
  {$ENDIF}
 end;
-
+{$ENDIF}
 {==============================================================================}
 {==============================================================================}
 {Syscalls Functions (Mman)}
