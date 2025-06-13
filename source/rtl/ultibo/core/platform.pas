@@ -311,7 +311,7 @@ type
  end;
  
  PHandleEntries = ^THandleEntries;
- THandleEntries = array[0..HANDLE_TABLE_MASK + 1] of PHandleEntry;
+ THandleEntries = array[0..HANDLE_TABLE_MASK] of PHandleEntry;
  
  {Handle Table}
  PHandleTable = ^THandleTable;
