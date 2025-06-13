@@ -80,7 +80,7 @@ function StrOfChar(const AValue:String;ALength:Integer):String;
 function StrToBool(const AValue:String):Boolean;
 function IntToStrLen(AValue:Integer;ADigits:Integer):String;
 function StrToLongWord(const AValue:String):LongWord;
-function BoolToStr(AValue:Boolean):String;
+function BoolToStr(AValue:Boolean;ATrueFalse:Boolean = True):String;
 function BoolToStrEx(AValue:Boolean;AType:Integer):String;
 function InFixStr(const Value:String):String;
 function InFixStrEx(const Value:String):String;
@@ -365,10 +365,17 @@ end;
 
 {==============================================================================}
 
-function BoolToStr(AValue:Boolean):String;
+function BoolToStr(AValue:Boolean;ATrueFalse:Boolean = True):String;
 begin
  {}
- Result:=BoolToStrEx(AValue,BOOLSTR_TRUEFALSE);
+ if ATrueFalse then
+  begin
+   Result:=BoolToStrEx(AValue,BOOLSTR_TRUEFALSE);
+  end
+ else
+  begin
+   Result:=BoolToStrEx(AValue,BOOLSTR_ZEROONE);
+  end;
 end;
 
 {==============================================================================}

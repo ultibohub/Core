@@ -39950,6 +39950,7 @@ end;
 {==============================================================================}
 {GUID Functions (Ultibo)}
 function CreateGUID: TGUID; stdcall;
+{Create a new GUID}
 {GUID has the following format DWORD-WORD-WORD-WORD-WORDDWORD }
 {                                             | Not Swapped  |}
 begin
@@ -39960,6 +39961,7 @@ end;
 {==============================================================================}
 
 function GUIDToString(const value: TGUID; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
+{Convert a TGUID to a string representation}
 begin
  {}
  Result:=APIStringToPCharBuffer(Ultibo.GUIDToString(value),_string,len);
@@ -39968,6 +39970,7 @@ end;
 {==============================================================================}
 
 function StringToGUID(const value: PCHAR): TGUID; stdcall;
+{Convert a string to a native TGUID type}
 begin
  {}
  Result:=Ultibo.StringToGUID(String(value));
@@ -39976,6 +39979,7 @@ end;
 {==============================================================================}
 
 function NullGUID(const guid: TGUID): BOOL; stdcall;
+{Check if a TGUID is empty (All zeroes)}
 begin
  {}
  Result:=Ultibo.NullGUID(guid);
@@ -39984,6 +39988,7 @@ end;
 {==============================================================================}
 
 function CompareGUID(const guid1, guid2: TGUID): BOOL; stdcall;
+{Check whether two TGUID variables are equal}
 begin
  {}
  Result:=Ultibo.CompareGUID(guid1,guid2);
