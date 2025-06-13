@@ -1,10 +1,10 @@
 ## Ultibo core
 
-This is the source for the Ultibo core project, a full featured embedded (no OS) development environment for Raspberry Pi written in Free Pascal.
+This is the source for the Ultibo core project, a full featured embedded (no OS) development environment for Raspberry Pi.
 
-Ultibo core is much more than just another OS example it is a complete platform for creating modern full featured embedded applications which run without any operating system and provides a large number of stable, ready to use features including:
+Ultibo core is much more than just another OS example it is a complete platform for creating modern full featured embedded applications in C, C++ or FreePascal which run without any operating system and provides a large number of stable, ready to use features including:
 
-* Support for all models of Raspberry Pi (A/B/A+/B+/2B/3B/3B+/4B/400/Zero/ZeroW/Zero2W) plus QEMU ARM emulation
+* Support for most models of Raspberry Pi (A/B/A+/B+/2B/3B/3B+/4B/400/Zero/ZeroW/Zero2W) plus QEMU ARM emulation
 
 * Pre-emptive threading
 
@@ -32,9 +32,11 @@ Ultibo core is much more than just another OS example it is a complete platform 
 
 * Full Winsock 1.1 and Winsock 2 implementation
 
-* Standard C library support including POSIX threads
+* Standard C library support including BSD sockets and POSIX threads
 
-* Prebuilt libraries for Freetype2, SQLite, Zlib, Libpng and more included
+* Standard C++ library included
+
+* Prebuilt libraries for Freetype2, SQLite, Zlib, Libpng, LVGL, Libmad and more included
 
 * Support for many common FPC packages
 
@@ -48,7 +50,9 @@ Note that the Raspberry Pi Pico is not supported by Ultibo core as it is based o
 
 For all information on developing with Ultibo, building the source and getting started please see the [Ultibo.org website](https://ultibo.org)
 
-An installer download for Windows and a Linux installer script are available from the [downloads page](https://ultibo.org/download/)
+An installer download for Windows and a Linux installer script are available from the [downloads page](https://ultibo.org/download/), installation on MacOS is supported using [fpcupdeluxe](https://github.com/LongDirtyAnimAlf/fpcupdeluxe/releases/latest)
+
+The installer includes the Ultibo core source, examples and runtime and a full featured FreePascal development environment, for C/C++ development the [Ultibo API](https://github.com/ultibohub/API) provides the necessary headers plus examples for getting started.
 
 Detailed documentation can be found in the [Ultibo wiki](https://ultibo.org/wiki)
 
