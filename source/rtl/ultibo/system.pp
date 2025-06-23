@@ -25,6 +25,8 @@ Unit System;
 
 { Do not use standard memory manager }
 {$define HAS_MEMORYMANAGER}
+{$define FPC_NO_DEFAULT_HEAP}
+{$define FPC_NO_DEFAULT_MEMORYMANAGER}
 
 {$define FPC_ANSI_TEXTFILEREC}
 
