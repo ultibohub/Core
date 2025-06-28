@@ -570,6 +570,7 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
 		    pitft28 \
 		    pitft35 \
 		    ipstft19 \
+			ads1x15 \
 		    smc91x \
 		    pl18x \
 		    bcmsdhost \
