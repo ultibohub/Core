@@ -1,7 +1,7 @@
 {
 ILITEK ILI9340 TFT LCD Driver.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -130,9 +130,9 @@ type
  
 {==============================================================================}
 {ILI9340 Functions}
-function ILI9340FramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
+function ILI9340FramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;{$IFDEF API_EXPORT_ILI9340} stdcall; public name 'ili9340_framebuffer_create';{$ENDIF}
   
-function ILI9340FramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;
+function ILI9340FramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;{$IFDEF API_EXPORT_ILI9340} stdcall; public name 'ili9340_framebuffer_destroy';{$ENDIF}
 
 {==============================================================================}
 {ILI9340 Framebuffer Functions}
@@ -176,7 +176,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {ILI9340 Functions}
-function ILI9340FramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
+function ILI9340FramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;{$IFDEF API_EXPORT_ILI9340} stdcall;{$ENDIF}
 {Create, register and allocate a new ILI9340 Framebuffer device which can be accessed using the framebuffer API}
 {SPI: The SPI device that this ILI9340 is connected to}
 {ChipSelect: The SPI chip select to use when communicating with this device}
@@ -339,7 +339,7 @@ end;
 
 {==============================================================================}
 
-function ILI9340FramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;
+function ILI9340FramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;{$IFDEF API_EXPORT_ILI9340} stdcall;{$ENDIF}
 {Release, deregister and destroy an ILI9340 Framebuffer device created by this driver}
 {Framebuffer: The Framebuffer device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

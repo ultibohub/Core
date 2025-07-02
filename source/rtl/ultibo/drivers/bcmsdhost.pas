@@ -1,7 +1,7 @@
 {
 Broadcom BCM27XX SDHOST driver
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -220,8 +220,8 @@ procedure BCMSDHOSTInit;
 
 {==============================================================================}
 {BCMSDHOST Functions}
-function BCMSDHOSTCreate(Address:PtrUInt;const Name:String;IRQ,DREQ,ClockMinimum,ClockMaximum,GPIOFirst,GPIOLast,GPIOFunction:LongWord;EnableFIQ:Boolean):PSDHCIHost;
-function BCMSDHOSTDestroy(SDHCI:PSDHCIHost):LongWord;
+function BCMSDHOSTCreate(Address:PtrUInt;const Name:String;IRQ,DREQ,ClockMinimum,ClockMaximum,GPIOFirst,GPIOLast,GPIOFunction:LongWord;EnableFIQ:Boolean):PSDHCIHost;{$IFDEF API_EXPORT_BCMSDHOST} stdcall; public name 'bcmsdhost_create';{$ENDIF}
+function BCMSDHOSTDestroy(SDHCI:PSDHCIHost):LongWord;{$IFDEF API_EXPORT_BCMSDHOST} stdcall; public name 'bcmsdhost_destroy';{$ENDIF}
 
 {==============================================================================}
 {BCMSDHOST MMC Functions}
@@ -321,7 +321,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {BCMSDHOST Functions}
-function BCMSDHOSTCreate(Address:PtrUInt;const Name:String;IRQ,DREQ,ClockMinimum,ClockMaximum,GPIOFirst,GPIOLast,GPIOFunction:LongWord;EnableFIQ:Boolean):PSDHCIHost;
+function BCMSDHOSTCreate(Address:PtrUInt;const Name:String;IRQ,DREQ,ClockMinimum,ClockMaximum,GPIOFirst,GPIOLast,GPIOFunction:LongWord;EnableFIQ:Boolean):PSDHCIHost;{$IFDEF API_EXPORT_BCMSDHOST} stdcall;{$ENDIF}
 {Create and register a new BCMSDHOST SDHCI device which can be accessed using the SDHCI API}
 {Address: The address of the BCMSDHOST registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -454,7 +454,7 @@ end;
 
 {==============================================================================}
 
-function BCMSDHOSTDestroy(SDHCI:PSDHCIHost):LongWord;
+function BCMSDHOSTDestroy(SDHCI:PSDHCIHost):LongWord;{$IFDEF API_EXPORT_BCMSDHOST} stdcall;{$ENDIF}
 {Stop, deregister and destroy a BCMSDHOST SDHCI device created by this driver}
 {SDHCI: The SDHCI device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

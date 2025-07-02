@@ -1358,6 +1358,7 @@ var
  CDCACM_MAX_TRANSMIT:LongWord;                  {The maximum transmit size for USB CDC ACM Serial devices (Defaults to maximum supported by the device if not specified)}
  
  {DS1307}
+ DS1307_AUTOSTART:LongBool = True;              {If True then auto start the DS1307 device on boot (Only if DS1307 unit included)}
  DS1307_CHIP_TYPE:LongWord;                     {The specific chip to support in the DS1307 driver (See the DS1307_CHIP_* constants in the driver)}
  DS1307_I2C_ADDRESS:Word = $68;                 {The I2C address to use for the DS1307 RTC device}
  DS1307_I2C_DEVICE:String = 'I2C0';             {The I2C device (Name or Description) to use for the DS1307 RTC device}

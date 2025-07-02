@@ -1,7 +1,7 @@
 {
 Broadcom GENET Gigabit Ethernet Driver.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -934,8 +934,8 @@ var
 
 {==============================================================================}
 {GENET Functions}
-function GENETNetworkCreate(Address:PtrUInt;MDIOOffset:LongWord;IRQ0,IRQ1:LongWord):PNetworkDevice;
-function GENETNetworkDestroy(Network:PNetworkDevice):LongWord;
+function GENETNetworkCreate(Address:PtrUInt;MDIOOffset:LongWord;IRQ0,IRQ1:LongWord):PNetworkDevice;{$IFDEF API_EXPORT_GENET} stdcall; public name 'genet_network_create';{$ENDIF}
+function GENETNetworkDestroy(Network:PNetworkDevice):LongWord;{$IFDEF API_EXPORT_GENET} stdcall; public name 'genet_network_destroy';{$ENDIF}
 
 {==============================================================================}
 {GENET Network Functions}
@@ -1144,7 +1144,7 @@ procedure _UniMACMDIOWrite(Network:PGENETNetwork;Offset,Value:LongWord); forward
 {==============================================================================}
 {==============================================================================}
 {GENET Functions}
-function GENETNetworkCreate(Address:PtrUInt;MDIOOffset:LongWord;IRQ0,IRQ1:LongWord):PNetworkDevice;
+function GENETNetworkCreate(Address:PtrUInt;MDIOOffset:LongWord;IRQ0,IRQ1:LongWord):PNetworkDevice;{$IFDEF API_EXPORT_GENET} stdcall;{$ENDIF}
 {Create and register a new GENET Network device which can be accessed using the Network API}
 {Address: The address of the GENET registers}
 {MDIOOffset: The offset from address of the MDIO registers}
@@ -1243,7 +1243,7 @@ end;
 
 {==============================================================================}
 
-function GENETNetworkDestroy(Network:PNetworkDevice):LongWord;
+function GENETNetworkDestroy(Network:PNetworkDevice):LongWord;{$IFDEF API_EXPORT_GENET} stdcall;{$ENDIF}
 {Close, deregister and destroy a GENET Network device created by this driver}
 {Network: The Network device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

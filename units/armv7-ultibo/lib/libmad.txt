@@ -1,0 +1,97 @@
+Libmad Library
+==============
+
+Libraries
+---------
+
+ libmad.a
+
+Licence
+-------
+
+ libmad - MPEG audio decoder library
+ Copyright (C) 2000-2004 Underbit Technologies, Inc.
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+ If you would like to negotiate alternate licensing terms, you may do
+ so by contacting: Underbit Technologies, Inc. <info@underbit.com>
+
+Version
+-------
+
+ 0.15.1b
+
+Download
+--------
+
+ https://sourceforge.net/projects/mad/files/libmad/0.15.1b/
+ 
+ or
+ 
+ https://github.com/markjeee/libmad
+
+Build
+-----
+
+ARMv6
+
+ Build with GCC arm-none-eabi 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
+
+
+ cd
+
+ cd libraries/libmad-0.15.1b
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
+
+ ./configure --build=x86_64-pc-linux-gnu --host=arm-none-eabi --prefix=$HOME/libraries/libmad-0.15.1b/armv6 --enable-static=yes --enable-shared=no --disable-tests --disable-tools CFLAGS="--specs=nosys.specs -O3 -mabi=aapcs -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS"
+ 
+ make
+  
+ make install
+ 
+ make clean
+
+
+ARMv7
+
+ Build with GCC arm-none-eabi 13.3.rel1
+
+ Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
+
+
+ cd
+
+ cd libraries/libmad-0.15.1b
+
+ export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
+
+ ./configure --build=x86_64-pc-linux-gnu --host=arm-none-eabi --prefix=$HOME/libraries/libmad-0.15.1b/armv7 --enable-static=yes --enable-shared=no --disable-tests --disable-tools CFLAGS="--specs=nosys.specs -O3 -mabi=aapcs -marm -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard -D__DYNAMIC_REENT__ -D__LARGE64_FILES -D_REENT_BACKWARD_BINARY_COMPAT -D_POSIX_THREADS"
+ 
+ make
+
+ make install
+
+ make clean
+
+
+ARMv8
+
+ Note: configure.ac and config.sub in offical version doesn't support aarch64, no ARMv8 build currently provided 
+ 
+

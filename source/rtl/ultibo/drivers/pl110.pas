@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL110 Color LCD Controller Driver.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -217,10 +217,10 @@ type
  
 {==============================================================================}
 {PL110 Functions}
-function PL110FramebufferCreateVGA(Address:PtrUInt;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;
-function PL110FramebufferCreateSVGA(Address:PtrUInt;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;
+function PL110FramebufferCreateVGA(Address:PtrUInt;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;{$IFDEF API_EXPORT_PL110} stdcall; public name 'pl110_framebuffer_create_vga';{$ENDIF}
+function PL110FramebufferCreateSVGA(Address:PtrUInt;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;{$IFDEF API_EXPORT_PL110} stdcall; public name 'pl110_framebuffer_create_svga';{$ENDIF}
 
-function PL110FramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;
+function PL110FramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;{$IFDEF API_EXPORT_PL110} stdcall; public name 'pl110_framebuffer_destroy';{$ENDIF}
 
 {==============================================================================}
 {PL110 Framebuffer Functions}
@@ -253,7 +253,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {PL110 Functions}
-function PL110FramebufferCreateVGA(Address:PtrUInt;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;
+function PL110FramebufferCreateVGA(Address:PtrUInt;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;{$IFDEF API_EXPORT_PL110} stdcall;{$ENDIF}
 {Create, register and allocate a new PL110 Framebuffer device which can be accessed using the framebuffer API}
 {Address: The address of the PL110 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -366,7 +366,7 @@ end;
 
 {==============================================================================}
 
-function PL110FramebufferCreateSVGA(Address:PtrUInt;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;
+function PL110FramebufferCreateSVGA(Address:PtrUInt;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;{$IFDEF API_EXPORT_PL110} stdcall;{$ENDIF}
 {Create, register and allocate a new PL110 Framebuffer device which can be accessed using the framebuffer API}
 {Address: The address of the PL110 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -479,7 +479,7 @@ end;
 
 {==============================================================================}
 
-function PL110FramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;
+function PL110FramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;{$IFDEF API_EXPORT_PL110} stdcall;{$ENDIF}
 {Release, deregister and destroy a PL110 Framebuffer device created by this driver}
 {Framebuffer: The Framebuffer device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

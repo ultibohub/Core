@@ -591,8 +591,8 @@ begin
          {Check for Timeout}
          if GetTickCount64 >= (StartTime + ATimeout) then
           begin
-           {Return Error}
-           Result:=SOCKET_ERROR;
+           {Return Zero}
+           Result:=0;
            Exit;
           end;
         end;           

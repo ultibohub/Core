@@ -1,7 +1,7 @@
 {
 SMSC 91C9x/91C1xx Ethernet Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -439,9 +439,9 @@ var
  
 {==============================================================================}
 {SMC91X Functions}
-function SMC91XNetworkCreate(Address:PtrUInt;const Name:String;IRQ:LongWord):PNetworkDevice;
+function SMC91XNetworkCreate(Address:PtrUInt;const Name:String;IRQ:LongWord):PNetworkDevice;{$IFDEF API_EXPORT_SMC91X} stdcall; public name 'smc91x_network_create';{$ENDIF}
 
-function SMC91XNetworkDestroy(Network:PNetworkDevice):LongWord;
+function SMC91XNetworkDestroy(Network:PNetworkDevice):LongWord;{$IFDEF API_EXPORT_SMC91X} stdcall; public name 'smc91x_network_destroy';{$ENDIF}
 
 {==============================================================================}
 {SMC91X Network Functions}
@@ -517,7 +517,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {SMC91X Functions}
-function SMC91XNetworkCreate(Address:PtrUInt;const Name:String;IRQ:LongWord):PNetworkDevice;
+function SMC91XNetworkCreate(Address:PtrUInt;const Name:String;IRQ:LongWord):PNetworkDevice;{$IFDEF API_EXPORT_SMC91X} stdcall;{$ENDIF}
 {Create and register a new SMC91X Network device which can be accessed using the Network API}
 {Address: The address of the SMC91X registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -595,7 +595,7 @@ end;
 
 {==============================================================================}
 
-function SMC91XNetworkDestroy(Network:PNetworkDevice):LongWord;
+function SMC91XNetworkDestroy(Network:PNetworkDevice):LongWord;{$IFDEF API_EXPORT_SMC91X} stdcall;{$ENDIF}
 {Close, deregister and destroy an SMC91X Network device created by this driver}
 {Network: The Network device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

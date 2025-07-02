@@ -1,7 +1,7 @@
 {
 Maxim DS1307 Real Time Clock Driver.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -189,6 +189,11 @@ type
 procedure DS1307Init;
 
 {==============================================================================}
+{DS1307 Functions}
+function DS1307RTCCreate(const Device:String;Address:Word;Chip:LongWord):PRTCDevice;{$IFDEF API_EXPORT_DS1307} stdcall; public name 'ds1307_rtc_create';{$ENDIF}
+function DS1307RTCDestroy(RTC:PRTCDevice):LongWord;{$IFDEF API_EXPORT_DS1307} stdcall; public name 'ds1307_rtc_destroy';{$ENDIF}
+
+{==============================================================================}
 {DS1307 RTC Functions}
 function DS1307RTCStart(RTC:PRTCDevice):LongWord;
 function DS1307RTCStop(RTC:PRTCDevice):LongWord;
@@ -227,29 +232,73 @@ var
 {Initialization Functions}
 procedure DS1307Init;
 var
- Status:LongWord;
  WorkInt:LongWord;
+ WorkBool:LongBool;
  WorkBuffer:String;
-
- DS1307RTC:PDS1307RTCDevice;
 begin
  {}
  {Check Initialized}
  if DS1307Initialized then Exit;
 
  {Check Environment Variables}
+ {DS1307_AUTOSTART}
+ WorkBool:=StrToBoolDef(EnvironmentGet('DS1307_AUTOSTART'),DS1307_AUTOSTART);
+ if WorkBool <> DS1307_AUTOSTART then DS1307_AUTOSTART:=WorkBool;
+
  {DS1307_CHIP_TYPE}
- WorkInt:=StrToIntDef(EnvironmentGet('DS1307_CHIP_TYPE'),0);
- if WorkInt > 0 then DS1307_CHIP_TYPE:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('DS1307_CHIP_TYPE'),DS1307_CHIP_TYPE);
+ if WorkInt <> DS1307_CHIP_TYPE then DS1307_CHIP_TYPE:=WorkInt;
  
  {DS1307_I2C_ADDRESS}
- WorkInt:=StrToIntDef(EnvironmentGet('DS1307_I2C_ADDRESS'),0);
- if WorkInt > 0 then DS1307_I2C_ADDRESS:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('DS1307_I2C_ADDRESS'),DS1307_I2C_ADDRESS);
+ if WorkInt <> DS1307_I2C_ADDRESS then DS1307_I2C_ADDRESS:=WorkInt;
 
  {DS1307_I2C_DEVICE}
  WorkBuffer:=EnvironmentGet('DS1307_I2C_DEVICE');
- if Length(WorkBuffer) <> 0 then DS1307_I2C_DEVICE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then DS1307_I2C_DEVICE:=WorkBuffer;
+
+ {Create RTC} 
+ if DS1307_AUTOSTART then
+  begin
+   DS1307RTCCreate(DS1307_I2C_DEVICE,DS1307_I2C_ADDRESS,DS1307_CHIP_TYPE);
+  end;
+
+ DS1307Initialized:=True;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{DS1307 Functions}
+function DS1307RTCCreate(const Device:String;Address:Word;Chip:LongWord):PRTCDevice;{$IFDEF API_EXPORT_DS1307} stdcall;{$ENDIF}
+{Create, register and start a new DS1307 RTC device connected to the specified I2C device}
+{Device: The I2C device this DS1307 is connected to}
+{Address: The I2C address for this DS1307}
+{Chip: The chip type for this DS1307 (eg DS1307_CHIP_DS1307)}
+{Return: Pointer to the new RTC device or nil on failure}
+var
+ Status:LongWord;
  
+ I2C:PI2CDevice;
+ DS1307RTC:PDS1307RTCDevice;
+begin
+ {}
+ Result:=nil;
+
+ {$IF DEFINED(DS1307_DEBUG) or DEFINED(RTC_DEBUG)}
+ if RTC_LOG_ENABLED then RTCLogDebug(nil,'DS1307: RTC Create (Device=' + Device + ' Address=' + IntToHex(Address,4) + ' Chip=' + IntToStr(Chip) + ')');
+ {$ENDIF}
+
+ {Check I2C Address}
+ if Address = I2C_ADDRESS_INVALID then Exit;
+ 
+ {Check I2C Device}
+ I2C:=PI2CDevice(DeviceFindByName(Device));
+ if I2C = nil then
+  begin
+   I2C:=PI2CDevice(DeviceFindByDescription(Device));
+   if I2C = nil then Exit;
+  end;
+
  {Create RTC}
  DS1307RTC:=PDS1307RTCDevice(RTCDeviceCreateEx(SizeOf(TDS1307RTCDevice)));
  if DS1307RTC <> nil then
@@ -273,8 +322,9 @@ begin
    DS1307RTC.RTC.Properties.MaxTime:=0;
    DS1307RTC.RTC.Properties.AlarmCount:=0;
    {DS1307}
-   DS1307RTC.Address:=DS1307_I2C_ADDRESS;
-   DS1307RTC.Chip:=DS1307_CHIP_TYPE;
+   DS1307RTC.I2C:=I2C;
+   DS1307RTC.Address:=Address;
+   DS1307RTC.Chip:=Chip;
    
    {Register RTC}
    Status:=RTCDeviceRegister(@DS1307RTC.RTC);
@@ -282,7 +332,12 @@ begin
     begin
      {Start RTC}
      Status:=RTCDeviceStart(@DS1307RTC.RTC);
-     if Status <> ERROR_SUCCESS then
+     if Status = ERROR_SUCCESS then
+      begin
+       {Return Result}
+       Result:=PRTCDevice(DS1307RTC);
+      end
+     else 
       begin
        if RTC_LOG_ENABLED then RTCLogError(nil,'DS1307: Failed to start new RTC device: ' + ErrorToString(Status));
 
@@ -304,9 +359,50 @@ begin
  else 
   begin
    if RTC_LOG_ENABLED then RTCLogError(nil,'DS1307: Failed to create new RTC device');
-  end; 
- 
- DS1307Initialized:=True;
+  end;
+end;
+
+{==============================================================================}
+
+function DS1307RTCDestroy(RTC:PRTCDevice):LongWord;{$IFDEF API_EXPORT_DS1307} stdcall;{$ENDIF}
+{Stop, deregister and destroy a DS1307 RTC device created by this driver}
+{RTC: The RTC device to destroy}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=ERROR_INVALID_PARAMETER;
+
+ {Check RTC}
+ if RTC = nil then Exit;
+
+ {$IF DEFINED(DS1307_DEBUG) or DEFINED(RTC_DEBUG)}
+ if RTC_LOG_ENABLED then RTCLogDebug(RTC,'DS1307: RTC Destroy');
+ {$ENDIF}
+
+ {Stop RTC}
+ Result:=RTCDeviceStop(RTC);
+ if Result = ERROR_SUCCESS then
+  begin
+   {Deregister RTC}
+   Result:=RTCDeviceDeregister(RTC);
+   if Result = ERROR_SUCCESS then
+    begin
+     {Destroy RTC}
+     Result:=RTCDeviceDestroy(RTC);
+     if Result <> ERROR_SUCCESS then
+      begin
+       if RTC_LOG_ENABLED then RTCLogError(nil,'DS1307: Failed to destroy RTC device: ' + ErrorToString(Result));
+      end;
+    end
+   else
+    begin
+     if RTC_LOG_ENABLED then RTCLogError(nil,'DS1307: Failed to deregister RTC device: ' + ErrorToString(Result));
+    end;
+  end
+ else
+  begin
+   if RTC_LOG_ENABLED then RTCLogError(nil,'DS1307: Failed to stop RTC device: ' + ErrorToString(Result));
+  end;
 end;
 
 {==============================================================================}
@@ -331,15 +427,10 @@ begin
  
  {Check I2C Address}
  if PDS1307RTCDevice(RTC).Address = I2C_ADDRESS_INVALID then Exit;
- 
+
  {Check I2C Device}
- PDS1307RTCDevice(RTC).I2C:=PI2CDevice(DeviceFindByName(DS1307_I2C_DEVICE));
- if PDS1307RTCDevice(RTC).I2C = nil then
-  begin
-   PDS1307RTCDevice(RTC).I2C:=PI2CDevice(DeviceFindByDescription(DS1307_I2C_DEVICE));
-   if PDS1307RTCDevice(RTC).I2C = nil then Exit;
-  end;
-  
+ if PDS1307RTCDevice(RTC).I2C = nil then Exit;
+
  {Start I2C Device}
  if I2CDeviceStart(PDS1307RTCDevice(RTC).I2C,0) <> ERROR_SUCCESS then
   begin

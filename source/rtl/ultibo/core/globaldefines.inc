@@ -390,6 +390,7 @@ Global Defines
 {$DEFINE API_EXPORT_LOCALE}          {Enable the library API unit to export symbols for the Locale unit (Default: On)}
 {$DEFINE API_EXPORT_UNICODE}         {Enable the library API unit to export symbols for the Unicode unit (Default: On)}
 {$DEFINE API_EXPORT_TFTFRAMEBUFFER}  {Enable the library API unit to export symbols for the TFTFramebuffer unit (Default: On)}
+{$DEFINE API_EXPORT_PS2}             {Enable the library API unit to export symbols for the PS2 unit (Default: On)}
 
 {$DEFINE API_EXPORT_FILESYSTEM}      {Enable the library API unit to export symbols for the FileSystem unit (Default: On)}
 {--$DEFINE API_EXPORT_WINSOCK}       {Enable the library API unit to export symbols for the Winsock unit (Default: Off)}
@@ -398,8 +399,33 @@ Global Defines
 
 {$DEFINE API_EXPORT_ULTIBO}          {Enable the library API unit to export symbols for the Ultibo unit (Default: On)}
 
-{$DEFINE API_EXPORT_I2CGPIO}         {Enable exporting symbols for the I2CGPIO driver (Default: On)}
-{$DEFINE API_EXPORT_PCF857X}         {Enable exporting symbols for the PCF857X driver (Default: On)}
+{$DEFINE API_EXPORT_I2CGPIO}         {Enable exporting symbols for the I2CGPIO driver if included (Default: On)}
+{$DEFINE API_EXPORT_PCF857X}         {Enable exporting symbols for the PCF857X driver if included (Default: On)}
+{$DEFINE API_EXPORT_MCP230XX}        {Enable exporting symbols for the MCP230XX driver if included (Default: On)}
+{$DEFINE API_EXPORT_RPISENSEHAT}     {Enable exporting symbols for the RPiSenseHat driver if included (Default: On)}
+{$DEFINE API_EXPORT_STMPE}           {Enable exporting symbols for the STMPE driver if included (Default: On)}
+{$DEFINE API_EXPORT_HX8357D}         {Enable exporting symbols for the HX8357D driver if included (Default: On)}
+{$DEFINE API_EXPORT_ILI9340}         {Enable exporting symbols for the ILI9340 driver if included (Default: On)}
+{$DEFINE API_EXPORT_HD44780}         {Enable exporting symbols for the HD44780 driver if included (Default: On)}
+{$DEFINE API_EXPORT_ST77XX}          {Enable exporting symbols for the ST77XX driver if included (Default: On)}
+{$DEFINE API_EXPORT_PITFT35}         {Enable exporting symbols for the PITFT35 driver if included (Default: On)}
+{$DEFINE API_EXPORT_PITFT28}         {Enable exporting symbols for the PITFT28 driver if included (Default: On)}
+{$DEFINE API_EXPORT_IPSTFT19}        {Enable exporting symbols for the IPSTFT19 driver if included (Default: On)}
+{$DEFINE API_EXPORT_I2CLCD}          {Enable exporting symbols for the I2CLCD driver if included (Default: On)}
+{$DEFINE API_EXPORT_AF16X2LCD}       {Enable exporting symbols for the AF16X2LCD driver if included (Default: On)}
+{$DEFINE API_EXPORT_GOODIXTOUCH}     {Enable exporting symbols for the GoodixTouch driver if included (Default: On)}
+{$DEFINE API_EXPORT_FT5X06TOUCH}     {Enable exporting symbols for the FT5X06Touch driver if included (Default: On)}
+{$DEFINE API_EXPORT_HYPERPIXEL}      {Enable exporting symbols for the HyperPixel driver if included (Default: On)}
+{$DEFINE API_EXPORT_DWCOTG}          {Enable exporting symbols for the DWCOTG driver if included (Default: On)}
+{$DEFINE API_EXPORT_DS1307}          {Enable exporting symbols for the DS1307 driver if included (Default: On)}
+{$DEFINE API_EXPORT_PL18X}           {Enable exporting symbols for the PL18X driver if included (Default: On)}
+{$DEFINE API_EXPORT_PL110}           {Enable exporting symbols for the PL110 driver if included (Default: On)}
+{$DEFINE API_EXPORT_PL050}           {Enable exporting symbols for the PL050 driver if included (Default: On)}
+{$DEFINE API_EXPORT_PL011}           {Enable exporting symbols for the PL011 driver if included (Default: On)}
+{$DEFINE API_EXPORT_PL031}           {Enable exporting symbols for the PL031 driver if included (Default: On)}
+{$DEFINE API_EXPORT_GENET}           {Enable exporting symbols for the GENET driver if included (Default: On)}
+{$DEFINE API_EXPORT_SMC91X}          {Enable exporting symbols for the SMC91X driver if included (Default: On)}
+{$DEFINE API_EXPORT_BCMSDHOST}       {Enable exporting symbols for the BCMSDHOST driver if included (Default: On)}
 
 {API dependencies}
 {$IFDEF API_EXPORT_CONSOLE}
@@ -488,6 +514,7 @@ Global Defines
 {--$DEFINE CRYPTO_DEBUG}                         {Enable debug output/functions for Crypto unit (Default: Off)}
 {--$DEFINE CRYPTO_DES_PRECOMPUTED_PERMUTATIONS}  {Enable precomputed permutations (IP/FP) for DES cipher (Faster but bigger) (Default: Off)}
 {--$DEFINE CRYPTO_AES_PRECOMPUTED_TABLES}        {Enable precomputed tables (TE1/TE2/TE3/TE4/TD1/TD2/TD3/TD4 etc) for AES cipher (Faster but bigger) (Default: Off)}
+{--$DEFINE CRYPTO_CRC_PRECOMPUTED_TABLES}        {Enable precomputed tables (32/64) for CRC (Faster but bigger) (Default: Off)}
 
 {X509 definitions}
 {--$DEFINE X509_DEBUG}                           {Enable debug output/functions for X509 unit (Default: Off)}

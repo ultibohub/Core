@@ -1,7 +1,7 @@
 {
 Adafruit PiTFT 3.5" LCD Driver.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -138,8 +138,8 @@ var
 {Initialization Functions}
 procedure PiTFT35Init;
 
-function PiTFT35Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
-function PiTFT35Stop(Handle:THandle):Boolean;
+function PiTFT35Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;{$IFDEF API_EXPORT_PITFT35} stdcall; public name 'pitft35_start';{$ENDIF}
+function PiTFT35Stop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_PITFT35} stdcall; public name 'pitft35_stop';{$ENDIF}
 
 {==============================================================================}
 {PiTFT35 Functions}
@@ -207,7 +207,7 @@ end;
 
 {==============================================================================}
 
-function PiTFT35Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
+function PiTFT35Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;{$IFDEF API_EXPORT_PITFT35} stdcall;{$ENDIF}
 {Start the PiTFT35 driver and register the Touch, Backlight (GPIO) and Framebuffer devices associated with the display}
 {Rotation: The rotation of the display (eg FRAMEBUFFER_ROTATION_180)}
 {Device: The SPI device that the HX8357D and STMPE610 devices are connected to}
@@ -331,7 +331,7 @@ end;
 
 {==============================================================================}
 
-function PiTFT35Stop(Handle:THandle):Boolean;
+function PiTFT35Stop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_PITFT35} stdcall;{$ENDIF}
 {Stop the PiTFT35 driver and deregister the Touch, Backlight (GPIO) and Framebuffer devices associated with the display}
 {Handle: The handle of the PiTFT35 or INVALID_HANDLE_VALUE for the default display}
 {Return: True if completed or False on failure}

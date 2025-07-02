@@ -161,7 +161,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {PCF857X Functions}
-function PCF8574GPIOCreate(I2C:PI2CDevice;Address:Word):PGPIODevice;
+function PCF8574GPIOCreate(I2C:PI2CDevice;Address:Word):PGPIODevice;{$IFDEF API_EXPORT_PCF857X} stdcall;{$ENDIF}
 {Create, register and start a new PCF8574 GPIO device connected to the specified I2C device}
 {I2C: The I2C device this PCF8574 is connected to}
 {Address: The I2C address for this PCF8574}
@@ -175,7 +175,7 @@ begin
  Result:=nil;
  
  {$IF DEFINED(PCF857X_DEBUG) or DEFINED(GPIO_DEBUG)}
- if GPIO_LOG_ENABLED then GPIOLogDebug(nil,'PCF8574: GPIO Create (Address=' + IntToHex(Address,8) + ')');
+ if GPIO_LOG_ENABLED then GPIOLogDebug(nil,'PCF8574: GPIO Create (Address=' + IntToHex(Address,4) + ')');
  {$ENDIF}
  
  {Check I2C}
@@ -260,7 +260,7 @@ end;
 
 {==============================================================================}
  
-function PCF857XGPIODestroy(GPIO:PGPIODevice):LongWord;
+function PCF857XGPIODestroy(GPIO:PGPIODevice):LongWord;{$IFDEF API_EXPORT_PCF857X} stdcall;{$ENDIF}
 {Stop, deregister and destroy a PCF857X GPIO device created by this driver}
 {GPIO: The GPIO device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

@@ -211,6 +211,10 @@ uses
   TFTFramebuffer,
   {$ENDIF}
 
+  {$IFDEF API_EXPORT_PS2}
+  PS2,
+  {$ENDIF}
+
   {$IFDEF API_EXPORT_FILESYSTEM}
   FileSystem,
   {$ENDIF}
@@ -752,6 +756,12 @@ type
 {$IFDEF API_EXPORT_TFTFRAMEBUFFER}
 type
  PTFT_FRAMEBUFFER = PTFTFramebuffer;
+{$ENDIF}
+
+{$IFDEF API_EXPORT_PS2}
+type
+ PPS2_KEYBOARD_SCANCODE = PPS2KeyboardScancode;
+ PPS2_MOUSE_PACKET = PPS2MousePacket;
 {$ENDIF}
 
 {$IFDEF API_EXPORT_FILESYSTEM}
@@ -4662,6 +4672,21 @@ function tft_framebuffer_commit(framebuffer: PFRAMEBUFFER_DEVICE; address: SIZE_
 procedure tft_framebuffer_update_display(framebuffer: PTFT_FRAMEBUFFER); stdcall; public name 'tft_framebuffer_update_display';
 {$ENDIF}
 {==============================================================================}
+{PS2 Helper Functions}
+{$IFDEF API_EXPORT_PS2}
+function keyboard_leds_to_ps2_leds(leds: uint32_t; var ps2leds: uint8_t): uint32_t; stdcall; public name 'keyboard_leds_to_ps2_leds';
+function keyboard_rate_and_delay_to_ps2_typematic(rate, delay: uint32_t; var ps2typematic: uint8_t): uint32_t; stdcall; public name 'keyboard_rate_and_delay_to_ps2_typematic';
+
+function ps2_keyboard_scancode_match(keyboardscancode: PPS2_KEYBOARD_SCANCODE; var index: int32_t): uint32_t; stdcall; public name 'ps2_keyboard_scancode_match';
+
+function ps2_keyboard_scancode_to_scan_code(keyboardscancode: PPS2_KEYBOARD_SCANCODE; index: int32_t; var scancode: uint16_t): uint32_t; stdcall; public name 'ps2_keyboard_scancode_to_scan_code';
+function ps2_keyboard_scancode_to_modifiers(keyboardscancode: PPS2_KEYBOARD_SCANCODE; index: int32_t; var modifiers: uint32_t): uint32_t; stdcall; public name 'ps2_keyboard_scancode_to_modifiers';
+
+function mouse_sample_rate_to_ps2_sample_rate(rate: uint32_t; var ps2rate: uint8_t): uint32_t; stdcall; public name 'mouse_sample_rate_to_ps2_sample_rate';
+
+function ps2_mouse_packet_to_mouse_data(mousepacket: PPS2_MOUSE_PACKET; mousedata: PMOUSE_DATA; flags, rotation: uint32_t): uint32_t; stdcall; public name 'ps2_mouse_packet_to_mouse_data';
+{$ENDIF}
+{==============================================================================}
 {FileSystem Functions (Ultibo)}
 {$IFDEF API_EXPORT_FILESYSTEM}
 function file_sys_start: uint32_t; stdcall; public name 'file_sys_start';
@@ -4997,8 +5022,11 @@ function InetNtopA(family: int32_t; paddr: PVOID; pstringbuf: PCHAR; stringbufsi
 function InetNtopW(family: int32_t; paddr: PVOID; pstringbuf: PWCHAR; stringbufsize: int32_t): PWCHAR; stdcall; public name 'InetNtopW';
 
 function WSAAccept(s: TSOCKET; addr: TSockAddr; addrlen: Pint32_t; lpfncondition: LPCONDITIONPROC; dwcallbackdata: uint32_t): TSOCKET; stdcall; public name 'WSAAccept';
-function WSACloseEvent(hevent: WSAEVENT): WordBool; stdcall; public name 'WSACloseEvent';
+function WSACloseEvent(hevent: WSAEVENT): BOOL; stdcall; public name 'WSACloseEvent';
 function WSAConnect(s: TSOCKET; name: PSockAddr; namelen: int32_t; lpcallerdata, lpcalleedata: LPWSABUF; lpsqos, lpgqos: LPQOS): int32_t; stdcall; public name 'WSAConnect';
+function WSAConnectByList(s: TSOCKET; socketaddresslist: PSOCKET_ADDRESS_LIST; var localaddresslength: uint32_t; localaddress: PSockAddr; var remoteaddresslength: uint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall; public name 'WSAConnectByList';
+function WSAConnectByNameA(s: TSOCKET; nodename: PCHAR; servicename: PCHAR; var localaddresslength: uint32_t; localaddress: PSockAddr; var remoteaddresslength: uint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall; public name 'WSAConnectByNameA';
+function WSAConnectByNameW(s: TSOCKET; nodename: PWCHAR; servicename: PWCHAR; var localaddresslength: uint32_t; localaddress: PSockAddr; var remoteaddresslength: uint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall; public name 'WSAConnectByNameW';
 function WSACreateEvent: WSAEVENT; stdcall; public name 'WSACreateEvent';
 function WSADuplicateSocketA(s: TSOCKET; dwprocessid: uint32_t; lpprotocolinfo: LPWSAProtocol_InfoA): int32_t; stdcall; public name 'WSADuplicateSocketA';
 function WSADuplicateSocketW(s: TSOCKET; dwprocessid: uint32_t; lpprotocolinfo: LPWSAProtocol_InfoW): int32_t; stdcall; public name 'WSADuplicateSocketW';
@@ -5006,28 +5034,30 @@ function WSAEnumNetworkEvents(s: TSOCKET; heventobject: WSAEVENT; lpnetworkevent
 function WSAEnumProtocolsA(lpiprotocols: Pint32_t; lpprotocolbuffer: LPWSAProtocol_InfoA; var lpdwbufferlength: uint32_t): int32_t; stdcall; public name 'WSAEnumProtocolsA';
 function WSAEnumProtocolsW(lpiprotocols: Pint32_t; lpprotocolbuffer: LPWSAProtocol_InfoW; var lpdwbufferlength: uint32_t): int32_t; stdcall; public name 'WSAEnumProtocolsW';
 function WSAEventSelect(s: TSOCKET; heventobject: WSAEVENT; lnetworkevents: int32_t): int32_t; stdcall; public name 'WSAEventSelect';
-function WSAGetOverlappedResult(s: TSOCKET; lpoverlapped: LPWSAOVERLAPPED; lpcbtransfer: LPDWORD; fwait: BOOL; var lpdwflags: uint32_t): WordBool; stdcall; public name 'WSAGetOverlappedResult';
-function WSAGetQosByName(s: TSOCKET; lpqosname: LPWSABUF; lpqos: LPQOS): WordBool; stdcall; public name 'WSAGetQosByName';
-function WSAhtonl(s: TSOCKET; hostlong: u_long; var lpnetlong: uint32_t): int32_t; stdcall; public name 'WSAhtonl';
-function WSAhtons(s: TSOCKET; hostshort: u_short; var lpnetshort: uint16_t): int32_t; stdcall; public name 'WSAhtons';
+function WSAGetOverlappedResult(s: TSOCKET; lpoverlapped: LPWSAOVERLAPPED; lpcbtransfer: LPDWORD; fwait: BOOL; var lpdwflags: uint32_t): BOOL; stdcall; public name 'WSAGetOverlappedResult';
+function WSAGetQosByName(s: TSOCKET; lpqosname: LPWSABUF; lpqos: LPQOS): BOOL; stdcall; public name 'WSAGetQosByName';
+function WSAHtonl(s: TSOCKET; hostlong: u_long; var lpnetlong: uint32_t): int32_t; stdcall; public name 'WSAHtonl';
+function WSAHtons(s: TSOCKET; hostshort: u_short; var lpnetshort: uint16_t): int32_t; stdcall; public name 'WSAHtons';
 function WSAIoctl(s: TSOCKET; dwiocontrolcode: uint32_t; lpvinbuffer: PVOID; cbinbuffer: uint32_t; lpvoutbuffer: PVOID; cboutbuffer: uint32_t; lpcbbytesreturned: LPDWORD; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSAIoctl';
 function WSAJoinLeaf(s: TSOCKET; name: PSockAddr; namelen: int32_t; lpcallerdata, lpcalleedata: LPWSABUF; lpsqos, lpgqos: LPQOS; dwflags: uint32_t): TSOCKET; stdcall; public name 'WSAJoinLeaf';
 function WSANtohl(s: TSOCKET; netlong: u_long; var lphostlong: uint32_t): int32_t; stdcall; public name 'WSANtohl';
 function WSANtohs(s: TSOCKET; netshort: u_short; var lphostshort: uint16_t): int32_t; stdcall; public name 'WSANtohs';
+function WSAPoll(fdarray: LPWSAPOLLFD; fds: ULONG; timeout: int32_t): int32_t; stdcall; public name 'WSAPoll';
+function WSAProviderConfigChange(var lpnotificationhandle: THANDLE; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSAProviderConfigChange';
 function WSARecv(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; var lpnumberofbytesrecvd: uint32_t; var lpflags: uint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSARecv';
 function WSARecvDisconnect(s: TSOCKET; lpinbounddisconnectdata: LPWSABUF): int32_t; stdcall; public name 'WSARecvDisconnect';
 function WSARecvFrom(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; var lpnumberofbytesrecvd: uint32_t; var lpflags: uint32_t; lpfrom: PSockAddr; lpfromlen: Pint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSARecvFrom';
 function WSARecvMsg(s: TSOCKET; lpmsg: LPWSAMSG; lpdwnumberofbytesrecvd: uint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSARecvMsg';
-function WSAResetEvent(hevent: WSAEVENT): WordBool; stdcall; public name 'WSAResetEvent';
+function WSAResetEvent(hevent: WSAEVENT): BOOL; stdcall; public name 'WSAResetEvent';
 function WSASend(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; var lpnumberofbytessent: uint32_t; dwflags: uint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSASend';
 function WSASendDisconnect(s: TSOCKET; lpoutbounddisconnectdata: LPWSABUF): int32_t; stdcall; public name 'WSASendDisconnect';
 function WSASendTo(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; var lpnumberofbytessent: uint32_t; dwflags: uint32_t; lpto: PSockAddr; itolen: int32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSASendTo';
 function WSASendMsg(s: TSOCKET; lpmsg: LPWSAMSG; dwflags: uint32_t; lpnumberofbytessent: uint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall; public name 'WSASendMsg';
-function WSASetEvent(hevent: WSAEVENT): WordBool; stdcall; public name 'WSASetEvent';
+function WSASetEvent(hevent: WSAEVENT): BOOL; stdcall; public name 'WSASetEvent';
 function WSASocketA(af, itype, protocol: int32_t; lpprotocolinfo: LPWSAProtocol_InfoA; g: GROUP; dwflags: uint32_t): TSOCKET; stdcall; public name 'WSASocketA';
 function WSASocketW(af, itype, protocol: int32_t; lpprotocolinfo: LPWSAProtocol_InfoW; g: GROUP; dwflags: uint32_t): TSOCKET; stdcall; public name 'WSASocketW';
 
-function WSAWaitForMultipleEvents(cevents: uint32_t; lphevents: PWSAEVENT; fwaitall: LONGBOOL; dwtimeout: uint32_t; falertable: LONGBOOL): uint32_t; stdcall; public name 'WSAWaitForMultipleEvents';
+function WSAWaitForMultipleEvents(cevents: uint32_t; lphevents: PWSAEVENT; fwaitall: BOOL; dwtimeout: uint32_t; falertable: BOOL): uint32_t; stdcall; public name 'WSAWaitForMultipleEvents';
 function WSAAddressToStringA(var lpsaaddress: TSockAddr; const dwaddresslength: uint32_t; const lpprotocolinfo: LPWSAProtocol_InfoA; const lpszaddressstring: PCHAR; var lpdwaddressstringlength: uint32_t): int32_t; stdcall; public name 'WSAAddressToStringA';
 function WSAAddressToStringW(var lpsaaddress: TSockAddr; const dwaddresslength: uint32_t; const lpprotocolinfo: LPWSAProtocol_InfoW; const lpszaddressstring: PWCHAR; var lpdwaddressstringlength: uint32_t): int32_t; stdcall; public name 'WSAAddressToStringW';
 
@@ -35408,6 +35438,97 @@ end;
 {$ENDIF}
 {==============================================================================}
 {==============================================================================}
+{PS2 Helper Functions}
+{$IFDEF API_EXPORT_PS2}
+function keyboard_leds_to_ps2_leds(leds: uint32_t; var ps2leds: uint8_t): uint32_t; stdcall;
+{Map the Keyboard LED values to the PS/2 Keyboard LED values}
+{LEDs: The Keyboard LED values to map (eg KEYBOARD_LED_NUMLOCK)}
+{PS2LEDs: The returned PS/2 Keyboard LED values (eg PS2_KEYBOARD_SET_LEDS_NUMLOCK)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=KeyboardLEDsToPS2LEDs(leds,ps2leds);
+end;
+
+{==============================================================================}
+
+function keyboard_rate_and_delay_to_ps2_typematic(rate, delay: uint32_t; var ps2typematic: uint8_t): uint32_t; stdcall;
+{Translate the Keyboard Repeat Rate and Delay values to the PS/2 Keyboard Typematic value}
+{Rate: The Keyboard Repeat Rate to translate (Milliseconds between repeats)}
+{Delay: The Keyboard Repeat Delay to translate (Number of Repeat Rate intervals before first repeat)}
+{PS2Typematic: The translated PS/2 Typematic value returned}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=KeyboardRateAndDelayToPS2Typematic(rate,delay,ps2typematic);
+end;
+
+{==============================================================================}
+
+function ps2_keyboard_scancode_match(keyboardscancode: PPS2_KEYBOARD_SCANCODE; var index: int32_t): uint32_t; stdcall;
+{Check a set of scancode bytes against the specified PS/2 Scancode set for a match}
+{KeyboardScancode: Pointer to the scancode bytes and scancode set information}
+{Index: The index of the matching scancode on success or the nearest match on not found
+        (Pass -1 to start search from first entry, on subsequent calls pass the previous value to continue)}
+{Return: ERROR_SUCCESS if matched, ERROR_NOT_FOUND if not matched or another error code on failure}
+begin
+ {}
+ Result:=PS2KeyboardScancodeMatch(keyboardscancode,index);
+end;
+
+{==============================================================================}
+
+function ps2_keyboard_scancode_to_scan_code(keyboardscancode: PPS2_KEYBOARD_SCANCODE; index: int32_t; var scancode: uint16_t): uint32_t; stdcall;
+{Return the Keyboard Scan Code value for a PS/2 scancode value}
+{KeyboardScancode: Pointer to the scancode bytes and scancode set information}
+{Index: The index value returned by PS2KeyboardScancodeMatch (-1 to search for match)}
+{ScanCode: The returned keyboard scan code value (eg SCAN_CODE_A)}
+{Return: ERROR_SUCCESS if completed or another error code on failure (ERROR_NOT_FOUND if not matched)}
+begin
+ {}
+ Result:=PS2KeyboardScancodeToScanCode(keyboardscancode,index,scancode);
+end;
+
+{==============================================================================}
+
+function ps2_keyboard_scancode_to_modifiers(keyboardscancode: PPS2_KEYBOARD_SCANCODE; index: int32_t; var modifiers: uint32_t): uint32_t; stdcall;
+{Return the Keyboard Modifiers flags for a PS/2 scancode value}
+{Index: The index value returned by PS2KeyboardScancodeMatch (-1 to search for match)}
+{Modifiers: The returned keyboard modifiers flags (eg KEYBOARD_LEFT_CTRL)}
+{Return: ERROR_SUCCESS if completed or another error code on failure (ERROR_NOT_FOUND if not matched)}
+begin
+ {}
+ Result:=PS2KeyboardScancodeToModifiers(keyboardscancode,index,modifiers);
+end;
+
+{==============================================================================}
+
+function mouse_sample_rate_to_ps2_sample_rate(rate: uint32_t; var ps2rate: uint8_t): uint32_t; stdcall;
+{Translate a Mouse Sample Rate value to the PS/2 Mouse Sample Rate value}
+{Rate: The Mouse Sample Rate to translate (Samples per second)}
+{PS2Rate: The translated PS/2 Sample Rate value returned}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=MouseSampleRateToPS2SampleRate(rate,ps2rate);
+end;
+
+{==============================================================================}
+
+function ps2_mouse_packet_to_mouse_data(mousepacket: PPS2_MOUSE_PACKET; mousedata: PMOUSE_DATA; flags, rotation: uint32_t): uint32_t; stdcall;
+{Translate a PS/2 Mouse Packet into a Mouse Data structure}
+{MousePacket: Pointer to the PS/2 Mouse Packet received from the mouse}
+{MouseData: Pointer to the Mouse Data structure to return}
+{Flags: The Mouse device flags (eg MOUSE_FLAG_SWAP_BUTTONS)}
+{Rotation: The Mouse device rotation setting (eg MOUSE_ROTATION_180)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+begin
+ {}
+ Result:=PS2MousePacketToMouseData(mousepacket,mousedata,flags,rotation);
+end;
+{$ENDIF}
+{==============================================================================}
+{==============================================================================}
 {FileSystem Functions (Ultibo)}
 {$IFDEF API_EXPORT_FILESYSTEM}
 function file_sys_start: uint32_t; stdcall;
@@ -36989,7 +37110,7 @@ end;
 
 {==============================================================================}
 
-function WSACloseEvent(hevent: WSAEVENT): WordBool; stdcall;
+function WSACloseEvent(hevent: WSAEVENT): BOOL; stdcall;
 begin
  {}
  Result:=Winsock2.WSACloseEvent(hevent);
@@ -37001,6 +37122,30 @@ function WSAConnect(s: TSOCKET; name: PSockAddr; namelen: int32_t; lpcallerdata,
 begin
  {}
  Result:=Winsock2.WSAConnect(s,name,namelen,lpcallerdata,lpcalleedata,lpsqos,lpgqos);
+end;
+
+{==============================================================================}
+
+function WSAConnectByList(s: TSOCKET; socketaddresslist: PSOCKET_ADDRESS_LIST; var localaddresslength: uint32_t; localaddress: PSockAddr; var remoteaddresslength: uint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall;
+begin
+ {}
+ Result:=Winsock2.WSAConnectByList(s,socketaddresslist,localaddresslength,localaddress,remoteaddresslength,remoteaddress,timeout,reserved);
+end;
+
+{==============================================================================}
+
+function WSAConnectByNameA(s: TSOCKET; nodename: PCHAR; servicename: PCHAR; var localaddresslength: uint32_t; localaddress: PSockAddr; var remoteaddresslength: uint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall;
+begin
+ {}
+ Result:=Winsock2.WSAConnectByNameA(s,nodename,servicename,localaddresslength,localaddress,remoteaddresslength,remoteaddress,timeout,reserved);
+end;
+
+{==============================================================================}
+
+function WSAConnectByNameW(s: TSOCKET; nodename: PWCHAR; servicename: PWCHAR; var localaddresslength: uint32_t; localaddress: PSockAddr; var remoteaddresslength: uint32_t; remoteaddress: PSockAddr; timeout: PTimeVal; reserved: LPWSAOVERLAPPED): BOOL; stdcall;
+begin
+ {}
+ Result:=Winsock2.WSAConnectByNameW(s,nodename,servicename,localaddresslength,localaddress,remoteaddresslength,remoteaddress,timeout,reserved);
 end;
 
 {==============================================================================}
@@ -37061,7 +37206,7 @@ end;
 
 {==============================================================================}
 
-function WSAGetOverlappedResult(s: TSOCKET; lpoverlapped: LPWSAOVERLAPPED; lpcbtransfer: LPDWORD; fwait: BOOL; var lpdwflags: uint32_t): WordBool; stdcall;
+function WSAGetOverlappedResult(s: TSOCKET; lpoverlapped: LPWSAOVERLAPPED; lpcbtransfer: LPDWORD; fwait: BOOL; var lpdwflags: uint32_t): BOOL; stdcall;
 begin
  {}
  Result:=Winsock2.WSAGetOverlappedResult(s,lpoverlapped,lpcbtransfer,fwait,lpdwflags);
@@ -37069,7 +37214,7 @@ end;
 
 {==============================================================================}
 
-function WSAGetQosByName(s: TSOCKET; lpqosname: LPWSABUF; lpqos: LPQOS): WordBool; stdcall;
+function WSAGetQosByName(s: TSOCKET; lpqosname: LPWSABUF; lpqos: LPQOS): BOOL; stdcall;
 begin
  {}
  Result:=Winsock2.WSAGetQosByName(s,lpqosname,lpqos);
@@ -37077,18 +37222,18 @@ end;
 
 {==============================================================================}
 
-function WSAhtonl(s: TSOCKET; hostlong: u_long; var lpnetlong: uint32_t): int32_t; stdcall;
+function WSAHtonl(s: TSOCKET; hostlong: u_long; var lpnetlong: uint32_t): int32_t; stdcall;
 begin
  {}
- Result:=Winsock2.WSAhtonl(s,hostlong,lpnetlong);
+ Result:=Winsock2.WSAHtonl(s,hostlong,lpnetlong);
 end;
 
 {==============================================================================}
 
-function WSAhtons(s: TSOCKET; hostshort: u_short; var lpnetshort: uint16_t): int32_t; stdcall;
+function WSAHtons(s: TSOCKET; hostshort: u_short; var lpnetshort: uint16_t): int32_t; stdcall;
 begin
  {}
- Result:=Winsock2.WSAhtons(s,hostshort,lpnetshort);
+ Result:=Winsock2.WSAHtons(s,hostshort,lpnetshort);
 end;
 
 {==============================================================================}
@@ -37125,6 +37270,22 @@ end;
 
 {==============================================================================}
 
+function WSAPoll(fdarray: LPWSAPOLLFD; fds: ULONG; timeout: int32_t): int32_t; stdcall;
+begin
+ {}
+ Result:=Winsock2.WSAPoll(fdarray,fds,timeout);
+end;
+
+{==============================================================================}
+
+function WSAProviderConfigChange(var lpnotificationhandle: THANDLE; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
+begin
+ {}
+ Result:=Winsock2.WSAProviderConfigChange(lpnotificationhandle,lpoverlapped,lpcompletionroutine);
+end;
+
+{==============================================================================}
+
 function WSARecv(s: TSOCKET; lpbuffers: LPWSABUF; dwbuffercount: uint32_t; var lpnumberofbytesrecvd: uint32_t; var lpflags: uint32_t; lpoverlapped: LPWSAOVERLAPPED; lpcompletionroutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): int32_t; stdcall;
 begin
  {}
@@ -37157,7 +37318,7 @@ end;
 
 {==============================================================================}
 
-function WSAResetEvent(hevent: WSAEVENT): WordBool; stdcall;
+function WSAResetEvent(hevent: WSAEVENT): BOOL; stdcall;
 begin
  {}
  Result:=Winsock2.WSAResetEvent(hevent);
@@ -37197,7 +37358,7 @@ end;
 
 {==============================================================================}
 
-function WSASetEvent(hevent: WSAEVENT): WordBool; stdcall;
+function WSASetEvent(hevent: WSAEVENT): BOOL; stdcall;
 begin
  {}
  Result:=Winsock2.WSASetEvent(hevent);
@@ -37221,7 +37382,7 @@ end;
 
 {==============================================================================}
 
-function WSAWaitForMultipleEvents(cevents: uint32_t; lphevents: PWSAEVENT; fwaitall: LONGBOOL; dwtimeout: uint32_t; falertable: LONGBOOL): uint32_t; stdcall;
+function WSAWaitForMultipleEvents(cevents: uint32_t; lphevents: PWSAEVENT; fwaitall: BOOL; dwtimeout: uint32_t; falertable: BOOL): uint32_t; stdcall;
 begin
  {}
  Result:=Winsock2.WSAWaitForMultipleEvents(cevents,lphevents,fwaitall,dwtimeout,falertable);
@@ -39789,6 +39950,7 @@ end;
 {==============================================================================}
 {GUID Functions (Ultibo)}
 function CreateGUID: TGUID; stdcall;
+{Create a new GUID}
 {GUID has the following format DWORD-WORD-WORD-WORD-WORDDWORD }
 {                                             | Not Swapped  |}
 begin
@@ -39799,6 +39961,7 @@ end;
 {==============================================================================}
 
 function GUIDToString(const value: TGUID; _string: PCHAR; len: uint32_t): uint32_t; stdcall;
+{Convert a TGUID to a string representation}
 begin
  {}
  Result:=APIStringToPCharBuffer(Ultibo.GUIDToString(value),_string,len);
@@ -39807,6 +39970,7 @@ end;
 {==============================================================================}
 
 function StringToGUID(const value: PCHAR): TGUID; stdcall;
+{Convert a string to a native TGUID type}
 begin
  {}
  Result:=Ultibo.StringToGUID(String(value));
@@ -39815,6 +39979,7 @@ end;
 {==============================================================================}
 
 function NullGUID(const guid: TGUID): BOOL; stdcall;
+{Check if a TGUID is empty (All zeroes)}
 begin
  {}
  Result:=Ultibo.NullGUID(guid);
@@ -39823,6 +39988,7 @@ end;
 {==============================================================================}
 
 function CompareGUID(const guid1, guid2: TGUID): BOOL; stdcall;
+{Check whether two TGUID variables are equal}
 begin
  {}
  Result:=Ultibo.CompareGUID(guid1,guid2);

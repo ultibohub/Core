@@ -1,7 +1,7 @@
 {
 Generic I2C LCD Driver.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -108,13 +108,13 @@ var
 {Initialization Functions}
 procedure I2CLCDInit;
 
-function I2CLCDStart(const Device:String;Address:Word;Width,Height:LongWord):THandle;
-function I2CLCDStop(Handle:THandle):Boolean;
+function I2CLCDStart(const Device:String;Address:Word;Width,Height:LongWord):THandle;{$IFDEF API_EXPORT_I2CLCD} stdcall; public name 'i2clcd_start';{$ENDIF}
+function I2CLCDStop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_I2CLCD} stdcall; public name 'i2clcd_stop';{$ENDIF}
 
 {==============================================================================}
 {I2CLCD Functions}
-function I2CLCDBacklightOn(Handle:THandle):Boolean;
-function I2CLCDBacklightOff(Handle:THandle):Boolean;
+function I2CLCDBacklightOn(Handle:THandle):Boolean;{$IFDEF API_EXPORT_I2CLCD} stdcall; public name 'i2clcd_backlight_on';{$ENDIF}
+function I2CLCDBacklightOff(Handle:THandle):Boolean;{$IFDEF API_EXPORT_I2CLCD} stdcall; public name 'i2clcd_backlight_off';{$ENDIF}
 
 {==============================================================================}
 {I2CLCD Helper Functions}
@@ -179,7 +179,7 @@ end;
 
 {==============================================================================}
 
-function I2CLCDStart(const Device:String;Address:Word;Width,Height:LongWord):THandle;
+function I2CLCDStart(const Device:String;Address:Word;Width,Height:LongWord):THandle;{$IFDEF API_EXPORT_I2CLCD} stdcall;{$ENDIF}
 {Start the I2CLCD driver and register the GPIO and Console devices associated with the display}
 {Device: The I2C device that the PCF8574 I/O Expander on the display is connected to}
 {Address: The I2C address of the PCF8574 I/O Expander on the display}
@@ -259,7 +259,7 @@ end;
 
 {==============================================================================}
 
-function I2CLCDStop(Handle:THandle):Boolean;
+function I2CLCDStop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_I2CLCD} stdcall;{$ENDIF}
 {Stop the I2CLCD driver and deregister the GPIO and Console devices associated with the display}
 {Handle: The handle of the I2CLCD or INVALID_HANDLE_VALUE for the default display}
 {Return: True if completed or False on failure}
@@ -319,7 +319,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {I2CLCD Functions}
-function I2CLCDBacklightOn(Handle:THandle):Boolean;
+function I2CLCDBacklightOn(Handle:THandle):Boolean;{$IFDEF API_EXPORT_I2CLCD} stdcall;{$ENDIF}
 {Turn on the backlight on the I2CLCD display}
 {Handle: The handle of the I2CLCD or INVALID_HANDLE_VALUE for the default display}
 {Return: True if completed or False on failure}
@@ -346,7 +346,7 @@ end;
 
 {==============================================================================}
 
-function I2CLCDBacklightOff(Handle:THandle):Boolean;
+function I2CLCDBacklightOff(Handle:THandle):Boolean;{$IFDEF API_EXPORT_I2CLCD} stdcall;{$ENDIF}
 {Turn off the backlight on the I2CLCD display}
 {Handle: The handle of the I2CLCD or INVALID_HANDLE_VALUE for the default display}
 {Return: True if completed or False on failure}

@@ -94,6 +94,10 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,L
 {$INCLUDE GlobalDefines.inc}
 
 {==============================================================================}
+{Local definitions}
+{--$DEFINE ULTIBO_USE_SYSUTILS_GUID}  {Use the GUID functions from SysUtils instead of the built it functions (Default: Off)}
+
+{==============================================================================}
 {Compatibility constants}
 const
  {64bit Constants}
@@ -1552,8 +1556,8 @@ procedure SetLastError(dwErrCode:DWORD); inline;
 
 {==============================================================================}
 {GUID Functions (Ultibo)}
-function CreateGUID:TGUID; //To Do //There is some GUID functionality in the System unit, check, confirm and remove/restructure
-function GUIDToString(const Value:TGUID):String;
+function CreateGUID:TGUID;
+function GUIDToString(const Value:TGUID;Braces:Boolean = False):String;
 function StringToGUID(const Value:String):TGUID;
 function NullGUID(const GUID:TGUID):Boolean;
 function CompareGUID(const GUID1,GUID2:TGUID):Boolean;
@@ -5833,13 +5837,20 @@ end;
 {==============================================================================}
 {GUID Functions (Ultibo)}
 function CreateGUID:TGUID;
+{Create a new GUID}
 {GUID has the following format DWORD-WORD-WORD-WORD-WORDDWORD }
 {                                             | Not Swapped  |}
+{$IFDEF ULTIBO_USE_SYSUTILS_GUID}
+begin
+ {}
+ SysUtils.CreateGUID(Result);
+end;
+{$ELSE}
 var
  Count:Integer;
 begin
  {}
- FillChar(Result,SizeOf(TGUID),0);
+ {FillChar(Result,SizeOf(TGUID),0);} {Not required}
 
  if not GUIDRandomized then
   begin
@@ -5847,27 +5858,62 @@ begin
    GUIDRandomized:=True;
   end;
 
+ {Generate Random Bytes}
  for Count:=0 to SizeOf(TGUID) - 1 do
   begin
    Byte(Pointer(PtrUInt(@Result) + LongWord(Count))^):=Random(256);
   end;
-end;
 
+ {Set Version (Version 4 Random - RFC 9562)}
+ Result.D3:=(Result.D3 and $0FFF) or $4000;
+
+ {Set Variant (Variant 8/9/A/B - RFC 9562)}
+ Result.D4[0]:=(Result.D4[0] and $3F) or $80;
+end;
+{$ENDIF}
 {==============================================================================}
 
-function GUIDToString(const Value:TGUID):String;
+function GUIDToString(const Value:TGUID;Braces:Boolean = False):String;
+{Convert a TGUID to a string representation}
+var
+ Len:Integer;
+ Format:String;
 begin
  {}
- Result:='';
+ {$IFDEF ULTIBO_USE_SYSUTILS_GUID}
+ if Braces then
+  begin
+   Result:=SysUtils.GUIDToString(Value);
+   Exit;
+  end; 
+ {$ENDIF}
 
- SetLength(Result,36);
- StrLFmt(PChar(Result),36,'%.8x-%.4x-%.4x-%.2x%.2x-%.2x%.2x%.2x%.2x%.2x%.2x',[Value.D1,Value.D2,Value.D3,Value.D4[0],Value.D4[1],Value.D4[2],Value.D4[3],Value.D4[4],Value.D4[5],Value.D4[6],Value.D4[7]]);
+ {Set Length and Format}
+ Len:=36;
+ Format:='%.8x-%.4x-%.4x-%.2x%.2x-%.2x%.2x%.2x%.2x%.2x%.2x';
+
+ {Check Braces}
+ if Braces then
+  begin
+   Len:=38;
+   Format:='{' + Format + '}';
+  end;
+
+ {Create String}
+ SetLength(Result,Len);
+ StrLFmt(PChar(Result),Len,PChar(Format),[Value.D1,Value.D2,Value.D3,Value.D4[0],Value.D4[1],Value.D4[2],Value.D4[3],Value.D4[4],Value.D4[5],Value.D4[6],Value.D4[7]]);
 end;
 
 {==============================================================================}
 
 function StringToGUID(const Value:String):TGUID;
-
+{Convert a string to a native TGUID type}
+{$IFDEF ULTIBO_USE_SYSUTILS_GUID}
+begin
+ {}
+ Result:=SysUtils.StringToGUID(Value);
+end;
+{$ELSE}
  function HexChar(Value:Char):Byte;
  begin
   {}
@@ -5952,24 +5998,35 @@ begin
    Inc(Source,2);
   end;
 end;
-
+{$ENDIF}
 {==============================================================================}
 
 function NullGUID(const GUID:TGUID):Boolean;
+{Check if a TGUID is empty (All zeroes)}
 var
  Value:TGUID;
 begin
  {}
  FillChar(Value,SizeOf(TGUID),0);
+ 
+ {$IFDEF ULTIBO_USE_SYSUTILS_GUID}
+ Result:=SysUtils.IsEqualGUID(GUID,Value);
+ {$ELSE}
  Result:=CompareMem(@GUID,@Value,SizeOf(TGUID));
+ {$ENDIF}
 end;
 
 {==============================================================================}
 
 function CompareGUID(const GUID1,GUID2:TGUID):Boolean;
+{Check whether two TGUID variables are equal}
 begin
  {}
+ {$IFDEF ULTIBO_USE_SYSUTILS_GUID}
+ Result:=SysUtils.IsEqualGUID(GUID1,GUID2);
+ {$ELSE}
  Result:=CompareMem(@GUID1,@GUID2,SizeOf(TGUID));
+ {$ENDIF}
 end;
 
 {==============================================================================}
@@ -6767,6 +6824,7 @@ begin
   SEMAPHORE_SIGNATURE:Result:=(Threads.SemaphoreDestroy(hObject) = ERROR_SUCCESS);
   SYNCHRONIZER_SIGNATURE:Result:=(Threads.SynchronizerDestroy(hObject) = ERROR_SUCCESS);
   CONDITION_SIGNATURE:Result:=(Threads.ConditionDestroy(hObject) = ERROR_SUCCESS);
+  COMPLETION_SIGNATURE:Result:=(Threads.CompletionDestroy(hObject) = ERROR_SUCCESS);
   THREAD_SIGNATURE:Result:=True; {No action for Threads}
   MESSAGESLOT_SIGNATURE:Result:=(Threads.MessageslotDestroy(hObject) = ERROR_SUCCESS);
   MAILSLOT_SIGNATURE:Result:=(Threads.MailslotDestroy(hObject) = ERROR_SUCCESS);

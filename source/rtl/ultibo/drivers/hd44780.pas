@@ -1,7 +1,7 @@
 {
 Hitachi HD44780 LCD controller Driver.
 
-Copyright (C) 2016 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -149,8 +149,8 @@ type
  
 {==============================================================================}
 {HD44780 Functions}
-function HD44780ConsoleCreate(GPIO:PGPIODevice;const Name:String;Width,Height,RS,RW,EN,D4,D5,D6,D7:LongWord):PConsoleDevice;
-function HD44780ConsoleDestroy(Console:PConsoleDevice):LongWord;
+function HD44780ConsoleCreate(GPIO:PGPIODevice;const Name:String;Width,Height,RS,RW,EN,D4,D5,D6,D7:LongWord):PConsoleDevice;{$IFDEF API_EXPORT_HD44780} stdcall; public name 'hd44780_console_create';{$ENDIF}
+function HD44780ConsoleDestroy(Console:PConsoleDevice):LongWord;{$IFDEF API_EXPORT_HD44780} stdcall; public name 'hd44780_console_destroy';{$ENDIF}
 
 {==============================================================================}
 {HD44780 Console Functions}
@@ -203,7 +203,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {HD44780 Functions}
-function HD44780ConsoleCreate(GPIO:PGPIODevice;const Name:String;Width,Height,RS,RW,EN,D4,D5,D6,D7:LongWord):PConsoleDevice;
+function HD44780ConsoleCreate(GPIO:PGPIODevice;const Name:String;Width,Height,RS,RW,EN,D4,D5,D6,D7:LongWord):PConsoleDevice;{$IFDEF API_EXPORT_HD44780} stdcall;{$ENDIF}
 var
  Status:LongWord;
 
@@ -318,7 +318,7 @@ end;
  
 {==============================================================================}
  
-function HD44780ConsoleDestroy(Console:PConsoleDevice):LongWord;
+function HD44780ConsoleDestroy(Console:PConsoleDevice):LongWord;{$IFDEF API_EXPORT_HD44780} stdcall;{$ENDIF}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;

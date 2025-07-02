@@ -1,7 +1,7 @@
 {
 Sitronix ST77XX TFT LCD Driver.
 
-Copyright (C) 2023 - Nabil EL MAHIRI.
+Copyright (C) 2025 - Nabil EL MAHIRI.
 
 Arch
 ====
@@ -194,9 +194,9 @@ type
 
 {==============================================================================}
 {ST77XX Functions}
-function ST77XXFramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Width,Height,ColStart:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
+function ST77XXFramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Width,Height,ColStart:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;{$IFDEF API_EXPORT_ST77XX} stdcall; public name 'st77xx_framebuffer_create';{$ENDIF}
 
-function ST77XXFramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;
+function ST77XXFramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;{$IFDEF API_EXPORT_ST77XX} stdcall; public name 'st77xx_framebuffer_destroy';{$ENDIF}
 
 {==============================================================================}
 {ST77XX Framebuffer Functions}
@@ -240,7 +240,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {ST77XX Functions}
-function ST77XXFramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Width,Height,ColStart:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;
+function ST77XXFramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Width,Height,ColStart:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;{$IFDEF API_EXPORT_ST77XX} stdcall;{$ENDIF}
 {Create, register and allocate a new ST77XX Framebuffer device which can be accessed using the framebuffer API}
 {SPI: The SPI device that this ST77XX is connected to}
 {ChipSelect: The SPI chip select to use when communicating with this device}
@@ -403,7 +403,7 @@ end;
 
 {==============================================================================}
 
-function ST77XXFramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;
+function ST77XXFramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;{$IFDEF API_EXPORT_ST77XX} stdcall;{$ENDIF}
 {Release, deregister and destroy an ST77XX Framebuffer device created by this driver}
 {Framebuffer: The Framebuffer device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

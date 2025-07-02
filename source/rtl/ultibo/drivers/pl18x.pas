@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL180/181 Multimedia Card Interface Driver.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -380,10 +380,10 @@ procedure PL18XInit;
  
 {==============================================================================}
 {PL18X Functions}
-function PL180SDHCICreate(Address:PtrUInt;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect = nil;WriteProtect:TMMCDeviceGetWriteProtect = nil):PSDHCIHost;
-function PL181SDHCICreate(Address:PtrUInt;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect = nil;WriteProtect:TMMCDeviceGetWriteProtect = nil):PSDHCIHost;
+function PL180SDHCICreate(Address:PtrUInt;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect = nil;WriteProtect:TMMCDeviceGetWriteProtect = nil):PSDHCIHost;{$IFDEF API_EXPORT_PL18X} stdcall; public name 'pl180sdhci_create';{$ENDIF}
+function PL181SDHCICreate(Address:PtrUInt;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect = nil;WriteProtect:TMMCDeviceGetWriteProtect = nil):PSDHCIHost;{$IFDEF API_EXPORT_PL18X} stdcall; public name 'pl181sdhci_create';{$ENDIF}
 
-function PL18XSDHCIDestroy(SDHCI:PSDHCIHost):LongWord;
+function PL18XSDHCIDestroy(SDHCI:PSDHCIHost):LongWord;{$IFDEF API_EXPORT_PL18X} stdcall; public name 'pl18xsdhci_destroy';{$ENDIF}
 
 {==============================================================================}
 {PL18X MMC Functions}
@@ -597,7 +597,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {PL18X Functions}
-function PL180SDHCICreate(Address:PtrUInt;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect;WriteProtect:TMMCDeviceGetWriteProtect):PSDHCIHost;
+function PL180SDHCICreate(Address:PtrUInt;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect;WriteProtect:TMMCDeviceGetWriteProtect):PSDHCIHost;{$IFDEF API_EXPORT_PL18X} stdcall;{$ENDIF}
 {Create and register a new PL180 SDHCI device which can be accessed using the SDHCI API}
 {Address: The address of the PL180 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -707,7 +707,7 @@ end;
 
 {==============================================================================}
 
-function PL181SDHCICreate(Address:PtrUInt;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect;WriteProtect:TMMCDeviceGetWriteProtect):PSDHCIHost;
+function PL181SDHCICreate(Address:PtrUInt;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect;WriteProtect:TMMCDeviceGetWriteProtect):PSDHCIHost;{$IFDEF API_EXPORT_PL18X} stdcall;{$ENDIF}
 {Create and register a new PL181 SDHCI device which can be accessed using the SDHCI API}
 {Address: The address of the PL181 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -817,7 +817,7 @@ end;
 
 {==============================================================================}
 
-function PL18XSDHCIDestroy(SDHCI:PSDHCIHost):LongWord;
+function PL18XSDHCIDestroy(SDHCI:PSDHCIHost):LongWord;{$IFDEF API_EXPORT_PL18X} stdcall;{$ENDIF}
 {Stop, deregister and destroy a PL18X SDHCI device created by this driver}
 {SDHCI: The SDHCI device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

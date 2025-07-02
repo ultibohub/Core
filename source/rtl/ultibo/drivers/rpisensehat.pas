@@ -1,7 +1,7 @@
 {
 Raspberry Pi Sense HAT Driver.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -197,8 +197,8 @@ var
 {Initialization Functions}
 procedure RPiSenseInit;
  
-function RPiSenseStart(const I2CDevice,GPIODevice:String;Rotation,Width,Height:LongWord):THandle;
-function RPiSenseStop(Handle:THandle):Boolean;
+function RPiSenseStart(const I2CDevice,GPIODevice:String;Rotation,Width,Height:LongWord):THandle;{$IFDEF API_EXPORT_RPISENSEHAT} stdcall; public name 'rpisense_start';{$ENDIF}
+function RPiSenseStop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_RPISENSEHAT} stdcall; public name 'rpisense_stop';{$ENDIF}
  
 {==============================================================================}
 {RPiSenseHat Functions}
@@ -320,7 +320,7 @@ end;
 
 {==============================================================================}
 
-function RPiSenseStart(const I2CDevice,GPIODevice:String;Rotation,Width,Height:LongWord):THandle;
+function RPiSenseStart(const I2CDevice,GPIODevice:String;Rotation,Width,Height:LongWord):THandle;{$IFDEF API_EXPORT_RPISENSEHAT} stdcall;{$ENDIF}
 {Start the RPiSenseHat driver and register the Framebuffer and Joystick devices}
 {I2C: The name of the I2C device that the Sense HAT is connected to}
 {GPIO: The name of the GPIO device that the Sense HAT is connected to}
@@ -427,7 +427,7 @@ end;
 
 {==============================================================================}
 
-function RPiSenseStop(Handle:THandle):Boolean;
+function RPiSenseStop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_RPISENSEHAT} stdcall;{$ENDIF}
 {Stop the RPiSenseHat driver and deregister the Framebuffer and Joystick devices}
 {Handle: The handle of the RPiSenseHat or INVALID_HANDLE_VALUE for the default}
 {Return: True if completed or False on failure}

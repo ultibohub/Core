@@ -1,7 +1,7 @@
 {
 ST Microelectronics STMPE Driver.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -792,23 +792,23 @@ var
  
 {==============================================================================}
 {Initialization Functions}
-procedure STMPEInit;
+procedure STMPEInit;{$IFDEF API_EXPORT_STMPE} stdcall; public name 'stmpe_init';{$ENDIF}
  
 {==============================================================================}
 {STMPE Functions}
-function STMPE610GPIOCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;IRQ:PGPIOInfo):PGPIODevice;
-function STMPE801GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;
-function STMPE811GPIOCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;IRQ:PGPIOInfo):PGPIODevice;
-function STMPE1601GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;
-function STMPE1801GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;
-function STMPE2401GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;
+function STMPE610GPIOCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;IRQ:PGPIOInfo):PGPIODevice;{$IFDEF API_EXPORT_STMPE} stdcall; public name 'stmpe610_gpio_create';{$ENDIF}
+function STMPE801GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;{$IFDEF API_EXPORT_STMPE} stdcall; public name 'stmpe801_gpio_create';{$ENDIF}
+function STMPE811GPIOCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;IRQ:PGPIOInfo):PGPIODevice;{$IFDEF API_EXPORT_STMPE} stdcall; public name 'stmpe811_gpio_create';{$ENDIF}
+function STMPE1601GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;{$IFDEF API_EXPORT_STMPE} stdcall; public name 'stmpe1601_gpio_create';{$ENDIF}
+function STMPE1801GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;{$IFDEF API_EXPORT_STMPE} stdcall; public name 'stmpe1801_gpio_create';{$ENDIF}
+function STMPE2401GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;{$IFDEF API_EXPORT_STMPE} stdcall; public name 'stmpe2401_gpio_create';{$ENDIF}
 
-function STMPEGPIODestroy(GPIO:PGPIODevice):LongWord;
+function STMPEGPIODestroy(GPIO:PGPIODevice):LongWord;{$IFDEF API_EXPORT_STMPE} stdcall; public name 'stmpe_gpio_destroy';{$ENDIF}
 
-function STMPE610TouchCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;Width,Height:LongWord;IRQ:PGPIOInfo):PTouchDevice;
-function STMPE811TouchCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;Width,Height:LongWord;IRQ:PGPIOInfo):PTouchDevice;
+function STMPE610TouchCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;Width,Height:LongWord;IRQ:PGPIOInfo):PTouchDevice;{$IFDEF API_EXPORT_STMPE} stdcall; public name 'stmpe610_touch_create';{$ENDIF}
+function STMPE811TouchCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;Width,Height:LongWord;IRQ:PGPIOInfo):PTouchDevice;{$IFDEF API_EXPORT_STMPE} stdcall; public name 'stmpe811_touch_create';{$ENDIF}
 
-function STMPETouchDestroy(Touch:PTouchDevice):LongWord;
+function STMPETouchDestroy(Touch:PTouchDevice):LongWord;{$IFDEF API_EXPORT_STMPE} stdcall; public name 'stmpe_touch_destroy';{$ENDIF}
 
 {==============================================================================}
 {STMPE GPIO Functions}
@@ -872,7 +872,7 @@ function STMPETouchUpdateConfig(Touch:PSTMPETouch):LongWord; forward;
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
-procedure STMPEInit;
+procedure STMPEInit;{$IFDEF API_EXPORT_STMPE} stdcall;{$ENDIF}
 {Initialize the STMPE unit and parameters}
 
 {Note: Called internally by other functions}
@@ -926,7 +926,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {STMPE Functions}
-function STMPE610GPIOCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;IRQ:PGPIOInfo):PGPIODevice;
+function STMPE610GPIOCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;IRQ:PGPIOInfo):PGPIODevice;{$IFDEF API_EXPORT_STMPE} stdcall;{$ENDIF}
 {Create, register and start a new STMPE610 GPIO device connected to the specified I2C or SPI device}
 {I2C: The I2C device this STMPE610 is connected to (Optional)}
 {SPI: The SPI device this STMPE610 is connected to (Optional)}
@@ -1043,7 +1043,7 @@ end;
 
 {==============================================================================}
 
-function STMPE801GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;
+function STMPE801GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;{$IFDEF API_EXPORT_STMPE} stdcall;{$ENDIF}
 {Create, register and start a new STMPE801 GPIO device connected to the specified I2C device}
 {I2C: The I2C device this STMPE801 is connected to}
 {Address: The I2C address for this STMPE801}
@@ -1151,7 +1151,7 @@ end;
 
 {==============================================================================}
 
-function STMPE811GPIOCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;IRQ:PGPIOInfo):PGPIODevice;
+function STMPE811GPIOCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;IRQ:PGPIOInfo):PGPIODevice;{$IFDEF API_EXPORT_STMPE} stdcall;{$ENDIF}
 {Create, register and start a new STMPE811 GPIO device connected to the specified I2C or SPI device}
 {I2C: The I2C device this STMPE811 is connected to (Optional)}
 {SPI: The SPI device this STMPE811 is connected to (Optional)}
@@ -1268,7 +1268,7 @@ end;
 
 {==============================================================================}
 
-function STMPE1601GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;
+function STMPE1601GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;{$IFDEF API_EXPORT_STMPE} stdcall;{$ENDIF}
 {Create, register and start a new STMPE1601 GPIO device connected to the specified I2C device}
 {I2C: The I2C device this STMPE1601 is connected to}
 {Address: The I2C address for this STMPE1601}
@@ -1376,7 +1376,7 @@ end;
 
 {==============================================================================}
 
-function STMPE1801GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;
+function STMPE1801GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;{$IFDEF API_EXPORT_STMPE} stdcall;{$ENDIF}
 {Create, register and start a new STMPE1801 GPIO device connected to the specified I2C device}
 {I2C: The I2C device this STMPE1801 is connected to}
 {Address: The I2C address for this STMPE1801}
@@ -1484,7 +1484,7 @@ end;
 
 {==============================================================================}
 
-function STMPE2401GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;
+function STMPE2401GPIOCreate(I2C:PI2CDevice;Address:Word;IRQ:PGPIOInfo):PGPIODevice;{$IFDEF API_EXPORT_STMPE} stdcall;{$ENDIF}
 {Create, register and start a new STMPE2401 GPIO device connected to the specified I2C device}
 {I2C: The I2C device this STMPE2401 is connected to}
 {Address: The I2C address for this STMPE2401}
@@ -1592,7 +1592,7 @@ end;
 
 {==============================================================================}
 
-function STMPEGPIODestroy(GPIO:PGPIODevice):LongWord;
+function STMPEGPIODestroy(GPIO:PGPIODevice):LongWord;{$IFDEF API_EXPORT_STMPE} stdcall;{$ENDIF}
 {Stop, deregister and destroy an STMPE GPIO device created by this driver}
 {GPIO: The GPIO device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -1635,7 +1635,7 @@ end;
 
 {==============================================================================}
 
-function STMPE610TouchCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;Width,Height:LongWord;IRQ:PGPIOInfo):PTouchDevice;
+function STMPE610TouchCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;Width,Height:LongWord;IRQ:PGPIOInfo):PTouchDevice;{$IFDEF API_EXPORT_STMPE} stdcall;{$ENDIF}
 {Create, register and start a new STMPE610 Touch device connected to the specified I2C or SPI device}
 {I2C: The I2C device this STMPE610 is connected to (Optional)}
 {SPI: The SPI device this STMPE610 is connected to (Optional)}
@@ -1759,7 +1759,7 @@ end;
 
 {==============================================================================}
 
-function STMPE811TouchCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;Width,Height:LongWord;IRQ:PGPIOInfo):PTouchDevice;
+function STMPE811TouchCreate(I2C:PI2CDevice;SPI:PSPIDevice;Address,ChipSelect:Word;Width,Height:LongWord;IRQ:PGPIOInfo):PTouchDevice;{$IFDEF API_EXPORT_STMPE} stdcall;{$ENDIF}
 {Create, register and start a new STMPE811 Touch device connected to the specified I2C or SPI device}
 {I2C: The I2C device this STMPE811 is connected to (Optional)}
 {SPI: The SPI device this STMPE811 is connected to (Optional)}
@@ -1883,7 +1883,7 @@ end;
 
 {==============================================================================}
 
-function STMPETouchDestroy(Touch:PTouchDevice):LongWord;
+function STMPETouchDestroy(Touch:PTouchDevice):LongWord;{$IFDEF API_EXPORT_STMPE} stdcall;{$ENDIF}
 {Stop, deregister and destroy an STMPE Touch device created by this driver}
 {Touch: The Touch device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

@@ -723,6 +723,27 @@ const
  RESULT_IS_ALIAS = $0001;
  
 const
+{ WSARecvMsg flags }
+ MSG_TRUNC     =  $0100;
+ MSG_CTRUNC    =  $0200;
+ MSG_BCAST     =  $0400;
+ MSG_MCAST     =  $0800;
+ 
+{ Event flag definitions for WSAPoll() }
+ POLLRDNORM = $0100;
+ POLLRDBAND = $0200;
+ POLLIN     = (POLLRDNORM or POLLRDBAND);
+ POLLPRI    = $0400;
+
+ POLLWRNORM = $0010;
+ POLLOUT    = (POLLWRNORM);
+ POLLWRBAND = $0020;
+
+ POLLERR    = $0001;
+ POLLHUP    = $0002;
+ POLLNVAL   = $0004;
+ 
+const
  {Error codes from getaddrinfo()}
  EAI_AGAIN    = GlobalSock.EAI_AGAIN;
  EAI_BADFLAGS = GlobalSock.EAI_BADFLAGS;
@@ -1011,6 +1032,7 @@ type
   iSockaddrLength : Longint;
  end {SOCKET_ADDRESS};
  PSOCKET_ADDRESS = ^SOCKET_ADDRESS;
+ LPSOCKET_ADDRESS = ^SOCKET_ADDRESS;
 
 { CSAddr Information }
  CSADDR_INFO = record
@@ -1018,6 +1040,14 @@ type
   iSocketType, iProtocol : LongInt;
  end {CSADDR_INFO};
  PCSADDR_INFO = ^CSADDR_INFO;
+ 
+{ Address list returned via SIO_ADDRESS_LIST_QUERY }
+ SOCKET_ADDRESS_LIST = record
+  iAddressCount: Longint;
+  Address: array [0..0] of SOCKET_ADDRESS;
+ end {SOCKET_ADDRESS_LIST};
+ PSOCKET_ADDRESS_LIST = ^SOCKET_ADDRESS_LIST;
+ LPSOCKET_ADDRESS_LIST = ^SOCKET_ADDRESS_LIST;
 
 { Address Family/Protocol Tuples }
  TAFProtocols = record
@@ -1093,6 +1123,16 @@ type
  LPWSAMSG = PWSAMSG;
 
 type
+ PWSAPOLLFD = ^TWSAPOLLFD;
+ TWSAPOLLFD = record
+  fd: TSocket;
+  events: short;
+  revents: short;
+ end;
+ WSAPOLLFD = TWSAPOLLFD;
+ LPWSAPOLLFD = PWSAPOLLFD;
+
+type
 { Service Address Registration and Deregistration Data Types. }
  TWSAeSetServiceOp = (RNRSERVICE_REGISTER{=0},RNRSERVICE_DEREGISTER,RNRSERVICE_DELETE);
 
@@ -1144,7 +1184,7 @@ type
  TWSANameSpace_InfoA = record
   NSProviderId: TGUID;
   dwNameSpace: LongInt;
-  fActive: LongInt{Bool};
+  fActive: BOOL;
   dwVersion: LongInt;
   lpszIdentifier: PChar;
  end {TWSANameSpace_InfoA};
@@ -1154,7 +1194,7 @@ type
  TWSANameSpace_InfoW = record
   NSProviderId: TGUID;
   dwNameSpace: LongInt;
-  fActive: LongInt{Bool};
+  fActive: BOOL;
   dwVersion: LongInt;
   lpszIdentifier: PWideChar;
  end {TWSANameSpace_InfoW};
@@ -2068,7 +2108,7 @@ function WSAAsyncGetHostByName(HWindow: HWND; wMsg: u_int; const name: PChar; bu
 function WSAAsyncGetHostByAddr(HWindow: HWND; wMsg: u_int; const addr: PChar; len, family: Longint; buf: PChar; buflen: Longint): THandle;
 function WSACancelAsyncRequest(hAsyncTaskHandle: THandle): Longint;
 function WSAAsyncSelect(s: TSocket; HWindow: HWND; wMsg: u_int; lEvent: Longint): Longint;
-function __WSAFDIsSet(s: TSOcket; var FDSet: TFDSet): Bool;
+function __WSAFDIsSet(s: TSOcket; var FDSet: TFDSet): BOOL;
 
 { WinSock 2 API new function prototypes }
 function inet_pton(Family: Longint; pszAddrString: PChar; pAddrBuf: Pointer): Longint;
@@ -2080,8 +2120,11 @@ function InetNtopA(Family: Longint; pAddr: Pointer; pStringBuf: PChar; StringBuf
 function InetNtopW(Family: Longint; pAddr: Pointer; pStringBuf: PWideChar; StringBufSize: Longint): PWideChar;
 
 function WSAAccept( s : TSocket; addr : TSockAddr; addrlen : PLongint; lpfnCondition : LPCONDITIONPROC; dwCallbackData : DWORD ): TSocket;
-function WSACloseEvent( hEvent : WSAEVENT) : WordBool;
+function WSACloseEvent( hEvent : WSAEVENT) : BOOL;
 function WSAConnect( s : TSocket; const name : PSockAddr; namelen : Longint; lpCallerData,lpCalleeData : LPWSABUF; lpSQOS,lpGQOS : LPQOS ) : Longint;
+function WSAConnectByList( s : TSocket; SocketAddressList : PSOCKET_ADDRESS_LIST; var LocalAddressLength : DWORD;  LocalAddress : PSockAddr; var RemoteAddressLength : DWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
+function WSAConnectByNameA( s : TSocket; nodename : PChar; servicename : PChar; var LocalAddressLength : DWORD; LocalAddress : PSockAddr; var RemoteAddressLength : DWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
+function WSAConnectByNameW( s : TSocket; nodename : PWideChar; servicename : PWideChar; var LocalAddressLength : DWORD; LocalAddress : PSockAddr; var RemoteAddressLength : DWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
 function WSACreateEvent : WSAEVENT; 
 function WSADuplicateSocketA( s : TSocket; dwProcessId : DWORD; lpProtocolInfo : LPWSAProtocol_InfoA ) : Longint;
 function WSADuplicateSocketW( s : TSocket; dwProcessId : DWORD; lpProtocolInfo : LPWSAProtocol_InfoW ) : Longint;
@@ -2089,28 +2132,30 @@ function WSAEnumNetworkEvents( const s : TSocket; const hEventObject : WSAEVENT;
 function WSAEnumProtocolsA( lpiProtocols : PLongint; lpProtocolBuffer : LPWSAProtocol_InfoA; var lpdwBufferLength : DWORD ) : Longint;
 function WSAEnumProtocolsW( lpiProtocols : PLongint; lpProtocolBuffer : LPWSAProtocol_InfoW; var lpdwBufferLength : DWORD ) : Longint;
 function WSAEventSelect( s : TSocket; hEventObject : WSAEVENT; lNetworkEvents : LongInt ): Longint;
-function WSAGetOverlappedResult( s : TSocket; lpOverlapped : LPWSAOVERLAPPED; lpcbTransfer : LPDWORD; fWait : BOOL; var lpdwFlags : DWORD ) : WordBool; 
-function WSAGetQosByName( s : TSocket; lpQOSName : LPWSABUF; lpQOS : LPQOS ): WordBool;
-function WSAhtonl( s : TSocket; hostlong : u_long; var lpnetlong : DWORD ): Longint; 
-function WSAhtons( s : TSocket; hostshort : u_short; var lpnetshort : WORD ): Longint;
+function WSAGetOverlappedResult( s : TSocket; lpOverlapped : LPWSAOVERLAPPED; lpcbTransfer : LPDWORD; fWait : BOOL; var lpdwFlags : DWORD ) : BOOL; 
+function WSAGetQosByName( s : TSocket; lpQOSName : LPWSABUF; lpQOS : LPQOS ): BOOL;
+function WSAHtonl( s : TSocket; hostlong : u_long; var lpnetlong : DWORD ): Longint; 
+function WSAHtons( s : TSocket; hostshort : u_short; var lpnetshort : WORD ): Longint;
 function WSAIoctl( s : TSocket; dwIoControlCode : DWORD; lpvInBuffer : Pointer; cbInBuffer : DWORD; lpvOutBuffer : Pointer; cbOutBuffer : DWORD; lpcbBytesReturned : LPDWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ) : Longint;
 function WSAJoinLeaf( s : TSocket; name : PSockAddr; namelen : Longint; lpCallerData,lpCalleeData : LPWSABUF; lpSQOS,lpGQOS : LPQOS; dwFlags : DWORD ) : TSocket;
 function WSANtohl( s : TSocket; netlong : u_long; var lphostlong : DWORD ): Longint;
 function WSANtohs( s : TSocket; netshort : u_short; var lphostshort : WORD ): Longint;
+function WSAPoll( fdArray : LPWSAPOLLFD; fds : ULONG; timeout : Longint): Longint;
+function WSAProviderConfigChange( var lpNotificationHandle: THandle; lpOverlapped: LPWSAOVERLAPPED; lpCompletionRoutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): Longint;
 function WSARecv( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesRecvd : DWORD; var lpFlags : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
 function WSARecvDisconnect( s : TSocket; lpInboundDisconnectData : LPWSABUF ): Longint;
 function WSARecvFrom( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesRecvd : DWORD; var lpFlags : DWORD; lpFrom : PSockAddr; lpFromlen : PLongint; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
-function WSARecvMsg( s : TSocket; lpMsg : LPWSAMSG; lpdwNumberOfBytesRecvd : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE) : Longint;
-function WSAResetEvent( hEvent : WSAEVENT ): WordBool;
+function WSARecvMsg( s : TSocket; lpMsg : LPWSAMSG; var lpdwNumberOfBytesRecvd : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE) : Longint;
+function WSAResetEvent( hEvent : WSAEVENT ): BOOL;
 function WSASend( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesSent : DWORD; dwFlags : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
 function WSASendDisconnect( s : TSocket; lpOutboundDisconnectData : LPWSABUF ): Longint;
 function WSASendTo( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesSent : DWORD; dwFlags : DWORD; lpTo : PSockAddr; iTolen : Longint; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
 function WSASendMsg( s : TSocket; lpMsg : LPWSAMSG; dwFlags : DWORD; lpNumberOfBytesSent : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE) : Longint;
-function WSASetEvent( hEvent : WSAEVENT ): WordBool;
+function WSASetEvent( hEvent : WSAEVENT ): BOOL;
 function WSASocketA( af, iType, protocol : Longint; lpProtocolInfo : LPWSAProtocol_InfoA; g : GROUP; dwFlags : DWORD ): TSocket;
 function WSASocketW( af, iType, protocol : Longint; lpProtocolInfo : LPWSAProtocol_InfoW; g : GROUP; dwFlags : DWORD ): TSocket;
 
-function WSAWaitForMultipleEvents( cEvents : DWORD; lphEvents : PWSAEVENT; fWaitAll : LongBool; dwTimeout : DWORD; fAlertable : LongBool ): DWORD;
+function WSAWaitForMultipleEvents( cEvents : DWORD; lphEvents : PWSAEVENT; fWaitAll : BOOL; dwTimeout : DWORD; fAlertable : BOOL ): DWORD;
 function WSAAddressToStringA( var lpsaAddress : TSockAddr; const dwAddressLength : DWORD; const lpProtocolInfo : LPWSAProtocol_InfoA; const lpszAddressString : PChar; var lpdwAddressStringLength : DWORD ): Longint;
 function WSAAddressToStringW( var lpsaAddress : TSockAddr; const dwAddressLength : DWORD; const lpProtocolInfo : LPWSAProtocol_InfoW; const lpszAddressString : PWideChar; var lpdwAddressStringLength : DWORD ): Longint; 
 
@@ -10824,7 +10869,7 @@ end;
 
 {==============================================================================}
 
-function __WSAFDIsSet(s: TSOcket; var FDSet: TFDSet): Bool;
+function __WSAFDIsSet(s: TSOcket; var FDSet: TFDSet): BOOL;
 begin
  {}
  Result:=FD_ISSET(s,FDSet);
@@ -11041,7 +11086,7 @@ end;
 
 {==============================================================================}
 
-function WSACloseEvent( hEvent : WSAEVENT) : WordBool;
+function WSACloseEvent( hEvent : WSAEVENT) : BOOL;
 begin
  {}
  {Not Implemented}
@@ -11056,6 +11101,36 @@ begin
  {}
  {Not Implemented}
  Result:=SOCKET_ERROR;
+ NetworkSetLastError(WSAEOPNOTSUPP);
+end;
+
+{==============================================================================}
+
+function WSAConnectByList( s : TSocket; SocketAddressList : PSOCKET_ADDRESS_LIST; var LocalAddressLength : DWORD;  LocalAddress : PSockAddr; var RemoteAddressLength : DWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
+begin
+ {}
+ {Not Implemented}
+ Result:=False;
+ NetworkSetLastError(WSAEOPNOTSUPP);
+end;
+
+{==============================================================================}
+
+function WSAConnectByNameA( s : TSocket; nodename : PChar; servicename : PChar; var LocalAddressLength : DWORD; LocalAddress : PSockAddr; var RemoteAddressLength : DWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
+begin
+ {}
+ {Not Implemented}
+ Result:=False;
+ NetworkSetLastError(WSAEOPNOTSUPP);
+end;
+
+{==============================================================================}
+
+function WSAConnectByNameW( s : TSocket; nodename : PWideChar; servicename : PWideChar; var LocalAddressLength : DWORD; LocalAddress : PSockAddr; var RemoteAddressLength : DWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
+begin
+ {}
+ {Not Implemented}
+ Result:=False;
  NetworkSetLastError(WSAEOPNOTSUPP);
 end;
 
@@ -11131,7 +11206,7 @@ end;
 
 {==============================================================================}
 
-function WSAGetOverlappedResult( s : TSocket; lpOverlapped : LPWSAOVERLAPPED; lpcbTransfer : LPDWORD; fWait : BOOL; var lpdwFlags : DWORD ) : WordBool; 
+function WSAGetOverlappedResult( s : TSocket; lpOverlapped : LPWSAOVERLAPPED; lpcbTransfer : LPDWORD; fWait : BOOL; var lpdwFlags : DWORD ) : BOOL; 
 begin
  {}
  {Not Implemented}
@@ -11141,7 +11216,7 @@ end;
 
 {==============================================================================}
 
-function WSAGetQosByName( s : TSocket; lpQOSName : LPWSABUF; lpQOS : LPQOS ): WordBool;
+function WSAGetQosByName( s : TSocket; lpQOSName : LPWSABUF; lpQOS : LPQOS ): BOOL;
 begin
  {}
  {Not Implemented}
@@ -11151,7 +11226,7 @@ end;
 
 {==============================================================================}
 
-function WSAhtonl( s : TSocket; hostlong : u_long; var lpnetlong : DWORD ): Longint; 
+function WSAHtonl( s : TSocket; hostlong : u_long; var lpnetlong : DWORD ): Longint; 
 var
  Socket:TProtocolSocket;
 begin
@@ -11196,7 +11271,7 @@ end;
 
 {==============================================================================}
 
-function WSAhtons( s : TSocket; hostshort : u_short; var lpnetshort : WORD ): Longint;
+function WSAHtons( s : TSocket; hostshort : u_short; var lpnetshort : WORD ): Longint;
 var
  Socket:TProtocolSocket;
 begin
@@ -11351,6 +11426,26 @@ end;
 
 {==============================================================================}
 
+function WSAPoll( fdArray : LPWSAPOLLFD; fds : ULONG; timeout : Longint): Longint;
+begin
+ {}
+ {Not Implemented}
+ Result:=SOCKET_ERROR;
+ NetworkSetLastError(WSAEOPNOTSUPP);
+end;
+
+{==============================================================================}
+
+function WSAProviderConfigChange( var lpNotificationHandle: THandle; lpOverlapped: LPWSAOVERLAPPED; lpCompletionRoutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): Longint;
+begin
+ {}
+ {Not Implemented}
+ Result:=SOCKET_ERROR;
+ NetworkSetLastError(WSAEOPNOTSUPP);
+end;
+
+{==============================================================================}
+
 function WSARecv( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesRecvd : DWORD; var lpFlags : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
 begin
  {}
@@ -11381,7 +11476,7 @@ end;
 
 {==============================================================================}
 
-function WSARecvMsg( s : TSocket; lpMsg : LPWSAMSG; lpdwNumberOfBytesRecvd : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE) : Longint;
+function WSARecvMsg( s : TSocket; lpMsg : LPWSAMSG; var lpdwNumberOfBytesRecvd : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE) : Longint;
 begin
  {}
  {Not Implemented}
@@ -11391,7 +11486,7 @@ end;
 
 {==============================================================================}
 
-function WSAResetEvent( hEvent : WSAEVENT ): WordBool;
+function WSAResetEvent( hEvent : WSAEVENT ): BOOL;
 begin
  {}
  {Not Implemented}
@@ -11441,7 +11536,7 @@ end;
 
 {==============================================================================}
 
-function WSASetEvent( hEvent : WSAEVENT ): WordBool;
+function WSASetEvent( hEvent : WSAEVENT ): BOOL;
 begin
  {}
  {Not Implemented}
@@ -11471,7 +11566,7 @@ end;
 
 {==============================================================================}
 
-function WSAWaitForMultipleEvents( cEvents : DWORD; lphEvents : PWSAEVENT; fWaitAll : LongBool; dwTimeout : DWORD; fAlertable : LongBool ): DWORD;
+function WSAWaitForMultipleEvents( cEvents : DWORD; lphEvents : PWSAEVENT; fWaitAll : BOOL; dwTimeout : DWORD; fAlertable : BOOL ): DWORD;
 begin
  {}
  {Not Implemented}

@@ -1,7 +1,7 @@
 {
 Microchip MCP230XX I/O expander Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -136,10 +136,10 @@ type
  
 {==============================================================================}
 {MCP230XX Functions}
-function MCP23008GPIOCreate(I2C:PI2CDevice;Address:Word):PGPIODevice;
-function MCP23017GPIOCreate(I2C:PI2CDevice;Address:Word):PGPIODevice;
+function MCP23008GPIOCreate(I2C:PI2CDevice;Address:Word):PGPIODevice;{$IFDEF API_EXPORT_MCP230XX} stdcall; public name 'mcp23008_gpio_create';{$ENDIF}
+function MCP23017GPIOCreate(I2C:PI2CDevice;Address:Word):PGPIODevice;{$IFDEF API_EXPORT_MCP230XX} stdcall; public name 'mcp23017_gpio_create';{$ENDIF}
 
-function MCP230XXGPIODestroy(GPIO:PGPIODevice):LongWord;
+function MCP230XXGPIODestroy(GPIO:PGPIODevice):LongWord;{$IFDEF API_EXPORT_MCP230XX} stdcall; public name 'mcp230xx_gpio_destroy';{$ENDIF}
 
 {==============================================================================}
 {MCP230XX GPIO Functions}
@@ -179,7 +179,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {MCP230XX Functions}
-function MCP23008GPIOCreate(I2C:PI2CDevice;Address:Word):PGPIODevice;
+function MCP23008GPIOCreate(I2C:PI2CDevice;Address:Word):PGPIODevice;{$IFDEF API_EXPORT_MCP230XX} stdcall;{$ENDIF}
 {Create, register and start a new MCP23008 GPIO device connected to the specified I2C device}
 {I2C: The I2C device this MCP23008 is connected to}
 {Address: The I2C address for this MCP23008}
@@ -281,7 +281,7 @@ end;
 
 {==============================================================================}
 
-function MCP23017GPIOCreate(I2C:PI2CDevice;Address:Word):PGPIODevice;
+function MCP23017GPIOCreate(I2C:PI2CDevice;Address:Word):PGPIODevice;{$IFDEF API_EXPORT_MCP230XX} stdcall;{$ENDIF}
 {Create, register and start a new MCP23017 GPIO device connected to the specified I2C device}
 {I2C: The I2C device this MCP23017 is connected to}
 {Address: The I2C address for this MCP23017}
@@ -383,7 +383,7 @@ end;
  
 {==============================================================================}
  
-function MCP230XXGPIODestroy(GPIO:PGPIODevice):LongWord;
+function MCP230XXGPIODestroy(GPIO:PGPIODevice):LongWord;{$IFDEF API_EXPORT_MCP230XX} stdcall;{$ENDIF}
 {Stop, deregister and destroy an MCP230XX GPIO device created by this driver}
 {GPIO: The GPIO device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

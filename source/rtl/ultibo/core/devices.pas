@@ -1,7 +1,7 @@
 {
 Ultibo Device interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -7694,7 +7694,7 @@ begin
  {}
  if RandomDeviceDefault = nil then Exit;
 
- RandomDeviceSeed(RandomDeviceDefault,ClockGetCount);
+ RandomDeviceSeed(RandomDeviceDefault,ClockGetTime + ClockGetCount);
 end;
 
 {==============================================================================}

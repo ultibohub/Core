@@ -1,7 +1,7 @@
 {
 ARM PrimeCell PL031 Real Time Clock Driver.
 
-Copyright (C) 2021 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -123,9 +123,9 @@ type
  
 {==============================================================================}
 {PL031 Functions}
-function PL031RTCCreate(Address:PtrUInt;const Name:String;IRQ:LongWord):PRTCDevice;
+function PL031RTCCreate(Address:PtrUInt;const Name:String;IRQ:LongWord):PRTCDevice;{$IFDEF API_EXPORT_PL031} stdcall; public name 'pl031_rtc_create';{$ENDIF}
 
-function PL031RTCDestroy(RTC:PRTCDevice):LongWord;
+function PL031RTCDestroy(RTC:PRTCDevice):LongWord;{$IFDEF API_EXPORT_PL031} stdcall; public name 'pl031_rtc_destroy';{$ENDIF}
 
 {==============================================================================}
 {PL031 RTC Functions}
@@ -157,7 +157,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {PL031 Functions}
-function PL031RTCCreate(Address:PtrUInt;const Name:String;IRQ:LongWord):PRTCDevice;
+function PL031RTCCreate(Address:PtrUInt;const Name:String;IRQ:LongWord):PRTCDevice;{$IFDEF API_EXPORT_PL031} stdcall;{$ENDIF}
 {Create, register and start a new PL031 RTC device which can be accessed using the RTC API}
 {Address: The address of the PL031 registers}
 {Name: The text description of this device which will show in the device list (Optional)}
@@ -238,7 +238,7 @@ end;
 
 {==============================================================================}
 
-function PL031RTCDestroy(RTC:PRTCDevice):LongWord;
+function PL031RTCDestroy(RTC:PRTCDevice):LongWord;{$IFDEF API_EXPORT_PL031} stdcall;{$ENDIF}
 {Stop, deregister and destroy a PL031 RTC device created by this driver}
 {RTC: The RTC device to destroy}
 {Return: ERROR_SUCCESS if completed or another error code on failure}

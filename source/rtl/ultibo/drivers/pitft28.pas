@@ -1,7 +1,7 @@
 {
 Adafruit PiTFT 2.8" LCD Driver.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -172,10 +172,10 @@ var
 {Initialization Functions}
 procedure PiTFT28Init;
 
-function PiTFT28Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle; inline;
-function PiTFT28ResistiveStart(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
-function PiTFT28CapacitiveStart(Rotation:LongWord;const SPIDevice,I2CDevice:String;DisplaySelect,TouchAddress:Word):THandle;
-function PiTFT28Stop(Handle:THandle):Boolean;
+function PiTFT28Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;{$IFDEF API_EXPORT_PITFT28} stdcall; public name 'pitft28_start';{$ENDIF}
+function PiTFT28ResistiveStart(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;{$IFDEF API_EXPORT_PITFT28} stdcall; public name 'pitft28_resistive_start';{$ENDIF}
+function PiTFT28CapacitiveStart(Rotation:LongWord;const SPIDevice,I2CDevice:String;DisplaySelect,TouchAddress:Word):THandle;{$IFDEF API_EXPORT_PITFT28} stdcall; public name 'pitft28_capacitive_start';{$ENDIF}
+function PiTFT28Stop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_PITFT28} stdcall; public name 'pitft28_stop';{$ENDIF}
 
 {==============================================================================}
 {PiTFT28 Functions}
@@ -259,7 +259,7 @@ end;
 
 {==============================================================================}
 
-function PiTFT28Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle; inline;
+function PiTFT28Start(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;{$IFDEF API_EXPORT_PITFT28} stdcall;{$ENDIF}
 {Start the PiTFT28 driver and register the Touch, Backlight (GPIO) and Framebuffer devices associated with the display}
 {Rotation: The rotation of the display (eg FRAMEBUFFER_ROTATION_180)}
 {Device: The SPI device that the ILI9340 and STMPE610 devices are connected to}
@@ -278,7 +278,7 @@ end;
 
 {==============================================================================}
 
-function PiTFT28ResistiveStart(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;
+function PiTFT28ResistiveStart(Rotation:LongWord;const Device:String;DisplaySelect,TouchSelect:Word):THandle;{$IFDEF API_EXPORT_PITFT28} stdcall;{$ENDIF}
 {Start the PiTFT28 driver and register the resistive Touch, Backlight (GPIO) and Framebuffer devices associated with the display}
 {Rotation: The rotation of the display (eg FRAMEBUFFER_ROTATION_180)}
 {Device: The SPI device that the ILI9340 and STMPE610 devices are connected to}
@@ -399,7 +399,7 @@ end;
 
 {==============================================================================}
 
-function PiTFT28CapacitiveStart(Rotation:LongWord;const SPIDevice,I2CDevice:String;DisplaySelect,TouchAddress:Word):THandle;
+function PiTFT28CapacitiveStart(Rotation:LongWord;const SPIDevice,I2CDevice:String;DisplaySelect,TouchAddress:Word):THandle;{$IFDEF API_EXPORT_PITFT28} stdcall;{$ENDIF}
 {Start the PiTFT28 driver and register the capacitive Touch and Framebuffer devices associated with the display}
 {Rotation: The rotation of the display (eg FRAMEBUFFER_ROTATION_180)}
 {SPIDevice: The SPI device that the ILI9340 device is connected to}
@@ -524,7 +524,7 @@ end;
 
 {==============================================================================}
 
-function PiTFT28Stop(Handle:THandle):Boolean;
+function PiTFT28Stop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_PITFT28} stdcall;{$ENDIF}
 {Stop the PiTFT28 driver and deregister the Touch, Backlight (GPIO) and Framebuffer devices associated with the display}
 {Handle: The handle of the PiTFT28 or INVALID_HANDLE_VALUE for the default display}
 {Return: True if completed or False on failure}
