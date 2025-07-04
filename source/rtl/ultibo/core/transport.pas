@@ -695,6 +695,7 @@ type
  end;
  
  TSocketList = class;
+ TSocketFlags = class;
  TSocketState = class;
  TSocketBuffer = class;
  TSocketOptions = class;
@@ -732,6 +733,7 @@ type
 
    {Socket Layer Variables}
    FSocketError:Integer;          {CONN_REFUSED etc}
+   FSocketFlags:TSocketFlags;     {WSA_FLAG_OVERLAPPED etc}
    FSocketState:TSocketState;     {SS_UNCONNECTED, SS_ISCONNECTED etc}
    FSocketOptions:TSocketOptions; {SO_ACCEPTCONN, SO_BROADCAST etc}
    FOpenTime:Int64;               {Socket was Opened ar [msec] (TCP_STATE_ESTAB)}
@@ -758,6 +760,7 @@ type
 
    {Socket Layer Properties}
    property SocketError:Integer read FSocketError write SetSocketError;
+   property SocketFlags:TSocketFlags read FSocketFlags;
    property SocketState:TSocketState read FSocketState;
    property SocketOptions:TSocketOptions read FSocketOptions;
    property OpenTime:Int64 read FOpenTime write SetOpenTime;
@@ -818,6 +821,27 @@ type
    
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
+ end;
+
+ TSocketFlags = class(TObject)  {For Socket Flags tracking WSA_FLAG_OVERLAPPED etc}
+   constructor Create;
+   destructor Destroy; override;
+  private
+   {Internal Variables}
+   FLock:TCriticalSectionHandle;
+  protected
+   {Internal Variables}
+   FFlags:LongWord;
+
+   {Internal Methods}
+   function AcquireLock:Boolean;
+   function ReleaseLock:Boolean;
+
+   function GetOverlapped:Boolean;
+   procedure SetOverlapped(AOverlapped:Boolean);
+  public
+   {Public Properties}
+   property Overlapped:Boolean read GetOverlapped write SetOverlapped;
  end;
 
  TSocketState = class(TObject)  {For Socket State tracking SS_UNCONNECTED, SS_PRIV etc}
@@ -4492,6 +4516,8 @@ begin
  FOwner:=nil;
 
  FSocketError:=ERROR_SUCCESS;
+ {Create Socket Flags}
+ FSocketFlags:=TSocketFlags.Create;
  {Create Socket State}
  FSocketState:=TSocketState.Create;
  {Create Socket Options}
@@ -4520,6 +4546,8 @@ begin
   FSocketOptions.Free;
   {Free Socket State}
   FSocketState.Free;
+  {Free Socket Flags}
+  FSocketFlags.Free;
 
   //To Do //LocalLock to protect Owner ?
   {Remove Owner}
@@ -5209,6 +5237,71 @@ function TSocketList.ReleaseLock:Boolean;
 begin
  {}
  Result:=(CriticalSectionUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TSocketFlags}
+constructor TSocketFlags.Create;
+begin
+ {}
+ inherited Create;
+ FLock:=CriticalSectionCreate;
+ 
+ FFlags:=WSA_FLAG_OVERLAPPED; {Default to Overlapped}
+end;
+
+{==============================================================================}
+
+destructor TSocketFlags.Destroy;
+begin
+ {}
+ AcquireLock;
+ try
+  inherited Destroy;
+ finally 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  CriticalSectionDestroy(FLock);
+ end;
+end;
+
+{==============================================================================}
+
+function TSocketFlags.AcquireLock:Boolean;
+begin
+ {}
+ Result:=(CriticalSectionLock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TSocketFlags.ReleaseLock:Boolean;
+begin
+ {}
+ Result:=(CriticalSectionUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function TSocketFlags.GetOverlapped:Boolean;
+begin
+ {}
+ Result:=(FFlags and WSA_FLAG_OVERLAPPED) = WSA_FLAG_OVERLAPPED;
+end;
+
+{==============================================================================}
+
+procedure TSocketFlags.SetOverlapped(AOverlapped:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+ 
+ if AOverlapped then
+  FFlags:=FFlags or WSA_FLAG_OVERLAPPED
+ else
+  FFlags:=FFlags and not(WSA_FLAG_OVERLAPPED);
+  
+ ReleaseLock;
 end;
 
 {==============================================================================}

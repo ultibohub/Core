@@ -32,8 +32,8 @@ Winsock 2
 =========
 
  Notes: All BSD/Winsock functions that accept an Address or Port expect
-        them to be in Network order. All other functions that take an
-        Address or Port expect them to be in Host order
+        them to be in Network byte order. All other functions that take
+        an Address or Port expect them to be in Host byte order
 
 }
 
@@ -343,6 +343,7 @@ const
  MSG_OOB         = GlobalSock.MSG_OOB;
  MSG_PEEK        = GlobalSock.MSG_PEEK;
  MSG_DONTROUTE   = GlobalSock.MSG_DONTROUTE;
+ MSG_WAITALL     = GlobalSock.MSG_WAITALL;
 
  MSG_INTERRUPT   = GlobalSock.MSG_INTERRUPT;
  MSG_MAXIOVLEN   = GlobalSock.MSG_MAXIOVLEN;
@@ -615,11 +616,11 @@ const
  JL_BOTH = $04;
 
 { WinSock 2 extension -- manifest constants for WSASocket() }
- WSA_FLAG_OVERLAPPED = $01;
- WSA_FLAG_MULTIPOINT_C_ROOT = $02;
- WSA_FLAG_MULTIPOINT_C_LEAF = $04;
- WSA_FLAG_MULTIPOINT_D_ROOT = $08;
- WSA_FLAG_MULTIPOINT_D_LEAF = $10;
+ WSA_FLAG_OVERLAPPED = GlobalSock.WSA_FLAG_OVERLAPPED;
+ WSA_FLAG_MULTIPOINT_C_ROOT = GlobalSock.WSA_FLAG_MULTIPOINT_C_ROOT;
+ WSA_FLAG_MULTIPOINT_C_LEAF = GlobalSock.WSA_FLAG_MULTIPOINT_C_LEAF;
+ WSA_FLAG_MULTIPOINT_D_ROOT = GlobalSock.WSA_FLAG_MULTIPOINT_D_ROOT;
+ WSA_FLAG_MULTIPOINT_D_LEAF = GlobalSock.WSA_FLAG_MULTIPOINT_D_LEAF;
 
 { WinSock 2 extension -- manifest constants for WSAIoctl() }
  IOC_UNIX = $00000000;
@@ -954,6 +955,7 @@ type
  
 type
  GROUP = u_long;
+ PGROUP = ^GROUP;
 
 { WinSock 2 extension -- data type for WSAEnumNetworkEvents() }
  TWSANetworkEvents = record
@@ -1134,7 +1136,7 @@ type
 
 type
 { Service Address Registration and Deregistration Data Types. }
- TWSAeSetServiceOp = (RNRSERVICE_REGISTER{=0},RNRSERVICE_DEREGISTER,RNRSERVICE_DELETE);
+ TWSAESetServiceOp = (RNRSERVICE_REGISTER{=0},RNRSERVICE_DEREGISTER,RNRSERVICE_DELETE);
 
 { Service Installation/Removal Data Types. }
  TWSANSClassInfoA = record
@@ -1208,13 +1210,14 @@ type
 type
 { WinSock 2 extensions -- data types for the condition function in }
 { WSAAccept() and overlapped I/O completion routine. }
- LPCONDITIONPROC = function (lpCallerId: LPWSABUF; lpCallerData : LPWSABUF; lpSQOS,lpGQOS : LPQOS; lpCalleeId,lpCalleeData : LPWSABUF; g : GROUP; dwCallbackData : DWORD ) : Longint;{$IFDEF i386} stdcall;{$ENDIF}
+ LPCONDITIONPROC = function (lpCallerId: LPWSABUF; lpCallerData : LPWSABUF; lpSQOS, lpGQOS : LPQOS; lpCalleeId, lpCalleeData : LPWSABUF; g : PGROUP; dwCallbackData : DWORD_PTR ) : Longint;{$IFDEF i386} stdcall;{$ENDIF}
  LPWSAOVERLAPPED_COMPLETION_ROUTINE = procedure ( const dwError, cbTransferred : DWORD; const lpOverlapped : LPWSAOVERLAPPED; const dwFlags : DWORD );{$IFDEF i386} stdcall;{$ENDIF}
  
 type
  {Structure used in getaddrinfo() call}
  PAddrInfo = GlobalSock.PAddrInfo;
  TAddrInfo = GlobalSock.TAddrInfo;
+ PPAddrInfo = GlobalSock.PPAddrInfo;
  
 {==============================================================================}
 type
@@ -2052,12 +2055,18 @@ function getsockname( const s: TSocket; var name: TSockAddr; var namelen: Longin
 function getsockopt( const s: TSocket; const level, optname: Longint; optval: PChar; var optlen: Longint ): Longint; overload;
 function getsockopt( const s: TSocket; const level, optname: Longint; optval: Pointer; var optlen: Longint ): Longint; overload;
 function getsockopt( const s: TSocket; const level, optname: Longint; var optval; var optlen: Longint ): Longint; overload;
+function htond(hostdouble: Double): UInt64;
+function htonf(hostfloat: Single): UInt32;
 function htonl(hostlong: u_long): u_long;
+function htonll(hostlonglong: UInt64): UInt64;
 function htons(hostshort: u_short): u_short;
 function inet_addr(const cp: PChar): u_long;
 function inet_ntoa(inaddr: TInAddr): PChar; 
 function listen(s: TSocket; backlog: Longint): Longint; 
+function ntohd(netdouble: UInt64): Double;
+function ntohf(netfloat: UInt32): Single;
 function ntohl(netlong: u_long): u_long;
+function ntohll(netlonglong: UInt64): UInt64;
 function ntohs(netshort: u_short): u_short; 
 function recv(s: TSocket; var Buf; len, flags: Longint): Longint;  overload;
 function recv(s: TSocket; Buf: PChar; len, flags: Longint): Longint; overload;
@@ -2108,80 +2117,80 @@ function WSAAsyncGetHostByName(HWindow: HWND; wMsg: u_int; const name: PChar; bu
 function WSAAsyncGetHostByAddr(HWindow: HWND; wMsg: u_int; const addr: PChar; len, family: Longint; buf: PChar; buflen: Longint): THandle;
 function WSACancelAsyncRequest(hAsyncTaskHandle: THandle): Longint;
 function WSAAsyncSelect(s: TSocket; HWindow: HWND; wMsg: u_int; lEvent: Longint): Longint;
-function __WSAFDIsSet(s: TSOcket; var FDSet: TFDSet): BOOL;
+function __WSAFDIsSet(s: TSocket; var FDSet: TFDSet): BOOL;
 
 { WinSock 2 API new function prototypes }
-function inet_pton(Family: Longint; pszAddrString: PChar; pAddrBuf: Pointer): Longint;
-function InetPtonA(Family: Longint; pszAddrString: PChar; pAddrBuf: Pointer): Longint;
-function InetPtonW(Family: Longint; pszAddrString: PWideChar; pAddrBuf: Pointer): Longint;
+function inet_pton(Family: Longint; const pszAddrString: PChar; pAddrBuf: Pointer): Longint;
+function InetPtonA(Family: Longint; const pszAddrString: PChar; pAddrBuf: Pointer): Longint;
+function InetPtonW(Family: Longint; const pszAddrString: PWideChar; pAddrBuf: Pointer): Longint;
 
 function inet_ntop(Family: Longint; pAddr: Pointer; pStringBuf: PChar; StringBufSize: Longint): PChar;
 function InetNtopA(Family: Longint; pAddr: Pointer; pStringBuf: PChar; StringBufSize: Longint): PChar;
 function InetNtopW(Family: Longint; pAddr: Pointer; pStringBuf: PWideChar; StringBufSize: Longint): PWideChar;
 
-function WSAAccept( s : TSocket; addr : TSockAddr; addrlen : PLongint; lpfnCondition : LPCONDITIONPROC; dwCallbackData : DWORD ): TSocket;
+function WSAAccept( s : TSocket; addr : PSockAddr; addrlen : PLongint; lpfnCondition : LPCONDITIONPROC; dwCallbackData : DWORD_PTR ): TSocket;
 function WSACloseEvent( hEvent : WSAEVENT) : BOOL;
-function WSAConnect( s : TSocket; const name : PSockAddr; namelen : Longint; lpCallerData,lpCalleeData : LPWSABUF; lpSQOS,lpGQOS : LPQOS ) : Longint;
-function WSAConnectByList( s : TSocket; SocketAddressList : PSOCKET_ADDRESS_LIST; var LocalAddressLength : DWORD;  LocalAddress : PSockAddr; var RemoteAddressLength : DWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
-function WSAConnectByNameA( s : TSocket; nodename : PChar; servicename : PChar; var LocalAddressLength : DWORD; LocalAddress : PSockAddr; var RemoteAddressLength : DWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
-function WSAConnectByNameW( s : TSocket; nodename : PWideChar; servicename : PWideChar; var LocalAddressLength : DWORD; LocalAddress : PSockAddr; var RemoteAddressLength : DWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
+function WSAConnect( s : TSocket; name : PSockAddr; namelen : Longint; lpCallerData, lpCalleeData : LPWSABUF; lpSQOS, lpGQOS : LPQOS ) : Longint;
+function WSAConnectByList( s : TSocket; SocketAddressList : PSOCKET_ADDRESS_LIST; LocalAddressLength : LPDWORD;  LocalAddress : PSockAddr; RemoteAddressLength : LPDWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
+function WSAConnectByNameA( s : TSocket; nodename : PChar; servicename : PChar; LocalAddressLength : LPDWORD; LocalAddress : PSockAddr; RemoteAddressLength : LPDWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
+function WSAConnectByNameW( s : TSocket; nodename : PWideChar; servicename : PWideChar; LocalAddressLength : LPDWORD; LocalAddress : PSockAddr; RemoteAddressLength : LPDWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
 function WSACreateEvent : WSAEVENT; 
 function WSADuplicateSocketA( s : TSocket; dwProcessId : DWORD; lpProtocolInfo : LPWSAProtocol_InfoA ) : Longint;
 function WSADuplicateSocketW( s : TSocket; dwProcessId : DWORD; lpProtocolInfo : LPWSAProtocol_InfoW ) : Longint;
-function WSAEnumNetworkEvents( const s : TSocket; const hEventObject : WSAEVENT; lpNetworkEvents : LPWSANETWORKEVENTS ) :Longint;
-function WSAEnumProtocolsA( lpiProtocols : PLongint; lpProtocolBuffer : LPWSAProtocol_InfoA; var lpdwBufferLength : DWORD ) : Longint;
-function WSAEnumProtocolsW( lpiProtocols : PLongint; lpProtocolBuffer : LPWSAProtocol_InfoW; var lpdwBufferLength : DWORD ) : Longint;
+function WSAEnumNetworkEvents( s : TSocket; hEventObject : WSAEVENT; lpNetworkEvents : LPWSANETWORKEVENTS ) :Longint;
+function WSAEnumProtocolsA( lpiProtocols : PLongint; lpProtocolBuffer : LPWSAProtocol_InfoA; lpdwBufferLength : LPDWORD ) : Longint;
+function WSAEnumProtocolsW( lpiProtocols : PLongint; lpProtocolBuffer : LPWSAProtocol_InfoW; lpdwBufferLength : LPDWORD ) : Longint;
 function WSAEventSelect( s : TSocket; hEventObject : WSAEVENT; lNetworkEvents : LongInt ): Longint;
-function WSAGetOverlappedResult( s : TSocket; lpOverlapped : LPWSAOVERLAPPED; lpcbTransfer : LPDWORD; fWait : BOOL; var lpdwFlags : DWORD ) : BOOL; 
+function WSAGetOverlappedResult( s : TSocket; lpOverlapped : LPWSAOVERLAPPED; lpcbTransfer : LPDWORD; fWait : BOOL; lpdwFlags : LPDWORD ) : BOOL; 
 function WSAGetQosByName( s : TSocket; lpQOSName : LPWSABUF; lpQOS : LPQOS ): BOOL;
-function WSAHtonl( s : TSocket; hostlong : u_long; var lpnetlong : DWORD ): Longint; 
-function WSAHtons( s : TSocket; hostshort : u_short; var lpnetshort : WORD ): Longint;
+function WSAHtonl( s : TSocket; hostlong : u_long; lpnetlong : pu_long ): Longint; 
+function WSAHtons( s : TSocket; hostshort : u_short; lpnetshort : pu_short ): Longint;
 function WSAIoctl( s : TSocket; dwIoControlCode : DWORD; lpvInBuffer : Pointer; cbInBuffer : DWORD; lpvOutBuffer : Pointer; cbOutBuffer : DWORD; lpcbBytesReturned : LPDWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ) : Longint;
 function WSAJoinLeaf( s : TSocket; name : PSockAddr; namelen : Longint; lpCallerData,lpCalleeData : LPWSABUF; lpSQOS,lpGQOS : LPQOS; dwFlags : DWORD ) : TSocket;
-function WSANtohl( s : TSocket; netlong : u_long; var lphostlong : DWORD ): Longint;
-function WSANtohs( s : TSocket; netshort : u_short; var lphostshort : WORD ): Longint;
+function WSANtohl( s : TSocket; netlong : u_long; lphostlong : pu_long ): Longint;
+function WSANtohs( s : TSocket; netshort : u_short; lphostshort : pu_short ): Longint;
 function WSAPoll( fdArray : LPWSAPOLLFD; fds : ULONG; timeout : Longint): Longint;
-function WSAProviderConfigChange( var lpNotificationHandle: THandle; lpOverlapped: LPWSAOVERLAPPED; lpCompletionRoutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): Longint;
-function WSARecv( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesRecvd : DWORD; var lpFlags : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
+function WSAProviderConfigChange( lpNotificationHandle: PHANDLE; lpOverlapped: LPWSAOVERLAPPED; lpCompletionRoutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): Longint;
+function WSARecv( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; lpNumberOfBytesRecvd : LPDWORD; lpFlags : LPDWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
 function WSARecvDisconnect( s : TSocket; lpInboundDisconnectData : LPWSABUF ): Longint;
-function WSARecvFrom( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesRecvd : DWORD; var lpFlags : DWORD; lpFrom : PSockAddr; lpFromlen : PLongint; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
-function WSARecvMsg( s : TSocket; lpMsg : LPWSAMSG; var lpdwNumberOfBytesRecvd : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE) : Longint;
+function WSARecvFrom( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; lpNumberOfBytesRecvd : LPDWORD; lpFlags : LPDWORD; lpFrom : PSockAddr; lpFromlen : PLongint; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
+function WSARecvMsg( s : TSocket; lpMsg : LPWSAMSG; lpdwNumberOfBytesRecvd : LPDWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE) : Longint;
 function WSAResetEvent( hEvent : WSAEVENT ): BOOL;
-function WSASend( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesSent : DWORD; dwFlags : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
+function WSASend( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; lpNumberOfBytesSent : LPDWORD; dwFlags : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
 function WSASendDisconnect( s : TSocket; lpOutboundDisconnectData : LPWSABUF ): Longint;
-function WSASendTo( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesSent : DWORD; dwFlags : DWORD; lpTo : PSockAddr; iTolen : Longint; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
-function WSASendMsg( s : TSocket; lpMsg : LPWSAMSG; dwFlags : DWORD; lpNumberOfBytesSent : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE) : Longint;
+function WSASendTo( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; lpNumberOfBytesSent : LPDWORD; dwFlags : DWORD; lpTo : PSockAddr; iTolen : Longint; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
+function WSASendMsg( s : TSocket; lpMsg : LPWSAMSG; dwFlags : DWORD; lpNumberOfBytesSent : LPDWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE) : Longint;
 function WSASetEvent( hEvent : WSAEVENT ): BOOL;
 function WSASocketA( af, iType, protocol : Longint; lpProtocolInfo : LPWSAProtocol_InfoA; g : GROUP; dwFlags : DWORD ): TSocket;
 function WSASocketW( af, iType, protocol : Longint; lpProtocolInfo : LPWSAProtocol_InfoW; g : GROUP; dwFlags : DWORD ): TSocket;
 
 function WSAWaitForMultipleEvents( cEvents : DWORD; lphEvents : PWSAEVENT; fWaitAll : BOOL; dwTimeout : DWORD; fAlertable : BOOL ): DWORD;
-function WSAAddressToStringA( var lpsaAddress : TSockAddr; const dwAddressLength : DWORD; const lpProtocolInfo : LPWSAProtocol_InfoA; const lpszAddressString : PChar; var lpdwAddressStringLength : DWORD ): Longint;
-function WSAAddressToStringW( var lpsaAddress : TSockAddr; const dwAddressLength : DWORD; const lpProtocolInfo : LPWSAProtocol_InfoW; const lpszAddressString : PWideChar; var lpdwAddressStringLength : DWORD ): Longint; 
+function WSAAddressToStringA( lpsaAddress : PSockAddr; dwAddressLength : DWORD; lpProtocolInfo : LPWSAProtocol_InfoA; lpszAddressString : PChar; lpdwAddressStringLength : PDWORD ): Longint;
+function WSAAddressToStringW( lpsaAddress : PSockAddr; dwAddressLength : DWORD; lpProtocolInfo : LPWSAProtocol_InfoW; lpszAddressString : PWideChar; lpdwAddressStringLength : PDWORD ): Longint;
 
-function WSAStringToAddressA( const AddressString : PChar; const AddressFamily: Longint; const lpProtocolInfo : LPWSAProtocol_InfoA; var lpAddress : TSockAddr; var lpAddressLength : Longint ): Longint; 
-function WSAStringToAddressW( const AddressString : PWideChar; const AddressFamily: Longint; const lpProtocolInfo : LPWSAProtocol_InfoA; var lpAddress : TSockAddr; var lpAddressLength : Longint ): Longint; 
+function WSAStringToAddressA( const AddressString : PChar; AddressFamily: Longint; lpProtocolInfo : LPWSAProtocol_InfoA; lpAddress : PSockAddr; lpAddressLength : PLongint ): Longint;
+function WSAStringToAddressW( const AddressString : PWideChar; AddressFamily: Longint; lpProtocolInfo : LPWSAProtocol_InfoA; lpAddress : PSockAddr; lpAddressLength : PLongint ): Longint;
 
 { Registration and Name Resolution API functions }
-function WSALookupServiceBeginA( const lpqsRestrictions : LPWSAQuerySetA; const dwControlFlags : DWORD; lphLookup : PHANDLE ): Longint;
-function WSALookupServiceBeginW( const lpqsRestrictions : LPWSAQuerySetW; const dwControlFlags : DWORD; lphLookup : PHANDLE ): Longint;
+function WSALookupServiceBeginA( lpqsRestrictions : LPWSAQuerySetA; dwControlFlags : DWORD; lphLookup : PHANDLE ): Longint;
+function WSALookupServiceBeginW( lpqsRestrictions : LPWSAQuerySetW; dwControlFlags : DWORD; lphLookup : PHANDLE ): Longint;
 
-function WSALookupServiceNextA( const hLookup : THandle; const dwControlFlags : DWORD; var lpdwBufferLength : DWORD; lpqsResults : LPWSAQuerySetA ): Longint;
-function WSALookupServiceNextW( const hLookup : THandle; const dwControlFlags : DWORD; var lpdwBufferLength : DWORD; lpqsResults : LPWSAQuerySetW ): Longint;
-function WSALookupServiceEnd( const hLookup : THandle ): Longint;
-function WSAInstallServiceClassA( const lpServiceClassInfo : LPWSAServiceClassInfoA ) : Longint;
-function WSAInstallServiceClassW( const lpServiceClassInfo : LPWSAServiceClassInfoW ) : Longint;
-function WSARemoveServiceClass( const lpServiceClassId : PGUID ) : Longint;
-function WSAGetServiceClassInfoA( const lpProviderId : PGUID; const lpServiceClassId : PGUID; var lpdwBufSize : DWORD; lpServiceClassInfo : LPWSAServiceClassInfoA ): Longint;
-function WSAGetServiceClassInfoW( const lpProviderId : PGUID; const lpServiceClassId : PGUID; var lpdwBufSize : DWORD; lpServiceClassInfo : LPWSAServiceClassInfoW ): Longint;
+function WSALookupServiceNextA( hLookup : THandle; dwControlFlags : DWORD; lpdwBufferLength : LPDWORD; lpqsResults : LPWSAQuerySetA ): Longint;
+function WSALookupServiceNextW( hLookup : THandle; dwControlFlags : DWORD; lpdwBufferLength : LPDWORD; lpqsResults : LPWSAQuerySetW ): Longint;
+function WSALookupServiceEnd( hLookup : THandle ): Longint;
+function WSAInstallServiceClassA( lpServiceClassInfo : LPWSAServiceClassInfoA ) : Longint;
+function WSAInstallServiceClassW( lpServiceClassInfo : LPWSAServiceClassInfoW ) : Longint;
+function WSARemoveServiceClass( lpServiceClassId : PGUID ) : Longint;
+function WSAGetServiceClassInfoA( lpProviderId : PGUID; lpServiceClassId : PGUID; lpdwBufSize : LPDWORD; lpServiceClassInfo : LPWSAServiceClassInfoA ): Longint;
+function WSAGetServiceClassInfoW( lpProviderId : PGUID; lpServiceClassId : PGUID; lpdwBufSize : LPDWORD; lpServiceClassInfo : LPWSAServiceClassInfoW ): Longint;
 
-function WSAEnumNameSpaceProvidersA( var lpdwBufferLength: DWORD; const lpnspBuffer: LPWSANameSpace_InfoA ): Longint; 
-function WSAEnumNameSpaceProvidersW( var lpdwBufferLength: DWORD; const lpnspBuffer: LPWSANameSpace_InfoW ): Longint; 
+function WSAEnumNameSpaceProvidersA( lpdwBufferLength: LPDWORD; lpnspBuffer: LPWSANameSpace_InfoA ): Longint; 
+function WSAEnumNameSpaceProvidersW( lpdwBufferLength: LPDWORD; lpnspBuffer: LPWSANameSpace_InfoW ): Longint; 
 
-function WSAGetServiceClassNameByClassIdA( const lpServiceClassId: PGUID; lpszServiceClassName: PChar; var lpdwBufferLength: DWORD ): Longint;
-function WSAGetServiceClassNameByClassIdW( const lpServiceClassId: PGUID; lpszServiceClassName: PWideChar; var lpdwBufferLength: DWORD ): Longint; 
-function WSASetServiceA( const lpqsRegInfo: LPWSAQuerySetA; const essoperation: TWSAeSetServiceOp; const dwControlFlags: DWORD ): Longint; 
-function WSASetServiceW( const lpqsRegInfo: LPWSAQuerySetW; const essoperation: TWSAeSetServiceOp; const dwControlFlags: DWORD ): Longint;
+function WSAGetServiceClassNameByClassIdA( lpServiceClassId: PGUID; lpszServiceClassName: PChar; lpdwBufferLength: LPDWORD ): Longint;
+function WSAGetServiceClassNameByClassIdW( lpServiceClassId: PGUID; lpszServiceClassName: PWideChar; lpdwBufferLength: LPDWORD ): Longint; 
+function WSASetServiceA( lpqsRegInfo: LPWSAQuerySetA; essoperation: TWSAESetServiceOp; dwControlFlags: DWORD ): Longint; 
+function WSASetServiceW( lpqsRegInfo: LPWSAQuerySetW; essoperation: TWSAESetServiceOp; dwControlFlags: DWORD ): Longint;
 
 function WSAMakeSyncReply(Buflen, Error: Word): Longint;
 function WSAMakeSelectReply(Event, Error: Word): Longint;
@@ -2603,7 +2612,7 @@ begin
           end; 
          
          {BufferLength:=Length(WorkBuffer);
-         if Winsock2.WSAAddressToStringA(PSockAddr(NextAddr.ai_addr)^,NextAddr.ai_addrlen,nil,PChar(WorkBuffer),BufferLength) = ERROR_SUCCESS then
+         if Winsock2.WSAAddressToStringA(PSockAddr(NextAddr.ai_addr),NextAddr.ai_addrlen,nil,PChar(WorkBuffer),@BufferLength) = ERROR_SUCCESS then
           begin
            Result.Add(String(PChar(WorkBuffer)));
           end;}
@@ -3179,7 +3188,7 @@ begin
        end;
       
       {BufferLength:=SizeOf(TSockAddrIn6);
-      if Winsock2.WSAStringToAddressA(PChar(FBoundAddress),FFamily,nil,PSockAddrIn(@SockAddr)^,BufferLength) = SOCKET_ERROR then
+      if Winsock2.WSAStringToAddressA(PChar(FBoundAddress),FFamily,nil,PSockAddrIn(@SockAddr),@BufferLength) = SOCKET_ERROR then
        begin
         FLastError:=Winsock2.WSAGetLastError;
         ReleaseAddress(Result,ALength,False);
@@ -3721,7 +3730,7 @@ begin
             end; 
            
            {BufferLength:=Length(WorkBuffer);
-           if Winsock2.WSAAddressToStringA(PSockAddr(NextAddr.ai_addr)^,NextAddr.ai_addrlen,nil,PChar(WorkBuffer),BufferLength) = ERROR_SUCCESS then
+           if Winsock2.WSAAddressToStringA(PSockAddr(NextAddr.ai_addr),NextAddr.ai_addrlen,nil,PChar(WorkBuffer),@BufferLength) = ERROR_SUCCESS then
             begin
              Result:=String(PChar(WorkBuffer));
              Exit;
@@ -3911,7 +3920,7 @@ begin
             end; 
            
            {BufferLength:=Length(WorkBuffer);
-           if Winsock2.WSAAddressToStringA(PSockAddr(NextAddr.ai_addr)^,NextAddr.ai_addrlen,nil,PChar(WorkBuffer),BufferLength) = ERROR_SUCCESS then
+           if Winsock2.WSAAddressToStringA(PSockAddr(NextAddr.ai_addr),NextAddr.ai_addrlen,nil,PChar(WorkBuffer),@BufferLength) = ERROR_SUCCESS then
             begin
              Result.Add(String(PChar(WorkBuffer)));
             end;}
@@ -6382,7 +6391,7 @@ begin
      end;
     
     {BufferLength:=SizeOf(TSockAddrIn6);
-    if Winsock2.WSAStringToAddressA(PChar(FRemoteAddress),FFamily,nil,PSockAddrIn(@SockAddr)^,BufferLength) = SOCKET_ERROR then
+    if Winsock2.WSAStringToAddressA(PChar(FRemoteAddress),FFamily,nil,PSockAddrIn(@SockAddr),@BufferLength) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
       ReleaseAddress(Result,ALength,False);
@@ -6895,7 +6904,7 @@ begin
      end;
     
     {BufferLength:=SizeOf(TSockAddrIn6);
-    if Winsock2.WSAStringToAddressA(PChar(FRemoteAddress),FFamily,nil,PSockAddrIn(@SockAddr)^,BufferLength) = SOCKET_ERROR then
+    if Winsock2.WSAStringToAddressA(PChar(FRemoteAddress),FFamily,nil,PSockAddrIn(@SockAddr),@BufferLength) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
       ReleaseAddress(Result,ALength,False);
@@ -7539,7 +7548,7 @@ begin
      end;
     
     {BufferLength:=SizeOf(TSockAddrIn6);
-    if Winsock2.WSAStringToAddressA(PChar(FRemoteAddress),FFamily,nil,PSockAddrIn(@SockAddr)^,BufferLength) = SOCKET_ERROR then
+    if Winsock2.WSAStringToAddressA(PChar(FRemoteAddress),FFamily,nil,PSockAddrIn(@SockAddr),@BufferLength) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
       ReleaseAddress(Result,ALength,False);
@@ -9349,6 +9358,9 @@ end;
 {==============================================================================}
 {Winsock2 Functions}
 function accept( const s: TSocket; addr: PSockAddr; addrlen: PLongint ): TSocket; 
+{Accept an incoming connection attempt on a socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -9390,6 +9402,9 @@ end;
 {==============================================================================}
 
 function accept( const s: TSocket; addr: PSockAddr; var addrlen: Longint ): TSocket; 
+{Accept an incoming connection attempt on a socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=accept(s,addr,@addrlen);
@@ -9398,14 +9413,26 @@ end;
 {==============================================================================}
 
 function bind( const s: TSocket; addr: PSockAddr; namelen: Longint ): Longint; 
+{Associate a local address with a socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Address}
+ NetworkSetLastError(WSAEFAULT);
+ if addr = nil then Exit;
+
  Result:=bind(s,addr^,namelen);
 end;
 
 {==============================================================================}
 
 function bind( const s: TSocket; var addr: TSockAddr; namelen: Longint ): Longint; 
+{Associate a local address with a socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -9447,6 +9474,9 @@ end;
 {==============================================================================}
 
 function closesocket( const s: TSocket ): Longint; 
+{Close an existing socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -9488,14 +9518,26 @@ end;
 {==============================================================================}
 
 function connect( const s: TSocket; name: PSockAddr; namelen: Longint): Longint; 
+{Establish a connection to a specified socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Name}
+ NetworkSetLastError(WSAEFAULT);
+ if name = nil then Exit;
+
  Result:=connect(s,name^,namelen);
 end;
 
 {==============================================================================}
 
 function connect( const s: TSocket; var name: TSockAddr; namelen: Longint): Longint; 
+{Establish a connection to a specified socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -9537,6 +9579,9 @@ end;
 {==============================================================================}
 
 function ioctlsocket( const s: TSocket; cmd: Longint; var arg: u_long ): Longint; 
+{Control the I/O mode of a socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -9578,14 +9623,26 @@ end;
 {==============================================================================}
 
 function ioctlsocket( const s: TSocket; cmd: Longint; argp: pu_long ): Longint; 
+{Control the I/O mode of a socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Argument}
+ NetworkSetLastError(WSAEFAULT);
+ if argp = nil then Exit;
+
  Result:=ioctlsocket(s,cmd,argp^);
 end;
 
 {==============================================================================}
 
 function getpeername( const s: TSocket; var name: TSockAddr; var namelen: Longint ): Longint; 
+{Retrieve the address of the peer to which a socket is connected}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -9627,6 +9684,9 @@ end;
 {==============================================================================}
 
 function getsockname( const s: TSocket; var name: TSockAddr; var namelen: Longint ): Longint; 
+{Retrieve the local name for a socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -9668,6 +9728,9 @@ end;
 {==============================================================================}
 
 function getsockopt( const s: TSocket; const level, optname: Longint; optval: PChar; var optlen: Longint ): Longint; 
+{Retrieve a socket option}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -9677,7 +9740,11 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
+  {Check Option Value}
+  NetworkSetLastError(WSAEFAULT);
+  if optval = nil then Exit;
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -9709,6 +9776,9 @@ end;
 {==============================================================================}
 
 function getsockopt( const s: TSocket; const level, optname: Longint; optval: Pointer; var optlen: Longint ): Longint; 
+{Retrieve a socket option}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=getsockopt(s,level,optname,PChar(optval),optlen);
@@ -9717,6 +9787,9 @@ end;
 {==============================================================================}
 
 function getsockopt( const s: TSocket; const level, optname: Longint; var optval; var optlen: Longint ): Longint; 
+{Retrieve a socket option}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=getsockopt(s,level,optname,PChar(@optval),optlen);
@@ -9724,7 +9797,36 @@ end;
 
 {==============================================================================}
 
+function htond(hostdouble: Double): UInt64;
+{Convert a double from host byte order to TCP/IP network byte order (which is big-endian)}
+
+{See the Windows Sockets 2 documentation for additional information}
+begin
+ {}
+ System.Move(hostdouble,Result,SizeOf(Double));
+
+ Result:=Int64NtoBE(Result); {Native to Big Endian}
+end;
+
+{==============================================================================}
+
+function htonf(hostfloat: Single): UInt32;
+{Convert a float from host byte order to TCP/IP network byte order (which is big-endian)}
+
+{See the Windows Sockets 2 documentation for additional information}
+begin
+ {}
+ System.Move(hostfloat,Result,SizeOf(Single));
+
+ Result:=LongWordNtoBE(Result); {Native to Big Endian}
+end;
+
+{==============================================================================}
+
 function htonl(hostlong: u_long): u_long;
+{Convert a u_long from host byte order to TCP/IP network byte order (which is big-endian)}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=LongWordNtoBE(hostlong); {Native to Big Endian}
@@ -9732,7 +9834,21 @@ end;
 
 {==============================================================================}
 
+function htonll(hostlonglong: UInt64): UInt64;
+{Convert an unsigned int64 from host byte order to TCP/IP network byte order (which is big-endian)}
+
+{See the Windows Sockets 2 documentation for additional information}
+begin
+ {}
+ Result:=Int64NtoBE(hostlonglong); {Native to Big Endian}
+end;
+
+{==============================================================================}
+
 function htons(hostshort: u_short): u_short;
+{Convert a u_short from host byte order to TCP/IP network byte order (which is big-endian)}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=WordNtoBE(hostshort); {Native to Big Endian}
@@ -9741,7 +9857,10 @@ end;
 {==============================================================================}
 
 function inet_addr(const cp: PChar): u_long;
-{Note: Address will be returned in network order}
+{Convert a string containing an IPv4 dotted-decimal address into a proper address for the IN_ADDR structure}
+{Note: Address will be returned in network byte order}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=LongWord(StringToInAddr(cp));
@@ -9750,10 +9869,13 @@ end;
 {==============================================================================}
 
 function inet_ntoa(inaddr: TInAddr): PChar; 
+{Convert an (IPv4) Internet network address into an ASCII string in Internet standard dotted-decimal format}
 {As per the Winsock specification, the buffer returned by this function is only
  guaranteed to be valid until the next Winsock function call is made within the
  same thread. Therefore, the data should be copied before another Winsock call}
-{Note: Address will be in network order}
+{Note: Address will be in network byte order}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  WorkBuffer:String;
  NetToAddr:PNetToAddr;
@@ -9786,6 +9908,9 @@ end;
 {==============================================================================}
 
 function listen(s: TSocket; backlog: Longint): Longint; 
+{Place a socket in a state in which it is listening for incoming connections}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -9826,7 +9951,36 @@ end;
 
 {==============================================================================}
 
+function ntohd(netdouble: UInt64): Double;
+{Convert an unsigned int64 from TCP/IP network byte order to host byte order and return a double}
+
+{See the Windows Sockets 2 documentation for additional information}
+begin
+ {}
+ netdouble:=Int64BEtoN(netdouble); {Big Endian to Native}
+ 
+ System.Move(netdouble,Result,SizeOf(UInt64));
+end;
+
+{==============================================================================}
+
+function ntohf(netfloat: UInt32): Single;
+{Convert an unsigned int32 from TCP/IP network byte order to host byte order and return a float}
+
+{See the Windows Sockets 2 documentation for additional information}
+begin
+ {}
+ netfloat:=LongWordBEtoN(netfloat); {Big Endian to Native}
+
+ System.Move(netfloat,Result,SizeOf(UInt32));
+end;
+
+{==============================================================================}
+
 function ntohl(netlong: u_long): u_long;
+{Convert a u_long from TCP/IP network byte order to host byte order}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=LongWordBEtoN(netlong); {Big Endian to Native}
@@ -9834,7 +9988,21 @@ end;
 
 {==============================================================================}
 
+function ntohll(netlonglong: UInt64): UInt64;
+{Convert an unsigned nt64 from TCP/IP network byte order to host byte order}
+
+{See the Windows Sockets 2 documentation for additional information}
+begin
+ {}
+ Result:=Int64BEtoN(netlonglong); {Big Endian to Native}
+end;
+
+{==============================================================================}
+
 function ntohs(netshort: u_short): u_short; 
+{Convert a u_short from TCP/IP network byte order to host byte order}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=WordBEtoN(netshort); {Big Endian to Native}
@@ -9843,6 +10011,9 @@ end;
 {==============================================================================}
 
 function recv(s: TSocket; var Buf; len, flags: Longint): Longint;  
+{Receive data from a connected socket or a bound connectionless socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -9884,38 +10055,93 @@ end;
 {==============================================================================}
 
 function recv(s: TSocket; Buf: PChar; len, flags: Longint): Longint; 
+{Receive data from a connected socket or a bound connectionless socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=recv(s,buf^,len,flags);
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if Buf = nil then Exit;
+
+ Result:=recv(s,Buf^,len,flags);
 end;
 
 {==============================================================================}
 
 function recv(s: TSocket; Buf: Pointer; len, flags: Longint): Longint;  
+{Receive data from a connected socket or a bound connectionless socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=recv(s,buf^,len,flags);
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if Buf = nil then Exit;
+
+ Result:=recv(s,Buf^,len,flags);
 end;
 
 {==============================================================================}
 
 function recvfrom(s: TSocket; Buf: PChar; len, flags: Longint; from: PSockAddr; fromlen: PLongint): Longint; 
+{Receive a datagram and store the source address}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=recvfrom(s,buf^,len,flags,from^,fromlen^);
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if Buf = nil then Exit;
+
+ {Check Address and Length}
+ if (from <> nil) and (fromlen <> nil) then
+  begin
+   Result:=recvfrom(s,Buf^,len,flags,from^,fromlen^);
+  end
+ else
+  begin
+   Result:=recv(s,Buf^,len,flags);
+  end;
 end;
 
 {==============================================================================}
 
 function recvfrom(s: TSocket; Buf: Pointer; len, flags: Longint; from: PSockAddr; fromlen: PLongint): Longint; 
+{Receive a datagram and store the source address}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=recvfrom(s,buf^,len,flags,from^,fromlen^);
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if Buf = nil then Exit;
+
+ {Check Address and Length}
+ if (from <> nil) and (fromlen <> nil) then
+  begin
+   Result:=recvfrom(s,Buf^,len,flags,from^,fromlen^);
+  end
+ else
+  begin
+   Result:=recv(s,Buf^,len,flags);
+  end;
 end;
 
 {==============================================================================}
 
 function recvfrom(s: TSocket; var Buf; len, flags: Longint; var from: TSockAddr; var fromlen: Longint): Longint; 
+{Receive a datagram and store the source address}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -9957,7 +10183,10 @@ end;
 {==============================================================================}
 
 function select(nfds: Longint; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): Longint; 
+{Determine the status of one or more sockets, waiting if necessary, to perform synchronous I/O}
 {Note: All sockets contained by the FDSet must be of the same type}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=SOCKET_ERROR;
@@ -9987,6 +10216,9 @@ end;
 {==============================================================================}
 
 function send(s: TSocket; var Buf; len, flags: Longint): Longint; 
+{Send data on a connected socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -10028,22 +10260,43 @@ end;
 {==============================================================================}
 
 function send(s: TSocket; const Buf: PChar; len, flags: Longint): Longint; 
+{Send data on a connected socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if Buf = nil then Exit;
+
  Result:=send(s,Buf^,len,flags);
 end;
 
 {==============================================================================}
 
 function send(s: TSocket; Buf: Pointer; len, flags: Longint): Longint; 
+{Send data on a connected socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if Buf = nil then Exit;
+
  Result:=send(s,Buf^,len,flags);
 end;
 
 {==============================================================================}
 
 function sendto(s: TSocket; var Buf; len, flags: Longint; var addrto: TSockAddr; tolen: Longint): Longint; 
+{Send data to a specific destination}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -10085,22 +10338,59 @@ end;
 {==============================================================================}
 
 function sendto(s: TSocket; const Buf: PChar; len, flags: Longint; addrto: PSockAddr; tolen: Longint): Longint; 
+{Send data to a specific destination}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=sendto(s,buf^,len,flags,addrto^,tolen);
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if Buf = nil then Exit;
+
+ {Check Address}
+ if addrto <> nil then
+  begin
+   Result:=sendto(s,Buf^,len,flags,addrto^,tolen);
+  end
+ else
+  begin
+   Result:=send(s,Buf^,len,flags);
+  end;
 end;
 
 {==============================================================================}
 
 function sendto(s: TSocket; Buf: Pointer; len, flags: Longint; addrto: PSockAddr; tolen: Longint): Longint; 
+{Send data to a specific destination}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- Result:=sendto(s,buf^,len,flags,addrto^,tolen);
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if Buf = nil then Exit;
+
+ {Check Address}
+ if addrto <> nil then
+  begin
+   Result:=sendto(s,Buf^,len,flags,addrto^,tolen);
+  end
+ else
+  begin
+   Result:=send(s,Buf^,len,flags);
+  end;
 end;
 
 {==============================================================================}
 
 function setsockopt(s: TSocket; level, optname: Longint; const optval; optlen: Longint): Longint;  
+{Set a socket option}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=setsockopt(s,level,optname,PChar(@optval),optlen);
@@ -10109,6 +10399,9 @@ end;
 {==============================================================================}
 
 function setsockopt(s: TSocket; level, optname: Longint; const optval: PChar; optlen: Longint): Longint; 
+{Set a socket option}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -10150,6 +10443,9 @@ end;
 {==============================================================================}
 
 function setsockopt(s: TSocket; level, optname: Longint; optval: Pointer; optlen: Longint): Longint; 
+{Set a socket option}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=setsockopt(s,level,optname,PChar(optval),optlen);
@@ -10158,6 +10454,9 @@ end;
 {==============================================================================}
 
 function shutdown(s: TSocket; how: Longint): Longint; 
+{Disable sends or receives on a socket}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -10199,6 +10498,9 @@ end;
 {==============================================================================}
 
 function socket(af, struct, protocol: Longint): TSocket; 
+{Create a socket that is bound to a specific transport service provider}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=INVALID_SOCKET;
@@ -10228,7 +10530,10 @@ end;
 {==============================================================================}
 
 function gethostbyaddr(addr: Pointer; len, family: Longint): PHostEnt; 
-{Note: Address will be in network order where applicable}
+{Retrieve the host information corresponding to a network address}
+{Note: Address will be in network byte order where applicable}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=nil;
@@ -10258,6 +10563,9 @@ end;
 {==============================================================================}
 
 function gethostbyname(const name: PChar): PHostEnt; 
+{Retrieve network address corresponding to a host name}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=nil;
@@ -10287,6 +10595,9 @@ end;
 {==============================================================================}
 
 function gethostname(name: PChar; len: Longint): Longint; 
+{Retrieve the standard host name for the local computer}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=SOCKET_ERROR;
@@ -10316,7 +10627,10 @@ end;
 {==============================================================================}
 
 function getservbyport(port: Longint; const proto: PChar): PServEnt; 
-{Note: Port will be in network order}
+{Retrieve service information corresponding to a port and protocol}
+{Note: Port will be in network byte order}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=nil;
@@ -10346,6 +10660,9 @@ end;
 {==============================================================================}
 
 function getservbyname(const name, proto: PChar): PServEnt; 
+{Retrieve service information corresponding to a service name and protocol}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=nil;
@@ -10375,6 +10692,9 @@ end;
 {==============================================================================}
 
 function getprotobynumber(proto: Longint): PProtoEnt; 
+{Retrieve protocol information corresponding to a protocol number}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=nil;
@@ -10404,6 +10724,9 @@ end;
 {==============================================================================}
 
 function getprotobyname(const name: PChar): PProtoEnt; 
+{Retrieve the protocol information corresponding to a protocol name}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=nil;
@@ -10434,6 +10757,8 @@ end;
 
 function getaddrinfo(pNodeName, pServiceName: PChar; pHints: PAddrInfo; var ppResult: PAddrInfo): LongInt;
 {RFC 3493 protocol-independent translation from a host name to an address}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=WSAEAFNOSUPPORT;
@@ -10467,6 +10792,8 @@ end;
 
 procedure freeaddrinfo(ai: PAddrInfo);
 {Free address information that GetAddrInfo dynamically allocates in TAddrInfo structures}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  try
@@ -10495,6 +10822,8 @@ end;
 
 function getnameinfo(sa: PSockAddr; salen: Integer; host: PChar; hostlen: DWORD; serv: PChar; servlen: DWORD; flags: Integer): Integer;
 {RFC 3493 protocol-independent name resolution from an address to a host name and a port number to a service name}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=WSAEAFNOSUPPORT;
@@ -10525,6 +10854,8 @@ end;
 
 function gai_strerror(ecode: Integer): PChar;
 {Return an error message for an error code returned by getaddrinfo or getnameinfo}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=PChar(EAI_UNKNOWN_STR);
@@ -10544,6 +10875,9 @@ end;
 {==============================================================================}
 
 function WSAStartup(wVersionRequired: word; var WSData: TWSAData): Longint;
+{Initiate use of Winsock 2 by an application}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=WSAEFAULT; {SOCKET_ERROR; See Spec}
@@ -10666,7 +11000,10 @@ end;
 
 {==============================================================================}
 
-function WSACleanup: Longint; 
+function WSACleanup: Longint;
+{Terminate use of Winsock 2 by an application}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=SOCKET_ERROR;
@@ -10730,6 +11067,9 @@ end;
 {==============================================================================}
 
 procedure WSASetLastError(iError: Longint); inline;
+{Set the error code that can be retrieved through the WSAGetLastError function}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  NetworkSetLastError(iError);
@@ -10738,6 +11078,9 @@ end;
 {==============================================================================}
 
 function WSAGetLastError: Longint; inline;
+{Return the error status for the last Windows Sockets operation that failed}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=NetworkGetLastError;
@@ -10869,7 +11212,10 @@ end;
 
 {==============================================================================}
 
-function __WSAFDIsSet(s: TSOcket; var FDSet: TFDSet): BOOL;
+function __WSAFDIsSet(s: TSocket; var FDSet: TFDSet): BOOL;
+{Return a value indicating whether a socket is included in a set of socket descriptors}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=FD_ISSET(s,FDSet);
@@ -10877,8 +11223,11 @@ end;
 
 {==============================================================================}
 
-function inet_pton(Family: Longint; pszAddrString: PChar; pAddrBuf: Pointer): Longint;
-{Note: Address will be returned in network order where applicable}
+function inet_pton(Family: Longint; const pszAddrString: PChar; pAddrBuf: Pointer): Longint;
+{Convert an IPv4 or IPv6 Internet network address in its standard text presentation form into its numeric binary form}
+{Note: Address will be returned in network byte order where applicable}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=InetPtonA(Family,pszAddrString,pAddrBuf);
@@ -10886,8 +11235,11 @@ end;
 
 {==============================================================================}
 
-function InetPtonA(Family: Longint; pszAddrString: PChar; pAddrBuf: Pointer): Longint;
-{Note: Address will be returned in network order where applicable}
+function InetPtonA(Family: Longint; const pszAddrString: PChar; pAddrBuf: Pointer): Longint;
+{Convert an IPv4 or IPv6 Internet network address in its standard text presentation form into its numeric binary form}
+{Note: Address will be returned in network byte order where applicable}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=SOCKET_ERROR;
@@ -10931,8 +11283,11 @@ end;
 
 {==============================================================================}
 
-function InetPtonW(Family: Longint; pszAddrString: PWideChar; pAddrBuf: Pointer): Longint;
-{Note: Address will be returned in network order where applicable}
+function InetPtonW(Family: Longint; const pszAddrString: PWideChar; pAddrBuf: Pointer): Longint;
+{Convert an IPv4 or IPv6 Internet network address in its standard text presentation form into its numeric binary form}
+{Note: Address will be returned in network byte order where applicable}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  AddrString:String;
 begin
@@ -10982,7 +11337,10 @@ end;
 {==============================================================================}
 
 function inet_ntop(Family: Longint; pAddr: Pointer; pStringBuf: PChar; StringBufSize: Longint): PChar;
-{Note: Address will be in network order where applicable}
+{Convert an IPv4 or IPv6 Internet network address into a string in Internet standard format}
+{Note: Address will be in network byte order where applicable}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  Result:=InetNtopA(Family,pAddr,pStringBuf,StringBufSize);
@@ -10991,7 +11349,10 @@ end;
 {==============================================================================}
 
 function InetNtopA(Family: Longint; pAddr: Pointer; pStringBuf: PChar; StringBufSize: Longint): PChar;
-{Note: Address will be in network order where applicable}
+{Convert an IPv4 or IPv6 Internet network address into a string in Internet standard format}
+{Note: Address will be in network byte order where applicable}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  WorkBuffer:String;
 begin
@@ -11034,7 +11395,10 @@ end;
 {==============================================================================}
 
 function InetNtopW(Family: Longint; pAddr: Pointer; pStringBuf: PWideChar; StringBufSize: Longint): PWideChar;
-{Note: Address will be in network order where applicable}
+{Convert an IPv4 or IPv6 Internet network address into a string in Internet standard format}
+{Note: Address will be in network byte order where applicable}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  WorkBuffer:String;
 begin
@@ -11076,37 +11440,169 @@ end;
 
 {==============================================================================}
 
-function WSAAccept( s : TSocket; addr : TSockAddr; addrlen : PLongint; lpfnCondition : LPCONDITIONPROC; dwCallbackData : DWORD ): TSocket;
+function WSAAccept( s : TSocket; addr : PSockAddr; addrlen : PLongint; lpfnCondition : LPCONDITIONPROC; dwCallbackData : DWORD_PTR ): TSocket;
+{Conditionally accept a connection based on the return value of a condition function and allows the transfer of connection data}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ g:GROUP;
+ Status:LongInt;
+ CallerId:WSABUF;
+ CalleeId:WSABUF; 
+ PeerName:TSockAddr;
+ PeerNameLen:LongInt;
+ SockName:TSockAddr;
+ SockNameLen:LongInt;
+ Socket:TProtocolSocket;
+ Accepted:TProtocolSocket;
 begin
  {}
- {Not Implemented}
  Result:=INVALID_SOCKET;
- NetworkSetLastError(WSAEOPNOTSUPP);
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Socket}
+  NetworkSetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(s);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
+
+  {Accept Socket}
+  Result:=TSocket(Socket.Protocol.Accept(Socket,addr,addrlen));
+  if (Result <> INVALID_SOCKET) and (Assigned(lpfnCondition)) then
+   begin
+    {Get Accepted Socket}
+    Accepted:=TProtocolSocket(Result);
+    if ProtocolManager.CheckSocket(Result,True,NETWORK_LOCK_READ) then
+     begin
+      {Set Group (Dummy)}
+      g:=0;
+
+      {Get Caller Id}
+      Accepted.Protocol.GetPeerName(Accepted,PeerName,PeerNameLen);
+      CallerId.buf:=PChar(@PeerName);
+      CallerId.len:=PeerNameLen;
+
+      {Get Callee Id}
+      Accepted.Protocol.GetSockName(Accepted,SockName,SockNameLen);
+      CalleeId.buf:=PChar(@SockName);
+      CalleeId.len:=SockNameLen;
+
+      {Call Condition Function}
+      Status:=lpfnCondition(@CallerId,nil,nil,nil,@CalleeId,nil,@g,dwCallbackData);
+      if Status = CF_REJECT then
+       begin
+        {Close Accepted Socket}
+        Accepted.Protocol.CloseSocket(Accepted);
+
+        NetworkSetLastError(WSAECONNREFUSED);
+        Result:=INVALID_SOCKET;
+       end;
+
+      {Unlock Accepted Socket}
+      Accepted.ReaderUnlock;
+     end;
+   end;
+
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    Result:=INVALID_SOCKET;
+    NetworkSetLastError(WSAENOTSOCK);
+    {$IFDEF WINSOCK2_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSAAccept ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
 end;
 
 {==============================================================================}
 
 function WSACloseEvent( hEvent : WSAEVENT) : BOOL;
+{Close the handle to an event object and free resources associated with the event object}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- {Not Implemented}
  Result:=False;
- NetworkSetLastError(WSAEOPNOTSUPP);
+
+ {Check Started}
+ NetworkSetLastError(WSANOTINITIALISED);
+ if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+ {Check Event}
+ NetworkSetLastError(WSA_INVALID_HANDLE);
+ if hEvent = WSA_INVALID_EVENT then Exit;
+ if hEvent = HANDLE(INVALID_HANDLE_VALUE) then Exit;
+
+ {Close Event}
+ if EventDestroy(hEvent) <> ERROR_SUCCESS then Exit;
+
+ NetworkSetLastError(ERROR_SUCCESS);
+ Result:=True;
 end;
 
 {==============================================================================}
 
-function WSAConnect( s : TSocket; const name : PSockAddr; namelen : Longint; lpCallerData,lpCalleeData : LPWSABUF; lpSQOS,lpGQOS : LPQOS ) : Longint;
+function WSAConnect( s : TSocket; name : PSockAddr; namelen : Longint; lpCallerData, lpCalleeData : LPWSABUF; lpSQOS, lpGQOS : LPQOS ) : Longint;
+{Establish a connection to another socket application and exchange connect data}
+{Note: The lpCallerData, lpCalleeData, lpSQOS and lpGQOS parameters are currently ignored}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ Socket:TProtocolSocket;
 begin
  {}
- {Not Implemented}
  Result:=SOCKET_ERROR;
- NetworkSetLastError(WSAEOPNOTSUPP);
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Name}
+  NetworkSetLastError(WSAEFAULT);
+  if name = nil then Exit;
+
+  {Check Socket}
+  NetworkSetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(s);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
+
+  {Connect Socket}
+  Result:=Socket.Protocol.Connect(Socket,name^,namelen);
+
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    Result:=SOCKET_ERROR;
+    NetworkSetLastError(WSAENOTSOCK);
+    {$IFDEF WINSOCK2_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSAConnect ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
 end;
 
 {==============================================================================}
 
-function WSAConnectByList( s : TSocket; SocketAddressList : PSOCKET_ADDRESS_LIST; var LocalAddressLength : DWORD;  LocalAddress : PSockAddr; var RemoteAddressLength : DWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
+function WSAConnectByList( s : TSocket; SocketAddressList : PSOCKET_ADDRESS_LIST; LocalAddressLength : LPDWORD;  LocalAddress : PSockAddr; RemoteAddressLength : LPDWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
 begin
  {}
  {Not Implemented}
@@ -11116,7 +11612,7 @@ end;
 
 {==============================================================================}
 
-function WSAConnectByNameA( s : TSocket; nodename : PChar; servicename : PChar; var LocalAddressLength : DWORD; LocalAddress : PSockAddr; var RemoteAddressLength : DWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
+function WSAConnectByNameA( s : TSocket; nodename : PChar; servicename : PChar; LocalAddressLength : LPDWORD; LocalAddress : PSockAddr; RemoteAddressLength : LPDWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
 begin
  {}
  {Not Implemented}
@@ -11126,7 +11622,7 @@ end;
 
 {==============================================================================}
 
-function WSAConnectByNameW( s : TSocket; nodename : PWideChar; servicename : PWideChar; var LocalAddressLength : DWORD; LocalAddress : PSockAddr; var RemoteAddressLength : DWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
+function WSAConnectByNameW( s : TSocket; nodename : PWideChar; servicename : PWideChar; LocalAddressLength : LPDWORD; LocalAddress : PSockAddr; RemoteAddressLength : LPDWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
 begin
  {}
  {Not Implemented}
@@ -11137,11 +11633,26 @@ end;
 {==============================================================================}
 
 function WSACreateEvent : WSAEVENT; 
+{Create a manual reset event object with an initial state of unsignaled}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ Event:TEventHandle;
 begin
  {}
- {Not Implemented}
  Result:=WSA_INVALID_EVENT;
- NetworkSetLastError(WSAEOPNOTSUPP);
+
+ {Check Started}
+ NetworkSetLastError(WSANOTINITIALISED);
+ if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+ {Create Event}
+ NetworkSetLastError(WSA_NOT_ENOUGH_MEMORY);
+ Event:=EventCreate(True,False);
+ if Event = INVALID_HANDLE_VALUE then Exit;
+
+ NetworkSetLastError(ERROR_SUCCESS);
+ Result:=Event;
 end;
 
 {==============================================================================}
@@ -11166,7 +11677,60 @@ end;
 
 {==============================================================================}
 
-function WSAEnumNetworkEvents( const s : TSocket; const hEventObject : WSAEVENT; lpNetworkEvents : LPWSANETWORKEVENTS ) :Longint;
+function WSAEnumNetworkEvents( s : TSocket; hEventObject : WSAEVENT; lpNetworkEvents : LPWSANETWORKEVENTS ) :Longint;
+{Discover occurrences of network events for the indicated socket, clear internal network event records, and reset event objects}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ Socket:TProtocolSocket;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Event} {Event can be nil}
+  {NetworkSetLastError(WSAEINVAL);}
+  {if hEventObject = WSA_INVALID_EVENT then Exit;}
+  {if hEventObject = HANDLE(INVALID_HANDLE_VALUE) then Exit;}
+
+  {Check Network Events}
+  NetworkSetLastError(WSAEFAULT);
+  if lpNetworkEvents = nil then Exit;
+
+  {Check Socket}
+  NetworkSetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(s);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
+
+  {Get Events} {Not Implemented Yet}
+  NetworkSetLastError(WSAEOPNOTSUPP);
+
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    Result:=SOCKET_ERROR;
+    NetworkSetLastError(WSAENOTSOCK);
+    {$IFDEF WINSOCK2_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSAEnumNetworkEvents ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
+end;
+
+{==============================================================================}
+
+function WSAEnumProtocolsA( lpiProtocols : PLongint; lpProtocolBuffer : LPWSAProtocol_InfoA; lpdwBufferLength : LPDWORD ) : Longint;
 begin
  {}
  {Not Implemented}
@@ -11176,17 +11740,7 @@ end;
 
 {==============================================================================}
 
-function WSAEnumProtocolsA( lpiProtocols : PLongint; lpProtocolBuffer : LPWSAProtocol_InfoA; var lpdwBufferLength : DWORD ) : Longint;
-begin
- {}
- {Not Implemented}
- Result:=SOCKET_ERROR;
- NetworkSetLastError(WSAEOPNOTSUPP);
-end;
-
-{==============================================================================}
-
-function WSAEnumProtocolsW( lpiProtocols : PLongint; lpProtocolBuffer : LPWSAProtocol_InfoW; var lpdwBufferLength : DWORD ) : Longint;
+function WSAEnumProtocolsW( lpiProtocols : PLongint; lpProtocolBuffer : LPWSAProtocol_InfoW; lpdwBufferLength : LPDWORD ) : Longint;
 begin
  {}
  {Not Implemented}
@@ -11197,21 +11751,100 @@ end;
 {==============================================================================}
 
 function WSAEventSelect( s : TSocket; hEventObject : WSAEVENT; lNetworkEvents : LongInt ): Longint;
+{Specify an event object to be associated with the requested set of FD_XXX network events}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ Socket:TProtocolSocket;
 begin
  {}
- {Not Implemented}
  Result:=SOCKET_ERROR;
- NetworkSetLastError(WSAEOPNOTSUPP);
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Event}
+  NetworkSetLastError(WSAEINVAL);
+  if hEventObject = WSA_INVALID_EVENT then Exit;
+  if hEventObject = HANDLE(INVALID_HANDLE_VALUE) then Exit;
+
+  {Check Socket}
+  NetworkSetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(s);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
+
+  {Set Events} {Not Implemented Yet}
+  NetworkSetLastError(WSAEOPNOTSUPP);
+
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    Result:=SOCKET_ERROR;
+    NetworkSetLastError(WSAENOTSOCK);
+    {$IFDEF WINSOCK2_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSAEventSelect ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
 end;
 
 {==============================================================================}
 
-function WSAGetOverlappedResult( s : TSocket; lpOverlapped : LPWSAOVERLAPPED; lpcbTransfer : LPDWORD; fWait : BOOL; var lpdwFlags : DWORD ) : BOOL; 
+function WSAGetOverlappedResult( s : TSocket; lpOverlapped : LPWSAOVERLAPPED; lpcbTransfer : LPDWORD; fWait : BOOL; lpdwFlags : LPDWORD ) : BOOL; 
+{Retrieve the results of an overlapped operation on the specified socket}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ Socket:TProtocolSocket;
 begin
  {}
- {Not Implemented}
  Result:=False;
- NetworkSetLastError(WSAEOPNOTSUPP);
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Parameters}
+  NetworkSetLastError(WSA_INVALID_PARAMETER);
+  if lpOverlapped = nil then Exit;
+  if lpcbTransfer = nil then Exit;
+  if lpdwFlags = nil then Exit;
+
+  {Check Socket}
+  NetworkSetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(s);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
+
+  {Not Implemented}
+  Result:=False;
+  NetworkSetLastError(WSAEOPNOTSUPP);
+
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    NetworkSetLastError(WSAEFAULT);
+    {$IFDEF WINSOCK2_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSAGetOverlappedResult ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
 end;
 
 {==============================================================================}
@@ -11226,7 +11859,10 @@ end;
 
 {==============================================================================}
 
-function WSAHtonl( s : TSocket; hostlong : u_long; var lpnetlong : DWORD ): Longint; 
+function WSAHtonl( s : TSocket; hostlong : u_long; lpnetlong : pu_long ): Longint; 
+{Convert a u_long from host byte order to network byte order}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -11236,7 +11872,11 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
+  {Check Parameters}
+  NetworkSetLastError(WSAEFAULT);
+  if lpnetlong = nil then Exit;
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -11249,7 +11889,7 @@ begin
   if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
 
   {Host to Network Long}
-  lpnetlong:=LongWordNtoBE(hostlong); {Native to Big Endian}
+  lpnetlong^:=LongWordNtoBE(hostlong); {Native to Big Endian}
 
   {Unlock Socket}
   Socket.ReaderUnlock;
@@ -11263,7 +11903,7 @@ begin
     Result:=SOCKET_ERROR;
     NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: bind ' + E.Message);
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSAHtonl ' + E.Message);
     {$ENDIF}
    end;
  end;
@@ -11271,7 +11911,10 @@ end;
 
 {==============================================================================}
 
-function WSAHtons( s : TSocket; hostshort : u_short; var lpnetshort : WORD ): Longint;
+function WSAHtons( s : TSocket; hostshort : u_short; lpnetshort : pu_short ): Longint;
+{Convert a u_short from host byte order to network byte order}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -11281,6 +11924,10 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Parameters}
+  NetworkSetLastError(WSAEFAULT);
+  if lpnetshort = nil then Exit;
   
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
@@ -11294,7 +11941,7 @@ begin
   if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
 
   {Host to Network Short}
-  lpnetshort:=WordNtoBE(hostshort); {Native to Big Endian}
+  lpnetshort^:=WordNtoBE(hostshort); {Native to Big Endian}
 
   {Unlock Socket}
   Socket.ReaderUnlock;
@@ -11308,7 +11955,7 @@ begin
     Result:=SOCKET_ERROR;
     NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: bind ' + E.Message);
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSAHtons ' + E.Message);
     {$ENDIF}
    end;
  end;
@@ -11317,11 +11964,101 @@ end;
 {==============================================================================}
 
 function WSAIoctl( s : TSocket; dwIoControlCode : DWORD; lpvInBuffer : Pointer; cbInBuffer : DWORD; lpvOutBuffer : Pointer; cbOutBuffer : DWORD; lpcbBytesReturned : LPDWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ) : Longint;
+{Control the mode of a socket}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ Argument:u_long;
+ Socket:TProtocolSocket;
 begin
  {}
- {Not Implemented}
  Result:=SOCKET_ERROR;
- NetworkSetLastError(WSAEOPNOTSUPP);
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Input Control Type}
+  NetworkSetLastError(WSAEINVAL);
+  if (dwIoControlCode and IOC_VENDOR) <> IOC_UNIX then Exit;
+
+  {Check Input Control Code}
+  if (dwIoControlCode and IOC_IN) <> 0 then
+   begin
+    {Check Input Buffer}
+    NetworkSetLastError(WSAEFAULT);
+    if lpvInBuffer = nil then Exit;
+
+    {Check Input Size}
+    NetworkSetLastError(WSAEINVAL);
+    if cbInBuffer = 0 then Exit;
+   end;
+
+  {Check Output Control Code}
+  if (dwIoControlCode and IOC_OUT) <> 0 then
+   begin
+    {Check Output Buffers}
+    NetworkSetLastError(WSAEFAULT);
+    if lpvOutBuffer = nil then Exit;
+    if lpcbBytesReturned = nil then Exit;
+
+    {Check Output Size}
+    NetworkSetLastError(WSAEINVAL);
+    if cbOutBuffer = 0 then Exit;
+   end;
+
+  {Check Socket}
+  NetworkSetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(s);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
+
+  {Check Overlapped}
+  if (lpOverlapped <> nil) and Socket.SocketFlags.Overlapped then
+   begin
+    {Not Implemented}
+    NetworkSetLastError(WSAEOPNOTSUPP);
+
+    {Unlock Socket}
+    Socket.ReaderUnlock;
+    Exit;
+   end
+  else
+   begin
+    {Check Input Control Code}
+    if (dwIoControlCode and IOC_IN) <> 0 then BufferSizeToValue(lpvInBuffer,cbInBuffer,Argument) else Argument:=0;
+
+    {IOCTL Socket}
+    Result:=Socket.Protocol.IoctlSocket(Socket,dwIoControlCode,Argument);
+
+    {Check Output Control Code}
+    if (dwIoControlCode and IOC_OUT) <> 0 then
+     begin
+      {Return Output Argument}
+      ValueToBufferSize(Argument,lpvOutBuffer,cbOutBuffer);
+
+      {Update Bytes Returned}
+      lpcbBytesReturned^:=Min(SizeOf(Argument),cbOutBuffer);
+     end;
+   end;
+
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    Result:=SOCKET_ERROR;
+    NetworkSetLastError(WSAENOTSOCK);
+    {$IFDEF WINSOCK2_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSAIoctl ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
 end;
 
 {==============================================================================}
@@ -11336,7 +12073,10 @@ end;
 
 {==============================================================================}
 
-function WSANtohl( s : TSocket; netlong : u_long; var lphostlong : DWORD ): Longint;
+function WSANtohl( s : TSocket; netlong : u_long; lphostlong : pu_long ): Longint;
+{Convert a u_long from network byte order to host byte order}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -11346,6 +12086,10 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Parameters}
+  NetworkSetLastError(WSAEFAULT);
+  if lphostlong = nil then Exit;
   
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
@@ -11359,7 +12103,7 @@ begin
   if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
 
   {Network to Host Long}
-  lphostlong:=LongWordBEtoN(netlong); {Big Endian to Native}
+  lphostlong^:=LongWordBEtoN(netlong); {Big Endian to Native}
 
   {Unlock Socket}
   Socket.ReaderUnlock;
@@ -11373,7 +12117,7 @@ begin
     Result:=SOCKET_ERROR;
     NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: bind ' + E.Message);
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSANtohl ' + E.Message);
     {$ENDIF}
    end;
  end;
@@ -11381,7 +12125,10 @@ end;
 
 {==============================================================================}
 
-function WSANtohs( s : TSocket; netshort : u_short; var lphostshort : WORD ): Longint;
+function WSANtohs( s : TSocket; netshort : u_short; lphostshort : pu_short ): Longint;
+{Convert a u_short from network byte order to host byte order}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -11391,6 +12138,10 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Parameters}
+  NetworkSetLastError(WSAEFAULT);
+  if lphostshort = nil then Exit;
   
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
@@ -11404,7 +12155,7 @@ begin
   if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
 
   {Host to Network Short}
-  lphostshort:=WordBEtoN(netshort); {Big Endian to Native}
+  lphostshort^:=WordBEtoN(netshort); {Big Endian to Native}
 
   {Unlock Socket}
   Socket.ReaderUnlock;
@@ -11418,7 +12169,7 @@ begin
     Result:=SOCKET_ERROR;
     NetworkSetLastError(WSAENOTSOCK);
     {$IFDEF WINSOCK2_DEBUG}
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: bind ' + E.Message);
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSANtohs ' + E.Message);
     {$ENDIF}
    end;
  end;
@@ -11427,6 +12178,9 @@ end;
 {==============================================================================}
 
 function WSAPoll( fdArray : LPWSAPOLLFD; fds : ULONG; timeout : Longint): Longint;
+{Determine status of one or more sockets}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  {Not Implemented}
@@ -11436,7 +12190,7 @@ end;
 
 {==============================================================================}
 
-function WSAProviderConfigChange( var lpNotificationHandle: THandle; lpOverlapped: LPWSAOVERLAPPED; lpCompletionRoutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): Longint;
+function WSAProviderConfigChange( lpNotificationHandle: PHANDLE; lpOverlapped: LPWSAOVERLAPPED; lpCompletionRoutine: LPWSAOVERLAPPED_COMPLETION_ROUTINE): Longint;
 begin
  {}
  {Not Implemented}
@@ -11446,12 +12200,125 @@ end;
 
 {==============================================================================}
 
-function WSARecv( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesRecvd : DWORD; var lpFlags : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
+function WSARecv( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; lpNumberOfBytesRecvd : LPDWORD; lpFlags : LPDWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
+{Receive data from a connected socket or a bound connectionless socket}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ Count:LongWord;
+ Total:LongWord;
+ Flags:LongWord;
+ Status:LongInt;
+ Buffer:LPWSABUF;
+ Socket:TProtocolSocket;
 begin
  {}
- {Not Implemented}
  Result:=SOCKET_ERROR;
- NetworkSetLastError(WSAEOPNOTSUPP);
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Buffer and Count}
+  NetworkSetLastError(WSAEINVAL);
+  if lpBuffers = nil then Exit; 
+  if dwBufferCount = 0 then Exit;
+  if lpFlags = nil then Exit; 
+
+  {Check Socket}
+  NetworkSetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(s);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
+
+  {Check Overlapped}
+  if (lpOverlapped <> nil) and Socket.SocketFlags.Overlapped then
+   begin
+    {Not Implemented}
+    NetworkSetLastError(WSAEOPNOTSUPP);
+
+    {Unlock Socket}
+    Socket.ReaderUnlock;
+    Exit;
+   end
+  else
+   begin
+    {Check Bytes Received}
+    NetworkSetLastError(WSAEINVAL);
+    if lpNumberOfBytesRecvd = nil then
+     begin
+      {Unlock Socket}
+      Socket.ReaderUnlock;
+      Exit;
+     end; 
+
+    {Get Start}
+    Count:=0;
+    Total:=0;
+    Buffer:=lpBuffers;
+
+    {Process Buffers}
+    while Count < dwBufferCount do
+     begin
+      {Set Flags}
+      Flags:=lpFlags^;
+
+      {Check Buffer}
+      NetworkSetLastError(WSAEFAULT);
+      if Buffer.buf = nil then
+       begin
+        {Unlock Socket}
+        Socket.ReaderUnlock;
+        Exit;
+       end; 
+
+      {Receive Buffer}
+      Status:=Socket.Protocol.Recv(Socket,Buffer.buf^,Buffer.len,Flags);
+      if Status = SOCKET_ERROR then
+       begin
+        {Unlock Socket}
+        Socket.ReaderUnlock;
+        Exit;
+       end;
+
+      {Update Total}
+      Inc(Total,Status);
+
+      {Check Received}
+      if Status < Buffer.len then Break;
+
+      {Get Next}
+      Inc(Count);
+      Inc(Buffer);
+     end;
+
+    {Update Flags}
+    lpFlags^:=Flags and MSG_PARTIAL;
+
+    {Update Bytes Received}
+    lpNumberOfBytesRecvd^:=Total;
+   end;
+
+  {Return Result}
+  Result:=0;
+
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    Result:=SOCKET_ERROR;
+    NetworkSetLastError(WSAENOTSOCK);
+    {$IFDEF WINSOCK2_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSARecv ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
 end;
 
 {==============================================================================}
@@ -11466,42 +12333,419 @@ end;
 
 {==============================================================================}
 
-function WSARecvFrom( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesRecvd : DWORD; var lpFlags : DWORD; lpFrom : PSockAddr; lpFromlen : PLongint; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
+function WSARecvFrom( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; lpNumberOfBytesRecvd : LPDWORD; lpFlags : LPDWORD; lpFrom : PSockAddr; lpFromlen : PLongint; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
+{Receive a datagram and store the source address}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ Count:LongWord;
+ Total:LongWord;
+ Flags:LongWord;
+ Status:LongInt;
+ Buffer:LPWSABUF;
+ Socket:TProtocolSocket;
 begin
  {}
- {Not Implemented}
  Result:=SOCKET_ERROR;
- NetworkSetLastError(WSAEOPNOTSUPP);
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Buffer and Count}
+  NetworkSetLastError(WSAEINVAL);
+  if lpBuffers = nil then Exit; 
+  if dwBufferCount = 0 then Exit;
+  if lpFlags = nil then Exit; 
+
+  {Check Socket}
+  NetworkSetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(s);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
+
+  {Check Overlapped}
+  if (lpOverlapped <> nil) and Socket.SocketFlags.Overlapped then
+   begin
+    {Not Implemented}
+    NetworkSetLastError(WSAEOPNOTSUPP);
+
+    {Unlock Socket}
+    Socket.ReaderUnlock;
+    Exit;
+   end
+  else
+   begin
+    {Check Bytes Received}
+    NetworkSetLastError(WSAEINVAL);
+    if lpNumberOfBytesRecvd = nil then
+     begin
+      {Unlock Socket}
+      Socket.ReaderUnlock;
+      Exit;
+     end; 
+
+    {Get Start}
+    Count:=0;
+    Total:=0;
+    Buffer:=lpBuffers;
+
+    {Process Buffers}
+    while Count < dwBufferCount do
+     begin
+      {Set Flags}
+      Flags:=lpFlags^;
+
+      {Check Buffer}
+      NetworkSetLastError(WSAEFAULT);
+      if Buffer.buf = nil then
+       begin
+        {Unlock Socket}
+        Socket.ReaderUnlock;
+        Exit;
+       end; 
+
+      {Check Address and Length}
+      if (lpFrom <> nil) and (lpFromlen <> nil) then
+       begin
+        {Receive Buffer}
+        Status:=Socket.Protocol.RecvFrom(Socket,Buffer.buf^,Buffer.len,Flags,lpFrom^,lpFromlen^);
+       end
+      else
+       begin
+        {Receive Buffer}
+        Status:=Socket.Protocol.Recv(Socket,Buffer.buf^,Buffer.len,Flags);
+       end;
+      if Status = SOCKET_ERROR then
+       begin
+        {Unlock Socket}
+        Socket.ReaderUnlock;
+        Exit;
+       end;
+
+      {Update Total}
+      Inc(Total,Status);
+
+      {Check Received}
+      if Status < Buffer.len then Break;
+
+      {Get Next}
+      Inc(Count);
+      Inc(Buffer);
+     end;
+
+    {Update Flags}
+    lpFlags^:=Flags and MSG_PARTIAL;
+
+    {Update Bytes Received}
+    lpNumberOfBytesRecvd^:=Total;
+   end;
+
+  {Return Result}
+  Result:=0;
+
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    Result:=SOCKET_ERROR;
+    NetworkSetLastError(WSAENOTSOCK);
+    {$IFDEF WINSOCK2_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSARecvFrom ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
 end;
 
 {==============================================================================}
 
-function WSARecvMsg( s : TSocket; lpMsg : LPWSAMSG; var lpdwNumberOfBytesRecvd : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE) : Longint;
+function WSARecvMsg( s : TSocket; lpMsg : LPWSAMSG; lpdwNumberOfBytesRecvd : LPDWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE) : Longint;
+{Receive data and optional control information from connected and unconnected sockets}
+{Note: The Control field of lpMsg parameter is currently ignored}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ Count:LongWord;
+ Total:LongWord;
+ Flags:LongWord;
+ Status:LongInt;
+ Buffer:LPWSABUF;
+ Socket:TProtocolSocket;
 begin
  {}
- {Not Implemented}
  Result:=SOCKET_ERROR;
- NetworkSetLastError(WSAEOPNOTSUPP);
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Buffer and Count}
+  NetworkSetLastError(WSAEINVAL);
+  if lpMsg.lpBuffers = nil then Exit; 
+  if lpMsg.dwBufferCount = 0 then Exit;
+
+  {Check Name and Namelen}
+  NetworkSetLastError(WSAEFAULT);
+  if (lpMsg.name = nil) and (lpMsg.namelen <> 0) then Exit;
+
+  {Check Control Buffer and Length}
+  NetworkSetLastError(WSAEFAULT);
+  if (lpMsg.Control.buf = nil) and (lpMsg.Control.len <> 0) then Exit;
+
+  {Check Socket}
+  NetworkSetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(s);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
+ 
+  {Check Overlapped}
+  if (lpOverlapped <> nil) and Socket.SocketFlags.Overlapped then
+   begin
+    {Not Implemented}
+    NetworkSetLastError(WSAEOPNOTSUPP);
+
+    {Unlock Socket}
+    Socket.ReaderUnlock;
+    Exit;
+   end
+  else
+   begin
+    {Check Bytes Received}
+    NetworkSetLastError(WSAEINVAL);
+    if lpdwNumberOfBytesRecvd = nil then
+     begin
+      {Unlock Socket}
+      Socket.ReaderUnlock;
+      Exit;
+     end; 
+
+    {Get Start}
+    Count:=0;
+    Total:=0;
+    Buffer:=lpMsg.lpBuffers;
+
+    {Process Buffers}
+    while Count < lpMsg.dwBufferCount do
+     begin
+      {Set Flags}
+      Flags:=lpMsg.dwFlags;
+
+      {Check Buffer}
+      NetworkSetLastError(WSAEFAULT);
+      if Buffer.buf = nil then
+       begin
+        {Unlock Socket}
+        Socket.ReaderUnlock;
+        Exit;
+       end; 
+
+      {Check Address and Length}
+      if (lpMsg.name <> nil) and (lpMsg.name.lpSockaddr <> nil) then
+       begin
+        {Receive Buffer}
+        Status:=Socket.Protocol.RecvFrom(Socket,Buffer.buf^,Buffer.len,Flags,lpMsg.name.lpSockaddr^,lpMsg.name.iSockaddrLength);
+       end
+      else
+       begin
+        {Receive Buffer}
+        Status:=Socket.Protocol.Recv(Socket,Buffer.buf^,Buffer.len,Flags);
+       end;
+      if Status = SOCKET_ERROR then
+       begin
+        {Unlock Socket}
+        Socket.ReaderUnlock;
+        Exit;
+       end;
+
+      {Update Total}
+      Inc(Total,Status);
+
+      {Check Received}
+      if Status < Buffer.len then Break;
+
+      {Get Next}
+      Inc(Count);
+      Inc(Buffer);
+     end;
+
+    {Update Flags}
+    lpMsg.dwFlags:=Flags and (MSG_BCAST or MSG_CTRUNC or MSG_MCAST or MSG_TRUNC);
+
+    {Update Bytes Received}
+    lpdwNumberOfBytesRecvd^:=Total;
+   end;
+
+  {Return Result}
+  Result:=0;
+
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    Result:=SOCKET_ERROR;
+    NetworkSetLastError(WSAENOTSOCK);
+    {$IFDEF WINSOCK2_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSARecvMsg ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
 end;
 
 {==============================================================================}
 
 function WSAResetEvent( hEvent : WSAEVENT ): BOOL;
+{Reset the state of the specified event object to unsignaled}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- {Not Implemented}
  Result:=False;
- NetworkSetLastError(WSAEOPNOTSUPP);
+
+ {Check Started}
+ NetworkSetLastError(WSANOTINITIALISED);
+ if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+ {Check Event}
+ NetworkSetLastError(WSA_INVALID_HANDLE);
+ if hEvent = WSA_INVALID_EVENT then Exit;
+ if hEvent = HANDLE(INVALID_HANDLE_VALUE) then Exit;
+
+ {Reset Event}
+ if EventReset(hEvent) <> ERROR_SUCCESS then Exit;
+
+ NetworkSetLastError(ERROR_SUCCESS);
+ Result:=True;
 end;
 
 {==============================================================================}
 
-function WSASend( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesSent : DWORD; dwFlags : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
+function WSASend( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; lpNumberOfBytesSent : LPDWORD; dwFlags : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
+{Send data on a connected socket}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ Count:LongWord;
+ Total:LongWord;
+ Flags:LongWord;
+ Status:LongInt;
+ Buffer:LPWSABUF;
+ Socket:TProtocolSocket;
 begin
  {}
- {Not Implemented}
  Result:=SOCKET_ERROR;
- NetworkSetLastError(WSAEOPNOTSUPP);
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Buffer and Count}
+  NetworkSetLastError(WSAEINVAL);
+  if lpBuffers = nil then Exit; 
+  if dwBufferCount = 0 then Exit;
+
+  {Check Socket}
+  NetworkSetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(s);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
+
+  {Check Overlapped}
+  if (lpOverlapped <> nil) and Socket.SocketFlags.Overlapped then
+   begin
+    {Not Implemented}
+    NetworkSetLastError(WSAEOPNOTSUPP);
+
+    {Unlock Socket}
+    Socket.ReaderUnlock;
+    Exit;
+   end
+  else
+   begin
+    {Check Bytes Sent}
+    NetworkSetLastError(WSAEINVAL);
+    if lpNumberOfBytesSent = nil then
+     begin
+      {Unlock Socket}
+      Socket.ReaderUnlock;
+      Exit;
+     end; 
+
+    {Get Start}
+    Count:=0;
+    Total:=0;
+    Buffer:=lpBuffers;
+
+    {Process Buffers}
+    while Count < dwBufferCount do
+     begin
+      {Set Flags}
+      Flags:=dwFlags;
+
+      {Check Buffer}
+      NetworkSetLastError(WSAEFAULT);
+      if Buffer.buf = nil then
+       begin
+        {Unlock Socket}
+        Socket.ReaderUnlock;
+        Exit;
+       end; 
+
+      {Send Buffer}
+      Status:=Socket.Protocol.Send(Socket,Buffer.buf^,Buffer.len,Flags);
+      if Status = SOCKET_ERROR then
+       begin
+        {Unlock Socket}
+        Socket.ReaderUnlock;
+        Exit;
+       end;
+
+      {Update Total}
+      Inc(Total,Status);
+
+      {Check Sent}
+      if Status < Buffer.len then Break;
+
+      {Get Next}
+      Inc(Count);
+      Inc(Buffer);
+     end;
+
+    {Update Bytes Sent}
+    lpNumberOfBytesSent^:=Total;
+   end;
+
+  {Return Result}
+  Result:=0;
+
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    Result:=SOCKET_ERROR;
+    NetworkSetLastError(WSAENOTSOCK);
+    {$IFDEF WINSOCK2_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSASend ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
 end;
 
 {==============================================================================}
@@ -11516,57 +12760,401 @@ end;
 
 {==============================================================================}
 
-function WSASendTo( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; var lpNumberOfBytesSent : DWORD; dwFlags : DWORD; lpTo : PSockAddr; iTolen : Longint; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
+function WSASendTo( s : TSocket; lpBuffers : LPWSABUF; dwBufferCount : DWORD; lpNumberOfBytesSent : LPDWORD; dwFlags : DWORD; lpTo : PSockAddr; iTolen : Longint; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ): Longint;
+{Send data to a specific destination, using overlapped I/O where applicable}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ Count:LongWord;
+ Total:LongWord;
+ Flags:LongWord;
+ Status:LongInt;
+ Buffer:LPWSABUF;
+ Socket:TProtocolSocket;
 begin
  {}
- {Not Implemented}
  Result:=SOCKET_ERROR;
- NetworkSetLastError(WSAEOPNOTSUPP);
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Buffer and Count}
+  NetworkSetLastError(WSAEINVAL);
+  if lpBuffers = nil then Exit; 
+  if dwBufferCount = 0 then Exit;
+
+  {Check Socket}
+  NetworkSetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(s);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
+
+  {Check Overlapped}
+  if (lpOverlapped <> nil) and Socket.SocketFlags.Overlapped then
+   begin
+    {Not Implemented}
+    NetworkSetLastError(WSAEOPNOTSUPP);
+
+    {Unlock Socket}
+    Socket.ReaderUnlock;
+    Exit;
+   end
+  else
+   begin
+    {Check Bytes Sent}
+    NetworkSetLastError(WSAEINVAL);
+    if lpNumberOfBytesSent = nil then
+     begin
+      {Unlock Socket}
+      Socket.ReaderUnlock;
+      Exit;
+     end; 
+
+    {Get Start}
+    Count:=0;
+    Total:=0;
+    Buffer:=lpBuffers;
+
+    {Process Buffers}
+    while Count < dwBufferCount do
+     begin
+      {Set Flags}
+      Flags:=dwFlags;
+
+      {Check Buffer}
+      NetworkSetLastError(WSAEFAULT);
+      if Buffer.buf = nil then
+       begin
+        {Unlock Socket}
+        Socket.ReaderUnlock;
+        Exit;
+       end; 
+
+      {Check Address}
+      if lpTo <> nil then
+       begin
+        {Send Buffer}
+        Status:=Socket.Protocol.SendTo(Socket,Buffer.buf^,Buffer.len,Flags,lpTo^,iTolen);
+       end
+      else
+       begin
+        {Send Buffer}
+        Status:=Socket.Protocol.Send(Socket,Buffer.buf^,Buffer.len,Flags);
+       end;
+      if Status = SOCKET_ERROR then
+       begin
+        {Unlock Socket}
+        Socket.ReaderUnlock;
+        Exit;
+       end;
+
+      {Update Total}
+      Inc(Total,Status);
+
+      {Check Sent}
+      if Status < Buffer.len then Break;
+
+      {Get Next}
+      Inc(Count);
+      Inc(Buffer);
+     end;
+
+    {Update Bytes Sent}
+    lpNumberOfBytesSent^:=Total;
+   end;
+
+  {Return Result}
+  Result:=0;
+
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    Result:=SOCKET_ERROR;
+    NetworkSetLastError(WSAENOTSOCK);
+    {$IFDEF WINSOCK2_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSASendTo ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
 end;
 
 {==============================================================================}
 
-function WSASendMsg( s : TSocket; lpMsg : LPWSAMSG; dwFlags : DWORD; lpNumberOfBytesSent : DWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE) : Longint;
+function WSASendMsg( s : TSocket; lpMsg : LPWSAMSG; dwFlags : DWORD; lpNumberOfBytesSent : LPDWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE) : Longint;
+{Send data and optional control information from connected and unconnected sockets}
+{Note: The Control field of lpMsg parameter is currently ignored}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ Count:LongWord;
+ Total:LongWord;
+ Flags:LongWord;
+ Status:LongInt;
+ Buffer:LPWSABUF;
+ Socket:TProtocolSocket;
 begin
  {}
- {Not Implemented}
  Result:=SOCKET_ERROR;
- NetworkSetLastError(WSAEOPNOTSUPP);
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Message}
+  NetworkSetLastError(WSAEINVAL);
+  if lpMsg = nil then Exit; 
+
+  {Check Buffer and Count}
+  NetworkSetLastError(WSAEINVAL);
+  if lpMsg.lpBuffers = nil then Exit;
+  if lpMsg.dwBufferCount = 0 then Exit;
+ 
+  {Check Name and Namelen}
+  NetworkSetLastError(WSAEFAULT);
+  if (lpMsg.name = nil) and (lpMsg.namelen <> 0) then Exit;
+
+  {Check Control Buffer and Length}
+  NetworkSetLastError(WSAEFAULT);
+  if (lpMsg.Control.buf = nil) and (lpMsg.Control.len <> 0) then Exit;
+
+  {Check Socket}
+  NetworkSetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(s);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
+ 
+  {Check Overlapped}
+  if (lpOverlapped <> nil) and Socket.SocketFlags.Overlapped then
+   begin
+    {Not Implemented}
+    NetworkSetLastError(WSAEOPNOTSUPP);
+
+    {Unlock Socket}
+    Socket.ReaderUnlock;
+    Exit;
+   end
+  else
+   begin
+    {Check Bytes Sent}
+    NetworkSetLastError(WSAEINVAL);
+    if lpNumberOfBytesSent = nil then
+     begin
+      {Unlock Socket}
+      Socket.ReaderUnlock;
+      Exit;
+     end; 
+
+    {Get Start}
+    Count:=0;
+    Total:=0;
+    Buffer:=lpMsg.lpBuffers;
+
+    {Process Buffers}
+    while Count < lpMsg.dwBufferCount do
+     begin
+      {Set Flags}
+      Flags:=dwFlags;
+
+      {Check Buffer}
+      NetworkSetLastError(WSAEFAULT);
+      if Buffer.buf = nil then
+       begin
+        {Unlock Socket}
+        Socket.ReaderUnlock;
+        Exit;
+       end; 
+
+      {Check Address}
+      if (lpMsg.name <> nil) and (lpMsg.name.lpSockaddr <> nil) then
+       begin
+        {Send Buffer}
+        Status:=Socket.Protocol.SendTo(Socket,Buffer.buf^,Buffer.len,Flags,lpMsg.name.lpSockaddr^,lpMsg.name.iSockaddrLength);
+       end
+      else
+       begin
+        {Send Buffer}
+        Status:=Socket.Protocol.Send(Socket,Buffer.buf^,Buffer.len,Flags);
+       end;
+      if Status = SOCKET_ERROR then
+       begin
+        {Unlock Socket}
+        Socket.ReaderUnlock;
+        Exit;
+       end;
+
+      {Update Total}
+      Inc(Total,Status);
+
+      {Check Sent}
+      if Status < Buffer.len then Break;
+
+      {Get Next}
+      Inc(Count);
+      Inc(Buffer);
+     end;
+
+    {Update Bytes Sent}
+    lpNumberOfBytesSent^:=Total;
+   end;
+
+  {Return Result}
+  Result:=0;
+
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    Result:=SOCKET_ERROR;
+    NetworkSetLastError(WSAENOTSOCK);
+    {$IFDEF WINSOCK2_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSASendMsg ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
 end;
 
 {==============================================================================}
 
 function WSASetEvent( hEvent : WSAEVENT ): BOOL;
+{Set the state of the specified event object to signaled}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
- {Not Implemented}
  Result:=False;
- NetworkSetLastError(WSAEOPNOTSUPP);
+
+ {Check Started}
+ NetworkSetLastError(WSANOTINITIALISED);
+ if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+ {Check Event}
+ NetworkSetLastError(WSA_INVALID_HANDLE);
+ if hEvent = WSA_INVALID_EVENT then Exit;
+ if hEvent = HANDLE(INVALID_HANDLE_VALUE) then Exit;
+
+ {Set Event}
+ if EventSet(hEvent) <> ERROR_SUCCESS then Exit;
+
+ NetworkSetLastError(ERROR_SUCCESS);
+ Result:=True;
 end;
 
 {==============================================================================}
 
 function WSASocketA( af, iType, protocol : Longint; lpProtocolInfo : LPWSAProtocol_InfoA; g : GROUP; dwFlags : DWORD ): TSocket;
+{Create a socket that is bound to a specific transport-service provider}
+{Note: The WSAProtocol_InfoA and GROUP parameters are currently ignored}
+{      The only currently supported flag value is WSA_FLAG_OVERLAPPED}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ Socket:TProtocolSocket;
 begin
  {}
- {Not Implemented}
  Result:=INVALID_SOCKET;
- NetworkSetLastError(WSAEOPNOTSUPP);
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Manager}
+  NetworkSetLastError(WSASYSNOTREADY);
+  if ProtocolManager = nil then Exit;
+
+  {Create Socket}
+  Result:=ProtocolManager.Socket(af,iType,protocol);
+  if (Result <> INVALID_SOCKET) and ((dwFlags and WSA_FLAG_OVERLAPPED) = 0) then
+   begin
+    {Get Socket}
+    Socket:=TProtocolSocket(Result);
+    if not ProtocolManager.CheckSocket(Result,True,NETWORK_LOCK_READ) then Exit;
+
+    {Clear Overlapped (Set by default}
+    Socket.SocketFlags.Overlapped:=False;
+
+    {Unlock Socket}
+    Socket.ReaderUnlock;
+   end;
+ except
+  on E: Exception do
+   begin
+    Result:=INVALID_SOCKET;
+    NetworkSetLastError(WSAEPROTONOSUPPORT);
+    {$IFDEF WINSOCK2_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSASocketA ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
 end;
 
 {==============================================================================}
 
 function WSASocketW( af, iType, protocol : Longint; lpProtocolInfo : LPWSAProtocol_InfoW; g : GROUP; dwFlags : DWORD ): TSocket;
+{Create a socket that is bound to a specific transport-service provider}
+{Note: The WSAProtocol_InfoW and GROUP parameters are currently ignored}
+{      The only currently supported flag value is WSA_FLAG_OVERLAPPED}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ Socket:TProtocolSocket;
 begin
  {}
- {Not Implemented}
  Result:=INVALID_SOCKET;
- NetworkSetLastError(WSAEOPNOTSUPP);
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Manager}
+  NetworkSetLastError(WSASYSNOTREADY);
+  if ProtocolManager = nil then Exit;
+
+  {Create Socket}
+  Result:=ProtocolManager.Socket(af,iType,protocol);
+  if (Result <> INVALID_SOCKET) and ((dwFlags and WSA_FLAG_OVERLAPPED) = 0) then
+   begin
+    {Get Socket}
+    Socket:=TProtocolSocket(Result);
+    if not ProtocolManager.CheckSocket(Result,True,NETWORK_LOCK_READ) then Exit;
+
+    {Clear Overlapped (Set by default}
+    Socket.SocketFlags.Overlapped:=False;
+
+    {Unlock Socket}
+    Socket.ReaderUnlock;
+   end;
+ except
+  on E: Exception do
+   begin
+    Result:=INVALID_SOCKET;
+    NetworkSetLastError(WSAEPROTONOSUPPORT);
+    {$IFDEF WINSOCK2_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: Exception: WSASocketW ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
 end;
 
 {==============================================================================}
 
 function WSAWaitForMultipleEvents( cEvents : DWORD; lphEvents : PWSAEVENT; fWaitAll : BOOL; dwTimeout : DWORD; fAlertable : BOOL ): DWORD;
+{Wait for one or all of the specified event objects to be in the signaled state or the time-out interval to expire}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  {Not Implemented}
@@ -11576,7 +13164,254 @@ end;
 
 {==============================================================================}
 
-function WSAAddressToStringA( var lpsaAddress : TSockAddr; const dwAddressLength : DWORD; const lpProtocolInfo : LPWSAProtocol_InfoA; const lpszAddressString : PChar; var lpdwAddressStringLength : DWORD ): Longint;
+function WSAAddressToStringA( lpsaAddress : PSockAddr; dwAddressLength : DWORD; lpProtocolInfo : LPWSAProtocol_InfoA; lpszAddressString : PChar; lpdwAddressStringLength : PDWORD ): Longint;
+{Convert all components of a sockaddr structure into a human-readable string representation of the address.}
+{Note: Address will be in network byte order where applicable}
+{Note: The lpProtocolInfo parameter is currently ignored}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ WorkBuffer:String;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+
+ {Check Started}
+ NetworkSetLastError(WSANOTINITIALISED);
+ if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+ {Check Parameters}
+ NetworkSetLastError(WSAEINVAL);
+ if lpsaAddress = nil then Exit;
+ if lpszAddressString = nil then Exit;
+ if lpdwAddressStringLength = nil then Exit;
+
+ {Check Family}
+ case lpsaAddress.sin_family of
+  AF_INET:begin
+    {IPv4}
+    {Check Address Length}
+    if dwAddressLength < SizeOf(TSockAddr) then Exit;
+
+    {Check String Length}
+    NetworkSetLastError(WSAEFAULT);
+    if lpdwAddressStringLength^ < INET_ADDRSTRLEN then Exit;
+
+    {Convert Address to String}
+    WorkBuffer:=InAddrToString(lpsaAddress.sin_addr);
+    StrLCopy(lpszAddressString,PChar(WorkBuffer),lpdwAddressStringLength^);
+
+    Result:=0;
+   end;
+  AF_INET6:begin
+    {IPv6}
+    {Check Address Length}
+    if dwAddressLength < SizeOf(TSockAddr6) then Exit;
+
+    {Check String Length}
+    NetworkSetLastError(WSAEFAULT);
+    if lpdwAddressStringLength^ < INET6_ADDRSTRLEN then Exit;
+
+    {Convert Address to String}
+    WorkBuffer:=In6AddrToString(PSockAddr6(lpsaAddress).sin6_addr);
+    StrLCopy(lpszAddressString,PChar(WorkBuffer),lpdwAddressStringLength^);
+
+    Result:=0;
+   end;
+ end;
+end;
+
+{==============================================================================}
+
+function WSAAddressToStringW( lpsaAddress : PSockAddr; dwAddressLength : DWORD; lpProtocolInfo : LPWSAProtocol_InfoW; lpszAddressString : PWideChar; lpdwAddressStringLength : PDWORD ): Longint;
+{Convert all components of a sockaddr structure into a human-readable string representation of the address.}
+{Note: Address will be in network byte order where applicable}
+{Note: The lpProtocolInfo parameter is currently ignored}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ WorkBuffer:String;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+
+ {Check Started}
+ NetworkSetLastError(WSANOTINITIALISED);
+ if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+ {Check Parameters}
+ NetworkSetLastError(WSAEINVAL);
+ if lpsaAddress = nil then Exit;
+ if lpszAddressString = nil then Exit;
+ if lpdwAddressStringLength = nil then Exit;
+
+ {Check Family}
+ case lpsaAddress.sin_family of
+  AF_INET:begin
+    {IPv4}
+    {Check Address Length}
+    if dwAddressLength < SizeOf(TSockAddr) then Exit;
+
+    {Check String Length}
+    NetworkSetLastError(WSAEFAULT);
+    if lpdwAddressStringLength^ < INET_ADDRSTRLEN then Exit;
+
+    {Convert Address to String}
+    WorkBuffer:=InAddrToString(lpsaAddress.sin_addr);
+    Ultibo.StringToWideChar(WorkBuffer,lpszAddressString,lpdwAddressStringLength^ shl 1); {Buffer length in chars, Multiply by SizeOf(WideChar)}
+
+    Result:=0;
+   end;
+  AF_INET6:begin
+    {IPv6}
+    {Check Address Length}
+    if dwAddressLength < SizeOf(TSockAddr6) then Exit;
+
+    {Check String Length}
+    NetworkSetLastError(WSAEFAULT);
+    if lpdwAddressStringLength^ < INET6_ADDRSTRLEN then Exit;
+
+    {Convert Address to String}
+    WorkBuffer:=In6AddrToString(PSockAddr6(lpsaAddress).sin6_addr);
+    Ultibo.StringToWideChar(WorkBuffer,lpszAddressString,lpdwAddressStringLength^ shl 1); {Buffer length in chars, Multiply by SizeOf(WideChar)}
+
+    Result:=0;
+   end;
+ end;
+end;
+
+{==============================================================================}
+
+function WSAStringToAddressA( const AddressString : PChar; AddressFamily: Longint; lpProtocolInfo : LPWSAProtocol_InfoA; lpAddress : PSockAddr; lpAddressLength : PLongint ): Longint;
+{Convert a network address in its standard text presentation form into its numeric binary form in a sockaddr structure}
+{Note: Address will be returned in network byte order where applicable}
+{Note: The lpProtocolInfo parameter is currently ignored}
+
+{See the Windows Sockets 2 documentation for additional information}
+begin
+ {}
+ Result:=SOCKET_ERROR;
+
+ {Check Started}
+ NetworkSetLastError(WSANOTINITIALISED);
+ if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+ {Check Parameters}
+ NetworkSetLastError(WSAEFAULT);
+ if AddressString = nil then Exit;
+ if lpAddress = nil then Exit;
+ if lpAddressLength = nil then Exit;
+
+ {Check Family}
+ NetworkSetLastError(WSAEINVAL);
+ case AddressFamily of
+  AF_INET:begin
+    {IPv4}
+    {Check Address Length}
+    NetworkSetLastError(WSAEFAULT);
+    if lpAddressLength^ < SizeOf(TSockAddr) then Exit;
+
+    {Convert String to Address}
+    lpAddress.sin_family:=AddressFamily;
+    lpAddress.sin_port:=0;
+    lpAddress.sin_addr:=StringToInAddr(AddressString);
+
+    {Update Address Length}
+    lpAddressLength^:=SizeOf(TSockAddr);
+
+    Result:=0;
+   end;
+  AF_INET6:begin
+    {IPv6}
+    {Check Address Length}
+    NetworkSetLastError(WSAEFAULT);
+    if lpAddressLength^ < SizeOf(TSockAddr6) then Exit;
+
+    {Convert String to Address}
+    PSockAddr6(lpAddress).sin6_family:=AddressFamily;
+    PSockAddr6(lpAddress).sin6_port:=0;
+    PSockAddr6(lpAddress).sin6_flowinfo:=0;
+    PSockAddr6(lpAddress).sin6_addr:=StringToIn6Addr(AddressString);
+    PSockAddr6(lpAddress).sin6_scope_id:=0;
+
+    {Update Address Length}
+    lpAddressLength^:=SizeOf(TSockAddr6);
+
+    Result:=0;
+   end;
+ end;
+end;
+
+{==============================================================================}
+
+function WSAStringToAddressW( const AddressString : PWideChar; AddressFamily: Longint; lpProtocolInfo : LPWSAProtocol_InfoA; lpAddress : PSockAddr; lpAddressLength : PLongint ): Longint;
+{Convert a network address in its standard text presentation form into its numeric binary form in a sockaddr structure}
+{Note: Address will be returned in network byte order where applicable}
+{Note: The lpProtocolInfo parameter is currently ignored}
+
+{See the Windows Sockets 2 documentation for additional information}
+var
+ WordBuffer:String;
+begin
+ {}
+ Result:=SOCKET_ERROR;
+
+ {Check Started}
+ NetworkSetLastError(WSANOTINITIALISED);
+ if WS2StartupError <> ERROR_SUCCESS then Exit;
+
+ {Check Parameters}
+ NetworkSetLastError(WSAEFAULT);
+ if AddressString = nil then Exit;
+ if lpAddress = nil then Exit;
+ if lpAddressLength = nil then Exit;
+
+ {Get Address String}
+ WordBuffer:=Ultibo.WideCharToString(AddressString);
+
+ {Check Family}
+ NetworkSetLastError(WSAEINVAL);
+ case AddressFamily of
+  AF_INET:begin
+    {IPv4}
+    {Check Address Length}
+    NetworkSetLastError(WSAEFAULT);
+    if lpAddressLength^ < SizeOf(TSockAddr) then Exit;
+
+    {Convert String to Address}
+    lpAddress.sin_family:=AddressFamily;
+    lpAddress.sin_port:=0;
+    lpAddress.sin_addr:=StringToInAddr(WordBuffer);
+
+    {Update Address Length}
+    lpAddressLength^:=SizeOf(TSockAddr);
+
+    Result:=0;
+   end;
+  AF_INET6:begin
+    {IPv6}
+    {Check Address Length}
+    NetworkSetLastError(WSAEFAULT);
+    if lpAddressLength^ < SizeOf(TSockAddr6) then Exit;
+
+    {Convert String to Address}
+    PSockAddr6(lpAddress).sin6_family:=AddressFamily;
+    PSockAddr6(lpAddress).sin6_port:=0;
+    PSockAddr6(lpAddress).sin6_flowinfo:=0;
+    PSockAddr6(lpAddress).sin6_addr:=StringToIn6Addr(WordBuffer);
+    PSockAddr6(lpAddress).sin6_scope_id:=0;
+
+    {Update Address Length}
+    lpAddressLength^:=SizeOf(TSockAddr6);
+
+    Result:=0;
+   end;
+ end;
+end;
+
+{==============================================================================}
+
+function WSALookupServiceBeginA( lpqsRestrictions : LPWSAQuerySetA; dwControlFlags : DWORD; lphLookup : PHANDLE ): Longint;
 begin
  {}
  {Not Implemented}
@@ -11586,7 +13421,7 @@ end;
 
 {==============================================================================}
 
-function WSAAddressToStringW( var lpsaAddress : TSockAddr; const dwAddressLength : DWORD; const lpProtocolInfo : LPWSAProtocol_InfoW; const lpszAddressString : PWideChar; var lpdwAddressStringLength : DWORD ): Longint; 
+function WSALookupServiceBeginW( lpqsRestrictions : LPWSAQuerySetW; dwControlFlags : DWORD; lphLookup : PHANDLE ): Longint;
 begin
  {}
  {Not Implemented}
@@ -11596,7 +13431,7 @@ end;
 
 {==============================================================================}
 
-function WSAStringToAddressA( const AddressString : PChar; const AddressFamily: Longint; const lpProtocolInfo : LPWSAProtocol_InfoA; var lpAddress : TSockAddr; var lpAddressLength : Longint ): Longint; 
+function WSALookupServiceNextA( hLookup : THandle; dwControlFlags : DWORD; lpdwBufferLength : LPDWORD; lpqsResults : LPWSAQuerySetA ): Longint;
 begin
  {}
  {Not Implemented}
@@ -11606,7 +13441,7 @@ end;
 
 {==============================================================================}
 
-function WSAStringToAddressW( const AddressString : PWideChar; const AddressFamily: Longint; const lpProtocolInfo : LPWSAProtocol_InfoA; var lpAddress : TSockAddr; var lpAddressLength : Longint ): Longint; 
+function WSALookupServiceNextW( hLookup : THandle; dwControlFlags : DWORD; lpdwBufferLength : LPDWORD; lpqsResults : LPWSAQuerySetW ): Longint;
 begin
  {}
  {Not Implemented}
@@ -11616,7 +13451,7 @@ end;
 
 {==============================================================================}
 
-function WSALookupServiceBeginA( const lpqsRestrictions : LPWSAQuerySetA; const dwControlFlags : DWORD; lphLookup : PHANDLE ): Longint;
+function WSALookupServiceEnd( hLookup : THandle ): Longint;
 begin
  {}
  {Not Implemented}
@@ -11626,7 +13461,7 @@ end;
 
 {==============================================================================}
 
-function WSALookupServiceBeginW( const lpqsRestrictions : LPWSAQuerySetW; const dwControlFlags : DWORD; lphLookup : PHANDLE ): Longint;
+function WSAInstallServiceClassA( lpServiceClassInfo : LPWSAServiceClassInfoA ) : Longint;
 begin
  {}
  {Not Implemented}
@@ -11636,7 +13471,7 @@ end;
 
 {==============================================================================}
 
-function WSALookupServiceNextA( const hLookup : THandle; const dwControlFlags : DWORD; var lpdwBufferLength : DWORD; lpqsResults : LPWSAQuerySetA ): Longint;
+function WSAInstallServiceClassW( lpServiceClassInfo : LPWSAServiceClassInfoW ) : Longint;
 begin
  {}
  {Not Implemented}
@@ -11646,7 +13481,7 @@ end;
 
 {==============================================================================}
 
-function WSALookupServiceNextW( const hLookup : THandle; const dwControlFlags : DWORD; var lpdwBufferLength : DWORD; lpqsResults : LPWSAQuerySetW ): Longint;
+function WSARemoveServiceClass( lpServiceClassId : PGUID ) : Longint;
 begin
  {}
  {Not Implemented}
@@ -11656,7 +13491,7 @@ end;
 
 {==============================================================================}
 
-function WSALookupServiceEnd( const hLookup : THandle ): Longint;
+function WSAGetServiceClassInfoA( lpProviderId : PGUID; lpServiceClassId : PGUID; lpdwBufSize : LPDWORD; lpServiceClassInfo : LPWSAServiceClassInfoA ): Longint;
 begin
  {}
  {Not Implemented}
@@ -11666,7 +13501,7 @@ end;
 
 {==============================================================================}
 
-function WSAInstallServiceClassA( const lpServiceClassInfo : LPWSAServiceClassInfoA ) : Longint;
+function WSAGetServiceClassInfoW( lpProviderId : PGUID; lpServiceClassId : PGUID; lpdwBufSize : LPDWORD; lpServiceClassInfo : LPWSAServiceClassInfoW ): Longint;
 begin
  {}
  {Not Implemented}
@@ -11676,7 +13511,7 @@ end;
 
 {==============================================================================}
 
-function WSAInstallServiceClassW( const lpServiceClassInfo : LPWSAServiceClassInfoW ) : Longint;
+function WSAEnumNameSpaceProvidersA( lpdwBufferLength: LPDWORD; lpnspBuffer: LPWSANameSpace_InfoA ): Longint; 
 begin
  {}
  {Not Implemented}
@@ -11686,7 +13521,7 @@ end;
 
 {==============================================================================}
 
-function WSARemoveServiceClass( const lpServiceClassId : PGUID ) : Longint;
+function WSAEnumNameSpaceProvidersW( lpdwBufferLength: LPDWORD; lpnspBuffer: LPWSANameSpace_InfoW ): Longint; 
 begin
  {}
  {Not Implemented}
@@ -11696,7 +13531,7 @@ end;
 
 {==============================================================================}
 
-function WSAGetServiceClassInfoA( const lpProviderId : PGUID; const lpServiceClassId : PGUID; var lpdwBufSize : DWORD; lpServiceClassInfo : LPWSAServiceClassInfoA ): Longint;
+function WSAGetServiceClassNameByClassIdA( lpServiceClassId: PGUID; lpszServiceClassName: PChar; lpdwBufferLength: LPDWORD ): Longint;
 begin
  {}
  {Not Implemented}
@@ -11706,7 +13541,7 @@ end;
 
 {==============================================================================}
 
-function WSAGetServiceClassInfoW( const lpProviderId : PGUID; const lpServiceClassId : PGUID; var lpdwBufSize : DWORD; lpServiceClassInfo : LPWSAServiceClassInfoW ): Longint;
+function WSAGetServiceClassNameByClassIdW( lpServiceClassId: PGUID; lpszServiceClassName: PWideChar; lpdwBufferLength: LPDWORD ): Longint; 
 begin
  {}
  {Not Implemented}
@@ -11716,7 +13551,7 @@ end;
 
 {==============================================================================}
 
-function WSAEnumNameSpaceProvidersA( var lpdwBufferLength: DWORD; const lpnspBuffer: LPWSANameSpace_InfoA ): Longint; 
+function WSASetServiceA( lpqsRegInfo: LPWSAQuerySetA; essoperation: TWSAESetServiceOp; dwControlFlags: DWORD ): Longint; 
 begin
  {}
  {Not Implemented}
@@ -11726,47 +13561,7 @@ end;
 
 {==============================================================================}
 
-function WSAEnumNameSpaceProvidersW( var lpdwBufferLength: DWORD; const lpnspBuffer: LPWSANameSpace_InfoW ): Longint; 
-begin
- {}
- {Not Implemented}
- Result:=SOCKET_ERROR;
- NetworkSetLastError(WSAEOPNOTSUPP);
-end;
-
-{==============================================================================}
-
-function WSAGetServiceClassNameByClassIdA( const lpServiceClassId: PGUID; lpszServiceClassName: PChar; var lpdwBufferLength: DWORD ): Longint;
-begin
- {}
- {Not Implemented}
- Result:=SOCKET_ERROR;
- NetworkSetLastError(WSAEOPNOTSUPP);
-end;
-
-{==============================================================================}
-
-function WSAGetServiceClassNameByClassIdW( const lpServiceClassId: PGUID; lpszServiceClassName: PWideChar; var lpdwBufferLength: DWORD ): Longint; 
-begin
- {}
- {Not Implemented}
- Result:=SOCKET_ERROR;
- NetworkSetLastError(WSAEOPNOTSUPP);
-end;
-
-{==============================================================================}
-
-function WSASetServiceA( const lpqsRegInfo: LPWSAQuerySetA; const essoperation: TWSAeSetServiceOp; const dwControlFlags: DWORD ): Longint; 
-begin
- {}
- {Not Implemented}
- Result:=SOCKET_ERROR;
- NetworkSetLastError(WSAEOPNOTSUPP);
-end;
-
-{==============================================================================}
-
-function WSASetServiceW( const lpqsRegInfo: LPWSAQuerySetW; const essoperation: TWSAeSetServiceOp; const dwControlFlags: DWORD ): Longint;
+function WSASetServiceW( lpqsRegInfo: LPWSAQuerySetW; essoperation: TWSAESetServiceOp; dwControlFlags: DWORD ): Longint;
 begin
  {}
  {Not Implemented}
@@ -11825,6 +13620,9 @@ end;
 {==============================================================================}
 
 procedure FD_CLR(Socket: TSocket; var FDSet: TFDSet);
+{Remove a socket from an fd_set}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  I: Integer;
 begin
@@ -11851,6 +13649,9 @@ end;
 {==============================================================================}
 
 function FD_ISSET(Socket: TSocket; var FDSet: TFDSet): Boolean;
+{Check if a socket is a member of an fd_set}
+
+{See the Windows Sockets 2 documentation for additional information}
 var
  I:Integer;
 begin
@@ -11872,6 +13673,9 @@ end;
 {==============================================================================}
 
 procedure FD_SET(Socket: TSocket; var FDSet: TFDSet);
+{Add a socket to an fd_set}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  if FDSet.fd_count < FD_SETSIZE then
@@ -11884,6 +13688,9 @@ end;
 {==============================================================================}
 
 procedure FD_ZERO(var FDSet: TFDSet);
+{Initialize an fd_set to null}
+
+{See the Windows Sockets 2 documentation for additional information}
 begin
  {}
  FDSet.fd_count:=0;
@@ -11906,6 +13713,7 @@ begin
   NetworkSetLastError(WSAEPROTONOSUPPORT);
   
   //To Do //For those that are documented call WsControlEx with adjusted params
+          //See: https://tangentsoft.com/wskfaq/articles/wscontrol.html
  except
   on E: Exception do
    begin
@@ -11921,7 +13729,8 @@ end;
 {==============================================================================}
 
 function getnetbyaddr(addr: Pointer; len, Struct: Integer): PNetEnt; 
-{Note: Address will be in network order where applicable}
+{Retrieve the network information corresponding to a network address}
+{Note: Address will be in network byte order where applicable}
 begin
  {}
  Result:=nil;
@@ -11951,6 +13760,7 @@ end;
 {==============================================================================}
 
 function getnetbyname(const name: PChar): PNetEnt; 
+{Retrieve network address corresponding to a network name}
 begin
  {}
  Result:=nil;

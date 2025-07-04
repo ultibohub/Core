@@ -331,6 +331,7 @@ const
  MSG_OOB         = GlobalSock.MSG_OOB;
  MSG_PEEK        = GlobalSock.MSG_PEEK;
  MSG_DONTROUTE   = GlobalSock.MSG_DONTROUTE;
+ MSG_WAITALL     = GlobalSock.MSG_WAITALL;
 
  MSG_INTERRUPT   = GlobalSock.MSG_INTERRUPT;
  MSG_MAXIOVLEN   = GlobalSock.MSG_MAXIOVLEN;
@@ -1743,6 +1744,10 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Buffer}
+  NetworkSetLastError(WSAEFAULT);
+  if msg = nil then Exit;
   
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
@@ -1785,6 +1790,10 @@ begin
   NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
   
+  {Check Buffer}
+  NetworkSetLastError(WSAEFAULT);
+  if msg = nil then Exit;
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -1796,8 +1805,17 @@ begin
   {Check Socket}
   if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
 
-  {Send To Socket}
-  Result:=Socket.Protocol.SendTo(Socket,msg^,len,flags,tox^,tolen);
+  {Check Address}
+  if tox <> nil then
+   begin
+    {Send To Socket}
+    Result:=Socket.Protocol.SendTo(Socket,msg^,len,flags,tox^,tolen);
+   end
+  else
+   begin
+    {Send To Socket}
+    Result:=Socket.Protocol.Send(Socket,msg^,len,flags);
+   end;
 
   {Unlock Socket}
   Socket.ReaderUnlock;
@@ -1825,6 +1843,10 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Buffer}
+  NetworkSetLastError(WSAEFAULT);
+  if buf = nil then Exit;
   
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
@@ -1866,7 +1888,11 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
-  
+
+  {Check Buffer}
+  NetworkSetLastError(WSAEFAULT);
+  if buf = nil then Exit;
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -1878,8 +1904,17 @@ begin
   {Check Socket}
   if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
 
-  {Receive From Socket}
-  Result:=Socket.Protocol.RecvFrom(Socket,buf^,len,flags,from^,fromlen^);
+  {Check Address and Length}
+  if (from <> nil) and (fromlen <> nil) then
+   begin
+    {Receive From Socket}
+    Result:=Socket.Protocol.RecvFrom(Socket,buf^,len,flags,from^,fromlen^);
+   end
+  else
+   begin
+    {Receive From Socket}
+    Result:=Socket.Protocol.Recv(Socket,buf^,len,flags);
+   end;
 
   {Unlock Socket}
   Socket.ReaderUnlock;
@@ -1907,6 +1942,10 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Name}
+  NetworkSetLastError(WSAEFAULT);
+  if name = nil then Exit;
   
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
@@ -1989,7 +2028,11 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
-  
+
+  {Check Address}
+  NetworkSetLastError(WSAEFAULT);
+  if addrx = nil then Exit;
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -2112,7 +2155,12 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
-  
+
+  {Check Name and Length}
+  NetworkSetLastError(WSAEFAULT);
+  if name = nil then Exit;
+  if namelen = nil then Exit;
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -2153,7 +2201,12 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
-  
+
+  {Check Name and Length}
+  NetworkSetLastError(WSAEFAULT);
+  if name = nil then Exit;
+  if namelen = nil then Exit;
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -2194,6 +2247,10 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if SocketsStartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Length}
+  NetworkSetLastError(WSAEFAULT);
+  if optlen = nil then Exit;
   
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);

@@ -364,6 +364,7 @@ const
  MSG_OOB         = $1;             {process out-of-band data }
  MSG_PEEK        = $2;             {peek at incoming message }
  MSG_DONTROUTE   = $4;             {send without using routing tables }
+ MSG_WAITALL     = $8;             { do not complete until packet is completely filled }
 
  MSG_INTERRUPT   = $10;            {send/recv in the interrupt context}
  MSG_MAXIOVLEN   = 16;
@@ -558,6 +559,14 @@ const
  SD_RECEIVE = $00;
  SD_SEND = $01;
  SD_BOTH = $02;
+ 
+const
+{ WinSock 2 extension -- manifest constants for WSASocket() }
+ WSA_FLAG_OVERLAPPED = $01;
+ WSA_FLAG_MULTIPOINT_C_ROOT = $02;
+ WSA_FLAG_MULTIPOINT_C_LEAF = $04;
+ WSA_FLAG_MULTIPOINT_D_ROOT = $08;
+ WSA_FLAG_MULTIPOINT_D_LEAF = $10;
  
 {==============================================================================}
 const
@@ -942,10 +951,12 @@ type
  { Structure used by kernel to store most addresses. }
  PSOCKADDR = ^TSockAddr;
  TSockAddr = sockaddr_in;
+ PPSOCKADDR = ^PSOCKADDR;
 
  {IPv6 version of above}
  PSOCKADDR6 = ^TSockAddr6;
  TSockAddr6 = sockaddr_in6;
+ PPSOCKADDR6 = ^PSOCKADDR6;
 
  {IPX version of above}
  {PSOCKADDRIPX = ^TSockAddrIpx;}
@@ -1465,6 +1476,7 @@ type
   ai_addr:PSockAddr;      {Binary address}
   ai_next:PAddrInfo;      {Next structure in linked list}
  end;
+ PPAddrInfo = ^PAddrInfo;
  
 {==============================================================================}
 {var}

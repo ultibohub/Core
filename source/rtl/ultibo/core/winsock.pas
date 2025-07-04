@@ -32,8 +32,8 @@ Winsock
 =======
 
  Notes: All BSD/Winsock functions that accept an Address or Port expect
-        them to be in Network order. All other functions that take an
-        Address or Port expect them to be in Host order
+        them to be in Network byte order. All other functions that take an
+        Address or Port expect them to be in Host byte order
 
 }
 
@@ -346,6 +346,7 @@ const
  MSG_OOB         = GlobalSock.MSG_OOB;
  MSG_PEEK        = GlobalSock.MSG_PEEK;
  MSG_DONTROUTE   = GlobalSock.MSG_DONTROUTE;
+ MSG_WAITALL     = GlobalSock.MSG_WAITALL;
 
  MSG_MAXIOVLEN   = GlobalSock.MSG_MAXIOVLEN;
 
@@ -648,6 +649,7 @@ type
  { Structure used by kernel to store most addresses. }
  PSOCKADDR = GlobalSock.PSOCKADDR;
  TSockAddr = GlobalSock.TSockAddr;
+ PPSOCKADDR = GlobalSock.PPSOCKADDR;
 
  { Structure used by kernel to pass protocol information in raw sockets. }
  PSockProto = GlobalSock.PSockProto;
@@ -814,9 +816,9 @@ function __WSAFDIsSet_(s: TSocket; var FDSet:TFDSet):tOS_INT;
       
 function TransmitFile(hSocket: TSocket; hFile: THandle; nNumberOfBytesToWrite: DWORD; nNumberOfBytesPerSend: DWORD; lpOverlapped: POverlapped; lpTransmitBuffers: PTransmitFileBuffers; dwReserved: DWORD): BOOL; 
 
-function AcceptEx(sListenSocket, sAcceptSocket: TSocket; lpOutputBuffer: Pointer; dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength: DWORD; var lpdwBytesReceived: DWORD; lpOverlapped: POverlapped): BOOL; 
+function AcceptEx(sListenSocket, sAcceptSocket: TSocket; lpOutputBuffer: Pointer; dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength: DWORD; lpdwBytesReceived: LPDWORD; lpOverlapped: POverlapped): BOOL; 
 
-procedure GetAcceptExSockaddrs(lpOutputBuffer: Pointer; dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength: DWORD; var LocalSockaddr: PSockAddr; var LocalSockaddrLength: Integer; var RemoteSockaddr: PSockAddr; var RemoteSockaddrLength: Integer); 
+procedure GetAcceptExSockaddrs(lpOutputBuffer: Pointer; dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength: DWORD; LocalSockaddr: PPSockAddr; LocalSockaddrLength: PInteger; RemoteSockaddr: PPSockAddr; RemoteSockaddrLength: PInteger); 
 
 function WSAMakeSyncReply(Buflen,Error:Word):dword;
 function WSAMakeSelectReply(Event,Error:Word):dword;
@@ -972,6 +974,9 @@ end;
 {==============================================================================}
 {Winsock Functions}
 function accept(s: TSocket; addr: PSockAddr; addrlen : ptOS_INT) : TSocket;
+{Accept an incoming connection attempt on a socket}
+
+{See the Windows Sockets documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -1013,6 +1018,9 @@ end;
 {==============================================================================}
 
 function accept(s: TSocket; addr: PSockAddr; var addrlen : tOS_INT) : TSocket;
+{Accept an incoming connection attempt on a socket}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=accept(s,addr,@addrlen);
@@ -1021,14 +1029,26 @@ end;
 {==============================================================================}
 
 function bind(s: TSocket; addr: PSockaddr;namelen:tOS_INT):tOS_INT;
+{Associate a local address with a socket}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Address}
+ NetworkSetLastError(WSAEFAULT);
+ if addr = nil then Exit;
+
  Result:=bind(s,addr^,namelen);
 end;
 
 {==============================================================================}
 
 function bind(s: TSocket; var addr: TSockaddr;namelen:tOS_INT):tOS_INT;
+{Associate a local address with a socket}
+
+{See the Windows Sockets documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -1070,6 +1090,9 @@ end;
 {==============================================================================}
 
 function closesocket(s: TSocket):tOS_INT;
+{Close an existing socket}
+
+{See the Windows Sockets documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -1111,14 +1134,26 @@ end;
 {==============================================================================}
 
 function connect(s: TSocket; addr:PSockAddr; namelen:tOS_INT):tOS_INT;
+{Establish a connection to a specified socket}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Address}
+ NetworkSetLastError(WSAEFAULT);
+ if addr = nil then Exit;
+
  Result:=connect(s,addr^,namelen);
 end;
 
 {==============================================================================}
 
 function connect(s: TSocket; var name:TSockAddr; namelen:tOS_INT):tOS_INT;
+{Establish a connection to a specified socket}
+
+{See the Windows Sockets documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -1160,6 +1195,9 @@ end;
 {==============================================================================}
 
 function ioctlsocket(s: TSocket; cmd:longint; var arg:u_long):tOS_INT; 
+{Control the I/O mode of a socket}
+
+{See the Windows Sockets documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -1201,6 +1239,9 @@ end;
 {==============================================================================}
 
 function ioctlsocket(s: TSocket; cmd:longint; var arg:longint):tOS_INT; 
+{Control the I/O mode of a socket}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=ioctlsocket(s,cmd,u_long(arg));
@@ -1209,14 +1250,26 @@ end;
 {==============================================================================}
 
 function ioctlsocket(s: TSocket; cmd:longint; argp:pu_long):tOS_INT; 
+{Control the I/O mode of a socket}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Argument}
+ NetworkSetLastError(WSAEFAULT);
+ if argp = nil then Exit;
+
  Result:=ioctlsocket(s,cmd,argp^);
 end;
 
 {==============================================================================}
 
 function getpeername(s: TSocket; var name:TSockAddr;var namelen:tOS_INT):tOS_INT;
+{Retrieve the address of the peer to which a socket is connected}
+
+{See the Windows Sockets documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -1258,6 +1311,9 @@ end;
 {==============================================================================}
 
 function getsockname(s: TSocket; var name:TSockAddr;var namelen:tOS_INT):tOS_INT;
+{Retrieve the local name for a socket}
+
+{See the Windows Sockets documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -1299,6 +1355,9 @@ end;
 {==============================================================================}
 
 function getsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT;optval:pchar;var optlen:tOS_INT):tOS_INT; 
+{Retrieve a socket option}
+
+{See the Windows Sockets documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -1340,6 +1399,9 @@ end;
 {==============================================================================}
 
 function getsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT;optval:pointer;var optlen:tOS_INT):tOS_INT; 
+{Retrieve a socket option}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=getsockopt(s,level,optname,PChar(optval),optlen);
@@ -1348,6 +1410,9 @@ end;
 {==============================================================================}
 
 function getsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT;var optval;var optlen:tOS_INT):tOS_INT; 
+{Retrieve a socket option}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=getsockopt(s,level,optname,PChar(@optval),optlen);
@@ -1356,6 +1421,9 @@ end;
 {==============================================================================}
 
 function htonl(hostlong: u_long): u_long; 
+{Convert a u_long from host byte order to TCP/IP network byte order (which is big-endian)}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=LongWordNtoBE(hostlong); {Native to Big Endian}
@@ -1364,6 +1432,9 @@ end;
 {==============================================================================}
 
 function htons(hostshort: u_short): u_short; 
+{Convert a u_short from host byte order to TCP/IP network byte order (which is big-endian)}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=WordNtoBE(hostshort); {Native to Big Endian}
@@ -1372,7 +1443,10 @@ end;
 {==============================================================================}
 
 function inet_addr(const cp: PChar): u_long;  {PInAddr;}  { TInAddr }
-{Note: Address will be returned in network order}
+{Convert a string containing an IPv4 dotted-decimal address into a proper address for the IN_ADDR structure}
+{Note: Address will be returned in network byte order}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=LongInt(StringToInAddr(cp));
@@ -1381,10 +1455,13 @@ end;
 {==============================================================================}
 
 function inet_ntoa(inaddr: TInAddr): PChar; 
+{Convert an (IPv4) Internet network address into an ASCII string in Internet standard dotted-decimal format}
 {As per the Winsock specification, the buffer returned by this function is only
  guaranteed to be valid until the next Winsock function call is made within the
  same thread. Therefore, the data should be copied before another Winsock call}
-{Note: Address will be in network order}
+{Note: Address will be in network byte order}
+
+{See the Windows Sockets documentation for additional information}
 var
  WorkBuffer:String;
  NetToAddr:PNetToAddr;
@@ -1417,6 +1494,9 @@ end;
 {==============================================================================}
 
 function listen(s: TSocket; backlog:tOS_INT):tOS_INT;
+{Place a socket in a state in which it is listening for incoming connections}
+
+{See the Windows Sockets documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -1458,6 +1538,9 @@ end;
 {==============================================================================}
 
 function ntohl(netlong: u_long): u_long; 
+{Convert a u_long from TCP/IP network byte order to host byte order}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=LongWordBEtoN(netlong); {Big Endian to Native}
@@ -1466,6 +1549,9 @@ end;
 {==============================================================================}
 
 function ntohs(netshort: u_short): u_short; 
+{Convert a u_short from TCP/IP network byte order to host byte order}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=WordBEtoN(netshort); {Big Endian to Native}
@@ -1474,22 +1560,43 @@ end;
 {==============================================================================}
 
 function recv(s: TSocket;buf:pchar; len:tOS_INT; flags:tOS_INT):tOS_INT; 
+{Receive data from a connected socket or a bound connectionless socket}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if buf = nil then Exit;
+
  Result:=recv(s,buf^,len,flags);
 end;
 
 {==============================================================================}
 
 function recv(s: TSocket;buf:pointer; len:tOS_INT; flags:tOS_INT):tOS_INT; 
+{Receive data from a connected socket or a bound connectionless socket}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if buf = nil then Exit;
+
  Result:=recv(s,buf^,len,flags);
 end;
 
 {==============================================================================}
 
 function recv(s: TSocket;var buf; len:tOS_INT; flags:tOS_INT):tOS_INT; 
+{Receive data from a connected socket or a bound connectionless socket}
+
+{See the Windows Sockets documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -1531,22 +1638,59 @@ end;
 {==============================================================================}
 
 function recvfrom(s: TSocket;buf:pchar; len:tOS_INT; flags:tOS_INT;from:PSockAddr; fromlen:ptOS_INT):tOS_INT; 
+{Receive a datagram and store the source address}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=recvfrom(s,buf^,len,flags,from^,fromlen^);
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if buf = nil then Exit;
+
+ {Check Address and Length}
+ if (from <> nil) and (fromlen <> nil) then
+  begin
+   Result:=recvfrom(s,buf^,len,flags,from^,fromlen^);
+  end
+ else
+  begin
+   Result:=recv(s,Buf^,len,flags);
+  end;
 end;
 
 {==============================================================================}
 
 function recvfrom(s: TSocket;buf:pointer; len:tOS_INT; flags:tOS_INT;from:PSockAddr; fromlen:ptOS_INT):tOS_INT; 
+{Receive a datagram and store the source address}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=recvfrom(s,buf^,len,flags,from^,fromlen^);
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if buf = nil then Exit;
+
+ {Check Address and Length}
+ if (from <> nil) and (fromlen <> nil) then
+  begin
+   Result:=recvfrom(s,buf^,len,flags,from^,fromlen^);
+  end
+ else
+  begin
+   Result:=recv(s,Buf^,len,flags);
+  end;
 end;
 
 {==============================================================================}
 
 function recvfrom(s: TSocket;var buf; len:tOS_INT; flags:tOS_INT;var from:TSockAddr; var fromlen:tOS_INT):tOS_INT; 
+{Receive a datagram and store the source address}
+
+{See the Windows Sockets documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -1588,7 +1732,10 @@ end;
 {==============================================================================}
 
 function select(nfds:tOS_INT; readfds,writefds,exceptfds : PFDSet;timeout: PTimeVal):tOS_INT;
+{Determine the status of one or more sockets, waiting if necessary, to perform synchronous I/O}
 {Note: All sockets contained by the FDSet must be of the same type}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=SOCKET_ERROR;
@@ -1618,6 +1765,9 @@ end;
 {==============================================================================}
 
 function send(s: TSocket;var buf; len:tOS_INT; flags:tOS_INT):tOS_INT; 
+{Send data on a connected socket}
+
+{See the Windows Sockets documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -1659,38 +1809,93 @@ end;
 {==============================================================================}
 
 function send(s: TSocket; const buf:pchar; len:tOS_INT; flags:tOS_INT):tOS_INT; 
+{Send data on a connected socket}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if buf = nil then Exit;
+
  Result:=send(s,buf^,len,flags);
 end;
 
 {==============================================================================}
 
 function send(s: TSocket;buf:pointer; len:tOS_INT; flags:tOS_INT):tOS_INT; 
+{Send data on a connected socket}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if buf = nil then Exit;
+
  Result:=send(s,buf^,len,flags);
 end;
 
 {==============================================================================}
 
 function sendto(s: TSocket; const buf:pchar; len:tOS_INT; flags:tOS_INT;toaddr:PSockAddr; tolen:tOS_INT):tOS_INT; 
+{Send data to a specific destination}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=sendto(s,buf^,len,flags,toaddr^,tolen);
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if buf = nil then Exit;
+
+ {Check Address}
+ if toaddr <> nil then
+  begin
+   Result:=sendto(s,buf^,len,flags,toaddr^,tolen);
+  end
+ else
+  begin
+   Result:=send(s,buf^,len,flags);
+  end;
 end;
 
 {==============================================================================}
 
 function sendto(s: TSocket; buf:pointer; len:tOS_INT; flags:tOS_INT;toaddr:PSockAddr; tolen:tOS_INT):tOS_INT; 
+{Send data to a specific destination}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
- Result:=sendto(s,buf^,len,flags,toaddr^,tolen);
+ Result:=SOCKET_ERROR;
+
+ {Check Buffer}
+ NetworkSetLastError(WSAEFAULT);
+ if buf = nil then Exit;
+
+ {Check Address}
+ if toaddr <> nil then
+  begin
+   Result:=sendto(s,buf^,len,flags,toaddr^,tolen);
+  end
+ else
+  begin
+   Result:=send(s,buf^,len,flags);
+  end;
 end;
 
 {==============================================================================}
 
 function sendto(s: TSocket; var buf; len:tOS_INT; flags:tOS_INT;var toaddr:TSockAddr; tolen:tOS_INT):tOS_INT; 
+{Send data to a specific destination}
+
+{See the Windows Sockets documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -1732,6 +1937,9 @@ end;
 {==============================================================================}
 
 function setsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT; const optval:pchar; optlen:tOS_INT):tOS_INT; 
+{Set a socket option}
+
+{See the Windows Sockets documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -1773,6 +1981,9 @@ end;
 {==============================================================================}
 
 function setsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT;optval:pointer; optlen:tOS_INT):tOS_INT; 
+{Set a socket option}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=setsockopt(s,level,optname,PChar(optval),optlen)
@@ -1781,6 +1992,9 @@ end;
 {==============================================================================}
 
 function setsockopt(s: TSocket; level:tOS_INT; optname:tOS_INT; var optval; optlen:tOS_INT):tOS_INT; 
+{Set a socket option}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=setsockopt(s,level,optname,PChar(@optval),optlen)
@@ -1789,6 +2003,9 @@ end;
 {==============================================================================}
 
 function shutdown(s: TSocket; how:tOS_INT):tOS_INT;
+{Disable sends or receives on a socket}
+
+{See the Windows Sockets documentation for additional information}
 var
  Socket:TProtocolSocket;
 begin
@@ -1830,6 +2047,9 @@ end;
 {==============================================================================}
 
 function socket(af:tOS_INT; struct:tOS_INT; protocol:tOS_INT):TSocket;
+{Create a socket that is bound to a specific transport service provider}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=INVALID_SOCKET;
@@ -1859,7 +2079,10 @@ end;
 {==============================================================================}
 
 function gethostbyaddr(const addr:pchar; len:tOS_INT; family:tOS_INT): PHostEnt;
-{Note: Address will be in network order where applicable}
+{Retrieve the host information corresponding to a network address}
+{Note: Address will be in network byte order where applicable}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=nil;
@@ -1889,6 +2112,9 @@ end;
 {==============================================================================}
 
 function gethostbyname(const name: PChar): PHostEnt; 
+{Retrieve network address corresponding to a host name}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=nil;
@@ -1918,6 +2144,9 @@ end;
 {==============================================================================}
 
 function gethostname(name: PChar; namelen:tOS_INT):tOS_INT;
+{Retrieve the standard host name for the local computer}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=SOCKET_ERROR;
@@ -1947,7 +2176,10 @@ end;
 {==============================================================================}
 
 function getservbyport(port:tOS_INT; const proto: PChar):PServEnt;
-{Note: Port will be in network order}
+{Retrieve service information corresponding to a port and protocol}
+{Note: Port will be in network byte order}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=nil;
@@ -1977,6 +2209,9 @@ end;
 {==============================================================================}
 
 function getservbyname(const name, proto: PChar): PServEnt; 
+{Retrieve service information corresponding to a service name and protocol}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=nil;
@@ -2006,6 +2241,9 @@ end;
 {==============================================================================}
 
 function getprotobynumber(proto:tOS_INT):PProtoEnt;
+{Retrieve protocol information corresponding to a protocol number}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=nil;
@@ -2035,6 +2273,9 @@ end;
 {==============================================================================}
 
 function getprotobyname(const name: PChar): PProtoEnt; 
+{Retrieve the protocol information corresponding to a protocol name}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=nil;
@@ -2064,6 +2305,9 @@ end;
 {==============================================================================}
 
 function WSAStartup(wVersionRequired:word;var WSAData:TWSADATA):tOS_INT;
+{Initiate use of Winsock by an application}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=WSAEFAULT; {SOCKET_ERROR; See Spec}
@@ -2187,6 +2431,9 @@ end;
 {==============================================================================}
 
 function WSACleanup:tOS_INT;
+{Terminate use of Winsock by an application}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=SOCKET_ERROR;
@@ -2250,6 +2497,9 @@ end;
 {==============================================================================}
 
 procedure WSASetLastError(iError:tOS_INT); inline;
+{Set the error code that can be retrieved through the WSAGetLastError function}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  NetworkSetLastError(iError);
@@ -2258,6 +2508,9 @@ end;
 {==============================================================================}
 
 function WSAGetLastError:tOS_INT; inline;
+{Return the error status for the last Windows Sockets operation that failed}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=NetworkGetLastError;
@@ -2390,16 +2643,57 @@ end;
 {==============================================================================}
 
 function WSARecvEx(s: TSocket;var buf; len:tOS_INT; flags:ptOS_INT):tOS_INT;
+{Receive data from a connected socket or a bound connectionless socket}
+
+{See the Windows Sockets documentation for additional information}
+var
+ Socket:TProtocolSocket;
 begin
  {}
- {Not Implemented}
  Result:=SOCKET_ERROR;
- NetworkSetLastError(WSAEOPNOTSUPP);
+ try
+  {Check Started}
+  NetworkSetLastError(WSANOTINITIALISED);
+  if WSStartupError <> ERROR_SUCCESS then Exit;
+
+  {Check Flags}
+  NetworkSetLastError(WSAEFAULT);
+  if flags = nil then Exit;
+
+  {Check Socket}
+  NetworkSetLastError(WSAENOTSOCK);
+  Socket:=TProtocolSocket(s);
+  if Socket = nil then Exit;
+
+  {Check Manager}
+  if ProtocolManager = nil then Exit;
+
+  {Check Socket}
+  if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
+
+  {Receive Socket}
+  Result:=Socket.Protocol.Recv(Socket,buf,len,flags^);
+
+  {Unlock Socket}
+  Socket.ReaderUnlock;
+ except
+  on E: Exception do
+   begin
+    Result:=SOCKET_ERROR;
+    NetworkSetLastError(WSAENOTSOCK);
+    {$IFDEF WINSOCK_DEBUG}
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock: Exception: WSARecvEx ' + E.Message);
+    {$ENDIF}
+   end;
+ end;
 end;
 
 {==============================================================================}
 
 function __WSAFDIsSet(s: TSocket; var FDSet:TFDSet):BOOL;
+{Return a value indicating whether a socket is included in a set of socket descriptors}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=FD_ISSET(s,FDSet);
@@ -2408,6 +2702,9 @@ end;
 {==============================================================================}
 
 function __WSAFDIsSet_(s: TSocket; var FDSet:TFDSet):tOS_INT;
+{Return a value indicating whether a socket is included in a set of socket descriptors}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  Result:=0;
@@ -2430,7 +2727,7 @@ end;
 
 {==============================================================================}
 
-function AcceptEx(sListenSocket, sAcceptSocket: TSocket; lpOutputBuffer: Pointer; dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength: DWORD; var lpdwBytesReceived: DWORD; lpOverlapped: POverlapped): BOOL; 
+function AcceptEx(sListenSocket, sAcceptSocket: TSocket; lpOutputBuffer: Pointer; dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength: DWORD; lpdwBytesReceived: LPDWORD; lpOverlapped: POverlapped): BOOL; 
 begin
  {}
  {Not Implemented}
@@ -2440,7 +2737,7 @@ end;
 
 {==============================================================================}
 
-procedure GetAcceptExSockaddrs(lpOutputBuffer: Pointer; dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength: DWORD; var LocalSockaddr: PSockAddr; var LocalSockaddrLength: Integer; var RemoteSockaddr: PSockAddr; var RemoteSockaddrLength: Integer); 
+procedure GetAcceptExSockaddrs(lpOutputBuffer: Pointer; dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength: DWORD; LocalSockaddr: PPSockAddr; LocalSockaddrLength: PInteger; RemoteSockaddr: PPSockAddr; RemoteSockaddrLength: PInteger);
 begin
  {}
  {Not Implemented}
@@ -2498,6 +2795,9 @@ end;
 {==============================================================================}
 
 procedure FD_CLR(Socket:TSocket; var FDSet:TFDSet);
+{Remove a socket from an fd_set}
+
+{See the Windows Sockets documentation for additional information}
 var
  I: Integer;
 begin
@@ -2524,6 +2824,9 @@ end;
 {==============================================================================}
 
 function FD_ISSET(Socket:TSocket; var FDSet:TFDSet):Boolean;
+{Check if a socket is a member of an fd_set}
+
+{See the Windows Sockets documentation for additional information}
 var
  I:Integer;
 begin
@@ -2545,6 +2848,9 @@ end;
 {==============================================================================}
 
 procedure FD_SET(Socket:TSocket; var FDSet:TFDSet);
+{Add a socket to an fd_set}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  if FDSet.fd_count < FD_SETSIZE then
@@ -2557,6 +2863,9 @@ end;
 {==============================================================================}
 
 procedure FD_ZERO(var FDSet:TFDSet);
+{Initialize an fd_set to null}
+
+{See the Windows Sockets documentation for additional information}
 begin
  {}
  FDSet.fd_count:=0;
@@ -2577,8 +2886,9 @@ begin
   if WSStartupError <> ERROR_SUCCESS then Exit;
   
   NetworkSetLastError(WSAEPROTONOSUPPORT);
-  
+
   //To Do //For those that are documented call WsControlEx with adjusted params //See Winsock2
+
  except
   on E: Exception do
    begin
@@ -2594,7 +2904,8 @@ end;
 {==============================================================================}
 
 function getnetbyaddr(addr: Pointer; len, Struct: Integer): PNetEnt; 
-{Note: Address will be in network order where applicable}
+{Retrieve the network information corresponding to a network address}
+{Note: Address will be in network byte order where applicable}
 begin
  {}
  Result:=nil;
@@ -2624,6 +2935,7 @@ end;
 {==============================================================================}
 
 function getnetbyname(const name: PChar): PNetEnt; 
+{Retrieve network address corresponding to a network name}
 begin
  {}
  Result:=nil;

@@ -1519,6 +1519,9 @@ function CountLeadingZeros64(Value:UInt64):LongWord; inline;
 function CountTrailingZeros(Value:LongWord):LongWord; inline;
 function CountTrailingZeros64(Value:UInt64):LongWord; inline;
 
+procedure BufferSizeToValue(Buffer:Pointer;Size:LongWord;var Value:LongWord);
+procedure ValueToBufferSize(Value:LongWord;Buffer:Pointer;Size:LongWord);
+
 {==============================================================================}
 {Conversion functions}
 function ErrorToString(Error:LongWord):String;
@@ -2531,6 +2534,58 @@ begin
  if Result = 32 then
   begin
    Result:=Result + CountTrailingZeros(Int64Rec(Value).Hi);
+  end;
+end;
+
+{==============================================================================}
+
+procedure BufferSizeToValue(Buffer:Pointer;Size:LongWord;var Value:LongWord);
+{Copy up to 4 bytes from buffer to value}
+{Buffer: Pointer to the source buffer}
+{Size: The size in bytes of the buffer}
+{Value: The value to copy buffer to}
+begin
+ {}
+ Value:=0;
+
+ if Buffer = nil then Exit;
+
+ if Size >= 4 then
+  begin
+   Value:=LongWord(Buffer^);
+  end
+ else if Size >= 2 then
+  begin
+   Value:=Word(Buffer^);
+  end
+ else if Size >= 1 then
+  begin
+   Value:=Byte(Buffer^);
+  end;
+end;
+
+{==============================================================================}
+
+procedure ValueToBufferSize(Value:LongWord;Buffer:Pointer;Size:LongWord);
+{Copy up to 4 bytes from value to buffer}
+{Buffer: Pointer to the dest buffer}
+{Size: The size in bytes of the buffer}
+{Value: The value to copy buffer from}
+begin
+ {}
+ if Buffer = nil then Exit;
+
+ if Size >= 4 then
+  begin
+   LongWord(Buffer^):=Value;
+  end
+ else if Size >= 2 then
+  begin
+   Word(Buffer^):=Value;
+  end
+ else if Size >= 1 then
+  begin
+   Byte(Buffer^):=Value;
   end;
 end;
 

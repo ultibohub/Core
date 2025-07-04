@@ -2760,11 +2760,13 @@ begin
        begin
         if Timeout = 0 then
          begin
+          {Return Zero}
           Result:=0;
           Exit;
          end;
         if GetTickCount64 > (StartTime + Timeout) then
          begin                                     
+          {Return Zero}
           Result:=0;
           Exit;
          end;

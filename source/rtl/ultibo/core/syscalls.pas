@@ -499,6 +499,7 @@ const
  O_WRONLY          = 1;
  O_RDWR            = 2;
  O_APPEND          = $0008;    {append (writes guaranteed at the end)}
+ O_ASYNC           = $0040;    {signal pgrp when data ready (Note: Not defined in default_fcntl.h, use "#define O_ASYNC _FASYNC" locally)}
  O_CREAT           = $0200;    {If set, the file will be created if it doesn’t already exist}
  O_EXCL            = $0800;    {If both O_CREAT and O_EXCL are set, then open fails if the specified file already exists. This is guaranteed to never clobber an existing file}
 
@@ -1436,6 +1437,7 @@ type
   ai_addr: P_sockaddr;   {binary address}
   ai_next: P_addrinfo;   {next structure in linked list}
  end;
+ PP_addrinfo = ^P_addrinfo;
 {$ENDIF}
  
 type 
@@ -2123,7 +2125,7 @@ function socket_getservbyname(name, proto: PChar): P_servent; cdecl; public name
 function socket_getprotobynumber(proto: int): P_protoent; cdecl; public name 'getprotobynumber';
 function socket_getprotobyname(name: PChar): P_protoent; cdecl; public name 'getprotobyname';
        
-function socket_getaddrinfo(node: PChar; service: PChar; hints: P_addrinfo; var res: P_addrinfo): int; cdecl; public name 'getaddrinfo';   
+function socket_getaddrinfo(node: PChar; service: PChar; hints: P_addrinfo; res: PP_addrinfo): int; cdecl; public name 'getaddrinfo';   
 function socket_getnameinfo(addr: P_sockaddr; addrlen: socklen_t; host: PChar; hostlen: socklen_t; serv: PChar; servlen: socklen_t; flags: int): int; cdecl; public name 'getnameinfo';   
 procedure socket_freeaddrinfo(res: P_addrinfo); cdecl; public name 'freeaddrinfo';   
 
@@ -12609,11 +12611,12 @@ end;
 
 {==============================================================================}
 
-function socket_getaddrinfo(node: PChar; service: PChar; hints: P_addrinfo; var res: P_addrinfo): int; cdecl;
+function socket_getaddrinfo(node: PChar; service: PChar; hints: P_addrinfo; res: PP_addrinfo): int; cdecl;
 {Network address and service translation}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
+ ptr:P_reent;
  addr:P_addrinfo;
  last:P_addrinfo;
  AddrInfo:PAddrInfo;
@@ -12624,14 +12627,23 @@ var
  SockAddrLen:Psocklen_t;
 begin
  {}
- Result:=EAI_MEMORY;
+ Result:=EAI_SYSTEM;
 
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls getaddrinfo (node=' + StrPas(node) + ' service=' + StrPas(service) + ')');
  {$ENDIF}
 
+ {Check Result}
+ if res = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+   Exit;
+  end;
+
  {Set Defaults}
- res:=nil;
+ res^:=nil;
  last:=nil;
  AddrInfo:=nil;
  HintsInfo:=nil;
@@ -12639,6 +12651,8 @@ begin
  {Check Hints}
  if hints <> nil then
   begin
+   Result:=EAI_MEMORY;
+
    {Allocate Hints}
    HintsInfo:=AllocMem(SizeOf(TAddrInfo));
    if HintsInfo = nil then Exit;
@@ -12687,7 +12701,7 @@ begin
       end;
 
      {Link Info}
-     if res = nil then res:=addr;
+     if res^ = nil then res^:=addr;
      if last <> nil then last^.ai_next:=addr;
      last:=addr;
 

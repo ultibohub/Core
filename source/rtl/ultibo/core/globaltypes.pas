@@ -282,6 +282,8 @@ type
  LPVOID = Pointer;
  LPCVOID = Pointer;
  LPBOOL = ^BOOL;
+ PINT = ^INT;
+ PSHORT = ^SHORT;
  PLONG = ^LONG;
  LPLONG = ^LONG;
  LPDWORD = ^DWORD;
@@ -375,6 +377,9 @@ type
  atomic64_t = record
   counter: Int64;
  end;
+ 
+ uintptr_t = DWORD_PTR;
+ puintptr_t = PDWORD_PTR; 
 
  {$IFDEF SYSCALLS_USE_LONG_TIME_T}
  time_t = PtrInt;   {long}       
