@@ -406,11 +406,13 @@ Global Defines
 {$DEFINE API_EXPORT_STMPE}           {Enable exporting symbols for the STMPE driver if included (Default: On)}
 {$DEFINE API_EXPORT_HX8357D}         {Enable exporting symbols for the HX8357D driver if included (Default: On)}
 {$DEFINE API_EXPORT_ILI9340}         {Enable exporting symbols for the ILI9340 driver if included (Default: On)}
+{$DEFINE API_EXPORT_ILI9486}         {Enable exporting symbols for the ILI9486 driver if included (Default: On)}
 {$DEFINE API_EXPORT_HD44780}         {Enable exporting symbols for the HD44780 driver if included (Default: On)}
 {$DEFINE API_EXPORT_ST77XX}          {Enable exporting symbols for the ST77XX driver if included (Default: On)}
 {$DEFINE API_EXPORT_PITFT35}         {Enable exporting symbols for the PITFT35 driver if included (Default: On)}
 {$DEFINE API_EXPORT_PITFT28}         {Enable exporting symbols for the PITFT28 driver if included (Default: On)}
 {$DEFINE API_EXPORT_IPSTFT19}        {Enable exporting symbols for the IPSTFT19 driver if included (Default: On)}
+{$DEFINE API_EXPORT_LCDA35}          {Enable exporting symbols for the LCDA35 driver if included (Default: On)}
 {$DEFINE API_EXPORT_I2CLCD}          {Enable exporting symbols for the I2CLCD driver if included (Default: On)}
 {$DEFINE API_EXPORT_AF16X2LCD}       {Enable exporting symbols for the AF16X2LCD driver if included (Default: On)}
 {$DEFINE API_EXPORT_GOODIXTOUCH}     {Enable exporting symbols for the GoodixTouch driver if included (Default: On)}

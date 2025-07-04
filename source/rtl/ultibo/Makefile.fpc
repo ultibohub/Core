@@ -270,6 +270,7 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
                     af16x2lcd \
                     i2clcd \
                     ili9340 \
+                    ili9486 \
                     hx8357d \
                     st77xx \
                     pl110 \
@@ -278,6 +279,7 @@ ULTIBO_DRIVER_UNITS=rtlwifi \
                     pitft28 \
                     pitft35 \
                     ipstft19 \
+                    lcda35 \
                     smc91x \
                     pl18x \
                     bcmsdhost \
