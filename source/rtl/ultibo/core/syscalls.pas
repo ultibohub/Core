@@ -2087,10 +2087,10 @@ function socket_getsockopt(socket: int; level, option_name: int; option_value: P
 function socket_listen(socket: int; backlog: int): int; cdecl; public name 'listen';
 function socket_recv(socket: int; buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl; public name 'recv';
 function socket_recvfrom(socket: int; buffer: Pointer; len: size_t; flags: int; address: P_sockaddr; address_len: Psocklen_t): ssize_t; cdecl; public name 'recvfrom';
-function socket_recvmsg(socket: int; message: Pmsghdr; flags: int): ssize_t; cdecl; public name 'recvmsg';
+function socket_recvmsg(socket: int; msg: Pmsghdr; flags: int): ssize_t; cdecl; public name 'recvmsg';
 function socket_send(socket: int; const buffer: Pointer; len: size_t; flags: int): ssize_t; cdecl; public name 'send';
 function socket_sendto(socket: int; const buffer: Pointer; len: size_t; flags: int; dest_addr: P_sockaddr; dest_len: socklen_t): ssize_t; cdecl; public name 'sendto';
-function socket_sendmsg(socket: int; const message: Pmsghdr; flags: int): ssize_t; cdecl; public name 'sendmsg';
+function socket_sendmsg(socket: int; const msg: Pmsghdr; flags: int): ssize_t; cdecl; public name 'sendmsg';
 function socket_setsockopt(socket: int; level, option_name: int; const option_value: Pointer; option_len: socklen_t): int; cdecl; public name 'setsockopt';
 function socket_shutdown(socket: int; how: int): int; cdecl; public name 'shutdown';
 function socket_socket(domain, sockettype, protocol: int): int; cdecl; public name 'socket';
@@ -7714,6 +7714,63 @@ end;
 
 {==============================================================================}
 
+function pthread_cond_checkinit(cond: Ppthread_cond_t; attr: Ppthread_condattr_t{$IFDEF SYSCALLS_WARN_UNINITIALIZED}; caller: String{$ENDIF}): int; cdecl;
+{Check initialization of a condition variable}
+
+{Note: Internal function, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+
+ {Check cond}
+ if cond = nil then Exit;
+
+ {Check cond}
+ if cond^ = PTHREAD_COND_INITIALIZER then
+  begin
+   if MutexLock(SyscallsPthreadLock) <> ERROR_SUCCESS then Exit;
+   try
+    {Recheck cond (Must be after lock)}
+    if cond^ = PTHREAD_COND_INITIALIZER then
+     begin
+      {Initialize cond}
+      Result:=pthread_cond_init(cond,attr);
+      if Result <> 0 then Exit;
+     end;
+   finally
+    MutexUnlock(SyscallsPthreadLock);
+   end;
+  end;
+
+ {Check cond}
+ if cond^ = 0 then
+  begin
+   if MutexLock(SyscallsPthreadLock) <> ERROR_SUCCESS then Exit;
+   try
+    {Recheck cond (Must be after lock)}
+    if cond^ = 0 then
+     begin
+      {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
+      {Uninitialized cond}
+      if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized condition in call to ' + caller);
+      {$ENDIF}
+
+      {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+      {Initialize cond}
+      Result:=pthread_cond_init(cond,attr);
+      if Result <> 0 then Exit;
+      {$ENDIF}  
+     end;
+   finally
+    MutexUnlock(SyscallsPthreadLock);
+   end;
+  end;
+
+ Result:=0;
+end;
+
+{==============================================================================}
+
 function pthread_cond_destroy(cond: Ppthread_cond_t): int; cdecl;
 {Destroy a condition variable}
 
@@ -7756,28 +7813,9 @@ begin
  {$ENDIF}
 
  {Check cond}
- if cond^ = PTHREAD_COND_INITIALIZER then
-  begin
-   {Initialize cond}
-   Result:=pthread_cond_init(cond,nil);
-   if Result <> 0 then Exit;
-  end;
- 
- {Check cond}
- if cond^ = 0 then
-  begin
-   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
-   {Uninitialized cond}
-   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized condition in call to pthread_cond_broadcast');
-   {$ENDIF}
-   
-   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
-   {Initialize cond}
-   Result:=pthread_cond_init(cond,nil);
-   if Result <> 0 then Exit;
-   {$ENDIF}  
-  end;
- 
+ Result:=pthread_cond_checkinit(cond,nil{$IFDEF SYSCALLS_WARN_UNINITIALIZED},'pthread_cond_broadcast'{$ENDIF});
+ if Result <> 0 then Exit;
+
  {Wake All Condition} 
  if ConditionWakeAll(TConditionHandle(cond^)) <> ERROR_SUCCESS then Exit;
  
@@ -7800,30 +7838,11 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_signal (cond=' + PtrToHex(cond) + ')');
  {$ENDIF}
- 
+
  {Check cond}
- if cond^ = PTHREAD_COND_INITIALIZER then
-  begin
-   {Initialize cond}
-   Result:=pthread_cond_init(cond,nil);
-   if Result <> 0 then Exit;
-  end;
- 
- {Check cond}
- if cond^ = 0 then
-  begin
-   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
-   {Uninitialized cond}
-   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized condition in call to pthread_cond_signal');
-   {$ENDIF}
-   
-   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
-   {Initialize cond}
-   Result:=pthread_cond_init(cond,nil);
-   if Result <> 0 then Exit;
-   {$ENDIF}  
-  end;
- 
+ Result:=pthread_cond_checkinit(cond,nil{$IFDEF SYSCALLS_WARN_UNINITIALIZED},'pthread_cond_signal'{$ENDIF});
+ if Result <> 0 then Exit;
+
  {Wake Condition} 
  if ConditionWake(TConditionHandle(cond^)) <> ERROR_SUCCESS then Exit;
  
@@ -7849,30 +7868,11 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_cond_wait (cond=' + PtrToHex(cond) + ' mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
- 
+
  {Check cond}
- if cond^ = PTHREAD_COND_INITIALIZER then
-  begin
-   {Initialize cond}
-   Result:=pthread_cond_init(cond,nil);
-   if Result <> 0 then Exit;
-  end;
- 
- {Check cond}
- if cond^ = 0 then
-  begin
-   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
-   {Uninitialized cond}
-   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized condition in call to pthread_cond_wait');
-   {$ENDIF}
-   
-   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
-   {Initialize cond}
-   Result:=pthread_cond_init(cond,nil);
-   if Result <> 0 then Exit;
-   {$ENDIF}  
-  end;
- 
+ Result:=pthread_cond_checkinit(cond,nil{$IFDEF SYSCALLS_WARN_UNINITIALIZED},'pthread_cond_wait'{$ENDIF});
+ if Result <> 0 then Exit;
+
  {Wait Condition Mutex}
  ResultCode:=ConditionWaitMutex(TConditionHandle(cond^),TMutexHandle(mutex^),INFINITE);
  if ResultCode = ERROR_SUCCESS then
@@ -7937,30 +7937,11 @@ begin
    
    Timeout:=(Relative.tv_sec * 1000) + (Relative.tv_nsec div 1000000);
   end;
- 
+
  {Check cond}
- if cond^ = PTHREAD_COND_INITIALIZER then
-  begin
-   {Initialize cond}
-   Result:=pthread_cond_init(cond,nil);
-   if Result <> 0 then Exit;
-  end;
- 
- {Check cond}
- if cond^ = 0 then
-  begin
-   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
-   {Uninitialized cond}
-   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized condition in call to pthread_cond_timedwait');
-   {$ENDIF}
-   
-   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
-   {Initialize cond}
-   Result:=pthread_cond_init(cond,nil);
-   if Result <> 0 then Exit;
-   {$ENDIF}  
-  end;
- 
+ Result:=pthread_cond_checkinit(cond,nil{$IFDEF SYSCALLS_WARN_UNINITIALIZED},'pthread_cond_timedwait'{$ENDIF});
+ if Result <> 0 then Exit;
+
  {Wait Condition Mutex}
  ResultCode:=ConditionWaitMutex(TConditionHandle(cond^),TMutexHandle(mutex^),Timeout);
  if ResultCode = ERROR_SUCCESS then
@@ -8719,6 +8700,63 @@ end;
 
 {==============================================================================}
 
+function pthread_mutex_checkinit(mutex: Ppthread_mutex_t; attr: Ppthread_mutexattr_t{$IFDEF SYSCALLS_WARN_UNINITIALIZED}; caller: String{$ENDIF}): int; cdecl;
+{Check initialization of a mutex}
+
+{Note: Internal function, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+
+ {Check mutex}
+ if mutex = nil then Exit;
+
+ {Check mutex}
+ if mutex^ = PTHREAD_MUTEX_INITIALIZER then
+  begin
+   if MutexLock(SyscallsPthreadLock) <> ERROR_SUCCESS then Exit;
+   try
+    {Recheck mutex (Must be after lock)}
+    if mutex^ = PTHREAD_MUTEX_INITIALIZER then
+     begin
+      {Initialize mutex}
+      Result:=pthread_mutex_init(mutex,attr);
+      if Result <> 0 then Exit;
+     end;
+   finally
+    MutexUnlock(SyscallsPthreadLock);
+   end;
+  end;
+
+ {Check mutex}
+ if mutex^ = 0 then
+  begin
+   if MutexLock(SyscallsPthreadLock) <> ERROR_SUCCESS then Exit;
+   try
+    {Recheck mutex (Must be after lock)}
+    if mutex^ = 0 then
+     begin
+      {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
+      {Uninitialized mutex}
+      if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized mutex in call to ' + caller);
+      {$ENDIF}  
+
+      {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+      {Initialize mutex}
+      Result:=pthread_mutex_init(mutex,attr);
+      if Result <> 0 then Exit;
+      {$ENDIF}  
+     end;
+   finally
+    MutexUnlock(SyscallsPthreadLock);
+   end;
+  end;
+
+ Result:=0;
+end;
+
+{==============================================================================}
+
 function pthread_mutex_destroy(mutex: Ppthread_mutex_t): int; cdecl;
 {Destroy a mutex}
 
@@ -8761,30 +8799,11 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_lock (mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
- 
+
  {Check mutex}
- if mutex^ = PTHREAD_MUTEX_INITIALIZER then
-  begin
-   {Initialize mutex}
-   Result:=pthread_mutex_init(mutex,nil);
-   if Result <> 0 then Exit;
-  end;
- 
- {Check mutex}
- if mutex^ = 0 then
-  begin
-   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
-   {Uninitialized mutex}
-   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized mutex in call to pthread_mutex_lock');
-   {$ENDIF}  
-   
-   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
-   {Initialize mutex}
-   Result:=pthread_mutex_init(mutex,nil);
-   if Result <> 0 then Exit;
-   {$ENDIF}  
-  end;
- 
+ Result:=pthread_mutex_checkinit(mutex,nil{$IFDEF SYSCALLS_WARN_UNINITIALIZED},'pthread_mutex_lock'{$ENDIF});
+ if Result <> 0 then Exit;
+
  {Lock Mutex}
  ResultCode:=MutexLock(TMutexHandle(mutex^));
  if ResultCode = ERROR_SUCCESS then
@@ -8815,30 +8834,11 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_trylock (mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
- 
+
  {Check mutex}
- if mutex^ = PTHREAD_MUTEX_INITIALIZER then
-  begin
-   {Initialize mutex}
-   Result:=pthread_mutex_init(mutex,nil);
-   if Result <> 0 then Exit;
-  end;
- 
- {Check mutex}
- if mutex^ = 0 then
-  begin
-   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
-   {Uninitialized mutex}
-   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized mutex in call to pthread_mutex_trylock');
-   {$ENDIF}  
-   
-   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
-   {Initialize mutex}
-   Result:=pthread_mutex_init(mutex,nil);
-   if Result <> 0 then Exit;
-   {$ENDIF}  
-  end;
- 
+ Result:=pthread_mutex_checkinit(mutex,nil{$IFDEF SYSCALLS_WARN_UNINITIALIZED},'pthread_mutex_trylock'{$ENDIF});
+ if Result <> 0 then Exit;
+
  {Try Lock Mutex}
  ResultCode:=MutexTryLock(TMutexHandle(mutex^));
  if ResultCode = ERROR_SUCCESS then
@@ -8869,30 +8869,11 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_unlock (mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
- 
+
  {Check mutex}
- if mutex^ = PTHREAD_MUTEX_INITIALIZER then
-  begin
-   {Initialize mutex}
-   Result:=pthread_mutex_init(mutex,nil);
-   if Result <> 0 then Exit;
-  end;
- 
- {Check mutex}
- if mutex^ = 0 then
-  begin
-   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
-   {Uninitialized mutex}
-   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized mutex in call to pthread_mutex_unlock');
-   {$ENDIF}  
-   
-   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
-   {Initialize mutex}
-   Result:=pthread_mutex_init(mutex,nil);
-   if Result <> 0 then Exit;
-   {$ENDIF}  
-  end;
- 
+ Result:=pthread_mutex_checkinit(mutex,nil{$IFDEF SYSCALLS_WARN_UNINITIALIZED},'pthread_mutex_unlock'{$ENDIF});
+ if Result <> 0 then Exit;
+
  {Unlock Mutex}
  ResultCode:=MutexUnlock(TMutexHandle(mutex^));
  if ResultCode = ERROR_SUCCESS then
@@ -8925,30 +8906,11 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_setprioceiling (mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
- 
+
  {Check mutex}
- if mutex^ = PTHREAD_MUTEX_INITIALIZER then
-  begin
-   {Initialize mutex}
-   Result:=pthread_mutex_init(mutex,nil);
-   if Result <> 0 then Exit;
-  end;
- 
- {Check mutex}
- if mutex^ = 0 then
-  begin
-   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
-   {Uninitialized mutex}
-   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized mutex in call to pthread_mutex_setprioceiling');
-   {$ENDIF}  
-   
-   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
-   {Initialize mutex}
-   Result:=pthread_mutex_init(mutex,nil);
-   if Result <> 0 then Exit;
-   {$ENDIF}  
-  end;
- 
+ Result:=pthread_mutex_checkinit(mutex,nil{$IFDEF SYSCALLS_WARN_UNINITIALIZED},'pthread_mutex_setprioceiling'{$ENDIF});
+ if Result <> 0 then Exit;
+
  {$IFDEF _POSIX_THREAD_PRIO_PROTECT}
  {Not supported}
  Result:=ENOSYS;
@@ -8974,30 +8936,11 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_mutex_getprioceiling (mutex=' + PtrToHex(mutex) + ')');
  {$ENDIF}
- 
+
  {Check mutex}
- if mutex^ = PTHREAD_MUTEX_INITIALIZER then
-  begin
-   {Initialize mutex}
-   Result:=pthread_mutex_init(mutex,nil);
-   if Result <> 0 then Exit;
-  end;
- 
- {Check mutex}
- if mutex^ = 0 then
-  begin
-   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}  
-   {Uninitialized mutex}
-   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized mutex in call to pthread_mutex_getprioceiling');
-   {$ENDIF}  
-   
-   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
-   {Initialize mutex}
-   Result:=pthread_mutex_init(mutex,nil);
-   if Result <> 0 then Exit;
-   {$ENDIF}  
-  end;
- 
+ Result:=pthread_mutex_checkinit(mutex,nil{$IFDEF SYSCALLS_WARN_UNINITIALIZED},'pthread_mutex_getprioceiling'{$ENDIF});
+ if Result <> 0 then Exit;
+
  {$IFDEF _POSIX_THREAD_PRIO_PROTECT}
  {Not supported}
  Result:=ENOSYS;
@@ -9640,6 +9583,63 @@ end;
 
 {==============================================================================}
 
+function pthread_rwlock_checkinit(rwlock: Ppthread_rwlock_t ; attr: Ppthread_rwlockattr_t{$IFDEF SYSCALLS_WARN_UNINITIALIZED}; caller: String{$ENDIF}): int; cdecl;
+{Check initialization of a read-write lock}
+
+{Note: Internal function, not intended to be called by applications}
+begin
+ {}
+ Result:=EINVAL;
+
+ {Check rwlock}
+ if rwlock = nil then Exit;
+
+ {Check rwlock}
+ if rwlock^ = PTHREAD_RWLOCK_INITIALIZER then
+  begin
+   if MutexLock(SyscallsPthreadLock) <> ERROR_SUCCESS then Exit;
+   try
+    {Recheck rwlock (Must be after lock)}
+    if rwlock^ = PTHREAD_RWLOCK_INITIALIZER then
+     begin
+      {Initialize rwlock}
+      Result:=pthread_rwlock_init(rwlock,attr);
+      if Result <> 0 then Exit;
+     end;
+   finally
+    MutexUnlock(SyscallsPthreadLock);
+   end;
+  end;
+
+ {Check rwlock}
+ if rwlock^ = 0 then
+  begin
+   if MutexLock(SyscallsPthreadLock) <> ERROR_SUCCESS then Exit;
+   try
+    {Recheck rwlock (Must be after lock)}
+    if rwlock^ = 0 then
+     begin
+      {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
+      {Uninitialized rwlock}
+      if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized rwlock in call to ' + caller);
+      {$ENDIF}
+
+      {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
+      {Initialize rwlock}
+      Result:=pthread_rwlock_init(rwlock,attr);
+      if Result <> 0 then Exit;
+      {$ENDIF}  
+     end;
+   finally
+    MutexUnlock(SyscallsPthreadLock);
+   end;
+  end;
+
+ Result:=0;
+end;
+
+{==============================================================================}
+
 function pthread_rwlock_destroy(rwlock: Ppthread_rwlock_t): int; cdecl;
 {Destroy a read-write lock}
 
@@ -9682,30 +9682,11 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_rdlock (rwlock=' + PtrToHex(rwlock) + ')');
  {$ENDIF}
- 
+
  {Check rwlock}
- if rwlock^ = PTHREAD_RWLOCK_INITIALIZER then
-  begin
-   {Initialize rwlock}
-   Result:=pthread_rwlock_init(rwlock,nil);
-   if Result <> 0 then Exit;
-  end;
- 
- {Check rwlock}
- if rwlock^ = 0 then
-  begin
-   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
-   {Uninitialized rwlock}
-   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized rwlock in call to pthread_rwlock_rdlock');
-   {$ENDIF}
-   
-   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
-   {Initialize rwlock}
-   Result:=pthread_rwlock_init(rwlock,nil);
-   if Result <> 0 then Exit;
-   {$ENDIF}  
-  end;
- 
+ Result:=pthread_rwlock_checkinit(rwlock,nil{$IFDEF SYSCALLS_WARN_UNINITIALIZED},'pthread_rwlock_rdlock'{$ENDIF});
+ if Result <> 0 then Exit;
+
  {Check Owner}
  if SynchronizerWriterOwner(TSynchronizerHandle(rwlock^)) = ThreadGetCurrent then
   begin
@@ -9740,30 +9721,11 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_wrlock (rwlock=' + PtrToHex(rwlock) + ')');
  {$ENDIF}
- 
+
  {Check rwlock}
- if rwlock^ = PTHREAD_RWLOCK_INITIALIZER then
-  begin
-   {Initialize rwlock}
-   Result:=pthread_rwlock_init(rwlock,nil);
-   if Result <> 0 then Exit;
-  end;
- 
- {Check rwlock}
- if rwlock^ = 0 then
-  begin
-   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
-   {Uninitialized rwlock}
-   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized rwlock in call to pthread_rwlock_wrlock');
-   {$ENDIF}
-   
-   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
-   {Initialize rwlock}
-   Result:=pthread_rwlock_init(rwlock,nil);
-   if Result <> 0 then Exit;
-   {$ENDIF}  
-  end;
- 
+ Result:=pthread_rwlock_checkinit(rwlock,nil{$IFDEF SYSCALLS_WARN_UNINITIALIZED},'pthread_rwlock_wrlock'{$ENDIF});
+ if Result <> 0 then Exit;
+
  {Check Last}
  if SynchronizerReaderLast(TSynchronizerHandle(rwlock^)) = ThreadGetCurrent then
   begin
@@ -9800,28 +9762,9 @@ begin
  {$ENDIF}
 
  {Check rwlock}
- if rwlock^ = PTHREAD_RWLOCK_INITIALIZER then
-  begin
-   {Initialize rwlock}
-   Result:=pthread_rwlock_init(rwlock,nil);
-   if Result <> 0 then Exit;
-  end;
- 
- {Check rwlock}
- if rwlock^ = 0 then
-  begin
-   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
-   {Uninitialized rwlock}
-   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized rwlock in call to pthread_rwlock_tryrdlock');
-   {$ENDIF}
-   
-   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
-   {Initialize rwlock}
-   Result:=pthread_rwlock_init(rwlock,nil);
-   if Result <> 0 then Exit;
-   {$ENDIF}  
-  end;
- 
+ Result:=pthread_rwlock_checkinit(rwlock,nil{$IFDEF SYSCALLS_WARN_UNINITIALIZED},'pthread_rwlock_tryrdlock'{$ENDIF});
+ if Result <> 0 then Exit;
+
  {Check Owner}
  if SynchronizerWriterOwner(TSynchronizerHandle(rwlock^)) = ThreadGetCurrent then
   begin
@@ -9860,29 +9803,10 @@ begin
  {$IFDEF SYSCALLS_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls pthread_rwlock_trywrlock (rwlock=' + PtrToHex(rwlock) + ')');
  {$ENDIF}
- 
+
  {Check rwlock}
- if rwlock^ = PTHREAD_RWLOCK_INITIALIZER then
-  begin
-   {Initialize rwlock}
-   Result:=pthread_rwlock_init(rwlock,nil);
-   if Result <> 0 then Exit;
-  end;
- 
- {Check rwlock}
- if rwlock^ = 0 then
-  begin
-   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
-   {Uninitialized rwlock}
-   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized rwlock in call to pthread_rwlock_trywrlock');
-   {$ENDIF}
-   
-   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
-   {Initialize rwlock}
-   Result:=pthread_rwlock_init(rwlock,nil);
-   if Result <> 0 then Exit;
-   {$ENDIF}  
-  end;
+ Result:=pthread_rwlock_checkinit(rwlock,nil{$IFDEF SYSCALLS_WARN_UNINITIALIZED},'pthread_rwlock_trywrlock'{$ENDIF});
+ if Result <> 0 then Exit;
  
  {Check Last}
  if SynchronizerReaderLast(TSynchronizerHandle(rwlock^)) = ThreadGetCurrent then
@@ -9924,28 +9848,9 @@ begin
  {$ENDIF}
  
  {Check rwlock}
- if rwlock^ = PTHREAD_RWLOCK_INITIALIZER then
-  begin
-   {Initialize rwlock}
-   Result:=pthread_rwlock_init(rwlock,nil);
-   if Result <> 0 then Exit;
-  end;
- 
- {Check rwlock}
- if rwlock^ = 0 then
-  begin
-   {$IFDEF SYSCALLS_WARN_UNINITIALIZED}
-   {Uninitialized rwlock}
-   if PLATFORM_LOG_ENABLED then PlatformLogWarn('Uninitialized rwlock in call to pthread_rwlock_unlock');
-   {$ENDIF}
-   
-   {$IFDEF SYSCALLS_CREATE_UNINITIALIZED}  
-   {Initialize rwlock}
-   Result:=pthread_rwlock_init(rwlock,nil);
-   if Result <> 0 then Exit;
-   {$ENDIF}  
-  end;
- 
+ Result:=pthread_rwlock_checkinit(rwlock,nil{$IFDEF SYSCALLS_WARN_UNINITIALIZED},'pthread_rwlock_unlock'{$ENDIF});
+ if Result <> 0 then Exit;
+
  {Check Owner}
  if SynchronizerWriterOwner(TSynchronizerHandle(rwlock^)) = ThreadGetCurrent then
   begin
@@ -11009,7 +10914,7 @@ begin
    if Handle = Integer(INVALID_SOCKET) then
     begin
      {Free Address}
-     FreeMem(SockAddr);
+     if SockAddr <> nil then FreeMem(SockAddr);
 
      {Return Error}
      ptr:=__getreent;
@@ -11025,7 +10930,7 @@ begin
      Sockets.CloseSocket(Handle);
 
      {Free Address}
-     FreeMem(SockAddr);
+     if SockAddr <> nil then FreeMem(SockAddr);
 
      {Return Error}
      ptr:=__getreent;
@@ -11040,7 +10945,7 @@ begin
      Sockets.CloseSocket(Handle);
 
      {Free Address}
-     FreeMem(SockAddr);
+     if SockAddr <> nil then FreeMem(SockAddr);
 
      {Return Error}
      ptr:=__getreent;
@@ -11049,7 +10954,7 @@ begin
     end;
 
    {Free Address}
-   FreeMem(SockAddr);
+   if SockAddr <> nil then FreeMem(SockAddr);
 
    {Return Result}
    Result:=Entry^.Number;
@@ -11099,7 +11004,7 @@ begin
    if not SyscallsSockAddrToWinsock(address,@address_len,SockAddr,SockAddrLen) then
     begin
      {Free Address}
-     FreeMem(SockAddr);
+     if SockAddr <> nil then FreeMem(SockAddr);
 
      {Return Error}
      ptr:=__getreent;
@@ -11117,7 +11022,7 @@ begin
     end;
 
    {Free Address}
-   FreeMem(SockAddr);
+   if SockAddr <> nil then FreeMem(SockAddr);
   end
  else
   begin
@@ -11164,7 +11069,7 @@ begin
    if not SyscallsSockAddrToWinsock(address,@address_len,SockAddr,SockAddrLen) then
     begin
      {Free Address}
-     FreeMem(SockAddr);
+     if SockAddr <> nil then FreeMem(SockAddr);
 
      {Return Error}
      ptr:=__getreent;
@@ -11182,7 +11087,7 @@ begin
     end;
 
    {Free Address}
-   FreeMem(SockAddr);
+   if SockAddr <> nil then FreeMem(SockAddr);
   end
  else
   begin
@@ -11230,7 +11135,7 @@ begin
    if Result = SOCKET_ERROR then
     begin
      {Free Address}
-     FreeMem(SockAddr);
+     if SockAddr <> nil then FreeMem(SockAddr);
 
      {Return Error}
      ptr:=__getreent;
@@ -11247,7 +11152,7 @@ begin
     end;
 
    {Free Address}
-   FreeMem(SockAddr);
+   if SockAddr <> nil then FreeMem(SockAddr);
   end
  else
   begin
@@ -11295,7 +11200,7 @@ begin
    if Result = SOCKET_ERROR then
     begin
      {Free Address}
-     FreeMem(SockAddr);
+     if SockAddr <> nil then FreeMem(SockAddr);
 
      {Return Error}
      ptr:=__getreent;
@@ -11312,7 +11217,7 @@ begin
     end;
 
    {Free Address}
-   FreeMem(SockAddr);
+   if SockAddr <> nil then FreeMem(SockAddr);
   end
  else
   begin
@@ -11488,7 +11393,7 @@ begin
     end;
 
    {Free Address}
-   FreeMem(SockAddr);
+   if SockAddr <> nil then FreeMem(SockAddr);
   end
  else
   begin
@@ -11500,30 +11405,127 @@ end;
 
 {==============================================================================}
 
-function socket_recvmsg(socket: int; message: Pmsghdr; flags: int): ssize_t; cdecl;
+function socket_recvmsg(socket: int; msg: Pmsghdr; flags: int): ssize_t; cdecl;
 {Receive a message from a socket}
+{Note: The msg_control and msg_controllen fields of msg parameter are currently ignored}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Count:ssize_t;
+ Total:ssize_t;
+ Status:ssize_t;
+ Vector:Piovec;
+ SockAddr:PSockAddr;
+ SockAddrBuf:LongInt;
+ SockAddrLen:PLongInt;
  Entry:PSyscallsEntry;
 begin
  {}
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls recvmsg (socket=' + IntToHex(socket,8) + ' message=' + PtrToHex(message) + ' flags=' + IntToHex(flags,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls recvmsg (socket=' + IntToHex(socket,8) + ' msg=' + PtrToHex(msg) + ' flags=' + IntToHex(flags,8) + ')');
  {$ENDIF}
  
  {Get Entry}
  Entry:=SyscallsGetEntry(socket);
  if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
-   //To Do // Not yet supported
-    
-   Result:=SOCKET_ERROR;
+   {Check Message}
+   if msg = nil then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EFAULT;
+     Exit;
+    end;
 
-   {Return Error}
-   ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=EBADF;
+   {Check Vector and Length}
+   if (msg^.msg_iov = nil) or (msg^.msg_iovlen = 0) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+
+   {Check Name and Namelen}
+   if (msg^.msg_name = nil) and (msg^.msg_namelen <> 0) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+
+   {Check Control Buffer and Length}
+   if (msg^.msg_control = nil) and (msg^.msg_controllen <> 0) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+
+   {Allocate Address}
+   if not SyscallsAllocateWinsock(msg^.msg_name,@msg^.msg_namelen,@SockAddrBuf,SockAddr,SockAddrLen) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+
+   {Get Start}
+   Count:=0;
+   Total:=0;
+   Vector:=msg^.msg_iov;
+
+   {Process Vectors}
+   while Count < msg^.msg_iovlen do
+    begin
+     {Check Vector}
+     if Vector^.iov_base = nil then
+      begin
+       {Return Error}
+       ptr:=__getreent;
+       if ptr <> nil then ptr^._errno:=EFAULT;
+       Exit;
+      end;
+
+     {Receive Vector}
+     Status:=Sockets.fprecvfrom(Entry^.Handle,Vector^.iov_base,Vector^.iov_len,flags,SockAddr,SockAddrLen);
+     if Status = SOCKET_ERROR then
+      begin
+       {Return Error}
+       ptr:=__getreent;
+       if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+       Exit;
+      end;
+
+     {Update Total}
+     Inc(Total,Status);
+
+     {Check Received}
+     if Status < Vector^.iov_len then Break;
+
+     {Get Next}
+     Inc(Count);
+     Inc(Vector);
+    end;
+
+   {Convert Address}
+   if not SyscallsWinsockToSockAddr(SockAddr,SockAddrLen,msg^.msg_name,@msg^.msg_namelen) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EFAULT;
+    end;
+
+   {Free Address}
+   if SockAddr <> nil then FreeMem(SockAddr);
+
+   {Return Result}
+   Result:=Total;
   end
  else
   begin
@@ -11610,7 +11612,7 @@ begin
    if not SyscallsSockAddrToWinsock(dest_addr,@dest_len,SockAddr,SockAddrLen) then
     begin
      {Free Address}
-     FreeMem(SockAddr);
+     if SockAddr <> nil then FreeMem(SockAddr);
 
      {Return Error}
      ptr:=__getreent;
@@ -11628,7 +11630,7 @@ begin
     end;
 
    {Free Address}
-   FreeMem(SockAddr);
+   if SockAddr <> nil then FreeMem(SockAddr);
   end
  else
   begin
@@ -11640,30 +11642,133 @@ end;
 
 {==============================================================================}
 
-function socket_sendmsg(socket: int; const message: Pmsghdr; flags: int): ssize_t; cdecl;
+function socket_sendmsg(socket: int; const msg: Pmsghdr; flags: int): ssize_t; cdecl;
 {Send a message on a socket}
+{Note: The msg_control and msg_controllen fields of msg parameter are currently ignored}
 
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Count:ssize_t;
+ Total:ssize_t;
+ Status:ssize_t;
+ Vector:Piovec;
+ SockAddr:PSockAddr;
+ SockAddrBuf:LongInt;
+ SockAddrLen:PLongInt;
  Entry:PSyscallsEntry;
 begin
  {}
+ Result:=SOCKET_ERROR;
+
  {$IFDEF SYSCALLS_DEBUG}
- if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sendmsg (socket=' + IntToHex(socket,8) + ' message=' + PtrToHex(message) + ' flags=' + IntToHex(flags,8) + ')');
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls sendmsg (socket=' + IntToHex(socket,8) + ' msg=' + PtrToHex(msg) + ' flags=' + IntToHex(flags,8) + ')');
  {$ENDIF}
- 
+
  {Get Entry}
  Entry:=SyscallsGetEntry(socket);
  if (Entry <> nil) and (Entry^.Source = SYSCALLS_ENTRY_SOCKET) then
   begin
-   //To Do // Not yet supported
-    
-   Result:=SOCKET_ERROR;
+   {Check Message}
+   if msg = nil then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EFAULT;
+     Exit;
+    end;
 
-   {Return Error}
-   ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=EBADF;
+   {Check Vector and Length}
+   if (msg^.msg_iov = nil) or (msg^.msg_iovlen = 0) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+
+   {Check Name and Namelen}
+   if (msg^.msg_name = nil) and (msg^.msg_namelen <> 0) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+
+   {Check Control Buffer and Length}
+   if (msg^.msg_control = nil) and (msg^.msg_controllen <> 0) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+
+   {Allocate Address}
+   if not SyscallsAllocateWinsock(msg^.msg_name,@msg^.msg_namelen,@SockAddrBuf,SockAddr,SockAddrLen) then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+
+   {Convert Address}
+   if not SyscallsSockAddrToWinsock(msg^.msg_name,@msg^.msg_namelen,SockAddr,SockAddrLen) then
+    begin
+     {Free Address}
+     if SockAddr <> nil then FreeMem(SockAddr);
+
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EFAULT;
+     Exit;
+    end;
+
+   {Get Start}
+   Count:=0;
+   Total:=0;
+   Vector:=msg^.msg_iov;
+
+   {Process Vectors}
+   while Count < msg^.msg_iovlen do
+    begin
+     {Check Vector}
+     if Vector^.iov_base = nil then
+      begin
+       {Return Error}
+       ptr:=__getreent;
+       if ptr <> nil then ptr^._errno:=EFAULT;
+       Exit;
+      end;
+     
+     {Send Vector}
+     Status:=Sockets.fpsendto(Entry^.Handle,Vector^.iov_base,Vector^.iov_len,flags,SockAddr,SockAddrLen^);
+     if Status = SOCKET_ERROR then
+      begin
+       {Return Error}
+       ptr:=__getreent;
+       if ptr <> nil then ptr^._errno:=socket_get_error(Sockets.SocketError());
+       Exit;
+      end;
+
+     {Update Total}
+     Inc(Total,Status);
+
+     {Check Sent}
+     if Status < Vector^.iov_len then Break;
+
+     {Get Next}
+     Inc(Count);
+     Inc(Vector);
+    end;
+
+   {Free Address}
+   if SockAddr <> nil then FreeMem(SockAddr);
+
+   {Return Result}
+   Result:=Total;
   end
  else
   begin
@@ -12750,7 +12855,7 @@ begin
  if not SyscallsSockAddrToWinsock(addr,@addrlen,SockAddr,SockAddrLen) then
   begin
    {Free Address}
-   FreeMem(SockAddr);
+   if SockAddr <> nil then FreeMem(SockAddr);
 
    {Return Error}
    Result:=EAI_SYSTEM;
@@ -12764,7 +12869,7 @@ begin
  if Result <> ERROR_SUCCESS then Result:=socket_get_eai_error(Result);
 
  {Free Address}
- FreeMem(SockAddr);
+ if SockAddr <> nil then FreeMem(SockAddr);
 end;
 
 {==============================================================================}
@@ -14470,10 +14575,13 @@ begin
 
  {Set Defaults}
  Dest:=nil;
- DestLen:=nil;
+ DestLen:=DestBuf;
 
  {Check Buffer}
  if DestBuf = nil then Exit;
+
+ {Set Defaults}
+ DestLen^:=0;
 
  {Check Source}
  if Source <> nil then
@@ -14482,7 +14590,6 @@ begin
    if (SourceLen = nil) or (SourceLen^ <= 0) then Exit; 
 
    {Set Length}
-   DestLen:=DestBuf;
    DestLen^:=SourceLen^;
 
    {Allocate Address}
@@ -14506,10 +14613,13 @@ begin
 
  {Set Defaults}
  Dest:=nil;
- DestLen:=nil;
+ DestLen:=DestBuf;
 
  {Check Buffer}
  if DestBuf = nil then Exit;
+
+ {Set Defaults}
+ DestLen^:=0;
 
  {Check Source}
  if Source <> nil then
@@ -14518,7 +14628,6 @@ begin
    if (SourceLen = nil) or (SourceLen^ <= 0) then Exit; 
 
    {Set Length}
-   DestLen:=DestBuf;
    DestLen^:=SourceLen^;
 
    {Allocate Address}
