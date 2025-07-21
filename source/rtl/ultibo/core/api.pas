@@ -1433,6 +1433,7 @@ function module_load(const name: PCHAR): THANDLE; stdcall; public name 'module_l
 function module_load_ex(const name: PCHAR; flags: uint32_t): THANDLE; stdcall; public name 'module_load_ex';
 function module_unload(handle: THANDLE): BOOL; stdcall; public name 'module_unload';
 function module_get_name(handle: THANDLE; name: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'module_get_name';
+function module_get_handle(const name: PCHAR): THANDLE; stdcall; public name 'module_get_handle';
 
 {Symbol Functions}
 function symbol_add(handle: THANDLE; const name: PCHAR; address: SIZE_T): BOOL; stdcall; public name 'symbol_add';
@@ -12651,6 +12652,21 @@ begin
   end;
 
  Result:=APIStringToPCharBuffer(Buffer,name,len);
+end;
+
+{==============================================================================}
+
+function module_get_handle(const name: PCHAR): THANDLE; stdcall;
+begin
+ {}
+ if Assigned(ModuleGetHandleHandler) then
+  begin
+   Result:=ModuleGetHandleHandler(String(name));
+  end
+ else
+  begin
+   Result:=INVALID_HANDLE_VALUE;
+  end;
 end;
 
 {==============================================================================}

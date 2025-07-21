@@ -1204,6 +1204,7 @@ type
  TModuleLoadEx = function(const AName:String;AFlags:LongWord):THandle;
  TModuleUnload = function(AHandle:THandle):Boolean;
  TModuleGetName = function(AHandle:THandle):String;
+ TModuleGetHandle = function(const AName:String):THandle;
  
 type
  {Prototypes for Symbol Handlers}
@@ -2032,6 +2033,7 @@ var
  ModuleLoadExHandler:TModuleLoadEx;
  ModuleUnloadHandler:TModuleUnload;
  ModuleGetNameHandler:TModuleGetName;
+ ModuleGetHandleHandler:TModuleGetHandle;
  
 var
  {Symbol Handlers}
@@ -2779,6 +2781,7 @@ function ModuleLoad(const AName:String):THandle; inline;
 function ModuleLoadEx(const AName:String;AFlags:LongWord):THandle; inline;
 function ModuleUnload(AHandle:THandle):Boolean; inline;
 function ModuleGetName(AHandle:THandle):String; inline;
+function ModuleGetHandle(const AName:String):THandle; inline;
 
 {==============================================================================}
 {Symbol Functions}
@@ -11922,6 +11925,21 @@ begin
   begin
    Result:=''; 
   end;  
+end;
+
+{==============================================================================}
+
+function ModuleGetHandle(const AName:String):THandle; inline;
+begin
+ {}
+ if Assigned(ModuleGetHandleHandler) then
+  begin
+   Result:=ModuleGetHandleHandler(AName);
+  end
+ else
+  begin
+   Result:=INVALID_HANDLE_VALUE; 
+  end;
 end;
 
 {==============================================================================}
