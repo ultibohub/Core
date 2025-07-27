@@ -485,7 +485,7 @@ type
   sun_path:array[0..107] of char;
  end;
 
- {Tsocket = clong;}  {To ease porting code from Kylix libc unit to sockets unit.}
+ TSocket = GlobalSock.TSocket; {Tsocket = clong;}  {To ease porting code from Kylix libc unit to sockets unit.}
 
 type
  {FD set type for select}
@@ -627,6 +627,9 @@ function HostAddrToStr(Entry:in_addr):AnsiString;
 function StrToHostAddr(IP:AnsiString):in_addr;
 function StrToNetAddr(IP:AnsiString):in_addr;
 
+function TryStrToHostAddr(IP:AnsiString;out ip4:in_addr):Boolean;
+function TryStrToNetAddr(IP:AnsiString;out ip4:in_addr):Boolean;
+
 {Netdb legacy compatibility}
 function HostToNet(Host:in_addr):in_addr; overload; deprecated;
 function NetToHost(Net:in_addr):in_addr; overload; deprecated;
@@ -639,6 +642,7 @@ function HostAddrToStr6(Entry:Tin6_addr):AnsiString;
 function StrToHostAddr6(IP:String):Tin6_addr; 
 function NetAddrToStr6(Entry:Tin6_addr):AnsiString;
 function StrToNetAddr6(IP:AnsiString):TIn6_Addr;
+function TryStrToHostAddr6(IP:AnsiString;out ip6:in6_addr):Boolean;
 
 {==============================================================================}
 {==============================================================================}
@@ -3428,6 +3432,66 @@ end;
 
 {==============================================================================}
 
+function TryStrToHostAddr(IP:AnsiString;out ip4:in_addr):Boolean;
+begin
+ {}
+ Result:=TryStrToNetAddr(IP,ip4);
+ if Result then ip4.s_addr:=ntohl(ip4.s_addr);
+end;
+
+{==============================================================================}
+
+function TryStrToNetAddr(IP:AnsiString;out ip4:in_addr):Boolean;
+const
+ AllowedChars = ['.','0'..'9'];
+var
+ Temp:in_addr;
+ Count,Index,Value:Longint;
+ Dummy:AnsiString;
+begin
+ {}
+ Result:=False;
+ ip4.s_addr:=0; { :=NoAddress; }
+
+ for Count:=1 to Length(IP) do
+  begin
+    if not (IP[Count] in AllowedChars) then
+     Exit;
+  end;
+
+ for Count:=1 to 4 do
+  begin
+   if Count < 4 then
+    begin
+     Index:=Pos('.',IP);
+     if Index = 0 then
+      Exit;
+
+     Dummy:=Copy(IP,1,Index - 1);
+     Delete(IP,1,Index);
+    end
+   else
+    Dummy:=IP;
+
+   if Length(Dummy) > 3 then
+    Exit;
+
+   Val(Dummy,Value,Index);
+   if Index <> 0 then
+    Exit;
+
+   Array4Int(Temp.s_addr)[Count]:=Byte(Value);
+   {Check if after wrapping to a byte, our number is still the same. If not, it can't be part of an IP}
+   if Array4Int(Temp.s_addr)[Count] <> Value then
+    Exit;
+  end;
+
+ ip4.s_addr:=Temp.s_addr;
+ Result := True;
+end;
+
+{==============================================================================}
+
 function HostToNet(Host:in_addr):in_addr;
 begin
  {}
@@ -3504,6 +3568,34 @@ function StrToNetAddr6(IP:AnsiString):TIn6_Addr;
 begin
  {}
  Result:=StrToHostAddr6(IP);
+end;
+
+{==============================================================================}
+
+function TryStrToHostAddr6(IP:AnsiString;out ip6:in6_addr):Boolean;
+var
+ Temp:in6_addr;
+begin
+ {}
+ Result:=False;
+
+ {Set Default}
+ ip6.u6_addr32[0]:=0;
+ ip6.u6_addr32[1]:=0;
+ ip6.u6_addr32[2]:=0;
+ ip6.u6_addr32[3]:=0;
+
+ {Get IPv6 Address}
+ Temp:=StringToIn6Addr(IP);
+ if In6AddrIsNone(Temp) then Exit;
+
+ {Copy Result}
+ ip6.u6_addr32[0]:=Temp.u6_addr32[0];
+ ip6.u6_addr32[1]:=Temp.u6_addr32[1];
+ ip6.u6_addr32[2]:=Temp.u6_addr32[2];
+ ip6.u6_addr32[3]:=Temp.u6_addr32[3];
+
+ Result:=True;
 end;
 
 {==============================================================================}
