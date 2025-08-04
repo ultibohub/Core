@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -48,7 +48,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {CP874ANSI specific constants}
@@ -64,13 +64,13 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Initialization Functions}
 procedure CP874ANSIInit;
- 
+
 {==============================================================================}
 {CP874ANSI Functions}
- 
+
 {==============================================================================}
 {CP874ANSI Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -122,7 +122,7 @@ var
   $0E50,$0E51,$0E52,$0E53,$0E54,$0E55,$0E56,$0E57,
   $0E58,$0E59,$0E5A,$0E5B,$F8C5,$F8C6,$F8C7,$F8C8)
  );
- 
+
  CP874Lower:TLowerTable = (
   LowerID:874;
   Values:(
@@ -143,7 +143,7 @@ var
   $E0,$E1,$E2,$E3,$E4,$E5,$E6,$E7,$E8,$E9,$EA,$EB,$EC,$ED,$EE,$EF,
   $F0,$F1,$F2,$F3,$F4,$F5,$F6,$F7,$F8,$F9,$FA,$FB,$FC,$FD,$FE,$FF)
  );
- 
+
  CP874Upper:TUpperTable = (
   UpperID:874;
   Values:(
@@ -164,7 +164,7 @@ var
   $E0,$E1,$E2,$E3,$E4,$E5,$E6,$E7,$E8,$E9,$EA,$EB,$EC,$ED,$EE,$EF,
   $F0,$F1,$F2,$F3,$F4,$F5,$F6,$F7,$F8,$F9,$FA,$FB,$FC,$FD,$FE,$FF)
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -177,7 +177,7 @@ begin
  {Load Default Code Pages}
  LoadPage(CP_ANSI_874,@CPANSI874,@CP874Lower,@CP874Upper);
  DefaultTrans(CP_ANSI_874,CP_OEM_874);
- 
+
  CP874ANSIInitialized:=True;
 end;
 
@@ -194,9 +194,9 @@ end;
 
 initialization
  CP874ANSIInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

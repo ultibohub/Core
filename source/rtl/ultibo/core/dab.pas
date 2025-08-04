@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -48,21 +48,21 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Audio,USB;
  //Useful references:
 
  // \linux-rpi-3.12.y\drivers\media\tuners
- 
+
  //Drivers
  // \linux-rpi-3.12.y\drivers\media\tuners\r820t.c
 
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
- 
+
 {==============================================================================}
 //const
  {DAB specific constants}
 
-//To Do //A generic DAB unit 
-                           
-              
+//To Do //A generic DAB unit
+
+
 {==============================================================================}
 //type
  {DAB specific types}
@@ -74,7 +74,7 @@ var
  DABInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure DABInit;
@@ -96,9 +96,9 @@ begin
  {}
  {Check Initialized}
  if DABInitialized then Exit;
- 
+
  //To Do
- 
+
  DABInitialized:=True;
 end;
 
@@ -114,7 +114,7 @@ initialization
  DABInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -122,5 +122,5 @@ finalization
 {==============================================================================}
 
 end.
- 
- 
+
+

@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -33,9 +33,9 @@ Console
 
  Notes: Console coordinates X,Y are based on either pixels or characters depending on the console mode (Pixel or Character)
         Console coordinates begin at 0,0 and extend to Width - 1, Height - 1
-        
+
         Console Window coordinates X,Y are always based on characters, beginning at 1,1 and extending to Cols,Rows
-      
+
 
 }
 
@@ -43,7 +43,7 @@ Console
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit Console; 
+unit Console;
 
 interface
 
@@ -52,7 +52,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Framebuffer,F
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-            
+
 {==============================================================================}
 const
  {Console specific constants}
@@ -64,9 +64,9 @@ const
  CONSOLE_TYPE_SERIAL      = 2;
  CONSOLE_TYPE_REMOTE      = 3;
  CONSOLE_TYPE_LCD         = 4;
- 
+
  CONSOLE_TYPE_MAX         = 4;
-  
+
  {Console Type Names}
  CONSOLE_TYPE_NAMES:array[CONSOLE_TYPE_NONE..CONSOLE_TYPE_MAX] of String = (
   'CONSOLE_TYPE_NONE',
@@ -74,25 +74,25 @@ const
   'CONSOLE_TYPE_SERIAL',
   'CONSOLE_TYPE_REMOTE',
   'CONSOLE_TYPE_LCD');
- 
+
  {Console Device States}
  CONSOLE_STATE_CLOSED   = 0;
  CONSOLE_STATE_OPEN     = 1;
- 
+
  CONSOLE_STATE_MAX      = 1;
- 
+
  {Console State Names}
  CONSOLE_STATE_NAMES:array[CONSOLE_STATE_CLOSED..CONSOLE_STATE_MAX] of String = (
   'CONSOLE_STATE_CLOSED',
   'CONSOLE_STATE_OPEN');
- 
+
  {Console Device Flags}
  CONSOLE_FLAG_NONE            = $00000000;
  CONSOLE_FLAG_LINE_WRAP       = $00000001; {Wrap long lines to the next line if set}
  CONSOLE_FLAG_DMA_BOX         = $00000002; {Use DMA to draw boxes (Where applicable)}
  CONSOLE_FLAG_DMA_LINE        = $00000004; {Use DMA to draw lines (Where applicable)}
  CONSOLE_FLAG_DMA_FILL        = $00000008; {Use DMA to fill blocks (Where applicable)}
- CONSOLE_FLAG_DMA_CLEAR       = $00000010; {Use DMA to clear blocks (Where applicable)} 
+ CONSOLE_FLAG_DMA_CLEAR       = $00000010; {Use DMA to clear blocks (Where applicable)}
  CONSOLE_FLAG_DMA_SCROLL      = $00000020; {Use DMA to scroll blocks (Where applicable)}
  CONSOLE_FLAG_SINGLE_WINDOW   = $00000040; {Console supports only one window (Not multiple)}
  CONSOLE_FLAG_HARDWARE_CURSOR = $00000080; {Console supports a hardware cursor (Mouse pointer) (Character mode only)}
@@ -101,55 +101,55 @@ const
  CONSOLE_FLAG_TEXT_MODE       = $00000400; {Console supports text mode settings}
  CONSOLE_FLAG_TEXT_BLINK      = $00000800; {Console supports blinking text}
  CONSOLE_FLAG_COLOR           = $00001000; {Console supports colors}
- CONSOLE_FLAG_FONT            = $00002000; {Console supports fonts} 
+ CONSOLE_FLAG_FONT            = $00002000; {Console supports fonts}
  CONSOLE_FLAG_FULLSCREEN      = $00004000; {Console supports creating a fullscreen window}
  CONSOLE_FLAG_AUTO_SCROLL     = $00008000; {Automatically scroll up on reaching the last line}
  CONSOLE_FLAG_DMA_TEXT        = $00010000; {Use DMA to draw text (Where applicable)}
  CONSOLE_FLAG_COLOR_REVERSE   = $00020000; {Console requires colors to be reversed for underlying hardware}
- CONSOLE_FLAG_TEXT_CARET      = $00040000; {Console supports a caret (Text cursor} 
+ CONSOLE_FLAG_TEXT_CARET      = $00040000; {Console supports a caret (Text cursor}
  CONSOLE_FLAG_FOCUS_CARET     = $00080000; {Only show caret on the focused (active) window}
- 
+
  CONSOLE_FLAG_DMA_MASK = CONSOLE_FLAG_DMA_BOX or CONSOLE_FLAG_DMA_LINE or CONSOLE_FLAG_DMA_FILL or CONSOLE_FLAG_DMA_CLEAR or CONSOLE_FLAG_DMA_SCROLL or CONSOLE_FLAG_DMA_TEXT;
- 
+
  {Flags that cannot be changed by ConsoleDeviceUpdateFlag}
  CONSOLE_FLAG_INTERNAL = CONSOLE_FLAG_SINGLE_WINDOW or CONSOLE_FLAG_HARDWARE_CURSOR or CONSOLE_FLAG_HARDWARE_CARET or CONSOLE_FLAG_BLINK_CARET or CONSOLE_FLAG_TEXT_MODE
                          or CONSOLE_FLAG_TEXT_BLINK or CONSOLE_FLAG_COLOR or CONSOLE_FLAG_FONT or CONSOLE_FLAG_FULLSCREEN or CONSOLE_FLAG_COLOR_REVERSE or CONSOLE_FLAG_TEXT_CARET;
- 
+
  {Console Device Modes}
  CONSOLE_MODE_NONE      = 0;
  CONSOLE_MODE_PIXEL     = 1;
  CONSOLE_MODE_CHARACTER = 2;
- 
+
  {Console Caret Signature}
  CARET_SIGNATURE = $9A2D40E3;
- 
+
  {Console Window Signature}
  WINDOW_SIGNATURE = $DE3A5C04;
- 
+
  {Console Window States}
  WINDOW_STATE_INVISIBLE = 0;
  WINDOW_STATE_VISIBLE   = 1;
- 
+
  WINDOW_STATE_MAX       = 1;
- 
+
  {Window State Names}
  WINDOW_STATE_NAMES:array[WINDOW_STATE_INVISIBLE..WINDOW_STATE_MAX] of String = (
   'WINDOW_STATE_INVISIBLE',
   'WINDOW_STATE_VISIBLE');
- 
+
  {Console Window Modes}
  WINDOW_MODE_NONE       = 0;
  WINDOW_MODE_TEXT       = 1;
  WINDOW_MODE_GRAPHICS   = 2;
- 
+
  WINDOW_MODE_MAX        = 2;
- 
+
  {Window Mode Names}
  WINDOW_MODE_NAMES:array[WINDOW_MODE_NONE..WINDOW_MODE_MAX] of String = (
   'WINDOW_MODE_NONE',
   'WINDOW_MODE_TEXT',
   'WINDOW_MODE_GRAPHICS');
- 
+
  {Console Window Flags}
  WINDOW_FLAG_NONE          = $00000000;
  WINDOW_FLAG_LINE_WRAP     = $00000001; {Wrap long lines to the next line if set}
@@ -159,69 +159,69 @@ const
  WINDOW_FLAG_CHARACTER     = $00000010; {Console for this Window is character mode only}
  WINDOW_FLAG_AUTO_UPDATE   = $00000020; {Automatically update output of buffered window}
  WINDOW_FLAG_FOCUS_CURSOR  = $00000040; {Only show cursor (caret) on the focused (active) window}
- 
+
  {Flags that cannot be changed by ConsoleWindowUpdateFlag}
  WINDOW_FLAG_INTERNAL = WINDOW_FLAG_FULLSCREEN or WINDOW_FLAG_CHARACTER;
- 
+
  {Console Window Draw Flags}
  WINDOW_DRAW_FLAG_NONE   = $00000000;
  WINDOW_DRAW_FLAG_BODY   = $00000001; {Draw the Window body}
  WINDOW_DRAW_FLAG_TITLE  = $00000002; {Draw the Window title}
  WINDOW_DRAW_FLAG_BORDER = $00000004; {Draw the Window border}
- 
+
  WINDOW_DRAW_FLAG_ALL = WINDOW_DRAW_FLAG_BODY or WINDOW_DRAW_FLAG_TITLE or WINDOW_DRAW_FLAG_BORDER;
- 
+
  {Console Window History}
  WINDOW_HISTORY_MAX_COUNT = 100;
- 
+
 {==============================================================================}
 const
  {Framebuffer Console specific constants}
  FRAMEBUFFER_CONSOLE_TITLE = 'Ultibo Core (Release: ' + ULTIBO_RELEASE_NAME + ' Version: ' + ULTIBO_RELEASE_VERSION + ' Date: ' + ULTIBO_RELEASE_DATE + ')';
  FRAMEBUFFER_CONSOLE_DESCRIPTION = 'Framebuffer Console';  {Description of the Framebuffer Console device}
- 
+
 {==============================================================================}
 type
  {Console specific types}
  TCursorMode  = (CURSOR_MODE_INSERT,CURSOR_MODE_OVERWRITE);
  TCursorState = (CURSOR_STATE_ON,CURSOR_STATE_OFF);
  TCursorShape = (CURSOR_SHAPE_LINE,CURSOR_SHAPE_BAR,CURSOR_SHAPE_BLOCK); {Line is a vertical line, Bar is a horizontal bar and Block is a solid block (All shapes inverse any character data under them)}
- 
+
  PConsoleChar = ^TConsoleChar;
  TConsoleChar = record
   Ch:Char;
   Forecolor:LongWord;
   Backcolor:LongWord;
  end;
- 
+
  TConsolePoint = record
   X:LongWord;
   Y:LongWord;
  end;
- 
+
  TConsoleRect = record
   X1:LongWord;
   Y1:LongWord;
   X2:LongWord;
   Y2:LongWord;
  end;
- 
+
  PConsoleProperties = ^TConsoleProperties;
  TConsoleProperties = record
   Flags:LongWord;               {Console device flags (eg CONSOLE_FLAG_FULLSCREEN)}
   Mode:LongWord;                {Console device mode (eg CONSOLE_MODE_PIXEL)}
-  Width:LongWord;               {Console Width (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
-  Height:LongWord;              {Console Height (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  Width:LongWord;               {Console Width (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
+  Height:LongWord;              {Console Height (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
   Format:LongWord;              {Color Format (eg COLOR_FORMAT_ARGB32)(Only applicable if CONSOLE_MODE_PIXEL)}
  end;
- 
+
  PConsoleDevice = ^TConsoleDevice;
- 
+
  {Console Enumeration Callback}
  TConsoleEnumerate = function(Console:PConsoleDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Console Notification Callback}
  TConsoleNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Console Device Methods}
  TConsoleDeviceOpen = function(Console:PConsoleDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TConsoleDeviceClose = function(Console:PConsoleDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -237,12 +237,12 @@ type
  TConsoleDeviceDrawCircle = function(Console:PConsoleDevice;X,Y,Color,Width,Radius:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TConsoleDeviceDrawImage = function(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TConsoleDeviceDrawWindow = function(Console:PConsoleDevice;Handle:TWindowHandle;Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TConsoleDeviceGetPixel = function(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TConsoleDeviceGetImage = function(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TConsoleDevicePutText = function(Console:PConsoleDevice;Handle:TFontHandle;const Source,Dest:TConsolePoint;Buffer:PConsoleChar;Width,Height,Skip:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TConsoleDeviceCopyImage = function(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
  TConsoleDeviceAddCaret = function(Console:PConsoleDevice;Width,Height,OffsetX,OffsetY:LongWord):THandle;{$IFDEF i386} stdcall;{$ENDIF}
@@ -252,14 +252,14 @@ type
 
  TConsoleDeviceSetCursor = function(Console:PConsoleDevice;Width,Height:LongWord;Chars:PChar):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TConsoleDeviceUpdateCursor = function(Console:PConsoleDevice;Enabled:Boolean;X,Y:LongInt;Relative:Boolean):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TConsoleDeviceGetPosition = function(Console:PConsoleDevice;Position:LongWord;var X1,Y1,X2,Y2:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TConsoleDeviceGetProperties = function(Console:PConsoleDevice;Properties:PConsoleProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  PConsoleCaret = ^TConsoleCaret;
  PConsoleWindow = ^TConsoleWindow;
  PConsoleHistory = ^TConsoleHistory;
- 
+
  {Console Device}
  TConsoleDevice = record
   {Device Properties}
@@ -305,12 +305,12 @@ type
   CopyCount:LongWord;
   {Driver Properties}
   Lock:TMutexHandle;                             {Device lock}
-  Width:LongWord;                                {Console Width (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
-  Height:LongWord;                               {Console Height (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  Width:LongWord;                                {Console Width (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
+  Height:LongWord;                               {Console Height (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
   Format:LongWord;                               {Color Format (eg COLOR_FORMAT_ARGB32)(Only applicable if CONSOLE_MODE_PIXEL)}
   Forecolor:LongWord;                            {Foreground Color}
   Backcolor:LongWord;                            {Background Color}
-  Borderwidth:LongWord;                          {Border Width (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  Borderwidth:LongWord;                          {Border Width (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
   Bordercolor:LongWord;                          {Border Color}
   {Font Properties}
   Font:TFontHandle;                              {Console Font}
@@ -338,7 +338,7 @@ type
   Prev:PConsoleDevice;                           {Previous entry in Console device table}
   Next:PConsoleDevice;                           {Next entry in Console device table}
  end;
- 
+
  {Console Caret}
  TConsoleCaret = record
   {Caret Properties}
@@ -365,34 +365,34 @@ type
   Prev:PConsoleCaret;                            {Previous entry in Console Caret table}
   Next:PConsoleCaret;                            {Next entry in Console Caret table}
  end;
- 
+
  PWindowProperties = ^TWindowProperties;
  TWindowProperties = record
   Position:LongWord;                             {Console Window Position (eg CONSOLE_POSITION_TOP)}
   State:LongWord;                                {Console Window State (eg WINDOW_STATE_VISIBLE)}
   Mode:LongWord;                                 {Console Window Mode (eg WINDOW_MODE_TEXT)}
   Flags:LongWord;                                {Console Window Flags (eg WINDOW_FLAG_LINE_WRAP)}
-  X1:LongWord;                                   {Window X1} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
-  Y1:LongWord;                                   {Window Y1} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
-  X2:LongWord;                                   {Window X2} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
-  Y2:LongWord;                                   {Window Y2} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  X1:LongWord;                                   {Window X1} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
+  Y1:LongWord;                                   {Window Y1} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
+  X2:LongWord;                                   {Window X2} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
+  Y2:LongWord;                                   {Window Y2} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
   Width:LongWord;                                {Window Width in Columns (Characters for WINDOW_MODE_TEXT / Pixels for WINDOW_MODE_GRAPHICS)}
   Height:LongWord;                               {Window Height in Rows (Characters for WINDOW_MODE_TEXT / Pixels for WINDOW_MODE_GRAPHICS)}
-  OffsetX:LongWord;                              {Window X Offset (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
-  OffsetY:LongWord;                              {Window Y Offset (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  OffsetX:LongWord;                              {Window X Offset (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
+  OffsetY:LongWord;                              {Window Y Offset (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
   FontWidth:LongWord;                            {Font Width (Pixels for CONSOLE_MODE_PIXEL / Always 1 for CONSOLE_MODE_CHARACTER)}
   FontHeight:LongWord;                           {Font Height (Pixels for CONSOLE_MODE_PIXEL / Always 1 for CONSOLE_MODE_CHARACTER)}
   Borderwidth:LongWord;                          {Current Border Width}
   Font:TFontHandle;                              {Window Font}
   Console:PConsoleDevice;                        {Window console}
  end;
- 
+
  {Console Window Enumeration Callback}
  TConsoleWindowEnumerate = function(Console:PConsoleDevice;Handle:TWindowHandle;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Console Window Completion Callback}
  TConsoleWindowCompletion = function(Handle:TWindowHandle;var Buffer:String;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Console Window}
  TConsoleWindow = record
   {Window Properties}
@@ -401,14 +401,14 @@ type
   WindowState:LongWord;                          {Console Window State (eg WINDOW_STATE_VISIBLE)}
   WindowMode:LongWord;                           {Console Window Mode (eg WINDOW_MODE_TEXT)}
   WindowFlags:LongWord;                          {Console Window Flags (eg WINDOW_FLAG_LINE_WRAP)}
-  X1:LongWord;                                   {Window X1} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
-  Y1:LongWord;                                   {Window Y1} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
-  X2:LongWord;                                   {Window X2} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
-  Y2:LongWord;                                   {Window Y2} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  X1:LongWord;                                   {Window X1} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
+  Y1:LongWord;                                   {Window Y1} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
+  X2:LongWord;                                   {Window X2} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
+  Y2:LongWord;                                   {Window Y2} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
   Width:LongWord;                                {Window Width in Columns (Characters for WINDOW_MODE_TEXT / Pixels for WINDOW_MODE_GRAPHICS)}
   Height:LongWord;                               {Window Height in Rows (Characters for WINDOW_MODE_TEXT / Pixels for WINDOW_MODE_GRAPHICS)}
-  OffsetX:LongWord;                              {Window X Offset (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
-  OffsetY:LongWord;                              {Window Y Offset (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  OffsetX:LongWord;                              {Window X Offset (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
+  OffsetY:LongWord;                              {Window Y Offset (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
   MinX:LongWord;                                 {Viewport X1} {Window Relative (Characters for WINDOW_MODE_TEXT / Pixels for WINDOW_MODE_GRAPHICS)}
   MinY:LongWord;                                 {Viewport Y1} {Window Relative (Characters for WINDOW_MODE_TEXT / Pixels for WINDOW_MODE_GRAPHICS)}
   MaxX:LongWord;                                 {Viewport X2} {Window Relative (Characters for WINDOW_MODE_TEXT / Pixels for WINDOW_MODE_GRAPHICS)}
@@ -437,8 +437,8 @@ type
   CursorForecolor:LongWord;                      {Cursor Foreground Color (WINDOW_MODE_TEXT only)}
   CursorBackcolor:LongWord;                      {Cursor Background Color (WINDOW_MODE_TEXT only)}
   {Caret Properties}
-  CaretX:LongWord;                               {Caret X} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
-  CaretY:LongWord;                               {Caret Y} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)} 
+  CaretX:LongWord;                               {Caret X} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
+  CaretY:LongWord;                               {Caret Y} {Console Relative (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
   CaretHandle:THandle;                           {Caret (Cursor) Handle (or INVALID_HANDLE_VALUE)}
   {History Properties}
   HistoryFirst:PConsoleHistory;
@@ -452,7 +452,7 @@ type
   Prev:PConsoleWindow;                           {Previous entry in Console Window table}
   Next:PConsoleWindow;                           {Next entry in Console Window table}
  end;
- 
+
  TConsoleHistory = record
   {History Properties}
   Value:PChar;
@@ -461,7 +461,7 @@ type
   Prev:PConsoleHistory;                          {Previous entry in History table}
   Next:PConsoleHistory;                          {Next entry in History table}
  end;
- 
+
 {==============================================================================}
 type
  {Framebuffer Console specific types}
@@ -480,11 +480,11 @@ type
   {Buffer Properties}
   LineBuffer:Pointer;                            {Buffer for device reads and writes (Size of one line)}
  end;
- 
+
 {==============================================================================}
 {var}
  {Console specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure ConsoleInit;
@@ -510,10 +510,10 @@ function ConsoleDeviceDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle;Fla
 
 function ConsoleDeviceGetPixel(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord;
 function ConsoleDeviceGetImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
- 
+
 function ConsoleDevicePutText(Console:PConsoleDevice;Handle:TFontHandle;const Source,Dest:TConsolePoint;Buffer:PConsoleChar;Width,Height,Skip:LongWord):LongWord;
 
-function ConsoleDeviceCopyImage(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord; 
+function ConsoleDeviceCopyImage(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord;
 
 function ConsoleDeviceAddCaret(Console:PConsoleDevice;Width,Height,OffsetX,OffsetY:LongWord):THandle;
 function ConsoleDeviceDeleteCaret(Console:PConsoleDevice;Handle:THandle):LongWord;
@@ -527,7 +527,7 @@ function ConsoleDeviceGetPosition(Console:PConsoleDevice;Position:LongWord;var X
 function ConsoleDeviceGetProperties(Console:PConsoleDevice;Properties:PConsoleProperties):LongWord;
 
 function ConsoleDeviceCheckFlag(Console:PConsoleDevice;Flag:LongWord):Boolean;
-function ConsoleDeviceUpdateFlag(Console:PConsoleDevice;Flag:LongWord;Clear:Boolean):LongWord;  
+function ConsoleDeviceUpdateFlag(Console:PConsoleDevice;Flag:LongWord;Clear:Boolean):LongWord;
 
 function ConsoleDeviceGetMode(Console:PConsoleDevice):LongWord;
 function ConsoleDeviceGetState(Console:PConsoleDevice):LongWord;
@@ -567,7 +567,7 @@ function ConsoleWindowFind(Console:PConsoleDevice;Position:LongWord):TWindowHand
 function ConsoleWindowEnumerate(Console:PConsoleDevice;Callback:TConsoleWindowEnumerate;Data:Pointer):LongWord;
 
 function ConsoleWindowCheckFlag(Handle:TWindowHandle;Flag:LongWord):Boolean;
-function ConsoleWindowUpdateFlag(Handle:TWindowHandle;Flag:LongWord;Clear:Boolean):LongWord;  
+function ConsoleWindowUpdateFlag(Handle:TWindowHandle;Flag:LongWord;Clear:Boolean):LongWord;
 
 function ConsoleWindowGetMode(Handle:TWindowHandle):LongWord;
 function ConsoleWindowGetState(Handle:TWindowHandle):LongWord;
@@ -588,7 +588,7 @@ function ConsoleWindowResetRect(Handle:TWindowHandle):LongWord; inline;
 
 function ConsoleWindowGetViewport(Handle:TWindowHandle;var X1,Y1,X2,Y2:LongWord):LongWord;
 function ConsoleWindowSetViewport(Handle:TWindowHandle;X1,Y1,X2,Y2:LongWord):LongWord;
-function ConsoleWindowResetViewport(Handle:TWindowHandle):LongWord; 
+function ConsoleWindowResetViewport(Handle:TWindowHandle):LongWord;
 
 function ConsoleWindowGetX(Handle:TWindowHandle):LongWord;
 function ConsoleWindowSetX(Handle:TWindowHandle;X:LongWord):LongWord;
@@ -739,10 +739,10 @@ function FramebufferConsoleDrawDesktop(Console:PConsoleDevice):LongWord;
 
 function FramebufferConsoleGetPixel(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord;
 function FramebufferConsoleGetImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Format,Skip:LongWord):LongWord;
- 
+
 function FramebufferConsolePutText(Console:PConsoleDevice;Handle:TFontHandle;const Source,Dest:TConsolePoint;Buffer:PConsoleChar;Width,Height,Skip:LongWord):LongWord;
- 
-function FramebufferConsoleCopyImage(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord; 
+
+function FramebufferConsoleCopyImage(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord;
 
 function FramebufferConsoleAddCaret(Console:PConsoleDevice;Width,Height,OffsetX,OffsetY:LongWord):THandle;
 function FramebufferConsoleDeleteCaret(Console:PConsoleDevice;Handle:THandle):LongWord;
@@ -754,7 +754,7 @@ function FramebufferConsoleGetPosition(Console:PConsoleDevice;Position:LongWord;
 {Console Helper Functions}
 function ConsoleDeviceGetCount:LongWord;
 function ConsoleDeviceGetDefault:PConsoleDevice;
-function ConsoleDeviceSetDefault(Console:PConsoleDevice):LongWord; 
+function ConsoleDeviceSetDefault(Console:PConsoleDevice):LongWord;
 
 function ConsoleDeviceCheck(Console:PConsoleDevice):PConsoleDevice;
 function ConsoleDeviceCaretCheck(Console:PConsoleDevice;Caret:PConsoleCaret):PConsoleCaret;
@@ -798,15 +798,15 @@ implementation
 var
  {Console specific variables}
  ConsoleInitialized:Boolean;
- 
+
  ConsoleDeviceTable:PConsoleDevice;
  ConsoleDeviceTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  ConsoleDeviceTableCount:LongWord;
- 
+
  ConsoleDeviceDefault:PConsoleDevice;
- 
+
  ConsoleTextIOOutputHandle:TWindowHandle = INVALID_HANDLE_VALUE;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -821,99 +821,99 @@ begin
  {}
  {Check Initialized}
  if ConsoleInitialized then Exit;
- 
+
  {$IFDEF CONSOLE_EARLY_INIT}
  {Initialize Device Support}
  DevicesInit;
- 
+
  {Initialize Framebuffer Support}
  FramebufferInit;
- 
+
  {Initialize Font Support}
  FontInit;
  {$ENDIF}
- 
+
  {Initialize Console Device Table}
  ConsoleDeviceTable:=nil;
- ConsoleDeviceTableLock:=CriticalSectionCreate; 
+ ConsoleDeviceTableLock:=CriticalSectionCreate;
  ConsoleDeviceTableCount:=0;
  if ConsoleDeviceTableLock = INVALID_HANDLE_VALUE then
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create console device table lock');
   end;
  ConsoleDeviceDefault:=nil;
- 
+
  {Check Environment Variables}
  {CONSOLE_DEFAULT_FORECOLOR}
  WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_DEFAULT_FORECOLOR'),CONSOLE_DEFAULT_FORECOLOR);
  if WorkInt <> CONSOLE_DEFAULT_FORECOLOR then CONSOLE_DEFAULT_FORECOLOR:=WorkInt;
- 
+
  {CONSOLE_DEFAULT_BACKCOLOR}
  WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_DEFAULT_BACKCOLOR'),CONSOLE_DEFAULT_BACKCOLOR);
  if WorkInt <> CONSOLE_DEFAULT_BACKCOLOR then CONSOLE_DEFAULT_BACKCOLOR:=WorkInt;
- 
+
  {CONSOLE_DEFAULT_BORDERWIDTH}
  WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_DEFAULT_BORDERWIDTH'),CONSOLE_DEFAULT_BORDERWIDTH);
  if WorkInt <> CONSOLE_DEFAULT_BORDERWIDTH then CONSOLE_DEFAULT_BORDERWIDTH:=WorkInt;
- 
+
  {CONSOLE_DEFAULT_BORDERCOLOR}
  WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_DEFAULT_BORDERCOLOR'),CONSOLE_DEFAULT_BORDERCOLOR);
  if WorkInt <> CONSOLE_DEFAULT_BORDERCOLOR then CONSOLE_DEFAULT_BORDERCOLOR:=WorkInt;
- 
+
  {CONSOLE_DEFAULT_FONT_NAME}
  WorkBuffer:=EnvironmentGet('CONSOLE_DEFAULT_FONT_NAME');
  if Length(WorkBuffer) <> 0 then CONSOLE_DEFAULT_FONT_NAME:=WorkBuffer;
- 
+
  {WINDOW_DEFAULT_FORECOLOR}
  WorkInt:=StrToIntDef(EnvironmentGet('WINDOW_DEFAULT_FORECOLOR'),WINDOW_DEFAULT_FORECOLOR);
  if WorkInt <> WINDOW_DEFAULT_FORECOLOR then WINDOW_DEFAULT_FORECOLOR:=WorkInt;
- 
+
  {WINDOW_DEFAULT_BACKCOLOR}
  WorkInt:=StrToIntDef(EnvironmentGet('WINDOW_DEFAULT_BACKCOLOR'),WINDOW_DEFAULT_BACKCOLOR);
  if WorkInt <> WINDOW_DEFAULT_BACKCOLOR then WINDOW_DEFAULT_BACKCOLOR:=WorkInt;
- 
+
  {WINDOW_DEFAULT_BORDERWIDTH}
  WorkInt:=StrToIntDef(EnvironmentGet('WINDOW_DEFAULT_BORDERWIDTH'),WINDOW_DEFAULT_BORDERWIDTH);
  if WorkInt <> WINDOW_DEFAULT_BORDERWIDTH then WINDOW_DEFAULT_BORDERWIDTH:=WorkInt;
- 
+
  {WINDOW_DEFAULT_BORDERCOLOR}
  WorkInt:=StrToIntDef(EnvironmentGet('WINDOW_DEFAULT_BORDERCOLOR'),WINDOW_DEFAULT_BORDERCOLOR);
  if WorkInt <> WINDOW_DEFAULT_BORDERCOLOR then WINDOW_DEFAULT_BORDERCOLOR:=WorkInt;
- 
+
  {WINDOW_DEFAULT_ACTIVEBORDER}
  WorkInt:=StrToIntDef(EnvironmentGet('WINDOW_DEFAULT_ACTIVEBORDER'),WINDOW_DEFAULT_ACTIVEBORDER);
  if WorkInt <> WINDOW_DEFAULT_ACTIVEBORDER then WINDOW_DEFAULT_ACTIVEBORDER:=WorkInt;
- 
+
  {WINDOW_DEFAULT_FONT_NAME}
  WorkBuffer:=EnvironmentGet('WINDOW_DEFAULT_FONT_NAME');
  if Length(WorkBuffer) <> 0 then WINDOW_DEFAULT_FONT_NAME:=WorkBuffer;
- 
+
  {FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET}
  WorkInt:=StrToIntDef(EnvironmentGet('FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET'),FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET);
  if WorkInt <> FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET then FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET:=WorkInt;
- 
+
  {FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR}
  WorkInt:=StrToIntDef(EnvironmentGet('FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR'),FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR);
  if WorkInt <> FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR then FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR:=WorkInt;
- 
+
  {Setup Console Default Font}
  CONSOLE_DEFAULT_FONT:=ConsoleDeviceGetDefaultFont;
- 
+
  {Setup Window Default Font}
  WINDOW_DEFAULT_FONT:=ConsoleWindowGetDefaultFont;
 
  {Enumerate Framebuffers}
  FramebufferDeviceEnumerate(ConsoleFramebufferDeviceEnum,nil);
- 
+
  {Register Notification}
  FramebufferDeviceNotification(nil,ConsoleFramebufferDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_ENABLE or DEVICE_NOTIFICATION_DISABLE,NOTIFIER_FLAG_UNLOCK);
- 
+
  {Setup Platform Text IO Handlers}
  {TextIOWriteCharHandler:=SysTextIOWriteChar;} {Only registered when calling ConsoleWindowRedirectOutput}
- 
+
  {Setup Platform Console Handlers}
  ConsoleWriteCharHandler:=SysConsoleWriteChar;
- 
+
  ConsoleInitialized:=True;
 end;
 
@@ -927,11 +927,11 @@ function ConsoleDeviceOpen(Console:PConsoleDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Open');
  {$ENDIF}
@@ -947,14 +947,14 @@ begin
    {Call Device Open}
    Result:=Console.DeviceOpen(Console);
    if Result <> ERROR_SUCCESS then Exit;
-  end; 
- 
+  end;
+
  {Open Device}
  Console.ConsoleState:=CONSOLE_STATE_OPEN;
 
  {Notify Open}
  NotifierNotify(@Console.Device,DEVICE_NOTIFICATION_OPEN);
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -967,11 +967,11 @@ function ConsoleDeviceClose(Console:PConsoleDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Close');
  {$ENDIF}
@@ -979,21 +979,21 @@ begin
  {Check Open}
  Result:=ERROR_SUCCESS;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  {Check Close}
  if Assigned(Console.DeviceClose) then
   begin
    {Call Device Close}
    Result:=Console.DeviceClose(Console);
    if Result <> ERROR_SUCCESS then Exit;
-  end; 
- 
+  end;
+
  {Close Device}
  Console.ConsoleState:=CONSOLE_STATE_CLOSED;
 
  {Notify Close}
  NotifierNotify(@Console.Device,DEVICE_NOTIFICATION_CLOSE);
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -1009,19 +1009,19 @@ function ConsoleDeviceClear(Console:PConsoleDevice;Color:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Clear');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceClear) then
   begin
    Result:=Console.DeviceClear(Console,Color);
@@ -1043,19 +1043,19 @@ function ConsoleDeviceScroll(Console:PConsoleDevice;X1,Y1,X2,Y2,Count,Direction:
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Scroll');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceScroll) then
   begin
    Result:=Console.DeviceScroll(Console,X1,Y1,X2,Y2,Count,Direction);
@@ -1079,19 +1079,19 @@ function ConsoleDeviceDrawBox(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:Lon
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Draw Box');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceDrawBox) then
   begin
    Result:=Console.DeviceDrawBox(Console,X1,Y1,X2,Y2,Color,Width);
@@ -1119,19 +1119,19 @@ function ConsoleDeviceDrawLine(Console:PConsoleDevice;X1,Y1,X2,Y2,Color,Width:Lo
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Draw Line');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceDrawLine) then
   begin
    Result:=Console.DeviceDrawLine(Console,X1,Y1,X2,Y2,Color,Width);
@@ -1162,7 +1162,7 @@ var
  A,B,E:LongInt;
  DeltaX,DeltaY:LongInt;
  OffsetX,OffsetY:LongInt;
- 
+
  Temp:LongInt;
  Count:Integer;
  LineEnd:LongInt;
@@ -1171,19 +1171,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Plot Line');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DevicePlotLine) then
   begin
    Result:=Console.DevicePlotLine(Console,X1,Y1,X2,Y2,Color,Width);
@@ -1193,14 +1193,14 @@ begin
    {Default Method}
    {Check Mode}
    if Console.ConsoleMode <> CONSOLE_MODE_PIXEL then Exit;
-   
+
    {Check Color}
    {if Color = COLOR_NONE then Exit;}
- 
+
    {Check Width}
    if Width < 1 then Exit;
-   
-   if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+   if MutexLock(Console.Lock) = ERROR_SUCCESS then
     begin
      try
       {Setup Defaults}
@@ -1212,49 +1212,49 @@ begin
       DeltaX:=X2 - X1;
       DeltaY:=Y2 - Y1;
       Bisecting:=False;
-      
+
       {Flip on the Y-axis}
       if DeltaX < 0 then
        begin
         DeltaX:=-DeltaX;
         OffsetX:=-1;
        end;
-      
+
       {Flip on the X-axis}
       if DeltaY < 0 then
        begin
         DeltaY:=-DeltaY;
         OffsetY:=-1;
        end;
-      
+
       {Flip on the bisectrix of the 1 quadrant}
       if DeltaX < DeltaY then
        begin
         Temp:=X;
         X:=Y;
         Y:=Temp;
-     
+
         Temp:=DeltaX;
         DeltaX:=DeltaY;
         DeltaY:=Temp;
-     
+
         Temp:=OffsetX;
         OffsetX:=OffsetY;
         OffsetY:=Temp;
-     
+
         LineEnd:=Y2;
         Bisecting:=True;
        end;
-      
+
       {Precalculated values for the loop}
       A:=DeltaY shl 1;
       B:=DeltaX shl 1 - A;
       E:=A - DeltaX;
-      
+
       {Calculate Width}
       WidthStart:=-(Width div 2);
       WidthEnd:=((Width div 2) - 1) + (Width mod 2);
-      
+
       {Plot the Line}
       if Bisecting then
        begin
@@ -1263,12 +1263,12 @@ begin
           ConsoleDeviceDrawPixel(Console,Y,X,Color);
          end
         else
-         begin        
+         begin
           for Count:=WidthStart to WidthEnd do
            begin
             ConsoleDeviceDrawPixel(Console,Y + Count,X,Color);
-           end; 
-         end;  
+           end;
+         end;
        end
       else
        begin
@@ -1277,14 +1277,14 @@ begin
           ConsoleDeviceDrawPixel(Console,X,Y,Color);
          end
         else
-         begin        
+         begin
           for Count:=WidthStart to WidthEnd do
            begin
             ConsoleDeviceDrawPixel(Console,X + Count,Y,Color);
-           end; 
-         end;  
-       end;       
-     
+           end;
+         end;
+       end;
+
       while X <> LineEnd do
        begin
         X:=X + OffsetX;
@@ -1297,7 +1297,7 @@ begin
          begin
           E:=E + A;
          end;
-   
+
         if Bisecting then
          begin
           if Width = 1 then
@@ -1305,12 +1305,12 @@ begin
             ConsoleDeviceDrawPixel(Console,Y,X,Color);
            end
           else
-           begin        
+           begin
             for Count:=WidthStart to WidthEnd do
              begin
               ConsoleDeviceDrawPixel(Console,Y + Count,X,Color);
-             end; 
-           end;  
+             end;
+           end;
          end
         else
          begin
@@ -1319,20 +1319,20 @@ begin
             ConsoleDeviceDrawPixel(Console,X,Y,Color);
            end
           else
-           begin        
+           begin
             for Count:=WidthStart to WidthEnd do
              begin
               ConsoleDeviceDrawPixel(Console,X + Count,Y,Color);
-             end; 
-           end;  
-         end;       
+             end;
+           end;
+         end;
        end;
-      
+
       {Get Result}
       Result:=ERROR_SUCCESS;
      finally
       MutexUnlock(Console.Lock);
-     end; 
+     end;
     end
    else
     begin
@@ -1358,19 +1358,19 @@ function ConsoleDeviceDrawChar(Console:PConsoleDevice;Handle:TFontHandle;Ch:Char
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Draw Char');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceDrawChar) then
   begin
    Result:=Console.DeviceDrawChar(Console,Handle,Ch,X,Y,Forecolor,Backcolor);
@@ -1395,19 +1395,19 @@ function ConsoleDeviceDrawText(Console:PConsoleDevice;Handle:TFontHandle;const T
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Draw Text');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceDrawText) then
   begin
    Result:=Console.DeviceDrawText(Console,Handle,Text,X,Y,Forecolor,Backcolor,Len);
@@ -1428,19 +1428,19 @@ function ConsoleDeviceDrawPixel(Console:PConsoleDevice;X,Y,Color:LongWord):LongW
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Draw Pixel');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceDrawPixel) then
   begin
    Result:=Console.DeviceDrawPixel(Console,X,Y,Color);
@@ -1467,19 +1467,19 @@ function ConsoleDeviceDrawBlock(Console:PConsoleDevice;X1,Y1,X2,Y2,Color:LongWor
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Draw Block');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceDrawBlock) then
   begin
    Result:=Console.DeviceDrawBlock(Console,X1,Y1,X2,Y2,Color);
@@ -1510,7 +1510,7 @@ function ConsoleDeviceDrawCircle(Console:PConsoleDevice;X,Y,Color,Width,Radius:L
     Inc(X1);
    end;
  end;
- 
+
  procedure FillY(Console:PConsoleDevice;X,Y1,Y2:LongInt;Color:LongWord);
  begin
   {}
@@ -1520,32 +1520,32 @@ function ConsoleDeviceDrawCircle(Console:PConsoleDevice;X,Y,Color,Width,Radius:L
     Inc(Y1);
    end;
  end;
- 
+
 var
  Count:Integer;
  Decision:LongInt;
  DeltaX,DeltaY:LongInt;
  OffsetX,OffsetY:LongInt;
- 
+
  InnerRadius:LongWord;
  InnerX,OuterX:LongInt;
  DecisionInner,DecisionOuter:LongInt;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Draw Circle');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceDrawCircle) then
   begin
    Result:=Console.DeviceDrawCircle(Console,X,Y,Color,Width,Radius);
@@ -1555,20 +1555,20 @@ begin
    {Default Method}
    {Check Mode}
    if Console.ConsoleMode <> CONSOLE_MODE_PIXEL then Exit;
-   
+
    {Check Color}
    {if Color = COLOR_NONE then Exit;}
- 
+
    {Check Width}
    if Width < 1 then Exit;
-   
+
    {Check Radius}
    if Radius < 1 then Exit;
-   
+
    {Check Width}
    if Width > Radius then Width:=Radius;
-   
-   if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+   if MutexLock(Console.Lock) = ERROR_SUCCESS then
     begin
      try
       {Check Width}
@@ -1580,8 +1580,8 @@ begin
         DeltaX:=1;
         DeltaY:=1;
         Decision:=DeltaX - (Radius shl 1);
-       
-        {Draw the Circle}     
+
+        {Draw the Circle}
         while OffsetX >= OffsetY do
          begin
           ConsoleDeviceDrawPixel(Console,X + OffsetX,Y + OffsetY,Color);
@@ -1592,7 +1592,7 @@ begin
           ConsoleDeviceDrawPixel(Console,X - OffsetY,Y - OffsetX,Color);
           ConsoleDeviceDrawPixel(Console,X + OffsetY,Y - OffsetX,Color);
           ConsoleDeviceDrawPixel(Console,X + OffsetX,Y - OffsetY,Color);
-           
+
           if Decision <= 0 then
            begin
             Inc(OffsetY);
@@ -1611,14 +1611,14 @@ begin
        begin
         {Get Radius}
         InnerRadius:=Radius - Width + 1;
-        
+
         {Setup Defaults}
         OuterX:=Radius;
         InnerX:=InnerRadius;
         OffsetY:=0;
         DecisionOuter:=1 - OuterX;
         DecisionInner:=1 - InnerX;
-        
+
         while OuterX >= OffsetY do
          begin
           FillX(Console,X + InnerX,X + OuterX,Y + OffsetY,Color);
@@ -1629,9 +1629,9 @@ begin
           FillY(Console,X - OffsetY,Y - OuterX,Y - InnerX,Color);
           FillX(Console,X + InnerX,X + OuterX,Y - OffsetY,Color);
           FillY(Console,X + OffsetY,Y - OuterX,Y - InnerX,Color);
-         
+
           Inc(OffsetY);
-          
+
           if DecisionOuter < 0 then
            begin
             Inc(DecisionOuter,(OffsetY shl 1) + 1);
@@ -1641,10 +1641,10 @@ begin
             Dec(OuterX);
             Inc(DecisionOuter,(OffsetY - OuterX + 1) shl 1);
            end;
-           
+
           if OffsetY > InnerRadius then
            begin
-            InnerX:=OffsetY; 
+            InnerX:=OffsetY;
            end
           else
            begin
@@ -1656,16 +1656,16 @@ begin
              begin
               Dec(InnerX);
               Inc(DecisionInner,(OffsetY - InnerX + 1) shl 1);
-             end;             
-           end;           
+             end;
+           end;
          end;
-       end;       
-      
+       end;
+
       {Get Result}
       Result:=ERROR_SUCCESS;
      finally
       MutexUnlock(Console.Lock);
-     end; 
+     end;
     end
    else
     begin
@@ -1690,19 +1690,19 @@ function ConsoleDeviceDrawImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Point
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Draw Image');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceDrawImage) then
   begin
    Result:=Console.DeviceDrawImage(Console,X,Y,Buffer,Width,Height,Format,Skip);
@@ -1724,27 +1724,27 @@ function ConsoleDeviceDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle;Fla
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Draw Window');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceDrawWindow) then
   begin
    Result:=Console.DeviceDrawWindow(Console,Handle,Flags);
   end;
 end;
- 
+
 {==============================================================================}
- 
+
 function ConsoleDeviceGetPixel(Console:PConsoleDevice;X,Y:LongWord;var Color:LongWord):LongWord;
 {Read a pixel from a console device}
 {Console: The console device to read from}
@@ -1757,19 +1757,19 @@ function ConsoleDeviceGetPixel(Console:PConsoleDevice;X,Y:LongWord;var Color:Lon
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Get Pixel');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceGetPixel) then
   begin
    Result:=Console.DeviceGetPixel(Console,X,Y,Color);
@@ -1796,19 +1796,19 @@ function ConsoleDeviceGetImage(Console:PConsoleDevice;X,Y:LongWord;Buffer:Pointe
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Get Image');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceGetImage) then
   begin
    Result:=Console.DeviceGetImage(Console,X,Y,Buffer,Width,Height,Format,Skip);
@@ -1836,19 +1836,19 @@ function ConsoleDevicePutText(Console:PConsoleDevice;Handle:TFontHandle;const So
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Put Text');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DevicePutText) then
   begin
    Result:=Console.DevicePutText(Console,Handle,Source,Dest,Buffer,Width,Height,Skip);
@@ -1860,8 +1860,8 @@ begin
 end;
 
 {==============================================================================}
- 
-function ConsoleDeviceCopyImage(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord; 
+
+function ConsoleDeviceCopyImage(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord;
 {Copy an image within a console device}
 {Console: The console device to copy on}
 {Source: The starting point for the source of the copy (Pixels for CONSOLE_MODE_PIXEL / Characters for CONSOLE_MODE_CHARACTER)}
@@ -1872,19 +1872,19 @@ function ConsoleDeviceCopyImage(Console:PConsoleDevice;const Source,Dest:TConsol
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Copy Image');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceCopyImage) then
   begin
    Result:=Console.DeviceCopyImage(Console,Source,Dest,Width,Height);
@@ -1908,19 +1908,19 @@ function ConsoleDeviceAddCaret(Console:PConsoleDevice;Width,Height,OffsetX,Offse
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Add Caret');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceAddCaret) then
   begin
    Result:=Console.DeviceAddCaret(Console,Width,Height,OffsetX,OffsetY);
@@ -1941,19 +1941,19 @@ function ConsoleDeviceDeleteCaret(Console:PConsoleDevice;Handle:THandle):LongWor
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Delete Caret');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceDeleteCaret) then
   begin
    Result:=Console.DeviceDeleteCaret(Console,Handle);
@@ -1963,7 +1963,7 @@ begin
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
 end;
- 
+
 {==============================================================================}
 
 function ConsoleDeviceUpdateCaret(Console:PConsoleDevice;Handle:THandle;X,Y:LongWord;Visible,Blink:Boolean):LongWord; inline;
@@ -2002,7 +2002,7 @@ begin
 
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Update Caret Ex');
@@ -2041,19 +2041,19 @@ function ConsoleDeviceSetCursor(Console:PConsoleDevice;Width,Height:LongWord;Cha
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Set Cursor');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceSetCursor) then
   begin
    Result:=Console.DeviceSetCursor(Console,Width,Height,Chars);
@@ -2063,14 +2063,14 @@ begin
    {Lock Console}
    if MutexLock(Console.Lock) <> ERROR_SUCCESS then Exit;
    try
- 
-    //To Do 
-    
+
+    //To Do
+
    finally
     {Unlock Console}
     MutexUnlock(Console.Lock);
-   end; 
-  end;  
+   end;
+  end;
 end;
 
 {==============================================================================}
@@ -2088,19 +2088,19 @@ function ConsoleDeviceUpdateCursor(Console:PConsoleDevice;Enabled:Boolean;X,Y:Lo
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Update Cursor');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceUpdateCursor) then
   begin
    Result:=Console.DeviceUpdateCursor(Console,Enabled,X,Y,Relative);
@@ -2110,18 +2110,18 @@ begin
    {Lock Console}
    if MutexLock(Console.Lock) <> ERROR_SUCCESS then Exit;
    try
- 
-    //To Do 
-    
+
+    //To Do
+
    finally
     {Unlock Console}
     MutexUnlock(Console.Lock);
-   end; 
-  end;  
+   end;
+  end;
 end;
 
 {==============================================================================}
- 
+
 function ConsoleDeviceGetPosition(Console:PConsoleDevice;Position:LongWord;var X1,Y1,X2,Y2:LongWord):LongWord;
 {Get the coordinates of a console position from a console device}
 {Console: The console device to get from}
@@ -2134,27 +2134,27 @@ function ConsoleDeviceGetPosition(Console:PConsoleDevice;Position:LongWord;var X
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Get Position');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_SUPPORTED;
  if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
- 
+
  if Assigned(Console.DeviceGetPosition) then
   begin
    Result:=Console.DeviceGetPosition(Console,Position,X1,Y1,X2,Y2);
   end;
 end;
- 
+
 {==============================================================================}
- 
+
 function ConsoleDeviceGetProperties(Console:PConsoleDevice;Properties:PConsoleProperties):LongWord;
 {Get the current properties from a console device}
 {Console: The console device to get properties from}
@@ -2163,22 +2163,22 @@ function ConsoleDeviceGetProperties(Console:PConsoleDevice;Properties:PConsolePr
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Properties}
  if Properties = nil then Exit;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Device Get Properties');
  {$ENDIF}
- 
+
  {Check Open}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;} {Allow when closed}
- 
+
  if Assigned(Console.DeviceGetProperties) then
   begin
    Result:=Console.DeviceGetProperties(Console,Properties);
@@ -2187,21 +2187,21 @@ begin
   begin
    {Default Method}
    if MutexLock(Console.Lock) <> ERROR_SUCCESS then Exit;
-   
+
    {Get Properties}
    Properties.Flags:=Console.Device.DeviceFlags;
    Properties.Mode:=Console.ConsoleMode;
    Properties.Width:=Console.Width;
    Properties.Height:=Console.Height;
    Properties.Format:=Console.Format;
- 
+
    {Return Result}
    Result:=ERROR_SUCCESS;
-   
+
    MutexUnlock(Console.Lock);
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
 
 function ConsoleDeviceCheckFlag(Console:PConsoleDevice;Flag:LongWord):Boolean;
@@ -2212,25 +2212,25 @@ function ConsoleDeviceCheckFlag(Console:PConsoleDevice;Flag:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {Check Open}
  {if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;} {Allow when closed}
- 
+
  if MutexLock(Console.Lock) <> ERROR_SUCCESS then Exit;
 
  {Check Flag}
  Result:=((Console.Device.DeviceFlags and Flag) <> 0);
- 
+
  MutexUnlock(Console.Lock);
 end;
- 
+
 {==============================================================================}
 
-function ConsoleDeviceUpdateFlag(Console:PConsoleDevice;Flag:LongWord;Clear:Boolean):LongWord;  
+function ConsoleDeviceUpdateFlag(Console:PConsoleDevice;Flag:LongWord;Clear:Boolean):LongWord;
 {Set or clear a flag on a console device}
 {Console: The console device to set or clear the flag on}
 {Flag: The console flag to set or clear (eg CONSOLE_FLAG_LINE_WRAP)}
@@ -2239,17 +2239,17 @@ function ConsoleDeviceUpdateFlag(Console:PConsoleDevice;Flag:LongWord;Clear:Bool
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Flag}
  if (Flag and CONSOLE_FLAG_INTERNAL) <> 0 then Exit;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {Check Open}
  {if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;} {Allow when closed}
- 
+
  if MutexLock(Console.Lock) <> ERROR_SUCCESS then Exit;
 
  if Clear then
@@ -2261,10 +2261,10 @@ begin
   begin
    {Set Flag}
    Console.Device.DeviceFlags:=Console.Device.DeviceFlags or Flag;
-  end; 
- 
+  end;
+
  MutexUnlock(Console.Lock);
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -2278,22 +2278,22 @@ function ConsoleDeviceGetMode(Console:PConsoleDevice):LongWord;
 begin
  {}
  Result:=CONSOLE_MODE_NONE;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {Check Open}
  {if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;} {Allow when closed}
 
  if MutexLock(Console.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Mode}
  Result:=Console.ConsoleMode;
- 
+
  MutexUnlock(Console.Lock);
 end;
- 
+
 {==============================================================================}
 
 function ConsoleDeviceGetState(Console:PConsoleDevice):LongWord;
@@ -2303,22 +2303,22 @@ function ConsoleDeviceGetState(Console:PConsoleDevice):LongWord;
 begin
  {}
  Result:=CONSOLE_STATE_CLOSED;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {Check Open}
  {if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;} {Allow when closed}
 
  if MutexLock(Console.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get State}
  Result:=Console.ConsoleState;
- 
+
  MutexUnlock(Console.Lock);
 end;
- 
+
 {==============================================================================}
 
 function ConsoleDeviceCreate:PConsoleDevice;
@@ -2338,16 +2338,16 @@ function ConsoleDeviceCreateEx(Size:LongWord):PConsoleDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TConsoleDevice) then Exit;
- 
+
  {Create Console}
  Result:=PConsoleDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=CONSOLE_TYPE_NONE;
  Result.Device.DeviceFlags:=CONSOLE_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -2381,13 +2381,13 @@ begin
  Result.DeviceGetPosition:=nil;
  Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
- Result.Width:=0;        
- Result.Height:=0;       
+ Result.Width:=0;
+ Result.Height:=0;
  Result.Format:=COLOR_FORMAT_UNKNOWN;
- Result.Forecolor:=CONSOLE_DEFAULT_FORECOLOR;    
- Result.Backcolor:=CONSOLE_DEFAULT_BACKCOLOR;     
- Result.Borderwidth:=CONSOLE_DEFAULT_BORDERWIDTH;   
- Result.Bordercolor:=CONSOLE_DEFAULT_BORDERCOLOR;   
+ Result.Forecolor:=CONSOLE_DEFAULT_FORECOLOR;
+ Result.Backcolor:=CONSOLE_DEFAULT_BACKCOLOR;
+ Result.Borderwidth:=CONSOLE_DEFAULT_BORDERWIDTH;
+ Result.Bordercolor:=CONSOLE_DEFAULT_BORDERCOLOR;
  Result.Font:=INVALID_HANDLE_VALUE;
  Result.FontRatio:=1;
  Result.CursorUpdate:=False;
@@ -2404,7 +2404,7 @@ begin
  Result.WindowCount:=0;
  Result.WindowActive:=nil;
  Result.WindowDefault:=INVALID_HANDLE_VALUE;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -2414,7 +2414,7 @@ begin
    Result:=nil;
    Exit;
   end;
- 
+
  {Create Window Lock}
  Result.WindowLock:=CriticalSectionCreate;
  if Result.WindowLock = INVALID_HANDLE_VALUE then
@@ -2424,7 +2424,7 @@ begin
    Result:=nil;
    Exit;
   end;
-  
+
  {Create Caret Lock}
  Result.CaretLock:=CriticalSectionCreate;
  if Result.CaretLock = INVALID_HANDLE_VALUE then
@@ -2445,37 +2445,37 @@ function ConsoleDeviceDestroy(Console:PConsoleDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Console}
  Result:=ERROR_IN_USE;
  if ConsoleDeviceCheck(Console) = Console then Exit;
 
  {Check State}
  if Console.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Caret Lock}
  if Console.CaretLock <> INVALID_HANDLE_VALUE then
   begin
    CriticalSectionDestroy(Console.CaretLock);
   end;
- 
+
  {Destroy Window Lock}
  if Console.WindowLock <> INVALID_HANDLE_VALUE then
   begin
    CriticalSectionDestroy(Console.WindowLock);
   end;
- 
+
  {Destroy Lock}
  if Console.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Console.Lock);
   end;
- 
- {Destroy Console} 
+
+ {Destroy Console}
  Result:=DeviceDestroy(@Console.Device);
 end;
 
@@ -2490,12 +2490,12 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.ConsoleId <> DEVICE_ID_ANY then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Interfaces}
  if Console.ConsoleMode = CONSOLE_MODE_CHARACTER then
   begin
@@ -2511,7 +2511,7 @@ begin
    if not(Assigned(Console.DeviceGetPosition)) then Exit;
   end
  else
-  begin 
+  begin
    if not(Assigned(Console.DeviceOpen)) then Exit;
    if not(Assigned(Console.DeviceClose)) then Exit;
    if not(Assigned(Console.DeviceClear)) then Exit;
@@ -2529,15 +2529,15 @@ begin
    if not(Assigned(Console.DevicePutText)) then Exit;
    if not(Assigned(Console.DeviceCopyImage)) then Exit;
    if not(Assigned(Console.DeviceGetPosition)) then Exit;
-  end; 
- 
+  end;
+
  {Check Console}
  Result:=ERROR_ALREADY_EXISTS;
  if ConsoleDeviceCheck(Console) = Console then Exit;
- 
+
  {Check State}
  if Console.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Console}
  if CriticalSectionLock(ConsoleDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -2549,19 +2549,19 @@ begin
       Inc(ConsoleId);
      end;
     Console.ConsoleId:=ConsoleId;
-    
+
     {Update Device}
     Console.Device.DeviceName:=CONSOLE_NAME_PREFIX + IntToStr(Console.ConsoleId);
     Console.Device.DeviceClass:=DEVICE_CLASS_CONSOLE;
-    
+
     {Register Device}
     Result:=DeviceRegister(@Console.Device);
     if Result <> ERROR_SUCCESS then
      begin
       Console.ConsoleId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link Console}
     if ConsoleDeviceTable = nil then
      begin
@@ -2573,16 +2573,16 @@ begin
       ConsoleDeviceTable.Prev:=Console;
       ConsoleDeviceTable:=Console;
      end;
- 
+
     {Increment Count}
     Inc(ConsoleDeviceTableCount);
-    
+
     {Check Default}
     if ConsoleDeviceDefault = nil then
      begin
       ConsoleDeviceDefault:=Console;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2592,7 +2592,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2607,19 +2607,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.ConsoleId = DEVICE_ID_ANY then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Console}
  Result:=ERROR_NOT_FOUND;
  if ConsoleDeviceCheck(Console) <> Console then Exit;
- 
+
  {Check State}
  if Console.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove Console}
  if CriticalSectionLock(ConsoleDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -2627,7 +2627,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@Console.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink Console}
     Prev:=Console.Prev;
     Next:=Console.Next;
@@ -2637,7 +2637,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -2645,21 +2645,21 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(ConsoleDeviceTableCount);
- 
+
     {Check Default}
     if ConsoleDeviceDefault = Console then
      begin
       ConsoleDeviceDefault:=ConsoleDeviceTable;
      end;
-     
+
     {Update Console}
     Console.ConsoleId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2669,7 +2669,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2683,10 +2683,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if ConsoleId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(ConsoleDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -2727,10 +2727,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(ConsoleDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -2794,10 +2794,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(ConsoleDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -2811,11 +2811,11 @@ begin
        begin
         if Callback(Console,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Console:=Console.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2826,7 +2826,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2841,19 +2841,19 @@ function ConsoleDeviceNotification(Console:PConsoleDevice;Callback:TConsoleNotif
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_CONSOLE,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check Console}
    if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@Console.Device,DEVICE_CLASS_CONSOLE,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -2894,18 +2894,18 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Create');
  {$ENDIF}
- 
+
  {Check Size}
  if Size = 0 then Size:=SizeOf(TConsoleWindow);
  if Size < SizeOf(TConsoleWindow) then Exit;
- 
+
  {Check Mode}
  {if Mode <> WINDOW_MODE_TEXT then Exit;} {Do not check mode, allow for expansion}
- 
+
  {Check Position}
  if Position = CONSOLE_POSITION_FULLSCREEN then
   begin
@@ -2913,12 +2913,12 @@ begin
    if not ConsoleDeviceCheckFlag(Console,CONSOLE_FLAG_FULLSCREEN) then Exit;
   end
  else
-  begin 
+  begin
    {if Position < CONSOLE_POSITION_FULL then Exit;}
    if Position > CONSOLE_POSITION_BOTTOMRIGHT then Exit;
    if ConsoleWindowFind(Console,Position) <> INVALID_HANDLE_VALUE then Exit;
    if ConsoleWindowFind(Console,CONSOLE_POSITION_FULLSCREEN) <> INVALID_HANDLE_VALUE then Exit;
-   
+
    {Check Position}
    case Position of
     CONSOLE_POSITION_FULL:begin
@@ -2929,7 +2929,7 @@ begin
       {Fail on top positions}
       if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPLEFT) <> INVALID_HANDLE_VALUE then Exit;
       if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPRIGHT) <> INVALID_HANDLE_VALUE then Exit;
-      
+
       {Get Full}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -2937,7 +2937,7 @@ begin
         {Move to Bottom}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOM) <> ERROR_SUCCESS then Exit;
        end;
-      
+
       {Get Left}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_LEFT);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -2945,8 +2945,8 @@ begin
         {Move to Bottom Left}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMLEFT) <> ERROR_SUCCESS then Exit;
        end;
-       
-      {Get Right} 
+
+      {Get Right}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_RIGHT);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
@@ -2958,7 +2958,7 @@ begin
       {Fail on bottom positions}
       if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMLEFT) <> INVALID_HANDLE_VALUE then Exit;
       if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMRIGHT) <> INVALID_HANDLE_VALUE then Exit;
-    
+
       {Get Full}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -2966,7 +2966,7 @@ begin
         {Move to Top}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOP) <> ERROR_SUCCESS then Exit;
        end;
-      
+
       {Get Left}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_LEFT);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -2974,8 +2974,8 @@ begin
         {Move to Top Left}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
        end;
-       
-      {Get Right} 
+
+      {Get Right}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_RIGHT);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
@@ -2987,7 +2987,7 @@ begin
       {Fail on left positions}
       if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPLEFT) <> INVALID_HANDLE_VALUE then Exit;
       if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMLEFT) <> INVALID_HANDLE_VALUE then Exit;
-    
+
       {Get Full}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -2995,7 +2995,7 @@ begin
         {Move to Right}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_RIGHT) <> ERROR_SUCCESS then Exit;
        end;
-    
+
       {Get Top}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_TOP);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -3003,8 +3003,8 @@ begin
         {Move to Top Right}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPRIGHT) <> ERROR_SUCCESS then Exit;
        end;
-       
-      {Get Bottom} 
+
+      {Get Bottom}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOM);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
@@ -3016,7 +3016,7 @@ begin
       {Fail on right positions}
       if ConsoleWindowFind(Console,CONSOLE_POSITION_TOPRIGHT) <> INVALID_HANDLE_VALUE then Exit;
       if ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOMRIGHT) <> INVALID_HANDLE_VALUE then Exit;
-    
+
       {Get Full}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -3024,7 +3024,7 @@ begin
         {Move to Left}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_LEFT) <> ERROR_SUCCESS then Exit;
        end;
-    
+
       {Get Top}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_TOP);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -3032,8 +3032,8 @@ begin
         {Move to Top Left}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
        end;
-       
-      {Get Bottom} 
+
+      {Get Bottom}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOM);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
@@ -3049,7 +3049,7 @@ begin
         {Move to Right}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_RIGHT) <> ERROR_SUCCESS then Exit;
        end;
-    
+
       {Get Top}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_TOP);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -3057,7 +3057,7 @@ begin
         {Move to Top Right}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPRIGHT) <> ERROR_SUCCESS then Exit;
        end;
-    
+
       {Get Left}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_LEFT);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -3066,7 +3066,7 @@ begin
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMLEFT) <> ERROR_SUCCESS then Exit;
        end;
      end;
-    CONSOLE_POSITION_TOPRIGHT:begin 
+    CONSOLE_POSITION_TOPRIGHT:begin
       {Get Full}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -3074,7 +3074,7 @@ begin
         {Move to Left}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_LEFT) <> ERROR_SUCCESS then Exit;
        end;
-    
+
       {Get Top}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_TOP);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -3082,8 +3082,8 @@ begin
         {Move to Top Left}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
        end;
-       
-      {Get Right} 
+
+      {Get Right}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_RIGHT);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
@@ -3091,7 +3091,7 @@ begin
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMRIGHT) <> ERROR_SUCCESS then Exit;
        end;
      end;
-    CONSOLE_POSITION_BOTTOMLEFT:begin 
+    CONSOLE_POSITION_BOTTOMLEFT:begin
       {Get Full}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -3099,15 +3099,15 @@ begin
         {Move to Right}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_RIGHT) <> ERROR_SUCCESS then Exit;
        end;
-    
-      {Get Bottom} 
+
+      {Get Bottom}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOM);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
         {Move to Bottom Right}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMRIGHT) <> ERROR_SUCCESS then Exit;
        end;
-    
+
       {Get Left}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_LEFT);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -3116,7 +3116,7 @@ begin
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
        end;
      end;
-    CONSOLE_POSITION_BOTTOMRIGHT:begin 
+    CONSOLE_POSITION_BOTTOMRIGHT:begin
       {Get Full}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_FULL);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -3124,16 +3124,16 @@ begin
         {Move to Left}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_LEFT) <> ERROR_SUCCESS then Exit;
        end;
-    
-      {Get Bottom} 
+
+      {Get Bottom}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_BOTTOM);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
         {Move to Bottom Left}
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMLEFT) <> ERROR_SUCCESS then Exit;
        end;
-       
-      {Get Right} 
+
+      {Get Right}
       Handle:=ConsoleWindowFind(Console,CONSOLE_POSITION_RIGHT);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
@@ -3141,23 +3141,23 @@ begin
         if ConsoleWindowSetPosition(Handle,CONSOLE_POSITION_TOPRIGHT) <> ERROR_SUCCESS then Exit;
        end;
      end;
-   end; 
-  end;  
- 
+   end;
+  end;
+
  {Get Position}
  if ConsoleDeviceGetPosition(Console,Position,X1,Y1,X2,Y2) <> ERROR_SUCCESS then Exit;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Create Window}
     Window:=PConsoleWindow(AllocMem(Size));
     if Window = nil then Exit;
-    
+
     {Update Window}
     Window.Signature:=WINDOW_SIGNATURE;
     Window.Position:=Position;
@@ -3206,29 +3206,29 @@ begin
     {Driver}
     Window.Lock:=INVALID_HANDLE_VALUE;
     Window.Console:=Console;
-    
+
     {Setup Flags}
     if Position = CONSOLE_POSITION_FULLSCREEN then Window.WindowFlags:=Window.WindowFlags or WINDOW_FLAG_FULLSCREEN;
     if Console.ConsoleMode = CONSOLE_MODE_CHARACTER then Window.WindowFlags:=Window.WindowFlags or WINDOW_FLAG_CHARACTER;
     if (CONSOLE_LINE_WRAP) or ((Console.Device.DeviceFlags and CONSOLE_FLAG_LINE_WRAP) <> 0) then Window.WindowFlags:=Window.WindowFlags or WINDOW_FLAG_LINE_WRAP;
     if (CONSOLE_AUTO_SCROLL) or ((Console.Device.DeviceFlags and CONSOLE_FLAG_AUTO_SCROLL) <> 0) then Window.WindowFlags:=Window.WindowFlags or WINDOW_FLAG_AUTO_SCROLL;
     if (CONSOLE_FOCUS_CURSOR) or ((Console.Device.DeviceFlags and CONSOLE_FLAG_FOCUS_CARET) <> 0) then Window.WindowFlags:=Window.WindowFlags or WINDOW_FLAG_FOCUS_CURSOR;
-    
+
     {Check Border}
     if Position = CONSOLE_POSITION_FULLSCREEN then Window.Borderwidth:=0; //To do //Would this be better based on another criteria ?
-    
+
     {Get Font}
     if Window.Font = INVALID_HANDLE_VALUE then Window.Font:=ConsoleWindowGetDefaultFont;
     if Window.Font = INVALID_HANDLE_VALUE then Window.Font:=Console.Font;
     if Window.Font = INVALID_HANDLE_VALUE then Window.Font:=FontGetDefault;
-    if Window.Font = INVALID_HANDLE_VALUE then 
+    if Window.Font = INVALID_HANDLE_VALUE then
      begin
       if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to get font for console window');
       {Free Window}
       FreeMem(Window);
       Exit;
      end;
-    
+
     {Get Font Width / Height}
     Window.FontWidth:=FontGetWidth(Window.Font);
     Window.FontHeight:=FontGetHeight(Window.Font);
@@ -3243,7 +3243,7 @@ begin
     if Window.FontWidth = 0 then Window.FontWidth:=1;
     Window.FontHeight:=Window.FontHeight * Console.FontRatio;
     if Window.FontHeight = 0 then Window.FontHeight:=1;
-    
+
     {Get Width / Height}
     Window.Width:=(((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth)) div Window.FontWidth;
     Window.Height:=(((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth)) div Window.FontHeight;
@@ -3254,35 +3254,35 @@ begin
       FreeMem(Window);
       Exit;
      end;
-     
+
     {Check Font Ratio}
     if Console.FontRatio > 0 then
      begin
       {Get RemainX,Y}
       RemainX:=(((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth)) mod Window.FontWidth;
       RemainY:=(((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth)) mod Window.FontHeight;
-      
+
       {Check Remain X}
       if RemainX < 4 then
        begin
         {Decrease Width}
         Dec(Window.Width);
         Inc(RemainX,Window.FontWidth);
-       end; 
+       end;
       {Get Offset X}
       Window.OffsetX:=(RemainX div 2) + (RemainX mod 2);
-      
+
       {Check Remain Y}
       if RemainY < 4 then
        begin
         {Decrease Height}
         Dec(Window.Height);
         Inc(RemainY,Window.FontHeight);
-       end; 
+       end;
       {Get Offset Y}
       Window.OffsetY:=(RemainY div 2) + (RemainY mod 2);
      end;
-     
+
     {Get MaxX,Y}
     Window.MaxX:=Window.Width;
     Window.MaxY:=Window.Height;
@@ -3290,11 +3290,11 @@ begin
     {Get Cols / Rows}
     Window.Cols:=Window.Width;
     Window.Rows:=Window.Height;
-    
+
     {Get CaretX / CaretY}
     Window.CaretX:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Window.CursorX - 1) * Window.FontWidth);
     Window.CaretY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Window.CursorY - 1) * Window.FontHeight);
-    
+
     {Create Lock}
     Window.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
     if Window.Lock = INVALID_HANDLE_VALUE then
@@ -3304,7 +3304,7 @@ begin
       FreeMem(Window);
       Exit;
      end;
-    
+
     {Insert Window}
     if CriticalSectionLock(Console.WindowLock) = ERROR_SUCCESS then
      begin
@@ -3320,27 +3320,27 @@ begin
          Console.WindowFirst.Prev:=Window;
          Console.WindowFirst:=Window;
         end;
-    
+
        {Increment Count}
        Inc(Console.WindowCount);
-       
+
        {Check Default}
        if (Console.WindowDefault = INVALID_HANDLE_VALUE) and (Default) then
         begin
          {Set Default}
          Console.WindowDefault:=TWindowHandle(Window);
         end;
-        
+
        {Check Visible}
        if State = WINDOW_STATE_VISIBLE then
         begin
          {Set Active}
          if Console.WindowActive = nil then Console.WindowActive:=Window;
-         
+
          {Draw Window}
          ConsoleDeviceDrawWindow(Console,TWindowHandle(Window),WINDOW_DRAW_FLAG_ALL);
-        end; 
-       
+        end;
+
        {Return Result}
        Result:=TWindowHandle(Window);
       finally
@@ -3354,13 +3354,13 @@ begin
        begin
         MutexDestroy(Window.Lock);
        end;
-       
+
       {Free Window}
       FreeMem(Window);
-     end;  
+     end;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end;
 end;
 
@@ -3380,14 +3380,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Destroy');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -3397,7 +3397,7 @@ begin
  Console:=Window.Console;
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Remove Window}
  if CriticalSectionLock(Console.WindowLock) = ERROR_SUCCESS then
   begin
@@ -3405,34 +3405,34 @@ begin
     {Check Window}
     Result:=ERROR_NOT_FOUND;
     if ConsoleWindowCheck(Console,Window) <> Window then Exit;
- 
+
     {Lock Window}
     if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
-    try 
+    try
      Unlock:=True;
-     
+
      {Check State}
      if Window.WindowState = WINDOW_STATE_VISIBLE then
       begin
        {Update Caret}
        ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-       
+
        {Set State}
        Window.WindowState:=WINDOW_STATE_INVISIBLE;
-    
+
        {Draw Window}
        Result:=ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window),WINDOW_DRAW_FLAG_ALL);
        if Result <> ERROR_SUCCESS then Exit;
-      end; 
+      end;
 
      {Delete Caret}
      if Window.CaretHandle <> INVALID_HANDLE_VALUE then
       begin
        ConsoleDeviceDeleteCaret(Window.Console,Window.CaretHandle);
        Window.CaretHandle:=INVALID_HANDLE_VALUE;
-      end; 
-     
-     {Unlink Window}    
+      end;
+
+     {Unlink Window}
      Prev:=Window.Prev;
      Next:=Window.Next;
      if Prev = nil then
@@ -3441,7 +3441,7 @@ begin
        if Next <> nil then
         begin
          Next.Prev:=nil;
-        end;       
+        end;
       end
      else
       begin
@@ -3449,12 +3449,12 @@ begin
        if Next <> nil then
         begin
          Next.Prev:=Prev;
-        end;       
-      end;     
-     
+        end;
+      end;
+
      {Decrement Count}
      Dec(Console.WindowCount);
-     
+
      {Check Default}
      if Console.WindowDefault = Handle then
       begin
@@ -3462,16 +3462,16 @@ begin
         begin
          Console.WindowDefault:=TWindowHandle(Next);
         end
-       else if Prev <> nil then 
+       else if Prev <> nil then
         begin
          Console.WindowDefault:=TWindowHandle(Prev);
         end
        else
         begin
          Console.WindowDefault:=INVALID_HANDLE_VALUE;
-        end;        
+        end;
       end;
- 
+
      {Check Active}
      if Console.WindowActive = Window then
       begin
@@ -3481,47 +3481,47 @@ begin
         begin
          {Set Active}
          Console.WindowActive:=PConsoleWindow(Active);
-         
+
          {Lock Window}
          if MutexLock(Console.WindowActive.Lock) = ERROR_SUCCESS then
           begin
            {Draw Active}
            ConsoleDeviceDrawWindow(Console,Active,WINDOW_DRAW_FLAG_BORDER);
-           
+
            {Unlock Window}
            MutexUnlock(Console.WindowActive.Lock);
-          end; 
+          end;
         end
        else
         begin
          {Clear Active}
          Console.WindowActive:=nil;
-        end;        
+        end;
       end;
-     
+
      {Update Window}
      Window.Signature:=0;
      Window.Console:=nil;
-     
+
      {Unlock Window}
      MutexUnlock(Window.Lock);
      Unlock:=False;
- 
+
      {Free Lock}
      if Window.Lock <> INVALID_HANDLE_VALUE then
       begin
        MutexDestroy(Window.Lock);
       end;
-       
+
      {Free Window}
      FreeMem(Window);
- 
+
      {Return Result}
      Result:=ERROR_SUCCESS;
     finally
      {Unlock Window}
      if Unlock then MutexUnlock(Window.Lock);
-    end; 
+    end;
    finally
     CriticalSectionUnlock(Console.WindowLock);
    end;
@@ -3529,7 +3529,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3543,14 +3543,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Show');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -3558,35 +3558,35 @@ begin
 
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- try 
+ try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   if Window.WindowState = WINDOW_STATE_INVISIBLE then
    begin
     {Set State}
     Window.WindowState:=WINDOW_STATE_VISIBLE;
-    
+
     {Draw Window}
     Result:=ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window),WINDOW_DRAW_FLAG_ALL);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Check Flag}
     if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
      begin
       {Update Caret}
       ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
-     end; 
+     end;
    end;
-   
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
 function ConsoleWindowHide(Handle:TWindowHandle):LongWord;
@@ -3601,43 +3601,43 @@ begin
 
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Hide');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- try 
+ try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   if Window.WindowState = WINDOW_STATE_VISIBLE then
    begin
     {Update Caret}
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-    
+
     {Set State}
     Window.WindowState:=WINDOW_STATE_INVISIBLE;
-    
+
     {Draw Window}
     Result:=ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window),WINDOW_DRAW_FLAG_ALL);
     if Result <> ERROR_SUCCESS then Exit;
    end;
-   
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
 function ConsoleWindowActivate(Handle:TWindowHandle):LongWord;
@@ -3654,21 +3654,21 @@ begin
 
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Activate');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- 
+
  {Get Console}
  Console:=Window.Console;
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(Console.WindowLock) = ERROR_SUCCESS then
   begin
@@ -3676,16 +3676,16 @@ begin
     {Check Window}
     Result:=ERROR_NOT_FOUND;
     if ConsoleWindowCheck(Console,Window) <> Window then Exit;
- 
+
     {Lock Window}
     if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
-    try 
+    try
      {Get Current}
      Current:=Console.WindowActive;
-     
+
      {Set Active}
      Console.WindowActive:=Window;
-     
+
      {Check Current}
      if Current <> nil then
       begin
@@ -3701,36 +3701,36 @@ begin
              {Update Caret}
              ConsoleDeviceUpdateCaretEx(Current.Console,Current.CaretHandle,Current.CaretX,Current.CaretY,Current.CursorForecolor,Current.CursorBackcolor,False,Current.CursorBlink,Window.CursorReverse);
             end;
-            
+
            {Draw Current}
            ConsoleDeviceDrawWindow(Console,TWindowHandle(Current),WINDOW_DRAW_FLAG_BORDER);
-          end; 
-           
+          end;
+
          {Unlock Window}
          MutexUnlock(Current.Lock);
-        end; 
+        end;
       end;
-  
+
      {Check Visible}
      if Window.WindowState = WINDOW_STATE_VISIBLE then
       begin
        {Draw Active}
        ConsoleDeviceDrawWindow(Console,TWindowHandle(Window),WINDOW_DRAW_FLAG_BORDER);
-       
+
        {Check Flag}
        if (Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) <> 0 then
         begin
          {Update Caret}
          ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
-        end; 
-      end; 
-  
+        end;
+      end;
+
      {Return Result}
      Result:=ERROR_SUCCESS;
     finally
      {Unlock Window}
      MutexUnlock(Window.Lock);
-    end; 
+    end;
    finally
     CriticalSectionUnlock(Console.WindowLock);
    end;
@@ -3738,7 +3738,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3758,21 +3758,21 @@ begin
 
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Deactivate');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- 
+
  {Get Console}
  Console:=Window.Console;
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(Console.WindowLock) = ERROR_SUCCESS then
   begin
@@ -3780,16 +3780,16 @@ begin
     {Check Window}
     Result:=ERROR_NOT_FOUND;
     if ConsoleWindowCheck(Console,Window) <> Window then Exit;
- 
+
     {Lock Window}
     if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
-    try 
+    try
      {Check Current}
      if Console.WindowActive <> Window then Exit;
-     
+
      {Clear Active}
      Console.WindowActive:=nil;
-     
+
      {Check Visible}
      if Window.WindowState = WINDOW_STATE_VISIBLE then
       begin
@@ -3798,18 +3798,18 @@ begin
         begin
          {Update Caret}
          ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-        end; 
-       
+        end;
+
        {Draw Window}
        ConsoleDeviceDrawWindow(Console,TWindowHandle(Window),WINDOW_DRAW_FLAG_BORDER);
-      end; 
-  
+      end;
+
      {Return Result}
      Result:=ERROR_SUCCESS;
     finally
      {Unlock Window}
      MutexUnlock(Window.Lock);
-    end; 
+    end;
    finally
     CriticalSectionUnlock(Console.WindowLock);
    end;
@@ -3817,7 +3817,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3834,32 +3834,32 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Next');
  {$ENDIF}
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(Console.WindowLock) = ERROR_SUCCESS then
   begin
    try
     Start:=False;
-    
+
     {Get Current}
     Current:=Console.WindowActive;
-    
+
     {Get Window}
     Window:=Current;
     if Window = nil then
      begin
       Start:=True;
       Window:=Console.WindowFirst;
-     end; 
-    
+     end;
+
     {Find Window}
     while Window <> nil do
      begin
@@ -3870,10 +3870,10 @@ begin
         Result:=TWindowHandle(Window);
         Exit;
        end;
- 
+
       {Get Next}
       Window:=Window.Next;
-      
+
       {Check Start}
       if not(Start) and (Window = nil) and (Current <> nil) then
        begin
@@ -3902,39 +3902,39 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Previous');
  {$ENDIF}
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(Console.WindowLock) = ERROR_SUCCESS then
   begin
    try
     Start:=False;
-    
+
     {Get Current}
     Current:=Console.WindowActive;
-    
+
     {Get Window}
     Window:=Current;
     if Window = nil then
      begin
       Start:=True;
       Window:=Console.WindowFirst;
-      
+
       {Find Last}
       while (Window <> nil) and (Window.Next <> nil) do
        begin
         {Get Next}
         Window:=Window.Next;
        end;
-     end; 
-    
+     end;
+
     {Find Window}
     while Window <> nil do
      begin
@@ -3945,10 +3945,10 @@ begin
         Result:=TWindowHandle(Window);
         Exit;
        end;
- 
+
       {Get Previous}
       Window:=Window.Prev;
-      
+
       {Check Start}
       if not(Start) and (Window = nil) and (Current <> nil) then
        begin
@@ -3979,15 +3979,15 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window At');
  {$ENDIF}
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(Console.WindowLock) = ERROR_SUCCESS then
   begin
@@ -4005,7 +4005,7 @@ begin
           Result:=TWindowHandle(Window);
           Exit;
          end;
-       end;  
+       end;
 
       {Get Next}
       Window:=Window.Next;
@@ -4029,7 +4029,7 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Position}
  {if Position < CONSOLE_POSITION_FULL then Exit;}
  if (Position <> CONSOLE_POSITION_FULLSCREEN) and (Position > CONSOLE_POSITION_BOTTOMRIGHT) then Exit;
@@ -4037,11 +4037,11 @@ begin
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Find');
  {$ENDIF}
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(Console.WindowLock) = ERROR_SUCCESS then
   begin
@@ -4080,10 +4080,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
@@ -4091,7 +4091,7 @@ begin
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Enumerate');
  {$ENDIF}
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(Console.WindowLock) = ERROR_SUCCESS then
   begin
@@ -4127,10 +4127,10 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -4138,17 +4138,17 @@ begin
 
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Check Flag}
  Result:=((Window.WindowFlags and Flag) <> 0);
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
 
 {==============================================================================}
 
-function ConsoleWindowUpdateFlag(Handle:TWindowHandle;Flag:LongWord;Clear:Boolean):LongWord;  
+function ConsoleWindowUpdateFlag(Handle:TWindowHandle;Flag:LongWord;Clear:Boolean):LongWord;
 {Set or clear a flag on an existing console window}
 {Handle: The handle of the window to set or clear the flag on}
 {Flag: The window flag to set or clear (eg WINDOW_FLAG_LINE_WRAP)}
@@ -4159,13 +4159,13 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Flag}
  if (Flag and WINDOW_FLAG_INTERNAL) <> 0 then Exit;
 
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -4173,7 +4173,7 @@ begin
 
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  if Clear then
   begin
    {Clear Flag}
@@ -4183,11 +4183,11 @@ begin
   begin
    {Set Flag}
    Window.WindowFlags:=Window.WindowFlags or Flag;
-  end;  
- 
+  end;
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -4203,10 +4203,10 @@ var
 begin
  {}
  Result:=WINDOW_MODE_NONE;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -4214,10 +4214,10 @@ begin
 
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Mode}
  Result:=Window.WindowMode;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -4233,10 +4233,10 @@ var
 begin
  {}
  Result:=WINDOW_STATE_INVISIBLE;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -4244,10 +4244,10 @@ begin
 
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get State}
  Result:=Window.WindowState;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -4266,7 +4266,7 @@ begin
 
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -4274,10 +4274,10 @@ begin
 
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Position}
  Result:=Window.Position;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -4311,86 +4311,86 @@ begin
 
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Set Position');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- try 
+ try
   {Check Console}
   if Window.Console = nil then Exit;
-  
+
   {Check Position}
   if ConsoleWindowFind(Window.Console,Position) <> INVALID_HANDLE_VALUE then Exit;
-  
+
   {Save State}
   State:=Window.WindowState;
   try
    {Update Caret}
    ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-   
+
    {Hide Window}
    Window.WindowState:=WINDOW_STATE_INVISIBLE;
-   
+
    {Draw Window}
    if State = WINDOW_STATE_VISIBLE then ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window),WINDOW_DRAW_FLAG_ALL);
-   
+
    {Get Position}
    if ConsoleDeviceGetPosition(Window.Console,Position,X1,Y1,X2,Y2) <> ERROR_SUCCESS then Exit;
-   
+
    {Check Viewport}
    Viewport:=False;
    if (Window.MinX <> 1) or (Window.MinY <> 1) or (Window.MaxX <> Window.Width) or (Window.MaxY <> Window.Height) then
     begin
      Viewport:=True;
     end;
-   
+
    {Update Window}
    Window.X1:=X1;
    Window.Y1:=Y1;
    Window.X2:=X2;
    Window.Y2:=Y2;
-  
+
    {Get Width / Height}
    Window.Width:=(((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth)) div Window.FontWidth;
    Window.Height:=(((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth)) div Window.FontHeight;
-   
+
    {Check Font Ratio}
    if Window.Console.FontRatio > 0 then
     begin
      {Get RemainX,Y}
      RemainX:=(((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth)) mod Window.FontWidth;
      RemainY:=(((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth)) mod Window.FontHeight;
-     
+
      {Check Remain X}
      if RemainX < 4 then
       begin
        {Decrease Width}
        Dec(Window.Width);
        Inc(RemainX,Window.FontWidth);
-      end; 
+      end;
      {Get Offset X}
      Window.OffsetX:=(RemainX div 2) + (RemainX mod 2);
-     
+
      {Check Remain Y}
      if RemainY < 4 then
       begin
        {Decrease Height}
        Dec(Window.Height);
        Inc(RemainY,Window.FontHeight);
-      end; 
+      end;
      {Get Offset Y}
      Window.OffsetY:=(RemainY div 2) + (RemainY mod 2);
     end;
-   
+
    if not Viewport then
     begin
      {Set MinX,Y / MaxX,Y}
@@ -4398,7 +4398,7 @@ begin
      Window.MinY:=1;
      Window.MaxX:=Window.Width;
      Window.MaxY:=Window.Height;
-     
+
      {Set Cols / Rows}
      Window.Cols:=Window.Width;
      Window.Rows:=Window.Height;
@@ -4410,50 +4410,50 @@ begin
      if Window.MinY > Window.Height then Window.MinY:=1;
      if Window.MaxX > Window.Width then Window.MaxX:=Window.Width;
      if Window.MaxY > Window.Height then Window.MaxY:=Window.Height;
-   
+
      {Get Cols / Rows}
      Window.Cols:=Window.MaxX - (Window.MinX - 1);
      Window.Rows:=Window.MaxY - (Window.MinY - 1);
     end;
-  
+
    {Get X,Y / Cursor X,Y}
    if Window.X > Window.Cols then Window.X:=1;
    if Window.Y > Window.Rows then Window.Y:=1;
    if Window.CursorX > Window.Cols then Window.CursorX:=1;
    if Window.CursorY > Window.Rows then Window.CursorY:=1;
-  
+
    {Get CaretX / CaretY}
    Window.CaretX:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Window.CursorX - 1) * Window.FontWidth);
    Window.CaretY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Window.CursorY - 1) * Window.FontHeight);
-  
+
    {Return Result}
    Result:=ERROR_SUCCESS;
   finally
    {Restore State}
    Window.WindowState:=State;
-   
+
    {Check Visible}
    if State = WINDOW_STATE_VISIBLE then
     begin
      {Draw Window}
      ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window),WINDOW_DRAW_FLAG_ALL);
-     
+
      {Check Flag}
      if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
       begin
        {Update Caret}
        ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
-      end; 
-    end; 
+      end;
+    end;
   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
- 
+
 function ConsoleWindowGetProperties(Handle:TWindowHandle;Properties:PWindowProperties):LongWord;
 {Get the properties for the specified console window}
 {Handle: The handle of the window to get the properties from}
@@ -4467,23 +4467,23 @@ begin
 
  {Check Properties}
  if Properties = nil then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Get Properties');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- try 
+ try
   {Get Properties}
   Properties.Position:=Window.Position;
   Properties.State:=Window.WindowState;
@@ -4502,13 +4502,13 @@ begin
   Properties.Borderwidth:=Window.Borderwidth;
   Properties.Font:=Window.Font;
   Properties.Console:=Window.Console;
-  
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4524,22 +4524,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get MinX}
  Result:=Window.MinX;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -4557,22 +4557,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get MinY}
  Result:=Window.MinY;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -4590,22 +4590,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get MaxX}
  Result:=Window.MaxX;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -4623,22 +4623,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get MaxY}
  Result:=Window.MaxY;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -4698,27 +4698,27 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
  {Get Viewport}
- X1:=Window.MinX; 
+ X1:=Window.MinX;
  Y1:=Window.MinY;
  X2:=Window.MaxX;
  Y2:=Window.MaxY;
-  
+
  Result:=ERROR_SUCCESS;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -4740,20 +4740,20 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
-  
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Set Viewport');
  {$ENDIF}
-  
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
@@ -4769,7 +4769,7 @@ begin
    Window.Y:=1;
    Window.Cols:=Window.MaxX - (Window.MinX - 1);
    Window.Rows:=Window.MaxY - (Window.MinY - 1);
-   
+
    {Unlock Window}
    MutexUnlock(Window.Lock);
 
@@ -4777,15 +4777,15 @@ begin
    Result:=ConsoleWindowSetCursorXY(Handle,Window.X,Window.Y);
   end
  else
-  begin 
+  begin
    {Unlock Window}
    MutexUnlock(Window.Lock);
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
-function ConsoleWindowResetViewport(Handle:TWindowHandle):LongWord; 
+function ConsoleWindowResetViewport(Handle:TWindowHandle):LongWord;
 {Reset the window viewport for an existing console window to the maximum size}
 {Handle: The handle of the window to reset the viewport for}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -4794,20 +4794,20 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
-  
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Reset Viewport');
  {$ENDIF}
-  
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
@@ -4820,14 +4820,14 @@ begin
  Window.Y:=1;
  Window.Cols:=Window.Width;
  Window.Rows:=Window.Height;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
- 
+
  {Set Cursor XY}
  Result:=ConsoleWindowSetCursorXY(Handle,Window.X,Window.Y);
 end;
- 
+
 {==============================================================================}
 
 function ConsoleWindowGetX(Handle:TWindowHandle):LongWord;
@@ -4841,22 +4841,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
  {Get X}
  Result:=Window.X;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -4875,20 +4875,20 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Set X');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
@@ -4897,7 +4897,7 @@ begin
   begin
    {Set X}
    Window.X:=X;
-   
+
    {Unlock Window}
    MutexUnlock(Window.Lock);
 
@@ -4905,10 +4905,10 @@ begin
    Result:=ConsoleWindowSetCursorXY(Handle,Window.X,Window.Y);
   end
  else
-  begin 
+  begin
    {Unlock Window}
    MutexUnlock(Window.Lock);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4924,22 +4924,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
  {Get Y}
  Result:=Window.Y;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -4958,20 +4958,20 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Set Y');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
@@ -4980,7 +4980,7 @@ begin
   begin
    {Set Y}
    Window.Y:=Y;
-   
+
    {Unlock Window}
    MutexUnlock(Window.Lock);
 
@@ -4988,10 +4988,10 @@ begin
    Result:=ConsoleWindowSetCursorXY(Handle,Window.X,Window.Y);
   end
  else
-  begin 
+  begin
    {Unlock Window}
    MutexUnlock(Window.Lock);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5009,25 +5009,25 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
  {Get XY}
  X:=Window.X;
  Y:=Window.Y;
- 
+
  Result:=ERROR_SUCCESS;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5047,20 +5047,20 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Set XY');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
@@ -5070,7 +5070,7 @@ begin
    {Set X,Y}
    Window.X:=X;
    Window.Y:=Y;
-   
+
    {Unlock Window}
    MutexUnlock(Window.Lock);
 
@@ -5078,10 +5078,10 @@ begin
    Result:=ConsoleWindowSetCursorXY(Handle,Window.X,Window.Y);
   end
  else
-  begin 
+  begin
    {Unlock Window}
    MutexUnlock(Window.Lock);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5124,22 +5124,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Cols}
  Result:=Window.Cols;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5157,22 +5157,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Rows}
  Result:=Window.Rows;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5190,22 +5190,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Width}
  Result:=Window.Width;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5223,22 +5223,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Height}
  Result:=Window.Height;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5254,22 +5254,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Format}
  Result:=Window.Format;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5285,22 +5285,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
  {Get Forecolor}
  Result:=Window.Forecolor;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5317,31 +5317,31 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Color}
  {if Color = COLOR_NONE then Exit;}
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Set Forecolor');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
  {Set Forecolor}
  Window.Forecolor:=Color;
- 
+
  Result:=ERROR_SUCCESS;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5357,22 +5357,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
  {Get Backcolor}
  Result:=Window.Backcolor;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5389,31 +5389,31 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Color}
  {if Color = COLOR_NONE then Exit;}
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Set Backcolor');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
  {Set Backcolor}
  Window.Backcolor:=Color;
- 
+
  Result:=ERROR_SUCCESS;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5429,22 +5429,22 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
  {Get Font}
  Result:=Window.Font;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5468,23 +5468,23 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Font}
  if Font = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Set Font');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -5502,46 +5502,46 @@ begin
      begin
       Viewport:=True;
      end;
-    
+
     {Set Font}
     Window.Font:=Font;
     Window.FontWidth:=FontWidth * Window.Console.FontRatio;
     if Window.FontWidth = 0 then Window.FontWidth:=1;
     Window.FontHeight:=FontHeight * Window.Console.FontRatio;
     if Window.FontHeight = 0 then Window.FontHeight:=1;
-   
+
     {Get Width / Height}
     Window.Width:=(((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth)) div Window.FontWidth;
     Window.Height:=(((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth)) div Window.FontHeight;
-    
+
     {Check Font Ratio}
     if Window.Console.FontRatio > 0 then
      begin
       {Get RemainX,Y}
       RemainX:=(((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth)) mod Window.FontWidth;
       RemainY:=(((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth)) mod Window.FontHeight;
-      
+
       {Check Remain X}
       if RemainX < 4 then
        begin
         {Decrease Width}
         Dec(Window.Width);
         Inc(RemainX,Window.FontWidth);
-       end; 
+       end;
       {Get Offset X}
       Window.OffsetX:=(RemainX div 2) + (RemainX mod 2);
-      
+
       {Check Remain Y}
       if RemainY < 4 then
        begin
         {Decrease Height}
         Dec(Window.Height);
         Inc(RemainY,Window.FontHeight);
-       end; 
+       end;
       {Get Offset Y}
       Window.OffsetY:=(RemainY div 2) + (RemainY mod 2);
      end;
-    
+
     if not Viewport then
      begin
       {Set MinX,Y / MaxX,Y}
@@ -5549,7 +5549,7 @@ begin
       Window.MinY:=1;
       Window.MaxX:=Window.Width;
       Window.MaxY:=Window.Height;
-      
+
       {Set Cols / Rows}
       Window.Cols:=Window.Width;
       Window.Rows:=Window.Height;
@@ -5561,46 +5561,46 @@ begin
       if Window.MinY > Window.Height then Window.MinY:=1;
       if Window.MaxX > Window.Width then Window.MaxX:=Window.Width;
       if Window.MaxY > Window.Height then Window.MaxY:=Window.Height;
-      
+
       {Get Cols / Rows}
       Window.Cols:=Window.MaxX - (Window.MinX - 1);
       Window.Rows:=Window.MaxY - (Window.MinY - 1);
-     end; 
-    
+     end;
+
     {Get X,Y / Cursor X,Y}
     if Window.X > Window.Cols then Window.X:=1;
     if Window.Y > Window.Rows then Window.Y:=1;
     if Window.CursorX > Window.Cols then Window.CursorX:=1;
     if Window.CursorY > Window.Rows then Window.CursorY:=1;
-   
+
     {Get CaretX / CaretY}
     Window.CaretX:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Window.CursorX - 1) * Window.FontWidth);
     Window.CaretY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Window.CursorY - 1) * Window.FontHeight);
-   
+
     {Delete Caret}
     if Window.CaretHandle <> INVALID_HANDLE_VALUE then
      begin
       ConsoleDeviceDeleteCaret(Window.Console,Window.CaretHandle);
       Window.CaretHandle:=INVALID_HANDLE_VALUE;
-     end; 
-    
+     end;
+
     {Check Visible}
     if Window.WindowState = WINDOW_STATE_VISIBLE then
      begin
       {Draw Window}
       ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window),WINDOW_DRAW_FLAG_ALL);
-      
+
       {Update Cursor}
       ConsoleWindowCursorMove(Handle,Window.CursorX,Window.CursorY);
-     end; 
-    
+     end;
+
     {Return Result}
     Result:=ERROR_SUCCESS;
-   end; 
- finally 
+   end;
+ finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5618,25 +5618,25 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Cursor XY}
  X:=Window.CursorX;
  Y:=Window.CursorY;
- 
+
  Result:=ERROR_SUCCESS;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5656,23 +5656,23 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Set Cursor XY');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Check Cursor State}
  if Window.CursorState = CURSOR_STATE_ON then
   begin
@@ -5690,11 +5690,11 @@ begin
      {Set Cursor XY}
      Window.CursorX:=X;
      Window.CursorY:=Y;
-     
+
      {Get CaretX / CaretY}
      Window.CaretX:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Window.CursorX - 1) * Window.FontWidth);
      Window.CaretY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Window.CursorY - 1) * Window.FontHeight);
-     
+
      Result:=ERROR_SUCCESS;
 
      {Unlock Window}
@@ -5704,8 +5704,8 @@ begin
     begin
      {Unlock Window}
      MutexUnlock(Window.Lock);
-    end; 
-  end;  
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -5719,22 +5719,22 @@ var
 begin
  {}
  Result:=CURSOR_MODE_INSERT;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Cursor Mode}
  Result:=Window.CursorMode;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5751,26 +5751,26 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Set Cursor Mode');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Set Cursor Mode}
  Window.CursorMode:=CursorMode;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5786,22 +5786,22 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Cursor Blink}
  Result:=Window.CursorBlink;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5818,29 +5818,29 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Set Cursor Blink');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Check Cursor Blink}
  if Window.CursorBlink then
   begin
    {Unlock Window}
    MutexUnlock(Window.Lock);
- 
+
    {Check Cursor Blink}
    if not(CursorBlink) then Result:=ConsoleWindowCursorBlink(Handle,CursorBlink) else Result:=ERROR_SUCCESS;
   end
@@ -5848,10 +5848,10 @@ begin
   begin
    {Unlock Window}
    MutexUnlock(Window.Lock);
-   
+
    {Check Cursor Blink}
    if CursorBlink then Result:=ConsoleWindowCursorBlink(Handle,CursorBlink) else Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5865,22 +5865,22 @@ var
 begin
  {}
  Result:=CURSOR_STATE_OFF;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Cursor State}
  Result:=Window.CursorState;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5897,29 +5897,29 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Set Cursor State');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Check Cursor State}
  if Window.CursorState = CURSOR_STATE_ON then
   begin
    {Unlock Window}
    MutexUnlock(Window.Lock);
- 
+
    {Check Cursor State}
    if CursorState = CURSOR_STATE_OFF then Result:=ConsoleWindowCursorOff(Handle) else Result:=ERROR_SUCCESS;
   end
@@ -5927,10 +5927,10 @@ begin
   begin
    {Unlock Window}
    MutexUnlock(Window.Lock);
-   
+
    {Check Cursor State}
    if CursorState = CURSOR_STATE_ON then Result:=ConsoleWindowCursorOn(Handle) else Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5944,22 +5944,22 @@ var
 begin
  {}
  Result:=CURSOR_SHAPE_LINE;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Cursor Shape}
  Result:=Window.CursorShape;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -5976,29 +5976,29 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Set Cursor Shape');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Check Cursor Shape}
  if CursorShape = CURSOR_SHAPE_LINE then
   begin
    {Unlock Window}
    MutexUnlock(Window.Lock);
- 
+
    {Check Cursor Shape}
    if Window.CursorShape <> CURSOR_SHAPE_LINE then Result:=ConsoleWindowCursorLine(Handle) else Result:=ERROR_SUCCESS;
   end
@@ -6006,7 +6006,7 @@ begin
   begin
    {Unlock Window}
    MutexUnlock(Window.Lock);
- 
+
    {Check Cursor Shape}
    if Window.CursorShape <> CURSOR_SHAPE_BAR then Result:=ConsoleWindowCursorBar(Handle) else Result:=ERROR_SUCCESS;
   end
@@ -6014,10 +6014,10 @@ begin
   begin
    {Unlock Window}
    MutexUnlock(Window.Lock);
-   
+
    {Check Cursor Shape}
    if Window.CursorShape <> CURSOR_SHAPE_BLOCK then Result:=ConsoleWindowCursorBlock(Handle) else Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -6097,13 +6097,13 @@ begin
   begin
    {Set Cursor Color}
    Window.CursorBackcolor:=Color;
-   
+
    Result:=ERROR_SUCCESS;
 
    {Unlock Window}
    MutexUnlock(Window.Lock);
   end;
-end;  
+end;
 
 {==============================================================================}
 
@@ -6199,32 +6199,32 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Cursor On');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check Cursor State}
   if Window.CursorState = CURSOR_STATE_OFF then
    begin
     {Set Cursor State}
     Window.CursorState:=CURSOR_STATE_ON;
-    
+
     {Check Visible}
     if Window.WindowState = WINDOW_STATE_VISIBLE then
      begin
@@ -6245,11 +6245,11 @@ begin
           Height:=1;
           OffsetY:=Window.FontHeight - 1;
          end;
-        
+
         {Add Caret}
         Window.CaretHandle:=ConsoleDeviceAddCaret(Window.Console,Width,Height,OffsetX,OffsetY);
        end;
-      
+
       {Check Flag}
       if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
        begin
@@ -6257,15 +6257,15 @@ begin
         Result:=ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
         if Result <> ERROR_SUCCESS then Exit;
        end;
-     end; 
+     end;
    end;
- 
+
   {Return Result}
   Result:=ERROR_SUCCESS;
- finally  
+ finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6279,47 +6279,47 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Cursor Off');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check Cursor State}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     {Set Cursor State}
     Window.CursorState:=CURSOR_STATE_OFF;
-    
+
     {Check Visible}
     if Window.WindowState = WINDOW_STATE_VISIBLE then
      begin
       {Update Caret}
       Result:=ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
       if Result <> ERROR_SUCCESS then Exit;
-     end; 
-   end; 
-   
-  {Return Result} 
+     end;
+   end;
+
+  {Return Result}
   Result:=ERROR_SUCCESS;
- finally  
+ finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6333,32 +6333,32 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Cursor Line');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
-  
+
   {Check Cursor Shape}
   if Window.CursorShape <> CURSOR_SHAPE_LINE then
    begin
     {Set Cursor Shape}
     Window.CursorShape:=CURSOR_SHAPE_LINE;
-    
+
     {Check Caret}
     if Window.CaretHandle <> INVALID_HANDLE_VALUE then
      begin
@@ -6366,13 +6366,13 @@ begin
       ConsoleDeviceDeleteCaret(Window.Console,Window.CaretHandle);
       Window.CaretHandle:=INVALID_HANDLE_VALUE;
      end;
-     
+
     {Check Visible}
     if Window.WindowState = WINDOW_STATE_VISIBLE then
      begin
       {Add Caret}
       Window.CaretHandle:=ConsoleDeviceAddCaret(Window.Console,1,Window.FontHeight,0,0);
-      
+
       {Check Flag}
       if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
        begin
@@ -6380,15 +6380,15 @@ begin
         Result:=ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
         if Result <> ERROR_SUCCESS then Exit;
        end;
-     end; 
-   end; 
-   
-  {Return Result} 
+     end;
+   end;
+
+  {Return Result}
   Result:=ERROR_SUCCESS;
- finally  
+ finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6402,32 +6402,32 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Cursor Bar');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check Cursor Shape}
   if Window.CursorShape <> CURSOR_SHAPE_BAR then
    begin
     {Set Cursor Shape}
     Window.CursorShape:=CURSOR_SHAPE_BAR;
-    
+
     {Check Caret}
     if Window.CaretHandle <> INVALID_HANDLE_VALUE then
      begin
@@ -6435,13 +6435,13 @@ begin
       ConsoleDeviceDeleteCaret(Window.Console,Window.CaretHandle);
       Window.CaretHandle:=INVALID_HANDLE_VALUE;
      end;
-     
+
     {Check Visible}
     if Window.WindowState = WINDOW_STATE_VISIBLE then
      begin
       {Add Caret}
       Window.CaretHandle:=ConsoleDeviceAddCaret(Window.Console,Window.FontWidth,1,0,Window.FontHeight - 1);
-      
+
       {Check Flag}
       if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
        begin
@@ -6449,15 +6449,15 @@ begin
         Result:=ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
         if Result <> ERROR_SUCCESS then Exit;
        end;
-     end; 
-   end; 
-   
-  {Return Result} 
+     end;
+   end;
+
+  {Return Result}
   Result:=ERROR_SUCCESS;
- finally  
+ finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6471,32 +6471,32 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Cursor Block');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check Cursor Shape}
   if Window.CursorShape <> CURSOR_SHAPE_BLOCK then
    begin
     {Set Cursor Shape}
     Window.CursorShape:=CURSOR_SHAPE_BLOCK;
-    
+
     {Check Caret}
     if Window.CaretHandle <> INVALID_HANDLE_VALUE then
      begin
@@ -6504,13 +6504,13 @@ begin
       ConsoleDeviceDeleteCaret(Window.Console,Window.CaretHandle);
       Window.CaretHandle:=INVALID_HANDLE_VALUE;
      end;
-     
+
     {Check Visible}
     if Window.WindowState = WINDOW_STATE_VISIBLE then
      begin
       {Add Caret}
       Window.CaretHandle:=ConsoleDeviceAddCaret(Window.Console,Window.FontWidth,Window.FontHeight,0,0);
-      
+
       {Check Flag}
       if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
        begin
@@ -6518,15 +6518,15 @@ begin
         Result:=ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink,Window.CursorReverse);
         if Result <> ERROR_SUCCESS then Exit;
        end;
-     end; 
-   end; 
-   
-  {Return Result} 
+     end;
+   end;
+
+  {Return Result}
   Result:=ERROR_SUCCESS;
- finally  
+ finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6544,37 +6544,37 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Cursor Move');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check Cursor X,Y}
   if (X > 0) and (Y > 0) and (((Window.MinX - 1) + X) <= Window.MaxX) and (((Window.MinY - 1) + Y) <= Window.MaxY) then
    begin
     {Set Cursor XY}
     Window.CursorX:=X;
     Window.CursorY:=Y;
- 
+
     {Get CaretX / CaretY}
     Window.CaretX:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Window.CursorX - 1) * Window.FontWidth);
     Window.CaretY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Window.CursorY - 1) * Window.FontHeight);
-    
+
     {Check Cursor State and Visible}
     if (Window.CursorState = CURSOR_STATE_ON) and (Window.WindowState = WINDOW_STATE_VISIBLE) then
      begin
@@ -6586,14 +6586,14 @@ begin
         if Result <> ERROR_SUCCESS then Exit;
        end;
      end;
-   
-    {Return Result} 
+
+    {Return Result}
     Result:=ERROR_SUCCESS;
-   end; 
- finally  
+   end;
+ finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6608,20 +6608,20 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Cursor Blink');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -6633,7 +6633,7 @@ begin
    begin
     {Set Cursor Blink}
     Window.CursorBlink:=Enabled;
-    
+
     {Check Visible}
     if (Window.CursorState = CURSOR_STATE_ON) and (Window.WindowState = WINDOW_STATE_VISIBLE) then
      begin
@@ -6645,14 +6645,14 @@ begin
         if Result <> ERROR_SUCCESS then Exit;
        end;
      end;
-   end; 
-   
-  {Return Result} 
+   end;
+
+  {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6765,15 +6765,15 @@ begin
         if Result <> ERROR_SUCCESS then Exit;
        end;
      end;
-   end; 
+   end;
 
-  {Return Result} 
+  {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
-end; 
+ end;
+end;
 
 {==============================================================================}
 
@@ -6792,20 +6792,20 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Add History');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -6820,20 +6820,20 @@ begin
        begin
         {Clear Current}
         Window.HistoryCurrent:=nil;
-        
+
         {Return Result}
-        Result:=ERROR_SUCCESS;  
+        Result:=ERROR_SUCCESS;
         Exit;
-       end; 
+       end;
      end;
-     
+
     {Check Maximum}
     if Window.HistoryCount >= WINDOW_HISTORY_MAX_COUNT then
      begin
       {Get First}
       History:=Window.HistoryFirst;
       if History = nil then Exit;
-      
+
       {Delete First}
       if History.Next <> nil then
        begin
@@ -6847,23 +6847,23 @@ begin
         {Is Last}
         Window.HistoryFirst:=nil;
         Window.HistoryLast:=nil;
-       end;        
-      
+       end;
+
       {Update Count}
       Dec(Window.HistoryCount);
-      
+
       {Free History}
       FreeMem(History);
      end;
-    
+
     {Add History}
     History:=AllocMem(SizeOf(TConsoleHistory) + Length(Value) + 1);
     History.Value:=PChar(PtrUInt(History) + SizeOf(TConsoleHistory));
     History.Length:=Length(Value);
     StrLCopy(History.Value,PChar(Value),History.Length);
-   
-    {Link History} 
-    Prev:=Window.HistoryLast;    
+
+    {Link History}
+    Prev:=Window.HistoryLast;
     if Prev = nil then
      begin
       {Is First}
@@ -6880,20 +6880,20 @@ begin
       History.Next:=nil;
       Window.HistoryLast:=History;
      end;
-    
+
     {Update Count}
     Inc(Window.HistoryCount);
-    
+
     {Clear Current}
     Window.HistoryCurrent:=nil;
    end;
 
   {Return Result}
-  Result:=ERROR_SUCCESS;  
+  Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6909,20 +6909,20 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Add History');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -6933,69 +6933,69 @@ begin
     {Get Next}
     Current:=History;
     History:=Current.Next;
-    
+
     {Free History}
     FreeMem(Current);
    end;
- 
+
   {Reset First, Last and Current}
   Window.HistoryFirst:=nil;
   Window.HistoryLast:=nil;
   Window.HistoryCurrent:=nil;
-  
+
   {Reset Count}
   Window.HistoryCount:=0;
-  
+
   {Return Result}
-  Result:=ERROR_SUCCESS;  
+  Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
- 
-function ConsoleWindowFirstHistory(Handle:TWindowHandle):String;   
+
+function ConsoleWindowFirstHistory(Handle:TWindowHandle):String;
 {Get the first (oldest) command history value from an existing console window}
 {Handle: The handle of the window to get from}
-{Return: The command history value or an empty string on failure}  
+{Return: The command history value or an empty string on failure}
 var
  Window:PConsoleWindow;
  History:PConsoleHistory;
 begin
  {}
  Result:='';
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window First History');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Get First}
   History:=Window.HistoryFirst;
   if History = nil then Exit;
-  
+
   {Set Current}
   Window.HistoryCurrent:=History;
-  
+
   {Return Result}
   Result:=StrPas(History.Value);
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7003,45 +7003,45 @@ end;
 function ConsoleWindowLastHistory(Handle:TWindowHandle):String;
 {Get the last (most recent) command history value from an existing console window}
 {Handle: The handle of the window to get from}
-{Return: The command history value or an empty string on failure}  
+{Return: The command history value or an empty string on failure}
 var
  Window:PConsoleWindow;
  History:PConsoleHistory;
 begin
  {}
  Result:='';
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Last History');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Get Last}
   History:=Window.HistoryLast;
   if History = nil then Exit;
-  
+
   {Set Current}
   Window.HistoryCurrent:=History;
-  
+
   {Return Result}
   Result:=StrPas(History.Value);
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
 function ConsoleWindowNextHistory(Handle:TWindowHandle):String;
@@ -7053,20 +7053,20 @@ var
 begin
  {}
  Result:='';
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Next History');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -7084,14 +7084,14 @@ begin
     {Get Next}
     Window.HistoryCurrent:=Window.HistoryCurrent.Next;
     if Window.HistoryCurrent = nil then Exit;
-    
+
     {Return Result}
     Result:=StrPas(Window.HistoryCurrent.Value);
-   end;   
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7099,7 +7099,7 @@ end;
 function ConsoleWindowPreviousHistory(Handle:TWindowHandle):String;
 {Get the next (before current) command history value from an existing console window}
 {Handle: The handle of the window to get from}
-{Return: The command history value or an empty string on failure}  
+{Return: The command history value or an empty string on failure}
 
 {Note: If there is no current history value the last value is returned}
 var
@@ -7107,20 +7107,20 @@ var
 begin
  {}
  Result:='';
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Previous History');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -7130,9 +7130,9 @@ begin
     {Get Last}
     Window.HistoryCurrent:=Window.HistoryLast;
     if Window.HistoryCurrent = nil then Exit;
-    
+
     {Return Result}
-    Result:=StrPas(Window.HistoryCurrent.Value); 
+    Result:=StrPas(Window.HistoryCurrent.Value);
    end
   else if Window.HistoryCurrent = Window.HistoryFirst then
    begin
@@ -7143,14 +7143,14 @@ begin
     {Get Previous}
     Window.HistoryCurrent:=Window.HistoryCurrent.Prev;
     if Window.HistoryCurrent = nil then Exit;
-    
+
     {Return Result}
     Result:=StrPas(Window.HistoryCurrent.Value);
-   end;   
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7158,7 +7158,7 @@ end;
 function ConsoleWindowCurrentHistory(Handle:TWindowHandle):String;
 {Get the current command history value from an existing console window}
 {Handle: The handle of the window to get from}
-{Return: The command history value or an empty string on failure}  
+{Return: The command history value or an empty string on failure}
 
 {Note: If there is no current history value the last value is returned}
 var
@@ -7167,20 +7167,20 @@ var
 begin
  {}
  Result:='';
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Previous History');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  {if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;} {Allow any mode, other window classes should override if required}
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -7192,13 +7192,13 @@ begin
     History:=Window.HistoryLast;
     if History = nil then Exit;
    end;
-   
+
   {Return Result}
   if History <> nil then Result:=StrPas(History.Value);
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7221,27 +7221,27 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Scroll Up');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Check Visible}
  if Window.WindowState <> WINDOW_STATE_VISIBLE then
   begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -7251,26 +7251,26 @@ begin
   {Check Row}
   if Row < 2 then Exit; {Cannot scroll Row 1}
   if ((Window.MinY - 1) + Row) > Window.MaxY then Exit;
-  
+
   {Check Lines}
   if Lines < 1 then Exit; {Must be at least 1 line}
   if Lines >= Row then Exit; {Cannot discard the starting Row}
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-   end; 
-  
+   end;
+
   {Calculate Count}
   Count:=Lines * (Window.FontHeight);
-  
+
   {Calculate X1,Y1,X2,Y2}
   X1:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth);
   Y1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + (Lines * Window.FontHeight); {Start at top plus Lines}
-  X2:=Window.X1 + Window.Borderwidth + Window.OffsetX + (Window.MaxX * Window.FontWidth); 
+  X2:=Window.X1 + Window.Borderwidth + Window.OffsetX + (Window.MaxX * Window.FontWidth);
   Y2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + (Row * Window.FontHeight); {Start at bottom of Row}
- 
+
   {Check Character Mode}
   if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
    begin
@@ -7278,26 +7278,26 @@ begin
     Dec(X2);
     Dec(Y2);
    end;
-  
+
   {Console Scroll}
   Result:=ConsoleDeviceScroll(Window.Console,X1,Y1,X2,Y2,Count,CONSOLE_DIRECTION_UP);
   if Result <> ERROR_SUCCESS then Exit;
-  
+
   {Recalculate Y1}
-  Y1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Row - Lines) * Window.FontHeight); 
-  
+  Y1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Row - Lines) * Window.FontHeight);
+
   {Console Draw Block}
   Result:=ConsoleDeviceDrawBlock(Window.Console,X1,Y1,X2,Y2,Window.Backcolor);
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7320,14 +7320,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Scroll Down');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -7340,36 +7340,36 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
-  
+
   {Check Row}
   if Row < 1 then Exit;
   if ((Window.MinY - 1) + Row) >= Window.MaxY then Exit; {Cannot scroll last Row}
-  
+
   {Check Lines}
   if Lines < 1 then Exit; {Must be at least 1 line}
   if ((Window.MinY - 1) + Row + Lines) > Window.MaxY then Exit; {Cannot discard the starting Row} {Note: Previously >= MaxY}
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-   end; 
-  
+   end;
+
   {Calculate Count}
   Count:=Lines * (Window.FontHeight);
-  
+
   {Calculate X1,Y1,X2,Y2}
   X1:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth);
   Y1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Row - 1) * Window.FontHeight); {Start at top of Row}
-  X2:=Window.X1 + Window.Borderwidth + Window.OffsetX + (Window.MaxX * Window.FontWidth); 
+  X2:=Window.X1 + Window.Borderwidth + Window.OffsetX + (Window.MaxX * Window.FontWidth);
   Y2:=(Window.Y1 + Window.Borderwidth + Window.OffsetY + (Window.MaxY * Window.FontHeight)) - (Lines * Window.FontHeight); {Start at bottom minus Lines}
- 
+
   {Check Character Mode}
   if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
    begin
@@ -7377,33 +7377,33 @@ begin
     Dec(X2);
     Dec(Y2);
    end;
-  
+
   {Console Scroll}
   Result:=ConsoleDeviceScroll(Window.Console,X1,Y1,X2,Y2,Count,CONSOLE_DIRECTION_DOWN);
   if Result <> ERROR_SUCCESS then Exit;
-  
+
   {Recalculate Y2}
   Y2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Row + Lines - 1) * Window.FontHeight);
-  
+
   {Check Character Mode}
   if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
    begin
     {Allow for Character mode}
     Dec(Y2);
    end;
-  
+
   {Console Draw Block}
   Result:=ConsoleDeviceDrawBlock(Window.Console,X1,Y1,X2,Y2,Window.Backcolor);
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7428,14 +7428,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Scroll Left');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -7448,44 +7448,44 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check Row}
   if Row < 1 then Exit;
   if ((Window.MinY - 1) + Row) > Window.MaxY then Exit;
- 
+
   {Check Lines}
   if Lines < 1 then Exit; {Must be at least 1 line}
   if ((Window.MinY - 1) + (Row - 1) + Lines) > Window.MaxY then Exit;
-  
+
   {Check Col}
   if Col < 2 then Exit; {Cannot scroll Col 1}
   if ((Window.MinX - 1) + Col) > Window.MaxX then Exit;
-  
+
   {Check Chars}
   if Chars < 1 then Exit; {Must be at least 1 character}
   if Chars >= Col then Exit; {Cannot discard the starting Col}
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-   end; 
-  
+   end;
+
   {Calculate Count}
   Count:=Chars * (Window.FontWidth);
-  
+
   {Calculate X1,Y1,X2,Y2}
   X1:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + (Chars * Window.FontWidth); {Start at left plus Chars};
   Y1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Row - 1) * Window.FontHeight); {Start at top of Row}
   X2:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + (Col * Window.FontWidth); {Start at right of Col}
   Y2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + (((Row - 1) + Lines) * Window.FontHeight); {Start at bottom of Row plus Lines}
-  
+
   {Check Character Mode}
   if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
    begin
@@ -7493,26 +7493,26 @@ begin
     Dec(X2);
     Dec(Y2);
    end;
-  
+
   {Console Scroll}
   Result:=ConsoleDeviceScroll(Window.Console,X1,Y1,X2,Y2,Count,CONSOLE_DIRECTION_LEFT);
   if Result <> ERROR_SUCCESS then Exit;
-  
+
   {Recalculate X1}
   X1:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Col - Chars) * Window.FontWidth);
-  
+
   {Console Draw Block}
   Result:=ConsoleDeviceDrawBlock(Window.Console,X1,Y1,X2,Y2,Window.Backcolor);
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7537,14 +7537,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Scroll Right');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -7557,44 +7557,44 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check Row}
   if Row < 1 then Exit;
   if ((Window.MinY - 1) + Row) > Window.MaxY then Exit;
-  
+
   {Check Lines}
   if Lines < 1 then Exit; {Must be at least 1 line}
   if ((Window.MinY - 1) + (Row - 1) + Lines) > Window.MaxY then Exit;
-  
+
   {Check Col}
   if Col < 1 then Exit;
   if ((Window.MinX - 1) + Col) >= Window.MaxX then Exit; {Cannot scroll last Col}
-  
+
   {Check Chars}
   if Lines < 1 then Exit; {Must be at least 1 character}
   if ((Window.MinX - 1) + Col + Chars) > Window.MaxX then Exit; {Cannot discard the starting Col}
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-   end; 
-  
+   end;
+
   {Calculate Count}
   Count:=Chars * (Window.FontWidth);
- 
+
   {Calculate X1,Y1,X2,Y2}
   X1:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Col - 1) * Window.FontWidth); {Start at left of Col}
   Y1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Row - 1) * Window.FontHeight); {Start at top of Row}
   X2:=(Window.X1 + Window.Borderwidth + Window.OffsetX + (Window.MaxX * Window.FontWidth)) - (Chars * Window.FontWidth); {Start at right minus Chars}
   Y2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + (((Row - 1) + Lines) * Window.FontHeight); {Start at bottom of Row plus Lines}
-  
+
   {Check Character Mode}
   if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
    begin
@@ -7602,33 +7602,33 @@ begin
     Dec(X2);
     Dec(Y2);
    end;
- 
+
   {Console Scroll}
   Result:=ConsoleDeviceScroll(Window.Console,X1,Y1,X2,Y2,Count,CONSOLE_DIRECTION_RIGHT);
   if Result <> ERROR_SUCCESS then Exit;
- 
+
   {Recalculate X2}
-  X2:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Col + Chars - 1) * Window.FontWidth); 
-  
+  X2:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Col + Chars - 1) * Window.FontWidth);
+
   {Check Character Mode}
   if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
    begin
     {Allow for Character mode}
     Dec(Y2);
    end;
-  
+
   {Console Draw Block}
   Result:=ConsoleDeviceDrawBlock(Window.Console,X1,Y1,X2,Y2,Window.Backcolor);
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7646,14 +7646,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Clear');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -7666,25 +7666,25 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-   end; 
-  
+   end;
+
   {Calculate X1,Y1,X2,Y2}
   ClearX1:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth);
   ClearY1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight);
-  ClearX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + (Window.MaxX * Window.FontWidth); 
+  ClearX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + (Window.MaxX * Window.FontWidth);
   ClearY2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + (Window.MaxY * Window.FontHeight);
- 
+
   {Check Character Mode}
   if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
    begin
@@ -7692,21 +7692,21 @@ begin
     Dec(ClearX2);
     Dec(ClearY2);
    end;
- 
+
   {Console Draw Block}
   Result:=ConsoleDeviceDrawBlock(Window.Console,ClearX1,ClearY1,ClearX2,ClearY2,Window.Backcolor);
   if Result <> ERROR_SUCCESS then Exit;
-  
+
   {Update X,Y}
   Window.X:=1;
   Window.Y:=1;
-  
+
   {Update Cursor}
   ConsoleWindowCursorMove(Handle,Window.X,Window.Y);
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7731,14 +7731,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Clear Ex');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -7751,7 +7751,7 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -7767,19 +7767,19 @@ begin
   if ((Window.MinY - 1) + Y1) > Window.MaxY then Exit;
   if ((Window.MinX - 1) + X2) > Window.MaxX then Exit;
   if ((Window.MinY - 1) + Y2) > Window.MaxY then Exit;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-   end; 
-  
+   end;
+
   {Calculate X1,Y1,X2,Y2}
   ClearX1:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((X1 - 1) * Window.FontWidth);
   ClearY1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Y1 - 1) * Window.FontHeight);
-  ClearX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + (X2 * Window.FontWidth); 
-  ClearY2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + (Y2 * Window.FontHeight); 
- 
+  ClearX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + (X2 * Window.FontWidth);
+  ClearY2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + (Y2 * Window.FontHeight);
+
   {Check Character Mode}
   if (Window.WindowFlags and WINDOW_FLAG_CHARACTER) <> 0 then
    begin
@@ -7787,33 +7787,33 @@ begin
     Dec(ClearX2);
     Dec(ClearY2);
    end;
- 
+
   {Console Draw Block}
   Result:=ConsoleDeviceDrawBlock(Window.Console,ClearX1,ClearY1,ClearX2,ClearY2,Window.Backcolor);
   if Result <> ERROR_SUCCESS then Exit;
-  
+
   {Check Cursor}
   if Cursor then
    begin
     {Update X,Y}
     Window.X:=1;
     Window.Y:=1;
-  
+
     {Update Cursor}
     ConsoleWindowCursorMove(Handle,Window.X,Window.Y);
    end
-  else 
+  else
    begin
     {Update Caret}
     if Window.CursorState = CURSOR_STATE_ON then
      begin
       ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
-     end; 
+     end;
    end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7834,14 +7834,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Write');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -7854,7 +7854,7 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -7865,24 +7865,24 @@ begin
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-   end; 
-  
+   end;
+
   {Get Length}
   WriteBuffer:=AText;
   WriteLength:=Length(WriteBuffer);
   if ((Window.MinX - 1) + (Window.X - 1) + WriteLength) > Window.MaxX then WriteLength:=Window.MaxX - ((Window.MinX - 1) + (Window.X - 1));
-  
+
   {Check Length}
   while (WriteLength > 0) do
    begin
     {Calculate X,Y}
     WriteX:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Window.X - 1) * Window.FontWidth);
     WriteY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Window.Y - 1) * Window.FontHeight);
-    
+
     {Console Draw Text}
     Result:=ConsoleDeviceDrawText(Window.Console,Window.Font,WriteBuffer,WriteX,WriteY,Window.Forecolor,Window.Backcolor,WriteLength);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update X}
     Inc(Window.X,WriteLength);
     if Window.X > Window.Cols then
@@ -7890,41 +7890,41 @@ begin
       Window.X:=1;
       Inc(Window.Y);
      end;
-    
+
     {Update Y}
     if Window.Y > Window.Rows then
      begin
       Window.Y:=Window.Rows;
-      
+
       {Check Scroll}
       if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
        begin
         {Console Scroll Up}
         Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
         if Result <> ERROR_SUCCESS then Exit;
-       end; 
-     end;     
-    
+       end;
+     end;
+
     {Check Wrap}
     if (Window.WindowFlags and WINDOW_FLAG_LINE_WRAP) = 0 then Break;
-    
+
     {Get Length}
     Delete(WriteBuffer,1,WriteLength);
     WriteLength:=Length(WriteBuffer);
     if ((Window.MinX - 1) + (Window.X - 1) + WriteLength) > Window.MaxX then WriteLength:=Window.MaxX - ((Window.MinX - 1) + (Window.X - 1));
-   end;   
-   
-  {Update Cursor} 
+   end;
+
+  {Update Cursor}
   ConsoleWindowCursorMove(Handle,Window.X,Window.Y);
-  
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function ConsoleWindowWriteEx(Handle:TWindowHandle;const AText:String;X,Y,Forecolor,Backcolor:LongWord):LongWord;
@@ -7948,18 +7948,18 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Colors}
  {if Forecolor = COLOR_NONE then Exit;}
  {if Backcolor = COLOR_NONE then Exit;}
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window Write Ex');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -7972,7 +7972,7 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -7984,13 +7984,13 @@ begin
   if Y < 1 then Exit;
   if ((Window.MinX - 1) + X) > Window.MaxX then Exit;
   if ((Window.MinY - 1) + Y) > Window.MaxY then Exit;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-   end; 
-  
+   end;
+
   {Get Length}
   WriteBuffer:=AText;
   WriteLength:=Length(WriteBuffer);
@@ -8002,11 +8002,11 @@ begin
     {Calculate X,Y}
     WriteX:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((X - 1) * Window.FontWidth);
     WriteY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Y - 1) * Window.FontHeight);
-    
+
     {Console Draw Text}
     Result:=ConsoleDeviceDrawText(Window.Console,Window.Font,WriteBuffer,WriteX,WriteY,Forecolor,Backcolor,WriteLength);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update X}
     Inc(X,WriteLength);
     if X > Window.Cols then
@@ -8026,32 +8026,32 @@ begin
         {Console Scroll Up}
         Result:=ConsoleWindowScrollUp(Handle,Y,1);
         if Result <> ERROR_SUCCESS then Exit;
-       end; 
-     end;     
-    
+       end;
+     end;
+
     {Check Wrap}
     if (Window.WindowFlags and WINDOW_FLAG_LINE_WRAP) = 0 then Break;
-    
+
     {Get Length}
     Delete(WriteBuffer,1,WriteLength);
     WriteLength:=Length(WriteBuffer);
     if ((Window.MinX - 1) + (X - 1) + WriteLength) > Window.MaxX then WriteLength:=Window.MaxX - ((Window.MinX - 1) + (X - 1));
-   end;   
-    
+   end;
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
-   end; 
-    
+   end;
+
   {No Cursor Update}
-  
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8072,14 +8072,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window WriteLn');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -8092,7 +8092,7 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -8103,24 +8103,24 @@ begin
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-   end; 
-  
+   end;
+
   {Get Length}
   WriteBuffer:=AText;
   WriteLength:=Length(WriteBuffer);
   if ((Window.MinX - 1) + (Window.X - 1) + WriteLength) > Window.MaxX then WriteLength:=Window.MaxX - ((Window.MinX - 1) + (Window.X - 1));
-  
+
   {Check Length}
   while (WriteLength > 0) do
    begin
     {Calculate X,Y}
     WriteX:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Window.X - 1) * Window.FontWidth);
     WriteY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Window.Y - 1) * Window.FontHeight);
-    
+
     {Console Draw Text}
     Result:=ConsoleDeviceDrawText(Window.Console,Window.Font,WriteBuffer,WriteX,WriteY,Window.Forecolor,Window.Backcolor,WriteLength);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update X}
     Inc(Window.X,WriteLength);
     if Window.X > Window.Cols then
@@ -8128,57 +8128,57 @@ begin
       Window.X:=1;
       Inc(Window.Y);
      end;
-    
+
     {Update Y}
     if Window.Y > Window.Rows then
      begin
       Window.Y:=Window.Rows;
-      
+
       {Check Scroll}
       if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
        begin
         {Console Scroll Up}
         Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
         if Result <> ERROR_SUCCESS then Exit;
-       end; 
-     end;     
-    
+       end;
+     end;
+
     {Check Wrap}
     if (Window.WindowFlags and WINDOW_FLAG_LINE_WRAP) = 0 then Break;
-    
+
     {Get Length}
     Delete(WriteBuffer,1,WriteLength);
     WriteLength:=Length(WriteBuffer);
     if ((Window.MinX - 1) + (Window.X - 1) + WriteLength) > Window.MaxX then WriteLength:=Window.MaxX - ((Window.MinX - 1) + (Window.X - 1));
-   end;   
-  
+   end;
+
   {Update X,Y}
   Window.X:=1;
   Inc(Window.Y);
   if Window.Y > Window.Rows then
    begin
     Window.Y:=Window.Rows;
-    
+
     {Check Scroll}
     if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
      begin
       {Console Scroll Up}
       Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
       if Result <> ERROR_SUCCESS then Exit;
-     end; 
-   end;     
-  
-  {Update Cursor} 
+     end;
+   end;
+
+  {Update Cursor}
   ConsoleWindowCursorMove(Handle,Window.X,Window.Y);
-  
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function ConsoleWindowWriteLnEx(Handle:TWindowHandle;const AText:String;X,Y,Forecolor,Backcolor:LongWord):LongWord;
@@ -8202,18 +8202,18 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Colors}
  {if Forecolor = COLOR_NONE then Exit;}
  {if Backcolor = COLOR_NONE then Exit;}
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window WriteLn Ex');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -8226,7 +8226,7 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -8238,29 +8238,29 @@ begin
   if Y < 1 then Exit;
   if ((Window.MinX - 1) + X) > Window.MaxX then Exit;
   if ((Window.MinY - 1) + Y) > Window.MaxY then Exit;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-   end; 
-  
+   end;
+
   {Get Length}
   WriteBuffer:=AText;
   WriteLength:=Length(WriteBuffer);
   if ((Window.MinX - 1) + (X - 1) + WriteLength) > Window.MaxX then WriteLength:=Window.MaxX - ((Window.MinX - 1) + (X - 1));
-  
+
   {Check Length}
   while (WriteLength > 0) do
    begin
     {Calculate X,Y}
     WriteX:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((X - 1) * Window.FontWidth);
     WriteY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Y - 1) * Window.FontHeight);
-    
+
     {Console Draw Text}
     Result:=ConsoleDeviceDrawText(Window.Console,Window.Font,WriteBuffer,WriteX,WriteY,Forecolor,Backcolor,WriteLength);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update X}
     Inc(X,WriteLength);
     if X > Window.Cols then
@@ -8268,7 +8268,7 @@ begin
       X:=1;
       Inc(Y);
      end;
-    
+
     {Update Y}
     if Y > Window.Rows then
      begin
@@ -8280,18 +8280,18 @@ begin
         {Console Scroll Up}
         Result:=ConsoleWindowScrollUp(Handle,Y,1);
         if Result <> ERROR_SUCCESS then Exit;
-       end; 
-     end;     
-    
+       end;
+     end;
+
     {Check Wrap}
     if (Window.WindowFlags and WINDOW_FLAG_LINE_WRAP) = 0 then Break;
-    
+
     {Get Length}
     Delete(WriteBuffer,1,WriteLength);
     WriteLength:=Length(WriteBuffer);
     if ((Window.MinX - 1) + (X - 1) + WriteLength) > Window.MaxX then WriteLength:=Window.MaxX - ((Window.MinX - 1) + (X - 1));
-   end;   
-    
+   end;
+
   {Update X,Y}
   X:=1;
   Inc(Y);
@@ -8305,23 +8305,23 @@ begin
       {Console Scroll Up}
       Result:=ConsoleWindowScrollUp(Handle,Y,1);
       if Result <> ERROR_SUCCESS then Exit;
-     end; 
-   end;     
-  
+     end;
+   end;
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
-   end; 
-  
+   end;
+
   {No Cursor Update}
-  
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8338,14 +8338,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window WriteChr');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -8358,7 +8358,7 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -8369,8 +8369,8 @@ begin
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-   end; 
-  
+   end;
+
   {Check Char}
   case AChr of
    #10:begin
@@ -8382,18 +8382,18 @@ begin
         if Window.Y > Window.Rows then
          begin
           Window.Y:=Window.Rows;
-          
+
           {Check Scroll}
           if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
            begin
             {Console Scroll Up}
             Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
             if Result <> ERROR_SUCCESS then Exit;
-           end; 
-         end;     
+           end;
+         end;
        end;
      end;
-    end;  
+    end;
    #13:begin
      case DefaultTextLineBreakStyle of
       tlbsCR:begin
@@ -8403,28 +8403,28 @@ begin
         if Window.Y > Window.Rows then
          begin
           Window.Y:=Window.Rows;
-          
+
           {Check Scroll}
           if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
            begin
             {Console Scroll Up}
             Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
             if Result <> ERROR_SUCCESS then Exit;
-           end; 
-         end;     
+           end;
+         end;
        end;
      end;
-    end;  
+    end;
    else
     begin
      {Calculate X,Y}
      WriteX:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Window.X - 1) * Window.FontWidth);
      WriteY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Window.Y - 1) * Window.FontHeight);
-     
+
      {Console Draw Char}
      Result:=ConsoleDeviceDrawChar(Window.Console,Window.Font,AChr,WriteX,WriteY,Window.Forecolor,Window.Backcolor);
      if Result <> ERROR_SUCCESS then Exit;
-     
+
      {Update X}
      Inc(Window.X);
      if Window.X > Window.Cols then
@@ -8432,34 +8432,34 @@ begin
        Window.X:=1;
        Inc(Window.Y);
       end;
-     
+
      {Update Y}
      if Window.Y > Window.Rows then
       begin
        Window.Y:=Window.Rows;
-       
+
        {Check Scroll}
        if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
         begin
          {Console Scroll Up}
          Result:=ConsoleWindowScrollUp(Handle,Window.Y,1);
          if Result <> ERROR_SUCCESS then Exit;
-        end; 
-      end; 
+        end;
+      end;
     end;
   end;
-  
-  {Update Cursor} 
+
+  {Update Cursor}
   ConsoleWindowCursorMove(Handle,Window.X,Window.Y);
-  
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function ConsoleWindowWriteChrEx(Handle:TWindowHandle;AChr:Char;X,Y,Forecolor,Backcolor:LongWord):LongWord;
@@ -8480,18 +8480,18 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Colors}
  {if Forecolor = COLOR_NONE then Exit;}
  {if Backcolor = COLOR_NONE then Exit;}
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console Window WriteChr Ex');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -8504,7 +8504,7 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -8516,13 +8516,13 @@ begin
   if Y < 1 then Exit;
   if ((Window.MinX - 1) + X) > Window.MaxX then Exit;
   if ((Window.MinY - 1) + Y) > Window.MaxY then Exit;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-   end; 
-  
+   end;
+
   {Check Char}
   case AChr of
    #10:begin
@@ -8534,18 +8534,18 @@ begin
         if Y > Window.Rows then
          begin
           Y:=Window.Rows;
-      
+
           {Check Scroll}
           if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
            begin
             {Console Scroll Up}
             Result:=ConsoleWindowScrollUp(Handle,Y,1);
             if Result <> ERROR_SUCCESS then Exit;
-           end; 
-         end;     
+           end;
+         end;
        end;
      end;
-    end;  
+    end;
    #13:begin
      case DefaultTextLineBreakStyle of
       tlbsCR:begin
@@ -8555,28 +8555,28 @@ begin
         if Y > Window.Rows then
          begin
           Y:=Window.Rows;
-          
+
           {Check Scroll}
           if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
            begin
             {Console Scroll Up}
             Result:=ConsoleWindowScrollUp(Handle,Y,1);
             if Result <> ERROR_SUCCESS then Exit;
-           end; 
-         end;     
+           end;
+         end;
        end;
      end;
-    end;  
+    end;
    else
     begin
      {Calculate X,Y}
      WriteX:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((X - 1) * Window.FontWidth);
      WriteY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Y - 1) * Window.FontHeight);
-    
+
      {Console Draw Char}
      Result:=ConsoleDeviceDrawChar(Window.Console,Window.Font,AChr,WriteX,WriteY,Forecolor,Backcolor);
      if Result <> ERROR_SUCCESS then Exit;
-     
+
      {Update X}
      Inc(X);
      if X > Window.Cols then
@@ -8584,37 +8584,37 @@ begin
        X:=1;
        Inc(Y);
       end;
-     
+
      {Update Y}
      if Y > Window.Rows then
       begin
        Y:=Window.Rows;
-       
+
        {Check Scroll}
        if (Window.WindowFlags and WINDOW_FLAG_AUTO_SCROLL) <> 0 then
         begin
          {Console Scroll Up}
          Result:=ConsoleWindowScrollUp(Handle,Y,1);
          if Result <> ERROR_SUCCESS then Exit;
-        end; 
-      end;     
+        end;
+      end;
     end;
   end;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
-   end; 
-  
+   end;
+
   {No cursor Update}
-  
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8639,81 +8639,81 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: Console Window Output (Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ' Skip=' + IntToStr(Skip) + ')');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
- 
+
  {Check Visible}
  if Window.WindowState <> WINDOW_STATE_VISIBLE then
   begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check Dest}
   if Dest.X < 1 then Exit;
   if Dest.Y < 1 then Exit;
   if ((Window.MinX - 1) + Dest.X) > Window.MaxX then Exit;
   if ((Window.MinY - 1) + Dest.Y) > Window.MaxY then Exit;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,False,Window.CursorBlink,Window.CursorReverse);
-   end; 
-  
+   end;
+
   {Get Width}
   OutputWidth:=Width;
   if ((Window.MinX - 1) + (Dest.X - 1) + OutputWidth) > Window.MaxX then OutputWidth:=Window.MaxX - ((Window.MinX - 1) + (Dest.X - 1));
-  
+
   {Update Skip}
   Inc(Skip,Width - OutputWidth);
-  
+
   {Get Height}
   OutputHeight:=Height;
   if ((Window.MinY - 1) + (Dest.Y - 1) + OutputHeight) > Window.MaxY then OutputHeight:=Window.MaxY - ((Window.MinY - 1) + (Dest.Y - 1));
-  
+
   {Calculate Dest X,Y}
   OutputDest.X:=Window.X1 + Window.Borderwidth + Window.OffsetX + ((Window.MinX - 1) * Window.FontWidth) + ((Dest.X - 1) * Window.FontWidth);
   OutputDest.Y:=Window.Y1 + Window.Borderwidth + Window.OffsetY + ((Window.MinY - 1) * Window.FontHeight) + ((Dest.Y - 1) * Window.FontHeight);
-  
+
   {Console Put Text}
   Result:=ConsoleDevicePutText(Window.Console,Window.Font,Source,OutputDest,Buffer,OutputWidth,OutputHeight,Skip);
   if Result <> ERROR_SUCCESS then Exit;
- 
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaretEx(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,Window.CursorForecolor,Window.CursorBackcolor,True,Window.CursorBlink,Window.CursorReverse);
-   end; 
- 
+   end;
+
   {No cursor Update}
-  
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8789,7 +8789,7 @@ var
   CurrentY:=FirstY;
   ConsoleWindowSetXY(Handle,CurrentX,CurrentY);
  end;
- 
+
  procedure MoveLast;
  {Move the cursor to the ending position of the line}
  begin
@@ -8797,7 +8797,7 @@ var
   {$IFDEF CONSOLE_DEBUG}
   if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: MoveLast (FirstX=' + IntToStr(FirstX) + ' FirstY=' + IntToStr(FirstY) + ' LastX=' + IntToStr(LastX) + ' LastY=' + IntToStr(LastY) + ' CurrentX=' + IntToStr(CurrentX) + ' CurrentY=' + IntToStr(CurrentY) + ' MaxX=' + IntToStr(MaxX) + ' MaxY=' + IntToStr(MaxY) + ')');
   {$ENDIF}
-  
+
   CurrentX:=LastX;
   CurrentY:=LastY;
   ConsoleWindowSetXY(Handle,CurrentX,CurrentY);
@@ -8813,14 +8813,14 @@ var
   {$IFDEF CONSOLE_DEBUG}
   if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: MoveLeft (FirstX=' + IntToStr(FirstX) + ' FirstY=' + IntToStr(FirstY) + ' LastX=' + IntToStr(LastX) + ' LastY=' + IntToStr(LastY) + ' CurrentX=' + IntToStr(CurrentX) + ' CurrentY=' + IntToStr(CurrentY) + ' MaxX=' + IntToStr(MaxX) + ' MaxY=' + IntToStr(MaxY) + ')');
   {$ENDIF}
-  
+
   {Get Offsets}
   First:=(FirstY * MaxX) + FirstX;
   Current:=(CurrentY * MaxX) + CurrentX;
-  
+
   {Check Offset}
   if Current = First then Exit;
-  
+
   {Update Position}
   Dec(CurrentX);
   if (CurrentY > FirstY) and (CurrentX < 1) then
@@ -8830,7 +8830,7 @@ var
    end;
   ConsoleWindowSetXY(Handle,CurrentX,CurrentY);
  end;
- 
+
  procedure MoveRight;
  {Move the cursor one position to the right in the line}
  var
@@ -8841,14 +8841,14 @@ var
   {$IFDEF CONSOLE_DEBUG}
   if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: MoveRight (FirstX=' + IntToStr(FirstX) + ' FirstY=' + IntToStr(FirstY) + ' LastX=' + IntToStr(LastX) + ' LastY=' + IntToStr(LastY) + ' CurrentX=' + IntToStr(CurrentX) + ' CurrentY=' + IntToStr(CurrentY) + ' MaxX=' + IntToStr(MaxX) + ' MaxY=' + IntToStr(MaxY) + ')');
   {$ENDIF}
-  
+
   {Get Offsets}
   Last:=(LastY * MaxX) + LastX;
   Current:=(CurrentY * MaxX) + CurrentX;
-  
+
   {Check Offset}
   if Current = Last then Exit;
-  
+
   {Update Position}
   Inc(CurrentX);
   if (CurrentY < LastY) and (CurrentX > MaxX) then
@@ -8858,7 +8858,7 @@ var
    end;
   ConsoleWindowSetXY(Handle,CurrentX,CurrentY);
  end;
- 
+
  procedure EraseLine;
  {Erase all characters in the line and reset the cursor position}
  begin
@@ -8873,15 +8873,15 @@ var
   LastX:=FirstX;
   LastY:=FirstY;
   ConsoleWindowSetXY(Handle,CurrentX,CurrentY);
-  
+
   {Update Line}
   ConsoleWindowWrite(Handle,StringOfChar(' ',Length(Buffer)));
   ConsoleWindowSetXY(Handle,CurrentX,CurrentY);
 
   {Update Buffer}
-  Buffer:='';  
+  Buffer:='';
  end;
- 
+
  procedure OutputLine(const AValue:String);
  {Output all characters in value and update the cursor position}
  var
@@ -8892,13 +8892,13 @@ var
   {$IFDEF CONSOLE_DEBUG}
   if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: OutputLine (FirstX=' + IntToStr(FirstX) + ' FirstY=' + IntToStr(FirstY) + ' LastX=' + IntToStr(LastX) + ' LastY=' + IntToStr(LastY) + ' CurrentX=' + IntToStr(CurrentX) + ' CurrentY=' + IntToStr(CurrentY) + ' MaxX=' + IntToStr(MaxX) + ' MaxY=' + IntToStr(MaxY) + ')');
   {$ENDIF}
-  
+
   {Check Value}
   if Length(AValue) = 0 then Exit;
-  
+
   {Move Last}
   MoveLast;
-  
+
   {Output Line}
   Value:='';
   for Count:=1 to Length(AValue) do
@@ -8921,27 +8921,27 @@ var
          end
         else
          begin
-          Dec(LastX);     
+          Dec(LastX);
           Break;
-         end; 
+         end;
        end;
      end;
-    
+
     {Get Character}
     Value:=Value + AValue[Count];
    end;
- 
+
   {Update Position}
   CurrentX:=LastX;
   CurrentY:=LastY;
-  
+
   {Update Line}
   ConsoleWindowWrite(Handle,Value);
- 
+
   {Update Buffer}
   Buffer:=Value;
  end;
- 
+
  function ExpandLine:Boolean;
  {Expand the tab key to a command completion if available}
  var
@@ -8949,35 +8949,35 @@ var
  begin
   {}
   Result:=False;
-  
+
   {$IFDEF CONSOLE_DEBUG}
   if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: ExpandLine (FirstX=' + IntToStr(FirstX) + ' FirstY=' + IntToStr(FirstY) + ' LastX=' + IntToStr(LastX) + ' LastY=' + IntToStr(LastY) + ' CurrentX=' + IntToStr(CurrentX) + ' CurrentY=' + IntToStr(CurrentY) + ' MaxX=' + IntToStr(MaxX) + ' MaxY=' + IntToStr(MaxY) + ')');
   {$ENDIF}
-  
+
   {Check Completion}
   if Assigned(Completion) then
    begin
     {Get Buffer}
     Value:=Buffer;
-    
+
     {Call Completion}
     Result:=(Completion(Handle,Value,Data) = ERROR_SUCCESS);
     if not Result then Exit;
-    
+
     {Erase Current}
     EraseLine;
-    
+
     {Update Line}
     ConsoleWindowWrite(Handle,Value);
     ConsoleWindowGetXY(Handle,CurrentX,CurrentY);
     LastX:=CurrentX;
     LastY:=CurrentY;
-    
+
     {Update Buffer}
     Buffer:=Value;
    end
  end;
- 
+
  procedure EraseCharacter;
  {Erase the character to the left of the cursor position}
  var
@@ -8991,19 +8991,19 @@ var
   {$IFDEF CONSOLE_DEBUG}
   if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: EraseCharacter (FirstX=' + IntToStr(FirstX) + ' FirstY=' + IntToStr(FirstY) + ' LastX=' + IntToStr(LastX) + ' LastY=' + IntToStr(LastY) + ' CurrentX=' + IntToStr(CurrentX) + ' CurrentY=' + IntToStr(CurrentY) + ' MaxX=' + IntToStr(MaxX) + ' MaxY=' + IntToStr(MaxY) + ')');
   {$ENDIF}
-  
+
   {Get Offsets}
   First:=(FirstY * MaxX) + FirstX;
   Last:=(LastY * MaxX) + LastX;
   Current:=(CurrentY * MaxX) + CurrentX;
-  
+
   {Check Offset}
   if Current = First then Exit;
-  
+
   {Get Head and Tail}
   Head:=Copy(Buffer,1,(Current - First) - 1);
   Tail:=Copy(Buffer,(Current - First) + 1,Length(Buffer));
-  
+
   {Update Position}
   Dec(CurrentX);
   if (CurrentY > FirstY) and (CurrentX < 1) then
@@ -9011,7 +9011,7 @@ var
     CurrentX:=MaxX;
     Dec(CurrentY);
    end;
-   
+
   Dec(LastX);
   if (LastY > FirstY) and (LastX < 1) then
    begin
@@ -9019,15 +9019,15 @@ var
     Dec(LastY);
    end;
   ConsoleWindowSetXY(Handle,CurrentX,CurrentY);
-  
+
   {Update Line}
   ConsoleWindowWrite(Handle,Tail + ' ');
   ConsoleWindowSetXY(Handle,CurrentX,CurrentY);
-  
+
   {Update Buffer}
   Buffer:=Head + Tail;
  end;
- 
+
  procedure DeleteCharacter;
  {Delete the character to the right of the cursor position}
  var
@@ -9041,19 +9041,19 @@ var
   {$IFDEF CONSOLE_DEBUG}
   if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: DeleteCharacter (FirstX=' + IntToStr(FirstX) + ' FirstY=' + IntToStr(FirstY) + ' LastX=' + IntToStr(LastX) + ' LastY=' + IntToStr(LastY) + ' CurrentX=' + IntToStr(CurrentX) + ' CurrentY=' + IntToStr(CurrentY) + ' MaxX=' + IntToStr(MaxX) + ' MaxY=' + IntToStr(MaxY) + ')');
   {$ENDIF}
-  
+
   {Get Offsets}
   First:=(FirstY * MaxX) + FirstX;
   Last:=(LastY * MaxX) + LastX;
   Current:=(CurrentY * MaxX) + CurrentX;
-  
+
   {Check Offset}
   if Current = Last then Exit;
-  
+
   {Get Head and Tail}
   Head:=Copy(Buffer,1,Current - First);
   Tail:=Copy(Buffer,(Current - First) + 2,Length(Buffer));
-  
+
   {Update Position}
   Dec(LastX);
   if (LastY > FirstY) and (LastX < 1) then
@@ -9061,15 +9061,15 @@ var
     LastX:=MaxX;
     Dec(LastY);
    end;
-  
+
   {Update Line}
   ConsoleWindowWrite(Handle,Tail + ' ');
   ConsoleWindowSetXY(Handle,CurrentX,CurrentY);
-  
+
   {Update Buffer}
   Buffer:=Head + Tail;
  end;
- 
+
  procedure InsertCharacter;
  {Insert a character at the cursor position}
  var
@@ -9084,18 +9084,18 @@ var
   {$IFDEF CONSOLE_DEBUG}
   if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: InsertCharacter (FirstX=' + IntToStr(FirstX) + ' FirstY=' + IntToStr(FirstY) + ' LastX=' + IntToStr(LastX) + ' LastY=' + IntToStr(LastY) + ' CurrentX=' + IntToStr(CurrentX) + ' CurrentY=' + IntToStr(CurrentY) + ' MaxX=' + IntToStr(MaxX) + ' MaxY=' + IntToStr(MaxY) + ')');
   {$ENDIF}
-  
+
   {Get Offsets}
   First:=(FirstY * MaxX) + FirstX;
   Last:=(LastY * MaxX) + LastX;
   Current:=(CurrentY * MaxX) + CurrentX;
-  
+
   {Get Head and Tail}
   Head:=Copy(Buffer,1,Current - First);
   Tail:=Copy(Buffer,(Current - First) + 1,Length(Buffer));
-  
+
   Scroll:=False;
-  
+
   {Update Position}
   Inc(LastX);
   if LastX > MaxX then
@@ -9116,12 +9116,12 @@ var
        end
       else
        begin
-        Dec(LastX);     
+        Dec(LastX);
         Exit;
-       end; 
+       end;
      end;
    end;
-   
+
   Inc(CurrentX);
   if CurrentX > MaxX then
    begin
@@ -9140,14 +9140,14 @@ var
        begin
         Dec(CurrentX);
         Exit;
-       end; 
+       end;
      end;
    end;
-  
+
   {Update Line}
   ConsoleWindowWrite(Handle,Ch + Tail);
   ConsoleWindowSetXY(Handle,CurrentX,CurrentY);
-  
+
   {Update Buffer}
   Buffer:=Head + Ch + Tail;
  end;
@@ -9171,19 +9171,19 @@ var
   First:=(FirstY * MaxX) + FirstX;
   Last:=(LastY * MaxX) + LastX;
   Current:=(CurrentY * MaxX) + CurrentX;
-  
+
   {Get Head and Tail}
   Head:=Copy(Buffer,1,Current - First);
   Tail:=Copy(Buffer,(Current - First) + 2,Length(Buffer));
-  
+
   Scroll:=False;
-  
+
   {Update Position}
   if (CurrentX = LastX) and (CurrentY = LastY) then
    begin
     Inc(LastX);
-   end; 
-  
+   end;
+
   Inc(CurrentX);
   if CurrentX > MaxX then
    begin
@@ -9206,17 +9206,17 @@ var
         else
          begin
           Dec(LastX);
-         end; 
+         end;
        end;
      end;
-     
+
     if CurrentY < MaxY then
      begin
       CurrentX:=1;
       Inc(CurrentY);
      end
     else
-     begin    
+     begin
       if Scroll then
        begin
         CurrentX:=1;
@@ -9225,18 +9225,18 @@ var
        begin
         Dec(CurrentX);
         Exit;
-       end; 
+       end;
      end;
    end;
-  
+
   {Update Line}
   ConsoleWindowWrite(Handle,Ch + Tail);
   ConsoleWindowSetXY(Handle,CurrentX,CurrentY);
-  
+
   {Update Buffer}
   Buffer:=Head + Ch + Tail;
  end;
- 
+
  procedure PrevHistory;
  {Get the previous command history value}
  var
@@ -9246,14 +9246,14 @@ var
   {$IFDEF CONSOLE_DEBUG}
   if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: PrevHistory (FirstX=' + IntToStr(FirstX) + ' FirstY=' + IntToStr(FirstY) + ' LastX=' + IntToStr(LastX) + ' LastY=' + IntToStr(LastY) + ' CurrentX=' + IntToStr(CurrentX) + ' CurrentY=' + IntToStr(CurrentY) + ' MaxX=' + IntToStr(MaxX) + ' MaxY=' + IntToStr(MaxY) + ')');
   {$ENDIF}
-  
+
   {Get History}
   Value:=ConsoleWindowPreviousHistory(Handle);
   if Length(Value) = 0 then Exit;
-  
+
   {Erase Current}
   EraseLine;
-  
+
   {Output Line}
   OutputLine(Value);
  end;
@@ -9267,18 +9267,18 @@ var
   {$IFDEF CONSOLE_DEBUG}
   if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: NextHistory (FirstX=' + IntToStr(FirstX) + ' FirstY=' + IntToStr(FirstY) + ' LastX=' + IntToStr(LastX) + ' LastY=' + IntToStr(LastY) + ' CurrentX=' + IntToStr(CurrentX) + ' CurrentY=' + IntToStr(CurrentY) + ' MaxX=' + IntToStr(MaxX) + ' MaxY=' + IntToStr(MaxY) + ')');
   {$ENDIF}
-  
+
   {Get History}
   Value:=ConsoleWindowNextHistory(Handle);
   if Length(Value) = 0 then Exit;
-  
+
   {Erase Current}
   EraseLine;
-  
+
   {Output Line}
   OutputLine(Value);
  end;
- 
+
  procedure FirstHistory;
  {Get the first command history value}
  var
@@ -9288,14 +9288,14 @@ var
   {$IFDEF CONSOLE_DEBUG}
   if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: FirstHistory (FirstX=' + IntToStr(FirstX) + ' FirstY=' + IntToStr(FirstY) + ' LastX=' + IntToStr(LastX) + ' LastY=' + IntToStr(LastY) + ' CurrentX=' + IntToStr(CurrentX) + ' CurrentY=' + IntToStr(CurrentY) + ' MaxX=' + IntToStr(MaxX) + ' MaxY=' + IntToStr(MaxY) + ')');
   {$ENDIF}
-  
+
   {Get History}
   Value:=ConsoleWindowFirstHistory(Handle);
   if Length(Value) = 0 then Exit;
-  
+
   {Erase Current}
   EraseLine;
-  
+
   {Output Line}
   OutputLine(Value);
  end;
@@ -9309,18 +9309,18 @@ var
   {$IFDEF CONSOLE_DEBUG}
   if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: LastHistory (FirstX=' + IntToStr(FirstX) + ' FirstY=' + IntToStr(FirstY) + ' LastX=' + IntToStr(LastX) + ' LastY=' + IntToStr(LastY) + ' CurrentX=' + IntToStr(CurrentX) + ' CurrentY=' + IntToStr(CurrentY) + ' MaxX=' + IntToStr(MaxX) + ' MaxY=' + IntToStr(MaxY) + ')');
   {$ENDIF}
-  
+
   {Get History}
   Value:=ConsoleWindowLastHistory(Handle);
   if Length(Value) = 0 then Exit;
-  
+
   {Erase Current}
   EraseLine;
-  
+
   {Output Line}
   OutputLine(Value);
  end;
- 
+
  procedure CurrentHistory;
  {Get the current command history value}
  var
@@ -9330,32 +9330,32 @@ var
   {$IFDEF CONSOLE_DEBUG}
   if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: CurrentHistory (FirstX=' + IntToStr(FirstX) + ' FirstY=' + IntToStr(FirstY) + ' LastX=' + IntToStr(LastX) + ' LastY=' + IntToStr(LastY) + ' CurrentX=' + IntToStr(CurrentX) + ' CurrentY=' + IntToStr(CurrentY) + ' MaxX=' + IntToStr(MaxX) + ' MaxY=' + IntToStr(MaxY) + ')');
   {$ENDIF}
-  
+
   {Get History}
   Value:=ConsoleWindowCurrentHistory(Handle);
   if Length(Value) = 0 then Exit;
-  
+
   {Erase Current}
   EraseLine;
-  
+
   {Output Line}
   OutputLine(Value);
  end;
- 
+
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Get Defaults}
  AText:='';
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: Console Window ReadLn Ex (Handle=' + IntToHex(Handle,8) + ' Prompt=' + Prompt + ' X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ')');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -9363,42 +9363,42 @@ begin
  if Window.WindowMode <> WINDOW_MODE_TEXT then Exit;
 
  Result:=ERROR_NOT_READY;
- 
+
  {Check Visible}
  if Window.WindowState <> WINDOW_STATE_VISIBLE then Exit;
- 
+
  {Check Active}
  if ConsoleWindowCheckFlag(Handle,WINDOW_FLAG_FOCUS_CURSOR) and (ConsoleWindowGetActive(Window.Console) <> Handle) then Exit;
- 
+
  {Check X, Y}
  if (X > 0) or (Y > 0) then
   begin
    {Get X, Y}
    if X = 0 then X:=ConsoleWindowGetX(Handle);
    if Y = 0 then Y:=ConsoleWindowGetY(Handle);
-   
+
    {Set X, Y}
    ConsoleWindowSetXY(Handle,X,Y);
   end;
- 
+
  {Check Colors}
  if (Forecolor <> COLOR_NONE) or (Backcolor <> COLOR_NONE) then
   begin
    {Get Colors}
    if Forecolor = COLOR_NONE then Forecolor:=ConsoleWindowGetForecolor(Handle);
    if Backcolor = COLOR_NONE then Backcolor:=ConsoleWindowGetBackcolor(Handle);
-   
+
    {Set Colors}
    ConsoleWindowSetForecolor(Handle,Forecolor);
    ConsoleWindowSetBackcolor(Handle,Backcolor);
   end;
- 
- {Check Prompt} 
+
+ {Check Prompt}
  if Length(Prompt) > 0 then
   begin
    ConsoleWindowWrite(Handle,Prompt);
   end;
-  
+
  {Setup Start}
  Buffer:='';
  MaxX:=ConsoleWindowGetCols(Handle);
@@ -9412,12 +9412,12 @@ begin
  Mode:=CURSOR_MODE_INSERT;
  Shape:=CURSOR_SHAPE_LINE;
  State:=ConsoleWindowGetCursorState(Handle);
- 
+
  {Setup Cursor}
  ConsoleWindowSetCursorMode(Handle,Mode);
  ConsoleWindowSetCursorShape(Handle,Shape);
  ConsoleWindowSetCursorState(Handle,CURSOR_STATE_ON);
- 
+
  {Read Keys}
  while True do
   begin
@@ -9450,8 +9450,8 @@ begin
            Mode:=CURSOR_MODE_INSERT;
            Shape:=CURSOR_SHAPE_LINE;
           end;
-          
-         {Set Mode} 
+
+         {Set Mode}
          ConsoleWindowSetCursorMode(Handle,Mode);
          ConsoleWindowSetCursorShape(Handle,Shape);
         end;
@@ -9523,13 +9523,13 @@ begin
        begin
         MoveLast;
         ConsoleWindowWriteLn(Handle,'');
-       end; 
+       end;
       if History then ConsoleWindowAddHistory(Handle,Buffer);
       AText:=Buffer;
       Break;
      end;
     #27:begin {Escape}
-      EraseLine;      
+      EraseLine;
       if Scroll then ConsoleWindowWriteLn(Handle,'');
       AText:=Buffer;
       Break;
@@ -9547,10 +9547,10 @@ begin
      end;
    end;
   end;
- 
+
  {Reset Cursor}
  ConsoleWindowSetCursorState(Handle,State);
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -9592,17 +9592,17 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Defaults}
  AChr:=#0;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: Console Window ReadChr Ex (Handle=' + IntToHex(Handle,8) + ' Prompt=' + Prompt + ' X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ')');
  {$ENDIF}
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -9611,49 +9611,49 @@ begin
 
  {Check Visible}
  if Window.WindowState <> WINDOW_STATE_VISIBLE then Exit;
- 
+
  {Check Active}
  if ConsoleWindowCheckFlag(Handle,WINDOW_FLAG_FOCUS_CURSOR) and (ConsoleWindowGetActive(Window.Console) <> Handle) then Exit;
- 
+
  {Check X, Y}
  if (X > 0) or (Y > 0) then
   begin
    {Get X, Y}
    if X = 0 then X:=ConsoleWindowGetX(Handle);
    if Y = 0 then Y:=ConsoleWindowGetY(Handle);
-   
+
    {Set X, Y}
    ConsoleWindowSetXY(Handle,X,Y);
   end;
- 
+
  {Check Colors}
  if (Forecolor = COLOR_NONE) or (Backcolor = COLOR_NONE) then
   begin
    {Get Colors}
    if Forecolor = COLOR_NONE then Forecolor:=ConsoleWindowGetForecolor(Handle);
    if Backcolor = COLOR_NONE then Backcolor:=ConsoleWindowGetBackcolor(Handle);
-   
+
    {Set Colors}
    ConsoleWindowSetForecolor(Handle,Forecolor);
    ConsoleWindowSetBackcolor(Handle,Backcolor);
   end;
- 
- {Check Prompt} 
+
+ {Check Prompt}
  if Length(Prompt) > 0 then
   begin
    ConsoleWindowWrite(Handle,Prompt);
   end;
- 
+
  {Setup Start}
  Mode:=CURSOR_MODE_INSERT;
  Shape:=CURSOR_SHAPE_LINE;
  State:=ConsoleWindowGetCursorState(Handle);
- 
+
  {Setup Cursor}
  ConsoleWindowSetCursorMode(Handle,Mode);
  ConsoleWindowSetCursorShape(Handle,Shape);
  ConsoleWindowSetCursorState(Handle,CURSOR_STATE_ON);
- 
+
  {Read Key}
  while True do
   begin
@@ -9671,8 +9671,8 @@ begin
       Break;
      end;
     else
-     begin    {Any Other Key}  
-      {Others}    
+     begin    {Any Other Key}
+      {Others}
       if Echo then ConsoleWindowWriteChr(Handle,Ch);
       if Scroll then ConsoleWindowWriteLn(Handle,'');
       AChr:=Ch;
@@ -9680,10 +9680,10 @@ begin
      end;
    end;
   end;
- 
+
  {Reset Cursor}
  ConsoleWindowSetCursorState(Handle,State);
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -9728,7 +9728,7 @@ begin
  {Get Window}
  Handle:=ConsoleWindowGetDefault(ConsoleDeviceDefault);
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Clear Window}
  ConsoleWindowClear(Handle);
 end;
@@ -9774,7 +9774,7 @@ begin
  {Get Window}
  Handle:=ConsoleWindowGetDefault(ConsoleDeviceDefault);
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Set XY}
  ConsoleWindowSetXY(Handle,X,Y);
 end;
@@ -9925,11 +9925,11 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Get Window}
  Handle:=ConsoleWindowGetDefault(ConsoleDeviceDefault);
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get X}
  Result:=ConsoleWindowGetX(Handle);
 end;
@@ -9946,11 +9946,11 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Get Window}
  Handle:=ConsoleWindowGetDefault(ConsoleDeviceDefault);
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Y}
  Result:=ConsoleWindowGetY(Handle);
 end;
@@ -10149,26 +10149,26 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Open');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
-    
+
     {Check Framebuffer}
     if Framebuffer = nil then Exit;
-    if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+    if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
     if Framebuffer.Address = 0 then Exit;
-    
+
     {Get Properties}
     Result:=FramebufferDeviceGetProperties(Framebuffer,@Properties);
     if Result = ERROR_SUCCESS then
@@ -10177,37 +10177,37 @@ begin
       Console.Width:=Properties.PhysicalWidth;
       Console.Height:=Properties.PhysicalHeight;
       Console.Format:=Properties.Format;
-      
+
       {Check Colors}
       if Console.Forecolor = COLOR_NONE then Console.Forecolor:=CONSOLE_DEFAULT_FORECOLOR;
       if Console.Backcolor = COLOR_NONE then Console.Backcolor:=CONSOLE_DEFAULT_BACKCOLOR;
       if Console.Bordercolor = COLOR_NONE then Console.Bordercolor:=CONSOLE_DEFAULT_BORDERCOLOR;
       if PFramebufferConsole(Console).DesktopColor = COLOR_NONE then PFramebufferConsole(Console).DesktopColor:=FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR;
-      
+
       {Check Font}
       if Console.Font = INVALID_HANDLE_VALUE then Console.Font:=ConsoleDeviceGetDefaultFont;
       if Console.Font = INVALID_HANDLE_VALUE then Console.Font:=FontGetDefault;
-      
+
       {Check Offset}
       if PFramebufferConsole(Console).DesktopOffset < Console.Borderwidth then PFramebufferConsole(Console).DesktopOffset:=Console.Borderwidth;
       if (PFramebufferConsole(Console).DesktopOffset * 2) >= Console.Width then Exit;
       if (PFramebufferConsole(Console).DesktopOffset * 2) >= Console.Height then Exit;
-      
+
       {Update Console}
       PFramebufferConsole(Console).DesktopX:=PFramebufferConsole(Console).DesktopOffset;
       PFramebufferConsole(Console).DesktopY:=PFramebufferConsole(Console).DesktopOffset;
       PFramebufferConsole(Console).DesktopWidth:=Console.Width - (PFramebufferConsole(Console).DesktopOffset * 2);
       PFramebufferConsole(Console).DesktopHeight:=Console.Height - (PFramebufferConsole(Console).DesktopOffset * 2);
-      
+
       {Update Statistics}
       Inc(Console.OpenCount);
-      
+
       {Draw Desktop}
       Result:=FramebufferConsoleDrawDesktop(Console);
      end;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -10225,30 +10225,30 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Close');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
-    
+
     {Check Framebuffer}
     if Framebuffer = nil then Exit;
-    if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+    if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
     {if Framebuffer.Address = 0 then Exit;} {Do not fail}
 
     {Clear Console}
     Result:=FramebufferConsoleClear(Console,COLOR_BLACK);
     {if Result <> ERROR_SUCCESS then Exit;} {Do not fail}
-    
+
     {Update Console}
     {Console}
     Console.Width:=0;
@@ -10272,15 +10272,15 @@ begin
        end;
       PFramebufferConsole(Console).LineBuffer:=nil;
      end;
-     
+
     {Update Statistics}
     Inc(Console.CloseCount);
-    
+
     {Get Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -10300,49 +10300,49 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Color}
  {if Color = COLOR_NONE then Exit;}
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Clear');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
-    
+
     {Check Framebuffer}
     if Framebuffer = nil then Exit;
-    
+
     {Get Flags}
     Flags:=FRAMEBUFFER_TRANSFER_NONE;
     if (Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_CLEAR) <> 0 then
      begin
       Flags:=FRAMEBUFFER_TRANSFER_DMA;
      end;
-     
+
     {Get Color}
     ColorDefaultToFormat(Console.Format,Color,@ColorFormat,(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0);
-    
+
     {Framebuffer Fill}
     Result:=FramebufferDeviceFillRect(Framebuffer,0,0,Console.Width,Console.Height,ColorFormat,Flags);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update Statistics}
     Inc(Console.ClearCount);
-    
+
     {Get Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -10361,27 +10361,27 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check X1, Y1, X2, Y2 (Must be a line or box)}
  if X1 > X2 then Exit;
  if Y1 > Y2 then Exit;
  if (X1 = X2) and (Y1 = Y2) then Exit; {This would be a pixel}
- 
+
  {Check Count}
  if Count < 1 then Exit;
- 
+
  {Check Direction}
  if Direction > CONSOLE_DIRECTION_RIGHT then Exit;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Scroll');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check X1, Y1, X2, Y2}
@@ -10389,10 +10389,10 @@ begin
     if Y1 >= Console.Height then Exit;
     if X2 >= Console.Width then Exit;
     if Y2 >= Console.Height then Exit;
- 
+
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
-    
+
     {Check Framebuffer}
     if Framebuffer = nil then Exit;
 
@@ -10402,13 +10402,13 @@ begin
      begin
       Flags:=FRAMEBUFFER_TRANSFER_DMA;
      end;
-    
+
     {Check Direction}
     case Direction of
      CONSOLE_DIRECTION_UP:begin
        {Check Count}
        if Count > Y1 then Exit;
-    
+
        {Framebuffer Copy}
        Result:=FramebufferDeviceCopyRect(Framebuffer,X1,Y1,X1,(Y1 - Count),((X2 - X1) + 1),((Y2 - Y1) + 1),Flags);
        if Result <> ERROR_SUCCESS then Exit;
@@ -10416,7 +10416,7 @@ begin
      CONSOLE_DIRECTION_DOWN:begin
        {Check Count}
        if (Y2 + Count) >= Console.Height then Exit;
-    
+
        {Framebuffer Copy}
        Result:=FramebufferDeviceCopyRect(Framebuffer,X1,Y1,X1,(Y1 + Count),((X2 - X1) + 1),((Y2 - Y1) + 1),Flags);
        if Result <> ERROR_SUCCESS then Exit;
@@ -10432,21 +10432,21 @@ begin
      CONSOLE_DIRECTION_RIGHT:begin
        {Check Count}
        if (X2 + Count) >= Console.Width then Exit;
-      
+
        {Framebuffer Copy}
        Result:=FramebufferDeviceCopyRect(Framebuffer,X1,Y1,(X1 + Count),Y1,((X2 - X1) + 1),((Y2 - Y1) + 1),Flags);
        if Result <> ERROR_SUCCESS then Exit;
       end;
     end;
-          
+
     {Update Statistics}
     Inc(Console.ScrollCount);
-     
+
     {Get Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -10466,26 +10466,26 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check X1, Y1, X2, Y2 (Must be a box}
  if X1 >= X2 then Exit;
  if Y1 >= Y2 then Exit;
- 
+
  {Check Color}
  {if Color = COLOR_NONE then Exit;}
- 
+
  {Check Width}
  if Width < 1 then Exit;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Draw Box');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check X1, Y1, X2, Y2}
@@ -10496,7 +10496,7 @@ begin
 
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
-    
+
     {Check Framebuffer}
     if Framebuffer = nil then Exit;
 
@@ -10506,13 +10506,13 @@ begin
      begin
       Flags:=FRAMEBUFFER_TRANSFER_DMA;
      end;
-    
+
     {Get Color}
     ColorDefaultToFormat(Console.Format,Color,@ColorFormat,(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0);
-    
+
     {Lock Framebuffer}
     if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
-    
+
     {Draw Top}
     Result:=FramebufferDeviceFillRect(Framebuffer,X1,Y1,((X2 - X1) + 1),Width,ColorFormat,Flags);
     if Result = ERROR_SUCCESS then
@@ -10530,19 +10530,19 @@ begin
          end;
        end;
      end;
-    
+
     {Unlock Framebuffer}
-    MutexUnlock(Framebuffer.Lock); 
+    MutexUnlock(Framebuffer.Lock);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update Statistics}
     Inc(Console.DrawCount);
-    
+
     {Get Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -10562,28 +10562,28 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check X1, Y1, X2, Y2 (Must be a line)}
  if X1 > X2 then Exit;
  if Y1 > Y2 then Exit;
  if (X1 = X2) and (Y1 = Y2) then Exit;   {This would be a pixel}
  if (X1 <> X2) and (Y1 <> Y2) then Exit; {This would be a box or a diagonal line (See: ConsoleDevicePlotLine)}
- 
+
  {Check Color}
  {if Color = COLOR_NONE then Exit;}
- 
+
  {Check Width}
  if Width < 1 then Exit;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Draw Line');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check X1, Y1, X2, Y2}
@@ -10594,7 +10594,7 @@ begin
 
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
-    
+
     {Check Framebuffer}
     if Framebuffer = nil then Exit;
 
@@ -10604,10 +10604,10 @@ begin
      begin
       Flags:=FRAMEBUFFER_TRANSFER_DMA;
      end;
-    
+
     {Get Color}
     ColorDefaultToFormat(Console.Format,Color,@ColorFormat,(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0);
-    
+
     {Get Direction}
     if X1 = X2 then
      begin
@@ -10615,21 +10615,21 @@ begin
       Result:=FramebufferDeviceFillRect(Framebuffer,X1,Y1,Width,((Y2 - Y1) + 1),ColorFormat,Flags);
       if Result <> ERROR_SUCCESS then Exit;
      end
-    else if Y1 = Y2 then 
+    else if Y1 = Y2 then
      begin
       {Horizontal}
       Result:=FramebufferDeviceFillRect(Framebuffer,X1,Y1,((X2 - X1) + 1),Width,ColorFormat,Flags);
       if Result <> ERROR_SUCCESS then Exit;
      end;
-    
+
     {Update Statistics}
     Inc(Console.DrawCount);
-    
+
     {Get Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -10658,23 +10658,23 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check Colors}
  {if Forecolor = COLOR_NONE then Exit;}
  {if Backcolor = COLOR_NONE then Exit;}
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Draw Char');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Get Font}
@@ -10687,10 +10687,10 @@ begin
     if Y >= Console.Height then Exit;
     if X + Font.CharWidth > Console.Width then Exit;
     if Y + Font.CharHeight > Console.Height then Exit;
-    
+
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
-    
+
     {Check Framebuffer}
     if Framebuffer = nil then Exit;
 
@@ -10700,20 +10700,20 @@ begin
      begin
       Flags:=FRAMEBUFFER_TRANSFER_DMA;
      end;
-    
+
     {Get Bytes}
     Bytes:=ColorFormatToBytes(Console.Format);
     if Bytes = 0 then Exit;
-    
+
     {Get Reverse}
     Reverse:=(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0;
-    
+
     {Check Buffer}
     if PFramebufferConsole(Console).LineBuffer = nil then
      begin
       {Get Properties}
       if FramebufferDeviceGetProperties(Framebuffer,@Properties) <> ERROR_SUCCESS then Exit;
-      
+
       {Check DMA}
       if ((Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_MASK) <> 0) and (DMAAvailable) then
        begin
@@ -10722,28 +10722,28 @@ begin
       else
        begin
         PFramebufferConsole(Console).LineBuffer:=GetMem(Properties.Pitch);
-       end; 
-     end; 
+       end;
+     end;
     {Get Buffer}
     Buffer:=PFramebufferConsole(Console).LineBuffer;
     if Buffer = nil then Exit;
-    
+
     {Lock Framebuffer}
     if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
-    
+
     {Check Cursor}
     if (Framebuffer.CursorState = FRAMEBUFFER_CURSOR_ENABLED) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CURSOR) = 0) then
      begin
       {Hide Cursor}
       FramebufferDeviceHideCursor(Framebuffer);
-      
+
       {Set Update}
       Framebuffer.CursorUpdate:=True;
      end;
-    
+
     {Set Result}
     Result:=ERROR_SUCCESS;
-    
+
     {Get Rows}
     for Row:=0 to Font.CharHeight - 1 do
      begin
@@ -10754,7 +10754,7 @@ begin
        9..16:Character:=PFontChars16(Font.CharData)[(Byte(Ch) * Font.CharHeight) + Row];
        17..32:Character:=PFontChars32(Font.CharData)[(Byte(Ch) * Font.CharHeight) + Row];
       end;
-       
+
       {Map Character}
       Offset:=(Font.CharWidth - 1) * Bytes;
       for Column:=Font.CharWidth - 1 downto 0 do
@@ -10766,17 +10766,17 @@ begin
         else
          begin
           ColorDefaultToFormat(Console.Format,Backcolor,Pointer(Buffer + Offset),Reverse);
-         end;  
-        
+         end;
+
         Dec(Offset,Bytes);
         Character:=Character shr 1;
        end;
-       
+
       {Framebuffer Write}
       Result:=FramebufferDeviceWrite(Framebuffer,X,Y + Row,Buffer,Font.CharWidth,Flags);
       if Result <> ERROR_SUCCESS then Break;
      end;
-    
+
     {Check Cursor}
     if (Framebuffer.CursorState = FRAMEBUFFER_CURSOR_ENABLED) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CURSOR) = 0) then
      begin
@@ -10786,16 +10786,16 @@ begin
       {Show Cursor}
       FramebufferDeviceShowCursor(Framebuffer);
      end;
-    
+
     {Unlock Framebuffer}
     MutexUnlock(Framebuffer.Lock);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update Statistics}
     Inc(Console.DrawCount);
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -10828,66 +10828,66 @@ begin
 
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check Text}
  if Length(Text) = 0 then Exit;
- 
+
  {Check Colors}
  {if Forecolor = COLOR_NONE then Exit;}
  {if Backcolor = COLOR_NONE then Exit;}
- 
+
  {Check Length}
  if Len < 1 then Exit;
  if Len > Length(Text) then Len:=Length(Text);
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Draw Text');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Get Font}
     Font:=PFontEntry(Handle);
     if Font = nil then Exit;
     if Font.Signature <> FONT_SIGNATURE then Exit;
-    
+
     {Check X, Y}
     if X >= Console.Width then Exit;
     if Y >= Console.Height then Exit;
     if X + (Font.CharWidth * Len) > Console.Width then Exit;
     if Y + Font.CharHeight > Console.Height then Exit;
-    
+
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
-    
+
     {Check Framebuffer}
     if Framebuffer = nil then Exit;
-    
+
     {Get Flags}
     Flags:=FRAMEBUFFER_TRANSFER_NONE;
     if (Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_TEXT) <> 0 then
      begin
       Flags:=FRAMEBUFFER_TRANSFER_DMA;
      end;
-    
+
     {Get Bytes}
     Bytes:=ColorFormatToBytes(Console.Format);
     if Bytes = 0 then Exit;
-    
+
     {Get Reverse}
     Reverse:=(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0;
-    
+
     {Check Buffer}
     if PFramebufferConsole(Console).LineBuffer = nil then
      begin
       {Get Properties}
       if FramebufferDeviceGetProperties(Framebuffer,@Properties) <> ERROR_SUCCESS then Exit;
-      
+
       {Check DMA}
       if ((Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_MASK) <> 0) and (DMAAvailable) then
        begin
@@ -10896,15 +10896,15 @@ begin
       else
        begin
         PFramebufferConsole(Console).LineBuffer:=GetMem(Properties.Pitch);
-       end; 
-     end; 
+       end;
+     end;
     {Get Buffer}
     Buffer:=PFramebufferConsole(Console).LineBuffer;
     if Buffer = nil then Exit;
 
     {Lock Framebuffer}
     if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
-    
+
     {Check Cursor}
     if (Framebuffer.CursorState = FRAMEBUFFER_CURSOR_ENABLED) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CURSOR) = 0) then
      begin
@@ -10914,10 +10914,10 @@ begin
       {Set Update}
       Framebuffer.CursorUpdate:=True;
      end;
-    
+
     {Set Result}
     Result:=ERROR_SUCCESS;
-    
+
     {Get Rows}
     for Row:=0 to Font.CharHeight - 1 do
      begin
@@ -10932,7 +10932,7 @@ begin
          9..16:Character:=PFontChars16(Font.CharData)[(Byte(Text[Count]) * Font.CharHeight) + Row];
          17..32:Character:=PFontChars32(Font.CharData)[(Byte(Text[Count]) * Font.CharHeight) + Row];
         end;
-        
+
         {Map Character}
         Inc(Offset,Font.CharWidth * Bytes);
         for Column:=Font.CharWidth - 1 downto 0 do
@@ -10946,18 +10946,18 @@ begin
            begin
             ColorDefaultToFormat(Console.Format,Backcolor,Pointer(Buffer + Offset),Reverse);
            end;
-          
+
           Character:=Character shr 1;
          end;
-         
-        Inc(Offset,Font.CharWidth * Bytes); 
+
+        Inc(Offset,Font.CharWidth * Bytes);
        end;
-       
+
       {Framebuffer Write}
       Result:=FramebufferDeviceWrite(Framebuffer,X,Y + Row,Buffer,Font.CharWidth * Len,Flags);
       if Result <> ERROR_SUCCESS then Break;
      end;
-    
+
     {Check Cursor}
     if (Framebuffer.CursorState = FRAMEBUFFER_CURSOR_ENABLED) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CURSOR) = 0) then
      begin
@@ -10967,16 +10967,16 @@ begin
       {Show Cursor}
       FramebufferDeviceShowCursor(Framebuffer);
      end;
-    
+
     {Unlock Framebuffer}
     MutexUnlock(Framebuffer.Lock);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update Statistics}
     Inc(Console.DrawCount);
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -10995,60 +10995,60 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Color}
  {if Color = COLOR_NONE then Exit;}
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Draw Pixel');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check X, Y}
     if X >= Console.Width then Exit;
     if Y >= Console.Height then Exit;
-   
+
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
-    
+
     {Check Framebuffer}
     if Framebuffer = nil then Exit;
 
     {Set Result}
     Result:=ERROR_SUCCESS;
-    
+
     {Lock Framebuffer}
     if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
-    
+
     {Check Cursor}
     if (Framebuffer.CursorState = FRAMEBUFFER_CURSOR_ENABLED) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CURSOR) = 0) then
      begin
       {Hide Cursor}
       if not Framebuffer.CursorUpdate then FramebufferDeviceHideCursor(Framebuffer);
      end;
-    
+
     {Get Address}
     Address:=FramebufferDeviceGetPoint(Framebuffer,X,Y);
     if Address <> nil then
      begin
       {Memory Barrier}
       DataMemoryBarrier;  {Before the First Write}
-      
+
       {Draw Pixel}
       ColorDefaultToFormat(Console.Format,Color,Address,(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0);
-      
+
       {Check Commit}
       if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
        begin
         Framebuffer.DeviceCommit(Framebuffer,PtrUInt(Address),ColorFormatToBytes(Console.Format),FRAMEBUFFER_TRANSFER_NONE);
        end;
-      
+
       {Check Mark}
       if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_MARK) <> 0) and Assigned(Framebuffer.DeviceMark) then
        begin
@@ -11058,24 +11058,24 @@ begin
     else
      begin
       Result:=ERROR_OPERATION_FAILED;
-     end;     
-    
+     end;
+
     {Check Cursor}
     if (Framebuffer.CursorState = FRAMEBUFFER_CURSOR_ENABLED) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CURSOR) = 0) then
      begin
       {Show Cursor}
       if not Framebuffer.CursorUpdate then FramebufferDeviceShowCursor(Framebuffer);
      end;
-    
+
     {Unlock Framebuffer}
-    MutexUnlock(Framebuffer.Lock); 
+    MutexUnlock(Framebuffer.Lock);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update Statistics}
     Inc(Console.DrawCount);
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -11095,23 +11095,23 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check X1, Y1, X2, Y2 (Must be a line, box or pixel)}
  if X1 > X2 then Exit;
  if Y1 > Y2 then Exit;
- 
+
  {Check Color}
  {if Color = COLOR_NONE then Exit;}
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Draw Block');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check X1, Y1, X2, Y2}
@@ -11122,7 +11122,7 @@ begin
 
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
-    
+
     {Check Framebuffer}
     if Framebuffer = nil then Exit;
 
@@ -11132,22 +11132,22 @@ begin
      begin
       Flags:=FRAMEBUFFER_TRANSFER_DMA;
      end;
-    
+
     {Get Color}
     ColorDefaultToFormat(Console.Format,Color,@ColorFormat,(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0);
-    
+
     {Framebuffer Fill}
     Result:=FramebufferDeviceFillRect(Framebuffer,X1,Y1,((X2 - X1) + 1),((Y2 - Y1) + 1),ColorFormat,Flags);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update Statistics}
     Inc(Console.DrawCount);
-    
+
     {Get Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -11175,19 +11175,19 @@ begin
 
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Width and Height}
  if (Width = 0) or (Height = 0) then Exit;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Draw Image');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check X, Y}
@@ -11195,13 +11195,13 @@ begin
     if Y >= Console.Height then Exit;
     if X + Width > Console.Width then Exit;
     if Y + Height > Console.Height then Exit;
- 
+
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
- 
+
     {Get Reverse}
     Reverse:=(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0;
- 
+
     {Check Format}
     if (Format = COLOR_FORMAT_UNKNOWN) or ((Format = Console.Format) and not(Reverse)) then
      begin
@@ -11213,26 +11213,26 @@ begin
      begin
       {Get Format Bytes}
       FormatBytes:=ColorFormatToBytes(Format);
-        
+
       {Get Console Bytes}
       ConsoleBytes:=ColorFormatToBytes(Console.Format);
 
       {Lock Framebuffer}
       if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
-      
+
       {Check Cursor}
       if (Framebuffer.CursorState = FRAMEBUFFER_CURSOR_ENABLED) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CURSOR) = 0) then
        begin
         {Hide Cursor}
         if not Framebuffer.CursorUpdate then FramebufferDeviceHideCursor(Framebuffer);
        end;
-      
+
       {Set Result}
       Result:=ERROR_SUCCESS;
-      
+
       {Set Offset}
       Offset:=0;
-      
+
       {Check Format}
       if Format = COLOR_FORMAT_DEFAULT then
        begin
@@ -11245,16 +11245,16 @@ begin
            begin
             {Memory Barrier}
             DataMemoryBarrier;  {Before the First Write}
-           
+
             {Convert from Format (COLOR_FORMAT_DEFAULT) to Console.Format}
             PixelsDefaultToFormat(Console.Format,Pointer(Buffer + Offset),Address,Width,Reverse);
-            
+
             {Check Commit}
             if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
              begin
               Framebuffer.DeviceCommit(Framebuffer,PtrUInt(Address),Width * ConsoleBytes,FRAMEBUFFER_TRANSFER_NONE);
              end;
-             
+
             {Check Mark}
             if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_MARK) <> 0) and Assigned(Framebuffer.DeviceMark) then
              begin
@@ -11266,7 +11266,7 @@ begin
             Result:=ERROR_OPERATION_FAILED;
             Break;
            end;
-           
+
           {Update Offset}
           Inc(Offset,(Width + Skip) * FormatBytes);
          end;
@@ -11282,16 +11282,16 @@ begin
            begin
             {Memory Barrier}
             DataMemoryBarrier;  {Before the First Write}
-        
+
             {Convert from Format to Console.Format (COLOR_FORMAT_DEFAULT)}
             PixelsFormatToDefault(Format,Pointer(Buffer + Offset),Address,Width,Reverse);
-            
+
             {Check Commit}
             if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
              begin
               Framebuffer.DeviceCommit(Framebuffer,PtrUInt(Address),Width * ConsoleBytes,FRAMEBUFFER_TRANSFER_NONE);
              end;
-             
+
             {Check Mark}
             if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_MARK) <> 0) and Assigned(Framebuffer.DeviceMark) then
              begin
@@ -11303,7 +11303,7 @@ begin
             Result:=ERROR_OPERATION_FAILED;
             Break;
            end;
-           
+
           {Update Offset}
           Inc(Offset,(Width + Skip) * FormatBytes);
          end;
@@ -11323,19 +11323,19 @@ begin
              begin
               {Memory Barrier}
               DataMemoryBarrier;  {Before the First Write}
-          
+
               {Convert from Format to Default (COLOR_FORMAT_DEFAULT)}
               PixelsFormatToDefault(Format,Pointer(Buffer + Offset),Line,Width,False);
-              
+
               {Convert from Default (COLOR_FORMAT_DEFAULT) to Console.Format}
               PixelsDefaultToFormat(Console.Format,Line,Address,Width,Reverse);
-              
+
               {Check Commit}
               if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_COMMIT) <> 0) and Assigned(Framebuffer.DeviceCommit) then
                begin
                 Framebuffer.DeviceCommit(Framebuffer,PtrUInt(Address),Width * ConsoleBytes,FRAMEBUFFER_TRANSFER_NONE);
                end;
-               
+
               {Check Mark}
               if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_MARK) <> 0) and Assigned(Framebuffer.DeviceMark) then
                begin
@@ -11347,40 +11347,40 @@ begin
               Result:=ERROR_OPERATION_FAILED;
               Break;
              end;
-             
+
             {Update Offset}
             Inc(Offset,(Width + Skip) * FormatBytes);
            end;
-                  
+
           {Free Line}
           FreeMem(Line);
-         end;         
-       end;       
-      
+         end;
+       end;
+
       {Check Cursor}
       if (Framebuffer.CursorState = FRAMEBUFFER_CURSOR_ENABLED) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CURSOR) = 0) then
        begin
         {Show Cursor}
         if not Framebuffer.CursorUpdate then FramebufferDeviceShowCursor(Framebuffer);
        end;
-      
+
       {Unlock Framebuffer}
       MutexUnlock(Framebuffer.Lock);
       if Result <> ERROR_SUCCESS then Exit;
      end;
- 
+
     {Update Statistics}
     Inc(Console.DrawCount);
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
 end;
- 
+
 {==============================================================================}
 
 function FramebufferConsoleDrawWindow(Console:PConsoleDevice;Handle:TWindowHandle;Flags:LongWord):LongWord;
@@ -11393,23 +11393,23 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Draw Window');
  {$ENDIF}
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- 
+
  {Check Window State}
  if Window.WindowState = WINDOW_STATE_INVISIBLE then
   begin
@@ -11425,7 +11425,7 @@ begin
     end;
   end
  else if Window.WindowState = WINDOW_STATE_VISIBLE then
-  begin 
+  begin
    {Check Border and Flags}
    if (Window.Borderwidth > 0) and ((Flags and WINDOW_DRAW_FLAG_BORDER) = WINDOW_DRAW_FLAG_BORDER) then
     begin
@@ -11437,13 +11437,13 @@ begin
      else
       begin
        Color:=Window.Bordercolor;
-      end;      
-      
+      end;
+
      {Draw Border}
-     Result:=FramebufferConsoleDrawBox(Console,Window.X1,Window.Y1,Window.X2,Window.Y2,Color,Window.Borderwidth); 
+     Result:=FramebufferConsoleDrawBox(Console,Window.X1,Window.Y1,Window.X2,Window.Y2,Color,Window.Borderwidth);
      if Result <> ERROR_SUCCESS then Exit;
-    end; 
-   
+    end;
+
    {Check Flags}
    if (Flags and WINDOW_DRAW_FLAG_ALL) = WINDOW_DRAW_FLAG_ALL then
     begin
@@ -11454,7 +11454,7 @@ begin
     begin
      Result:=ERROR_SUCCESS;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -11471,7 +11471,7 @@ var
  TitleFont:TFontHandle;
  TitleForecolor:LongWord;
  TitleBackcolor:LongWord;
- 
+
  BorderX1:LongWord;
  BorderY1:LongWord;
  BorderX2:LongWord;
@@ -11483,25 +11483,25 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Draw Desktop');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Get Title}
     Title:=FRAMEBUFFER_CONSOLE_TITLE;
     if Length(FRAMEBUFFER_CONSOLE_MESSAGE) > 0 then Title:=FRAMEBUFFER_CONSOLE_MESSAGE;
-     
+
     {Get Desktop}
     DesktopColor:=PFramebufferConsole(Console).DesktopColor;
-    
+
     {Get Border}
     BorderX1:=(PFramebufferConsole(Console).DesktopOffset - Console.Borderwidth);
     BorderY1:=(PFramebufferConsole(Console).DesktopOffset - Console.Borderwidth);
@@ -11509,7 +11509,7 @@ begin
     BorderY2:=(Console.Height - 1) - (PFramebufferConsole(Console).DesktopOffset - Console.Borderwidth);
     BorderColor:=Console.Bordercolor;
     BorderWidth:=Console.Borderwidth;
-    
+
     {Get Title}
     TitleX:=PFramebufferConsole(Console).DesktopOffset;
     TitleY:=(PFramebufferConsole(Console).DesktopOffset - FontGetHeight(Console.Font)) div 2;
@@ -11519,34 +11519,34 @@ begin
     if FontGetHeight(Console.Font) > TitleOffset then TitleOffset:=0;
     TitleForecolor:=Console.Forecolor;
     TitleBackcolor:=PFramebufferConsole(Console).DesktopColor;
-    
+
     {Draw Desktop}
     Result:=FramebufferConsoleClear(Console,DesktopColor);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Check Border}
     if BorderWidth > 0 then
      begin
       {Draw Border}
       Result:=FramebufferConsoleDrawBox(Console,BorderX1,BorderY1,BorderX2,BorderY2,BorderColor,BorderWidth);
       if Result <> ERROR_SUCCESS then Exit;
-     end; 
-    
+     end;
+
     {Check Title}
     if TitleOffset > 0 then
      begin
       {Check Length}
-      if (TitleX + (TitleLen * FontGetWidth(Console.Font))) > Console.Width then 
+      if (TitleX + (TitleLen * FontGetWidth(Console.Font))) > Console.Width then
        begin
         TitleLen:=(Console.Width - (TitleX + 1)) div FontGetWidth(Console.Font);
        end;
 
       {Draw Title}
       Result:=FramebufferConsoleDrawText(Console,TitleFont,Title,TitleX,TitleY,TitleForecolor,TitleBackcolor,TitleLen);
-     end; 
+     end;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -11568,69 +11568,69 @@ begin
 
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Get Pixel');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check X, Y}
     if X >= Console.Width then Exit;
     if Y >= Console.Height then Exit;
-   
+
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
-    
+
     {Check Framebuffer}
     if Framebuffer = nil then Exit;
 
     {Set Result}
     Result:=ERROR_SUCCESS;
-    
+
     {Lock Framebuffer}
     if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
-    
+
     {Check Cursor}
     if (Framebuffer.CursorState = FRAMEBUFFER_CURSOR_ENABLED) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CURSOR) = 0) then
      begin
       {Hide Cursor}
       if not Framebuffer.CursorUpdate then FramebufferDeviceHideCursor(Framebuffer);
      end;
-    
+
     {Get Address}
     Address:=FramebufferDeviceGetPoint(Framebuffer,X,Y);
     if Address <> nil then
      begin
       {Get Pixel}
       ColorFormatAltToDefault(Console.Format,Address,Color,(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0);
-      
+
       {Memory Barrier}
       DataMemoryBarrier;  {After the Last Read}
      end
     else
      begin
       Result:=ERROR_OPERATION_FAILED;
-     end;     
-    
+     end;
+
     {Check Cursor}
     if (Framebuffer.CursorState = FRAMEBUFFER_CURSOR_ENABLED) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CURSOR) = 0) then
      begin
       {Show Cursor}
       if not Framebuffer.CursorUpdate then FramebufferDeviceShowCursor(Framebuffer);
      end;
-    
+
     {Unlock Framebuffer}
-    MutexUnlock(Framebuffer.Lock); 
+    MutexUnlock(Framebuffer.Lock);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update Statistics}
     Inc(Console.GetCount);
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -11658,19 +11658,19 @@ begin
 
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Width and Height}
  if (Width = 0) or (Height = 0) then Exit;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Get Image');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check X, Y}
@@ -11678,13 +11678,13 @@ begin
     if Y >= Console.Height then Exit;
     if X + Width > Console.Width then Exit;
     if Y + Height > Console.Height then Exit;
- 
+
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
-    
+
     {Get Reverse}
     Reverse:=(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0;
-    
+
     {Check Format}
     if (Format = COLOR_FORMAT_UNKNOWN) or ((Format = Console.Format) and not(Reverse)) then
      begin
@@ -11696,26 +11696,26 @@ begin
      begin
       {Get Format Bytes}
       FormatBytes:=ColorFormatToBytes(Format);
-        
+
       {Get Console Bytes}
       ConsoleBytes:=ColorFormatToBytes(Console.Format);
 
       {Lock Framebuffer}
       if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
-      
+
       {Check Cursor}
       if (Framebuffer.CursorState = FRAMEBUFFER_CURSOR_ENABLED) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CURSOR) = 0) then
        begin
         {Hide Cursor}
         if not Framebuffer.CursorUpdate then FramebufferDeviceHideCursor(Framebuffer);
        end;
-      
+
       {Set Result}
       Result:=ERROR_SUCCESS;
-      
+
       {Set Offset}
       Offset:=0;
-      
+
       {Check Format}
       if Format = COLOR_FORMAT_DEFAULT then
        begin
@@ -11728,7 +11728,7 @@ begin
            begin
             {Convert from Console.Format to Format (COLOR_FORMAT_DEFAULT)}
             PixelsFormatAltToDefault(Console.Format,Address,Pointer(Buffer + Offset),Width,Reverse);
-           
+
             {Memory Barrier}
             DataMemoryBarrier;  {After the Last Read}
            end
@@ -11737,7 +11737,7 @@ begin
             Result:=ERROR_OPERATION_FAILED;
             Break;
            end;
-           
+
           {Update Offset}
           Inc(Offset,(Width + Skip) * FormatBytes);
          end;
@@ -11753,7 +11753,7 @@ begin
            begin
             {Convert from Console.Format (COLOR_FORMAT_DEFAULT) to Format}
             PixelsDefaultAltToFormat(Format,Address,Pointer(Buffer + Offset),Width,Reverse);
-                    
+
             {Memory Barrier}
             DataMemoryBarrier;  {After the Last Read}
            end
@@ -11762,7 +11762,7 @@ begin
             Result:=ERROR_OPERATION_FAILED;
             Break;
            end;
-           
+
           {Update Offset}
           Inc(Offset,(Width + Skip) * FormatBytes);
          end;
@@ -11782,10 +11782,10 @@ begin
              begin
               {Convert from Console.Format to Default (COLOR_FORMAT_DEFAULT)}
               PixelsFormatAltToDefault(Console.Format,Address,Line,Width,Reverse);
-              
+
               {Convert from Default (COLOR_FORMAT_DEFAULT) to Format}
               PixelsDefaultToFormat(Format,Line,Pointer(Buffer + Offset),Width,False);
-                
+
               {Memory Barrier}
               DataMemoryBarrier;  {After the Last Read}
              end
@@ -11794,33 +11794,33 @@ begin
               Result:=ERROR_OPERATION_FAILED;
               Break;
              end;
-             
+
             {Update Offset}
             Inc(Offset,(Width + Skip) * FormatBytes);
            end;
-                  
+
           {Free Line}
           FreeMem(Line);
-         end;         
-       end;       
-      
+         end;
+       end;
+
       {Check Cursor}
       if (Framebuffer.CursorState = FRAMEBUFFER_CURSOR_ENABLED) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CURSOR) = 0) then
        begin
         {Show Cursor}
         if not Framebuffer.CursorUpdate then FramebufferDeviceShowCursor(Framebuffer);
        end;
-      
+
       {Unlock Framebuffer}
       MutexUnlock(Framebuffer.Lock);
       if Result <> ERROR_SUCCESS then Exit;
      end;
- 
+
     {Update Statistics}
     Inc(Console.GetCount);
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -11843,7 +11843,7 @@ var
  Character:LongWord;
  LineBuffer:Pointer;
  TextBuffer:PConsoleChar;
- 
+
  Flags:LongWord;
  Bytes:LongWord;
  Reverse:Boolean;
@@ -11856,22 +11856,22 @@ begin
 
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Width and Height}
  if (Width = 0) or (Height = 0) then Exit;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Put Text (Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ' Skip=' + IntToStr(Skip) + ')');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Get Font}
@@ -11882,39 +11882,39 @@ begin
     {Check Source}
     if Source.X < 1 then Exit;
     if Source.Y < 1 then Exit;
-    
+
     {Check Dest}
     if Dest.X >= Console.Width then Exit;
     if Dest.Y >= Console.Height then Exit;
     if Dest.X + (Font.CharWidth * Width) > Console.Width then Exit;
     if Dest.Y + (Font.CharHeight * Height) > Console.Height then Exit;
-    
+
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
-    
+
     {Check Framebuffer}
     if Framebuffer = nil then Exit;
-    
+
     {Get Flags}
     Flags:=FRAMEBUFFER_TRANSFER_NONE;
     if (Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_TEXT) <> 0 then
      begin
       Flags:=FRAMEBUFFER_TRANSFER_DMA;
      end;
-    
+
     {Get Bytes}
     Bytes:=ColorFormatToBytes(Console.Format);
     if Bytes = 0 then Exit;
-    
+
     {Get Reverse}
     Reverse:=(Console.Device.DeviceFlags and CONSOLE_FLAG_COLOR_REVERSE) <> 0;
-    
+
     {Check Line Buffer}
     if PFramebufferConsole(Console).LineBuffer = nil then
      begin
       {Get Properties}
       if FramebufferDeviceGetProperties(Framebuffer,@Properties) <> ERROR_SUCCESS then Exit;
-      
+
       {Check DMA}
       if ((Console.Device.DeviceFlags and CONSOLE_FLAG_DMA_MASK) <> 0) and (DMAAvailable) then
        begin
@@ -11923,15 +11923,15 @@ begin
       else
        begin
         PFramebufferConsole(Console).LineBuffer:=GetMem(Properties.Pitch);
-       end; 
-     end; 
+       end;
+     end;
     {Get Line Buffer}
     LineBuffer:=PFramebufferConsole(Console).LineBuffer;
     if LineBuffer = nil then Exit;
 
     {Lock Framebuffer}
     if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
-    
+
     {Check Cursor}
     if (Framebuffer.CursorState = FRAMEBUFFER_CURSOR_ENABLED) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CURSOR) = 0) then
      begin
@@ -11941,14 +11941,14 @@ begin
       {Set Update}
       Framebuffer.CursorUpdate:=True;
      end;
-    
+
     {Set Result}
     Result:=ERROR_SUCCESS;
-    
+
     {Get Text Buffer}
     Offset:=((Width + Skip) * (Source.Y - 1)) + (Source.X - 1);
-    TextBuffer:=PConsoleChar(PtrUInt(Buffer) + (Offset  * SizeOf(TConsoleChar))); 
-    
+    TextBuffer:=PConsoleChar(PtrUInt(Buffer) + (Offset  * SizeOf(TConsoleChar)));
+
     {Get Lines}
     CurrentY:=Dest.Y;
     for Line:=1 to Height do
@@ -11967,7 +11967,7 @@ begin
            9..16:Character:=PFontChars16(Font.CharData)[(Byte(TextBuffer.Ch) * Font.CharHeight) + Row];
            17..32:Character:=PFontChars32(Font.CharData)[(Byte(TextBuffer.Ch) * Font.CharHeight) + Row];
           end;
-          
+
           {Map Character}
           Inc(Offset,Font.CharWidth * Bytes);
           for Column:=Font.CharWidth - 1 downto 0 do
@@ -11981,57 +11981,57 @@ begin
              begin
               ColorDefaultToFormat(Console.Format,TextBuffer.Backcolor,Pointer(LineBuffer + Offset),Reverse);
              end;
-            
+
             Character:=Character shr 1;
            end;
-           
-          Inc(Offset,Font.CharWidth * Bytes); 
-          
+
+          Inc(Offset,Font.CharWidth * Bytes);
+
           Inc(TextBuffer);
          end;
-         
+
         {Framebuffer Write}
         Result:=FramebufferDeviceWrite(Framebuffer,Dest.X,CurrentY,LineBuffer,Font.CharWidth * Width,Flags);
         if Result <> ERROR_SUCCESS then Break;
-        
+
         Dec(TextBuffer,Width);
-        
+
         Inc(CurrentY);
        end;
-      
+
       {Update Text Buffer}
       Inc(TextBuffer,Width + Skip);
-     end; 
-    
+     end;
+
     {Check Cursor}
     if (Framebuffer.CursorState = FRAMEBUFFER_CURSOR_ENABLED) and ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_CURSOR) = 0) then
      begin
       {Clear Update}
       Framebuffer.CursorUpdate:=False;
-      
+
       {Show Cursor}
       FramebufferDeviceShowCursor(Framebuffer);
      end;
-    
+
     {Unlock Framebuffer}
     MutexUnlock(Framebuffer.Lock);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update Statistics}
     Inc(Console.PutCount);
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
 end;
-    
+
 {==============================================================================}
 
-function FramebufferConsoleCopyImage(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord; 
+function FramebufferConsoleCopyImage(Console:PConsoleDevice;const Source,Dest:TConsolePoint;Width,Height:LongWord):LongWord;
 {Implementation of ConsoleDeviceCopyImage API for FramebufferConsole}
 {Note: Not intended to be called directly by applications, use ConsoleDeviceCopyImage instead}
 var
@@ -12042,16 +12042,16 @@ begin
 
  {Check Width and Height}
  if (Width = 0) or (Height = 0) then Exit;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Copy Image');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Source}
@@ -12059,28 +12059,28 @@ begin
     if Source.Y >= Console.Height then Exit;
     if Source.X + Width > Console.Width then Exit;
     if Source.Y + Height > Console.Height then Exit;
- 
+
     {Check Dest}
     if Dest.X >= Console.Width then Exit;
     if Dest.Y >= Console.Height then Exit;
     if Dest.X + Width > Console.Width then Exit;
     if Dest.Y + Height > Console.Height then Exit;
-    
+
     {Get Framebuffer}
     Framebuffer:=PFramebufferConsole(Console).Framebuffer;
-    
+
     {Framebuffer Copy}
     Result:=FramebufferDeviceCopyRect(Framebuffer,Source.X,Source.Y,Dest.X,Dest.Y,Width,Height,FRAMEBUFFER_TRANSFER_DMA);
     if Result <> ERROR_SUCCESS then Exit;
- 
+
     {Update Statistics}
     Inc(Console.CopyCount);
-    
+
     {Get Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -12101,34 +12101,34 @@ begin
  {Check Caret}
  if Caret = nil then Exit;
  if Caret.Signature <> CARET_SIGNATURE then Exit;
- 
+
  {Get Console}
  Console:=Caret.Console;
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Caret Timer (X=' + IntToStr(Caret.X) + ' Y=' + IntToStr(Caret.Y) + ')');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Caret}
-    if Caret.Signature <> CARET_SIGNATURE then Exit;    
- 
+    if Caret.Signature <> CARET_SIGNATURE then Exit;
+
     {Check Visible}
     if Caret.Visible then
      begin
       {Get Framebuffer}
       Framebuffer:=PFramebufferConsole(Console).Framebuffer;
-      
+
       {Check Active}
       if Caret.Active then
        begin
         {Clear Caret}
         FramebufferDevicePutRect(Framebuffer,Caret.X,Caret.Y,Caret.Buffer,Caret.Width,Caret.Height,0,FRAMEBUFFER_TRANSFER_NONE);
-        
+
         {Clear Active}
         Caret.Active:=False;
        end
@@ -12136,17 +12136,17 @@ begin
        begin
         {Display Caret}
         FramebufferDevicePutRect(Framebuffer,Caret.X,Caret.Y,Caret.Output,Caret.Width,Caret.Height,0,FRAMEBUFFER_TRANSFER_NONE);
-        
+
         {Set Active}
         Caret.Active:=True;
        end;
-       
+
       {Enable Timer}
       if Caret.Blink then TimerEnableEx(Caret.Handle,CONSOLE_CURSOR_BLINK_RATE,TTimerEvent(FramebufferConsoleCaretTimer),Caret);
-     end;     
+     end;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end;
 end;
 
@@ -12232,7 +12232,7 @@ begin
  {}
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {Check Caret}
  if Caret = nil then Exit;
@@ -12303,20 +12303,20 @@ begin
      FRAMEBUFFER_DEPTH_8:begin
        PByte(Caret.Output + Offset)^:=Value;
        Inc(Offset,1);
-      end; 
+      end;
      FRAMEBUFFER_DEPTH_16:begin
        PWord(Caret.Output + Offset)^:=Value;
        Inc(Offset,2);
-      end; 
+      end;
      FRAMEBUFFER_DEPTH_24:begin
        PWord(Caret.Output + Offset)^:=Value;
        PByte(Caret.Output + Offset + 2)^:=(Value shr 16);
        Inc(Offset,3);
-      end; 
+      end;
      FRAMEBUFFER_DEPTH_32:begin
        PLongWord(Caret.Output + Offset)^:=Value;
        Inc(Offset,4);
-      end; 
+      end;
      else
       Exit;
     end;
@@ -12341,8 +12341,8 @@ begin
  {}
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {Check Caret}
  if Caret = nil then Exit;
  if Caret.Signature <> CARET_SIGNATURE then Exit;
@@ -12350,13 +12350,13 @@ begin
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Hide Caret (X=' + IntToStr(Caret.X) + ' Y=' + IntToStr(Caret.Y) + ')');
  {$ENDIF}
- 
+
  {Get Framebuffer}
  Framebuffer:=PFramebufferConsole(Console).Framebuffer;
- 
+
  {Clear Active}
  Caret.Active:=False;
- 
+
  {Hide Caret}
  FramebufferDevicePutRect(Framebuffer,Caret.X,Caret.Y,Caret.Buffer,Caret.Width,Caret.Height,0,FRAMEBUFFER_TRANSFER_NONE);
 end;
@@ -12372,25 +12372,25 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Width and Height}
  if (Width = 0) or (Height = 0) then Exit;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Add Caret (Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Create Caret}
     Caret:=PConsoleCaret(AllocMem(SizeOf(TConsoleCaret)));
     if Caret = nil then Exit;
- 
+
     {Update Caret}
     Caret.Signature:=CARET_SIGNATURE;
     Caret.X:=0;
@@ -12408,10 +12408,10 @@ begin
     Caret.Handle:=INVALID_HANDLE_VALUE;
     Caret.Active:=False;
     Caret.Image:=nil;
-    
+
     {Calculate size}
     Size:=(Width * Height * ColorFormatToBytes(Console.Format));
-    
+
     {Allocate Buffer}
     Caret.Buffer:=GetMem(Size);
     if Caret.Buffer = nil then
@@ -12419,36 +12419,36 @@ begin
       {Free Caret}
       FreeMem(Caret);
      end;
-    FillChar(Caret.Buffer^,Size,1); 
-     
-    {Allocate Output} 
+    FillChar(Caret.Buffer^,Size,1);
+
+    {Allocate Output}
     Caret.Output:=GetMem(Size);
     if Caret.Output = nil then
      begin
       {Free Buffer}
       FreeMem(Caret.Buffer);
-      
+
       {Free Caret}
       FreeMem(Caret);
      end;
-     
+
     {Create Timer}
     Caret.Handle:=TimerCreateEx(CONSOLE_CURSOR_BLINK_RATE,TIMER_STATE_DISABLED,TIMER_FLAG_WORKER,TTimerEvent(FramebufferConsoleCaretTimer),Caret);
     if Caret.Handle = INVALID_HANDLE_VALUE then
      begin
       {Delete Timer}
       TimerDestroy(Caret.Handle);
-      
+
       {Free Output}
       FreeMem(Caret.Output);
-      
+
       {Free Buffer}
       FreeMem(Caret.Buffer);
-      
+
       {Free Caret}
       FreeMem(Caret);
      end;
-     
+
     {Insert Caret}
     if CriticalSectionLock(Console.CaretLock) = ERROR_SUCCESS then
      begin
@@ -12464,10 +12464,10 @@ begin
          Console.CaretFirst.Prev:=Caret;
          Console.CaretFirst:=Caret;
         end;
-    
+
        {Increment Count}
        Inc(Console.CaretCount);
-       
+
        {Return Result}
        Result:=THandle(Caret);
       finally
@@ -12478,16 +12478,16 @@ begin
      begin
       {Free Output}
       FreeMem(Caret.Output);
-      
+
       {Free Buffer}
       FreeMem(Caret.Buffer);
-      
+
       {Free Caret}
       FreeMem(Caret);
-     end;  
+     end;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -12507,35 +12507,35 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Delete Caret');
  {$ENDIF}
- 
+
  {Get Caret}
  Caret:=PConsoleCaret(Handle);
  if Caret = nil then Exit;
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Caret}
-    if Caret.Signature <> CARET_SIGNATURE then Exit;    
- 
+    if Caret.Signature <> CARET_SIGNATURE then Exit;
+
     {Check Visible}
     if Caret.Visible then
      begin
       {Hide Caret}
       FramebufferConsoleHideCaret(Console,Caret);
      end;
-    
+
     {Remove Caret}
     if CriticalSectionLock(Console.CaretLock) = ERROR_SUCCESS then
      begin
@@ -12543,15 +12543,15 @@ begin
        {Check Caret}
        Result:=ERROR_NOT_FOUND;
        if ConsoleDeviceCaretCheck(Console,Caret) <> Caret then Exit;
-    
+
        {Delete Timer}
        if Caret.Handle <> INVALID_HANDLE_VALUE then
         begin
          TimerDestroy(Caret.Handle);
          Caret.Handle:=INVALID_HANDLE_VALUE;
         end;
-    
-       {Unlink Caret}    
+
+       {Unlink Caret}
        Prev:=Caret.Prev;
        Next:=Caret.Next;
        if Prev = nil then
@@ -12560,7 +12560,7 @@ begin
          if Next <> nil then
           begin
            Next.Prev:=nil;
-          end;       
+          end;
         end
        else
         begin
@@ -12568,19 +12568,19 @@ begin
          if Next <> nil then
           begin
            Next.Prev:=Prev;
-          end;       
-        end;     
-       
+          end;
+        end;
+
        {Decrement Count}
        Dec(Console.CaretCount);
-    
+
        {Update Caret}
        Caret.Signature:=0;
        Caret.Console:=nil;
-        
+
        {Free Caret}
        FreeMem(Caret);
-    
+
        {Return Result}
        Result:=ERROR_SUCCESS;
       finally
@@ -12590,10 +12590,10 @@ begin
     else
      begin
       Result:=ERROR_CAN_NOT_COMPLETE;
-     end; 
+     end;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -12614,44 +12614,44 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Update Caret (Handle=' + IntToHex(Handle,8) + ' X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Forecolor=' + IntToHex(Forecolor,8) + ' Backcolor=' + IntToHex(Backcolor,8) + ' Visible=' + BoolToStr(Visible,True) + ' Blink=' + BoolToStr(Blink,True) + ' Reverse=' + BoolToStr(Reverse,True) + ')');
  {$ENDIF}
- 
+
  {Get Caret}
  Caret:=PConsoleCaret(Handle);
  if Caret = nil then Exit;
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Caret}
-    if Caret.Signature <> CARET_SIGNATURE then Exit;    
+    if Caret.Signature <> CARET_SIGNATURE then Exit;
 
     {Check X, Y}
     if X >= Console.Width then Exit;
     if Y >= Console.Height then Exit;
     if X + Caret.Width > Console.Width then Exit;
     if Y + Caret.Height > Console.Height then Exit;
-    
+
     {Check Visible}
     VisibleChange:=Visible <> Caret.Visible;
     Change:=VisibleChange;
-    
+
     {Check X}
     if not Change then Change:=X <> Caret.X;
-    
+
     {Check Y}
     if not Change then Change:=Y <> Caret.Y;
-    
+
     {Check Forecolor}
     if not Change then Change:=Forecolor <> Caret.Forecolor;
 
@@ -12661,7 +12661,7 @@ begin
     {Check Blink}
     BlinkChange:=Blink <> Caret.Blink;
     if not Change then Change:=BlinkChange;
-    
+
     {Check Reverse}
     if not Change then Change:=Reverse <> Caret.Reverse;
 
@@ -12673,8 +12673,8 @@ begin
        begin
         {Hide Caret}
         FramebufferConsoleHideCaret(Console,Caret);
-       end; 
-       
+       end;
+
       {Update Properties}
       Caret.Visible:=Visible;
       Caret.X:=X + Caret.OffsetX;
@@ -12683,14 +12683,14 @@ begin
       Caret.Backcolor:=Backcolor;
       Caret.Blink:=Blink;
       Caret.Reverse:=Reverse;
-      
+
       {Check Visible}
       if Visible then
        begin
         {Show Caret}
         FramebufferConsoleShowCaret(Console,Caret);
-       end; 
-       
+       end;
+
       {Check Visible or Blink Change}
       if VisibleChange or BlinkChange then
        begin
@@ -12707,12 +12707,12 @@ begin
          end;
        end;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -12728,20 +12728,20 @@ function FramebufferConsoleGetPosition(Console:PConsoleDevice;Position:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Position}
  {if Position < CONSOLE_POSITION_FULL then Exit;}
  if (Position <> CONSOLE_POSITION_FULLSCREEN) and (Position > CONSOLE_POSITION_BOTTOMRIGHT) then Exit;
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'FramebufferConsole: Console Get Position');
  {$ENDIF}
- 
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Position}
@@ -12752,7 +12752,7 @@ begin
        Y1:=PFramebufferConsole(Console).DesktopY + Console.Borderwidth;
        X2:=(PFramebufferConsole(Console).DesktopX + (PFramebufferConsole(Console).DesktopWidth - 1)) - Console.Borderwidth;
        Y2:=(PFramebufferConsole(Console).DesktopY + (PFramebufferConsole(Console).DesktopHeight - 1)) - Console.Borderwidth;
-       
+
        Result:=ERROR_SUCCESS;
       end;
      CONSOLE_POSITION_TOP:begin
@@ -12761,30 +12761,30 @@ begin
        Y1:=PFramebufferConsole(Console).DesktopY + Console.Borderwidth;
        X2:=(PFramebufferConsole(Console).DesktopX + (PFramebufferConsole(Console).DesktopWidth - 1)) - Console.Borderwidth;
        Y2:=(PFramebufferConsole(Console).DesktopY + ((PFramebufferConsole(Console).DesktopHeight div 2) - 1)) - Console.Borderwidth;
-       
+
        Result:=ERROR_SUCCESS;
       end;
-     CONSOLE_POSITION_BOTTOM:begin 
+     CONSOLE_POSITION_BOTTOM:begin
        {Bottom Window}
        X1:=PFramebufferConsole(Console).DesktopX + Console.Borderwidth;
        Y1:=PFramebufferConsole(Console).DesktopY + ((PFramebufferConsole(Console).DesktopHeight div 2) - 1) + Console.Borderwidth;
        X2:=(PFramebufferConsole(Console).DesktopX + (PFramebufferConsole(Console).DesktopWidth - 1)) - Console.Borderwidth;
        Y2:=(PFramebufferConsole(Console).DesktopY + (PFramebufferConsole(Console).DesktopHeight - 1)) - Console.Borderwidth;
-       
+
        Result:=ERROR_SUCCESS;
       end;
-     CONSOLE_POSITION_LEFT:begin  
+     CONSOLE_POSITION_LEFT:begin
        {Left Window}
        X1:=PFramebufferConsole(Console).DesktopX + Console.Borderwidth;
        Y1:=PFramebufferConsole(Console).DesktopY + Console.Borderwidth;
        X2:=(PFramebufferConsole(Console).DesktopX + ((PFramebufferConsole(Console).DesktopWidth div 2) - 1)) - Console.Borderwidth;
        Y2:=(PFramebufferConsole(Console).DesktopY + (PFramebufferConsole(Console).DesktopHeight - 1)) - Console.Borderwidth;
-       
+
        Result:=ERROR_SUCCESS;
       end;
-     CONSOLE_POSITION_RIGHT:begin 
+     CONSOLE_POSITION_RIGHT:begin
        {Right Window}
-       X1:=PFramebufferConsole(Console).DesktopX + ((PFramebufferConsole(Console).DesktopWidth div 2) - 1) + Console.Borderwidth; 
+       X1:=PFramebufferConsole(Console).DesktopX + ((PFramebufferConsole(Console).DesktopWidth div 2) - 1) + Console.Borderwidth;
        Y1:=PFramebufferConsole(Console).DesktopY + Console.Borderwidth;
        X2:=(PFramebufferConsole(Console).DesktopX + (PFramebufferConsole(Console).DesktopWidth - 1)) - Console.Borderwidth;
        Y2:=(PFramebufferConsole(Console).DesktopY + (PFramebufferConsole(Console).DesktopHeight - 1)) - Console.Borderwidth;
@@ -12797,16 +12797,16 @@ begin
        Y1:=PFramebufferConsole(Console).DesktopY + Console.Borderwidth;
        X2:=(PFramebufferConsole(Console).DesktopX + ((PFramebufferConsole(Console).DesktopWidth div 2) - 1)) - Console.Borderwidth;
        Y2:=(PFramebufferConsole(Console).DesktopY + ((PFramebufferConsole(Console).DesktopHeight div 2) - 1)) - Console.Borderwidth;
-       
+
        Result:=ERROR_SUCCESS;
       end;
-     CONSOLE_POSITION_TOPRIGHT:begin 
+     CONSOLE_POSITION_TOPRIGHT:begin
        {Top Right Window}
-       X1:=PFramebufferConsole(Console).DesktopX + ((PFramebufferConsole(Console).DesktopWidth div 2) - 1) + Console.Borderwidth; 
+       X1:=PFramebufferConsole(Console).DesktopX + ((PFramebufferConsole(Console).DesktopWidth div 2) - 1) + Console.Borderwidth;
        Y1:=PFramebufferConsole(Console).DesktopY + Console.Borderwidth;
        X2:=(PFramebufferConsole(Console).DesktopX + (PFramebufferConsole(Console).DesktopWidth - 1)) - Console.Borderwidth;
        Y2:=(PFramebufferConsole(Console).DesktopY + ((PFramebufferConsole(Console).DesktopHeight div 2) - 1)) - Console.Borderwidth;
-       
+
        Result:=ERROR_SUCCESS;
       end;
      CONSOLE_POSITION_BOTTOMLEFT:begin
@@ -12815,16 +12815,16 @@ begin
        Y1:=PFramebufferConsole(Console).DesktopY + ((PFramebufferConsole(Console).DesktopHeight div 2) - 1) + Console.Borderwidth;
        X2:=(PFramebufferConsole(Console).DesktopX + ((PFramebufferConsole(Console).DesktopWidth div 2) - 1)) - Console.Borderwidth;
        Y2:=(PFramebufferConsole(Console).DesktopY + (PFramebufferConsole(Console).DesktopHeight - 1)) - Console.Borderwidth;
-       
+
        Result:=ERROR_SUCCESS;
       end;
      CONSOLE_POSITION_BOTTOMRIGHT:begin
        {Bottom Right Window}
-       X1:=PFramebufferConsole(Console).DesktopX + ((PFramebufferConsole(Console).DesktopWidth div 2) - 1) + Console.Borderwidth; 
+       X1:=PFramebufferConsole(Console).DesktopX + ((PFramebufferConsole(Console).DesktopWidth div 2) - 1) + Console.Borderwidth;
        Y1:=PFramebufferConsole(Console).DesktopY + ((PFramebufferConsole(Console).DesktopHeight div 2) - 1) + Console.Borderwidth;
        X2:=(PFramebufferConsole(Console).DesktopX + (PFramebufferConsole(Console).DesktopWidth - 1)) - Console.Borderwidth;
        Y2:=(PFramebufferConsole(Console).DesktopY + (PFramebufferConsole(Console).DesktopHeight - 1)) - Console.Borderwidth;
-       
+
        Result:=ERROR_SUCCESS;
       end;
      CONSOLE_POSITION_FULLSCREEN:begin
@@ -12833,13 +12833,13 @@ begin
        Y1:=0;
        X2:=Console.Width - 1;
        Y2:=Console.Height - 1;
-       
+
        Result:=ERROR_SUCCESS;
-      end;     
+      end;
     end;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -12868,26 +12868,26 @@ end;
 
 {==============================================================================}
 
-function ConsoleDeviceSetDefault(Console:PConsoleDevice):LongWord; 
+function ConsoleDeviceSetDefault(Console:PConsoleDevice):LongWord;
 {Set the current default console device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(ConsoleDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Console}
     if ConsoleDeviceCheck(Console) <> Console then Exit;
-    
+
     {Set Console Default}
     ConsoleDeviceDefault:=Console;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -12910,11 +12910,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(ConsoleDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -12929,7 +12929,7 @@ begin
         Result:=Console;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -12952,7 +12952,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
@@ -12960,7 +12960,7 @@ begin
  {Check Caret}
  if Caret = nil then Exit;
  if Caret.Signature <> CARET_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(Console.CaretLock) = ERROR_SUCCESS then
   begin
@@ -12975,14 +12975,14 @@ begin
         Result:=Caret;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
    finally
     CriticalSectionUnlock(Console.CaretLock);
    end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -12992,7 +12992,7 @@ function ConsoleTypeToString(ConsoleType:LongWord):String;
 begin
  {}
  Result:='CONSOLE_TYPE_UNKNOWN';
- 
+
  if ConsoleType <= CONSOLE_TYPE_MAX then
   begin
    Result:=CONSOLE_TYPE_NAMES[ConsoleType];
@@ -13006,7 +13006,7 @@ function ConsoleStateToString(ConsoleState:LongWord):String;
 begin
  {}
  Result:='CONSOLE_STATE_UNKNOWN';
- 
+
  if ConsoleState <= CONSOLE_STATE_MAX then
   begin
    Result:=CONSOLE_STATE_NAMES[ConsoleState];
@@ -13019,7 +13019,7 @@ function ConsoleDeviceGetDefaultFont:TFontHandle;
 {Get the default console font}
 begin
  {}
- if (CONSOLE_DEFAULT_FONT = INVALID_HANDLE_VALUE) and (Length(CONSOLE_DEFAULT_FONT_NAME) <> 0 ) then 
+ if (CONSOLE_DEFAULT_FONT = INVALID_HANDLE_VALUE) and (Length(CONSOLE_DEFAULT_FONT_NAME) <> 0 ) then
   begin
    CONSOLE_DEFAULT_FONT:=FontFindByName(CONSOLE_DEFAULT_FONT_NAME);
    if CONSOLE_DEFAULT_FONT = INVALID_HANDLE_VALUE then
@@ -13027,7 +13027,7 @@ begin
      CONSOLE_DEFAULT_FONT:=FontFindByDescription(CONSOLE_DEFAULT_FONT_NAME);
     end;
   end;
-  
+
  Result:=CONSOLE_DEFAULT_FONT;
 end;
 
@@ -13049,7 +13049,7 @@ begin
   CONSOLE_POSITION_BOTTOMLEFT:Result:='CONSOLE_POSITION_BOTTOMLEFT';
   CONSOLE_POSITION_BOTTOMRIGHT:Result:='CONSOLE_POSITION_BOTTOMRIGHT';
   CONSOLE_POSITION_FULLSCREEN:Result:='CONSOLE_POSITION_FULLSCREEN';
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13061,7 +13061,7 @@ var
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {Check Console}
  if ConsoleDeviceFindByDevice(@Framebuffer.Device) = nil then
   begin
@@ -13071,7 +13071,7 @@ begin
     begin
      {Update Console}
      {Device}
-     Console.Console.Device.DeviceBus:=Framebuffer.Device.DeviceBus; 
+     Console.Console.Device.DeviceBus:=Framebuffer.Device.DeviceBus;
      Console.Console.Device.DeviceType:=CONSOLE_TYPE_FRAMEBUFFER;
      Console.Console.Device.DeviceFlags:=CONSOLE_FLAG_BLINK_CARET or CONSOLE_FLAG_COLOR or CONSOLE_FLAG_FONT or CONSOLE_FLAG_FULLSCREEN or CONSOLE_FLAG_TEXT_CARET;
      Console.Console.Device.DeviceData:=@Framebuffer.Device;
@@ -13104,7 +13104,7 @@ begin
      Console.Framebuffer:=Framebuffer;
      Console.DesktopOffset:=FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET;
      Console.DesktopColor:=FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPCOLOR;
-     
+
      {Setup Flags}
      if CONSOLE_LINE_WRAP then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_LINE_WRAP;
      if CONSOLE_AUTO_SCROLL then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_AUTO_SCROLL;
@@ -13116,7 +13116,7 @@ begin
      if CONSOLE_DMA_CLEAR then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_CLEAR;
      if CONSOLE_DMA_SCROLL then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_DMA_SCROLL;
      if (Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_SWAP) <> 0 then Console.Console.Device.DeviceFlags:=Console.Console.Device.DeviceFlags or CONSOLE_FLAG_COLOR_REVERSE;
-     
+
      {Register Console}
      Status:=ConsoleDeviceRegister(@Console.Console);
      if Status = ERROR_SUCCESS then
@@ -13134,7 +13134,7 @@ begin
          ConsoleDeviceDestroy(@Console.Console);
         end;
       end
-     else 
+     else
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Console: Failed to register new framebuffer console device: ' + ErrorToString(Status));
 
@@ -13146,7 +13146,7 @@ begin
     begin
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Console: Failed to create new framebuffer console device');
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -13158,7 +13158,7 @@ var
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {Check Console}
  Console:=PFramebufferConsole(ConsoleDeviceFindByDevice(@Framebuffer.Device));
  if Console <> nil then
@@ -13176,15 +13176,15 @@ begin
        if Status <> ERROR_SUCCESS then
         begin
          if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Console: Failed to destroy framebuffer console device');
-        end; 
+        end;
       end
      else
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Console: Failed to deregister framebuffer console device: ' + ErrorToString(Status));
-      end;      
+      end;
     end
    else
-    begin   
+    begin
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Console: Failed to close framebuffer console device: ' + ErrorToString(Status));
     end;
   end;
@@ -13196,21 +13196,21 @@ function ConsoleFramebufferDeviceEnum(Framebuffer:PFramebufferDevice;Data:Pointe
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: Framebuffer device enumeration');
  {$ENDIF}
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit; 
- 
+ if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+
  {Check Autocreate}
  if FRAMEBUFFER_CONSOLE_AUTOCREATE then
   begin
    {Add Framebuffer}
    Result:=ConsoleFramebufferDeviceAdd(Framebuffer);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -13221,41 +13221,41 @@ var
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {$IFDEF CONSOLE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Console: Framebuffer device notification (Notification=' + NotificationToString(Notification) + ')');
  {$ENDIF}
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Get Framebuffer}
  Framebuffer:=PFramebufferDevice(Device);
- 
+
  {Check Notification}
  if (Notification and DEVICE_NOTIFICATION_REGISTER) <> 0 then
   begin
    {Check Framebuffer}
-   if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit; 
-   
-   {Check Autocreate}
-   if FRAMEBUFFER_CONSOLE_AUTOCREATE then
-    begin
-     {Add Framebuffer}
-     Result:=ConsoleFramebufferDeviceAdd(Framebuffer);
-    end; 
-  end
- else if (Notification and DEVICE_NOTIFICATION_ENABLE) <> 0 then
-  begin
-   {Check Framebuffer}
-   if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit; 
+   if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
 
    {Check Autocreate}
    if FRAMEBUFFER_CONSOLE_AUTOCREATE then
     begin
      {Add Framebuffer}
      Result:=ConsoleFramebufferDeviceAdd(Framebuffer);
-    end; 
+    end;
+  end
+ else if (Notification and DEVICE_NOTIFICATION_ENABLE) <> 0 then
+  begin
+   {Check Framebuffer}
+   if Framebuffer.FramebufferState <> FRAMEBUFFER_STATE_ENABLED then Exit;
+
+   {Check Autocreate}
+   if FRAMEBUFFER_CONSOLE_AUTOCREATE then
+    begin
+     {Add Framebuffer}
+     Result:=ConsoleFramebufferDeviceAdd(Framebuffer);
+    end;
   end
  else if (Notification and DEVICE_NOTIFICATION_DEREGISTER) <> 0 then
   begin
@@ -13279,11 +13279,11 @@ function ConsoleWindowGetCount(Console:PConsoleDevice):LongWord; inline;
 begin
  {}
  Result:=0;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Get Window Count}
  Result:=Console.WindowCount;
 end;
@@ -13297,14 +13297,14 @@ function ConsoleWindowGetActive(Console:PConsoleDevice):TWindowHandle; inline;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Window Active}
  if Console.WindowActive = nil then Exit;
- 
+
  {Get Window Active}
  Result:=TWindowHandle(Console.WindowActive);
 end;
@@ -13318,11 +13318,11 @@ function ConsoleWindowGetDefault(Console:PConsoleDevice):TWindowHandle; inline;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Get Window Default}
  Result:=Console.WindowDefault;
 end;
@@ -13338,14 +13338,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
@@ -13358,10 +13358,10 @@ begin
    try
     {Check Window}
     if ConsoleWindowCheck(Console,Window) <> Window then Exit;
-    
+
     {Set Window Default}
     Console.WindowDefault:=Handle;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -13386,7 +13386,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
@@ -13394,7 +13394,7 @@ begin
  {Check Window}
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(Console.WindowLock) = ERROR_SUCCESS then
   begin
@@ -13409,14 +13409,14 @@ begin
         Result:=Window;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
    finally
     CriticalSectionUnlock(Console.WindowLock);
    end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -13426,7 +13426,7 @@ function ConsoleWindowStateToString(WindowState:LongWord):String;
 begin
  {}
  Result:='WINDOW_STATE_UNKNOWN';
- 
+
  if WindowState <= WINDOW_STATE_MAX then
   begin
    Result:=WINDOW_STATE_NAMES[WindowState];
@@ -13440,7 +13440,7 @@ function ConsoleWindowModeToString(WindowMode:LongWord):String;
 begin
  {}
  Result:='WINDOW_MODE_UNKNOWN';
- 
+
  if WindowMode <= WINDOW_MODE_MAX then
   begin
    Result:=WINDOW_MODE_NAMES[WindowMode];
@@ -13461,7 +13461,7 @@ begin
      WINDOW_DEFAULT_FONT:=FontFindByDescription(WINDOW_DEFAULT_FONT_NAME);
     end;
   end;
-  
+
  Result:=WINDOW_DEFAULT_FONT;
 end;
 
@@ -13479,13 +13479,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if Handle = INVALID_HANDLE_VALUE then
   begin
    {Stop Redirection}
    TextIOWriteCharHandler:=nil;
    TextIOWriteBufferHandler:=nil;
-   
+
    ConsoleTextIOOutputHandle:=INVALID_HANDLE_VALUE;
   end
  else
@@ -13494,14 +13494,14 @@ begin
    Window:=PConsoleWindow(Handle);
    if Window = nil then Exit;
    if Window.Signature <> WINDOW_SIGNATURE then Exit;
-   
+
    {Start Redirection}
    TextIOWriteCharHandler:=SysTextIOWriteChar;
    TextIOWriteBufferHandler:=nil;
-  
+
    ConsoleTextIOOutputHandle:=Handle;
-  end;  
-  
+  end;
+
  Result:=True;
 end;
 
@@ -13510,9 +13510,9 @@ end;
 
 initialization
  ConsoleInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

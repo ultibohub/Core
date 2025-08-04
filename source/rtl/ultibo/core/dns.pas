@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
- 
- 
+
+
 References
 ==========
 
- 
+
 DNS
 ===
 
@@ -35,7 +35,7 @@ DNS
        Winsock2 functions
 
        See RFC 1035 Section 4 for details
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -57,7 +57,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,SysUtils,Classes,Network,Tr
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-  
+
 {==============================================================================}
 const
  {DNS specific constants}
@@ -92,7 +92,7 @@ const
  DNS_OPCODE_UNKNOWN       = 3;
  DNS_OPCODE_NOTIFY        = 4;
  DNS_OPCODE_UPDATE        = 5;
- 
+
  {DNS Response Codes}
  DNS_RESPONSE_NO_ERROR        = 0;
  DNS_RESPONSE_FORMAT_ERROR    = 1;
@@ -176,7 +176,7 @@ const
  DNS_CLASS_IN       = DNS_CLASS_INTERNET;  // ARPA internet class
  DNS_CLASS_CS       = DNS_CLASS_CSNET;
  DNS_CLASS_WILD     = DNS_CLASS_ANY;       // wildcard for several of the classifications
- 
+
  {DNS Message Compression}
  DNS_POINTER_MASK = $C0;  //mask to indicate pointer to previously used name
 
@@ -218,14 +218,14 @@ type
   DataLength:Word;    // length of data field
   RecordData:array[0..MAX_DNS_MESSAGE - 1] of Byte; // data field
  end;
- 
+
  PDNSClientName = ^TDNSClientName;
- TDNSClientName = array[0..MAX_NAME_SIZE - 1] of Char; 
- 
+ TDNSClientName = array[0..MAX_NAME_SIZE - 1] of Char;
+
  PDNSClientData = ^TDNSClientData;
  TDNSClientData = record {Used for TLS Data}
   {Host Ent}
-  HostEnt:THostEnt;                  
+  HostEnt:THostEnt;
   HostEntName:TDNSClientName;
   HostAliasesPtr:array[0..MAX_NAME_ALIASES] of PChar;            // One extra for terminating null pointer
   HostAliases:array[0..MAX_NAME_ALIASES - 1] of TDNSClientName;
@@ -250,7 +250,7 @@ type
   ProtoAliasesPtr:array[0..MAX_NAME_ALIASES] of PChar;           // One extra for terminating null pointer
   ProtoAliases:array[0..MAX_NAME_ALIASES - 1] of TDNSClientName;
  end;
- 
+
 {==============================================================================}
 type
  {DNS specific classes}
@@ -258,7 +258,7 @@ type
    constructor Create(AProtocol:TNetworkProtocol);
    destructor Destroy; override;
   private
-   {Internal Variables} 
+   {Internal Variables}
    FTlsIndex:LongWord;
 
    {Status Variables}
@@ -274,7 +274,7 @@ type
    function NetworkEntryToNetEnt(NetworkEntry:TNetworkEntry):PNetEnt;
    function ServEntryToServEnt(ServEntry:TServEntry):PServEnt;
    function ProtoEntryToProtoEnt(ProtoEntry:TProtoEntry):PProtoEnt;
-   
+
    function AddressEntryToAddrInfo(AddressEntry:TAddressEntry;AFlags,AFamily,AProtocol,ASocketType:LongInt;APort:Word;AFirst:Boolean):PAddrInfo;
    function HostEntryToAddrInfo(HostEntry:THostEntry;AFlags,AFamily,AProtocol,ASocketType:LongInt;APort:Word;AFirst:Boolean):PAddrInfo;
 
@@ -299,7 +299,7 @@ type
 
    function In6AddrToName(const AAddress:TIn6Addr):String;
    function NameToIn6Addr(const AName:String):TIn6Addr;
-   
+
    function GetDNSMessageSize(AMessage:PDNSMessage):Integer;
 
    function GetDNSNameSize(AMessage:PDNSMessage;AOffset:Word):Word;
@@ -316,7 +316,7 @@ type
    function HandleDNSResponse(AMessage:PDNSMessage;AFamily,AIdentifier:Word):Boolean;
 
    function PerformDNSRequest(AData:Pointer;ALength,AFamily,AType,AClass:Word):Boolean;
-   
+
    function SendDNSQuery(ASocket:TProtocolSocket;AServer:PSockAddr;AServerLength:Integer;AData:Pointer;ALength,AFamily,AType,AClass,AIdentifier:Word):Boolean;
    function RecvDNSResponse(ASocket:TProtocolSocket;AFamily,AType,AClass,AIdentifier:Word):Boolean;
 
@@ -354,14 +354,14 @@ type
    function StartClient:Boolean; override;
    function StopClient:Boolean; override;
  end;
- 
+
  //TDNSThread = class(TClientThread)  {DNS client} //To Do
- 
+
 {==============================================================================}
 var
  {DNS specific variables}
  DNSClient:TDNSClient;
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure DNSInit;
@@ -370,7 +370,7 @@ function DNSStop:LongWord;
 
 {==============================================================================}
 {DNS Functions}
-  
+
 {==============================================================================}
 {DNS Helper Functions}
 
@@ -385,7 +385,7 @@ var
  {DNS specific variables}
  DNSInitialized:Boolean;
  DNSStarted:Boolean;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TDNSClient}
@@ -404,10 +404,10 @@ begin
  WriterLock;
  try
   TlsFree(FTlsIndex);
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end;  
+ end;
 end;
 
 {==============================================================================}
@@ -422,7 +422,7 @@ begin
   begin
    {Create Client Data}
    if not CreateClientData then Exit;
-   
+
    {Get TLS Value}
    Result:=TlsGetValue(FTlsIndex);
   end;
@@ -446,11 +446,11 @@ begin
    {Allocate TLS Value}
    ClientData:=AllocMem(SizeOf(TDNSClientData));
    if ClientData = nil then Exit;
-   
+
    {Set TLS Value}
    if not TlsSetValue(FTlsIndex,ClientData) then Exit;
   end;
- 
+
  {Setup Client Data}
  {Host Ent}
  FillChar(ClientData.HostEnt,SizeOf(THostEnt),0);
@@ -467,7 +467,7 @@ begin
   begin
    ClientData.HostAddrListPtr[Count]:=@ClientData.HostAddrList[Count];
    ClientData.HostAddr6ListPtr[Count]:=@ClientData.HostAddr6List[Count];
-  end; 
+  end;
  ClientData.HostAddrListPtr[MAX_HOST_ALIASES]:=nil;
  ClientData.HostAddr6ListPtr[MAX_HOST_ALIASES]:=nil;
  ClientData.HostEnt.h_name:=@ClientData.HostEntName;
@@ -519,9 +519,9 @@ function TDNSClient.GetLastAddrInfo(AAddrInfo:PAddrInfo):PAddrInfo;
 begin
  {}
  Result:=AAddrInfo;
- 
+
  if Result = nil then Exit;
- 
+
  while Result.ai_next <> nil do
   begin
    Result:=Result.ai_next;
@@ -544,11 +544,11 @@ begin
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: AddressEntryToHostEnt (Type = ' + IntToStr(AddressEntry.AddressType) + ' Family = ' + IntToStr(AddressEntry.Family) + ' Name = ' + AName + ' Count = ' + IntToStr(ACount) + ')');
  {$ENDIF}
- 
+
  {Get Client Data}
  ClientData:=GetClientData;
  if ClientData = nil then Exit;
- 
+
  {Check Address Type}
  case AddressEntry.AddressType of
   ADDRESS_TYPE_PRIMARY,
@@ -574,7 +574,7 @@ begin
 
          ClientData.HostEnt.h_addr_list:=@ClientData.HostAddrListPtr;
         end;
-       AF_INET6:begin 
+       AF_INET6:begin
          {IPv6}
          ClientData.HostAddr6List[ACount - 1]:=TIP6AddressEntry(AddressEntry).Address;
          ClientData.HostAddr6ListPtr[ACount - 1]:=@ClientData.HostAddr6List[ACount - 1];
@@ -599,7 +599,7 @@ begin
 
          ClientData.HostEnt.h_addr_list:=@ClientData.HostAddrListPtr;
         end;
-       AF_INET6:begin 
+       AF_INET6:begin
          {IPv6}
          ClientData.HostAddr6List[ACount - 1]:=TIP6AddressEntry(AddressEntry).Address;
          ClientData.HostAddr6ListPtr[ACount - 1]:=@ClientData.HostAddr6List[ACount - 1];
@@ -608,10 +608,10 @@ begin
          ClientData.HostEnt.h_addr_list:=@ClientData.HostAddr6ListPtr;
         end;
       end;
-      
+
       {Return Result}
       Result:=@ClientData.HostEnt;
-     end;     
+     end;
    end;
  end;
 end;
@@ -635,11 +635,11 @@ begin
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: HostEntryToHostEnt (Name = ' + HostEntry.Name  + ')');
  {$ENDIF}
- 
+
  {Get Client Data}
  ClientData:=GetClientData;
  if ClientData = nil then Exit;
- 
+
  {Create Host Ent}
  ClientData.HostEnt.h_addrtype:=HostEntry.Family;
  ClientData.HostEnt.h_length:=HostEntry.Length;
@@ -669,14 +669,14 @@ begin
        begin
         ClientData.HostAddrList[Count]:=InAddrToNetwork(TIPHostEntry(HostEntry).Addresses[Index]);
         ClientData.HostAddrListPtr[Count]:=@ClientData.HostAddrList[Count];
-       
+
         Inc(Count);
        end;
      end;
     ClientData.HostAddrListPtr[Count]:=nil;
     ClientData.HostEnt.h_addr_list:=@ClientData.HostAddrListPtr;
    end;
-  AF_INET6:begin 
+  AF_INET6:begin
     {IPv6}
     Count:=0;
     for Index:=0 to MAX_HOST_ALIASES - 1 do
@@ -685,7 +685,7 @@ begin
        begin
         ClientData.HostAddr6List[Count]:=TIP6HostEntry(HostEntry).Addresses[Count];
         ClientData.HostAddr6ListPtr[Count]:=@ClientData.HostAddr6List[Count];
-        
+
         Inc(Count);
        end;
      end;
@@ -716,11 +716,11 @@ begin
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: NetworkEntryToNetEnt (Name = ' + NetworkEntry.Name  + ')');
  {$ENDIF}
- 
+
  {Get Client Data}
  ClientData:=GetClientData;
  if ClientData = nil then Exit;
- 
+
  {Create Net Ent}
  ClientData.NetEnt.n_addrtype:=NetworkEntry.Family;
  StrLCopy(ClientData.NetEntName,PChar(NetworkEntry.Name),MAX_NAME_SIZE);
@@ -744,7 +744,7 @@ begin
     {IPv4}
     ClientData.NetEnt.n_net:=LongInt(InAddrToNetwork(TIPNetworkEntry(NetworkEntry).Network));
    end;
-  AF_INET6:begin 
+  AF_INET6:begin
     {IPv6}
     {Not Supported}
    end;
@@ -772,11 +772,11 @@ begin
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: ServEntryToServEnt (Name = ' + ServEntry.Name  + ')');
  {$ENDIF}
- 
+
  {Get Client Data}
  ClientData:=GetClientData;
  if ClientData = nil then Exit;
- 
+
  {Create Serv Ent}
  ClientData.ServEnt.s_port:=WordNtoBE(ServEntry.Port);
  StrLCopy(ClientData.ServEntName,PChar(ServEntry.Name),MAX_NAME_SIZE);
@@ -819,11 +819,11 @@ begin
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: ProtoEntryToProtoEnt (Name = ' + ProtoEntry.Name  + ')');
  {$ENDIF}
- 
+
  {Get Client Data}
  ClientData:=GetClientData;
  if ClientData = nil then Exit;
- 
+
  {Create Proto Ent}
  ClientData.ProtoEnt.p_proto:=ProtoEntry.Number;
  StrLCopy(ClientData.ProtoEntName,PChar(ProtoEntry.Name),MAX_NAME_SIZE);
@@ -896,7 +896,7 @@ begin
      PSockAddr6(AddrInfo.ai_addr).sin6_family:=AFamily;
      PSockAddr6(AddrInfo.ai_addr).sin6_port:=WordNtoBE(APort);
      PSockAddr6(AddrInfo.ai_addr).sin6_addr:=TIP6AddressEntry(AddressEntry).Address;
-    end; 
+    end;
   end;
 
   {Check Canonical Name}
@@ -916,7 +916,7 @@ begin
   Result:=AddrInfo;
  finally
   if Result = nil then FreeAddrInfo(AddrInfo);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -986,7 +986,7 @@ begin
         end;
       end;
     end;
-   AF_INET6:begin 
+   AF_INET6:begin
      {IPv6}
      for Index:=0 to MAX_HOST_ALIASES - 1 do
       begin
@@ -1032,7 +1032,7 @@ begin
   end;
  finally
   if Result = nil then FreeAddrInfo(NextInfo);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1074,7 +1074,7 @@ begin
         {Create Address Info}
         AddrInfo:=AddressEntryToAddrInfo(IPAddressEntry,AFlags,AFamily,AProtocol,ASocketType,APort,(Result = nil));
         if AddrInfo = nil then Exit;
- 
+
         {Check Last}
         LastInfo:=GetLastAddrInfo(Result);
         if LastInfo = nil then Result:=AddrInfo else LastInfo.ai_next:=AddrInfo;
@@ -1097,7 +1097,7 @@ begin
         {Create Address Info}
         AddrInfo:=AddressEntryToAddrInfo(IPAddressEntry,AFlags,AFamily,AProtocol,ASocketType,APort,(Result = nil));
         if AddrInfo = nil then Exit;
- 
+
         {Check Last}
         LastInfo:=GetLastAddrInfo(Result);
         if LastInfo = nil then Result:=AddrInfo else LastInfo.ai_next:=AddrInfo;
@@ -1152,7 +1152,7 @@ begin
         {Create Address Info}
         AddrInfo:=AddressEntryToAddrInfo(IPAddressEntry,AFlags,AFamily,AProtocol,ASocketType,APort,(Result = nil));
         if AddrInfo = nil then Exit;
- 
+
         {Check Last}
         LastInfo:=GetLastAddrInfo(Result);
         if LastInfo = nil then Result:=AddrInfo else LastInfo.ai_next:=AddrInfo;
@@ -1175,7 +1175,7 @@ begin
         {Create Address Info}
         AddrInfo:=AddressEntryToAddrInfo(IPAddressEntry,AFlags,AFamily,AProtocol,ASocketType,APort,(Result = nil));
         if AddrInfo = nil then Exit;
- 
+
         {Check Last}
         LastInfo:=GetLastAddrInfo(Result);
         if LastInfo = nil then Result:=AddrInfo else LastInfo.ai_next:=AddrInfo;
@@ -1244,7 +1244,7 @@ begin
       Result:=HostEntry;
      end;
    end;
-   
+
   {Check Result}
   if Result = nil then
    begin
@@ -1283,7 +1283,7 @@ function TDNSClient.ResolveHostByAddress(AAddress:Pointer;ALength,AFamily:Intege
 {Performs a DNS_TYPE_PTR Query for the Domain name of the Address supplied}
 {Note: Address will be in network order where applicable}
 {Will lock the returned host entry for read access, caller must unlock when finished}
-var 
+var
  HostEntry:THostEntry;
  IPTransport:TIPTransport;
  IP6Transport:TIP6Transport;
@@ -1341,7 +1341,7 @@ begin
         Result:=IPTransport.GetHostByAddress(InAddrToHost(PInAddr(AAddress)^),True);
        end;
      end;
-    
+
     if (AFamily = AF_INET6) and (ALength >= SizeOf(TIn6Addr)) and (IP6Transport <> nil) then
      begin
       {IPv6}
@@ -1352,7 +1352,7 @@ begin
         Result:=IP6Transport.GetHostByAddress(PIn6Addr(AAddress)^,True);
        end;
      end;
-   end; 
+   end;
  finally
   if IPTransport <> nil then IPTransport.ReaderUnlock;
   if IP6Transport <> nil then IP6Transport.ReaderUnlock;
@@ -1360,7 +1360,7 @@ begin
 end;
 
 {==============================================================================}
-   
+
 function TDNSClient.ResolveHostName:String;
 begin
  {}
@@ -1372,10 +1372,10 @@ begin
 end;
 
 {==============================================================================}
-   
+
 function TDNSClient.ResolveServByName(const AName,AProto:String):TServEntry;
 {Will lock the returned service entry for read access, caller must unlock when finished}
-var 
+var
  ServEntry:TServEntry;
  IPTransport:TIPTransport;
  IP6Transport:TIP6Transport;
@@ -1426,7 +1426,7 @@ end;
 function TDNSClient.ResolveServByPort(APort:Integer;const AProto:String):TServEntry;
 {Note: Port will be in network order}
 {Will lock the returned service entry for read access, caller must unlock when finished}
-var 
+var
  ServEntry:TServEntry;
  IPTransport:TIPTransport;
  IP6Transport:TIP6Transport;
@@ -1548,7 +1548,7 @@ begin
    begin
     {IPv4}
     {Check the Cache}
-    ProtoEntry:=IPTransport.GetProtoByNumber(AProto,True); 
+    ProtoEntry:=IPTransport.GetProtoByNumber(AProto,True);
     if ProtoEntry <> nil then
      begin
       {Return Protocol Entry if found}
@@ -1560,7 +1560,7 @@ begin
    begin
     {IPv6}
     {Check the Cache}
-    ProtoEntry:=IP6Transport.GetProtoByNumber(AProto,True); 
+    ProtoEntry:=IP6Transport.GetProtoByNumber(AProto,True);
     if ProtoEntry <> nil then
      begin
       {Return Protocol Entry if found}
@@ -1574,7 +1574,7 @@ begin
 end;
 
 {==============================================================================}
-   
+
 function TDNSClient.ResolveNetworkByName(const AName:String;AFamily:Integer):TNetworkEntry;
 {Will lock the returned network entry for read access, caller must unlock when finished}
 var
@@ -1598,7 +1598,7 @@ begin
    begin
     {IPv4}
     {Check the Cache}
-    NetworkEntry:=IPTransport.GetNetworkByName(AName,True); 
+    NetworkEntry:=IPTransport.GetNetworkByName(AName,True);
     if NetworkEntry <> nil then
      begin
       {Return Network Entry if found}
@@ -1610,7 +1610,7 @@ begin
    begin
     {IPv6}
     {Check the Cache}
-    NetworkEntry:=IP6Transport.GetNetworkByName(AName,True); 
+    NetworkEntry:=IP6Transport.GetNetworkByName(AName,True);
     if NetworkEntry <> nil then
      begin
       {Return Network Entry if found}
@@ -1639,7 +1639,7 @@ begin
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: ResolveNetworkByAddress (Address = ' + PtrToHex(AAddress) + ' Length = ' + IntToStr(ALength) + ' Family = ' + IntToStr(AFamily) + ')');
  {$ENDIF}
- 
+
  {Check the Address}
  if AAddress = nil then Exit;
 
@@ -1697,11 +1697,11 @@ var
 begin
  {}
  Result.S_addr:=INADDR_ANY;
- 
+
  {Check Suffix}
  PosIdx:=Pos('.IN-ADDR.ARPA',Uppercase(AName));
  if PosIdx = 0 then Exit;
- 
+
  {Return Result}
  Result:=StringToInAddr(Copy(AName,1,PosIdx - 1));
 end;
@@ -1814,46 +1814,46 @@ begin
 
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Set Result}
  Result:=DNS_HEADER_SIZE;
- 
+
  {Get the Question sizes}
  for Count:=1 to WordBEtoN(AMessage.DNS.QuestionCount) do
   begin
    {Get Offset}
    Offset:=GetDNSQuestionOffset(AMessage,Count);
-   
+
    {Update Result}
    Result:=Result + GetDNSQuestionSize(AMessage,Offset);
   end;
- 
+
  {Get the Answer sizes}
  for Count:=1 to WordBEtoN(AMessage.DNS.AnswerCount) do
   begin
    {Get Offset}
    Offset:=GetDNSAnswerOffset(AMessage,Count);
-   
+
    {Update Result}
    Result:=Result + GetDNSResourceSize(AMessage,Offset);
   end;
- 
+
  {Get the Authority sizes}
  for Count:=1 to WordBEtoN(AMessage.DNS.AuthorityCount) do
   begin
    {Get Offset}
    Offset:=GetDNSAuthorityOffset(AMessage,Count);
-   
+
    {Update Result}
    Result:=Result + GetDNSResourceSize(AMessage,Offset);
   end;
- 
+
  {Get the Additional sizes}
  for Count:=1 to WordBEtoN(AMessage.DNS.AdditionalCount) do
   begin
    {Get Offset}
    Offset:=GetDNSAdditionalOffset(AMessage,Count);
-   
+
    {Update Result}
    Result:=Result + GetDNSResourceSize(AMessage,Offset);
   end;
@@ -1873,13 +1873,13 @@ begin
 
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Set Offset}
  Offset:=0;
- 
+
  {Get the Name}
  Name:=PDNSName(PtrUInt(AMessage) + AOffset);
- 
+
  {Check for Last Label}
  while Byte(Name[Offset]) <> 0 do
   begin
@@ -1890,14 +1890,14 @@ begin
      Result:=Offset + SizeOf(Word);
      Exit;
     end;
-   
+
    {Move to Next Label}
    Inc(Offset,Byte(Name[Offset]) + 1);
-   
+
    {Check for End of Buffer}
    if Offset > (MAX_DNS_NAME - 1) then Exit;
   end;
- 
+
  {Return the Size}
  Result:=Offset + 1;
 end;
@@ -1913,7 +1913,7 @@ begin
 
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Get the Name size and Question size}
  Result:=GetDNSNameSize(AMessage,AOffset) + DNS_QUESTION_SIZE;
 end;
@@ -1931,13 +1931,13 @@ begin
 
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Get the Name size}
  Result:=GetDNSNameSize(AMessage,AOffset);
- 
+
  {Get the Resource size}
  Resource:=PDNSResource(PtrUInt(AMessage) + AOffset + Result);
- 
+
  {Return Result}
  Result:=Result + DNS_RESOURCE_SIZE + WordBEtoN(Resource.DataLength);
 end;
@@ -1957,26 +1957,26 @@ begin
 
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Check Count}
  if ACount < 1 then Exit;
- 
+
  {Get the Starting Offset}
  Offset:=DNS_HEADER_SIZE;
- 
+
  {Enumerate the Questions}
  for Count:=1 to WordBEtoN(AMessage.DNS.QuestionCount) do
   begin
    {Check for Question}
    if Count = ACount then Break;
-   
+
    {Get Offset of next Question}
    Inc(Offset,GetDNSQuestionSize(AMessage,Offset));
-   
+
    {Check for End of Buffer}
    if Offset > (MAX_DNS_MESSAGE - 1) then Exit;
   end;
- 
+
  {Return Offset}
  Result:=Offset;
 end;
@@ -1996,26 +1996,26 @@ begin
 
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Check Count}
  if ACount < 1 then Exit;
- 
+
  {Get the Starting Offset}
  Offset:=GetDNSQuestionOffset(AMessage,WordBEtoN(AMessage.DNS.QuestionCount) + 1);
- 
+
  {Enumerate the Answers}
  for Count:=1 to WordBEtoN(AMessage.DNS.AnswerCount) do
   begin
    {Check for Answer}
    if Count = ACount then Break;
-   
+
    {Get Offset of next Answer}
    Inc(Offset,GetDNSResourceSize(AMessage,Offset));
-   
+
    {Check for End of Buffer}
    if Offset > (MAX_DNS_MESSAGE - 1) then Exit;
   end;
- 
+
  {Return Offset}
  Result:=Offset;
 end;
@@ -2035,26 +2035,26 @@ begin
 
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Check Count}
  if ACount < 1 then Exit;
- 
+
  {Get the Starting Offset}
  Offset:=GetDNSAnswerOffset(AMessage,WordBEtoN(AMessage.DNS.AnswerCount) + 1);
- 
+
  {Enumerate the Authoritys}
  for Count:=1 to WordBEtoN(AMessage.DNS.AuthorityCount) do
   begin
    {Check for Authority}
    if Count = ACount then Break;
-   
+
    {Get Offset of next Authority}
    Inc(Offset,GetDNSResourceSize(AMessage,Offset));
-   
+
    {Check for End of Buffer}
    if Offset > (MAX_DNS_MESSAGE - 1) then Exit;
   end;
- 
+
  {Return Offset}
  Result:=Offset;
 end;
@@ -2074,26 +2074,26 @@ begin
 
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Check Count}
  if ACount < 1 then Exit;
- 
+
  {Get the Starting Offset}
  Offset:=GetDNSAuthorityOffset(AMessage,WordBEtoN(AMessage.DNS.AuthorityCount) + 1);
- 
+
  {Enumerate the Additionals}
  for Count:=1 to WordBEtoN(AMessage.DNS.AdditionalCount) do
   begin
    {Check for Additional}
    if Count = ACount then Break;
-   
+
    {Get Offset of next Additional}
    Inc(Offset,GetDNSResourceSize(AMessage,Offset));
-   
+
    {Check for End of Buffer}
    if Offset > (MAX_DNS_MESSAGE - 1) then Exit;
   end;
- 
+
  {Return Offset}
  Result:=Offset;
 end;
@@ -2106,25 +2106,25 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: Creating DNS Query (Identifier = ' + IntToHex(AIdentifier,4) + ')');
  {$ENDIF}
- 
+
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Zero Message}
  FillChar(AMessage^,SizeOf(TDNSMessage),0);
- 
+
  {Set the Id}
  AMessage.DNS.Identifier:=WordNtoBE(AIdentifier);
- 
+
  {Set the Flags}
  Flags:=DNS_OPCODE_QUERY shl 11;       {Opcode}
  Flags:=Flags or DNS_FLAG_DO_RECURSE;  {Recursion Desired}
  AMessage.DNS.Flags:=WordNtoBE(Flags);
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -2137,27 +2137,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: Checking DNS Response (Identifier = ' + IntToHex(AIdentifier,4) + ')');
  {$ENDIF}
- 
+
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Check the Id}
  if WordBEtoN(AMessage.DNS.Identifier) <> AIdentifier then Exit;
- 
+
  {Check the Flags}
  Flags:=WordBEtoN(AMessage.DNS.Flags);
  if ((Flags and DNS_OPCODE_MASK) shr 11) <> DNS_OPCODE_QUERY then Exit;
  if (Flags and DNS_FLAG_RESPONSE) <> DNS_FLAG_RESPONSE then Exit;
  if (Flags and DNS_RESPONSE_MASK) <> DNS_RESPONSE_NO_ERROR then Exit;
- 
+
  {Check the Counts}
  if WordBEtoN(AMessage.DNS.QuestionCount) < 1 then Exit;
  if WordBEtoN(AMessage.DNS.AnswerCount) < 1 then Exit;
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -2180,19 +2180,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: Handling DNS Response (Family = ' + IntToStr(AFamily) + ' Identifier = ' + IntToHex(AIdentifier,4) + ')');
  {$ENDIF}
- 
+
  {Check Message}
  if AMessage = nil then Exit;
 
  {Check Protocol}
  if FProtocol = nil then Exit;
- 
+
  {Get the Transports}
- IPTransport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ)); 
+ IPTransport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ));
  IP6Transport:=TIP6Transport(FProtocol.Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ));
  try
   {Create the Buffers}
@@ -2278,7 +2278,7 @@ begin
                  if IPTransport <> nil then
                   begin
                    {Insert a Host Entry or update existing Entry}
-                   HostEntry:=IPTransport.GetHostByAddress(PInAddr(Name)^,True); 
+                   HostEntry:=IPTransport.GetHostByAddress(PInAddr(Name)^,True);
                    if HostEntry = nil then
                     begin
                      {$IFDEF DNS_DEBUG}
@@ -2302,12 +2302,12 @@ begin
                     end;
                   end;
                 end;
-               AF_INET6:begin 
+               AF_INET6:begin
                  {IPv6}
                  if IP6Transport <> nil then
                   begin
                    {Insert a Host Entry or update existing Entry}
-                   HostEntry:=IP6Transport.GetHostByAddress(PIn6Addr(Name)^,True); 
+                   HostEntry:=IP6Transport.GetHostByAddress(PIn6Addr(Name)^,True);
                    if HostEntry = nil then
                     begin
                      {$IFDEF DNS_DEBUG}
@@ -2340,7 +2340,7 @@ begin
                  if IPTransport <> nil then
                   begin
                    {Insert a Host Entry or update existing Entry}
-                   HostEntry:=IPTransport.GetHostByName(PChar(Name),True); 
+                   HostEntry:=IPTransport.GetHostByName(PChar(Name),True);
                    if HostEntry = nil then
                     begin
                      {$IFDEF DNS_DEBUG}
@@ -2372,12 +2372,12 @@ begin
                     end;
                   end;
                 end;
-               AF_INET6:begin 
+               AF_INET6:begin
                  {IPv6}
                  if IP6Transport <> nil then
                   begin
                    {Insert a Host Entry or update existing Entry}
-                   HostEntry:=IP6Transport.GetHostByName(PChar(Name),True); 
+                   HostEntry:=IP6Transport.GetHostByName(PChar(Name),True);
                    if HostEntry = nil then
                     begin
                      {$IFDEF DNS_DEBUG}
@@ -2637,20 +2637,20 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: Sending DNS Query (Data = ' + PtrToHex(AData) + ' Length = ' + IntToStr(ALength) + ' Family = ' + IntToStr(AFamily) + ' Type = ' + IntToStr(AType) + ' Class = ' + IntToStr(AClass) + ')');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Create the Message}
  if CreateDNSQuery(@Query,AIdentifier) then
   begin
    {Insert the Question}
    if not InsertDNSQuestion(@Query,1,AData,ALength,AFamily,AType,AClass) then Exit;
-   
+
    {Get the Size}
    Size:=GetDNSMessageSize(@Query);
 
@@ -2671,17 +2671,17 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: Receiving DNS Response (Family = ' + IntToStr(AFamily) + ' Type = ' + IntToStr(AType) + ' Class = ' + IntToStr(AClass) + ' Identifier = ' + IntToHex(AIdentifier,4) + ')');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Get the Size}
  Size:=SizeOf(TDNSMessage);
- 
+
  {Create the Buffer}
  FillChar(Response,SizeOf(TDNSMessage),0);
 
@@ -2716,28 +2716,28 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: Inserting DNS Name (Offset = ' + IntToStr(AOffset) + ' Name = ' + PtrToHex(AName) + ' Length = ' + IntToStr(ALength) + ')');
  {$ENDIF}
- 
+
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Check Length}
  if ALength > MAX_DNS_NAME then Exit;
- 
+
  {Get the Data}
  Data:=PChar(AName);
- 
+
  {Get the Name}
  Name:=PDNSName(PtrUInt(AMessage) + AOffset);
- 
+
  {Set the Offsets}
  Start:=0;
  Offset:=1;
  Length:=0;
- 
+
  {Create the Labels}
  for Count:=0 to ALength - 1 do
   begin
@@ -2757,13 +2757,13 @@ begin
      Inc(Length);
     end;
   end;
-  
+
  {Mark the Label}
  Byte(Name[Start]):=Length;
- 
+
  {Set the Last Label}
  Byte(Name[Offset]):=0;
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -2781,11 +2781,11 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: Extracting DNS Name (Offset = ' + IntToStr(AOffset) + ' Name = ' + PtrToHex(AName) + ')');
  {$ENDIF}
- 
+
  {Check Message}
  if AMessage = nil then Exit;
 
@@ -2798,18 +2798,18 @@ begin
  {Setup the Offsets}
  Offset:=0;
  ALength:=0;
- 
+
  {Check for Last Label}
  while Byte(Name[Offset]) <> 0 do
   begin
    Length:=Byte(Name[Offset]);
-   
+
    {Check for Pointer (Compressed)}
    if (Length and DNS_POINTER_MASK) = DNS_POINTER_MASK then
     begin
      {Get the Offset to the Compressed Name}
      Offset:=((Length and not(DNS_POINTER_MASK)) shl 8) + Byte(Name[Offset + 1]);
-     
+
      {Return Result}
      Result:=ExtractDNSName(AMessage,Offset,Data,ALength);
      Exit;
@@ -2820,28 +2820,28 @@ begin
      if Offset <> 0 then
       begin
        Data^:='.';
-       
+
        Inc(PtrUInt(Data));
        Inc(ALength);
       end;
-     
+
      {Copy the Data}
      System.Move(Name[Offset + 1],Data^,Length);
-     
+
      Inc(PtrUInt(Data),Length);
      Inc(ALength,Length);
     end;
-   
+
    {Move to Next Label}
    Inc(Offset,Length + 1);
-   
+
    {Check for End of Buffer}
    if Offset > (MAX_DNS_NAME - 1) then Exit;
   end;
-  
+
  {Mark the end}
  Data^:=#0;
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -2856,17 +2856,17 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: Extracting DNS RData (Offset = ' + IntToStr(AOffset) + ' Data = ' + PtrToHex(AData) + ' Type = ' + IntToStr(AType) + ' Class = ' + IntToStr(AClass) + ')');
  {$ENDIF}
- 
+
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Get the Resource}
  Resource:=PDNSResource(PtrUInt(AMessage) + AOffset);
- 
+
  {Check the Class}
  case AClass of
   DNS_CLASS_IN:begin
@@ -2878,7 +2878,7 @@ begin
        ALength:=SizeOf(TInAddr);
        System.Move(Resource.RecordData[0],AData^,ALength);
        PInAddr(AData)^:=InAddrToHost(PInAddr(AData)^);
-       
+
        {Return Result}
        Result:=True;
       end;
@@ -2887,7 +2887,7 @@ begin
        if WordBEtoN(Resource.DataLength) <> SizeOf(TIn6Addr) then Exit;
        ALength:=SizeOf(TIn6Addr);
        System.Move(Resource.RecordData[0],AData^,ALength);
-       
+
        {Return Result}
        Result:=True;
       end;
@@ -2900,7 +2900,7 @@ begin
        {Extract Binary Data}
        ALength:=WordBEtoN(Resource.DataLength);
        System.Move(Resource.RecordData[0],AData^,ALength);
-       
+
        {Return Result}
        Result:=True;
       end;
@@ -2923,18 +2923,18 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: Inserting DNS Question (Count = ' + IntToStr(ACount) + ' Data = ' + PtrToHex(AData) + ' Length = ' + IntToStr(ALength) + ' Family = ' + IntToStr(AFamily) + ' Type = ' + IntToStr(AType) + ' Class = ' + IntToStr(AClass) + ')');
  {$ENDIF}
- 
+
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Get the Offset}
  Offset:=GetDNSQuestionOffset(AMessage,ACount);
  if Offset = 0 then Exit;
- 
+
  {Insert the Name}
  case AClass of
   DNS_CLASS_IN:begin
@@ -2949,7 +2949,7 @@ begin
           Name:=InAddrToName(InAddrToHost(PInAddr(AData)^));
           if not InsertDNSName(AMessage,Offset,PChar(Name),Length(Name)) then Exit;
          end;
-        AF_INET6:begin 
+        AF_INET6:begin
           {IPv6}
           {If PTR convert InAddr to Name}
           if ALength <> SizeOf(TIn6Addr) then Exit;
@@ -2970,16 +2970,16 @@ begin
     Exit;
    end;
  end;
- 
+
  {Set the Question}
  Inc(Offset,GetDNSNameSize(AMessage,Offset));
  Question:=PDNSQuestion(PtrUInt(AMessage) + Offset);
  Question.QuestionType:=WordNtoBE(AType);
  Question.QuestionClass:=WordNtoBE(AClass);
- 
+
  {Set the Question Count}
  AMessage.DNS.QuestionCount:=WordNtoBE(WordBEtoN(AMessage.DNS.QuestionCount) + 1);
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -2995,29 +2995,29 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: Extracting DNS Answer (Count = ' + IntToStr(ACount) + ' Name = ' + PtrToHex(AName) + ' Data = ' + PtrToHex(AData) + ' Family = ' + IntToStr(AFamily) + ')');
  {$ENDIF}
- 
- 
+
+
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Get the Offset}
  Offset:=GetDNSAnswerOffset(AMessage,ACount);
  if Offset = 0 then Exit;
- 
+
  {Extract the Name}
  if not ExtractDNSName(AMessage,Offset,AName,ANameLength) then Exit;
- 
+
  {Get the Resource}
  Inc(Offset,GetDNSNameSize(AMessage,Offset));
  Resource:=PDNSResource(PtrUInt(AMessage) + Offset);
  AType:=WordBEtoN(Resource.RecordType);
  AClass:=WordBEtoN(Resource.RecordClass);
  ATtl:=LongWordBEtoN(Resource.Ttl);
- 
+
  {Extract the Data}
  case AClass of
   DNS_CLASS_IN:begin
@@ -3033,7 +3033,7 @@ begin
           ANameLength:=SizeOf(TInAddr);
           if not ExtractDNSRData(AMessage,Offset,AData,ADataLength,AType,AClass) then Exit;
          end;
-        AF_INET6:begin 
+        AF_INET6:begin
           {IPv6}
           {If PTR convert Name to In6Addr}
           Address6:=NameToIn6Addr(PChar(AName));
@@ -3055,7 +3055,7 @@ begin
     Exit;
    end;
  end;
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -3069,31 +3069,31 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: Extracting DNS Authority (Count = ' + IntToStr(ACount) + ' Name = ' + PtrToHex(AName) + ' Data = ' + PtrToHex(AData) + ' Family = ' + IntToStr(AFamily) + ')');
  {$ENDIF}
- 
+
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Get the Offset}
  Offset:=GetDNSAuthorityOffset(AMessage,ACount);
  if Offset = 0 then Exit;
- 
+
  {Extract the Name}
  if not ExtractDNSName(AMessage,Offset,AName,ANameLength) then Exit;
- 
+
  {Get the Resource}
  Inc(Offset,GetDNSNameSize(AMessage,Offset));
  Resource:=PDNSResource(PtrUInt(AMessage) + Offset);
  AType:=WordBEtoN(Resource.RecordType);
  AClass:=WordBEtoN(Resource.RecordClass);
  ATtl:=LongWordBEtoN(Resource.Ttl);
- 
+
  {Extract the Data}
  //To Do //See above
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -3107,31 +3107,31 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DNS_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DNS: Extracting DNS Additional (Count = ' + IntToStr(ACount) + ' Name = ' + PtrToHex(AName) + ' Data = ' + PtrToHex(AData) + ' Family = ' + IntToStr(AFamily) + ')');
  {$ENDIF}
- 
+
  {Check Message}
  if AMessage = nil then Exit;
- 
+
  {Get the Offset}
  Offset:=GetDNSAdditionalOffset(AMessage,ACount);
  if Offset = 0 then Exit;
- 
+
  {Extract the Name}
  if not ExtractDNSName(AMessage,Offset,AName,ANameLength) then Exit;
- 
+
  {Get the Resource}
  Inc(Offset,GetDNSNameSize(AMessage,Offset));
  Resource:=PDNSResource(PtrUInt(AMessage) + Offset);
  AType:=WordBEtoN(Resource.RecordType);
  AClass:=WordBEtoN(Resource.RecordClass);
  ATtl:=LongWordBEtoN(Resource.Ttl);
- 
+
  {Extract the Data}
  //To Do //See above
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -3164,7 +3164,7 @@ begin
 
   {Get the Host}
   NetworkSetLastError(WSAHOST_NOT_FOUND);
-  HostEntry:=ResolveHostByAddress(AAddr,ALength,AFamily); 
+  HostEntry:=ResolveHostByAddress(AAddr,ALength,AFamily);
   if HostEntry = nil then Exit;
 
   {Return Host Entry if found}
@@ -3322,7 +3322,7 @@ begin
     begin
      {Get the Host}
      NetworkSetLastError(WSAHOST_NOT_FOUND);
-     HostEntry:=ResolveHostByName(NameBuffer,AFamily); 
+     HostEntry:=ResolveHostByName(NameBuffer,AFamily);
      if HostEntry = nil then Exit;
 
      {Return Host Entry if found}
@@ -3441,7 +3441,7 @@ begin
 
   {Get the Service}
   NetworkSetLastError(WSAHOST_NOT_FOUND);
-  ServEntry:=ResolveServByName(AName,AProto); 
+  ServEntry:=ResolveServByName(AName,AProto);
   if ServEntry = nil then Exit;
 
   {Return Service Entry if found}
@@ -3477,7 +3477,7 @@ begin
 
   {Get the Protocol}
   NetworkSetLastError(WSAHOST_NOT_FOUND);
-  ProtoEntry:=ResolveProtoByNumber(AProto); 
+  ProtoEntry:=ResolveProtoByNumber(AProto);
   if ProtoEntry = nil then Exit;
 
   {Return Protocol Entry if found}
@@ -3689,14 +3689,14 @@ begin
     if ANodeName = nil then Exit;
    end;
 
-  {Check Flags (Numeric Service)}  
+  {Check Flags (Numeric Service)}
   if (Flags and AI_NUMERICSERV) = AI_NUMERICSERV then
    begin
     Result:=WSAHOST_NOT_FOUND;
     NetworkSetLastError(WSAHOST_NOT_FOUND);
     if AServName = nil then Exit;
    end;
-  
+
   {Get Transports}
   IPTransport:=TIPTransport(FProtocol.Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ));
   IP6Transport:=TIP6Transport(FProtocol.Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ));
@@ -3707,7 +3707,7 @@ begin
    if (Family <> AF_UNSPEC) and (Family <> AF_INET) and (Family <> AF_INET6) then Exit;
    if (IPTransport = nil) and (Family = AF_INET) then Exit;
    if (IP6Transport = nil) and (Family = AF_INET6) then Exit;
-   if Family = AF_UNSPEC then 
+   if Family = AF_UNSPEC then
     begin
      {if (IPTransport <> nil) and (IP6Transport = nil) then Family:=AF_INET;} {Allow numeric host, bindable and connectable address even if protocol not enabled}
      {if (IPTransport = nil) and (IP6Transport <> nil) then Family:=AF_INET6;}
@@ -4043,7 +4043,7 @@ begin
         PSockAddr6(NextInfo.ai_addr).sin6_family:=AF_INET6; {Family}
         PSockAddr6(NextInfo.ai_addr).sin6_port:=WordNtoBE(Port);
         PSockAddr6(NextInfo.ai_addr).sin6_addr:=IN6ADDR_LOOPBACK_INIT;
-       end;     
+       end;
 
       {Check Last}
       LastInfo:=GetLastAddrInfo(AAddrInfo);
@@ -4059,7 +4059,7 @@ begin
    end
   else
    begin
-    NetworkSetLastError(ERROR_SUCCESS); 
+    NetworkSetLastError(ERROR_SUCCESS);
     Result:=ERROR_SUCCESS;
    end;
  finally
@@ -4087,7 +4087,7 @@ begin
   Result:=WSAEFAULT;
   NetworkSetLastError(WSAEFAULT);
   if AAddr = nil then Exit;
-  
+
   {Check Names}
   Result:=WSAHOST_NOT_FOUND;
   NetworkSetLastError(WSAHOST_NOT_FOUND);
@@ -4121,7 +4121,7 @@ begin
         StrLCopy(AHost,PChar(WorkBuffer),AHostLength);
        end
       else
-       begin      
+       begin
         {Resolve Address}
         HostEntry:=ResolveHostByAddress(@PSockAddr6(AAddr).sin6_addr,SizeOf(TIn6Addr),AF_INET6);
         if HostEntry = nil then
@@ -4149,14 +4149,14 @@ begin
          end;
 
         //To Do //Check Flag NI_NOFQDN
-       end; 
+       end;
      end;
 
     {Check Service}
     if AServ <> nil then
      begin
       {Check Flags}
-      if (AFlags and NI_NUMERICSERV) = NI_NUMERICSERV then 
+      if (AFlags and NI_NUMERICSERV) = NI_NUMERICSERV then
        begin
         {Convert Service}
         WorkBuffer:=IntToStr(WordBEtoN(PSockAddr6(AAddr).sin6_port));
@@ -4194,10 +4194,10 @@ begin
           {Unlock Service}
           ServEntry.ReleaseLock;
          end;
-       end;       
+       end;
      end;
 
-    NetworkSetLastError(ERROR_SUCCESS); 
+    NetworkSetLastError(ERROR_SUCCESS);
     Result:=ERROR_SUCCESS;
    end
   else if (AAddrLength >= SizeOf(TSockAddr)) and (PSockAddr(AAddr).sin_family = AF_INET) then
@@ -4247,14 +4247,14 @@ begin
          end;
 
         //To Do //Check NI_NOFQDN
-       end; 
+       end;
      end;
 
     {Check Service}
     if AServ <> nil then
      begin
       {Check Flags}
-      if (AFlags and NI_NUMERICSERV) = NI_NUMERICSERV then 
+      if (AFlags and NI_NUMERICSERV) = NI_NUMERICSERV then
        begin
         {Convert Service}
         WorkBuffer:=IntToStr(WordBEtoN(PSockAddr(AAddr).sin_port));
@@ -4288,14 +4288,14 @@ begin
         else
          begin
           StrLCopy(AServ,PChar(ServEntry.Name),AServLength);
-          
+
           {Unlock Service}
           ServEntry.ReleaseLock;
          end;
-       end;       
+       end;
      end;
 
-    NetworkSetLastError(ERROR_SUCCESS); 
+    NetworkSetLastError(ERROR_SUCCESS);
     Result:=ERROR_SUCCESS;
    end;
  finally
@@ -4349,38 +4349,38 @@ end;
 
 {==============================================================================}
 
-function TDNSClient.StartClient:Boolean; 
+function TDNSClient.StartClient:Boolean;
 begin
  {}
  ReaderLock;
  try
   Result:=False;
- 
+
   //To Do
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TDNSClient.StopClient:Boolean; 
+function TDNSClient.StopClient:Boolean;
 begin
  {}
  ReaderLock;
  try
   Result:=False;
- 
+
   //To Do
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4396,8 +4396,8 @@ begin
  if NetworkSettings.GetBooleanDefault('DNS_CLIENT_ENABLED',DNS_CLIENT_ENABLED) then
   begin
    DNSClient:=TDNSClient.Create(ProtocolManager.GetProtocolByType(IPPROTO_UDP,SOCK_DGRAM,False,NETWORK_LOCK_NONE)); //To Do //Pass Manager //Move to StartClient
-  end; 
- 
+  end;
+
  DNSInitialized:=True;
 end;
 
@@ -4407,21 +4407,21 @@ function DNSStart:LongWord;
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {Check Started}
  if DNSStarted then Exit;
- 
+
  Result:=ERROR_INVALID_PARAMETER;
 
  {Check Client}
  if DNSClient = nil then Exit;
- 
+
  //To Do //Remove this, move to DNSClient.StartClient etc
- 
- {Set Started} 
+
+ {Set Started}
  DNSStarted:=True;
- 
- {Return Result} 
+
+ {Return Result}
  Result:=ERROR_SUCCESS;
 end;
 
@@ -4431,32 +4431,32 @@ function DNSStop:LongWord;
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {Check Started}
  if not(DNSStarted) then Exit;
- 
+
  Result:=ERROR_INVALID_PARAMETER;
 
  {Check Client}
  if DNSClient = nil then Exit;
- 
+
  //To Do //Remove this, move to DNSClient.StartClient etc
 
  {Set Started}
- DNSStarted:=False;    
- 
- {Return Result} 
+ DNSStarted:=False;
+
+ {Return Result}
  Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}
 {==============================================================================}
 {DNS Functions}
-  
+
 {==============================================================================}
 {==============================================================================}
 {DNS Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -4464,12 +4464,12 @@ initialization
  DNSInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 end.
- 
+

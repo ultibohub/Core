@@ -17,19 +17,19 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
   Linux - \drivers\tty\serial\amba-pl011.c - Copyright (C) 2010 ST-Ericsson SA and others
-  
+
 References
 ==========
 
  PL011 - http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html
-         
+
 ARM PrimeCell PL011 UART
 ========================
 
@@ -39,7 +39,7 @@ ARM PrimeCell PL011 UART
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit PL011; 
+unit PL011;
 
 interface
 
@@ -53,26 +53,26 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,UART,Serial,S
 const
  {PL011 specific constants}
  PL011_UART_DESCRIPTION = 'ARM PrimeCell PL011 UART';  {Description of PL011 device}
- 
+
  PL011_UART_MIN_BAUD = 300;      {Default minimum of 300 baud}
- PL011_UART_MAX_BAUD = 1500000;  {Default maximum based on 24MHz clock} 
- 
+ PL011_UART_MAX_BAUD = 1500000;  {Default maximum based on 24MHz clock}
+
  PL011_UART_MIN_DATABITS = SERIAL_DATA_5BIT;
  PL011_UART_MAX_DATABITS = SERIAL_DATA_8BIT;
- 
+
  PL011_UART_MIN_STOPBITS = SERIAL_STOP_1BIT;
  PL011_UART_MAX_STOPBITS = SERIAL_STOP_2BIT;
- 
+
  PL011_UART_MAX_PARITY = SERIAL_PARITY_EVEN;
- 
+
  PL011_UART_MAX_FLOW = SERIAL_FLOW_RTS_CTS;
- 
- PL011_UART_CLOCK_RATE = 24000000; 
+
+ PL011_UART_CLOCK_RATE = 24000000;
  {$IFDEF PL011_UART_RX_BUFFER}
  PL011_UART_RX_POLL_LIMIT = 256; {Number of times interrupt handler may poll the read FIFO}
  PL011_UART_RX_BUFFER_SIZE = 1024;
  {$ENDIF}
- 
+
 const
  {PL011 UART Data register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
  PL011_UART_DR_OE    = (1 shl 11);   {Overrun error}
@@ -81,139 +81,139 @@ const
  PL011_UART_DR_FE    = (1 shl 8);    {Framing error}
  PL011_UART_DR_DATA  = ($FF shl 0);  {Receive / Transmit data}
  PL011_UART_DR_ERROR = PL011_UART_DR_OE or PL011_UART_DR_BE or PL011_UART_DR_PE or PL011_UART_DR_FE;
- 
+
  {PL011 UART Receive Status / Error Clear register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
  PL011_UART_RSRECR_OE = (1 shl 3); {Overrun error}
  PL011_UART_RSRECR_BE = (1 shl 2); {Break error}
  PL011_UART_RSRECR_PE = (1 shl 1); {Parity error}
  PL011_UART_RSRECR_FE = (1 shl 0); {Framing error}
- 
+
  {PL011 UART Flag register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
  PL011_UART_FR_RI   = (1 shl 8); {Unsupported, write zero, read as don't care}
  PL011_UART_FR_TXFE = (1 shl 7); {Transmit FIFO empty}
  PL011_UART_FR_RXFF = (1 shl 6); {Receive FIFO full}
- PL011_UART_FR_TXFF = (1 shl 5); {Transmit FIFO full} 
- PL011_UART_FR_RXFE = (1 shl 4); {Receive FIFO empty} 
+ PL011_UART_FR_TXFF = (1 shl 5); {Transmit FIFO full}
+ PL011_UART_FR_RXFE = (1 shl 4); {Receive FIFO empty}
  PL011_UART_FR_BUSY = (1 shl 3); {UART busy}
  PL011_UART_FR_DCD  = (1 shl 2); {Unsupported, write zero, read as don't care}
  PL011_UART_FR_DSR  = (1 shl 1); {Unsupported, write zero, read as don't care}
  PL011_UART_FR_CTS  = (1 shl 0); {Clear to send (This bit is the complement of the UART clear to send, nUARTCTS, modem status input. That is, the bit is 1 when nUARTCTS is LOW)}
- 
+
  {PL011 UART IrDA register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
-  
+
  {PL011 UART Integer Baud Rate Divisor register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
  PL011_UART_IBRD_MASK = ($FFFF shl 0);
- 
+
  {PL011 UART Fractional Baud Rate Divisor register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
  PL011_UART_FBRD_MASK = ($3F shl 0);
- 
+
  {PL011 UART Line Control register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
  PL011_UART_LCRH_SPS   = (1 shl 7); {Stick parity select}
  PL011_UART_LCRH_WLEN  = (3 shl 5); {Word length}
  PL011_UART_LCRH_WLEN8 = (3 shl 5); { 8 bits}
- PL011_UART_LCRH_WLEN7 = (2 shl 5); { 7 bits} 
- PL011_UART_LCRH_WLEN6 = (1 shl 5); { 6 bits} 
- PL011_UART_LCRH_WLEN5 = (0 shl 5); { 5 bits} 
- PL011_UART_LCRH_FEN   = (1 shl 4); {Enable FIFOs} 
+ PL011_UART_LCRH_WLEN7 = (2 shl 5); { 7 bits}
+ PL011_UART_LCRH_WLEN6 = (1 shl 5); { 6 bits}
+ PL011_UART_LCRH_WLEN5 = (0 shl 5); { 5 bits}
+ PL011_UART_LCRH_FEN   = (1 shl 4); {Enable FIFOs}
  PL011_UART_LCRH_STP2  = (1 shl 3); {Two stop bits select}
- PL011_UART_LCRH_EPS   = (1 shl 2); {Even parity select (0 = odd parity / 1 = even parity)} 
- PL011_UART_LCRH_PEN   = (1 shl 1); {Parity enable} 
- PL011_UART_LCRH_BRK   = (1 shl 0); {Send break} 
- 
+ PL011_UART_LCRH_EPS   = (1 shl 2); {Even parity select (0 = odd parity / 1 = even parity)}
+ PL011_UART_LCRH_PEN   = (1 shl 1); {Parity enable}
+ PL011_UART_LCRH_BRK   = (1 shl 0); {Send break}
+
  {PL011 UART Control register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
  PL011_UART_CR_CTSEN  = (1 shl 15); {CTS hardware flow control enable (If this bit is set to 1 data is only transmitted when the nUARTCTS signal is asserted)}
- PL011_UART_CR_RTSEN  = (1 shl 14); {RTS hardware flow control enable (If this bit is set to 1 data is only requested when there is space in the receive FIFO for it to be received)} 
- PL011_UART_CR_OUT2   = (1 shl 13); {Unsupported, write zero, read as don't care} 
- PL011_UART_CR_OUT1   = (1 shl 12); {Unsupported, write zero, read as don't care} 
- PL011_UART_CR_RTS    = (1 shl 11); {Request to send (This bit is the complement of the UART request to send, nUARTRTS, modem status output. That is, when the bit is programmed to a 1 then nUARTRTS is LOW)} 
- PL011_UART_CR_DTR    = (1 shl 10); {Unsupported, write zero, read as don't care} 
+ PL011_UART_CR_RTSEN  = (1 shl 14); {RTS hardware flow control enable (If this bit is set to 1 data is only requested when there is space in the receive FIFO for it to be received)}
+ PL011_UART_CR_OUT2   = (1 shl 13); {Unsupported, write zero, read as don't care}
+ PL011_UART_CR_OUT1   = (1 shl 12); {Unsupported, write zero, read as don't care}
+ PL011_UART_CR_RTS    = (1 shl 11); {Request to send (This bit is the complement of the UART request to send, nUARTRTS, modem status output. That is, when the bit is programmed to a 1 then nUARTRTS is LOW)}
+ PL011_UART_CR_DTR    = (1 shl 10); {Unsupported, write zero, read as don't care}
  PL011_UART_CR_RXE    = (1 shl 9);  {Receive enable}
- PL011_UART_CR_TXE    = (1 shl 8);  {Transmit enable} 
+ PL011_UART_CR_TXE    = (1 shl 8);  {Transmit enable}
  PL011_UART_CR_LBE    = (1 shl 7);  {Loopback enable}
  {Bits 6:3 Reserved - Write as 0, read as don't care}
- PL011_UART_CR_SIRLP  = (1 shl 2);  {Unsupported, write zero, read as don't care} 
+ PL011_UART_CR_SIRLP  = (1 shl 2);  {Unsupported, write zero, read as don't care}
  PL011_UART_CR_SIREN  = (1 shl 1);  {Unsupported, write zero, read as don't care}
  PL011_UART_CR_UARTEN = (1 shl 0);  {UART enable}
- 
+
  {PL011 UART Interrupt FIFO Level Select register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
  PL011_UART_IFLS_RXIFPSEL    = (7 shl 9); {Unsupported, write zero, read as don't care}
- PL011_UART_IFLS_TXIFPSEL    = (7 shl 6); {Unsupported, write zero, read as don't care} 
- PL011_UART_IFLS_RXIFLSEL    = (7 shl 3); {Receive interrupt FIFO level select} 
+ PL011_UART_IFLS_TXIFPSEL    = (7 shl 6); {Unsupported, write zero, read as don't care}
+ PL011_UART_IFLS_RXIFLSEL    = (7 shl 3); {Receive interrupt FIFO level select}
  PL011_UART_IFLS_RXIFLSEL1_8 = (0 shl 3); { b000 = Receive FIFO becomes >= 1/8 full}
- PL011_UART_IFLS_RXIFLSEL1_4 = (1 shl 3); { b001 = Receive FIFO becomes >= 1/4 full} 
- PL011_UART_IFLS_RXIFLSEL1_2 = (2 shl 3); { b010 = Receive FIFO becomes >= 1/2 full} 
- PL011_UART_IFLS_RXIFLSEL3_4 = (3 shl 3); { b011 = Receive FIFO becomes >= 3/4 full} 
- PL011_UART_IFLS_RXIFLSEL7_8 = (4 shl 3); { b100 = Receive FIFO becomes >= 7/8 full} 
- PL011_UART_IFLS_TXIFLSEL    = (7 shl 0); {Transmit interrupt FIFO level select} 
- PL011_UART_IFLS_TXIFLSEL1_8 = (0 shl 0); { b000 = Transmit FIFO becomes <= 1/8 full} 
- PL011_UART_IFLS_TXIFLSEL1_4 = (1 shl 0); { b001 = Transmit FIFO becomes <= 1/4 full} 
- PL011_UART_IFLS_TXIFLSEL1_2 = (2 shl 0); { b010 = Transmit FIFO becomes <= 1/2 full} 
- PL011_UART_IFLS_TXIFLSEL3_4 = (3 shl 0); { b011 = Transmit FIFO becomes <= 3/4 full}  
- PL011_UART_IFLS_TXIFLSEL7_8 = (4 shl 0); { b100 = Transmit FIFO becomes <= 7/8 full}  
- 
+ PL011_UART_IFLS_RXIFLSEL1_4 = (1 shl 3); { b001 = Receive FIFO becomes >= 1/4 full}
+ PL011_UART_IFLS_RXIFLSEL1_2 = (2 shl 3); { b010 = Receive FIFO becomes >= 1/2 full}
+ PL011_UART_IFLS_RXIFLSEL3_4 = (3 shl 3); { b011 = Receive FIFO becomes >= 3/4 full}
+ PL011_UART_IFLS_RXIFLSEL7_8 = (4 shl 3); { b100 = Receive FIFO becomes >= 7/8 full}
+ PL011_UART_IFLS_TXIFLSEL    = (7 shl 0); {Transmit interrupt FIFO level select}
+ PL011_UART_IFLS_TXIFLSEL1_8 = (0 shl 0); { b000 = Transmit FIFO becomes <= 1/8 full}
+ PL011_UART_IFLS_TXIFLSEL1_4 = (1 shl 0); { b001 = Transmit FIFO becomes <= 1/4 full}
+ PL011_UART_IFLS_TXIFLSEL1_2 = (2 shl 0); { b010 = Transmit FIFO becomes <= 1/2 full}
+ PL011_UART_IFLS_TXIFLSEL3_4 = (3 shl 0); { b011 = Transmit FIFO becomes <= 3/4 full}
+ PL011_UART_IFLS_TXIFLSEL7_8 = (4 shl 0); { b100 = Transmit FIFO becomes <= 7/8 full}
+
  {PL011 UART Interrupt Mask Set/Clear register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
  PL011_UART_IMSC_OEIM   = (1 shl 10); {Overrun error interrupt mask}
- PL011_UART_IMSC_BEIM   = (1 shl 9);  {Break error interrupt mask} 
- PL011_UART_IMSC_PEIM   = (1 shl 8);  {Parity error interrupt mask} 
- PL011_UART_IMSC_FEIM   = (1 shl 7);  {Framing error interrupt mask} 
- PL011_UART_IMSC_RTIM   = (1 shl 6);  {Receive timeout interrupt mask} 
+ PL011_UART_IMSC_BEIM   = (1 shl 9);  {Break error interrupt mask}
+ PL011_UART_IMSC_PEIM   = (1 shl 8);  {Parity error interrupt mask}
+ PL011_UART_IMSC_FEIM   = (1 shl 7);  {Framing error interrupt mask}
+ PL011_UART_IMSC_RTIM   = (1 shl 6);  {Receive timeout interrupt mask}
  PL011_UART_IMSC_TXIM   = (1 shl 5);  {Transmit interrupt mask}
- PL011_UART_IMSC_RXIM   = (1 shl 4);  {Receive interrupt mask} 
- PL011_UART_IMSC_DSRMIM = (1 shl 3);  {Unsupported, write zero, read as don't care} 
- PL011_UART_IMSC_DCDMIM = (1 shl 2);  {Unsupported, write zero, read as don't care} 
- PL011_UART_IMSC_CTSMIM = (1 shl 1);  {nUARTCTS modem interrupt mask} 
+ PL011_UART_IMSC_RXIM   = (1 shl 4);  {Receive interrupt mask}
+ PL011_UART_IMSC_DSRMIM = (1 shl 3);  {Unsupported, write zero, read as don't care}
+ PL011_UART_IMSC_DCDMIM = (1 shl 2);  {Unsupported, write zero, read as don't care}
+ PL011_UART_IMSC_CTSMIM = (1 shl 1);  {nUARTCTS modem interrupt mask}
  PL011_UART_IMSC_RIMIM  = (1 shl 0);  {Unsupported, write zero, read as don't care}
- 
+
  {PL011 UART Raw Interrupt Status register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
  PL011_UART_RIS_OERIS   = (1 shl 10); {Overrun error interrupt status}
  PL011_UART_RIS_BERIS   = (1 shl 9);  {Break error interrupt status}
- PL011_UART_RIS_PERIS   = (1 shl 8);  {Parity error interrupt status} 
- PL011_UART_RIS_FERIS   = (1 shl 7);  {Framing error interrupt status} 
- PL011_UART_RIS_RTRIS   = (1 shl 6);  {Receive timeout interrupt status} 
+ PL011_UART_RIS_PERIS   = (1 shl 8);  {Parity error interrupt status}
+ PL011_UART_RIS_FERIS   = (1 shl 7);  {Framing error interrupt status}
+ PL011_UART_RIS_RTRIS   = (1 shl 6);  {Receive timeout interrupt status}
  PL011_UART_RIS_TXRIS   = (1 shl 5);  {Transmit interrupt status}
- PL011_UART_RIS_RXRIS   = (1 shl 4);  {Receive interrupt status} 
- PL011_UART_RIS_DSRMRIS = (1 shl 3);  {Unsupported, write zero, read as don't care} 
- PL011_UART_RIS_DCDMRIS = (1 shl 2);  {Unsupported, write zero, read as don't care} 
- PL011_UART_RIS_CTSMRIS = (1 shl 1);  {nUARTCTS modem interrupt status} 
- PL011_UART_RIS_RIMRIS  = (1 shl 0);  {Unsupported, write zero, read as don't care} 
- 
+ PL011_UART_RIS_RXRIS   = (1 shl 4);  {Receive interrupt status}
+ PL011_UART_RIS_DSRMRIS = (1 shl 3);  {Unsupported, write zero, read as don't care}
+ PL011_UART_RIS_DCDMRIS = (1 shl 2);  {Unsupported, write zero, read as don't care}
+ PL011_UART_RIS_CTSMRIS = (1 shl 1);  {nUARTCTS modem interrupt status}
+ PL011_UART_RIS_RIMRIS  = (1 shl 0);  {Unsupported, write zero, read as don't care}
+
  {PL011 UART Masked Interrupt Status register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
  PL011_UART_MIS_OEMIS   = (1 shl 10); {Overrun error masked interrupt status}
- PL011_UART_MIS_BEMIS   = (1 shl 9);  {Break error masked interrupt status} 
- PL011_UART_MIS_PEMIS   = (1 shl 8);  {Parity error masked interrupt status} 
- PL011_UART_MIS_FEMIS   = (1 shl 7);  {Framing error masked interrupt status}  
- PL011_UART_MIS_RTMIS   = (1 shl 6);  {Receive timeout masked interrupt status}  
- PL011_UART_MIS_TXMIS   = (1 shl 5);  {Transmit masked interrupt status}  
- PL011_UART_MIS_RXMIS   = (1 shl 4);  {Receive masked interrupt status}  
- PL011_UART_MIS_DSRMMIS = (1 shl 3);  {Unsupported, write zero, read as don't care}  
- PL011_UART_MIS_DCDMMIS = (1 shl 2);  {Unsupported, write zero, read as don't care}  
- PL011_UART_MIS_CTSMMIS = (1 shl 1);  {nUARTCTS modem masked interrupt status}  
- PL011_UART_MIS_RIMMIS  = (1 shl 0);  {Unsupported, write zero, read as don't care}  
- 
+ PL011_UART_MIS_BEMIS   = (1 shl 9);  {Break error masked interrupt status}
+ PL011_UART_MIS_PEMIS   = (1 shl 8);  {Parity error masked interrupt status}
+ PL011_UART_MIS_FEMIS   = (1 shl 7);  {Framing error masked interrupt status}
+ PL011_UART_MIS_RTMIS   = (1 shl 6);  {Receive timeout masked interrupt status}
+ PL011_UART_MIS_TXMIS   = (1 shl 5);  {Transmit masked interrupt status}
+ PL011_UART_MIS_RXMIS   = (1 shl 4);  {Receive masked interrupt status}
+ PL011_UART_MIS_DSRMMIS = (1 shl 3);  {Unsupported, write zero, read as don't care}
+ PL011_UART_MIS_DCDMMIS = (1 shl 2);  {Unsupported, write zero, read as don't care}
+ PL011_UART_MIS_CTSMMIS = (1 shl 1);  {nUARTCTS modem masked interrupt status}
+ PL011_UART_MIS_RIMMIS  = (1 shl 0);  {Unsupported, write zero, read as don't care}
+
  {PL011 UART Interrupt Clear register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
  PL011_UART_ICR_OEIC   = (1 shl 10); {Overrun error interrupt clear}
  PL011_UART_ICR_BEIC   = (1 shl 9);  {Break error interrupt clear}
- PL011_UART_ICR_PEIC   = (1 shl 8);  {Parity error interrupt clear} 
- PL011_UART_ICR_FEIC   = (1 shl 7);  {Framing error interrupt clear} 
- PL011_UART_ICR_RTIC   = (1 shl 6);  {Receive timeout interrupt clear} 
- PL011_UART_ICR_TXIC   = (1 shl 5);  {Transmit interrupt clear} 
- PL011_UART_ICR_RXIC   = (1 shl 4);  {Receive interrupt clear} 
- PL011_UART_ICR_DSRMIC = (1 shl 3);  {Unsupported, write zero, read as don't care} 
- PL011_UART_ICR_DCDMIC = (1 shl 2);  {Unsupported, write zero, read as don't care} 
- PL011_UART_ICR_CTSMIC = (1 shl 1);  {nUARTCTS modem interrupt clear} 
- PL011_UART_ICR_RIMIC  = (1 shl 0);  {Unsupported, write zero, read as don't care} 
- 
+ PL011_UART_ICR_PEIC   = (1 shl 8);  {Parity error interrupt clear}
+ PL011_UART_ICR_FEIC   = (1 shl 7);  {Framing error interrupt clear}
+ PL011_UART_ICR_RTIC   = (1 shl 6);  {Receive timeout interrupt clear}
+ PL011_UART_ICR_TXIC   = (1 shl 5);  {Transmit interrupt clear}
+ PL011_UART_ICR_RXIC   = (1 shl 4);  {Receive interrupt clear}
+ PL011_UART_ICR_DSRMIC = (1 shl 3);  {Unsupported, write zero, read as don't care}
+ PL011_UART_ICR_DCDMIC = (1 shl 2);  {Unsupported, write zero, read as don't care}
+ PL011_UART_ICR_CTSMIC = (1 shl 1);  {nUARTCTS modem interrupt clear}
+ PL011_UART_ICR_RIMIC  = (1 shl 0);  {Unsupported, write zero, read as don't care}
+
  {PL011 UART DMA Control register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
   {This register is disabled, writing to it has no effect and reading returns 0}
 
  {PL011 UART Test Control register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
- 
+
  {PL011 UART Integration Test Input register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
 
  {PL011 UART Integration Test Output register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
 
  {PL011 UART Test Data register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0183g/index.html)}
- 
+
 {==============================================================================}
 type
  {PL011 specific types}
@@ -257,7 +257,7 @@ type
   ITOP:LongWord;       {Integration Test Output Register}
   TDR:LongWord;        {Test Data Register}
  end;
- 
+
  PPL011UART = ^TPL011UART;
  TPL011UART = record
   {UART Properties}
@@ -272,18 +272,18 @@ type
   Count:LongWord;                                                         {Number of available entries in the buffer}
   Buffer:array[0..(PL011_UART_RX_BUFFER_SIZE - 1)] of Word;               {Buffer for received data (Includes data and status)}
   {$ENDIF}
-  {Statistics Properties}                                        
+  {Statistics Properties}
   InterruptCount:LongWord;                                                {Number of interrupt requests received by the device}
  end;
- 
+
 {==============================================================================}
 var
  {PL011 specific variables}
  PL011_RX_IRQ_MASK:Boolean = False; {If True then mask RX interrupts while RX FIFO is not empty (Allows for implementation variations)}
- 
+
 {==============================================================================}
 {Initialization Functions}
- 
+
 {==============================================================================}
 {PL011 Functions}
 function PL011UARTCreate(Address:PtrUInt;const Name:String;IRQ,ClockRate:LongWord):PUARTDevice;{$IFDEF API_EXPORT_PL011} stdcall; public name 'pl011_uart_create';{$ENDIF}
@@ -294,10 +294,10 @@ function PL011UARTDestroy(UART:PUARTDevice):LongWord;{$IFDEF API_EXPORT_PL011} s
 {PL011 UART Functions}
 function PL011UARTOpen(UART:PUARTDevice;BaudRate,DataBits,StopBits,Parity,FlowControl:LongWord):LongWord;
 function PL011UARTClose(UART:PUARTDevice):LongWord;
- 
+
 function PL011UARTRead(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 function PL011UARTWrite(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
- 
+
 function PL011UARTGetStatus(UART:PUARTDevice):LongWord;
 function PL011UARTSetStatus(UART:PUARTDevice;Status:LongWord):LongWord;
 
@@ -306,8 +306,8 @@ procedure PL011UARTInterruptHandler(UART:PUARTDevice);
 procedure PL011UARTReceive(UART:PUARTDevice);
 procedure PL011UARTTransmit(UART:PUARTDevice);
 
-procedure PL011UARTEnableInterrupt(UART:PPL011UART;Interrupt:LongWord); 
-procedure PL011UARTDisableInterrupt(UART:PPL011UART;Interrupt:LongWord); 
+procedure PL011UARTEnableInterrupt(UART:PPL011UART;Interrupt:LongWord);
+procedure PL011UARTDisableInterrupt(UART:PPL011UART;Interrupt:LongWord);
 
 {==============================================================================}
 {PL011 Helper Functions}
@@ -321,11 +321,11 @@ implementation
 {==============================================================================}
 {var}
  {PL011 specific variables}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 {PL011 Functions}
@@ -342,27 +342,27 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(nil,'PL011: UART Create (Address=' + AddrToHex(Address) + ' Name=' + Name + ' IRQ=' + IntToStr(IRQ) + ' ClockRate=' + IntToStr(ClockRate) + ')');
  {$ENDIF}
- 
+
  {Check Address}
  if Address = 0 then Exit;
- 
+
  {Check IRQ}
  {if IRQ = 0 then Exit;} {IRQ 0 is valid}
- 
+
  {Check Clock Rate}
  if ClockRate = 0 then Exit;
- 
+
  {Create UART}
  PL011UART:=PPL011UART(UARTDeviceCreateEx(SizeOf(TPL011UART)));
  if PL011UART <> nil then
   begin
    {Update UART}
    {Device}
-   PL011UART.UART.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+   PL011UART.UART.Device.DeviceBus:=DEVICE_BUS_MMIO;
    PL011UART.UART.Device.DeviceType:=UART_TYPE_16650;
    PL011UART.UART.Device.DeviceFlags:=UART_FLAG_DATA_8BIT or UART_FLAG_DATA_7BIT or UART_FLAG_DATA_6BIT or UART_FLAG_DATA_5BIT or UART_FLAG_STOP_1BIT or UART_FLAG_STOP_2BIT or UART_FLAG_PARITY_ODD or UART_FLAG_PARITY_EVEN or UART_FLAG_FLOW_RTS_CTS;
    PL011UART.UART.Device.DeviceData:=nil;
@@ -391,23 +391,23 @@ begin
    PL011UART.Lock:=INVALID_HANDLE_VALUE;
    PL011UART.ClockRate:=ClockRate;
    PL011UART.Registers:=PPL011UARTRegisters(Address);
-   
+
    {Register UART}
    Status:=UARTDeviceRegister(@PL011UART.UART);
    if Status = ERROR_SUCCESS then
     begin
      {Return Result}
-     Result:=PUARTDevice(PL011UART); 
+     Result:=PUARTDevice(PL011UART);
     end
    else
     begin
      if UART_LOG_ENABLED then UARTLogError(nil,'PL011: Failed to register new UART device: ' + ErrorToString(Status));
-     
+
      {Destroy UART}
      UARTDeviceDestroy(@PL011UART.UART);
     end;
   end
- else 
+ else
   begin
    if UART_LOG_ENABLED then UARTLogError(nil,'PL011: Failed to create new UART device');
   end;
@@ -422,14 +422,14 @@ function PL011UARTDestroy(UART:PUARTDevice):LongWord;{$IFDEF API_EXPORT_PL011} s
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check UART}
  if UART = nil then Exit;
- 
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011: UART Destroy');
  {$ENDIF}
- 
+
  {Close UART}
  Result:=UARTDeviceClose(UART);
  if Result = ERROR_SUCCESS then
@@ -448,12 +448,12 @@ begin
    else
     begin
      if UART_LOG_ENABLED then UARTLogError(nil,'PL011: Failed to deregister UART device: ' + ErrorToString(Result));
-    end;    
+    end;
   end
  else
   begin
    if UART_LOG_ENABLED then UARTLogError(nil,'PL011: Failed to close UART device: ' + ErrorToString(Result));
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -469,61 +469,61 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check UART}
  if UART = nil then Exit;
- 
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011: UART Open (BaudRate=' + IntToStr(BaudRate) + ' DataBits=' + IntToStr(DataBits) + ' StopBits=' + IntToStr(StopBits) + ' Parity=' + IntToStr(Parity) + ' FlowControl=' + IntToStr(FlowControl) + ')');
  {$ENDIF}
- 
+
  {Update Clock Rate}
- if PPL011UART(UART).ClockRate = 0 then PPL011UART(UART).ClockRate:=PL011_UART_CLOCK_RATE; 
- 
+ if PPL011UART(UART).ClockRate = 0 then PPL011UART(UART).ClockRate:=PL011_UART_CLOCK_RATE;
+
  {Update Properties}
  UART.Properties.MaxRate:=PPL011UART(UART).ClockRate div 16;
- 
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011:  ClockRate=' + IntToStr(PPL011UART(UART).ClockRate) + ' MaxRate=' + IntToStr(UART.Properties.MaxRate));
  {$ENDIF}
- 
+
  {Check Baud Rate}
  if ((BaudRate < PL011_UART_MIN_BAUD) or (BaudRate > UART.Properties.MaxRate)) and (BaudRate <> SERIAL_BAUD_RATE_DEFAULT) then Exit;
- 
+
  {Check Data Bits}
  if (DataBits < PL011_UART_MIN_DATABITS) or (DataBits > PL011_UART_MAX_DATABITS) then Exit;
- 
+
  {Check Stop Bits}
  if (StopBits < PL011_UART_MIN_STOPBITS) or (StopBits > PL011_UART_MAX_STOPBITS) then Exit;
- 
+
  {Check Parity}
  if Parity > PL011_UART_MAX_PARITY then Exit;
- 
+
  {Check Flow Control}
  if FlowControl > PL011_UART_MAX_FLOW then Exit;
- 
+
  {Adjust Baud Rate}
  if BaudRate = SERIAL_BAUD_RATE_DEFAULT then
   begin
    BaudRate:=SERIAL_BAUD_RATE_STANDARD;
    if (BaudRate > UART.Properties.MaxRate) then BaudRate:=SERIAL_BAUD_RATE_FALLBACK;
-  end; 
- 
+  end;
+
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
-  
+
  {Reset Control (Disable UART)}
  PPL011UART(UART).Registers.CR:=0;
- 
+
  {Reset Interrupt Mask (Disable Interrupts)}
  PPL011UART(UART).Registers.IMSC:=0;
- 
+
  {Ackowledge Interrupts}
  PPL011UART(UART).Registers.ICR:=$7FF;
- 
+
  {Reset Line Control (Flush FIFOs)}
  PPL011UART(UART).Registers.LCRH:=0;
- 
+
  {Calculate Divisor}
  if BaudRate > (PPL011UART(UART).ClockRate div 16) then
   begin
@@ -533,7 +533,7 @@ begin
   begin
    Divisor:=DivRoundClosest(PPL011UART(UART).ClockRate * 4,BaudRate);
   end;
-  
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011:  BaudRate=' + IntToStr(BaudRate) + ' Divisor=' + IntToStr(Divisor) + ' Divisor shr 6=' + IntToStr(Divisor shr 6) + ' Divisor and $3F=' + IntToStr(Divisor and $3f));
  {$ENDIF}
@@ -541,12 +541,12 @@ begin
  {Set Baud Rate}
  PPL011UART(UART).Registers.FBRD:=Divisor and $3f;
  PPL011UART(UART).Registers.IBRD:=Divisor shr 6;
-  
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011:  Integer Divisor=' + IntToStr(PPL011UART(UART).Registers.IBRD));
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011:  Fractional Divisor=' + IntToStr(PPL011UART(UART).Registers.FBRD));
  {$ENDIF}
-  
+
  {Get Line Control}
  LineControl:=PL011_UART_LCRH_FEN;
  {Data Bits}
@@ -565,28 +565,28 @@ begin
   SERIAL_PARITY_ODD:LineControl:=LineControl or PL011_UART_LCRH_PEN;
   SERIAL_PARITY_EVEN:LineControl:=LineControl or PL011_UART_LCRH_PEN or PL011_UART_LCRH_EPS;
  end;
- 
+
  {Set Line Control}
  PPL011UART(UART).Registers.LCRH:=LineControl;
- 
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011:  Line Control=' + IntToHex(PPL011UART(UART).Registers.LCRH,8));
  {$ENDIF}
- 
+
  {Set Interrupt FIFO Level}
  PPL011UART(UART).Registers.IFLS:=PL011_UART_IFLS_RXIFLSEL1_8 or PL011_UART_IFLS_TXIFLSEL1_8; {PL011_UART_IFLS_RXIFLSEL1_2 / PL011_UART_IFLS_TXIFLSEL1_2}
 
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011:  Interrupt FIFO Level=' + IntToHex(PPL011UART(UART).Registers.IFLS,8));
  {$ENDIF}
- 
- {Get Control} 
+
+ {Get Control}
  Control:=PL011_UART_CR_RXE or PL011_UART_CR_TXE or PL011_UART_CR_UARTEN;
  {Flow Control}
  case FlowControl of
   SERIAL_FLOW_RTS_CTS:Control:=Control or PL011_UART_CR_CTSEN or PL011_UART_CR_RTSEN;
  end;
- 
+
  {Create Receive Event (Manual Reset)}
  UART.ReceiveWait:=EventCreate(True,False);
  if UART.ReceiveWait = INVALID_HANDLE_VALUE then
@@ -603,7 +603,7 @@ begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Allocate Lock}
  PPL011UART(UART).Lock:=SpinCreate;
  if PPL011UART(UART).Lock = INVALID_HANDLE_VALUE then
@@ -614,28 +614,28 @@ begin
    EventDestroy(UART.ReceiveWait);
    Result:=ERROR_OPERATION_FAILED;
    Exit;
-  end; 
- 
+  end;
+
  {Set Control (Enable UART)}
  PPL011UART(UART).Registers.CR:=Control;
- 
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011:  Control=' + IntToHex(PPL011UART(UART).Registers.CR,8));
  {$ENDIF}
- 
+
  {Request IRQ}
  RequestIRQ(IRQ_ROUTING,PPL011UART(UART).IRQ,TInterruptHandler(PL011UARTInterruptHandler),UART);
- 
+
  {Set Interrupt Mask (Enable Interrupts)}
  PPL011UART(UART).Registers.IMSC:=PL011_UART_IMSC_TXIM or PL011_UART_IMSC_RXIM;
- 
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011:  Interrupt Mask=' + IntToHex(PPL011UART(UART).Registers.IMSC,8));
  {$ENDIF}
- 
+
  {Memory Barrier}
- DataMemoryBarrier; {After the Last Read} 
- 
+ DataMemoryBarrier; {After the Last Read}
+
  {Update Properties}
  UART.Properties.BaudRate:=BaudRate;
  UART.Properties.DataBits:=DataBits;
@@ -655,57 +655,57 @@ function PL011UARTClose(UART:PUARTDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check UART}
  if UART = nil then Exit;
- 
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011: UART Close');
  {$ENDIF}
- 
+
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
- 
+
  {Reset Interrupt Mask (Disable Interrupts)}
  PPL011UART(UART).Registers.IMSC:=0;
- 
+
  {Acknowledge Interrupts}
  PPL011UART(UART).Registers.ICR:=$7FF;
- 
+
  {Release IRQ}
  ReleaseIRQ(IRQ_ROUTING,PPL011UART(UART).IRQ,TInterruptHandler(PL011UARTInterruptHandler),UART);
- 
+
  {Reset Control (Disable UART)}
  PPL011UART(UART).Registers.CR:=0;
- 
+
  {Destroy Lock}
  SpinDestroy(PPL011UART(UART).Lock);
  PPL011UART(UART).Lock:=INVALID_HANDLE_VALUE;
- 
+
  {Destroy Transmit Event}
  EventDestroy(UART.TransmitWait);
  UART.TransmitWait:=INVALID_HANDLE_VALUE;
- 
+
  {Destroy Receive Event}
  EventDestroy(UART.ReceiveWait);
  UART.ReceiveWait:=INVALID_HANDLE_VALUE;
- 
+
  {Memory Barrier}
- DataMemoryBarrier; {After the Last Read} 
- 
+ DataMemoryBarrier; {After the Last Read}
+
  {Update Properties}
  UART.Properties.BaudRate:=SERIAL_BAUD_RATE_DEFAULT;
  UART.Properties.DataBits:=SERIAL_DATA_8BIT;
  UART.Properties.StopBits:=SERIAL_STOP_1BIT;
  UART.Properties.Parity:=SERIAL_PARITY_NONE;
  UART.Properties.FlowControl:=SERIAL_FLOW_NONE;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}
- 
+
 function PL011UARTRead(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 {Implementation of UARTDeviceRead API for PL011 UART}
 {Note: Not intended to be called directly by applications, use UARTDeviceRead instead}
@@ -721,7 +721,7 @@ function PL011UARTRead(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var C
    begin
     {Memory Barrier}
     DataMemoryBarrier; {Before the First Write}
-    
+
     {Buffer Received Data}
     Limit:=PL011_UART_RX_POLL_LIMIT;
     Status:=PPL011UART(UART).Registers.FR;
@@ -729,41 +729,41 @@ function PL011UARTRead(UART:PUARTDevice;Buffer:Pointer;Size,Flags:LongWord;var C
      begin
       {Read Data}
       PPL011UART(UART).Buffer[(PPL011UART(UART).Start + PPL011UART(UART).Count) mod PL011_UART_RX_BUFFER_SIZE]:=PPL011UART(UART).Registers.DR;
-      
+
       {Update Count}
       Inc(PPL011UART(UART).Count);
 
       {Update Limit}
       Dec(Limit);
-      
+
       {Get Status}
       Status:=PPL011UART(UART).Registers.FR;
 
       {Check Limit}
       if Limit = 0 then Break;
      end;
-    
+
     {Check Mask and Status}
     if (PL011_RX_IRQ_MASK) and ((Status and PL011_UART_FR_RXFE) <> 0) then
      begin
       {Enable Receive}
       PPL011UART(UART).Registers.IMSC:=PPL011UART(UART).Registers.IMSC or PL011_UART_IMSC_RXIM;
-     end; 
-    
+     end;
+
     {Memory Barrier}
-    DataMemoryBarrier; {After the Last Read} 
-    
+    DataMemoryBarrier; {After the Last Read}
+
     SpinUnlockIRQ(PPL011UART(UART).Lock);
-    
+
     {Set Event}
     EventSet(UART.ReceiveWait);
-    
+
     Result:=ERROR_SUCCESS;
    end
   else
    begin
     Result:=ERROR_CAN_NOT_COMPLETE;
-   end; 
+   end;
  end;
  {$ENDIF}
 
@@ -777,17 +777,17 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check UART}
  if UART = nil then Exit;
- 
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011: UART Read (Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Read to Buffer}
  Offset:=0;
  Total:=Size;
@@ -808,17 +808,17 @@ begin
      EventSet(UART.ReceiveWait);
      {$ENDIF}
     end;
-    
+
    {Check Non Blocking}
    if ((Flags and UART_READ_NON_BLOCK) <> 0) and (EventState(UART.ReceiveWait) <> EVENT_STATE_SIGNALED) then
     begin
      Result:=ERROR_NO_MORE_ITEMS;
      Break;
     end;
- 
+
    {Release the Lock}
    MutexUnlock(UART.Lock);
-   
+
    {Wait for Data}
    if EventWait(UART.ReceiveWait) = ERROR_SUCCESS then
     begin
@@ -835,10 +835,10 @@ begin
 
            {Update Start}
            PPL011UART(UART).Start:=(PPL011UART(UART).Start + 1) mod PL011_UART_RX_BUFFER_SIZE;
-         
+
            {Update Count}
            Dec(PPL011UART(UART).Count);
-          
+
            SpinUnlockIRQ(PPL011UART(UART).Lock);
           end
          else
@@ -846,55 +846,55 @@ begin
            Result:=ERROR_CAN_NOT_COMPLETE;
            Exit;
           end;
-         
+
          {Check for Error}
          if (Value and PL011_UART_DR_ERROR) <> 0 then
           begin
            {Check Error}
            if (Value and PL011_UART_DR_OE) <> 0 then
             begin
-             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Overrun error on receive character'); 
-             
+             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Overrun error on receive character');
+
              UART.UARTStatus:=UART.UARTStatus or UART_STATUS_OVERRUN_ERROR;
             end;
            if (Value and PL011_UART_DR_BE) <> 0 then
             begin
-             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Break error on receive character'); 
-             
+             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Break error on receive character');
+
              UART.UARTStatus:=UART.UARTStatus or UART_STATUS_BREAK_ERROR;
             end;
            if (Value and PL011_UART_DR_PE) <> 0 then
             begin
-             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Parity error on receive character'); 
-             
+             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Parity error on receive character');
+
              UART.UARTStatus:=UART.UARTStatus or UART_STATUS_PARITY_ERROR;
             end;
            if (Value and PL011_UART_DR_FE) <> 0 then
             begin
-             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Framing error on receive character'); 
-             
+             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Framing error on receive character');
+
              UART.UARTStatus:=UART.UARTStatus or UART_STATUS_FRAMING_ERROR;
             end;
-           
+
            {Update Statistics}
            Inc(UART.ReceiveErrors);
           end;
 
          {Save Data}
          PByte(Buffer + Offset)^:=Value and PL011_UART_DR_DATA;
-         
+
          {Update Statistics}
          Inc(UART.ReceiveCount);
-         
+
          {Update Count}
          Inc(Count);
-         
+
          {Update Size and Offset}
          Dec(Size);
          Inc(Offset);
         end;
-        
-       {Check Count} 
+
+       {Check Count}
        if PPL011UART(UART).Count = 0 then
         begin
          {Reset Event}
@@ -903,64 +903,64 @@ begin
        {$ELSE}
        {Memory Barrier}
        DataMemoryBarrier; {Before the First Write}
- 
+
        {Get Status}
        Status:=PPL011UART(UART).Registers.FR;
        while ((Status and PL011_UART_FR_RXFE) = 0) and (Size > 0) do
         begin
          {Read Data}
          Value:=PPL011UART(UART).Registers.DR;
-         
+
          {Check for Error}
          if (Value and PL011_UART_DR_ERROR) <> 0 then
           begin
            {Check Error}
            if (Value and PL011_UART_DR_OE) <> 0 then
             begin
-             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Overrun error on receive character'); 
-             
+             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Overrun error on receive character');
+
              UART.UARTStatus:=UART.UARTStatus or UART_STATUS_OVERRUN_ERROR;
             end;
            if (Value and PL011_UART_DR_BE) <> 0 then
             begin
-             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Break error on receive character'); 
-             
+             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Break error on receive character');
+
              UART.UARTStatus:=UART.UARTStatus or UART_STATUS_BREAK_ERROR;
             end;
            if (Value and PL011_UART_DR_PE) <> 0 then
             begin
-             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Parity error on receive character'); 
-             
+             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Parity error on receive character');
+
              UART.UARTStatus:=UART.UARTStatus or UART_STATUS_PARITY_ERROR;
             end;
            if (Value and PL011_UART_DR_FE) <> 0 then
             begin
-             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Framing error on receive character'); 
-             
+             if UART_LOG_ENABLED then UARTLogError(UART,'PL011: Framing error on receive character');
+
              UART.UARTStatus:=UART.UARTStatus or UART_STATUS_FRAMING_ERROR;
             end;
-           
+
            {Update Statistics}
            Inc(UART.ReceiveErrors);
           end;
-          
+
          {Save Data}
          PByte(Buffer + Offset)^:=Value and PL011_UART_DR_DATA;
-         
+
          {Update Statistics}
          Inc(UART.ReceiveCount);
-         
+
          {Update Count}
          Inc(Count);
-         
+
          {Update Size and Offset}
          Dec(Size);
          Inc(Offset);
-         
+
          {Get Status}
          Status:=PPL011UART(UART).Registers.FR;
         end;
-        
+
        {Check Status}
        if (Status and PL011_UART_FR_RXFE) <> 0 then
         begin
@@ -969,35 +969,35 @@ begin
           begin
            {Enable Receive}
            PL011UARTEnableInterrupt(PPL011UART(UART),PL011_UART_IMSC_RXIM);
-          end; 
-         
+          end;
+
          {Reset Event}
          EventReset(UART.ReceiveWait);
-        end;        
- 
+        end;
+
        {Memory Barrier}
-       DataMemoryBarrier; {After the Last Read} 
+       DataMemoryBarrier; {After the Last Read}
        {$ENDIF}
       end
      else
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
        Exit;
-      end;      
+      end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
      Exit;
-    end;    
+    end;
   end;
- 
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011:  Return Count=' + IntToStr(Count));
  {$ENDIF}
- 
+
  {Return Result}
- if (Total = Count) then Result:=ERROR_SUCCESS; 
+ if (Total = Count) then Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}
@@ -1014,17 +1014,17 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check UART}
  if UART = nil then Exit;
- 
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011: UART Write (Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Write from Buffer}
  Offset:=0;
  Total:=Size;
@@ -1036,17 +1036,17 @@ begin
      {Set Event}
      EventSet(UART.TransmitWait);
     end;
-   
+
    {Check Non Blocking}
    if ((Flags and UART_WRITE_NON_BLOCK) <> 0) and (EventState(UART.TransmitWait) <> EVENT_STATE_SIGNALED) then
     begin
      Result:=ERROR_INSUFFICIENT_BUFFER;
      Break;
     end;
-   
+
    {Release the Lock}
    MutexUnlock(UART.Lock);
-   
+
    {Wait for Space}
    if EventWait(UART.TransmitWait) = ERROR_SUCCESS then
     begin
@@ -1055,64 +1055,64 @@ begin
       begin
        {Memory Barrier}
        DataMemoryBarrier; {Before the First Write}
-      
+
        {Get Status}
        Status:=PPL011UART(UART).Registers.FR;
        while ((Status and PL011_UART_FR_TXFF) = 0) and (Size > 0) do
         begin
          {Write Data}
          PPL011UART(UART).Registers.DR:=PByte(Buffer + Offset)^;
-         
+
          {Update Statistics}
          Inc(UART.TransmitCount);
-         
+
          {Update Count}
          Inc(Count);
-         
+
          {Update Size and Offset}
          Dec(Size);
          Inc(Offset);
-         
+
          {Get Status}
          Status:=PPL011UART(UART).Registers.FR;
         end;
-        
+
        {Check Status}
        if (Status and PL011_UART_FR_TXFF) <> 0 then
         begin
          {Enable Transmit}
          PL011UARTEnableInterrupt(PPL011UART(UART),PL011_UART_IMSC_TXIM);
-         
+
          {Reset Event}
          EventReset(UART.TransmitWait);
-        end;        
-      
+        end;
+
        {Memory Barrier}
-       DataMemoryBarrier; {After the Last Read} 
+       DataMemoryBarrier; {After the Last Read}
       end
      else
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
        Exit;
-      end;      
+      end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
      Exit;
-    end;    
+    end;
   end;
-  
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011:  Return Count=' + IntToStr(Count));
  {$ENDIF}
- 
+
  {Return Result}
  if (Total = Count) then Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}
- 
+
 function PL011UARTGetStatus(UART:PUARTDevice):LongWord;
 {Implementation of UARTDeviceGetStatus API for PL011 UART}
 {Note: Not intended to be called directly by applications, use UARTDeviceGetStatus instead}
@@ -1123,14 +1123,14 @@ var
 begin
  {}
  Result:=UART_STATUS_NONE;
- 
+
  {Check UART}
  if UART = nil then Exit;
- 
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011: UART Get Status');
  {$ENDIF}
- 
+
  {Get Flags}
  Flags:=PPL011UART(UART).Registers.FR;
  if (Flags and PL011_UART_FR_CTS) <> 0 then
@@ -1157,7 +1157,7 @@ begin
   begin
    Result:=Result or UART_STATUS_BUSY;
   end;
- 
+
  {Get Status}
  Status:=PPL011UART(UART).Registers.RSRECR;
  if Status <> 0 then
@@ -1180,12 +1180,12 @@ begin
     end;
    {Memory Barrier}
    DataMemoryBarrier; {Before the First Write}
-   
-   {Clear Status} 
-   PPL011UART(UART).Registers.RSRECR:=0;  
-  end;  
 
- {Get UART Status} 
+   {Clear Status}
+   PPL011UART(UART).Registers.RSRECR:=0;
+  end;
+
+ {Get UART Status}
  if UART.UARTStatus <> UART_STATUS_NONE then
   begin
    Result:=Result or UART.UARTStatus;
@@ -1199,9 +1199,9 @@ begin
   begin
    Result:=Result or UART_STATUS_RTS;
   end;
- 
+
  {Memory Barrier}
- DataMemoryBarrier; {After the Last Read} 
+ DataMemoryBarrier; {After the Last Read}
 end;
 
 {==============================================================================}
@@ -1214,20 +1214,20 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check UART}
  if UART = nil then Exit;
- 
+
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011: UART0 Set Status (Status=' + IntToHex(Status,8) + ')');
  {$ENDIF}
- 
+
  {Get Control}
  Control:=PPL011UART(UART).Registers.CR;
- 
+
  {Memory Barrier}
- DataMemoryBarrier; {After the Last Read / Before the First Write} 
- 
+ DataMemoryBarrier; {After the Last Read / Before the First Write}
+
  {Check RTS}
  if (Status and UART_STATUS_RTS) <> 0 then
   begin
@@ -1238,8 +1238,8 @@ begin
   begin
    {Disable}
    PPL011UART(UART).Registers.CR:=Control and not(PL011_UART_CR_RTS);
-  end;  
- 
+  end;
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -1258,37 +1258,37 @@ begin
  {}
  {Check UART}
  if UART = nil then Exit;
- 
+
  {Acquire Lock}
  if SpinLockIRQ(PPL011UART(UART).Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Update Statistics}
  Inc(PPL011UART(UART).InterruptCount);
- 
+
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
- 
+
  {Get Interrupt Status}
  Status:=PPL011UART(UART).Registers.MIS;
  if Status <> 0 then
   begin
    {Acknowledge Interrupts}
    PPL011UART(UART).Registers.ICR:=Status and not(PL011_UART_ICR_TXIC or PL011_UART_ICR_RXIC);
-   
+
    {Check Transmit}
    if (Status and PL011_UART_MIS_TXMIS) <> 0 then
     begin
      {Acknowledge Transmit}
      PPL011UART(UART).Registers.ICR:=PL011_UART_ICR_TXIC;
-     
+
      {Send Transmit}
      if WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(PL011UARTTransmit),UART,nil) = ERROR_SUCCESS then
       begin
        {Mask Transmit}
        PPL011UART(UART).Registers.IMSC:=PPL011UART(UART).Registers.IMSC and not(PL011_UART_IMSC_TXIM);
-      end; 
+      end;
     end;
-    
+
    {Check Receive}
    if (Status and PL011_UART_MIS_RXMIS) <> 0 then
     begin
@@ -1303,16 +1303,16 @@ begin
       begin
        {Read Data}
        PPL011UART(UART).Buffer[(PPL011UART(UART).Start + PPL011UART(UART).Count) mod PL011_UART_RX_BUFFER_SIZE]:=PPL011UART(UART).Registers.DR;
-       
+
        {Update Count}
        Inc(PPL011UART(UART).Count);
-       
+
        {Update Limit}
        Dec(Limit);
-       
+
        {Get Status}
        Status:=PPL011UART(UART).Registers.FR;
-       
+
        {Check Limit}
        if Limit = 0 then Break;
       end;
@@ -1322,8 +1322,8 @@ begin
       begin
        {Mask Receive}
        PPL011UART(UART).Registers.IMSC:=PPL011UART(UART).Registers.IMSC and not(PL011_UART_IMSC_RXIM);
-      end; 
-       
+      end;
+
      {Send Receive}
      WorkerScheduleIRQ(CPU_AFFINITY_NONE,TWorkerTask(PL011UARTReceive),UART,nil);
      {$ELSE}
@@ -1332,14 +1332,14 @@ begin
       begin
        {Mask Receive}
        PPL011UART(UART).Registers.IMSC:=PPL011UART(UART).Registers.IMSC and not(PL011_UART_IMSC_RXIM);
-      end; 
+      end;
      {$ENDIF}
     end;
-  end; 
- 
+  end;
+
  {Memory Barrier}
- DataMemoryBarrier; {After the Last Read} 
- 
+ DataMemoryBarrier; {After the Last Read}
+
  {Release Lock}
  SpinUnlockIRQ(PPL011UART(UART).Lock);
 end;
@@ -1355,29 +1355,29 @@ begin
  {}
  {Check UART}
  if UART = nil then Exit;
- if UART.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if UART.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011: UART Receive');
  {$ENDIF}
- 
+
  {Check Mode}
  if UART.UARTMode = UART_MODE_SERIAL then
   begin
    {Get Serial}
    Serial:=UART.Serial;
    if Serial = nil then Exit;
-   if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
-   
+   if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
    {Acquire the Lock}
    if MutexLock(Serial.Lock) = ERROR_SUCCESS then
     begin
      {Set Event}
      EventSet(UART.ReceiveWait);
-     
+
      {Serial Receive}
      UARTSerialDeviceReceive(UART);
- 
+
      {Release the Lock}
      MutexUnlock(Serial.Lock);
     end;
@@ -1389,7 +1389,7 @@ begin
     begin
      {Set Event}
      EventSet(UART.ReceiveWait);
-     
+
      {Release the Lock}
      MutexUnlock(UART.Lock);
     end;
@@ -1407,29 +1407,29 @@ begin
  {}
  {Check UART}
  if UART = nil then Exit;
- if UART.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if UART.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {$IF DEFINED(PL011_DEBUG) or DEFINED(UART_DEBUG)}
  if UART_LOG_ENABLED then UARTLogDebug(UART,'PL011: UART Transmit');
  {$ENDIF}
- 
+
  {Check Mode}
  if UART.UARTMode = UART_MODE_SERIAL then
   begin
    {Get Serial}
    Serial:=UART.Serial;
    if Serial = nil then Exit;
-   if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
-   
+   if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
    {Acquire the Lock}
    if MutexLock(Serial.Lock) = ERROR_SUCCESS then
     begin
      {Set Event}
      EventSet(UART.TransmitWait);
-     
+
      {Serial Transmit}
      UARTSerialDeviceTransmit(UART);
- 
+
      {Release the Lock}
      MutexUnlock(Serial.Lock);
     end;
@@ -1441,7 +1441,7 @@ begin
     begin
      {Set Event}
      EventSet(UART.TransmitWait);
-     
+
      {Release the Lock}
      MutexUnlock(UART.Lock);
     end;
@@ -1460,15 +1460,15 @@ begin
  {}
  {Acquire Lock}
  if SpinLockIRQ(UART.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
 
- {Update Interrupt Mask} 
+ {Update Interrupt Mask}
  UART.Registers.IMSC:=UART.Registers.IMSC or Interrupt;
- 
+
  {Memory Barrier}
- DataMemoryBarrier; {After the Last Read} 
+ DataMemoryBarrier; {After the Last Read}
 
  {Release Lock}
  SpinUnlockIRQ(UART.Lock);
@@ -1489,13 +1489,13 @@ begin
 
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
- 
- {Update Interrupt Mask} 
+
+ {Update Interrupt Mask}
  UART.Registers.IMSC:=UART.Registers.IMSC and not(Interrupt);
- 
+
  {Memory Barrier}
- DataMemoryBarrier; {After the Last Read} 
- 
+ DataMemoryBarrier; {After the Last Read}
+
  {Release Lock}
  SpinUnlockIRQ(UART.Lock);
 end;
@@ -1509,9 +1509,9 @@ end;
 
 {initialization}
  {Nothing}
- 
+
 {==============================================================================}
- 
+
 {finalization}
  {Nothing}
 

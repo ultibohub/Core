@@ -17,38 +17,38 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
   Linux - \drivers\net\wireless\rt2x00\* - Copyright (C) 2010 Willow Garage and others.
-  
+
 References
 ==========
 
  RT2x00 - http://ralink.rapla.net/ (Contains some patchy information about Ralink chipsets)
- 
+
 Ralink RT2800
 =============
 
  The Ralink RT2800 is a WLAN controller with USB2.0 interface, Ralink is now part of MediaTek.
- 
+
  The list of USB supported device IDs shown below for this driver is taken from the equivalent Linux driver
  but not all have been tested. In general if your device works with the rt2800usb kernel module under Linux
  then it should also work with this driver.
- 
- Only USB devices are currently supported, PCI and other forms of the same chipset will require a separate 
+
+ Only USB devices are currently supported, PCI and other forms of the same chipset will require a separate
  driver unit for support.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit RT2800USB; 
+unit RT2800USB;
 
 interface
 
@@ -62,369 +62,369 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Network,W
 const
  {RT2800USB specific constants}
  RT2800USB_NETWORK_DESCRIPTION = 'Ralink RT2800 USB Wireless'; {Description of RT2800USB device}
- 
+
  RT2800USB_DRIVER_NAME = 'Ralink RT2800 USB Wireless Driver';  {Name of RT2800USB driver}
- 
+
  RT2800USB_DEVICE_ID_COUNT = 330; {Number of supported Device IDs}
 
  RT2800USB_DEVICE_ID:array[0..RT2800USB_DEVICE_ID_COUNT - 1] of TUSBDeviceId = (
   (idVendor:$07b8;idProduct:$2870),  {Abocom}
-  (idVendor:$07b8;idProduct:$2770),  
-  (idVendor:$07b8;idProduct:$3070),  
-  (idVendor:$07b8;idProduct:$3071),  
-  (idVendor:$07b8;idProduct:$3072),  
-  (idVendor:$1482;idProduct:$3c09),  
+  (idVendor:$07b8;idProduct:$2770),
+  (idVendor:$07b8;idProduct:$3070),
+  (idVendor:$07b8;idProduct:$3071),
+  (idVendor:$07b8;idProduct:$3072),
+  (idVendor:$1482;idProduct:$3c09),
   (idVendor:$1eda;idProduct:$2012),  {AirTies}
-  (idVendor:$1eda;idProduct:$2210), 
-  (idVendor:$1eda;idProduct:$2310), 
+  (idVendor:$1eda;idProduct:$2210),
+  (idVendor:$1eda;idProduct:$2310),
   (idVendor:$8516;idProduct:$2070),  {Allwin}
-  (idVendor:$8516;idProduct:$2770), 
-  (idVendor:$8516;idProduct:$2870), 
-  (idVendor:$8516;idProduct:$3070), 
-  (idVendor:$8516;idProduct:$3071), 
-  (idVendor:$8516;idProduct:$3072), 
+  (idVendor:$8516;idProduct:$2770),
+  (idVendor:$8516;idProduct:$2870),
+  (idVendor:$8516;idProduct:$3070),
+  (idVendor:$8516;idProduct:$3071),
+  (idVendor:$8516;idProduct:$3072),
   (idVendor:$14b2;idProduct:$3c06),  {Alpha Networks}
-  (idVendor:$14b2;idProduct:$3c07), 
-  (idVendor:$14b2;idProduct:$3c09), 
-  (idVendor:$14b2;idProduct:$3c12), 
-  (idVendor:$14b2;idProduct:$3c23), 
-  (idVendor:$14b2;idProduct:$3c25), 
-  (idVendor:$14b2;idProduct:$3c27), 
-  (idVendor:$14b2;idProduct:$3c28), 
-  (idVendor:$14b2;idProduct:$3c2c), 
+  (idVendor:$14b2;idProduct:$3c07),
+  (idVendor:$14b2;idProduct:$3c09),
+  (idVendor:$14b2;idProduct:$3c12),
+  (idVendor:$14b2;idProduct:$3c23),
+  (idVendor:$14b2;idProduct:$3c25),
+  (idVendor:$14b2;idProduct:$3c27),
+  (idVendor:$14b2;idProduct:$3c28),
+  (idVendor:$14b2;idProduct:$3c2c),
   (idVendor:$15c5;idProduct:$0008),  {Amit}
-  (idVendor:$1690;idProduct:$0740),  {Askey} 
-  (idVendor:$0b05;idProduct:$1731),  {ASUS} 
-  (idVendor:$0b05;idProduct:$1732), 
-  (idVendor:$0b05;idProduct:$1742), 
-  (idVendor:$0b05;idProduct:$1784), 
-  (idVendor:$1761;idProduct:$0b05), 
-  (idVendor:$13d3;idProduct:$3247),  {AzureWave} 
-  (idVendor:$13d3;idProduct:$3273), 
-  (idVendor:$13d3;idProduct:$3305), 
-  (idVendor:$13d3;idProduct:$3307), 
-  (idVendor:$13d3;idProduct:$3321), 
+  (idVendor:$1690;idProduct:$0740),  {Askey}
+  (idVendor:$0b05;idProduct:$1731),  {ASUS}
+  (idVendor:$0b05;idProduct:$1732),
+  (idVendor:$0b05;idProduct:$1742),
+  (idVendor:$0b05;idProduct:$1784),
+  (idVendor:$1761;idProduct:$0b05),
+  (idVendor:$13d3;idProduct:$3247),  {AzureWave}
+  (idVendor:$13d3;idProduct:$3273),
+  (idVendor:$13d3;idProduct:$3305),
+  (idVendor:$13d3;idProduct:$3307),
+  (idVendor:$13d3;idProduct:$3321),
   (idVendor:$050d;idProduct:$8053),  {Belkin}
-  (idVendor:$050d;idProduct:$805c), 
-  (idVendor:$050d;idProduct:$815c), 
-  (idVendor:$050d;idProduct:$825a), 
-  (idVendor:$050d;idProduct:$825b), 
-  (idVendor:$050d;idProduct:$935a), 
-  (idVendor:$050d;idProduct:$935b), 
+  (idVendor:$050d;idProduct:$805c),
+  (idVendor:$050d;idProduct:$815c),
+  (idVendor:$050d;idProduct:$825a),
+  (idVendor:$050d;idProduct:$825b),
+  (idVendor:$050d;idProduct:$935a),
+  (idVendor:$050d;idProduct:$935b),
   (idVendor:$0411;idProduct:$00e8),  {Buffalo}
-  (idVendor:$0411;idProduct:$0158), 
-  (idVendor:$0411;idProduct:$015d), 
-  (idVendor:$0411;idProduct:$016f), 
-  (idVendor:$0411;idProduct:$01a2), 
-  (idVendor:$0411;idProduct:$01ee), 
-  (idVendor:$0411;idProduct:$01a8), 
+  (idVendor:$0411;idProduct:$0158),
+  (idVendor:$0411;idProduct:$015d),
+  (idVendor:$0411;idProduct:$016f),
+  (idVendor:$0411;idProduct:$01a2),
+  (idVendor:$0411;idProduct:$01ee),
+  (idVendor:$0411;idProduct:$01a8),
   (idVendor:$07aa;idProduct:$002f),  {Corega}
-  (idVendor:$07aa;idProduct:$003c), 
-  (idVendor:$07aa;idProduct:$003f), 
-  (idVendor:$18c5;idProduct:$0012), 
-  (idVendor:$07d1;idProduct:$3c09),  {D-Link} 
-  (idVendor:$07d1;idProduct:$3c0a), 
-  (idVendor:$07d1;idProduct:$3c0d), 
-  (idVendor:$07d1;idProduct:$3c0e), 
-  (idVendor:$07d1;idProduct:$3c0f), 
-  (idVendor:$07d1;idProduct:$3c11), 
-  (idVendor:$07d1;idProduct:$3c13), 
-  (idVendor:$07d1;idProduct:$3c15), 
-  (idVendor:$07d1;idProduct:$3c16), 
-  (idVendor:$07d1;idProduct:$3c17), 
-  (idVendor:$2001;idProduct:$3317), 
-  (idVendor:$2001;idProduct:$3c1b), 
-  (idVendor:$2001;idProduct:$3c25), 
+  (idVendor:$07aa;idProduct:$003c),
+  (idVendor:$07aa;idProduct:$003f),
+  (idVendor:$18c5;idProduct:$0012),
+  (idVendor:$07d1;idProduct:$3c09),  {D-Link}
+  (idVendor:$07d1;idProduct:$3c0a),
+  (idVendor:$07d1;idProduct:$3c0d),
+  (idVendor:$07d1;idProduct:$3c0e),
+  (idVendor:$07d1;idProduct:$3c0f),
+  (idVendor:$07d1;idProduct:$3c11),
+  (idVendor:$07d1;idProduct:$3c13),
+  (idVendor:$07d1;idProduct:$3c15),
+  (idVendor:$07d1;idProduct:$3c16),
+  (idVendor:$07d1;idProduct:$3c17),
+  (idVendor:$2001;idProduct:$3317),
+  (idVendor:$2001;idProduct:$3c1b),
+  (idVendor:$2001;idProduct:$3c25),
   (idVendor:$07fa;idProduct:$7712),  {Draytek}
   (idVendor:$0fe9;idProduct:$b307),  {DVICO}
   (idVendor:$7392;idProduct:$4085),  {Edimax}
-  (idVendor:$7392;idProduct:$7711), 
-  (idVendor:$7392;idProduct:$7717), 
-  (idVendor:$7392;idProduct:$7718), 
-  (idVendor:$7392;idProduct:$7722), 
+  (idVendor:$7392;idProduct:$7711),
+  (idVendor:$7392;idProduct:$7717),
+  (idVendor:$7392;idProduct:$7718),
+  (idVendor:$7392;idProduct:$7722),
   (idVendor:$203d;idProduct:$1480),  {Encore}
-  (idVendor:$203d;idProduct:$14a9), 
+  (idVendor:$203d;idProduct:$14a9),
   (idVendor:$1740;idProduct:$9701),  {EnGenius}
-  (idVendor:$1740;idProduct:$9702), 
-  (idVendor:$1740;idProduct:$9703), 
-  (idVendor:$1740;idProduct:$9705), 
-  (idVendor:$1740;idProduct:$9706), 
-  (idVendor:$1740;idProduct:$9707), 
-  (idVendor:$1740;idProduct:$9708), 
-  (idVendor:$1740;idProduct:$9709), 
+  (idVendor:$1740;idProduct:$9702),
+  (idVendor:$1740;idProduct:$9703),
+  (idVendor:$1740;idProduct:$9705),
+  (idVendor:$1740;idProduct:$9706),
+  (idVendor:$1740;idProduct:$9707),
+  (idVendor:$1740;idProduct:$9708),
+  (idVendor:$1740;idProduct:$9709),
   (idVendor:$15a9;idProduct:$0012),  {Gemtek}
   (idVendor:$1044;idProduct:$800b),  {Gigabyte}
-  (idVendor:$1044;idProduct:$800d), 
+  (idVendor:$1044;idProduct:$800d),
   (idVendor:$0e66;idProduct:$0001),  {Hawking}
-  (idVendor:$0e66;idProduct:$0003), 
-  (idVendor:$0e66;idProduct:$0009), 
-  (idVendor:$0e66;idProduct:$000b), 
-  (idVendor:$0e66;idProduct:$0013), 
-  (idVendor:$0e66;idProduct:$0017), 
-  (idVendor:$0e66;idProduct:$0018), 
-  (idVendor:$04bb;idProduct:$0945),  {I-O DATA} 
-  (idVendor:$04bb;idProduct:$0947), 
-  (idVendor:$04bb;idProduct:$0948), 
-  (idVendor:$13b1;idProduct:$0031), {Linksys} 
-  (idVendor:$1737;idProduct:$0070), 
-  (idVendor:$1737;idProduct:$0071), 
-  (idVendor:$1737;idProduct:$0077), 
-  (idVendor:$1737;idProduct:$0078), 
-  (idVendor:$0789;idProduct:$0162),  {Logitec} 
-  (idVendor:$0789;idProduct:$0163), 
-  (idVendor:$0789;idProduct:$0164), 
-  (idVendor:$0789;idProduct:$0166), 
+  (idVendor:$0e66;idProduct:$0003),
+  (idVendor:$0e66;idProduct:$0009),
+  (idVendor:$0e66;idProduct:$000b),
+  (idVendor:$0e66;idProduct:$0013),
+  (idVendor:$0e66;idProduct:$0017),
+  (idVendor:$0e66;idProduct:$0018),
+  (idVendor:$04bb;idProduct:$0945),  {I-O DATA}
+  (idVendor:$04bb;idProduct:$0947),
+  (idVendor:$04bb;idProduct:$0948),
+  (idVendor:$13b1;idProduct:$0031), {Linksys}
+  (idVendor:$1737;idProduct:$0070),
+  (idVendor:$1737;idProduct:$0071),
+  (idVendor:$1737;idProduct:$0077),
+  (idVendor:$1737;idProduct:$0078),
+  (idVendor:$0789;idProduct:$0162),  {Logitec}
+  (idVendor:$0789;idProduct:$0163),
+  (idVendor:$0789;idProduct:$0164),
+  (idVendor:$0789;idProduct:$0166),
   (idVendor:$100d;idProduct:$9031),  {Motorola}
-  (idVendor:$0db0;idProduct:$3820),  {MSI} 
-  (idVendor:$0db0;idProduct:$3821), 
-  (idVendor:$0db0;idProduct:$3822), 
-  (idVendor:$0db0;idProduct:$3870), 
-  (idVendor:$0db0;idProduct:$3871), 
-  (idVendor:$0db0;idProduct:$6899), 
-  (idVendor:$0db0;idProduct:$821a), 
-  (idVendor:$0db0;idProduct:$822a), 
-  (idVendor:$0db0;idProduct:$822b), 
-  (idVendor:$0db0;idProduct:$822c), 
-  (idVendor:$0db0;idProduct:$870a), 
-  (idVendor:$0db0;idProduct:$871a), 
-  (idVendor:$0db0;idProduct:$871b), 
-  (idVendor:$0db0;idProduct:$871c), 
-  (idVendor:$0db0;idProduct:$899a), 
-  (idVendor:$1b75;idProduct:$3071),  {Ovislink} 
-  (idVendor:$1b75;idProduct:$3072), 
-  (idVendor:$1b75;idProduct:$a200), 
+  (idVendor:$0db0;idProduct:$3820),  {MSI}
+  (idVendor:$0db0;idProduct:$3821),
+  (idVendor:$0db0;idProduct:$3822),
+  (idVendor:$0db0;idProduct:$3870),
+  (idVendor:$0db0;idProduct:$3871),
+  (idVendor:$0db0;idProduct:$6899),
+  (idVendor:$0db0;idProduct:$821a),
+  (idVendor:$0db0;idProduct:$822a),
+  (idVendor:$0db0;idProduct:$822b),
+  (idVendor:$0db0;idProduct:$822c),
+  (idVendor:$0db0;idProduct:$870a),
+  (idVendor:$0db0;idProduct:$871a),
+  (idVendor:$0db0;idProduct:$871b),
+  (idVendor:$0db0;idProduct:$871c),
+  (idVendor:$0db0;idProduct:$899a),
+  (idVendor:$1b75;idProduct:$3071),  {Ovislink}
+  (idVendor:$1b75;idProduct:$3072),
+  (idVendor:$1b75;idProduct:$a200),
   (idVendor:$20b8;idProduct:$8888),  {Para}
-  (idVendor:$1d4d;idProduct:$0002),  {Pegatron} 
-  (idVendor:$1d4d;idProduct:$000c), 
-  (idVendor:$1d4d;idProduct:$000e), 
-  (idVendor:$1d4d;idProduct:$0011), 
-  (idVendor:$0471;idProduct:$200f),  {Philips} 
-  (idVendor:$2019;idProduct:$5201),  {Planex} 
-  (idVendor:$2019;idProduct:$ab25), 
-  (idVendor:$2019;idProduct:$ed06), 
+  (idVendor:$1d4d;idProduct:$0002),  {Pegatron}
+  (idVendor:$1d4d;idProduct:$000c),
+  (idVendor:$1d4d;idProduct:$000e),
+  (idVendor:$1d4d;idProduct:$0011),
+  (idVendor:$0471;idProduct:$200f),  {Philips}
+  (idVendor:$2019;idProduct:$5201),  {Planex}
+  (idVendor:$2019;idProduct:$ab25),
+  (idVendor:$2019;idProduct:$ed06),
   (idVendor:$1a32;idProduct:$0304),  {Quanta}
   (idVendor:$148f;idProduct:$2070),  {Ralink}
-  (idVendor:$148f;idProduct:$2770), 
-  (idVendor:$148f;idProduct:$2870), 
-  (idVendor:$148f;idProduct:$3070), 
-  (idVendor:$148f;idProduct:$3071), 
-  (idVendor:$148f;idProduct:$3072), 
-  (idVendor:$04e8;idProduct:$2018),  {Samsung} 
+  (idVendor:$148f;idProduct:$2770),
+  (idVendor:$148f;idProduct:$2870),
+  (idVendor:$148f;idProduct:$3070),
+  (idVendor:$148f;idProduct:$3071),
+  (idVendor:$148f;idProduct:$3072),
+  (idVendor:$04e8;idProduct:$2018),  {Samsung}
   (idVendor:$129b;idProduct:$1828),  {Siemens}
-  (idVendor:$0df6;idProduct:$0017),  {Sitecom} 
-  (idVendor:$0df6;idProduct:$002b), 
-  (idVendor:$0df6;idProduct:$002c), 
-  (idVendor:$0df6;idProduct:$002d), 
-  (idVendor:$0df6;idProduct:$0039), 
-  (idVendor:$0df6;idProduct:$003b), 
-  (idVendor:$0df6;idProduct:$003d), 
-  (idVendor:$0df6;idProduct:$003e), 
-  (idVendor:$0df6;idProduct:$003f), 
-  (idVendor:$0df6;idProduct:$0040), 
-  (idVendor:$0df6;idProduct:$0042), 
-  (idVendor:$0df6;idProduct:$0047), 
-  (idVendor:$0df6;idProduct:$0048), 
-  (idVendor:$0df6;idProduct:$0051), 
-  (idVendor:$0df6;idProduct:$005f), 
-  (idVendor:$0df6;idProduct:$0060), 
+  (idVendor:$0df6;idProduct:$0017),  {Sitecom}
+  (idVendor:$0df6;idProduct:$002b),
+  (idVendor:$0df6;idProduct:$002c),
+  (idVendor:$0df6;idProduct:$002d),
+  (idVendor:$0df6;idProduct:$0039),
+  (idVendor:$0df6;idProduct:$003b),
+  (idVendor:$0df6;idProduct:$003d),
+  (idVendor:$0df6;idProduct:$003e),
+  (idVendor:$0df6;idProduct:$003f),
+  (idVendor:$0df6;idProduct:$0040),
+  (idVendor:$0df6;idProduct:$0042),
+  (idVendor:$0df6;idProduct:$0047),
+  (idVendor:$0df6;idProduct:$0048),
+  (idVendor:$0df6;idProduct:$0051),
+  (idVendor:$0df6;idProduct:$005f),
+  (idVendor:$0df6;idProduct:$0060),
   (idVendor:$083a;idProduct:$6618),  {SMC}
-  (idVendor:$083a;idProduct:$7511), 
-  (idVendor:$083a;idProduct:$7512), 
-  (idVendor:$083a;idProduct:$7522), 
-  (idVendor:$083a;idProduct:$8522), 
-  (idVendor:$083a;idProduct:$a618), 
-  (idVendor:$083a;idProduct:$a701), 
-  (idVendor:$083a;idProduct:$a702), 
-  (idVendor:$083a;idProduct:$a703), 
-  (idVendor:$083a;idProduct:$b522), 
+  (idVendor:$083a;idProduct:$7511),
+  (idVendor:$083a;idProduct:$7512),
+  (idVendor:$083a;idProduct:$7522),
+  (idVendor:$083a;idProduct:$8522),
+  (idVendor:$083a;idProduct:$a618),
+  (idVendor:$083a;idProduct:$a701),
+  (idVendor:$083a;idProduct:$a702),
+  (idVendor:$083a;idProduct:$a703),
+  (idVendor:$083a;idProduct:$b522),
   (idVendor:$15a9;idProduct:$0006),  {Sparklan}
-  (idVendor:$177f;idProduct:$0153),  {Sweex} 
-  (idVendor:$177f;idProduct:$0164), 
-  (idVendor:$177f;idProduct:$0302), 
-  (idVendor:$177f;idProduct:$0313), 
-  (idVendor:$177f;idProduct:$0323), 
-  (idVendor:$177f;idProduct:$0324), 
+  (idVendor:$177f;idProduct:$0153),  {Sweex}
+  (idVendor:$177f;idProduct:$0164),
+  (idVendor:$177f;idProduct:$0302),
+  (idVendor:$177f;idProduct:$0313),
+  (idVendor:$177f;idProduct:$0323),
+  (idVendor:$177f;idProduct:$0324),
   (idVendor:$157e;idProduct:$300e),  {U-Media}
-  (idVendor:$157e;idProduct:$3013), 
-  (idVendor:$0cde;idProduct:$0022),  {ZCOM} 
-  (idVendor:$0cde;idProduct:$0025), 
+  (idVendor:$157e;idProduct:$3013),
+  (idVendor:$0cde;idProduct:$0022),  {ZCOM}
+  (idVendor:$0cde;idProduct:$0025),
   (idVendor:$5a57;idProduct:$0280),  {Zinwell}
-  (idVendor:$5a57;idProduct:$0282), 
-  (idVendor:$5a57;idProduct:$0283), 
-  (idVendor:$5a57;idProduct:$5257), 
+  (idVendor:$5a57;idProduct:$0282),
+  (idVendor:$5a57;idProduct:$0283),
+  (idVendor:$5a57;idProduct:$5257),
   (idVendor:$0586;idProduct:$3416),  {Zyxel}
-  (idVendor:$0586;idProduct:$3418), 
-  (idVendor:$0586;idProduct:$341a), 
-  (idVendor:$0586;idProduct:$341e), 
-  (idVendor:$0586;idProduct:$343e), 
+  (idVendor:$0586;idProduct:$3418),
+  (idVendor:$0586;idProduct:$341a),
+  (idVendor:$0586;idProduct:$341e),
+  (idVendor:$0586;idProduct:$343e),
   {RT2800USB_RT33XX devices}
   (idVendor:$050d;idProduct:$945b),  {Belkin}
-  (idVendor:$2001;idProduct:$3c17),  {D-Link} 
+  (idVendor:$2001;idProduct:$3c17),  {D-Link}
   (idVendor:$083a;idProduct:$b511),  {Panasonic}
   (idVendor:$0471;idProduct:$20dd),  {Philips}
   (idVendor:$148f;idProduct:$3370),  {Ralink}
-  (idVendor:$148f;idProduct:$8070), 
+  (idVendor:$148f;idProduct:$8070),
   (idVendor:$0df6;idProduct:$0050),  {Sitecom}
   (idVendor:$177f;idProduct:$0163),  {Sweex}
-  (idVendor:$177f;idProduct:$0165), 
+  (idVendor:$177f;idProduct:$0165),
   {RT2800USB_RT35XX devices}
   (idVendor:$8516;idProduct:$3572),  {Allwin}
   (idVendor:$1690;idProduct:$0744),  {Askey}
-  (idVendor:$1690;idProduct:$0761), 
-  (idVendor:$1690;idProduct:$0764), 
+  (idVendor:$1690;idProduct:$0761),
+  (idVendor:$1690;idProduct:$0764),
   (idVendor:$0b05;idProduct:$179d),  {ASUS}
-  (idVendor:$167b;idProduct:$4001),  {Cisco} 
-  (idVendor:$1740;idProduct:$9801),  {EnGenius} 
+  (idVendor:$167b;idProduct:$4001),  {Cisco}
+  (idVendor:$1740;idProduct:$9801),  {EnGenius}
   (idVendor:$04bb;idProduct:$0944),  {I-O DATA}
   (idVendor:$13b1;idProduct:$002f),  {Linksys}
-  (idVendor:$1737;idProduct:$0079), 
+  (idVendor:$1737;idProduct:$0079),
   (idVendor:$0789;idProduct:$0170),  {Logitec}
-  (idVendor:$148f;idProduct:$3572),  {Ralink} 
-  (idVendor:$0df6;idProduct:$0041),  {Sitecom} 
-  (idVendor:$0df6;idProduct:$0062), 
-  (idVendor:$0df6;idProduct:$0065), 
-  (idVendor:$0df6;idProduct:$0066), 
-  (idVendor:$0df6;idProduct:$0068), 
-  (idVendor:$0930;idProduct:$0a07),  {Toshiba} 
-  (idVendor:$5a57;idProduct:$0284),  {Zinwell} 
+  (idVendor:$148f;idProduct:$3572),  {Ralink}
+  (idVendor:$0df6;idProduct:$0041),  {Sitecom}
+  (idVendor:$0df6;idProduct:$0062),
+  (idVendor:$0df6;idProduct:$0065),
+  (idVendor:$0df6;idProduct:$0066),
+  (idVendor:$0df6;idProduct:$0068),
+  (idVendor:$0930;idProduct:$0a07),  {Toshiba}
+  (idVendor:$5a57;idProduct:$0284),  {Zinwell}
   {RT2800USB_RT3573 devices}
   (idVendor:$1b75;idProduct:$7733),  {AirLive}
   (idVendor:$0b05;idProduct:$17bc),  {ASUS}
-  (idVendor:$0b05;idProduct:$17ad), 
+  (idVendor:$0b05;idProduct:$17ad),
   (idVendor:$050d;idProduct:$1103),  {Belkin}
   (idVendor:$148f;idProduct:$f301),  {Cameo}
-  (idVendor:$2001;idProduct:$3c1f),  {D-Link} 
+  (idVendor:$2001;idProduct:$3c1f),  {D-Link}
   (idVendor:$7392;idProduct:$7733),  {Edimax}
   (idVendor:$0e66;idProduct:$0020),  {Hawking}
-  (idVendor:$0e66;idProduct:$0021), 
+  (idVendor:$0e66;idProduct:$0021),
   (idVendor:$04bb;idProduct:$094e),  {I-O DATA}
-  (idVendor:$13b1;idProduct:$003b),  {Linksys} 
+  (idVendor:$13b1;idProduct:$003b),  {Linksys}
   (idVendor:$0789;idProduct:$016b),  {Logitec}
-  (idVendor:$0846;idProduct:$9012),  {NETGEAR} 
-  (idVendor:$0846;idProduct:$9013), 
-  (idVendor:$0846;idProduct:$9019), 
+  (idVendor:$0846;idProduct:$9012),  {NETGEAR}
+  (idVendor:$0846;idProduct:$9013),
+  (idVendor:$0846;idProduct:$9019),
   (idVendor:$2019;idProduct:$ed19),  {Planex}
   (idVendor:$148f;idProduct:$3573),  {Ralink}
   (idVendor:$0df6;idProduct:$0067),  {Sitecom}
-  (idVendor:$0df6;idProduct:$006a), 
-  (idVendor:$0df6;idProduct:$006e), 
+  (idVendor:$0df6;idProduct:$006a),
+  (idVendor:$0df6;idProduct:$006e),
   (idVendor:$0586;idProduct:$3421),  {ZyXEL}
   {RT2800USB_RT53XX devices}
   (idVendor:$043e;idProduct:$7a12),  {Arcadyan}
-  (idVendor:$043e;idProduct:$7a32), 
+  (idVendor:$043e;idProduct:$7a32),
   (idVendor:$0b05;idProduct:$17e8),  {ASUS}
   (idVendor:$13d3;idProduct:$3329),  {Azurewave}
-  (idVendor:$13d3;idProduct:$3365), 
+  (idVendor:$13d3;idProduct:$3365),
   (idVendor:$2001;idProduct:$3c15),  {D-Link}
-  (idVendor:$2001;idProduct:$3c19), 
-  (idVendor:$2001;idProduct:$3c1c), 
-  (idVendor:$2001;idProduct:$3c1d), 
-  (idVendor:$2001;idProduct:$3c1e), 
-  (idVendor:$2001;idProduct:$3c20), 
-  (idVendor:$2001;idProduct:$3c22), 
-  (idVendor:$2001;idProduct:$3c23), 
-  (idVendor:$043e;idProduct:$7a22),  {LG innotek} 
-  (idVendor:$043e;idProduct:$7a42), 
-  (idVendor:$04da;idProduct:$1801),  {Panasonic} 
-  (idVendor:$04da;idProduct:$1800), 
-  (idVendor:$04da;idProduct:$23f6), 
-  (idVendor:$0471;idProduct:$2104),  {Philips} 
-  (idVendor:$0471;idProduct:$2126), 
-  (idVendor:$0471;idProduct:$2180), 
-  (idVendor:$0471;idProduct:$2181), 
-  (idVendor:$0471;idProduct:$2182), 
-  (idVendor:$148f;idProduct:$5370),  {Ralink} 
-  (idVendor:$148f;idProduct:$5372), 
+  (idVendor:$2001;idProduct:$3c19),
+  (idVendor:$2001;idProduct:$3c1c),
+  (idVendor:$2001;idProduct:$3c1d),
+  (idVendor:$2001;idProduct:$3c1e),
+  (idVendor:$2001;idProduct:$3c20),
+  (idVendor:$2001;idProduct:$3c22),
+  (idVendor:$2001;idProduct:$3c23),
+  (idVendor:$043e;idProduct:$7a22),  {LG innotek}
+  (idVendor:$043e;idProduct:$7a42),
+  (idVendor:$04da;idProduct:$1801),  {Panasonic}
+  (idVendor:$04da;idProduct:$1800),
+  (idVendor:$04da;idProduct:$23f6),
+  (idVendor:$0471;idProduct:$2104),  {Philips}
+  (idVendor:$0471;idProduct:$2126),
+  (idVendor:$0471;idProduct:$2180),
+  (idVendor:$0471;idProduct:$2181),
+  (idVendor:$0471;idProduct:$2182),
+  (idVendor:$148f;idProduct:$5370),  {Ralink}
+  (idVendor:$148f;idProduct:$5372),
   {RT2800USB_RT55XX devices}
   (idVendor:$043e;idProduct:$7a32),  {Arcadyan}
-  (idVendor:$057c;idProduct:$8501),  {AVM GmbH} 
+  (idVendor:$057c;idProduct:$8501),  {AVM GmbH}
   (idVendor:$0411;idProduct:$0241),  {Buffalo}
-  (idVendor:$0411;idProduct:$0253), 
+  (idVendor:$0411;idProduct:$0253),
   (idVendor:$2001;idProduct:$3c1a),  {D-Link}
-  (idVendor:$2001;idProduct:$3c21), 
+  (idVendor:$2001;idProduct:$3c21),
   (idVendor:$043e;idProduct:$7a13),  {Proware}
   (idVendor:$148f;idProduct:$5572),  {Ralink}
   (idVendor:$20f4;idProduct:$724a),  {TRENDnet}
   {RT2800USB_UNKNOWN devices}
   (idVendor:$07b8;idProduct:$3073),  {Abocom}
-  (idVendor:$07b8;idProduct:$3074), 
+  (idVendor:$07b8;idProduct:$3074),
   (idVendor:$14b2;idProduct:$3c08),  {Alpha Networks}
-  (idVendor:$14b2;idProduct:$3c11), 
+  (idVendor:$14b2;idProduct:$3c11),
   (idVendor:$0e0b;idProduct:$9031),  {Amigo}
-  (idVendor:$0e0b;idProduct:$9041), 
+  (idVendor:$0e0b;idProduct:$9041),
   (idVendor:$0b05;idProduct:$166a),  {ASUS}
-  (idVendor:$0b05;idProduct:$1760), 
-  (idVendor:$0b05;idProduct:$1761), 
-  (idVendor:$0b05;idProduct:$1790), 
-  (idVendor:$0b05;idProduct:$17a7), 
+  (idVendor:$0b05;idProduct:$1760),
+  (idVendor:$0b05;idProduct:$1761),
+  (idVendor:$0b05;idProduct:$1790),
+  (idVendor:$0b05;idProduct:$17a7),
   (idVendor:$13d3;idProduct:$3262),  {AzureWave}
-  (idVendor:$13d3;idProduct:$3284), 
-  (idVendor:$13d3;idProduct:$3322), 
-  (idVendor:$13d3;idProduct:$3340), 
-  (idVendor:$13d3;idProduct:$3399), 
-  (idVendor:$13d3;idProduct:$3400), 
-  (idVendor:$13d3;idProduct:$3401), 
+  (idVendor:$13d3;idProduct:$3284),
+  (idVendor:$13d3;idProduct:$3322),
+  (idVendor:$13d3;idProduct:$3340),
+  (idVendor:$13d3;idProduct:$3399),
+  (idVendor:$13d3;idProduct:$3400),
+  (idVendor:$13d3;idProduct:$3401),
   (idVendor:$050d;idProduct:$1003),  {Belkin}
   (idVendor:$0411;idProduct:$012e),  {Buffalo}
-  (idVendor:$0411;idProduct:$0148), 
-  (idVendor:$0411;idProduct:$0150), 
+  (idVendor:$0411;idProduct:$0148),
+  (idVendor:$0411;idProduct:$0150),
   (idVendor:$07aa;idProduct:$0041),  {Corega}
-  (idVendor:$07aa;idProduct:$0042), 
-  (idVendor:$18c5;idProduct:$0008), 
+  (idVendor:$07aa;idProduct:$0042),
+  (idVendor:$18c5;idProduct:$0008),
   (idVendor:$07d1;idProduct:$3c0b),  {D-Link}
   (idVendor:$203d;idProduct:$14a1),  {Encore}
   (idVendor:$1740;idProduct:$0600),  {EnGenius}
-  (idVendor:$1740;idProduct:$0602), 
+  (idVendor:$1740;idProduct:$0602),
   (idVendor:$15a9;idProduct:$0010),  {Gemtek}
   (idVendor:$1044;idProduct:$800c),  {Gigabyte}
   (idVendor:$06f8;idProduct:$e036),  {Hercules}
   (idVendor:$148f;idProduct:$f101),  {Huawei}
-  (idVendor:$04bb;idProduct:$094b),  {I-O DATA} 
+  (idVendor:$04bb;idProduct:$094b),  {I-O DATA}
   (idVendor:$1740;idProduct:$0605),  {LevelOne}
-  (idVendor:$1740;idProduct:$0615), 
+  (idVendor:$1740;idProduct:$0615),
   (idVendor:$0789;idProduct:$0168),  {Logitec}
-  (idVendor:$0789;idProduct:$0169), 
+  (idVendor:$0789;idProduct:$0169),
   (idVendor:$100d;idProduct:$9032),  {Motorola}
   (idVendor:$05a6;idProduct:$0101),  {Pegatron}
-  (idVendor:$1d4d;idProduct:$0010), 
+  (idVendor:$1d4d;idProduct:$0010),
   (idVendor:$2019;idProduct:$ab24),  {Planex}
-  (idVendor:$2019;idProduct:$ab29), 
+  (idVendor:$2019;idProduct:$ab29),
   (idVendor:$18e8;idProduct:$6259),  {Qcom}
   (idVendor:$08b9;idProduct:$1197),  {RadioShack}
   (idVendor:$0df6;idProduct:$003c),  {Sitecom}
-  (idVendor:$0df6;idProduct:$004a), 
-  (idVendor:$0df6;idProduct:$004d), 
-  (idVendor:$0df6;idProduct:$0053), 
-  (idVendor:$0df6;idProduct:$0069), 
-  (idVendor:$0df6;idProduct:$006f), 
-  (idVendor:$0df6;idProduct:$0078), 
+  (idVendor:$0df6;idProduct:$004a),
+  (idVendor:$0df6;idProduct:$004d),
+  (idVendor:$0df6;idProduct:$0053),
+  (idVendor:$0df6;idProduct:$0069),
+  (idVendor:$0df6;idProduct:$006f),
+  (idVendor:$0df6;idProduct:$0078),
   (idVendor:$083a;idProduct:$a512),  {SMC}
-  (idVendor:$083a;idProduct:$c522), 
-  (idVendor:$083a;idProduct:$d522), 
-  (idVendor:$083a;idProduct:$f511), 
+  (idVendor:$083a;idProduct:$c522),
+  (idVendor:$083a;idProduct:$d522),
+  (idVendor:$083a;idProduct:$f511),
   (idVendor:$177f;idProduct:$0254),  {Sweex}
   (idVendor:$f201;idProduct:$5370));  {TP-LINK}
- 
+
  {Firmware image}
  RT2800USB_FIRMWARE_IMAGEBASE = $3000;
-  
+
  {DMA descriptor defines}
  RT2800USB_TXINFO_DESC_SIZE = (1 * SizeOf(LongWord));
  RT2800USB_RXINFO_DESC_SIZE = (1 * SizeOf(LongWord));
- 
+
  {TXINFO structure}
  {Word0}
  RT2800USB_TXINFO_W0_USB_DMA_TX_PKT_LEN = $0000ffff;
- RT2800USB_TXINFO_W0_WIV		        = $01000000; {WIV: Wireless Info Valid. 1: Driver filled WI,  0: DMA needs to copy WI}
- RT2800USB_TXINFO_W0_QSEL		        = $06000000; {QSEL: Select on-chip FIFO ID for 2nd-stage output scheduler. 0:MGMT, 1:HCCA 2:EDCA}
- RT2800USB_TXINFO_W0_SW_USE_LAST_ROUND  = $08000000; 
+ RT2800USB_TXINFO_W0_WIV                = $01000000; {WIV: Wireless Info Valid. 1: Driver filled WI,  0: DMA needs to copy WI}
+ RT2800USB_TXINFO_W0_QSEL                = $06000000; {QSEL: Select on-chip FIFO ID for 2nd-stage output scheduler. 0:MGMT, 1:HCCA 2:EDCA}
+ RT2800USB_TXINFO_W0_SW_USE_LAST_ROUND  = $08000000;
  RT2800USB_TXINFO_W0_USB_DMA_NEXT_VALID = $40000000; {USB_DMA_NEXT_VALID: Used ONLY in USB bulk Aggregation, NextValid}
  RT2800USB_TXINFO_W0_USB_DMA_TX_BURST   = $80000000; {DMA_TX_BURST: Used ONLY in USB bulk Aggregation. Force USB DMA transmit frame from current selected endpoint}
- 
+
  {RXINFO structure}
  {Word 0}
- RT2800USB_RXINFO_W0_USB_DMA_RX_PKT_LEN	= $0000ffff;
- 
+ RT2800USB_RXINFO_W0_USB_DMA_RX_PKT_LEN    = $0000ffff;
+
  {RXD structure}
  {Word0}
  RT2800USB_RXD_W0_BA             = $00000001;
@@ -447,14 +447,14 @@ const
  RT2800USB_RXD_W0_CIPHER_ALG     = $00040000;
  RT2800USB_RXD_W0_LAST_AMSDU     = $00080000;
  RT2800USB_RXD_W0_PLCP_SIGNAL    = $fff00000;
- 
+
  RT2800USB_MAX_TX_ENTRIES = SIZE_16;
- RT2800USB_MAX_RX_ENTRIES = SIZE_256; 
- 
+ RT2800USB_MAX_RX_ENTRIES = SIZE_256;
+
 {==============================================================================}
 type
  {RT2800USB specific types}
- 
+
  {RT2800USB Request}
  PRT2800USBRequest = ^TRT2800USBRequest;
  TRT2800USBRequest = record
@@ -463,7 +463,7 @@ type
   Request:PUSBRequest;                {The USB request allocated for this endpoint}
   Endpoint:PUSBEndpointDescriptor;    {The USB endpoint descriptor found during bind for this endpoint}
  end;
- 
+
  {RT2800USB Device}
  PRT2800USBWiFiDevice = ^TRT2800USBWiFiDevice;
  TRT2800USBWiFiDevice = record
@@ -479,15 +479,15 @@ type
   PendingCount:LongWord;                         {Number of USB requests pending for this network}
   WaiterThread:TThreadId;                        {Thread waiting for pending requests to complete (for network close)}
  end;
- 
+
 {==============================================================================}
 var
  {RT2800USB specific variables}
  RT2800USB_FIRMWARE_FILENAME:String = 'rt2870.bin';  {The name of the firmware image file to load}
  RT2800USB_FIRMWARE_INTERNAL:LongBool = True;        {If True then load the internal firmware not a firmware file}
- 
+
  RT2800USB_HARDWARE_ENCRYPTION_DISABLED:LongBool;    {If True then disable hardware encryption in the device}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure RT2800USBInit;
@@ -507,18 +507,18 @@ function RT2800USBBufferTransmit(Network:PNetworkDevice;Entry:PNetworkEntry):Lon
 {RT2800USB WiFi Functions}
 function RT2800USBDeviceConfigure(WiFi:PWiFiDevice;Flags:LongWord):LongWord;
 function RT2800USBDeviceConfigureFilter(WiFi:PWiFiDevice;var Filter:LongWord):LongWord;
-function RT2800USBDeviceConfigureInterface(WiFi:PWiFiDevice;Interrface:PWiFiInterface):LongWord; 
+function RT2800USBDeviceConfigureInterface(WiFi:PWiFiDevice;Interrface:PWiFiInterface):LongWord;
 
 {==============================================================================}
 {RT2800USB USB Functions}
 function RT2800USBDriverBind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 function RT2800USBDriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 
-procedure RT2800USBReceiveWorker(Request:PUSBRequest); 
-procedure RT2800USBReceiveComplete(Request:PUSBRequest); 
+procedure RT2800USBReceiveWorker(Request:PUSBRequest);
+procedure RT2800USBReceiveComplete(Request:PUSBRequest);
 
-procedure RT2800USBTransmitWorker(Request:PUSBRequest); 
-procedure RT2800USBTransmitComplete(Request:PUSBRequest); 
+procedure RT2800USBTransmitWorker(Request:PUSBRequest);
+procedure RT2800USBTransmitComplete(Request:PUSBRequest);
 
 {==============================================================================}
 {RT2800USB Helper Functions}
@@ -559,8 +559,8 @@ implementation
 {==============================================================================}
 var
  {RT2800USB specific variables}
- RT2800USBInitialized:Boolean; 
- 
+ RT2800USBInitialized:Boolean;
+
  RT2800USBDriver:PUSBDriver;  {RT2800USB Driver interface (Set by RT2800USBInit)}
 
  {RT2800USB firmware (rt2870.bin)}
@@ -1078,7 +1078,7 @@ var
   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,
   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$1D,$84,$C2
  );
- 
+
  RT2800USBFirmware:array[0..8191] of Byte = ( //To Do //rt2870.bin from DPO_RT5572_LinuxSTA_2.6.1.3_20121022 (Ralink download)
   $FF,$FF,$FF,$02,$10,$28,$02,$10,$3B,$02,$10,$86,$02,$15,$5F,$02,
   $15,$60,$02,$16,$44,$02,$16,$8D,$12,$16,$45,$22,$02,$1B,$CF,$02,
@@ -1593,7 +1593,7 @@ var
   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,
   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$21,$F7,$CD
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -1611,22 +1611,22 @@ begin
  {RT2800USB_FIRMWARE_FILENAME}
  WorkBuffer:=EnvironmentGet('RT2800USB_FIRMWARE_FILENAME');
  if Length(WorkBuffer) <> 0 then RT2800USB_FIRMWARE_FILENAME:=WorkBuffer;
- 
+
  {RT2800USB_FIRMWARE_INTERNAL}
  WorkInt:=StrToIntDef(EnvironmentGet('RT2800USB_FIRMWARE_INTERNAL'),1);
  if WorkInt = 0 then RT2800USB_FIRMWARE_INTERNAL:=False;
- 
+
  {RT2800USB_HARDWARE_ENCRYPTION_DISABLED}
  WorkInt:=StrToIntDef(EnvironmentGet('RT2800USB_HARDWARE_ENCRYPTION_DISABLED'),0);
  if WorkInt <> 0 then RT2800USB_HARDWARE_ENCRYPTION_DISABLED:=True;
- 
+
  {Create RT2800USB Wireless Driver}
  RT2800USBDriver:=USBDriverCreate;
  if RT2800USBDriver <> nil then
   begin
    {Update RT2800USB Wireless Driver}
    {Driver}
-   RT2800USBDriver.Driver.DriverName:=RT2800USB_DRIVER_NAME; 
+   RT2800USBDriver.Driver.DriverName:=RT2800USB_DRIVER_NAME;
    {USB}
    RT2800USBDriver.DriverBind:=RT2800USBDriverBind;
    RT2800USBDriver.DriverUnbind:=RT2800USBDriverUnbind;
@@ -1645,7 +1645,7 @@ begin
   begin
    if USB_LOG_ENABLED then USBLogError(nil,'RT2800USB: Failed to create RT2800USB driver');
   end;
- 
+
  RT2800USBInitialized:=True;
 end;
 
@@ -1674,7 +1674,7 @@ begin
  {$IFDEF RT2800USB_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'RT2800USB: Device Open');
  {$ENDIF}
- 
+
  {Acquire the Lock}
  if MutexLock(Network.Lock) = ERROR_SUCCESS then
   begin
@@ -1682,12 +1682,12 @@ begin
     {Check State}
     Result:=ERROR_ALREADY_OPEN;
     if Network.NetworkState <> NETWORK_STATE_CLOSED then Exit;
- 
+
     {Set Result}
     Result:=ERROR_OPERATION_FAILED;
- 
+
     //To Do //Set State to OPENING ? //Need to return to closed on fail as well
-    
+
     {Load Firmware}
     Status:=RT2X00LoadFirmware(PRT2X00WiFiDevice(Network));
     if Status <> ERROR_SUCCESS then
@@ -1696,10 +1696,10 @@ begin
       Result:=Status;
       Exit;
      end;
-    
+
     {Initialize Queues}
     //To Do //rt2x00lib_start
-    
+
     {Enable Radio}
     Status:=RT2X00EnableRadio(PRT2X00WiFiDevice(Network));
     if Status <> ERROR_SUCCESS then
@@ -1708,28 +1708,28 @@ begin
       Result:=Status;
       Exit;
      end;
-     
-    try 
+
+    try
      {Allocate Receive Queue Buffer}
      Network.ReceiveQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry) + SizeOf(TIEEE80211RXStatus),RT2800USB_MAX_RX_ENTRIES + Length(PRT2800USBWiFiDevice(Network).ReceiveRequests));
      if Network.ReceiveQueue.Buffer = INVALID_HANDLE_VALUE then
       begin
        if NETWORK_LOG_ENABLED then NetworkLogError(Network,'RT2800USB: Failed to create receive queue buffer');
-       
+
        Result:=ERROR_OPERATION_FAILED;
        Exit;
       end;
-     
+
      {Allocate Receive Queue Semaphore}
      Network.ReceiveQueue.Wait:=SemaphoreCreate(0);
      if Network.ReceiveQueue.Wait = INVALID_HANDLE_VALUE then
       begin
        if NETWORK_LOG_ENABLED then NetworkLogError(Network,'RT2800USB: Failed to create receive queue semaphore');
-       
+
        Result:=ERROR_OPERATION_FAILED;
        Exit;
       end;
-       
+
      {Allocate Receive Queue Buffers}
      Entry:=BufferIterate(Network.ReceiveQueue.Buffer,nil);
      while Entry <> nil do
@@ -1738,41 +1738,41 @@ begin
        Entry.Size:=RT2X00GetRXBufferSize(PRT2X00WiFiDevice(Network));
        Entry.Offset:=0;     //To Do //Offset //See drivers
        Entry.Count:=1;
-       
+
        {Allocate USB Request Buffer}
        Entry.Buffer:=USBBufferAllocate(Device,Entry.Size);
        if Entry.Buffer = nil then
         begin
          if NETWORK_LOG_ENABLED then NetworkLogError(Network,'RT2800USB: Failed to allocate USB receive buffer');
-         
+
          Result:=ERROR_OPERATION_FAILED;
          Exit;
         end;
-       
+
        {Initialize Packets}
        SetLength(Entry.Packets,Entry.Count);
-       
+
        {Initialize Packet}
        Entry.Packets[0].Buffer:=Entry.Buffer;
        Entry.Packets[0].Data:=Entry.Buffer + Entry.Offset;
        Entry.Packets[0].Length:=Entry.Size - Entry.Offset;
-       
+
        Entry:=BufferIterate(Network.ReceiveQueue.Buffer,Entry);
       end;
-     
+
      {Allocate Receive Queue Entries}
      SetLength(Network.ReceiveQueue.Entries,RT2800USB_MAX_RX_ENTRIES);
-     
+
      {Allocate Transmit Queue Buffer}
      Network.TransmitQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry) + SizeOf(TIEEE80211TXInfo),RT2800USB_MAX_TX_ENTRIES + Length(PRT2800USBWiFiDevice(Network).TransmitRequests));
      if Network.TransmitQueue.Buffer = INVALID_HANDLE_VALUE then
       begin
        if NETWORK_LOG_ENABLED then NetworkLogError(Network,'RT2800USB: Failed to create transmit queue buffer');
-       
+
        Result:=ERROR_OPERATION_FAILED;
        Exit;
       end;
-     
+
      {Allocate Transmit Queue Buffers}
      Entry:=BufferIterate(Network.TransmitQueue.Buffer,nil);
      while Entry <> nil do
@@ -1781,28 +1781,28 @@ begin
        Entry.Size:=SIZE_4K; //To Do //Size per buffer //See drivers
        Entry.Offset:=0;     //To Do //Offset //See drivers
        Entry.Count:=1;
-       
+
        {Allocate USB Request Buffer}
        Entry.Buffer:=USBBufferAllocate(Device,Entry.Size);
        if Entry.Buffer = nil then
         begin
          if NETWORK_LOG_ENABLED then NetworkLogError(Network,'RT2800USB: Failed to allocate USB transmit buffer');
-         
+
          Result:=ERROR_OPERATION_FAILED;
          Exit;
         end;
-        
+
        {Initialize Packets}
        SetLength(Entry.Packets,Entry.Count);
-      
+
        {Initialize Packet}
        Entry.Packets[0].Buffer:=Entry.Buffer;
        Entry.Packets[0].Data:=Entry.Buffer + Entry.Offset;
        Entry.Packets[0].Length:=Entry.Size - Entry.Offset;
-       
+
        Entry:=BufferIterate(Network.TransmitQueue.Buffer,Entry);
       end;
-     
+
      {Allocate Receive Requests}
      for Count:=0 to Length(PRT2800USBWiFiDevice(Network).ReceiveRequests) - 1 do
       begin
@@ -1810,12 +1810,12 @@ begin
        if PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Request = nil then
         begin
          if NETWORK_LOG_ENABLED then NetworkLogError(Network,'RT2800USB: Failed to allocate USB receive request');
-         
+
          Result:=ERROR_OPERATION_FAILED;
          Exit;
         end;
       end;
-     
+
      {Allocate Transmit Requests}
      for Count:=0 to Length(PRT2800USBWiFiDevice(Network).TransmitRequests) - 1 do
       begin
@@ -1823,12 +1823,12 @@ begin
        if PRT2800USBWiFiDevice(Network).TransmitRequests[Count].Request = nil then
         begin
          if NETWORK_LOG_ENABLED then NetworkLogError(Network,'RT2800USB: Failed to allocate USB transmit request');
-         
+
          Result:=ERROR_OPERATION_FAILED;
          Exit;
         end;
       end;
-     
+
      {Submit Receive Requests}
      for Count:=0 to Length(PRT2800USBWiFiDevice(Network).ReceiveRequests) - 1 do
       begin
@@ -1838,72 +1838,72 @@ begin
         begin
          {Update Pending}
          Inc(PRT2800USBWiFiDevice(Network).PendingCount);
-         
+
          {Update Free}
          PRT2800USBWiFiDevice(Network).ReceiveFree:=PRT2800USBWiFiDevice(Network).ReceiveFree xor (1 shl Count);
-         
+
          {Update Entry}
          Entry.DriverData:=Network;
-         
+
          {Update Request}
          PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Entry:=Entry;
-         
+
          {Reinitialize Request}
          USBRequestInitialize(PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Request,RT2800USBReceiveComplete,Entry.Buffer,Entry.Size,PRT2800USBWiFiDevice(Network).ReceiveRequests[Count]);
-         
+
          {Submit Request}
          Status:=USBRequestSubmit(PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Request);
          if Status <> USB_STATUS_SUCCESS then
           begin
            if NETWORK_LOG_ENABLED then NetworkLogError(Network,'RT2800USB: Failed to submit USB receive request: ' + USBStatusToString(Status));
-         
+
            {Update Pending}
            Dec(PRT2800USBWiFiDevice(Network).PendingCount);
-           
+
            {Update Free}
            PRT2800USBWiFiDevice(Network).ReceiveFree:=PRT2800USBWiFiDevice(Network).ReceiveFree or (1 shl Count);
-           
+
            {Update Entry}
            Entry.DriverData:=nil;
-           
+
            {Update Request}
            PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Entry:=nil;
-           
+
            {Free Entry}
            BufferFree(Entry);
           end;
         end;
       end;
-     
+
      {Check Pending Count}
      if PRT2800USBWiFiDevice(Network).PendingCount = 0 then
       begin
        Result:=ERROR_OPERATION_FAILED;
        Exit;
       end;
-     
-     
+
+
      /////////////////////////////////////////////////////////////////////////////////////////////////
-     
+
      //To Do //Continuing
      //DoBulkIn //F:\Download\Ralink\DPO_RT5572_LinuxSTA_2.6.1.3_20121022\common\rtusb_bulk.c
      //RTUSBInitRxDesc
      //RTUSBBulkReceive
      //RTUSBBulkRxComplete
-     
+
      //RTMPAllocUsbBulkBufStruct
      //RTMPAllocTxRxRingMemory
-     
+
      //To Do //rt2x00lib_enable_radio //Enable/Start Queues //Start watchdog monitoring
-     
+
      /////////////////////////////////////////////////////////////////////////////////////////////////
-     
+
      {Set State to Open}
      Network.NetworkState:=NETWORK_STATE_OPEN;
-     
+
      {Notify the State}
-     NotifierNotify(@Network.Device,DEVICE_NOTIFICATION_OPEN); 
-     
+     NotifierNotify(@Network.Device,DEVICE_NOTIFICATION_OPEN);
+
      {Return Result}
      Result:=ERROR_SUCCESS;
     finally
@@ -1915,7 +1915,7 @@ begin
         begin
          USBRequestRelease(PRT2800USBWiFiDevice(Network).TransmitRequests[Count].Request);
         end;
-       
+
        {Release Receive Requests}
        for Count:=0 to Length(PRT2800USBWiFiDevice(Network).ReceiveRequests) - 1 do
         begin
@@ -1925,49 +1925,49 @@ begin
          {Release Receive Request}
          USBRequestRelease(PRT2800USBWiFiDevice(Network).ReceiveRequests[Count].Request);
         end;
-       
+
        {Release Transmit Queue Buffers}
        Entry:=BufferIterate(Network.TransmitQueue.Buffer,nil);
        while Entry <> nil do
         begin
          {Release USB Buffer}
          USBBufferRelease(Entry.Buffer);
-         
+
          {Release Packets}
          SetLength(Entry.Packets,0);
-         
+
          Entry:=BufferIterate(Network.TransmitQueue.Buffer,Entry);
-        end; 
+        end;
 
        {Destroy Transmit Queue Buffer}
        BufferDestroy(Network.TransmitQueue.Buffer);
-       
+
        {Release Receive Queue Entries}
        SetLength(Network.ReceiveQueue.Entries,0);
-       
+
        {Release Receive Queue Buffers}
        Entry:=BufferIterate(Network.ReceiveQueue.Buffer,nil);
        while Entry <> nil do
         begin
          {Release USB Buffer}
          USBBufferRelease(Entry.Buffer);
-         
+
          {Release Packets}
          SetLength(Entry.Packets,0);
-         
+
          Entry:=BufferIterate(Network.ReceiveQueue.Buffer,Entry);
-        end; 
-       
+        end;
+
        {Destroy Receive Queue Semaphore}
        SemaphoreDestroy(Network.ReceiveQueue.Wait);
-       
+
        {Destroy Receive Queue Buffer}
        BufferDestroy(Network.ReceiveQueue.Buffer);
-       
+
        {Disable Radio}
-       //To Do 
+       //To Do
       end;
-    end;    
+    end;
    finally
     {Release the Lock}
     MutexUnlock(Network.Lock);
@@ -1976,9 +1976,9 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
 
 function RT2800USBDeviceClose(Network:PNetworkDevice):LongWord;
@@ -1998,15 +1998,15 @@ begin
  {Get Device}
  Device:=PUSBDevice(Network.Device.DeviceData);
  if Device = nil then Exit;
- 
+
  {$IFDEF RT2800USB_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'RT2800USB: Device Close');
  {$ENDIF}
- 
+
  {Check State}
  Result:=ERROR_NOT_OPEN;
  if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
- 
+
  {Set State to Closing}
  Result:=ERROR_OPERATION_FAILED;
  if NetworkDeviceSetState(Network,NETWORK_STATE_CLOSING) <> ERROR_SUCCESS then Exit;
@@ -2030,28 +2030,28 @@ begin
       {$ENDIF}
 
       {Wait for Pending}
- 
+
       {Setup Waiter}
-      PRT2800USBWiFiDevice(Network).WaiterThread:=GetCurrentThreadId; 
-   
+      PRT2800USBWiFiDevice(Network).WaiterThread:=GetCurrentThreadId;
+
       {Release the Lock}
       MutexUnlock(Network.Lock);
-   
+
       {Wait for Message}
-      ThreadReceiveMessage(Message); 
-      
+      ThreadReceiveMessage(Message);
+
       {Acquire the Lock}
       if MutexLock(Network.Lock) <> ERROR_SUCCESS then Exit;
      end;
-       
+
     {Set State to Closed}
     Network.NetworkState:=NETWORK_STATE_CLOSED;
- 
+
     {Notify the State}
-    NotifierNotify(@Network.Device,DEVICE_NOTIFICATION_CLOSE); 
-    
+    NotifierNotify(@Network.Device,DEVICE_NOTIFICATION_CLOSE);
+
     //To Do //rt2x00lib_stop
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2062,9 +2062,9 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
 
 function RT2800USBDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
@@ -2078,7 +2078,7 @@ begin
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Get Device}
  Device:=PUSBDevice(Network.Device.DeviceData);
  if Device = nil then Exit;
@@ -2086,14 +2086,14 @@ begin
  {$IFDEF RT2800USB_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'RT2800USB: Device Control');
  {$ENDIF}
- 
+
  {Acquire the Lock}
  if MutexLock(Network.Lock) = ERROR_SUCCESS then
   begin
    try
- 
+
     //To Do
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2104,11 +2104,11 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
- 
+
 function RT2800USBBufferAllocate(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
 {Implementation of NetworkBufferAllocate for the RT2800USB device}
 begin
@@ -2117,19 +2117,19 @@ begin
 
  {Setup Entry}
  Entry:=nil;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF RT2800USB_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'RT2800USB: Buffer Allocate');
  {$ENDIF}
- 
+
  {Check State}
  Result:=ERROR_NOT_READY;
  if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
- 
+
  {Set Result}
  Result:=ERROR_OPERATION_FAILED;
 
@@ -2153,19 +2153,19 @@ begin
 
  {Check Entry}
  if Entry = nil then Exit;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF RT2800USB_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'RT2800USB: Buffer Release');
  {$ENDIF}
- 
+
  {Check State}
  Result:=ERROR_NOT_READY;
  if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
- 
+
  {Acquire the Lock}
  if MutexLock(Network.Lock) = ERROR_SUCCESS then
   begin
@@ -2180,7 +2180,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2193,19 +2193,19 @@ begin
 
  {Setup Entry}
  Entry:=nil;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF RT2800USB_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'RT2800USB: Buffer Receive');
  {$ENDIF}
- 
+
  {Check State}
  Result:=ERROR_NOT_READY;
  if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
- 
+
  {Wait for Entry}
  if SemaphoreWait(Network.ReceiveQueue.Wait) = ERROR_SUCCESS then
   begin
@@ -2215,13 +2215,13 @@ begin
      try
       {Remove Entry}
       Entry:=Network.ReceiveQueue.Entries[Network.ReceiveQueue.Start];
-      
+
       {Update Start}
       Network.ReceiveQueue.Start:=(Network.ReceiveQueue.Start + 1) mod RT2800USB_MAX_RX_ENTRIES;
-      
+
       {Update Count}
       Dec(Network.ReceiveQueue.Count);
-      
+
       {Return Result}
       Result:=ERROR_SUCCESS;
      finally
@@ -2232,12 +2232,12 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;  
+    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2250,27 +2250,27 @@ begin
 
  {Check Entry}
  if Entry = nil then Exit;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF RT2800USB_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'RT2800USB: Buffer Transmit');
  {$ENDIF}
- 
+
  {Check State}
  Result:=ERROR_NOT_READY;
  if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
- 
+
  {Acquire the Lock}
  if MutexLock(Network.Lock) = ERROR_SUCCESS then
   begin
    try
- 
+
     //To Do //Continuing //Use the TransmitQueue ? and Wait for completion ?
                          //Need to check empty and do Submit ?
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2281,7 +2281,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2296,7 +2296,7 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check WiFi}
  if WiFi = nil then Exit;
  if WiFi.Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
@@ -2304,7 +2304,7 @@ begin
  {$IFDEF RT2800USB_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(@WiFi.Network,'RT2800USB: Device Configure (Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
- 
+
  {Acquire the Lock}
  if MutexLock(WiFi.Network.Lock) = ERROR_SUCCESS then
   begin
@@ -2317,7 +2317,7 @@ begin
       Result:=Status;
       Exit;
      end;
- 
+
     {If we've just turned on the radio, we want to reprogram everything to ensure a consistent state}
     Status:=RT2X00Configure(PRT2X00WiFiDevice(WiFi),Flags);
     if Status <> ERROR_SUCCESS then
@@ -2326,7 +2326,7 @@ begin
       Result:=Status;
       Exit;
      end;
-    
+
     {After the radio has been enabled we need to configure the antenna to the default settings}
     {RT2X00ConfigureAntenna should determine if any action should be taken based on checking if diversity has been enabled or no antenna changes have been made since the last configuration change}
     Status:=RT2X00ConfigureAntenna(PRT2X00WiFiDevice(WiFi),@PRT2X00WiFiDevice(WiFi).Antenna);
@@ -2336,7 +2336,7 @@ begin
       Result:=Status;
       Exit;
      end;
-    
+
     {Turn RX back on}
     Status:=RT2X00EnableRX(PRT2X00WiFiDevice(WiFi));
     if Status <> ERROR_SUCCESS then
@@ -2345,7 +2345,7 @@ begin
       Result:=Status;
       Exit;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2356,7 +2356,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2370,7 +2370,7 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check WiFi}
  if WiFi = nil then Exit;
  if WiFi.Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
@@ -2378,15 +2378,15 @@ begin
  {$IFDEF RT2800USB_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(@WiFi.Network,'RT2800USB: Device Configure Filter (Filter=' + IntToHex(Filter,8) + ')');
  {$ENDIF}
- 
+
  {Acquire the Lock}
  if MutexLock(WiFi.Network.Lock) = ERROR_SUCCESS then
   begin
    try
     //To Do //rt2x00mac_configure_filter
- 
+
     //
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2397,12 +2397,12 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
- 
-function RT2800USBDeviceConfigureInterface(WiFi:PWiFiDevice;Interrface:PWiFiInterface):LongWord; 
+
+function RT2800USBDeviceConfigureInterface(WiFi:PWiFiDevice;Interrface:PWiFiInterface):LongWord;
 {Implementation of WiFiDeviceConfigureInterface for the RT2800USB device}
 
 {rt2x00mac_add_interface / rt2x00mac_remove_interface}
@@ -2411,18 +2411,18 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check WiFi}
  if WiFi = nil then Exit;
  if WiFi.Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {Check Interface}
  if Interrface = nil then Exit;
- 
+
  {$IFDEF RT2800USB_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(@WiFi.Network,'RT2800USB: Device Configure Interface');
  {$ENDIF}
- 
+
  {Acquire the Lock}
  if MutexLock(WiFi.Network.Lock) = ERROR_SUCCESS then
   begin
@@ -2435,11 +2435,11 @@ begin
     else
      begin
       Inc(PRT2X00WiFiDevice(WiFi).STAInterfaceCount);
-     end;     
- 
+     end;
+
     //To Do //rt2x00mac_add_interface
     //To Do //rt2x00mac_remove_interface -> rt2x00lib_config_intf / rt2800_config_intf
-    
+
     {The MAC address must be configured after the device has been initialized. Otherwise the device can reset the MAC registers}
     {The BSSID address must only be configured in AP mode, however we should not send an empty BSSID address for STA interfaces at this time, since this can cause invalid behavior in the device}
     Status:=RT2X00ConfigureInterface(PRT2X00WiFiDevice(WiFi),Interrface.InterfaceType,@Interrface.Address,nil);
@@ -2449,10 +2449,10 @@ begin
       Result:=Status;
       Exit;
      end;
-    
+
     {Some filters depend on the current working mode. We can force an update during the next DeviceConfigureFilter by resetting the current PacketFilter state}
     PRT2X00WiFiDevice(WiFi).PacketFilter:=0;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2463,9 +2463,9 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {RT2800USB USB Functions}
@@ -2492,7 +2492,7 @@ begin
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
- 
+
  {Check Interface (Bind to device only)}
  if Interrface <> nil then
   begin
@@ -2503,7 +2503,7 @@ begin
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
+
  {Check RT2800USB Device}
  if RT2800USBCheckDevice(Device) <> USB_STATUS_SUCCESS then
   begin
@@ -2540,7 +2540,7 @@ begin
  {$IFDEF RT2800USB_DEBUG}
   if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Interface.bInterfaceNumber=' + IntToStr(NetworkInterface.Descriptor.bInterfaceNumber));
  {$ENDIF}
- 
+
  {Check Bulk IN Endpoint}
  ReceiveEndpoint:=USBDeviceFindEndpointByType(Device,NetworkInterface,USB_DIRECTION_IN,USB_TRANSFER_TYPE_BULK);
  if ReceiveEndpoint = nil then
@@ -2555,7 +2555,7 @@ begin
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: BULK IN Endpoint Count=' + IntToStr(USBDeviceCountEndpointsByType(Device,NetworkInterface,USB_DIRECTION_IN,USB_TRANSFER_TYPE_BULK)));
  {$ENDIF}
- 
+
  {Check Bulk OUT Endpoint}
  TransmitEndpoint:=USBDeviceFindEndpointByType(Device,NetworkInterface,USB_DIRECTION_OUT,USB_TRANSFER_TYPE_BULK);
  if TransmitEndpoint = nil then
@@ -2570,44 +2570,44 @@ begin
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: BULK OUT Endpoint Count=' + IntToStr(USBDeviceCountEndpointsByType(Device,NetworkInterface,USB_DIRECTION_OUT,USB_TRANSFER_TYPE_BULK)));
  {$ENDIF}
- 
+
  {Check Configuration}
  if Device.ConfigurationValue = 0 then
   begin
    {$IFDEF RT2800USB_DEBUG}
    if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Assigning configuration ' + IntToStr(Device.Configuration.Descriptor.bConfigurationValue) + ' (' + IntToStr(Device.Configuration.Descriptor.bNumInterfaces) + ' interfaces available)');
    {$ENDIF}
-   
+
    {Set Configuration}
    Status:=USBDeviceSetConfiguration(Device,Device.Configuration.Descriptor.bConfigurationValue);
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(Device,'RT2800USB: Failed to set device configuration: ' + USBStatusToString(Status));
-     
+
      {Return Result}
      Result:=Status;
      Exit;
     end;
   end;
- 
+
  {USB device reset not required because the USB core already did a reset on the port during attach}
- 
+
  {Create WiFi}
  RT2800USB:=PRT2800USBWiFiDevice(WiFiDeviceCreateEx(SizeOf(TRT2800USBWiFiDevice)));
  if RT2800USB = nil then
   begin
    if USB_LOG_ENABLED then USBLogError(Device,'RT2800USB: Failed to create new wifi device');
-   
+
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
- {Update WiFi} 
+
+ {Update WiFi}
  {Device}
  RT2800USB.RT2X00.WiFi.Network.Device.DeviceBus:=DEVICE_BUS_USB;
  RT2800USB.RT2X00.WiFi.Network.Device.DeviceType:=NETWORK_TYPE_80211;
- RT2800USB.RT2X00.WiFi.Network.Device.DeviceFlags:=NETWORK_FLAG_RX_BUFFER or NETWORK_FLAG_TX_BUFFER or NETWORK_FLAG_RX_MULTIPACKET;     
+ RT2800USB.RT2X00.WiFi.Network.Device.DeviceFlags:=NETWORK_FLAG_RX_BUFFER or NETWORK_FLAG_TX_BUFFER or NETWORK_FLAG_RX_MULTIPACKET;
  RT2800USB.RT2X00.WiFi.Network.Device.DeviceData:=Device;
  RT2800USB.RT2X00.WiFi.Network.Device.DeviceDescription:=RT2800USB_NETWORK_DESCRIPTION;
  {Network}
@@ -2668,7 +2668,7 @@ begin
   if RT2800USB.RT2X00.Data = nil then
    begin
     if USB_LOG_ENABLED then USBLogError(Device,'RT2800USB: Failed to allocate chipset data for wifi');
-    
+
     {Return Result}
     Result:=USB_STATUS_DEVICE_UNSUPPORTED;
     Exit;
@@ -2676,13 +2676,13 @@ begin
   {$IFDEF RT2800USB_DEBUG}
   if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB:  (Chipset Data=' + PtrToHex(RT2800USB.RT2X00.Data) + ')');
   {$ENDIF}
-  
+
   {Create RF}
   RT2800USB.RT2X00.RFData:=AllocMem(RT2800USB.RT2X00.RFSize);
   if RT2800USB.RT2X00.RFData = nil then
    begin
     if USB_LOG_ENABLED then USBLogError(Device,'RT2800USB: Failed to allocate RF data for wifi');
-    
+
     {Return Result}
     Result:=USB_STATUS_DEVICE_UNSUPPORTED;
     Exit;
@@ -2690,13 +2690,13 @@ begin
   {$IFDEF RT2800USB_DEBUG}
   if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB:  (RF Data=' + PtrToHex(RT2800USB.RT2X00.RFData) + ')');
   {$ENDIF}
-   
+
   {Create Eeprom}
   RT2800USB.RT2X00.EepromData:=AllocMem(RT2800USB.RT2X00.EepromSize);
   if RT2800USB.RT2X00.EepromData = nil then
    begin
     if USB_LOG_ENABLED then USBLogError(Device,'RT2800USB: Failed to allocate EEPROM data for wifi');
-    
+
     {Return Result}
     Result:=USB_STATUS_DEVICE_UNSUPPORTED;
     Exit;
@@ -2704,18 +2704,18 @@ begin
   {$IFDEF RT2800USB_DEBUG}
   if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB:  (EEPROM Data=' + PtrToHex(RT2800USB.RT2X00.EepromData) + ')');
   {$ENDIF}
-  
-  {Create Lock} 
+
+  {Create Lock}
   RT2800USB.RT2X00.CSRLock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
   if RT2800USB.RT2X00.CSRLock = INVALID_HANDLE_VALUE then
    begin
     if USB_LOG_ENABLED then USBLogError(Device,'RT2800USB: Failed to create CSR lock for wifi');
-    
+
     {Return Result}
     Result:=USB_STATUS_DEVICE_UNSUPPORTED;
     Exit;
    end;
-  
+
   {Create Receive Requests / Assign IN Endpoints}
   Index:=0;
   for Count:=0 to Length(RT2800USB.ReceiveRequests) - 1 do
@@ -2724,7 +2724,7 @@ begin
     if RT2800USB.ReceiveRequests[Count] = nil then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'RT2800USB: Failed to allocate receive request for wifi');
-      
+
       {Return Result}
       Result:=USB_STATUS_DEVICE_UNSUPPORTED;
       Exit;
@@ -2737,7 +2737,7 @@ begin
     RT2800USB.ReceiveMask:=RT2800USB.ReceiveMask or (1 shl Count);
    end;
   RT2800USB.ReceiveFree:=RT2800USB.ReceiveMask;
-  
+
   {Create Transmit Requests / Assign OUT Endpoints}
   Index:=0;
   for Count:=0 to Length(RT2800USB.TransmitRequests) - 1 do
@@ -2746,12 +2746,12 @@ begin
     if RT2800USB.TransmitRequests[Count] = nil then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'RT2800USB: Failed to allocate transmit request for wifi');
-      
+
       {Return Result}
       Result:=USB_STATUS_DEVICE_UNSUPPORTED;
       Exit;
      end;
-     
+
     RT2800USB.TransmitRequests[Count].Index:=Count;
     RT2800USB.TransmitRequests[Count].Endpoint:=USBDeviceFindEndpointByTypeEx(Device,NetworkInterface,USB_DIRECTION_OUT,USB_TRANSFER_TYPE_BULK,Index);
     {Note: USB Request allocated by DeviceOpen}
@@ -2759,30 +2759,30 @@ begin
     RT2800USB.TransmitMask:=RT2800USB.TransmitMask or (1 shl Count);
    end;
   RT2800USB.TransmitFree:=RT2800USB.TransmitMask;
-  
+
   {Initialize Driver}
   if RT2X00DriverInit(@RT2800USB.RT2X00) <> ERROR_SUCCESS then
    begin
     if USB_LOG_ENABLED then USBLogError(Device,'RT2800USB: Failed to initialize driver for wifi');
-    
+
     {Return Result}
     Result:=USB_STATUS_DEVICE_UNSUPPORTED;
     Exit;
    end;
-   
-  {Register WiFi} 
+
+  {Register WiFi}
   if WiFiDeviceRegister(@RT2800USB.RT2X00.WiFi) <> ERROR_SUCCESS then
    begin
     if USB_LOG_ENABLED then USBLogError(Device,'RT2800USB: Failed to register new wifi device');
-    
+
     {Return Result}
     Result:=USB_STATUS_DEVICE_UNSUPPORTED;
     Exit;
    end;
-  
+
   {Update Device}
   Device.DriverData:=RT2800USB;
-  
+
   {Return Result}
   Result:=USB_STATUS_SUCCESS;
  finally
@@ -2791,36 +2791,36 @@ begin
    begin
     {Free Data}
     FreeMem(RT2800USB.RT2X00.Data);
-    
+
     {Free RF}
     FreeMem(RT2800USB.RT2X00.RFData);
-  
+
     {Free Eeprom}
     FreeMem(RT2800USB.RT2X00.EepromData);
-    
+
     {Destroy Lock}
     MutexDestroy(RT2800USB.RT2X00.CSRLock);
-  
+
     {Release Receive Requests}
     for Count:=0 to Length(RT2800USB.ReceiveRequests) - 1 do
      begin
       FreeMem(RT2800USB.ReceiveRequests[Count]);
      end;
     SetLength(RT2800USB.ReceiveRequests,0);
-    
+
     {Release Transmit Requests}
     for Count:=0 to Length(RT2800USB.TransmitRequests) - 1 do
      begin
       FreeMem(RT2800USB.TransmitRequests[Count]);
      end;
     SetLength(RT2800USB.TransmitRequests,0);
-  
+
     {Destroy WiFi}
     WiFiDeviceDestroy(@RT2800USB.RT2X00.WiFi);
    end;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function RT2800USBDriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
@@ -2828,22 +2828,22 @@ function RT2800USBDriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongW
 {Device: The USB device to unbind from}
 {Interrface: The USB interface to unbind from (or nil for whole device)}
 {Return: USB_STATUS_SUCCESS if completed or another error code on failure}
-var 
+var
  Count:LongWord;
  RT2800USB:PRT2800USBWiFiDevice;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
  {Check Interface}
  if Interrface <> nil then Exit;
- 
+
  {Check Driver}
  if Device.Driver <> RT2800USBDriver then Exit;
- 
+
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'RT2800USB: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
@@ -2851,54 +2851,54 @@ begin
  {Get WiFi}
  RT2800USB:=PRT2800USBWiFiDevice(Device.DriverData);
  if RT2800USB = nil then Exit;
- 
+
  {Close Network}
  RT2800USBDeviceClose(@RT2800USB.RT2X00.WiFi.Network);
- 
+
  {Update Device}
  Device.DriverData:=nil;
- 
+
  {Deregister WiFi}
  if WiFiDeviceDeregister(@RT2800USB.RT2X00.WiFi) <> ERROR_SUCCESS then Exit;
- 
+
  {Terminate Driver}
  RT2X00USBDriverQuit(@RT2800USB.RT2X00);
- 
+
  {Free Data}
  FreeMem(RT2800USB.RT2X00.Data);
- 
+
  {Free RF}
  FreeMem(RT2800USB.RT2X00.RFData);
- 
+
  {Free Eeprom}
  FreeMem(RT2800USB.RT2X00.EepromData);
- 
+
  {Destroy Lock}
  MutexDestroy(RT2800USB.RT2X00.CSRLock);
- 
+
  {Release Receive Requests}
  for Count:=0 to Length(RT2800USB.ReceiveRequests) - 1 do
   begin
    FreeMem(RT2800USB.ReceiveRequests[Count]);
   end;
  SetLength(RT2800USB.ReceiveRequests,0);
- 
+
  {Release Transmit Requests}
  for Count:=0 to Length(RT2800USB.TransmitRequests) - 1 do
   begin
    FreeMem(RT2800USB.TransmitRequests[Count]);
   end;
  SetLength(RT2800USB.TransmitRequests,0);
- 
+
  {Destroy WiFi}
  WiFiDeviceDestroy(@RT2800USB.RT2X00.WiFi);
- 
+
  Result:=USB_STATUS_SUCCESS;
 end;
 
 {==============================================================================}
 
-procedure RT2800USBReceiveWorker(Request:PUSBRequest); 
+procedure RT2800USBReceiveWorker(Request:PUSBRequest);
 {Called (by a Worker thread) to process a completed USB request from the RT2800USB bulk IN endpoint}
 {Request: The USB request which has completed}
 var
@@ -2921,7 +2921,7 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  {Get Request}
  RT2800USBRequest:=PRT2800USBRequest(Request.DriverData);
  if (RT2800USBRequest <> nil) and (RT2800USBRequest.Request = Request) then
@@ -2932,27 +2932,27 @@ begin
     begin
      {Get WiFi}
      RT2800USB:=PRT2800USBWiFiDevice(Entry.DriverData);
-     if RT2800USB <> nil then 
+     if RT2800USB <> nil then
       begin
        {Acquire the Lock}
        if MutexLock(RT2800USB.RT2X00.WiFi.Network.Lock) = ERROR_SUCCESS then
         begin
          try
           {Update Statistics}
-          Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveCount); 
-     
+          Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveCount);
+
           {Check State}
           if RT2800USB.RT2X00.WiFi.Network.NetworkState = NETWORK_STATE_CLOSING then
            begin
             {$IFDEF RT2800USB_DEBUG}
             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Close pending, setting receive request status to USB_STATUS_DEVICE_DETACHED');
             {$ENDIF}
-          
+
             {Update Request}
             Request.Status:=USB_STATUS_DEVICE_DETACHED;
            end;
-     
-          {Check Result} 
+
+          {Check Result}
           if Request.Status = USB_STATUS_SUCCESS then
            begin
             {$IFDEF RT2800USB_DEBUG}
@@ -2963,64 +2963,64 @@ begin
             {Get Data and Size}
             Data:=Request.Data;
             Size:=Request.ActualSize;
-            
+
             {Get RXINFO}
             RXINFO:=Data;
             Value:=RT2X00ReadDescriptor(RXINFO,0);
-            
+
             {$IFDEF RT2800USB_DEBUG}
             //if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: (RXINFO Value=' + IntToHex(Value,8) + ')'); //To Do
             {$ENDIF}
-            
+
             {Get Packet Length}
             PacketLength:=RT2X00GetRegister32(Value,RT2800USB_RXINFO_W0_USB_DMA_RX_PKT_LEN,0);
-            
+
             {$IFDEF RT2800USB_DEBUG}
             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: (PacketLength=' + IntToStr(PacketLength) + ')');
             {$ENDIF}
-            
+
             {Check Packet Length}
             if (PacketLength > 0) and (PacketLength <= RT2X00_AGGREGATION_SIZE) then
              begin
               {Update Data and Size (Remove the RXINFO from start of buffer)}
               Inc(Data,RT2800USB_RXINFO_DESC_SIZE);
               Dec(Size,RT2800USB_RXINFO_DESC_SIZE);
-              
+
               {Get Next}
               Next:=nil;
               if BufferAvailable(RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Buffer) > 0 then
                begin
                 Next:=BufferGet(RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Buffer);
                end;
-               
-              {Check Next} 
+
+              {Check Next}
               if Next <> nil then
                begin
                 if RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Count < RT2800USB_MAX_RX_ENTRIES then
                  begin
                   {Setup Descriptor}
                   FillChar(Descriptor,SizeOf(TRT2X00RXDescriptor),0);
-                  
+
                   {Process RXD}
                   RT2800USBReceiveProcessRXD(@RT2800USB.RT2X00,@Descriptor,Data,Size,PacketLength);
-                  
+
                   {Process RXWI}
                   RT2800ReceiveProcessRXWI(@RT2800USB.RT2X00,@Descriptor,Data,Size);
-                  
+
                   {$IFDEF RT2800USB_DEBUG}
                   if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: (Descriptor.Size=' + IntToStr(Descriptor.Size) + ')');
                   {$ENDIF}
-                  
+
                   {Check Descriptor Size}
                   if (Descriptor.Size > 0) and (Descriptor.Size <= RT2X00_AGGREGATION_SIZE) then
                    begin
                     {The data behind the IEEE80211 header must be aligned on a 4 byte boundary}
                     HeaderLength:=IEEE80211HeaderLengthFromBuffer(Data,Size);
-                    
+
                     {$IFDEF RT2800USB_DEBUG}
                     if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: (HeaderLength=' + IntToStr(HeaderLength) + ')');
                     {$ENDIF}
-                    
+
                     {Hardware might have stripped the IV/EIV/ICV data, it is possible that the data was provided
                      separately (through hardware descriptor) in which case we should reinsert the data into the frame}
                     if ((Descriptor.RXFlags and RT2X00_RXDONE_CRYPTO_IV) <> 0) and ((Descriptor.Flags and WIFI_RX_FLAG_IV_STRIPPED) <> 0) then
@@ -3031,30 +3031,30 @@ begin
                      begin
                       RT2X00RemoveL2PAD(Data,Size,HeaderLength);
                      end;
-                    
+
                     {Update Size (Actual size from descriptor)}
                     Size:=Descriptor.Size;
-                    
+
                     {Translate the signal to the correct bitrate index}
                     RateIndex:=RT2X00ReceiveReadSignal(@RT2800USB.RT2X00,@Descriptor);
                     if (Descriptor.RateMode = RT2X00_RATE_MODE_HT_MIX) or (Descriptor.RateMode = RT2X00_RATE_MODE_HT_GREENFIELD) then
                      begin
                       Descriptor.Flags:=Descriptor.Flags or WIFI_RX_FLAG_HT;
                      end;
-                    
+
                     //To Do //Continuing //rt2x00lib_rxdone_check_ps
-                    
+
                     //To Do //Continuing //rt2x00lib_rxdone_check_ba
-                    
+
                     {Update extra components}
                     //To Do //Continuing //rt2x00link_update_stats
                     //To Do //Continuing //rt2x00debug_update_crypto
                     //To Do //Continuing //rt2x00debug_dump_frame
-                    
+
                     {Setup RX Status}
                     RXStatus:=PIEEE80211RXStatus(PtrUInt(Entry) + SizeOf(TNetworkEntry));
                     FillChar(RXStatus^,SizeOf(TIEEE80211RXStatus),0);
-                    
+
                     {Update RX Status}
                     RXStatus.MACTime:=Descriptor.Timestamp;
                     RXStatus.Band:=RT2800USB.RT2X00.CurrentBand;
@@ -3063,24 +3063,24 @@ begin
                     RXStatus.Signal:=Descriptor.RSSI;
                     RXStatus.Flags:=Descriptor.Flags;
                     RXStatus.Antenna:=RT2800USB.RT2X00.Link.Antenna.ActiveAntenna.RX;
-                 
+
                     {Update Packet}
                     Entry.Packets[0].Buffer:=Entry.Buffer;
                     Entry.Packets[0].Data:=Data;
                     Entry.Packets[0].Length:=Size;
-                    
+
                     {Update Entry}
                     Entry.DriverData:=RXStatus;
-                    
+
                     {Add Entry}
                     RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Entries[(RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Start + RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Count) mod RT2800USB_MAX_RX_ENTRIES]:=Entry;
-                    
+
                     {Update Count}
                     Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Count);
-                    
+
                     {Signal Packet Received}
                     SemaphoreSignal(RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Wait);
-                    
+
                     {$IFDEF RT2800USB_DEBUG}
                     //if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: (Queue Count=' + IntToStr(RT2800USB.RT2X00.WiFi.Network.ReceiveQueue.Count) + ')'); //To Do
                     {$ENDIF}
@@ -3088,76 +3088,76 @@ begin
                   else
                    begin
                     if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Receive error (Descriptor.Size=' + IntToStr(Descriptor.Size) + ')');
-                   
+
                     {Free Entry}
                     BufferFree(Entry);
-                    
+
                     {Update Statistics}
-                    Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveErrors); 
+                    Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveErrors);
                    end;
                  end
                 else
                  begin
                   if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Receive queue overrun, packet discarded');
-                  
+
                   {Free Entry}
                   BufferFree(Entry);
-                  
+
                   {Update Statistics}
-                  Inc(RT2800USB.RT2X00.WiFi.Network.BufferOverruns); 
+                  Inc(RT2800USB.RT2X00.WiFi.Network.BufferOverruns);
                  end;
                end
               else
                begin
                 if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: No receive buffer available, packet discarded');
-                
+
                 {Get Next}
                 Next:=Entry;
-                
+
                 {Update Statistics}
-                Inc(RT2800USB.RT2X00.WiFi.Network.BufferUnavailable); 
+                Inc(RT2800USB.RT2X00.WiFi.Network.BufferUnavailable);
                end;
              end
             else
              begin
               if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Receive error (PacketLength=' + IntToStr(PacketLength) + ')');
-    
+
               {Get Next}
               Next:=Entry;
-    
+
               {Update Statistics}
-              Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveErrors); 
-             end;         
+              Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveErrors);
+             end;
            end
-          else 
+          else
            begin
             if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Failed receive request (Status=' + USBStatusToString(Request.Status) + ')');
-       
+
             {Get Next}
             Next:=Entry;
-            
+
             {Update Statistics}
-            Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveErrors); 
+            Inc(RT2800USB.RT2X00.WiFi.Network.ReceiveErrors);
            end;
-     
+
           {Update Pending}
-          Dec(RT2800USB.PendingCount); 
-          
+          Dec(RT2800USB.PendingCount);
+
           {Update Free}
           RT2800USB.ReceiveFree:=RT2800USB.ReceiveFree or (1 shl RT2800USBRequest.Index);
-          
+
           {Update Next}
           Next.DriverData:=nil;
-          
+
           {Update Request}
           RT2800USBRequest.Entry:=nil;
-          
+
           {Check State}
           if RT2800USB.RT2X00.WiFi.Network.NetworkState = NETWORK_STATE_CLOSING then
            begin
             {Free Next}
             BufferFree(Next);
-            
+
             {Check Pending}
             if RT2800USB.PendingCount = 0 then
              begin
@@ -3167,56 +3167,56 @@ begin
                 {$IFDEF RT2800USB_DEBUG}
                 if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Close pending, sending message to waiter thread (Thread=' + IntToHex(RT2800USB.WaiterThread,8) + ')');
                 {$ENDIF}
-                
+
                 {Send Message}
                 FillChar(Message,SizeOf(TMessage),0);
                 ThreadSendMessage(RT2800USB.WaiterThread,Message);
                 RT2800USB.WaiterThread:=INVALID_HANDLE_VALUE;
-               end; 
+               end;
              end;
            end
           else
            begin
-            {Check Next} 
+            {Check Next}
             if Next <> nil then
              begin
               {Update Pending}
               Inc(RT2800USB.PendingCount);
-              
+
               {Update Free}
               RT2800USB.ReceiveFree:=RT2800USB.ReceiveFree xor (1 shl RT2800USBRequest.Index);
-              
+
               {Update Next}
               Next.DriverData:=RT2800USB;
-              
+
               {Update Request}
               RT2800USBRequest.Entry:=Next;
-              
+
               {Reinitialize Request}
               USBRequestInitialize(RT2800USBRequest.Request,RT2800USBReceiveComplete,Next.Buffer,Next.Size,RT2800USBRequest);
-              
+
               {$IFDEF RT2800USB_DEBUG}
               if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Resubmitting receive request');
               {$ENDIF}
-              
+
               {Resubmit Request}
               Status:=USBRequestSubmit(RT2800USBRequest.Request);
               if Status <> USB_STATUS_SUCCESS then
                begin
                 if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Failed to resubmit receive request: ' + USBStatusToString(Status));
-              
+
                 {Update Pending}
                 Dec(RT2800USB.PendingCount);
-                
+
                 {Update Free}
                 RT2800USB.ReceiveFree:=RT2800USB.ReceiveFree or (1 shl RT2800USBRequest.Index);
-                
+
                 {Update Next}
                 Next.DriverData:=nil;
-                
+
                 {Update Request}
                 RT2800USBRequest.Entry:=nil;
-                
+
                 {Free Next}
                 BufferFree(Next);
                end;
@@ -3224,11 +3224,11 @@ begin
             else
              begin
               if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: No receive buffer available, cannot resubmit receive request');
-              
+
               {Update Statistics}
-              Inc(RT2800USB.RT2X00.WiFi.Network.BufferUnavailable); 
-             end;             
-           end;  
+              Inc(RT2800USB.RT2X00.WiFi.Network.BufferUnavailable);
+             end;
+           end;
          finally
           {Release the Lock}
           MutexUnlock(RT2800USB.RT2X00.WiFi.Network.Lock);
@@ -3242,22 +3242,22 @@ begin
      else
       begin
        if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Receive request invalid (WiFi)');
-      end;    
+      end;
     end
    else
     begin
      if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Receive request invalid (Entry)');
-    end;    
+    end;
   end
  else
   begin
    if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Receive request invalid (Request)');
-  end;    
+  end;
 end;
 
 {==============================================================================}
- 
-procedure RT2800USBReceiveComplete(Request:PUSBRequest); 
+
+procedure RT2800USBReceiveComplete(Request:PUSBRequest);
 {Called when a USB request from the RT2800USB bulk IN endpoint completes}
 {Request: The USB request which has completed}
 {Note: Request is passed to worker thread for processing to prevent blocking the USB completion}
@@ -3265,13 +3265,13 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  WorkerSchedule(0,TWorkerTask(RT2800USBReceiveWorker),Request,nil)
 end;
 
 {==============================================================================}
 
-procedure RT2800USBTransmitWorker(Request:PUSBRequest); 
+procedure RT2800USBTransmitWorker(Request:PUSBRequest);
 {Called (by a Worker thread) to process a completed USB request to the RT2800USB bulk OUT endpoint}
 {Request: The USB request which has completed}
 var
@@ -3284,7 +3284,7 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  {Get Request}
  RT2800USBRequest:=PRT2800USBRequest(Request.DriverData);
  if (RT2800USBRequest <> nil) and (RT2800USBRequest.Request = Request) then
@@ -3295,56 +3295,56 @@ begin
     begin
      {Get WiFi}
      RT2800USB:=PRT2800USBWiFiDevice(Entry.DriverData);
-     if RT2800USB <> nil then 
+     if RT2800USB <> nil then
       begin
        {Acquire the Lock}
        if MutexLock(RT2800USB.RT2X00.WiFi.Network.Lock) = ERROR_SUCCESS then
         begin
          try
           {Update Statistics}
-          Inc(RT2800USB.RT2X00.WiFi.Network.TransmitCount); 
-     
+          Inc(RT2800USB.RT2X00.WiFi.Network.TransmitCount);
+
           {Check State}
           if RT2800USB.RT2X00.WiFi.Network.NetworkState = NETWORK_STATE_CLOSING then
            begin
             {$IFDEF RT2800USB_DEBUG}
             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Close pending, setting transmit request status to USB_STATUS_DEVICE_DETACHED');
             {$ENDIF}
-          
+
             {Update Request}
             Request.Status:=USB_STATUS_DEVICE_DETACHED;
            end;
-          
-          {Check Result} 
+
+          {Check Result}
           if Request.Status = USB_STATUS_SUCCESS then
            begin
             {$IFDEF RT2800USB_DEBUG}
             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Transmit complete (Size=' + IntToStr(Request.Size) + ' Actual Size=' + IntToStr(Request.ActualSize) + ')');
             {$ENDIF}
-          
+
             //To Do //Continuing
-            
+
             //Signal waiting thread (Semaphore)
             //Get Next from Queue
             //What about status of result ?
-            
+
            end
-          else 
+          else
            begin
             if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Failed transmit request (Status=' + USBStatusToString(Request.Status) + ')');
-            
+
             {Update Statistics}
-            Inc(RT2800USB.RT2X00.WiFi.Network.TransmitErrors); 
+            Inc(RT2800USB.RT2X00.WiFi.Network.TransmitErrors);
            end;
-          
+
           //To Do //Continuing
-          
+
           {Update Pending}
-          Dec(RT2800USB.PendingCount); 
-          
+          Dec(RT2800USB.PendingCount);
+
           {Update Free}
           RT2800USB.TransmitFree:=RT2800USB.TransmitFree or (1 shl RT2800USBRequest.Index);
-          
+
           {Check State}
           if RT2800USB.RT2X00.WiFi.Network.NetworkState = NETWORK_STATE_CLOSING then
            begin
@@ -3357,12 +3357,12 @@ begin
                 {$IFDEF RT2800USB_DEBUG}
                 if USB_LOG_ENABLED then USBLogDebug(Request.Device,'RT2800USB: Close pending, sending message to waiter thread (Thread=' + IntToHex(RT2800USB.WaiterThread,8) + ')');
                 {$ENDIF}
-                
+
                 {Send Message}
                 FillChar(Message,SizeOf(TMessage),0);
                 ThreadSendMessage(RT2800USB.WaiterThread,Message);
                 RT2800USB.WaiterThread:=INVALID_HANDLE_VALUE;
-               end; 
+               end;
              end;
            end;
          finally
@@ -3378,22 +3378,22 @@ begin
      else
       begin
        if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Transmit request invalid (WiFi)');
-      end;    
+      end;
     end
    else
     begin
      if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Transmit request invalid (Entry)');
-    end;    
+    end;
   end
  else
   begin
    if USB_LOG_ENABLED then USBLogError(Request.Device,'RT2800USB: Transmit request invalid (Request)');
-  end;    
+  end;
 end;
 
 {==============================================================================}
 
-procedure RT2800USBTransmitComplete(Request:PUSBRequest); 
+procedure RT2800USBTransmitComplete(Request:PUSBRequest);
 {Called when a USB request to the RT2800USB bulk OUT endpoint completes}
 {Request: The USB request which has completed}
 {Note: Request is passed to worker thread for processing to prevent blocking the USB completion}
@@ -3401,7 +3401,7 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  WorkerSchedule(0,TWorkerTask(RT2800USBTransmitWorker),Request,nil)
 end;
 
@@ -3411,13 +3411,13 @@ end;
 function RT2800USBCheckDevice(Device:PUSBDevice):LongWord;
 {Check the Vendor and Device ID against the supported devices}
 {Device: USB device to check}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
  Count:Integer;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
@@ -3440,10 +3440,10 @@ function RT2800USBDriverInit(RT2X00:PRT2X00WiFiDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Device}
  if RT2X00 = nil then Exit;
- 
+
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Driver init');
  {$ENDIF}
@@ -3464,10 +3464,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Device}
  if RT2X00 = nil then Exit;
- 
+
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: EEPROM load');
  {$ENDIF}
@@ -3481,7 +3481,7 @@ begin
      Result:=RT2800LoadEfuse(RT2X00,Data,Size);
     end
    else
-    begin   
+    begin
      Result:=RT2X00USBEepromLoad(RT2X00,Data,Size);
     end;
   end
@@ -3499,10 +3499,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Device}
  if RT2X00 = nil then Exit;
- 
+
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Set State=' + IntToStr(State));
  {$ENDIF}
@@ -3513,13 +3513,13 @@ begin
     {Before the radio can be enabled, the device first has to be woken up. After that it needs a bit of time to be fully awake and then the radio can be enabled}
     RT2800MCURequest(RT2X00,RT2800_MCU_WAKEUP,$ff,0,2);
     Sleep(1);
-    
+
     Status:=RT2800USBEnableRadio(RT2X00);
    end;
   RT2X00_STATE_RADIO_OFF:begin
     {After the radio has been disabled, the device should be put to sleep for powersaving}
     Status:=RT2800USBDisableRadio(RT2X00);
-    
+
     RT2800MCURequest(RT2X00,RT2800_MCU_SLEEP,$ff,$ff,2);
    end;
   RT2X00_STATE_RADIO_IRQ_ON,RT2X00_STATE_RADIO_IRQ_OFF:begin
@@ -3532,7 +3532,7 @@ begin
       Status:=ERROR_SUCCESS;
      end
     else
-     begin    
+     begin
       Status:=ERROR_OPERATION_FAILED;
      end;
    end;
@@ -3542,21 +3542,21 @@ begin
       Status:=ERROR_SUCCESS;
      end
     else
-     begin    
+     begin
       Status:=ERROR_OPERATION_FAILED;
      end;
    end;
   else
    begin
     Status:=ERROR_NOT_SUPPORTED;
-   end;   
+   end;
  end;
- 
+
  if Status <> ERROR_SUCCESS then
   begin
    if USB_LOG_ENABLED then USBLogError(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Device failed to enter state (Status=' + ErrorToString(Status) + ')');
   end;
-  
+
  Result:=Status;
 end;
 
@@ -3569,10 +3569,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Device}
  if RT2X00 = nil then Exit;
- 
+
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Enable RX');
  {$ENDIF}
@@ -3580,10 +3580,10 @@ begin
  RT2X00USBRegisterRead(RT2X00,RT2800_MAC_SYS_CTRL,@Reg);
  RT2X00SetRegister32(Reg,RT2800_MAC_SYS_CTRL_ENABLE_RX,3,1);
  RT2X00USBRegisterWrite(RT2X00,RT2800_MAC_SYS_CTRL,Reg);
- 
+
  Result:=ERROR_SUCCESS;
 end;
- 
+
 {==============================================================================}
 
 function RT2800USBDisableRX(RT2X00:PRT2X00WiFiDevice):LongWord;
@@ -3593,10 +3593,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Device}
  if RT2X00 = nil then Exit;
- 
+
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Disable RX');
  {$ENDIF}
@@ -3604,7 +3604,7 @@ begin
  RT2X00USBRegisterRead(RT2X00,RT2800_MAC_SYS_CTRL,@Reg);
  RT2X00SetRegister32(Reg,RT2800_MAC_SYS_CTRL_ENABLE_RX,3,0);
  RT2X00USBRegisterWrite(RT2X00,RT2800_MAC_SYS_CTRL,Reg);
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -3617,10 +3617,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Device}
  if RT2X00 = nil then Exit;
- 
+
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Enable Beacon');
  {$ENDIF}
@@ -3630,7 +3630,7 @@ begin
  RT2X00SetRegister32(Reg,RT2800_BCN_TIME_CFG_TBTT_ENABLE,19,1);
  RT2X00SetRegister32(Reg,RT2800_BCN_TIME_CFG_BEACON_GEN,20,1);
  RT2X00USBRegisterWrite(RT2X00,RT2800_BCN_TIME_CFG,Reg);
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -3643,10 +3643,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Device}
  if RT2X00 = nil then Exit;
- 
+
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Disable Beacon');
  {$ENDIF}
@@ -3656,17 +3656,17 @@ begin
  RT2X00SetRegister32(Reg,RT2800_BCN_TIME_CFG_TBTT_ENABLE,19,0);
  RT2X00SetRegister32(Reg,RT2800_BCN_TIME_CFG_BEACON_GEN,20,0);
  RT2X00USBRegisterWrite(RT2X00,RT2800_BCN_TIME_CFG,Reg);
- 
+
  Result:=ERROR_SUCCESS;
 end;
- 
+
 {==============================================================================}
 
 function RT2800USBGetFirmware(RT2X00:PRT2X00WiFiDevice;var Name:String;var Address:Pointer;var Size:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Device}
  if RT2X00 = nil then Exit;
 
@@ -3679,7 +3679,7 @@ begin
   begin
    {Update Name}
    Name:='';
-   
+
    {Update Address and Size}
    Address:=@RT2800USBFirmware;
    Size:=SizeOf(RT2800USBFirmware);
@@ -3692,7 +3692,7 @@ begin
   begin
    {Update Name}
    Name:=RT2800USB_FIRMWARE_FILENAME;
-   
+
    {Update Address and Size}
    Address:=nil;
    Size:=0;
@@ -3700,9 +3700,9 @@ begin
    {$IFDEF RT2800USB_DEBUG}
    if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: External firmware (Name=' + Name + ')');
    {$ENDIF}
-  end; 
-  
- Result:=True; 
+  end;
+
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -3716,18 +3716,18 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Device}
  if RT2X00 = nil then Exit;
 
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Write firmware (Data=' + PtrToHex(Data) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Check Firmware}
  if Data = nil then Exit;
  if Size <> SIZE_8K then Exit;
- 
+
  {Check Chipset}
  if (RT2X00GetRTChip(RT2X00) = RT2X00_RT2860) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT2872) or (RT2X00GetRTChip(RT2X00) = RT2X00_RT3070) then
   begin
@@ -3740,9 +3740,9 @@ begin
    {Setup Offset and Count}
    Offset:=SIZE_4K;
    Count:=SIZE_4K;
-  end;  
-  
- {Check Autorun} 
+  end;
+
+ {Check Autorun}
  Status:=RT2800USBDetectAutorun(RT2X00);
  if (Status <> ERROR_SUCCESS) and (Status <> ERROR_NOT_SUPPORTED) then
   begin
@@ -3750,20 +3750,20 @@ begin
    Exit;
   end
  else
-  begin 
+  begin
    if Status = ERROR_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogInfo(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Device in autorun mode, firmware not required');
-     
+
      {Firmware not required}
      RT2X00ClearRequirement(RT2X00,RT2X00_REQUIRE_FIRMWARE);
     end
    else
-    begin 
+    begin
      {$IFDEF RT2800USB_DEBUG}
      if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB:  (Offset=' + IntToStr(Offset) + ' Count=' + IntToStr(Count) + ')');
      {$ENDIF}
-    
+
      {Write the firmware}
      Status:=RT2X00USBRegisterMultiWrite(RT2X00,RT2800USB_FIRMWARE_IMAGEBASE,Data + Offset,Count);
      if Status <> USB_STATUS_SUCCESS then
@@ -3771,11 +3771,11 @@ begin
        if USB_LOG_ENABLED then USBLogError(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Failed register multiwrite for RT2800USB_FIRMWARE_IMAGEBASE (Status=' + USBStatusToString(Status) + ')');
        Exit;
       end;
-     
+
      {Setup mailbox}
      RT2X00USBRegisterWrite(RT2X00,RT2800_H2M_MAILBOX_CID,LongWord(not(0)));
      RT2X00USBRegisterWrite(RT2X00,RT2800_H2M_MAILBOX_STATUS,LongWord(not(0)));
-     
+
      {Send firmware request}
      Status:=RT2X00USBVendorRequest(RT2X00,RT2X00USB_DEVICE_MODE,RT2X00USB_VENDOR_REQUEST_OUT,RT2X00USB_MODE_FIRMWARE,0,nil,0,RT2X00USB_REGISTER_TIMEOUT_FIRMWARE);
      if Status <> USB_STATUS_SUCCESS then //To Do //Change to ERROR_ returns  //Dont use USB_STATUS_ codes
@@ -3783,16 +3783,16 @@ begin
        if USB_LOG_ENABLED then USBLogError(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Failed vendor request for RT2X00USB_MODE_FIRMWARE (Status=' + USBStatusToString(Status) + ')');
        Exit;
       end;
-      
-     {Delay} 
+
+     {Delay}
      MillisecondDelay(10);
-     
+
      {Update mailbox}
      RT2X00USBRegisterWrite(RT2X00,RT2800_H2M_MAILBOX_CSR,0);
-    end; 
-   
+    end;
+
    Result:=True;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -3804,7 +3804,7 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Device}
  if RT2X00 = nil then Exit;
 
@@ -3819,17 +3819,17 @@ begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  RT2X00USBRegisterRead(RT2X00,RT2800_PBF_SYS_CTRL,@Reg);
  RT2X00USBRegisterWrite(RT2X00,RT2800_PBF_SYS_CTRL,Reg and not($00002000));
-    
+
  Reg:=0;
  RT2X00SetRegister32(Reg,RT2800_MAC_SYS_CTRL_RESET_CSR,0,1);
  RT2X00SetRegister32(Reg,RT2800_MAC_SYS_CTRL_RESET_BBP,1,1);
  RT2X00USBRegisterWrite(RT2X00,RT2800_MAC_SYS_CTRL,Reg);
-    
+
  RT2X00USBRegisterWrite(RT2X00,RT2800_USB_DMA_CFG,$00000000);
-    
+
  Status:=RT2X00USBVendorRequest(RT2X00,RT2X00USB_DEVICE_MODE,RT2X00USB_VENDOR_REQUEST_OUT,RT2X00USB_MODE_RESET,0,nil,0,RT2X00USB_REGISTER_TIMEOUT);
  if Status <> USB_STATUS_SUCCESS then //To Do //Change to ERROR_ returns  //Dont use USB_STATUS_ codes
   begin
@@ -3837,12 +3837,12 @@ begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
-    
+
  RT2X00USBRegisterWrite(RT2X00,RT2800_MAC_SYS_CTRL,$00000000);
- 
+
  Result:=ERROR_SUCCESS;
 end;
- 
+
 {==============================================================================}
 
 function RT2800USBHardwareEncryptionDisabled(RT2X00:PRT2X00WiFiDevice):Boolean;
@@ -3857,14 +3857,14 @@ function RT2800USBDetectEfuse(RT2X00:PRT2X00WiFiDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Device}
  if RT2X00 = nil then Exit;
 
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Detect eFuse EEPROM');
  {$ENDIF}
- 
+
  {Check Autorun}
  Result:=RT2800USBDetectAutorun(RT2X00);
  if Result = ERROR_NOT_SUPPORTED then
@@ -3884,17 +3884,17 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Device}
  if RT2X00 = nil then Exit;
 
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Detect RT2X00USB_MODE_AUTORUN');
  {$ENDIF}
- 
+
  {Setup Value}
  Reg:=0;
- 
+
  {Vendor Request for MODE_AUTORUN}
  Status:=RT2X00USBVendorRequest(RT2X00,RT2X00USB_DEVICE_MODE,RT2X00USB_VENDOR_REQUEST_IN,RT2X00USB_MODE_AUTORUN,0,@Reg,SizeOf(LongWord),RT2X00USB_REGISTER_TIMEOUT_FIRMWARE);
  if Status <> USB_STATUS_SUCCESS then //To Do //Change to ERROR_ returns  //Dont use USB_STATUS_ codes
@@ -3903,21 +3903,21 @@ begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
-  
+
  {Get Value}
  Value:=LongWordLEtoN(Reg);
- 
+
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB:  (Value=' + IntToHex(Value,8) + ')');
  {$ENDIF}
- 
+
  {Check Value}
  if (Value and $00000003) = 2 then
   begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
-  
+
  Result:=ERROR_NOT_SUPPORTED;
 end;
 
@@ -3929,14 +3929,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Device}
  if RT2X00 = nil then Exit;
 
  {$IFDEF RT2800USB_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(PUSBDevice(RT2X00.WiFi.Network.Device.DeviceData),'RT2800USB: Enable Radio');
  {$ENDIF}
- 
+
  {Check State}
  Result:=ERROR_ALREADY_OPEN;
  if RT2X00.WiFi.Network.NetworkState = NETWORK_STATE_OPEN then Exit;
@@ -3947,17 +3947,17 @@ begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
-  
+
  RT2X00USBRegisterRead(RT2X00,RT2800_USB_DMA_CFG,@Reg);
  RT2X00SetRegister32(Reg,RT2800_USB_DMA_CFG_PHY_CLEAR,20,0);
  RT2X00SetRegister32(Reg,RT2800_USB_DMA_CFG_RX_BULK_AGG_EN,21,0);
  RT2X00SetRegister32(Reg,RT2800_USB_DMA_CFG_RX_BULK_AGG_TIMEOUT,0,128);
- 
+
  RT2X00SetRegister32(Reg,RT2800_USB_DMA_CFG_RX_BULK_AGG_LIMIT,8,((128 * RT2X00_DATA_FRAME_SIZE) div 1024) - 3); //To Do //128 = rx->limit //See: rt2800usb_enable_radio/rt2800usb_queue_init {Total room for RX frames in kilobytes, PBF might still exceed this limit so reduce the number to prevent errors}
  RT2X00SetRegister32(Reg,RT2800_USB_DMA_CFG_RX_BULK_EN,22,1);
  RT2X00SetRegister32(Reg,RT2800_USB_DMA_CFG_TX_BULK_EN,23,1);
- RT2800RegisterWrite(RT2X00,RT2800_USB_DMA_CFG,Reg);    
- 
+ RT2800RegisterWrite(RT2X00,RT2800_USB_DMA_CFG,Reg);
+
  {Enable Radio}
  Result:=RT2800EnableRadio(RT2X00);
 end;
@@ -3968,7 +3968,7 @@ function RT2800USBDisableRadio(RT2X00:PRT2X00WiFiDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Device}
  if RT2X00 = nil then Exit;
 
@@ -3994,13 +3994,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Device}
  if RT2X00 = nil then Exit;
 
  {Check Descriptor}
  if Descriptor = nil then Exit;
- 
+
  {Check Data and Size}
  if Data = nil then Exit;
  if Size = 0 then Exit;
@@ -4011,26 +4011,26 @@ begin
  {$IFDEF RT2800USB_DEBUG}
  //if NETWORK_LOG_ENABLED then NetworkLogDebug(@RT2X00.WiFi.Network,'RT2800USB: (RXD Value=' + IntToHex(Value,8) + ')'); //To Do
  {$ENDIF}
- 
+
  {CRC Error}
  if RT2X00GetRegister32(Value,RT2800USB_RXD_W0_CRC_ERROR,8) <> 0 then
   begin
    Descriptor.Flags:=Descriptor.Flags or WIFI_RX_FLAG_FAILED_FCS_CRC;
   end;
-  
+
  {Cipher Status}
  Descriptor.CipherStatus:=RT2X00GetRegister32(Value,RT2800USB_RXD_W0_CIPHER_ERROR,9);
- 
+
  {Decrypted}
  if RT2X00GetRegister32(Value,RT2800USB_RXD_W0_DECRYPTED,16) <> 0 then
   begin
    {Hardware has stripped IV/EIV data from 802.11 frame during decryption. Unfortunately the
     descriptor doesn't contain any fields with the EIV/IV data either, so they can't be restored}
    Descriptor.Flags:=Descriptor.Flags or WIFI_RX_FLAG_IV_STRIPPED;
-   
+
    {The hardware has already checked the Michael Mic and has stripped it from the frame}
    Descriptor.Flags:=Descriptor.Flags or WIFI_RX_FLAG_MMIC_STRIPPED;
-   
+
    if Descriptor.CipherStatus = RT2X00_RX_CRYPTO_SUCCESS then
     begin
      Descriptor.Flags:=Descriptor.Flags or WIFI_RX_FLAG_DECRYPTED;
@@ -4040,22 +4040,22 @@ begin
      Descriptor.Flags:=Descriptor.Flags or WIFI_RX_FLAG_MMIC_ERROR;
     end;
   end;
-  
+
  {My BSS}
- if RT2X00GetRegister32(Value,RT2800USB_RXD_W0_MY_BSS,7) <> 0 then  
+ if RT2X00GetRegister32(Value,RT2800USB_RXD_W0_MY_BSS,7) <> 0 then
   begin
    Descriptor.RXFlags:=Descriptor.RXFlags or RT2X00_RXDONE_MY_BSS;
   end;
- 
+
  {L2 Pad}
- if RT2X00GetRegister32(Value,RT2800USB_RXD_W0_L2PAD,14) <> 0 then  
+ if RT2X00GetRegister32(Value,RT2800USB_RXD_W0_L2PAD,14) <> 0 then
   begin
    Descriptor.RXFlags:=Descriptor.RXFlags or RT2X00_RXDONE_L2PAD;
   end;
-  
+
  {Update Size (Remove RXD from end of buffer)}
  Size:=PacketLength;
-  
+
  Result:=True;
 end;
 
@@ -4064,14 +4064,14 @@ end;
 
 initialization
  RT2800USBInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 end.
- 
+

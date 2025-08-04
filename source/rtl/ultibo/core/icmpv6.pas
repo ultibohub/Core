@@ -17,22 +17,22 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
- 
- 
+
+
 References
 ==========
 
- 
+
 Internet Control Message Protocol version 6
 ===========================================
 
  Notes: ICMP6 Checksum includes both Header and Data (if any)
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -51,18 +51,18 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Threads,SysUtils,Classes,Ne
 //To Do //Multicast on IPv6 is handled by MLD (Multicast Listener Discovery) (via ICMPv6) instead of IGMP
                       //See: https://en.wikipedia.org/wiki/Internet_Group_Management_Protocol
                       //     https://en.wikipedia.org/wiki/Multicast_Listener_Discovery
-                      
+
 
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-  
+
 {==============================================================================}
 const
  {ICMPv6 specific constants}
  {Note: Some ICMPV6 definitions are in the Protocol or IPv6 modules}
  ICMP6_PROTOCOL_NAME = 'ICMPV6';
- 
+
  {ICMPv6  constants}
  ICMP6_TIMEOUT = 0;          {Wait forever on a ICMP6 Read}
  ICMP6_BUFFER_SIZE = 65536;  {ICMP6 Receive Buffer Size}
@@ -70,7 +70,7 @@ const
  ICMP6_HEADER_SIZE = 5;      {SizeOf(TICMP6Header);} //????? Which Message ?????
 
  ICMP6_PACKET_SIZE = 8;      {SizeOf(TICMP6Packet)}
- 
+
 {==============================================================================}
 type
  {ICMPv6 specific types}
@@ -80,16 +80,16 @@ type
   ICMP6Type:Byte;            {ICMP_UNREACH etc}
   Code:Byte;                 {ICMP_UNREACH_NET,ICMP_UNREACH_PORT etc}
   Checksum:Word;             {1s Compliment checksum of Structure}
-  CurrentHopLimit:Byte;      
+  CurrentHopLimit:Byte;
   //To Do
  end;
 
  PICMP6Packet = ^TICMP6Packet;
- TICMP6Packet = record   {8 Bytes} {Used by ICMP6Buffer} 
+ TICMP6Packet = record   {8 Bytes} {Used by ICMP6Buffer}
   Size:LongWord;         {LongWord to keep size even}
   Next:PICMP6Packet;
  end; {Followed by RemoteAddress (4 or 16 Bytes)}
- 
+
 {==============================================================================}
 type
  {ICMPv6 specific classes}
@@ -124,7 +124,7 @@ type
    {Inherited Methods}
    function SelectCheck(ASource,ADest:PFDSet;ACode:Integer):Integer; override;
    function SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; override;
-   
+
    function SendPacket(ASocket:TProtocolSocket;ASource,ADest:Pointer;ASourcePort,ADestPort:Word;APacket:PPacketFragment;ASize,AFlags:Integer):Integer; override;
   public
    {Public Properties}
@@ -154,7 +154,7 @@ type
 
    function FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket; override;
    procedure FlushSockets(All:Boolean); override;
-   
+
    function StartProtocol:Boolean; override;
    function StopProtocol:Boolean; override;
    function ProcessProtocol:Boolean; override;
@@ -166,7 +166,7 @@ type
    destructor Destroy; override;
   private
    {Internal Variables}
-   
+
    {Data Layer Variables}
    FRecvData:TICMP6Buffer;
   public
@@ -212,11 +212,11 @@ type
    function ReadBuffer(var ABuffer;var ASize:Integer;ARemoteAddress:Pointer;AFlags:Integer):Boolean;
    function WriteBuffer(var ABuffer;ASize:Integer;ARemoteAddress:Pointer):Boolean;
  end;
- 
+
 {==============================================================================}
 {var}
  {ICMPv6 specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure ICMP6Init;
@@ -231,7 +231,7 @@ function GetICMP6DataOffset(AFamily:Word;ABuffer:Pointer):Word;
 function GetICMP6DataLength(AFamily:Word;ABuffer:Pointer):Word;
 
 function ChecksumICMP6(AFamily:Word;ABuffer:Pointer;AOffset,ALength:Word):Word;
-  
+
 {==============================================================================}
 {ICMPv6 Helper Functions}
 
@@ -264,10 +264,10 @@ begin
  WriterLock;
  try
   Socket:=nil;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -294,7 +294,7 @@ begin
  finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -317,23 +317,23 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: PacketHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Dest}
  {if ADest = nil then Exit;} {Not Used}
- 
+
  {Check Source}
- {if ASource = nil then Exit;} {Not Used} 
-  
+ {if ASource = nil then Exit;} {Not Used}
+
  {Check Packet}
  if APacket = nil then Exit;
- 
+
  {Get Transport}
- Transport:=TICMP6ProtocolTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ)); 
+ Transport:=TICMP6ProtocolTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
  try
   {$IFDEF ICMP6_DEBUG}
@@ -343,15 +343,15 @@ begin
   {Check Transport Family}
   case Transport.Transport.Family of
    AF_INET6:begin
-     {Get Header}  
+     {Get Header}
      IP6:=PIP6Header(APacket);
-     
+
      //To Do //Extensions
-     
+
      {$IFDEF ICMP6_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6:  Protocol = ' + ProtocolToString(Transport.Protocol));
      {$ENDIF}
-     
+
      {Check Protocol}
      case Transport.Protocol of
       IPPROTO_ICMPV6:begin
@@ -365,15 +365,15 @@ begin
 
           //   {Signal the Event}
           //   Socket.SignalChange;
-          
-         end; 
+
+         end;
        end;
      end;
     end;
   end;
  finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -394,21 +394,21 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: ControlHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Dest}
  {if ADest = nil then Exit;} {May be nil}
- 
+
  {Check Source}
  {if ASource = nil then Exit;} {May be nil}
-  
+
  {Check Data}
  {if AData = nil then Exit;} {May be nil}
- 
+
  {Get Transport}
  Transport:=TICMP6ProtocolTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
@@ -416,11 +416,11 @@ begin
   {Check Transport Family}
   case Transport.Transport.Family of
    AF_INET6:begin
-     {Check Protocol} 
+     {Check Protocol}
      case Transport.Protocol of
       IPPROTO_ICMPV6:begin
         {Check Command}
-        
+
         //To Do
        end;
      end;
@@ -428,7 +428,7 @@ begin
   end;
  finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -442,7 +442,7 @@ begin
 
  {Get Next Id}
  Result:=FNextICMP6Id;
-  
+
  {Increment Id}
  if AIncrement then Inc(FNextICMP6Id,ID_INCREMENT);
 
@@ -459,14 +459,14 @@ var
 begin
  {}
  Result:=0;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: SelectCheck');
  {$ENDIF}
- 
+
  {Check Dest}
  if ADest = nil then Exit;
- 
+
  {Check Source}
  if ASource = nil then Exit;
 
@@ -474,16 +474,16 @@ begin
  case ACode of
   SELECT_READ:begin
     Result:=SOCKET_ERROR;
-    
+
     {Get Sockets}
     for Count:=ASource.fd_count - 1 downto 0 do
      begin
       {Get Socket}
       Socket:=TICMP6Socket(ASource.fd_array[Count]);
-      
+
       {Check Socket}
       if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
-      
+
       {Check Receive Count}
       if Socket.RecvData.GetCount > 0 then
        begin
@@ -493,26 +493,26 @@ begin
           FD_SET(TSocket(Socket),ADest^);
          end;
        end;
-       
+
       {Unlock Socket}
       Socket.ReaderUnlock;
      end;
-    
+
     {Return Result}
     Result:=ADest.fd_count;
    end;
   SELECT_WRITE:begin
     Result:=SOCKET_ERROR;
-    
+
     {Get Sockets}
     for Count:=ASource.fd_count - 1 downto 0 do
      begin
       {Get Socket}
       Socket:=TICMP6Socket(ASource.fd_array[Count]);
-      
+
       {Check Socket}
       if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
-      
+
       {Check Set}
       if not FD_ISSET(TSocket(Socket),ADest^) then
        begin
@@ -535,7 +535,7 @@ end;
 
 {==============================================================================}
 
-function TICMP6Protocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; 
+function TICMP6Protocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer;
 {Socket is the single socket to check, Code is the type of check, Timeout is how long to wait}
 var
  StartTime:Int64;
@@ -543,14 +543,14 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: SelectWait');
  {$ENDIF}
 
  {Get Socket}
  Socket:=TICMP6Socket(ASocket);
- 
+
  {Check Socket}
  if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
  try
@@ -578,7 +578,7 @@ begin
            Exit;
           end;
         end
-       else 
+       else
         begin
          {Wait for Event}
          if not Socket.WaitChangeEx(ATimeout) then
@@ -595,26 +595,26 @@ begin
            Result:=0;
            Exit;
           end;
-        end;           
+        end;
       end;
-      
+
      {Return One}
-     Result:=1; 
+     Result:=1;
     end;
    SELECT_WRITE:begin
      {Return One}
-     Result:=1; 
+     Result:=1;
     end;
    SELECT_ERROR:begin
      {Return Zero}
      Result:=0;
     end;
   end;
- 
+
  finally
-  {Unlock Socket} 
+  {Unlock Socket}
   Socket.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -637,22 +637,22 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: SendPacket');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET6:begin
     {$IFDEF ICMP6_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6:  Dest = ' + In6AddrToString(PIn6Addr(ADest)^));
     {$ENDIF}
-    
+
     {Get Transport}
     Transport:=TICMP6ProtocolTransport(GetTransportByTransport(ASocket.Transport,True,NETWORK_LOCK_READ));
     if Transport = nil then Exit;
@@ -678,12 +678,12 @@ function TICMP6Protocol.Accept(ASocket:TProtocolSocket;ASockAddr:PSockAddr;AAddr
 begin
  {}
  Result:=TProtocolSocket(INVALID_SOCKET);
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: Accept');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Not supported}
@@ -711,44 +711,44 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: Bind');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected or Bound}
    NetworkSetLastError(WSAEINVAL);
    if ASocket.SocketState.Connected then Exit;
    if ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Get Socket Address}
    SockAddr6:=PSockAddr6(@ASockAddr);
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    if ASocket.Family <> SockAddr6.sin6_family then Exit;
-   
+
    {Check Address Family}
    case ASocket.Family of
     AF_INET6:begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
+
       {Check LocalAddress}
       if not TIP6Transport(ASocket.Transport).CompareDefault(SockAddr6.sin6_addr) then
        begin
         NetworkSetLastError(WSAEADDRNOTAVAIL);
         if TIP6Transport(ASocket.Transport).GetAddressByAddress(SockAddr6.sin6_addr,False,NETWORK_LOCK_NONE) = nil then Exit;
        end;
-      
+
       {Bind the Socket}
       ASocket.SocketState.LocalAddress:=True;
       TIP6State(ASocket.TransportState).LocalAddress:=SockAddr6.sin6_addr;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -773,21 +773,21 @@ function TICMP6Protocol.CloseSocket(ASocket:TProtocolSocket):Integer;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: CloseSocket');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Close Socket}
    ASocket.SocketState.Closed:=True;
    ASocket.CloseTime:=GetTickCount64;
-   
+
    {Signal the Event}
    ASocket.SignalChange;
-   
+
    {Return Result}
    NetworkSetLastError(ERROR_SUCCESS);
    Result:=NO_ERROR;
@@ -817,43 +817,43 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: Connect');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
    NetworkSetLastError(WSAEISCONN);
    if ASocket.SocketState.Connected then Exit;
-   
+
    {Get Socket Address}
    SockAddr6:=PSockAddr6(@ASockAddr);
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    if ASocket.Family <> SockAddr6.sin6_family then Exit;
-   
+
    {Check Address Family}
    case ASocket.Family of
     AF_INET6:begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
+
       {Check for Default RemoteAddress}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if TIP6Transport(ASocket.Transport).CompareDefault(SockAddr6.sin6_addr) then Exit;
-      
+
       {Check for Broadcast RemoteAddress}
       NetworkSetLastError(WSAEACCES);
       if TIP6Transport(ASocket.Transport).CompareBroadcast(SockAddr6.sin6_addr) or TIP6Transport(ASocket.Transport).CompareDirected(SockAddr6.sin6_addr) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
-      
+
       {Check the Route}
       NetworkSetLastError(WSAENETUNREACH);
       Route:=TIP6Transport(ASocket.Transport).GetRouteByAddress(SockAddr6.sin6_addr,True,NETWORK_LOCK_READ);
@@ -863,7 +863,7 @@ begin
        NetworkSetLastError(WSAEADDRNOTAVAIL);
        Address:=TIP6Transport(ASocket.Transport).GetAddressByAddress(TIP6RouteEntry(Route).Address,True,NETWORK_LOCK_READ);
        if Address = nil then Exit;
-      
+
        {Check the Binding}
        if not ASocket.SocketState.LocalAddress then
         begin
@@ -871,31 +871,31 @@ begin
          ASocket.SocketState.LocalAddress:=True;
          TIP6State(ASocket.TransportState).LocalAddress:=TIP6AddressEntry(Address).Address;
         end;
-      
+
        {Check for Default Binding}
        if TIP6Transport(ASocket.Transport).CompareDefault(TIP6State(ASocket.TransportState).LocalAddress) then
         begin
          {Set the LocalAddress}
          TIP6State(ASocket.TransportState).LocalAddress:=TIP6AddressEntry(Address).Address;
         end;
-      
+
        {Connect the Socket}
        ASocket.SocketState.Connected:=True;
        ASocket.SocketState.RemoteAddress:=True;
        TIP6State(ASocket.TransportState).RemoteAddress:=SockAddr6.sin6_addr;
-      
+
        {Unlock Address}
        Address.ReaderUnlock;
-       
+
        {Signal the Event}
        ASocket.SignalChange;
-       
+
        {Return Result}
        NetworkSetLastError(ERROR_SUCCESS);
        Result:=NO_ERROR;
       finally
        Route.ReaderUnlock;
-      end;      
+      end;
      end;
    end;
   end
@@ -918,12 +918,12 @@ function TICMP6Protocol.IoctlSocket(ASocket:TProtocolSocket;ACmd:DWORD;var AArg:
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: IoctlSocket');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Pass the call to the socket}
@@ -950,18 +950,18 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: GetPeerName');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Connected}
    NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
-   
+
    {Get Socket Address}
    SockAddr6:=PSockAddr6(@ASockAddr);
 
@@ -972,13 +972,13 @@ begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
+
       {Return the Peer Details}
       SockAddr6.sin6_family:=ASocket.Family;
       SockAddr6.sin6_port:=WordNtoBE(IPPORT_ANY);
       SockAddr6.sin6_addr:=TIP6State(ASocket.TransportState).RemoteAddress;
       AAddrLength:=SizeOf(TSockAddr6);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -1006,21 +1006,21 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: GetSockName');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Get Socket Address}
    SockAddr6:=PSockAddr6(@ASockAddr);
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -1028,13 +1028,13 @@ begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
+
       {Return the Peer Details}
       SockAddr6.sin6_family:=ASocket.Family;
       SockAddr6.sin6_port:=WordNtoBE(IPPORT_ANY);
       SockAddr6.sin6_addr:=TIP6State(ASocket.TransportState).LocalAddress;
       AAddrLength:=SizeOf(TSockAddr6);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -1062,12 +1062,12 @@ function TICMP6Protocol.GetSockOpt(ASocket:TProtocolSocket;ALevel,AOptName:Integ
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: GetSockOpt');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Level}
@@ -1107,12 +1107,12 @@ function TICMP6Protocol.Listen(ASocket:TProtocolSocket;ABacklog:Integer):Integer
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: Listen');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Not supported}
@@ -1141,26 +1141,26 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: Recv');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
    NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
-   
+
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantRecvMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
@@ -1177,7 +1177,7 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
+        end;
 
        {Check for Timeout}
        if GetTickCount64 >= (StartTime + ASocket.SocketOptions.RecvTimeout) then
@@ -1193,9 +1193,9 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
-      end;      
-     
+        end;
+      end;
+
      {Check for Closed}
      if ASocket.SocketState.Closed then
       begin
@@ -1203,7 +1203,7 @@ begin
        Exit;
       end;
     end;
-   
+
    {Check Size}
    NetworkSetLastError(ERROR_SUCCESS);
    Size:=TICMP6Socket(ASocket).RecvData.GetNext;
@@ -1212,7 +1212,7 @@ begin
      NetworkSetLastError(WSAEMSGSIZE);
      Size:=ALength;
     end;
-    
+
    {Read Data}
    if TICMP6Socket(ASocket).RecvData.ReadBuffer(ABuffer,Size,nil,AFlags) then
     begin
@@ -1246,26 +1246,26 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: RecvFrom');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantRecvMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
+
    {Check size of FromAddr}
    NetworkSetLastError(WSAEFAULT);
    if AFromLength < SizeOf(TSockAddr6) then Exit;
@@ -1282,7 +1282,7 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
+        end;
 
        {Check for Timeout}
        if GetTickCount64 >= (StartTime + ASocket.SocketOptions.RecvTimeout) then
@@ -1298,9 +1298,9 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
-      end;      
-     
+        end;
+      end;
+
      {Check for Closed}
      if ASocket.SocketState.Closed then
       begin
@@ -1308,7 +1308,7 @@ begin
        Exit;
       end;
     end;
-   
+
    {Check Size}
    NetworkSetLastError(ERROR_SUCCESS);
    Size:=TICMP6Socket(ASocket).RecvData.GetNext;
@@ -1317,14 +1317,14 @@ begin
      NetworkSetLastError(WSAEMSGSIZE);
      Size:=ALength;
     end;
-   
+
    {Get Socket Address}
    SockAddr6:=PSockAddr6(@AFromAddr);
-   
+
    {Get Address}
    SockAddr6.sin6_family:=ASocket.Family;
    SockAddr6.sin6_port:=WordNtoBE(IPPORT_ANY);
-   
+
    {Read Data}
    if TICMP6Socket(ASocket).RecvData.ReadBuffer(ABuffer,Size,@SockAddr6.sin6_addr,AFlags) then
     begin
@@ -1357,26 +1357,26 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: Send');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
    NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
-   
+
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantSendMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
@@ -1391,12 +1391,12 @@ begin
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
-      
+
       {Create the Fragment}
       Packet.Size:=ALength;
       Packet.Data:=@ABuffer;
       Packet.Next:=nil;
-      
+
       {Send the Packet}
       Result:=SendPacket(ASocket,@TIP6State(ASocket.TransportState).LocalAddress,@TIP6State(ASocket.TransportState).RemoteAddress,0,0,@Packet,ALength,AFlags);
      end;
@@ -1430,54 +1430,54 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: SendTo');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound} {Moved Below}
    {NetworkSetLastError(WSAEINVAL);}
    {if not ASocket.SocketState.LocalAddress then Exit;}
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantSendMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
+
    {Get Socket Address}
    SockAddr6:=PSockAddr6(@AToAddr);
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    if ASocket.Family <> SockAddr6.sin6_family then Exit;
-   
+
    {Check Address Family}
    case ASocket.Family of
     AF_INET6:begin
       {Check size of ToAddr}
       NetworkSetLastError(WSAEFAULT);
       if AToLength < SizeOf(TSockAddr6) then Exit;
-      
+
       {Get the RemoteAddress}
       In6Addr:=SockAddr6.sin6_addr;
-      
+
       {Check for Default RemoteAddress}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if TIP6Transport(ASocket.Transport).CompareDefault(In6Addr) then Exit;
-      
+
       {Check for Broadcast RemoteAddress}
       NetworkSetLastError(WSAEACCES);
       if TIP6Transport(ASocket.Transport).CompareBroadcast(In6Addr) or TIP6Transport(ASocket.Transport).CompareDirected(In6Addr) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
-      
+
       {Check the Binding}
       if not(ASocket.SocketState.LocalAddress) or TIP6Transport(ASocket.Transport).CompareDefault(TIP6State(ASocket.TransportState).LocalAddress) then
        begin
@@ -1490,24 +1490,24 @@ begin
          NetworkSetLastError(WSAEADDRNOTAVAIL);
          Address:=TIP6Transport(ASocket.Transport).GetAddressByAddress(TIP6RouteEntry(Route).Address,True,NETWORK_LOCK_READ);
          if Address = nil then Exit;
-         
+
          {Bind the Socket}
          ASocket.SocketState.LocalAddress:=True;
          TIP6State(ASocket.TransportState).LocalAddress:=TIP6AddressEntry(Address).Address;
-         
+
          {Unlock Address}
          Address.ReaderUnlock;
         finally
          {Unlock Route}
          Route.ReaderUnlock;
-        end;      
-       end;  
-      
+        end;
+       end;
+
       {Create the Fragment}
       Packet.Size:=ALength;
       Packet.Data:=@ABuffer;
       Packet.Next:=nil;
-      
+
       {Send the Packet}
       Result:=SendPacket(ASocket,@TIP6State(ASocket.TransportState).LocalAddress,@In6Addr,0,0,@Packet,ALength,AFlags);
      end;
@@ -1534,12 +1534,12 @@ function TICMP6Protocol.SetSockOpt(ASocket:TProtocolSocket;ALevel,AOptName:Integ
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: SetSockOpt');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Level}
@@ -1555,7 +1555,7 @@ begin
           end;
         end;
       end;
-      
+
       {Pass the call to the socket}
       Result:=ASocket.SetOption(ALevel,AOptName,AOptValue,AOptLength);
      end;
@@ -1595,12 +1595,12 @@ function TICMP6Protocol.Shutdown(ASocket:TProtocolSocket;AHow:Integer):Integer;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: Shutdown');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Direction}
@@ -1608,10 +1608,10 @@ begin
     SHUTDOWN_RECV:begin
       {Shutdown Receive}
       ASocket.SocketState.CantRecvMore:=True;
-      
+
       {Signal the Event}
       ASocket.SignalChange;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -1619,10 +1619,10 @@ begin
     SHUTDOWN_SEND:begin
       {Shutdown Send}
       ASocket.SocketState.CantSendMore:=True;
-      
+
       {Signal the Event}
       ASocket.SignalChange;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -1631,10 +1631,10 @@ begin
       {Shutdown Both}
       ASocket.SocketState.CantRecvMore:=True;
       ASocket.SocketState.CantSendMore:=True;
-      
+
       {Signal the Event}
       ASocket.SignalChange;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -1666,33 +1666,33 @@ begin
  ReaderLock;
  try
   Result:=TProtocolSocket(INVALID_SOCKET);
-  
+
   {$IFDEF ICMP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: Socket');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6:  Family = ' + AddressFamilyToString(AFamily));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6:  Struct = ' + SocketTypeToString(AStruct));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
-  
+
   {Check Socket Type}
   NetworkSetLastError(WSAESOCKTNOSUPPORT);
   if AStruct <> SOCK_RAW then Exit;
-  
+
   {Check Address Family}
   NetworkSetLastError(WSAEAFNOSUPPORT);
   if (AFamily = AF_UNSPEC) and (AProtocol <> IPPROTO_IP) then AFamily:=AF_INET6;
- 
+
   {Check Protocol}
   NetworkSetLastError(WSAEPROTOTYPE);
   if (AProtocol <> IPPROTO_ICMPV6) and (AProtocol <> IPPROTO_IP) then Exit;
-  
+
   {Get Transport}
   Transport:=TICMP6ProtocolTransport(GetTransportByFamily(AFamily,True,NETWORK_LOCK_READ));
   if Transport = nil then Exit;
-  
+
   {Create Socket}
   Result:=TICMP6Socket.Create(Self,Transport.Transport);
-  
+
   {Unlock Transport}
   Transport.ReaderUnlock;
 
@@ -1701,13 +1701,13 @@ begin
   try
    {Add Socket}
    FSockets.Add(Result);
-  finally 
+  finally
    {Release Lock}
    FSockets.WriterUnlock;
-  end; 
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1723,15 +1723,15 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ICMP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: AddTransport');
   {$ENDIF}
- 
+
   {Check Transport}
   if ATransport = nil then Exit;
- 
-  {Get Transport} 
+
+  {Get Transport}
   Transport:=TICMP6ProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_READ));
   if Transport = nil then
    begin
@@ -1747,26 +1747,26 @@ begin
          Transport.Handle:=Handle;
          Transport.Protocol:=IPPROTO_ICMPV6;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Add Control Socket}
           Transport.Socket:=TICMP6Socket.Create(Self,ATransport);
           {FSockets.Add(Transport.Socket);} {Dont add this one to the list}
-         
+
           {Add Proto Entry}
           TIP6Transport(ATransport).AddProto(ICMP6_PROTOCOL_NAME,IPPROTO_ICMPV6,False);
-         
+
           {Return Result}
           Result:=True;
          finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end;  
+         end;
         end;
       end;
     end;
@@ -1775,13 +1775,13 @@ begin
    begin
     {Unlock Transport}
     Transport.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1796,18 +1796,18 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ICMP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: RemoveTransport');
   {$ENDIF}
- 
+
   {Check Transport}
   if ATransport = nil then Exit;
- 
+
   {Get Transport}
   Transport:=TICMP6ProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Transport = nil then Exit;
- 
+
   {Check Address Family}
   case ATransport.Family of
    AF_INET6:begin
@@ -1816,7 +1816,7 @@ begin
       begin
        {Remove Proto Entry}
        TIP6Transport(ATransport).RemoveProto(ICMP6_PROTOCOL_NAME);
-       
+
        {Remove Control Socket}
        {FSockets.Remove(Transport.Socket);} {This one is not on the list}
        Transport.Socket.Free;
@@ -1826,25 +1826,25 @@ begin
        try
         {Remove Transport}
         FTransports.Remove(Transport);
-       
+
         {Unlock Transport}
         Transport.WriterUnlock;
-       
+
         {Destroy Transport}
         Transport.Free;
-       
+
         {Return Result}
         Result:=True;
        finally
         {Release Lock}
         FTransports.WriterUnlock;
-       end;  
+       end;
       end;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1868,14 +1868,14 @@ begin
  FSockets.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF ICMP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: FindSocket');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6:  Family = ' + AddressFamilyToString(AFamily));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6:  Struct = ' + SocketTypeToString(AStruct));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
-  
+
   {Get Socket}
   Socket:=TICMP6Socket(FSockets.First);
   while Socket <> nil do
@@ -1893,7 +1893,7 @@ begin
            begin
             {Lock Socket}
             if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-            
+
             {Return Result}
             Result:=Socket;
             Exit;
@@ -1906,7 +1906,7 @@ begin
            begin
             {Lock Socket}
             if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-           
+
             {Return Result}
             Result:=Socket;
             Exit;
@@ -1914,13 +1914,13 @@ begin
          end;
        end;
      end;
-     
+
     {Get Next}
     Socket:=TICMP6Socket(Socket.Next);
    end;
- finally 
+ finally
   FSockets.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1938,10 +1938,10 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: FlushSockets');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6:  All = ' + BoolToStr(All));
  {$ENDIF}
-  
+
  {Get Tick Count}
  CurrentTime:=GetTickCount64;
-  
+
  {Get Socket}
  Socket:=TICMP6Socket(GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
  while Socket <> nil do
@@ -1949,7 +1949,7 @@ begin
    {Get Next}
    Current:=Socket;
    Socket:=TICMP6Socket(GetSocketByNext(Current,True,False,NETWORK_LOCK_READ));
-    
+
    {Check Socket State}
    if (Current.SocketState.Closed) or (All) then
     begin
@@ -1961,23 +1961,23 @@ begin
         begin
          {Acquire Lock}
          FSockets.WriterLock;
-       
+
          {Remove Socket}
          FSockets.Remove(Current);
-       
+
          {Release Lock}
          FSockets.WriterUnlock;
-       
+
          {Unlock Socket}
          Current.WriterUnlock;
-         
+
          {Free Socket}
          Current.Free;
          Current:=nil;
-        end; 
+        end;
       end;
     end;
-    
+
    {Unlock Socket}
    if Current <> nil then Current.ReaderUnlock;
   end;
@@ -1994,7 +1994,7 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ICMP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: StartProtocol');
   {$ENDIF}
@@ -2008,16 +2008,16 @@ begin
    begin
     {Add Transport}
     AddTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
+   end;
 
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2031,33 +2031,33 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ICMP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: StopProtocol');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Close all Sockets}
   FlushSockets(True);
-  
+
   {Deregister with IP6 Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
-  
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2136,10 +2136,10 @@ begin
   FTransportOptions.Free;
   {Free Transport State}
   FTransportState.Free;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2150,32 +2150,32 @@ begin
  ReaderLock;
  try
   Result:=SOCKET_ERROR;
-  
+
   {$IFDEF ICMP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6 Socket: IoCtl');
   {$ENDIF}
-  
+
   {Check Commmand}
   NetworkSetLastError(WSAEINVAL);
   case ACommand of
    FIONREAD:begin
      AArgument:=RecvData.GetNext;
-     
+
      {Return Result}
      NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
     end;
    FIONBIO:begin
      SocketState.NonBlocking:=(AArgument <> 0);
-     
+
      {Return Result}
      NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2190,23 +2190,23 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ICMP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6 Socket: IsConnected');
   {$ENDIF}
-  
+
   {Check Local}
   if ALocalAddress = nil then Exit;
-  
+
   {Check Remote}
   if ARemoteAddress = nil then Exit;
-  
+
   {Check for Bound}
   if not SocketState.LocalAddress then Exit;
-  
+
   {Check for Connected}
   if not SocketState.Connected then Exit; {Could use RemoteAddress instead}
-  
+
   {Check Address Family}
   case Family of
    AF_INET6:begin
@@ -2226,22 +2226,22 @@ begin
          if Route = nil then Exit;
          try
           if not TIP6Transport(Transport).CompareAddress(TIP6State(TransportState).LocalAddress,TIP6RouteEntry(Route).Address) then Exit;
-         finally 
+         finally
           Route.ReaderUnlock;
-         end; 
+         end;
         end;
       end;
-     
+
      {Check the Connected RemoteAddress}
      if not TIP6Transport(Transport).CompareAddress(TIP6State(TransportState).RemoteAddress,PIn6Addr(ARemoteAddress)^) then Exit;
-     
+
      {Return Result}
      Result:=True;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2256,23 +2256,23 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ICMP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6 Socket: IsListening');
   {$ENDIF}
-  
+
   {Check Local}
   if ALocalAddress = nil then Exit;
-  
+
   {Check Remote}
   {if ARemoteAddress = nil then Exit;} {Not Used}
-  
+
   {Check for Bound}
   if not SocketState.LocalAddress then Exit;
-  
+
   {Check for Connected}
   if SocketState.Connected then Exit; {Could use RemoteAddress instead}
-  
+
   {Check Address Family}
   case Family of
    AF_INET6:begin
@@ -2290,24 +2290,24 @@ begin
          if not TIP6Transport(Transport).CompareBroadcast(PIn6Addr(ALocalAddress)^) then
           begin
            {If not global Broadcast then check for Directed Broadcast}
-           Route:=TIP6Transport(Transport).GetRouteByAddress(PIn6Addr(ALocalAddress)^,True,NETWORK_LOCK_READ); 
+           Route:=TIP6Transport(Transport).GetRouteByAddress(PIn6Addr(ALocalAddress)^,True,NETWORK_LOCK_READ);
            if Route = nil then Exit;
            try
             if not TIP6Transport(Transport).CompareAddress(TIP6State(TransportState).LocalAddress,TIP6RouteEntry(Route).Address) then Exit;
            finally
             Route.ReaderUnlock;
-           end; 
+           end;
           end;
         end;
       end;
-      
+
      {Return Result}
      Result:=True;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2317,7 +2317,7 @@ constructor TICMP6Buffer.Create(ASocket:TTransportSocket);
 begin
  {}
  inherited Create(ASocket);
- 
+
  FOffset:=SizeOf(TICMP6Packet); {ICMP6_PACKET_SIZE}
 
  {Check Address Family}
@@ -2348,10 +2348,10 @@ begin
  AcquireLock;
  try
   FlushPackets;
- finally 
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+ finally
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2363,25 +2363,25 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF ICMP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6 Buffer: AddPacket');
   {$ENDIF}
-  
+
   {Check Data Size}
   if ASize = 0 then Exit;
-  
+
   {Check Buffer Free}
   if LongWord(ASize) > FFree then Exit;
-  
+
   {Create a new Packet}
   Packet:=GetMem(FOffset + FLength);
   if Packet = nil then Exit;
   Packet.Size:=ASize;
   Packet.Next:=nil;
-  
+
   {Add to List}
   if FLast = nil then
    begin
@@ -2401,12 +2401,12 @@ begin
     Inc(FUsed,ASize);
     Inc(FCount);
    end;
-   
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2418,16 +2418,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF ICMP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6 Buffer: RemovePacket');
   {$ENDIF}
-  
+
   {Check for Packets}
   if FFirst = nil then Exit;
-  
+
   {Remove from List}
   if FFirst.Next <> nil then
    begin
@@ -2448,15 +2448,15 @@ begin
     Inc(FFree,Packet.Size);
     Dec(FCount);
    end;
-   
+
   {Free the Packet}
   FreeMem(Packet,FOffset + FLength);
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2472,9 +2472,9 @@ begin
     {Remove Packet}
     RemovePacket;
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2491,36 +2491,36 @@ begin
 
   {Check Size}
   if ASize = 0 then Exit;
-  
+
   {Get Size}
   ASize:=Max(ASize,ICMP6_BUFFER_SIZE);
-  
+
   {Clear any Packets}
   FlushPackets;
-  
+
   {Allocate the Memory}
   FBuffer.SetSize(ASize);
-  
+
   {Set the Buffer Values}
   FSize:=ASize;
   FStart:=FBuffer.Memory;
-  
+
   {End actually points to byte beyond last for simpler calculations}
   FEnd:=Pointer(PtrUInt(FStart) + FSize);
-  
+
   {Set the Data Values}
   FUsed:=0;
   FFree:=FSize;
   FRead:=FStart;
   FWrite:=FStart;
-  
+
   {Set the Packet Values}
   FCount:=0;
   FFirst:=nil;
   FLast:=nil;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2529,17 +2529,17 @@ function TICMP6Buffer.GetNext:Integer;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
  try
   {Check First}
   if FFirst = nil then Exit;
-  
+
   {Get First Size}
   Result:=FFirst.Size;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2564,15 +2564,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check the Buffer Size}
   if ASize = 0 then Exit;
-  
+
   {Check there is Data}
   if FFirst = nil then Exit;
-  
+
   {Get the Start and Size}
   ReadNext:=FRead;
   ReadSize:=FFirst.Size;
@@ -2580,11 +2580,11 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6 Buffer: ReadBuffer: FStart = ' + PtrToHex(FStart) + ' FEnd = ' + PtrToHex(FEnd));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6 Buffer: ReadBuffer: ReadNext = ' + IntToStr(PtrUInt(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
   {$ENDIF}
-  
+
   {Get the Return Size}
   BufferSize:=Min(ASize,ReadSize);
   ASize:=BufferSize;
-  
+
   {Since we Guarantee ReadNext to be at least 1 byte from the End of the Buffer, we can start reading}
   {Check for Single or Double Read}
   if (PtrUInt(ReadNext) + ReadSize) <= PtrUInt(FEnd) then
@@ -2602,7 +2602,7 @@ begin
      begin
       System.Move(ReadNext^,ABuffer,ReadSize);
      end;
-    
+
     Inc(PtrUInt(ReadNext),ReadSize);
     Dec(ReadSize,ReadSize);
    end
@@ -2620,20 +2620,20 @@ begin
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6 Buffer: ReadBuffer: Short First Read');
       {$ENDIF}
       System.Move(ReadNext^,ABuffer,BufferSize);
-      
+
       Dec(BufferSize,BufferSize);
      end
     else
      begin
       System.Move(ReadNext^,ABuffer,BlockSize);
-      
+
       Dec(BufferSize,BlockSize);
      end;
-    
+
     {Wrap to Start of Buffer}
     ReadNext:=FStart;
     Dec(ReadSize,BlockSize);
-    
+
     {Read the Second Block of the Data}
     if BufferSize > 0 then
      begin
@@ -2649,23 +2649,23 @@ begin
         System.Move(ReadNext^,Pointer(PtrUInt(@ABuffer) + BlockSize)^,ReadSize);
        end;
      end;
-    
+
     Inc(PtrUInt(ReadNext),ReadSize);
     Dec(ReadSize,ReadSize);
    end;
-  
+
   {Check for Wrap around}
   if PtrUInt(ReadNext) = PtrUInt(FEnd) then ReadNext:=FStart;
   {$IFDEF ICMP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6 Buffer: ReadBuffer: ReadNext = ' + IntToStr(PtrUInt(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
   {$ENDIF}
-  
+
   {Get the Remote Address}
   if ARemoteAddress <> nil then
    begin
     System.Move(Pointer(PtrUInt(FFirst) + FOffset)^,ARemoteAddress^,FLength);
    end;
-  
+
   {Check for Peek Flag}
   if (AFlags and MSG_PEEK) = 0 then
    begin
@@ -2675,16 +2675,16 @@ begin
     {Remove the Packet}
     RemovePacket;
    end;
-  
+
   {$IFDEF ICMP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6 Buffer: ReadBuffer: Free = ' + IntToStr(FFree) + ' Used = ' + IntToStr(FUsed) + ' Count = ' + IntToStr(FCount));
   {$ENDIF}
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2699,15 +2699,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check the Data Size}
   if ASize = 0 then Exit;
-  
+
   {Add the Packet}
   if not AddPacket(ASize) then Exit;
-  
+
   {Get the Start and Size}
   WriteNext:=FWrite;
   WriteSize:=ASize;
@@ -2715,14 +2715,14 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6 Buffer: WriteBuffer: FStart = ' + PtrToHex(FStart) + ' FEnd = ' + PtrToHex(FEnd));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6 Buffer: WriteBuffer: WriteNext = ' + IntToStr(PtrUInt(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
   {$ENDIF}
-  
+
   {Since we guarantee WriteNext to be at least 1 byte from the End of the Buffer, we can start writing}
   if (PtrUInt(WriteNext) + WriteSize) <= PtrUInt(FEnd) then
    begin
     {Single Write with no wrap around}
     {Write the Packet Data}
     System.Move(ABuffer,WriteNext^,WriteSize);
-    
+
     Inc(PtrUInt(WriteNext),WriteSize);
     Dec(WriteSize,WriteSize);
    end
@@ -2732,48 +2732,48 @@ begin
     {$IFDEF ICMP6_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6 Buffer: WriteBuffer: Double Write');
     {$ENDIF}
-    
+
     {Write the First Block of the Packet Data}
     BlockSize:=(PtrUInt(FEnd) - PtrUInt(WriteNext));
     System.Move(ABuffer,WriteNext^,BlockSize);
-    
+
     {Wrap to Start of Buffer}
     WriteNext:=FStart;
     Dec(WriteSize,BlockSize);
-    
+
     {Write the Second Block of the Packet Data}
     System.Move(Pointer(PtrUInt(@ABuffer) + BlockSize)^,WriteNext^,WriteSize);
-    
+
     Inc(PtrUInt(WriteNext),WriteSize);
     Dec(WriteSize,WriteSize);
    end;
-   
+
   {Check for Wrap around}
   if PtrUInt(WriteNext) = PtrUInt(FEnd) then WriteNext:=FStart;
   {$IFDEF ICMP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6 Buffer: WriteBuffer: WriteNext = ' + IntToStr(PtrUInt(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
   {$ENDIF}
-  
+
   {Set the RemoteAddress}
   if ARemoteAddress <> nil then
    begin
     System.Move(ARemoteAddress^,Pointer(PtrUInt(FLast) + FOffset)^,FLength);
    end;
-  
+
   {Update the Next Write}
   FWrite:=WriteNext;
-  
+
   {$IFDEF ICMP6_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6 Buffer: WriteBuffer: Free = ' + IntToStr(FFree) + ' Used = ' + IntToStr(FUsed) + ' Count = ' + IntToStr(FCount));
   {$ENDIF}
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -2785,13 +2785,13 @@ begin
 
  {Setup ICMP Protocol}
  if NetworkSettings.GetBoolean('IP6_TRANSPORT_ENABLED') then NetworkSettings.AddBoolean('ICMP6_PROTOCOL_ENABLED',True);
- 
+
  {Create ICMPv6 Protocol}
- if NetworkSettings.GetBooleanDefault('ICMP6_PROTOCOL_ENABLED',ICMP6_PROTOCOL_ENABLED) then 
+ if NetworkSettings.GetBooleanDefault('ICMP6_PROTOCOL_ENABLED',ICMP6_PROTOCOL_ENABLED) then
   begin
    TICMP6Protocol.Create(ProtocolManager,ICMP6_PROTOCOL_NAME);
-  end; 
- 
+  end;
+
  ICMP6Initialized:=True;
 end;
 
@@ -2807,11 +2807,11 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP6_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMPv6: CheckICMP6');
  {$ENDIF}
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET6:begin
@@ -2823,9 +2823,9 @@ begin
     if Length >= ICMP6_HEADER_SIZE then
      begin
       {Validate the Header Checksum}
-    
+
       //To do
-      
+
      end;
    end;
  end;
@@ -2838,7 +2838,7 @@ function GetICMP6HeaderOffset(AFamily:Word;ABuffer:Pointer):Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET6:begin
@@ -2856,7 +2856,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET6:begin
@@ -2872,7 +2872,7 @@ function GetICMP6DataOffset(AFamily:Word;ABuffer:Pointer):Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET6:begin
@@ -2889,7 +2889,7 @@ function GetICMP6DataLength(AFamily:Word;ABuffer:Pointer):Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET6:begin
@@ -2907,7 +2907,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET6:begin
@@ -2915,11 +2915,11 @@ begin
    end;
  end;
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {ICMPv6 Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -2927,12 +2927,12 @@ initialization
  ICMP6Init;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 end.
- 
+

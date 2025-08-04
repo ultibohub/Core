@@ -53,7 +53,7 @@ begin
  else
   begin
    Result:=-1;
-  end; 
+  end;
 end;
 
 function do_read(h: thandle; addr: pointer; len: longint) : longint;
@@ -65,7 +65,7 @@ begin
  else
   begin
    Result:=-1;
-  end; 
+  end;
 end;
 
 function do_filepos(handle: thandle) : longint;
@@ -77,7 +77,7 @@ begin
  else
   begin
    Result:=-1;
-  end; 
+  end;
 end;
 
 procedure do_seek(handle: thandle; pos: longint);
@@ -97,7 +97,7 @@ begin
  else
   begin
    Result:=-1;
-  end; 
+  end;
 end;
 
 function do_filesize(handle : thandle) : longint;
@@ -109,7 +109,7 @@ begin
  else
   begin
    Result:=-1;
-  end; 
+  end;
 end;
 
 { truncate at a given position }

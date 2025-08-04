@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -54,14 +54,14 @@ const
  TIME_ZONE_ID_STANDARD = 1;
  TIME_ZONE_ID_DAYLIGHT = 2;
  TIME_ZONE_ID_INVALID  = DWORD($FFFFFFFF);
- 
+
  {Timezone Signature}
  TIMEZONE_SIGNATURE = $ED9A1BC3;
 
  {Timezone name constants}
  TIMEZONE_NAME_LENGTH = SIZE_64;   {Length of timezone name}
  TIMEZONE_DESC_LENGTH = SIZE_128;  {Length of timezone description}
- 
+
 {==============================================================================}
 type
  {Timezone specific types}
@@ -82,7 +82,7 @@ type
  SYSTEMTIME = SysUtils.SYSTEMTIME;
  TSystemTime = SysUtils.TSystemTime;
  PSystemTime = SysUtils.PSystemTime;
- 
+
  {Timezone types}
  PTIME_ZONE_INFORMATION = ^TIME_ZONE_INFORMATION;
  _TIME_ZONE_INFORMATION = record
@@ -98,7 +98,7 @@ type
  LPTIME_ZONE_INFORMATION = ^TIME_ZONE_INFORMATION;
  TTimeZoneInformation = TIME_ZONE_INFORMATION;
  PTimeZoneInformation = PTIME_ZONE_INFORMATION;
- 
+
  {Timezone Data}
  PTimezoneData = ^TTimezoneData;
  TTimezoneData = record
@@ -112,12 +112,12 @@ type
   DaylightBias:LongInt;
   DaylightStart:SYSTEMTIME;
  end;
- 
+
  PTimezoneEntry = ^TTimezoneEntry;
- 
+
  {Timezone Enumeration Callback}
  TTimezoneEnumerate = function(Timezone:PTimezoneEntry;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Timezone Entry}
  TTimezoneEntry = record
   {Timezone Properties}
@@ -135,11 +135,11 @@ type
   Prev:PTimezoneEntry;           {Previous entry in Timezone table}
   Next:PTimezoneEntry;           {Next entry in Timezone table}
  end;
- 
+
 {==============================================================================}
 {var}
  {Timezone specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure TimezoneInit;
@@ -149,7 +149,7 @@ procedure TimezoneInit;
 function TimezoneAdd(Data:PTimezoneData;Default:Boolean):LongWord;
 function TimezoneDelete(Timezone:PTimezoneEntry):LongWord;
 
-function TimezoneGetName(Timezone:PTimezoneEntry):String; 
+function TimezoneGetName(Timezone:PTimezoneEntry):String;
 function TimezoneGetDescription(Timezone:PTimezoneEntry):String;
 
 function TimezoneGetBias(Timezone:PTimezoneEntry):LongInt;
@@ -207,9 +207,9 @@ var
  TimezoneTable:PTimezoneEntry;
  TimezoneTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  TimezoneTableCount:LongWord;
- 
+
  TimezoneDefault:PTimezoneEntry;
- 
+
  {Begin timezone builder data}
 const
  {Timezone count}
@@ -1924,7 +1924,7 @@ var
    )
   );
  {End timezone builder data}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -1937,42 +1937,42 @@ begin
  {}
  {Check Initialized}
  if TimezoneInitialized then Exit;
- 
+
  {Initialize Timezone Table}
  TimezoneTable:=nil;
- TimezoneTableLock:=CriticalSectionCreate; 
+ TimezoneTableLock:=CriticalSectionCreate;
  TimezoneTableCount:=0;
  if TimezoneTableLock = INVALID_HANDLE_VALUE then
   begin
    if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to create timezone table lock');
   end;
  TimezoneDefault:=nil;
- 
+
  {Set Timezone Defaults}
  TIMEZONE_TIME_OFFSET:=0;
  TIMEZONE_TIME_ADJUST:=0;
- 
+
  TIMEZONE_DEFAULT_NAME:='UTC';
- 
+
  {Check Environment Variables}
  {TIMEZONE_DEFAULT_NAME}
  WorkBuffer:=EnvironmentGet('TIMEZONE_DEFAULT_NAME');
  if Length(WorkBuffer) <> 0 then TIMEZONE_DEFAULT_NAME:=TimezoneNameReplaceChar(WorkBuffer,'_',' ');
- 
+
  {Load Timezone Table}
  for Count:=0 to TimezoneList.TimezoneCount - 1 do
   begin
    {Get Data}
    Data:=@TimezoneList.TimezoneData[Count];
-   
+
    {Add Timezone}
    TimezoneAdd(Data,Data.Name = TIMEZONE_DEFAULT_NAME);
   end;
- 
+
  {Setup Platform Handlers}
  ClockUpdateOffsetHandler:=TimezoneUpdateOffset;
  ClockCalculateOffsetHandler:=TimezoneCalculateOffset;
- 
+
  TimezoneInitialized:=True;
 end;
 
@@ -1986,14 +1986,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Data}
  if Data = nil then Exit;
- 
+
  {Create Timezone}
  Timezone:=PTimezoneEntry(AllocMem(SizeOf(TTimezoneEntry)));
  if Timezone = nil then Exit;
-   
+
  {Update Timezone}
  Timezone.Signature:=TIMEZONE_SIGNATURE;
  Timezone.Name:=Data.Name;
@@ -2005,7 +2005,7 @@ begin
  Timezone.DaylightName:=Data.DaylightName;
  Timezone.DaylightBias:=Data.DaylightBias;
  Timezone.DaylightStart:=Data.DaylightStart;
- 
+
  {Insert Timezone}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2021,31 +2021,31 @@ begin
       TimezoneTable.Prev:=Timezone;
       TimezoneTable:=Timezone;
      end;
- 
+
     {Increment Count}
     Inc(TimezoneTableCount);
- 
+
     {Check Default}
     if (TimezoneDefault = nil) and (Default) then
      begin
       TimezoneDefault:=Timezone;
-      
+
       {Allocate Default Name}
       SetLength(TIMEZONE_DEFAULT_NAME,TIMEZONE_NAME_LENGTH - 1);
-      
+
       {Set Timezone Defaults}
       StrLCopy(PChar(TIMEZONE_DEFAULT_NAME),TimezoneDefault.Name,TIMEZONE_NAME_LENGTH - 1);
-      
+
       {Update Default Name}
       SetLength(TIMEZONE_DEFAULT_NAME,StrLen(PChar(TIMEZONE_DEFAULT_NAME)));
 
       {Update TZ Environment}
       TimezoneUpdateEnvironment;
-      
+
       {Update Timezone Offset}
       TimezoneUpdateOffset;
      end;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2056,9 +2056,9 @@ begin
   begin
    {Free Timezone}
    FreeMem(Timezone);
-   
+
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2070,11 +2070,11 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2091,7 +2091,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -2099,42 +2099,42 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(TimezoneTableCount);
- 
+
     {Check Default}
     if TimezoneDefault = Timezone then
      begin
       TimezoneDefault:=TimezoneTable;
-      
+
       if TimezoneDefault <> nil then
        begin
         {Allocate Default Name}
         SetLength(TIMEZONE_DEFAULT_NAME,TIMEZONE_NAME_LENGTH - 1);
-      
+
         {Set Timezone Defaults}
         StrLCopy(PChar(TIMEZONE_DEFAULT_NAME),TimezoneDefault.Name,TIMEZONE_NAME_LENGTH - 1);
-      
+
         {Update Default Name}
         SetLength(TIMEZONE_DEFAULT_NAME,StrLen(PChar(TIMEZONE_DEFAULT_NAME)));
 
         {Update TZ Environment}
         TimezoneUpdateEnvironment;
-        
+
         {Update Timezone Offset}
         TimezoneUpdateOffset;
-       end; 
+       end;
      end;
-     
+
     {Update Timezone}
     Timezone.Signature:=0;
-  
+
     {Free Timezone}
     FreeMem(Timezone);
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2145,20 +2145,20 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function TimezoneGetName(Timezone:PTimezoneEntry):String; 
+function TimezoneGetName(Timezone:PTimezoneEntry):String;
 begin
  {}
  Result:='';
- 
+
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2180,18 +2180,18 @@ begin
    end;
   end;
 end;
-    
+
 {==============================================================================}
 
 function TimezoneGetDescription(Timezone:PTimezoneEntry):String;
 begin
  {}
  Result:='';
- 
+
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2220,11 +2220,11 @@ function TimezoneGetBias(Timezone:PTimezoneEntry):LongInt;
 begin
  {}
  Result:=0;
- 
+
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2269,29 +2269,29 @@ var
 begin
  {}
  Result:=TIME_ZONE_ID_INVALID;
- 
+
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Timezone}
     if TimezoneCheck(Timezone) <> Timezone then Exit;
- 
+
     {Get Year}
     DecodeDate(Trunc(DateTime),Year,Month,Day);
     if Year > 0 then
      begin
       {Get Current}
       CurrentDate:=DateTime;
-      
+
       {Get Daylight Start and End}
       StartDate:=TimezoneStartToDateTime(Timezone.DaylightStart,Year);
       EndDate:=TimezoneStartToDateTime(Timezone.StandardStart,Year);
-      
+
       {Check Start and End}
       if (StartDate = 0) or (EndDate = 0) then
        begin
@@ -2377,29 +2377,29 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Timezone}
     if TimezoneCheck(Timezone) <> Timezone then Exit;
- 
+
     {Get Year}
     DecodeDate(Trunc(DateTime),Year,Month,Day);
     if Year > 0 then
      begin
       {Get Current}
       CurrentDate:=DateTime;
-      
+
       {Get Daylight Start and End}
       StartDate:=TimezoneStartToDateTime(Timezone.DaylightStart,Year);
       EndDate:=TimezoneStartToDateTime(Timezone.StandardStart,Year);
-      
+
       {Check Start and End}
       if (StartDate = 0) or (EndDate = 0) then
        begin
@@ -2463,11 +2463,11 @@ function TimezoneGetStandardName(Timezone:PTimezoneEntry):String;
 begin
  {}
  Result:='';
- 
+
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2496,11 +2496,11 @@ function TimezoneGetStandardBias(Timezone:PTimezoneEntry):LongInt;
 begin
  {}
  Result:=0;
- 
+
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2527,25 +2527,25 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Timezone}
     if TimezoneCheck(Timezone) <> Timezone then Exit;
- 
+
     {Get Year}
     DecodeDate(Date,Year,Month,Day);
     if Year > 0 then
      begin
       {Get Date Time}
       Result:=TimezoneStartToDateTime(Timezone.StandardStart,Year);
-      
+
       {Check Date Time}
       if Next and (Result < Now) then
        begin
@@ -2566,11 +2566,11 @@ function TimezoneGetStandardStart(Timezone:PTimezoneEntry):SYSTEMTIME;
 begin
  {}
  FillChar(Result,SizeOf(SYSTEMTIME),0);
- 
+
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2593,11 +2593,11 @@ function TimezoneGetDaylightName(Timezone:PTimezoneEntry):String;
 begin
  {}
  Result:='';
- 
+
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2626,11 +2626,11 @@ function TimezoneGetDaylightBias(Timezone:PTimezoneEntry):LongInt;
 begin
  {}
  Result:=0;
- 
+
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2657,25 +2657,25 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Timezone}
     if TimezoneCheck(Timezone) <> Timezone then Exit;
- 
+
     {Get Year}
     DecodeDate(Date,Year,Month,Day);
     if Year > 0 then
      begin
       {Get Date Time}
       Result:=TimezoneStartToDateTime(Timezone.DaylightStart,Year);
-      
+
       {Check Date Time}
       if Next and (Result < Now) then
        begin
@@ -2696,11 +2696,11 @@ function TimezoneGetDaylightStart(Timezone:PTimezoneEntry):SYSTEMTIME;
 begin
  {}
  FillChar(Result,SizeOf(SYSTEMTIME),0);
- 
+
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2725,7 +2725,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2763,7 +2763,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2801,7 +2801,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2839,7 +2839,7 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
 
@@ -2856,11 +2856,11 @@ begin
        begin
         if Callback(Timezone,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Timezone:=Timezone.Next;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2871,7 +2871,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2895,7 +2895,7 @@ end;
 
 {==============================================================================}
 
-function TimezoneSetDefault(Timezone:PTimezoneEntry):LongWord; 
+function TimezoneSetDefault(Timezone:PTimezoneEntry):LongWord;
 {Set the current default timezone}
 begin
  {}
@@ -2904,17 +2904,17 @@ begin
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Timezone}
     if TimezoneCheck(Timezone) <> Timezone then Exit;
-    
+
     {Set Timezone Default}
     TimezoneDefault:=Timezone;
-    
+
     {Allocate Default Name}
     SetLength(TIMEZONE_DEFAULT_NAME,TIMEZONE_NAME_LENGTH - 1);
 
@@ -2926,10 +2926,10 @@ begin
 
     {Update TZ Environment}
     TimezoneUpdateEnvironment;
-    
+
     {Update Timezone Offset}
     TimezoneUpdateOffset;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2942,7 +2942,7 @@ begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
 end;
-   
+
 {==============================================================================}
 
 function TimezoneCheck(Timezone:PTimezoneEntry):PTimezoneEntry;
@@ -2952,11 +2952,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Timezone}
  if Timezone = nil then Exit;
  if Timezone.Signature <> TIMEZONE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2971,7 +2971,7 @@ begin
         Result:=Timezone;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -2988,10 +2988,10 @@ function TimezoneUpdateOffset:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Default}
  if TimezoneDefault = nil then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(TimezoneTableLock) = ERROR_SUCCESS then
   begin
@@ -2999,17 +2999,17 @@ begin
     {Check Update}
     Result:=ERROR_IN_PROGRESS;
     if TIMEZONE_UPDATE_CURRENT then Exit;
-    
+
     {Start Update}
     TIMEZONE_UPDATE_CURRENT:=True;
     try
      {Check Timezone}
      if TimezoneDefault = nil then Exit;
      if TimezoneDefault.Signature <> TIMEZONE_SIGNATURE then Exit;
-     
+
      {Check Timezone}
      if TimezoneCheck(TimezoneDefault) <> TimezoneDefault then Exit;
-     
+
      {Check State}
      if TimezoneGetState(TimezoneDefault) = TIME_ZONE_ID_DAYLIGHT then
       begin
@@ -3020,14 +3020,14 @@ begin
       begin
        {Standard Offset}
        TIMEZONE_TIME_OFFSET:=TimezoneDefault.Bias;
-      end;      
-     
+      end;
+
      {Return Result}
      Result:=ERROR_SUCCESS;
     finally
      {End Update}
      TIMEZONE_UPDATE_CURRENT:=False;
-    end;    
+    end;
    finally
     {Release the Lock}
     CriticalSectionUnlock(TimezoneTableLock);
@@ -3036,7 +3036,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -3066,7 +3066,7 @@ begin
     {Check Timezone}
     if TimezoneDefault = nil then Exit;
     if TimezoneDefault.Signature <> TIMEZONE_SIGNATURE then Exit;
-     
+
     {Check Timezone}
     if TimezoneCheck(TimezoneDefault) <> TimezoneDefault then Exit;
 
@@ -3094,8 +3094,8 @@ begin
       if Abs(TimezoneDefault.DaylightBias) <> 60 then
        begin
         Bias:=TimezoneDefault.Bias + TimezoneDefault.DaylightBias;
-        
-        DaylightBias:='+'; 
+
+        DaylightBias:='+';
         if Bias < 0 then DaylightBias:='-';
         DaylightBias:=DaylightBias + IntToStr(Abs(Bias) div 60);
         if Abs(Bias) mod 60 > 0 then DaylightBias:=DaylightBias + ':' + IntToStr(Abs(Bias) mod 60);
@@ -3154,7 +3154,7 @@ begin
 
  {Get Daylight}
  Daylight:=TimezoneGetStateEx(TimezoneDefault,DateTime) = TIME_ZONE_ID_DAYLIGHT;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -3176,7 +3176,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Year}
  if AStart.wYear = 0 then
   begin
@@ -3224,7 +3224,7 @@ var
 begin
  {}
  Result:='';
- 
+
  {Check Year}
  if AStart.wYear = 0 then
   begin
@@ -3281,12 +3281,12 @@ begin
      WorkBuffer:=IntToStr(AStart.wHour);
      if Length(WorkBuffer) < 2 then WorkBuffer:='0' + WorkBuffer;
      Result:=Result + WorkBuffer + ':';
-     
+
      {Get Minute}
      WorkBuffer:=IntToStr(AStart.wMinute);
      if Length(WorkBuffer) < 2 then WorkBuffer:='0' + WorkBuffer;
      Result:=Result + WorkBuffer + ':';
-     
+
      {Get Second}
      WorkBuffer:=IntToStr(AStart.wSecond);
      if Length(WorkBuffer) < 2 then WorkBuffer:='0' + WorkBuffer;
@@ -3314,7 +3314,7 @@ begin
      WorkBuffer[Count]:=AReplace;
     end;
   end;
- 
+
  {Return Result}
  Result:=WorkBuffer;
 end;
@@ -3354,7 +3354,7 @@ initialization
  TimezoneInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

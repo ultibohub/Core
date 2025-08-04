@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -134,13 +134,13 @@ Global Defines
 {$ENDIF}
 
 {--$DEFINE FILESYS_DEBUG}         {Enable debug output/counters for Filesystem services (Default: Off)}
-{$IFDEF FILESYS_DEBUG} 
+{$IFDEF FILESYS_DEBUG}
  {$DEFINE FAT_DEBUG}
  {$DEFINE CDFS_DEBUG}
  {$DEFINE NTFS_DEBUG}
- {$DEFINE EXTFS_DEBUG} 
+ {$DEFINE EXTFS_DEBUG}
  {$DEFINE VIRTUAL_DEBUG}
- {$DEFINE CACHE_DEBUG} 
+ {$DEFINE CACHE_DEBUG}
 {$ENDIF}
 
 {--$DEFINE NETWORK_DEBUG}         {Enable debug output/counters for Network services (Default: Off) (Do not enable when network logging is active)}
@@ -157,11 +157,11 @@ Global Defines
  {$DEFINE ICMP_DEBUG}
  {$DEFINE ICMP6_DEBUG}
  {$DEFINE IGMP_DEBUG}
- {$DEFINE UDP_DEBUG} 
- {$DEFINE TCP_DEBUG} 
- {$DEFINE RAW_DEBUG} 
- {$DEFINE DHCP_DEBUG} 
- {$DEFINE DNS_DEBUG} 
+ {$DEFINE UDP_DEBUG}
+ {$DEFINE TCP_DEBUG}
+ {$DEFINE RAW_DEBUG}
+ {$DEFINE DHCP_DEBUG}
+ {$DEFINE DNS_DEBUG}
 {$ENDIF}
 
 {--$DEFINE HID_DEBUG}             {Enable debug output/counters for HID devices (Default: Off)}
@@ -229,8 +229,8 @@ Global Defines
 {$DEFINE RTL8188EU_DEBUG}       {Enable debug output/counters for RTL8188EU driver (Default: Off)}
 {$DEFINE RTL8192CU_DEBUG}       {Enable debug output/counters for RTL8192CU driver (Default: Off)}
 {--$DEFINE RT2800USB_DEBUG}       {Enable debug output/counters for RT2800USB driver (Default: Off)}
-     
-{Serial/UART}     
+
+{Serial/UART}
 {--$DEFINE PL2303_DEBUG}          {Enable debug output/counters for PL2303 driver (Default: Off)}
 {--$DEFINE CDCACM_DEBUG}          {Enable debug output/counters for USB CDC ACM driver (Default: Off)}
 {--$DEFINE FTDISERIAL_DEBUG}      {Enable debug output/counters for FTDI Serial driver (Default: Off)}
@@ -246,7 +246,7 @@ Global Defines
 {--$DEFINE RPIGPIOEXP_DEBUG}      {Enable debug output/counters for RPiGPIO Expander driver (Default: Off)}
 {--$DEFINE REMOTEGPIO_DEBUG}      {Enable debug output/counters for RemoteGPIO driver (Default: Off)}
 {--$DEFINE PCF857X_DEBUG}         {Enable debug output/counters for PCF857X driver (Default: Off)}
-{--$DEFINE I2CGPIO_DEBUG}         {Enable debug output/counters for I2CGPIO driver (Default: Off)} 
+{--$DEFINE I2CGPIO_DEBUG}         {Enable debug output/counters for I2CGPIO driver (Default: Off)}
 
 {Framebuffer/Console}
 {--$DEFINE HD44780_DEBUG}         {Enable debug output/counters for HD44780 driver (Default: Off)}
@@ -263,7 +263,7 @@ Global Defines
 {--$DEFINE AF16X2LCD_DEBUG}       {Enable debug output/counters for AF16X2LCD driver (Default: Off)}
 {--$DEFINE PITFT28_DEBUG}         {Enable debug output/counters for PITFT28 driver (Default: Off)}
 {--$DEFINE PITFT35_DEBUG}         {Enable debug output/counters for PITFT35 driver (Default: Off)}
-{--$DEFINE IPSTFT19_DEBUG}         {Enable debug output/counters for IPSTFT19 driver (Default: Off)} 
+{--$DEFINE IPSTFT19_DEBUG}         {Enable debug output/counters for IPSTFT19 driver (Default: Off)}
 {Keyboard/Mouse/Touch}
 {--$DEFINE PL050_DEBUG}           {Enable debug output/counters for PL050 driver (Default: Off)}
 {--$DEFINE RPIFT5406_DEBUG}       {Enable debug output/counters for RPIFT5406 driver (Default: Off)}
@@ -317,40 +317,40 @@ Global Defines
 
 {$IFDEF FIQ_DEBUG}
  {$DEFINE HEAP_LOCK_IRQFIQ}
- {$DEFINE LOGGING_LOCK_IRQFIQ} 
+ {$DEFINE LOGGING_LOCK_IRQFIQ}
 {$ENDIF}
 
 {$IFDEF SWI_DEBUG}
- {$DEFINE HEAP_LOCK_IRQFIQ} 
- {$DEFINE LOGGING_LOCK_IRQFIQ} 
+ {$DEFINE HEAP_LOCK_IRQFIQ}
+ {$DEFINE LOGGING_LOCK_IRQFIQ}
 {$ENDIF}
 
 {$IFDEF HEAP_DEBUG}
- {$DEFINE HEAP_LOCK_IRQFIQ} 
- {$DEFINE LOGGING_LOCK_IRQFIQ} 
+ {$DEFINE HEAP_LOCK_IRQFIQ}
+ {$DEFINE LOGGING_LOCK_IRQFIQ}
 {$ENDIF}
 
 {$IFDEF THREAD_DEBUG}
- {$DEFINE HEAP_LOCK_IRQFIQ} 
- {$DEFINE LOGGING_LOCK_IRQFIQ} 
+ {$DEFINE HEAP_LOCK_IRQFIQ}
+ {$DEFINE LOGGING_LOCK_IRQFIQ}
 {$ENDIF}
 
 {$IFDEF PLATFORM_DEBUG}
- {$DEFINE HEAP_LOCK_IRQFIQ} 
- {$DEFINE LOGGING_LOCK_IRQFIQ} 
+ {$DEFINE HEAP_LOCK_IRQFIQ}
+ {$DEFINE LOGGING_LOCK_IRQFIQ}
 {$ENDIF}
 
 {==============================================================================}
 {==============================================================================}
 {Syscalls definitions}
 {--$DEFINE SYSCALLS_FILE_OFFSET64}   {Enable support for 64-bit file offsets in Syscalls unit (Default: Off)}
-{$DEFINE SYSCALLS_LARGE64_FILES}     {Enable support for 64-bit file access in Syscalls unit (Default: On)} 
+{$DEFINE SYSCALLS_LARGE64_FILES}     {Enable support for 64-bit file access in Syscalls unit (Default: On)}
                                      {Note: Must match the options used to compile the standard C library (Newlib)}
 
 {$DEFINE SYSCALLS_EXPORT_SOCKETS}    {Enable export of POSIX standard socket functions by the Syscalls unit (Default: On)}
                                      {Note: Must be disabled in order to enable export of the Winsock or Winsock2 API below}
 
-{--$DEFINE SYSCALLS_USE_LONG_TIME_T} {Define time_t as a long (32-bit) instead of int64_t (64-bit) for compatibility with older GCC and NewLib (Default: Off)}                                  
+{--$DEFINE SYSCALLS_USE_LONG_TIME_T} {Define time_t as a long (32-bit) instead of int64_t (64-bit) for compatibility with older GCC and NewLib (Default: Off)}
 
 {==============================================================================}
 {==============================================================================}

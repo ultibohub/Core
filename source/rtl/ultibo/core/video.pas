@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -47,11 +47,11 @@ unit Video;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Codec,SysUtils;
-    
+
 //To Do //Add MPEG etc //No, they should include video if required
 
 //To Do //This unit should also include the generic USB Video driver ? //No, seperate unit ?
-     
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -63,14 +63,14 @@ const
 
  {Video Device Types}
  VIDEO_TYPE_NONE      = 0;
- 
+
  {Video Device States}
  VIDEO_STATE_DISABLED = 0;
  VIDEO_STATE_ENABLED  = 1;
- 
+
  {Video Device Flags}
  VIDEO_FLAG_NONE      = $00000000;
- 
+
  {Video logging}
  VIDEO_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Video debugging messages}
  VIDEO_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Video informational messages, such as a device being attached or detached}
@@ -78,12 +78,12 @@ const
  VIDEO_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Video error messages}
  VIDEO_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Video messages}
 
-var 
+var
  VIDEO_DEFAULT_LOG_LEVEL:LongWord = VIDEO_LOG_LEVEL_DEBUG; {Minimum level for Video messages.  Only messages with level greater than or equal to this will be printed}
- 
-var 
+
+var
  {Video logging}
- VIDEO_LOG_ENABLED:Boolean; 
+ VIDEO_LOG_ENABLED:Boolean;
 
 {==============================================================================}
 type
@@ -95,20 +95,20 @@ type
   Flags:LongWord;        {Device flags (eg VIDEO_FLAG_????)}
   //To do
  end;
- 
+
  {Video Device}
  PVideoDevice = ^TVideoDevice;
- 
+
  {Video Enumeration Callback}
  TVideoEnumerate = function(Video:PVideoDevice;Data:Pointer):LongWord;
  {Video Notification Callback}
  TVideoNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
- 
+
  {Video Device Methods}
  //To do
- 
+
  TVideoDeviceGetProperties = function(Video:PVideoDevice;Properties:PVideoProperties):LongWord;
- 
+
  TVideoDevice = record
   {Device Properties}
   Device:TDevice;                                 {The Device entry for this Video device}
@@ -123,15 +123,15 @@ type
   Lock:TMutexHandle;                              {Device lock}
   //To Do
   Properties:TVideoProperties;                    {Device properties}
-  {Internal Properties}                                                                        
+  {Internal Properties}
   Prev:PVideoDevice;                              {Previous entry in Video device table}
   Next:PVideoDevice;                              {Next entry in Video device table}
- end; 
+ end;
 
 {==============================================================================}
 {var}
  {Video specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure VideoInit;
@@ -141,7 +141,7 @@ procedure VideoInit;
 //To Do
 
 function VideoDeviceGetProperties(Video:PVideoDevice;Properties:PVideoProperties):LongWord;
-  
+
 function VideoDeviceCreate:PVideoDevice;
 function VideoDeviceCreateEx(Size:LongWord):PVideoDevice;
 function VideoDeviceDestroy(Video:PVideoDevice):LongWord;
@@ -153,7 +153,7 @@ function VideoDeviceFind(VideoId:LongWord):PVideoDevice;
 function VideoDeviceFindByName(const Name:String):PVideoDevice; inline;
 function VideoDeviceFindByDescription(const Description:String):PVideoDevice; inline;
 function VideoDeviceEnumerate(Callback:TVideoEnumerate;Data:Pointer):LongWord;
- 
+
 function VideoDeviceNotification(Video:PVideoDevice;Callback:TVideoNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
 
 {==============================================================================}
@@ -164,7 +164,7 @@ function VideoDeviceNotification(Video:PVideoDevice;Callback:TVideoNotification;
 {Video Helper Functions}
 function VideoGetCount:LongWord;
 function VideoDeviceGetDefault:PVideoDevice;
-function VideoDeviceSetDefault(Video:PVideoDevice):LongWord; 
+function VideoDeviceSetDefault(Video:PVideoDevice):LongWord;
 
 function VideoDeviceCheck(Video:PVideoDevice):PVideoDevice;
 
@@ -202,23 +202,23 @@ begin
  {}
  {Check Initialized}
  if VideoInitialized then Exit;
- 
+
  {Initialize Logging}
- VIDEO_LOG_ENABLED:=(VIDEO_DEFAULT_LOG_LEVEL <> VIDEO_LOG_LEVEL_NONE); 
- 
+ VIDEO_LOG_ENABLED:=(VIDEO_DEFAULT_LOG_LEVEL <> VIDEO_LOG_LEVEL_NONE);
+
  {Initialize Video Device Table}
  VideoDeviceTable:=nil;
- VideoDeviceTableLock:=CriticalSectionCreate; 
+ VideoDeviceTableLock:=CriticalSectionCreate;
  VideoDeviceTableCount:=0;
  if VideoDeviceTableLock = INVALID_HANDLE_VALUE then
   begin
    if VIDEO_LOG_ENABLED then VideoLogError(nil,'Failed to create Video device table lock');
   end;
  VideoDeviceDefault:=nil;
- 
+
  {Register Platform Video Handlers}
  //To Do
- 
+
  VideoInitialized:=True;
 end;
 
@@ -228,7 +228,7 @@ end;
 //To Do
 
 {==============================================================================}
- 
+
 function VideoDeviceGetProperties(Video:PVideoDevice;Properties:PVideoProperties):LongWord;
 {Get the properties for the specified Video device}
 {Video: The Video device to get properties from}
@@ -237,22 +237,22 @@ function VideoDeviceGetProperties(Video:PVideoDevice;Properties:PVideoProperties
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Properties}
  if Properties = nil then Exit;
- 
+
  {Check Video}
  if Video = nil then Exit;
- if Video.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Video.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF VIDEO_DEBUG}
  if VIDEO_LOG_ENABLED then VideoLogDebug(Video,'Video Device Get Properties');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if Video.VideoState <> VIDEO_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(Video.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Video.DeviceGetProperties) then
@@ -264,17 +264,17 @@ begin
     begin
      {Get Properties}
      System.Move(Video.Properties,Properties^,SizeOf(TVideoProperties));
-       
+
      {Return Result}
      Result:=ERROR_SUCCESS;
-    end;  
-    
+    end;
+
    MutexUnlock(Video.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -296,16 +296,16 @@ function VideoDeviceCreateEx(Size:LongWord):PVideoDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TVideoDevice) then Exit;
- 
+
  {Create Video}
  Result:=PVideoDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=VIDEO_TYPE_NONE;
  Result.Device.DeviceFlags:=VIDEO_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -316,7 +316,7 @@ begin
  //To Do
  Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -335,25 +335,25 @@ function VideoDeviceDestroy(Video:PVideoDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Video}
  if Video = nil then Exit;
  if Video.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Video}
  Result:=ERROR_IN_USE;
  if VideoDeviceCheck(Video) = Video then Exit;
 
  {Check State}
  if Video.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Lock}
  if Video.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Video.Lock);
   end;
- 
- {Destroy Video} 
+
+ {Destroy Video}
  Result:=DeviceDestroy(@Video.Device);
 end;
 
@@ -366,22 +366,22 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Video}
  if Video = nil then Exit;
  if Video.VideoId <> DEVICE_ID_ANY then Exit;
  if Video.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Interfaces}
  //To Do
- 
+
  {Check Video}
  Result:=ERROR_ALREADY_EXISTS;
  if VideoDeviceCheck(Video) = Video then Exit;
- 
+
  {Check State}
  if Video.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Video}
  if CriticalSectionLock(VideoDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -393,19 +393,19 @@ begin
       Inc(VideoId);
      end;
     Video.VideoId:=VideoId;
-    
+
     {Update Device}
-    Video.Device.DeviceName:=VIDEO_NAME_PREFIX + IntToStr(Video.VideoId); 
+    Video.Device.DeviceName:=VIDEO_NAME_PREFIX + IntToStr(Video.VideoId);
     Video.Device.DeviceClass:=DEVICE_CLASS_VIDEO;
-    
+
     {Register Device}
     Result:=DeviceRegister(@Video.Device);
     if Result <> ERROR_SUCCESS then
      begin
       Video.VideoId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link Video}
     if VideoDeviceTable = nil then
      begin
@@ -417,16 +417,16 @@ begin
       VideoDeviceTable.Prev:=Video;
       VideoDeviceTable:=Video;
      end;
- 
+
     {Increment Count}
     Inc(VideoDeviceTableCount);
-    
+
     {Check Default}
     if VideoDeviceDefault = nil then
      begin
       VideoDeviceDefault:=Video;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -436,7 +436,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -449,19 +449,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Video}
  if Video = nil then Exit;
  if Video.VideoId = DEVICE_ID_ANY then Exit;
  if Video.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Video}
  Result:=ERROR_NOT_FOUND;
  if VideoDeviceCheck(Video) <> Video then Exit;
- 
+
  {Check State}
  if Video.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove Video}
  if CriticalSectionLock(VideoDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -469,7 +469,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@Video.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink Video}
     Prev:=Video.Prev;
     Next:=Video.Next;
@@ -479,7 +479,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -487,21 +487,21 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(VideoDeviceTableCount);
- 
+
     {Check Default}
     if VideoDeviceDefault = Video then
      begin
       VideoDeviceDefault:=VideoDeviceTable;
      end;
- 
+
     {Update Video}
     Video.VideoId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -511,7 +511,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -522,10 +522,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if VideoId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(VideoDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -544,7 +544,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       Video:=Video.Next;
      end;
@@ -570,7 +570,7 @@ begin
  {}
  Result:=PVideoDevice(DeviceFindByDescription(Description));
 end;
-       
+
 {==============================================================================}
 
 function VideoDeviceEnumerate(Callback:TVideoEnumerate;Data:Pointer):LongWord;
@@ -579,10 +579,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(VideoDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -596,11 +596,11 @@ begin
        begin
         if Callback(Video,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Video:=Video.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -611,7 +611,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -620,19 +620,19 @@ function VideoDeviceNotification(Video:PVideoDevice;Callback:TVideoNotification;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Video}
  if Video = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_Video,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check Video}
    if Video.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@Video.Device,DEVICE_CLASS_VIDEO,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -660,26 +660,26 @@ end;
 
 {==============================================================================}
 
-function VideoDeviceSetDefault(Video:PVideoDevice):LongWord; 
+function VideoDeviceSetDefault(Video:PVideoDevice):LongWord;
 {Set the current default Video device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Video}
  if Video = nil then Exit;
  if Video.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(VideoDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Video}
     if VideoDeviceCheck(Video) <> Video then Exit;
-    
+
     {Set Video Default}
     VideoDeviceDefault:=Video;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -702,11 +702,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Video}
  if Video = nil then Exit;
  if Video.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(VideoDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -721,7 +721,7 @@ begin
         Result:=Video;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -741,7 +741,7 @@ begin
  {}
  {Check Level}
  if Level < VIDEO_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = VIDEO_LOG_LEVEL_DEBUG then
@@ -756,17 +756,17 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'Video: ';
- 
+
  {Check Video}
  if Video <> nil then
   begin
    WorkBuffer:=WorkBuffer + VIDEO_NAME_PREFIX + IntToStr(Video.VideoId) + ': ';
   end;
 
- {Output Logging}  
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_VIDEO,LogLevelToLoggingSeverity(Level),'Video',WorkBuffer + AText);
 end;
 
@@ -809,7 +809,7 @@ initialization
  VideoInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

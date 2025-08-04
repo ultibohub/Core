@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -43,10 +43,10 @@ unit Codec;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
-     
+
 //To Do //See also: \source\packages\a52\src\a52.pas
 //To Do //See also: \source\packages\fcl-sound\src
-     
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -58,14 +58,14 @@ const
 
  {Codec Device Types}
  CODEC_TYPE_NONE      = 0;
- 
+
  {Codec Device States}
  CODEC_STATE_DISABLED = 0;
  CODEC_STATE_ENABLED  = 1;
- 
+
  {Codec Device Flags}
  CODEC_FLAG_NONE      = $00000000;
- 
+
  {Codec logging}
  CODEC_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Codec debugging messages}
  CODEC_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Codec informational messages, such as a device being attached or detached}
@@ -73,13 +73,13 @@ const
  CODEC_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Codec error messages}
  CODEC_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Codec messages}
 
-var 
+var
  CODEC_DEFAULT_LOG_LEVEL:LongWord = CODEC_LOG_LEVEL_DEBUG; {Minimum level for Codec messages.  Only messages with level greater than or equal to this will be printed}
- 
-var 
+
+var
  {Codec logging}
- CODEC_LOG_ENABLED:Boolean; 
- 
+ CODEC_LOG_ENABLED:Boolean;
+
 {==============================================================================}
 type
  {Codec specific types}
@@ -90,20 +90,20 @@ type
   Flags:LongWord;        {Device flags (eg CODEC_FLAG_????)}
   //To do
  end;
- 
+
  {Codec Device}
  PCodecDevice = ^TCodecDevice;
- 
+
  {Codec Enumeration Callback}
  TCodecEnumerate = function(Codec:PCodecDevice;Data:Pointer):LongWord;
  {Codec Notification Callback}
  TCodecNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
- 
+
  {Codec Device Methods}
  //To do
- 
+
  TCodecDeviceGetProperties = function(Codec:PCodecDevice;Properties:PCodecProperties):LongWord;
- 
+
  TCodecDevice = record
   {Device Properties}
   Device:TDevice;                                 {The Device entry for this Codec device}
@@ -118,15 +118,15 @@ type
   Lock:TMutexHandle;                              {Device lock}
   //To Do
   Properties:TCodecProperties;                    {Device properties}
-  {Internal Properties}                                                                        
+  {Internal Properties}
   Prev:PCodecDevice;                              {Previous entry in Codec device table}
   Next:PCodecDevice;                              {Next entry in Codec device table}
- end; 
-  
+ end;
+
 {==============================================================================}
 {var}
  {Codec specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure CodecInit;
@@ -136,7 +136,7 @@ procedure CodecInit;
 //To Do
 
 function CodecDeviceGetProperties(Codec:PCodecDevice;Properties:PCodecProperties):LongWord;
-  
+
 function CodecDeviceCreate:PCodecDevice;
 function CodecDeviceCreateEx(Size:LongWord):PCodecDevice;
 function CodecDeviceDestroy(Codec:PCodecDevice):LongWord;
@@ -148,7 +148,7 @@ function CodecDeviceFind(CodecId:LongWord):PCodecDevice;
 function CodecDeviceFindByName(const Name:String):PCodecDevice; inline;
 function CodecDeviceFindByDescription(const Description:String):PCodecDevice; inline;
 function CodecDeviceEnumerate(Callback:TCodecEnumerate;Data:Pointer):LongWord;
- 
+
 function CodecDeviceNotification(Codec:PCodecDevice;Callback:TCodecNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
 
 {==============================================================================}
@@ -159,7 +159,7 @@ function CodecDeviceNotification(Codec:PCodecDevice;Callback:TCodecNotification;
 {Codec Helper Functions}
 function CodecGetCount:LongWord;
 function CodecDeviceGetDefault:PCodecDevice;
-function CodecDeviceSetDefault(Codec:PCodecDevice):LongWord; 
+function CodecDeviceSetDefault(Codec:PCodecDevice):LongWord;
 
 function CodecDeviceCheck(Codec:PCodecDevice):PCodecDevice;
 
@@ -185,7 +185,7 @@ var
  CodecDeviceTableCount:LongWord;
 
  CodecDeviceDefault:PCodecDevice;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -197,23 +197,23 @@ begin
  {}
  {Check Initialized}
  if CodecInitialized then Exit;
- 
+
  {Initialize Logging}
- CODEC_LOG_ENABLED:=(CODEC_DEFAULT_LOG_LEVEL <> CODEC_LOG_LEVEL_NONE); 
- 
+ CODEC_LOG_ENABLED:=(CODEC_DEFAULT_LOG_LEVEL <> CODEC_LOG_LEVEL_NONE);
+
  {Initialize Codec Device Table}
  CodecDeviceTable:=nil;
- CodecDeviceTableLock:=CriticalSectionCreate; 
+ CodecDeviceTableLock:=CriticalSectionCreate;
  CodecDeviceTableCount:=0;
  if CodecDeviceTableLock = INVALID_HANDLE_VALUE then
   begin
    if CODEC_LOG_ENABLED then CodecLogError(nil,'Failed to create Codec device table lock');
   end;
  CodecDeviceDefault:=nil;
- 
+
  {Register Platform Codec Handlers}
  //To Do
- 
+
  CodecInitialized:=True;
 end;
 
@@ -223,7 +223,7 @@ end;
 //To Do
 
 {==============================================================================}
- 
+
 function CodecDeviceGetProperties(Codec:PCodecDevice;Properties:PCodecProperties):LongWord;
 {Get the properties for the specified Codec device}
 {Codec: The Codec device to get properties from}
@@ -232,22 +232,22 @@ function CodecDeviceGetProperties(Codec:PCodecDevice;Properties:PCodecProperties
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Properties}
  if Properties = nil then Exit;
- 
+
  {Check Codec}
  if Codec = nil then Exit;
- if Codec.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Codec.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF CODEC_DEBUG}
  if CODEC_LOG_ENABLED then CodecLogDebug(Codec,'Codec Device Get Properties');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if Codec.CodecState <> CODEC_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(Codec.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Codec.DeviceGetProperties) then
@@ -259,17 +259,17 @@ begin
     begin
      {Get Properties}
      System.Move(Codec.Properties,Properties^,SizeOf(TCodecProperties));
-       
+
      {Return Result}
      Result:=ERROR_SUCCESS;
-    end;  
-    
+    end;
+
    MutexUnlock(Codec.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -291,16 +291,16 @@ function CodecDeviceCreateEx(Size:LongWord):PCodecDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TCodecDevice) then Exit;
- 
+
  {Create Codec}
  Result:=PCodecDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=CODEC_TYPE_NONE;
  Result.Device.DeviceFlags:=CODEC_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -311,7 +311,7 @@ begin
  //To Do
  Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -330,25 +330,25 @@ function CodecDeviceDestroy(Codec:PCodecDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Codec}
  if Codec = nil then Exit;
  if Codec.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Codec}
  Result:=ERROR_IN_USE;
  if CodecDeviceCheck(Codec) = Codec then Exit;
 
  {Check State}
  if Codec.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Lock}
  if Codec.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Codec.Lock);
   end;
- 
- {Destroy Codec} 
+
+ {Destroy Codec}
  Result:=DeviceDestroy(@Codec.Device);
 end;
 
@@ -361,22 +361,22 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Codec}
  if Codec = nil then Exit;
  if Codec.CodecId <> DEVICE_ID_ANY then Exit;
  if Codec.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Interfaces}
  //To Do
- 
+
  {Check Codec}
  Result:=ERROR_ALREADY_EXISTS;
  if CodecDeviceCheck(Codec) = Codec then Exit;
- 
+
  {Check State}
  if Codec.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Codec}
  if CriticalSectionLock(CodecDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -388,19 +388,19 @@ begin
       Inc(CodecId);
      end;
     Codec.CodecId:=CodecId;
-    
+
     {Update Device}
-    Codec.Device.DeviceName:=CODEC_NAME_PREFIX + IntToStr(Codec.CodecId); 
+    Codec.Device.DeviceName:=CODEC_NAME_PREFIX + IntToStr(Codec.CodecId);
     Codec.Device.DeviceClass:=DEVICE_CLASS_CODEC;
-    
+
     {Register Device}
     Result:=DeviceRegister(@Codec.Device);
     if Result <> ERROR_SUCCESS then
      begin
       Codec.CodecId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link Codec}
     if CodecDeviceTable = nil then
      begin
@@ -412,16 +412,16 @@ begin
       CodecDeviceTable.Prev:=Codec;
       CodecDeviceTable:=Codec;
      end;
- 
+
     {Increment Count}
     Inc(CodecDeviceTableCount);
-    
+
     {Check Default}
     if CodecDeviceDefault = nil then
      begin
       CodecDeviceDefault:=Codec;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -431,7 +431,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -444,19 +444,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Codec}
  if Codec = nil then Exit;
  if Codec.CodecId = DEVICE_ID_ANY then Exit;
  if Codec.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Codec}
  Result:=ERROR_NOT_FOUND;
  if CodecDeviceCheck(Codec) <> Codec then Exit;
- 
+
  {Check State}
  if Codec.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove Codec}
  if CriticalSectionLock(CodecDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -464,7 +464,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@Codec.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink Codec}
     Prev:=Codec.Prev;
     Next:=Codec.Next;
@@ -474,7 +474,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -482,21 +482,21 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(CodecDeviceTableCount);
- 
+
     {Check Default}
     if CodecDeviceDefault = Codec then
      begin
       CodecDeviceDefault:=CodecDeviceTable;
      end;
- 
+
     {Update Codec}
     Codec.CodecId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -506,7 +506,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -517,10 +517,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if CodecId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(CodecDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -539,7 +539,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       Codec:=Codec.Next;
      end;
@@ -565,7 +565,7 @@ begin
  {}
  Result:=PCodecDevice(DeviceFindByDescription(Description));
 end;
-       
+
 {==============================================================================}
 
 function CodecDeviceEnumerate(Callback:TCodecEnumerate;Data:Pointer):LongWord;
@@ -574,10 +574,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(CodecDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -591,11 +591,11 @@ begin
        begin
         if Callback(Codec,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Codec:=Codec.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -606,7 +606,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -615,19 +615,19 @@ function CodecDeviceNotification(Codec:PCodecDevice;Callback:TCodecNotification;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Codec}
  if Codec = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_Codec,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check Codec}
    if Codec.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@Codec.Device,DEVICE_CLASS_CODEC,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -655,26 +655,26 @@ end;
 
 {==============================================================================}
 
-function CodecDeviceSetDefault(Codec:PCodecDevice):LongWord; 
+function CodecDeviceSetDefault(Codec:PCodecDevice):LongWord;
 {Set the current default Codec device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Codec}
  if Codec = nil then Exit;
  if Codec.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(CodecDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Codec}
     if CodecDeviceCheck(Codec) <> Codec then Exit;
-    
+
     {Set Codec Default}
     CodecDeviceDefault:=Codec;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -697,11 +697,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Codec}
  if Codec = nil then Exit;
  if Codec.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(CodecDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -716,7 +716,7 @@ begin
         Result:=Codec;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -736,7 +736,7 @@ begin
  {}
  {Check Level}
  if Level < CODEC_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = CODEC_LOG_LEVEL_DEBUG then
@@ -751,17 +751,17 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'Codec: ';
- 
+
  {Check Codec}
  if Codec <> nil then
   begin
    WorkBuffer:=WorkBuffer + CODEC_NAME_PREFIX + IntToStr(Codec.CodecId) + ': ';
   end;
 
- {Output Logging}  
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_CODEC,LogLevelToLoggingSeverity(Level),'Codec',WorkBuffer + AText);
 end;
 
@@ -804,7 +804,7 @@ initialization
  CodecInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

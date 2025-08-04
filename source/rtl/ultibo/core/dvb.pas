@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -46,10 +46,10 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Audio,Video,U
 //To Do
 
  //Useful references:
- 
+
  //   \linux-rpi-3.12.y\drivers\media\dvb-core
  //   \linux-rpi-3.12.y\drivers\media\dvb-frontends
- 
+
  //USB
  //
  //   \linux-rpi-3.12.y\drivers\media\usb\dvb-usb
@@ -60,18 +60,18 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Audio,Video,U
  //   \linux-rpi-3.12.y\drivers\media\usb\dvb-usb-v2\af9015.c
  //   \linux-rpi-3.12.y\drivers\media\usb\dvb-usb-v2\af9035.c
  //   \linux-rpi-3.12.y\drivers\media\usb\dvb-usb-v2\rtl28xxu.c
- 
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
- 
+
 {==============================================================================}
 //const
  {DVB specific constants}
 
-//To Do //A generic DVB unit 
-                           
-              
+//To Do //A generic DVB unit
+
+
 {==============================================================================}
 //type
  {DVB specific types}
@@ -83,7 +83,7 @@ var
  DVBInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure DVBInit;
@@ -105,9 +105,9 @@ begin
  {}
  {Check Initialized}
  if DVBInitialized then Exit;
- 
+
  //To Do
- 
+
  DVBInitialized:=True;
 end;
 
@@ -123,7 +123,7 @@ initialization
  DVBInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -131,10 +131,10 @@ finalization
 {==============================================================================}
 
 end.
- 
-  
- 
- 
- 
- 
- 
+
+
+
+
+
+
+

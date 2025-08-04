@@ -38,18 +38,18 @@ Sitronix ST77XX
  The ST77XX is a family of single-chip controllers/drivers for color, graphic type TFT-LCD display.
 
  Instantiate the ST77XX driver by calling ST77XXFramebufferCreate() with the required parameters:
- 
+
   SPI: The SPI device that this ST77XX is connected to
   ChipSelect: The SPI chip select to use when communicating with this device
   Name: The text description of this device which will show in the device list (Optional)
   Rotation: The rotation value for the framebuffer device (eg FRAMEBUFFER_ROTATION_180)
   Width: The width of the framebuffer in pixels
   Height: The height of the framebuffer in pixels
-  ColStart: 
+  ColStart:
   RST: GPIO pin information for the Reset pin (Optional)
   DC: GPIO pin information for the Data/Command pin
   BL: GPIO pin information for the Backlight pin (Optional)
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}

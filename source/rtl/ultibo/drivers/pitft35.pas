@@ -17,75 +17,75 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
   Linux - \arch\arm\boot\dts\overlays\pitft35-resistive-overlay.dts
- 
+
 References
 ==========
 
  Adafruit PiTFT 3.5" LCD
 
   Raspberry Pi A/B
-  
+
    https://www.adafruit.com/product/2097
-   
+
   Raspberry Pi A+/B+/Zero/2B/3B
-  
-   https://www.adafruit.com/products/2441 
- 
+
+   https://www.adafruit.com/products/2441
+
   Schematic
-  
+
    https://learn.adafruit.com/assets/26348
-  
+
 Adafruit PiTFT 3.5" LCD
 =======================
 
  The Adafruit PiTFT 3.5" LCD is a 480 x 320 pixel TFT with resistive touchscreen using a Himax HX8357
  driver and a STMicroelectronics STMPE610 resistive touchscreen controller.
- 
+
  This unit ties together the various components needed to make one of these boards work with Ultibo by finding
  the correct SPI device, creating the STMPE610 Touch device, creating the HX8357D Framebuffer device and registering
  all of it with the correct parameters for the Adafruit board.
 
  Details:
- 
-  HX8357D 
-  
+
+  HX8357D
+
    Width:   320
    Height:  480
- 
+
    SPI Mode: 0
    SPI Frequency: 42000000
    SPI Chip Select: SPI_CS_0
-   
+
    DC GPIO: GPIO_PIN_25 (Pull: GPIO_PULL_NONE)
    RST GPIO: GPIO_PIN_UNKNOWN
 
    Backlight GPIO: GPIO_PIN_2  (STMPE GPIO)
                    GPIO_PIN_18 (PWM)
-                   
+
   STMPE
 
    Chip: STMPE_CHIP_610
- 
+
    SPI Mode: 0
    SPI Frequency: 500000
    SPI Chip Select: SPI_CS_1
-   
+
    IRQ GPIO: GPIO_PIN_24 (Trigger: GPIO_TRIGGER_FALLING)(Pull: GPIO_PULL_UP)
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit PiTFT35; 
+unit PiTFT35;
 
 interface
 
@@ -101,17 +101,17 @@ const
  PITFT35_FRAMEBUFFER_DESCRIPTION = 'Adafruit PiTFT 3.5" LCD';  {Description of PiTFT35 device}
 
  PITFT35_SIGNATURE = $AF000035;
- 
+
  PITFT35_SCREEN_WIDTH  = 320;
  PITFT35_SCREEN_HEIGHT = 480;
- 
+
  {PiTFT35 GPIO constants}
  PITFT35_LCD_DC     = GPIO_PIN_25;
  PITFT35_TOUCH_IRQ  = GPIO_PIN_24;
- 
+
  PITFT35_LCD_BL     = GPIO_PIN_2; {STMPE GPIO}
  PITFT35_LCD_BL_PWM = GPIO_PIN_18;
- 
+
 {==============================================================================}
 type
  {PiTFT35 specific types}
@@ -125,7 +125,7 @@ type
   Backlight:PGPIODevice;          {Backlight GPIO (STMPE) device for this display}
   Framebuffer:PFramebufferDevice; {Framebuffer (HX8357D) device for this display}
  end;
- 
+
 {==============================================================================}
 var
  {PiTFT35 specific variables}
@@ -133,7 +133,7 @@ var
  PITFT35_LCD_CHIPSELECT:Word = SPI_CS_0;
  PITFT35_TOUCH_CHIPSELECT:Word = SPI_CS_1;
  PITFT35_BL_PWM_ENABLE:LongBool = True;
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure PiTFT35Init;
@@ -150,7 +150,7 @@ function PiTFT35Stop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_PITFT35} stdcall
 
 {==============================================================================}
 {PiTFT35 Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -161,9 +161,9 @@ implementation
 var
  {PiTFT35 specific variables}
  PiTFT35Initialized:Boolean;
- 
+
  PiTFT35Default:THandle = INVALID_HANDLE_VALUE;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -178,16 +178,16 @@ begin
  {}
  {Check Initialized}
  if PiTFT35Initialized then Exit;
- 
+
  {Check Environment Variables}
  {PITFT35_AUTOSTART}
  WorkInt:=StrToIntDef(EnvironmentGet('PITFT35_AUTOSTART'),1);
  if WorkInt = 0 then PITFT35_AUTOSTART:=False;
- 
+
  {PITFT35_SPI_DEVICE}
  WorkBuffer:=EnvironmentGet('PITFT35_SPI_DEVICE');
  if Length(WorkBuffer) <> 0 then PITFT35_SPI_DEVICE:=WorkBuffer;
- 
+
  {PITFT35_LCD_CHIPSELECT}
  WorkInt:=StrToIntDef(EnvironmentGet('PITFT35_LCD_CHIPSELECT'),0);
  if WorkInt > 0 then PITFT35_LCD_CHIPSELECT:=WorkInt;
@@ -195,13 +195,13 @@ begin
  {PITFT35_TOUCH_CHIPSELECT}
  WorkInt:=StrToIntDef(EnvironmentGet('PITFT35_TOUCH_CHIPSELECT'),0);
  if WorkInt > 0 then PITFT35_TOUCH_CHIPSELECT:=WorkInt;
- 
- {Start PiTFT35} 
+
+ {Start PiTFT35}
  if PITFT35_AUTOSTART then
   begin
    PiTFT35Default:=PiTFT35Start(FRAMEBUFFER_ROTATION_0,PITFT35_SPI_DEVICE,PITFT35_LCD_CHIPSELECT,PITFT35_TOUCH_CHIPSELECT);
   end;
- 
+
  PiTFT35Initialized:=True;
 end;
 
@@ -228,15 +228,15 @@ var
  DC:TGPIOInfo;
  RST:TGPIOInfo;
  IRQ:TGPIOInfo;
- 
+
  PiTFT35LCD:PPiTFT35LCD;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Rotation}
  if Rotation > FRAMEBUFFER_ROTATION_270 then Exit;
- 
+
  {Check Device}
  if Length(Device) = 0 then Exit;
 
@@ -245,7 +245,7 @@ begin
 
  {Check Touch Chip Select}
  if TouchSelect = SPI_CS_NONE then Exit;
- 
+
  {Check SPI Device}
  SPI:=SPIDeviceFindByName(Device);
  if SPI = nil then
@@ -253,18 +253,18 @@ begin
    SPI:=SPIDeviceFindByDescription(Device);
    if SPI = nil then Exit;
   end;
- 
+
  {Check GPIO Device}
  GPIO:=GPIODeviceGetDefault;
  if GPIO = nil then Exit;
- 
+
  {Setup Touch IRQ (Interrupt)}
  IRQ.GPIO:=GPIO;
  IRQ.Pin:=PITFT35_TOUCH_IRQ;
  IRQ.Func:=GPIO_FUNCTION_IN;
  IRQ.Pull:=GPIO_PULL_UP;
  IRQ.Trigger:=GPIO_TRIGGER_FALLING;
-  
+
  {Create Backlight (GPIO) Device}
  Backlight:=STMPE610GPIOCreate(nil,SPI,I2C_ADDRESS_INVALID,TouchSelect,nil); {IRQ not available for GPIO}
  if Backlight = nil then Exit;
@@ -275,32 +275,32 @@ begin
   try
    {Setup Display RST (Reset)}
    RST:=GPIO_INFO_UNKNOWN;
-   
+
    {Setup Display DC (Data/Command)}
    DC.GPIO:=GPIO;
    DC.Pin:=PITFT35_LCD_DC;
    DC.Func:=GPIO_FUNCTION_OUT;
    DC.Pull:=GPIO_PULL_NONE;
    DC.Trigger:=GPIO_TRIGGER_UNKNOWN;
-   
+
    {Setup Display BL (Backlight)}
    BL.GPIO:=Backlight;
    BL.Pin:=PITFT35_LCD_BL;
    BL.Func:=GPIO_FUNCTION_OUT;
    BL.Pull:=GPIO_PULL_NONE;
    BL.Trigger:=GPIO_TRIGGER_UNKNOWN;
-   
+
    {Create Framebuffer Device}
    Framebuffer:=HX8357DFramebufferCreate(SPI,DisplaySelect,PITFT35_FRAMEBUFFER_DESCRIPTION,Rotation,PITFT35_SCREEN_WIDTH,PITFT35_SCREEN_HEIGHT,@RST,@DC,@BL);
    if Framebuffer = nil then Exit;
    try
     {Update Framebuffer}
     //To Do //Backlight PWM control
-    
+
     {Create PiTFT35}
     PiTFT35LCD:=AllocMem(SizeOf(TPiTFT35LCD));
     if PiTFT35LCD = nil then Exit;
-    
+
     {Update PiTFT35}
     PiTFT35LCD.Signature:=PITFT35_SIGNATURE;
     PiTFT35LCD.Rotation:=Rotation;
@@ -309,10 +309,10 @@ begin
     PiTFT35LCD.Touch:=Touch;
     PiTFT35LCD.Backlight:=Backlight;
     PiTFT35LCD.Framebuffer:=Framebuffer;
-    
+
     {Return Result}
     Result:=THandle(PiTFT35LCD);
-    
+
     {Check Default}
     if PiTFT35Default = INVALID_HANDLE_VALUE then
      begin
@@ -340,7 +340,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Handle:=PiTFT35Default;
  if Handle = INVALID_HANDLE_VALUE then Exit;
@@ -349,7 +349,7 @@ begin
  PiTFT35LCD:=PPiTFT35LCD(Handle);
  if PiTFT35LCD = nil then Exit;
  if PiTFT35LCD.Signature <> PITFT35_SIGNATURE then Exit;
- 
+
  {Check Framebuffer Device}
  if PiTFT35LCD.Framebuffer <> nil then
   begin
@@ -358,7 +358,7 @@ begin
     begin
      {Update PiTFT35}
      PiTFT35LCD.Framebuffer:=nil;
- 
+
      {Check Touch Device}
      if PiTFT35LCD.Touch <> nil then
       begin
@@ -367,7 +367,7 @@ begin
         begin
          {Update PiTFT35}
          PiTFT35LCD.Touch:=nil;
-         
+
          {Check Backlight Device}
          if PiTFT35LCD.Backlight <> nil then
           begin
@@ -376,29 +376,29 @@ begin
             begin
              {Update PiTFT35}
              PiTFT35LCD.Backlight:=nil;
-         
+
              {Check Default}
              if PiTFT35Default = THandle(PiTFT35LCD) then
               begin
                PiTFT35Default:=INVALID_HANDLE_VALUE;
               end;
-             
+
              {Invalidate PiTFT35}
              PiTFT35LCD.Signature:=0;
-             
+
              {Destroy PiTFT35}
              FreeMem(PiTFT35LCD);
-             
+
              {Return Result}
              Result:=True;
-            end; 
-          end;  
+            end;
+          end;
         end;
       end;
     end;
   end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {PiTFT35 Functions}
@@ -412,9 +412,9 @@ end;
 
 initialization
  PiTFT35Init;
- 
+
 {==============================================================================}
- 
+
 {finalization}
  {Nothing}
 

@@ -17,41 +17,41 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
   Adafruit - https://github.com/adafruit/Adafruit_Python_CharLCD
- 
+
 References
 ==========
- 
+
  Adafruit RGB Positive 16x2 LCD+Keypad Kit for Raspberry Pi
   https://www.adafruit.com/products/1109
- 
+
  Adafruit RGB Negative 16x2 LCD+Keypad Kit for Raspberry Pi
   https://www.adafruit.com/product/1110
- 
+
  Adafruit Blue&White 16x2 LCD+Keypad Kit for Raspberry Pi
   https://www.adafruit.com/products/1115
-  
+
   https://learn.adafruit.com/adafruit-16x2-character-lcd-plus-keypad-for-raspberry-pi
- 
+
 Adafruit 16x2 Character LCD + Keypad
 ====================================
- 
+
  The Adafruit 16x2 LCD + Keypad is a kit that includes both a 16x2 LCD display using the Hitachi HD44780 LCD
  controller as well as a custom PCB with an MCP23017 I/O expander to connect it to a Raspberry Pi (any model)
  using I2C. It is available in Monochrome or RGB Positive and Negative versions.
- 
+
  This unit ties together the various components needed to make one of these boards work with Ultibo by finding
  the correct I2C device, creating the MCP230XX GPIO device, creating the HD44780 Console device and registering
  all of it with the correct parameters for the Adafruit kit.
- 
+
  The unit also includes functions to read the 5 buttons on the board and control the LCD backlight.
- 
+
  You will find many LCD display boards based on the Hitachi HD44780 controller and this unit gives an example
  of how to assembler the available units to create your own driver for a different board.
 
@@ -61,7 +61,7 @@ Adafruit 16x2 Character LCD + Keypad
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit AF16x2LCD; 
+unit AF16x2LCD;
 
 interface
 
@@ -77,10 +77,10 @@ const
  AF16X2LCD_CONSOLE_DESCRIPTION = 'Adafruit 16x2 LCD';  {Description of AF16x2LCD device}
 
  AF16X2LCD_SIGNATURE = $000AF162;
- 
+
  AF16X2LCD_MODEL_MONO = 0; {LCD with Monochrome backlight}
  AF16X2LCD_MODEL_RGB  = 1; {LCD with RGB backlight}
- 
+
  {AF16x2LCD GPIO constants}
  AF16X2LCD_PLATE_RS      = GPIO_PIN_15; {GPIO pin for the LCD RS line}
  AF16X2LCD_PLATE_RW      = GPIO_PIN_14; {GPIO pin for the LCD RW line}
@@ -92,13 +92,13 @@ const
  AF16X2LCD_PLATE_RED     = GPIO_PIN_6;  {GPIO pin for the Backlight Red LED}
  AF16X2LCD_PLATE_GREEN   = GPIO_PIN_7;  {GPIO pin for the Backlight Green LED}
  AF16X2LCD_PLATE_BLUE    = GPIO_PIN_8;  {GPIO pin for the Backlight Blue LED}
-   
+
  AF16X2LCD_BUTTON_SELECT = GPIO_PIN_0;  {GPIO pin for the Select button}
  AF16X2LCD_BUTTON_RIGHT  = GPIO_PIN_1;  {GPIO pin for the Right button}
  AF16X2LCD_BUTTON_DOWN   = GPIO_PIN_2;  {GPIO pin for the Down button}
  AF16X2LCD_BUTTON_UP     = GPIO_PIN_3;  {GPIO pin for the Up button}
  AF16X2LCD_BUTTON_LEFT   = GPIO_PIN_4;  {GPIO pin for the Left button}
-  
+
 {==============================================================================}
 type
  {AF16x2LCD specific types}
@@ -111,14 +111,14 @@ type
   GPIO:PGPIODevice;       {GPIO (MCP23017) device for this plate}
   Console:PConsoleDevice; {Console (HD44780) device for this plate}
  end;
- 
+
 {==============================================================================}
 var
  {AF16x2LCD specific variables}
  AF16X2LCD_MODEL:LongWord = AF16X2LCD_MODEL_RGB;
  AF16X2LCD_I2C_ADDRESS:Word = $20;
  AF16X2LCD_I2C_DEVICE:String = 'I2C0';
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure AF16x2LCDInit;
@@ -136,7 +136,7 @@ function AF16x2LCDBacklightColor(Handle:THandle;Red,Green,Blue:Byte):Boolean;{$I
 
 {==============================================================================}
 {AF16x2LCD Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -147,9 +147,9 @@ implementation
 var
  {AF16x2LCD specific variables}
  AF16x2LCDInitialized:Boolean;
- 
+
  AF16x2LCDDefault:THandle = INVALID_HANDLE_VALUE;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -164,7 +164,7 @@ begin
  {}
  {Check Initialized}
  if AF16x2LCDInitialized then Exit;
- 
+
  {Check Environment Variables}
  {AF16X2LCD_AUTOSTART}
  WorkInt:=StrToIntDef(EnvironmentGet('AF16X2LCD_AUTOSTART'),1);
@@ -173,21 +173,21 @@ begin
  {AF16X2LCD_MODEL}
  WorkInt:=StrToIntDef(EnvironmentGet('AF16X2LCD_MODEL'),AF16X2LCD_MODEL);
  if WorkInt <> AF16X2LCD_MODEL then AF16X2LCD_MODEL:=WorkInt;
- 
+
  {AF16X2LCD_I2C_ADDRESS}
  WorkInt:=StrToIntDef(EnvironmentGet('AF16X2LCD_I2C_ADDRESS'),0);
  if WorkInt > 0 then AF16X2LCD_I2C_ADDRESS:=WorkInt;
- 
+
  {AF16X2LCD_I2C_DEVICE}
  WorkBuffer:=EnvironmentGet('AF16X2LCD_I2C_DEVICE');
  if Length(WorkBuffer) <> 0 then AF16X2LCD_I2C_DEVICE:=WorkBuffer;
- 
- {Start 16x2 LCD} 
+
+ {Start 16x2 LCD}
  if AF16X2LCD_AUTOSTART then
   begin
    AF16x2LCDDefault:=AF16x2LCDStart(AF16X2LCD_MODEL,True,AF16X2LCD_I2C_DEVICE,AF16X2LCD_I2C_ADDRESS);
   end;
- 
+
  AF16x2LCDInitialized:=True;
 end;
 
@@ -211,16 +211,16 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Model}
  if Model > AF16X2LCD_MODEL_RGB then Exit;
- 
+
  {Check Device}
  if Length(Device) = 0 then Exit;
- 
+
  {Check Address}
  if Address = I2C_ADDRESS_INVALID then Exit;
- 
+
  {Check I2C Device}
  I2C:=PI2CDevice(DeviceFindByName(Device));
  if I2C = nil then
@@ -240,7 +240,7 @@ begin
    {Create AF16x2LCD}
    AF16x2LCDPlate:=AllocMem(SizeOf(TAF16x2LCDPlate));
    if AF16x2LCDPlate = nil then Exit;
-   
+
    {Update AF16x2LCD}
    AF16x2LCDPlate.Signature:=AF16X2LCD_SIGNATURE;
    AF16x2LCDPlate.Model:=Model;
@@ -248,7 +248,7 @@ begin
    AF16x2LCDPlate.I2C:=I2C;
    AF16x2LCDPlate.GPIO:=GPIO;
    AF16x2LCDPlate.Console:=Console;
-   
+
    {Setup Buttons}
    {Select}
    GPIODeviceFunctionSelect(GPIO,AF16X2LCD_BUTTON_SELECT,GPIO_FUNCTION_IN);
@@ -265,15 +265,15 @@ begin
    {Left}
    GPIODeviceFunctionSelect(GPIO,AF16X2LCD_BUTTON_LEFT,GPIO_FUNCTION_IN);
    GPIODevicePullSelect(GPIO,AF16X2LCD_BUTTON_LEFT,GPIO_PULL_UP);
-   
+
    {Setup Backlight}
    GPIODeviceFunctionSelect(GPIO,AF16X2LCD_PLATE_RED,GPIO_FUNCTION_OUT);
    GPIODeviceFunctionSelect(GPIO,AF16X2LCD_PLATE_GREEN,GPIO_FUNCTION_OUT);
    GPIODeviceFunctionSelect(GPIO,AF16X2LCD_PLATE_BLUE,GPIO_FUNCTION_OUT);
-   
+
    {Return Result}
    Result:=THandle(AF16x2LCDPlate);
-   
+
    {Check Default}
    if AF16x2LCDDefault = INVALID_HANDLE_VALUE then
     begin
@@ -281,7 +281,7 @@ begin
     end;
   finally
    if Result = INVALID_HANDLE_VALUE then HD44780ConsoleDestroy(Console);
-  end;  
+  end;
  finally
   if Result = INVALID_HANDLE_VALUE then MCP230XXGPIODestroy(GPIO);
  end;
@@ -298,16 +298,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Handle:=AF16x2LCDDefault;
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Plate}
  AF16x2LCDPlate:=PAF16x2LCDPlate(Handle);
  if AF16x2LCDPlate = nil then Exit;
  if AF16x2LCDPlate.Signature <> AF16X2LCD_SIGNATURE then Exit;
- 
+
  {Check Console Device}
  if AF16x2LCDPlate.Console <> nil then
   begin
@@ -316,7 +316,7 @@ begin
     begin
      {Update AF16x2LCD}
      AF16x2LCDPlate.Console:=nil;
-     
+
      {Check GPIO Device}
      if AF16x2LCDPlate.GPIO <> nil then
       begin
@@ -325,23 +325,23 @@ begin
         begin
          {Update AF16x2LCD}
          AF16x2LCDPlate.GPIO:=nil;
-         
+
          {Check Default}
          if AF16x2LCDDefault = THandle(AF16x2LCDPlate) then
           begin
            AF16x2LCDDefault:=INVALID_HANDLE_VALUE;
           end;
-         
+
          {Invalidate AF16x2LCD}
          AF16x2LCDPlate.Signature:=0;
-         
+
          {Destroy AF16x2LCD}
          FreeMem(AF16x2LCDPlate);
-         
+
          {Return Result}
          Result:=True;
-        end; 
-      end;  
+        end;
+      end;
     end;
   end;
 end;
@@ -359,20 +359,20 @@ var
 begin
  {}
  Result:=GPIO_LEVEL_UNKNOWN;
- 
+
  {Check Button}
  if Button < AF16X2LCD_BUTTON_SELECT then Exit;
  if Button > AF16X2LCD_BUTTON_LEFT then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Handle:=AF16x2LCDDefault;
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Plate}
  AF16x2LCDPlate:=PAF16x2LCDPlate(Handle);
  if AF16x2LCDPlate = nil then Exit;
  if AF16x2LCDPlate.Signature <> AF16X2LCD_SIGNATURE then Exit;
- 
+
  {Get Button}
  Result:=GPIODeviceInputGet(AF16x2LCDPlate.GPIO,Button);
 end;
@@ -389,26 +389,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Handle:=AF16x2LCDDefault;
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Plate}
  AF16x2LCDPlate:=PAF16x2LCDPlate(Handle);
  if AF16x2LCDPlate = nil then Exit;
  if AF16x2LCDPlate.Signature <> AF16X2LCD_SIGNATURE then Exit;
- 
+
  {Get Level}
  Level:=GPIO_LEVEL_HIGH;
  if AF16x2LCDPlate.Invert then Level:=GPIO_LEVEL_LOW;
- 
+
  {Turn on Backlight (White)}
  GPIODeviceOutputSet(AF16x2LCDPlate.GPIO,AF16X2LCD_PLATE_RED,Level);
  GPIODeviceOutputSet(AF16x2LCDPlate.GPIO,AF16X2LCD_PLATE_GREEN,Level);
  GPIODeviceOutputSet(AF16x2LCDPlate.GPIO,AF16X2LCD_PLATE_BLUE,Level);
 
- Result:=True; 
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -423,26 +423,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Handle:=AF16x2LCDDefault;
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Plate}
  AF16x2LCDPlate:=PAF16x2LCDPlate(Handle);
  if AF16x2LCDPlate = nil then Exit;
  if AF16x2LCDPlate.Signature <> AF16X2LCD_SIGNATURE then Exit;
- 
+
  {Get Level}
  Level:=GPIO_LEVEL_LOW;
  if AF16x2LCDPlate.Invert then Level:=GPIO_LEVEL_HIGH;
- 
+
  {Turn off Backlight}
  GPIODeviceOutputSet(AF16x2LCDPlate.GPIO,AF16X2LCD_PLATE_RED,Level);
  GPIODeviceOutputSet(AF16x2LCDPlate.GPIO,AF16X2LCD_PLATE_GREEN,Level);
  GPIODeviceOutputSet(AF16x2LCDPlate.GPIO,AF16X2LCD_PLATE_BLUE,Level);
 
- Result:=True; 
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -452,7 +452,7 @@ function AF16x2LCDBacklightColor(Handle:THandle;Red,Green,Blue:Byte):Boolean;{$I
 {Handle: The handle of the AF16x2LCD or INVALID_HANDLE_VALUE for the default display}
 {Red: The Red value (0 for Off / 1 for On)}
 {Green: The Green value (0 for Off / 1 for On)}
-{Blue: The Blue value (0 for Off / 1 for On)} 
+{Blue: The Blue value (0 for Off / 1 for On)}
 {Return: True if completed or False on failure}
 var
  LevelLow:LongWord;
@@ -461,24 +461,24 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Handle:=AF16x2LCDDefault;
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Plate}
  AF16x2LCDPlate:=PAF16x2LCDPlate(Handle);
  if AF16x2LCDPlate = nil then Exit;
  if AF16x2LCDPlate.Signature <> AF16X2LCD_SIGNATURE then Exit;
- 
+
  {Get Low (Off) Level}
  LevelLow:=GPIO_LEVEL_LOW;
  if AF16x2LCDPlate.Invert then LevelLow:=GPIO_LEVEL_HIGH;
- 
+
  {Get High (On) Level}
  LevelHigh:=GPIO_LEVEL_HIGH;
  if AF16x2LCDPlate.Invert then LevelHigh:=GPIO_LEVEL_LOW;
- 
+
  {Turn on/off Backlight (Red)}
  if Red = 0 then
   begin
@@ -488,7 +488,7 @@ begin
   begin
    GPIODeviceOutputSet(AF16x2LCDPlate.GPIO,AF16X2LCD_PLATE_RED,LevelHigh);
   end;
- 
+
  {Turn on/off Backlight (Green)}
  if Green = 0 then
   begin
@@ -498,7 +498,7 @@ begin
   begin
    GPIODeviceOutputSet(AF16x2LCDPlate.GPIO,AF16X2LCD_PLATE_GREEN,LevelHigh);
   end;
- 
+
  {Turn on/off Backlight (Blue)}
  if Blue = 0 then
   begin
@@ -519,9 +519,9 @@ end;
 
 initialization
  AF16x2LCDInit;
- 
+
 {==============================================================================}
- 
+
 {finalization}
  {Nothing}
 

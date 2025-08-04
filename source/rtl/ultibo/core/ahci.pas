@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -54,9 +54,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Storage;
  {AHCI specific constants}
 
 
-//To Do //A generic AHCI unit 
-                           
-              
+//To Do //A generic AHCI unit
+
+
 {==============================================================================}
 //type
  {AHCI specific types}
@@ -68,7 +68,7 @@ var
  AHCIInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure AHCIInit;
@@ -90,9 +90,9 @@ begin
  {}
  {Check Initialized}
  if AHCIInitialized then Exit;
- 
+
  //To Do
- 
+
  AHCIInitialized:=True;
 end;
 
@@ -108,7 +108,7 @@ initialization
  AHCIInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

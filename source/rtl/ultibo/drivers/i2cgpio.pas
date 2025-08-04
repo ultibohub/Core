@@ -43,13 +43,13 @@ I2C GPIO
 
  This is a software based (bit bang) I2C driver which can implement an I2C interface
  using any available pair of GPIO pins without the need for a hardware controller.
- 
+
  This driver supports clock stretching and 10bit addresses and can operate with
- either the default GPIO device or any other suitable GPIO device. 
- 
+ either the default GPIO device or any other suitable GPIO device.
+
  Creating multiple instances on different sets of GPIO pins is fully supported, all
  instances will appear in the standard Ultibo device tables.
- 
+
  Being a software based driver the clock speed is mostly meaningless, instead a
  delay parameter can be passed during device creation which determines the interval
  between high and low states and the length of start and stop conditions. The default
@@ -58,45 +58,45 @@ I2C GPIO
  To use this driver in place of the default hardware I2C controller on the Raspberry
  Pi (I2C0 or BSC1) which is on GPIO pins 2 and 3 you simply initialize an instance
  of the I2CGPIO device by calling the I2CGPIOCreate function like this:
- 
+
  uses
   I2C,
   GPIO,
   I2CGPIO;
- 
+
  var
   I2CDevice:PI2CDevice;
   GPIODevice:PGPIODevice;
-  
+
  begin
   // Get the default GPIO device
   GPIODevice:=GPIODeviceGetDefault;
-  
+
   // Create an instance of the I2CGPIO device
   I2CDevice:=I2CGPIOCreate(GPIODevice,GPIO_PIN_2,GPIO_PIN_3,4,0,False,False);
- 
+
   // Pass the returned I2CDevice to the standard I2C API functions
   ...
  end;
- 
+
  The returned I2CDevice instance can be passed to any of the standard I2C API functions
  to perform I2C reads and writes. As noted above, any available pair of GPIO pins can
  be used to create a new I2CGPIO device.
- 
+
  If an instance of the I2CGPIO device is no longer required it can be released by calling
  the I2CGPIODestroy function and passing the I2CDevice instance returned from I2CGPIOCreate.
- 
+
  Handling of SDA/SCL
  -------------------
 
  If OpenDrain is set to True in I2CGPIOCreate then the SDA/SCL pins will be set to Output
  and toggled High or Low as required, the driver assumes that the hardware provides the
  high impedance state required for the I2C protocol.
- 
+
  If OpenDrain is set to False in I2CGPIOCreate then the SDA/SCL pins will be set to Input
  when the state is High and Output with a value or Low when the state is Low. This will
  provide the high impedance (floating) state required for the I2C protocol.
- 
+
  If OutputOnly is set to True in I2CGPIOCreate then reading of the SCL value is not used
  and clock stretching is not supported.
 
@@ -126,7 +126,7 @@ const
  I2CGPIO_I2C_MAX_CLOCK = 100000; {Arbitrary maximum of 100KHz, actual rate is determined by Delay parameter}
 
  I2CGPIO_RETRY_COUNT = 3;
- 
+
  I2CGPIO_DEFAULT_TIMEOUT = 100;
 
 {==============================================================================}
@@ -462,7 +462,7 @@ begin
     Status:=I2CGPIOWriteAddress(I2CDevice,I2C.SlaveAddress,True);
     if Status <> ERROR_SUCCESS then
      begin
-      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write address failure'); 
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write address failure');
 
       {Update Statistics}
       Inc(I2C.ReadErrors);
@@ -475,7 +475,7 @@ begin
     Status:=I2CGPIOReceiveBytes(I2CDevice,Buffer,Size,Count);
     if Status <> ERROR_SUCCESS then
      begin
-      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Read failure or timeout'); 
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Read failure or timeout');
 
       {Update Statistics}
       Inc(I2C.ReadErrors);
@@ -554,7 +554,7 @@ begin
     Status:=I2CGPIOWriteAddress(I2CDevice,I2C.SlaveAddress,False);
     if Status <> ERROR_SUCCESS then
      begin
-      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write address failure'); 
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write address failure');
 
       {Update Statistics}
       Inc(I2C.WriteErrors);
@@ -567,7 +567,7 @@ begin
     Status:=I2CGPIOSendBytes(I2CDevice,Buffer,Size,Count);
     if Status <> ERROR_SUCCESS then
      begin
-      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write failure or timeout'); 
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write failure or timeout');
 
       {Update Statistics}
       Inc(I2C.WriteErrors);
@@ -649,7 +649,7 @@ begin
     Status:=I2CGPIOWriteAddress(I2CDevice,I2C.SlaveAddress,False);
     if Status <> ERROR_SUCCESS then
      begin
-      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write address failure'); 
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write address failure');
 
       {Update Statistics}
       Inc(I2C.WriteErrors);
@@ -662,7 +662,7 @@ begin
     Status:=I2CGPIOSendBytes(I2CDevice,Initial,Len,Count);
     if Status <> ERROR_SUCCESS then
      begin
-      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write failure or timeout (Initial)'); 
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write failure or timeout (Initial)');
 
       {Update Statistics}
       Inc(I2C.WriteErrors);
@@ -681,7 +681,7 @@ begin
       Status:=I2CGPIOWriteAddress(I2CDevice,I2C.SlaveAddress,True);
       if Status <> ERROR_SUCCESS then
        begin
-        if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write address failure'); 
+        if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write address failure');
 
         {Update Statistics}
         Inc(I2C.ReadErrors);
@@ -694,7 +694,7 @@ begin
       Status:=I2CGPIOReceiveBytes(I2CDevice,Data,Size,Count);
       if Status <> ERROR_SUCCESS then
        begin
-        if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Read failure or timeout (Data)'); 
+        if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Read failure or timeout (Data)');
 
         {Update Statistics}
         Inc(I2C.ReadErrors);
@@ -777,7 +777,7 @@ begin
     Status:=I2CGPIOWriteAddress(I2CDevice,I2C.SlaveAddress,False);
     if Status <> ERROR_SUCCESS then
      begin
-      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write address failure'); 
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write address failure');
 
       {Update Statistics}
       Inc(I2C.WriteErrors);
@@ -790,7 +790,7 @@ begin
     Status:=I2CGPIOSendBytes(I2CDevice,Initial,Len,Count);
     if Status <> ERROR_SUCCESS then
      begin
-      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write failure or timeout (Initial)'); 
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write failure or timeout (Initial)');
 
       {Update Statistics}
       Inc(I2C.WriteErrors);
@@ -803,7 +803,7 @@ begin
     Status:=I2CGPIOSendBytes(I2CDevice,Data,Size,Count);
     if Status <> ERROR_SUCCESS then
      begin
-      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write failure or timeout (Data)'); 
+      if I2C_LOG_ENABLED then I2CLogError(I2C,'I2CGPIO: Write failure or timeout (Data)');
 
       {Update Statistics}
       Inc(I2C.WriteErrors);

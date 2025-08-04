@@ -17,23 +17,23 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
- 
- 
+
+
 References
 ==========
 
- 
+
 Internet Protocol
 =================
 
- Note: In spite of the name, IP is considered a transport rather than a 
+ Note: In spite of the name, IP is considered a transport rather than a
        protocol.
-       
+
  Note: The implementation of Addresses at present only allows one Address
        per Adapter plus Secondary Addresses on the same subnet.
 
@@ -55,7 +55,7 @@ Internet Protocol
        Requires addition of:
          TTransportBinding etc  - FBindings, TIPTransportBinding (with pointer to Adapter)
          AddBinding/RemoveBinding - Do the actual Config currently in AddAdapter (Similar to ODI etc)
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -71,12 +71,12 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,SysUtils,C
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-  
+
 {==============================================================================}
 const
  {IP specific constants}
  IP_TRANSPORT_NAME = 'IP';
- 
+
  {IP Constants}
  MIN_IP_PACKET = 20;    {Not Counting Adapter Header}
  MAX_IP_PACKET = 65536; {Not Counting Adapter Header}
@@ -132,7 +132,7 @@ const
  IPTOS_THROUGHPUT     =   $08;
  IPTOS_RELIABILITY    =   $04;
  IPTOS_MINCOST        =   $02;
-  
+
 {==============================================================================}
 type
  {IP specific types}
@@ -181,7 +181,7 @@ type
  TIPFragment = record {12 Bytes} {Used by Fragment Buffer}
   Offset:Word;       {Offset of this Fragment in the Packet}
   Size:Word;         {Size of this Fragment}
-  
+
   Prev:PIPFragment;  {Pointer to Prev Fragment}
   Next:PIPFragment;  {Pointer to Next Fragment}
  end;
@@ -189,7 +189,7 @@ type
  PIPPacket = ^TIPPacket;
  TIPPacket = record {56 Bytes} {Used by Fragment Buffer}
   Lock:TMutexHandle; {Packet Lock}
-  
+
   Id:Word;           {IP Id}
   Protocol:Word;     {IP Protocol}
   Dest:TInAddr;      {IP Dest}
@@ -200,14 +200,14 @@ type
   Total:Word;        {IP Total Length}
   Length:Word;       {IP Header Length}
   Received:Word;     {Received Bytes}
-  
+
   Prev:PIPPacket;    {Pointer to Prev Packet}
   Next:PIPPacket;    {Pointer to Next Packet}
-  
+
   First:PIPFragment; {Pointer to First Fragment}
   Last:PIPFragment;  {Pointer to Last Fragment}
  end;
-  
+
 {==============================================================================}
 type
  {IP specific classes}
@@ -240,7 +240,7 @@ type
    constructor Create;
   private
    {Internal Variables}
-   
+
   public
    {Status Variables}
    Address:TInAddr;
@@ -248,14 +248,14 @@ type
    Gateway:TInAddr;
    Network:TInAddr;
    Directed:TInAddr;
-   
+
    Server:TInAddr;       {DHCP Server}
    LeaseTime:LongWord;   {DHCP Lease Time}
    RetryTime:Int64;      {DHCP Retry Time}
    ExpiryTime:Int64;     {DHCP Expiry Time}
    RenewalTime:Int64;    {DHCP Renewal Time}
    RebindingTime:Int64;  {DHCP Rebinding Time}
-   
+
    ConfigDefault:Word;   {BOOTP/DHCP/RARP/STATIC/PSEUDO/LOOPBACK}
    ConfigAddress:TInAddr;
    ConfigNetmask:TInAddr;
@@ -267,7 +267,7 @@ type
    constructor Create;
   private
    {Internal Variables}
-   
+
   public
    {Status Variables}
    Address:TInAddr;
@@ -275,14 +275,14 @@ type
    Gateway:TInAddr;
    Network:TInAddr;
    Directed:TInAddr;
-   
+
    Server:TInAddr;       {DHCP Server}
    LeaseTime:LongWord;   {DHCP Lease Time}
    RetryTime:Int64;      {DHCP Retry Time}
    ExpiryTime:Int64;     {DHCP Expiry Time}
    RenewalTime:Int64;    {DHCP Renewal Time}
    RebindingTime:Int64;  {DHCP Rebinding Time}
-   
+
    ConfigDefault:Word;   {BOOTP/DHCP/RARP/STATIC/PSEUDO/LOOPBACK}
    ConfigAddress:TInAddr;
    ConfigNetmask:TInAddr;
@@ -330,7 +330,7 @@ type
    {Internal Variables}
    FNextIPId:Word;
    FNextIPLock:TMutexHandle; //To Do //Change this to LocalLock and share with other properties
-   
+
    FARP:TARPTransport;
    FRARP:TRARPTransport;
    FFragments:TIPBuffer;
@@ -345,7 +345,7 @@ type
    {Status Variables}
    FNameservers:TIPNameservers; //To Do //Change Nameservers to an object type (eg Transport.TNameserverEntry and TIPNameserverEntry) (Part of TNetworkList)
    FNameserverLock:TMutexHandle;                      //Then do Add/Remove/GetNameserverByNext etc)
-                                                      
+
    FForwarding:LongWord;
    FDefaultTTL:LongWord;
    FAutoRelease:Boolean;
@@ -357,9 +357,9 @@ type
    function CheckFragment(ABuffer:Pointer):Boolean;
 
    function GetNextIPId(AIncrement:Boolean):Word;
- 
+
    function GetIPNameserver(ACount:LongWord):TInAddr;
-   
+
    function GetAdapterConfigType(const AName:String):Word;
    function GetAdapterConfigAddress(const AName:String):TInAddr;
    function GetAdapterConfigNetmask(const AName:String):TInAddr;
@@ -403,7 +403,7 @@ type
 
    function BindTransport(AAdapter:TNetworkAdapter):Boolean; override;
    function UnbindTransport(AAdapter:TNetworkAdapter):Boolean; override;
-   
+
    {IP Methods}
    function AddNameserver(const AAddress:TInAddr):Boolean;
    function RemoveNameserver(const AAddress:TInAddr):Boolean;
@@ -423,19 +423,19 @@ type
    function AddRoute(const ANetwork,ANetmask,AGateway,AAddress:TInAddr;AType:Word;ALock:Boolean;AState:LongWord):TIPRouteEntry;
    function RemoveRoute(const ANetwork,AAddress:TInAddr):Boolean;
    procedure FlushRoutes(All:Boolean);
-   
+
    function GetAddressByAddress(const AAddress:TInAddr;ALock:Boolean;AState:LongWord):TIPAddressEntry;
    function GetAddressByNext(APrevious:TIPAddressEntry;ALock,AUnlock:Boolean;AState:LongWord):TIPAddressEntry;
    function CheckAddress(AAddress:TIPAddressEntry;ALock:Boolean;AState:LongWord):Boolean;
    function AddAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter;AType:Word;ALock:Boolean;AState:LongWord):TIPAddressEntry;
    function RemoveAddress(const AAddress:TInAddr):Boolean;
    procedure FlushAddresses(All:Boolean);
-   
+
    function GetNetworkByName(const AName:String;ALock:Boolean):TIPNetworkEntry;
    function GetNetworkByAddress(const ANetwork:TInAddr;ALock:Boolean):TIPNetworkEntry;
    function AddNetwork(const AName:String;const ANetwork:TInAddr;ALock:Boolean):TIPNetworkEntry;
    function RemoveNetwork(const AName:String):Boolean;
-   
+
    function GetServByName(const AName,AProtocol:String;ALock:Boolean):TIPServEntry;
    function GetServByPort(APort:Word;const AProtocol:String;ALock:Boolean):TIPServEntry;
    function AddServ(const AName,AProtocol:String;APort:Word;ALock:Boolean):TIPServEntry;
@@ -462,7 +462,7 @@ type
    {Internal Variables}
    FLocalAddress:TInAddr;   {Host Order}
    FRemoteAddress:TInAddr;  {Host Order}
-   
+
    {Internal Methods}
    procedure SetLocalAddress(const ALocalAddress:TInAddr);
    procedure SetRemoteAddress(const ARemoteAddress:TInAddr);
@@ -480,7 +480,7 @@ type
    FMemory:TMemoryStream; //To Do //Should this be a TMemoryStreamEx ?
    FOptions:Pointer;
    FLength:Integer;
-   
+
    {IP Layer Variables}
    FTOS:Byte;               {IPTOS_LOWDELAY etc}
    FTTL:Byte;               {Time To Live}
@@ -489,16 +489,16 @@ type
    FMulticastIF:TInAddr;    {IP_MULTICAST_IF}
    FMulticastTTL:Byte;      {IP_MULTICAST_TTL}
    FMulticastLOOP:Boolean;  {IP_MULTICAST_LOOP}
-   
+
    {Internal Methods}
    procedure SetTOS(ATOS:Byte);
-   procedure SetTTL(ATTL:Byte); 
-   procedure SetFlags(AFlags:Word); 
+   procedure SetTTL(ATTL:Byte);
+   procedure SetFlags(AFlags:Word);
    procedure SetHeader(AHeader:Boolean);
    procedure SetMulticastIF(const AMulticastIF:TInAddr);
-   procedure SetMulticastTTL(AMulticastTTL:Byte); 
-   procedure SetMulticastLOOP(AMulticastLOOP:Boolean); 
-   
+   procedure SetMulticastTTL(AMulticastTTL:Byte);
+   procedure SetMulticastLOOP(AMulticastLOOP:Boolean);
+
    procedure SetLength(ALength:Integer);
   public
    {IP Layer Properties}
@@ -520,7 +520,7 @@ type
   private
    {Internal Variables}
    FAddresses:array[0..MAX_HOST_ALIASES - 1] of TInAddr;
-   
+
    {Internal Methods}
    function GetAddress:TInAddr;
    procedure SetAddress(const AAddress:TInAddr);
@@ -532,7 +532,7 @@ type
 
    {Public Methods}
    function FindAddress(const AAddress:TInAddr):Boolean;
-   
+
    function AddAddress(const AAddress:TInAddr):Boolean;
    function RemoveAddress(const AAddress:TInAddr):Boolean;
  end;
@@ -547,10 +547,10 @@ type
    FNetmask:TInAddr;
    FGateway:TInAddr;
    FAddress:TInAddr;
-   
+
    {Internal Methods}
-   procedure SetTOS(ATOS:Byte);        
-   procedure SetTTL(ATTL:Byte);       
+   procedure SetTOS(ATOS:Byte);
+   procedure SetTTL(ATTL:Byte);
    procedure SetNetwork(const ANetwork:TInAddr);
    procedure SetNetmask(const ANetmask:TInAddr);
    procedure SetGateway(const AGateway:TInAddr);
@@ -570,7 +570,7 @@ type
   private
    {Internal Variables}
    FAddress:TInAddr;
-   
+
    {Internal Methods}
    procedure SetAddress(const AAddress:TInAddr);
   public
@@ -583,7 +583,7 @@ type
   private
    {Internal Variables}
    FNetwork:TInAddr;
-   
+
    {Internal Methods}
    procedure SetNetwork(const ANetwork:TInAddr);
   public
@@ -595,26 +595,26 @@ type
    constructor Create;
   private
    {Internal Variables}
-   
+
   public
    {Status Variables}
-   
+
  end;
 
  TIPProtoEntry = class(TProtoEntry)
    constructor Create;
   private
    {Internal Variables}
-   
+
   public
    {Status Variables}
-   
+
  end;
-  
+
 {==============================================================================}
 {var}
  {IP specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure IPInit;
@@ -631,7 +631,7 @@ function GetIPDataLength(ABuffer:Pointer):Word;
 
 function ChecksumIPRecv(ABuffer:Pointer;AOffset,ALength:Word):Word;
 function ChecksumIPSend(AHeader,AOptions:Pointer;ALength:Word):Word;
-  
+
 {==============================================================================}
 {IP Helper Functions}
 
@@ -684,10 +684,10 @@ begin
  ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Packet}
   if APacket = nil then Exit;
-  
+
   {Get Fragment}
   Fragment:=APacket.First;
   while Fragment <> nil do
@@ -699,13 +699,13 @@ begin
       Result:=Fragment;
       Exit;
      end;
-    
+
     {Get Next}
     Fragment:=Fragment.Next;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -719,20 +719,20 @@ begin
  ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Packet}
   if APacket = nil then Exit;
-  
+
   {Create Fragment}
   Result:=GetMem(SizeOf(TIPFragment)); {IP_FRAGMENT_SIZE}
   if Result = nil then Exit;
-  
+
   {Update Fragment}
   Result.Offset:=AOffset;
   Result.Size:=ASize;
   Result.Prev:=nil;
   Result.Next:=nil;
-  
+
   {Add Fragement}
   if APacket.Last = nil then
    begin
@@ -747,9 +747,9 @@ begin
     Result.Prev:=APacket.Last;
     APacket.Last:=Result;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -765,13 +765,13 @@ begin
  if not(WriterOwner) then ReaderLock else WriterLock;
  try
   Result:=False;
-  
+
   {Check Packet}
   if APacket = nil then Exit;
-  
+
   {Check for Fragments}
   if APacket.First = nil then Exit;
-  
+
   {Remove Fragment}
   if APacket.First.Next <> nil then
    begin
@@ -787,15 +787,15 @@ begin
     APacket.First:=nil;
     APacket.Last:=nil;
    end;
-   
+
   {Free Fragment}
   FreeMem(Fragment,SizeOf(TIPFragment)); {IP_FRAGMENT_SIZE}
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   if not(WriterOwner) then ReaderUnlock else WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -810,16 +810,16 @@ begin
  try
   {Check Packet}
   if APacket = nil then Exit;
-  
+
   {Get Fragment}
   while APacket.First <> nil do
    begin
     {Remove Fragment}
     RemoveFragment(APacket);
    end;
- finally 
+ finally
   if not(WriterOwner) then ReaderUnlock else WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -833,11 +833,11 @@ begin
  ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: GetPacket - Id = ' + IntToStr(WordBEtoN(AId)));
   {$ENDIF}
-  
+
   {Get Packet}
   Packet:=FFirst;
   while Packet <> nil do
@@ -851,20 +851,20 @@ begin
          begin
           {Lock Packet}
           if ALock then MutexLock(Packet.Lock);
-          
+
           {Return Result}
           Result:=Packet;
           Exit;
          end;
        end;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Packet:=Packet.Next;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -876,11 +876,11 @@ begin
  {$IFDEF IP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: AddPacket - Id = ' + IntToStr(WordBEtoN(AId)));
  {$ENDIF}
-  
+
  {Create Packet}
  Result:=GetMem(SizeOf(TIPPacket)); {IP_PACKET_SIZE}
  if Result = nil then Exit;
-  
+
  {Update Packet}
  Result.Lock:=MutexCreate;
  Result.Id:=AId;
@@ -897,7 +897,7 @@ begin
  Result.First:=nil;
  Result.Last:=nil;
 
- {Acquire Lock} 
+ {Acquire Lock}
  WriterLock; {Acquire as Writer}
  try
   {Add Packet}
@@ -914,15 +914,15 @@ begin
     Result.Prev:=FLast;
     FLast:=Result;
    end;
-  
+
   {Convert Lock}
-  WriterConvert; 
-  
+  WriterConvert;
+
   {Lock Packet}
   if ALock then MutexLock(Result.Lock);
- finally 
+ finally
   ReaderUnlock; {Converted to Reader}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -942,11 +942,11 @@ begin
 
  {Acquire the Lock}
  if MutexLock(APacket.Lock) <> ERROR_SUCCESS then Exit;
-  
+
  {Remove any Fragments}
  FlushFragments(APacket);
 
- {Acquire Lock} 
+ {Acquire Lock}
  WriterLock;
  try
   {Remove Packet}
@@ -982,24 +982,24 @@ begin
       FLast:=nil;
      end;
    end;
-  
+
   {Release the Lock}
   MutexUnlock(APacket.Lock);
-  
+
   {Free Packet Memory}
   FreeMem(APacket.Data,MAX_IP_PACKET);
-  
+
   {Free Packet Lock}
   MutexDestroy(APacket.Lock);
-  
+
   {Free Packet}
   FreeMem(APacket,SizeOf(TIPPacket)); {IP_PACKET_SIZE}
 
   {Return Result}
   Result:=True;
- finally 
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1009,10 +1009,10 @@ function TIPBuffer.UnlockPacket(APacket:PIPPacket):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Packet}
  if APacket = nil then Exit;
- 
+
  {Unlock Packet}
  Result:=(MutexUnlock(APacket.Lock) = ERROR_SUCCESS);
 end;
@@ -1029,8 +1029,8 @@ begin
  {}
  {Get Tick Count}
  CurrentTime:=GetTickCount64;
-  
- {Acquire Lock}   
+
+ {Acquire Lock}
  if All then WriterLock else ReaderLock;
  try
   {Get Packet}
@@ -1040,23 +1040,23 @@ begin
     {Get Next}
     Current:=Packet;
     Packet:=Current.Next;
-    
+
     {Check Packet}
     if ((Current.Timeout + MAX_FRAG_LIFE) < CurrentTime) or (All) then
      begin
       {Convert Lock}
-      if not(All) then ReaderConvert; 
-     
+      if not(All) then ReaderConvert;
+
       {Remove Packet}
       RemovePacket(Current);
-      
+
       {Convert Lock}
-      if not(All) then WriterConvert; 
+      if not(All) then WriterConvert;
      end;
    end;
- finally 
+ finally
   if All then WriterUnlock else ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1070,29 +1070,29 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: PutHeader - Length = ' + IntToStr(ALength));
   {$ENDIF}
-  
+
   {Check Packet}
   if APacket = nil then Exit;
-  
+
   {Check Buffer}
   if ABuffer = nil then Exit;
-  
+
   {Update Packet}
   APacket.Length:=ALength;
   Inc(APacket.Received,ALength);
-  
+
   {Copy Header}
   System.Move(ABuffer^,APacket.Data^,ALength);
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1108,17 +1108,17 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: PutFragment - Size = ' + IntToStr(ASize));
   {$ENDIF}
-  
+
   {Check Packet}
   if APacket = nil then Exit;
-  
+
   {Check Buffer}
   if ABuffer = nil then Exit;
-  
+
   {Get Fragment}
   Fragment:=GetFragment(APacket,AOffset,ASize);
   if Fragment = nil then
@@ -1126,30 +1126,30 @@ begin
     {Add Fragment}
     Fragment:=AddFragment(APacket,AOffset,ASize);
     if Fragment = nil then Exit;
-    
+
     {Update Packet}
     Inc(APacket.Received,ASize);
-    
+
     {Copy Fragment}
     System.Move(ABuffer^,Pointer(PtrUInt(APacket.Data) + APacket.Length + AOffset)^,ASize);
-    
+
     {Check Flags}
     if (AFlags and IP_MF) = 0 then
      begin
       {Last Fragment}
       APacket.Total:=APacket.Length + AOffset + ASize;
-      
+
       {Update Header}
       PIPHeader(APacket.Data).TotalLength:=WordNtoBE(APacket.Total);
       PIPHeader(APacket.Data).FragOffset:=WordNtoBE(AFlags);
      end;
    end;
-  
-  {Return Result}  
+
+  {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1164,14 +1164,14 @@ begin
  LongWord(Gateway.S_addr):=INADDR_ANY;
  LongWord(Network.S_addr):=INADDR_ANY;
  LongWord(Directed.S_addr):=INADDR_BROADCAST;
- 
+
  LongWord(Server.S_addr):=INADDR_BROADCAST;
  LeaseTime:=0;
  RetryTime:=0;
  ExpiryTime:=0;
  RenewalTime:=0;
  RebindingTime:=0;
- 
+
  ConfigDefault:=CONFIG_TYPE_AUTO;
  LongWord(ConfigAddress.S_addr):=INADDR_ANY;
  LongWord(ConfigNetmask.S_addr):=INADDR_ANY;
@@ -1191,14 +1191,14 @@ begin
  LongWord(Gateway.S_addr):=INADDR_ANY;
  LongWord(Network.S_addr):=INADDR_ANY;
  LongWord(Directed.S_addr):=INADDR_BROADCAST;
- 
+
  LongWord(Server.S_addr):=INADDR_BROADCAST;
  LeaseTime:=0;
  RetryTime:=0;
  ExpiryTime:=0;
  RenewalTime:=0;
  RebindingTime:=0;
- 
+
  ConfigDefault:=CONFIG_TYPE_AUTO;
  LongWord(ConfigAddress.S_addr):=INADDR_ANY;
  LongWord(ConfigNetmask.S_addr):=INADDR_ANY;
@@ -1218,7 +1218,7 @@ begin
 
  FNextIPId:=1;
  FNextIPLock:=MutexCreate;
- 
+
  FARP:=nil;
  FRARP:=nil;
  FFragments:=TIPBuffer.Create(Self);
@@ -1246,7 +1246,7 @@ begin
  WriterLock;
  try
   MutexDestroy(FNameserverLock);
-  
+
   FAddresses.Free;
   FNetworks.Free;
   FRoutes.Free;
@@ -1257,12 +1257,12 @@ begin
   FFragments.Free;
   FRARP:=nil;
   FARP:=nil;
-  
+
   MutexDestroy(FNextIPLock);
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1285,30 +1285,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: PacketHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Handle = ' + IntToHex(AHandle,8));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
-  
+
  {Check Dest}
  {if ADest = nil then Exit;} {Not Used}
- 
+
  {Check Source}
- {if ASource = nil then Exit;} {Not Used} 
-  
+ {if ASource = nil then Exit;} {Not Used}
+
  {Check Packet}
  if APacket = nil then Exit;
-  
+
  {Get Adapter}
  Adapter:=TIPTransportAdapter(GetAdapterByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Adapter = nil then Exit;
- try 
+ try
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  PacketType = ' + PacketTypeToString(Adapter.PacketType));
   {$ENDIF}
-  
+
   {Check Packet Type}
   case Adapter.PacketType of
    PACKET_TYPE_IP:begin
@@ -1317,28 +1317,28 @@ begin
       begin
        {Get Header}
        IP:=PIPHeader(APacket);
-     
+
        {$IFDEF IP_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Protocol = ' + ProtocolToString(IP.Protocol));
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  ID = ' + IntToStr(WordBEtoN(IP.Id)));
        {$ENDIF}
-     
+
        {Set the Addresses to Host order}
        IP.DestIP:=InAddrToHost(IP.DestIP);
        IP.SourceIP:=InAddrToHost(IP.SourceIP);
-       
+
        {$IFDEF IP_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  DestIP = ' + InAddrToString(InAddrToNetwork(IP.DestIP)));
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  SourceIP = ' + InAddrToString(InAddrToNetwork(IP.SourceIP)));
        {$ENDIF}
-       
+
        {Check for Broadcast}
        Broadcast:=False;
        if CompareBroadcast(IP.DestIP) or CompareDirected(IP.DestIP) then
         begin
          Broadcast:=True;
         end;
-       
+
        {Check for Local or Loopback}
        if Broadcast or CompareLocal(IP.DestIP) or CompareLoopback(IP.DestIP) then
         begin
@@ -1365,10 +1365,10 @@ begin
                      {Unlock Protocol}
                      Protocol.ReaderUnlock;
                      Exit;
-                    end; 
+                    end;
                   end;
                 end;
-               
+
                {Get Next}
                Protocol:=TIPTransportProtocol(GetProtocolByNext(Protocol,True,True,NETWORK_LOCK_READ));
               end;
@@ -1409,9 +1409,9 @@ begin
       end;
     end;
   end;
- finally 
+ finally
   Adapter.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1434,33 +1434,33 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF IP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: FragmentHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
-  
+
  {Check Dest}
  {if ADest = nil then Exit;} {Not Used}
- 
+
  {Check Source}
- {if ASource = nil then Exit;} {Not Used} 
-  
+ {if ASource = nil then Exit;} {Not Used}
+
  {Check Packet}
  if APacket = nil then Exit;
-  
+
  {Get Header}
  IP:=PIPHeader(APacket);
-  
+
  {Get Length}
  Length:=GetIPHeaderLength(IP);
-  
+
  {Get Packet}
  {$IFDEF IP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  GetPacket');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   Id = ' + IntToStr(WordBEtoN(IP.Id)));
  {$ENDIF}
- 
+
  Packet:=FFragments.GetPacket(IP.Id,IP.Protocol,IP.SourceIP,IP.DestIP,True);
  if Packet = nil then
   begin
@@ -1469,7 +1469,7 @@ begin
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  AddPacket');
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   Id = ' + IntToStr(WordBEtoN(IP.Id)));
    {$ENDIF}
-   
+
    Packet:=FFragments.AddPacket(IP.Id,IP.Protocol,IP.SourceIP,IP.DestIP,True);
    if Packet = nil then Exit;
 
@@ -1478,7 +1478,7 @@ begin
     begin
      FFragments.UnlockPacket(Packet);
      Exit;
-    end; 
+    end;
   end;
  try
   {Add the Fragment}
@@ -1511,10 +1511,10 @@ begin
                {Unlock Protocol}
                Protocol.ReaderUnlock;
                Exit;
-              end; 
+              end;
             end;
           end;
-         
+
          {Get Next}
          Protocol:=TIPTransportProtocol(GetProtocolByNext(Protocol,True,True,NETWORK_LOCK_READ));
         end;
@@ -1535,17 +1535,17 @@ begin
     finally
      {Unlock Packet}
      FFragments.UnlockPacket(Packet);
-     
+
      {Free the Packet}
      FFragments.RemovePacket(Packet);
-     
+
      Packet:=nil;
     end;
    end;
- finally 
+ finally
   {Unlock Packet}
   if Packet <> nil then FFragments.UnlockPacket(Packet);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1560,23 +1560,23 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF IP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: CheckFragment');
  {$ENDIF}
-  
+
  {Check Buffer}
  if ABuffer = nil then Exit;
-  
- {Get Header} 
+
+ {Get Header}
  IP:=PIPHeader(ABuffer);
- 
+
  {Get Flags}
  Flags:=WordBEtoN(IP.FragOffset) and not(IP_OFFMASK);
- 
+
  {Get Offset}
  Offset:=(WordBEtoN(IP.FragOffset) and IP_OFFMASK) shl 3;
-  
+
  {Check for Dont Fragment Flag} {Dont check as Solaris sets it}
  {if (Flags and IP_DF) <> IP_DF then}
  { begin}
@@ -1600,7 +1600,7 @@ begin
 
  {Get Next Id}
  Result:=FNextIPId;
-  
+
  {Increment Id}
  if AIncrement then Inc(FNextIPId,ID_INCREMENT);
 
@@ -1616,14 +1616,14 @@ var
 begin
  {}
  LongWord(Result.S_addr):=INADDR_NONE;
- 
+
  Value:=Uppercase(Manager.Settings.GetString('IP_NAMESERVER' + IntToStr(ACount)));
  if Length(Value) <> 0 then
   begin
    Result:=InAddrToHost(StringToInAddr(Value));
-  end; 
+  end;
 end;
- 
+
 {==============================================================================}
 
 function TIPTransport.GetAdapterConfigType(const AName:String):Word;
@@ -1633,7 +1633,7 @@ var
 begin
  {}
  Result:=CONFIG_TYPE_AUTO;
- 
+
  Value:=Uppercase(Manager.Settings.GetString(AName + '_IP_CONFIG'));
  if Length(Value) <> 0 then
   begin
@@ -1663,9 +1663,9 @@ begin
      else
       begin
        Result:=CONFIG_TYPE_AUTO;
-      end;      
-    end; 
-  end; 
+      end;
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -1677,12 +1677,12 @@ var
 begin
  {}
  LongWord(Result.S_addr):=INADDR_NONE;
- 
+
  Value:=Uppercase(Manager.Settings.GetString(AName + '_IP_ADDRESS'));
  if Length(Value) <> 0 then
   begin
    Result:=InAddrToHost(StringToInAddr(Value));
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1694,12 +1694,12 @@ var
 begin
  {}
  LongWord(Result.S_addr):=INADDR_NONE;
- 
+
  Value:=Uppercase(Manager.Settings.GetString(AName + '_IP_NETMASK'));
  if Length(Value) <> 0 then
   begin
    Result:=InAddrToHost(StringToInAddr(Value));
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1711,12 +1711,12 @@ var
 begin
  {}
  LongWord(Result.S_addr):=INADDR_NONE;
- 
+
  Value:=Uppercase(Manager.Settings.GetString(AName + '_IP_GATEWAY'));
  if Length(Value) <> 0 then
   begin
    Result:=InAddrToHost(StringToInAddr(Value));
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1728,12 +1728,12 @@ var
 begin
  {}
  LongWord(Result.S_addr):=INADDR_NONE;
- 
+
  Value:=Uppercase(Manager.Settings.GetString(AName + '_IP_SERVER'));
  if Length(Value) <> 0 then
   begin
    Result:=InAddrToHost(StringToInAddr(Value));
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1754,24 +1754,24 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF IP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: FilterPacket');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
-  
+
  {Check Dest}
- if ADest = nil then Exit; 
- 
+ if ADest = nil then Exit;
+
  {Check Source}
- if ASource = nil then Exit; 
-  
+ if ASource = nil then Exit;
+
  {Check Packet}
  if APacket = nil then Exit;
-  
+
  {Get Header}
  IP:=PIPHeader(APacket);
-  
+
  {Get Filter}
  Filter:=TIPTransportFilter(GetFilterByNext(nil,True,False,NETWORK_LOCK_READ));
  while Filter <> nil do
@@ -1789,11 +1789,11 @@ begin
          {Unlock Filter}
          Filter.ReaderUnlock;
          Exit;
-        end; 
+        end;
       end;
     end;
-   
-   {Get Next}    
+
+   {Get Next}
    Filter:=TIPTransportFilter(GetFilterByNext(Filter,True,True,NETWORK_LOCK_READ));
   end;
 end;
@@ -1821,28 +1821,28 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF IP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: ForwardPacket');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
 
  {Check Dest}
- if ADest = nil then Exit; 
- 
+ if ADest = nil then Exit;
+
  {Check Source}
- if ASource = nil then Exit; 
+ if ASource = nil then Exit;
 
  {Check Packet}
  if APacket = nil then Exit;
-  
+
  {Get Dest}
  Dest:=PInAddr(ADest)^;
 
  {Get Source}
  Source:=PInAddr(ASource)^;
  if CompareDefault(Source) then Exit;
-  
+
  {Get the Route}
  Route:=GetRouteByAddress(Dest,True,NETWORK_LOCK_READ);
  if Route = nil then
@@ -1873,10 +1873,10 @@ begin
        end;
       Exit;
      end;
-  
+
     {Update the TTL}
     Dec(PIPHeader(APacket).TTL,TTL_DECREMENT);
-   
+
     {Check the TTL}
     if PIPHeader(APacket).TTL < 1 then
      begin
@@ -1887,20 +1887,20 @@ begin
        end;
       Exit;
      end;
-  
+
     {Set the Addresses to Network order}
     PIPHeader(APacket).DestIP:=InAddrToNetwork(PIPHeader(APacket).DestIP);
     PIPHeader(APacket).SourceIP:=InAddrToNetwork(PIPHeader(APacket).SourceIP);
-  
+
     {Calculate the Checksum}
     PIPHeader(APacket).Checksum:=ChecksumIPRecv(APacket,0,GetIPHeaderLength(APacket));
-  
+
     {Get the Hardware}
     if CompareAddress(Route.Gateway,Route.Address) then
      begin
       {Check ARP Transport}
       if FARP = nil then Exit;
-      
+
       {Get the Dest Hardware}
       if not FARP.ResolveAddress(Address.Adapter,Address.Address,Dest,Hardware) then
        begin
@@ -1928,15 +1928,15 @@ begin
         Exit;
        end;
      end;
-  
+
     {Create the Packet}
     Packet.Size:=ASize;
     Packet.Data:=APacket;
     Packet.Next:=nil;
-  
+
     {Send the Packet}
     Result:=Adapter.Adapter.SendPacket(Adapter.Handle,@Hardware,@Packet,ASize);
-  
+
     {Check Route}
     if AAdapter = Adapter then
      begin
@@ -1958,9 +1958,9 @@ begin
   finally
    Address.ReaderUnlock;
   end;
- finally 
+ finally
   Route.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1981,18 +1981,18 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: AddAdapter');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Config = ' + ConfigTypeToString(AConfigType));
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {Check State}
   if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
-  
+
   {Get Adapter}
   Adapter:=TIPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
   if Adapter = nil then
@@ -2002,17 +2002,17 @@ begin
 
     {Check RARP Transport}
     if FRARP = nil then Exit;
-    
+
     {Add IP Type}
     Handle:=AAdapter.AddTransport(PACKET_TYPE_IP,FRAME_TYPE_ETHERNET_II,IP_TRANSPORT_NAME,PacketHandler);
     if Handle <> INVALID_HANDLE_VALUE then
      begin
       {Add to ARP}
       FARP.AddAdapter(AAdapter,0,nil,nil,nil,nil);
-      
+
       {Add to RARP}
       FRARP.AddAdapter(AAdapter,0,nil,nil,nil,nil);
-      
+
       {Create Adapter}
       Adapter:=TIPTransportAdapter.Create;
       Adapter.Name:=AAdapter.Name;
@@ -2030,16 +2030,16 @@ begin
       if ANetmask <> nil then Adapter.ConfigNetmask:=TInAddr(ANetmask^);
       if AGateway <> nil then Adapter.ConfigGateway:=TInAddr(AGateway^);
       if AServer <> nil then Adapter.ConfigServer:=TInAddr(AServer^);
-      
+
       {Lock Adapter}
       Adapter.WriterLock;
-      
+
       {Acquire Lock}
       FAdapters.WriterLock;
       try
        {Add Adapter}
        FAdapters.Add(Adapter);
-      
+
        {Configure Adapter}
        case Adapter.ConfigType of
         CONFIG_TYPE_STATIC:begin
@@ -2056,7 +2056,7 @@ begin
           Adapter.RetryTime:=GetTickCount64; {Initial Configuration}
          end;
        end;
-      
+
        {Unlock Adapter}
        Adapter.WriterUnlock;
 
@@ -2065,20 +2065,20 @@ begin
       finally
        {Release Lock}
        FAdapters.WriterUnlock;
-      end;  
+      end;
      end;
    end
   else
    begin
     {Unlock Adapter}
     Adapter.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2094,63 +2094,63 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: RemoveAdapter');
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {Check ARP Transport}
   if FARP = nil then Exit;
 
   {Check RARP Transport}
   if FRARP = nil then Exit;
-  
+
   {Get Adapter}
   Adapter:=TIPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to configure}
   if Adapter = nil then Exit;
-  
+
   {Notify Config of Remove}
   case Adapter.ConfigType of
    CONFIG_TYPE_STATIC:begin
      {Update Adapter}
      Adapter.Configured:=False;
-     
+
      {Remove Default Route}
      if not CompareDefault(Adapter.Gateway) then
       begin
        RemoveRoute(IP_DEFAULT_NETWORK,Adapter.Address);
       end;
-     
+
      {Remove Broadcast Route}
      RemoveRoute(IP_BROADCAST_NETWORK,Adapter.Address);
-     
+
      {Remove Multicast Route}
      RemoveRoute(IP_MULTICAST_NETWORK,Adapter.Address);
-     
+
      {Remove Routes (Network, Address, Directed)}
      RemoveRoute(Adapter.Directed,Adapter.Address);
      RemoveRoute(Adapter.Address,IP_LOOPBACK_ADDRESS);
      RemoveRoute(Adapter.Network,Adapter.Address);
-     
+
      {Remove Address}
      RemoveAddress(Adapter.Address);
     end;
    CONFIG_TYPE_LOOPBACK:begin
      {Update Adapter}
      Adapter.Configured:=False;
-     
+
      {Remove loopback Network}
      RemoveNetwork('loopback');
-     
+
      {Remove loopback Address}
      RemoveAddress(IP_LOOPBACK_ADDRESS);
-     
+
      {Remove loopback Route}
      RemoveRoute(IP_LOOPBACK_NETWORK,IP_LOOPBACK_ADDRESS);
-     
+
      {Remove localhost Host}
      RemoveHost(IP_LOOPBACK_ADDRESS);
     end;
@@ -2171,82 +2171,82 @@ begin
             begin
              {Call Config Handler}
              Config.ConfigHandler(THandle(Config),Adapter,CONFIG_ADAPTER_RELEASE); {Do not check return}
-            end; 
+            end;
 
            {Update Adapter}
            Adapter.Configured:=False;
-           
+
            {Remove Default Route}
            if not CompareDefault(Adapter.Gateway) then
             begin
              RemoveRoute(IP_DEFAULT_NETWORK,Adapter.Address);
             end;
-           
+
            {Remove Broadcast Route}
            RemoveRoute(IP_BROADCAST_NETWORK,Adapter.Address);
-           
+
            {Remove Multicast Route}
            RemoveRoute(IP_MULTICAST_NETWORK,Adapter.Address);
-           
+
            {Remove Routes (Network, Address, Directed)}
            RemoveRoute(Adapter.Directed,Adapter.Address);
            RemoveRoute(Adapter.Address,IP_LOOPBACK_ADDRESS);
            RemoveRoute(Adapter.Network,Adapter.Address);
-           
+
            {Remove Address}
            RemoveAddress(Adapter.Address);
-           
+
            {Unlock Config}
            Config.ReaderUnlock;
-           
+
            Break;
           end;
         end;
-        
-       {Get Next} 
+
+       {Get Next}
        Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
       end;
     end;
   end;
-  
+
   {Remove RARP Address}
   FRARP.UnloadAddress(Adapter.Adapter,Adapter.Address);
-  
+
   {Remove ARP Addresses}
   {FARP.UnloadAddress(Adapter.Adapter,IP_BROADCAST_ADDRESS);} {Removed in ARP.RemoveAdapter}
   FARP.UnloadAddress(Adapter.Adapter,Adapter.Directed);
   FARP.UnloadAddress(Adapter.Adapter,Adapter.Address);
-  
+
   {Remove from RARP}
   FRARP.RemoveAdapter(AAdapter);
-  
+
   {Remove from ARP}
   FARP.RemoveAdapter(AAdapter);
-  
+
   {Remove IP Type}
   AAdapter.RemoveTransport(Adapter.Handle,Adapter.PacketType);
-  
+
   {Acquire Lock}
   FAdapters.WriterLock;
   try
    {Remove Adapter}
    FAdapters.Remove(Adapter);
-  
+
    {Unlock Adapter}
    Adapter.WriterUnlock;
-  
+
    {Destroy Adapter}
    Adapter.Free;
-  
+
    {Return Result}
    Result:=True;
   finally
    {Release Lock}
    FAdapters.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2263,37 +2263,37 @@ begin
  ReaderLock;
  try
   Result:=INVALID_HANDLE_VALUE;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: AddProtocol');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
-  
+
   {Get Protocol}
   {Protocol:=TIPTransportProtocol(GetProtocolByType(AProtocol,False,NETWORK_LOCK_NONE));} {Do not lock} {Allow multiple protocols with same type}
   {if Protocol <> nil then Exit;}
-  
+
   {Create Protocol}
   Protocol:=TIPTransportProtocol.Create;
   Protocol.Protocol:=AProtocol;
   Protocol.PacketHandler:=APacketHandler;
   Protocol.ControlHandler:=AControlHandler;
-  
+
   {Acquire Lock}
   FProtocols.WriterLock;
   try
    {Add Protocol}
    FProtocols.Add(Protocol);
-  
+
    {Return Result}
    Result:=THandle(Protocol);
   finally
    {Release Lock}
    FProtocols.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2326,8 +2326,8 @@ begin
     {Unlock Protocol}
     Protocol.WriterUnlock;
     Exit;
-   end; 
-  
+   end;
+
   {Acquire Lock}
   FProtocols.WriterLock;
   try
@@ -2336,19 +2336,19 @@ begin
 
    {Unlock Protocol}
    Protocol.WriterUnlock;
-  
+
    {Destroy Protocol}
    Protocol.Free;
- 
+
    {Return Result}
    Result:=True;
   finally
    {Release Lock}
    FProtocols.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2364,36 +2364,36 @@ begin
  ReaderLock;
  try
   Result:=INVALID_HANDLE_VALUE;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: AddFilter');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
-  
+
   {Get Filter}
   Filter:=TIPTransportFilter(GetFilterByProtocol(AProtocol,False,NETWORK_LOCK_NONE)); {Do not lock}
   if Filter <> nil then Exit;
-  
+
   {Create Filter}
   Filter:=TIPTransportFilter.Create;
   Filter.Protocol:=AProtocol;
   Filter.FilterHandler:=AFilterHandler;
-  
+
   {Acquire Lock}
   FFilters.WriterLock;
   try
    {Add Filter}
    FFilters.Add(Filter);
-  
+
    {Return Result}
    Result:=THandle(Filter);
   finally
    {Release Lock}
    FFilters.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2409,25 +2409,25 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: RemoveFilter');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Handle = ' + IntToHex(AHandle,8));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
-  
+
   {Get Filter}
   Filter:=TIPTransportFilter(GetFilterByHandle(AHandle,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Filter = nil then Exit;
-  
+
   {Check Filter}
   if Filter.Protocol <> AProtocol then
    begin
     {Unlock Filter}
     Filter.WriterUnlock;
     Exit;
-   end; 
-  
+   end;
+
   {Acquire Lock}
   FFilters.WriterLock;
   try
@@ -2436,19 +2436,19 @@ begin
 
    {Unlock Filter}
    Filter.WriterUnlock;
-  
+
    {Destroy Filter}
    Filter.Free;
-  
+
    {Return Result}
    Result:=True;
   finally
    {Release Lock}
    FFilters.WriterUnlock;
-  end; 
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2465,37 +2465,37 @@ begin
  ReaderLock;
  try
   Result:=INVALID_HANDLE_VALUE;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: AddConfig');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Config = ' + ConfigTypeToString(AConfigType));
   {$ENDIF}
-  
+
   {Get Config}
   Config:=TIPTransportConfig(GetConfigByType(AConfigType,False,NETWORK_LOCK_NONE)); {Do not lock}
   if Config <> nil then Exit;
-  
+
   {Create Config}
   Config:=TIPTransportConfig.Create;
   Config.ConfigType:=AConfigType;
   Config.ConfigAuto:=AConfigAuto;
   Config.ConfigHandler:=AConfigHandler;
-  
+
   {Acquire Lock}
   FConfigs.WriterLock;
   try
    {Add Config}
    FConfigs.Add(Config);
-  
+
    {Return Result}
    Result:=THandle(Config);
   finally
    {Release Lock}
    FConfigs.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2511,25 +2511,25 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: RemoveConfig');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Handle = ' + IntToHex(AHandle,8));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Config = ' + ConfigTypeToString(AConfigType));
   {$ENDIF}
-  
+
   {Get Config}
   Config:=TIPTransportConfig(GetConfigByHandle(AHandle,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Config = nil then Exit;
-  
+
   {Check Config}
   if Config.ConfigType <> AConfigType then
    begin
     {Unlock Config}
     Config.WriterUnlock;
     Exit;
-   end; 
-  
+   end;
+
   {Acquire Lock}
   FConfigs.WriterLock;
   try
@@ -2538,19 +2538,19 @@ begin
 
    {Unlock Config}
    Config.WriterUnlock;
-  
+
    {Destroy Config}
    Config.Free;
-  
+
    {Return Result}
    Result:=True;
   finally
    {Release Lock}
    FConfigs.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2582,22 +2582,22 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: SendPacket');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Size = ' + IntToStr(ASize));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Dest = ' + InAddrToString(InAddrToNetwork(PInAddr(ADest)^)));
  {$ENDIF}
-  
+
  {Check Dest}
  if ADest = nil then Exit;
-  
+
  {Check Source}
  if ASource = nil then Exit;
-  
+
  {Check Socket}
  if ASocket = nil then Exit;
-  
+
  {Get the Route}
  NetworkSetLastError(WSAENETUNREACH);
  Route:=GetRouteByAddress(PInAddr(ADest)^,True,NETWORK_LOCK_READ);
@@ -2606,7 +2606,7 @@ begin
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Route = ' + InAddrToString(InAddrToNetwork(Route.Network)) + '/' + InAddrToString(InAddrToNetwork(Route.Address)));
   {$ENDIF}
-  
+
   {Get the Address}
   NetworkSetLastError(WSAEADDRNOTAVAIL);
   Address:=GetAddressByAddress(Route.Address,True,NETWORK_LOCK_READ);
@@ -2615,7 +2615,7 @@ begin
    {$IFDEF IP_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Address = ' + InAddrToString(InAddrToNetwork(Address.Address)));
    {$ENDIF}
-  
+
    {Get the Adapter}
    Adapter:=TIPTransportAdapter(GetAdapterByAdapter(Address.Adapter,True,NETWORK_LOCK_READ));
    if Adapter = nil then Exit;
@@ -2623,7 +2623,7 @@ begin
     {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Adapter = ' + InAddrToString(InAddrToNetwork(Adapter.Address)));
     {$ENDIF}
-  
+
     {Get the Source}
     Source:=PInAddr(ASource)^;
     if CompareDefault(Source) then Source:=Route.Address;
@@ -2631,14 +2631,14 @@ begin
     {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Source = ' + InAddrToString(InAddrToNetwork(Source)));
     {$ENDIF}
-  
+
     {Get the Hardware}
     NetworkSetLastError(WSAEHOSTUNREACH);
     if CompareLoopback(Route.Address) then
      begin
       {Check ARP Transport}
       if FARP = nil then Exit;
-      
+
       {Get the Loopback Hardware}
       {$IFDEF IP_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Resolve Loopback Hardware');
@@ -2670,7 +2670,7 @@ begin
     {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Hardware = ' + HardwareAddressToString(Hardware));
     {$ENDIF}
- 
+
     {Check for Header Include}
     if TIPOptions(ASocket.TransportOptions).Header then
      begin
@@ -2678,7 +2678,7 @@ begin
       Header.Size:=APacket.Size;
       Header.Data:=APacket.Data;
       Header.Next:=APacket.Next;
-    
+
       {Get the Size}
       Size:=ASize;
      end
@@ -2691,7 +2691,7 @@ begin
       IP.Protocol:=ASocket.Proto;
       IP.SourceIP:=InAddrToNetwork(Source);
       IP.DestIP:=InAddrToNetwork(PInAddr(ADest)^);
-    
+
       {Create the Fragments}
       Header.Size:=IP_HEADER_SIZE;
       Header.Data:=@IP;
@@ -2702,15 +2702,15 @@ begin
         Options.Size:=0;
         Options.Data:=nil;
         Options.Next:=nil;
-      
+
         {Get the Size}
         Size:=ASize + Header.Size;
-      
+
         {Create the Header}
         IP.VersionLength:=$45;
         IP.TotalLength:=WordNtoBE(Size);
         IP.FragOffset:=WordNtoBE(AFlags or TIPOptions(ASocket.TransportOptions).Flags);
-      
+
         {Calculate the Checksum} {Use Receive due to no Options}
         IP.Checksum:=ChecksumIPRecv(@IP,0,IP_HEADER_SIZE);
        end
@@ -2721,15 +2721,15 @@ begin
         Options.Size:=TIPOptions(ASocket.TransportOptions).Length;
         Options.Data:=TIPOptions(ASocket.TransportOptions).Options;
         Options.Next:=@Buffer;
-      
+
         {Get the Size}
         Size:=ASize + Header.Size + Options.Size;
-      
+
         {Create the Header}
         IP.VersionLength:=$40 + ((IP_HEADER_SIZE + Options.Size) shr 2); {Size div 4}
         IP.TotalLength:=WordNtoBE(Size);
-        IP.FragOffset:=WordNtoBE(AFlags or TIPOptions(ASocket.TransportOptions).Flags); 
-      
+        IP.FragOffset:=WordNtoBE(AFlags or TIPOptions(ASocket.TransportOptions).Flags);
+
         {Calculate the Checksum}
         IP.Checksum:=ChecksumIPSend(@IP,Options.Data,Options.Size);
        end;
@@ -2737,11 +2737,11 @@ begin
       Buffer.Data:=APacket.Data;
       Buffer.Next:=APacket.Next;
      end;
-  
+
     {Check the Size}
     NetworkSetLastError(WSAEMSGSIZE);
     if Size > MAX_IP_PACKET then Exit;
-    
+
     {Send the Packet}
     if Size <= Adapter.MTU then
      begin
@@ -2749,7 +2749,7 @@ begin
       {$IFDEF IP_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Packet is Non Fragmented');
       {$ENDIF}
-    
+
       {Send the Packet}
       NetworkSetLastError(WSAENETDOWN);
       if Adapter.Adapter.SendPacket(Adapter.Handle,@Hardware,@Header,Size) then
@@ -2764,18 +2764,18 @@ begin
       {$IFDEF IP_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Packet is Fragmented');
       {$ENDIF}
-    
+
       {Check for Header Include}
       if TIPOptions(ASocket.TransportOptions).Header then Exit;
-    
+
       {Check for Dont Fragment}
       if ((AFlags and IP_DF) = IP_DF) or ((TIPOptions(ASocket.TransportOptions).Flags and IP_DF) = IP_DF) then Exit;
-    
+
       {Set Offset and Length}
       Size:=ASize;
       Offset:=0;
       Length:=IP_HEADER_SIZE + Options.Size;
-    
+
       {Set Data Fragment}
       Buffer.Size:=0;
       Buffer.Next:=nil;
@@ -2790,49 +2790,49 @@ begin
          Inc(Buffer.Size,Packet.Size);
          Packet:=Packet.Next;
         end;
-     
+
        {Send an MTU size Packet for each Fragment}
        NetworkSetLastError(WSAENETDOWN);
        while Size > (Adapter.MTU - Length) do
         begin
          {Create the Header}
          IP.TotalLength:=WordNtoBE(Adapter.MTU);
-         IP.FragOffset:=WordNtoBE((AFlags or IP_MF) or (Offset shr 3)); {Offset div 8} 
+         IP.FragOffset:=WordNtoBE((AFlags or IP_MF) or (Offset shr 3)); {Offset div 8}
 
          {Calculate the Checksum}
          IP.Checksum:=ChecksumIPSend(@IP,Options.Data,Options.Size);
-       
+
          {Set Data Fragment}
          Buffer.Size:=Adapter.MTU - Length;
-       
+
          {Send the Fragment}
          if not Adapter.Adapter.SendPacket(Adapter.Handle,@Hardware,@Header,Adapter.MTU) then Exit;
-       
+
          {Update Size and Offset}
          Dec(Size,Adapter.MTU - Length);
          Inc(Offset,Adapter.MTU - Length);
-       
+
          {Update Data Fragment}
          Inc(PtrUInt(Buffer.Data),Adapter.MTU - Length);
         end;
-     
+
        {Send the Last Fragment (either full size or partial)}
        if Size >= 0 then
         begin
          {Create the Header}
          IP.TotalLength:=WordNtoBE(Length + Size);
-         IP.FragOffset:=WordNtoBE(AFlags or (Offset shr 3)); {Offset div 8} 
-        
+         IP.FragOffset:=WordNtoBE(AFlags or (Offset shr 3)); {Offset div 8}
+
          {Calculate the Checksum}
          IP.Checksum:=ChecksumIPSend(@IP,Options.Data,Options.Size);
-       
+
          {Set Data Fragment}
          Buffer.Size:=Size;
-       
+
          {Send the Fragment}
          if not Adapter.Adapter.SendPacket(Adapter.Handle,@Hardware,@Header,Length + Size) then Exit;
         end;
-      
+
        Result:=ASize;
       finally
        FreeMem(Pointer(PtrUInt(Buffer.Data) - Offset));
@@ -2843,10 +2843,10 @@ begin
    end;
   finally
    Address.ReaderUnlock;
-  end;  
- finally 
+  end;
+ finally
   Route.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2859,12 +2859,12 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF IP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: SendControl');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Protocol}
  Protocol:=TIPTransportProtocol(GetProtocolByNext(nil,True,False,NETWORK_LOCK_READ));
  while Protocol <> nil do
@@ -2882,11 +2882,11 @@ begin
          {Unlock Protocol}
          Protocol.ReaderUnlock;
          Exit;
-        end; 
+        end;
       end;
     end;
-    
-   {Get Next} 
+
+   {Get Next}
    Protocol:=TIPTransportProtocol(GetProtocolByNext(Protocol,True,True,NETWORK_LOCK_READ));
   end;
 end;
@@ -2905,58 +2905,58 @@ function TIPTransport.GetSockOpt(ASocket:TTransportSocket;ALevel,AOptName:Intege
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: GetSockOpt');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Level}
  case ALevel of
   IPPROTO_IP:begin
     NetworkSetLastError(WSAENOPROTOOPT);
-    
+
     {Check Option}
     case AOptName of
      IP_OPTIONS:begin
        NetworkSetLastError(WSAEFAULT);
-        
+
        if AOptLength >= TIPOptions(ASocket.TransportOptions).Length then
         begin
          AOptLength:=TIPOptions(ASocket.TransportOptions).Length;
          System.Move(TIPOptions(ASocket.TransportOptions).Options^,AOptValue^,AOptLength);
-         
+
          Result:=NO_ERROR;
         end;
       end;
      IP_MULTICAST_IF:begin
        {Note: MulticastIF only affects Sends}
        NetworkSetLastError(WSAEFAULT);
-        
+
        if AOptLength >= SizeOf(TInAddr) then
         begin
          AOptLength:=SizeOf(TInAddr);
          PInAddr(AOptValue)^:=TIPOptions(ASocket.TransportOptions).MulticastIF;
-         
+
          Result:=NO_ERROR;
         end;
       end;
      IP_MULTICAST_TTL:begin
        NetworkSetLastError(WSAEFAULT);
-        
+
        if AOptLength >= SizeOf(Integer) then
         begin
          AOptLength:=SizeOf(Integer);
          PInteger(AOptValue)^:=TIPOptions(ASocket.TransportOptions).MulticastTTL;
-          
+
          Result:=NO_ERROR;
         end;
       end;
      IP_MULTICAST_LOOP:begin
        NetworkSetLastError(WSAEFAULT);
-       
+
        if AOptLength >= SizeOf(Integer) then
         begin
          AOptLength:=SizeOf(Integer);
@@ -2968,47 +2968,47 @@ begin
       end;
      IP_TTL:begin
        NetworkSetLastError(WSAEFAULT);
-        
+
        if AOptLength >= SizeOf(Integer) then
         begin
          AOptLength:=SizeOf(Integer);
          PInteger(AOptValue)^:=TIPOptions(ASocket.TransportOptions).TTL;
-         
+
          Result:=NO_ERROR;
         end;
       end;
      IP_TOS:begin
        NetworkSetLastError(WSAEFAULT);
-       
+
        if AOptLength >= SizeOf(Integer) then
         begin
          AOptLength:=SizeOf(Integer);
          PInteger(AOptValue)^:=TIPOptions(ASocket.TransportOptions).TOS;
-          
+
          Result:=NO_ERROR;
         end;
       end;
      IP_DONTFRAGMENT:begin
        NetworkSetLastError(WSAEFAULT);
-        
+
        if AOptLength >= SizeOf(Integer) then
         begin
          AOptLength:=SizeOf(Integer);
          PInteger(AOptValue)^:=0;
          if (TIPOptions(ASocket.TransportOptions).Flags and IP_DF) <> 0 then PInteger(AOptValue)^:=1;
-         
+
          Result:=NO_ERROR;
         end;
       end;
      IP_HDRINCL:begin
        NetworkSetLastError(WSAEFAULT);
-       
+
        if AOptLength >= SizeOf(Integer) then
         begin
          AOptLength:=SizeOf(Integer);
          PInteger(AOptValue)^:=0;
          if TIPOptions(ASocket.TransportOptions).Header then PInteger(AOptValue)^:=1;
-         
+
          Result:=NO_ERROR;
         end;
       end;
@@ -3039,30 +3039,30 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: SetSockOpt');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Level}
  case ALevel of
   IPPROTO_IP:begin
     NetworkSetLastError(WSAENOPROTOOPT);
-    
+
     {Check Option}
     case AOptName of
      IP_OPTIONS:begin
        {Note: Modified behaviour from other options}
        NetworkSetLastError(WSAEFAULT);
-       
+
        TIPOptions(ASocket.TransportOptions).Length:=AOptLength;
        if TIPOptions(ASocket.TransportOptions).Length >= AOptLength then
         begin
          Result:=NO_ERROR;
-         
+
          if AOptLength > 0 then
           begin
            System.Move(AOptValue^,TIPOptions(ASocket.TransportOptions).Options^,AOptLength);
@@ -3072,57 +3072,57 @@ begin
      IP_MULTICAST_IF:begin
        {Note: MulticastIF only affects Sends}
        NetworkSetLastError(WSAEFAULT);
-       
+
        if AOptLength >= SizeOf(TInAddr) then
         begin
          TIPOptions(ASocket.TransportOptions).MulticastIF:=PInAddr(AOptValue)^;
-         
+
          Result:=NO_ERROR;
         end;
       end;
      IP_MULTICAST_TTL:begin
        NetworkSetLastError(WSAEFAULT);
-       
+
        if AOptLength >= SizeOf(Integer) then
         begin
          TIPOptions(ASocket.TransportOptions).MulticastTTL:=PInteger(AOptValue)^;
-         
+
          Result:=NO_ERROR;
         end;
       end;
      IP_MULTICAST_LOOP:begin
        NetworkSetLastError(WSAEFAULT);
-       
+
        if AOptLength >= SizeOf(Integer) then
         begin
          TIPOptions(ASocket.TransportOptions).MulticastLOOP:=(PInteger(AOptValue)^ <> 0);
-         
+
          Result:=NO_ERROR;
         end;
       end;
      IP_TTL:begin
        NetworkSetLastError(WSAEFAULT);
-       
+
        if AOptLength >= SizeOf(Integer) then
         begin
          TIPOptions(ASocket.TransportOptions).TTL:=PInteger(AOptValue)^;
-         
+
          Result:=NO_ERROR;
         end;
       end;
      IP_TOS:begin
        NetworkSetLastError(WSAEFAULT);
-       
+
        if AOptLength >= SizeOf(Integer) then
         begin
          TIPOptions(ASocket.TransportOptions).TOS:=PInteger(AOptValue)^;
-         
+
          Result:=NO_ERROR;
         end;
       end;
      IP_DONTFRAGMENT:begin
        NetworkSetLastError(WSAEFAULT);
-       
+
        if AOptLength >= SizeOf(Integer) then
         begin
          if PInteger(AOptValue)^ = 1 then
@@ -3133,24 +3133,24 @@ begin
           begin
            TIPOptions(ASocket.TransportOptions).Flags:=TIPOptions(ASocket.TransportOptions).Flags and not(IP_DF);
           end;
-          
+
          Result:=NO_ERROR;
         end;
       end;
      IP_HDRINCL:begin
        NetworkSetLastError(WSAEFAULT);
-       
+
        if AOptLength >= SizeOf(Integer) then
         begin
          TIPOptions(ASocket.TransportOptions).Header:=(PInteger(AOptValue)^ <> 0);
-         
+
          Result:=NO_ERROR;
         end;
       end;
      {Add/Drop Membership Options}
      IP_ADD_MEMBERSHIP:begin
        NetworkSetLastError(WSAEFAULT);
-       
+
        if AOptLength >= SizeOf(TMulticastRequest) then
         begin
          {Add the Hardware Address}
@@ -3160,18 +3160,18 @@ begin
          //See notes from Microsoft about the behaviour of this
          {Send an IGMP Membership Report}
          //
-         
+
          Result:=NO_ERROR;
         end;
       end;
      IP_DROP_MEMBERSHIP:begin
        NetworkSetLastError(WSAEFAULT);
-       
+
        if AOptLength >= SizeOf(TMulticastRequest) then
         begin
          {Get Member Address}
          Member:=PMulticastRequest(AOptValue)^.IMRMultiAddr;
-         
+
          {Get Address}
          Address:=GetAddressByAddress(Member,True,NETWORK_LOCK_READ);
          if Address = nil then Exit;
@@ -3179,31 +3179,31 @@ begin
           {Get Adapter}
           Adapter:=TIPTransportAdapter(GetAdapterByAdapter(Address.Adapter,True,NETWORK_LOCK_READ));
           if Adapter = nil then Exit;
-         
+
           //To Do //Multicast Memberships must be Reference counted - done by IGMP ?
-         
+
           {Send an IGMP Leave Group}
           //To Do
           //SendControl(@Adapter.Address,@Adapter.Directed,IPPROTO_IGMP,IGMP_LEAVE,
-         
+
           {Remove the Hardware Address}
           //To Do //Dont seem to have the Multicast Hardware address stored !!
           //Adapter.Adapter.RemoveMulticastAddress(Adapter.Handle,Address.Hardware);
-         
+
           {Unlock Address}
           Address.ReaderUnlock;
           Address:=nil;
-          
+
           {Remove the Address}
           RemoveAddress(Member);
-          
+
           {Unlock Adapter}
           Adapter.ReaderUnlock;
-          
+
           Result:=NO_ERROR;
          finally
           if Address <> nil then Address.ReaderUnlock;
-         end;         
+         end;
         end;
       end;
     end;
@@ -3227,22 +3227,22 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: StartTransport');
   {$ENDIF}
- 
+
   {Check Manager}
   if Manager = nil then Exit;
- 
+
   {Locate ARP Transport}
   FARP:=TARPTransport(Manager.GetTransportByType(AF_UNSPEC,PACKET_TYPE_ARP,False,NETWORK_LOCK_NONE)); {Do not lock} //To Do //AddTransport (TTransportTransport/TIPTransportTransport ?) //Client ?
   if FARP = nil then Exit;
-  
+
   {Locate RARP Transport}
   FRARP:=TRARPTransport(Manager.GetTransportByType(AF_UNSPEC,PACKET_TYPE_RARP,False,NETWORK_LOCK_NONE)); {Do not lock} //To Do //AddTransport (TTransportTransport/TIPTransportTransport ?) //Client ?
   if FRARP = nil then Exit;
-  
+
   {Add Nameservers}
   for Count:=1 to MAX_NAME_SERVERS do
    begin
@@ -3251,13 +3251,13 @@ begin
      begin
       AddNameserver(Nameserver);
      end;
-   end;  
-  
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3266,20 +3266,20 @@ function TIPTransport.StopTransport:Boolean;
 {Stop this transport ready for removal}
 var
  Current:TIPTransportAdapter;
- Adapter:TIPTransportAdapter; 
+ Adapter:TIPTransportAdapter;
 begin
  {}
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: StopTransport');
   {$ENDIF}
- 
+
   {Check Manager}
   if Manager = nil then Exit;
- 
+
   {Get Adapter}
   Adapter:=TIPTransportAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
   while Adapter <> nil do
@@ -3287,34 +3287,34 @@ begin
     {Get Next}
     Current:=Adapter;
     Adapter:=TIPTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
-    
-    {Remove Adapter} 
+
+    {Remove Adapter}
     RemoveAdapter(Current.Adapter);
    end;
- 
+
   {Flush all Addresses}
   FlushAddresses(True);
- 
+
   {Flush all Routes}
   FlushRoutes(True);
- 
+
   {Flush all Hosts}
   FlushHosts(True);
- 
+
   {Flush all Fragments}
   FFragments.FlushPackets(True);
- 
+
   {Remove RARP Transport} //To Do //RemoveTransport (TTransportTransport/TIPTransportTransport ?)
   FRARP:=nil;
- 
+
   {Remove ARP Transport} //To Do //RemoveTransport (TTransportTransport/TIPTransportTransport ?)
   FARP:=nil;
- 
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3330,20 +3330,20 @@ begin
  {}
  {Flush old Hosts}
  FlushHosts(False);
-  
+
  {Flush old Routes}
  FlushRoutes(False);
-  
+
  {Flush old Addresses}
  FlushAddresses(False);
-  
+
  {Flush old Fragments}
  FFragments.FlushPackets(False);
-  
+
  {Check Adapters for Retry/Renew/Rebind/Expire}
  {Get Tick Count}
  CurrentTime:=GetTickCount64;
-  
+
  {Get Adapter}
  Adapter:=TIPTransportAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
  while Adapter <> nil do
@@ -3351,9 +3351,9 @@ begin
    {Get Current}
    Current:=Adapter;
    Adapter:=nil;
-   
+
    {Note: No need to convert to write lock as this function is serialized by the caller}
-   
+
    {Check for Unconfigured}
    if not(Current.Configured) and not(Current.Configuring) and (Current.Adapter.Status = ADAPTER_STATUS_UP) then
     begin
@@ -3380,59 +3380,59 @@ begin
               if Assigned(Config.ConfigHandler) then
                begin
                 if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Configuring adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
-                
+
                 {Call Request to confirm the Address}
                 if Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_REQUEST) then
                  begin
                   {Set the Network and Directed}
                   Current.Network.S_addr:=(Current.Address.S_addr and Current.Netmask.S_addr);
                   Current.Directed.S_addr:=(Current.Address.S_addr or not(Current.Netmask.S_addr));
-                 
+
                   {Add ARP Addresses (Address, Directed, Broadcast}
                   FARP.LoadAddress(Current.Adapter,Current.Address,Current.Hardware,ADDRESS_TYPE_LOCAL);
                   FARP.LoadAddress(Current.Adapter,Current.Directed,Current.Broadcast,ADDRESS_TYPE_BROADCAST);
                   {FARP.LoadAddress(Current.Adapter,IP_BROADCAST_ADDRESS,Current.Broadcast,ADDRESS_TYPE_BROADCAST);} {Added in ARP.AddAdapter}
-                 
+
                   {Add RARP Address}
                   FRARP.LoadAddress(Current.Adapter,Current.Address,Current.Hardware,ADDRESS_TYPE_LOCAL);
-                  
+
                   {Add Address}
                   AddAddress(Current.Address,Current.Adapter,ADDRESS_TYPE_PRIMARY,False,NETWORK_LOCK_NONE);
-                  
+
                   {Add Routes (Network, Address, Directed)}
                   AddRoute(Current.Network,Current.Netmask,Current.Address,Current.Address,ROUTE_TYPE_STATIC,False,NETWORK_LOCK_NONE);
                   AddRoute(Current.Address,IP_BROADCAST_NETMASK,IP_LOOPBACK_ADDRESS,IP_LOOPBACK_ADDRESS,ROUTE_TYPE_STATIC,False,NETWORK_LOCK_NONE);
                   AddRoute(Current.Directed,IP_BROADCAST_NETMASK,Current.Address,Current.Address,ROUTE_TYPE_STATIC,False,NETWORK_LOCK_NONE);
-                  
+
                   {Add Multicast Route}
                   AddRoute(IP_MULTICAST_NETWORK,IP_MULTICAST_NETMASK,Current.Address,Current.Address,ROUTE_TYPE_MULTICAST,False,NETWORK_LOCK_NONE);
-                  
+
                   {Add Broadcast Route}
                   AddRoute(IP_BROADCAST_NETWORK,IP_BROADCAST_NETMASK,Current.Address,Current.Address,ROUTE_TYPE_BROADCAST,False,NETWORK_LOCK_NONE);
-                 
+
                   {Add Default Route}
                   if not CompareDefault(Current.Gateway) then
                    begin
                     AddRoute(IP_DEFAULT_NETWORK,IP_DEFAULT_NETMASK,Current.Gateway,Current.Address,ROUTE_TYPE_GATEWAY,False,NETWORK_LOCK_NONE);
                    end;
-                  
+
                   {Update Adapter}
                   Current.Configured:=True;
-                  
+
                   {Unlock Config}
                   Config.ReaderUnlock;
-                  
+
                   {Return Result}
                   Result:=True;
                   Break;
                  end;
                end;
              end;
-             
-            {Get Next} 
+
+            {Get Next}
             Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
            end;
-          
+
           {Check for Completed}
           if Result then
            begin
@@ -3446,7 +3446,7 @@ begin
               NetworkLogInfo(nil,'IP:  Server = ' + InAddrToString(InAddrToNetwork(Current.Server)));
              end;
            end
-          else 
+          else
            begin
             {Reset Adapter if Config failed}
             Current.RetryTime:=GetTickCount64 + CONFIG_RETRY_TIMEOUT;
@@ -3462,7 +3462,7 @@ begin
           Current.Netmask:=IP_LOOPBACK_NETMASK;
           Current.Gateway:=IP_DEFAULT_ADDRESS;
           Current.Server:=IP_DEFAULT_ADDRESS;
-         
+
           {Call appropriate Config Handler}
           Config:=TIPTransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
           while Config <> nil do
@@ -3474,37 +3474,37 @@ begin
               if Assigned(Config.ConfigHandler) then
                begin
                 if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Configuring adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
-                
+
                 {Call Request to confirm the Address}
                 if Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_REQUEST) then
                  begin
                   {Set the Network and Directed}
                   Current.Network.S_addr:=(Current.Address.S_addr and Current.Netmask.S_addr);
                   Current.Directed.S_addr:=(Current.Address.S_addr or not(Current.Netmask.S_addr));
-                  
+
                   {Add ARP Addresses (Address, Directed, Broadcast}
                   FARP.LoadAddress(Current.Adapter,Current.Address,Current.Hardware,ADDRESS_TYPE_LOCAL);
                   FARP.LoadAddress(Current.Adapter,Current.Directed,Current.Broadcast,ADDRESS_TYPE_BROADCAST);
                   {FARP.LoadAddress(Current.Adapter,IP_BROADCAST_ADDRESS,Current.Broadcast,ADDRESS_TYPE_BROADCAST);} {Added in ARP.AddAdapter}
-                 
+
                   {Add RARP Address}
                   FRARP.LoadAddress(Current.Adapter,Current.Address,Current.Hardware,ADDRESS_TYPE_LOCAL);
-                  
+
                   {Add localhost Host}
                   AddHost(IP_LOOPBACK_ADDRESS,'localhost',HOST_TYPE_LOOPBACK,False);
-                  
+
                   {Add loopback Route}
                   AddRoute(IP_LOOPBACK_NETWORK,IP_LOOPBACK_NETMASK,IP_LOOPBACK_ADDRESS,IP_LOOPBACK_ADDRESS,ROUTE_TYPE_LOOPBACK,False,NETWORK_LOCK_NONE);
-                  
+
                   {Add loopback Address}
                   AddAddress(IP_LOOPBACK_ADDRESS,Current.Adapter,ADDRESS_TYPE_LOOPBACK,False,NETWORK_LOCK_NONE);
-                  
+
                   {Add loopback Network}
                   AddNetwork('loopback',IP_LOOPBACK_NETWORK,False);
-                  
+
                   {Update Adapter}
                   Current.Configured:=True;
-                  
+
                   {Unlock Config}
                   Config.ReaderUnlock;
 
@@ -3514,11 +3514,11 @@ begin
                  end;
                end;
              end;
-             
-            {Get Next} 
+
+            {Get Next}
             Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
            end;
-           
+
           {Check for Completed}
           if Result then
            begin
@@ -3532,7 +3532,7 @@ begin
               NetworkLogInfo(nil,'IP:  Server = ' + InAddrToString(InAddrToNetwork(Current.Server)));
              end;
            end
-          else 
+          else
            begin
             {Reset Adapter if Config failed}
             Current.RetryTime:=GetTickCount64 + CONFIG_RETRY_TIMEOUT;
@@ -3549,7 +3549,7 @@ begin
           Current.Netmask:=Current.ConfigNetmask;
           Current.Gateway:=Current.ConfigGateway;
           Current.Server:=Current.ConfigServer;
-         
+
           {Call appropriate Config Handler}
           Config:=TIPTransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
           while Config <> nil do
@@ -3561,7 +3561,7 @@ begin
               if Assigned(Config.ConfigHandler) then
                begin
                 if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Configuring adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
-                
+
                 {Call Reboot to confirm the Address}
                 if Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_REBOOT) then
                  begin
@@ -3569,38 +3569,38 @@ begin
                   Current.ConfigType:=Config.ConfigType;
                   Current.Network.S_addr:=(Current.Address.S_addr and Current.Netmask.S_addr);
                   Current.Directed.S_addr:=(Current.Address.S_addr or not(Current.Netmask.S_addr));
-                  
+
                   {Add ARP Addresses (Address, Directed, Broadcast}
                   FARP.LoadAddress(Current.Adapter,Current.Address,Current.Hardware,ADDRESS_TYPE_LOCAL);
                   FARP.LoadAddress(Current.Adapter,Current.Directed,Current.Broadcast,ADDRESS_TYPE_BROADCAST);
                   {FARP.LoadAddress(Current.Adapter,IP_BROADCAST_ADDRESS,Current.Broadcast,ADDRESS_TYPE_BROADCAST);} {Added in ARP.AddAdapter}
-                  
+
                   {Add RARP Address}
                   FRARP.LoadAddress(Current.Adapter,Current.Address,Current.Hardware,ADDRESS_TYPE_LOCAL);
-                  
+
                   {Add Address}
                   AddAddress(Current.Address,Current.Adapter,ADDRESS_TYPE_PRIMARY,False,NETWORK_LOCK_NONE);
-                  
+
                   {Add Routes (Network, Address, Directed)}
                   AddRoute(Current.Network,Current.Netmask,Current.Address,Current.Address,ROUTE_TYPE_STATIC,False,NETWORK_LOCK_NONE);
                   AddRoute(Current.Address,IP_BROADCAST_NETMASK,IP_LOOPBACK_ADDRESS,IP_LOOPBACK_ADDRESS,ROUTE_TYPE_STATIC,False,NETWORK_LOCK_NONE);
                   AddRoute(Current.Directed,IP_BROADCAST_NETMASK,Current.Address,Current.Address,ROUTE_TYPE_STATIC,False,NETWORK_LOCK_NONE);
-                  
+
                   {Add Multicast Route}
                   AddRoute(IP_MULTICAST_NETWORK,IP_MULTICAST_NETMASK,Current.Address,Current.Address,ROUTE_TYPE_MULTICAST,False,NETWORK_LOCK_NONE);
-                  
+
                   {Add Broadcast Route}
                   AddRoute(IP_BROADCAST_NETWORK,IP_BROADCAST_NETMASK,Current.Address,Current.Address,ROUTE_TYPE_BROADCAST,False,NETWORK_LOCK_NONE);
-                  
+
                   {Add Default Route}
                   if not CompareDefault(Current.Gateway) then
                    begin
                     AddRoute(IP_DEFAULT_NETWORK,IP_DEFAULT_NETMASK,Current.Gateway,Current.Address,ROUTE_TYPE_GATEWAY,False,NETWORK_LOCK_NONE);
                    end;
-                  
+
                   {Update Adapter}
                   Current.Configured:=True;
-                  
+
                   {Unlock Config}
                   Config.ReaderUnlock;
 
@@ -3615,38 +3615,38 @@ begin
                   Current.ConfigType:=Config.ConfigType;
                   Current.Network.S_addr:=(Current.Address.S_addr and Current.Netmask.S_addr);
                   Current.Directed.S_addr:=(Current.Address.S_addr or not(Current.Netmask.S_addr));
-                  
+
                   {Add ARP Addresses (Address, Directed, Broadcast}
                   FARP.LoadAddress(Current.Adapter,Current.Address,Current.Hardware,ADDRESS_TYPE_LOCAL);
                   FARP.LoadAddress(Current.Adapter,Current.Directed,Current.Broadcast,ADDRESS_TYPE_BROADCAST);
                   {FARP.LoadAddress(Current.Adapter,IP_BROADCAST_ADDRESS,Current.Broadcast,ADDRESS_TYPE_BROADCAST);} {Added in ARP.AddAdapter}
-                  
+
                   {Add RARP Address}
                   FRARP.LoadAddress(Current.Adapter,Current.Address,Current.Hardware,ADDRESS_TYPE_LOCAL);
-                  
+
                   {Add Address}
                   AddAddress(Current.Address,Current.Adapter,ADDRESS_TYPE_PRIMARY,False,NETWORK_LOCK_NONE);
-                  
+
                   {Add Routes (Network, Address, Directed)}
                   AddRoute(Current.Network,Current.Netmask,Current.Address,Current.Address,ROUTE_TYPE_STATIC,False,NETWORK_LOCK_NONE);
                   AddRoute(Current.Address,IP_BROADCAST_NETMASK,IP_LOOPBACK_ADDRESS,IP_LOOPBACK_ADDRESS,ROUTE_TYPE_STATIC,False,NETWORK_LOCK_NONE);
                   AddRoute(Current.Directed,IP_BROADCAST_NETMASK,Current.Address,Current.Address,ROUTE_TYPE_STATIC,False,NETWORK_LOCK_NONE);
-                  
+
                   {Add Multicast Route}
                   AddRoute(IP_MULTICAST_NETWORK,IP_MULTICAST_NETMASK,Current.Address,Current.Address,ROUTE_TYPE_MULTICAST,False,NETWORK_LOCK_NONE);
-                  
+
                   {Add Broadcast Route}
                   AddRoute(IP_BROADCAST_NETWORK,IP_BROADCAST_NETMASK,Current.Address,Current.Address,ROUTE_TYPE_BROADCAST,False,NETWORK_LOCK_NONE);
-                  
+
                   {Add Default Route}
                   if not CompareDefault(Current.Gateway) then
                    begin
                     AddRoute(IP_DEFAULT_NETWORK,IP_DEFAULT_NETMASK,Current.Gateway,Current.Address,ROUTE_TYPE_GATEWAY,False,NETWORK_LOCK_NONE);
                    end;
-                  
+
                   {Update Adapter}
                   Current.Configured:=True;
-                  
+
                   {Unlock Config}
                   Config.ReaderUnlock;
 
@@ -3656,11 +3656,11 @@ begin
                  end;
                end;
              end;
-            
+
             {Get Next}
             Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
            end;
-           
+
           {Check for Completed}
           if Result then
            begin
@@ -3674,7 +3674,7 @@ begin
               NetworkLogInfo(nil,'IP:  Server = ' + InAddrToString(InAddrToNetwork(Current.Server)));
              end;
            end
-          else 
+          else
            begin
             {Reset Adapter if Config failed}
             Current.RetryTime:=GetTickCount64 + CONFIG_RETRY_TIMEOUT;
@@ -3687,7 +3687,7 @@ begin
        end;
       end;
     end;
-    
+
    {Check for Configured}
    if Current.Configured then
     begin
@@ -3702,10 +3702,10 @@ begin
           begin
            {Get Next}
            {Adapter:=TIPTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));} {Not required}
-            
+
            {Remove Adapter}
            {RemoveAdapter(Current.Adapter);} {Not required}
-           
+
            {Call Config Handlers}
            Config:=TIPTransportConfig(GetConfigByNext(nil,True,False,NETWORK_LOCK_READ));
            while Config <> nil do
@@ -3717,70 +3717,70 @@ begin
                if Assigned(Config.ConfigHandler) then
                 begin
                  if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Configuration expired, unconfiguring adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
-                 
+
                  {Check for Release}
                  if FAutoRelease then
                   begin
                    {Call Config Handler}
                    Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_RELEASE); {Do not check return}
                   end;
-           
+
                  {Update Adapter}
                  Current.Configured:=False;
-                 
+
                  {Remove Default Route}
                  if not CompareDefault(Current.Gateway) then
                   begin
                    RemoveRoute(IP_DEFAULT_NETWORK,Current.Address);
                   end;
-                 
+
                  {Remove Broadcast Route}
                  RemoveRoute(IP_BROADCAST_NETWORK,Current.Address);
-                 
+
                  {Remove Multicast Route}
                  RemoveRoute(IP_MULTICAST_NETWORK,Current.Address);
-                 
+
                  {Remove Routes (Network, Address, Directed)}
                  RemoveRoute(Current.Directed,Current.Address);
                  RemoveRoute(Current.Address,IP_LOOPBACK_ADDRESS);
                  RemoveRoute(Current.Network,Current.Address);
-                 
+
                  {Remove Address}
                  RemoveAddress(Current.Address);
-                 
+
                  {Remove RARP Address}
                  FRARP.UnloadAddress(Current.Adapter,Current.Address);
-                 
+
                  {Remove ARP Addresses}
                  {FARP.UnloadAddress(Current.Adapter,IP_BROADCAST_ADDRESS);} {Removed in ARP.RemoveAdapter}
                  FARP.UnloadAddress(Current.Adapter,Current.Directed);
                  FARP.UnloadAddress(Current.Adapter,Current.Address);
-         
+
                  {Reset Adapter}
                  LongWord(Current.Address.S_addr):=INADDR_ANY;
                  LongWord(Current.Netmask.S_addr):=INADDR_ANY;
                  LongWord(Current.Gateway.S_addr):=INADDR_ANY;
                  LongWord(Current.Network.S_addr):=INADDR_ANY;
                  LongWord(Current.Directed.S_addr):=INADDR_BROADCAST;
-                 
+
                  LongWord(Current.Server.S_addr):=INADDR_BROADCAST;
-                 
+
                  Current.LeaseTime:=0;
                  Current.RetryTime:=GetTickCount64; {Initial Configuration}
                  Current.ExpiryTime:=0;
                  Current.RenewalTime:=0;
                  Current.RebindingTime:=0;
-                 
+
                  Current.ConfigType:=Current.ConfigDefault;
-                 
+
                  {Unlock Config}
                  Config.ReaderUnlock;
-                 
+
                  Break;
                 end;
               end;
-              
-             {Get Next} 
+
+             {Get Next}
              Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
             end;
           end
@@ -3803,15 +3803,15 @@ begin
                    if Assigned(Config.ConfigHandler) then
                     begin
                      if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Rebinding adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
-                     
+
                      {Call Rebind to extend the Lease}
                      if not Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_REBIND) then
                       begin
                        if NETWORK_LOG_ENABLED then NetworkLogError(nil,'IP: Rebind failed for adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
-                       
+
                        {Set Retry if Config failed}
                        Current.RetryTime:=GetTickCount64 + CONFIG_REBIND_TIMEOUT;
-                       
+
                        {Check Expiry (Expires immediately on NAK)}
                        if Current.ExpiryTime <= GetTickCount64 then Current.RetryTime:=GetTickCount64;
                       end;
@@ -3822,8 +3822,8 @@ begin
                      Break;
                     end;
                   end;
-                 
-                 {Get Next} 
+
+                 {Get Next}
                  Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
                 end;
               end;
@@ -3847,27 +3847,27 @@ begin
                      if Assigned(Config.ConfigHandler) then
                       begin
                        if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Renewing adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
-                        
+
                        {Call Renew to extend the Lease}
                        if not Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_RENEW) then
                         begin
                          if NETWORK_LOG_ENABLED then NetworkLogError(nil,'IP: Renew failed for adapter ' + Current.Name + ' with ' + ConfigTypeToString(Config.ConfigType));
-                         
+
                          {Set Retry if Config failed}
                          Current.RetryTime:=GetTickCount64 + CONFIG_RENEW_TIMEOUT;
-                         
+
                          {Check Expiry (Expires immediately on NAK)}
                          if Current.ExpiryTime <= GetTickCount64 then Current.RetryTime:=GetTickCount64;
                         end;
-                        
+
                        {Unlock Config}
                        Config.ReaderUnlock;
 
                        Break;
                       end;
                     end;
-                    
-                   {Get Next} 
+
+                   {Get Next}
                    Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
                   end;
                 end;
@@ -3880,45 +3880,45 @@ begin
       begin
        {Unconfigure on Status Down}
        if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'IP: Status change to down, unconfiguring adapter ' + Current.Name + ' with ' + ConfigTypeToString(Current.ConfigType));
-       
+
        case Current.ConfigType of
         CONFIG_TYPE_STATIC:begin
           {Update Adapter}
           Current.Configured:=False;
-      
+
           {Remove Default Route}
           if not CompareDefault(Current.Gateway) then
            begin
             RemoveRoute(IP_DEFAULT_NETWORK,Current.Address);
            end;
-          
+
           {Remove Broadcast Route}
           RemoveRoute(IP_BROADCAST_NETWORK,Current.Address);
-          
+
           {Remove Multicast Route}
           RemoveRoute(IP_MULTICAST_NETWORK,Current.Address);
-          
+
           {Remove Routes (Network, Address, Directed)}
           RemoveRoute(Current.Directed,Current.Address);
           RemoveRoute(Current.Address,IP_LOOPBACK_ADDRESS);
           RemoveRoute(Current.Network,Current.Address);
-          
+
           {Remove Address}
           RemoveAddress(Current.Address);
          end;
         CONFIG_TYPE_LOOPBACK:begin
           {Update Adapter}
           Current.Configured:=False;
-          
+
           {Remove loopback Network}
           RemoveNetwork('loopback');
-          
+
           {Remove loopback Address}
           RemoveAddress(IP_LOOPBACK_ADDRESS);
-          
+
           {Remove loopback Route}
           RemoveRoute(IP_LOOPBACK_NETWORK,IP_LOOPBACK_ADDRESS);
-          
+
           {Remove localhost Host}
           RemoveHost(IP_LOOPBACK_ADDRESS);
          end;
@@ -3939,82 +3939,82 @@ begin
                  begin
                   {Call Config Handler}
                   Config.ConfigHandler(THandle(Config),Current,CONFIG_ADAPTER_RELEASE); {Do not check return}
-                 end; 
+                 end;
 
                 {Update Adapter}
                 Current.Configured:=False;
-                
+
                 {Remove Default Route}
                 if not CompareDefault(Current.Gateway) then
                  begin
                   RemoveRoute(IP_DEFAULT_NETWORK,Current.Address);
                  end;
-                
+
                 {Remove Broadcast Route}
                 RemoveRoute(IP_BROADCAST_NETWORK,Current.Address);
-                
+
                 {Remove Multicast Route}
                 RemoveRoute(IP_MULTICAST_NETWORK,Current.Address);
-                
+
                 {Remove Routes (Network, Address, Directed)}
                 RemoveRoute(Current.Directed,Current.Address);
                 RemoveRoute(Current.Address,IP_LOOPBACK_ADDRESS);
                 RemoveRoute(Current.Network,Current.Address);
-                
+
                 {Remove Address}
                 RemoveAddress(Current.Address);
-                 
+
                 {Unlock Config}
                 Config.ReaderUnlock;
-                 
+
                 Break;
-               end;     
+               end;
              end;
-             
-            {Get Next} 
+
+            {Get Next}
             Config:=TIPTransportConfig(GetConfigByNext(Config,True,True,NETWORK_LOCK_READ));
            end;
          end;
        end;
-          
+
        {Remove RARP Address}
        FRARP.UnloadAddress(Current.Adapter,Current.Address);
-       
+
        {Remove ARP Addresses}
        {FARP.UnloadAddress(Current.Adapter,IP_BROADCAST_ADDRESS);} {Removed in ARP.RemoveAdapter}
        FARP.UnloadAddress(Current.Adapter,Current.Directed);
        FARP.UnloadAddress(Current.Adapter,Current.Address);
-          
+
        {Reset Adapter}
        LongWord(Current.Address.S_addr):=INADDR_ANY;
        LongWord(Current.Netmask.S_addr):=INADDR_ANY;
        LongWord(Current.Gateway.S_addr):=INADDR_ANY;
        LongWord(Current.Network.S_addr):=INADDR_ANY;
        LongWord(Current.Directed.S_addr):=INADDR_BROADCAST;
-       
+
        LongWord(Current.Server.S_addr):=INADDR_BROADCAST;
-       
+
        Current.LeaseTime:=0;
        Current.RetryTime:=GetTickCount64; {Initial Configuration}
        Current.ExpiryTime:=0;
        Current.RenewalTime:=0;
        Current.RebindingTime:=0;
-       
+
        Current.ConfigType:=Current.ConfigDefault;
-      end;      
+      end;
     end;
-    
+
    {Get Next}
    if Adapter = nil then Adapter:=TIPTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
   end;
-  
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TIPTransport.BindTransport(AAdapter:TNetworkAdapter):Boolean; 
+function TIPTransport.BindTransport(AAdapter:TNetworkAdapter):Boolean;
 {Bind this transport to an adapter if appropriate}
 {Adapter: The adapter to bind to}
 var
@@ -4022,27 +4022,27 @@ var
  Netmask:PInAddr;
  Gateway:PInAddr;
  Server:PInAddr;
- 
+
  ConfigType:Word;
  ConfigAddress:TInAddr;
  ConfigNetmask:TInAddr;
  ConfigGateway:TInAddr;
  ConfigServer:TInAddr;
- 
+
  Adapter:TIPTransportAdapter;
 begin
  {}
  ReaderLock;
  try
-  Result:=False; 
- 
+  Result:=False;
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: BindTransport');
   {$ENDIF}
- 
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Adapter = ' + AAdapter.Name);
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   State = ' + AdapterStateToString(AAdapter.State));
@@ -4050,20 +4050,20 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   Type = ' + AdapterTypeToString(AAdapter.AdapterType));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   Media = ' + MediaTypeToString(AAdapter.MediaType));
   {$ENDIF}
-  
+
   {Check State}
   if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
-  
+
   Result:=True;
-  
+
   {Check Media}
   if AAdapter.MediaType <> MEDIA_TYPE_ETHERNET then Exit;
-  
+
   {Check Type}
   if AAdapter.AdapterType = ADAPTER_TYPE_UNKNOWN then Exit;
-  
-  Result:=False; 
-  
+
+  Result:=False;
+
   {Get Adapter}
   Adapter:=TIPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
   if Adapter = nil then
@@ -4073,7 +4073,7 @@ begin
     Netmask:=nil;
     Gateway:=nil;
     Server:=nil;
-    
+
     {Check Type}
     case AAdapter.AdapterType of
      ADAPTER_TYPE_LOOPBACK:begin
@@ -4085,7 +4085,7 @@ begin
        {IP_CONFIG}
        ConfigType:=GetAdapterConfigType(AAdapter.Name);
        if ConfigType <> CONFIG_TYPE_AUTO then
-        begin       
+        begin
          {IP_ADDRESS}
          Address:=nil;
          ConfigAddress:=GetAdapterConfigAddress(AAdapter.Name);
@@ -4114,54 +4114,7 @@ begin
           begin
            Server:=@ConfigServer;
           end;
-        end; 
-       
-       {$IFDEF IP_DEBUG}
-       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   ConfigType = ' + ConfigTypeToString(ConfigType));
-       if NETWORK_LOG_ENABLED and (Address <> nil) then NetworkLogDebug(nil,'IP:   Address = ' + InAddrToString(InAddrToNetwork(Address^)));
-       if NETWORK_LOG_ENABLED and (Netmask <> nil) then NetworkLogDebug(nil,'IP:   Netmask = ' + InAddrToString(InAddrToNetwork(Netmask^)));
-       if NETWORK_LOG_ENABLED and (Gateway <> nil) then NetworkLogDebug(nil,'IP:   Gateway = ' + InAddrToString(InAddrToNetwork(Gateway^)));
-       if NETWORK_LOG_ENABLED and (Server <> nil) then NetworkLogDebug(nil,'IP:   Server = ' + InAddrToString(InAddrToNetwork(Server^)));
-       {$ENDIF}
-  
-       {Add Adapter}
-       Result:=AddAdapter(AAdapter,ConfigType,Address,Netmask,Gateway,Server);
-      end;     
-     ADAPTER_TYPE_WIRELESS:begin 
-       {Get Settings}
-       {IP_CONFIG}
-       ConfigType:=GetAdapterConfigType(AAdapter.Name);
-       if ConfigType <> CONFIG_TYPE_AUTO then
-        begin       
-         {IP_ADDRESS}
-         Address:=nil;
-         ConfigAddress:=GetAdapterConfigAddress(AAdapter.Name);
-         if not CompareDefault(ConfigAddress) and not CompareBroadcast(ConfigAddress) then
-          begin
-           Address:=@ConfigAddress;
-          end;
-         {IP_NETMASK}
-         Netmask:=nil;
-         ConfigNetmask:=GetAdapterConfigNetmask(AAdapter.Name);
-         if not CompareDefault(ConfigNetmask) and not CompareBroadcast(ConfigNetmask) then
-          begin
-           Netmask:=@ConfigNetmask;
-          end;
-         {IP_GATEWAY}
-         Gateway:=nil;
-         ConfigGateway:=GetAdapterConfigGateway(AAdapter.Name);
-         if not CompareDefault(ConfigGateway) and not CompareBroadcast(ConfigGateway) then
-          begin
-           Gateway:=@ConfigGateway;
-          end;
-         {IP_SERVER}
-         Server:=nil;
-         ConfigServer:=GetAdapterConfigServer(AAdapter.Name);
-         if not CompareDefault(ConfigServer) and not CompareBroadcast(ConfigServer) then
-          begin
-           Server:=@ConfigServer;
-          end;
-        end; 
+        end;
 
        {$IFDEF IP_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   ConfigType = ' + ConfigTypeToString(ConfigType));
@@ -4170,28 +4123,75 @@ begin
        if NETWORK_LOG_ENABLED and (Gateway <> nil) then NetworkLogDebug(nil,'IP:   Gateway = ' + InAddrToString(InAddrToNetwork(Gateway^)));
        if NETWORK_LOG_ENABLED and (Server <> nil) then NetworkLogDebug(nil,'IP:   Server = ' + InAddrToString(InAddrToNetwork(Server^)));
        {$ENDIF}
-        
+
        {Add Adapter}
        Result:=AddAdapter(AAdapter,ConfigType,Address,Netmask,Gateway,Server);
-      end;     
+      end;
+     ADAPTER_TYPE_WIRELESS:begin
+       {Get Settings}
+       {IP_CONFIG}
+       ConfigType:=GetAdapterConfigType(AAdapter.Name);
+       if ConfigType <> CONFIG_TYPE_AUTO then
+        begin
+         {IP_ADDRESS}
+         Address:=nil;
+         ConfigAddress:=GetAdapterConfigAddress(AAdapter.Name);
+         if not CompareDefault(ConfigAddress) and not CompareBroadcast(ConfigAddress) then
+          begin
+           Address:=@ConfigAddress;
+          end;
+         {IP_NETMASK}
+         Netmask:=nil;
+         ConfigNetmask:=GetAdapterConfigNetmask(AAdapter.Name);
+         if not CompareDefault(ConfigNetmask) and not CompareBroadcast(ConfigNetmask) then
+          begin
+           Netmask:=@ConfigNetmask;
+          end;
+         {IP_GATEWAY}
+         Gateway:=nil;
+         ConfigGateway:=GetAdapterConfigGateway(AAdapter.Name);
+         if not CompareDefault(ConfigGateway) and not CompareBroadcast(ConfigGateway) then
+          begin
+           Gateway:=@ConfigGateway;
+          end;
+         {IP_SERVER}
+         Server:=nil;
+         ConfigServer:=GetAdapterConfigServer(AAdapter.Name);
+         if not CompareDefault(ConfigServer) and not CompareBroadcast(ConfigServer) then
+          begin
+           Server:=@ConfigServer;
+          end;
+        end;
+
+       {$IFDEF IP_DEBUG}
+       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:   ConfigType = ' + ConfigTypeToString(ConfigType));
+       if NETWORK_LOG_ENABLED and (Address <> nil) then NetworkLogDebug(nil,'IP:   Address = ' + InAddrToString(InAddrToNetwork(Address^)));
+       if NETWORK_LOG_ENABLED and (Netmask <> nil) then NetworkLogDebug(nil,'IP:   Netmask = ' + InAddrToString(InAddrToNetwork(Netmask^)));
+       if NETWORK_LOG_ENABLED and (Gateway <> nil) then NetworkLogDebug(nil,'IP:   Gateway = ' + InAddrToString(InAddrToNetwork(Gateway^)));
+       if NETWORK_LOG_ENABLED and (Server <> nil) then NetworkLogDebug(nil,'IP:   Server = ' + InAddrToString(InAddrToNetwork(Server^)));
+       {$ENDIF}
+
+       {Add Adapter}
+       Result:=AddAdapter(AAdapter,ConfigType,Address,Netmask,Gateway,Server);
+      end;
     end;
    end
   else
    begin
     {Unlock Adapter}
     Adapter.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
-   end;   
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TIPTransport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean; 
+function TIPTransport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean;
 {Unbind this transport from an adapter if appropriate}
 {Adapter: The adapter to unbind from}
 var
@@ -4200,15 +4200,15 @@ begin
  {}
  ReaderLock;
  try
-  Result:=False; 
- 
+  Result:=False;
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: UnbindTransport');
   {$ENDIF}
- 
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Adapter = ' + AAdapter.Name);
   {$ENDIF}
@@ -4227,10 +4227,10 @@ begin
    begin
     {Return Result}
     Result:=True;
-   end;   
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4245,15 +4245,15 @@ begin
  MutexLock(FNameserverLock);
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: AddNameserver');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
   {$ENDIF}
-  
+
   for Count:=0 to MAX_NAME_SERVERS - 1 do
    begin
-    {$IFDEF IP_DEBUG} 
+    {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Compare = ' + InAddrToString(InAddrToNetwork(FNameservers[Count])));
     {$ENDIF}
     {Check Nameserver}
@@ -4261,15 +4261,15 @@ begin
      begin
       {Add Nameserver}
       FNameservers[Count]:=AAddress;
-      
+
       {Return Result}
       Result:=True;
       Exit;
      end;
    end;
- finally 
+ finally
   MutexUnlock(FNameserverLock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4284,15 +4284,15 @@ begin
  MutexLock(FNameserverLock);
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: RemoveNameserver');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
   {$ENDIF}
-  
+
   for Count:=0 to MAX_NAME_SERVERS - 1 do
    begin
-    {$IFDEF IP_DEBUG} 
+    {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Compare = ' + InAddrToString(InAddrToNetwork(FNameservers[Count])));
     {$ENDIF}
     {Check Nameserver}
@@ -4300,15 +4300,15 @@ begin
      begin
       {Remove Nameserver}
       LongWord(FNameservers[Count].S_addr):=INADDR_ANY;
-      
+
       {Return Result}
       Result:=True;
       Exit;
      end;
    end;
- finally 
+ finally
   MutexUnlock(FNameserverLock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4325,12 +4325,12 @@ begin
  FHosts.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: GetHostByName');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Name = ' + AName);
   {$ENDIF}
-  
+
   {Get Host}
   Host:=TIPHostEntry(FHosts.First);
   while Host <> nil do
@@ -4338,16 +4338,16 @@ begin
     {Get Name}
     Name:=Host.Name;
 
-    {$IFDEF IP_DEBUG} 
+    {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Compare = ' + Name);
     {$ENDIF}
-    
+
     {Check Name}
     if Lowercase(Name) = Lowercase(AName) then
      begin
       {Lock Host}
       if ALock then Host.AcquireLock;
-     
+
       {Return Result}
       Result:=Host;
       Exit;
@@ -4356,7 +4356,7 @@ begin
      begin
       {Lock Host}
       if ALock then Host.AcquireLock;
-     
+
       {Return Result}
       Result:=Host;
       Exit;
@@ -4365,18 +4365,18 @@ begin
      begin
       {Lock Host}
       if ALock then Host.AcquireLock;
-     
+
       {Return Result}
       Result:=Host;
       Exit;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Host:=TIPHostEntry(Host.Next);
    end;
- finally 
+ finally
   FHosts.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4392,26 +4392,26 @@ begin
  FHosts.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: GetHostByAddress');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
   {$ENDIF}
-  
+
   {Get Host}
   Host:=TIPHostEntry(FHosts.First);
   while Host <> nil do
    begin
-    {$IFDEF IP_DEBUG} 
+    {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Compare = ' + InAddrToString(InAddrToNetwork(Host.Address)));
     {$ENDIF}
-    
+
     {Check Address}
     if CompareAddress(Host.Address,AAddress) then
      begin
       {Lock Host}
       if ALock then Host.AcquireLock;
-     
+
       {Return Result}
       Result:=Host;
       Exit;
@@ -4423,19 +4423,19 @@ begin
        begin
         {Lock Host}
         if ALock then Host.AcquireLock;
-         
+
         {Return Result}
         Result:=Host;
         Exit;
        end;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Host:=TIPHostEntry(Host.Next);
    end;
- finally 
+ finally
   FHosts.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4448,7 +4448,7 @@ begin
  if not(FHosts.WriterOwner) then FHosts.ReaderLock else FHosts.WriterLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -4458,7 +4458,7 @@ begin
      begin
       {Lock Host}
       if ALock then Host.AcquireLock;
-      
+
       {Return Result}
       Result:=Host;
      end;
@@ -4471,17 +4471,17 @@ begin
      begin
       {Lock Host}
       if ALock then Host.AcquireLock;
-      
+
       {Return Result}
       Result:=Host;
      end;
 
     {Unlock Previous}
     if AUnlock then APrevious.ReleaseLock;
-   end;   
- finally 
+   end;
+ finally
   if not(FHosts.WriterOwner) then FHosts.ReaderUnlock else FHosts.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4522,12 +4522,12 @@ begin
       Exit;
      end;
 
-    {Get Next} 
+    {Get Next}
     Host:=TIPHostEntry(Host.Next);
    end;
- finally 
+ finally
   if not(FHosts.WriterOwner) then FHosts.ReaderUnlock else FHosts.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4546,37 +4546,37 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Name = ' + AName);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Type = ' + HostTypeToString(AType));
  {$ENDIF}
-  
+
  {Create Host}
  Result:=TIPHostEntry.Create;
  Result.Address:=AAddress;
  Result.Name:=Lowercase(AName);
  Result.HostType:=AType;
 
- {Acquire Lock} 
+ {Acquire Lock}
  FHosts.WriterLock; {Acquire as Writer}
  try
   {Add Host}
   if FHosts.Add(Result) then
    begin
     {Convert Lock}
-    FHosts.WriterConvert; 
+    FHosts.WriterConvert;
 
     {Lock Host}
     if ALock then Result.AcquireLock;
    end
-  else 
+  else
    begin
     {Convert Lock}
-    FHosts.WriterConvert; 
+    FHosts.WriterConvert;
 
     {Free Host}
     Result.Free;
     Result:=nil;
    end;
- finally 
+ finally
   FHosts.ReaderUnlock; {Converted to Reader}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4588,15 +4588,15 @@ var
  Host:TIPHostEntry;
 begin
  {}
- FHosts.ReaderLock; 
+ FHosts.ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: RemoveHost');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
   {$ENDIF}
-  
+
   {Get Host}
   Host:=TIPHostEntry(FHosts.First);
   while Host <> nil do
@@ -4610,14 +4610,14 @@ begin
       {Convert Lock}
       if FHosts.ReaderConvert then
        begin
-        {Lock Host} 
+        {Lock Host}
         if CheckHost(Host,True) then
          begin
           {Remove Host}
           Result:=FHosts.Remove(Host);
 
           {Convert Lock}
-          FHosts.WriterConvert; 
+          FHosts.WriterConvert;
 
           {Unlock Host}
           Host.ReleaseLock;
@@ -4640,14 +4640,14 @@ begin
         {Convert Lock}
         if FHosts.ReaderConvert then
          begin
-          {Lock Host} 
+          {Lock Host}
           if CheckHost(Host,True) then
            begin
             {Remove Host}
             Result:=FHosts.Remove(Host);
 
             {Convert Lock}
-            FHosts.WriterConvert; 
+            FHosts.WriterConvert;
 
             {Unlock Host}
             Host.ReleaseLock;
@@ -4660,13 +4660,13 @@ begin
         Exit;
        end;
      end;
-    
+
     {Get Next}
     Host:=TIPHostEntry(Host.Next);
    end;
- finally 
+ finally
   if not(FHosts.WriterOwner) then FHosts.ReaderUnlock else FHosts.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4684,10 +4684,10 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: FlushHosts');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  All = ' + BoolToStr(All));
  {$ENDIF}
-  
+
  {Get Tick Count}
  CurrentTime:=GetTickCount64;
-  
+
  {Get Host}
  Host:=GetHostByNext(nil,True,False);
  while Host <> nil do
@@ -4753,17 +4753,17 @@ begin
  FRoutes.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: GetRouteByAddress');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
   {$ENDIF}
-  
+
   {Get Route}
   Route:=TIPRouteEntry(FRoutes.Last); {Search backwards from last (Broadcast)}
   while Route <> nil do
    begin
-    {$IFDEF IP_DEBUG} 
+    {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Compare = ' + InAddrToString(InAddrToNetwork(Route.Network)) + '/' + InAddrToString(InAddrToNetwork(Route.Netmask)));
     {$ENDIF}
     {Check Subnet}
@@ -4771,18 +4771,18 @@ begin
      begin
       {Lock Route}
       if ALock then if AState = NETWORK_LOCK_READ then Route.ReaderLock else Route.WriterLock;
-     
+
       {Return Result}
       Result:=Route;
       Exit;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Route:=TIPRouteEntry(Route.Prev);
    end;
- finally 
+ finally
   FRoutes.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4799,13 +4799,13 @@ begin
  FRoutes.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: GetRouteByNetwork');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Network = ' + InAddrToString(InAddrToNetwork(ANetwork)));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
   {$ENDIF}
-  
+
   {Get Route}
   Route:=TIPRouteEntry(FRoutes.First);
   while Route <> nil do
@@ -4818,19 +4818,19 @@ begin
        begin
         {Lock Route}
         if ALock then if AState = NETWORK_LOCK_READ then Route.ReaderLock else Route.WriterLock;
-       
+
         {Return Result}
         Result:=Route;
         Exit;
-       end; 
+       end;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Route:=TIPRouteEntry(Route.Next);
    end;
- finally 
+ finally
   FRoutes.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4843,7 +4843,7 @@ begin
  if not(FRoutes.WriterOwner) then FRoutes.ReaderLock else FRoutes.WriterLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -4853,7 +4853,7 @@ begin
      begin
       {Lock Route}
       if ALock then if AState = NETWORK_LOCK_READ then Route.ReaderLock else Route.WriterLock;
-      
+
       {Return Result}
       Result:=Route;
      end;
@@ -4866,17 +4866,17 @@ begin
      begin
       {Lock Route}
       if ALock then if AState = NETWORK_LOCK_READ then Route.ReaderLock else Route.WriterLock;
-      
+
       {Return Result}
       Result:=Route;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   if not(FRoutes.WriterOwner) then FRoutes.ReaderUnlock else FRoutes.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4917,13 +4917,13 @@ begin
       Result:=True;
       Exit;
      end;
-    
-    {Get Next}    
+
+    {Get Next}
     Route:=TIPRouteEntry(Route.Next);
-   end; 
- finally 
+   end;
+ finally
   if not(FRoutes.WriterOwner) then FRoutes.ReaderUnlock else FRoutes.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4948,7 +4948,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Type = ' + RouteTypeToString(AType));
  {$ENDIF}
-  
+
  {Create Route}
  Result:=TIPRouteEntry.Create;
  Result.Network:=ANetwork;
@@ -4957,8 +4957,8 @@ begin
  Result.Address:=AAddress;
  Result.RouteType:=AType;
 
- {Acquire Lock} 
- FRoutes.ReaderLock; 
+ {Acquire Lock}
+ FRoutes.ReaderLock;
  try
   {Find the insertion point}
   Route:=TIPRouteEntry(FRoutes.Last);
@@ -4968,11 +4968,11 @@ begin
      begin
       Break;
      end;
-    
+
     {Get Previous}
     Route:=TIPRouteEntry(Route.Prev);
    end;
-  
+
   {Convert Lock}
   if FRoutes.ReaderConvert then
    begin
@@ -4980,24 +4980,24 @@ begin
     if FRoutes.Insert(Route,Result) then
      begin
       {Convert Lock}
-      FRoutes.WriterConvert; 
-    
+      FRoutes.WriterConvert;
+
       {Lock Route}
       if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
      end
-    else 
+    else
      begin
       {Convert Lock}
-      FRoutes.WriterConvert; 
-     
+      FRoutes.WriterConvert;
+
       {Free Route}
       Result.Free;
       Result:=nil;
      end;
-   end;  
- finally 
+   end;
+ finally
   FRoutes.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5010,16 +5010,16 @@ var
  Route:TIPRouteEntry;
 begin
  {}
- FRoutes.ReaderLock; 
+ FRoutes.ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: RemoveRoute');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Network = ' + InAddrToString(InAddrToNetwork(ANetwork)));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
   {$ENDIF}
-  
+
   {Get Route}
   Route:=TIPRouteEntry(FRoutes.First);
   while Route <> nil do
@@ -5036,14 +5036,14 @@ begin
         {Convert Lock}
         if FRoutes.ReaderConvert then
          begin
-          {Lock Route} 
+          {Lock Route}
           if CheckRoute(Route,True,NETWORK_LOCK_WRITE) then
            begin
             {Remove Route}
             Result:=FRoutes.Remove(Route);
 
             {Convert Lock}
-            FRoutes.WriterConvert; 
+            FRoutes.WriterConvert;
 
             {Unlock Route}
             Route.WriterUnlock;
@@ -5056,13 +5056,13 @@ begin
         Exit;
        end;
      end;
-    
+
     {Get Next}
     Route:=TIPRouteEntry(Route.Next);
    end;
- finally 
+ finally
   if not(FRoutes.WriterOwner) then FRoutes.ReaderUnlock else FRoutes.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5080,10 +5080,10 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: FlushRoutes');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  All = ' + BoolToStr(All));
  {$ENDIF}
- 
+
  {Get Tick Count}
  CurrentTime:=GetTickCount64;
-  
+
  {Get Route}
  Route:=GetRouteByNext(nil,True,False,NETWORK_LOCK_READ);
  while Route <> nil do
@@ -5093,28 +5093,28 @@ begin
     begin
      {Unlock Route (While waiting for writer lock)}
      Route.ReaderUnlock;
-     
+
      {Acquire Lock}
      FRoutes.WriterLock;
-     
+
      {Lock Route}
      if CheckRoute(Route,True,NETWORK_LOCK_WRITE) then
       begin
        {Save Route}
        Current:=Route;
-       
+
        {Get Next}
        Route:=GetRouteByNext(Current,True,False,NETWORK_LOCK_READ);
-       
+
        {Remove Route}
        FRoutes.Remove(Current);
 
        {Release Lock}
        FRoutes.WriterUnlock;
-       
+
        {Unlock Route}
        Current.WriterUnlock;
-        
+
        {Free Route}
        Current.Free;
        Current:=nil;
@@ -5123,7 +5123,7 @@ begin
       begin
        {Release Lock}
        FRoutes.WriterUnlock;
-       
+
        {Get Next}
        if All then Route:=GetRouteByNext(nil,True,False,NETWORK_LOCK_READ);
       end;
@@ -5149,17 +5149,17 @@ begin
  FAddresses.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: GetAddressByAddress');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
   {$ENDIF}
-  
+
   {Get Address}
   Address:=TIPAddressEntry(FAddresses.First);
   while Address <> nil do
    begin
-    {$IFDEF IP_DEBUG} 
+    {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Compare = ' + InAddrToString(InAddrToNetwork(Address.Address)));
     {$ENDIF}
     {Check Address}
@@ -5167,18 +5167,18 @@ begin
      begin
       {Lock Address}
       if ALock then if AState = NETWORK_LOCK_READ then Address.ReaderLock else Address.WriterLock;
-     
+
       {Return Result}
       Result:=Address;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Address:=TIPAddressEntry(Address.Next);
    end;
- finally 
+ finally
   FAddresses.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5191,7 +5191,7 @@ begin
  if not(FAddresses.WriterOwner) then FAddresses.ReaderLock else FAddresses.WriterLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -5201,7 +5201,7 @@ begin
      begin
       {Lock Address}
       if ALock then if AState = NETWORK_LOCK_READ then Address.ReaderLock else Address.WriterLock;
-      
+
       {Return Result}
       Result:=Address;
      end;
@@ -5214,17 +5214,17 @@ begin
      begin
       {Lock Address}
       if ALock then if AState = NETWORK_LOCK_READ then Address.ReaderLock else Address.WriterLock;
-      
+
       {Return Result}
       Result:=Address;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   if not(FAddresses.WriterOwner) then FAddresses.ReaderUnlock else FAddresses.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5266,12 +5266,12 @@ begin
       Exit;
      end;
 
-    {Get Next}    
+    {Get Next}
     Address:=TIPAddressEntry(Address.Next);
-   end; 
- finally 
+   end;
+ finally
   if not(FAddresses.WriterOwner) then FAddresses.ReaderUnlock else FAddresses.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5289,17 +5289,17 @@ var
 begin
  {}
  Result:=nil;
-  
+
  {Check Adapter}
  if AAdapter = nil then Exit;
-  
+
  {$IFDEF IP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: AddAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Adapter = ' + AAdapter.Name);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Type = ' + AddressTypeToString(AType));
  {$ENDIF}
-  
+
  {Check Type}
  case AType of
   ADDRESS_TYPE_SECONDARY:begin
@@ -5308,59 +5308,59 @@ begin
 
     {Check RARP Transport}
     if FRARP = nil then Exit;
-   
+
     {Get Adapter}
     Adapter:=TIPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
     if Adapter = nil then Exit;
     try
      if not CompareSubnet(AAddress,Adapter.Network,Adapter.Netmask) then Exit;
-     
+
      {Add ARP Address}
      FARP.LoadAddress(Adapter.Adapter,AAddress,Adapter.Hardware,ADDRESS_TYPE_LOCAL);
-     
+
      {Add RARP Address}
      FRARP.LoadAddress(Adapter.Adapter,AAddress,Adapter.Hardware,ADDRESS_TYPE_LOCAL);
-     
+
      {Add Route}
      AddRoute(AAddress,IP_BROADCAST_NETMASK,IP_LOOPBACK_ADDRESS,IP_LOOPBACK_ADDRESS,ROUTE_TYPE_STATIC,False,NETWORK_LOCK_NONE);
-      
+
      //To Do //See Binding
     finally
      Adapter.ReaderUnlock;
-    end;     
+    end;
    end;
  end;
-  
+
  {Create Address}
  Result:=TIPAddressEntry.Create;
  Result.Address:=AAddress;
  Result.Adapter:=AAdapter;
  Result.AddressType:=AType;
- 
- {Acquire Lock} 
+
+ {Acquire Lock}
  FAddresses.WriterLock; {Acquire as Writer}
  try
   {Add Address}
   if FAddresses.Add(Result) then
    begin
     {Convert Lock}
-    FAddresses.WriterConvert; 
+    FAddresses.WriterConvert;
 
     {Lock Address}
     if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
    end
-  else 
+  else
    begin
     {Convert Lock}
-    FAddresses.WriterConvert; 
-   
+    FAddresses.WriterConvert;
+
     {Free Address}
     Result.Free;
     Result:=nil;
    end;
- finally 
+ finally
   FAddresses.ReaderUnlock; {Converted to Reader}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5375,12 +5375,12 @@ begin
  FAddresses.ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: RemoveAddress');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
   {$ENDIF}
-  
+
   {Get Address}
   Address:=TIPAddressEntry(FAddresses.First);
   while Address <> nil do
@@ -5396,34 +5396,34 @@ begin
 
          {Check RARP Transport}
          if FRARP = nil then Exit;
-         
+
          {Remove Route}
          RemoveRoute(Address.Address,IP_LOOPBACK_ADDRESS);
-         
+
          {Remove RARP Address}
          FRARP.UnloadAddress(Address.Adapter,Address.Address);
-         
+
          {Remove ARP Addresses}
          FARP.UnloadAddress(Address.Adapter,Address.Address);
-         
+
          //To Do //See Binding
         end;
       end;
-      
+
       {Lock Address}
       {Address.WriterLock;} {Must be after acquiring writer lock}
 
       {Convert Lock}
       if FAddresses.ReaderConvert then
        begin
-        {Lock Address} 
+        {Lock Address}
         if CheckAddress(Address,True,NETWORK_LOCK_WRITE) then
          begin
           {Remove Address}
           Result:=FAddresses.Remove(Address);
 
           {Convert Lock}
-          FAddresses.WriterConvert; 
+          FAddresses.WriterConvert;
 
           {Unlock Address}
           Address.WriterUnlock;
@@ -5435,13 +5435,13 @@ begin
 
       Exit;
      end;
-    
+
     {Get Next}
     Address:=TIPAddressEntry(Address.Next);
    end;
- finally 
+ finally
   if not(FAddresses.WriterOwner) then FAddresses.ReaderUnlock else FAddresses.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5549,29 +5549,29 @@ begin
  FNetworks.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: GetNetworkByName');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Name = ' + AName);
   {$ENDIF}
-  
+
   {Get Network}
   Network:=TIPNetworkEntry(FNetworks.First);
   while Network <> nil do
    begin
     {Get Name}
     Name:=Network.Name;
-    
-    {$IFDEF IP_DEBUG} 
+
+    {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Compare = ' + Name);
     {$ENDIF}
-    
+
     {Check Name}
     if Lowercase(Name) = Lowercase(AName) then
      begin
       {Lock Network}
       if ALock then Network.AcquireLock;
-     
+
       {Return Result}
       Result:=Network;
       Exit;
@@ -5580,18 +5580,18 @@ begin
      begin
       {Lock Network}
       if ALock then Network.AcquireLock;
-     
+
       {Return Result}
       Result:=Network;
       Exit;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Network:=TIPNetworkEntry(Network.Next);
    end;
- finally 
+ finally
   FNetworks.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5607,17 +5607,17 @@ begin
  FNetworks.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: GetNetworkByAddress');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Network = ' + InAddrToString(InAddrToNetwork(ANetwork)));
   {$ENDIF}
-  
+
   {Get Network}
   Network:=TIPNetworkEntry(FNetworks.First);
   while Network <> nil do
    begin
-    {$IFDEF IP_DEBUG} 
+    {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Compare = ' + InAddrToString(InAddrToNetwork(Network.Network)));
     {$ENDIF}
     {Check Network}
@@ -5625,18 +5625,18 @@ begin
      begin
       {Lock Network}
       if ALock then Network.AcquireLock;
-     
+
       {Return Result}
       Result:=Network;
       Exit;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Network:=TIPNetworkEntry(Network.Next);
    end;
- finally 
+ finally
   FNetworks.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5653,36 +5653,36 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Name = ' + AName);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Network = ' + InAddrToString(InAddrToNetwork(ANetwork)));
  {$ENDIF}
-  
+
  {Create Network}
  Result:=TIPNetworkEntry.Create;
  Result.Name:=Lowercase(AName);
  Result.Network:=ANetwork;
-  
- {Acquire Lock} 
+
+ {Acquire Lock}
  FNetworks.WriterLock; {Acquire as Writer}
  try
   {Add Network}
   if FNetworks.Add(Result) then
    begin
     {Convert Lock}
-    FNetworks.WriterConvert; 
+    FNetworks.WriterConvert;
 
     {Lock Network}
     if ALock then Result.AcquireLock;
    end
-  else 
+  else
    begin
     {Convert Lock}
-    FNetworks.WriterConvert; 
-   
+    FNetworks.WriterConvert;
+
     {Free Network}
     Result.Free;
     Result:=nil;
    end;
- finally 
+ finally
   FNetworks.ReaderUnlock; {Converted to Reader}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5698,73 +5698,73 @@ begin
  FNetworks.ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: RemoveNetwork');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Name = ' + AName);
   {$ENDIF}
-  
+
   {Get Network}
   Network:=TIPNetworkEntry(FNetworks.First);
   while Network <> nil do
    begin
     {Get Name}
     Name:=Network.Name;
-    
+
     {Check Name}
     if Lowercase(Name) = Lowercase(AName) then
      begin
       {Lock Network}
       Network.AcquireLock;
-          
+
       {Convert Lock}
       if FNetworks.ReaderConvert then
        begin
         {Remove Network}
         Result:=FNetworks.Remove(Network);
-      
+
         {Convert Lock}
-        FNetworks.WriterConvert; 
-      
+        FNetworks.WriterConvert;
+
         {Unlock Network}
         Network.ReleaseLock;
-          
+
         {Free Network}
         Network.Free;
        end;
-       
+
       Exit;
      end
     else if Network.FindAlias(Lowercase(AName)) then
      begin
       {Lock Network}
       Network.AcquireLock;
-          
+
       {Convert Lock}
       if FNetworks.ReaderConvert then
        begin
         {Remove Network}
         Result:=FNetworks.Remove(Network);
-      
+
         {Convert Lock}
-        FNetworks.WriterConvert; 
-      
+        FNetworks.WriterConvert;
+
         {Unlock Network}
         Network.ReleaseLock;
-          
+
         {Free Network}
         Network.Free;
        end;
-       
+
       Exit;
      end;
-    
+
     {Get Next}
     Network:=TIPNetworkEntry(Network.Next);
    end;
- finally 
+ finally
   FNetworks.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5781,18 +5781,18 @@ begin
  FServs.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: GetServByName');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Name = ' + AName);
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Protocol = ' + AProtocol);
   {$ENDIF}
-  
+
   {Get Service}
   Serv:=TIPServEntry(FServs.First);
   while Serv <> nil do
    begin
-    {$IFDEF IP_DEBUG} 
+    {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Compare = ' + Serv.Name);
     {$ENDIF}
     {Check Name}
@@ -5803,19 +5803,19 @@ begin
        begin
         {Lock Service}
         if ALock then Serv.AcquireLock;
-     
+
         {Return Result}
         Result:=Serv;
         Exit;
        end;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Serv:=TIPServEntry(Serv.Next);
    end;
- finally 
+ finally
   FServs.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5832,18 +5832,18 @@ begin
  FServs.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: GetServByPort');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Port = ' + IntToStr(APort));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Protocol = ' + AProtocol);
   {$ENDIF}
-  
+
   {Get Service}
   Serv:=TIPServEntry(FServs.First);
   while Serv <> nil do
    begin
-    {$IFDEF IP_DEBUG} 
+    {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Compare = ' + IntToStr(Serv.Port));
     {$ENDIF}
     {Check Port}
@@ -5854,19 +5854,19 @@ begin
        begin
         {Lock Service}
         if ALock then Serv.AcquireLock;
-     
+
         {Return Result}
         Result:=Serv;
         Exit;
        end;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Serv:=TIPServEntry(Serv.Next);
    end;
- finally 
+ finally
   FServs.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5885,37 +5885,37 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Protocol = ' + AProtocol);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Port = ' + IntToStr(APort));
  {$ENDIF}
-  
+
  {Create Service}
  Result:=TIPServEntry.Create;
  Result.Name:=Lowercase(AName);
  Result.Protocol:=Lowercase(AProtocol);
  Result.Port:=APort;
 
- {Acquire Lock} 
+ {Acquire Lock}
  FServs.WriterLock; {Acquire as Writer}
  try
   {Add Service}
   if FServs.Add(Result) then
    begin
     {Convert Lock}
-    FServs.WriterConvert; 
+    FServs.WriterConvert;
 
     {Lock Service}
     if ALock then Result.AcquireLock;
    end
-  else 
+  else
    begin
     {Convert Lock}
-    FServs.WriterConvert; 
+    FServs.WriterConvert;
 
     {Free Service}
     Result.Free;
     Result:=nil;
    end;
- finally 
+ finally
   FServs.ReaderUnlock; {Converted to Reader}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5931,13 +5931,13 @@ begin
  FServs.ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: RemoveServ');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Name = ' + AName);
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Protocol = ' + AProtocol);
   {$ENDIF}
-  
+
   {Get Service}
   Serv:=TIPServEntry(FServs.First);
   while Serv <> nil do
@@ -5950,33 +5950,33 @@ begin
        begin
         {Lock Service}
         Serv.AcquireLock;
-          
+
         {Convert Lock}
         if FServs.ReaderConvert then
          begin
           {Remove Service}
           Result:=FServs.Remove(Serv);
-      
+
           {Convert Lock}
-          FServs.WriterConvert; 
-      
+          FServs.WriterConvert;
+
           {Unlock Service}
           Serv.ReleaseLock;
-          
+
           {Free Service}
           Serv.Free;
          end;
-         
+
         Exit;
        end;
      end;
-    
+
     {Get Next}
     Serv:=TIPServEntry(Serv.Next);
    end;
- finally 
+ finally
   FServs.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5992,17 +5992,17 @@ begin
  FProtos.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: GetProtoByName');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Name = ' + AName);
   {$ENDIF}
-  
+
   {Get Protocol}
   Proto:=TIPProtoEntry(FProtos.First);
   while Proto <> nil do
    begin
-    {$IFDEF IP_DEBUG} 
+    {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Compare = ' + Proto.Name);
     {$ENDIF}
     {Check Name}
@@ -6010,18 +6010,18 @@ begin
      begin
       {Lock Protocol}
       if ALock then Proto.AcquireLock;
-     
+
       {Return Result}
       Result:=Proto;
       Exit;
      end;
-    
-    {Get Next}     
+
+    {Get Next}
     Proto:=TIPProtoEntry(Proto.Next);
    end;
- finally 
+ finally
   FProtos.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6037,17 +6037,17 @@ begin
  FProtos.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: GetProtoByNumber');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Number = ' + IntToStr(ANumber));
   {$ENDIF}
-  
+
   {Get Protocol}
   Proto:=TIPProtoEntry(FProtos.First);
   while Proto <> nil do
    begin
-    {$IFDEF IP_DEBUG} 
+    {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Compare = ' + IntToStr(Proto.Number));
     {$ENDIF}
     {Check Number}
@@ -6055,18 +6055,18 @@ begin
      begin
       {Lock Protocol}
       if ALock then Proto.AcquireLock;
-     
+
       {Return Result}
       Result:=Proto;
       Exit;
      end;
-     
-    {Get Next}     
+
+    {Get Next}
     Proto:=TIPProtoEntry(Proto.Next);
    end;
- finally 
+ finally
   FProtos.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6083,36 +6083,36 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Name = ' + AName);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Number = ' + IntToStr(ANumber));
  {$ENDIF}
-  
+
  {Create Protocol}
  Result:=TIPProtoEntry.Create;
  Result.Name:=Lowercase(AName);
  Result.Number:=ANumber;
- 
- {Acquire Lock} 
+
+ {Acquire Lock}
  FProtos.WriterLock; {Acquire as Writer}
  try
   {Add Protocol}
   if FProtos.Add(Result) then
    begin
     {Convert Lock}
-    FProtos.WriterConvert; 
+    FProtos.WriterConvert;
 
     {Lock Protocol}
     if ALock then Result.AcquireLock;
    end
-  else 
+  else
    begin
     {Convert Lock}
-    FProtos.WriterConvert; 
+    FProtos.WriterConvert;
 
     {Free Protocol}
     Result.Free;
     Result:=nil;
    end;
- finally 
+ finally
   FProtos.ReaderUnlock; {Converted to Reader}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6127,12 +6127,12 @@ begin
  FProtos.ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: RemoveProto');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP:  Name = ' + AName);
   {$ENDIF}
-  
+
   {Get Protocol}
   Proto:=TIPProtoEntry(FProtos.First);
   while Proto <> nil do
@@ -6142,32 +6142,32 @@ begin
      begin
       {Lock Protocol}
       Proto.AcquireLock;
-          
+
       {Convert Lock}
       if FProtos.ReaderConvert then
        begin
         {Remove Protocol}
         Result:=FProtos.Remove(Proto);
-      
+
         {Convert Lock}
-        FProtos.WriterConvert; 
-      
+        FProtos.WriterConvert;
+
         {Unlock Protocol}
         Proto.ReleaseLock;
-          
+
         {Free Protocol}
         Proto.Free;
        end;
-       
+
       Exit;
      end;
-    
+
     {Get Next}
     Proto:=TIPProtoEntry(Proto.Next);
    end;
- finally 
+ finally
   FProtos.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6181,23 +6181,23 @@ begin
  FAddresses.ReaderLock;
  try
   Result:=True;
-  
+
   Address:=TIPAddressEntry(FAddresses.First);
   while Address <> nil do
    begin
     {Check for Bound to Default Address}
     if LongWord(Address.Address.S_addr) = INADDR_ANY then Exit;
-    
+
     {Check for Matching Address}
     if LongWord(Address.Address.S_addr) = LongWord(AAddress.S_addr) then Exit;
-    
+
     Address:=TIPAddressEntry(Address.Next);
    end;
-   
+
   Result:=False;
- finally 
+ finally
   FAddresses.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6216,10 +6216,10 @@ function TIPTransport.CompareLoopback(const AAddress:TInAddr):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if LongWord(AAddress.S_addr) < LongWord(IP_LOOPBACK_NETWORK.S_addr) then Exit;
  if LongWord(AAddress.S_addr) > (LongWord(IP_LOOPBACK_NETWORK.S_addr) or not(LongWord(IP_LOOPBACK_NETMASK.S_addr))) then Exit;
- 
+
  Result:=True;
 end;
 
@@ -6232,8 +6232,8 @@ var
 begin
  {}
  Result:=True;
- 
- {Get Adapter} 
+
+ {Get Adapter}
  Adapter:=TIPTransportAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
  while Adapter <> nil do
   begin
@@ -6242,12 +6242,12 @@ begin
      {Unlock Adapter}
      Adapter.ReaderUnlock;
      Exit;
-    end; 
-    
-   {Get Next} 
+    end;
+
+   {Get Next}
    Adapter:=TIPTransportAdapter(GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ));
   end;
-   
+
  Result:=False;
 end;
 
@@ -6258,9 +6258,9 @@ function TIPTransport.CompareBroadcast(const AAddress:TInAddr):Boolean;
 begin
  {}
  Result:=True;
- 
+
  if LongWord(AAddress.S_addr) = LongWord(IP_BROADCAST_ADDRESS.S_addr) then Exit;
- 
+
  Result:=False;
 end;
 
@@ -6271,10 +6271,10 @@ function TIPTransport.CompareMulticast(const AAddress:TInAddr):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if LongWord(AAddress.S_addr) < LongWord(IP_MULTICAST_NETWORK.S_addr) then Exit;
  if LongWord(AAddress.S_addr) > (LongWord(IP_MULTICAST_NETWORK.S_addr) or not(LongWord(IP_MULTICAST_NETMASK.S_addr))) then Exit;
- 
+
  Result:=True;
 end;
 
@@ -6294,10 +6294,10 @@ function TIPTransport.CompareSubnet(const AAddress,ANetwork,ANetmask:TInAddr):Bo
 begin
  {}
  Result:=False;
- 
+
  if LongWord(AAddress.S_addr) < LongWord(ANetwork.S_addr) then Exit;
  if LongWord(AAddress.S_addr) > (LongWord(ANetwork.S_addr) or not(LongWord(ANetmask.S_addr))) then Exit;
- 
+
  Result:=True;
 end;
 
@@ -6364,10 +6364,10 @@ begin
  AcquireLock;
  try
   FMemory.Free;
- finally 
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+ finally
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6384,7 +6384,7 @@ end;
 
 {==============================================================================}
 
-procedure TIPOptions.SetTTL(ATTL:Byte); 
+procedure TIPOptions.SetTTL(ATTL:Byte);
 begin
  {}
  if not AcquireLock then Exit;
@@ -6396,7 +6396,7 @@ end;
 
 {==============================================================================}
 
-procedure TIPOptions.SetFlags(AFlags:Word); 
+procedure TIPOptions.SetFlags(AFlags:Word);
 begin
  {}
  if not AcquireLock then Exit;
@@ -6432,7 +6432,7 @@ end;
 
 {==============================================================================}
 
-procedure TIPOptions.SetMulticastTTL(AMulticastTTL:Byte); 
+procedure TIPOptions.SetMulticastTTL(AMulticastTTL:Byte);
 begin
  {}
  if not AcquireLock then Exit;
@@ -6444,7 +6444,7 @@ end;
 
 {==============================================================================}
 
-procedure TIPOptions.SetMulticastLOOP(AMulticastLOOP:Boolean); 
+procedure TIPOptions.SetMulticastLOOP(AMulticastLOOP:Boolean);
 begin
  {}
  if not AcquireLock then Exit;
@@ -6468,18 +6468,18 @@ begin
     {Round up to multiple of 4}
     Remain:=(ALength mod 4);
     if Remain > 0 then ALength:=ALength + (4 - Remain);
-    
+
     {Allocate the Memory}
     FMemory.SetSize(ALength);
     FLength:=ALength;
     FOptions:=FMemory.Memory;
-    
+
     {Zero the Memory (IPOPT_EOL)}
     FillChar(FOptions^,FLength,0);
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6491,7 +6491,7 @@ begin
  inherited Create;
  FFamily:=AF_INET;
  FLength:=SizeOf(TInAddr);
- 
+
  FillChar(FAddresses,SizeOf(TInAddr) * MAX_HOST_ALIASES,0);
 end;
 
@@ -6531,20 +6531,20 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPHostEntry: FindAddress');
   {$ENDIF}
-  
+
   {Get Addresses}
   for Count:=0 to MAX_HOST_ALIASES - 1 do
    begin
-    {$IFDEF IP_DEBUG} 
+    {$IFDEF IP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPHostEntry:  Compare = ' + InAddrToString(InAddrToNetwork(FAddresses[Count])));
     {$ENDIF}
-    
+
     {Check Address}
     if LongWord(FAddresses[Count].S_addr) = LongWord(AAddress.S_addr) then
      begin
@@ -6555,9 +6555,9 @@ begin
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function TIPHostEntry.AddAddress(const AAddress:TInAddr):Boolean;
@@ -6566,13 +6566,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPHostEntry: AddAddress');
   {$ENDIF}
- 
+
   {Get Addresses}
   for Count:=0 to MAX_HOST_ALIASES - 1 do
    begin
@@ -6581,7 +6581,7 @@ begin
      begin
       {Set Address}
       FAddresses[Count]:=AAddress;
-     
+
       {Return Result}
       Result:=True;
       Exit;
@@ -6589,7 +6589,7 @@ begin
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6600,13 +6600,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF IP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IPHostEntry: RemoveAddress');
   {$ENDIF}
- 
+
   {Get Addresses}
   for Count:=0 to MAX_HOST_ALIASES - 1 do
    begin
@@ -6615,7 +6615,7 @@ begin
      begin
       {Clear Address}
       LongWord(FAddresses[Count].S_addr):=INADDR_ANY;
-      
+
       {Return Result}
       Result:=True;
       Exit;
@@ -6623,7 +6623,7 @@ begin
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6645,7 +6645,7 @@ end;
 
 {==============================================================================}
 
-procedure TIPRouteEntry.SetTOS(ATOS:Byte);        
+procedure TIPRouteEntry.SetTOS(ATOS:Byte);
 begin
  {}
  if not AcquireLock then Exit;
@@ -6657,7 +6657,7 @@ end;
 
 {==============================================================================}
 
-procedure TIPRouteEntry.SetTTL(ATTL:Byte);       
+procedure TIPRouteEntry.SetTTL(ATTL:Byte);
 begin
  {}
  if not AcquireLock then Exit;
@@ -6724,7 +6724,7 @@ begin
  inherited Create;
  FFamily:=AF_INET;
  FLength:=SizeOf(TInAddr);
- 
+
  FAddress.S_addr:=INADDR_ANY;
 end;
 
@@ -6749,7 +6749,7 @@ begin
  inherited Create;
  FFamily:=AF_INET;
  FLength:=SizeOf(TInAddr);
- 
+
  FNetwork.S_addr:=INADDR_ANY;
 end;
 
@@ -6782,7 +6782,7 @@ begin
  {}
  inherited Create;
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -6793,11 +6793,11 @@ begin
  if IPInitialized then Exit;
 
  {Create IP Transport}
- if NetworkSettings.GetBooleanDefault('IP_TRANSPORT_ENABLED',IP_TRANSPORT_ENABLED) then 
+ if NetworkSettings.GetBooleanDefault('IP_TRANSPORT_ENABLED',IP_TRANSPORT_ENABLED) then
   begin
    TIPTransport.Create(TransportManager,IP_TRANSPORT_NAME);
-  end; 
- 
+  end;
+
  IPInitialized:=True;
 end;
 
@@ -6813,14 +6813,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IP: CheckIP');
  {$ENDIF}
- 
+
  {Get Header}
  IP:=PIPHeader(ABuffer);
- 
+
  {Check Version - Only Support IPv4}
  if (IP.VersionLength and $F0) = $40 then
   begin
@@ -6858,7 +6858,7 @@ function GetIPHeaderLength(ABuffer:Pointer):Word;
 {Return Size of IP Header (Including Options)}
 {Buffer: Complete packet including Transport header}
 begin
- {} 
+ {}
  Result:=(PIPHeader(ABuffer).VersionLength and $0F) shl 2;
 end;
 
@@ -6868,7 +6868,7 @@ function GetIPOptionsLength(ABuffer:Pointer):Word;
 {Return Size of IP Options (Header - IP_HEADER_SIZE)}
 {Buffer: Complete packet including Transport header}
 begin
- {} 
+ {}
  Result:=((PIPHeader(ABuffer).VersionLength and $0F) shl 2) - IP_HEADER_SIZE;
 end;
 
@@ -6878,7 +6878,7 @@ function GetIPDataOffset(ABuffer:Pointer):Word;
 {Return Start of IP Packet Data (Length of IP Header)}
 {Buffer: Complete packet including Transport header}
 begin
- {} 
+ {}
  Result:=(PIPHeader(ABuffer).VersionLength and $0F) shl 2;
 end;
 
@@ -6890,10 +6890,10 @@ function GetIPDataLength(ABuffer:Pointer):Word;
 var
  Length:Integer;
 begin
- {} 
+ {}
  {Get Header Length}
  Length:=(PIPHeader(ABuffer).VersionLength and $0F) shl 2;
- 
+
  {Get Data Length}
  Result:=WordBEtoN(PIPHeader(ABuffer).TotalLength) - Length;
 end;
@@ -6910,14 +6910,14 @@ begin
  {}
  {Get Header}
  IP:=PIPHeader(PtrUInt(ABuffer) + AOffset);
- 
+
  {Save Checksum}
  Original:=IP.Checksum;
  IP.Checksum:=0;
- 
+
  {Calculate 1s Compliment Checksum on IP Header}
  Result:=GetChecksum(ABuffer,AOffset,ALength);
- 
+
  {Restore Checksum}
  IP.Checksum:=Original;
 end;
@@ -6941,23 +6941,23 @@ begin
   begin
    {Get Header}
    IP:=PIPHeader(AHeader);
-   
+
    {Save Checksum}
    Original:=IP.Checksum;
    IP.Checksum:=0;
-   
+
    {Calculate 1s Compliment Checksum on IP Header and Options}
    Result:=GetChecksum2(AHeader,AOptions,IP_HEADER_SIZE,0,ALength);
-   
+
    {Restore Checksum}
    IP.Checksum:=Original;
   end;
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {IP Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -6965,12 +6965,12 @@ initialization
  IPInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 end.
-  
+

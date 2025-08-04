@@ -17,7 +17,7 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -26,47 +26,47 @@ Credits
   Linux - \drivers\mmc\host\mmci.c - Copyright (C) 2010 ST-Ericsson SA
   Linux - \arch\arm\mach-versatile\core.c - Copyright (C) 2000 Deep Blue Solutions Ltd
   Linux - \arch\arm\mach-versatile\versatile_pb.c - Copyright (C) 2004 ARM Limited
-  
+
   QEMU - \hw\sd\pl181.c - Copyright (c) 2007 CodeSourcery
   QEMU - \hw\misc\arm_sysctl.c - Copyright (c) 2006-2007 CodeSourcery
-  
+
 References
 ==========
- 
+
  PL18X - http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0172a/index.html
- 
+
 ARM PrimeCell PL180/181 Multimedia Card
 =======================================
- 
+
  The PL180/181 Multimedia Card is an ARM peripheral that is compatible with MMC multimedia
  cards and SD secure digital cards in memory mapped I/O format compatible with the ARM
  advanced peripheral bus (APB).
 
  The design of the Pl180/181 allows for multiple cards per controller however this driver
  currently only supports attaching one card.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit PL18X; 
+unit PL18X;
 
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,DMA,Storage,MMC,SysUtils;
- 
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-                     
+
 {==============================================================================}
 const
  {PL18X specific constants}
  PL180_MMCI_DESCRIPTION = 'ARM PrimeCell PL180 MMCI Host';  {Description of PL180 device}
  PL181_MMCI_DESCRIPTION = 'ARM PrimeCell PL181 MMCI Host';  {Description of PL181 device}
- 
+
 const
  {PL18X Power control register}
  PL18X_MMCI_POWER  = $000;
@@ -77,7 +77,7 @@ const
  {Bits 5:2 - Output Voltage}
  PL18X_MMCI_POWER_OD  = (1 shl 6); {MCICMD output control}
  PL18X_MMCI_POWER_ROD = (1 shl 7); {Rod control}
- 
+
  {The ST Micro version does not have ROD and reuses the voltage registers for direction settings}
  PL18X_MMCI_POWER_ST_DATA2DIREN  = (1 shl 2);
  PL18X_MMCI_POWER_ST_CMDDIREN    = (1 shl 3);
@@ -85,14 +85,14 @@ const
  PL18X_MMCI_POWER_ST_DATA31DIREN = (1 shl 5);
  PL18X_MMCI_POWER_ST_FBCLKEN     = (1 shl 7);
  PL18X_MMCI_POWER_ST_DATA74DIREN = (1 shl 8);
- 
+
  {PL18X Clock control register}
  PL18X_MMCI_CLOCK  = $004;
  PL18X_MMCI_CLOCK_ENABLE   = (1 shl 8);   {Enable MCI bus clock: 0 = Clock disabled / 1 = Clock enabled}
  PL18X_MMCI_CLOCK_PWRSAVE  = (1 shl 9);   {Disable MCI clock output when bus is idle: 0 = Always enabled / 1 = Clock enabled when bus is active}
  PL18X_MMCI_CLOCK_BYPASS   = (1 shl 10);  {Enable bypass of clock divide logic: 0 = Disable bypass / 1 = Enable bypass}
  PL18X_MMCI_CLOCK_4BIT_BUS = (1 shl 11);  {Enable wide bus mode: 0 = Standard bus mode (only MCIDAT0 used) / 1 = Wide bus mode (MCIDAT3:0 used)}
- 
+
  {8bit wide buses, hardware flow contronl, negative edges and clock inversion supported in ST Micro U300 and Ux500 versions}
  PL18X_MMCI_CLOCK_ST_8BIT_BUS       = (1 shl 12);
  PL18X_MMCI_CLOCK_ST_U300_HWFCEN    = (1 shl 13);
@@ -114,7 +114,7 @@ const
  {PL18X Argument register}
  PL18X_MMCI_ARGUMENT  = $008;
  {Bits 31:0 Command Argument}
- 
+
  {PL18X Command register}
  PL18X_MMCI_COMMAND  = $00c;
  {Bits 5:0 Command Index}
@@ -136,12 +136,12 @@ const
  PL18X_MMCI_CPSM_QCOM_CCSDISABLE = (1 shl 15);
  PL18X_MMCI_CPSM_QCOM_AUTO_CMD19 = (1 shl 16);
  PL18X_MMCI_CPSM_QCOM_AUTO_CMD21 = (1 shl 21);
- 
+
  {PL18X Command response register}
  PL18X_MMCI_RESPCMD  = $010;
  {Bits 5:0  Response command index}
  {Bits 31:6 Reserved}
- 
+
  {PL18X Response registers}
  PL18X_MMCI_RESPONSE0  = $014;
  PL18X_MMCI_RESPONSE1  = $018;
@@ -152,12 +152,12 @@ const
  {PL18X Data timer register}
  PL18X_MMCI_DATATIMER  = $024;
  {Bits 31:0 Data Timeout Period}
- 
+
  {PL18X Data length register}
  PL18X_MMCI_DATALENGTH  = $028;
  {Bits 15:0  Data Length Value}
  {Bits 31:16 Reserved}
- 
+
  {PL18X Data control register}
  PL18X_MMCI_DATACTRL  = $02c;
  PL18X_MMCI_DPSM_ENABLE    = (1 shl 0); {Data transfer enabled}
@@ -209,7 +209,7 @@ const
  PL18X_MMCI_ST_SDIOIT       = (1 shl 22);
  PL18X_MMCI_ST_CEATAEND     = (1 shl 23);
  PL18X_MMCI_ST_CARDBUSY     = (1 shl 24);
- 
+
  {PL18X Clear register}
  PL18X_MMCI_CLEAR  = $038;
  PL18X_MMCI_CMDCRCFAILCLR   = (1 shl 0);
@@ -257,43 +257,43 @@ const
  PL18X_MMCI_ST_SDIOITMASK       = (1 shl 22);
  PL18X_MMCI_ST_CEATAENDMASK     = (1 shl 23);
  PL18X_MMCI_ST_BUSYEND          = (1 shl 24);
- 
+
  {PL18X SD card select register}
  PL18X_MMCI_SELECT  = $044;
 
  {PL18X FIFO counter register}
  PL18X_MMCI_FIFOCNT  = $048;
- 
+
  {PL18X Data FIFO register}
  PL18X_MMCI_FIFO  = $080; {To $0bc}
- 
+
  {PL18X Peripheral identification register}
  PL18X_MMCI_PERIPHID = $FE0;
 
  {PL18X PrimeCell identification register}
  PL18X_MMCI_PCELLID  = $FF0;
- 
+
  PL18X_MMCI_IRQENABLE = (PL18X_MMCI_CMDCRCFAILMASK or PL18X_MMCI_DATACRCFAILMASK or PL18X_MMCI_CMDTIMEOUTMASK or  PL18X_MMCI_DATATIMEOUTMASK
                       or PL18X_MMCI_TXUNDERRUNMASK or PL18X_MMCI_RXOVERRUNMASK or PL18X_MMCI_CMDRESPENDMASK or PL18X_MMCI_CMDSENTMASK or PL18X_MMCI_STARTBITERRMASK);
  {These interrupts are directed to IRQ1 when two IRQ lines are available}
  PL18X_MMCI_IRQ1MASK = (PL18X_MMCI_RXFIFOHALFFULLMASK or PL18X_MMCI_RXDATAAVLBLMASK or PL18X_MMCI_TXFIFOHALFEMPTYMASK);
- 
+
 {==============================================================================}
 type
  {PL18X specific types}
  PPL18XVersionData = ^TPL18XVersionData;
- 
+
  PPL18XVersionID = ^TPL18XVersionID;
  TPL18XVersionID = record
   PeripheralID:LongWord;
   PeripheralMask:LongWord;
   VersionData:PPL18XVersionData;
  end;
- 
+
  TPL18XVersionData = record
   Name:String;                      {Name of the device}
   ClockRegister:LongWord;           {Default value for MCICLOCK register}
-  ClockEnable:LongWord;             {Enable value for MMCICLOCK register}  
+  ClockEnable:LongWord;             {Enable value for MMCICLOCK register}
   Clock8BitEnable:LongWord;         {Enable value for 8 bit bus}
   ClockNegativeEdgeEnable:LongWord; {Enable value for inverted data/cmd output}
   DataLengthBits:LongWord;          {Number of bits in the MMCIDATALENGTH register}
@@ -317,7 +317,7 @@ type
   QualcommDMA:LongBool;             {Enable Qualcomm specific DMA glue for DMA transfers}
   ReversedIRQ:LongBool;             {Handle data irq before cmd irq}
  end;
- 
+
  {Layout of the PL18X registers (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0172a/i1006458.html)}
  PPL18XMMCIRegisters = ^TPL18XMMCIRegisters;
  TPL18XMMCIRegisters = record
@@ -342,14 +342,14 @@ type
   FifoCnt:LongWord;                 {FIFO counter}
   Reserved:array[$4C..$7C] of Byte; {Reserved}
   FIFO:LongWord;                    {Data FIFO register (0x80 to 0xBC)}
- end; 
+ end;
 
  {PL18X SDHCI types}
  PPL18XSDHCIHost = ^TPL18XSDHCIHost;
- 
+
  {PL18X SDHCI Host Methods}
  TPL18XSDHCIGetRXFIFOCount = function(SDHCI:PPL18XSDHCIHost;Status,Remain:LongWord):LongWord;
- 
+
  TPL18XSDHCIHost = record
   {SDHCI Properties}
   SDHCI:TSDHCIHost;
@@ -366,18 +366,18 @@ type
   BusyStatus:LongWord;                             {Current Busy Status for ST Micro variants}
   GetRXFIFOCount:TPL18XSDHCIGetRXFIFOCount;        {Model specific GetRXFIFOCount function}
  end;
- 
+
 {==============================================================================}
 var
  {PL18X specific variables}
  PL18X_MMCI_FIQ_ENABLED:LongBool;        {The SDHCI uses Fast Interrupt Requests (FIQ) instead of IRQ}
  PL18X_MMCI_MIN_FREQ:LongWord = 400000;  {Minimum clock frequency for SDHCI (Default minimum of 400KHz)}
  PL18X_MMCI_MAX_FREQ:LongWord = 400000;  {Maximum clock frequency for SDHCI (Default maximum of 400KHz)}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure PL18XInit;
- 
+
 {==============================================================================}
 {PL18X Functions}
 function PL180SDHCICreate(Address:PtrUInt;const Name:String;IRQ0,IRQ1,ClockMinimum,ClockMaximum:LongWord;CardDetect:TMMCDeviceGetCardDetect = nil;WriteProtect:TMMCDeviceGetWriteProtect = nil):PSDHCIHost;{$IFDEF API_EXPORT_PL18X} stdcall; public name 'pl180sdhci_create';{$ENDIF}
@@ -389,7 +389,7 @@ function PL18XSDHCIDestroy(SDHCI:PSDHCIHost):LongWord;{$IFDEF API_EXPORT_PL18X} 
 {PL18X MMC Functions}
 function PL18XMMCDeviceGetCardDetect(MMC:PMMCDevice):LongWord;
 function PL18XMMCDeviceGetWriteProtect(MMC:PMMCDevice):LongWord;
-function PL18XMMCDeviceSendCommand(MMC:PMMCDevice;Command:PMMCCommand):LongWord; 
+function PL18XMMCDeviceSendCommand(MMC:PMMCDevice;Command:PMMCCommand):LongWord;
 function PL18XMMCDeviceSetIOS(MMC:PMMCDevice):LongWord;
 
 {==============================================================================}
@@ -397,12 +397,12 @@ function PL18XMMCDeviceSetIOS(MMC:PMMCDevice):LongWord;
 function PL18XSDHCIHostStart(SDHCI:PSDHCIHost):LongWord;
 function PL18XSDHCIHostStop(SDHCI:PSDHCIHost):LongWord;
 
-function PL18XSDHCIHostReadByte(SDHCI:PSDHCIHost;Reg:LongWord):Byte; 
-function PL18XSDHCIHostReadWord(SDHCI:PSDHCIHost;Reg:LongWord):Word; 
-function PL18XSDHCIHostReadLong(SDHCI:PSDHCIHost;Reg:LongWord):LongWord; 
-procedure PL18XSDHCIHostWriteByte(SDHCI:PSDHCIHost;Reg:LongWord;Value:Byte); 
-procedure PL18XSDHCIHostWriteWord(SDHCI:PSDHCIHost;Reg:LongWord;Value:Word); 
-procedure PL18XSDHCIHostWriteLong(SDHCI:PSDHCIHost;Reg:LongWord;Value:LongWord); 
+function PL18XSDHCIHostReadByte(SDHCI:PSDHCIHost;Reg:LongWord):Byte;
+function PL18XSDHCIHostReadWord(SDHCI:PSDHCIHost;Reg:LongWord):Word;
+function PL18XSDHCIHostReadLong(SDHCI:PSDHCIHost;Reg:LongWord):LongWord;
+procedure PL18XSDHCIHostWriteByte(SDHCI:PSDHCIHost;Reg:LongWord;Value:Byte);
+procedure PL18XSDHCIHostWriteWord(SDHCI:PSDHCIHost;Reg:LongWord;Value:Word);
+procedure PL18XSDHCIHostWriteLong(SDHCI:PSDHCIHost;Reg:LongWord;Value:LongWord);
 
 function PL18XSDHCIHostSetPower(SDHCI:PSDHCIHost;Power:Word):LongWord;
 
@@ -447,7 +447,7 @@ implementation
 var
  {PL18X specific variables}
  PL18XInitialized:Boolean;
- 
+
 var
  PL18X_VERSION_DATA_ARM:TPL18XVersionData;
  PL18X_VERSION_DATA_ARM_EXTENDED_FIFO:TPL18XVersionData;
@@ -457,7 +457,7 @@ var
  PL18X_VERSION_DATA_UX500:TPL18XVersionData;
  PL18X_VERSION_DATA_UX500V2:TPL18XVersionData;
  PL18X_VERSION_DATA_QCOM:TPL18XVersionData;
- 
+
  PL18X_VERSION_ID:array[0..9] of TPL18XVersionID = (
   (PeripheralID:$00041180;  PeripheralMask:$ff0fffff; VersionData:@PL18X_VERSION_DATA_ARM),
   (PeripheralID:$01041180;  PeripheralMask:$ff0fffff; VersionData:@PL18X_VERSION_DATA_ARM_EXTENDED_FIFO),
@@ -472,7 +472,7 @@ var
   {Qualcomm variants}
   (PeripheralID:$00051180;  PeripheralMask:$000fffff; VersionData:@PL18X_VERSION_DATA_QCOM)
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -484,7 +484,7 @@ begin
  {}
  {Check Initialized}
  if PL18XInitialized then Exit;
- 
+
  {Initialize Version Table}
  PL18X_VERSION_DATA_ARM.Name:='ARM';
  PL18X_VERSION_DATA_ARM.DataLengthBits:=16;
@@ -500,7 +500,7 @@ begin
  PL18X_VERSION_DATA_ARM_EXTENDED_FIFO.FIFOHalfSize:=64 * 4;
  PL18X_VERSION_DATA_ARM_EXTENDED_FIFO.PowerPowerUp:=PL18X_MMCI_POWER_UP;
  PL18X_VERSION_DATA_ARM_EXTENDED_FIFO.ClockMaximum:=100000000;
- 
+
  PL18X_VERSION_DATA_ARM_EXTENDED_FIFO_HWFC.Name:='ARM Extended FIFO with Hardware Flow Control';
  PL18X_VERSION_DATA_ARM_EXTENDED_FIFO_HWFC.ClockEnable:=PL18X_MMCI_CLOCK_ARM_HWFCEN;
  PL18X_VERSION_DATA_ARM_EXTENDED_FIFO_HWFC.DataLengthBits:=16;
@@ -508,7 +508,7 @@ begin
  PL18X_VERSION_DATA_ARM_EXTENDED_FIFO_HWFC.FIFOHalfSize:=64 * 4;
  PL18X_VERSION_DATA_ARM_EXTENDED_FIFO_HWFC.PowerPowerUp:=PL18X_MMCI_POWER_UP;
  PL18X_VERSION_DATA_ARM_EXTENDED_FIFO_HWFC.ClockMaximum:=100000000;
- 
+
  PL18X_VERSION_DATA_U300.Name:='ST U300';
  PL18X_VERSION_DATA_U300.ClockEnable:=PL18X_MMCI_CLOCK_ST_U300_HWFCEN;
  PL18X_VERSION_DATA_U300.Clock8BitEnable:=PL18X_MMCI_CLOCK_ST_8BIT_BUS;
@@ -522,7 +522,7 @@ begin
  PL18X_VERSION_DATA_U300.SignalDirection:=True;
  PL18X_VERSION_DATA_U300.PowerClockGate:=True;
  PL18X_VERSION_DATA_U300.PowerNoPower:=True;
- 
+
  PL18X_VERSION_DATA_NOMADIK.Name:='ST Nomadik';
  PL18X_VERSION_DATA_NOMADIK.ClockRegister:=PL18X_MMCI_CLOCK_ENABLE;
  PL18X_VERSION_DATA_NOMADIK.DataLengthBits:=24;
@@ -536,7 +536,7 @@ begin
  PL18X_VERSION_DATA_NOMADIK.SignalDirection:=True;
  PL18X_VERSION_DATA_NOMADIK.PowerClockGate:=True;
  PL18X_VERSION_DATA_NOMADIK.PowerNoPower:=True;
- 
+
  PL18X_VERSION_DATA_UX500.Name:='ST UX500';
  PL18X_VERSION_DATA_UX500.ClockRegister:=PL18X_MMCI_CLOCK_ENABLE;
  PL18X_VERSION_DATA_UX500.ClockEnable:=PL18X_MMCI_CLOCK_ST_UX500_HWFCEN;
@@ -554,7 +554,7 @@ begin
  PL18X_VERSION_DATA_UX500.PowerClockGate:=True;
  PL18X_VERSION_DATA_UX500.BusyDetect:=True;
  PL18X_VERSION_DATA_UX500.PowerNoPower:=True;
- 
+
  PL18X_VERSION_DATA_UX500V2.Name:='ST UX500V2';
  PL18X_VERSION_DATA_UX500V2.ClockRegister:=PL18X_MMCI_CLOCK_ENABLE;
  PL18X_VERSION_DATA_UX500V2.ClockEnable:=PL18X_MMCI_CLOCK_ST_UX500_HWFCEN;
@@ -574,7 +574,7 @@ begin
  PL18X_VERSION_DATA_UX500V2.PowerClockGate:=True;
  PL18X_VERSION_DATA_UX500V2.BusyDetect:=True;
  PL18X_VERSION_DATA_UX500V2.PowerNoPower:=True;
- 
+
  PL18X_VERSION_DATA_QCOM.Name:='Qualcomm';
  PL18X_VERSION_DATA_QCOM.ClockRegister:=PL18X_MMCI_CLOCK_ENABLE;
  PL18X_VERSION_DATA_QCOM.ClockEnable:=PL18X_MMCI_CLOCK_QCOM_FLOWENA or PL18X_MMCI_CLOCK_QCOM_SELECT_IN_FBCLK;
@@ -590,10 +590,10 @@ begin
  PL18X_VERSION_DATA_QCOM.ExplicitMClockControl:=True;
  PL18X_VERSION_DATA_QCOM.QualcommFIFO:=True;
  PL18X_VERSION_DATA_QCOM.QualcommDMA:=True;
- 
+
  PL18XInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {PL18X Functions}
@@ -612,30 +612,30 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL180: SDHCI Create (Address=' + AddrToHex(Address) + ' Name=' + Name + ' IRQ0=' + IntToStr(IRQ0) + ' IRQ1=' + IntToStr(IRQ1) + ')');
  {$ENDIF}
- 
+
  {Check Address}
  if Address = 0 then Exit;
- 
+
  {Check IRQ0}
  {if IRQ0 = 0 then Exit;} {IRQ 0 is valid}
 
  {Check IRQ1}
  {if IRQ1 = 0 then Exit;} {IRQ 0 is valid}
- 
+
  {Check Clock Minimum}
  if ClockMinimum = 0 then ClockMinimum:=400000;
- 
+
  {Create SDHCI}
  PL18XSDHCI:=PPL18XSDHCIHost(SDHCIHostCreateEx(SizeOf(TPL18XSDHCIHost)));
  if PL18XSDHCI <> nil then
   begin
    {Update SDHCI}
    {Device}
-   PL18XSDHCI.SDHCI.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+   PL18XSDHCI.SDHCI.Device.DeviceBus:=DEVICE_BUS_MMIO;
    PL18XSDHCI.SDHCI.Device.DeviceType:=SDHCI_TYPE_MMCI;
    PL18XSDHCI.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_NON_STANDARD or SDHCI_FLAG_EXTERNAL_DMA; {QEMU does not allow CMD23 for version 1.0 controller, requires CMD12 to stop read or write}
    PL18XSDHCI.SDHCI.Device.DeviceData:=nil;
@@ -679,11 +679,11 @@ begin
    PL18XSDHCI.SingleIRQ:=False;
    PL18XSDHCI.Registers:=PPL18XMMCIRegisters(Address);
    PL18XSDHCI.Version:=PL18XGetVersionData(PL18XSDHCI);
- 
+
    {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
    if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL180: Version = ' + PL18XSDHCI.Version.Name);
    {$ENDIF}
- 
+
    {Register SDHCI}
    Status:=SDHCIHostRegister(@PL18XSDHCI.SDHCI);
    if Status = ERROR_SUCCESS then
@@ -691,7 +691,7 @@ begin
      {Return Result}
      Result:=PSDHCIHost(PL18XSDHCI);
     end
-   else 
+   else
     begin
      if MMC_LOG_ENABLED then MMCLogError(nil,'PL180: Failed to register new SDHCI host: ' + ErrorToString(Status));
 
@@ -699,7 +699,7 @@ begin
      SDHCIHostDestroy(@PL18XSDHCI.SDHCI);
     end;
   end
- else 
+ else
   begin
    if MMC_LOG_ENABLED then MMCLogError(nil,'PL180: Failed to create new SDHCI host');
   end;
@@ -722,30 +722,30 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL181: SDHCI Create (Address=' + AddrToHex(Address) + ' Name=' + Name + ' IRQ0=' + IntToStr(IRQ0) + ' IRQ1=' + IntToStr(IRQ1) + ')');
  {$ENDIF}
- 
+
  {Check Address}
  if Address = 0 then Exit;
- 
+
  {Check IRQ0}
  {if IRQ0 = 0 then Exit;} {IRQ 0 is valid}
 
  {Check IRQ1}
  {if IRQ1 = 0 then Exit;} {IRQ 0 is valid}
- 
+
  {Check Clock Minimum}
  if ClockMinimum = 0 then ClockMinimum:=400000;
- 
+
  {Create SDHCI}
  PL18XSDHCI:=PPL18XSDHCIHost(SDHCIHostCreateEx(SizeOf(TPL18XSDHCIHost)));
  if PL18XSDHCI <> nil then
   begin
    {Update SDHCI}
    {Device}
-   PL18XSDHCI.SDHCI.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+   PL18XSDHCI.SDHCI.Device.DeviceBus:=DEVICE_BUS_MMIO;
    PL18XSDHCI.SDHCI.Device.DeviceType:=SDHCI_TYPE_MMCI;
    PL18XSDHCI.SDHCI.Device.DeviceFlags:=SDHCI_FLAG_NON_STANDARD or SDHCI_FLAG_EXTERNAL_DMA; {QEMU does not allow CMD23 for version 1.0 controller, requires CMD12 to stop read or write}
    PL18XSDHCI.SDHCI.Device.DeviceData:=nil;
@@ -789,11 +789,11 @@ begin
    PL18XSDHCI.SingleIRQ:=False;
    PL18XSDHCI.Registers:=PPL18XMMCIRegisters(Address);
    PL18XSDHCI.Version:=PL18XGetVersionData(PL18XSDHCI);
- 
+
    {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
    if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL181: Version = ' + PL18XSDHCI.Version.Name);
    {$ENDIF}
- 
+
    {Register SDHCI}
    Status:=SDHCIHostRegister(@PL18XSDHCI.SDHCI);
    if Status = ERROR_SUCCESS then
@@ -801,7 +801,7 @@ begin
      {Return Result}
      Result:=PSDHCIHost(PL18XSDHCI);
     end
-   else 
+   else
     begin
      if MMC_LOG_ENABLED then MMCLogError(nil,'PL181: Failed to register new SDHCI host: ' + ErrorToString(Status));
 
@@ -809,7 +809,7 @@ begin
      SDHCIHostDestroy(@PL18XSDHCI.SDHCI);
     end;
   end
- else 
+ else
   begin
    if MMC_LOG_ENABLED then MMCLogError(nil,'PL181: Failed to create new SDHCI host');
   end;
@@ -824,14 +824,14 @@ function PL18XSDHCIDestroy(SDHCI:PSDHCIHost):LongWord;{$IFDEF API_EXPORT_PL18X} 
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check SDHCI}
  if SDHCI = nil then Exit;
- 
+
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: SDHCI Destroy');
  {$ENDIF}
- 
+
  {Stop SDHCI}
  Result:=SDHCIHostStop(SDHCI);
  if Result = ERROR_SUCCESS then
@@ -850,12 +850,12 @@ begin
    else
     begin
      if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: Failed to deregister SDHCI host: ' + ErrorToString(Result));
-    end;    
+    end;
   end
  else
   begin
    if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: Failed to stop SDHCI host: ' + ErrorToString(Result));
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -869,27 +869,27 @@ var
 begin
  {}
  Result:=MMC_STATUS_INVALID_PARAMETER;
- 
+
  {Check MMC}
  if MMC = nil then Exit;
 
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Device Get Card Detect');
  {$ENDIF}
- 
+
  {Get SDHCI}
  SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
  if SDHCI = nil then Exit;
- 
+
  {Check Non Removable}
  if MMCIsNonRemovable(MMC) then
   begin
    MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_CARD_PRESENT);
-   
+
    Result:=MMC_STATUS_SUCCESS;
    Exit;
   end;
- 
+
  {Check MMC State}
  if MMC.MMCState = MMC_STATE_INSERTED then
   begin
@@ -911,14 +911,14 @@ begin
     begin
      {Update Flags}
      MMC.Device.DeviceFlags:=(MMC.Device.DeviceFlags or MMC_FLAG_CARD_PRESENT);
-     
+
      {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
      if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: Get Card Detect (Flags=MMC_FLAG_CARD_PRESENT)');
      {$ENDIF}
-    end; 
-  end; 
- 
- Result:=MMC_STATUS_SUCCESS; 
+    end;
+  end;
+
+ Result:=MMC_STATUS_SUCCESS;
 end;
 
 {==============================================================================}
@@ -929,20 +929,20 @@ function PL18XMMCDeviceGetWriteProtect(MMC:PMMCDevice):LongWord;
 begin
  {}
  Result:=MMC_STATUS_INVALID_PARAMETER;
- 
+
  {Check MMC}
  if MMC = nil then Exit;
 
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Device Get Write Protect');
  {$ENDIF}
- 
+
  Result:=MMC_STATUS_SUCCESS;
 end;
 
 {==============================================================================}
 
-function PL18XMMCDeviceSendCommand(MMC:PMMCDevice;Command:PMMCCommand):LongWord; 
+function PL18XMMCDeviceSendCommand(MMC:PMMCDevice;Command:PMMCCommand):LongWord;
 {Implementation of MMCDeviceSendCommand API for PL18X SDHCI}
 {Note: Not intended to be called directly by applications, use MMCDeviceSendCommand instead}
 var
@@ -957,21 +957,21 @@ var
 begin
  {}
  Result:=MMC_STATUS_INVALID_PARAMETER;
- 
+
  {Check MMC}
  if MMC = nil then Exit;
 
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Device Send Command');
  {$ENDIF}
- 
+
  {Check Command}
  if Command = nil then Exit;
 
  {Get SDHCI}
  SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
  if SDHCI = nil then Exit;
- 
+
  {Acquire the Lock}
  if MutexLock(MMC.Lock) = ERROR_SUCCESS then
   begin
@@ -984,100 +984,100 @@ begin
     Command.CommandCompleted:=False;
     try
      {Update Statistics}
-     Inc(SDHCI.RequestCount); 
-     
+     Inc(SDHCI.RequestCount);
+
      {Memory Barrier}
      DataMemoryBarrier; {Before the First Write}
-     
+
      {Check Command}
      if (PPL18XSDHCIHost(SDHCI).Registers.Command and PL18X_MMCI_CPSM_ENABLE) <> 0 then
       begin
        {Reset Command}
        PPL18XSDHCIHost(SDHCI).Registers.Command:=0;
-       
+
        {Delay}
        PL18XRegisterDelay(PPL18XSDHCIHost(SDHCI));
       end;
-     
+
      {Setup Command}
      Value:=Command.Command or PL18X_MMCI_CPSM_ENABLE;
-     
+
      {Setup Response}
      if (Command.ResponseType and MMC_RSP_PRESENT) <> 0 then
       begin
        Value:=Value or PL18X_MMCI_CPSM_RESPONSE;
-       
+
        if (Command.ResponseType and MMC_RSP_136) <> 0 then
         begin
          Value:=Value or PL18X_MMCI_CPSM_LONGRSP;
         end;
       end;
-      
+
      //if (Command.ResponseType and MMC_CMD_MASK) = MMC_CMD_ADTC then //To Do
      // begin
      //  Value:=Value or PPL18XSDHCIHost(SDHCI).Version.DataCommandEnable;
      // end;
-     
+
      {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
      if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Send Command (Command=' + IntToHex(Value,8) + ')');
      {$ENDIF}
-     
+
      {Check Data}
      if Command.Data = nil then
       begin
        {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
        if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Send Command (Argument=' + IntToHex(Command.Argument,8) + ')');
        {$ENDIF}
-       
+
        {Write Argument}
        PPL18XSDHCIHost(SDHCI).Registers.Argument:=Command.Argument;
-       
+
        {Setup Interrupt Mask}
        IntMask:=0;
       end
-     else 
+     else
       begin
        {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
        if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Send Command (BlockSize=' + IntToStr(Command.Data.BlockSize) + ')');
        if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Send Command (BlockCount=' + IntToStr(Command.Data.BlockCount) + ')');
        {$ENDIF}
-       
+
        {Setup Data}
        Command.Data.BlockOffset:=0;
        Command.Data.BytesRemaining:=Command.Data.BlockSize * Command.Data.BlockCount;
        Command.Data.BytesTransfered:=0;
-       
+
        {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
        if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Send Command (Argument=' + IntToHex(Command.Argument,8) + ')');
        {$ENDIF}
-       
+
        {Write Argument}
        PPL18XSDHCIHost(SDHCI).Registers.Argument:=Command.Argument;
-       
+
        {Setup Data Timer (5 seconds in SD clock cycles)}
        Timeout:=5 * SDHCI.Clock;
        {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
        if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Send Command (Data Timer=' + IntToStr(Timeout) + ')');
        {$ENDIF}
-       
+
        {Write Data Timer}
        PPL18XSDHCIHost(SDHCI).Registers.DataTimer:=Timeout;
-       
+
        {Setup Data Length}
        Size:=Command.Data.BlockSize * Command.Data.BlockCount;
        {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
        if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Send Command (Data Length=' + IntToStr(Size) + ')');
        {$ENDIF}
-       
+
        {Write Data Length}
        PPL18XSDHCIHost(SDHCI).Registers.DataLength:=Size;
-       
+
        {Setup Data Control}
        if PPL18XSDHCIHost(SDHCI).Version.BlockSizeDataControl16 then
         begin
          Control:=PL18X_MMCI_DPSM_ENABLE or (Command.Data.BlockSize shl 16);
         end
-       else if PPL18XSDHCIHost(SDHCI).Version.BlockSizeDataControl4 then 
+       else if PPL18XSDHCIHost(SDHCI).Version.BlockSizeDataControl4 then
         begin
          Control:=PL18X_MMCI_DPSM_ENABLE or (Command.Data.BlockSize shl 4);
         end
@@ -1088,9 +1088,9 @@ begin
          {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
          if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Send Command (Block Size Bit=' + IntToStr(SizeBit) + ')');
          {$ENDIF}
-         
+
          Control:=PL18X_MMCI_DPSM_ENABLE or (SizeBit shl 4);
-        end;       
+        end;
        if (Command.Data.Flags and MMC_DATA_READ) <> 0 then
         begin
          Control:=Control or PL18X_MMCI_DPSM_DIRECTION;
@@ -1103,15 +1103,15 @@ begin
        {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
        if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Send Command (Data Control=' + IntToHex(Control,8) + ')');
        {$ENDIF}
-       
+
        {Setup DMA Transfer}
        //To Do //mmci_dma_start_data
-       
+
        {Setup Interrupt Mask}
        if (Command.Data.Flags and MMC_DATA_READ) <> 0 then
         begin
          IntMask:=PL18X_MMCI_RXFIFOHALFFULLMASK;
-         
+
          if Size < PPL18XSDHCIHost(SDHCI).Version.FIFOHalfSize then
           begin
            IntMask:=IntMask or PL18X_MMCI_RXDATAAVLBLMASK;
@@ -1120,15 +1120,15 @@ begin
        else
         begin
          IntMask:=PL18X_MMCI_TXFIFOHALFEMPTYMASK;
-        end;       
+        end;
        {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
        if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Send Command (Interrupt Mask=' + IntToHex(IntMask,8) + ')');
        {$ENDIF}
-       
+
        {Write Data Control}
        PL18XWriteDataCtrlRegister(PPL18XSDHCIHost(SDHCI),Control);
-      end;     
-     
+      end;
+
      {Setup Command}
      SDHCI.Command:=Command;
      try
@@ -1140,18 +1140,18 @@ begin
       else
        begin
         if SpinLockIRQ(SDHCI.Spin) <> ERROR_SUCCESS then Exit;
-       end;  
-      
+       end;
+
       {Write Interrupt Mask}
       PPL18XSDHCIHost(SDHCI).Registers.Mask0:=PPL18XSDHCIHost(SDHCI).Registers.Mask0 and not(PL18X_MMCI_DATAENDMASK);
       PL18XSetInterruptMask1(PPL18XSDHCIHost(SDHCI),IntMask);
-      
+
       {Write Command}
       PPL18XSDHCIHost(SDHCI).Registers.Command:=Value;
-      
+
       {Memory Barrier}
-      DataMemoryBarrier; {After the Last Read} 
- 
+      DataMemoryBarrier; {After the Last Read}
+
       {Release the Lock}
       if PPL18XSDHCIHost(SDHCI).EnableFIQ then
        begin
@@ -1160,13 +1160,13 @@ begin
       else
        begin
         SpinUnlockIRQ(SDHCI.Spin);
-       end;     
-       
+       end;
+
       {Wait for Completion}
       if Command.Data = nil then
        begin
         {Update Statistics}
-        Inc(SDHCI.CommandRequestCount); 
+        Inc(SDHCI.CommandRequestCount);
 
         {Get Command Timeout (Default 100ms)}
         Timeout:=100;
@@ -1179,28 +1179,28 @@ begin
           if Status = ERROR_WAIT_TIMEOUT then
            begin
             if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: MMC Send Command Response Timeout');
-            
+
             Command.Status:=MMC_STATUS_TIMEOUT;
            end
           else
            begin
             if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: MMC Send Command Response Failure');
- 
+
             Command.Status:=MMC_STATUS_HARDWARE_ERROR;
-           end;          
+           end;
          end;
        end
       else
        begin
         {Update Statistics}
-        Inc(SDHCI.DataRequestCount); 
+        Inc(SDHCI.DataRequestCount);
 
         //To Do //DMA
         //{Update Statistics}
-        //Inc(SDHCI.DMADataTransferCount); 
+        //Inc(SDHCI.DMADataTransferCount);
 
         {Update Statistics}
-        Inc(SDHCI.PIODataTransferCount); 
+        Inc(SDHCI.PIODataTransferCount);
 
         {Get Data Timeout (Default 5000ms)}
         Timeout:=5000;
@@ -1213,15 +1213,15 @@ begin
           if Status = ERROR_WAIT_TIMEOUT then
            begin
             if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: MMC Send Data Response Timeout');
-            
+
             Command.Status:=MMC_STATUS_TIMEOUT;
            end
           else
            begin
             if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: MMC Send Data Response Failure');
-            
+
             Command.Status:=MMC_STATUS_HARDWARE_ERROR;
-           end;          
+           end;
          end;
        end;
      finally
@@ -1233,8 +1233,8 @@ begin
      if Command.Status <> MMC_STATUS_SUCCESS then
       begin
        {Update Statistics}
-       Inc(SDHCI.RequestErrors); 
-       
+       Inc(SDHCI.RequestErrors);
+
        {Return Result}
        Result:=Command.Status;
       end;
@@ -1262,7 +1262,7 @@ var
 begin
  {}
  Result:=MMC_STATUS_INVALID_PARAMETER;
- 
+
  {Check MMC}
  if MMC = nil then Exit;
 
@@ -1270,26 +1270,26 @@ begin
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Device Set IOS');
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MMC Set IOS (Clock=' + IntToStr(MMC.Clock) + ' BusWidth=' + MMCBusWidthToString(MMC.BusWidth) + ')');
  {$ENDIF}
- 
+
  {Get SDHCI}
  SDHCI:=PSDHCIHost(MMC.Device.DeviceData);
  if SDHCI = nil then Exit;
- 
+
  {Set Power}
  Power:=PL18X_MMCI_POWER_ON;
- 
+
  {Write Registers}
  PL18XSetClockRegister(PPL18XSDHCIHost(SDHCI),MMC,MMC.Clock);
  PL18XWritePowerRegister(PPL18XSDHCIHost(SDHCI),Power);
 
  {Delay}
  PL18XRegisterDelay(PPL18XSDHCIHost(SDHCI));
- 
+
  {Update Clock, Bus Width and Timing}
  SDHCI.Clock:=MMC.Clock;
  SDHCI.BusWidth:=MMC.BusWidth;
  SDHCI.Timing:=MMC.Timing;
- 
+
  Result:=MMC_STATUS_SUCCESS;
 end;
 
@@ -1305,16 +1305,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check SDHCI}
  if SDHCI = nil then Exit;
- 
+
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: SDHCI Host Start');
  {$ENDIF}
- 
+
  if MMC_LOG_ENABLED then MMCLogInfo(nil,'PL18X Starting SD host controller (' + SDHCI.Device.DeviceDescription + ')');
- 
+
  {Update SDHCI}
  {Driver Properties}
  if PPL18XSDHCIHost(SDHCI).EnableFIQ then
@@ -1324,7 +1324,7 @@ begin
  else
   begin
    SDHCI.Wait:=SemaphoreCreateEx(0,SEMAPHORE_DEFAULT_MAXIMUM,SEMAPHORE_FLAG_IRQ);
-  end;  
+  end;
  SDHCI.Quirks:=SDHCI_QUIRK_NO_HISPD_BIT or SDHCI_QUIRK_MISSING_CAPS;
  {Configuration Properties}
  SDHCI.PresetVoltages:=MMC_VDD_32_33 or MMC_VDD_33_34;
@@ -1337,22 +1337,22 @@ begin
  else
   begin
    PPL18XSDHCIHost(SDHCI).GetRXFIFOCount:=PL18XGetRXFIFOCount;
-  end;  
- 
+  end;
+
  {Get Clock Maximum}
  SDHCI.MaximumFrequency:=SDHCI.ClockMaximum;
  if SDHCI.MaximumFrequency > PPL18XSDHCIHost(SDHCI).Version.ClockMaximum then
   begin
    SDHCI.ClockMaximum:=PPL18XSDHCIHost(SDHCI).Version.ClockMaximum;
   end;
- 
+
  {Get Clock Minimum}
- if PPL18XSDHCIHost(SDHCI).Version.STClockDivider then 
+ if PPL18XSDHCIHost(SDHCI).Version.STClockDivider then
   begin
    {The ARM and ST versions of the block have slightly different clock divider equations which means that the minimum divider differs too}
    SDHCI.MinimumFrequency:=DivRoundUp(SDHCI.ClockMaximum,257);
   end
- else if PPL18XSDHCIHost(SDHCI).Version.ExplicitMClockControl then 
+ else if PPL18XSDHCIHost(SDHCI).Version.ExplicitMClockControl then
   begin
    {On Qualcomm like controllers get the nearest minimum clock to 100Khz}
    SDHCI.MinimumFrequency:=100000;
@@ -1361,57 +1361,57 @@ begin
   begin
    SDHCI.MinimumFrequency:=DivRoundUp(SDHCI.ClockMaximum,512);
   end;
-   
+
  if SDHCI.MaximumFrequency > 0 then
   begin
-   if PPL18XSDHCIHost(SDHCI).Version.ExplicitMClockControl then 
+   if PPL18XSDHCIHost(SDHCI).Version.ExplicitMClockControl then
     begin
      SDHCI.MaximumFrequency:=Min(PPL18XSDHCIHost(SDHCI).Version.ClockMaximum,SDHCI.MaximumFrequency);
     end
    else
     begin
      SDHCI.MaximumFrequency:=Min(SDHCI.ClockMaximum,SDHCI.MaximumFrequency);
-    end;    
+    end;
   end
  else
   begin
    SDHCI.MaximumFrequency:=SDHCI.ClockMinimum;
   end;
-  
+
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: ClockMinimum = ' + IntToStr(SDHCI.ClockMinimum) + ' ClockMaximum = ' + IntToStr(SDHCI.ClockMaximum));
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: MinimumFrequency = ' + IntToStr(SDHCI.MinimumFrequency) + ' MaximumFrequency = ' + IntToStr(SDHCI.MaximumFrequency));
  {$ENDIF}
- 
+
  {Get Voltages}
  SDHCI.Voltages:=SDHCI.PresetVoltages;
- 
+
  {Get Capabilities}
  SDHCI.Capabilities:=MMC_CAP_4_BIT_DATA; //MMC_CAP_SD_HIGHSPEED or MMC_CAP_MMC_HIGHSPEED or MMC_CAP_4_BIT_DATA; //To Do //High speed not supported by earler QEMU versions
- 
+
  {Determine Request Size}
  SDHCI.MaximumRequestSize:=(1 shl PPL18XSDHCIHost(SDHCI).Version.DataLengthBits) - 1;
- 
+
  {Determine Block Size}
  SDHCI.MaximumBlockSize:=(1 shl 11);
- 
+
  {Determine Block Count}
  SDHCI.MaximumBlockCount:=(SDHCI.MaximumRequestSize shr 11);
- 
+
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
- 
+
  {Reset Interrupts}
  PPL18XSDHCIHost(SDHCI).Registers.Mask0:=0;
  PPL18XSDHCIHost(SDHCI).Registers.Mask1:=0;
  PPL18XSDHCIHost(SDHCI).Registers.Clear:=$fff;
- 
+
  {Request the IRQ/FIQ}
  if PPL18XSDHCIHost(SDHCI).EnableFIQ then
   begin
    {Request IRQ0}
    RequestFIQ(FIQ_ROUTING,PPL18XSDHCIHost(SDHCI).IRQ0,TInterruptHandler(PL18XSDHCIInterruptHandler),SDHCI);
-   
+
    if not PPL18XSDHCIHost(SDHCI).SingleIRQ then
     begin
      {Request IRQ1}
@@ -1422,17 +1422,17 @@ begin
   begin
    {Request IRQ0}
    RequestIRQ(IRQ_ROUTING,PPL18XSDHCIHost(SDHCI).IRQ0,TInterruptHandler(PL18XSDHCIInterruptHandler),SDHCI);
-   
+
    if not PPL18XSDHCIHost(SDHCI).SingleIRQ then
     begin
      {Request IRQ1}
      RequestIRQ(IRQ_ROUTING,PPL18XSDHCIHost(SDHCI).IRQ1,TInterruptHandler(PL18XSDHCIPIOInterruptHandler),SDHCI);
     end;
-  end;  
- 
+  end;
+
  {Enable Interrupts}
  PPL18XSDHCIHost(SDHCI).Registers.Mask0:=PL18X_MMCI_IRQENABLE;
- 
+
  {Create MMC}
  MMC:=MMCDeviceCreate;
  if MMC = nil then
@@ -1440,7 +1440,7 @@ begin
    if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: Failed to create new MMC device');
    Exit;
   end;
- 
+
  {Update MMC}
  {Device}
  MMC.Device.DeviceBus:=DEVICE_BUS_MMC;
@@ -1459,24 +1459,24 @@ begin
  MMC.Voltages:=SDHCI.Voltages;
  MMC.Capabilities:=SDHCI.Capabilities or MMC_CAP_CMD23;
  MMC.Capabilities2:=SDHCI.Capabilities2;
- if PPL18XSDHCIHost(SDHCI).Version.BusyDetect then 
+ if PPL18XSDHCIHost(SDHCI).Version.BusyDetect then
   begin
     //MMC.DeviceCardBusy:=PL18XMMCDeviceCardBusy; //To Do //mmci_card_busy
     //PL18XWriteDataCtrlRegister(PPL18XSDHCIHost(SDHCI),PL18X_MMCI_ST_DPSM_BUSYMODE) //To Do
     //MMC.Capabilities:=MMC.Capabilities or MMC_CAP_WAIT_WHILE_BUSY; //To Do
     //MMC.MaxBusyTimeout:=0; //
   end;
- 
+
  {Create Storage}
  MMC.Storage:=StorageDeviceCreate;
  if MMC.Storage = nil then
   begin
    if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: Failed to create new Storage device');
-   
+
    MMCDeviceDestroy(MMC);
    Exit;
   end;
- 
+
  {Update Storage}
  {Device}
  MMC.Storage.Device.DeviceBus:=DEVICE_BUS_MMC;
@@ -1489,31 +1489,31 @@ begin
  MMC.Storage.DeviceWrite:=MMCStorageDeviceWrite;
  MMC.Storage.DeviceErase:=MMCStorageDeviceErase;
  MMC.Storage.DeviceControl:=MMCStorageDeviceControl;
- 
+
  {Initialize MMC}
  Status:=MMCDeviceInitialize(MMC);
  if (Status <> MMC_STATUS_SUCCESS) and (Status <> MMC_STATUS_NO_MEDIA) then
   begin
    if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: Failed to initialize new MMC device');
-   
+
    StorageDeviceDestroy(MMC.Storage);
    MMCDeviceDestroy(MMC);
    Exit;
   end;
- 
+
  {Check MMC Type}
  if MMC.Device.DeviceType = MMC_TYPE_SDIO then
   begin
    {Destroy Storage}
    StorageDeviceDestroy(MMC.Storage);
    MMC.Storage:=nil;
-  end;  
- 
+  end;
+
  {Register MMC}
  if MMCDeviceRegister(MMC) <> MMC_STATUS_SUCCESS then
   begin
    if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: Failed to register new MMC device');
-   
+
    StorageDeviceDestroy(MMC.Storage);
    MMCDeviceDestroy(MMC);
    Exit;
@@ -1524,16 +1524,16 @@ begin
 
  {Enable Host}
  SDHCI.SDHCIState:=SDHCI_STATE_ENABLED;
- 
+
  {Notify Enable}
  NotifierNotify(@SDHCI.Device,DEVICE_NOTIFICATION_ENABLE);
- 
+
  {Notify Insert MMC}
  if MMC.MMCState = MMC_STATE_INSERTED then
   begin
    NotifierNotify(@MMC.Device,DEVICE_NOTIFICATION_INSERT);
   end;
- 
+
  {Check Storage}
  if MMC.Storage <> nil then
   begin
@@ -1541,18 +1541,18 @@ begin
    if MMC.MMCState = MMC_STATE_INSERTED then
     begin
      StorageDeviceSetState(MMC.Storage,STORAGE_STATE_INSERTED);
-    end; 
-   
+    end;
+
    {Start Storage Status Checking}
    if StorageDeviceStartStatus(MMC.Storage,MMC_STATUS_TIMER_INTERVAL) <> ERROR_SUCCESS then
     begin
      if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: Failed start status for new MMC device');
     end;
-  end;  
- 
+  end;
+
  Result:=ERROR_SUCCESS;
 end;
- 
+
 {==============================================================================}
 
 function PL18XSDHCIHostStop(SDHCI:PSDHCIHost):LongWord;
@@ -1563,47 +1563,47 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
-  
+
  {Check SDHCI}
  if SDHCI = nil then Exit;
- 
+
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: SDHCI Host Stop');
  {$ENDIF}
- 
+
  {Get MMC}
  MMC:=MMCDeviceFindByDevice(@SDHCI.Device);
  if MMC <> nil then
-  begin 
+  begin
    {Check Storage}
    if MMC.Storage <> nil then
     begin
      {Stop Storage Status Checking}
      StorageDeviceStopStatus(MMC.Storage);
-     
+
      {Set Storage State to Inserted}
      StorageDeviceSetState(MMC.Storage,STORAGE_STATE_EJECTED);
-    end; 
-  
+    end;
+
    {Eject MMC}
    MMC.MMCState:=MMC_STATE_EJECTED;
-   
+
    {Notify Eject MMC}
    NotifierNotify(@MMC.Device,DEVICE_NOTIFICATION_EJECT);
-  end;  
- 
+  end;
+
  {Disable Host}
  SDHCI.SDHCIState:=SDHCI_STATE_DISABLED;
-  
+
  {Notify Disable}
  NotifierNotify(@SDHCI.Device,DEVICE_NOTIFICATION_DISABLE);
- 
+
  {Release the IRQ/FIQ}
  if PPL18XSDHCIHost(SDHCI).EnableFIQ then
   begin
    {Release IRQ0}
    ReleaseFIQ(FIQ_ROUTING,PPL18XSDHCIHost(SDHCI).IRQ0,TInterruptHandler(PL18XSDHCIInterruptHandler),SDHCI);
-   
+
    if not PPL18XSDHCIHost(SDHCI).SingleIRQ then
     begin
      {Release IRQ1}
@@ -1614,14 +1614,14 @@ begin
   begin
    {Release IRQ0}
    ReleaseIRQ(IRQ_ROUTING,PPL18XSDHCIHost(SDHCI).IRQ0,TInterruptHandler(PL18XSDHCIInterruptHandler),SDHCI);
-   
+
    if not PPL18XSDHCIHost(SDHCI).SingleIRQ then
     begin
      {Release IRQ1}
      ReleaseIRQ(IRQ_ROUTING,PPL18XSDHCIHost(SDHCI).IRQ1,TInterruptHandler(PL18XSDHCIPIOInterruptHandler),SDHCI);
     end;
-  end;  
- 
+  end;
+
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
 
@@ -1629,52 +1629,52 @@ begin
  PPL18XSDHCIHost(SDHCI).Registers.Mask0:=0;
  PPL18XSDHCIHost(SDHCI).Registers.Mask1:=0;
  PPL18XSDHCIHost(SDHCI).Registers.Clear:=$fff;
- 
+
  {Reset Command}
  PPL18XSDHCIHost(SDHCI).Registers.Command:=0;
- 
+
  {Reset Data Control}
  PPL18XSDHCIHost(SDHCI).Registers.DataCtrl:=0;
- 
+
  {Check MMC}
  if MMC <> nil then
-  begin 
+  begin
    {Dergister MMC}
    MMCDeviceDeregister(MMC);
-   
+
    {Check Storage}
    if MMC.Storage <> nil then
     begin
      {Destroy Storage}
      StorageDeviceDestroy(MMC.Storage);
     end;
-   
+
    {Destroy MMC}
-   MMCDeviceDestroy(MMC);   
+   MMCDeviceDestroy(MMC);
   end;
- 
+
  {Destroy the Semaphore}
  if SDHCI.Wait <> INVALID_HANDLE_VALUE then
   begin
    SemaphoreDestroy(SDHCI.Wait);
-   
+
    SDHCI.Wait:=INVALID_HANDLE_VALUE;
-  end; 
- 
+  end;
+
  if MMC_LOG_ENABLED then MMCLogInfo(nil,'PL18X Stopped SD host controller (' + SDHCI.Device.DeviceDescription + ')');
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}
 
-function PL18XSDHCIHostReadByte(SDHCI:PSDHCIHost;Reg:LongWord):Byte; 
+function PL18XSDHCIHostReadByte(SDHCI:PSDHCIHost;Reg:LongWord):Byte;
 {Implementation of SDHCIHostReadByte API for PL18X SDHCI}
 {Note: Not intended to be called directly by applications, use SDHCIHostReadByte instead}
 begin
  {Not used by MMCI}
  Result:=0;
- 
+
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: SDHCI Host Read Byte');
  {$ENDIF}
@@ -1682,13 +1682,13 @@ end;
 
 {==============================================================================}
 
-function PL18XSDHCIHostReadWord(SDHCI:PSDHCIHost;Reg:LongWord):Word; 
+function PL18XSDHCIHostReadWord(SDHCI:PSDHCIHost;Reg:LongWord):Word;
 {Implementation of SDHCIHostReadWord API for PL18X SDHCI}
 {Note: Not intended to be called directly by applications, use SDHCIHostReadWord instead}
 begin
  {Not used by MMCI}
  Result:=0;
- 
+
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: SDHCI Host Read Word');
  {$ENDIF}
@@ -1696,13 +1696,13 @@ end;
 
 {==============================================================================}
 
-function PL18XSDHCIHostReadLong(SDHCI:PSDHCIHost;Reg:LongWord):LongWord; 
+function PL18XSDHCIHostReadLong(SDHCI:PSDHCIHost;Reg:LongWord):LongWord;
 {Implementation of SDHCIHostReadLong API for PL18X SDHCI}
 {Note: Not intended to be called directly by applications, use SDHCIHostReadLong instead}
 begin
  {Not used by MMCI}
  Result:=0;
- 
+
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: SDHCI Host Read Long');
  {$ENDIF}
@@ -1710,7 +1710,7 @@ end;
 
 {==============================================================================}
 
-procedure PL18XSDHCIHostWriteByte(SDHCI:PSDHCIHost;Reg:LongWord;Value:Byte); 
+procedure PL18XSDHCIHostWriteByte(SDHCI:PSDHCIHost;Reg:LongWord;Value:Byte);
 {Implementation of SDHCIHostWriteByte API for PL18X SDHCI}
 {Note: Not intended to be called directly by applications, use SDHCIHostWriteByte instead}
 begin
@@ -1722,7 +1722,7 @@ end;
 
 {==============================================================================}
 
-procedure PL18XSDHCIHostWriteWord(SDHCI:PSDHCIHost;Reg:LongWord;Value:Word); 
+procedure PL18XSDHCIHostWriteWord(SDHCI:PSDHCIHost;Reg:LongWord;Value:Word);
 {Implementation of SDHCIHostWriteWord API for PL18X SDHCI}
 {Note: Not intended to be called directly by applications, use SDHCIHostWriteWord instead}
 begin
@@ -1734,7 +1734,7 @@ end;
 
 {==============================================================================}
 
-procedure PL18XSDHCIHostWriteLong(SDHCI:PSDHCIHost;Reg:LongWord;Value:LongWord); 
+procedure PL18XSDHCIHostWriteLong(SDHCI:PSDHCIHost;Reg:LongWord;Value:LongWord);
 {Implementation of SDHCIHostWriteLong API for PL18X SDHCI}
 {Note: Not intended to be called directly by applications, use SDHCIHostWriteLong instead}
 begin
@@ -1777,7 +1777,7 @@ begin
  {}
  {Check SDHCI}
  if SDHCI = nil then Exit;
- 
+
  {Acquire the Lock}
  if SDHCI.EnableFIQ then
   begin
@@ -1786,19 +1786,19 @@ begin
  else
   begin
    if SpinLockIRQ(SDHCI.SDHCI.Spin) <> ERROR_SUCCESS then Exit;
-  end;  
- 
+  end;
+
  {Update Statistics}
  Inc(SDHCI.SDHCI.InterruptCount);
- 
+
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
- 
+
  {Check Status}
  repeat
   {Get Status}
   Status:=SDHCI.Registers.Status;
-  
+
   {Check Single IRQ}
   if SDHCI.SingleIRQ then
    begin
@@ -1806,20 +1806,20 @@ begin
      begin
       PL18XSDHCIPIOInterruptHandler(SDHCI);
      end;
-     
+
     Status:=Status and not(PL18X_MMCI_IRQ1MASK);
    end;
-  
+
   {Clear Status (Including PL18X_MMCI_ST_CARDBUSY if enabled)}
   Status:=(Status and SDHCI.Registers.Mask0);
   SDHCI.Registers.Clear:=Status;
-  
+
   {Check Reversed IRQ Handling}
   if SDHCI.Version.ReversedIRQ then
    begin
     {Data Interrupt}
     PL18XSDHCIDataInterrupt(SDHCI,Status);
-    
+
     {Command Interrupt}
     PL18XSDHCICommandInterrupt(SDHCI,Status);
    end
@@ -1830,18 +1830,18 @@ begin
 
     {Data Interrupt}
     PL18XSDHCIDataInterrupt(SDHCI,Status);
-   end;    
-  
-  {Don't poll for busy completion in interrupt}  
+   end;
+
+  {Don't poll for busy completion in interrupt}
   if SDHCI.BusyStatus <> 0 then
    begin
-    Status:=Status and not(PL18X_MMCI_ST_CARDBUSY); 
+    Status:=Status and not(PL18X_MMCI_ST_CARDBUSY);
    end;
  until Status = 0;
- 
+
  {Memory Barrier}
- DataMemoryBarrier; {After the Last Read} 
- 
+ DataMemoryBarrier; {After the Last Read}
+
  {Release the Lock}
  if SDHCI.EnableFIQ then
   begin
@@ -1850,7 +1850,7 @@ begin
  else
   begin
    SpinUnlockIRQ(SDHCI.SDHCI.Spin);
-  end;     
+  end;
 end;
 
 {==============================================================================}
@@ -1867,22 +1867,22 @@ begin
  {}
  {Check SDHCI}
  if SDHCI = nil then Exit;
- 
+
  {$IF DEFINED(PL18X_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: Data Interrupt');
  {$ENDIF}
- 
+
  {Update Statistics}
  Inc(SDHCI.SDHCI.DataInterruptCount);
- 
+
  {Check Command}
  if SDHCI.SDHCI.Command = nil then
   begin
    {$IF DEFINED(PL18X_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
    if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: Data Interrupt when no current command (Status=' + IntToHex(Status,8) + ')');
    {$ENDIF}
-   Exit; 
-  end; 
+   Exit;
+  end;
 
  {Check Command}
  if SDHCI.SDHCI.Command.Data = nil then
@@ -1890,24 +1890,24 @@ begin
    {$IF DEFINED(PL18X_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
    if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: Data Interrupt when no current data (Status=' + IntToHex(Status,8) + ')');
    {$ENDIF}
-   Exit; 
-  end; 
-  
+   Exit;
+  end;
+
  {Check for Errors}
  if (Status and (PL18X_MMCI_DATACRCFAIL or PL18X_MMCI_DATATIMEOUT or PL18X_MMCI_STARTBITERR or PL18X_MMCI_TXUNDERRUN or PL18X_MMCI_RXOVERRUN)) <> 0 then
   begin
    {Terminate DMA transfer}
    //To Do
-   
+
    {Calculate how far we are into the transfer}
    Remain:=SDHCI.Registers.DataCnt;
    Success:=(SDHCI.SDHCI.Command.Data.BlockSize * SDHCI.SDHCI.Command.Data.BlockCount) - Remain;
-   
+
    if (Status and PL18X_MMCI_DATACRCFAIL) <> 0 then
     begin
      {Last block was not successful}
      Dec(Success);
-     
+
      {Return Status}
      SDHCI.SDHCI.Command.Status:=MMC_STATUS_INVALID_SEQUENCE;
     end
@@ -1916,17 +1916,17 @@ begin
      {Return Status}
      SDHCI.SDHCI.Command.Status:=MMC_STATUS_TIMEOUT;
     end
-   else if (Status and PL18X_MMCI_STARTBITERR) <> 0 then  
+   else if (Status and PL18X_MMCI_STARTBITERR) <> 0 then
     begin
      {Return Status}
      SDHCI.SDHCI.Command.Status:=MMC_STATUS_HARDWARE_ERROR;
     end
-   else if (Status and PL18X_MMCI_TXUNDERRUN) <> 0 then  
+   else if (Status and PL18X_MMCI_TXUNDERRUN) <> 0 then
     begin
      {Return Status}
      SDHCI.SDHCI.Command.Status:=MMC_STATUS_HARDWARE_ERROR;
     end
-   else if (Status and PL18X_MMCI_RXOVERRUN) <> 0 then  
+   else if (Status and PL18X_MMCI_RXOVERRUN) <> 0 then
     begin
      if Success > SDHCI.Version.FIFOSize then
       begin
@@ -1936,14 +1936,14 @@ begin
       begin
        Success:=0;
       end;
-      
+
      {Return Status}
      SDHCI.SDHCI.Command.Status:=MMC_STATUS_HARDWARE_ERROR;
     end;
-   
+
    {Update Bytes Transferred}
    SDHCI.SDHCI.Command.Data.BytesTransfered:=RoundDown(Success,SDHCI.SDHCI.Command.Data.BlockSize);
-   
+
    {Signal Completion}
    if SDHCI.EnableFIQ then
     begin
@@ -1954,21 +1954,21 @@ begin
      SemaphoreSignal(SDHCI.SDHCI.Wait);
     end;
   end;
- 
- {Check for Data Block End} 
+
+ {Check for Data Block End}
  if (Status and PL18X_MMCI_DATABLOCKEND) <> 0 then
   begin
    {$IF DEFINED(PL18X_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
    if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: Unrequested PL18X_MMCI_DATABLOCKEND interrupt (Status=' + IntToHex(Status,8) + ')');
    {$ENDIF}
   end;
- 
- {Check for Data End}  
+
+ {Check for Data End}
  if ((Status and PL18X_MMCI_DATAEND) <> 0) or (SDHCI.SDHCI.Command.Status <> MMC_STATUS_NOT_PROCESSED) then
   begin
    {Stop Data}
    PL18XSDHCIStopData(SDHCI);
-   
+
    {Check Status}
    if SDHCI.SDHCI.Command.Status = MMC_STATUS_NOT_PROCESSED then
     begin
@@ -1977,13 +1977,13 @@ begin
       begin
        {Update Bytes Transferred}
        SDHCI.SDHCI.Command.Data.BytesTransfered:=(SDHCI.SDHCI.Command.Data.BlockSize * SDHCI.SDHCI.Command.Data.BlockCount);
-       
+
        {Return Status}
        SDHCI.SDHCI.Command.Status:=MMC_STATUS_SUCCESS;
-     
+
        {Set Data Completed}
        SDHCI.SDHCI.Command.DataCompleted:=True;
-     
+
        {Check Command Completed}
        if SDHCI.SDHCI.Command.CommandCompleted then
         begin
@@ -1996,8 +1996,8 @@ begin
           begin
            SemaphoreSignal(SDHCI.SDHCI.Wait);
           end;
-        end;   
-      end;  
+        end;
+      end;
     end;
   end;
 end;
@@ -2015,32 +2015,32 @@ begin
  {}
  {Check SDHCI}
  if SDHCI = nil then Exit;
- 
+
  {$IF DEFINED(PL18X_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: Command Interrupt');
  {$ENDIF}
- 
+
  {Update Statistics}
  Inc(SDHCI.SDHCI.CommandInterruptCount);
- 
+
  {Check Command}
  if SDHCI.SDHCI.Command = nil then
   begin
    {$IF DEFINED(PL18X_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
    if MMC_LOG_ENABLED then MMCLogError(nil,'PL18X: Command Interrupt when no current command (Status=' + IntToHex(Status,8) + ')');
    {$ENDIF}
-   Exit; 
-  end; 
- 
+   Exit;
+  end;
+
  {Check for Busy Response}
  BusyResponse:=SDHCI.Version.BusyDetect and ((SDHCI.SDHCI.Command.ResponseType and MMC_RSP_BUSY) <> 0);
- 
+
  {Check for Command}
  if ((Status or SDHCI.BusyStatus) and (PL18X_MMCI_CMDCRCFAIL or PL18X_MMCI_CMDTIMEOUT or PL18X_MMCI_CMDSENT or PL18X_MMCI_CMDRESPEND)) = 0 then Exit;
- 
+
  {Check if we need to wait for busy completion}
  if (SDHCI.BusyStatus <> 0) and ((Status and PL18X_MMCI_ST_CARDBUSY) <> 0) then Exit;
- 
+
  {Enable busy completion if needed}
  if (SDHCI.BusyStatus = 0) and BusyResponse and ((Status and (PL18X_MMCI_CMDCRCFAIL or PL18X_MMCI_CMDTIMEOUT)) = 0) and ((SDHCI.Registers.Status and PL18X_MMCI_ST_CARDBUSY) <> 0) then
   begin
@@ -2048,20 +2048,20 @@ begin
    SDHCI.BusyStatus:=Status and (PL18X_MMCI_CMDSENT or PL18X_MMCI_CMDRESPEND);
    Exit;
   end;
-  
+
  {At busy completion, mask the IRQ and complete the request}
  if SDHCI.BusyStatus <> 0 then
   begin
    SDHCI.Registers.Mask0:=SDHCI.Registers.Mask0 and not(PL18X_MMCI_ST_BUSYEND);
    SDHCI.BusyStatus:=0;
   end;
- 
+
  {Check Status}
  if (Status and PL18X_MMCI_CMDTIMEOUT) <> 0 then
   begin
    {Return Status}
    SDHCI.SDHCI.Command.Status:=MMC_STATUS_TIMEOUT;
-   
+
    {Signal Completion}
    if SDHCI.EnableFIQ then
     begin
@@ -2076,7 +2076,7 @@ begin
   begin
    {Return Status}
    SDHCI.SDHCI.Command.Status:=MMC_STATUS_INVALID_SEQUENCE;
-   
+
    {Signal Completion}
    if SDHCI.EnableFIQ then
     begin
@@ -2097,17 +2097,17 @@ begin
      SDHCI.SDHCI.Command.Response[1]:=SDHCI.Registers.Response1;
      SDHCI.SDHCI.Command.Response[2]:=SDHCI.Registers.Response2;
      SDHCI.SDHCI.Command.Response[3]:=SDHCI.Registers.Response3;
-     
-     
+
+
      {Set Command Completed}
      SDHCI.SDHCI.Command.CommandCompleted:=True;
-  
+
      {Check Data Completed}
      if (SDHCI.SDHCI.Command.DataCompleted) or (SDHCI.SDHCI.Command.Data = nil) then
       begin
        {Return Status}
        SDHCI.SDHCI.Command.Status:=MMC_STATUS_SUCCESS;
-       
+
        {Signal Completion}
        if SDHCI.EnableFIQ then
         begin
@@ -2117,10 +2117,10 @@ begin
         begin
          SemaphoreSignal(SDHCI.SDHCI.Wait);
         end;
-      end;   
-    end;  
-  end;  
- 
+      end;
+    end;
+  end;
+
  if SDHCI.SDHCI.Command.Status <> MMC_STATUS_NOT_PROCESSED then
   begin
    {Stop Data}
@@ -2139,14 +2139,14 @@ begin
  {}
  {Check SDHCI}
  if SDHCI = nil then Exit;
- 
+
  {$IF DEFINED(PL18X_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18X: Stop Data');
  {$ENDIF}
- 
+
  {Write Data Control}
  PL18XWriteDataCtrlRegister(SDHCI,0);
- 
+
  {Write Interrupt Mask1}
  PL18XSetInterruptMask1(SDHCI,0);
 end;
@@ -2176,35 +2176,35 @@ begin
    else
     begin
      if SpinLockIRQ(SDHCI.SDHCI.Spin) <> ERROR_SUCCESS then Exit;
-    end; 
-  end;  
- 
+    end;
+  end;
+
  {Update Statistics}
  if not SDHCI.SingleIRQ then Inc(SDHCI.SDHCI.InterruptCount);
- 
+
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
- 
+
  {Setup Defaults}
  Remain:=0;
- 
+
  {Get Status}
  Status:=SDHCI.Registers.Status;
  while True do
   begin
    {Check Command}
    if SDHCI.SDHCI.Command = nil then Break;
-   
+
    {Check Command}
    if SDHCI.SDHCI.Command.Data = nil then Break;
-   
+
    {For write, we only need to test the half-empty flag here - if the FIFO is completely empty, then by definition it is more than half empty}
    if (Status and (PL18X_MMCI_TXFIFOHALFEMPTY or PL18X_MMCI_RXDATAAVLBL)) = 0 then Break;
 
    Len:=0;
    Remain:=SDHCI.SDHCI.Command.Data.BytesRemaining;
    Buffer:=Pointer(SDHCI.SDHCI.Command.Data.Data + SDHCI.SDHCI.Command.Data.BlockOffset);
-  
+
    if (Status and PL18X_MMCI_RXACTIVE) <> 0 then
     begin
      Len:=PL18XSHDCIReadPIO(SDHCI,Buffer,Remain);
@@ -2213,35 +2213,35 @@ begin
     begin
      Len:=PL18XSDHCIWritePIO(SDHCI,Buffer,Remain,Status);
     end;
-   
+
    {Update Offset and Remain}
    Inc(SDHCI.SDHCI.Command.Data.BlockOffset,Len);
    Dec(SDHCI.SDHCI.Command.Data.BytesRemaining,Len);
    Dec(Remain,Len);
-   
+
    if Remain <> 0 then Break;
-   
+
    {Get Status}
    Status:=SDHCI.Registers.Status;
   end;
- 
+
  {If we have less than the fifo 'half-full' threshold to transfer, trigger a PIO interrupt as soon as any data is available}
  if ((Status and PL18X_MMCI_RXACTIVE) <> 0) and (Remain < SDHCI.Version.FIFOHalfSize) then
   begin
    PL18XSetInterruptMask1(SDHCI,PL18X_MMCI_RXDATAAVLBLMASK);
   end;
- 
+
  {If we run out of data, disable the data IRQs; this prevents a race where the FIFO becomes empty
   before the chip itself has disabled the data path, and stops us racing with our data end IRQ}
  if Remain = 0 then
   begin
    PL18XSetInterruptMask1(SDHCI,0);
    SDHCI.Registers.Mask0:=SDHCI.Registers.Mask0 or PL18X_MMCI_DATAENDMASK;
-  end;  
- 
+  end;
+
  {Memory Barrier}
- DataMemoryBarrier; {After the Last Read} 
- 
+ DataMemoryBarrier; {After the Last Read}
+
  {Release the Lock}
  if not SDHCI.SingleIRQ then
   begin
@@ -2252,8 +2252,8 @@ begin
    else
     begin
      SpinUnlockIRQ(SDHCI.SDHCI.Spin);
-    end;     
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -2273,19 +2273,19 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check SDHCI}
  if SDHCI = nil then Exit;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Remain}
  if Remain = 0 then Exit;
- 
+
  {Setup Start}
  Next:=Buffer;
- 
+
  {Get Status}
  Status:=SDHCI.Registers.Status;
  while (Status and PL18X_MMCI_RXDATAAVLBL) <> 0 do
@@ -2296,9 +2296,9 @@ begin
     begin
      Size:=Remain;
     end;
-   if Size < 1 then Break;    
-   
-   {SDIO may want to send something that is not divisible by 4 (as opposed to card sectors etc). 
+   if Size < 1 then Break;
+
+   {SDIO may want to send something that is not divisible by 4 (as opposed to card sectors etc).
     Therefore make sure to always read the last bytes while only doing full 32-bit reads form the FIFO}
    if (Size and $03) <> 0 then
     begin
@@ -2319,10 +2319,10 @@ begin
          Dec(Count);
          Inc(Offset,SizeOf(LongWord));
         end;
-       
+
        {Round Size}
        Size:=Size and not($03);
-      end;      
+      end;
     end
    else
     begin
@@ -2335,13 +2335,13 @@ begin
        Dec(Count);
        Inc(Offset,SizeOf(LongWord));
       end;
-    end;    
-    
+    end;
+
    {Update Buffer and Remain}
    Inc(Next,Size);
    Dec(Remain,Size);
    if Remain = 0 then Break;
-   
+
    {Get Status}
    Status:=SDHCI.Registers.Status;
   end;
@@ -2366,19 +2366,19 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check SDHCI}
  if SDHCI = nil then Exit;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Remain}
  if Remain = 0 then Exit;
- 
+
  {Setup Start}
  Next:=Buffer;
- 
+
  {Get Status}
  while (Status and PL18X_MMCI_TXFIFOHALFEMPTY) <> 0 do
   begin
@@ -2390,9 +2390,9 @@ begin
    else
     begin
      MaxSize:=SDHCI.Version.FIFOHalfSize;
-    end;    
+    end;
    Size:=Min(Remain,MaxSize);
-   
+
    {SDIO may want to send something that is not divisible by 4 (as opposed to card sectors etc),
     and the FIFO only accept full 32-bit writes. So compensate by adding +3 on the count}
    {Write Aligned Bytes}
@@ -2404,16 +2404,16 @@ begin
      Dec(Count);
      Inc(Offset,SizeOf(LongWord));
     end;
-   
+
    {Update Buffer and Remain}
    Inc(Next,Size);
    Dec(Remain,Size);
    if Remain = 0 then Break;
-   
+
    {Get Status}
    Status:=SDHCI.Registers.Status;
   end;
- 
+
  {Get Result}
  Result:=Next - Buffer;
 end;
@@ -2429,25 +2429,25 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check SDHCI}
  if SDHCI = nil then Exit;
 
  {Check Address}
  if SDHCI.SDHCI.Address = nil then Exit;
- 
+
  {Get Peripheral ID}
  for Count:=0 to 3 do
   begin
    Value:=PLongWord(SDHCI.SDHCI.Address + PL18X_MMCI_PERIPHID + (Count shl 2))^;
-   
+
    Result:=Result or ((Value and $FF) shl (Count shl 3));
-  end; 
-  
+  end;
+
  {Memory Barrier}
- DataMemoryBarrier; {After the Last Read} 
+ DataMemoryBarrier; {After the Last Read}
 end;
- 
+
 
 {==============================================================================}
 
@@ -2459,17 +2459,17 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check SDHCI}
  if SDHCI = nil then Exit;
- 
+
  {Get Peripheral ID}
  PeripheralID:=PL18XGetPeripheralID(SDHCI);
- 
+
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL18x: PeripheralID = ' + IntToHex(PeripheralID,8));
  {$ENDIF}
- 
+
  {Find Peripheral ID}
  for Count:=0 to 9 do
   begin
@@ -2479,9 +2479,9 @@ begin
      Exit;
     end;
   end;
-  
+
  {Default to ARM}
- if Result = nil then Result:=@PL18X_VERSION_DATA_ARM; 
+ if Result = nil then Result:=@PL18X_VERSION_DATA_ARM;
 end;
 
 {==============================================================================}
@@ -2491,14 +2491,14 @@ function PL18XGetRXFIFOCount(SDHCI:PPL18XSDHCIHost;Status,Remain:LongWord):LongW
 begin
  {}
  Result:=0;
- 
+
  {Check SDHCI}
  if SDHCI = nil then Exit;
 
  Result:=Remain - (SDHCI.Registers.FifoCnt shl 2);
- 
+
  {Memory Barrier}
- DataMemoryBarrier; {After the Last Read} 
+ DataMemoryBarrier; {After the Last Read}
 end;
 
 {==============================================================================}
@@ -2508,10 +2508,10 @@ function PL18XQualcommGetRXFIFOCount(SDHCI:PPL18XSDHCIHost;Status,Remain:LongWor
 begin
  {}
  Result:=0;
- 
+
  {Check SDHCI}
  if SDHCI = nil then Exit;
- 
+
  {On Qualcomm SDCC4 only 8 words are used in each burst so only 8 addresses from the fifo range should be used}
  if (Status and PL18X_MMCI_RXFIFOHALFFULL) <> 0 then
   begin
@@ -2520,7 +2520,7 @@ begin
  else if (Status and PL18X_MMCI_RXDATAAVLBL) <> 0 then
   begin
    Result:=4;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2545,7 +2545,7 @@ begin
   begin
    {NanosecondDelay(120);} {Not currently functional}
    MicrosecondDelay(1);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2563,13 +2563,13 @@ begin
 
  {Check MMC}
  if MMC = nil then Exit;
- 
+
  {Get Defaults}
  Clock:=SDHCI.Version.ClockRegister;
- 
+
  {Reset Clock}
  SDHCI.SDHCI.Clock:=0;
- 
+
  {Check Desired}
  if Desired > 0 then
   begin
@@ -2607,14 +2607,14 @@ begin
       end;
      SDHCI.SDHCI.Clock:=SDHCI.SDHCI.MaximumFrequency div (2 * (Clock + 1));
     end;
-    
+
    Clock:=Clock or SDHCI.Version.ClockEnable;
    Clock:=Clock or PL18X_MMCI_CLOCK_ENABLE;
   end;
-  
+
  {Set MMC Clock}
- MMC.Clock:=SDHCI.SDHCI.Clock; 
- 
+ MMC.Clock:=SDHCI.SDHCI.Clock;
+
  if MMC.BusWidth = MMC_BUS_WIDTH_4 then
   begin
    Clock:=Clock or PL18X_MMCI_CLOCK_4BIT_BUS;
@@ -2623,12 +2623,12 @@ begin
   begin
    Clock:=Clock or SDHCI.Version.Clock8BitEnable;
   end;
-  
+
  if (MMC.Timing = MMC_TIMING_UHS_DDR50) or (MMC.Timing = MMC_TIMING_MMC_DDR52) then
   begin
    Clock:=Clock or SDHCI.Version.ClockNegativeEdgeEnable;
   end;
-  
+
  PL18XWriteClockRegister(SDHCI,Clock);
 end;
 
@@ -2644,33 +2644,33 @@ begin
  {}
  {Check SDHCI}
  if SDHCI = nil then Exit;
- 
+
  {Check Value}
  if Value = 0 then
   begin
    {Power Off}
-   Power:=PL18X_MMCI_POWER_OFF; 
+   Power:=PL18X_MMCI_POWER_OFF;
    PL18XWritePowerRegister(SDHCI,Power);
-   
+
    {Delay}
    PL18XRegisterDelay(SDHCI);
   end
  else
   begin
    {Power Up}
-   Power:=SDHCI.Version.PowerPowerUp; 
-   PL18XWritePowerRegister(SDHCI,Power);
-   
-   {Delay}
-   PL18XRegisterDelay(SDHCI);
-   
-   {Power On}
-   Power:=PL18X_MMCI_POWER_ON; 
+   Power:=SDHCI.Version.PowerPowerUp;
    PL18XWritePowerRegister(SDHCI,Power);
 
    {Delay}
    PL18XRegisterDelay(SDHCI);
-  end;  
+
+   {Power On}
+   Power:=PL18X_MMCI_POWER_ON;
+   PL18XWritePowerRegister(SDHCI,Power);
+
+   {Delay}
+   PL18XRegisterDelay(SDHCI);
+  end;
 end;
 
 
@@ -2689,26 +2689,26 @@ begin
 
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
- 
+
  {Check Single IRQ}
  if SDHCI.SingleIRQ then
   begin
    {Read Mask0}
    Mask0:=SDHCI.Registers.Mask0;
-   
+
    {Update Mask0}
    Mask0:=Mask0 and not(PL18X_MMCI_IRQ1MASK);
    Mask0:=Mask0 or Mask;
-   
+
    {Write Mask0}
    SDHCI.Registers.Mask0:=Mask0;
   end;
-  
+
  {Write Mask1}
  SDHCI.Registers.Mask1:=Mask;
- 
+
  {Memory Barrier}
- DataMemoryBarrier; {After the Last Read} 
+ DataMemoryBarrier; {After the Last Read}
 end;
 
 {==============================================================================}
@@ -2721,17 +2721,17 @@ begin
  {}
  {Check SDHCI}
  if SDHCI = nil then Exit;
- 
+
  {Check Register}
  if SDHCI.ClockRegister <> Clock then
   begin
    {Memory Barrier}
    DataMemoryBarrier; {Before the First Write}
-   
+
    {Set Register}
    SDHCI.ClockRegister:=Clock;
    SDHCI.Registers.Clock:=Clock;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -2744,17 +2744,17 @@ begin
  {}
  {Check SDHCI}
  if SDHCI = nil then Exit;
- 
+
  {Check Register}
  if SDHCI.PowerRegister <> Power then
   begin
    {Memory Barrier}
    DataMemoryBarrier; {Before the First Write}
-   
+
    {Set Register}
    SDHCI.PowerRegister:=Power;
    SDHCI.Registers.Power:=Power;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -2767,20 +2767,20 @@ begin
  {}
  {Check SDHCI}
  if SDHCI = nil then Exit;
- 
+
  {Keep ST Micro busy mode if enabled}
  DataCtrl:=DataCtrl or (SDHCI.DataCtrlRegister and PL18X_MMCI_ST_DPSM_BUSYMODE);
- 
+
  {Check Register}
  if SDHCI.DataCtrlRegister <> DataCtrl then
   begin
    {Memory Barrier}
    DataMemoryBarrier; {Before the First Write}
-   
+
    {Set Register}
    SDHCI.DataCtrlRegister:=DataCtrl;
    SDHCI.Registers.DataCtrl:=DataCtrl;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -2788,9 +2788,9 @@ end;
 
 initialization
  PL18XInit;
- 
+
 {==============================================================================}
- 
+
 {finalization}
  {Nothing}
 

@@ -3,7 +3,7 @@
     Copyright (c) 2015 by Free Pascal development team
 
     Low level OS functions for Ultibo
-    
+
     See the file COPYING.FPC, included in this distribution,
     for details about the copyright.
 
@@ -12,9 +12,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
  **********************************************************************}
- 
+
 {$define HAS_GETCPUCOUNT}
 function GetCPUCount: LongWord;
 begin
   Result := SystemCPUCount;
-end; 
+end;

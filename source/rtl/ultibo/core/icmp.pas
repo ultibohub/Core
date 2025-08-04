@@ -17,22 +17,22 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
- 
- 
+
+
 References
 ==========
 
- 
+
 Internet Control Message Protocol
 =================================
 
  Notes: ICMP Checksum includes both Header and Data (if any)
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -48,13 +48,13 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Threads,SysUtils,Classes,Ne
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-  
+
 {==============================================================================}
 const
  {ICMP specific constants}
  {Note: Some ICMP definitions are in the Protocol or IP modules}
  ICMP_PROTOCOL_NAME = 'ICMP';
- 
+
  {ICMP constants}
  ICMP_TIMEOUT = 0;         {Wait forever on a ICMP Read}
  ICMP_BUFFER_SIZE = 65536; {ICMP Receive Buffer Size}
@@ -201,11 +201,11 @@ type
  end;
 
  PICMPPacket = ^TICMPPacket;
- TICMPPacket = record   {8 Bytes} {Used by ICMPBuffer} 
+ TICMPPacket = record   {8 Bytes} {Used by ICMPBuffer}
   Size:LongWord;        {LongWord to keep size even}
   Next:PICMPPacket;
  end; {Followed by RemoteAddress (4 or 16 Bytes)}
- 
+
 {==============================================================================}
 type
  {ICMP specific classes}
@@ -289,7 +289,7 @@ type
 
    function FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket; override;
    procedure FlushSockets(All:Boolean); override;
-   
+
    function StartProtocol:Boolean; override;
    function StopProtocol:Boolean; override;
    function ProcessProtocol:Boolean; override;
@@ -347,11 +347,11 @@ type
    function ReadBuffer(var ABuffer;var ASize:Integer;ARemoteAddress:Pointer;AFlags:Integer):Boolean;
    function WriteBuffer(var ABuffer;ASize:Integer;ARemoteAddress:Pointer):Boolean;
  end;
- 
+
 {==============================================================================}
 {var}
  {ICMP specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure ICMPInit;
@@ -366,7 +366,7 @@ function GetICMPDataOffset(AFamily:Word;ABuffer:Pointer):Word;
 function GetICMPDataLength(AFamily:Word;ABuffer:Pointer):Word;
 
 function ChecksumICMP(AFamily:Word;ABuffer:Pointer;AOffset,ALength:Word):Word;
-  
+
 {==============================================================================}
 {ICMP Helper Functions}
 
@@ -399,10 +399,10 @@ begin
  WriterLock;
  try
   Socket:=nil;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -429,7 +429,7 @@ begin
  finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -452,21 +452,21 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: PacketHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Dest}
  {if ADest = nil then Exit;} {Not Used}
- 
+
  {Check Source}
- {if ASource = nil then Exit;} {Not Used} 
-  
+ {if ASource = nil then Exit;} {Not Used}
+
  {Check Packet}
  if APacket = nil then Exit;
- 
+
  {Get Transport}
  Transport:=TICMPProtocolTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
@@ -474,17 +474,17 @@ begin
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Family = ' + AddressFamilyToString(Transport.Transport.Family));
   {$ENDIF}
- 
+
   {Check Transport Family}
   case Transport.Transport.Family of
    AF_INET:begin
-     {Get Header}  
+     {Get Header}
      IP:=PIPHeader(APacket);
-    
+
      {$IFDEF ICMP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Protocol = ' + ProtocolToString(Transport.Protocol));
      {$ENDIF}
-    
+
      {Check Protocol}
      case Transport.Protocol of
       IPPROTO_ICMP:begin
@@ -493,41 +493,41 @@ begin
          begin
           {Get Header}
           ICMP:=PICMPHeader(PtrUInt(IP) + GetICMPHeaderOffset(AF_INET,IP));
-         
+
           {Check for a Type that we handle}
           case ICMP.Unused.ICMPType of
            ICMP_REDIRECT:begin
              Result:=True;
-            
+
              {$IFDEF ICMP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  ICMP Redirect');
              {$ENDIF}
-            
+
              {Check that we sent the original packet}
              if TIPTransport(Transport.Transport).GetAddressByAddress(InAddrToHost(ICMP.Redirect.IP.SourceIP),False,NETWORK_LOCK_NONE) = nil then Exit;
-            
+
              {Check that the Dest is not Broadcast}
              if ABroadcast then Exit;
-             
+
              {Check that the Gateway is not Broadcast}
              if TIPTransport(Transport.Transport).CompareBroadcast(InAddrToHost(ICMP.Redirect.Gateway)) or TIPTransport(Transport.Transport).CompareDirected(InAddrToHost(ICMP.Redirect.Gateway)) then Exit;
-             
+
              {Add the new Route}
              Result:=(TIPTransport(Transport.Transport).AddRoute(InAddrToHost(ICMP.Redirect.IP.DestIP),IP_BROADCAST_NETMASK,InAddrToHost(ICMP.Redirect.Gateway),IP.DestIP,ROUTE_TYPE_DYNAMIC,False,NETWORK_LOCK_NONE) <> nil);
             end;
            ICMP_ECHO:begin
              Result:=True;
-             
+
              {$IFDEF ICMP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  ICMP Echo');
              {$ENDIF}
-             
+
              {Check that the Dest is not Broadcast}
              if ABroadcast then Exit;
-            
+
              {Check that the Source is not Broadcast}
              if TIPTransport(Transport.Transport).CompareBroadcast(IP.SourceIP) or TIPTransport(Transport.Transport).CompareDirected(IP.SourceIP) then Exit;
-            
+
              {Lock Socket}
              Transport.Socket.ReaderLock;
 
@@ -539,76 +539,76 @@ begin
             end;
            ICMP_ROUTERADVERT:begin
              Result:=True;
-            
+
              {$IFDEF ICMP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  ICMP Advert');
              {$ENDIF}
-             
+
              {Ignore this - See RFC 1256}
             end;
            ICMP_ROUTERSOLICIT:begin
              Result:=True;
-            
+
              {$IFDEF ICMP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  ICMP Solicit');
              {$ENDIF}
-             
+
              {Ignore this - See RFC 1256}
             end;
            ICMP_TSTAMP:begin
              Result:=True;
-             
+
              {$IFDEF ICMP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  ICMP Timestamp');
              {$ENDIF}
-            
+
              {Check that the Source is not Broadcast}
              if TIPTransport(Transport.Transport).CompareBroadcast(IP.SourceIP) or TIPTransport(Transport.Transport).CompareDirected(IP.SourceIP) then Exit;
-             
+
              {Lock Socket}
              Transport.Socket.ReaderLock;
-             
+
              {Pass to SendICMPTimestampReply (Source and Dest reversed)}
              Result:=SendICMPTimestampReply(Transport.Socket,@IP.DestIP,@IP.SourceIP,ICMP,SizeOf(TICMPTimestampHeader));
-             
+
              {Unlock Socket}
              Transport.Socket.ReaderUnlock;
             end;
            ICMP_IREQ:begin
              Result:=True;
-             
+
              {$IFDEF ICMP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  ICMP Info');
              {$ENDIF}
-            
+
              {Check that the Source is not Broadcast}
              if TIPTransport(Transport.Transport).CompareBroadcast(IP.SourceIP) or TIPTransport(Transport.Transport).CompareDirected(IP.SourceIP) then Exit;
-             
+
              {Lock Socket}
              Transport.Socket.ReaderLock;
-             
+
              {Pass to SendICMPInfoReply (Source and Dest reversed)}
              Result:=SendICMPInfoReply(Transport.Socket,@IP.DestIP,@IP.SourceIP,ICMP,SizeOf(TICMPInfoHeader));
-             
+
              {Unlock Socket}
              Transport.Socket.ReaderUnlock;
             end;
            ICMP_MASKREQ:begin
              Result:=True;
-             
+
              {$IFDEF ICMP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  ICMP Mask');
              {$ENDIF}
-            
+
              {Check that the Source is not Broadcast}
              if TIPTransport(Transport.Transport).CompareBroadcast(IP.SourceIP) or TIPTransport(Transport.Transport).CompareDirected(IP.SourceIP) then Exit;
-            
+
              {Lock Socket}
              Transport.Socket.ReaderLock;
-            
+
              {Pass to SendICMPMaskReply (Source and Dest reversed)}
              Result:=SendICMPMaskReply(Transport.Socket,@IP.DestIP,@IP.SourceIP,ICMP,SizeOf(TICMPInfoHeader));
-             
+
              {Unlock Socket}
              Transport.Socket.ReaderUnlock;
             end;
@@ -622,11 +622,11 @@ begin
                Socket:=TICMPSocket(FindSocket(AF_INET,SOCK_RAW,IPPROTO_ICMP,@IP.DestIP,@IP.SourceIP,0,0,ABroadcast,True,True,NETWORK_LOCK_READ));
               end;
              if Socket = nil then Exit;
-             
+
              {Get the Data Offset}
              Offset:=GetIPDataOffset(IP);
              Length:=GetIPDataLength(IP);
-             
+
              {Account for IP_HDRINCL}
              if TIPOptions(Socket.TransportOptions).Header then
               begin
@@ -634,15 +634,15 @@ begin
                Length:=ASize;
               end;
 
-             {Write the Data into the Receive Buffer}              
+             {Write the Data into the Receive Buffer}
              {$IFDEF ICMP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Offset = ' + IntToStr(Offset) + ' Length = ' + IntToStr(Length));
              {$ENDIF}
              Socket.RecvData.WriteBuffer(Pointer(PtrUInt(IP) + Offset)^,Length,@IP.SourceIP);
-             
+
              {Signal the Event}
              Socket.SignalChange;
-             
+
              {Return True even if the Write failed (eg Buffer is Full, Socket Shutdown etc)}
              Result:=True;
 
@@ -657,7 +657,7 @@ begin
   end;
  finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -678,21 +678,21 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: ControlHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Dest}
  {if ADest = nil then Exit;} {May be nil}
- 
+
  {Check Source}
  {if ASource = nil then Exit;} {May be nil}
-  
+
  {Check Data}
  {if AData = nil then Exit;} {May be nil}
- 
+
  {Get Transport}
  Transport:=TICMPProtocolTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
@@ -711,7 +711,7 @@ begin
            {$ENDIF}
            {Lock Socket}
            Transport.Socket.ReaderLock;
-           
+
            {Send Echo Reply}
            Result:=SendICMPEchoReply(Transport.Socket,ASource,ADest,AData,ASize);
 
@@ -724,7 +724,7 @@ begin
            {$ENDIF}
            {Lock Socket}
            Transport.Socket.ReaderLock;
-           
+
            {Send Unreach}
            Result:=SendICMPUnreach(Transport.Socket,ASource,ADest,ACode,AData,ASize);
 
@@ -737,7 +737,7 @@ begin
            {$ENDIF}
            {Lock Socket}
            Transport.Socket.ReaderLock;
-           
+
            {Send Source Quench}
            Result:=SendICMPSourceQuench(Transport.Socket,ASource,ADest,AData,ASize);
 
@@ -750,7 +750,7 @@ begin
            {$ENDIF}
            {Lock Socket}
            Transport.Socket.ReaderLock;
-           
+
            {Send Redirect}
            Result:=SendICMPRedirect(Transport.Socket,ASource,ADest,ACode,AAddress,AData,ASize);
 
@@ -763,7 +763,7 @@ begin
            {$ENDIF}
            {Lock Socket}
            Transport.Socket.ReaderLock;
-           
+
            {Send Echo Request}
            Result:=SendICMPEchoRequest(Transport.Socket,ASource,ADest,ASize);
 
@@ -788,7 +788,7 @@ begin
            {$ENDIF}
            {Lock Socket}
            Transport.Socket.ReaderLock;
-           
+
            {Send Time Exceeded}
            Result:=SendICMPTimeExceeded(Transport.Socket,ASource,ADest,ACode,AData,ASize);
 
@@ -801,7 +801,7 @@ begin
            {$ENDIF}
            {Lock Socket}
            Transport.Socket.ReaderLock;
-           
+
            {Send Param Problem}
            Result:=SendICMPParamProblem(Transport.Socket,ASource,ADest,ACode,PByte(AAddress)^,AData,ASize);
 
@@ -814,7 +814,7 @@ begin
            {$ENDIF}
            {Lock Socket}
            Transport.Socket.ReaderLock;
-           
+
            {Send Timestamp Request}
            Result:=SendICMPTimestampRequest(Transport.Socket,ASource,ADest);
 
@@ -827,7 +827,7 @@ begin
            {$ENDIF}
            {Lock Socket}
            Transport.Socket.ReaderLock;
-           
+
            {Send Timestamp Reply}
            Result:=SendICMPTimestampReply(Transport.Socket,ASource,ADest,AData,ASize);
 
@@ -840,7 +840,7 @@ begin
            {$ENDIF}
            {Lock Socket}
            Transport.Socket.ReaderLock;
-           
+
            {Send Info Request}
            Result:=SendICMPInfoRequest(Transport.Socket,ASource,ADest);
 
@@ -853,7 +853,7 @@ begin
            {$ENDIF}
            {Lock Socket}
            Transport.Socket.ReaderLock;
-           
+
            {Send Info Reply}
            Result:=SendICMPInfoReply(Transport.Socket,ASource,ADest,AData,ASize);
 
@@ -866,7 +866,7 @@ begin
            {$ENDIF}
            {Lock Socket}
            Transport.Socket.ReaderLock;
-           
+
            {Send Mask Request}
            Result:=SendICMPMaskRequest(Transport.Socket,ASource,ADest);
 
@@ -879,7 +879,7 @@ begin
            {$ENDIF}
            {Lock Socket}
            Transport.Socket.ReaderLock;
-           
+
            {Send Mask Reply}
            Result:=SendICMPMaskReply(Transport.Socket,ASource,ADest,AData,ASize);
 
@@ -893,7 +893,7 @@ begin
   end;
  finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -907,7 +907,7 @@ begin
 
  {Get Next Id}
  Result:=FNextICMPId;
-  
+
  {Increment Id}
  if AIncrement then Inc(FNextICMPId,ID_INCREMENT);
 
@@ -935,50 +935,50 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPUnreach');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Data}
  if AData = nil then Exit;
- 
+
  {Fill in the ICMP fields}
  Unreach.ICMPType:=ICMP_UNREACH;
  Unreach.Code:=ACode; {ICMP_UNREACH_PROTOCOL or ICMP_UNREACH_PORT only}
  Unreach.Unused:=0;
- 
+
  {Get the Size of the Packet}
  Size:=SizeOf(TICMPUnreachHeader);
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {Calculate the Header and Data Offsets}
     Offset:=GetIPDataOffset(AData);
-    
+
     {Copy the IP Header and first 64 bits of Data}
     System.Move(AData^,Unreach.IP,SizeOf(TIPHeader));
     System.Move(Pointer(PtrUInt(AData) + Offset)^,Unreach.Data,8);
-    
+
     {Set the Addresses to Network order}
     Unreach.IP.DestIP:=InAddrToNetwork(Unreach.IP.DestIP);
     Unreach.IP.SourceIP:=InAddrToNetwork(Unreach.IP.SourceIP);
-    
+
     {Calculate the Checksum}
     Unreach.Checksum:=ChecksumICMP(AF_INET,@Unreach,0,Size);
-    
+
     {Create the Fragment}
     Packet.Size:=Size;
     Packet.Data:=@Unreach;
     Packet.Next:=nil;
-    
+
     {Send the Packet}
     Result:=(SendPacket(ASocket,ASource,ADest,0,0,@Packet,Size,0) = Size);
-    
+
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPUnreach Completed');
     {$ENDIF}
@@ -1008,55 +1008,55 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPRedirect');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Address}
  if AAddress = nil then Exit;
- 
+
  {Check Data}
  if AData = nil then Exit;
- 
+
  {Fill in the ICMP fields}
  Redirect.ICMPType:=ICMP_REDIRECT;
  Redirect.Code:=ACode; {ICMP_REDIRECT_NET or ICMP_REDIRECT_HOST only}
- 
+
  {Get the Size of the Packet}
  Size:=SizeOf(TICMPRedirectHeader);
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {Fill in the ICMP fields}
     Redirect.Gateway:=InAddrToNetwork(PInAddr(AAddress)^);
-    
+
     {Calculate the Header and Data Offsets}
     Offset:=GetIPDataOffset(AData);
-    
+
     {Copy the IP Header and first 64 bits of Data}
     System.Move(AData^,Redirect.IP,SizeOf(TIPHeader));
     System.Move(Pointer(PtrUInt(AData) + Offset)^,Redirect.Data,8);
-    
+
     {Set the Addresses to Network order}
     Redirect.IP.DestIP:=InAddrToNetwork(Redirect.IP.DestIP);
     Redirect.IP.SourceIP:=InAddrToNetwork(Redirect.IP.SourceIP);
-    
+
     {Calculate the Checksum}
     Redirect.Checksum:=ChecksumICMP(AF_INET,@Redirect,0,Size);
-    
+
     {Create the Fragment}
     Packet.Size:=Size;
     Packet.Data:=@Redirect;
     Packet.Next:=nil;
-    
+
     {Send the Packet}
     Result:=(SendPacket(ASocket,ASource,ADest,0,0,@Packet,Size,0) = Size);
-    
+
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPRedirect Completed');
     {$ENDIF}
@@ -1085,50 +1085,50 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPTimeExceeded');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Data}
  if AData = nil then Exit;
- 
+
  {Fill in the ICMP fields}
  Expire.ICMPType:=ICMP_TIMXCEED;
  Expire.Code:=ACode; {ICMP_TIMXCEED_INTRANS or ICMP_TIMXCEED_REASS}
  Expire.Unused:=0;
- 
+
  {Get the Size of the Packet}
  Size:=SizeOf(TICMPExpireHeader);
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {Calculate the Header and Data Offsets}
     Offset:=GetIPDataOffset(AData);
-    
+
     {Copy the IP Header and first 64 bits of Data}
     System.Move(AData^,Expire.IP,SizeOf(TIPHeader));
     System.Move(Pointer(PtrUInt(AData) + Offset)^,Expire.Data,8);
-    
+
     {Set the Addresses to Network order}
     Expire.IP.DestIP:=InAddrToNetwork(Expire.IP.DestIP);
     Expire.IP.SourceIP:=InAddrToNetwork(Expire.IP.SourceIP);
-    
+
     {Calculate the Checksum}
     Expire.Checksum:=ChecksumICMP(AF_INET,@Expire,0,Size);
-    
+
     {Create the Fragment}
     Packet.Size:=Size;
     Packet.Data:=@Expire;
     Packet.Next:=nil;
-    
+
     {Send the Packet}
     Result:=(SendPacket(ASocket,ASource,ADest,0,0,@Packet,Size,0) = Size);
-    
+
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPTimeExceeded Completed');
     {$ENDIF}
@@ -1156,50 +1156,50 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPSourceQuench');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Data}
  if AData = nil then Exit;
- 
+
  {Fill in the ICMP fields}
  Quench.ICMPType:=ICMP_SOURCEQUENCH;
  Quench.Code:=0;
  Quench.Unused:=0;
- 
+
  {Get the Size of the Packet}
  Size:=SizeOf(TICMPQuenchHeader);
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {Calculate the Header and Data Offsets}
     Offset:=GetIPDataOffset(AData);
-    
+
     {Copy the IP Header and first 64 bits of Data}
     System.Move(AData^,Quench.IP,SizeOf(TIPHeader));
     System.Move(Pointer(PtrUInt(AData) + Offset)^,Quench.Data,8);
-    
+
     {Set the Addresses to Network order}
     Quench.IP.DestIP:=InAddrToNetwork(Quench.IP.DestIP);
     Quench.IP.SourceIP:=InAddrToNetwork(Quench.IP.SourceIP);
-    
+
     {Calculate the Checksum}
     Quench.Checksum:=ChecksumICMP(AF_INET,@Quench,0,Size);
-    
+
     {Create the Fragment}
     Packet.Size:=Size;
     Packet.Data:=@Quench;
     Packet.Next:=nil;
-    
+
     {Send the Packet}
     Result:=(SendPacket(ASocket,ASource,ADest,0,0,@Packet,Size,0) = Size);
-    
+
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPSourceQuench Completed');
     {$ENDIF}
@@ -1228,51 +1228,51 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPParamProblem');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Data}
  if AData = nil then Exit;
- 
+
  {Fill in the ICMP fields}
  Param.ICMPType:=ICMP_PARAMPROB;
  Param.Code:=ACode; {ICMP_PARAMPROB_OPTABSENT Only}
  Param.Pointer:=APointer;
  FillChar(Param.Unused,3,0);
- 
+
  {Get the Size of the Packet}
  Size:=SizeOf(TICMPParamHeader);
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {Calculate the Header and Data Offsets}
     Offset:=GetIPDataOffset(AData);
-    
+
     {Copy the IP Header and first 64 bits of Data}
     System.Move(AData^,Param.IP,SizeOf(TIPHeader));
     System.Move(Pointer(PtrUInt(AData) + Offset)^,Param.Data,8);
-    
+
     {Set the Addresses to Network order}
     Param.IP.DestIP:=InAddrToNetwork(Param.IP.DestIP);
     Param.IP.SourceIP:=InAddrToNetwork(Param.IP.SourceIP);
-    
+
     {Calculate the Checksum}
     Param.Checksum:=ChecksumICMP(AF_INET,@Param,0,Size);
-    
+
     {Create the Fragment}
     Packet.Size:=Size;
     Packet.Data:=@Param;
     Packet.Next:=nil;
-    
+
     {Send the Packet}
     Result:=(SendPacket(ASocket,ASource,ADest,0,0,@Packet,Size,0) = Size);
-    
+
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPParamProblem Completed');
     {$ENDIF}
@@ -1298,38 +1298,38 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPEchoReply');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Data}
  if AData = nil then Exit;
- 
+
  {Get the Header}
  Echo:=PICMPEchoHeader(AData);
- 
+
  {Adjust the Original Packet}
  Echo.ICMPType:=ICMP_ECHOREPLY;
  Echo.Code:=0;
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {Calculate the Checksum}
     Echo.Checksum:=ChecksumICMP(AF_INET,Echo,0,ASize);
-    
+
     {Create the Fragment}
     Packet.Size:=ASize;
     Packet.Data:=Echo;
     Packet.Next:=nil;
-    
+
     {Send the Packet}
     Result:=(SendPacket(ASocket,ASource,ADest,0,0,@Packet,ASize,0) = ASize);
-    
+
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPEchoReply Completed');
     {$ENDIF}
@@ -1356,44 +1356,44 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPInfoReply');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Data}
  if AData = nil then Exit;
- 
+
  {Get the Header}
  Info:=PICMPInfoHeader(AData);
- 
+
  {Adjust the Original Packet}
  Info.ICMPType:=ICMP_IREQREPLY;
  Info.Code:=0;
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {Calculate the Header Length}
     Length:=GetICMPHeaderLength(AF_INET,AData);
-    
+
     {Calculate the Checksum}
     Info.Checksum:=ChecksumICMP(AF_INET,Info,0,Length);
-    
+
     {Get the Dest Address (Network)}
     //To Do //GetRouteByAddress to LocalAddress/CalcMask/GetRouteByAddress to NetworkAddress
-    
+
     {Create the Fragment}
     Packet.Size:=ASize;
     Packet.Data:=Info;
     Packet.Next:=nil;
-    
+
     {Send the Packet}
     Result:=(SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,ADest,0,0,@Packet,ASize,0) = ASize);
-    
+
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPInfoReply Completed');
     {$ENDIF}
@@ -1420,44 +1420,44 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPMaskReply');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Data}
  if AData = nil then Exit;
- 
+
  {Get the Header}
  Mask:=PICMPMaskHeader(AData);
- 
+
  {Adjust the Original Packet}
  Mask.ICMPType:=ICMP_MASKREPLY;
  Mask.Code:=0;
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {Calculate the Header Length}
     Length:=GetICMPHeaderLength(AF_INET,AData);
-    
+
     {Calculate the Checksum}
     Mask.Checksum:=ChecksumICMP(AF_INET,Mask,0,Length);
-    
+
     {Fill in the ICMP fields}
     //Mask.Mask:= //Netmask //To Do //GetRouteByAddress/Calc Mask ??
-    
+
     {Create the Fragment}
     Packet.Size:=ASize;
     Packet.Data:=Mask;
     Packet.Next:=nil;
-    
+
     {Send the Packet}
     Result:=(SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,ADest,0,0,@Packet,ASize,0) = ASize);
-    
+
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPMaskReply Completed');
     {$ENDIF}
@@ -1484,43 +1484,43 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPTimestampReply');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Data}
  if AData = nil then Exit;
- 
+
  {Get the Header}
  Timestamp:=PICMPTimestampHeader(AData);
- 
+
  {Adjust the Original Packet}
  Timestamp.ICMPType:=ICMP_TSTAMPREPLY;
  Timestamp.Code:=0;
  Timestamp.Receive:=(GetTickCount or $80000000);
  Timestamp.Transmit:=(GetTickCount or $80000000);
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {Calculate the Header Length}
     Length:=GetICMPHeaderLength(AF_INET,AData);
-    
+
     {Calculate the Checksum}
     Timestamp.Checksum:=ChecksumICMP(AF_INET,Timestamp,0,Length);
-    
+
     {Create the Fragment}
     Packet.Size:=ASize;
     Packet.Data:=Timestamp;
     Packet.Next:=nil;
-    
+
     {Send the Packet}
     Result:=(SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,ADest,0,0,@Packet,ASize,0) = ASize);
-    
+
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPTimestampReply Completed');
     {$ENDIF}
@@ -1547,24 +1547,24 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPEchoRequest');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Size}
  if ASize < 0 then Exit;
  if ASize > 65500 then Exit;
- 
+
  {Get the Length of the Header}
  Length:=SizeOf(TICMPEchoHeader);
- 
+
  {Get the Size of the Packet}
  Size:=Length + ASize;
- 
+
  {Allocate the Packet}
  Echo:=GetMem(Size);
  if Echo = nil then Exit;
@@ -1575,27 +1575,27 @@ begin
   Echo.Checksum:=0;
   Echo.Identifier:=WordNtoBE(GetNextICMPId(True));
   Echo.Sequence:=0;
-  
+
   {Create the Data}
   if ASize > 0 then
    begin
     FillChar(Pointer(PtrUInt(Echo) + Length)^,ASize,#65);
-   end; 
-   
-  {Check Address Family} 
+   end;
+
+  {Check Address Family}
   case ASocket.Family of
    AF_INET:begin
      {Calculate the Checksum}
      Echo.Checksum:=ChecksumICMP(AF_INET,Echo,0,Size);
-     
+
      {Create the Fragment}
      Packet.Size:=Size;
      Packet.Data:=Echo;
      Packet.Next:=nil;
-     
+
      {Send the Packet}
      Result:=(SendPacket(ASocket,ASource,ADest,0,0,@Packet,Size,0) = Size);
-     
+
      {$IFDEF ICMP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPEchoRequest Completed');
      {$ENDIF}
@@ -1623,38 +1623,38 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPInfoRequest');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Get the Size of the Packet}
  Size:=SizeOf(TICMPInfoHeader);
- 
+
  {Fill in the ICMP fields}
  Info.ICMPType:=ICMP_IREQ;
  Info.Code:=0;
  Info.Checksum:=0;
  Info.Identifier:=WordNtoBE(GetNextICMPId(True));
  Info.Sequence:=0;
- 
- {Check Address Family} 
+
+ {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {Calculate the Checksum}
     Info.Checksum:=ChecksumICMP(AF_INET,@Info,0,Size);
-    
+
     {Create the Fragment}
     Packet.Size:=Size;
     Packet.Data:=@Info;
     Packet.Next:=nil;
-    
+
     {Send the Packet}
     Result:=(SendPacket(ASocket,ASource,ADest,0,0,@Packet,Size,0) = Size);
-    
+
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPInfoRequest Completed');
     {$ENDIF}
@@ -1679,17 +1679,17 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPMaskRequest');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Get the Size of the Packet}
  Size:=SizeOf(TICMPMaskHeader);
- 
+
  {Fill in the ICMP fields}
  Mask.ICMPType:=ICMP_MASKREQ;
  Mask.Code:=0;
@@ -1697,21 +1697,21 @@ begin
  Mask.Identifier:=WordNtoBE(GetNextICMPId(True));
  Mask.Sequence:=0;
  Mask.Mask.S_addr:=INADDR_ANY;
- 
- {Check Address Family} 
+
+ {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {Calculate the Checksum}
     Mask.Checksum:=ChecksumICMP(AF_INET,@Mask,0,Size);
-    
+
     {Create the Fragment}
     Packet.Size:=Size;
     Packet.Data:=@Mask;
     Packet.Next:=nil;
-    
+
     {Send the Packet}
     Result:=(SendPacket(ASocket,ASource,ADest,0,0,@Packet,Size,0) = Size);
-    
+
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPMaskRequest Completed');
     {$ENDIF}
@@ -1736,17 +1736,17 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPTimestampRequest');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Get the Size of the Packet}
  Size:=SizeOf(TICMPTimestampHeader);
- 
+
  {Fill in the ICMP fields}
  Timestamp.ICMPType:=ICMP_TSTAMP;
  Timestamp.Code:=0;
@@ -1756,21 +1756,21 @@ begin
  Timestamp.Original:=(GetTickCount or $80000000);
  Timestamp.Receive:=0;
  Timestamp.Transmit:=0;
- 
- {Check Address Family} 
+
+ {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {Calculate the Checksum}
     Timestamp.Checksum:=ChecksumICMP(AF_INET,@Timestamp,0,Size);
-    
+
     {Create the Fragment}
     Packet.Size:=Size;
     Packet.Data:=@Timestamp;
     Packet.Next:=nil;
-    
+
     {Send the Packet}
     Result:=(SendPacket(ASocket,ASource,ADest,0,0,@Packet,Size,0) = Size);
-    
+
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPTimestampRequest Completed');
     {$ENDIF}
@@ -1798,23 +1798,23 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPRouterAdvert');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Address}
  if AAddress = nil then Exit;
- 
+
  {Get the Length of the Header}
  Length:=SizeOf(TICMPAdvertHeader);
- 
+
  {Get the Size of the Packet}
  Size:=Length + SizeOf(TICMPRouterAddress);
- 
+
  {Allocate the Packet}
  Advert:=GetMem(Size);
  if Advert = nil then Exit;
@@ -1826,26 +1826,26 @@ begin
   Advert.EntryCount:=1;
   Advert.EntrySize:=SizeOf(TICMPRouterAddress);
   Advert.Lifetime:=ICMP_ROUTER_TIMEOUT;
-  
-  {Check Address Family} 
+
+  {Check Address Family}
   case ASocket.Family of
    AF_INET:begin
      {Fill in the ICMP fields}
      Router:=PICMPRouterAddress(PtrUInt(Advert) + Length);
      Router.Address:=PInAddr(AAddress)^;
      Router.Level:=LongInt($80000000);
-     
+
      {Calculate the Checksum}
      Advert.Checksum:=ChecksumICMP(AF_INET,Advert,0,Size);
-     
+
      {Create the Fragment}
      Packet.Size:=Size;
      Packet.Data:=Advert;
      Packet.Next:=nil;
-     
+
      {Send the Packet}
      Result:=(SendPacket(ASocket,ASource,ADest,0,0,@Packet,Size,0) = Size);
-     
+
      {$IFDEF ICMP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPRouterAdvert Completed');
      {$ENDIF}
@@ -1873,36 +1873,36 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPRouterSolicit');
  {$ENDIF}
- 
+
  if ASocket = nil then Exit;
- 
+
  {Get the Size of the Packet}
  Size:=SizeOf(TICMPSolicitHeader);
- 
+
  {Fill in the ICMP fields}
  Solicit.ICMPType:=ICMP_ROUTERSOLICIT;
  Solicit.Code:=0;
  Solicit.Checksum:=0;
  Solicit.Reserved:=0;
- 
- {Check Address Family} 
+
+ {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {Calculate the Checksum}
     Solicit.Checksum:=ChecksumICMP(AF_INET,@Solicit,0,Size);
-    
+
     {Create the Fragment}
     Packet.Size:=Size;
     Packet.Data:=@Solicit;
     Packet.Next:=nil;
-    
+
     {Send the Packet}
     Result:=(SendPacket(ASocket,ASource,ADest,0,0,@Packet,Size,0) = Size);
-    
+
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendICMPRouterSolicit Completed');
     {$ENDIF}
@@ -1920,31 +1920,31 @@ var
 begin
  {}
  Result:=0;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SelectCheck');
  {$ENDIF}
- 
+
  {Check Dest}
  if ADest = nil then Exit;
- 
+
  {Check Source}
  if ASource = nil then Exit;
- 
+
  {Check Code}
  case ACode of
   SELECT_READ:begin
     Result:=SOCKET_ERROR;
-    
+
     {Get Sockets}
     for Count:=ASource.fd_count - 1 downto 0 do
      begin
       {Get Socket}
       Socket:=TICMPSocket(ASource.fd_array[Count]);
-      
+
       {Check Socket}
       if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
-      
+
       {Check Receive Count}
       if Socket.RecvData.GetCount > 0 then
        begin
@@ -1954,26 +1954,26 @@ begin
           FD_SET(TSocket(Socket),ADest^);
          end;
        end;
-       
+
       {Unlock Socket}
       Socket.ReaderUnlock;
      end;
-    
+
     {Return Result}
     Result:=ADest.fd_count;
    end;
   SELECT_WRITE:begin
     Result:=SOCKET_ERROR;
-    
+
     {Get Sockets}
     for Count:=ASource.fd_count - 1 downto 0 do
      begin
       {Get Socket}
       Socket:=TICMPSocket(ASource.fd_array[Count]);
-      
+
       {Check Socket}
       if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
-      
+
       {Check Set}
       if not FD_ISSET(TSocket(Socket),ADest^) then
        begin
@@ -1996,7 +1996,7 @@ end;
 
 {==============================================================================}
 
-function TICMPProtocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; 
+function TICMPProtocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer;
 {Socket is the single socket to check, Code is the type of check, Timeout is how long to wait}
 var
  StartTime:Int64;
@@ -2004,14 +2004,14 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SelectWait');
  {$ENDIF}
 
  {Get Socket}
  Socket:=TICMPSocket(ASocket);
- 
+
  {Check Socket}
  if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
  try
@@ -2039,7 +2039,7 @@ begin
            Exit;
           end;
         end
-       else 
+       else
         begin
          {Wait for Event}
          if not Socket.WaitChangeEx(ATimeout) then
@@ -2056,26 +2056,26 @@ begin
            Result:=0;
            Exit;
           end;
-        end;           
+        end;
       end;
-      
+
      {Return One}
-     Result:=1; 
+     Result:=1;
     end;
    SELECT_WRITE:begin
      {Return One}
-     Result:=1; 
+     Result:=1;
     end;
    SELECT_ERROR:begin
      {Return Zero}
      Result:=0;
     end;
   end;
- 
+
  finally
-  {Unlock Socket} 
+  {Unlock Socket}
   Socket.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2098,29 +2098,29 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendPacket');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Dest = ' + InAddrToString(InAddrToNetwork(PInAddr(ADest)^)));
     {$ENDIF}
-    
+
     {Get Transport}
     Transport:=TICMPProtocolTransport(GetTransportByTransport(ASocket.Transport,True,NETWORK_LOCK_READ));
     if Transport = nil then Exit;
-        
+
     {Send the Packet}
     Result:=TIPTransport(ASocket.Transport).SendPacket(ASocket,ASource,ADest,APacket,ASize,AFlags);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
    end;
@@ -2139,12 +2139,12 @@ function TICMPProtocol.Accept(ASocket:TProtocolSocket;ASockAddr:PSockAddr;AAddrL
 begin
  {}
  Result:=TProtocolSocket(INVALID_SOCKET);
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: Accept');
  {$ENDIF}
 
- {Check Socket} 
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Not supported}
@@ -2170,41 +2170,41 @@ function TICMPProtocol.Bind(ASocket:TProtocolSocket;var ASockAddr:TSockAddr;AAdd
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: Bind');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected or Bound}
    NetworkSetLastError(WSAEINVAL);
    if ASocket.SocketState.Connected then Exit;
    if ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    if ASocket.Family <> ASockAddr.sin_family then Exit;
-   
+
    {Check Address Family}
    case ASocket.Family of
     AF_INET:begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Check LocalAddress}
       if not TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then
        begin
         NetworkSetLastError(WSAEADDRNOTAVAIL);
         if TIPTransport(ASocket.Transport).GetAddressByAddress(InAddrToHost(ASockAddr.sin_addr),False,NETWORK_LOCK_NONE) = nil then Exit;
        end;
-      
+
       {Bind the Socket}
       ASocket.SocketState.LocalAddress:=True;
       TIPState(ASocket.TransportState).LocalAddress:=InAddrToHost(ASockAddr.sin_addr);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -2229,21 +2229,21 @@ function TICMPProtocol.CloseSocket(ASocket:TProtocolSocket):Integer;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: CloseSocket');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Close Socket}
    ASocket.SocketState.Closed:=True;
    ASocket.CloseTime:=GetTickCount64;
-   
+
    {Signal the Event}
    ASocket.SignalChange;
-   
+
    {Return Result}
    NetworkSetLastError(ERROR_SUCCESS);
    Result:=NO_ERROR;
@@ -2272,40 +2272,40 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: Connect');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
    NetworkSetLastError(WSAEISCONN);
    if ASocket.SocketState.Connected then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    if ASocket.Family <> ASockAddr.sin_family then Exit;
-   
+
    {Check Address Family}
    case ASocket.Family of
     AF_INET:begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Check for Default RemoteAddress}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then Exit;
-      
+
       {Check for Broadcast RemoteAddress}
       NetworkSetLastError(WSAEACCES);
       if TIPTransport(ASocket.Transport).CompareBroadcast(InAddrToHost(ASockAddr.sin_addr)) or TIPTransport(ASocket.Transport).CompareDirected(InAddrToHost(ASockAddr.sin_addr)) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
-      
+
       {Check the Route}
       NetworkSetLastError(WSAENETUNREACH);
       Route:=TIPTransport(ASocket.Transport).GetRouteByAddress(InAddrToHost(ASockAddr.sin_addr),True,NETWORK_LOCK_READ);
@@ -2315,7 +2315,7 @@ begin
        NetworkSetLastError(WSAEADDRNOTAVAIL);
        Address:=TIPTransport(ASocket.Transport).GetAddressByAddress(TIPRouteEntry(Route).Address,True,NETWORK_LOCK_READ);
        if Address = nil then Exit;
-      
+
        {Check the Binding}
        if not ASocket.SocketState.LocalAddress then
         begin
@@ -2323,31 +2323,31 @@ begin
          ASocket.SocketState.LocalAddress:=True;
          TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
         end;
-      
+
        {Check for Default Binding}
        if TIPTransport(ASocket.Transport).CompareDefault(TIPState(ASocket.TransportState).LocalAddress) then
         begin
          {Set the LocalAddress}
          TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
         end;
-      
+
        {Connect the Socket}
        ASocket.SocketState.Connected:=True;
        ASocket.SocketState.RemoteAddress:=True;
        TIPState(ASocket.TransportState).RemoteAddress:=InAddrToHost(ASockAddr.sin_addr);
-      
+
        {Unlock Address}
        Address.ReaderUnlock;
-       
+
        {Signal the Event}
        ASocket.SignalChange;
-       
+
        {Return Result}
        NetworkSetLastError(ERROR_SUCCESS);
        Result:=NO_ERROR;
       finally
        Route.ReaderUnlock;
-      end;      
+      end;
      end;
    end;
   end
@@ -2370,12 +2370,12 @@ function TICMPProtocol.IoctlSocket(ASocket:TProtocolSocket;ACmd:DWORD;var AArg:u
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: IoctlSocket');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Pass the call to the socket}
@@ -2400,18 +2400,18 @@ function TICMPProtocol.GetPeerName(ASocket:TProtocolSocket;var ASockAddr:TSockAd
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: GetPeerName');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Connected}
    NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -2419,13 +2419,13 @@ begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Return the Peer Details}
       ASockAddr.sin_family:=ASocket.Family;
       ASockAddr.sin_port:=WordNtoBE(IPPORT_ANY);
       ASockAddr.sin_addr:=InAddrToNetwork(TIPState(ASocket.TransportState).RemoteAddress);
       AAddrLength:=SizeOf(TSockAddr);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -2451,18 +2451,18 @@ function TICMPProtocol.GetSockName(ASocket:TProtocolSocket;var ASockAddr:TSockAd
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: GetSockName');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -2470,13 +2470,13 @@ begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Return the Socket Details}
       ASockAddr.sin_family:=ASocket.Family;
       ASockAddr.sin_port:=WordNtoBE(IPPORT_ANY);
       ASockAddr.sin_addr:=InAddrToNetwork(TIPState(ASocket.TransportState).LocalAddress);
       AAddrLength:=SizeOf(TSockAddr);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -2504,12 +2504,12 @@ function TICMPProtocol.GetSockOpt(ASocket:TProtocolSocket;ALevel,AOptName:Intege
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: GetSockOpt');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Level}
@@ -2549,12 +2549,12 @@ function TICMPProtocol.Listen(ASocket:TProtocolSocket;ABacklog:Integer):Integer;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: Listen');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Not supported}
@@ -2583,30 +2583,30 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: Recv');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
    NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
-   
+
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantRecvMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
+
    {Wait for Data}
    StartTime:=GetTickCount64;
    while TICMPSocket(ASocket).RecvData.GetCount = 0 do
@@ -2619,8 +2619,8 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
-       
+        end;
+
        {Check for Timeout}
        if GetTickCount64 >= (StartTime + ASocket.SocketOptions.RecvTimeout) then
         begin
@@ -2635,9 +2635,9 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
-      end;      
-     
+        end;
+      end;
+
      {Check for Closed}
      if ASocket.SocketState.Closed then
       begin
@@ -2645,7 +2645,7 @@ begin
        Exit;
       end;
     end;
-   
+
    {Check Size}
    NetworkSetLastError(ERROR_SUCCESS);
    Size:=TICMPSocket(ASocket).RecvData.GetNext;
@@ -2654,7 +2654,7 @@ begin
      NetworkSetLastError(WSAEMSGSIZE);
      Size:=ALength;
     end;
-    
+
    {Read Data}
    if TICMPSocket(ASocket).RecvData.ReadBuffer(ABuffer,Size,nil,AFlags) then
     begin
@@ -2687,30 +2687,30 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: RecvFrom');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantRecvMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
+
    {Check size of FromAddr}
    NetworkSetLastError(WSAEFAULT);
    if AFromLength < SizeOf(TSockAddr) then Exit;
-   
+
    {Wait for Data}
    StartTime:=GetTickCount64;
    while TICMPSocket(ASocket).RecvData.GetCount = 0 do
@@ -2723,7 +2723,7 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
+        end;
 
        {Check for Timeout}
        if GetTickCount64 >= (StartTime + ASocket.SocketOptions.RecvTimeout) then
@@ -2739,9 +2739,9 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
-      end;      
-     
+        end;
+      end;
+
      {Check for Closed}
      if ASocket.SocketState.Closed then
       begin
@@ -2749,7 +2749,7 @@ begin
        Exit;
       end;
     end;
-    
+
    {Check Size}
    NetworkSetLastError(ERROR_SUCCESS);
    Size:=TICMPSocket(ASocket).RecvData.GetNext;
@@ -2758,11 +2758,11 @@ begin
      NetworkSetLastError(WSAEMSGSIZE);
      Size:=ALength;
     end;
-   
+
    {Get Address}
    AFromAddr.sin_family:=ASocket.Family;
    AFromAddr.sin_port:=WordNtoBE(IPPORT_ANY);
-   
+
    {Read Data}
    if TICMPSocket(ASocket).RecvData.ReadBuffer(ABuffer,Size,@AFromAddr.sin_addr,AFlags) then
     begin
@@ -2798,30 +2798,30 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: Send');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
    NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
-   
+
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantSendMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -2832,12 +2832,12 @@ begin
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
-      
+
       {Create the Fragment}
       Packet.Size:=ALength;
       Packet.Data:=@ABuffer;
       Packet.Next:=nil;
-      
+
       {Send the Packet}
       Result:=SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@TIPState(ASocket.TransportState).RemoteAddress,0,0,@Packet,ALength,AFlags);
      end;
@@ -2870,51 +2870,51 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SendTo');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound} {Moved Below}
    {NetworkSetLastError(WSAEINVAL);}
    {if not ASocket.SocketState.LocalAddress then Exit;}
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantSendMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    if ASocket.Family <> AToAddr.sin_family then Exit;
-   
+
    {Check Address Family}
    case ASocket.Family of
     AF_INET:begin
       {Check size of ToAddr}
       NetworkSetLastError(WSAEFAULT);
       if AToLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Get the RemoteAddress}
       InAddr:=InAddrToHost(AToAddr.sin_addr);
-      
+
       {Check for Default RemoteAddress}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if TIPTransport(ASocket.Transport).CompareDefault(InAddr) then Exit;
-      
+
       {Check for Broadcast RemoteAddress}
       NetworkSetLastError(WSAEACCES);
       if TIPTransport(ASocket.Transport).CompareBroadcast(InAddr) or TIPTransport(ASocket.Transport).CompareDirected(InAddr) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
-      
+
       {Check the Binding}
       if not(ASocket.SocketState.LocalAddress) or TIPTransport(ASocket.Transport).CompareDefault(TIPState(ASocket.TransportState).LocalAddress) then
        begin
@@ -2927,24 +2927,24 @@ begin
          NetworkSetLastError(WSAEADDRNOTAVAIL);
          Address:=TIPTransport(ASocket.Transport).GetAddressByAddress(TIPRouteEntry(Route).Address,True,NETWORK_LOCK_READ);
          if Address = nil then Exit;
-      
+
          {Bind the Socket}
          ASocket.SocketState.LocalAddress:=True;
          TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
-         
+
          {Unlock Address}
          Address.ReaderUnlock;
         finally
          {Unlock Route}
          Route.ReaderUnlock;
-        end;      
-       end; 
-      
+        end;
+       end;
+
       {Create the Fragment}
       Packet.Size:=ALength;
       Packet.Data:=@ABuffer;
       Packet.Next:=nil;
-      
+
       {Send the Packet}
       Result:=SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@InAddr,0,0,@Packet,ALength,AFlags);
      end;
@@ -2971,12 +2971,12 @@ function TICMPProtocol.SetSockOpt(ASocket:TProtocolSocket;ALevel,AOptName:Intege
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: SetSockOpt');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Level}
@@ -2987,14 +2987,14 @@ begin
       case AOptName of
        SO_RCVBUF:begin
          NetworkSetLastError(WSAEFAULT);
-         
+
          if AOptLength >= SizeOf(Integer) then
           begin
            TICMPSocket(ASocket).RecvData.Size:=PInteger(AOptValue)^;
           end;
         end;
       end;
-      
+
       {Pass the call to the socket}
       Result:=ASocket.SetOption(ALevel,AOptName,AOptValue,AOptLength);
      end;
@@ -3034,12 +3034,12 @@ function TICMPProtocol.Shutdown(ASocket:TProtocolSocket;AHow:Integer):Integer;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: Shutdown');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Direction}
@@ -3047,10 +3047,10 @@ begin
     SHUTDOWN_RECV:begin
       {Shutdown Receive}
       ASocket.SocketState.CantRecvMore:=True;
-      
+
       {Signal the Event}
       ASocket.SignalChange;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -3058,10 +3058,10 @@ begin
     SHUTDOWN_SEND:begin
       {Shutdown Send}
       ASocket.SocketState.CantSendMore:=True;
-      
+
       {Signal the Event}
       ASocket.SignalChange;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -3070,10 +3070,10 @@ begin
       {Shutdown Both}
       ASocket.SocketState.CantRecvMore:=True;
       ASocket.SocketState.CantSendMore:=True;
-      
+
       {Signal the Event}
       ASocket.SignalChange;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -3105,18 +3105,18 @@ begin
  ReaderLock;
  try
   Result:=TProtocolSocket(INVALID_SOCKET);
-  
+
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: Socket');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Family = ' + AddressFamilyToString(AFamily));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Struct = ' + SocketTypeToString(AStruct));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
-  
+
   {Check Socket Type}
   NetworkSetLastError(WSAESOCKTNOSUPPORT);
   if AStruct <> SOCK_RAW then Exit;
-  
+
   {Check Address Family}
   NetworkSetLastError(WSAEAFNOSUPPORT);
   if (AFamily = AF_UNSPEC) and (AProtocol <> IPPROTO_IP) then AFamily:=AF_INET;
@@ -3124,14 +3124,14 @@ begin
   {Check Protocol}
   NetworkSetLastError(WSAEPROTOTYPE);
   if (AProtocol <> IPPROTO_ICMP) and (AProtocol <> IPPROTO_IP) then Exit;
-  
+
   {Get Transport}
   Transport:=TICMPProtocolTransport(GetTransportByFamily(AFamily,True,NETWORK_LOCK_READ));
   if Transport = nil then Exit;
-    
+
   {Create Socket}
   Result:=TICMPSocket.Create(Self,Transport.Transport);
-  
+
   {Unlock Transport}
   Transport.ReaderUnlock;
 
@@ -3140,13 +3140,13 @@ begin
   try
    {Add Socket}
    FSockets.Add(Result);
-  finally 
+  finally
    {Release Lock}
    FSockets.WriterUnlock;
-  end; 
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3162,15 +3162,15 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: AddTransport');
   {$ENDIF}
- 
+
   {Check Transport}
   if ATransport = nil then Exit;
- 
-  {Get Transport} 
+
+  {Get Transport}
   Transport:=TICMPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_READ));
   if Transport = nil then
    begin
@@ -3186,26 +3186,26 @@ begin
          Transport.Handle:=Handle;
          Transport.Protocol:=IPPROTO_ICMP;
          Transport.Transport:=ATransport;
-       
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-        
+
           {Add Control Socket}
           Transport.Socket:=TICMPSocket.Create(Self,ATransport);
           {FSockets.Add(Transport.Socket);} {Dont add this one to the list}
-        
+
           {Add Proto Entry}
           TIPTransport(ATransport).AddProto(ICMP_PROTOCOL_NAME,IPPROTO_ICMP,False);
-       
+
           {Return Result}
           Result:=True;
          finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end;  
+         end;
         end;
       end;
     end;
@@ -3214,13 +3214,13 @@ begin
    begin
     {Unlock Transport}
     Transport.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3235,18 +3235,18 @@ begin
  ReaderLock;
  try
   Result:=False;
- 
+
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: RemoveTransport');
   {$ENDIF}
- 
+
   {Check Transport}
   if ATransport = nil then Exit;
- 
+
   {Get Transport}
   Transport:=TICMPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Transport = nil then Exit;
- 
+
   {Check Address Family}
   case ATransport.Family of
    AF_INET:begin
@@ -3255,35 +3255,35 @@ begin
       begin
        {Remove Proto Entry}
        TIPTransport(ATransport).RemoveProto(ICMP_PROTOCOL_NAME);
-       
+
        {Remove Control Socket}
        {FSockets.Remove(Transport.Socket);} {This one is not on the list}
        Transport.Socket.Free;
-       
+
        {Acquire Lock}
        FTransports.WriterLock;
        try
         {Remove Transport}
         FTransports.Remove(Transport);
-       
+
         {Unlock Transport}
         Transport.WriterUnlock;
-       
+
         {Destroy Transport}
         Transport.Free;
-       
+
         {Return Result}
         Result:=True;
        finally
         {Release Lock}
         FTransports.WriterUnlock;
-       end;  
+       end;
       end;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3307,14 +3307,14 @@ begin
  FSockets.ReaderLock;
  try
   Result:=nil;
- 
+
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: FindSocket');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Family = ' + AddressFamilyToString(AFamily));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Struct = ' + SocketTypeToString(AStruct));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
- 
+
   {Get Socket}
   Socket:=TICMPSocket(FSockets.First);
   while Socket <> nil do
@@ -3332,7 +3332,7 @@ begin
            begin
             {Lock Socket}
             if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-           
+
             {Return Result}
             Result:=Socket;
             Exit;
@@ -3345,21 +3345,21 @@ begin
            begin
             {Lock Socket}
             if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-            
+
             {Return Result}
             Result:=Socket;
             Exit;
            end;
          end;
        end;
-     end;  
-    
+     end;
+
     {Get Next}
     Socket:=TICMPSocket(Socket.Next);
    end;
- finally 
+ finally
   FSockets.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3377,10 +3377,10 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: FlushSockets');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP:  All = ' + BoolToStr(All));
  {$ENDIF}
-  
+
  {Get Tick Count}
  CurrentTime:=GetTickCount64;
-  
+
  {Get Socket}
  Socket:=TICMPSocket(GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
  while Socket <> nil do
@@ -3388,7 +3388,7 @@ begin
    {Get Next}
    Current:=Socket;
    Socket:=TICMPSocket(GetSocketByNext(Current,True,False,NETWORK_LOCK_READ));
-    
+
    {Check Socket State}
    if (Current.SocketState.Closed) or (All) then
     begin
@@ -3400,23 +3400,23 @@ begin
         begin
          {Acquire Lock}
          FSockets.WriterLock;
-       
+
          {Remove Socket}
          FSockets.Remove(Current);
-       
+
          {Release Lock}
          FSockets.WriterUnlock;
-       
+
          {Unlock Socket}
          Current.WriterUnlock;
-        
+
          {Free Socket}
          Current.Free;
          Current:=nil;
-        end; 
-      end; 
+        end;
+      end;
     end;
-    
+
    {Unlock Socket}
    if Current <> nil then Current.ReaderUnlock;
   end;
@@ -3433,30 +3433,30 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: StartProtocol');
   {$ENDIF}
- 
+
   {Check Manager}
   if Manager = nil then Exit;
- 
+
   {Register with IP Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
     AddTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3470,33 +3470,33 @@ begin
  ReaderLock;
  try
   Result:=False;
- 
+
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: StopProtocol');
   {$ENDIF}
- 
+
   {Check Manager}
   if Manager = nil then Exit;
- 
+
   {Close all Sockets}
   FlushSockets(True);
- 
+
   {Deregister with IP Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3507,7 +3507,7 @@ begin
  {}
  {Close old Sockets}
  FlushSockets(False);
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -3519,7 +3519,7 @@ constructor TICMPSocket.Create(AProtocol:TNetworkProtocol;ATransport:TNetworkTra
 begin
  {}
  inherited Create(AProtocol,ATransport);
- 
+
  {Check Address Family}
  case Family of
   AF_INET:begin
@@ -3527,7 +3527,7 @@ begin
     FTransportState:=TIPState.Create;
     {Create IP Transport Options}
     FTransportOptions:=TIPOptions.Create;
-    
+
     {Set IP Defaults}
     TIPOptions(FTransportOptions).TTL:=TIPTransport(ATransport).DefaultTTL;
    end;
@@ -3575,10 +3575,10 @@ begin
   FTransportOptions.Free;
   {Free Transport State}
   FTransportState.Free;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3589,32 +3589,32 @@ begin
  ReaderLock;
  try
   Result:=SOCKET_ERROR;
-  
+
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Socket: IoCtl');
   {$ENDIF}
-  
+
   {Check Commmand}
   NetworkSetLastError(WSAEINVAL);
   case ACommand of
    FIONREAD:begin
      AArgument:=RecvData.GetNext;
-     
+
      {Return Result}
      NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
     end;
    FIONBIO:begin
      SocketState.NonBlocking:=(AArgument <> 0);
-     
+
      {Return Result}
      NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3629,23 +3629,23 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Socket: IsConnected');
   {$ENDIF}
-  
+
   {Check Local}
   if ALocalAddress = nil then Exit;
-  
+
   {Check Remote}
   if ARemoteAddress = nil then Exit;
-  
+
   {Check for Bound}
   if not SocketState.LocalAddress then Exit;
-  
+
   {Check for Connected}
   if not SocketState.Connected then Exit; {Could use RemoteAddress instead}
-  
+
   {Check Address Family}
   case Family of
    AF_INET:begin
@@ -3667,20 +3667,20 @@ begin
           if not TIPTransport(Transport).CompareAddress(TIPState(TransportState).LocalAddress,TIPRouteEntry(Route).Address) then Exit;
          finally
           Route.ReaderUnlock;
-         end; 
+         end;
         end;
       end;
-     
+
      {Check the Connected RemoteAddress}
      if not TIPTransport(Transport).CompareAddress(TIPState(TransportState).RemoteAddress,PInAddr(ARemoteAddress)^) then Exit;
-     
+
      {Return Result}
      Result:=True;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3695,23 +3695,23 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Socket: IsListening');
   {$ENDIF}
-  
+
   {Check Local}
   if ALocalAddress = nil then Exit;
-  
+
   {Check Remote}
   {if ARemoteAddress = nil then Exit;} {Not Used}
-  
+
   {Check for Bound}
   if not SocketState.LocalAddress then Exit;
-  
+
   {Check for Connected}
   if SocketState.Connected then Exit; {Could use RemoteAddress instead}
-  
+
   {Check Address Family}
   case Family of
    AF_INET:begin
@@ -3735,18 +3735,18 @@ begin
             if not TIPTransport(Transport).CompareAddress(TIPState(TransportState).LocalAddress,TIPRouteEntry(Route).Address) then Exit;
            finally
             Route.ReaderUnlock;
-           end; 
+           end;
           end;
         end;
       end;
-     
+
      {Return Result}
      Result:=True;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3756,9 +3756,9 @@ constructor TICMPBuffer.Create(ASocket:TTransportSocket);
 begin
  {}
  inherited Create(ASocket);
- 
+
  FOffset:=SizeOf(TICMPPacket); {ICMP_PACKET_SIZE}
- 
+
  {Check Address Family}
  case FSocket.Family of
   AF_INET:begin
@@ -3787,10 +3787,10 @@ begin
  AcquireLock;
  try
   FlushPackets;
- finally 
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+ finally
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3802,25 +3802,25 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: AddPacket');
   {$ENDIF}
-  
+
   {Check Data Size}
   if ASize = 0 then Exit;
-  
+
   {Check Buffer Free}
   if LongWord(ASize) > FFree then Exit;
-  
+
   {Create a new Packet}
   Packet:=GetMem(FOffset + FLength);
   if Packet = nil then Exit;
   Packet.Size:=ASize;
   Packet.Next:=nil;
-  
+
   {Add to List}
   if FLast = nil then
    begin
@@ -3840,12 +3840,12 @@ begin
     Inc(FUsed,ASize);
     Inc(FCount);
    end;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3857,16 +3857,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: RemovePacket');
   {$ENDIF}
-  
+
   {Check for Packets}
   if FFirst = nil then Exit;
-  
+
   {Remove from List}
   if FFirst.Next <> nil then
    begin
@@ -3887,15 +3887,15 @@ begin
     Inc(FFree,Packet.Size);
     Dec(FCount);
    end;
-  
+
   {Free the Packet}
   FreeMem(Packet,FOffset + FLength);
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3911,9 +3911,9 @@ begin
     {Remove Packet}
     RemovePacket;
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3930,36 +3930,36 @@ begin
 
   {Check Size}
   if ASize = 0 then Exit;
-  
+
   {Get Size}
   ASize:=Max(ASize,ICMP_BUFFER_SIZE);
-  
+
   {Clear any Packets}
   FlushPackets;
-  
+
   {Allocate the Memory}
   FBuffer.SetSize(ASize);
-  
+
   {Set the Buffer Values}
   FSize:=ASize;
   FStart:=FBuffer.Memory;
-  
+
   {End actually points to byte beyond last for simpler calculations}
   FEnd:=Pointer(PtrUInt(FStart) + FSize);
-  
+
   {Set the Data Values}
   FUsed:=0;
   FFree:=FSize;
   FRead:=FStart;
   FWrite:=FStart;
-  
+
   {Set the Packet Values}
   FCount:=0;
   FFirst:=nil;
   FLast:=nil;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3968,17 +3968,17 @@ function TICMPBuffer.GetNext:Integer;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
  try
   {Check First}
   if FFirst = nil then Exit;
-  
+
   {Get First Size}
   Result:=FFirst.Size;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4003,15 +4003,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check the Buffer Size}
   if ASize = 0 then Exit;
-  
+
   {Check there is Data}
   if FFirst = nil then Exit;
-  
+
   {Get the Start and Size}
   ReadNext:=FRead;
   ReadSize:=FFirst.Size;
@@ -4019,11 +4019,11 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: ReadBuffer: FStart = ' + PtrToHex(FStart) + ' FEnd = ' + PtrToHex(FEnd));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: ReadBuffer: ReadNext = ' + IntToStr(PtrUInt(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
   {$ENDIF}
-  
+
   {Get the Return Size}
   BufferSize:=Min(ASize,ReadSize);
   ASize:=BufferSize;
-  
+
   {Since we Guarantee ReadNext to be at least 1 byte from the End of the Buffer, we can start reading}
   {Check for Single or Double Read}
   if (PtrUInt(ReadNext) + ReadSize) <= PtrUInt(FEnd) then
@@ -4041,7 +4041,7 @@ begin
      begin
       System.Move(ReadNext^,ABuffer,ReadSize);
      end;
-    
+
     Inc(PtrUInt(ReadNext),ReadSize);
     Dec(ReadSize,ReadSize);
    end
@@ -4051,7 +4051,7 @@ begin
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: ReadBuffer: Double Read');
     {$ENDIF}
-    
+
     {Read the First Block of the Data}
     BlockSize:=(PtrUInt(FEnd) - PtrUInt(ReadNext));
     if BufferSize < BlockSize then
@@ -4060,20 +4060,20 @@ begin
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: ReadBuffer: Short First Read');
       {$ENDIF}
       System.Move(ReadNext^,ABuffer,BufferSize);
-      
+
       Dec(BufferSize,BufferSize);
      end
     else
      begin
       System.Move(ReadNext^,ABuffer,BlockSize);
-      
+
       Dec(BufferSize,BlockSize);
      end;
-    
+
     {Wrap to Start of Buffer}
     ReadNext:=FStart;
     Dec(ReadSize,BlockSize);
-    
+
     {Read the Second Block of the Data}
     if BufferSize > 0 then
      begin
@@ -4089,42 +4089,42 @@ begin
         System.Move(ReadNext^,Pointer(PtrUInt(@ABuffer) + BlockSize)^,ReadSize);
        end;
      end;
-    
+
     Inc(PtrUInt(ReadNext),ReadSize);
     Dec(ReadSize,ReadSize);
    end;
-  
+
   {Check for Wrap around}
   if PtrUInt(ReadNext) = PtrUInt(FEnd) then ReadNext:=FStart;
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: ReadBuffer: ReadNext = ' + IntToStr(PtrUInt(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
   {$ENDIF}
-  
+
   {Get the Remote Address}
   if ARemoteAddress <> nil then
    begin
     System.Move(Pointer(PtrUInt(FFirst) + FOffset)^,ARemoteAddress^,FLength);
    end;
-  
+
   {Check for Peek Flag}
   if (AFlags and MSG_PEEK) = 0 then
    begin
     {Update the Next Read}
     FRead:=ReadNext;
-    
+
     {Remove the Packet}
     RemovePacket;
    end;
-  
+
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: ReadBuffer: Free = ' + IntToStr(FFree) + ' Used = ' + IntToStr(FUsed) + ' Count = ' + IntToStr(FCount));
   {$ENDIF}
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4139,15 +4139,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check the Data Size}
   if ASize = 0 then Exit;
-  
+
   {Add the Packet}
   if not AddPacket(ASize) then Exit;
-  
+
   {Get the Start and Size}
   WriteNext:=FWrite;
   WriteSize:=ASize;
@@ -4155,14 +4155,14 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: WriteBuffer: FStart = ' + PtrToHex(FStart) + ' FEnd = ' + PtrToHex(FEnd));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: WriteBuffer: WriteNext = ' + IntToStr(PtrUInt(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
   {$ENDIF}
-  
+
   {Since we guarantee WriteNext to be at least 1 byte from the End of the Buffer, we can start writing}
   if (PtrUInt(WriteNext) + WriteSize) <= PtrUInt(FEnd) then
    begin
     {Single Write with no wrap around}
     {Write the Packet Data}
     System.Move(ABuffer,WriteNext^,WriteSize);
-    
+
     Inc(PtrUInt(WriteNext),WriteSize);
     Dec(WriteSize,WriteSize);
    end
@@ -4172,48 +4172,48 @@ begin
     {$IFDEF ICMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: WriteBuffer: Double Write');
     {$ENDIF}
-    
+
     {Write the First Block of the Packet Data}
     BlockSize:=(PtrUInt(FEnd) - PtrUInt(WriteNext));
     System.Move(ABuffer,WriteNext^,BlockSize);
-    
+
     {Wrap to Start of Buffer}
     WriteNext:=FStart;
     Dec(WriteSize,BlockSize);
-    
+
     {Write the Second Block of the Packet Data}
     System.Move(Pointer(PtrUInt(@ABuffer) + BlockSize)^,WriteNext^,WriteSize);
-    
+
     Inc(PtrUInt(WriteNext),WriteSize);
     Dec(WriteSize,WriteSize);
    end;
-  
+
   {Check for Wrap around}
   if PtrUInt(WriteNext) = PtrUInt(FEnd) then WriteNext:=FStart;
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: WriteBuffer: WriteNext = ' + IntToStr(PtrUInt(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
   {$ENDIF}
-  
+
   {Set the RemoteAddress}
   if ARemoteAddress <> nil then
    begin
     System.Move(ARemoteAddress^,Pointer(PtrUInt(FLast) + FOffset)^,FLength);
    end;
-  
+
   {Update the Next Write}
   FWrite:=WriteNext;
-  
+
   {$IFDEF ICMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP Buffer: WriteBuffer: Free = ' + IntToStr(FFree) + ' Used = ' + IntToStr(FUsed) + ' Count = ' + IntToStr(FCount));
   {$ENDIF}
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -4225,13 +4225,13 @@ begin
 
  {Setup ICMP Protocol}
  if NetworkSettings.GetBoolean('IP_TRANSPORT_ENABLED') then NetworkSettings.AddBoolean('ICMP_PROTOCOL_ENABLED',True);
- 
+
  {Create ICMP Protocol}
- if NetworkSettings.GetBooleanDefault('ICMP_PROTOCOL_ENABLED',ICMP_PROTOCOL_ENABLED) then 
+ if NetworkSettings.GetBooleanDefault('ICMP_PROTOCOL_ENABLED',ICMP_PROTOCOL_ENABLED) then
   begin
    TICMPProtocol.Create(ProtocolManager,ICMP_PROTOCOL_NAME);
-  end; 
- 
+  end;
+
  ICMPInitialized:=True;
 end;
 
@@ -4247,17 +4247,17 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ICMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ICMP: CheckICMP');
  {$ENDIF}
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
     {Get Header}
     ICMP:=PICMPHeader(PtrUInt(ABuffer) + GetICMPHeaderOffset(AF_INET,ABuffer));
-        
+
     {Check Data Length}
     Length:=GetIPDataLength(ABuffer);
     if Length >= ICMP_HEADER_SIZE then
@@ -4285,7 +4285,7 @@ function GetICMPHeaderOffset(AFamily:Word;ABuffer:Pointer):Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
@@ -4304,13 +4304,13 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
     {Get Start of the ICMP Header (Length of IP Header)}
     Offset:=(PIPHeader(ABuffer).VersionLength and $0F) shl 2;
-    
+
     {Return Size of ICMP Header based on ICMPType Field}
     case PICMPHeader(PtrUInt(ABuffer) + Offset).Unused.ICMPType of
      ICMP_UNREACH,ICMP_TIMXCEED,ICMP_SOURCEQUENCH:begin
@@ -4352,7 +4352,7 @@ function GetICMPDataOffset(AFamily:Word;ABuffer:Pointer):Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
@@ -4369,7 +4369,7 @@ function GetICMPDataLength(AFamily:Word;ABuffer:Pointer):Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
@@ -4390,30 +4390,30 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
     {Get Header}
     ICMP:=PICMPHeader(PtrUInt(ABuffer) + AOffset);
-    
+
     {Save Checksum}
     Original:=ICMP.Unused.Checksum;
     ICMP.Unused.Checksum:=0;
-    
+
     {Calculate 1s Compliment Checksum on ICMP Header and Data}
     Result:=GetChecksum(ABuffer,AOffset,ALength);
-    
+
     {Restore Checksum}
     ICMP.Unused.Checksum:=Original;
    end;
  end;
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {ICMP Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -4421,12 +4421,12 @@ initialization
  ICMPInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 end.
- 
+

@@ -312,7 +312,7 @@ begin
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(nil,'CDC Ethernet: Failed to register CDC Ethernet driver: ' + USBStatusToString(Status));
-     
+
      {Destroy Driver}
      USBDriverDestroy(CDCEthernetDriver);
     end;

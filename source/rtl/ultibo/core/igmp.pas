@@ -17,27 +17,27 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
- 
- 
+
+
 References
 ==========
 
  Multicast Address Assignments
- 
+
   http://www.iana.org/assignments/multicast-addresses/multicast-addresses.xhtml
- 
+
 Internet Group Management Protocol
 ==================================
 
  Notes: Supports IGMP Version 1 and 2
 
  Notes: IGMP Checksum includes both Header and Data (if any)
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -49,17 +49,17 @@ unit IGMP;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Threads,SysUtils,Classes,Network,Transport,Protocol,IP,Ultibo,UltiboClasses;
-          
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-  
+
 {==============================================================================}
 const
  {IGMP specific constants}
  {Note: Some IGMP definitions are in the Protocol or IP modules}
  IGMP_PROTOCOL_NAME = 'IGMP';
- 
+
  {IGMP constants}
  IGMP_TIMEOUT = 0;          {Wait forever on a IGMP Read}
  IGMP_BUFFER_SIZE = 65536;  {IGMP Receive Buffer Size}
@@ -86,7 +86,7 @@ type
  end;                     {zero for "General" queries}
 
  PIGMPPacket = ^TIGMPPacket;
- TIGMPPacket = record   {8 Bytes} {Used by IGMPBuffer} 
+ TIGMPPacket = record   {8 Bytes} {Used by IGMPBuffer}
   Size:LongWord;        {LongWord to keep size even}
   Next:PIGMPPacket;
  end; {Followed by RemoteAddress (4 or 16 Bytes)}
@@ -166,7 +166,7 @@ type
 
    function FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket; override;
    procedure FlushSockets(All:Boolean); override;
-   
+
    function StartProtocol:Boolean; override;
    function StopProtocol:Boolean; override;
    function ProcessProtocol:Boolean; override;
@@ -178,7 +178,7 @@ type
   private
    {Internal Variables}
    FLock:TCriticalSectionHandle;
-   
+
    {Status Variables}
    FCount:Word;                     {Number of memberships}
    FQueryTime:Int64;                {IGMP query reply timer}
@@ -187,16 +187,16 @@ type
    FAddress:TInAddr;                {IP address of group}
    FHardware:THardwareAddress;      {Hardware address of group}
    FTransport:TNetworkTransport;    {Transport provider for group}
-   
+
    {Internal Methods}
    procedure SetCount(ACount:Word);
-   function GetActive:Boolean; 
+   function GetActive:Boolean;
    procedure SetQueryTime(const AQueryTime:Int64);
    procedure SetReportTime(const AReportTime:Int64);
    procedure SetTransmitCount(ATransmitCount:Word);
-   procedure SetAddress(const AAddress:TInAddr);   
+   procedure SetAddress(const AAddress:TInAddr);
    procedure SetHardware(const AHardware:THardwareAddress);
-   procedure SetTransport(ATransport:TNetworkTransport); 
+   procedure SetTransport(ATransport:TNetworkTransport);
   public
    {Public Properties}
    property Count:Word read FCount write SetCount;
@@ -207,11 +207,11 @@ type
    property Address:TInAddr read FAddress write SetAddress;
    property Hardware:THardwareAddress read FHardware write SetHardware;
    property Transport:TNetworkTransport read FTransport write SetTransport;
-   
+
    {Public Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    procedure IncrementCount;
    procedure DecrementCount;
    procedure IncrementTransmitCount;
@@ -224,7 +224,7 @@ type
    destructor Destroy; override;
   private
    {Internal Variables}
-   
+
    {Data Layer Variables}
    FRecvData:TIGMPBuffer;
   public
@@ -270,11 +270,11 @@ type
    function ReadBuffer(var ABuffer;var ASize:Integer;ARemoteAddress:Pointer;AFlags:Integer):Boolean;
    function WriteBuffer(var ABuffer;ASize:Integer;ARemoteAddress:Pointer):Boolean;
  end;
- 
+
 {==============================================================================}
 {var}
  {IGMP specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure IGMPInit;
@@ -289,7 +289,7 @@ function GetIGMPDataOffset(AFamily:Word;ABuffer:Pointer):Word;
 function GetIGMPDataLength(AFamily:Word;ABuffer:Pointer):Word;
 
 function ChecksumIGMP(AFamily:Word;ABuffer:Pointer;AOffset,ALength:Word):Word;
- 
+
 {==============================================================================}
 {IGMP Helper Functions}
 
@@ -322,10 +322,10 @@ begin
  WriterLock;
  try
   Socket:=nil;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -348,10 +348,10 @@ begin
  WriterLock;
  try
   FGroups.Free;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -380,28 +380,28 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: PacketHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Dest}
  {if ADest = nil then Exit;} {Not Used}
- 
+
  {Check Source}
- {if ASource = nil then Exit;} {Not Used} 
-  
+ {if ASource = nil then Exit;} {Not Used}
+
  {Check Packet}
  if APacket = nil then Exit;
- 
+
  {Get Transport}
  Transport:=TIGMPProtocolTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
- try 
+ try
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Family = ' + AddressFamilyToString(Transport.Transport.Family));
   {$ENDIF}
- 
+
   {Check Transport Family}
   case Transport.Transport.Family of
    AF_INET:begin
-     {Get Header}  
+     {Get Header}
      IP:=PIPHeader(APacket);
 
      {$IFDEF IGMP_DEBUG}
@@ -416,19 +416,19 @@ begin
          begin
           {Get Header}
           IGMP:=PIGMPHeader(PtrUInt(IP) + GetIGMPHeaderOffset(AF_INET,IP));
-          
+
           {Check for a Type that we handle}
           case IGMP.IGMPType of
            IGMP_QUERY:begin
              {Return Result}
              Result:=True;
-             
+
              {$IFDEF IGMP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  IGMP 1/2 Query');
              {$ENDIF}
-             
+
              if IGMP.RespTime = 0 then IGMP.RespTime:=100;
-             
+
              if TIPTransport(Transport.Transport).CompareDefault(InAddrToHost(IGMP.Address)) then
               begin
                {General Query}
@@ -440,11 +440,11 @@ begin
                   begin
                    {Set the Report Timeout}
                    Group.ReportTime:=GetTickCount64 + IGMP.RespTime;
-                   
+
                    {Set the Transmit Counter}
                    Group.TransmitCount:=1;
                   end;
-                 
+
                  {Get Next}
                  Group:=TIGMPGroup(GetGroupByNext(Group,True,True));
                 end;
@@ -452,19 +452,19 @@ begin
              else
               begin
                {Specific Query}
-               Group:=GetGroup(Transport,InAddrToHost(IGMP.Address),True); 
+               Group:=GetGroup(Transport,InAddrToHost(IGMP.Address),True);
                if Group = nil then Exit;
-               
+
                {Check Active}
                if Group.Active then
                 begin
                  {Set the Report Timeout}
                  Group.ReportTime:=GetTickCount64 + IGMP.RespTime;
-                 
+
                  {Set the Transmit Counter}
                  Group.TransmitCount:=1;
                 end;
-                
+
                {Unlock Group}
                Group.ReleaseLock;
               end;
@@ -472,21 +472,21 @@ begin
            IGMP_REPORTV1,IGMP_REPORTV2:begin
              {Return Result}
              Result:=True;
-             
+
              {$IFDEF IGMP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  IGMP 1/2 Report');
              {$ENDIF}
-             
+
              {Get the Group}
              Group:=GetGroup(Transport,InAddrToHost(IGMP.Address),True);
              if Group = nil then Exit;
-             
+
              {Reset the Query Timeout}
              Group.QueryTime:=0;
-             
+
              {Reset the Report Timeout}
              Group.ReportTime:=0;
-             
+
              {Reset the Transmit Counter}
              Group.TransmitCount:=0;
 
@@ -496,11 +496,11 @@ begin
            IGMP_LEAVE:begin
              {Return Result}
              Result:=True;
-             
+
              {$IFDEF IGMP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  IGMP 2 Leave');
              {$ENDIF}
-             
+
              {Note: Only a Router should process this}
             end;
            else
@@ -513,32 +513,32 @@ begin
                Socket:=TIGMPSocket(FindSocket(AF_INET,SOCK_RAW,IPPROTO_IGMP,@IP.DestIP,@IP.SourceIP,0,0,ABroadcast,True,True,NETWORK_LOCK_READ));
               end;
              if Socket = nil then Exit;
-             
-             
+
+
              {Get the Data Offset}
              Offset:=GetIPDataOffset(IP);
              Length:=GetIPDataLength(IP);
-             
+
              {Account for IP_HDRINCL}
              if TIPOptions(Socket.TransportOptions).Header then
               begin
                Offset:=0;
                Length:=ASize;
               end;
-              
+
              {$IFDEF IGMP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Offset = ' + IntToStr(Offset) + ' Length = ' + IntToStr(Length));
              {$ENDIF}
-             
+
              {Write the Data into the Receive Buffer}
              Socket.RecvData.WriteBuffer(Pointer(PtrUInt(IP) + Offset)^,Length,@IP.SourceIP);
-             
+
              {Signal the Event}
              Socket.SignalChange;
-             
+
              {Return True even if the Write failed (eg Buffer is Full, Socket Shutdown etc)}
              Result:=True;
-             
+
              {Unlock Socket}
              Socket.ReaderUnlock;
             end;
@@ -550,7 +550,7 @@ begin
   end;
  finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -574,21 +574,21 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: ControlHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Dest}
  {if ADest = nil then Exit;} {May be nil}
- 
+
  {Check Source}
  {if ASource = nil then Exit;} {May be nil}
-  
+
  {Check Data}
  {if AData = nil then Exit;} {May be nil}
- 
+
  {Get Transport}
  Transport:=TIGMPProtocolTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
@@ -606,17 +606,17 @@ begin
            {$IFDEF IGMP_DEBUG}
            if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  IGMP 1/2 Query');
            {$ENDIF}
-           
+
            {Get the Group}
-           Group:=GetGroup(Transport,PInAddr(AAddress)^,True); 
+           Group:=GetGroup(Transport,PInAddr(AAddress)^,True);
            if Group = nil then Exit;
-           
+
            {Set the Query Timeout}
            Group.QueryTime:=GetTickCount64 + IGMP_QUERY_TIMEOUT;
-           
+
            {Set the Transmit Counter}
            Group.TransmitCount:=IGMP_TRANSMIT_COUNT - 1;
-           
+
            {Lock Socket}
            Transport.Socket.ReaderLock;
 
@@ -625,7 +625,7 @@ begin
 
            {Unlock Socket}
            Transport.Socket.ReaderUnlock;
- 
+
            {Unlock Group}
            Group.ReleaseLock;
           end;
@@ -633,14 +633,14 @@ begin
            {$IFDEF IGMP_DEBUG}
            if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  IGMP 1 Report');
            {$ENDIF}
-           
+
            {Check the Group}
            Group:=GetGroup(Transport,PInAddr(AAddress)^,True);
            if Group <> nil then
             begin
              {Increment Count}
              Group.IncrementCount;
-             
+
              {Return Result}
              Result:=True;
             end
@@ -649,19 +649,19 @@ begin
              {Add the Group}
              Group:=AddGroup(Transport,PInAddr(AAddress)^,PHardwareAddress(AData)^,True);
              if Group = nil then Exit;
-             
+
              {Set the Report (Retransmit) Timeout}
              Group.ReportTime:=GetTickCount64 + IGMP_REPORT_TIMEOUT;
-             
+
              {Set the Transmit Counter}
              Group.TransmitCount:=IGMP_TRANSMIT_COUNT - 1;
-             
+
              {Lock Socket}
              Transport.Socket.ReaderLock;
-             
+
              {Send the Report}
              Result:=SendIGMP1Report(Transport.Socket,ASource,ADest,AAddress);
-    
+
              {Unlock Socket}
              Transport.Socket.ReaderUnlock;
             end;
@@ -673,14 +673,14 @@ begin
            {$IFDEF IGMP_DEBUG}
            if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  IGMP 2 Report');
            {$ENDIF}
-           
+
            {Check the Group}
            Group:=GetGroup(Transport,PInAddr(AAddress)^,True);
            if Group <> nil then
             begin
              {Increment Count}
              Group.IncrementCount;
-             
+
              {Return Result}
              Result:=True;
             end
@@ -689,19 +689,19 @@ begin
              {Add the Group}
              Group:=AddGroup(Transport,PInAddr(AAddress)^,PHardwareAddress(AData)^,True);
              if Group = nil then Exit;
-             
+
              {Set the Report (Retransmit) Timeout}
              Group.ReportTime:=GetTickCount64 + IGMP_REPORT_TIMEOUT;
-             
+
              {Set the Transmit Counter}
              Group.TransmitCount:=IGMP_TRANSMIT_COUNT - 1;
-             
+
              {Lock Socket}
              Transport.Socket.ReaderLock;
-             
+
              {Send the Report}
              Result:=SendIGMP2Report(Transport.Socket,ASource,ADest,AAddress);
-             
+
              {Unlock Socket}
              Transport.Socket.ReaderUnlock;
             end;
@@ -713,23 +713,23 @@ begin
            {$IFDEF IGMP_DEBUG}
            if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  IGMP 2 Leave');
            {$ENDIF}
-           
+
            {Check the Group}
            Group:=GetGroup(Transport,PInAddr(AAddress)^,True);
            if Group = nil then Exit;
-           
+
            {Decrement Count}
            Group.DecrementCount;
-           
+
            {Check for Active}
            if not Group.Active then
             begin
              {Lock Socket}
              Transport.Socket.ReaderLock;
-             
+
              {Send the Leave}
              Result:=SendIGMP2Leave(Transport.Socket,ASource,ADest,AAddress);
-             
+
              {Unlock Socket}
              Transport.Socket.ReaderUnlock;
             end
@@ -738,7 +738,7 @@ begin
              {Return Result}
              Result:=True;
             end;
-            
+
            {Unlock Group}
            Group.ReleaseLock;
           end;
@@ -749,7 +749,7 @@ begin
   end;
  finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -766,17 +766,17 @@ function TIGMPProtocol.SendIGMP1Report(ASocket:TIGMPSocket;ASource,ADest,AAddres
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: SendIGMP1Report');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Address}
  if AAddress = nil then Exit;
- 
+
  //To Do
 end;
 
@@ -794,17 +794,17 @@ function TIGMPProtocol.SendIGMP2Report(ASocket:TIGMPSocket;ASource,ADest,AAddres
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: SendIGMP2Report');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Address}
  if AAddress = nil then Exit;
- 
+
  //To Do
 end;
 
@@ -822,17 +822,17 @@ function TIGMPProtocol.SendIGMP2Leave(ASocket:TIGMPSocket;ASource,ADest,AAddress
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: SendIGMP2Leave');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Address}
  if AAddress = nil then Exit;
- 
+
  //To Do
 end;
 
@@ -850,17 +850,17 @@ function TIGMPProtocol.SendIGMP1Query(ASocket:TIGMPSocket;ASource,ADest,AAddress
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: SendIGMP1Query');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Address}
  if AAddress = nil then Exit;
- 
+
  //To Do
 end;
 
@@ -878,17 +878,17 @@ function TIGMPProtocol.SendIGMP2Query(ASocket:TIGMPSocket;ASource,ADest,AAddress
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: SendIGMP2Query');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Address}
  if AAddress = nil then Exit;
- 
+
  //To Do
 end;
 
@@ -909,15 +909,15 @@ begin
  FGroups.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: GetGroup');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
-  
+
   {Get Group}
   Group:=TIGMPGroup(FGroups.First);
   while Group <> nil do
@@ -925,10 +925,10 @@ begin
     {Check Transport}
     if Group.Transport = ATransport.Transport then
      begin
-      {$IFDEF IGMP_DEBUG} 
+      {$IFDEF IGMP_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Compare = ' + InAddrToString(InAddrToNetwork(Group.Address)));
       {$ENDIF}
-      
+
       {Check Address Family}
       case Group.Transport.Family of
        AF_INET:begin
@@ -937,7 +937,7 @@ begin
           begin
            {Lock Group}
            if ALock then Group.AcquireLock;
-           
+
            {Return Result}
            Result:=Group;
            Exit;
@@ -945,13 +945,13 @@ begin
         end;
       end;
      end;
-     
-    {Get Next}  
+
+    {Get Next}
     Group:=TIGMPGroup(Group.Next);
    end;
- finally 
+ finally
   FGroups.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -964,7 +964,7 @@ begin
  FGroups.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -974,7 +974,7 @@ begin
      begin
       {Lock Group}
       if ALock then Group.AcquireLock;
-      
+
       {Return Result}
       Result:=Group;
      end;
@@ -987,17 +987,17 @@ begin
      begin
       {Lock Group}
       if ALock then Group.AcquireLock;
-      
+
       {Return Result}
       Result:=Group;
      end;
 
     {Unlock Previous}
     if AUnlock then APrevious.ReleaseLock;
-   end;   
- finally 
+   end;
+ finally
   FGroups.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1014,17 +1014,17 @@ function TIGMPProtocol.AddGroup(ATransport:TIGMPProtocolTransport;const AAddress
 begin
  {}
  Result:=nil;
-  
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: AddGroup');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Hardware = ' + HardwareAddressToString(AHardware));
  {$ENDIF}
-  
+
  {Check Transport}
  if ATransport = nil then Exit;
-  
- {Create Group}  
+
+ {Create Group}
  Result:=TIGMPGroup.Create;
  Result.Count:=1;
  Result.QueryTime:=0;
@@ -1034,30 +1034,30 @@ begin
  Result.Hardware:=AHardware;
  Result.Transport:=ATransport.Transport;
 
- {Acquire Lock} 
+ {Acquire Lock}
  FGroups.WriterLock; {Acquire as Writer}
  try
   {Add Group}
   if FGroups.Add(Result) then
    begin
     {Convert Lock}
-    FGroups.WriterConvert; 
+    FGroups.WriterConvert;
 
     {Lock Group}
     if ALock then Result.AcquireLock;
    end
-  else 
+  else
    begin
     {Convert Lock}
-    FGroups.WriterConvert; 
-    
+    FGroups.WriterConvert;
+
     {Free Group}
     Result.Free;
     Result:=nil;
    end;
- finally 
+ finally
   FGroups.ReaderUnlock; {Converted to Reader}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1076,16 +1076,16 @@ begin
  FGroups.ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: RemoveGroup');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
 
-  {Get Group}  
+  {Get Group}
   Group:=TIGMPGroup(FGroups.First);
   while Group <> nil do
    begin
@@ -1100,35 +1100,35 @@ begin
           begin
            {Lock Group}
            Group.AcquireLock;
-          
+
            {Convert Lock}
            if FGroups.ReaderConvert then
             begin
              {Remove Group}
              Result:=FGroups.Remove(Group);
-      
+
              {Convert Lock}
-             FGroups.WriterConvert; 
-      
+             FGroups.WriterConvert;
+
              {Unlock Group}
              Group.ReleaseLock;
-           
+
              {Free Group}
              Group.Free;
             end;
-            
+
            Exit;
           end;
         end;
       end;
      end;
-    
+
     {Get Next}
     Group:=TIGMPGroup(Group.Next);
    end;
- finally 
+ finally
   FGroups.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1153,27 +1153,27 @@ begin
    {Get Next}
    Current:=Group;
    Group:=TIGMPGroup(GetGroupByNext(Current,True,False));
-    
+
    {Check Active}
    if (Group.Active = False) or (All) then
     begin
      {Acquire Lock}
      FGroups.WriterLock;
-          
+
      {Remove Group}
      FGroups.Remove(Current);
-      
+
      {Release Lock}
      FGroups.WriterUnlock;
-      
+
      {Unlock Group}
      Current.ReleaseLock;
-          
+
      {Free Group}
      Current.Free;
      Current:=nil;
     end;
-    
+
    {Unlock Group}
    if Current <> nil then Current.ReleaseLock;
   end;
@@ -1193,7 +1193,7 @@ begin
  {$ENDIF}
 
  Result:=False;
-  
+
  {Get Group}
  Group:=TIGMPGroup(GetGroupByNext(nil,True,False));
  while Group <> nil do
@@ -1213,15 +1213,15 @@ begin
            begin
             {Lock Socket}
             Transport.Socket.ReaderLock;
-            
+
             {Send Query}
             //Result:=SendIGMP2Query(Transport.Socket,MULTICAST_HOST //To Do
-            
+
             {Unlock Socket}
             Transport.Socket.ReaderUnlock;
-            
+
             Group.DecrementTransmitCount;
-            
+
             Group.QueryTime:=GetTickCount64 + IGMP_QUERY_TIMEOUT;
             if Group.TransmitCount < 1 then
              begin
@@ -1231,21 +1231,21 @@ begin
               Group.TransmitCount:=0;
              end;
            end;
-          
-          {Check Report Time}           
+
+          {Check Report Time}
           if (Group.ReportTime <> 0) and (Group.ReportTime < GetTickCount64) then
            begin
             {Lock Socket}
             Transport.Socket.ReaderLock;
-            
+
             {Send Report}
             //Result:=SendIGMP2Report(Transport.Socket,MUTLICAST_ROUTER //To Do
-            
+
             {Unlock Socket}
             Transport.Socket.ReaderUnlock;
-            
+
             Group.DecrementTransmitCount;
-            
+
             Group.ReportTime:=GetTickCount64 + IGMP_REPORT_TIMEOUT;
             if Group.TransmitCount < 1 then
              begin
@@ -1254,14 +1254,14 @@ begin
               Group.TransmitCount:=0;
              end;
            end;
-           
+
           {Unlock Transport}
-          Transport.ReaderUnlock;     
+          Transport.ReaderUnlock;
          end;
        end;
      end;
     end;
-    
+
    {Get Next}
    Group:=TIGMPGroup(GetGroupByNext(Group,True,True));
   end;
@@ -1277,31 +1277,31 @@ var
 begin
  {}
  Result:=0;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: SelectCheck');
  {$ENDIF}
- 
+
  {Check Dest}
  if ADest = nil then Exit;
- 
+
  {Check Source}
  if ASource = nil then Exit;
- 
+
  {Check Code}
  case ACode of
   SELECT_READ:begin
     Result:=SOCKET_ERROR;
-    
+
     {Get Sockets}
     for Count:=ASource.fd_count - 1 downto 0 do
      begin
-      {Get Socket}    
+      {Get Socket}
       Socket:=TIGMPSocket(ASource.fd_array[Count]);
-      
+
       {Check Socket}
       if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
-      
+
       {Check Receive Count}
       if Socket.RecvData.GetCount > 0 then
        begin
@@ -1315,22 +1315,22 @@ begin
       {Unlock Socket}
       Socket.ReaderUnlock;
      end;
-     
-    {Return Result} 
+
+    {Return Result}
     Result:=ADest.fd_count;
    end;
   SELECT_WRITE:begin
     Result:=SOCKET_ERROR;
-    
+
     {Get Sockets}
     for Count:=ASource.fd_count - 1 downto 0 do
      begin
       {Get Socket}
       Socket:=TIGMPSocket(ASource.fd_array[Count]);
-      
+
       {Check Socket}
       if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
-      
+
       {Check Set}
       if not FD_ISSET(TSocket(Socket),ADest^) then
        begin
@@ -1340,8 +1340,8 @@ begin
       {Unlock Socket}
       Socket.ReaderUnlock;
      end;
-     
-    {Return Result} 
+
+    {Return Result}
     Result:=ADest.fd_count;
    end;
   SELECT_ERROR:begin
@@ -1353,7 +1353,7 @@ end;
 
 {==============================================================================}
 
-function TIGMPProtocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; 
+function TIGMPProtocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer;
 {Socket is the single socket to check, Code is the type of check, Timeout is how long to wait}
 var
  StartTime:Int64;
@@ -1361,14 +1361,14 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: SelectWait');
  {$ENDIF}
 
  {Get Socket}
  Socket:=TIGMPSocket(ASocket);
- 
+
  {Check Socket}
  if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
  try
@@ -1396,7 +1396,7 @@ begin
            Exit;
           end;
         end
-       else 
+       else
         begin
          {Wait for Event}
          if not Socket.WaitChangeEx(ATimeout) then
@@ -1413,26 +1413,26 @@ begin
            Result:=0;
            Exit;
           end;
-        end;           
+        end;
       end;
-      
+
      {Return One}
-     Result:=1; 
+     Result:=1;
     end;
    SELECT_WRITE:begin
      {Return One}
-     Result:=1; 
+     Result:=1;
     end;
    SELECT_ERROR:begin
      {Return Zero}
      Result:=0;
     end;
   end;
- 
+
  finally
-  {Unlock Socket} 
+  {Unlock Socket}
   Socket.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1456,15 +1456,15 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: SendPacket');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
@@ -1475,10 +1475,10 @@ begin
     {Get Transport}
     Transport:=TIGMPProtocolTransport(GetTransportByTransport(ASocket.Transport,True,NETWORK_LOCK_READ));
     if Transport = nil then Exit;
-    
+
     {Send the Packet}
     Result:=TIPTransport(ASocket.Transport).SendPacket(ASocket,ASource,ADest,APacket,ASize,AFlags);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
    end;
@@ -1498,12 +1498,12 @@ function TIGMPProtocol.Accept(ASocket:TProtocolSocket;ASockAddr:PSockAddr;AAddrL
 begin
  {}
  Result:=TProtocolSocket(INVALID_SOCKET);
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: Accept');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Not supported}
@@ -1530,41 +1530,41 @@ function TIGMPProtocol.Bind(ASocket:TProtocolSocket;var ASockAddr:TSockAddr;AAdd
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: Bind');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected or Bound}
    NetworkSetLastError(WSAEINVAL);
    if ASocket.SocketState.Connected then Exit;
    if ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    if ASocket.Family <> ASockAddr.sin_family then Exit;
-   
+
    {Check Address Family}
    case ASocket.Family of
     AF_INET:begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Check LocalAddress}
       if not TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then
        begin
         NetworkSetLastError(WSAEADDRNOTAVAIL);
         if TIPTransport(ASocket.Transport).GetAddressByAddress(InAddrToHost(ASockAddr.sin_addr),False,NETWORK_LOCK_NONE) = nil then Exit;
        end;
-      
+
       {Bind the Socket}
       ASocket.SocketState.LocalAddress:=True;
       TIPState(ASocket.TransportState).LocalAddress:=InAddrToHost(ASockAddr.sin_addr);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -1589,21 +1589,21 @@ function TIGMPProtocol.CloseSocket(ASocket:TProtocolSocket):Integer;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: CloseSocket');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Close Socket}
    ASocket.SocketState.Closed:=True;
    ASocket.CloseTime:=GetTickCount64;
-   
+
    {Signal the Event}
    ASocket.SignalChange;
-   
+
    {Return Result}
    NetworkSetLastError(ERROR_SUCCESS);
    Result:=NO_ERROR;
@@ -1633,40 +1633,40 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: Connect');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
    NetworkSetLastError(WSAEISCONN);
    if ASocket.SocketState.Connected then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    if ASocket.Family <> ASockAddr.sin_family then Exit;
-   
+
    {Check Address Family}
    case ASocket.Family of
     AF_INET:begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Check for Default RemoteAddress}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then Exit;
-      
+
       {Check for Broadcast RemoteAddress}
       NetworkSetLastError(WSAEACCES);
       if TIPTransport(ASocket.Transport).CompareBroadcast(InAddrToHost(ASockAddr.sin_addr)) or TIPTransport(ASocket.Transport).CompareDirected(InAddrToHost(ASockAddr.sin_addr)) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
-      
+
       {Check the Route}
       NetworkSetLastError(WSAENETUNREACH);
       Route:=TIPTransport(ASocket.Transport).GetRouteByAddress(InAddrToHost(ASockAddr.sin_addr),True,NETWORK_LOCK_READ);
@@ -1676,7 +1676,7 @@ begin
        NetworkSetLastError(WSAEADDRNOTAVAIL);
        Address:=TIPTransport(ASocket.Transport).GetAddressByAddress(TIPRouteEntry(Route).Address,True,NETWORK_LOCK_READ);
        if Address = nil then Exit;
-      
+
        {Check the Binding}
        if not ASocket.SocketState.LocalAddress then
         begin
@@ -1684,31 +1684,31 @@ begin
          ASocket.SocketState.LocalAddress:=True;
          TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
         end;
-      
+
        {Check for Default Binding}
        if TIPTransport(ASocket.Transport).CompareDefault(TIPState(ASocket.TransportState).LocalAddress) then
         begin
          {Set the LocalAddress}
          TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
         end;
-      
+
        {Connect the Socket}
        ASocket.SocketState.Connected:=True;
        ASocket.SocketState.RemoteAddress:=True;
        TIPState(ASocket.TransportState).RemoteAddress:=InAddrToHost(ASockAddr.sin_addr);
-      
+
        {Unlock Address}
        Address.ReaderUnlock;
-      
+
        {Signal the Event}
        ASocket.SignalChange;
-      
+
        {Return Result}
        NetworkSetLastError(ERROR_SUCCESS);
        Result:=NO_ERROR;
       finally
        Route.ReaderUnlock;
-      end;      
+      end;
      end;
    end;
   end
@@ -1731,12 +1731,12 @@ function TIGMPProtocol.IoctlSocket(ASocket:TProtocolSocket;ACmd:DWORD;var AArg:u
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: IoctlSocket');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Pass the call to the socket}
@@ -1762,18 +1762,18 @@ function TIGMPProtocol.GetPeerName(ASocket:TProtocolSocket;var ASockAddr:TSockAd
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: GetPeerName');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Connected}
    NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -1781,13 +1781,13 @@ begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Return the Peer Details}
       ASockAddr.sin_family:=ASocket.Family;
       ASockAddr.sin_port:=WordNtoBE(IPPORT_ANY);
       ASockAddr.sin_addr:=InAddrToNetwork(TIPState(ASocket.TransportState).RemoteAddress);
       AAddrLength:=SizeOf(TSockAddr);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -1814,18 +1814,18 @@ function TIGMPProtocol.GetSockName(ASocket:TProtocolSocket;var ASockAddr:TSockAd
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: GetSockName');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -1833,13 +1833,13 @@ begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Return the Socket Details}
       ASockAddr.sin_family:=ASocket.Family;
       ASockAddr.sin_port:=WordNtoBE(IPPORT_ANY);
       ASockAddr.sin_addr:=InAddrToNetwork(TIPState(ASocket.TransportState).LocalAddress);
       AAddrLength:=SizeOf(TSockAddr);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -1867,12 +1867,12 @@ function TIGMPProtocol.GetSockOpt(ASocket:TProtocolSocket;ALevel,AOptName:Intege
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: GetSockOpt');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Level}
@@ -1912,12 +1912,12 @@ function TIGMPProtocol.Listen(ASocket:TProtocolSocket;ABacklog:Integer):Integer;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: Listen');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Not supported}
@@ -1946,31 +1946,31 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: Recv');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
    NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
-   
+
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantRecvMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
-   {Wait for Data} 
+
+   {Wait for Data}
    StartTime:=GetTickCount64;
    while TIGMPSocket(ASocket).RecvData.GetCount = 0 do
     begin
@@ -1982,7 +1982,7 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
+        end;
 
        {Check for Timeout}
        if GetTickCount64 >= (StartTime + ASocket.SocketOptions.RecvTimeout) then
@@ -1998,9 +1998,9 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
-      end;      
-      
+        end;
+      end;
+
      {Check for Closed}
      if ASocket.SocketState.Closed then
       begin
@@ -2008,8 +2008,8 @@ begin
        Exit;
       end;
     end;
-    
-   {Check Size} 
+
+   {Check Size}
    NetworkSetLastError(ERROR_SUCCESS);
    Size:=TIGMPSocket(ASocket).RecvData.GetNext;
    if Size > ALength then
@@ -2017,8 +2017,8 @@ begin
      NetworkSetLastError(WSAEMSGSIZE);
      Size:=ALength;
     end;
-    
-   {Read Data} 
+
+   {Read Data}
    if TIGMPSocket(ASocket).RecvData.ReadBuffer(ABuffer,Size,nil,AFlags) then
     begin
      {Return Size}
@@ -2051,30 +2051,30 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: RecvFrom');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantRecvMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
+
    {Check size of FromAddr}
    NetworkSetLastError(WSAEFAULT);
    if AFromLength < SizeOf(TSockAddr) then Exit;
-   
+
    {Wait for Data}
    StartTime:=GetTickCount64;
    while TIGMPSocket(ASocket).RecvData.GetCount = 0 do
@@ -2087,7 +2087,7 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
+        end;
 
        {Check for Timeout}
        if GetTickCount64 >= (StartTime + ASocket.SocketOptions.RecvTimeout) then
@@ -2103,9 +2103,9 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
-      end;      
-      
+        end;
+      end;
+
      {Check for Closed}
      if ASocket.SocketState.Closed then
       begin
@@ -2113,7 +2113,7 @@ begin
        Exit;
       end;
     end;
-    
+
    {Check Size}
    NetworkSetLastError(ERROR_SUCCESS);
    Size:=TIGMPSocket(ASocket).RecvData.GetNext;
@@ -2122,11 +2122,11 @@ begin
      NetworkSetLastError(WSAEMSGSIZE);
      Size:=ALength;
     end;
-    
-   {Get Address} 
+
+   {Get Address}
    AFromAddr.sin_family:=ASocket.Family;
    AFromAddr.sin_port:=WordNtoBE(IPPORT_ANY);
-   
+
    {Read Data}
    if TIGMPSocket(ASocket).RecvData.ReadBuffer(ABuffer,Size,@AFromAddr.sin_addr,AFlags) then
     begin
@@ -2162,30 +2162,30 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: Send');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
    NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
-   
+
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantSendMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -2196,12 +2196,12 @@ begin
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
-      
+
       {Create the Fragment}
       Packet.Size:=ALength;
       Packet.Data:=@ABuffer;
       Packet.Next:=nil;
-      
+
       {Send the Packet}
       Result:=SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@TIPState(ASocket.TransportState).RemoteAddress,0,0,@Packet,ALength,AFlags);
      end;
@@ -2233,56 +2233,56 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: SendTo');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantSendMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    if ASocket.Family <> AToAddr.sin_family then Exit;
-   
+
    {Check Address Family}
    case ASocket.Family of
     AF_INET:begin
       {Check size of ToAddr}
       NetworkSetLastError(WSAEFAULT);
       if AToLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Get the RemoteAddress}
       Address:=InAddrToHost(AToAddr.sin_addr);
-      
+
       {Check for Default RemoteAddress}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if TIPTransport(ASocket.Transport).CompareDefault(Address) then Exit;
-      
+
       {Check for Broadcast RemoteAddress}
       NetworkSetLastError(WSAEACCES);
       if TIPTransport(ASocket.Transport).CompareBroadcast(Address) or TIPTransport(ASocket.Transport).CompareDirected(Address) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
-      
+
       {Create the Fragment}
       Packet.Size:=ALength;
       Packet.Data:=@ABuffer;
       Packet.Next:=nil;
-      
+
       {Send the Packet}
       Result:=SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@Address,0,0,@Packet,ALength,AFlags);
      end;
@@ -2309,12 +2309,12 @@ function TIGMPProtocol.SetSockOpt(ASocket:TProtocolSocket;ALevel,AOptName:Intege
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: SetSockOpt');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Level}
@@ -2324,14 +2324,14 @@ begin
       case AOptName of
        SO_RCVBUF:begin
          NetworkSetLastError(WSAEFAULT);
-         
+
          if AOptLength >= SizeOf(Integer) then
           begin
            TIGMPSocket(ASocket).RecvData.Size:=PInteger(AOptValue)^;
           end;
         end;
       end;
-      
+
       {Pass the call to the socket}
       Result:=ASocket.SetOption(ALevel,AOptName,AOptValue,AOptLength);
      end;
@@ -2371,12 +2371,12 @@ function TIGMPProtocol.Shutdown(ASocket:TProtocolSocket;AHow:Integer):Integer;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: Shutdown');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Direction}
@@ -2384,10 +2384,10 @@ begin
     SHUTDOWN_RECV:begin
       {Shutdown Receive}
       ASocket.SocketState.CantRecvMore:=True;
-      
+
       {Signal the Event}
       ASocket.SignalChange;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -2395,10 +2395,10 @@ begin
     SHUTDOWN_SEND:begin
       {Shutdown Send}
       ASocket.SocketState.CantSendMore:=True;
-      
+
       {Signal the Event}
       ASocket.SignalChange;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -2407,10 +2407,10 @@ begin
       {Shutdown Both}
       ASocket.SocketState.CantRecvMore:=True;
       ASocket.SocketState.CantSendMore:=True;
-      
+
       {Signal the Event}
       ASocket.SignalChange;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -2442,18 +2442,18 @@ begin
  ReaderLock;
  try
   Result:=TProtocolSocket(INVALID_SOCKET);
-  
+
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: Socket');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Family = ' + AddressFamilyToString(AFamily));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Struct = ' + SocketTypeToString(AStruct));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
-  
+
   {Check Socket Type}
   NetworkSetLastError(WSAESOCKTNOSUPPORT);
   if AStruct <> SOCK_RAW then Exit;
-  
+
   {Check Address Family}
   NetworkSetLastError(WSAEAFNOSUPPORT);
   if (AFamily = AF_UNSPEC) and (AProtocol <> IPPROTO_IP) then AFamily:=AF_INET;
@@ -2461,14 +2461,14 @@ begin
   {Check Protocol}
   NetworkSetLastError(WSAEPROTOTYPE);
   if (AProtocol <> IPPROTO_IGMP) and (AProtocol <> IPPROTO_IP) then Exit;
-  
+
   {Get Transport}
   Transport:=TIGMPProtocolTransport(GetTransportByFamily(AFamily,True,NETWORK_LOCK_READ));
   if Transport = nil then Exit;
-  
+
   {Create Socket}
   Result:=TIGMPSocket.Create(Self,Transport.Transport);
-  
+
   {Unlock Transport}
   Transport.ReaderUnlock;
 
@@ -2477,13 +2477,13 @@ begin
   try
    {Add Socket}
    FSockets.Add(Result);
-  finally 
+  finally
    {Release Lock}
    FSockets.WriterUnlock;
-  end; 
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2499,15 +2499,15 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: AddTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
-  
-  {Get Transport} 
+
+  {Get Transport}
   Transport:=TIGMPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_READ));
   if Transport = nil then
    begin
@@ -2523,26 +2523,26 @@ begin
          Transport.Handle:=Handle;
          Transport.Protocol:=IPPROTO_IGMP;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Add Control Socket}
           Transport.Socket:=TIGMPSocket.Create(Self,ATransport);
           {FSockets.Add(Transport.Socket);} {Dont add this one to the list}
-         
+
           {Add Proto Entry}
           TIPTransport(ATransport).AddProto(IGMP_PROTOCOL_NAME,IPPROTO_IGMP,False);
-         
+
           {Return Result}
           Result:=True;
          finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end;  
+         end;
         end;
       end;
     end;
@@ -2551,13 +2551,13 @@ begin
    begin
     {Unlock Transport}
     Transport.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2572,18 +2572,18 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: RemoveTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
-  
+
   {Get Transport}
   Transport:=TIGMPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Transport = nil then Exit;
-  
+
   {Check Address Family}
   case ATransport.Family of
    AF_INET:begin
@@ -2592,35 +2592,35 @@ begin
       begin
        {Remove Proto Entry}
        TIPTransport(ATransport).RemoveProto(IGMP_PROTOCOL_NAME);
-       
+
        {Remove Control Socket}
        {FSockets.Remove(Transport.Socket);} {This one is not on the list}
        Transport.Socket.Free;
-       
+
        {Acquire Lock}
        FTransports.WriterLock;
        try
         {Remove Transport}
         FTransports.Remove(Transport);
-       
+
         {Unlock Transport}
         Transport.WriterUnlock;
-       
+
         {Destroy Transport}
         Transport.Free;
-       
+
         {Return Result}
         Result:=True;
        finally
         {Release Lock}
         FTransports.WriterUnlock;
-       end;  
+       end;
       end;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2644,14 +2644,14 @@ begin
  FSockets.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: FindSocket');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Family = ' + AddressFamilyToString(AFamily));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Struct = ' + SocketTypeToString(AStruct));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
-  
+
   {Get Socket}
   Socket:=TIGMPSocket(FSockets.First);
   while Socket <> nil do
@@ -2669,7 +2669,7 @@ begin
            begin
             {Lock Socket}
             if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-            
+
             {Return Result}
             Result:=Socket;
             Exit;
@@ -2682,7 +2682,7 @@ begin
            begin
             {Lock Socket}
             if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-            
+
             {Return Result}
             Result:=Socket;
             Exit;
@@ -2690,13 +2690,13 @@ begin
          end;
        end;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Socket:=TIGMPSocket(Socket.Next);
    end;
- finally 
+ finally
   FSockets.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2714,10 +2714,10 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: FlushSockets');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP:  All = ' + BoolToStr(All));
  {$ENDIF}
-  
+
  {Get Tick Count}
  CurrentTime:=GetTickCount64;
-  
+
  {Get Socket}
  Socket:=TIGMPSocket(GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
  while Socket <> nil do
@@ -2725,7 +2725,7 @@ begin
    {Get Next}
    Current:=Socket;
    Socket:=TIGMPSocket(GetSocketByNext(Current,True,False,NETWORK_LOCK_READ));
-    
+
    {Check Socket State}
    if (Current.SocketState.Closed) or (All) then
     begin
@@ -2737,23 +2737,23 @@ begin
         begin
          {Acquire Lock}
          FSockets.WriterLock;
-       
+
          {Remove Socket}
          FSockets.Remove(Current);
-        
+
          {Release Lock}
          FSockets.WriterUnlock;
-       
+
          {Unlock Socket}
          Current.WriterUnlock;
-        
+
          {Free Socket}
          Current.Free;
          Current:=nil;
-        end; 
+        end;
       end;
     end;
-    
+
    {Unlock Socket}
    if Current <> nil then Current.ReaderUnlock;
   end;
@@ -2770,30 +2770,30 @@ begin
  ReaderLock;
  try
   Result:=False;
- 
+
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: StartProtocol');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
- 
+
   {Register with IP Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
     AddTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2807,33 +2807,33 @@ begin
  ReaderLock;
  try
   Result:=False;
- 
+
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: StopProtocol');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
- 
+
   {Close all Sockets}
   FlushSockets(True);
- 
+
   {Deregister with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2844,10 +2844,10 @@ begin
  {}
  {Close old Sockets}
  FlushSockets(False);
- 
+
  {Process Groups}
  ProcessGroups;
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -2860,7 +2860,7 @@ begin
  {}
  inherited Create;
  FLock:=CriticalSectionCreate;
- 
+
  FCount:=0;
  FQueryTime:=0;
  FReportTime:=0;
@@ -2878,8 +2878,8 @@ begin
  try
   FTransport:=nil;
   inherited Destroy;
- finally 
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+ finally
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -2898,7 +2898,7 @@ end;
 
 {==============================================================================}
 
-function TIGMPGroup.GetActive:Boolean; 
+function TIGMPGroup.GetActive:Boolean;
 begin
  {}
  Result:=(FCount > 0);
@@ -2942,7 +2942,7 @@ end;
 
 {==============================================================================}
 
-procedure TIGMPGroup.SetAddress(const AAddress:TInAddr);   
+procedure TIGMPGroup.SetAddress(const AAddress:TInAddr);
 begin
  {}
  if not AcquireLock then Exit;
@@ -2966,7 +2966,7 @@ end;
 
 {==============================================================================}
 
-procedure TIGMPGroup.SetTransport(ATransport:TNetworkTransport); 
+procedure TIGMPGroup.SetTransport(ATransport:TNetworkTransport);
 begin
  {}
  if not AcquireLock then Exit;
@@ -3047,7 +3047,7 @@ constructor TIGMPSocket.Create(AProtocol:TNetworkProtocol;ATransport:TNetworkTra
 begin
  {}
  inherited Create(AProtocol,ATransport);
- 
+
  {Check Address Family}
  case Family of
   AF_INET:begin
@@ -3055,7 +3055,7 @@ begin
     FTransportState:=TIPState.Create;
     {Create IP Transport Options}
     FTransportOptions:=TIPOptions.Create;
-    
+
     {Set IP Defaults}
     TIPOptions(FTransportOptions).TTL:=TIPTransport(ATransport).DefaultTTL;
    end;
@@ -3103,10 +3103,10 @@ begin
   FTransportOptions.Free;
   {Free Transport State}
   FTransportState.Free;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3117,11 +3117,11 @@ begin
  ReaderLock;
  try
   Result:=SOCKET_ERROR;
-  
+
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Socket: IoCtl');
   {$ENDIF}
-  
+
   {Check Commmand}
   NetworkSetLastError(WSAEINVAL);
   case ACommand of
@@ -3140,9 +3140,9 @@ begin
      Result:=NO_ERROR;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3161,19 +3161,19 @@ begin
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Socket: IsConnected');
   {$ENDIF}
-  
+
   {Check Local}
   if ALocalAddress = nil then Exit;
-  
+
   {Check Remote}
   if ARemoteAddress = nil then Exit;
-  
+
   {Check for Bound}
   if not SocketState.LocalAddress then Exit;
-  
+
   {Check for Connected}
   if not SocketState.Connected then Exit; {Could use RemoteAddress instead}
-  
+
   {Check Address Family}
   case Family of
    AF_INET:begin
@@ -3195,20 +3195,20 @@ begin
           if not TIPTransport(Transport).CompareAddress(TIPState(TransportState).LocalAddress,TIPRouteEntry(Route).Address) then Exit;
          finally
           Route.ReaderUnlock;
-         end; 
+         end;
         end;
       end;
-     
+
      {Check the Connected RemoteAddress}
      if not TIPTransport(Transport).CompareAddress(TIPState(TransportState).RemoteAddress,PInAddr(ARemoteAddress)^) then Exit;
-     
+
      {Return Result}
      Result:=True;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3223,23 +3223,23 @@ begin
  ReaderLock;
  try
   Result:=False;
- 
+
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Socket: IsListening');
   {$ENDIF}
- 
+
   {Check Local}
   if ALocalAddress = nil then Exit;
-  
+
   {Check Remote}
   {if ARemoteAddress = nil then Exit;} {Not Used}
- 
+
   {Check for Bound}
   if not SocketState.LocalAddress then Exit;
-  
+
   {Check for Connected}
   if SocketState.Connected then Exit; {Could use RemoteAddress instead}
-  
+
   {Check Address Family}
   case Family of
    AF_INET:begin
@@ -3263,18 +3263,18 @@ begin
             if not TIPTransport(Transport).CompareAddress(TIPState(TransportState).LocalAddress,TIPRouteEntry(Route).Address) then Exit;
            finally
             Route.ReaderUnlock;
-           end; 
+           end;
           end;
         end;
       end;
-      
-     {Return Result} 
+
+     {Return Result}
      Result:=True;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3284,9 +3284,9 @@ constructor TIGMPBuffer.Create(ASocket:TTransportSocket);
 begin
  {}
  inherited Create(ASocket);
- 
+
  FOffset:=SizeOf(TIGMPPacket); {IGMP_PACKET_SIZE}
- 
+
  {Check Address Family}
  case FSocket.Family of
   AF_INET:begin
@@ -3315,10 +3315,10 @@ begin
  AcquireLock;
  try
   FlushPackets;
- finally 
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+ finally
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3330,25 +3330,25 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Buffer: AddPacket');
   {$ENDIF}
-  
+
   {Check Data Size}
   if ASize = 0 then Exit;
-  
+
   {Check Buffer Free}
   if LongWord(ASize) > FFree then Exit;
-  
+
   {Create a new Packet}
   Packet:=GetMem(FOffset + FLength);
   if Packet = nil then Exit;
   Packet.Size:=ASize;
   Packet.Next:=nil;
-  
+
   {Add to List}
   if FLast = nil then
    begin
@@ -3368,12 +3368,12 @@ begin
     Inc(FUsed,ASize);
     Inc(FCount);
    end;
-   
-  {Return Result} 
+
+  {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3385,16 +3385,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Buffer: RemovePacket');
   {$ENDIF}
-  
+
   {Check for Packets}
   if FFirst = nil then Exit;
-  
+
   {Remove from List}
   if FFirst.Next <> nil then
    begin
@@ -3415,15 +3415,15 @@ begin
     Inc(FFree,Packet.Size);
     Dec(FCount);
    end;
-   
+
   {Free the Packet}
   FreeMem(Packet,FOffset + FLength);
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3439,9 +3439,9 @@ begin
     {Remove Packet}
     RemovePacket;
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3458,36 +3458,36 @@ begin
 
   {Check Size}
   if ASize = 0 then Exit;
-  
+
   {Get Size}
   ASize:=Max(ASize,IGMP_BUFFER_SIZE);
-  
+
   {Clear any Packets}
   FlushPackets;
-  
+
   {Allocate the Memory}
   FBuffer.SetSize(ASize);
-  
+
   {Set the Buffer Values}
   FSize:=ASize;
   FStart:=FBuffer.Memory;
-  
+
   {End actually points to byte beyond last for simpler calculations}
   FEnd:=Pointer(PtrUInt(FStart) + FSize);
-  
+
   {Set the Data Values}
   FUsed:=0;
   FFree:=FSize;
   FRead:=FStart;
   FWrite:=FStart;
-  
+
   {Set the Packet Values}
   FCount:=0;
   FFirst:=nil;
   FLast:=nil;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3496,17 +3496,17 @@ function TIGMPBuffer.GetNext:Integer;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
  try
   {Check First}
   if FFirst = nil then Exit;
-  
+
   {Get First Size}
   Result:=FFirst.Size;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3531,15 +3531,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check the Buffer Size}
   if ASize = 0 then Exit;
-  
+
   {Check there is Data}
   if FFirst = nil then Exit;
-  
+
   {Get the Start and Size}
   ReadNext:=FRead;
   ReadSize:=FFirst.Size;
@@ -3547,11 +3547,11 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Buffer: ReadBuffer: FStart = ' + PtrToHex(FStart) + ' FEnd = ' + PtrToHex(FEnd));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Buffer: ReadBuffer: ReadNext = ' + IntToStr(PtrUInt(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
   {$ENDIF}
-  
+
   {Get the Return Size}
   BufferSize:=Min(ASize,ReadSize);
   ASize:=BufferSize;
-  
+
   {Since we Guarantee ReadNext to be at least 1 byte from the End of the Buffer, we can start reading}
   {Check for Single or Double Read}
   if (PtrUInt(ReadNext) + ReadSize) <= PtrUInt(FEnd) then
@@ -3569,7 +3569,7 @@ begin
      begin
       System.Move(ReadNext^,ABuffer,ReadSize);
      end;
-     
+
     Inc(PtrUInt(ReadNext),ReadSize);
     Dec(ReadSize,ReadSize);
    end
@@ -3579,7 +3579,7 @@ begin
     {$IFDEF IGMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Buffer: ReadBuffer: Double Read');
     {$ENDIF}
-    
+
     {Read the First Block of the Data}
     BlockSize:=(PtrUInt(FEnd) - PtrUInt(ReadNext));
     if BufferSize < BlockSize then
@@ -3588,20 +3588,20 @@ begin
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Buffer: ReadBuffer: Short First Read');
       {$ENDIF}
       System.Move(ReadNext^,ABuffer,BufferSize);
-      
+
       Dec(BufferSize,BufferSize);
      end
     else
      begin
       System.Move(ReadNext^,ABuffer,BlockSize);
-      
+
       Dec(BufferSize,BlockSize);
      end;
-    
+
     {Wrap to Start of Buffer}
     ReadNext:=FStart;
     Dec(ReadSize,BlockSize);
-    
+
     {Read the Second Block of the Data}
     if BufferSize > 0 then
      begin
@@ -3617,42 +3617,42 @@ begin
         System.Move(ReadNext^,Pointer(PtrUInt(@ABuffer) + BlockSize)^,ReadSize);
        end;
      end;
-    
+
     Inc(PtrUInt(ReadNext),ReadSize);
     Dec(ReadSize,ReadSize);
    end;
-  
+
   {Check for Wrap around}
   if PtrUInt(ReadNext) = PtrUInt(FEnd) then ReadNext:=FStart;
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Buffer: ReadBuffer: ReadNext = ' + IntToStr(PtrUInt(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
   {$ENDIF}
-  
+
   {Get the Remote Address}
   if ARemoteAddress <> nil then
    begin
     System.Move(Pointer(PtrUInt(FFirst) + FOffset)^,ARemoteAddress^,FLength);
    end;
-  
+
   {Check for Peek Flag}
   if (AFlags and MSG_PEEK) = 0 then
    begin
     {Update the Next Read}
     FRead:=ReadNext;
-    
+
     {Remove the Packet}
     RemovePacket;
    end;
-  
+
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Buffer: ReadBuffer: Free = ' + IntToStr(FFree) + ' Used = ' + IntToStr(FUsed) + ' Count = ' + IntToStr(FCount));
   {$ENDIF}
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3667,15 +3667,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check the Data Size}
   if ASize = 0 then Exit;
-  
+
   {Add the Packet}
   if not AddPacket(ASize) then Exit;
-  
+
   {Get the Start and Size}
   WriteNext:=FWrite;
   WriteSize:=ASize;
@@ -3683,14 +3683,14 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Buffer: WriteBuffer: FStart = ' + PtrToHex(FStart) + ' FEnd = ' + PtrToHex(FEnd));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Buffer: WriteBuffer: WriteNext = ' + IntToStr(PtrUInt(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
   {$ENDIF}
-  
+
   {Since we guarantee WriteNext to be at least 1 byte from the End of the Buffer, we can start writing}
   if (PtrUInt(WriteNext) + WriteSize) <= PtrUInt(FEnd) then
    begin
     {Single Write with no wrap around}
     {Write the Packet Data}
     System.Move(ABuffer,WriteNext^,WriteSize);
-    
+
     Inc(PtrUInt(WriteNext),WriteSize);
     Dec(WriteSize,WriteSize);
    end
@@ -3700,48 +3700,48 @@ begin
     {$IFDEF IGMP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Buffer: WriteBuffer: Double Write');
     {$ENDIF}
-    
+
     {Write the First Block of the Packet Data}
     BlockSize:=(PtrUInt(FEnd) - PtrUInt(WriteNext));
     System.Move(ABuffer,WriteNext^,BlockSize);
-    
+
     {Wrap to Start of Buffer}
     WriteNext:=FStart;
     Dec(WriteSize,BlockSize);
-    
+
     {Write the Second Block of the Packet Data}
     System.Move(Pointer(PtrUInt(@ABuffer) + BlockSize)^,WriteNext^,WriteSize);
-    
+
     Inc(PtrUInt(WriteNext),WriteSize);
     Dec(WriteSize,WriteSize);
    end;
-   
+
   {Check for Wrap around}
   if PtrUInt(WriteNext) = PtrUInt(FEnd) then WriteNext:=FStart;
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Buffer: WriteBuffer: WriteNext = ' + IntToStr(PtrUInt(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
   {$ENDIF}
-  
+
   {Set the RemoteAddress}
   if ARemoteAddress <> nil then
    begin
     System.Move(ARemoteAddress^,Pointer(PtrUInt(FLast) + FOffset)^,FLength);
    end;
-  
+
   {Update the Next Write}
   FWrite:=WriteNext;
-  
+
   {$IFDEF IGMP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP Buffer: WriteBuffer: Free = ' + IntToStr(FFree) + ' Used = ' + IntToStr(FUsed) + ' Count = ' + IntToStr(FCount));
   {$ENDIF}
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -3755,8 +3755,8 @@ begin
  if NetworkSettings.GetBooleanDefault('IGMP_PROTOCOL_ENABLED',IGMP_PROTOCOL_ENABLED) then
   begin
    TIGMPProtocol.Create(ProtocolManager,IGMP_PROTOCOL_NAME);
-  end; 
- 
+  end;
+
  IGMPInitialized:=True;
 end;
 
@@ -3772,17 +3772,17 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF IGMP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'IGMP: CheckIGMP');
  {$ENDIF}
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
     {Get Header}
     IGMP:=PIGMPHeader(PtrUInt(ABuffer) + GetIGMPHeaderOffset(AF_INET,ABuffer));
-    
+
     {Check Header Length}
     Length:=GetIGMPHeaderLength(AF_INET,ABuffer);
     if Length >= IGMP_HEADER_SIZE then
@@ -3809,7 +3809,7 @@ function GetIGMPHeaderOffset(AFamily:Word;ABuffer:Pointer):Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
@@ -3828,13 +3828,13 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
     {Get Start of the IGMP Header (Length of IP Header)}
     Offset:=(PIPHeader(ABuffer).VersionLength and $0F) shl 2;
-    
+
     {Return Size of IGMP Header based on IGMPType Field}
     case PIGMPHeader(PtrUInt(ABuffer) + Offset).IGMPType of
      IGMP_QUERY,IGMP_REPORTV1,IGMP_REPORTV2,IGMP_LEAVE:begin
@@ -3852,7 +3852,7 @@ function GetIGMPDataOffset(AFamily:Word;ABuffer:Pointer):Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
@@ -3869,7 +3869,7 @@ function GetIGMPDataLength(AFamily:Word;ABuffer:Pointer):Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
@@ -3891,30 +3891,30 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
     {Get Header}
     IGMP:=PIGMPHeader(PtrUInt(ABuffer) + AOffset);
-    
+
     {Save Checksum}
     Original:=IGMP.Checksum;
     IGMP.Checksum:=0;
-    
+
     {Calculate 1s Compliment Checksum on IGMP Header and Data}
     Result:=GetChecksum(ABuffer,AOffset,ALength);
-    
+
     {Restore Checksum}
     IGMP.Checksum:=Original;
    end;
  end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {IGMP Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -3922,11 +3922,11 @@ initialization
  IGMPInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
- 
+
 {==============================================================================}
 {==============================================================================}
 
-end. 
+end.

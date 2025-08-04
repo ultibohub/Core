@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -36,17 +36,17 @@ Serial Devices
  some other form of device such as a USB to Serial converter. As long as the device can implement
  the common capabilities then it can be accessed as a serial device without regard to the actual
  implementation.
- 
+
  Each serial device returns a set of properties that describe the capabilities of the device and
  includes a set of flags that indicate what features are supported.
- 
+
  Reads from and writes to serial devices are buffered so that varying data transfer rates can be
  accommodated and both reads and writes allow for non blocking so that a caller can avoid waiting
  for received data to be available or the device to be ready to transmit.
- 
+
  This unit also implements the serial logging device which can be configured via parameters in the
  GlobalConfig unit or from the command line.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -69,40 +69,40 @@ const
  SERIAL_NAME_PREFIX = 'Serial';  {Name prefix for Serial Devices}
 
  SERIAL_LOGGING_DESCRIPTION = 'Serial Logging';
- 
+
  SERIAL_RECEIVE_DEPTH_DEFAULT  =  SIZE_2K; {Default receive buffer size in bytes}
  SERIAL_TRANSMIT_DEPTH_DEFAULT =  SIZE_2K; {Default transmit buffer size in bytes}
- 
+
  SERIAL_PUSH_TIMEOUT = 50; {Timeout (Milliseconds) for Push RX/TX (Implementation specific)}
- 
+
  {Serial Device Types}
  SERIAL_TYPE_NONE      = 0;
  SERIAL_TYPE_UART      = 1;
  SERIAL_TYPE_USB       = 2;
- 
+
  SERIAL_TYPE_MAX       = 2;
-  
+
  {Serial Type Names}
  SERIAL_TYPE_NAMES:array[SERIAL_TYPE_NONE..SERIAL_TYPE_MAX] of String = (
   'SERIAL_TYPE_NONE',
   'SERIAL_TYPE_UART',
   'SERIAL_TYPE_USB');
- 
+
  {Serial Device States}
  SERIAL_STATE_CLOSED  = 0;
  SERIAL_STATE_CLOSING = 1;
  SERIAL_STATE_OPENING = 2;
  SERIAL_STATE_OPEN    = 3;
- 
+
  SERIAL_STATE_MAX     = 3;
- 
+
  {Serial State Names}
  SERIAL_STATE_NAMES:array[SERIAL_STATE_CLOSED..SERIAL_STATE_MAX] of String = (
   'SERIAL_STATE_CLOSED',
   'SERIAL_STATE_CLOSING',
   'SERIAL_STATE_OPENING',
   'SERIAL_STATE_OPEN');
- 
+
  {Serial Device Flags}
  SERIAL_FLAG_NONE         = $00000000;
  SERIAL_FLAG_DATA_8BIT    = $00000001; {Device supports 8 data bits}
@@ -120,27 +120,27 @@ const
  SERIAL_FLAG_FLOW_DSR_DTR = $00001000; {Device supports DSR/DTR flow control}
  SERIAL_FLAG_PUSH_RX      = $00002000; {Device requires pushed receive (Implementation specific)}
  SERIAL_FLAG_PUSH_TX      = $00004000; {Device requires pushed transmit (Implementation specific)}
- 
+
  {Serial Read Flags}
  SERIAL_READ_NONE        = $00000000;
  SERIAL_READ_NON_BLOCK   = $00000001; {Do not block when reading, if the buffer is empty return immediately}
  SERIAL_READ_PEEK_BUFFER = $00000002; {Return the number of bytes available in the receive buffer without reading them}
- 
+
  {Serial Write Flags}
  SERIAL_WRITE_NONE        = $00000000;
  SERIAL_WRITE_NON_BLOCK   = $00000001; {Do not block when writing, if the buffer is full return immediately}
  SERIAL_WRITE_PEEK_BUFFER = $00000002; {Return the number of bytes free in the transmit buffer without writing anything}
- 
+
  {Serial Wait Directions}
  SERIAL_WAIT_NONE     = 0;
  SERIAL_WAIT_RECEIVE  = 1; {Wait for data to be available in the receive buffer}
  SERIAL_WAIT_TRANSMIT = 2; {Wait for space to be available in the transmit buffer}
- 
+
  {Serial Flush Flags}
  SERIAL_FLUSH_NONE     = $00000000;
  SERIAL_FLUSH_RECEIVE  = $00000001; {Flush the receive buffer}
  SERIAL_FLUSH_TRANSMIT = $00000002; {Flush the transmit buffer}
- 
+
  {Serial Status Flags}
  SERIAL_STATUS_NONE          = $00000000;
  SERIAL_STATUS_RTS           = $00000001; {RTS (Request to Send) is set (If applicable)}
@@ -158,7 +158,7 @@ const
  SERIAL_STATUS_OVERRUN_ERROR = $00001000; {Overrun error reported}
  SERIAL_STATUS_DCD           = $00002000; {DCD (Data Carrier Detect) is set (If applicable)}
  SERIAL_STATUS_RI            = $00004000; {RI (Ring Indicator) is set (If applicable)}
- 
+
  {Serial logging}
  SERIAL_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Serial debugging messages}
  SERIAL_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Serial informational messages, such as a device being attached or detached}
@@ -166,22 +166,22 @@ const
  SERIAL_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Serial error messages}
  SERIAL_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Serial messages}
 
-var 
+var
  SERIAL_DEFAULT_LOG_LEVEL:LongWord = SERIAL_LOG_LEVEL_DEBUG; {Minimum level for Serial messages.  Only messages with level greater than or equal to this will be printed}
- 
-var 
+
+var
  {Serial logging}
- SERIAL_LOG_ENABLED:Boolean; 
+ SERIAL_LOG_ENABLED:Boolean;
 
 {==============================================================================}
 const
  {Serial Logging specific constants}
  SERIAL_LOGGING_LINE_END = Chr(13) + Chr(10); {CR LF}
- 
+
 {==============================================================================}
 type
  {Serial specific types}
- 
+
  {Serial Properties}
  PSerialProperties = ^TSerialProperties;
  TSerialProperties = record
@@ -191,12 +191,12 @@ type
   BaudRate:LongWord;      {Current baud rate setting}
   DataBits:LongWord;      {Current data bits setting}
   StopBits:LongWord;      {Current stop bits setting}
-  Parity:LongWord;        {Current parity setting} 
+  Parity:LongWord;        {Current parity setting}
   FlowControl:LongWord;   {Current flow control setting}
   ReceiveDepth:LongWord;  {Current receive depth setting}
   TransmitDepth:LongWord; {Current transmit depth setting}
  end;
- 
+
  {Serial Buffer}
  PSerialBuffer = ^TSerialBuffer;
  TSerialBuffer = record
@@ -206,31 +206,31 @@ type
   Size:LongWord;             {Size of buffer}
   Data:Pointer;              {Buffered data}
  end;
- 
+
  {Serial Device}
  PSerialDevice = ^TSerialDevice;
- 
+
  {Serial Enumeration Callback}
  TSerialEnumerate = function(Serial:PSerialDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Serial Notification Callback}
  TSerialNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Serial Device Methods}
  TSerialDeviceOpen = function(Serial:PSerialDevice;BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDepth,TransmitDepth:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSerialDeviceClose = function(Serial:PSerialDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TSerialDeviceRead = function(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSerialDeviceWrite = function(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TSerialDeviceWait = function(Serial:PSerialDevice;Direction,Timeout:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSerialDeviceFlush = function(Serial:PSerialDevice;Flags:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TSerialDeviceGetStatus = function(Serial:PSerialDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSerialDeviceSetStatus = function(Serial:PSerialDevice;Status:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TSerialDeviceGetProperties = function(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSerialDeviceSetProperties = function(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TSerialDevice = record
   {Device Properties}
   Device:TDevice;                                 {The Device entry for this Serial}
@@ -256,20 +256,20 @@ type
   {Statistics Properties}
   ReceiveCount:LongWord;
   ReceiveErrors:LongWord;
-  ReceiveOverruns:LongWord;  
+  ReceiveOverruns:LongWord;
   TransmitCount:LongWord;
   TransmitErrors:LongWord;
   TransmitOverruns:LongWord;
-  {Internal Properties}                                                                     
+  {Internal Properties}
   Prev:PSerialDevice;                             {Previous entry in Serial table}
   Next:PSerialDevice;                             {Next entry in Serial table}
- end; 
+ end;
 
 {==============================================================================}
 type
  {Serial Logging specific types}
  PSerialLogging = ^TSerialLogging;
- 
+
  {Serial Logging}
  TSerialLogging = record
   {Logging Properties}
@@ -282,11 +282,11 @@ type
   Parity:LongWord;
   FlowControl:LongWord;
  end;
- 
+
 {==============================================================================}
 {var}
  {Serial specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure SerialInit;
@@ -309,7 +309,7 @@ function SerialDeviceSetStatus(Serial:PSerialDevice;Status:LongWord):LongWord;
 function SerialDeviceProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord; inline;
 function SerialDeviceGetProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
 function SerialDeviceSetProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord;
-  
+
 function SerialDeviceCreate:PSerialDevice;
 function SerialDeviceCreateEx(Size:LongWord):PSerialDevice;
 function SerialDeviceDestroy(Serial:PSerialDevice):LongWord;
@@ -321,7 +321,7 @@ function SerialDeviceFind(SerialId:LongWord):PSerialDevice;
 function SerialDeviceFindByName(const Name:String):PSerialDevice; inline;
 function SerialDeviceFindByDescription(const Description:String):PSerialDevice; inline;
 function SerialDeviceEnumerate(Callback:TSerialEnumerate;Data:Pointer):LongWord;
- 
+
 function SerialDeviceNotification(Serial:PSerialDevice;Callback:TSerialNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
 
 {==============================================================================}
@@ -342,10 +342,10 @@ function SysTextIOWriteBuffer(ABuffer:PChar;ACount:LongInt;AUserData:Pointer):Lo
 {==============================================================================}
 {RTL Serial Functions}
 function SysSerialAvailable:Boolean;
- 
+
 function SysSerialOpen(BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDepth,TransmitDepth:LongWord):LongWord;
 function SysSerialClose:LongWord;
-  
+
 function SysSerialRead(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
 function SysSerialWrite(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
 
@@ -354,15 +354,15 @@ function SysSerialWrite(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWor
 function SerialGetCount:LongWord;
 
 function SerialDeviceGetDefault:PSerialDevice;
-function SerialDeviceSetDefault(Serial:PSerialDevice):LongWord; 
+function SerialDeviceSetDefault(Serial:PSerialDevice):LongWord;
 
 function SerialDeviceCheck(Serial:PSerialDevice):PSerialDevice;
 
 function SerialTypeToString(SerialType:LongWord):String;
 function SerialStateToString(SerialState:LongWord):String;
 
-function SerialDeviceRedirectInput(Serial:PSerialDevice):Boolean; 
-function SerialDeviceRedirectOutput(Serial:PSerialDevice):Boolean; 
+function SerialDeviceRedirectInput(Serial:PSerialDevice):Boolean;
+function SerialDeviceRedirectOutput(Serial:PSerialDevice):Boolean;
 
 function SerialBufferReadStart(Buffer:PSerialBuffer;var Available:LongWord):Pointer;
 function SerialBufferReadComplete(Buffer:PSerialBuffer;Removed:LongWord):Boolean;
@@ -409,7 +409,7 @@ var
 
  SerialTextIOInputDevice:PSerialDevice;
  SerialTextIOOutputDevice:PSerialDevice;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -424,51 +424,51 @@ begin
  {}
  {Check Initialized}
  if SerialInitialized then Exit;
- 
+
  {Initialize Logging}
- SERIAL_LOG_ENABLED:=(SERIAL_DEFAULT_LOG_LEVEL <> SERIAL_LOG_LEVEL_NONE); 
- 
+ SERIAL_LOG_ENABLED:=(SERIAL_DEFAULT_LOG_LEVEL <> SERIAL_LOG_LEVEL_NONE);
+
  {Initialize Serial Table}
  SerialDeviceTable:=nil;
- SerialDeviceTableLock:=CriticalSectionCreate; 
+ SerialDeviceTableLock:=CriticalSectionCreate;
  SerialDeviceTableCount:=0;
  if SerialDeviceTableLock = INVALID_HANDLE_VALUE then
   begin
    if SERIAL_LOG_ENABLED then SerialLogError(nil,'Failed to create Serial table lock');
   end;
  SerialDeviceDefault:=nil;
- 
+
  {Check Environment Variables}
  {SERIAL_REGISTER_LOGGING}
  WorkInt:=StrToIntDef(EnvironmentGet('SERIAL_REGISTER_LOGGING'),0);
  if WorkInt <> 0 then SERIAL_REGISTER_LOGGING:=True;
- 
+
  {SERIAL_LOGGING_DEFAULT}
  WorkInt:=StrToIntDef(EnvironmentGet('SERIAL_LOGGING_DEFAULT'),0);
  if WorkInt <> 0 then SERIAL_LOGGING_DEFAULT:=True;
- 
+
  {SERIAL_LOGGING_PARAMETERS}
  WorkBuffer:=EnvironmentGet('SERIAL_LOGGING_PARAMETERS');
  if Length(WorkBuffer) <> 0 then SERIAL_LOGGING_PARAMETERS:=WorkBuffer;
- 
+
  {Enumerate Serial Devices}
  SerialDeviceEnumerate(SerialLoggingDeviceEnum,nil);
- 
+
  {Register Notification}
  SerialDeviceNotification(nil,SerialLoggingDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER,NOTIFIER_FLAG_WORKER);
- 
+
  {Register Platform Text IO Handlers}
  {TextIOReadCharHandler:=SysTextIOReadChar;}       {Only registered when calling SerialDeviceRedirectInput}
  {TextIOWriteCharHandler:=SysTextIOWriteChar;}     {Only registered when calling SerialDeviceRedirectOutput}
  {TextIOWriteBufferHandler:=SysTextIOWriteBuffer;} {Only registered when calling SerialDeviceRedirectOutput}
- 
+
  {Register Platform Serial Handlers}
  SerialAvailableHandler:=SysSerialAvailable;
  SerialOpenHandler:=SysSerialOpen;
  SerialCloseHandler:=SysSerialClose;
  SerialReadHandler:=SysSerialRead;
  SerialWriteHandler:=SysSerialWrite;
- 
+
  SerialInitialized:=True;
 end;
 
@@ -489,19 +489,19 @@ function SerialDeviceOpen(Serial:PSerialDevice;BaudRate,DataBits,StopBits,Parity
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SERIAL_DEBUG}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Open (BaudRate=' + IntToStr(BaudRate) + ' DataBits=' + SerialDataBitsToString(DataBits) + ' StopBits=' + SerialStopBitsToString(StopBits) + ' Parity=' + SerialParityToString(Parity) + ' FlowControl=' + SerialFlowControlToString(FlowControl) + ')');
  {$ENDIF}
- 
+
  {Check State}
  Result:=ERROR_ALREADY_OPEN;
  if Serial.SerialState <> SERIAL_STATE_CLOSED then Exit;
- 
+
  if MutexLock(Serial.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -509,10 +509,10 @@ begin
      begin
       {Set State to Opening}
       Serial.SerialState:=SERIAL_STATE_OPENING;
-      
+
       {Notify Opening}
       NotifierNotify(@Serial.Device,DEVICE_NOTIFICATION_OPENING);
-     
+
       {Call Device Open}
       Result:=Serial.DeviceOpen(Serial,BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDepth,TransmitDepth);
       if Result <> ERROR_SUCCESS then
@@ -520,29 +520,29 @@ begin
         {Reset State to Closed}
         Serial.SerialState:=SERIAL_STATE_CLOSED;
         Exit;
-       end; 
+       end;
      end
     else
-     begin    
+     begin
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
-     end; 
-    
+     end;
+
     {Set State to Open}
     Serial.SerialState:=SERIAL_STATE_OPEN;
-    
+
     {Notify Open}
     NotifierNotify(@Serial.Device,DEVICE_NOTIFICATION_OPEN);
- 
+
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Serial.Lock);
-   end; 
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -554,19 +554,19 @@ function SerialDeviceClose(Serial:PSerialDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SERIAL_DEBUG}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Close');
  {$ENDIF}
- 
+
  {Check State}
  Result:=ERROR_NOT_OPEN;
  if Serial.SerialState <> SERIAL_STATE_OPEN then Exit;
- 
+
  if MutexLock(Serial.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -574,10 +574,10 @@ begin
      begin
       {Set State to Closing}
       Serial.SerialState:=SERIAL_STATE_CLOSING;
-      
+
       {Notify Closing}
       NotifierNotify(@Serial.Device,DEVICE_NOTIFICATION_CLOSING);
-     
+
       {Call Device Close}
       Result:=Serial.DeviceClose(Serial);
       if Result <> ERROR_SUCCESS then
@@ -585,29 +585,29 @@ begin
         {Reset State to Open}
         Serial.SerialState:=SERIAL_STATE_OPEN;
         Exit;
-       end; 
+       end;
      end
     else
      begin
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
-     end;    
- 
+     end;
+
     {Set State to Closed}
     Serial.SerialState:=SERIAL_STATE_CLOSED;
-    
+
     {Notify Close}
     NotifierNotify(@Serial.Device,DEVICE_NOTIFICATION_CLOSE);
-    
+
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Serial.Lock);
-   end; 
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -628,19 +628,19 @@ begin
 
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SERIAL_DEBUG}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Read (Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Check State}
  Result:=ERROR_NOT_READY;
  if Serial.SerialState <> SERIAL_STATE_OPEN then Exit;
- 
+
  if MutexLock(Serial.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Serial.DeviceRead) then
@@ -651,14 +651,14 @@ begin
    else
     begin
      Result:=ERROR_INVALID_PARAMETER;
-    end;    
-    
+    end;
+
    MutexUnlock(Serial.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -676,22 +676,22 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SERIAL_DEBUG}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Write (Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Check State}
  Result:=ERROR_NOT_READY;
  if Serial.SerialState <> SERIAL_STATE_OPEN then Exit;
- 
+
  if MutexLock(Serial.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Serial.DeviceWrite) then
@@ -702,14 +702,14 @@ begin
    else
     begin
      Result:=ERROR_INVALID_PARAMETER;
-    end;    
-    
+    end;
+
    MutexUnlock(Serial.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -726,44 +726,44 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
  if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF SERIAL_DEBUG}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Wait (Direction=' + IntToStr(Direction) + ' Timeout=' + IntToStr(Timeout) + ')');
  {$ENDIF}
 
  {Check Timeout}
  if Timeout = 0 then Timeout:=INFINITE;
- 
+
  {Check State}
  Result:=ERROR_NOT_READY;
  if Serial.SerialState <> SERIAL_STATE_OPEN then Exit;
- 
+
  if MutexLock(Serial.Lock) = ERROR_SUCCESS then
   begin
    try
     Unlock:=True;
-    
+
     if Assigned(Serial.DeviceWait) then
      begin
       {Call Device Wait}
       Result:=Serial.DeviceWait(Serial,Direction,Timeout,Count);
      end
     else
-     begin 
+     begin
       {Setup Result}
       Count:=0;
-      
+
       {Check Receive}
       if Direction = SERIAL_WAIT_RECEIVE then
        begin
         {Release the Lock}
         MutexUnlock(Serial.Lock);
         Unlock:=False;
-        
+
         {Wait for Data}
         Result:=EventWaitEx(Serial.Receive.Wait,Timeout);
         if Result <> ERROR_SUCCESS then Exit;
@@ -772,10 +772,10 @@ begin
         if MutexLock(Serial.Lock) = ERROR_SUCCESS then
          begin
           Unlock:=True;
-          
+
           {Get Count}
           Count:=Serial.Receive.Count;
-          
+
           {Return Result}
           Result:=ERROR_SUCCESS;
          end
@@ -790,19 +790,19 @@ begin
         {Release the Lock}
         MutexUnlock(Serial.Lock);
         Unlock:=False;
-        
+
         {Wait for Space}
         Result:=EventWaitEx(Serial.Transmit.Wait,Timeout);
         if Result <> ERROR_SUCCESS then Exit;
-        
+
         {Acquire the Lock}
         if MutexLock(Serial.Lock) = ERROR_SUCCESS then
          begin
           Unlock:=True;
-          
+
           {Get Count}
           Count:=Serial.Transmit.Size - Serial.Transmit.Count;
-          
+
           {Return Result}
           Result:=ERROR_SUCCESS;
          end
@@ -814,7 +814,7 @@ begin
      end;
    finally
     if Unlock then MutexUnlock(Serial.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -832,19 +832,19 @@ function SerialDeviceFlush(Serial:PSerialDevice;Flags:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
  if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF SERIAL_DEBUG}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Flush (Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
- 
+
  {Check State}
  Result:=ERROR_NOT_READY;
  if Serial.SerialState <> SERIAL_STATE_OPEN then Exit;
- 
+
  if MutexLock(Serial.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -854,7 +854,7 @@ begin
       Result:=Serial.DeviceFlush(Serial,Flags);
      end
     else
-     begin 
+     begin
       {Check Receive}
       if (Flags and SERIAL_FLUSH_RECEIVE) <> 0 then
        begin
@@ -863,22 +863,22 @@ begin
         Serial.Receive.Start:=0;
         Serial.Receive.Count:=0;
        end;
-      
+
       {Check Transmit}
-      if (Flags and SERIAL_FLUSH_TRANSMIT) <> 0 then  
+      if (Flags and SERIAL_FLUSH_TRANSMIT) <> 0 then
        begin
         {Flush Transmit}
         EventSet(Serial.Transmit.Wait);
         Serial.Transmit.Start:=0;
         Serial.Transmit.Count:=0;
        end;
-      
+
       {Return Result}
       Result:=ERROR_SUCCESS;
      end;
    finally
     MutexUnlock(Serial.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -908,18 +908,18 @@ function SerialDeviceGetStatus(Serial:PSerialDevice):LongWord;
 begin
  {}
  Result:=SERIAL_STATUS_NONE;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SERIAL_DEBUG}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Get Status');
  {$ENDIF}
- 
+
  {Check State}
  if Serial.SerialState <> SERIAL_STATE_OPEN then Exit;
- 
+
  if MutexLock(Serial.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Serial.DeviceGetStatus) then
@@ -931,8 +931,8 @@ begin
     begin
      {Get Status}
      Result:=Serial.SerialStatus;
-    end;  
-    
+    end;
+
    MutexUnlock(Serial.Lock);
   end;
 end;
@@ -950,11 +950,11 @@ function SerialDeviceSetStatus(Serial:PSerialDevice;Status:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
  if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF SERIAL_DEBUG}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Set Status (Status=' + IntToHex(Status,8) + ')');
  {$ENDIF}
@@ -962,7 +962,7 @@ begin
  {Check State}
  Result:=ERROR_NOT_READY;
  if Serial.SerialState <> SERIAL_STATE_OPEN then Exit;
- 
+
  if MutexLock(Serial.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Serial.DeviceSetStatus) then
@@ -973,8 +973,8 @@ begin
    else
     begin
      Result:=ERROR_CALL_NOT_IMPLEMENTED;
-    end;  
-    
+    end;
+
    MutexUnlock(Serial.Lock);
   end
  else
@@ -984,7 +984,7 @@ begin
 end;
 
 {==============================================================================}
- 
+
 function SerialDeviceProperties(Serial:PSerialDevice;Properties:PSerialProperties):LongWord; inline;
 {Get the properties for the specified Serial device}
 {Serial: The Serial device to get properties from}
@@ -1007,22 +1007,22 @@ function SerialDeviceGetProperties(Serial:PSerialDevice;Properties:PSerialProper
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Properties}
  if Properties = nil then Exit;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SERIAL_DEBUG}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Get Properties');
  {$ENDIF}
- 
+
  {Check Open}
  {Result:=ERROR_NOT_READY;}
  {if Serial.SerialState <> SERIAL_STATE_OPEN then Exit;} {Allow when closed}
- 
+
  if MutexLock(Serial.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Serial.DeviceGetProperties) then
@@ -1034,17 +1034,17 @@ begin
     begin
      {Get Properties}
      System.Move(Serial.Properties,Properties^,SizeOf(TSerialProperties));
-       
+
      {Return Result}
      Result:=ERROR_SUCCESS;
-    end;  
-    
+    end;
+
    MutexUnlock(Serial.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -1057,22 +1057,22 @@ function SerialDeviceSetProperties(Serial:PSerialDevice;Properties:PSerialProper
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Properties}
  if Properties = nil then Exit;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SERIAL_DEBUG}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'Serial Device Set Properties');
  {$ENDIF}
- 
+
  {Check Open}
  Result:=ERROR_NOT_READY;
  if Serial.SerialState <> SERIAL_STATE_OPEN then Exit;
- 
+
  if MutexLock(Serial.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Serial.DeviceSetProperties) then
@@ -1084,17 +1084,17 @@ begin
     begin
      {Close Device}
      SerialDeviceClose(Serial);
-     
+
      {Open Device}
      Result:=SerialDeviceOpen(Serial,Properties.BaudRate,Properties.DataBits,Properties.StopBits,Properties.Parity,Properties.FlowControl,Properties.ReceiveDepth,Properties.TransmitDepth);
-    end;  
-    
+    end;
+
    MutexUnlock(Serial.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -1116,16 +1116,16 @@ function SerialDeviceCreateEx(Size:LongWord):PSerialDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TSerialDevice) then Exit;
- 
+
  {Create Serial}
  Result:=PSerialDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=SERIAL_TYPE_NONE;
  Result.Device.DeviceFlags:=SERIAL_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -1147,7 +1147,7 @@ begin
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Receive.Wait:=INVALID_HANDLE_VALUE;
  Result.Transmit.Wait:=INVALID_HANDLE_VALUE;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -1157,7 +1157,7 @@ begin
    Result:=nil;
    Exit;
   end;
-  
+
  {Create Receive Event (Manual Reset)}
  Result.Receive.Wait:=EventCreate(True,False);
  if Result.Receive.Wait = INVALID_HANDLE_VALUE then
@@ -1167,7 +1167,7 @@ begin
    Result:=nil;
    Exit;
   end;
-  
+
  {Create Transmit Event (Manual Reset / Intitial State)}
  Result.Transmit.Wait:=EventCreate(True,True);
  if Result.Transmit.Wait = INVALID_HANDLE_VALUE then
@@ -1188,37 +1188,37 @@ function SerialDeviceDestroy(Serial:PSerialDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
  if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Serial}
  Result:=ERROR_IN_USE;
  if SerialDeviceCheck(Serial) = Serial then Exit;
 
  {Check State}
  if Serial.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Transmit Event}
  if Serial.Transmit.Wait <> INVALID_HANDLE_VALUE then
   begin
    EventDestroy(Serial.Transmit.Wait);
   end;
- 
+
  {Destroy Receive Event}
  if Serial.Receive.Wait <> INVALID_HANDLE_VALUE then
   begin
    EventDestroy(Serial.Receive.Wait);
   end;
- 
+
  {Destroy Lock}
  if Serial.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Serial.Lock);
   end;
- 
- {Destroy Serial} 
+
+ {Destroy Serial}
  Result:=DeviceDestroy(@Serial.Device);
 end;
 
@@ -1233,25 +1233,25 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
  if Serial.SerialId <> DEVICE_ID_ANY then Exit;
  if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Interfaces}
  if not(Assigned(Serial.DeviceOpen)) then Exit;
  if not(Assigned(Serial.DeviceClose)) then Exit;
  if not(Assigned(Serial.DeviceRead)) then Exit;
  if not(Assigned(Serial.DeviceWrite)) then Exit;
- 
+
  {Check Serial}
  Result:=ERROR_ALREADY_EXISTS;
  if SerialDeviceCheck(Serial) = Serial then Exit;
- 
+
  {Check State}
  if Serial.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Serial}
  if CriticalSectionLock(SerialDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1263,19 +1263,19 @@ begin
       Inc(SerialId);
      end;
     Serial.SerialId:=SerialId;
-    
+
     {Update Device}
-    Serial.Device.DeviceName:=SERIAL_NAME_PREFIX + IntToStr(Serial.SerialId); 
+    Serial.Device.DeviceName:=SERIAL_NAME_PREFIX + IntToStr(Serial.SerialId);
     Serial.Device.DeviceClass:=DEVICE_CLASS_SERIAL;
-    
+
     {Register Device}
     Result:=DeviceRegister(@Serial.Device);
     if Result <> ERROR_SUCCESS then
      begin
       Serial.SerialId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link Serial}
     if SerialDeviceTable = nil then
      begin
@@ -1287,16 +1287,16 @@ begin
       SerialDeviceTable.Prev:=Serial;
       SerialDeviceTable:=Serial;
      end;
- 
+
     {Increment Count}
     Inc(SerialDeviceTableCount);
-    
+
     {Check Default}
     if SerialDeviceDefault = nil then
      begin
       SerialDeviceDefault:=Serial;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1306,7 +1306,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1321,19 +1321,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
  if Serial.SerialId = DEVICE_ID_ANY then Exit;
  if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Serial}
  Result:=ERROR_NOT_FOUND;
  if SerialDeviceCheck(Serial) <> Serial then Exit;
- 
+
  {Check State}
  if Serial.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove Serial}
  if CriticalSectionLock(SerialDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1341,7 +1341,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@Serial.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink Serial}
     Prev:=Serial.Prev;
     Next:=Serial.Next;
@@ -1351,7 +1351,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -1359,21 +1359,21 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(SerialDeviceTableCount);
- 
+
     {Check Default}
     if SerialDeviceDefault = Serial then
      begin
       SerialDeviceDefault:=SerialDeviceTable;
      end;
- 
+
     {Update Serial}
     Serial.SerialId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1383,7 +1383,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1397,10 +1397,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if SerialId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(SerialDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1419,7 +1419,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       Serial:=Serial.Next;
      end;
@@ -1429,7 +1429,7 @@ begin
    end;
   end;
 end;
-     
+
 {==============================================================================}
 
 function SerialDeviceFindByName(const Name:String):PSerialDevice; inline;
@@ -1451,7 +1451,7 @@ begin
  {}
  Result:=PSerialDevice(DeviceFindByDescription(Description));
 end;
-       
+
 {==============================================================================}
 
 function SerialDeviceEnumerate(Callback:TSerialEnumerate;Data:Pointer):LongWord;
@@ -1464,10 +1464,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(SerialDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1481,11 +1481,11 @@ begin
        begin
         if Callback(Serial,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Serial:=Serial.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1496,7 +1496,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1511,19 +1511,19 @@ function SerialDeviceNotification(Serial:PSerialDevice;Callback:TSerialNotificat
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_SERIAL,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check Serial}
    if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@Serial.Device,DEVICE_CLASS_SERIAL,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1535,25 +1535,25 @@ function SerialLoggingStart(Logging:PLoggingDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
     if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
     {Check Serial}
     if PSerialLogging(Logging).Serial = nil then Exit;
-    
+
     {Open Serial}
     Result:=SerialDeviceOpen(PSerialLogging(Logging).Serial,PSerialLogging(Logging).BaudRate,PSerialLogging(Logging).DataBits,PSerialLogging(Logging).StopBits,PSerialLogging(Logging).Parity,PSerialLogging(Logging).FlowControl,0,0);
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1569,25 +1569,25 @@ function SerialLoggingStop(Logging:PLoggingDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
-    if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+    if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
     {Check Serial}
     if PSerialLogging(Logging).Serial = nil then Exit;
- 
+
     {Close Serial}
     Result:=SerialDeviceClose(PSerialLogging(Logging).Serial);
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1605,35 +1605,35 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
-    if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+    if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
     {Check Serial}
     if PSerialLogging(Logging).Serial = nil then Exit;
- 
+
     {Serial Write}
     Result:=SerialDeviceWrite(PSerialLogging(Logging).Serial,PChar(Data),Length(Data),SERIAL_WRITE_NONE,Count);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Serial Write}
     Result:=SerialDeviceWrite(PSerialLogging(Logging).Serial,PChar(SERIAL_LOGGING_LINE_END),Length(SERIAL_LOGGING_LINE_END),SERIAL_WRITE_NONE,Count);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update Statistics}
     Inc(Logging.OutputCount);
-    
+
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1654,9 +1654,9 @@ begin
 
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
@@ -1743,13 +1743,13 @@ var
 begin
  {}
  Result:=0;
- 
+
  if SerialDeviceWrite(SerialTextIOOutputDevice,ABuffer,ACount,SERIAL_WRITE_NONE,Count) = ERROR_SUCCESS then
   begin
    Result:=Count;
   end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {RTL Serial Functions}
@@ -1774,9 +1774,9 @@ function SysSerialOpen(BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDept
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if SerialDeviceDefault = nil then Exit;
- 
+
  Result:=SerialDeviceOpen(SerialDeviceDefault,BaudRate,DataBits,StopBits,Parity,FlowControl,ReceiveDepth,TransmitDepth);
 end;
 
@@ -1787,14 +1787,14 @@ function SysSerialClose:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if SerialDeviceDefault = nil then Exit;
- 
+
  Result:=SerialDeviceClose(SerialDeviceDefault);
 end;
 
 {==============================================================================}
-  
+
 function SysSerialRead(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
 {Read data from the default Serial device}
 {Buffer: Pointer to a buffer to receive the data}
@@ -1805,9 +1805,9 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if SerialDeviceDefault = nil then Exit;
- 
+
  Result:=SerialDeviceRead(SerialDeviceDefault,Buffer,Size,SERIAL_READ_NONE,Count);
 end;
 
@@ -1823,9 +1823,9 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if SerialDeviceDefault = nil then Exit;
- 
+
  Result:=SerialDeviceWrite(SerialDeviceDefault,Buffer,Size,SERIAL_WRITE_NONE,Count);
 end;
 
@@ -1850,26 +1850,26 @@ end;
 
 {==============================================================================}
 
-function SerialDeviceSetDefault(Serial:PSerialDevice):LongWord; 
+function SerialDeviceSetDefault(Serial:PSerialDevice):LongWord;
 {Set the current default Serial device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
  if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(SerialDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Serial}
     if SerialDeviceCheck(Serial) <> Serial then Exit;
-    
+
     {Set Serial Default}
     SerialDeviceDefault:=Serial;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1892,11 +1892,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
  if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(SerialDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1911,7 +1911,7 @@ begin
         Result:=Serial;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -1929,7 +1929,7 @@ function SerialTypeToString(SerialType:LongWord):String;
 begin
  {}
  Result:='SERIAL_TYPE_UNKNOWN';
- 
+
  if SerialType <= SERIAL_TYPE_MAX then
   begin
    Result:=SERIAL_TYPE_NAMES[SerialType];
@@ -1943,7 +1943,7 @@ function SerialStateToString(SerialState:LongWord):String;
 begin
  {}
  Result:='SERIAL_STATE_UNKNOWN';
- 
+
  if SerialState <= SERIAL_STATE_MAX then
   begin
    Result:=SERIAL_STATE_NAMES[SerialState];
@@ -1952,7 +1952,7 @@ end;
 
 {==============================================================================}
 
-function SerialDeviceRedirectInput(Serial:PSerialDevice):Boolean; 
+function SerialDeviceRedirectInput(Serial:PSerialDevice):Boolean;
 {Redirect standard input to the serial device specified by Serial}
 {Serial: The serial device to redirect input to (or nil to stop redirection)}
 {Return: True if completed successfully or False if an error occurred}
@@ -1962,31 +1962,31 @@ function SerialDeviceRedirectInput(Serial:PSerialDevice):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Serial = nil then
   begin
    {Stop Redirection}
    TextIOReadCharHandler:=nil;
-   
+
    SerialTextIOInputDevice:=nil;
   end
  else
   begin
    {Check Serial}
    if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
-  
+
    {Start Redirection}
    TextIOReadCharHandler:=SysTextIOReadChar;
-  
+
    SerialTextIOInputDevice:=Serial;
-  end;  
-  
+  end;
+
  Result:=True;
 end;
 
 {==============================================================================}
 
-function SerialDeviceRedirectOutput(Serial:PSerialDevice):Boolean; 
+function SerialDeviceRedirectOutput(Serial:PSerialDevice):Boolean;
 {Redirect standard output to the serial device specified by Serial}
 {Serial: The serial device to redirect output to (or nil to stop redirection)}
 {Return: True if completed successfully or False if an error occurred}
@@ -1996,27 +1996,27 @@ function SerialDeviceRedirectOutput(Serial:PSerialDevice):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Serial = nil then
   begin
    {Stop Redirection}
    TextIOWriteCharHandler:=nil;
    TextIOWriteBufferHandler:=nil;
-   
+
    SerialTextIOOutputDevice:=nil;
   end
  else
   begin
    {Check Serial}
    if Serial.Device.Signature <> DEVICE_SIGNATURE then Exit;
-   
+
    {Start Redirection}
    TextIOWriteCharHandler:=SysTextIOWriteChar;
    TextIOWriteBufferHandler:=SysTextIOWriteBuffer;
-  
+
    SerialTextIOOutputDevice:=Serial;
-  end;  
-  
+  end;
+
  Result:=True;
 end;
 
@@ -2034,15 +2034,15 @@ begin
 
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  if Buffer.Count > 0 then
   begin
    {Check Wraparound}
    if (Buffer.Start + Buffer.Count) > Buffer.Size then
-    begin  
-     {Get Available}    
+    begin
+     {Get Available}
      Available:=Buffer.Count - ((Buffer.Start + Buffer.Count) mod Buffer.Size);
-     
+
      {Get Pointer}
      Result:=Pointer(PtrUInt(Buffer.Data) + PtrUInt(Buffer.Start));
     end
@@ -2050,7 +2050,7 @@ begin
     begin
      {Get Available}
      Available:=Buffer.Count;
-     
+
      {Get Pointer}
      Result:=Pointer(PtrUInt(Buffer.Data) + PtrUInt(Buffer.Start));
     end;
@@ -2066,10 +2066,10 @@ function SerialBufferReadComplete(Buffer:PSerialBuffer;Removed:LongWord):Boolean
 begin
  {}
  Result:=False;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  if Removed <= Buffer.Count then
   begin
    {Update Start}
@@ -2077,7 +2077,7 @@ begin
 
    {Update Count}
    Dec(Buffer.Count,Removed);
-   
+
    Result:=True;
   end;
 end;
@@ -2093,10 +2093,10 @@ begin
  {Setup Result}
  Available:=0;
  Result:=nil;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  if Buffer.Count < Buffer.Size then
   begin
    {Check Wraparound}
@@ -2104,7 +2104,7 @@ begin
     begin
      {Get Available}
      Available:=Buffer.Start - ((Buffer.Start + Buffer.Count) mod Buffer.Size);
-     
+
      {Get Pointer}
      Result:=Pointer(PtrUInt(Buffer.Data) + PtrUInt((Buffer.Start + Buffer.Count) mod Buffer.Size));
     end
@@ -2112,10 +2112,10 @@ begin
     begin
      {Get Available}
      Available:=Buffer.Size - (Buffer.Start + Buffer.Count);
-     
+
      {Get Pointer}
      Result:=Pointer(PtrUInt(Buffer.Data) + PtrUInt((Buffer.Start + Buffer.Count) mod Buffer.Size));
-    end;    
+    end;
   end;
 end;
 
@@ -2128,15 +2128,15 @@ function SerialBufferWriteComplete(Buffer:PSerialBuffer;Added:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  if (Buffer.Count + Added) <= Buffer.Size then
   begin
    {Update Count}
    Inc(Buffer.Count,Added);
-   
+
    Result:=True;
   end;
 end;
@@ -2150,7 +2150,7 @@ begin
  {}
  {Check Level}
  if Level < SERIAL_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = SERIAL_LOG_LEVEL_DEBUG then
@@ -2165,17 +2165,17 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'Serial: ';
- 
+
  {Check Serial}
  if Serial <> nil then
   begin
    WorkBuffer:=WorkBuffer + SERIAL_NAME_PREFIX + IntToStr(Serial.SerialId) + ': ';
   end;
 
- {Output Logging}  
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_SERIAL,LogLevelToLoggingSeverity(Level),'Serial',WorkBuffer + AText);
 end;
 
@@ -2217,7 +2217,7 @@ function SerialDataBitsToString(Bits:LongWord):String;
 begin
  {}
  Result:='SERIAL_DATA_UNKNOWN';
- 
+
  case Bits of
   SERIAL_DATA_8BIT:Result:='SERIAL_DATA_8BIT';
   SERIAL_DATA_7BIT:Result:='SERIAL_DATA_7BIT';
@@ -2232,7 +2232,7 @@ function SerialStopBitsToString(Bits:LongWord):String;
 begin
  {}
  Result:='SERIAL_STOP_UNKNOWN';
- 
+
  case Bits of
   SERIAL_STOP_1BIT:Result:='SERIAL_STOP_1BIT';
   SERIAL_STOP_2BIT:Result:='SERIAL_STOP_2BIT';
@@ -2246,7 +2246,7 @@ function SerialParityToString(Parity:LongWord):String;
 begin
  {}
  Result:='SERIAL_PARITY_NONE';
- 
+
  case Parity of
   SERIAL_PARITY_ODD:Result:='SERIAL_PARITY_ODD';
   SERIAL_PARITY_EVEN:Result:='SERIAL_PARITY_EVEN';
@@ -2261,7 +2261,7 @@ function SerialFlowControlToString(Flow:LongWord):String;
 begin
  {}
  Result:='SERIAL_FLOW_NONE';
- 
+
  case Flow of
   SERIAL_FLOW_RTS_CTS:Result:='SERIAL_FLOW_RTS_CTS';
   SERIAL_FLOW_DSR_DTR:Result:='SERIAL_FLOW_DSR_DTR';
@@ -2279,7 +2279,7 @@ var
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {Check Logging}
  if LoggingDeviceFindByDevice(@Serial.Device) = nil then
   begin
@@ -2308,7 +2308,7 @@ begin
       begin
        {Update Logging}
        {Device}
-       Logging.Logging.Device.DeviceBus:=DEVICE_BUS_NONE; 
+       Logging.Logging.Device.DeviceBus:=DEVICE_BUS_NONE;
        Logging.Logging.Device.DeviceType:=LOGGING_TYPE_SERIAL;
        Logging.Logging.Device.DeviceFlags:=LOGGING_FLAG_NONE;
        Logging.Logging.Device.DeviceData:=@Serial.Device;
@@ -2324,7 +2324,7 @@ begin
        Logging.Serial:=Serial;
        Logging.FlowControl:=SERIAL_FLOW_NONE;
        SerialLoggingDeviceParameters(Serial,SERIAL_LOGGING_PARAMETERS,Logging.BaudRate,Logging.Parity,Logging.DataBits,Logging.StopBits);
-       
+
        {Register Logging}
        Status:=LoggingDeviceRegister(@Logging.Logging);
        if Status = ERROR_SUCCESS then
@@ -2342,7 +2342,7 @@ begin
            LoggingDeviceDestroy(@Logging.Logging);
           end;
         end
-       else 
+       else
         begin
          if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to register new serial logging device: ' + ErrorToString(Status));
 
@@ -2350,12 +2350,12 @@ begin
          LoggingDeviceDestroy(@Logging.Logging);
         end;
       end
-     else 
+     else
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to create new serial logging device');
       end;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -2368,7 +2368,7 @@ var
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {Check Logging}
  Logging:=PSerialLogging(LoggingDeviceFindByDevice(@Serial.Device));
  if Logging <> nil then
@@ -2386,15 +2386,15 @@ begin
        if Status <> ERROR_SUCCESS then
         begin
          if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to destroy serial logging device');
-        end; 
+        end;
       end
      else
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to deregister serial logging device: ' + ErrorToString(Status));
-      end;      
+      end;
     end
    else
-    begin   
+    begin
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to stop serial logging device: ' + ErrorToString(Status));
     end;
   end;
@@ -2423,14 +2423,14 @@ function SerialLoggingDeviceParameters(Serial:PSerialDevice;const Parameters:Str
     Delete(Value,1,PosIdx + (Length(Delimiter) - 1));
    end;
  end;
- 
+
  function SerialLoggingCharCount(const Value:String;Delimiter:Char):Integer;
  var
   Count:Integer;
  begin
   {}
   Result:=0;
-  
+
   if Length(Value) = 0 then Exit;
 
   for Count:=1 to Length(Value) do
@@ -2438,52 +2438,52 @@ function SerialLoggingDeviceParameters(Serial:PSerialDevice;const Parameters:Str
     if Value[Count] = Delimiter then Inc(Result);
    end;
  end;
- 
+
 var
  WorkValue:String;
  WorkBuffer:String;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Setup Defaults}
  BaudRate:=SERIAL_BAUD_RATE_DEFAULT;
  Parity:=SERIAL_PARITY_NONE;
  DataBits:=SERIAL_DATA_8BIT;
  StopBits:=SERIAL_STOP_1BIT;
- 
+
  {Check Parameters}
  if Length(Parameters) = 0 then Exit;
  if SerialLoggingCharCount(Parameters,',') <> 3 then Exit;
  WorkBuffer:=Parameters;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {Get Baud Rate}
  BaudRate:=StrToIntDef(SerialLoggingFirstWord(WorkBuffer,','),BaudRate);
- 
+
  {Get Parity}
  WorkValue:=Uppercase(SerialLoggingFirstWord(WorkBuffer,','));
  if WorkValue = 'N' then
   begin
    Parity:=SERIAL_PARITY_NONE;
   end
- else if WorkValue = 'O' then 
+ else if WorkValue = 'O' then
   begin
    Parity:=SERIAL_PARITY_ODD;
   end
- else if WorkValue = 'E' then 
+ else if WorkValue = 'E' then
   begin
    Parity:=SERIAL_PARITY_EVEN;
   end;
-  
- {Get Data Bits} 
+
+ {Get Data Bits}
  DataBits:=StrToIntDef(SerialLoggingFirstWord(WorkBuffer,','),DataBits);
- 
+
  {Get Stop Bits}
  StopBits:=StrToIntDef(SerialLoggingFirstWord(WorkBuffer,','),StopBits);
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -2495,15 +2495,15 @@ function SerialLoggingDeviceEnum(Serial:PSerialDevice;Data:Pointer):LongWord;
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {$IF DEFINED(LOGGING_DEBUG) or DEFINED(DEVICE_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Logging: Serial device enumeration');
  {$ENDIF}
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- if Serial.SerialState <> SERIAL_STATE_CLOSED then Exit; 
- 
+ if Serial.SerialState <> SERIAL_STATE_CLOSED then Exit;
+
  {Add Serial}
  Result:=SerialLoggingDeviceAdd(Serial);
 end;
@@ -2518,14 +2518,14 @@ var
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {$IF DEFINED(LOGGING_DEBUG) or DEFINED(DEVICE_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Logging: Serial device notification (Notification=' + NotificationToString(Notification) + ')');
  {$ENDIF}
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Get Serial}
  Serial:=PSerialDevice(Device);
 
@@ -2533,8 +2533,8 @@ begin
  if (Notification and DEVICE_NOTIFICATION_REGISTER) <> 0 then
   begin
    {Check Serial}
-   if Serial.SerialState <> SERIAL_STATE_CLOSED then Exit; 
-   
+   if Serial.SerialState <> SERIAL_STATE_CLOSED then Exit;
+
    {Add Serial}
    Result:=SerialLoggingDeviceAdd(Serial);
   end
@@ -2552,7 +2552,7 @@ initialization
  SerialInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

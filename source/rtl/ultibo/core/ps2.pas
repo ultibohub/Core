@@ -17,57 +17,57 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
-  
+
 References
 ==========
- 
+
  PS2 Keyboard - http://wiki.osdev.org/PS/2_Keyboard
                 http://www.computer-engineering.org/ps2keyboard/
-                
+
  PS2 Mouse - http://wiki.osdev.org/PS/2_Mouse
              http://www.computer-engineering.org/ps2mouse/
-             
+
  PS2 Scancodes - http://www.computer-engineering.org/ps2keyboard/scancodes1.html
                  http://www.computer-engineering.org/ps2keyboard/scancodes2.html
                  http://www.computer-engineering.org/ps2keyboard/scancodes3.html
-                 
+
 PS2 Keyboard/Mouse Controller
 =============================
- 
- This unit provides supporting functions and definitions for PS/2 keyboard and mouse 
- controller drivers. 
- 
+
+ This unit provides supporting functions and definitions for PS/2 keyboard and mouse
+ controller drivers.
+
  The constants defined here are not a complete set but represent the most commonly
  used PS/2 functions and operations. Of most importance is the mouse packet and the
  keyboard scancode structures which provide support for receiving the actual data
  from a keyboard or a mouse.
- 
+
  This unit also includes the PS/2 scancode sets which define the actual values that
  are received in response to each key press and release. Currently only scancode set
- 2 is defined as in many instances that is considered the standard scancode set and 
+ 2 is defined as in many instances that is considered the standard scancode set and
  some devices simply do not support scancode set 1 or 3.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit PS2; 
+unit PS2;
 
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Keyboard,Mouse,SysUtils;
- 
+
 //To Do //Intellimouse extensions (Wheel plus Buttons 4 and 5) see http://www.computer-engineering.org/ps2mouse/
         //Scancode sets 1 and 3
-        
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
@@ -93,20 +93,20 @@ const
  PS2_KEYBOARD_COMMAND_SET_MAKE_ONLY          = $FD; {Set specific key to make only (Scancode set 3 only) (Data: Scancode for key)}
  PS2_KEYBOARD_COMMAND_RESEND                 = $FE; {Resend last byte (Data: None)}
  PS2_KEYBOARD_COMMAND_RESET                  = $FF; {Reset and start self-test (Data: None)}
- 
+
  PS2_KEYBOARD_SET_LEDS_SCROLLLOCK = (1 shl 0); {ScrollLock}
  PS2_KEYBOARD_SET_LEDS_NUMLOCK    = (1 shl 1); {NumberLock}
  PS2_KEYBOARD_SET_LEDS_CAPSLOCK   = (1 shl 2); {CapsLock}
- 
+
  PS2_KEYBOARD_SCANCODE_GET  = 0; {Get current scan code set}
  PS2_KEYBOARD_SCANCODE_SET1 = 1; {Set scan code set 1}
  PS2_KEYBOARD_SCANCODE_SET2 = 2; {Set scan code set 2}
  PS2_KEYBOARD_SCANCODE_SET3 = 3; {Set scan code set 3}
- 
+
  PS2_KEYBOARD_SET_REPEAT_RATE_MASK = $0F; {Repeat rate (00000b = 30 Hz, ..., 11111b = 2 Hz) }
  PS2_KEYBOARD_SET_DELAY_MASK       = $70; {Delay before keys repeat (00b = 250 ms, 01b = 500 ms, 10b = 750 ms, 11b = 1000 ms)}
  {Bit 7 Must be zero }
-  
+
  PS2_KEYBOARD_SET_REPEAT_RATE_30_0 = $00; {30.0cps}
  PS2_KEYBOARD_SET_REPEAT_RATE_26_7 = $01; {26.7cps}
  PS2_KEYBOARD_SET_REPEAT_RATE_24_0 = $02; {24.0cps}
@@ -139,12 +139,12 @@ const
  PS2_KEYBOARD_SET_REPEAT_RATE_2_3  = $1D; {2.3cps}
  PS2_KEYBOARD_SET_REPEAT_RATE_2_1  = $1E; {2.1cps}
  PS2_KEYBOARD_SET_REPEAT_RATE_2_0  = $1F; {2.0cps}
-  
+
  PS2_KEYBOARD_SET_DELAY_250  = $00; {250ms}
  PS2_KEYBOARD_SET_DELAY_500  = $10; {500ms}
  PS2_KEYBOARD_SET_DELAY_750  = $20; {750ms}
  PS2_KEYBOARD_SET_DELAY_1000 = $30; {1000ms}
- 
+
  {Mouse command constants (See: http://wiki.osdev.org/PS/2_Mouse)}
  PS2_MOUSE_COMMAND_RESET           = $FF; {Reset (Data: None)}
  PS2_MOUSE_COMMAND_RESEND          = $FE; {Resend (Data: None)}
@@ -160,7 +160,7 @@ const
  PS2_MOUSE_COMMAND_SET_STREAM_MODE = $EA; {Set Stream Mode (Data: None)}
  PS2_MOUSE_COMMAND_STATUS_REQUEST  = $E9; {Status Request (Data: None)}
  PS2_MOUSE_COMMAND_SET_RESOLUTION  = $E8; {Set Resolution (Data: See below)}
- 
+
  PS2_MOUSE_COMMAND_SAMPLE_RATE_10  = 10;  {10 samples/sec}
  PS2_MOUSE_COMMAND_SAMPLE_RATE_20  = 20;  {20 samples/sec}
  PS2_MOUSE_COMMAND_SAMPLE_RATE_40  = 40;  {40 samples/sec}
@@ -168,12 +168,12 @@ const
  PS2_MOUSE_COMMAND_SAMPLE_RATE_80  = 80;  {80 samples/sec}
  PS2_MOUSE_COMMAND_SAMPLE_RATE_100 = 100; {100 samples/sec}
  PS2_MOUSE_COMMAND_SAMPLE_RATE_200 = 200; {200 samples/sec}
- 
+
  PS2_MOUSE_COMMAND_RESOLUTION_1 = $00; {1 count/mm}
  PS2_MOUSE_COMMAND_RESOLUTION_2 = $01; {2 count/mm}
  PS2_MOUSE_COMMAND_RESOLUTION_4 = $02; {4 count/mm}
  PS2_MOUSE_COMMAND_RESOLUTION_5 = $03; {8 count/mm}
- 
+
  {Response constants}
  PS2_RESPONSE_NONE           = $00; {Key detection error or internal buffer overrun}
  PS2_RESPONSE_SELF_TEST_PASS = $AA; {Self test passed (sent after "0xFF (reset)" command or keyboard power up)}
@@ -183,40 +183,40 @@ const
  PS2_RESPONSE_SELFTEST_FAIL2 = $FD; {Self test failed (sent after "0xFF (reset)" command or keyboard power up)}
  PS2_RESPONSE_RESEND         = $FE; {Resend (keyboard wants controller to repeat last command it sent)}
  PS2_RESPONSE_ERROR          = $FF; {Key detection error or internal buffer overrun}
- 
+
  {Mouse packet bits}
  PS2_MOUSE_BITS_YO = (1 shl 7); {Y-Axis Overflow}
  PS2_MOUSE_BITS_XO = (1 shl 6); {X-Axis Overflow}
  PS2_MOUSE_BITS_YS = (1 shl 5); {Y-Axis Sign Bit (9-Bit Y-Axis Relative Offset)}
  PS2_MOUSE_BITS_XS = (1 shl 4); {X-Axis Sign Bit (9-Bit X-Axis Relative Offset)}
- PS2_MOUSE_BITS_AO = (1 shl 3); {Always One} 
+ PS2_MOUSE_BITS_AO = (1 shl 3); {Always One}
  PS2_MOUSE_BITS_BM = (1 shl 2); {Button Middle (Normally Off = 0)}
- PS2_MOUSE_BITS_BR = (1 shl 1); {Button Right (Normally Off = 0)} 
- PS2_MOUSE_BITS_BL = (1 shl 0); {Button Left (Normally Off = 0)} 
- 
+ PS2_MOUSE_BITS_BR = (1 shl 1); {Button Right (Normally Off = 0)}
+ PS2_MOUSE_BITS_BL = (1 shl 0); {Button Left (Normally Off = 0)}
+
  {Keyboard scancode types}
  PS2_SCANCODE_MAKE = 0;  {Key Down (Press)}
  PS2_SCANCODE_BREAK = 1; {Key Up (Release)}
- 
- {Keyboard scancode counts} 
+
+ {Keyboard scancode counts}
  PS2_SCANCODE_PC104_COUNT = 104;
  PS2_SCANCODE_ACPI_COUNT = 3;
  PS2_SCANCODE_MULTIMEDIA_COUNT = 18;
  PS2_SCANCODE_COUNT = PS2_SCANCODE_PC104_COUNT + PS2_SCANCODE_ACPI_COUNT + PS2_SCANCODE_MULTIMEDIA_COUNT;
- 
+
 {==============================================================================}
 type
  {PS2 specific types}
  PPS2ScancodeData = ^TPS2ScancodeData;
  TPS2ScancodeData = array[0..(PS2_SCANCODE_COUNT * 2) - 1] of array[0..9] of Byte;
- 
+
  {Keyboard types}
  PPS2KeyboardScancode = ^TPS2KeyboardScancode;
  TPS2KeyboardScancode = record
   ScancodeSet:Byte;
   Scancode:array[0..7] of Byte;
  end;
- 
+
  {Mouse types}
  PPS2MousePacket = ^TPS2MousePacket;
  TPS2MousePacket = record
@@ -228,10 +228,10 @@ type
 {==============================================================================}
 {var}
  {PS2 specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
- 
+
 {==============================================================================}
 {PS2 Functions}
 
@@ -366,12 +366,12 @@ var
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
-  
+
   {ACPI}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
-  
+
   {Windows Multimedia}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
@@ -391,7 +391,7 @@ var
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
-  
+
   {Break (Release) scancodes}
   {PC101,102,104}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
@@ -498,12 +498,12 @@ var
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
-  
+
   {ACPI}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
-  
+
   {Windows Multimedia}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
@@ -524,7 +524,7 @@ var
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE)               {}
  );
- 
+
  {Keyboard scancode set 2}
  PS2_KEYBOARD_SCANCODE_2:TPS2ScancodeData = (
   {Make (Press) scancodes}
@@ -565,7 +565,7 @@ var
   ($3D, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_7),               {7}
   ($3E, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_8),               {8}
   ($46, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_9),               {9}
-  
+
   ($0E, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_GRAVE),           {`}
   ($4E, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_MINUS),           {-}
   ($55, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_EQUALS),          {=}
@@ -600,7 +600,7 @@ var
   ($E0, $12, $E0, $7C, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_PRINTSCREEN),     {PRNT SCRN}
   ($7E, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_SCROLLLOCK),      {SCROLL}
   ($E1, $14, $77, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_PAUSE),           {PAUSE}
-  
+
   ($54, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_LEFT_SQUARE),     {[}
   ($E0, $70, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_INSERT),          {INSERT}
   ($E0, $6C, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_HOME),            {HOME}
@@ -635,12 +635,12 @@ var
   ($41, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_COMMA),           {,}
   ($49, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_PERIOD),          {.}
   ($4A, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_SLASH),           {/}
-  
+
   {ACPI} //To Do //Allocate SCAN_CODE_* values for these?
   ($E0, $37, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_POWER),           {Power}
   ($E0, $3F, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),            {Sleep}
   ($E0, $5E, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),            {Wake}
-  
+
   {Windows Multimedia} //To Do //Allocate SCAN_CODE_* values for these?
   ($E0, $4D, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),            {Next Track}
   ($E0, $15, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),            {Previous Track}
@@ -660,7 +660,7 @@ var
   ($E0, $28, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),            {WWW Stop}
   ($E0, $20, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),            {WWW Refresh}
   ($E0, $18, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),            {WWW Favorites}
-  
+
   {Break (Release) scancodes}
   {PC101,102,104}
   ($F0, $1C, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_A),               {A}
@@ -699,7 +699,7 @@ var
   ($F0, $3D, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_7),               {7}
   ($F0, $3E, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_8),               {8}
   ($F0, $46, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_9),               {9}
-  
+
   ($F0, $0E, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_GRAVE),           {`}
   ($F0, $4E, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_MINUS),           {-}
   ($F0, $55, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_EQUALS),          {=}
@@ -733,8 +733,8 @@ var
   ($F0, $07, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_F12),             {F12}
   ($E0, $F0, $7C, $E0, $F0, $12, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_PRINTSCREEN),     {PRNT SCRN} //To Do //This seems to be backwards?
   ($F0, $7E, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_SCROLLLOCK),      {SCROLL}
-  ($E1, $F0, $14, $F0, $77, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_PAUSE),           {PAUSE} 
-  
+  ($E1, $F0, $14, $F0, $77, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_PAUSE),           {PAUSE}
+
   ($F0, $54, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_LEFT_SQUARE),     {[}
   ($E0, $F0, $70, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_INSERT),          {INSERT}
   ($E0, $F0, $6C, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_HOME),            {HOME}
@@ -769,12 +769,12 @@ var
   ($F0, $41, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_COMMA),           {,}
   ($F0, $49, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_PERIOD),          {.}
   ($F0, $4A, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_SLASH),           {/}
-  
+
   {ACPI} //To Do //Allocate SCAN_CODE_* values for these?
   ($E0, $F0, $37, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_POWER),           {Power}
   ($E0, $F0, $3F, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),            {Sleep}
   ($E0, $F0, $5E, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),            {Wake}
-  
+
   {Windows Multimedia} //To Do //Allocate SCAN_CODE_* values for these?
   ($E0, $F0, $4D, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),            {Next Track}
   ($E0, $F0, $15, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),            {Previous Track}
@@ -794,7 +794,7 @@ var
   ($E0, $F0, $28, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),            {WWW Stop}
   ($E0, $F0, $20, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),            {WWW Refresh}
   ($E0, $F0, $18, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE)             {WWW Favorites}
-  
+
  );
 
  {Keyboard scancode set 3} //To Do //See: http://www.computer-engineering.org/ps2keyboard/scancodes3.html
@@ -905,12 +905,12 @@ var
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
-  
+
   {ACPI}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
-  
+
   {Windows Multimedia}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
@@ -930,7 +930,7 @@ var
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_MAKE,  SCAN_CODE_NONE),              {}
-  
+
   {Break (Release) scancodes}
   {PC101,102,104}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
@@ -1037,12 +1037,12 @@ var
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
-  
+
   {ACPI}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
-  
+
   {Windows Multimedia}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
@@ -1063,11 +1063,11 @@ var
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE),              {}
   ($00, $00, $00, $00, $00, $00, $00, $00, PS2_SCANCODE_BREAK, SCAN_CODE_NONE)               {}
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 {PS2 Functions}
@@ -1083,13 +1083,13 @@ function KeyboardLEDsToPS2LEDs(LEDs:LongWord;var PS2LEDs:Byte):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Get LEDs}
  PS2LEDs:=0;
  if (LEDs and KEYBOARD_LED_NUMLOCK) <> 0 then PS2LEDs:=PS2LEDs or PS2_KEYBOARD_SET_LEDS_NUMLOCK;
  if (LEDs and KEYBOARD_LED_CAPSLOCK) <> 0 then PS2LEDs:=PS2LEDs or PS2_KEYBOARD_SET_LEDS_CAPSLOCK;
  if (LEDs and KEYBOARD_LED_SCROLLLOCK) <> 0 then PS2LEDs:=PS2LEDs or PS2_KEYBOARD_SET_LEDS_SCROLLLOCK;
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -1107,113 +1107,113 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Rate}
  if Rate = 0 then Exit;
- 
+
  {Check Delay}
  if Delay = 0 then Exit;
- 
+
  {Get Rate Value (Milliseconds to CPS)}
  RateValue:=1000 div Rate;
- 
+
  {Get Delay Value (Intervals to Milliseconds)}
  DelayValue:=Rate * Delay;
- 
+
  PS2Typematic:=0;
- 
+
  {Get Typematic Rate}
  if RateValue <= 2 then
   begin
    PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_2_7;
   end
- else if RateValue <= 3 then 
+ else if RateValue <= 3 then
   begin
    PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_3_7;
   end
- else if RateValue <= 4 then 
+ else if RateValue <= 4 then
   begin
    PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_4_6;
   end
- else if RateValue <= 5 then 
+ else if RateValue <= 5 then
   begin
    PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_5_5;
   end
- else if RateValue <= 6 then 
+ else if RateValue <= 6 then
   begin
    PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_6_7;
   end
- else if RateValue <= 7 then 
+ else if RateValue <= 7 then
   begin
-   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_7_5;  
+   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_7_5;
   end
- else if RateValue <= 8 then 
+ else if RateValue <= 8 then
   begin
-   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_8_6;  
+   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_8_6;
   end
- else if RateValue <= 9 then 
+ else if RateValue <= 9 then
   begin
-   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_9_2;  
+   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_9_2;
   end
- else if RateValue <= 10 then 
+ else if RateValue <= 10 then
   begin
-   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_10_9;  
+   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_10_9;
   end
- else if RateValue <= 12 then 
+ else if RateValue <= 12 then
   begin
-   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_12_0;  
+   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_12_0;
   end
- else if RateValue <= 13 then 
+ else if RateValue <= 13 then
   begin
-   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_13_3;  
+   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_13_3;
   end
- else if RateValue <= 15 then 
+ else if RateValue <= 15 then
   begin
-   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_15_0;  
+   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_15_0;
   end
- else if RateValue <= 16 then 
+ else if RateValue <= 16 then
   begin
-   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_16_0;  
+   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_16_0;
   end
- else if RateValue <= 17 then 
+ else if RateValue <= 17 then
   begin
-   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_17_1;  
+   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_17_1;
   end
- else if RateValue <= 18 then 
+ else if RateValue <= 18 then
   begin
-   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_18_5;  
+   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_18_5;
   end
- else if RateValue <= 20 then 
+ else if RateValue <= 20 then
   begin
-   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_20_7;  
+   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_20_7;
   end
- else if RateValue <= 21 then 
+ else if RateValue <= 21 then
   begin
-   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_21_8;  
+   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_21_8;
   end
- else if RateValue <= 24 then 
+ else if RateValue <= 24 then
   begin
-   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_24_0;  
+   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_24_0;
   end
- else if RateValue <= 26 then 
+ else if RateValue <= 26 then
   begin
-   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_26_7;  
+   PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_26_7;
   end
  else
   begin
    PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_REPEAT_RATE_30_0;
-  end;  
-  
+  end;
+
  {Get Typematic Delay}
- if DelayValue <= 250 then 
+ if DelayValue <= 250 then
   begin
    PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_DELAY_250;
   end
- else if DelayValue <= 500 then   
+ else if DelayValue <= 500 then
   begin
    PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_DELAY_500;
   end
- else if DelayValue <= 750 then   
+ else if DelayValue <= 750 then
   begin
    PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_DELAY_750;
   end
@@ -1221,7 +1221,7 @@ begin
   begin
    PS2Typematic:=PS2Typematic or PS2_KEYBOARD_SET_DELAY_1000;
   end;
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -1243,14 +1243,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Keyboard Scancode}
  if KeyboardScancode = nil then Exit;
- 
+
  {Check Scancode Set}
  case KeyboardScancode.ScancodeSet of
   1:begin
-    //Data:=@PS2_KEYBOARD_SCANCODE_1; //To Do //Scancode set 1 
+    //Data:=@PS2_KEYBOARD_SCANCODE_1; //To Do //Scancode set 1
     Exit;
    end;
   2:begin
@@ -1258,12 +1258,12 @@ begin
    end;
   3:begin
     //Data:=@PS2_KEYBOARD_SCANCODE_3; //To Do //Scancode set 3
-    Exit; 
-   end;  
+    Exit;
+   end;
  else
    begin
     Exit;
-   end;   
+   end;
  end;
 
  {Setup Start}
@@ -1273,7 +1273,7 @@ begin
  Count:=0;
  if Index <> -1 then Count:=Index;
  if Count > (PS2_SCANCODE_COUNT * 2) - 1 then Count:=0;
- 
+
  {Check Data}
  while Count < (PS2_SCANCODE_COUNT * 2) do
   begin
@@ -1289,7 +1289,7 @@ begin
          Item:=Count;
          Len:=Offset + 1;
         end;
-       
+
        {Check Found}
        if (KeyboardScancode.Scancode[Offset] = 0) and (Data[Count,Offset + 1] = 0) then
         begin
@@ -1302,22 +1302,22 @@ begin
       begin
        Break;
       end;
-      
+
      {Update Offset}
      Inc(Offset);
     end;
-   
-   {Check Found}   
+
+   {Check Found}
    if Found then Break;
-   
+
    {Update Count}
    Inc(Count);
   end;
 
- {Return Index}  
+ {Return Index}
  Index:=Item;
 
- {Return Result} 
+ {Return Result}
  if Found then Result:=ERROR_SUCCESS else Result:=ERROR_NOT_FOUND;
 end;
 
@@ -1332,40 +1332,40 @@ function PS2KeyboardScancodeToScanCode(KeyboardScancode:PPS2KeyboardScancode;Ind
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Keyboard Scancode}
  if KeyboardScancode = nil then Exit;
- 
+
  {Check Index}
  if Index = -1 then
   begin
    Result:=PS2KeyboardScancodeMatch(KeyboardScancode,Index);
    if Result <> ERROR_SUCCESS then Exit;
   end;
-  
+
  {Check Scancode Set}
  case KeyboardScancode.ScancodeSet of
   1:begin
     {Get Scan Code}
-    //ScanCode:=PS2_KEYBOARD_SCANCODE_1[Index,9]; //To Do //Scancode set 1  
+    //ScanCode:=PS2_KEYBOARD_SCANCODE_1[Index,9]; //To Do //Scancode set 1
     Exit;
    end;
   2:begin
     {Get Scan Code}
-    ScanCode:=PS2_KEYBOARD_SCANCODE_2[Index,9]; 
+    ScanCode:=PS2_KEYBOARD_SCANCODE_2[Index,9];
    end;
   3:begin
     {Get Scan Code}
-    //ScanCode:=PS2_KEYBOARD_SCANCODE_3[Index,9]; //To Do //Scancode set 3 
-    Exit; 
-   end;  
+    //ScanCode:=PS2_KEYBOARD_SCANCODE_3[Index,9]; //To Do //Scancode set 3
+    Exit;
+   end;
  else
    begin
     Exit;
-   end;   
+   end;
  end;
- 
- {Return Result} 
+
+ {Return Result}
  Result:=ERROR_SUCCESS;
 end;
 
@@ -1382,40 +1382,40 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Keyboard Scancode}
  if KeyboardScancode = nil then Exit;
- 
+
  {Check Index}
  if Index = -1 then
   begin
    Result:=PS2KeyboardScancodeMatch(KeyboardScancode,Index);
    if Result <> ERROR_SUCCESS then Exit;
   end;
- 
+
  {Check Scancode Set}
  case KeyboardScancode.ScancodeSet of
   1:begin
     {Get Scan Type and Code}
-    //ScanType:=PS2_KEYBOARD_SCANCODE_1[Index,8]; //To Do //Scancode set 1 
-    //ScanCode:=PS2_KEYBOARD_SCANCODE_1[Index,9]; //To Do //Scancode set 1  
+    //ScanType:=PS2_KEYBOARD_SCANCODE_1[Index,8]; //To Do //Scancode set 1
+    //ScanCode:=PS2_KEYBOARD_SCANCODE_1[Index,9]; //To Do //Scancode set 1
     Exit;
    end;
   2:begin
     {Get Scan Type and Code}
-    ScanType:=PS2_KEYBOARD_SCANCODE_2[Index,8]; 
-    ScanCode:=PS2_KEYBOARD_SCANCODE_2[Index,9]; 
+    ScanType:=PS2_KEYBOARD_SCANCODE_2[Index,8];
+    ScanCode:=PS2_KEYBOARD_SCANCODE_2[Index,9];
    end;
   3:begin
     {Get Scan Type and Code}
-    //ScanType:=PS2_KEYBOARD_SCANCODE_3[Index,8]; //To Do //Scancode set 3  
-    //ScanCode:=PS2_KEYBOARD_SCANCODE_3[Index,9]; //To Do //Scancode set 3  
-    Exit; 
-   end;  
+    //ScanType:=PS2_KEYBOARD_SCANCODE_3[Index,8]; //To Do //Scancode set 3
+    //ScanCode:=PS2_KEYBOARD_SCANCODE_3[Index,9]; //To Do //Scancode set 3
+    Exit;
+   end;
  else
    begin
     Exit;
-   end;   
+   end;
  end;
 
  {Get Modifiers}
@@ -1438,9 +1438,9 @@ begin
   SCAN_CODE_RIGHT_SHIFT:Modifiers:=Modifiers or KEYBOARD_RIGHT_SHIFT;
   SCAN_CODE_RIGHT_ALT:Modifiers:=Modifiers or KEYBOARD_RIGHT_ALT;
   SCAN_CODE_RIGHT_GUI:Modifiers:=Modifiers or KEYBOARD_RIGHT_GUI;
- end; 
- 
- {Return Result} 
+ end;
+
+ {Return Result}
  Result:=ERROR_SUCCESS;
 end;
 
@@ -1454,42 +1454,42 @@ function MouseSampleRateToPS2SampleRate(Rate:LongWord;var PS2Rate:Byte):LongWord
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Rate}
  if Rate = 0 then Exit;
 
  PS2Rate:=0;
- 
+
  {Get Sample Rate}
  if Rate <= 10 then
   begin
-   PS2Rate:=PS2_MOUSE_COMMAND_SAMPLE_RATE_10;  
+   PS2Rate:=PS2_MOUSE_COMMAND_SAMPLE_RATE_10;
   end
  else if Rate <= 20 then
   begin
    PS2Rate:=PS2_MOUSE_COMMAND_SAMPLE_RATE_20;
-  end  
+  end
  else if Rate <= 40 then
   begin
-   PS2Rate:=PS2_MOUSE_COMMAND_SAMPLE_RATE_40; 
-  end  
+   PS2Rate:=PS2_MOUSE_COMMAND_SAMPLE_RATE_40;
+  end
  else if Rate <= 60 then
   begin
-   PS2Rate:=PS2_MOUSE_COMMAND_SAMPLE_RATE_60; 
-  end  
+   PS2Rate:=PS2_MOUSE_COMMAND_SAMPLE_RATE_60;
+  end
  else if Rate <= 80 then
   begin
-   PS2Rate:=PS2_MOUSE_COMMAND_SAMPLE_RATE_80;  
-  end  
+   PS2Rate:=PS2_MOUSE_COMMAND_SAMPLE_RATE_80;
+  end
  else if Rate <= 100 then
   begin
-   PS2Rate:=PS2_MOUSE_COMMAND_SAMPLE_RATE_100; 
-  end  
+   PS2Rate:=PS2_MOUSE_COMMAND_SAMPLE_RATE_100;
+  end
  else
   begin
    PS2Rate:=PS2_MOUSE_COMMAND_SAMPLE_RATE_200;
-  end;  
- 
+  end;
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -1510,13 +1510,13 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mouse Packet}
  if MousePacket = nil then Exit;
- 
+
  {Check Mouse Data}
  if MouseData = nil then Exit;
- 
+
  {Get Buttons}
  MouseData.Buttons:=0;
  if (MousePacket.MouseBits and PS2_MOUSE_BITS_BL) <> 0 then
@@ -1545,16 +1545,16 @@ begin
   end;
  if (MousePacket.MouseBits and PS2_MOUSE_BITS_BM) <> 0 then
   begin
-   MouseData.Buttons:=MouseData.Buttons or MOUSE_MIDDLE_BUTTON;  
+   MouseData.Buttons:=MouseData.Buttons or MOUSE_MIDDLE_BUTTON;
   end;
- 
+
  {Get State}
  State:=MousePacket.MouseBits;
 
  {Get Offset X}
  OffsetX:=MousePacket.MouseX - ((State shl 4) and $100);
 
- {Get Offset Y} 
+ {Get Offset Y}
  OffsetY:=-(MousePacket.MouseY - ((State shl 3) and $100));
 
  {Check Swap}
@@ -1611,7 +1611,7 @@ begin
  MouseData.MaximumX:=0;
  MouseData.MaximumY:=0;
  MouseData.MaximumWheel:=0;
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -1620,9 +1620,9 @@ end;
 
 {initialization}
  {Nothing}
- 
+
 {==============================================================================}
- 
+
 {finalization}
  {Nothing}
 

@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
- 
+
 
 Shell USB
 =========
@@ -54,20 +54,20 @@ const
 
  {Shell USB Command constants}
  SHELL_USB_COMMAND_USB = 'USB';
- 
+
  {Shell USB Action constants}
  SHELL_USB_ACTION_START   = 'START';
  SHELL_USB_ACTION_STOP    = 'STOP';
  SHELL_USB_ACTION_LIST    = 'LIST';
  SHELL_USB_ACTION_TREE    = 'TREE';
  SHELL_USB_ACTION_INFO    = 'INFO';
- 
+
  {Shell USB Item constants}
  SHELL_USB_ITEM_ALL       = 'ALL';
  SHELL_USB_ITEM_HOSTS     = 'HOSTS';
  SHELL_USB_ITEM_DEVICES   = 'DEVICES';
  SHELL_USB_ITEM_DRIVERS   = 'DRIVERS';
- 
+
 {==============================================================================}
 type
  {Shell USB specific types}
@@ -78,7 +78,7 @@ type
   Parameters:TStrings;
   Data:Pointer;
  end;
- 
+
 {==============================================================================}
 type
  {Shell USB specific classes}
@@ -88,7 +88,7 @@ type
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
   function USBFlagsToFlagNames(AFlags:LongWord):TStringList;
   function USBHostFlagsToFlagNames(AFlags:LongWord):TStringList;
@@ -96,7 +96,7 @@ type
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -105,23 +105,23 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
-  
+
 {==============================================================================}
 {var}
  {Shell USB specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure ShellUSBInit;
 
 {==============================================================================}
 {Shell USB Functions}
- 
+
 {==============================================================================}
 {Shell USB Helper Functions}
 function ShellUSBLogDeviceCallback(Device:PUSBDevice;Data:Pointer):LongWord;
 function ShellUSBLogTreeCallback(Device:PUSBDevice;Data:Pointer):LongWord;
- 
+
 function ShellUSBHostEnumerate(Host:PUSBHost;Data:Pointer):LongWord;
 function ShellUSBDeviceEnumerate(Device:PUSBDevice;Data:Pointer):LongWord;
 function ShellUSBDriverEnumerate(Driver:PUSBDriver;Data:Pointer):LongWord;
@@ -136,12 +136,12 @@ implementation
 var
  {Shell USB specific variables}
  ShellUSBInitialized:Boolean;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Forward Declarations}
 procedure ShellUSBLogOutput(const AText:String;Data:Pointer); forward;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TShellUSB}
@@ -157,7 +157,7 @@ begin
  if Result.Count = 0 then
   begin
    Result.Add('USB_FLAG_NONE');
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -181,7 +181,7 @@ begin
  if Result.Count = 0 then
   begin
    Result.Add('USBHOST_FLAG_NONE');
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -197,21 +197,21 @@ end;
 
 {==============================================================================}
 
-function TShellUSB.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellUSB.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'List or display information about active USB hosts, devices and drivers');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,' ' + Name + ' LIST <ITEM>           (List all currently active USB hosts, devices and drivers)');
  AShell.DoOutput(ASession,' ' + Name + ' TREE                  (Display the connection tree of active USB hosts and devices)');
  AShell.DoOutput(ASession,' ' + Name + ' INFO <DEVICE or HOST> (Display information for the specified USB host or device)');
- AShell.DoOutput(ASession,'');                                
+ AShell.DoOutput(ASession,'');
  //AShell.DoOutput(ASession,' ' + Name + ' START                 (Start the USB subsystem if not currently active)'); //To Do
  //AShell.DoOutput(ASession,' ' + Name + ' STOP                  (Stop the USB subsystem and remove all hosts and devices)'); //To Do
  //AShell.DoOutput(ASession,''); //To Do
@@ -235,28 +235,28 @@ begin
  AShell.DoOutput(ASession,'   ' + Name + ' with no parameters is equivalent to LIST ALL');
  AShell.DoOutput(ASession,'   ' + Name + ' LIST is equivalent to LIST ALL');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellUSB.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellUSB.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'List or display information about active USB hosts, devices and drivers');
 end;
 
 {==============================================================================}
 
-function TShellUSB.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellUSB.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 
  function DisplayHost(AHost:PUSBHost):Boolean;
  var
@@ -265,12 +265,12 @@ function TShellUSB.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TS
  begin
   {}
   Result:=False;
-  
+
   if AHost = nil then Exit;
-  
+
   {Get Flags Names}
   FlagNames:=USBHostFlagsToFlagNames(AHost.Device.DeviceFlags);
-  
+
   AShell.DoOutput(ASession,'  Host Information');
   AShell.DoOutput(ASession,'  ----------------');
   AShell.DoOutput(ASession,'');
@@ -287,7 +287,7 @@ function TShellUSB.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TS
       AShell.DoOutput(ASession,'         ' + FlagNames.Strings[Count]);
      end;
    end;
-  
+
   AShell.DoOutput(ASession,'');
   AShell.DoOutput(ASession,'  Id: ' + IntToStr(AHost.HostId));
   AShell.DoOutput(ASession,'  State: ' + USBHostStateToString(AHost.HostState));
@@ -302,7 +302,7 @@ function TShellUSB.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TS
 
   FlagNames.Free;
  end;
- 
+
  function DisplayDevice(ADevice:PUSBDevice):Boolean;
  var
   Count:LongWord;
@@ -311,19 +311,19 @@ function TShellUSB.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TS
  begin
   {}
   Result:=False;
-  
+
   if ADevice = nil then Exit;
-  
+
   {Get Flags Names}
   FlagNames:=USBFlagsToFlagNames(ADevice.Device.DeviceFlags);
-  
+
   AShell.DoOutput(ASession,'  Device Information');
   AShell.DoOutput(ASession,'  ------------------');
   AShell.DoOutput(ASession,'');
   AShell.DoOutput(ASession,'  Name:   ' + DeviceGetName(@ADevice.Device));
   AShell.DoOutput(ASession,'  Type: ' + USBDeviceTypeToString(ADevice.Device.DeviceType));
   AShell.DoOutput(ASession,'  Flags: ' + FlagNames.Strings[0]);
-  
+
   {Check Flag Count}
   if FlagNames.Count > 1 then
    begin
@@ -333,7 +333,7 @@ function TShellUSB.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TS
       AShell.DoOutput(ASession,'         ' + FlagNames.Strings[Count]);
      end;
    end;
-  
+
   AShell.DoOutput(ASession,'');
   AShell.DoOutput(ASession,'  Id: ' + IntToStr(ADevice.USBId));
   AShell.DoOutput(ASession,'  State: ' + USBDeviceStateToString(ADevice.USBState));
@@ -346,7 +346,7 @@ function TShellUSB.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TS
   AShell.DoOutput(ASession,'  Port Number: ' + IntToStr(ADevice.PortNumber));
   AShell.DoOutput(ASession,'  Configuration Value: ' + IntToStr(ADevice.ConfigurationValue));
   AShell.DoOutput(ASession,'');
-  
+
   WorkBuffer:='';
   if ADevice.Parent <> nil then WorkBuffer:=DeviceGetName(@ADevice.Parent.Device);
   AShell.DoOutput(ASession,'  Parent: ' + WorkBuffer);
@@ -366,15 +366,15 @@ function TShellUSB.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TS
   AShell.DoOutput(ASession,'  Class: ' + USBClassCodeToString(ADevice.Descriptor.bDeviceClass));
   AShell.DoOutput(ASession,'  VID/PID: ' + IntToHex(ADevice.Descriptor.idVendor,4) + ':' + IntToHex(ADevice.Descriptor.idProduct,4));
   AShell.DoOutput(ASession,'');
-  
+
   AShell.DoOutput(ASession,'  Device Descriptors');
   AShell.DoOutput(ASession,'  ------------------');
   AShell.DoOutput(ASession,'');
-  
+
   FlagNames.Free;
  end;
 
-var 
+var
  Item:String;
  Action:String;
  Match:Boolean;
@@ -389,7 +389,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
@@ -401,20 +401,20 @@ begin
  Data.Session:=ASession;
  Data.Parameters:=AParameters;
  Data.Data:=nil;
- 
+
  {Get Action}
  Action:=AShell.ParameterIndex(0,AParameters);
- 
+
  {Check Action}
  if (Length(Action) = 0) or (Uppercase(Action) = SHELL_USB_ACTION_LIST) then
   begin
    AShell.DoOutput(ASession,'USB List');
    AShell.DoOutput(ASession,'--------');
    AShell.DoOutput(ASession,'');
- 
+
    {Get Item}
    Item:=AShell.ParameterIndex(1,AParameters);
- 
+
    {Check Item}
    {Hosts}
    if (Length(Item) = 0) or (Uppercase(Item) = SHELL_USB_ITEM_ALL) or (Uppercase(Item) = SHELL_USB_ITEM_HOSTS) then
@@ -428,17 +428,17 @@ begin
      AShell.AddOutput(WorkBuffer,60,'State');
      AShell.DoOutput(ASession,WorkBuffer);
      AShell.DoOutput(ASession,'');
-     
+
      {Enumerate USB Hosts}
      USBHostEnumerate(ShellUSBHostEnumerate,@Data);
-     
+
      if Uppercase(Item) <> SHELL_USB_ITEM_HOSTS then AShell.DoOutput(ASession,'');
-     
+
      {Return Result}
      Result:=True;
     end;
-   {Devices} 
-   if (Length(Item) = 0) or (Uppercase(Item) = SHELL_USB_ITEM_ALL) or (Uppercase(Item) = SHELL_USB_ITEM_DEVICES) then   
+   {Devices}
+   if (Length(Item) = 0) or (Uppercase(Item) = SHELL_USB_ITEM_ALL) or (Uppercase(Item) = SHELL_USB_ITEM_DEVICES) then
     begin
      AShell.DoOutput(ASession,'  Devices');
      AShell.DoOutput(ASession,'  -------');
@@ -452,14 +452,14 @@ begin
 
      {Enumerate USB Devices}
      USBDeviceEnumerate(ShellUSBDeviceEnumerate,@Data);
-     
+
      if Uppercase(Item) <> SHELL_USB_ITEM_DEVICES then AShell.DoOutput(ASession,'');
-     
+
      {Return Result}
      Result:=True;
     end;
-   {Drivers} 
-   if (Length(Item) = 0) or (Uppercase(Item) = SHELL_USB_ITEM_ALL) or (Uppercase(Item) = SHELL_USB_ITEM_DRIVERS) then   
+   {Drivers}
+   if (Length(Item) = 0) or (Uppercase(Item) = SHELL_USB_ITEM_ALL) or (Uppercase(Item) = SHELL_USB_ITEM_DRIVERS) then
     begin
      AShell.DoOutput(ASession,'  Drivers');
      AShell.DoOutput(ASession,'  -------');
@@ -469,32 +469,32 @@ begin
      AShell.AddOutput(WorkBuffer,60,'State');
      AShell.DoOutput(ASession,WorkBuffer);
      AShell.DoOutput(ASession,'');
-     
+
      {Enumerate USB Drivers}
      USBDriverEnumerate(ShellUSBDriverEnumerate,@Data);
- 
+
      if Uppercase(Item) <> SHELL_USB_ITEM_DRIVERS then AShell.DoOutput(ASession,'');
- 
+
      {Return Result}
      Result:=True;
     end;
-     
+
    if not Result then
     begin
      {Show Error}
      Result:=AShell.DoError(ASession);
-    end; 
+    end;
   end
  else if Uppercase(Action) = SHELL_USB_ACTION_TREE then
   begin
    AShell.DoOutput(ASession,'USB Tree');
    AShell.DoOutput(ASession,'--------');
- 
+
    {Display Tree}
    USBLogDevicesEx(nil,ShellUSBLogOutput,nil,ShellUSBLogTreeCallback,@Data);
-   
+
    AShell.DoOutput(ASession,'');
-   
+
    {Return Result}
    Result:=True;
   end
@@ -505,15 +505,15 @@ begin
    AShell.DoOutput(ASession,'');
 
    Match:=False;
-   
+
    {Get Host Id}
    HostId:=AShell.ParameterValue('HOSTID',AParameters);
    if Length(HostId) > 0 then Match:=True;
-   
+
    {Get Host Name}
    if not Match then HostName:=AShell.ParameterValue('HOST',AParameters);
    if Length(HostName) > 0 then Match:=True;
-   
+
    {Get Device Id}
    if not Match then DeviceId:=AShell.ParameterValue('DEVICEID',AParameters);
    if Length(DeviceId) > 0 then Match:=True;
@@ -521,56 +521,56 @@ begin
    {Get Device Name}
    if not Match then DeviceName:=AShell.ParameterValue('DEVICE',AParameters);
    if Length(DeviceName) > 0 then Match:=True;
-  
+
    {Get Item}
    if not Match then Item:=AShell.ParameterIndex(1,AParameters);
    if Length(Item) > 0 then Match:=True;
-  
+
    if Match then
     begin
      {Check Host}
      if (Length(HostId) > 0) or (Length(HostName) > 0) then
       begin
        Host:=nil;
-       
+
        {Check Id}
        if Length(HostId) > 0 then
         begin
          Host:=USBHostFind(StrToIntDef(HostId,Integer(DEVICE_ID_ANY)));
         end
-       {Check Name} 
+       {Check Name}
        else if Length(HostName) > 0 then
         begin
          Host:=USBHostFindByName(HostName);
         end;
-        
+
        {Display Host}
        if Host <> nil then
         begin
          DisplayHost(Host);
         end;
       end
-     {Check Device} 
+     {Check Device}
      else if (Length(DeviceId) > 0) or (Length(DeviceName) > 0) then
       begin
        Device:=nil;
-       
+
        {Check Id}
        if Length(DeviceId) > 0 then
         begin
          Device:=USBDeviceFind(StrToIntDef(DeviceId,Integer(DEVICE_ID_ANY)));
         end
-       {Check Name} 
+       {Check Name}
        else if Length(DeviceName) > 0 then
         begin
          Device:=USBDeviceFindByName(DeviceName);
         end;
-        
+
        {Display Device}
        if Device <> nil then
         begin
          DisplayDevice(Device);
-         
+
          USBLogDevicesEx(Device,ShellUSBLogOutput,ShellUSBLogDeviceCallback,nil,@Data);
         end;
       end
@@ -590,7 +590,7 @@ begin
          if Device <> nil then
           begin
            DisplayDevice(Device);
-           
+
            USBLogDevicesEx(Device,ShellUSBLogOutput,ShellUSBLogDeviceCallback,nil,@Data);
           end
          else
@@ -599,7 +599,7 @@ begin
           end;
         end;
       end
-     else 
+     else
       begin
        AShell.DoOutput(ASession,'Host or Device name or ID not supplied');
       end;
@@ -607,8 +607,8 @@ begin
    else
     begin
      AShell.DoOutput(ASession,'Host or Device name or ID not supplied');
-    end;    
-   
+    end;
+
    {Return Result}
    Result:=True;
   end
@@ -616,15 +616,15 @@ begin
   begin
 
    //To Do
-   
+
    {Return Result}
    Result:=True;
   end
  else if Uppercase(Action) = SHELL_USB_ACTION_STOP then
   begin
-  
+
    //To Do
-   
+
    {Return Result}
    Result:=True;
   end
@@ -632,9 +632,9 @@ begin
   begin
    {Show Error}
    Result:=AShell.DoError(ASession);
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -643,21 +643,21 @@ begin
  {}
  {Check Initialized}
  if ShellUSBInitialized then Exit;
- 
+
  {Register USB Commands}
  ShellRegisterCommand(TShellUSB.Create);
- 
+
  ShellUSBInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Shell USB Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Shell USB Helper Functions}
-procedure ShellUSBLogOutput(const AText:String;Data:Pointer); 
+procedure ShellUSBLogOutput(const AText:String;Data:Pointer);
 var
  Shell:TShell;
  Session:TShellSession;
@@ -665,7 +665,7 @@ begin
  {}
  {Check Data}
  if Data = nil then Exit;
-  
+
  {Get Shell}
  Shell:=PShellUSBData(Data).Shell;
  if Shell = nil then Exit;
@@ -673,7 +673,7 @@ begin
  {Get Session}
  Session:=PShellUSBData(Data).Session;
  if Session = nil then Exit;
- 
+
  {Send Output}
  Shell.DoOutput(Session,' ' + AText);
 end;
@@ -684,17 +684,17 @@ function ShellUSBLogDeviceCallback(Device:PUSBDevice;Data:Pointer):LongWord;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  ShellUSBLogOutput('[USB Device Id: ' + IntToStr(Device.USBId) + ' Address: ' + IntToStr(Device.Address) + ']',Data);
- 
+
  USBLogDeviceDescriptor(Device,Device.Descriptor,ShellUSBLogOutput,Data);
  USBLogDeviceConfiguration(Device,ShellUSBLogOutput,Data);
 
  ShellUSBLogOutput('',Data);
- 
+
  Result:=USB_STATUS_SUCCESS;
 end;
 
@@ -704,7 +704,7 @@ function ShellUSBLogTreeCallback(Device:PUSBDevice;Data:Pointer):LongWord;
 const
  SHELL_USB_TREE_SPACES_PER_LEVEL = 2;
  SHELL_USB_TREE_LINES_PER_PORT = 2;
- 
+
 var
  Count:Integer;
  WorkBuffer:String;
@@ -713,38 +713,38 @@ var
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Output Diagram}
  WorkBuffer:='';
  if Device.Depth <> 0 then
   begin
    SpacesCount:=(Device.Depth - 1) * (SHELL_USB_TREE_SPACES_PER_LEVEL + SHELL_USB_TREE_SPACES_PER_LEVEL - 1);
-   
+
    if SHELL_USB_TREE_LINES_PER_PORT > 1 then
     begin
      for LinesCount:=0 to SHELL_USB_TREE_LINES_PER_PORT - 2 do
       begin
        WorkBuffer:=StringOfChar(' ',SpacesCount) + '|';
-       
+
        ShellUSBLogOutput(WorkBuffer,Data);
       end;
-    end;  
-   
+    end;
+
    WorkBuffer:=StringOfChar(' ',SpacesCount) + '|' + StringOfChar('_',SHELL_USB_TREE_SPACES_PER_LEVEL);
   end;
 
  {Output Device}
  WorkBuffer:=WorkBuffer + 'Id: ' + IntToStr(Device.USBId) + ' / Addr: ' + IntToStr(Device.Address) + ' [' + USBDeviceToString(Device) + ']';
  ShellUSBLogOutput(WorkBuffer,Data);
- 
+
  Result:=USB_STATUS_SUCCESS;
 end;
- 
+
 {==============================================================================}
- 
+
 function ShellUSBHostEnumerate(Host:PUSBHost;Data:Pointer):LongWord;
 var
  Shell:TShell;
@@ -753,7 +753,7 @@ var
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Host}
  if Host = nil then Exit;
 
@@ -767,7 +767,7 @@ begin
  {Get Session}
  Session:=PShellUSBData(Data).Session;
  if Session = nil then Exit;
- 
+
  {Send Output}
  WorkBuffer:='';
  Shell.AddOutput(WorkBuffer,2,DeviceGetName(@Host.Device));
@@ -788,7 +788,7 @@ var
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
@@ -802,7 +802,7 @@ begin
  {Get Session}
  Session:=PShellUSBData(Data).Session;
  if Session = nil then Exit;
- 
+
  {Send Output}
  WorkBuffer:='';
  Shell.AddOutput(WorkBuffer,2,DeviceGetName(@Device.Device));
@@ -823,7 +823,7 @@ var
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Driver}
  if Driver = nil then Exit;
 
@@ -837,7 +837,7 @@ begin
  {Get Session}
  Session:=PShellUSBData(Data).Session;
  if Session = nil then Exit;
- 
+
  {Send Output}
  WorkBuffer:='';
  Shell.AddOutput(WorkBuffer,2,DriverGetName(@Driver.Driver));
@@ -854,12 +854,12 @@ initialization
  ShellUSBInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
 {==============================================================================}
 {==============================================================================}
- 
+
 end.
- 
+

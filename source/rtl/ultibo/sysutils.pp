@@ -56,7 +56,7 @@ type
    dwLowDateTime:DWORD;
    dwHighDateTime:DWORD;
   end;
-  
+
 type
   {Find Data (Exactly equivalent to Win32}
   TWin32FindDataA = record
@@ -128,7 +128,7 @@ type
  TSysUtilsFileRead = function(Handle:THandle;out Buffer;Count:LongInt):LongInt;
  TSysUtilsFileWrite = function(Handle:THandle;const Buffer;Count:LongInt):LongInt;
  TSysUtilsFileSeekEx = function(Handle:THandle;FOffset:Int64;Origin:LongInt):Int64;
- 
+
  TSysUtilsInternalFindFirst = function(const Path:RawByteString;Attr:LongInt;out SearchRec:TSearchRec;var Name:RawByteString):LongInt;
  TSysUtilsInternalFindNext = function(var SearchRec:TSearchRec;var Name:RawByteString):LongInt;
  TSysUtilsInternalFindClose = procedure(var Handle:THandle);
@@ -153,7 +153,7 @@ type
  {FileTime Functions}
  TSysUtilsFileTimeToSystemTime = function(const lpFileTime:FILETIME;var lpSystemTime:SYSTEMTIME):ByteBool;
  TSysUtilsFileTimeToLocalFileTime = function(const lpFileTime:FILETIME;var lpLocalFileTime:FILETIME):ByteBool;
- 
+
 var
  {File Functions}
  SysUtilsFileOpenHandler:TSysUtilsFileOpen;
@@ -175,7 +175,7 @@ var
  SysUtilsFileReadHandler:TSysUtilsFileRead;
  SysUtilsFileWriteHandler:TSysUtilsFileWrite;
  SysUtilsFileSeekExHandler:TSysUtilsFileSeekEx;
- 
+
  SysUtilsInternalFindFirstHandler:TSysUtilsInternalFindFirst;
  SysUtilsInternalFindNextHandler:TSysUtilsInternalFindNext;
  SysUtilsInternalFindCloseHandler:TSysUtilsInternalFindClose;
@@ -200,12 +200,12 @@ var
  {FileTime Functions}
  SysUtilsFileTimeToSystemTimeHandler:TSysUtilsFileTimeToSystemTime;
  SysUtilsFileTimeToLocalFileTimeHandler:TSysUtilsFileTimeToLocalFileTime;
- 
+
 procedure ResetEnvironmentVariableCount;
 function GetEnvironmentIndex(Const EnvVar : AnsiString) : Integer;
 
 procedure SysUtilsInitExceptions;
- 
+
 implementation
 
 {$IFDEF FPC_DOTTEDUNITS}
@@ -249,7 +249,7 @@ end;
 
 var
  SysUtilsExceptionsInitialized:Boolean;
- 
+
 {****************************************************************************
                               File Functions
 ****************************************************************************}
@@ -263,7 +263,7 @@ begin
  else
   begin
    Result:=-1;
-  end; 
+  end;
 end;
 
 function FileGetDate(Handle: THandle) : TOSTimestamp;
@@ -465,7 +465,7 @@ begin
    Name:=Path;
    Rslt.Attr:=Attr;
    Rslt.ExcludeAttr:=(not Attr) and ($1e); { $1e = faHidden or faSysFile or faVolumeID or faDirectory }
-   
+
    Result:=SysUtilsInternalFindFirstHandler(Path,Attr,SearchRec,Name);
    if Result = 0 then
     begin
@@ -479,7 +479,7 @@ begin
  else
   begin
    Result:=-1;
-  end; 
+  end;
 end;
 
 Function InternalFindNext (var Rslt : TAbstractSearchRec; var Name : RawByteString) : Longint;
@@ -490,7 +490,7 @@ begin
   begin
    SearchRec.FindHandle:=Rslt.FindHandle;
    SearchRec.ExcludeAttr:=Rslt.ExcludeAttr;
-   
+
    Result:=SysUtilsInternalFindNextHandler(SearchRec,Name);
    if Result = 0 then
     begin
@@ -503,7 +503,7 @@ begin
  else
   begin
    Result:=-1;
-  end; 
+  end;
 end;
 
 {$ifdef FPC_LEGACY}
@@ -511,7 +511,7 @@ Procedure InternalFindClose(var Handle: THandle{$ifdef USEFINDDATA};var FindData
 {$else}
 Procedure InternalFindClose(var Handle: THandle{$ifdef SEARCHREC_USEFINDDATA};var FindData: TFindData{$endif});
 {$endif}
-begin 
+begin
  if Assigned(SysUtilsInternalFindCloseHandler) then
   begin
    SysUtilsInternalFindCloseHandler(Handle);
@@ -551,7 +551,7 @@ begin
  if Result then
   begin
    DateTime.data:=Info.FindData;
-   
+
    FindClose(Info);
   end;
 end;
@@ -628,7 +628,7 @@ begin
   else
    begin
     Result:=0;
-   end;   
+   end;
 end;
 
 function GetTickCount64:QWord;
@@ -649,7 +649,7 @@ end;
 
 procedure SysBeep;
 begin
- {No SysBeep for Ultibo} 
+ {No SysBeep for Ultibo}
 end;
 
 Function GetLastOSError : Integer;
@@ -700,7 +700,7 @@ begin
  else
   begin
    Result:=0;
-  end;  
+  end;
 end;
 
 {$if defined(FPC_STABLE) or defined(FPC_FIXES) or defined(FPC_LEGACY)}
@@ -718,7 +718,7 @@ begin
  else
   begin
    Result:=False;
-  end;  
+  end;
 end;
 
 function SysErrorMessage(ErrorCode: Integer): String;
@@ -729,9 +729,9 @@ begin
    Result:=SysUtilsSysErrorMessageHandler(ErrorCode);
   end
  else
-  begin 
+  begin
    Result:='';
-  end; 
+  end;
 end;
 
 {****************************************************************************
@@ -789,7 +789,7 @@ end;
 Function GetEnvironmentString(Index : Integer) : {$ifdef FPC_RTL_UNICODE}UnicodeString{$else}AnsiString{$endif};
 begin
  Result:='';
- 
+
  if Index >= 1 then
    Result:=FPCGetEnvStrFromP(envp,Index);
 end;
@@ -833,12 +833,12 @@ end;
 procedure SysUtilsInitExceptions;
 begin
  if SysUtilsExceptionsInitialized then Exit;
- 
+
  InitExceptions;
- 
+
  SysUtilsExceptionsInitialized:=True;
 end;
- 
+
 {****************************************************************************
                               Initialization code
 ****************************************************************************}

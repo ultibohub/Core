@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -56,24 +56,24 @@ const
 
  {DMA Host Types}
  DMA_TYPE_NONE = 0;
- 
+
  DMA_TYPE_MAX  = 0;
-  
+
  {DMA Type Names}
  DMA_TYPE_NAMES:array[DMA_TYPE_NONE..DMA_TYPE_MAX] of String = (
   'DMA_TYPE_NONE');
- 
+
  {DMA Host States}
  DMA_STATE_DISABLED = 0;
  DMA_STATE_ENABLED  = 1;
- 
+
  DMA_STATE_MAX      = 1;
- 
+
  {DMA State Names}
  DMA_STATE_NAMES:array[DMA_STATE_DISABLED..DMA_STATE_MAX] of String = (
   'DMA_STATE_DISABLED',
   'DMA_STATE_ENABLED');
- 
+
  {DMA Host Flags}
  DMA_FLAG_NONE        = $00000000;
  DMA_FLAG_SHARED      = $00000001; {Host requires data buffers in shared memory}
@@ -90,14 +90,14 @@ const
  DMA_FLAG_40BIT       = $00000800; {Host supports 40-bit address transfer}
 
  {DMA Data Flags}
- {See: Platform DMA_DATA_FLAG_*} 
- 
+ {See: Platform DMA_DATA_FLAG_*}
+
  {DMA Request Flags}
  DMA_REQUEST_FLAG_NONE       = $00000000;
  DMA_REQUEST_FLAG_RELEASE    = $00000001; {If set then release the request automatically after completion}
  DMA_REQUEST_FLAG_CYCLIC     = $00000002; {This is a cyclic request which loops around from tail to head}
  DMA_REQUEST_FLAG_COMPATIBLE = $00000004; {If set then all buffers supplied are host configuration compatible (Sizing, Alignment, Flags)}
- 
+
  {DMA logging}
  DMA_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {DMA debugging messages}
  DMA_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {DMA informational messages, such as a device being attached or detached}
@@ -105,17 +105,17 @@ const
  DMA_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {DMA error messages}
  DMA_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No DMA messages}
 
-var 
+var
  DMA_DEFAULT_LOG_LEVEL:LongWord = DMA_LOG_LEVEL_DEBUG; {Minimum level for DMA messages.  Only messages with level greater than or equal to this will be printed}
- 
-var 
+
+var
  {DMA logging}
- DMA_LOG_ENABLED:Boolean; 
- 
+ DMA_LOG_ENABLED:Boolean;
+
 {==============================================================================}
 type
  {DMA specific types}
- 
+
  {DMA Properties}
  PDMAProperties = ^TDMAProperties;
  TDMAProperties = record
@@ -124,16 +124,16 @@ type
   Multiplier:LongWord; {Host data buffer multiplier}
   Channels:LongWord;   {Total number of host channels}
   MaxSize:LongWord;    {Maximum transfer size}
-  MaxCount:LongWord;   {Maximum Y count for 2D stride}  
+  MaxCount:LongWord;   {Maximum Y count for 2D stride}
   MaxLength:LongWord;  {Maximum X length for 2D stride}
   MinStride:LongInt;   {Minimum stride value (Increment between rows)(May be negative)}
   MaxStride:LongWord;  {Maximum stride value (Increment between rows)}
  end;
- 
+
  {DMA Host}
  PDMAHost = ^TDMAHost;
  PDMARequest = ^TDMARequest; {Forward declared to satisfy DMAHost}
- 
+
  {DMA Enumeration Callback}
  TDMAEnumerate = function(DMA:PDMAHost;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {DMA Notification Callback}
@@ -146,7 +146,7 @@ type
  TDMAHostSubmit = function(DMA:PDMAHost;Request:PDMARequest):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TDMAHostCancel = function(DMA:PDMAHost;Request:PDMARequest):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TDMAHostProperties = function(DMA:PDMAHost;Properties:PDMAProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TDMAHost = record
   {Device Properties}
   Device:TDevice;                          {The Device entry for this DMA host}
@@ -168,19 +168,19 @@ type
   PendingCount:LongWord;                   {Number of DMA requests pending for this host}
   WaiterThread:TThreadId;                  {Thread waiting for pending requests to complete}
   {Statistics Properties}
-  RequestCount:LongWord;                   {Number of DMA requests that have been submitted to this host} 
+  RequestCount:LongWord;                   {Number of DMA requests that have been submitted to this host}
   RequestErrors:LongWord;                  {Number of DMA requests that have failed on this host}
-  {Internal Properties}                                                                        
+  {Internal Properties}
   Prev:PDMAHost;                           {Previous entry in DMA host table}
   Next:PDMAHost;                           {Next entry in DMA host table}
  end;
- 
+
  {DMA Request}
  {PDMARequest = ^TDMARequest;} {Declared above for DMAHost}
- 
+
  {DMA Request Methods}
  TDMARequestCompleted = procedure(Request:PDMARequest);{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TDMARequest = record
   {Request Properties}
   Host:PDMAHost;
@@ -195,15 +195,15 @@ type
   {Driver Properties}                      {Private variables for use by Host drivers}
   ControlBlocks:Pointer;
  end;
- 
+
 {==============================================================================}
 {var}
  {DMA specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure DMAInit;
- 
+
 {==============================================================================}
 {DMA Host Functions}
 function DMAHostStart(DMA:PDMAHost):LongWord;
@@ -220,7 +220,7 @@ function DMAHostDeregister(DMA:PDMAHost):LongWord;
 
 function DMAHostFind(DMAId:LongWord):PDMAHost;
 function DMAHostEnumerate(Callback:TDMAEnumerate;Data:Pointer):LongWord;
- 
+
 function DMAHostNotification(DMA:PDMAHost;Callback:TDMANotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
 
 {==============================================================================}
@@ -253,16 +253,16 @@ procedure DMATransferRequestComplete(Request:PDMARequest);
 
 {==============================================================================}
 {RTL DMA Functions}
-function SysDMAAvailable:Boolean; 
+function SysDMAAvailable:Boolean;
 
 function SysDMATransfer(Data:PDMAData;Direction,Peripheral:LongWord):LongWord;
- 
+
 function SysDMAFillMemory(Dest:Pointer;Size:LongWord;Value:Byte):LongWord;
 function SysDMACopyMemory(Source,Dest:Pointer;Size:LongWord):LongWord;
- 
+
 function SysDMAReadPeripheral(Address,Dest:Pointer;Size,Peripheral:LongWord):LongWord;
 function SysDMAWritePeripheral(Source,Address:Pointer;Size,Peripheral:LongWord):LongWord;
- 
+
 function SysDMAAllocateBuffer(Size:LongWord):Pointer;
 function SysDMAAllocateBufferEx(var Size:LongWord):Pointer;
 function SysDMAReleaseBuffer(Buffer:Pointer):LongWord;
@@ -271,7 +271,7 @@ function SysDMAReleaseBuffer(Buffer:Pointer):LongWord;
 {DMA Helper Functions}
 function DMAGetCount:LongWord;
 function DMAHostGetDefault:PDMAHost;
-function DMAHostSetDefault(DMA:PDMAHost):LongWord; 
+function DMAHostSetDefault(DMA:PDMAHost):LongWord;
 
 function DMAHostCheck(DMA:PDMAHost):PDMAHost;
 
@@ -283,7 +283,7 @@ procedure DMALogInfo(DMA:PDMAHost;const AText:String); inline;
 procedure DMALogWarn(DMA:PDMAHost;const AText:String); inline;
 procedure DMALogError(DMA:PDMAHost;const AText:String); inline;
 procedure DMALogDebug(DMA:PDMAHost;const AText:String); inline;
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -300,7 +300,7 @@ var
  DMAHostTableCount:LongWord;
 
  DMAHostDefault:PDMAHost;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -309,20 +309,20 @@ begin
  {}
  {Check Initialized}
  if DMAInitialized then Exit;
- 
+
  {Initialize Logging}
- DMA_LOG_ENABLED:=(DMA_DEFAULT_LOG_LEVEL <> DMA_LOG_LEVEL_NONE); 
- 
+ DMA_LOG_ENABLED:=(DMA_DEFAULT_LOG_LEVEL <> DMA_LOG_LEVEL_NONE);
+
  {Initialize DMA Host Table}
  DMAHostTable:=nil;
- DMAHostTableLock:=CriticalSectionCreate; 
+ DMAHostTableLock:=CriticalSectionCreate;
  DMAHostTableCount:=0;
  if DMAHostTableLock = INVALID_HANDLE_VALUE then
   begin
    if DMA_LOG_ENABLED then DMALogError(nil,'Failed to create DMA host table lock');
   end;
  DMAHostDefault:=nil;
- 
+
  {Register Platform DMA Handlers}
  DMAAvailableHandler:=SysDMAAvailable;
  DMATransferHandler:=SysDMATransfer;
@@ -333,10 +333,10 @@ begin
  DMAAllocateBufferHandler:=SysDMAAllocateBuffer;
  DMAAllocateBufferExHandler:=SysDMAAllocateBufferEx;
  DMAReleaseBufferHandler:=SysDMAReleaseBuffer;
- 
+
  DMAInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {DMA Host Functions}
@@ -344,15 +344,15 @@ function DMAHostStart(DMA:PDMAHost):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check DMA}
  if DMA = nil then Exit;
- if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DMA_DEBUG}
  if DMA_LOG_ENABLED then DMALogDebug(DMA,'DMA Host Start');
  {$ENDIF}
- 
+
  {Check Disabled}
  Result:=ERROR_SUCCESS;
  if DMA.DMAState <> DMA_STATE_DISABLED then Exit;
@@ -367,26 +367,26 @@ begin
       if Result <> ERROR_SUCCESS then Exit;
      end
     else
-     begin    
+     begin
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
-     end; 
- 
+     end;
+
     {Enable Host}
     DMA.DMAState:=DMA_STATE_ENABLED;
-    
+
     {Notify Enable}
     NotifierNotify(@DMA.Device,DEVICE_NOTIFICATION_ENABLE);
-    
+
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(DMA.Lock);
-   end; 
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -397,11 +397,11 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check DMA}
  if DMA = nil then Exit;
- if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DMA_DEBUG}
  if DMA_LOG_ENABLED then DMALogDebug(DMA,'DMA Host Stop');
  {$ENDIF}
@@ -409,7 +409,7 @@ begin
  {Check Enabled}
  Result:=ERROR_SUCCESS;
  if DMA.DMAState <> DMA_STATE_ENABLED then Exit;
- 
+
  if MutexLock(DMA.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -419,22 +419,22 @@ begin
       {$IFDEF DMA_DEBUG}
       if DMA_LOG_ENABLED then DMALogDebug(DMA,'Waiting for ' + IntToStr(DMA.PendingCount) + ' pending requests to complete');
       {$ENDIF}
-   
+
       {Wait for Pending}
-      
+
       {Setup Waiter}
       DMA.WaiterThread:=GetCurrentThreadId;
-   
+
       {Release the Lock}
       MutexUnlock(DMA.Lock);
-   
+
       {Wait for Message}
-      ThreadReceiveMessage(Message); 
-      
+      ThreadReceiveMessage(Message);
+
       {Acquire the Lock}
       if MutexLock(DMA.Lock) <> ERROR_SUCCESS then Exit;
      end;
-   
+
     if Assigned(DMA.HostStop) then
      begin
       {Call Host Stop}
@@ -445,23 +445,23 @@ begin
      begin
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
-     end;    
-   
+     end;
+
     {Disable Host}
     DMA.DMAState:=DMA_STATE_DISABLED;
-    
+
     {Notify Disable}
     NotifierNotify(@DMA.Device,DEVICE_NOTIFICATION_DISABLE);
-    
+
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(DMA.Lock);
-   end; 
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -470,19 +470,19 @@ function DMAHostReset(DMA:PDMAHost):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check DMA}
  if DMA = nil then Exit;
- if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DMA_DEBUG}
  if DMA_LOG_ENABLED then DMALogDebug(DMA,'DMA Host Reset');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if DMA.DMAState <> DMA_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(DMA.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(DMA.HostReset) then
@@ -494,13 +494,13 @@ begin
     begin
      Result:=ERROR_NOT_SUPPORTED;
     end;
-    
+
    MutexUnlock(DMA.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -509,22 +509,22 @@ function DMAHostProperties(DMA:PDMAHost;Properties:PDMAProperties):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Properties}
  if Properties = nil then Exit;
- 
+
  {Check DMA}
  if DMA = nil then Exit;
- if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DMA_DEBUG}
  if DMA_LOG_ENABLED then DMALogDebug(DMA,'DMA Host Properties');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if DMA.DMAState <> DMA_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(DMA.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(DMA.HostProperties) then
@@ -536,17 +536,17 @@ begin
     begin
      {Get Properties}
      System.Move(DMA.Properties,Properties^,SizeOf(TDMAProperties));
-       
+
      {Return Result}
      Result:=ERROR_SUCCESS;
-    end;  
-    
+    end;
+
    MutexUnlock(DMA.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -568,16 +568,16 @@ function DMAHostCreateEx(Size:LongWord):PDMAHost;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TDMAHost) then Exit;
- 
+
  {Create DMA}
  Result:=PDMAHost(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=DMA_TYPE_NONE;
  Result.Device.DeviceFlags:=DMA_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -595,7 +595,7 @@ begin
  Result.Alignment:=1;
  Result.Multiplier:=1;
  Result.WaiterThread:=INVALID_HANDLE_VALUE;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -614,11 +614,11 @@ function DMAHostDestroy(DMA:PDMAHost):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check DMA}
  if DMA = nil then Exit;
  if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check DMA}
  Result:=ERROR_IN_USE;
  if DMAHostCheck(DMA) = DMA then Exit;
@@ -631,8 +631,8 @@ begin
   begin
    MutexDestroy(DMA.Lock);
   end;
- 
- {Destroy DMA} 
+
+ {Destroy DMA}
  Result:=DeviceDestroy(@DMA.Device);
 end;
 
@@ -645,25 +645,25 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check DMA}
  if DMA = nil then Exit;
  if DMA.DMAId <> DEVICE_ID_ANY then Exit;
  if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Interfaces}
  if not(Assigned(DMA.HostStart)) then Exit;
  if not(Assigned(DMA.HostStop)) then Exit;
  if not(Assigned(DMA.HostSubmit)) then Exit;
  if not(Assigned(DMA.HostCancel)) then Exit;
- 
+
  {Check DMA}
  Result:=ERROR_ALREADY_EXISTS;
  if DMAHostCheck(DMA) = DMA then Exit;
- 
+
  {Check State}
  if DMA.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert DMA}
  if CriticalSectionLock(DMAHostTableLock) = ERROR_SUCCESS then
   begin
@@ -675,19 +675,19 @@ begin
       Inc(DMAId);
      end;
     DMA.DMAId:=DMAId;
-    
+
     {Update Device}
-    DMA.Device.DeviceName:=DMA_NAME_PREFIX + IntToStr(DMA.DMAId); 
+    DMA.Device.DeviceName:=DMA_NAME_PREFIX + IntToStr(DMA.DMAId);
     DMA.Device.DeviceClass:=DEVICE_CLASS_DMA;
-    
+
     {Register Device}
     Result:=DeviceRegister(@DMA.Device);
     if Result <> ERROR_SUCCESS then
      begin
       DMA.DMAId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link DMA}
     if DMAHostTable = nil then
      begin
@@ -699,16 +699,16 @@ begin
       DMAHostTable.Prev:=DMA;
       DMAHostTable:=DMA;
      end;
- 
+
     {Increment Count}
     Inc(DMAHostTableCount);
-    
+
     {Check Default}
     if DMAHostDefault = nil then
      begin
       DMAHostDefault:=DMA;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -718,7 +718,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -731,19 +731,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check DMA}
  if DMA = nil then Exit;
  if DMA.DMAId = DEVICE_ID_ANY then Exit;
  if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check DMA}
  Result:=ERROR_NOT_FOUND;
  if DMAHostCheck(DMA) <> DMA then Exit;
- 
+
  {Check State}
  if DMA.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove DMA}
  if CriticalSectionLock(DMAHostTableLock) = ERROR_SUCCESS then
   begin
@@ -751,7 +751,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@DMA.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink DMA}
     Prev:=DMA.Prev;
     Next:=DMA.Next;
@@ -761,7 +761,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -769,21 +769,21 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(DMAHostTableCount);
- 
+
     {Check Default}
     if DMAHostDefault = DMA then
      begin
       DMAHostDefault:=DMAHostTable;
      end;
- 
+
     {Update DMA}
     DMA.DMAId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -793,7 +793,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -804,10 +804,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if DMAId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(DMAHostTableLock) = ERROR_SUCCESS then
   begin
@@ -826,7 +826,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       DMA:=DMA.Next;
      end;
@@ -845,10 +845,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(DMAHostTableLock) = ERROR_SUCCESS then
   begin
@@ -862,11 +862,11 @@ begin
        begin
         if Callback(DMA,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       DMA:=DMA.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -877,30 +877,30 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
 
 function DMAHostNotification(DMA:PDMAHost;Callback:TDMANotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check DMA}
  if DMA = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_DMA,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check DMA}
    if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@DMA.Device,DEVICE_CLASS_DMA,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {DMA Data Functions}
@@ -911,18 +911,18 @@ var
 begin
  {}
  Result:=0;
- 
+
  Next:=Data;
  while Next <> nil do
   begin
    Inc(Result);
-   
+
    Next:=Next.Next;
   end;
 end;
- 
+
 {==============================================================================}
- 
+
 function DMADataFlags(Data:PDMAData):LongWord;
 {Return the combined flags of the data blocks in the linked list}
 var
@@ -935,7 +935,7 @@ begin
  while Next <> nil do
   begin
    Result:=Result or Next.Flags;
-   
+
    Next:=Next.Next;
   end;
 end;
@@ -954,11 +954,11 @@ begin
  while Next <> nil do
   begin
    if Next.Size > Result then Result:=Next.Size;
-   
+
    Next:=Next.Next;
   end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {DMA Buffer Functions}
@@ -971,9 +971,9 @@ begin
  {}
  Result:=DMABufferAllocateEx(DMA,Size);
 end;
- 
+
 {==============================================================================}
- 
+
 function DMABufferAllocateEx(DMA:PDMAHost;var Size:LongWord):Pointer;
 {Allocate a data buffer for a DMA request}
 {DMA: The DMA host that the request will be sent to}
@@ -981,28 +981,28 @@ function DMABufferAllocateEx(DMA:PDMAHost;var Size:LongWord):Pointer;
 {Return: The newly allocated buffer or nil on failure}
 
 {Note: This differs from DMABufferAllocate in that it updates the size value to reflect
-       the actual size of the buffer allocated which may be required for some uses} 
+       the actual size of the buffer allocated which may be required for some uses}
 begin
  {}
  Result:=nil;
 
  {Check Size}
  if Size = 0 then Exit;
- 
+
  {Check DMA}
  if DMA = nil then Exit;
  if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {Check Size}
  Size:=RoundUp(Size,DMA.Multiplier);
- 
+
  {Check Host Flags}
  if (DMA.Device.DeviceFlags and DMA_FLAG_SHARED) = DMA_FLAG_SHARED then
   begin
    {Allocate Shared}
    Result:=GetSharedAlignedMem(Size,DMA.Alignment);
   end
- else if (DMA.Device.DeviceFlags and DMA_FLAG_NOCACHE) = DMA_FLAG_NOCACHE then  
+ else if (DMA.Device.DeviceFlags and DMA_FLAG_NOCACHE) = DMA_FLAG_NOCACHE then
   begin
    {Allocate Non Cached}
    Result:=GetNoCacheAlignedMem(Size,DMA.Alignment);
@@ -1011,7 +1011,7 @@ begin
   begin
    {Allocate Normal}
    Result:=GetAlignedMem(Size,DMA.Alignment);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1030,31 +1030,31 @@ function DMABufferValidate(DMA:PDMAHost;Buffer:Pointer;Size:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Size}
  if Size = 0 then Exit;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
 
  {Check DMA}
  if DMA = nil then Exit;
  if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Host Alignment}
  if Align(Buffer,DMA.Alignment) <> Buffer then
   begin
    Result:=ERROR_NOT_COMPATIBLE;
    Exit;
   end;
-   
+
  {Check Host Multiplier}
  if RoundUp(Size,DMA.Multiplier) <> Size then
   begin
    Result:=ERROR_NOT_COMPATIBLE;
    Exit;
   end;
-   
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -1068,13 +1068,13 @@ function DMABufferRelease(Buffer:Pointer):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Free Buffer}
  FreeMem(Buffer);
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -1101,20 +1101,20 @@ begin
  {Check DMA}
  if DMA = nil then Exit;
  if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Data}
  {if Data = nil then Exit;} {Data may be nil}
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
 
  {Check Driver Data}
  {if DriverData = nil then Exit;} {DriverData may be nil}
- 
+
  {Allocate Request}
  Request:=AllocMem(SizeOf(TDMARequest));
  if Request = nil then Exit;
- 
+
  {Initialize Request}
  Request.Host:=DMA;
  Request.Data:=Data;
@@ -1124,7 +1124,7 @@ begin
  Request.Callback:=Callback;
  Request.DriverData:=DriverData;
  Request.Status:=ERROR_NOT_VALID;
- 
+
  {Return Result}
  Result:=Request;
 end;
@@ -1141,7 +1141,7 @@ begin
 
  {Check Request}
  if Request = nil then Exit;
- 
+
  {Deinitialize Request}
  Request.Host:=nil;
  Request.Data:=nil;
@@ -1151,10 +1151,10 @@ begin
  Request.Callback:=nil;
  Request.DriverData:=nil;
  Request.Status:=ERROR_NOT_VALID;
- 
+
  {Release Request}
  FreeMem(Request);
-   
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -1180,32 +1180,32 @@ begin
    if DMA_LOG_ENABLED then DMALogError(nil,'Bad DMA request, host or completion callback function not specified');
    Exit;
   end;
-  
+
  {Get Host}
  Host:=Request.Host;
-  
- {Setup Request} 
+
+ {Setup Request}
  Request.Status:=ERROR_NOT_PROCESSED;
- 
+
  {Acquire the Lock}
  if MutexLock(Host.Lock) = ERROR_SUCCESS then
   begin
    try
     {Update Statistics}
-    Inc(Host.RequestCount); 
-   
+    Inc(Host.RequestCount);
+
     {Update Pending}
     Inc(Host.PendingCount);
-    
+
     {Release the Lock}
     MutexUnlock(Host.Lock);
-    
+
     {Submit Request}
     Status:=Host.HostSubmit(Host,Request);
-    
+
     {Acquire the Lock}
     if MutexLock(Host.Lock) <> ERROR_SUCCESS then Exit;
-    
+
     {Check Status}
     if Status <> ERROR_SUCCESS then
      begin
@@ -1218,8 +1218,8 @@ begin
    finally
     {Release the Lock}
     MutexUnlock(Host.Lock);
-   end;   
-  end; 
+   end;
+  end;
 end;
 
 {==============================================================================}
@@ -1240,10 +1240,10 @@ begin
    if DMA_LOG_ENABLED then DMALogError(nil,'Bad DMA request, host or completion callback function not specified');
    Exit;
   end;
- 
+
  {Get Host}
  Host:=Request.Host;
- 
+
  {Acquire the Lock}
  if MutexLock(Host.Lock) = ERROR_SUCCESS then
   begin
@@ -1253,8 +1253,8 @@ begin
    finally
     {Release the Lock}
     MutexUnlock(Host.Lock);
-   end;   
-  end; 
+   end;
+  end;
 end;
 
 {==============================================================================}
@@ -1277,13 +1277,13 @@ begin
  {$IFDEF DMA_DEBUG}
  if DMA_LOG_ENABLED then DMALogDebug(Request.Host,'DMA Request Complete (Request=' + PtrToHex(Request) + ' Status=' + ErrorToString(Request.Status) + ')');
  {$ENDIF}
- 
+
  {Get Host}
  Host:=Request.Host;
 
  {Get Flags}
  Flags:=Request.Flags;
- 
+
  {Acquire the Lock}
  if MutexLock(Host.Lock) = ERROR_SUCCESS then
   begin
@@ -1292,23 +1292,23 @@ begin
     if Request.Status <> ERROR_SUCCESS then
      begin
       {Update Statistics}
-      Inc(Host.RequestErrors); 
-      
+      Inc(Host.RequestErrors);
+
       {Update Status}
       Host.LastError:=Request.Status;
      end;
- 
+
     {Release the Lock}
     MutexUnlock(Host.Lock);
- 
-    {Completion Callback} 
+
+    {Completion Callback}
     Request.Callback(Request);
- 
+
     {Acquire the Lock}
     if MutexLock(Host.Lock) <> ERROR_SUCCESS then Exit;
 
     {Update Pending}
-    Dec(Host.PendingCount); 
+    Dec(Host.PendingCount);
 
     {Check Pending Requests}
     if (Host.PendingCount = 0) and (Host.WaiterThread <> INVALID_HANDLE_VALUE) then
@@ -1316,13 +1316,13 @@ begin
       {$IFDEF DMA_DEBUG}
       if DMA_LOG_ENABLED then DMALogDebug(Host,'Sending message to waiter thread (Thread=' + IntToHex(Host.WaiterThread,8) + ')');
       {$ENDIF}
-        
+
       {Send Message}
       FillChar(Message,SizeOf(TMessage),0);
       ThreadSendMessage(Host.WaiterThread,Message);
       Host.WaiterThread:=INVALID_HANDLE_VALUE;
      end;
-     
+
     {Check for Release}
     if (Flags and DMA_REQUEST_FLAG_RELEASE) <> 0 then
      begin
@@ -1332,8 +1332,8 @@ begin
    finally
     {Release the Lock}
     MutexUnlock(Host.Lock);
-   end;   
-  end; 
+   end;
+  end;
 end;
 
 {==============================================================================}
@@ -1357,53 +1357,53 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Data}
  if Data = nil then Exit;
- 
+
  {Check DMA}
  if DMA = nil then Exit;
- if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DMA_DEBUG}
  if DMA_LOG_ENABLED then DMALogDebug(DMA,'DMA Transfer Request');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if DMA.DMAState <> DMA_STATE_ENABLED then Exit;
- 
+
  {Check Timeout}
  if Timeout = 0 then
   begin
    Timeout:=INFINITE;
   end;
- 
- {Check Flags (Do not allow release flag)} 
+
+ {Check Flags (Do not allow release flag)}
  Flags:=Flags and not(DMA_REQUEST_FLAG_RELEASE);
- 
+
  {Create Semaphore}
  Semaphore:=SemaphoreCreate(0);
  if Semaphore = INVALID_HANDLE_VALUE then
   begin
    {Return Result}
    Result:=ERROR_OPERATION_FAILED;
-   Exit; 
+   Exit;
   end;
- 
- {Create Request} 
+
+ {Create Request}
  Request:=DMARequestAllocate(DMA,Data,DMATransferRequestComplete,Pointer(Semaphore),Direction,Peripheral,Flags);
  if Request = nil then
   begin
    {Destroy Semaphore}
    SemaphoreDestroy(Semaphore);
-   
+
    {Return Result}
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
-         
- {Submit Request} 
+
+ {Submit Request}
  Status:=DMARequestSubmit(Request);
  if Status = ERROR_SUCCESS then
   begin
@@ -1413,49 +1413,49 @@ begin
     begin
      {Get Status}
      Status:=Request.Status;
-    end 
+    end
    else if ResultCode = ERROR_WAIT_TIMEOUT then
     begin
      if DMA_LOG_ENABLED then DMALogError(DMA,'Transfer request timeout (Timeout=' + IntToStr(Timeout) + ')');
-     
+
      {Get Status}
      Status:=ERROR_WAIT_TIMEOUT;
-     
+
      {Cancel Request}
      DMARequestCancel(Request);
-     
+
      {Wait for Cancel}
      SemaphoreWait(Semaphore);
     end
    else
     begin
      if DMA_LOG_ENABLED then DMALogError(DMA,'Transfer request failure (Error=' + ErrorToString(ResultCode) + ')');
-     
+
      {Get Status}
      Status:=ERROR_OPERATION_FAILED;
-     
+
      {Cancel Request}
      DMARequestCancel(Request);
-     
+
      {Wait for Cancel}
-     SemaphoreWait(Semaphore); 
-    end;    
-  end;  
- 
+     SemaphoreWait(Semaphore);
+    end;
+  end;
+
  {Check for Release (Release flag not allowed)}
  {if (Flags and DMA_REQUEST_FLAG_RELEASE) = 0 then
   begin}
    {Release Request}
    DMARequestRelease(Request);
-  {end;} 
- 
+  {end;}
+
  {Destroy Semaphore}
- SemaphoreDestroy(Semaphore); 
- 
+ SemaphoreDestroy(Semaphore);
+
  {$IFDEF DMA_DEBUG}
  if DMA_LOG_ENABLED then DMALogDebug(DMA,'Transfer request complete (Result=' + ErrorToString(Status) + ')');
  {$ENDIF}
- 
+
  {Return Result}
  Result:=Status;
 end;
@@ -1480,23 +1480,23 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Data}
  if Data = nil then Exit;
- 
+
  {Check DMA}
  if DMA = nil then Exit;
- if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DMA_DEBUG}
  if DMA_LOG_ENABLED then DMALogDebug(DMA,'DMA Transfer Request Ex');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if DMA.DMAState <> DMA_STATE_ENABLED then Exit;
- 
- {Create Request} 
+
+ {Create Request}
  Request:=DMARequestAllocate(DMA,Data,Callback,DriverData,Direction,Peripheral,Flags);
  if Request = nil then
   begin
@@ -1504,22 +1504,22 @@ begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
-     
+
  {Update Request (Always add release flag)}
  Request.Flags:=Request.Flags or DMA_REQUEST_FLAG_RELEASE;
 
- {Submit Request} 
+ {Submit Request}
  Status:=DMARequestSubmit(Request);
  if Status <> ERROR_SUCCESS then
   begin
    {Release Request}
    DMARequestRelease(Request);
   end;
- 
+
  {$IFDEF DMA_DEBUG}
  if DMA_LOG_ENABLED then DMALogDebug(DMA,'Transfer request submitted (Result=' + ErrorToString(Status) + ')');
  {$ENDIF}
- 
+
  {Return Result}
  Result:=Status;
 end;
@@ -1535,10 +1535,10 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  {Check Semaphore}
  if Request.DriverData = nil then Exit;
- 
+
  {Signal Semaphore}
  SemaphoreSignal(TSemaphoreHandle(Request.DriverData));
 end;
@@ -1546,7 +1546,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RTL DMA Functions}
-function SysDMAAvailable:Boolean; 
+function SysDMAAvailable:Boolean;
 {Check if a DMA host is available}
 begin
  {}
@@ -1563,14 +1563,14 @@ function SysDMATransfer(Data:PDMAData;Direction,Peripheral:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if DMAHostDefault = nil then Exit;
- 
+
  Result:=DMATransferRequest(DMAHostDefault,Data,Direction,Peripheral,DMA_REQUEST_FLAG_NONE,INFINITE);
 end;
 
 {==============================================================================}
- 
+
 function SysDMAFillMemory(Dest:Pointer;Size:LongWord;Value:Byte):LongWord;
 {Fill memory at the destination address using DMA}
 {Dest: The address to start the memory fill}
@@ -1583,16 +1583,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if DMAHostDefault = nil then Exit;
 
  {Check Dest and Size}
  if Dest = nil then Exit;
  if Size = 0 then Exit;
- 
+
  {Get Size}
  Len:=SizeOf(LongWord);
- 
+
  {Get Source}
  Source:=DMABufferAllocateEx(DMAHostDefault,Len);
  try
@@ -1602,12 +1602,12 @@ begin
   Data.Dest:=Dest;
   Data.Size:=Size;
   Data.Flags:=DMA_DATA_FLAG_NONE;
-  
+
   {Check No Increment}
   if (DMAHostDefault.Device.DeviceFlags and DMA_FLAG_NOINCREMENT) <> 0 then
    begin
     Data.Flags:=Data.Flags or DMA_DATA_FLAG_SOURCE_NOINCREMENT;
-    
+
     {Check Value}
     if (Value = 0) and ((DMAHostDefault.Device.DeviceFlags and DMA_FLAG_NOREAD) <> 0) then
      begin
@@ -1616,33 +1616,33 @@ begin
     else
      begin
       Data.Flags:=Data.Flags or DMA_DATA_FLAG_NOCLEAN;
-      
+
       {Set Value}
       FillChar(Source^,Len,Value);
-      
+
       {Flush Cache}
       if (DMAHostDefault.Device.DeviceFlags and DMA_FLAG_COHERENT) = 0 then
        begin
         CleanDataCacheRange(PtrUInt(Source),Len);
-       end; 
+       end;
      end;
-    
+
     {Check Wide}
     if (DMAHostDefault.Device.DeviceFlags and DMA_FLAG_WIDE) <> 0 then
      begin
       Data.Flags:=Data.Flags or DMA_DATA_FLAG_DEST_WIDE;
      end;
-    
+
     {Perform Transfer}
     Result:=DMATransferRequest(DMAHostDefault,@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE,DMA_REQUEST_FLAG_NONE,INFINITE);
    end
   else
    begin
     Result:=ERROR_NOT_SUPPORTED;
-   end;  
+   end;
  finally
   DMABufferRelease(Source);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1657,39 +1657,39 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if DMAHostDefault = nil then Exit;
- 
+
  {Check Source, Dest and Size}
  if Source = nil then Exit;
  if Dest = nil then Exit;
  if Size = 0 then Exit;
- 
+
  {Create Data}
  FillChar(Data,SizeOf(TDMAData),0);
  Data.Source:=Source;
  Data.Dest:=Dest;
  Data.Size:=Size;
  Data.Flags:=DMA_DATA_FLAG_NONE;
- 
+
  {Check Wide}
  if (DMAHostDefault.Device.DeviceFlags and DMA_FLAG_WIDE) <> 0 then
   begin
    Data.Flags:=Data.Flags or DMA_DATA_FLAG_SOURCE_WIDE or DMA_DATA_FLAG_DEST_WIDE;
   end;
-  
+
  {Check Bulk}
  if (DMAHostDefault.Device.DeviceFlags and DMA_FLAG_BULK) <> 0 then
   begin
    Data.Flags:=Data.Flags or DMA_DATA_FLAG_BULK;
   end;
- 
+
  {Perform Transfer}
  Result:=DMATransferRequest(DMAHostDefault,@Data,DMA_DIR_MEM_TO_MEM,DMA_DREQ_ID_NONE,DMA_REQUEST_FLAG_NONE,INFINITE);
 end;
 
 {==============================================================================}
- 
+
 function SysDMAReadPeripheral(Address,Dest:Pointer;Size,Peripheral:LongWord):LongWord;
 {Read from a periperal address to the destination address using DMA}
 {Address: The address of the periperhal register to read from}
@@ -1701,14 +1701,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if DMAHostDefault = nil then Exit;
- 
+
  {Check Address, Dest and Size}
  if Address = nil then Exit;
  if Dest = nil then Exit;
  if Size = 0 then Exit;
- 
+
  {Create Data}
  FillChar(Data,SizeOf(TDMAData),0);
  Data.Source:=Address;
@@ -1720,26 +1720,26 @@ begin
  if (DMAHostDefault.Device.DeviceFlags and DMA_FLAG_NOINCREMENT) <> 0 then
   begin
    Data.Flags:=Data.Flags or DMA_DATA_FLAG_SOURCE_NOINCREMENT;
- 
+
    {Check Data Request}
    if (DMAHostDefault.Device.DeviceFlags and DMA_FLAG_DREQ) <> 0 then
     begin
      Data.Flags:=Data.Flags or DMA_DATA_FLAG_SOURCE_DREQ;
     end;
-   
+
    {Check Wide}
    if (DMAHostDefault.Device.DeviceFlags and DMA_FLAG_WIDE) <> 0 then
     begin
      Data.Flags:=Data.Flags or DMA_DATA_FLAG_DEST_WIDE;
     end;
-   
+
    {Perform Transfer}
    Result:=DMATransferRequest(DMAHostDefault,@Data,DMA_DIR_DEV_TO_MEM,Peripheral,DMA_REQUEST_FLAG_NONE,INFINITE);
   end
  else
   begin
    Result:=ERROR_NOT_SUPPORTED;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1755,14 +1755,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if DMAHostDefault = nil then Exit;
- 
+
  {Check Source, Address and Size}
  if Source = nil then Exit;
  if Address = nil then Exit;
  if Size = 0 then Exit;
- 
+
  {Create Data}
  FillChar(Data,SizeOf(TDMAData),0);
  Data.Source:=Source;
@@ -1774,53 +1774,53 @@ begin
  if (DMAHostDefault.Device.DeviceFlags and DMA_FLAG_NOINCREMENT) <> 0 then
   begin
    Data.Flags:=Data.Flags or DMA_DATA_FLAG_DEST_NOINCREMENT;
- 
+
    {Check Data Request}
    if (DMAHostDefault.Device.DeviceFlags and DMA_FLAG_DREQ) <> 0 then
     begin
      Data.Flags:=Data.Flags or DMA_DATA_FLAG_DEST_DREQ;
     end;
-   
+
    {Check Wide}
    if (DMAHostDefault.Device.DeviceFlags and DMA_FLAG_WIDE) <> 0 then
     begin
      Data.Flags:=Data.Flags or DMA_DATA_FLAG_SOURCE_WIDE;
     end;
-   
+
    {Perform Transfer}
    Result:=DMATransferRequest(DMAHostDefault,@Data,DMA_DIR_MEM_TO_DEV,Peripheral,DMA_REQUEST_FLAG_NONE,INFINITE);
   end
  else
   begin
    Result:=ERROR_NOT_SUPPORTED;
-  end;  
+  end;
 end;
 
 {==============================================================================}
- 
+
 function SysDMAAllocateBuffer(Size:LongWord):Pointer;
 {Allocate a buffer compatible with DMA memory reads or writes}
 {Size: The size of the buffer to allocate}
 begin
  {}
  Result:=nil;
- 
+
  if DMAHostDefault = nil then Exit;
- 
+
  Result:=DMABufferAllocate(DMAHostDefault,Size);
 end;
 
 {==============================================================================}
- 
+
 function SysDMAAllocateBufferEx(var Size:LongWord):Pointer;
 {Allocate a buffer compatible with DMA memory reads or writes}
 {Size: The size of the buffer to allocate (Updated on return to actual size)}
 begin
  {}
  Result:=nil;
- 
+
  if DMAHostDefault = nil then Exit;
- 
+
  Result:=DMABufferAllocateEx(DMAHostDefault,Size);
 end;
 
@@ -1832,9 +1832,9 @@ function SysDMAReleaseBuffer(Buffer:Pointer):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if DMAHostDefault = nil then Exit;
- 
+
  Result:=DMABufferRelease(Buffer);
 end;
 
@@ -1859,26 +1859,26 @@ end;
 
 {==============================================================================}
 
-function DMAHostSetDefault(DMA:PDMAHost):LongWord; 
+function DMAHostSetDefault(DMA:PDMAHost):LongWord;
 {Set the current default DMA device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check DMA}
  if DMA = nil then Exit;
  if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(DMAHostTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check DMA}
     if DMAHostCheck(DMA) <> DMA then Exit;
-    
+
     {Set DMA Default}
     DMAHostDefault:=DMA;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1901,11 +1901,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check DMA}
  if DMA = nil then Exit;
  if DMA.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(DMAHostTableLock) = ERROR_SUCCESS then
   begin
@@ -1920,7 +1920,7 @@ begin
         Result:=DMA;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -1938,7 +1938,7 @@ function DMATypeToString(DMAType:LongWord):String;
 begin
  {}
  Result:='DMA_TYPE_UNKNOWN';
- 
+
  if DMAType <= DMA_TYPE_MAX then
   begin
    Result:=DMA_TYPE_NAMES[DMAType];
@@ -1952,7 +1952,7 @@ function DMAStateToString(DMAState:LongWord):String;
 begin
  {}
  Result:='DMA_STATE_UNKNOWN';
- 
+
  if DMAState <= DMA_STATE_MAX then
   begin
    Result:=DMA_STATE_NAMES[DMAState];
@@ -1960,7 +1960,7 @@ begin
 end;
 
 {==============================================================================}
- 
+
 procedure DMALog(Level:Integer;DMA:PDMAHost;const AText:String);
 var
  WorkBuffer:String;
@@ -1968,7 +1968,7 @@ begin
  {}
  {Check Level}
  if Level < DMA_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = DMA_LOG_LEVEL_DEBUG then
@@ -1983,16 +1983,16 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'DMA: ';
- 
+
  {Check DMA}
  if DMA <> nil then
   begin
    WorkBuffer:=WorkBuffer + DMA_NAME_PREFIX + IntToStr(DMA.DMAId) + ': ';
   end;
-  
+
  {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_DMA,LogLevelToLoggingSeverity(Level),'DMA',WorkBuffer + AText);
 end;
@@ -2028,7 +2028,7 @@ begin
  {}
  DMALog(DMA_LOG_LEVEL_DEBUG,DMA,AText);
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -2036,7 +2036,7 @@ initialization
  DMAInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -2044,4 +2044,4 @@ finalization
 {==============================================================================}
 
 end.
- 
+

@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
- 
+
 SMTP
 ====
 
@@ -55,9 +55,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils,Classes,Ulti
 const
  {SMTP specific constants}
  SMTP_LINE_END = Chr(13) + Chr(10); {CR LF}
- 
+
  SMTP_BUFFER_SIZE = SIZE_4K;
-         
+
  {SMTP Status constants}
  SMTP_STATUS_NONE = 0;
  SMTP_STATUS_CONN = 1;
@@ -67,9 +67,9 @@ const
  SMTP_STATUS_RCPT = 5;
  SMTP_STATUS_DATA = 6;
  SMTP_STATUS_QUIT = 7;
-         
- SMTP_MAX_STATUS = 7;         
- 
+
+ SMTP_MAX_STATUS = 7;
+
  SMTP_STATUS_STRINGS:array[0..SMTP_MAX_STATUS] of String = (
   'None',
   'Connect',
@@ -79,7 +79,7 @@ const
   'Rcpt To',
   'Data',
   'Quit');
- 
+
  {SMTP Command constants}
  SMTP_COMMAND_HELO       = 'HELO';
  SMTP_COMMAND_EHLO       = 'EHLO';
@@ -93,14 +93,14 @@ const
  SMTP_COMMAND_END_DATA   = '.';
  SMTP_COMMAND_RSET       = 'RSET';
  SMTP_COMMAND_QUIT       = 'QUIT';
- 
+
  {SMTP Sub Command constants}
  SMTP_SUB_COMMAND_MAIL_FROM  = 'FROM:';
  SMTP_SUB_COMMAND_RCPT_TO    = 'TO:';
- 
- {SMTP String constants}         
+
+ {SMTP String constants}
  SMTP_STRING_CONTINUE           = '-';
- 
+
  SMTP_STRING_CONN_SUCCESS       = '220 ';
  SMTP_STRING_QUIT_SUCCESS       = '221 ';
  SMTP_STRING_HELO_SUCCESS       = '250 ';
@@ -154,7 +154,7 @@ const
  SMTP_STRING_BAD_MAIL          = 'Unknown sender';
  SMTP_STRING_BAD_RCPT          = 'Unknown recipient';
  SMTP_STRING_BAD_VRFY          = 'Mailbox not found';
- 
+
  {SMTP logging}
  SMTP_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {SMTP debugging messages}
  SMTP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {SMTP informational messages}
@@ -162,13 +162,13 @@ const
  SMTP_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {SMTP error messages}
  SMTP_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No SMTP messages}
 
-var 
- SMTP_DEFAULT_LOG_LEVEL:LongWord = SMTP_LOG_LEVEL_DEBUG; {Minimum level for SMTP messages.  Only messages with level greater than or equal to this will be printed} 
- 
-var 
+var
+ SMTP_DEFAULT_LOG_LEVEL:LongWord = SMTP_LOG_LEVEL_DEBUG; {Minimum level for SMTP messages.  Only messages with level greater than or equal to this will be printed}
+
+var
  {SMTP logging}
- SMTP_LOG_ENABLED:Boolean; 
-              
+ SMTP_LOG_ENABLED:Boolean;
+
 {==============================================================================}
 {type}
  {SMTP specific types}
@@ -185,25 +185,25 @@ type
  private
   {Internal Variables}
   FLock:TCriticalSectionHandle;
-  
+
   FData:Pointer;
   FSize:LongWord;
   FCount:LongWord;
   FStart:LongWord;
-  
+
   {Internal Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
 
-  function GetCount:LongWord;  
+  function GetCount:LongWord;
  public
   {Public Properties}
   property Count:LongWord read GetCount;
-  
+
   {Public Methods}
   function ReadData:Char;
   function WriteData(AChar:Char):Boolean;
-  
+
   function WriteLock(var ASize:LongWord):Pointer;
   function WriteUnlock(ACount:LongWord):Boolean;
  end;
@@ -237,10 +237,10 @@ type
 
   property OnRequestStart:TNotifyEvent read FOnRequestStart write FOnRequestStart;
   property OnRequestEnd:TNotifyEvent read FOnRequestEnd write FOnRequestEnd;
- 
+
   property Authenticated:Boolean read FAuthenticated;
   property Buffer:TSMTPBuffer read FBuffer;
- 
+
   {Public Methods}
   function DoConn(const AHost,APort:String;var AReply:String):Boolean;
   function DoHelo(const AHost:String;var AReply:String):Boolean;
@@ -257,7 +257,7 @@ type
   function DoTime(var AReply:String):Boolean;
   function DoNoop(var AReply:String):Boolean;
  end;
- 
+
  {Server classes}
  TSMTPConnection = class(TListObject)
  public
@@ -267,7 +267,7 @@ type
  private
   {Internal Variables}
   FLock:TCriticalSectionHandle;
-  
+
   FHandle:THandle;
   FRxByteCount:Int64;         {Bytes Recv Count from Connection}
   FTxByteCount:Int64;         {Bytes Sent Count to Connection}
@@ -277,18 +277,18 @@ type
   FReplyTime:TDateTime;       {Last Reply Time}
   FRemoteAddress:String;      {Address of Remote Client}
   FStatus:LongWord;           {None,Conn,Auth,Helo,Mail,Rcpt,Data etc}
-  
+
   FAuthenticated:Boolean;     {Current authentication state}
   FUsername:String;           {Current Username}
   FPassword:String;           {Current Password}
 
   FThread:TThread;            {TWinsock2TCPServerThread}
   FBuffer:TSMTPBuffer;        {Buffer for received data}
-  
+
   {Internal Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
-  
+
   procedure SetHandle(AHandle:THandle);
   function GetRxByteCount:Int64;
   procedure SetRxByteCount(const ARxByteCount:Int64);
@@ -305,13 +305,13 @@ type
   function GetRemoteAddress:String;
   procedure SetRemoteAddress(const ARemoteAddress:String);
   procedure SetStatus(AStatus:LongWord);
-  
+
   procedure SetAuthenticated(AAuthenticated:Boolean);
   function GetUsername:String;
   procedure SetUsername(const AUsername:String);
   function GetPassword:String;
   procedure SetPassword(const APassword:String);
-  
+
   procedure SetThread(AThread:TThread);
  public
   {Public Properties}
@@ -324,28 +324,28 @@ type
   property ReplyTime:TDateTime read GetReplyTime write SetReplyTime;
   property RemoteAddress:String read GetRemoteAddress write SetRemoteAddress;
   property Status:LongWord read FStatus write SetStatus;
-  
+
   property Authenticated:Boolean read FAuthenticated write SetAuthenticated;
   property Username:String read GetUsername write SetUsername;
   property Password:String read GetPassword write SetPassword;
-  
+
   property Thread:TThread read FThread  write SetThread;
   property Buffer:TSMTPBuffer read FBuffer;
-  
+
   {Public Methods}
   procedure IncrementRxByteCount(const ARxByteCount:Int64);
   procedure IncrementTxByteCount(const ATxByteCount:Int64);
   procedure IncrementRequestCount;
   procedure IncrementReplyCount;
  end;
- 
+
  TSMTPHostEvent = function(AConnection:TSMTPConnection):Boolean of Object;
  TSMTPCountEvent = function(AConnection:TSMTPConnection):Boolean of Object;
  TSMTPNotifyEvent = procedure(AConnection:TSMTPConnection;const ARequest:String) of Object;
  TSMTPRequestEvent = function(AConnection:TSMTPConnection;const ARequest:String;var AReply:String):Boolean of Object;
  TSMTPAuthenticateEvent = function(AConnection:TSMTPConnection;const AMethod,AUsername,APassword:String;var AReply:String):Boolean of Object;
  TSMTPConnectionEvent = procedure(AConnection:TSMTPConnection) of Object;
- 
+
  TSMTPListener = class(TWinsock2TCPListener)
  public
   {}
@@ -360,7 +360,7 @@ type
 
   FOnRequest:TSMTPNotifyEvent;
   FOnReply:TSMTPNotifyEvent;
- 
+
   FOnConn:TSMTPRequestEvent;
   FOnHelo:TSMTPRequestEvent;
   FOnEhlo:TSMTPRequestEvent;
@@ -382,7 +382,7 @@ type
 
   function DoCheckHost(AThread:TWinsock2TCPServerThread):Boolean; virtual;
   function DoCheckCount(AThread:TWinsock2TCPServerThread):Boolean; virtual;
-  
+
   function DoExecute(AThread:TWinsock2TCPServerThread):Boolean; override;
 
   procedure DoConn(AThread:TWinsock2TCPServerThread);
@@ -399,7 +399,7 @@ type
   procedure DoRset(AThread:TWinsock2TCPServerThread);
   procedure DoTime(AThread:TWinsock2TCPServerThread);
   procedure DoNoop(AThread:TWinsock2TCPServerThread);
-  
+
   function GetRequest(AThread:TWinsock2TCPServerThread;var ARequest:String):Boolean;
   function SendReply(AThread:TWinsock2TCPServerThread;const AReply:String):Boolean;
  public
@@ -412,7 +412,7 @@ type
 
   property OnRequest:TSMTPNotifyEvent read FOnRequest write FOnRequest;
   property OnReply:TSMTPNotifyEvent read FOnReply write FOnReply;
-  
+
   property OnConn:TSMTPRequestEvent read FOnConn write FOnConn;
   property OnHelo:TSMTPRequestEvent read FOnHelo write FOnHelo;
   property OnEhlo:TSMTPRequestEvent read FOnEhlo write FOnEhlo;
@@ -428,11 +428,11 @@ type
   property OnTime:TSMTPRequestEvent read FOnTime write FOnTime;
   property OnNoop:TSMTPRequestEvent read FOnNoop write FOnNoop;
  end;
-  
+
 {==============================================================================}
 {var}
  {SMTP specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure SMTPInit;
@@ -467,18 +467,18 @@ begin
  {}
  inherited Create;
  FLock:=CriticalSectionCreate;
- 
+
  FData:=nil;
  FSize:=ASize;
  FCount:=0;
  FStart:=0;
- 
+
  if FSize <> 0 then FData:=GetMem(FSize);
 end;
 
 {==============================================================================}
 
-destructor TSMTPBuffer.Destroy; 
+destructor TSMTPBuffer.Destroy;
 begin
  {}
  AcquireLock;
@@ -486,7 +486,7 @@ begin
   if FData <> nil then FreeMem(FData);
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -509,16 +509,16 @@ end;
 
 {==============================================================================}
 
-function TSMTPBuffer.GetCount:LongWord;  
+function TSMTPBuffer.GetCount:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FCount;
- 
- ReleaseLock; 
+
+ ReleaseLock;
 end;
 
 {==============================================================================}
@@ -527,23 +527,23 @@ function TSMTPBuffer.ReadData:Char;
 begin
  {}
  Result:=#0;
- 
+
  if not AcquireLock then Exit;
  try
   if FCount > 0 then
    begin
     {Read Char}
     Result:=Char(Pointer(PtrUInt(FData) + PtrUInt(FStart))^);
-    
+
     {Update Start}
     FStart:=(FStart + 1) mod FSize;
 
     {Update Count}
     Dec(FCount);
-   end; 
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -552,20 +552,20 @@ function TSMTPBuffer.WriteData(AChar:Char):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FCount < FSize then
    begin
     {Write Char}
     Char(Pointer(PtrUInt(FData) + PtrUInt((FStart + FCount) mod FSize))^):=AChar;
-    
+
     {Update Count}
     Inc(FCount);
-   end; 
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -579,7 +579,7 @@ begin
  Result:=nil;
 
  if not AcquireLock then Exit;
- 
+
  if FCount < FSize then
   begin
    {Check Wraparound}
@@ -587,7 +587,7 @@ begin
     begin
      {Get Size}
      ASize:=FStart - ((FStart + FCount) mod FSize);
-     
+
      {Get Data}
      Result:=Pointer(PtrUInt(FData) + PtrUInt((FStart + FCount) mod FSize));
     end
@@ -595,15 +595,15 @@ begin
     begin
      {Get Size}
      ASize:=FSize - (FStart + FCount);
-     
+
      {Get Data}
      Result:=Pointer(PtrUInt(FData) + PtrUInt((FStart + FCount) mod FSize));
-    end;    
+    end;
   end
  else
   begin
    ReleaseLock;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -612,13 +612,13 @@ function TSMTPBuffer.WriteUnlock(ACount:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if (FCount + ACount) <= FSize then
   begin
    {Update Count}
    Inc(FCount,ACount);
   end;
-  
+
  ReleaseLock;
 end;
 
@@ -634,7 +634,7 @@ end;
 
 {==============================================================================}
 
-destructor TSMTPClient.Destroy; 
+destructor TSMTPClient.Destroy;
 begin
  {}
  FBuffer.Free;
@@ -659,7 +659,7 @@ begin
  {$IFDEF SMTP_DEBUG}
  if SMTP_LOG_ENABLED then SMTPLogDebug('Client: GetReply');
  {$ENDIF}
- 
+
  {Get Request}
  Completed:=False;
  while not(Completed) do
@@ -667,13 +667,13 @@ begin
    {$IFDEF SMTP_DEBUG}
    if SMTP_LOG_ENABLED then SMTPLogDebug('Client:  Buffer Count = ' + IntToStr(FBuffer.Count));
    {$ENDIF}
-   
+
    {Read from Buffer}
    while FBuffer.Count > 0 do
     begin
      {Read Value}
      Value:=FBuffer.ReadData;
-     
+
      {Check for CR LF}
      if not(Value in [#10,#13]) then
       begin
@@ -687,12 +687,12 @@ begin
          Completed:=True;
          Break;
         end;
-      end;      
+      end;
     end;
-   
+
    {Check Completed}
    if Completed then Break;
-   
+
    {Read from Socket}
    Data:=FBuffer.WriteLock(Size);
    if Data = nil then Exit;
@@ -702,32 +702,32 @@ begin
     {$ENDIF}
 
     Count:=0;
-      
+
     {Read Available}
     if not ReadAvailable(Data,Size,LongInt(Count),Closed) then Exit;
-    
+
     {$IFDEF SMTP_DEBUG}
     if SMTP_LOG_ENABLED then SMTPLogDebug('Client:  Buffer Write Count = ' + IntToStr(Count));
     {$ENDIF}
    finally
     FBuffer.WriteUnlock(Count);
-   end; 
-  end;  
- 
+   end;
+  end;
+
  {Reply Event}
  if Assigned(FOnReply) then
   begin
    FOnReply(AReply);
-  end; 
-   
+  end;
+
  {Return Result}
- Result:=True; 
-   
+ Result:=True;
+
  {$IFDEF SMTP_DEBUG}
  if SMTP_LOG_ENABLED then SMTPLogDebug('Client:  Reply = ' + AReply);
  {$ENDIF}
 end;
- 
+
 {==============================================================================}
 
 function TSMTPClient.SendRequest(const ARequest:String):Boolean;
@@ -739,23 +739,23 @@ begin
  if SMTP_LOG_ENABLED then SMTPLogDebug('Client: SendRequest');
  if SMTP_LOG_ENABLED then SMTPLogDebug('Client:  Request = ' + ARequest);
  {$ENDIF}
- 
+
  {Send Request}
  if not WriteData(PChar(ARequest),Length(ARequest)) then Exit;
- 
+
  {Send Line End}
  if not WriteData(PChar(SMTP_LINE_END),Length(SMTP_LINE_END)) then Exit;
- 
+
  {Request Event}
  if Assigned(FOnRequest) then
   begin
    FOnRequest(ARequest);
   end;
-  
+
  {Return Result}
- Result:=True; 
+ Result:=True;
 end;
- 
+
 {==============================================================================}
 
 function TSMTPClient.DoConn(const AHost,APort:String;var AReply:String):Boolean;
@@ -776,22 +776,22 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if Connected then Exit;
-   
+
    {Set Host and Port}
    RemoteHost:=AHost;
    RemotePort:=StrToInt(APort);
-   
+
    {Connect}
    if not Connect then Exit;
-   
+
    FAuthenticated:=False;
 
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Continuation}
    if Uppercase(Copy(Trim(AReply),4,Length(Trim(SMTP_STRING_CONTINUE)))) <> Uppercase(Trim(SMTP_STRING_CONTINUE)) then
     begin
@@ -813,17 +813,17 @@ begin
      {Line Continuation}
      {Get Response}
      if not GetReply(WorkBuffer) then Exit;
-     
-     {Check Response}     
+
+     {Check Response}
      while Uppercase(Copy(Trim(WorkBuffer),4,Length(Trim(SMTP_STRING_CONTINUE)))) = Uppercase(Trim(SMTP_STRING_CONTINUE)) do
       begin
        {Add Line}
        AReply:=AReply + SMTP_LINE_END + WorkBuffer;
-       
+
        {Get Response}
        if not GetReply(WorkBuffer) then Exit;
       end;
-      
+
      {Check for Success}
      if Uppercase(Copy(Trim(WorkBuffer),1,Length(Trim(SMTP_STRING_CONN_SUCCESS)))) = Uppercase(Trim(SMTP_STRING_CONN_SUCCESS)) then
       begin
@@ -835,7 +835,7 @@ begin
        {Disconnect}
        Disconnect;
       end;
-      
+
      {Add Line}
      AReply:=AReply + SMTP_LINE_END + WorkBuffer;
     end;
@@ -867,16 +867,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(SMTP_COMMAND_HELO + ' ' + AHost) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Continuation}
    if Uppercase(Copy(Trim(AReply),4,Length(Trim(SMTP_STRING_CONTINUE)))) <> Uppercase(Trim(SMTP_STRING_CONTINUE)) then
     begin
@@ -893,25 +893,25 @@ begin
      {Line Continuation}
      {Get Response}
      if not GetReply(WorkBuffer) then Exit;
-     
-     {Check Response}     
+
+     {Check Response}
      while Uppercase(Copy(Trim(WorkBuffer),4,Length(Trim(SMTP_STRING_CONTINUE)))) = Uppercase(Trim(SMTP_STRING_CONTINUE)) do
       begin
        {Add Line}
        AReply:=AReply + SMTP_LINE_END + WorkBuffer;
-       
+
        {Get Response}
        if not GetReply(WorkBuffer) then Exit;
       end;
-     
+
      {Check for Success}
      if Uppercase(Copy(Trim(WorkBuffer),1,Length(Trim(SMTP_STRING_HELO_SUCCESS)))) = Uppercase(Trim(SMTP_STRING_HELO_SUCCESS)) then
       begin
        {Return Result}
        Result:=True;
       end;
-      
-     {Add Line} 
+
+     {Add Line}
      AReply:=AReply + SMTP_LINE_END + WorkBuffer;
     end;
   finally
@@ -922,7 +922,7 @@ begin
   {}
  end;
 end;
- 
+
 {==============================================================================}
 
 function TSMTPClient.DoEhlo(const AHost:String;var AReply:String):Boolean;
@@ -942,10 +942,10 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(SMTP_COMMAND_EHLO + ' ' + AHost) then Exit;
 
@@ -968,25 +968,25 @@ begin
      {Line Continuation}
      {Get Response}
      if not GetReply(WorkBuffer) then Exit;
-     
-     {Check Response}     
+
+     {Check Response}
      while Uppercase(Copy(Trim(WorkBuffer),4,Length(Trim(SMTP_STRING_CONTINUE)))) = Uppercase(Trim(SMTP_STRING_CONTINUE)) do
       begin
        {Add Line}
        AReply:=AReply + SMTP_LINE_END + WorkBuffer;
-       
+
        {Get Response}
        if not GetReply(WorkBuffer) then Exit;
       end;
-      
+
      {Check for Success}
      if Uppercase(Copy(Trim(WorkBuffer),1,Length(Trim(SMTP_STRING_EHLO_SUCCESS)))) = Uppercase(Trim(SMTP_STRING_EHLO_SUCCESS)) then
       begin
        {Return Result}
        Result:=True;
       end;
-      
-     {Add Line} 
+
+     {Add Line}
      AReply:=AReply + SMTP_LINE_END + WorkBuffer;
     end;
   finally
@@ -1021,7 +1021,7 @@ begin
 
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Check Authenticated}
    if not FAuthenticated then
     begin
@@ -1030,30 +1030,30 @@ begin
 
      {Get Reply}
      if not GetReply(AReply) then Exit;
-     
+
      {Check Reply}
      if Uppercase(Copy(Trim(AReply),1,Length(Trim(SMTP_STRING_AUTH_CHALLENGE)))) = Uppercase(Trim(SMTP_STRING_AUTH_CHALLENGE)) then
       begin
        {Send Username}
-       if not SendRequest(Base64EncodeString(AUsername)) then Exit; 
+       if not SendRequest(Base64EncodeString(AUsername)) then Exit;
 
        {Get Reply}
        if not GetReply(AReply) then Exit;
-       
+
        {Check Reply}
        if Uppercase(Copy(Trim(AReply),1,Length(Trim(SMTP_STRING_AUTH_CHALLENGE)))) = Uppercase(Trim(SMTP_STRING_AUTH_CHALLENGE)) then
         begin
          {Send Password}
          if not SendRequest(Base64EncodeString(APassword)) then Exit;
-         
+
          {Get Reply}
          if not GetReply(AReply) then Exit;
-         
+
          {Check Reply}
          if Uppercase(Copy(Trim(AReply),1,Length(Trim(SMTP_STRING_AUTH_SUCCESS)))) = Uppercase(Trim(SMTP_STRING_AUTH_SUCCESS)) then
           begin
            FAuthenticated:=True;
-           
+
            {Return Result}
            Result:=True;
           end;
@@ -1093,16 +1093,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(SMTP_COMMAND_MAIL + ' ' + SMTP_SUB_COMMAND_MAIL_FROM + ' ' + ASender) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Continuation}
    if Uppercase(Copy(Trim(AReply),4,Length(Trim(SMTP_STRING_CONTINUE)))) <> Uppercase(Trim(SMTP_STRING_CONTINUE)) then
     begin
@@ -1119,25 +1119,25 @@ begin
      {Line Continuation}
      {Get Response}
      if not GetReply(WorkBuffer) then Exit;
-     
-     {Check Response}     
+
+     {Check Response}
      while Uppercase(Copy(Trim(WorkBuffer),4,Length(Trim(SMTP_STRING_CONTINUE)))) = Uppercase(Trim(SMTP_STRING_CONTINUE)) do
       begin
        {Add Line}
        AReply:=AReply + SMTP_LINE_END + WorkBuffer;
-       
+
        {Get Response}
        if not GetReply(WorkBuffer) then Exit;
       end;
-      
+
      {Check for Success}
      if Uppercase(Copy(Trim(WorkBuffer),1,Length(Trim(SMTP_STRING_MAIL_SUCCESS)))) = Uppercase(Trim(SMTP_STRING_MAIL_SUCCESS)) then
       begin
        {Return Result}
        Result:=True;
       end;
-      
-     {Add Line} 
+
+     {Add Line}
      AReply:=AReply + SMTP_LINE_END + WorkBuffer;
     end;
   finally
@@ -1171,7 +1171,7 @@ begin
 
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(SMTP_COMMAND_RCPT + ' ' + SMTP_SUB_COMMAND_RCPT_TO + ' ' + AReceiver) then Exit;
 
@@ -1194,8 +1194,8 @@ begin
      {Line Continuation}
      {Get Response}
      if not GetReply(WorkBuffer) then Exit;
-     
-     {Check Response}     
+
+     {Check Response}
      while Uppercase(Copy(Trim(WorkBuffer),4,Length(Trim(SMTP_STRING_CONTINUE)))) = Uppercase(Trim(SMTP_STRING_CONTINUE)) do
       begin
        {Add Line}
@@ -1211,8 +1211,8 @@ begin
        {Return Result}
        Result:=True;
       end;
-     
-     {Add Line} 
+
+     {Add Line}
      AReply:=AReply + SMTP_LINE_END + WorkBuffer;
     end;
   finally
@@ -1243,16 +1243,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(SMTP_COMMAND_VRFY + ' ' + AAddress) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Continuation}
    if Uppercase(Copy(Trim(AReply),4,Length(Trim(SMTP_STRING_CONTINUE)))) <> Uppercase(Trim(SMTP_STRING_CONTINUE)) then
     begin
@@ -1269,25 +1269,25 @@ begin
      {Line Continuation}
      {Get Response}
      if not GetReply(WorkBuffer) then Exit;
-     
-     {Check Response}     
+
+     {Check Response}
      while Uppercase(Copy(Trim(WorkBuffer),4,Length(Trim(SMTP_STRING_CONTINUE)))) = Uppercase(Trim(SMTP_STRING_CONTINUE)) do
       begin
        {Add Line}
        AReply:=AReply + SMTP_LINE_END + WorkBuffer;
-       
+
        {Get Response}
        if not GetReply(WorkBuffer) then Exit;
       end;
-      
+
      {Check for Success}
      if Uppercase(Copy(Trim(WorkBuffer),1,Length(Trim(SMTP_STRING_VRFY_SUCCESS)))) = Uppercase(Trim(SMTP_STRING_VRFY_SUCCESS)) then
       begin
        {Return Result}
        Result:=True;
       end;
-      
-     {Add Line} 
+
+     {Add Line}
      AReply:=AReply + SMTP_LINE_END + WorkBuffer;
     end;
   finally
@@ -1317,10 +1317,10 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(SMTP_COMMAND_BEGIN_DATA) then Exit;
 
@@ -1343,25 +1343,25 @@ begin
      {Line Continuation}
      {Get Response}
      if not GetReply(WorkBuffer) then Exit;
-     
-     {Check Response}     
+
+     {Check Response}
      while Uppercase(Copy(Trim(WorkBuffer),4,Length(Trim(SMTP_STRING_CONTINUE)))) = Uppercase(Trim(SMTP_STRING_CONTINUE)) do
       begin
        {Add Line}
        AReply:=AReply + SMTP_LINE_END + WorkBuffer;
-       
+
        {Get Response}
        if not GetReply(WorkBuffer) then Exit;
       end;
-      
+
      {Check for Success}
      if Uppercase(Copy(Trim(WorkBuffer),1,Length(Trim(SMTP_STRING_BEGIN_DATA_SUCCESS)))) = Uppercase(Trim(SMTP_STRING_BEGIN_DATA_SUCCESS)) then
       begin
        {Return Result}
        Result:=True;
       end;
-      
-     {Add Line} 
+
+     {Add Line}
      AReply:=AReply + SMTP_LINE_END + WorkBuffer;
     end;
   finally
@@ -1390,10 +1390,10 @@ begin
   try
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(AData) then Exit;
-   
+
    {Return Result}
    Result:=True;
   finally
@@ -1423,16 +1423,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(SMTP_COMMAND_END_DATA) then Exit;
 
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Continuation}
    if Uppercase(Copy(Trim(AReply),4,Length(Trim(SMTP_STRING_CONTINUE)))) <> Uppercase(Trim(SMTP_STRING_CONTINUE)) then
     begin
@@ -1449,25 +1449,25 @@ begin
      {Line Continuation}
      {Get Response}
      if not GetReply(WorkBuffer) then Exit;
-     
-     {Check Response}     
+
+     {Check Response}
      while Uppercase(Copy(Trim(WorkBuffer),4,Length(Trim(SMTP_STRING_CONTINUE)))) = Uppercase(Trim(SMTP_STRING_CONTINUE)) do
       begin
        {Add Line}
        AReply:=AReply + SMTP_LINE_END + WorkBuffer;
-       
+
        {Get Response}
        if not GetReply(WorkBuffer) then Exit;
       end;
-      
+
      {Check for Success}
      if Uppercase(Copy(Trim(WorkBuffer),1,Length(Trim(SMTP_STRING_END_DATA_SUCCESS)))) = Uppercase(Trim(SMTP_STRING_END_DATA_SUCCESS)) then
       begin
        {Return Result}
        Result:=True;
       end;
-     
-     {Add Line} 
+
+     {Add Line}
      AReply:=AReply + SMTP_LINE_END + WorkBuffer;
     end;
   finally
@@ -1497,10 +1497,10 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(SMTP_COMMAND_QUIT) then Exit;
 
@@ -1515,44 +1515,44 @@ begin
      if Uppercase(Copy(Trim(AReply),1,Length(Trim(SMTP_STRING_QUIT_SUCCESS)))) = Uppercase(Trim(SMTP_STRING_QUIT_SUCCESS)) then
       begin
        FAuthenticated:=False;
-       
+
        {Return Result}
        Result:=True;
       end;
-      
+
      {Disconnect}
-     Disconnect;   
+     Disconnect;
     end
    else
     begin
      {Line Continuation}
      {Get Response}
      if not GetReply(WorkBuffer) then Exit;
-     
-     {Check Response}     
+
+     {Check Response}
      while Uppercase(Copy(Trim(WorkBuffer),4,Length(Trim(SMTP_STRING_CONTINUE)))) = Uppercase(Trim(SMTP_STRING_CONTINUE)) do
       begin
        {Add Line}
        AReply:=AReply + SMTP_LINE_END + WorkBuffer;
-       
+
        {Get Response}
        if not GetReply(WorkBuffer) then Exit;
       end;
-      
+
      {Check for Success}
      if Uppercase(Copy(Trim(WorkBuffer),1,Length(Trim(SMTP_STRING_QUIT_SUCCESS)))) = Uppercase(Trim(SMTP_STRING_QUIT_SUCCESS)) then
       begin
        FAuthenticated:=False;
-       
+
        {Return Result}
        Result:=True;
       end;
-      
-     {Add Line} 
+
+     {Add Line}
      AReply:=AReply + SMTP_LINE_END + WorkBuffer;
 
      {Disconnect}
-     Disconnect;   
+     Disconnect;
     end;
   finally
    {Request End Event}
@@ -1581,16 +1581,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(SMTP_COMMAND_RSET) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Continuation}
    if Uppercase(Copy(Trim(AReply),4,Length(Trim(SMTP_STRING_CONTINUE)))) <> Uppercase(Trim(SMTP_STRING_CONTINUE)) then
     begin
@@ -1599,7 +1599,7 @@ begin
      if Uppercase(Copy(Trim(AReply),1,Length(Trim(SMTP_STRING_RSET_SUCCESS)))) = Uppercase(Trim(SMTP_STRING_RSET_SUCCESS)) then
       begin
        FAuthenticated:=False;
-       
+
        {Return Result}
        Result:=True;
       end;
@@ -1609,27 +1609,27 @@ begin
      {Line Continuation}
      {Get Response}
      if not GetReply(WorkBuffer) then Exit;
-     
-     {Check Response}     
+
+     {Check Response}
      while Uppercase(Copy(Trim(WorkBuffer),4,Length(Trim(SMTP_STRING_CONTINUE)))) = Uppercase(Trim(SMTP_STRING_CONTINUE)) do
       begin
        {Add Line}
        AReply:=AReply + SMTP_LINE_END + WorkBuffer;
-       
+
        {Get Response}
        if not GetReply(WorkBuffer) then Exit;
       end;
-      
+
      {Check for Success}
      if Uppercase(Copy(Trim(WorkBuffer),1,Length(Trim(SMTP_STRING_RSET_SUCCESS)))) = Uppercase(Trim(SMTP_STRING_RSET_SUCCESS)) then
       begin
        FAuthenticated:=False;
-       
+
        {Return Result}
        Result:=True;
       end;
-      
-     {Add Line} 
+
+     {Add Line}
      AReply:=AReply + SMTP_LINE_END + WorkBuffer;
     end;
   finally
@@ -1659,10 +1659,10 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(SMTP_COMMAND_TIME) then Exit;
 
@@ -1685,25 +1685,25 @@ begin
      {Line Continuation}
      {Get Response}
      if not GetReply(WorkBuffer) then Exit;
-     
-     {Check Response}     
+
+     {Check Response}
      while Uppercase(Copy(Trim(WorkBuffer),4,Length(Trim(SMTP_STRING_CONTINUE)))) = Uppercase(Trim(SMTP_STRING_CONTINUE)) do
       begin
        {Add Line}
        AReply:=AReply + SMTP_LINE_END + WorkBuffer;
-       
+
        {Get Response}
        if not GetReply(WorkBuffer) then Exit;
       end;
-      
+
      {Check for Success}
      if Uppercase(Copy(Trim(WorkBuffer),1,Length(Trim(SMTP_STRING_TIME_SUCCESS)))) = Uppercase(Trim(SMTP_STRING_TIME_SUCCESS)) then
       begin
        {Return Result}
        Result:=True;
       end;
-      
-     {Add Line} 
+
+     {Add Line}
      AReply:=AReply + SMTP_LINE_END + WorkBuffer;
     end;
   finally
@@ -1733,16 +1733,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(SMTP_COMMAND_NOOP) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Continuation}
    if Uppercase(Copy(Trim(AReply),4,Length(Trim(SMTP_STRING_CONTINUE)))) <> Uppercase(Trim(SMTP_STRING_CONTINUE)) then
     begin
@@ -1759,25 +1759,25 @@ begin
      {Line Continuation}
      {Get Response}
      if not GetReply(WorkBuffer) then Exit;
-     
-     {Check Response}     
+
+     {Check Response}
      while Uppercase(Copy(Trim(WorkBuffer),4,Length(Trim(SMTP_STRING_CONTINUE)))) = Uppercase(Trim(SMTP_STRING_CONTINUE)) do
       begin
        {Add Line}
        AReply:=AReply + SMTP_LINE_END + WorkBuffer;
-       
+
        {Get Response}
        if not GetReply(WorkBuffer) then Exit;
       end;
-      
+
      {Check for Success}
      if Uppercase(Copy(Trim(WorkBuffer),1,Length(Trim(SMTP_STRING_NOOP_SUCCESS)))) = Uppercase(Trim(SMTP_STRING_NOOP_SUCCESS)) then
       begin
        {Return Result}
        Result:=True;
       end;
-      
-     {Add Line} 
+
+     {Add Line}
      AReply:=AReply + SMTP_LINE_END + WorkBuffer;
     end;
   finally
@@ -1797,7 +1797,7 @@ begin
  {}
  inherited Create;
  FLock:=CriticalSectionCreate;
- 
+
  FHandle:=THandle(Self);
  FRxByteCount:=0;
  FTxByteCount:=0;
@@ -1807,18 +1807,18 @@ begin
  FReplyTime:=Now;
  FRemoteAddress:='';
  FStatus:=SMTP_STATUS_NONE;
- 
+
  FAuthenticated:=False;
  FUsername:='';
  FPassword:='';
- 
+
  FThread:=nil;
  FBuffer:=TSMTPBuffer.Create(SMTP_BUFFER_SIZE);
 end;
 
 {==============================================================================}
 
-destructor TSMTPConnection.Destroy; 
+destructor TSMTPConnection.Destroy;
 begin
  {}
  AcquireLock;
@@ -1827,7 +1827,7 @@ begin
   FBuffer.Free;
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -1866,7 +1866,7 @@ function TSMTPConnection.GetRxByteCount:Int64;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FRxByteCount;
@@ -1892,7 +1892,7 @@ function TSMTPConnection.GetTxByteCount:Int64;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FTxByteCount;
@@ -1918,7 +1918,7 @@ function TSMTPConnection.GetRequestCount:Int64;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FRequestCount;
@@ -1944,7 +1944,7 @@ function TSMTPConnection.GetReplyCount:Int64;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FReplyCount;
@@ -1970,7 +1970,7 @@ function TSMTPConnection.GetRequestTime:TDateTime;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FRequestTime;
@@ -1996,7 +1996,7 @@ function TSMTPConnection.GetReplyTime:TDateTime;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FReplyTime;
@@ -2022,7 +2022,7 @@ function TSMTPConnection.GetRemoteAddress:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FRemoteAddress;
@@ -2074,7 +2074,7 @@ function TSMTPConnection.GetUsername:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FUsername;
@@ -2102,7 +2102,7 @@ function TSMTPConnection.GetPassword:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FPassword;
@@ -2125,7 +2125,7 @@ begin
 end;
 
 {==============================================================================}
- 
+
 procedure TSMTPConnection.SetThread(AThread:TThread);
 begin
  {}
@@ -2197,36 +2197,36 @@ end;
 
 {==============================================================================}
 
-procedure TSMTPListener.DoConnect(AThread:TWinsock2TCPServerThread); 
+procedure TSMTPListener.DoConnect(AThread:TWinsock2TCPServerThread);
 var
  Connection:TSMTPConnection;
 begin
  {}
  inherited DoConnect(AThread);
- 
+
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF SMTP_DEBUG}
  if SMTP_LOG_ENABLED then SMTPLogDebug('Listener: DoConnect');
  {$ENDIF}
- 
+
  {Create Connection}
  Connection:=TSMTPConnection.Create;
  Connection.RemoteAddress:=AThread.Server.PeerAddress;
  Connection.Thread:=AThread;
  Connection.RequestTime:=Now;
  Connection.ReplyTime:=Now;
- 
+
  {Update Thread}
  AThread.Data:=Connection;
- 
+
  {Connected Event}
  if Assigned(FOnConnected) then
   begin
    FOnConnected(Connection);
   end;
- 
+
  {Check Host Event}
  if not DoCheckHost(AThread) then
   begin
@@ -2234,7 +2234,7 @@ begin
    AThread.Server.Disconnect;
    Exit;
   end;
-  
+
  {Check Count Event}
  if not DoCheckCount(AThread) then
   begin
@@ -2243,23 +2243,23 @@ begin
    Exit;
   end;
 
- {Conn Event}  
+ {Conn Event}
  DoConn(AThread);
 end;
 
 {==============================================================================}
 
-procedure TSMTPListener.DoDisconnect(AThread:TWinsock2TCPServerThread); 
+procedure TSMTPListener.DoDisconnect(AThread:TWinsock2TCPServerThread);
 begin
  {}
  inherited DoDisconnect(AThread);
- 
+
  if AThread = nil then Exit;
- 
+
  {$IFDEF SMTP_DEBUG}
  if SMTP_LOG_ENABLED then SMTPLogDebug('Listener: DoDisconnect');
  {$ENDIF}
- 
+
  {Disconnected Event}
  if Assigned(FOnDisconnected) then
   begin
@@ -2269,17 +2269,17 @@ end;
 
 {==============================================================================}
 
-function TSMTPListener.DoCheckHost(AThread:TWinsock2TCPServerThread):Boolean; 
+function TSMTPListener.DoCheckHost(AThread:TWinsock2TCPServerThread):Boolean;
 begin
  {}
  Result:=True;
- 
+
  if AThread = nil then Exit;
- 
+
  {$IFDEF SMTP_DEBUG}
  if SMTP_LOG_ENABLED then SMTPLogDebug('Listener: DoCheckHost');
  {$ENDIF}
- 
+
  {Check Host Event}
  if Assigned(FOnCheckHost) then
   begin
@@ -2289,17 +2289,17 @@ end;
 
 {==============================================================================}
 
-function TSMTPListener.DoCheckCount(AThread:TWinsock2TCPServerThread):Boolean; 
+function TSMTPListener.DoCheckCount(AThread:TWinsock2TCPServerThread):Boolean;
 begin
  {}
  Result:=True;
- 
+
  if AThread = nil then Exit;
- 
+
  {$IFDEF SMTP_DEBUG}
  if SMTP_LOG_ENABLED then SMTPLogDebug('Listener: DoCheckCount');
  {$ENDIF}
- 
+
  {Check Count Event}
  if Assigned(FOnCheckCount) then
   begin
@@ -2308,8 +2308,8 @@ begin
 end;
 
 {==============================================================================}
-  
-function TSMTPListener.DoExecute(AThread:TWinsock2TCPServerThread):Boolean; 
+
+function TSMTPListener.DoExecute(AThread:TWinsock2TCPServerThread):Boolean;
 var
  Reply:String;
  Request:String;
@@ -2321,31 +2321,31 @@ begin
  {}
  Result:=inherited DoExecute(AThread);
  if not Result then Exit;
- 
+
  Result:=False;
 
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF SMTP_DEBUG}
  if SMTP_LOG_ENABLED then SMTPLogDebug('Listener: DoExecute');
  {$ENDIF}
- 
+
  if AThread.Server.Connected then
   begin
    {Get Connection}
    Connection:=TSMTPConnection(AThread.Data);
    if Connection = nil then Exit;
-   
+
    {Check Status}
    case Connection.Status of
     SMTP_STATUS_NONE,SMTP_STATUS_CONN,SMTP_STATUS_HELO,SMTP_STATUS_AUTH,SMTP_STATUS_MAIL,SMTP_STATUS_RCPT,SMTP_STATUS_QUIT:begin
       {Get Request}
       if not GetRequest(AThread,Request) then Exit;
-   
+
       {Set Default Reply}
       Reply:=SMTP_STRING_COMMAND_FAILURE + SMTP_STRING_BAD_COMMAND;
-  
+
       {Process Request}
       if Trim(Request) <> '' then
        begin
@@ -2353,10 +2353,10 @@ begin
          begin
           {Get SMTP Command}
           SMTPCommand:=Uppercase(Copy(Trim(Request),1,4));
-          
+
           {Get SMTP Data}
           SMTPData:=Trim(Copy(Trim(Request),Length(SMTPCommand) + 1,Length(Request)));
-  
+
           {Check SMTP Commands}
           if SMTPCommand = SMTP_COMMAND_HELO then
            begin
@@ -2377,10 +2377,10 @@ begin
            begin
             {Get SMTP Sub Command}
             SMTPSubCommand:=Uppercase(Copy(Trim(SMTPData),1,5));
-            
+
             {Get SMTP Data}
             SMTPData:=Trim(Copy(Trim(SMTPData),Length(SMTPSubCommand) + 1,Length(SMTPData)));
-            
+
             {Check SMTP Sub Command}
             if SMTPSubCommand = SMTP_SUB_COMMAND_MAIL_FROM then
              begin
@@ -2397,10 +2397,10 @@ begin
            begin
             {Get SMTP Sub Command}
             SMTPSubCommand:=Uppercase(Copy(Trim(SMTPData),1,3));
-            
+
             {Get SMTP Data}
             SMTPData:=Trim(Copy(Trim(SMTPData),Length(SMTPSubCommand) + 1,Length(SMTPData)));
-            
+
             {Check SMTP Sub Command}
             if SMTPSubCommand = SMTP_SUB_COMMAND_RCPT_TO then
              begin
@@ -2464,7 +2464,7 @@ begin
     SMTP_STATUS_DATA:begin
       {Get Request}
       if not GetRequest(AThread,Request) then Exit;
-   
+
       {Set Default Reply}
       Reply:='';
 
@@ -2480,12 +2480,12 @@ begin
         DoData(AThread,Request);
        end;
      end;
-   end;  
-    
+   end;
+
    Result:=True;
   end;
 end;
-  
+
 {==============================================================================}
 
 procedure TSMTPListener.DoConn(AThread:TWinsock2TCPServerThread);
@@ -2497,23 +2497,23 @@ begin
  {}
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF SMTP_DEBUG}
  if SMTP_LOG_ENABLED then SMTPLogDebug('Listener: DoConn');
  {$ENDIF}
- 
+
  Request:='';
- 
+
  {Set Default Reply}
  Reply:=SMTP_STRING_CONN_SUCCESS + SMTP_STRING_CONN_OK;
- 
+
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
- if Connection <> nil then 
+ if Connection <> nil then
   begin
    Connection.Status:=SMTP_STATUS_CONN;
-  end; 
- 
+  end;
+
  {Conn Event}
  if Assigned(FOnConn) then
   begin
@@ -2534,9 +2534,9 @@ begin
    if not SendReply(AThread,Reply) then Exit;
   end;
 end;
-  
+
 {==============================================================================}
-  
+
 procedure TSMTPListener.DoHelo(AThread:TWinsock2TCPServerThread;const AHost:String);
 var
  Reply:String;
@@ -2558,12 +2558,12 @@ begin
 
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
- if Connection <> nil then 
+ if Connection <> nil then
   begin
    Connection.Status:=SMTP_STATUS_HELO;
-  end; 
+  end;
 
- {Helo Event}  
+ {Helo Event}
  if Assigned(FOnHelo) then
   begin
    if FOnHelo(Connection,Request,Reply) then
@@ -2601,18 +2601,18 @@ begin
  {$ENDIF}
 
  Request:=AHost;
- 
+
  {Set Default Reply}
  Reply:=SMTP_STRING_EHLO_SUCCESS + SMTP_STRING_EHLO_HEAD_OK + AHost + SMTP_STRING_EHLO_TAIL_OK;
- 
+
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
- if Connection <> nil then 
+ if Connection <> nil then
   begin
    Connection.Status:=SMTP_STATUS_HELO;
   end;
-  
- {Ehlo Event}  
+
+ {Ehlo Event}
  if Assigned(FOnEhlo) then
   begin
    if FOnEhlo(Connection,Request,Reply) then
@@ -2654,45 +2654,45 @@ begin
 
  {Set Default Reply}
  Reply:=SMTP_STRING_COMMAND_FAILURE + SMTP_STRING_BAD_COMMAND;
- 
+
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
- if Connection <> nil then 
+ if Connection <> nil then
   begin
    Connection.Status:=SMTP_STATUS_AUTH;
   end;
-  
- {Auth Event}   
+
+ {Auth Event}
  if Assigned(FOnAuth) then
   begin
    Params:=TStringList.Create;
    try
     {Extract Params}
     UndelimitString(AParams,Params,' ');
-    
+
     {Check Params}
     case Params.Count of
      1:begin
        {Method supplied}
        {Get Method}
        Method:=Params.Strings[0];
-       
+
        {Send Reply}   {Base64 Encoded}
        Reply:=SMTP_STRING_AUTH_CHALLENGE + Base64EncodeString('Username:');
        if not SendReply(AThread,Reply) then Exit;
-       
+
        {Get Username} {Base64 Encoded}
        if not GetRequest(AThread,Username) then Exit;
        Username:=Base64DecodeString(Username);
-       
+
        {Send Reply}   {Base64 Encoded}
        Reply:=SMTP_STRING_AUTH_CHALLENGE + Base64EncodeString('Password:');
        if not SendReply(AThread,Reply) then Exit;
-       
+
        {Get Password} {Base64 Encoded}
        if not GetRequest(AThread,Password) then Exit;
        Password:=Base64DecodeString(Password);
-       
+
        if FOnAuth(Connection,Method,Username,Password,Reply) then
         begin
          {Send Reply}
@@ -2708,18 +2708,18 @@ begin
        {Method and Username supplied}
        {Get Method}
        Method:=Params.Strings[0];
-       
+
        {Get Username} {Base64 Encoded}
        Username:=Base64DecodeString(Params.Strings[1]);
-       
+
        {Send Reply}   {Base64 Encoded}
        Reply:=SMTP_STRING_AUTH_CHALLENGE + Base64EncodeString('Password:');
        if not SendReply(AThread,Reply) then Exit;
-       
+
        {Get Password} {Base64 Encoded}
        if not GetRequest(AThread,Password) then Exit;
        Password:=Base64DecodeString(Password);
-       
+
        if FOnAuth(Connection,Method,Username,Password,Reply) then
         begin
          {Send Reply}
@@ -2735,7 +2735,7 @@ begin
       begin
        {Set Default Reply}
        Reply:=SMTP_STRING_AUTH_FAILURE + SMTP_STRING_BAD_AUTH;
-       
+
        {Send Reply}
        if not SendReply(AThread,Reply) then Exit;
       end;
@@ -2768,17 +2768,17 @@ begin
  {$ENDIF}
 
  Request:=ASender;
- 
+
  {Set Default Reply}
  Reply:=SMTP_STRING_MAIL_SUCCESS + SMTP_STRING_MAIL_OK;
- 
+
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
- if Connection <> nil then 
+ if Connection <> nil then
   begin
    Connection.Status:=SMTP_STATUS_MAIL;
   end;
-  
+
  {Mail Event}
  if Assigned(FOnMail) then
   begin
@@ -2817,17 +2817,17 @@ begin
  {$ENDIF}
 
  Request:=ARecipient;
- 
+
  {Set Default Reply}
  Reply:=SMTP_STRING_RCPT_SUCCESS + SMTP_STRING_RCPT_OK;
- 
+
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
- if Connection <> nil then 
+ if Connection <> nil then
   begin
    Connection.Status:=SMTP_STATUS_RCPT;
-  end; 
- 
+  end;
+
  {Rcpt Event}
  if Assigned(FOnRcpt) then
   begin
@@ -2872,10 +2872,10 @@ begin
 
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
- if Connection <> nil then 
+ if Connection <> nil then
   begin
    Connection.Status:=Connection.Status;
-  end; 
+  end;
 
  {Vrfy Event}
  if Assigned(FOnVrfy) then
@@ -2914,17 +2914,17 @@ begin
  {$ENDIF}
 
  Request:='';
- 
+
  {Set Default Reply}
  Reply:=SMTP_STRING_BEGIN_DATA_SUCCESS + SMTP_STRING_BEGIN_DATA_OK;
- 
+
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
- if Connection <> nil then 
+ if Connection <> nil then
   begin
    Connection.Status:=SMTP_STATUS_DATA;
-  end; 
- 
+  end;
+
  {Begin Data Event}
  if Assigned(FOnBeginData) then
   begin
@@ -2962,17 +2962,17 @@ begin
  {$ENDIF}
 
  Request:=AData;
- 
+
  {Set Default Reply}
  Reply:='';
- 
+
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
- if Connection <> nil then 
+ if Connection <> nil then
   begin
    Connection.Status:=SMTP_STATUS_DATA;
-  end; 
- 
+  end;
+
  {Data Event}
  if Assigned(FOnData) then
   begin
@@ -3013,10 +3013,10 @@ begin
 
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
- if Connection <> nil then 
+ if Connection <> nil then
   begin
    Connection.Status:=SMTP_STATUS_HELO;
-  end; 
+  end;
 
  {End Data Event}
  if Assigned(FOnEndData) then
@@ -3050,7 +3050,7 @@ begin
  {}
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF SMTP_DEBUG}
  if SMTP_LOG_ENABLED then SMTPLogDebug('Listener: DoQuit');
  {$ENDIF}
@@ -3062,10 +3062,10 @@ begin
 
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
- if Connection <> nil then 
+ if Connection <> nil then
   begin
    Connection.Status:=SMTP_STATUS_QUIT;
-  end; 
+  end;
 
  {Quit Event}
  if Assigned(FOnQuit) then
@@ -3074,7 +3074,7 @@ begin
     begin
      {Send Reply}
      if not SendReply(AThread,Reply) then Exit;
-     
+
      {Close Connection}
      AThread.Server.Disconnect;
     end
@@ -3082,7 +3082,7 @@ begin
     begin
      {Send Reply}
      if not SendReply(AThread,Reply) then Exit;
-     
+
      {Close Connection}
      AThread.Server.Disconnect;
     end;
@@ -3091,7 +3091,7 @@ begin
   begin
    {Default Reply}
    if not SendReply(AThread,Reply) then Exit;
-   
+
    {Close Connection}
    AThread.Server.Disconnect;
   end;
@@ -3119,10 +3119,10 @@ begin
 
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
- if Connection <> nil then 
+ if Connection <> nil then
   begin
    Connection.Status:=SMTP_STATUS_HELO;
-  end; 
+  end;
 
  {Rset Event}
  if Assigned(FOnRset) then
@@ -3167,10 +3167,10 @@ begin
 
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
- if Connection <> nil then 
+ if Connection <> nil then
   begin
    Connection.Status:=Connection.Status;
-  end; 
+  end;
 
  {Time Event}
  if Assigned(FOnTime) then
@@ -3215,10 +3215,10 @@ begin
 
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
- if Connection <> nil then 
+ if Connection <> nil then
   begin
    Connection.Status:=Connection.Status;
-  end; 
+  end;
 
  {Noop Event}
  if Assigned(FOnNoop) then
@@ -3256,18 +3256,18 @@ begin
  {}
  Result:=False;
  ARequest:='';
- 
+
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF SMTP_DEBUG}
  if SMTP_LOG_ENABLED then SMTPLogDebug('Listener: GetRequest');
  {$ENDIF}
- 
+
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
  if Connection = nil then Exit;
- 
+
  {Get Request}
  Completed:=False;
  while not(Completed) do
@@ -3275,13 +3275,13 @@ begin
    {$IFDEF SMTP_DEBUG}
    if SMTP_LOG_ENABLED then SMTPLogDebug('Listener:  Buffer Count = ' + IntToStr(Connection.Buffer.Count));
    {$ENDIF}
-   
+
    {Read from Buffer}
    while Connection.Buffer.Count > 0 do
     begin
      {Read Value}
      Value:=Connection.Buffer.ReadData;
-     
+
      {Check for CR LF}
      if not(Value in [#10,#13]) then
       begin
@@ -3295,12 +3295,12 @@ begin
          Completed:=True;
          Break;
         end;
-      end;      
+      end;
     end;
-   
+
    {Check Completed}
    if Completed then Break;
-   
+
    {Read from Socket}
    Data:=Connection.Buffer.WriteLock(Size);
    if Data = nil then Exit;
@@ -3310,32 +3310,32 @@ begin
     {$ENDIF}
 
     Count:=0;
-      
+
     {Read Available}
     if not AThread.Server.ReadAvailable(Data,Size,LongInt(Count),Closed) then Exit;
-    
+
     {$IFDEF SMTP_DEBUG}
     if SMTP_LOG_ENABLED then SMTPLogDebug('Listener:  Buffer Write Count = ' + IntToStr(Count));
     {$ENDIF}
    finally
     Connection.Buffer.WriteUnlock(Count);
-   end; 
-  end;  
- 
+   end;
+  end;
+
  {Update Connection}
  Connection.RequestTime:=Now;
  Connection.IncrementRequestCount;
  Connection.IncrementRxByteCount(Length(ARequest));
- 
+
  {Request Event}
  if Assigned(FOnRequest) then
   begin
    FOnRequest(Connection,ARequest);
   end;
-  
+
  {Return Result}
- Result:=True; 
-  
+ Result:=True;
+
  {$IFDEF SMTP_DEBUG}
  if SMTP_LOG_ENABLED then SMTPLogDebug('Listener:  Request = ' + ARequest);
  {$ENDIF}
@@ -3349,38 +3349,38 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF SMTP_DEBUG}
  if SMTP_LOG_ENABLED then SMTPLogDebug('Listener: SendReply');
  if SMTP_LOG_ENABLED then SMTPLogDebug('Listener:  Reply = ' + AReply);
  {$ENDIF}
- 
+
  {Get Connection}
  Connection:=TSMTPConnection(AThread.Data);
  if Connection = nil then Exit;
 
  {Send Reply}
  if not AThread.Server.WriteData(PChar(AReply),Length(AReply)) then Exit;
- 
+
  {Send Line End}
  if not AThread.Server.WriteData(PChar(SMTP_LINE_END),Length(SMTP_LINE_END)) then Exit;
- 
+
  {Update Connection}
  Connection.ReplyTime:=Now;
  Connection.IncrementReplyCount;
  Connection.IncrementTxByteCount(Length(AReply));
- 
+
  {Reply Event}
  if Assigned(FOnReply) then
   begin
    FOnReply(Connection,AReply);
   end;
-  
+
  {Return Result}
- Result:=True; 
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -3391,9 +3391,9 @@ begin
  {}
  {Check Initialized}
  if SMTPInitialized then Exit;
- 
+
  {Initialize Logging}
- SMTP_LOG_ENABLED:=(SMTP_DEFAULT_LOG_LEVEL <> SMTP_LOG_LEVEL_NONE); 
+ SMTP_LOG_ENABLED:=(SMTP_DEFAULT_LOG_LEVEL <> SMTP_LOG_LEVEL_NONE);
 
  SMTPInitialized:=True;
 end;
@@ -3412,7 +3412,7 @@ begin
  {}
  {Check Level}
  if Level < SMTP_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = SMTP_LOG_LEVEL_DEBUG then
@@ -3427,11 +3427,11 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'SMTP: ';
 
- {Output Logging} 
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_SMTP,LogLevelToLoggingSeverity(Level),'SMTP',WorkBuffer + AText);
 end;
 
@@ -3474,7 +3474,7 @@ initialization
  SMTPInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

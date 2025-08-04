@@ -21,7 +21,7 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -29,18 +29,18 @@ Credits
 
   Linux - \drivers\gpio\gpio-bcm-exp.c - Copyright (C) 2017 Raspberry Pi Trading Ltd.
   Linux - \include\soc\bcm2835\raspberrypi-firmware.h - Copyright (C) 2015 Broadcom
-  
+
 References
 ==========
 
   Raspbian Linux - https://github.com/raspberrypi/linux/
-  
+
 Raspberry Pi GPIO Expander
 ==========================
- 
- As of February 2017 the Raspberry Pi firmware contains a mailbox interface to allow 
+
+ As of February 2017 the Raspberry Pi firmware contains a mailbox interface to allow
  control of the GPIO expander on the Raspberry Pi 3/4 and Compute Module 3/4.
-  
+
  Unlike the earlier virtual GPIO interface this mailbox service now supports most GPIO
  functionality including getting and setting a pin value, getting and changing the pin
  function and getting or changing the pullup/down options.
@@ -48,24 +48,24 @@ Raspberry Pi GPIO Expander
  This driver implements most of the functionality available in the new mailbox service
  as a standard Ultibo GPIO device and also provides direct mailbox calls to allow access
  to any additional options not covered by the GPIO device API.
- 
+
  When included in a project this driver replaces the Virtual GPIO functions provided by
  the PlatformRPi2, PlatformRPi3, PlatformRPi4 units.
-  
+
  According to /arch/arm/boot/dts/bcm2710-rpi-3-b.dts the following pin assignments are known:
- 
+
   GPIO_PIN_2 = Activity LED
   GPIO_PIN_4 = HDMI Detect (Input / Active Low)
   GPIO_PIN_7 = Power LED (Input / Active Low)
 
  For the Raspberry Pi 3B+ the assignments shown in /arch/arm/boot/dts/bcm2710-rpi-3-b.dts have
  changed as follows:
- 
+
   GPIO_PIN_2 = Power LED (Active Low)
   GPIO_PIN_4 = HDMI Detect (Input / Active Low)
-  
+
  For the Raspberry Pi 4B the assignments shown in /arch/arm/boot/dts/bcm2711-rpi-4-b.dts are:
- 
+
   GPIO_PIN_0 = Bluetooth Power (Active High) (BT_ON)
   GPIO_PIN_1 = WiFi Power Sequencer (Active Low) (WL_ON)
   GPIO_PIN_2 = Power LED (Active Low) (PWR_LED_OFF)
@@ -74,22 +74,22 @@ Raspberry Pi GPIO Expander
   GPIO_PIN_5 = CAM1 regulator (Active High) (CAM_GPIO)
   GPIO_PIN_6 = SD VCC regulator (Active High) (SD_PWR_ON)
   GPIO_PIN_7 = (SD_OC_N) (ANT2 on CM4)
-  
+
  The Pi 400 and CM4 files at bcm2711-rpi-400.dts and bcm2711-rpi-cm4.dts show identical assignments
  as the Pi 4B.
-  
+
  Note that this driver requires recent firmware (later than February 2017) and has been tested
  successfully with the firmware release from 8 October 2020.
- 
+
  The latest version of the firmware is available from https://github.com/raspberrypi/firmware
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit RPiGPIOExpander; 
+unit RPiGPIOExpander;
 
 interface
 
@@ -103,21 +103,21 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads,Devices,G
 const
  {RPiGPIO Expander specific constants}
  RPIGPIOEXP_GPIO_DESCRIPTION = 'Raspberry Pi Firmware GPIO Expander';  {Description of RPiGPIO Expander device}
- 
+
  RPIGPIOEXP_GPIO_MIN_PIN = GPIO_PIN_0;
  RPIGPIOEXP_GPIO_MAX_PIN = GPIO_PIN_7;
- 
+
  RPIGPIOEXP_GPIO_PIN_COUNT  = 8;
- 
+
  RPIGPIOEXP_GPIO_PIN_OFFSET = 128;
 
  RPIGPIOEXP_GPIO_MAX_LEVEL = GPIO_LEVEL_HIGH;
- 
+
  RPIGPIOEXP_GPIO_MAX_PULL = GPIO_PULL_DOWN;
- 
+
  RPIGPIOEXP_GPIO_MIN_FUNCTION = GPIO_FUNCTION_IN;
  RPIGPIOEXP_GPIO_MAX_FUNCTION = GPIO_FUNCTION_OUT;
- 
+
 {==============================================================================}
 type
  {RPiGPIO Expander specific types}
@@ -127,26 +127,26 @@ type
   GPIO:TGPIODevice;
   {RPiGPIO Expander Properties}
   {Nothing}
- end; 
- 
+ end;
+
 {==============================================================================}
 {var}
  {RPiGPIO Expander specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure RPiGPIOExpanderInit;
- 
+
 {==============================================================================}
 {RPiGPIO Expander Functions}
- 
+
 {==============================================================================}
 {RPiGPIO Expander GPIO Functions}
-function RPiGPIOExpanderStart(GPIO:PGPIODevice):LongWord; 
-function RPiGPIOExpanderStop(GPIO:PGPIODevice):LongWord; 
- 
+function RPiGPIOExpanderStart(GPIO:PGPIODevice):LongWord;
+function RPiGPIOExpanderStop(GPIO:PGPIODevice):LongWord;
+
 function RPiGPIOExpanderInputGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
- 
+
 function RPiGPIOExpanderOutputSet(GPIO:PGPIODevice;Pin,Level:LongWord):LongWord;
 
 function RPiGPIOExpanderPullGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
@@ -154,14 +154,14 @@ function RPiGPIOExpanderPullSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
 
 function RPiGPIOExpanderFunctionGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
 function RPiGPIOExpanderFunctionSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
- 
+
 {==============================================================================}
 {RTL Virtual GPIO Functions}
-function SysVirtualGPIOInputGet(Pin:LongWord):LongWord; 
-function SysVirtualGPIOOutputSet(Pin,Level:LongWord):LongWord; 
-function SysVirtualGPIOFunctionGet(Pin:LongWord):LongWord; 
-function SysVirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; 
- 
+function SysVirtualGPIOInputGet(Pin:LongWord):LongWord;
+function SysVirtualGPIOOutputSet(Pin,Level:LongWord):LongWord;
+function SysVirtualGPIOFunctionGet(Pin:LongWord):LongWord;
+function SysVirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord;
+
 {==============================================================================}
 {RPiGPIO Expander Helper Functions}
 function RPiGPIOExpanderGetState(GPIO:LongWord;var State:LongWord):LongWord;
@@ -189,7 +189,7 @@ const
  RPIGPIO_MBOX_TAG_SET_GPIO_STATE = BCM2835_MBOX_TAG_SET_GPIO_STATE;
  RPIGPIO_MBOX_TAG_GET_GPIO_CONFIG = BCM2835_MBOX_TAG_GET_GPIO_CONFIG;
  RPIGPIO_MBOX_TAG_SET_GPIO_CONFIG = BCM2835_MBOX_TAG_SET_GPIO_CONFIG;
- 
+
  RPIGPIO_MAILBOX_0 = BCM2835_MAILBOX_0;
  RPIGPIO_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC = BCM2835_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC;
  {$ELSE}
@@ -200,7 +200,7 @@ const
  RPIGPIO_MBOX_TAG_SET_GPIO_STATE = BCM2837_MBOX_TAG_SET_GPIO_STATE;
  RPIGPIO_MBOX_TAG_GET_GPIO_CONFIG = BCM2837_MBOX_TAG_GET_GPIO_CONFIG;
  RPIGPIO_MBOX_TAG_SET_GPIO_CONFIG = BCM2837_MBOX_TAG_SET_GPIO_CONFIG;
- 
+
  RPIGPIO_MAILBOX_0 = BCM2837_MAILBOX_0;
  RPIGPIO_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC = BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC;
  {$ENDIF}
@@ -211,19 +211,19 @@ type
  {$IFDEF CPUARMV6}
  TRPiGPIOMailboxHeader = TBCM2835MailboxHeader;
  PRPiGPIOMailboxHeader = PBCM2835MailboxHeader;
- 
+
  TRPiGPIOMailboxFooter = TBCM2835MailboxFooter;
  PRPiGPIOMailboxFooter = PBCM2835MailboxFooter;
- 
+
  TRPiGPIOMailboxTagHeader = TBCM2835MailboxTagHeader;
  PRPiGPIOMailboxTagHeader = PBCM2835MailboxTagHeader;
- 
+
  TRPiGPIOMailboxTagGetGPIOState = TBCM2835MailboxTagGetGPIOState;
  PRPiGPIOMailboxTagGetGPIOState = PBCM2835MailboxTagGetGPIOState;
- 
+
  TRPiGPIOMailboxTagSetGPIOState = TBCM2835MailboxTagSetGPIOState;
  PRPiGPIOMailboxTagSetGPIOState = PBCM2835MailboxTagSetGPIOState;
- 
+
  TRPiGPIOMailboxTagGetGPIOConfig = TBCM2835MailboxTagGetGPIOConfig;
  PRPiGPIOMailboxTagGetGPIOConfig = PBCM2835MailboxTagGetGPIOConfig;
 
@@ -232,19 +232,19 @@ type
  {$ELSE}
  TRPiGPIOMailboxHeader = TBCM2837MailboxHeader;
  PRPiGPIOMailboxHeader = PBCM2837MailboxHeader;
- 
+
  TRPiGPIOMailboxFooter = TBCM2837MailboxFooter;
  PRPiGPIOMailboxFooter = PBCM2837MailboxFooter;
- 
+
  TRPiGPIOMailboxTagHeader = TBCM2837MailboxTagHeader;
  PRPiGPIOMailboxTagHeader = PBCM2837MailboxTagHeader;
- 
+
  TRPiGPIOMailboxTagGetGPIOState = TBCM2837MailboxTagGetGPIOState;
  PRPiGPIOMailboxTagGetGPIOState = PBCM2837MailboxTagGetGPIOState;
- 
+
  TRPiGPIOMailboxTagSetGPIOState = TBCM2837MailboxTagSetGPIOState;
  PRPiGPIOMailboxTagSetGPIOState = PBCM2837MailboxTagSetGPIOState;
- 
+
  TRPiGPIOMailboxTagGetGPIOConfig = TBCM2837MailboxTagGetGPIOConfig;
  PRPiGPIOMailboxTagGetGPIOConfig = PBCM2837MailboxTagGetGPIOConfig;
 
@@ -257,7 +257,7 @@ var
  {RPiGPIO Expander specific variables}
  RPiGPIOExpander:PRPiGPIOExpander;
  RPiGPIOExpanderInitialized:Boolean;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -272,7 +272,7 @@ begin
  {}
  {Check Initialized}
  if RPiGPIOExpanderInitialized then Exit;
- 
+
  {Check Board Type}
  BoardType:=BoardGetType;
  case BoardType of
@@ -290,7 +290,7 @@ begin
      begin
       {Update GPIO}
       {Device}
-      RPiGPIOExpander.GPIO.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+      RPiGPIOExpander.GPIO.Device.DeviceBus:=DEVICE_BUS_MMIO;
       RPiGPIOExpander.GPIO.Device.DeviceType:=GPIO_TYPE_NONE;
       RPiGPIOExpander.GPIO.Device.DeviceFlags:=GPIO_FLAG_PULL_UP;
       RPiGPIOExpander.GPIO.Device.DeviceData:=nil;
@@ -301,10 +301,10 @@ begin
       RPiGPIOExpander.GPIO.DeviceStop:=RPiGPIOExpanderStop;
       RPiGPIOExpander.GPIO.DeviceInputGet:=RPiGPIOExpanderInputGet;
       RPiGPIOExpander.GPIO.DeviceOutputSet:=RPiGPIOExpanderOutputSet;
-      RPiGPIOExpander.GPIO.DevicePullGet:=RPiGPIOExpanderPullGet;  
-      RPiGPIOExpander.GPIO.DevicePullSelect:=RPiGPIOExpanderPullSelect;  
+      RPiGPIOExpander.GPIO.DevicePullGet:=RPiGPIOExpanderPullGet;
+      RPiGPIOExpander.GPIO.DevicePullSelect:=RPiGPIOExpanderPullSelect;
       RPiGPIOExpander.GPIO.DeviceFunctionGet:=RPiGPIOExpanderFunctionGet;
-      RPiGPIOExpander.GPIO.DeviceFunctionSelect:=RPiGPIOExpanderFunctionSelect;    
+      RPiGPIOExpander.GPIO.DeviceFunctionSelect:=RPiGPIOExpanderFunctionSelect;
       {Driver}
       RPiGPIOExpander.GPIO.Address:=nil;
       RPiGPIOExpander.GPIO.Properties.Flags:=RPiGPIOExpander.GPIO.Device.DeviceFlags;
@@ -316,7 +316,7 @@ begin
       RPiGPIOExpander.GPIO.Properties.FunctionCount:=2;
       {RPiGPIO Expander}
       {Nothing}
-      
+
       {Register GPIO}
       Status:=GPIODeviceRegister(@RPiGPIOExpander.GPIO);
       if Status = ERROR_SUCCESS then
@@ -330,10 +330,10 @@ begin
           VirtualGPIOOutputSetHandler:=SysVirtualGPIOOutputSet;
           VirtualGPIOFunctionGetHandler:=SysVirtualGPIOFunctionGet;
           VirtualGPIOFunctionSelectHandler:=SysVirtualGPIOFunctionSelect;
-          
+
           {Setup Virtual GPIO}
           VIRTUAL_GPIO_PIN_COUNT:=RPIGPIOEXP_GPIO_PIN_COUNT;
-          
+
           case BoardType of
            BOARD_TYPE_RPI3B,
            BOARD_TYPE_RPI_COMPUTE3:begin
@@ -341,12 +341,12 @@ begin
              ACTIVITY_LED_PIN:=VIRTUAL_GPIO_PIN_2;
              ACTIVITY_LED_FUNCTION:=VIRTUAL_GPIO_FUNCTION_OUT;
              ACTIVITY_LED_ACTIVE_LOW:=False;
-          
+
              {Setup Power LED}
              POWER_LED_PIN:=VIRTUAL_GPIO_PIN_7;
              POWER_LED_FUNCTION:=VIRTUAL_GPIO_FUNCTION_OUT;
              POWER_LED_ACTIVE_LOW:=False;
-            end; 
+            end;
            BOARD_TYPE_RPI3B_PLUS,
            BOARD_TYPE_RPI3A_PLUS,
            BOARD_TYPE_RPI_COMPUTE3_PLUS:begin
@@ -365,15 +365,15 @@ begin
              POWER_LED_FUNCTION:=VIRTUAL_GPIO_FUNCTION_OUT;
              POWER_LED_ACTIVE_LOW:=True;
             end;
-          end;  
+          end;
          end
-        else 
+        else
          begin
           if GPIO_LOG_ENABLED then GPIOLogError(nil,'RPiGPIOEXP: Failed to start new GPIO device: ' + ErrorToString(Status));
-          
+
           {Deregister GPIO}
           GPIODeviceDeregister(@RPiGPIOExpander.GPIO);
-          
+
           {Destroy GPIO}
           GPIODeviceDestroy(@RPiGPIOExpander.GPIO);
          end;
@@ -381,21 +381,21 @@ begin
       else
        begin
         if GPIO_LOG_ENABLED then GPIOLogError(nil,'RPiGPIOEXP: Failed to register new GPIO device: ' + ErrorToString(Status));
-        
+
         {Destroy GPIO}
         GPIODeviceDestroy(@RPiGPIOExpander.GPIO);
        end;
      end
-    else 
+    else
      begin
       if GPIO_LOG_ENABLED then GPIOLogError(nil,'RPiGPIOEXP: Failed to create new GPIO device');
      end;
    end;
  end;
- 
+
  RPiGPIOExpanderInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {RPiGPIO Expander Functions}
@@ -403,7 +403,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RPiGPIO Expander GPIO Functions}
-function RPiGPIOExpanderStart(GPIO:PGPIODevice):LongWord; 
+function RPiGPIOExpanderStart(GPIO:PGPIODevice):LongWord;
 {Implementation of GPIODeviceStart API for RPiGPIO Expander}
 {Note: Not intended to be called directly by applications, use GPIODeviceStart instead}
 var
@@ -411,40 +411,40 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check GPIO}
  if GPIO = nil then Exit;
- 
+
  {$IF DEFINED(RPIGPIOEXP_DEBUG) or DEFINED(GPIO_DEBUG)}
  if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'RPiGPIOEXP: GPIO Start');
  {$ENDIF}
- 
+
  {Check Supported}
- Result:=RPiGPIOExpanderGetState(GPIO_PIN_0,State);  
+ Result:=RPiGPIOExpanderGetState(GPIO_PIN_0,State);
 end;
- 
+
 {==============================================================================}
 
-function RPiGPIOExpanderStop(GPIO:PGPIODevice):LongWord; 
+function RPiGPIOExpanderStop(GPIO:PGPIODevice):LongWord;
 {Implementation of GPIODeviceStop API for RPiGPIO Expander}
 {Note: Not intended to be called directly by applications, use GPIODeviceStop instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check GPIO}
  if GPIO = nil then Exit;
- 
+
  {$IF DEFINED(RPIGPIOEXP_DEBUG) or DEFINED(GPIO_DEBUG)}
  if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'RPiGPIOEXP: GPIO Stop');
  {$ENDIF}
- 
+
  {Return Result}
- Result:=ERROR_SUCCESS;  
+ Result:=ERROR_SUCCESS;
 end;
- 
+
 {==============================================================================}
- 
+
 function RPiGPIOExpanderInputGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
 {Implementation of GPIODeviceInputGet API for RPiGPIO Expander}
 {Note: Not intended to be called directly by applications, use GPIODeviceInputGet instead}
@@ -454,11 +454,11 @@ begin
 
  {Check GPIO}
  if GPIO = nil then Exit;
- 
+
  {$IF DEFINED(RPIGPIOEXP_DEBUG) or DEFINED(GPIO_DEBUG)}
  if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'RPiGPIOEXP: GPIO Input Get (Pin=' + GPIOPinToString(Pin) + ')');
  {$ENDIF}
- 
+
  {Check Pin}
  if Pin > GPIO.Properties.PinMax then Exit;
 
@@ -468,9 +468,9 @@ begin
  {Get State}
  RPiGPIOExpanderGetState(Pin,Result);
 end;
- 
+
 {==============================================================================}
- 
+
 function RPiGPIOExpanderOutputSet(GPIO:PGPIODevice;Pin,Level:LongWord):LongWord;
 {Implementation of GPIODeviceOutputSet API for RPiGPIO Expander}
 {Note: Not intended to be called directly by applications, use GPIODeviceOutputSet instead}
@@ -480,24 +480,24 @@ begin
 
  {Check GPIO}
  if GPIO = nil then Exit;
- 
+
  {$IF DEFINED(RPIGPIOEXP_DEBUG) or DEFINED(GPIO_DEBUG)}
  if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'RPiGPIOEXP: GPIO Output Set (Pin=' + GPIOPinToString(Pin) + ' Level=' + GPIOLevelToString(Level) + ')');
  {$ENDIF}
- 
+
  {Check Pin}
  if Pin > GPIO.Properties.PinMax then Exit;
- 
+
  {Check Level}
  if Level > RPIGPIOEXP_GPIO_MAX_LEVEL then Exit;
- 
+
  {Update Statistics}
  Inc(GPIO.SetCount);
 
  {Set State}
  Result:=RPiGPIOExpanderSetState(Pin,Level);
 end;
- 
+
 {==============================================================================}
 
 function RPiGPIOExpanderPullGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
@@ -515,7 +515,7 @@ begin
  {$IF DEFINED(RPIGPIOEXP_DEBUG) or DEFINED(GPIO_DEBUG)}
  if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'RPiGPIOEXP: GPIO Pull Get (Pin=' + GPIOPinToString(Pin) + ')');
  {$ENDIF}
- 
+
  {Check Pin}
  if Pin > GPIO.Properties.PinMax then Exit;
 
@@ -526,12 +526,12 @@ begin
    if Direction = GPIO_FUNCTION_IN then
     begin
      Result:=GPIO_PULL_NONE;
-     
+
      {Check Terminator Enabled}
      if Terminator <> 0 then
       begin
        Result:=GPIO_PULL_DOWN;
-       
+
        {Check PullUp Enabled}
        if PullUp <> 0 then
         begin
@@ -539,9 +539,9 @@ begin
         end;
       end;
     end;
-  end; 
+  end;
 end;
- 
+
 {==============================================================================}
 
 function RPiGPIOExpanderPullSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
@@ -559,21 +559,21 @@ begin
 
  {Check GPIO}
  if GPIO = nil then Exit;
- 
+
  {$IF DEFINED(RPIGPIOEXP_DEBUG) or DEFINED(GPIO_DEBUG)}
  if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'RPiGPIOEXP: GPIO Pull Select (Pin=' + GPIOPinToString(Pin) + ' Mode=' + GPIOPullToString(Mode) + ')');
  {$ENDIF}
- 
+
  {Check Pin}
  if Pin > GPIO.Properties.PinMax then Exit;
- 
+
  {Check Mode}
  if Mode > RPIGPIOEXP_GPIO_MAX_PULL then Exit;
 
  {Get Config}
  Result:=RPiGPIOExpanderGetConfig(Pin,Direction,Polarity,Terminator,PullUp);
  if Result <> ERROR_SUCCESS then Exit;
- 
+
  {Check Direction}
  if Direction = GPIO_FUNCTION_IN then
   begin
@@ -590,9 +590,9 @@ begin
  else
   begin
    Result:=ERROR_SUCCESS;
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
 
 function RPiGPIOExpanderFunctionGet(GPIO:PGPIODevice;Pin:LongWord):LongWord;
@@ -609,11 +609,11 @@ begin
 
  {Check GPIO}
  if GPIO = nil then Exit;
- 
+
  {$IF DEFINED(RPIGPIOEXP_DEBUG) or DEFINED(GPIO_DEBUG)}
  if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'RPiGPIOEXP: GPIO Function Get (Pin=' + GPIOPinToString(Pin) + ')');
  {$ENDIF}
- 
+
  {Check Pin}
  if Pin > GPIO.Properties.PinMax then Exit;
 
@@ -621,9 +621,9 @@ begin
  if RPiGPIOExpanderGetConfig(Pin,Direction,Polarity,Terminator,PullUp) = ERROR_SUCCESS then
   begin
    Result:=Direction;
-  end; 
+  end;
 end;
- 
+
 {==============================================================================}
 
 function RPiGPIOExpanderFunctionSelect(GPIO:PGPIODevice;Pin,Mode:LongWord):LongWord;
@@ -638,17 +638,17 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check GPIO}
  if GPIO = nil then Exit;
- 
+
  {$IF DEFINED(RPIGPIOEXP_DEBUG) or DEFINED(GPIO_DEBUG)}
  if GPIO_LOG_ENABLED then GPIOLogDebug(GPIO,'RPiGPIOEXP: GPIO Function Select (Pin=' + GPIOPinToString(Pin) + ' Mode=' + GPIOFunctionToString(Mode) + ')');
  {$ENDIF}
- 
+
  {Check Pin}
  if Pin > GPIO.Properties.PinMax then Exit;
- 
+
  {Check Mode}
  if Mode > RPIGPIOEXP_GPIO_MAX_FUNCTION then Exit;
 
@@ -658,7 +658,7 @@ begin
     {Get Config}
     Result:=RPiGPIOExpanderGetConfig(Pin,Direction,Polarity,Terminator,PullUp);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Input}
     Direction:=GPIO_FUNCTION_IN; {Input}
     {Polarity}                   {Retain existing}
@@ -671,11 +671,11 @@ begin
     {Get State}
     Result:=RPiGPIOExpanderGetState(Pin,State);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Get Config}
     Result:=RPiGPIOExpanderGetConfig(Pin,Direction,Polarity,Terminator,PullUp);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Output}
     Direction:=GPIO_FUNCTION_OUT;
     {Polarity}                   {Retain existing}
@@ -686,18 +686,18 @@ begin
    end;
  end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {RTL Virtual GPIO Functions}
-function SysVirtualGPIOInputGet(Pin:LongWord):LongWord; 
+function SysVirtualGPIOInputGet(Pin:LongWord):LongWord;
 {Get the current state of a virtual GPIO input pin}
 {Pin: The pin to get the state for (eg VIRTUAL_GPIO_PIN_1)}
 {Return: The current state (eg GPIO_LEVEL_HIGH) or GPIO_LEVEL_UNKNOWN on failure}
 begin
  {}
  Result:=GPIO_LEVEL_UNKNOWN;
- 
+
  if RPiGPIOExpander = nil then Exit;
 
  Result:=RPiGPIOExpanderInputGet(@RPiGPIOExpander.GPIO,Pin);
@@ -705,7 +705,7 @@ end;
 
 {==============================================================================}
 
-function SysVirtualGPIOOutputSet(Pin,Level:LongWord):LongWord; 
+function SysVirtualGPIOOutputSet(Pin,Level:LongWord):LongWord;
 {Set the state of a virtual GPIO output pin}
 {Pin: The pin to set the state for (eg GPIO_PIN_1)}
 {Level: The state to set the pin to (eg GPIO_LEVEL_HIGH)}
@@ -713,7 +713,7 @@ function SysVirtualGPIOOutputSet(Pin,Level:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if RPiGPIOExpander = nil then Exit;
 
  Result:=RPiGPIOExpanderOutputSet(@RPiGPIOExpander.GPIO,Pin,Level);
@@ -721,14 +721,14 @@ end;
 
 {==============================================================================}
 
-function SysVirtualGPIOFunctionGet(Pin:LongWord):LongWord; 
+function SysVirtualGPIOFunctionGet(Pin:LongWord):LongWord;
 {Get the current function of a virtual GPIO pin}
 {Pin: The pin to get the function for (eg GPIO_PIN_1)}
 {Return: The current function of the pin (eg GPIO_FUNCTION_IN) or GPIO_FUNCTION_UNKNOWN on failure}
 begin
  {}
  Result:=GPIO_FUNCTION_UNKNOWN;
- 
+
  if RPiGPIOExpander = nil then Exit;
 
  Result:=RPiGPIOExpanderFunctionGet(@RPiGPIOExpander.GPIO,Pin);
@@ -736,7 +736,7 @@ end;
 
 {==============================================================================}
 
-function SysVirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord; 
+function SysVirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord;
 {Change the function of a virtual GPIO pin}
 {Pin: The pin to change the function for (eg GPIO_PIN_1)}
 {Mode: The function to set for the pin (eg GPIO_FUNCTION_OUT)}
@@ -744,12 +744,12 @@ function SysVirtualGPIOFunctionSelect(Pin,Mode:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if RPiGPIOExpander = nil then Exit;
 
  Result:=RPiGPIOExpanderFunctionSelect(@RPiGPIOExpander.GPIO,Pin,Mode);
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {RPiGPIO Expander Helper Functions}
@@ -764,10 +764,10 @@ var
 begin
  {}
  Result:=ERROR_OPERATION_FAILED;
- 
+
  {Calculate Size}
  Size:=SizeOf(TRPiGPIOMailboxHeader) + SizeOf(TRPiGPIOMailboxTagGetGPIOState) + SizeOf(TRPiGPIOMailboxFooter);
- 
+
  {Allocate Mailbox Buffer}
  {$IFDEF CPUARMV6}
  Header:=GetSharedAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -779,22 +779,22 @@ begin
  try
   {Clear Buffer}
   FillChar(Header^,Size,0);
- 
+
   {Setup Header}
   Header.Size:=Size;
   Header.Code:=RPIGPIO_MBOX_REQUEST_CODE;
- 
+
   {Setup Tag}
   Tag:=PRPiGPIOMailboxTagGetGPIOState(PtrUInt(Header) + PtrUInt(SizeOf(TRPiGPIOMailboxHeader)));
   Tag.Header.Tag:=RPIGPIO_MBOX_TAG_GET_GPIO_STATE;
   Tag.Header.Size:=SizeOf(TRPiGPIOMailboxTagGetGPIOState) - SizeOf(TRPiGPIOMailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.GPIO:=GPIO + RPIGPIOEXP_GPIO_PIN_OFFSET;
- 
+
   {Setup Footer}
   Footer:=PRPiGPIOMailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TRPiGPIOMailboxTagGetGPIOState)));
   Footer.Tag:=RPIGPIO_MBOX_TAG_END;
-  
+
   {Call Mailbox}
   if MailboxPropertyCall(RPIGPIO_MAILBOX_0,RPIGPIO_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
@@ -802,11 +802,11 @@ begin
     if GPIO_LOG_ENABLED then GPIOLogDebug(nil,'RPiGPIOEXP: RPiGPIOExpanderGetState - MailboxPropertyCall Failed');
     {$ENDIF}
     Exit;
-   end; 
+   end;
 
-  {Get State}  
+  {Get State}
   State:=Tag.Response.State;
-   
+
   {Get Result}
   Result:=ERROR_SUCCESS;
  finally
@@ -827,10 +827,10 @@ var
 begin
  {}
  Result:=ERROR_OPERATION_FAILED;
- 
+
  {Calculate Size}
  Size:=SizeOf(TRPiGPIOMailboxHeader) + SizeOf(TRPiGPIOMailboxTagSetGPIOState) + SizeOf(TRPiGPIOMailboxFooter);
- 
+
  {Allocate Mailbox Buffer}
  {$IFDEF CPUARMV6}
  Header:=GetSharedAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -842,11 +842,11 @@ begin
  try
   {Clear Buffer}
   FillChar(Header^,Size,0);
- 
+
   {Setup Header}
   Header.Size:=Size;
   Header.Code:=RPIGPIO_MBOX_REQUEST_CODE;
- 
+
   {Setup Tag}
   Tag:=PRPiGPIOMailboxTagSetGPIOState(PtrUInt(Header) + PtrUInt(SizeOf(TRPiGPIOMailboxHeader)));
   Tag.Header.Tag:=RPIGPIO_MBOX_TAG_SET_GPIO_STATE;
@@ -854,11 +854,11 @@ begin
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.GPIO:=GPIO + RPIGPIOEXP_GPIO_PIN_OFFSET;
   Tag.Request.State:=State;
- 
+
   {Setup Footer}
   Footer:=PRPiGPIOMailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TRPiGPIOMailboxTagSetGPIOState)));
   Footer.Tag:=RPIGPIO_MBOX_TAG_END;
-  
+
   {Call Mailbox}
   if MailboxPropertyCall(RPIGPIO_MAILBOX_0,RPIGPIO_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
@@ -866,8 +866,8 @@ begin
     if GPIO_LOG_ENABLED then GPIOLogDebug(nil,'RPiGPIOEXP: RPiGPIOExpanderSetState - MailboxPropertyCall Failed');
     {$ENDIF}
     Exit;
-   end; 
-   
+   end;
+
   {Get Result}
   Result:=ERROR_SUCCESS;
  finally
@@ -888,10 +888,10 @@ var
 begin
  {}
  Result:=ERROR_OPERATION_FAILED;
- 
+
  {Calculate Size}
  Size:=SizeOf(TRPiGPIOMailboxHeader) + SizeOf(TRPiGPIOMailboxTagGetGPIOConfig) + SizeOf(TRPiGPIOMailboxFooter);
- 
+
  {Allocate Mailbox Buffer}
  {$IFDEF CPUARMV6}
  Header:=GetSharedAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -903,22 +903,22 @@ begin
  try
   {Clear Buffer}
   FillChar(Header^,Size,0);
- 
+
   {Setup Header}
   Header.Size:=Size;
   Header.Code:=RPIGPIO_MBOX_REQUEST_CODE;
- 
+
   {Setup Tag}
   Tag:=PRPiGPIOMailboxTagGetGPIOConfig(PtrUInt(Header) + PtrUInt(SizeOf(TRPiGPIOMailboxHeader)));
   Tag.Header.Tag:=RPIGPIO_MBOX_TAG_GET_GPIO_CONFIG;
   Tag.Header.Size:=SizeOf(TRPiGPIOMailboxTagGetGPIOConfig) - SizeOf(TRPiGPIOMailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.GPIO:=GPIO + RPIGPIOEXP_GPIO_PIN_OFFSET;
- 
+
   {Setup Footer}
   Footer:=PRPiGPIOMailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TRPiGPIOMailboxTagGetGPIOConfig)));
   Footer.Tag:=RPIGPIO_MBOX_TAG_END;
-  
+
   {Call Mailbox}
   if MailboxPropertyCall(RPIGPIO_MAILBOX_0,RPIGPIO_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
@@ -926,14 +926,14 @@ begin
     if GPIO_LOG_ENABLED then GPIOLogDebug(nil,'RPiGPIOEXP: RPiGPIOExpanderGetConfig - MailboxPropertyCall Failed');
     {$ENDIF}
     Exit;
-   end; 
+   end;
 
-  {Get Config}  
+  {Get Config}
   Direction:=Tag.Response.Direction;
   Polarity:=Tag.Response.Polarity;
   Terminator:=Tag.Response.Terminator;
   PullUp:=Tag.Response.PullUp;
-   
+
   {Get Result}
   Result:=ERROR_SUCCESS;
  finally
@@ -954,10 +954,10 @@ var
 begin
  {}
  Result:=ERROR_OPERATION_FAILED;
- 
+
  {Calculate Size}
  Size:=SizeOf(TRPiGPIOMailboxHeader) + SizeOf(TRPiGPIOMailboxTagSetGPIOConfig) + SizeOf(TRPiGPIOMailboxFooter);
- 
+
  {Allocate Mailbox Buffer}
  {$IFDEF CPUARMV6}
  Header:=GetSharedAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -969,11 +969,11 @@ begin
  try
   {Clear Buffer}
   FillChar(Header^,Size,0);
- 
+
   {Setup Header}
   Header.Size:=Size;
   Header.Code:=RPIGPIO_MBOX_REQUEST_CODE;
- 
+
   {Setup Tag}
   Tag:=PRPiGPIOMailboxTagSetGPIOConfig(PtrUInt(Header) + PtrUInt(SizeOf(TRPiGPIOMailboxHeader)));
   Tag.Header.Tag:=RPIGPIO_MBOX_TAG_SET_GPIO_CONFIG;
@@ -985,11 +985,11 @@ begin
   Tag.Request.Terminator:=Terminator;
   Tag.Request.PullUp:=PullUp;
   Tag.Request.State:=State;
- 
+
   {Setup Footer}
   Footer:=PRPiGPIOMailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TRPiGPIOMailboxTagSetGPIOConfig)));
   Footer.Tag:=RPIGPIO_MBOX_TAG_END;
-  
+
   {Call Mailbox}
   if MailboxPropertyCall(RPIGPIO_MAILBOX_0,RPIGPIO_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response) <> ERROR_SUCCESS then
    begin
@@ -997,8 +997,8 @@ begin
     if GPIO_LOG_ENABLED then GPIOLogDebug(nil,'RPiGPIOEXP: RPiGPIOExpanderSetConfig - MailboxPropertyCall Failed');
     {$ENDIF}
     Exit;
-   end; 
-   
+   end;
+
   {Get Result}
   Result:=ERROR_SUCCESS;
  finally
@@ -1011,9 +1011,9 @@ end;
 
 initialization
  RPiGPIOExpanderInit;
- 
+
 {==============================================================================}
- 
+
 {finalization}
  {Nothing}
 

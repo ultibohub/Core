@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -34,9 +34,9 @@ IP Helper
 
  This unit provides a subset of the Windows IP Helper API functions for querying and managing configuration
  of the TCP/IP transport and associated protocols.
- 
+
  Not all functions are currently implemented, more will be added as they are required.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -88,7 +88,7 @@ const
  MIB_IF_TYPE_LOOPBACK               = 24;
  MIB_IF_TYPE_SLIP                   = 28;
  MIB_IF_TYPE_IEEE80211              = 71;
- 
+
  IF_TYPE_OTHER                      = MIB_IF_TYPE_OTHER;
  IF_TYPE_ETHERNET_CSMACD            = MIB_IF_TYPE_ETHERNET;
  IF_TYPE_ISO88025_TOKENRING         = MIB_IF_TYPE_TOKENRING;
@@ -175,7 +175,7 @@ type
  IPAddr = Cardinal;     {An IP address}
  IPMask = Cardinal;     {An IP netmask}
  IP_STATUS = Cardinal;  {Status code returned from IP APIs}
- 
+
 type
  PMIB_IFNUMBER = ^MIB_IFNUMBER;
  MIB_IFNUMBER = record
@@ -516,11 +516,11 @@ type
  end;
  TFixedInfo = FIXED_INFO;
  PFixedInfo = PFIXED_INFO;
- 
+
 {==============================================================================}
 {var}
  {IP Helper specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 
@@ -602,7 +602,7 @@ implementation
 var
  {IP Helper specific variables}
  IPHelperStarted:Boolean;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -622,7 +622,7 @@ begin
      IPHelperStarted:=True;
     end;
   end;
-  
+
  Result:=IPHelperStarted;
 end;
 
@@ -676,15 +676,15 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(DWORD);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETNUMBEROFINTERFACES,@pdwNumIf,Size,@pdwNumIf,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -700,18 +700,18 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IFROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETIFENTRY,pIfRow,Size,pIfRow,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -724,17 +724,17 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETIFTABLE,pIfTable,pdwSize,pIfTable,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
-      
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -747,17 +747,17 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETIPADDRTABLE,pIpAddrTable,pdwSize,pIpAddrTable,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -770,14 +770,14 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETIPNETTABLE,pIpNetTable,pdwSize,pIpNetTable,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
-     
+
      Exit;
     end;
 
@@ -793,14 +793,14 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETIPFORWARDTABLE,pIpForwardTable,pdwSize,pIpForwardTable,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
-     
+
      Exit;
     end;
 
@@ -816,14 +816,14 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETTCPTABLE,pTcpTable,pdwSize,pTcpTable,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
-     
+
      Exit;
     end;
 
@@ -839,14 +839,14 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETUDPTABLE,pUdpTable,pdwSize,pUdpTable,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pdwSize:=Required;
-     
+
      Exit;
     end;
 
@@ -862,15 +862,15 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPSTATS);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETIPSTATISTICS,@pStats,Size,@pStats,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -886,15 +886,15 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_ICMP);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETICMPSTATISTICS,@pStats,Size,@pStats,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -910,15 +910,15 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_TCPSTATS);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETTCPSTATISTICS,@pStats,Size,@pStats,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -934,15 +934,15 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_UDPSTATS);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETUDPSTATISTICS,@pStats,Size,@pStats,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -958,15 +958,15 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IFROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_SETIFENTRY,@pIfRow,Size,@pIfRow,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -982,18 +982,18 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPFORWARDROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_CREATEIPFORWARDENTRY,@pRoute,Size,@pRoute,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1006,15 +1006,15 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPFORWARDROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_SETIPFORWARDENTRY,@pRoute,Size,@pRoute,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1030,15 +1030,15 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPFORWARDROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_DELETEIPFORWARDENTRY,@pRoute,Size,@pRoute,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1054,18 +1054,18 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPSTATS);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_SETIPSTATISTICS,@pIpStats,Size,@pIpStats,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1078,18 +1078,18 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(UINT);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_SETIPTTL,@nTTL,Size,@nTTL,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1102,15 +1102,15 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPNETROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_CREATEIPNETENTRY,@pArpEntry,Size,@pArpEntry,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1126,15 +1126,15 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPNETROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_SETIPNETENTRY,@pArpEntry,Size,@pArpEntry,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1150,15 +1150,15 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_IPNETROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_DELETEIPNETENTRY,@pArpEntry,Size,@pArpEntry,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1174,15 +1174,15 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(DWORD);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_FLUSHIPNETTABLE,@dwIfIndex,Size,@dwIfIndex,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1214,15 +1214,15 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(MIB_TCPROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_SETTCPENTRY,@pTcpRow,Size,@pTcpRow,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1238,17 +1238,17 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETINTERFACEINFO,pIfTable,dwOutBufLen,pIfTable,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then dwOutBufLen:=Required;
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1264,22 +1264,22 @@ end;
 {==============================================================================}
 
 function GetBestInterface(dwDestAddr: IPAddr; var pdwBestIfIndex: DWORD): DWORD;
-var 
+var
  DestSize:DWORD;
  IndexSize:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    DestSize:=SizeOf(IPAddr);
    IndexSize:=SizeOf(DWORD);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETBESTINTERFACE,@dwDestAddr,DestSize,@pdwBestIfIndex,IndexSize) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1290,24 +1290,24 @@ end;
 {==============================================================================}
 
 function GetBestRoute(dwDestAddr, dwSourceAddr: DWORD; pBestRoute: PMIB_IPFORWARDROW): DWORD;
-var 
+var
  DestSize:DWORD;
  SourceSize:DWORD;
  RouteSize:DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    DestSize:=SizeOf(DWORD);
    SourceSize:=SizeOf(DWORD);
    RouteSize:=SizeOf(MIB_IPFORWARDROW);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETBESTROUTE,@dwDestAddr,DestSize,pBestRoute,RouteSize) <> NO_ERROR then //To Do //dwSourceAddr ? //Pass a structure
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1340,16 +1340,16 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    NameSize:=StrLen(AdapterName);
    IndexSize:=SizeOf(DWORD);
-  
+
    if WsControlEx(IPPROTO_IP,WSA_GETADAPTERINDEX,AdapterName,NameSize,@IfIndex,IndexSize) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1363,7 +1363,7 @@ function AddIPAddress(Address: IPAddr; IpMask: IPMask; IfIndex: DWORD; var NTECo
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    //if WsControlEx(IPPROTO_IP,WSA_ADDIPADDRESS ) <> NO_ERROR then //To Do //Pass and return a MIB_IPADDRROW
@@ -1378,7 +1378,7 @@ function DeleteIPAddress(NTEContext: DWORD): DWORD;
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    //if WsControlEx(IPPROTO_IP,WSA_DELETEIPADDRESS ) <> NO_ERROR then //To Do //NTEContext will be a handle to the Binding
@@ -1395,17 +1395,17 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETNETWORKPARAMS,pFixedInfo,pOutBufLen,pFixedInfo,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pOutBufLen:=Required;
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1418,17 +1418,17 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    if WsControlEx(IPPROTO_IP,WSA_GETADAPTERSINFO,pAdapterInfo,pOutBufLen,pAdapterInfo,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pOutBufLen:=Required;
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1442,17 +1442,17 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(DWORD);
    Required:=pOutBufLen;
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETPERADAPTERINFO,@IfIndex,Size,pPerAdapterInfo,Required) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
      if Result = ERROR_INSUFFICIENT_BUFFER then pOutBufLen:=Required;
-     
+
      Exit;
     end;
 
@@ -1468,18 +1468,18 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(IP_ADAPTER_INDEX_MAP);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_IPRELEASEADDRESS,@AdapterInfo,Size,@AdapterInfo,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1492,18 +1492,18 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(IP_ADAPTER_INDEX_MAP);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_IPRENEWADDRESS,@AdapterInfo,Size,@AdapterInfo,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
-    
+
    Result:=ERROR_SUCCESS;
   end;
 end;
@@ -1514,7 +1514,7 @@ function SendARP(const DestIP, SrcIP: IPAddr; pMacAddr: PDWORD; var PhyAddrLen: 
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    //if WsControlEx(IPPROTO_IP,WSA_SENDARP ) <> NO_ERROR then //To Do //Pass and return a structure
@@ -1529,7 +1529,7 @@ function GetRTTAndHopCount(DestIpAddress: IPAddr; var HopCount: DWORD; MaxHops: 
 begin
  {}
  Result:=False;
- 
+
  if IPHelperStart then
   begin
    //if WsControlEx(IPPROTO_IP,WSA_GETRTTANDHOPCOUNT ) <> NO_ERROR then //To Do //Pass and return a structure
@@ -1546,15 +1546,15 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    Size:=SizeOf(DWORD);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_GETFRIENDLYIFINDEX,@IfIndex,Size,@IfIndex,Size) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1571,16 +1571,16 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    HandleSize:=SizeOf(THandle);
    OverlappedSize:=SizeOf(OVERLAPPED);
-   
+
    if WsControlEx(IPPROTO_IP,WSA_ENABLEROUTER,@pHandle,HandleSize,pOverlapped,OverlappedSize) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1597,16 +1597,16 @@ var
 begin
  {}
  Result:=ERROR_NOT_READY;
- 
+
  if IPHelperStart then
   begin
    OverlappedSize:=SizeOf(OVERLAPPED);
    EnableCountSize:=SizeOf(DWORD);
-  
+
    if WsControlEx(IPPROTO_IP,WSA_UNENABLEROUTER,pOverlapped,OverlappedSize,lpdwEnableCount,EnableCountSize) <> NO_ERROR then
     begin
      Result:=IPHelperConvertError(WSAGetLastError);
-     
+
      Exit;
     end;
 
@@ -1621,7 +1621,7 @@ function MIBIFOperStatusToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_IF_OPER_STATUS_UNKNOWN';
- 
+
  case AValue of
   MIB_IF_OPER_STATUS_NON_OPERATIONAL:Result:='MIB_IF_OPER_STATUS_NON_OPERATIONAL';
   MIB_IF_OPER_STATUS_UNREACHABLE:Result:='MIB_IF_OPER_STATUS_UNREACHABLE';
@@ -1638,7 +1638,7 @@ function MIBIFTypeToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_IF_TYPE_UNKNOWN';
- 
+
  case AValue of
   MIB_IF_TYPE_OTHER:Result:='MIB_IF_TYPE_OTHER';
   MIB_IF_TYPE_ETHERNET:Result:='MIB_IF_TYPE_ETHERNET';
@@ -1656,7 +1656,7 @@ function MIBIFAdminStatusToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_IF_ADMIN_STATUS_UNKNOWN';
- 
+
  case AValue of
   MIB_IF_ADMIN_STATUS_UP:Result:='MIB_IF_ADMIN_STATUS_UP';
   MIB_IF_ADMIN_STATUS_DOWN:Result:='MIB_IF_ADMIN_STATUS_DOWN';
@@ -1670,7 +1670,7 @@ function MIBTCPRTOToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_TCP_RTO_UNKNOWN';
- 
+
  case AValue of
   MIB_TCP_RTO_OTHER:Result:='MIB_TCP_RTO_OTHER';
   MIB_TCP_RTO_CONSTANT:Result:='MIB_TCP_RTO_CONSTANT';
@@ -1685,7 +1685,7 @@ function MIBTCPStateToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_TCP_STATE_UNKNOWN';
- 
+
  case AValue of
   MIB_TCP_STATE_CLOSED:Result:='MIB_TCP_STATE_CLOSED';
   MIB_TCP_STATE_LISTEN:Result:='MIB_TCP_STATE_LISTEN';
@@ -1708,7 +1708,7 @@ function MIBIPForwardingToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_IP_UNKNOWN';
- 
+
  case AValue of
   MIB_IP_FORWARDING:Result:='MIB_IP_FORWARDING';
   MIB_IP_NOT_FORWARDING:Result:='MIB_IP_NOT_FORWARDING';
@@ -1721,7 +1721,7 @@ function MIBIPRouteTypeToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_IPROUTE_TYPE_UNKNOWN';
- 
+
  case AValue of
   MIB_IPROUTE_TYPE_OTHER:Result:='MIB_IPROUTE_TYPE_OTHER';
   MIB_IPROUTE_TYPE_INVALID:Result:='MIB_IPROUTE_TYPE_INVALID';
@@ -1736,7 +1736,7 @@ function MIBIPProtoToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_IPPROTO_UNKNOWN';
- 
+
  case AValue of
   MIB_IPPROTO_OTHER:Result:='MIB_IPPROTO_OTHER';
   MIB_IPPROTO_LOCAL:Result:='MIB_IPPROTO_LOCAL';
@@ -1764,7 +1764,7 @@ function MIBIPNetTypeToString(AValue:DWORD):String;
 begin
  {}
  Result:='MIB_IPNET_TYPE_UNKNOWN';
- 
+
  case AValue of
   MIB_IPNET_TYPE_OTHER:Result:='MIB_IPNET_TYPE_OTHER';
   MIB_IPNET_TYPE_INVALID:Result:='MIB_IPNET_TYPE_INVALID';
@@ -1780,7 +1780,7 @@ end;
  {Nothing}
 
 {==============================================================================}
- 
+
 finalization
  IPHelperStop;
 

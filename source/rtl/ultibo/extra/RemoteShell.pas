@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
- 
+
 
 Remote Shell
 ============
@@ -52,7 +52,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils,Classes,Ulti
 const
  {Remote Shell specific constants}
  REMOTE_SHELL_DEFAULT_WELCOME = ' (Type HELP for a list of available commands)';
- 
+
  {Telnet Shell constants}
  TELNET_SHELL_NAME = 'Telnet Shell';
 
@@ -61,16 +61,16 @@ const
 
  {Telnet Shell Alias constants}
  TELNET_SHELL_ALIAS_EXIT = 'EXIT';
- 
+
  {SSH Shell constants}
  SSH_SHELL_NAME = 'SSH Shell';
- 
+
  {SSH Shell Command constants}
  SSH_SHELL_COMMAND_LOGOUT = 'LOGOUT';
- 
+
  {SSH Shell Alias constants}
  SSH_SHELL_ALIAS_EXIT = 'EXIT';
- 
+
 {==============================================================================}
 {type}
  {Remote Shell specific types}
@@ -87,24 +87,24 @@ type
  private
   {Internal Variables}
   FListener:TTelnetListener;
-  
+
   {Internal Methods}
   procedure Reset(ASession:TTelnetSession);
-  
+
   procedure MoveFirst(ASession:TTelnetSession);
   procedure MoveLast(ASession:TTelnetSession);
   procedure MoveLeft(ASession:TTelnetSession);
   procedure MoveRight(ASession:TTelnetSession);
-  
+
   procedure EraseLine(ASession:TTelnetSession);
   procedure OutputLine(ASession:TTelnetSession;const AValue:String);
   function ExpandLine(ASession:TTelnetSession):Boolean;
-  
+
   procedure EraseCharacter(ASession:TTelnetSession);
   procedure DeleteCharacter(ASession:TTelnetSession);
   procedure InsertCharacter(ASession:TTelnetSession;ACh:Char);
   procedure OverwriteCharacter(ASession:TTelnetSession;ACh:Char);
-  
+
   procedure PrevHistory(ASession:TTelnetSession);
   procedure NextHistory(ASession:TTelnetSession);
   procedure CurrentHistory(ASession:TTelnetSession);
@@ -120,18 +120,18 @@ type
  public
   {Public Properties}
   property Listener:TTelnetListener read FListener;
-  
+
   {Public Methods}
   function DoClear(ASession:TShellSession):Boolean; override;
-  
+
   function DoInput(ASession:TShellSession;var AInput:String):Boolean; override;
-  
+
   function DoOutputEx(ASession:TShellSession;const AOutput:String;AReturn:Boolean):Boolean; override;
-  
+
   function MatchSequence(const ASequence:String;var AContinue:Boolean):Boolean;
   function ProcessSequence(const ASequence:String):Boolean;
  end;
-  
+
  TTelnetSession = class(TShellSession)
  private
   {Internal Variables}
@@ -140,17 +140,17 @@ type
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
   Command:String;
   Sequence:String;
   Position:LongWord;
-  
+
   {Public Methods}
-  
+
  end;
-  
+
  TSSHShell = class(TShell)
  public
   {}
@@ -159,21 +159,21 @@ type
  private
   {Internal Variables}
   //FListener:TSSHListener; //To Do
-  
+
   {Internal Methods}
-  
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
   {Public Methods}
   //To Do
  end;
-  
+
  TTelnetShellLogout = class(TShellCommand)
  public
   {}
@@ -181,14 +181,14 @@ type
   destructor Destroy; override;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -205,21 +205,21 @@ type
   destructor Destroy; override;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
   {Public Methods}
   //To Do
  end;
- 
+
 {==============================================================================}
 {var}
  {Remote Shell specific variables}
@@ -244,7 +244,7 @@ implementation
 var
  {Remote Shell specific variables}
  RemoteShellInitialized:Boolean;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TTelnetShell}
@@ -254,7 +254,7 @@ begin
  inherited Create;
  Name:=TELNET_SHELL_NAME;
  Flags:=SHELL_FLAG_CLEAR;
- 
+
  FListener:=TTelnetListener.Create;
  FListener.OnConnected:=TelnetConnected;
  FListener.OnDisconnected:=TelnetDisconnected;
@@ -266,7 +266,7 @@ end;
 
 {==============================================================================}
 
-destructor TTelnetShell.Destroy; 
+destructor TTelnetShell.Destroy;
 begin
  {}
  AcquireLock;
@@ -286,14 +286,14 @@ begin
  {}
  {Check Session}
  if ASession = nil then Exit;
- 
+
  {Setup Start}
  //To Do //See ConsoleShell
- 
+
  {Setup Cursor}
  //To Do //See ConsoleShell
 end;
- 
+
 {==============================================================================}
 
 procedure TTelnetShell.MoveFirst(ASession:TTelnetSession);
@@ -303,9 +303,9 @@ begin
  {Check Session}
  if ASession = nil then Exit;
 
- //To Do //See ConsoleShell 
+ //To Do //See ConsoleShell
 end;
- 
+
 {==============================================================================}
 
 procedure TTelnetShell.MoveLast(ASession:TTelnetSession);
@@ -315,7 +315,7 @@ begin
  {Check Session}
  if ASession = nil then Exit;
 
- //To Do //See ConsoleShell 
+ //To Do //See ConsoleShell
 end;
 
 {==============================================================================}
@@ -327,7 +327,7 @@ begin
  {Check Session}
  if ASession = nil then Exit;
 
- //To Do //See ConsoleShell 
+ //To Do //See ConsoleShell
 end;
 
 {==============================================================================}
@@ -339,7 +339,7 @@ begin
  {Check Session}
  if ASession = nil then Exit;
 
- //To Do //See ConsoleShell 
+ //To Do //See ConsoleShell
 end;
 
 {==============================================================================}
@@ -351,7 +351,7 @@ begin
  {Check Session}
  if ASession = nil then Exit;
 
- //To Do //See ConsoleShell 
+ //To Do //See ConsoleShell
 end;
 
 {==============================================================================}
@@ -363,7 +363,7 @@ begin
  {Check Session}
  if ASession = nil then Exit;
 
- //To Do //See ConsoleShell 
+ //To Do //See ConsoleShell
 end;
 
 {==============================================================================}
@@ -376,7 +376,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Session}
  if ASession = nil then Exit;
 
@@ -386,15 +386,15 @@ begin
   begin
    {Erase Current}
    EraseLine(ASession);
- 
+
    {Output Line}
    OutputLine(ASession,Value);
-   
+
    {Update Command}
    ASession.Command:=Value;
   end;
-  
- {Return True (Prevent Tab Character)} 
+
+ {Return True (Prevent Tab Character)}
  Result:=True;
 end;
 
@@ -407,7 +407,7 @@ begin
  {Check Session}
  if ASession = nil then Exit;
 
- //To Do //See ConsoleShell 
+ //To Do //See ConsoleShell
 end;
 
 {==============================================================================}
@@ -419,7 +419,7 @@ begin
  {Check Session}
  if ASession = nil then Exit;
 
- //To Do //See ConsoleShell 
+ //To Do //See ConsoleShell
 end;
 
 {==============================================================================}
@@ -431,7 +431,7 @@ begin
  {Check Session}
  if ASession = nil then Exit;
 
- //To Do //See ConsoleShell 
+ //To Do //See ConsoleShell
 end;
 
 {==============================================================================}
@@ -443,7 +443,7 @@ begin
  {Check Session}
  if ASession = nil then Exit;
 
- //To Do //See ConsoleShell 
+ //To Do //See ConsoleShell
 end;
 
 {==============================================================================}
@@ -456,14 +456,14 @@ begin
  {}
  {Check Session}
  if ASession = nil then Exit;
- 
+
  {Get History}
  Value:=ASession.PrevHistory;
  if Length(Value) = 0 then Exit;
- 
+
  {Erase Current}
  EraseLine(ASession);
- 
+
  {Output Line}
  OutputLine(ASession,Value);
 end;
@@ -478,14 +478,14 @@ begin
  {}
  {Check Session}
  if ASession = nil then Exit;
- 
+
  {Get History}
  Value:=ASession.NextHistory;
  if Length(Value) = 0 then Exit;
- 
+
  {Erase Current}
  EraseLine(ASession);
- 
+
  {Output Line}
  OutputLine(ASession,Value);
 end;
@@ -500,14 +500,14 @@ begin
  {}
  {Check Session}
  if ASession = nil then Exit;
- 
+
  {Get History}
  Value:=ASession.CurrentHistory;
  if Length(Value) = 0 then Exit;
- 
+
  {Erase Current}
  EraseLine(ASession);
- 
+
  {Output Line}
  OutputLine(ASession,Value);
 end;
@@ -521,7 +521,7 @@ begin
  {}
  {Check Connection}
  if AConnection = nil then Exit;
- 
+
  {Create Session}
  Session:=TTelnetSession.Create(Self,AConnection.Handle);
  Session.Data:=AConnection;
@@ -532,7 +532,7 @@ begin
    Session.Free;
    Exit;
   end;
- 
+
  {Update Connection}
  AConnection.Data:=Session;
 end;
@@ -546,17 +546,17 @@ begin
  {}
  {Check Connection}
  if AConnection = nil then Exit;
- 
+
  {Get Session}
  Session:=TShellSession(AConnection.Data);
  if Session = nil then Exit;
- 
+
  {Deregister Session}
  if not DeregisterSession(Session) then Exit;
- 
+
  {Destroy Session}
  Session.Free;
- 
+
  {Update Connection}
  AConnection.Data:=nil;
 end;
@@ -569,33 +569,33 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Connection}
  if AConnection = nil then Exit;
- 
+
  {Get Session}
  Session:=TTelnetSession(AConnection.Data);
  if Session = nil then Exit;
- 
+
  {Check Authenticator}
  if Authenticator <> nil then
   begin
    {Perform Authentication}
    //To Do
   end;
- 
+
  {Clear Screen}
  if not DoClear(Session) then Exit;
- 
+
  {Send Banner}
  if not DoBanner(Session) then Exit;
- 
+
  {Send Welcome}
  if not DoOutput(Session,REMOTE_SHELL_DEFAULT_WELCOME) then Exit;
- 
+
  {Send Prompt}
  if not DoPrompt(Session) then Exit;
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -608,14 +608,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Connection}
  if AConnection = nil then Exit;
- 
+
  {Get Session}
  Session:=TTelnetSession(AConnection.Data);
  if Session = nil then Exit;
- 
+
  {Check for ESC}
  if AChar = TELNET_CHAR_ESC then
   begin
@@ -626,7 +626,7 @@ begin
      Session.Command:=Session.Command + Session.Sequence;
      Inc(Session.Position,Length(Session.Sequence));
     end;
-    
+
    {Start Sequence}
    Session.Sequence:=AChar;
   end
@@ -641,7 +641,7 @@ begin
        {Add Command}
        Session.Command:=Session.Command + Session.Sequence;
        Inc(Session.Position,Length(Session.Sequence));
-       
+
        {Clear Sequence}
        SetLength(Session.Sequence,0);
       end
@@ -651,35 +651,35 @@ begin
        {Add Command}
        Session.Command:=Session.Command + Session.Sequence;
        Inc(Session.Position,Length(Session.Sequence));
-       
+
        {Clear Sequence}
        SetLength(Session.Sequence,0);
-      
+
        {Check Command}
        if Length(Session.Command) > 0 then
         begin
          {Process Command}
          ProcessCommand(Session,Session.Command);
-        
+
          {Add History}
          Session.AddHistory(Session.Command);
-        
+
          {Clear Command}
          SetLength(Session.Command,0);
          Session.Position:=0;
         end;
-        
-       {Send Prompt} 
+
+       {Send Prompt}
        DoPrompt(Session);
       end
-     else 
+     else
       begin
        {Add Sequence}
        Session.Sequence:=Session.Sequence + AChar;
-     
+
        {Match Sequence}
-       //To Do 
-      end; 
+       //To Do
+      end;
     end
    else
     begin
@@ -696,23 +696,23 @@ begin
         begin
          {Process Command}
          ProcessCommand(Session,Session.Command);
-         
+
          {Add History}
          Session.AddHistory(Session.Command);
-         
+
          {Clear Command}
          SetLength(Session.Command,0);
          Session.Position:=0;
         end;
-        
-       {Send Prompt} 
+
+       {Send Prompt}
        DoPrompt(Session);
       end
      {Check for Tab}
      else if AChar = TELNET_CHAR_TAB then
       begin
        {Match Command}
-       //To Do 
+       //To Do
       end
      {Check for Backspace}
      else if AChar = TELNET_CHAR_BACKSPACE then
@@ -722,16 +722,16 @@ begin
          {Remove Character}
          SetLength(Session.Command,Length(Session.Command) - 1);
          Dec(Session.Position);
-        end; 
+        end;
       end
      else
-      begin     
+      begin
        {Add Command}
        Session.Command:=Session.Command + AChar;
        Inc(Session.Position);
-      end; 
-    end;    
-  end;  
+      end;
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -742,14 +742,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Connection}
  if AConnection = nil then Exit;
- 
+
  {Get Session}
  Session:=TTelnetSession(AConnection.Data);
  if Session = nil then Exit;
- 
+
  {Check Command}
  case ACommand of
   TELNET_COMMAND_EC:begin
@@ -759,80 +759,80 @@ begin
       SetLength(Session.Command,Length(Session.Command) - 1);
       Dec(Session.Position);
      end;
-     
+
     {Return Result}
     Result:=True;
    end;
-  TELNET_COMMAND_EL:begin 
+  TELNET_COMMAND_EL:begin
     {Erase Line}
     SetLength(Session.Command,0);
     Session.Position:=0;
-    
+
     {Return Result}
     Result:=True;
    end;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TTelnetShell.DoClear(ASession:TShellSession):Boolean; 
+function TTelnetShell.DoClear(ASession:TShellSession):Boolean;
 var
  WorkBuffer:String;
  Connection:TTelnetConnection;
 begin
  {}
  Result:=False;
- 
+
  {Check Session}
  if ASession = nil then Exit;
- 
+
  {Get Connection}
  Connection:=TTelnetConnection(ASession.Data);
  if Connection = nil then Exit;
- 
+
  {Create Text}
  WorkBuffer:=TELNET_CHAR_ESC + '[2J'; {Esc[2J - Clear entire screen}
- 
+
  {Send Text}
  if not FListener.SendText(TWinsock2TCPServerThread(Connection.Thread),WorkBuffer) then Exit;
 
  {Create Text}
  WorkBuffer:=TELNET_CHAR_ESC + '[H'; {Esc[H - Move cursor to upper left corner}
- 
+
  {Send Text}
  Result:=FListener.SendText(TWinsock2TCPServerThread(Connection.Thread),WorkBuffer);
 end;
 
 {==============================================================================}
 
-function TTelnetShell.DoInput(ASession:TShellSession;var AInput:String):Boolean; 
+function TTelnetShell.DoInput(ASession:TShellSession;var AInput:String):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Session}
  if ASession = nil then Exit;
 
  //To Do
 end;
- 
+
 {==============================================================================}
 
-function TTelnetShell.DoOutputEx(ASession:TShellSession;const AOutput:String;AReturn:Boolean):Boolean; 
+function TTelnetShell.DoOutputEx(ASession:TShellSession;const AOutput:String;AReturn:Boolean):Boolean;
 var
  Connection:TTelnetConnection;
 begin
  {}
  Result:=False;
- 
+
  {Check Session}
  if ASession = nil then Exit;
- 
+
  {Get Connection}
  Connection:=TTelnetConnection(ASession.Data);
  if Connection = nil then Exit;
- 
+
  {Check Return}
  if AReturn then
   begin
@@ -852,7 +852,7 @@ function TTelnetShell.MatchSequence(const ASequence:String;var AContinue:Boolean
 begin
  {}
  Result:=False;
- 
+
  //To Do
 end;
 
@@ -862,7 +862,7 @@ function TTelnetShell.ProcessSequence(const ASequence:String):Boolean;
 begin
  {}
  Result:=False;
- 
+
  //To Do
 end;
 
@@ -875,7 +875,7 @@ begin
  inherited Create;
  Name:=SSH_SHELL_NAME;
  Flags:=SHELL_FLAG_CLEAR;
- 
+
  //FListener:=TSSHListener.Create;
  //To Do
  //FListener.Active:=True;
@@ -894,7 +894,7 @@ begin
   inherited Destroy;
  end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TTelnetShellLogout}
@@ -907,11 +907,11 @@ begin
 
  Name:=TELNET_SHELL_COMMAND_LOGOUT;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
- 
+
  {Create Alias}
  Alias:=TShellAlias.Create;
  Alias.Name:=TELNET_SHELL_ALIAS_EXIT;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
@@ -921,85 +921,85 @@ begin
 end;
 
 {==============================================================================}
- 
-destructor TTelnetShellLogout.Destroy; 
+
+destructor TTelnetShellLogout.Destroy;
 var
  Alias:TShellAlias;
 begin
  {}
  {Get Alias}
  Alias:=FindAlias(TELNET_SHELL_ALIAS_EXIT);
- 
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
-  
+
  inherited Destroy;
 end;
 
 {==============================================================================}
 
-function TTelnetShellLogout.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TTelnetShellLogout.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  Result:=AShell.DoOutput(ASession,'Logout from the current shell session');
 end;
 
 {==============================================================================}
 
-function TTelnetShellLogout.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TTelnetShellLogout.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Logout from the current shell session');
 end;
 
 {==============================================================================}
 
-function TTelnetShellLogout.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TTelnetShellLogout.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Connection:TTelnetConnection;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Check Session}
  if ASession = nil then Exit;
- 
+
  {Get Connection}
  Connection:=TTelnetConnection(ASession.Data);
  if Connection = nil then Exit;
  if Connection.Thread = nil then Exit;
- 
+
  {Signoff}
  if not AShell.DoOutput(ASession,'Goodbye!') then Exit;
- 
+
  {Wait}
  Sleep(500);
- 
+
  {Disconnect}
  TWinsock2TCPServerThread(Connection.Thread).Server.Disconnect;
- 
+
  Result:=True;
 end;
 
@@ -1015,11 +1015,11 @@ begin
 
  Name:=SSH_SHELL_COMMAND_LOGOUT;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
- 
+
  {Create Alias}
  Alias:=TShellAlias.Create;
  Alias.Name:=SSH_SHELL_ALIAS_EXIT;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
@@ -1029,25 +1029,25 @@ begin
 end;
 
 {==============================================================================}
- 
-destructor TSSHShellLogout.Destroy; 
+
+destructor TSSHShellLogout.Destroy;
 var
  Alias:TShellAlias;
 begin
  {}
  {Get Alias}
  Alias:=FindAlias(SSH_SHELL_ALIAS_EXIT);
- 
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
-  
+
  inherited Destroy;
 end;
 
@@ -1063,7 +1063,7 @@ begin
  {}
  {Check Initialized}
  if RemoteShellInitialized then Exit;
- 
+
  {Check Telnet Auto Start}
  if TELNET_AUTOSTART then
   begin
@@ -1073,7 +1073,7 @@ begin
     begin
      {Create Telnet Shell}
      TelnetShell:=TTelnetShell.Create;
-     
+
      {Register Shell}
      if ShellRegisterShell(TelnetShell) then
       begin
@@ -1084,10 +1084,10 @@ begin
       begin
        {Destroy Shell}
        TelnetShell.Free;
-      end;      
-    end; 
+      end;
+    end;
   end;
- 
+
  {Check SSH Auto Start}
  if SSH_AUTOSTART then
   begin
@@ -1097,28 +1097,28 @@ begin
     begin
      {Create SSH Shell}
      SSHShell:=TSSHShell.Create;
-     
+
      {Register Shell}
      if ShellRegisterShell(SSHShell) then
       begin
        {Register Logout Command}
-       //To Do 
+       //To Do
       end
      else
       begin
        {Destroy Shell}
        SSHShell.Free;
-      end;      
-    end; 
+      end;
+    end;
   end;
-  
+
  RemoteShellInitialized:=True;
 end;
 
 {==============================================================================}
 {==============================================================================}
 {Remote Shell Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Remote Shell Helper Functions}
@@ -1130,12 +1130,12 @@ initialization
  RemoteShellInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
 {==============================================================================}
 {==============================================================================}
- 
+
 end.
-  
+

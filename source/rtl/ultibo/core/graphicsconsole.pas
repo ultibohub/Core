@@ -17,14 +17,14 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
  Inspired by the original work of Ronald Daleske (http://www.projekte.daleske.de/)
- 
+
 References
 ==========
 
@@ -36,36 +36,36 @@ Graphics Console
  allows putting blocks (or rectangles) of pixel data on to the screen or getting rectangles of pixel data
  from the screen. Functions are also included to copy a rectangle from one part of the screen to another
  and to put text (with a specified font) on to the screen.
- 
+
  Most image formats either consist of, or can be decoded to, a block of data that is a number of horizontal
  rows each with a number of pixels (columns) with each pixel containing color information in a certain bit
- size (8/16/24/32) and format (RGB/BGR/RGBA etc). 
- 
+ size (8/16/24/32) and format (RGB/BGR/RGBA etc).
+
  If the data exists in memory as a single contiguous block with each row following directly after the previous
  row then that can be passed directly to the functions in this unit (eg GraphicsWindowDrawImage) to be drawn on
  the screen.
- 
+
  Many graphics libraries do image manipulation, rendering and compositing to a memory buffer in a form that
  is compatible with the functions in this unit so a complex image can be constructed in memory and then
  transferred to the screen in a single operation. This is sometimes referred to as a bit block transfer or
  BitBlt and is a very standard technique for rendering both text and images to a framebuffer device.
- 
- This unit extends the console unit by creating a new type of console window (WINDOW_MODE_GRAPHICS) and 
+
+ This unit extends the console unit by creating a new type of console window (WINDOW_MODE_GRAPHICS) and
  therefore allows both text console windows and graphics console windows to co-exist on the screen at once.
- 
+
  The functions in this unit cannot be used to draw on a text console window (WINDOW_MODE_TEXT) and vice
  versa the functions in the console unit cannot be used to draw on a graphics console window.
- 
+
  Like the console unit, the graphics console supports setting a viewport for a specified window to allow
  masking the area to be written to. However the graphics console does not support tracking a cursor X
  and Y position. Setting a window as the default is also not supported since that functionality is purely
  intended to support the RTL functions for text output.
- 
+
  Graphics windows can only be created on console devices which have a mode of CONSOLE_MODE_PIXEL.
- 
+
  Notes: Unlike the Console unit, Graphics console coordinates are always based on pixels not characters
         Graphics console coordinates begin at 0,0 and extend to Width - 1, Height - 1
-        
+
         Graphics Window coordinates X,Y are always based on pixels, beginning at 0,0 and extending to Cols - 1, Rows - 1
 
 }
@@ -74,7 +74,7 @@ Graphics Console
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit GraphicsConsole; 
+unit GraphicsConsole;
 
 interface
 
@@ -83,7 +83,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Framebuffer,F
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-            
+
 {==============================================================================}
 {const}
  {Graphics Console specific constants}
@@ -93,36 +93,36 @@ type
  {Graphics Console specific types}
  {Graphics Window Enumeration Callback}
  TGraphicsWindowEnumerate = TConsoleWindowEnumerate;
- 
+
  {Graphics Window}
  PGraphicsWindow = ^TGraphicsWindow;
  TGraphicsWindow = TConsoleWindow;
- 
+
 {==============================================================================}
 {var}
  {Graphics Console specific variables}
- 
+
 {==============================================================================}
 type
  {Graphics Console specific classes}
  TGraphicImage = class(TObject)
   private
    {Internal Variables}
- 
+
    {Internal Methods}
-   
+
   protected
    {Protected Variables}
-  
+
    {Protected Methods}
-   
+
   public
    {Public Properties}
-   
+
    {Public Methods}
    //To Do //Continuing
  end;
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure GraphicsConsoleInit;
@@ -168,7 +168,7 @@ function GraphicsWindowResetRect(Handle:TWindowHandle):LongWord; inline;
 
 function GraphicsWindowGetViewport(Handle:TWindowHandle;var X1,Y1,X2,Y2:LongWord):LongWord;
 function GraphicsWindowSetViewport(Handle:TWindowHandle;X1,Y1,X2,Y2:LongWord):LongWord;
-function GraphicsWindowResetViewport(Handle:TWindowHandle):LongWord; 
+function GraphicsWindowResetViewport(Handle:TWindowHandle):LongWord;
 
 function GraphicsWindowGetCols(Handle:TWindowHandle):LongWord;
 function GraphicsWindowGetRows(Handle:TWindowHandle):LongWord;
@@ -201,7 +201,7 @@ function GraphicsWindowCursorOff(Handle:TWindowHandle):LongWord; inline;
 function GraphicsWindowCursorLine(Handle:TWindowHandle):LongWord; inline;
 function GraphicsWindowCursorBar(Handle:TWindowHandle):LongWord; inline;
 function GraphicsWindowCursorBlock(Handle:TWindowHandle):LongWord; inline;
-function GraphicsWindowCursorMove(Handle:TWindowHandle;X,Y:LongWord):LongWord; 
+function GraphicsWindowCursorMove(Handle:TWindowHandle;X,Y:LongWord):LongWord;
 function GraphicsWindowCursorBlink(Handle:TWindowHandle;Enabled:Boolean):LongWord; inline;
 
 function GraphicsWindowClear(Handle:TWindowHandle):LongWord;
@@ -261,9 +261,9 @@ begin
  {}
  {Check Initialized}
  if GraphicsConsoleInitialized then Exit;
- 
+
  {Nothing}
- 
+
  GraphicsConsoleInitialized:=True;
 end;
 
@@ -301,17 +301,17 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Size}
  if Size = 0 then Size:=SizeOf(TGraphicsWindow);
  if Size < SizeOf(TGraphicsWindow) then Exit;
- 
+
  {Check Mode}
  {if Mode <> WINDOW_MODE_GRAPHICS then Exit;} {Do not check mode, allow for expansion}
- 
+
  {Check Console}
  if ConsoleDeviceGetMode(Console) <> CONSOLE_MODE_PIXEL then Exit;
- 
+
  {Check Position}
  if Position = CONSOLE_POSITION_FULLSCREEN then
   begin
@@ -319,12 +319,12 @@ begin
    if not ConsoleDeviceCheckFlag(Console,CONSOLE_FLAG_FULLSCREEN) then Exit;
   end
  else
-  begin 
+  begin
    {if Position < CONSOLE_POSITION_FULL then Exit;}
    if Position > CONSOLE_POSITION_BOTTOMRIGHT then Exit;
    if GraphicsWindowFind(Console,Position) <> INVALID_HANDLE_VALUE then Exit;
    if GraphicsWindowFind(Console,CONSOLE_POSITION_FULLSCREEN) <> INVALID_HANDLE_VALUE then Exit;
- 
+
    {Check Position}
    case Position of
     CONSOLE_POSITION_FULL:begin
@@ -335,7 +335,7 @@ begin
       {Fail on top positions}
       if GraphicsWindowFind(Console,CONSOLE_POSITION_TOPLEFT) <> INVALID_HANDLE_VALUE then Exit;
       if GraphicsWindowFind(Console,CONSOLE_POSITION_TOPRIGHT) <> INVALID_HANDLE_VALUE then Exit;
-      
+
       {Get Full}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_FULL);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -343,7 +343,7 @@ begin
         {Move to Bottom}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOM) <> ERROR_SUCCESS then Exit;
        end;
-      
+
       {Get Left}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_LEFT);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -351,8 +351,8 @@ begin
         {Move to Bottom Left}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMLEFT) <> ERROR_SUCCESS then Exit;
        end;
-       
-      {Get Right} 
+
+      {Get Right}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_RIGHT);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
@@ -364,7 +364,7 @@ begin
       {Fail on bottom positions}
       if GraphicsWindowFind(Console,CONSOLE_POSITION_BOTTOMLEFT) <> INVALID_HANDLE_VALUE then Exit;
       if GraphicsWindowFind(Console,CONSOLE_POSITION_BOTTOMRIGHT) <> INVALID_HANDLE_VALUE then Exit;
-    
+
       {Get Full}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_FULL);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -372,7 +372,7 @@ begin
         {Move to Top}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_TOP) <> ERROR_SUCCESS then Exit;
        end;
-      
+
       {Get Left}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_LEFT);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -380,8 +380,8 @@ begin
         {Move to Top Left}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
        end;
-       
-      {Get Right} 
+
+      {Get Right}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_RIGHT);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
@@ -393,7 +393,7 @@ begin
       {Fail on left positions}
       if GraphicsWindowFind(Console,CONSOLE_POSITION_TOPLEFT) <> INVALID_HANDLE_VALUE then Exit;
       if GraphicsWindowFind(Console,CONSOLE_POSITION_BOTTOMLEFT) <> INVALID_HANDLE_VALUE then Exit;
-    
+
       {Get Full}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_FULL);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -401,7 +401,7 @@ begin
         {Move to Right}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_RIGHT) <> ERROR_SUCCESS then Exit;
        end;
-    
+
       {Get Top}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_TOP);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -409,8 +409,8 @@ begin
         {Move to Top Right}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_TOPRIGHT) <> ERROR_SUCCESS then Exit;
        end;
-       
-      {Get Bottom} 
+
+      {Get Bottom}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_BOTTOM);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
@@ -422,7 +422,7 @@ begin
       {Fail on right positions}
       if GraphicsWindowFind(Console,CONSOLE_POSITION_TOPRIGHT) <> INVALID_HANDLE_VALUE then Exit;
       if GraphicsWindowFind(Console,CONSOLE_POSITION_BOTTOMRIGHT) <> INVALID_HANDLE_VALUE then Exit;
-    
+
       {Get Full}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_FULL);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -430,7 +430,7 @@ begin
         {Move to Left}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_LEFT) <> ERROR_SUCCESS then Exit;
        end;
-    
+
       {Get Top}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_TOP);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -438,8 +438,8 @@ begin
         {Move to Top Left}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
        end;
-       
-      {Get Bottom} 
+
+      {Get Bottom}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_BOTTOM);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
@@ -455,7 +455,7 @@ begin
         {Move to Right}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_RIGHT) <> ERROR_SUCCESS then Exit;
        end;
-    
+
       {Get Top}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_TOP);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -463,7 +463,7 @@ begin
         {Move to Top Right}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_TOPRIGHT) <> ERROR_SUCCESS then Exit;
        end;
-    
+
       {Get Left}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_LEFT);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -472,7 +472,7 @@ begin
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMLEFT) <> ERROR_SUCCESS then Exit;
        end;
      end;
-    CONSOLE_POSITION_TOPRIGHT:begin 
+    CONSOLE_POSITION_TOPRIGHT:begin
       {Get Full}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_FULL);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -480,7 +480,7 @@ begin
         {Move to Left}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_LEFT) <> ERROR_SUCCESS then Exit;
        end;
-    
+
       {Get Top}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_TOP);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -488,8 +488,8 @@ begin
         {Move to Top Left}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
        end;
-       
-      {Get Right} 
+
+      {Get Right}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_RIGHT);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
@@ -497,7 +497,7 @@ begin
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMRIGHT) <> ERROR_SUCCESS then Exit;
        end;
      end;
-    CONSOLE_POSITION_BOTTOMLEFT:begin 
+    CONSOLE_POSITION_BOTTOMLEFT:begin
       {Get Full}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_FULL);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -505,15 +505,15 @@ begin
         {Move to Right}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_RIGHT) <> ERROR_SUCCESS then Exit;
        end;
-    
-      {Get Bottom} 
+
+      {Get Bottom}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_BOTTOM);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
         {Move to Bottom Right}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMRIGHT) <> ERROR_SUCCESS then Exit;
        end;
-    
+
       {Get Left}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_LEFT);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -522,7 +522,7 @@ begin
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_TOPLEFT) <> ERROR_SUCCESS then Exit;
        end;
      end;
-    CONSOLE_POSITION_BOTTOMRIGHT:begin 
+    CONSOLE_POSITION_BOTTOMRIGHT:begin
       {Get Full}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_FULL);
       if Handle <> INVALID_HANDLE_VALUE then
@@ -530,16 +530,16 @@ begin
         {Move to Left}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_LEFT) <> ERROR_SUCCESS then Exit;
        end;
-    
-      {Get Bottom} 
+
+      {Get Bottom}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_BOTTOM);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
         {Move to Bottom Left}
         if GraphicsWindowSetPosition(Handle,CONSOLE_POSITION_BOTTOMLEFT) <> ERROR_SUCCESS then Exit;
        end;
-       
-      {Get Right} 
+
+      {Get Right}
       Handle:=GraphicsWindowFind(Console,CONSOLE_POSITION_RIGHT);
       if Handle <> INVALID_HANDLE_VALUE then
        begin
@@ -548,22 +548,22 @@ begin
        end;
      end;
    end;
-  end;  
- 
+  end;
+
  {Get Position}
  if ConsoleDeviceGetPosition(Console,Position,X1,Y1,X2,Y2) <> ERROR_SUCCESS then Exit;
- 
+
  {Check Console}
  if Console = nil then Exit;
  if Console.Device.Signature <> DEVICE_SIGNATURE then Exit;
-   
- if MutexLock(Console.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Console.Lock) = ERROR_SUCCESS then
   begin
    try
     {Create Window}
     Window:=PGraphicsWindow(AllocMem(Size));
     if Window = nil then Exit;
-    
+
     {Update Window}
     Window.Signature:=WINDOW_SIGNATURE;
     Window.Position:=Position;
@@ -609,26 +609,26 @@ begin
     {Driver}
     Window.Lock:=INVALID_HANDLE_VALUE;
     Window.Console:=Console;
-   
+
     {Setup Flags}
     if Position = CONSOLE_POSITION_FULLSCREEN then Window.WindowFlags:=Window.WindowFlags or WINDOW_FLAG_FULLSCREEN;
     {No Character, Line Wrap or Auto Scroll on graphics windows}
-    
+
     {Check Border}
     if Position = CONSOLE_POSITION_FULLSCREEN then Window.Borderwidth:=0; //To do //Would this be better based on another criteria ?
-    
+
     {Get Font}
     if Window.Font = INVALID_HANDLE_VALUE then Window.Font:=ConsoleWindowGetDefaultFont;
     if Window.Font = INVALID_HANDLE_VALUE then Window.Font:=Console.Font;
     if Window.Font = INVALID_HANDLE_VALUE then Window.Font:=FontGetDefault;
-    if Window.Font = INVALID_HANDLE_VALUE then 
+    if Window.Font = INVALID_HANDLE_VALUE then
      begin
       if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to get font for graphics window');
       {Free Window}
       FreeMem(Window);
       Exit;
      end;
-    
+
     {Get Font Width / Height}
     Window.FontWidth:=FontGetWidth(Window.Font);
     Window.FontHeight:=FontGetHeight(Window.Font);
@@ -643,7 +643,7 @@ begin
     if Window.FontWidth = 0 then Window.FontWidth:=1;
     Window.FontHeight:=Window.FontHeight * Console.FontRatio;
     if Window.FontHeight = 0 then Window.FontHeight:=1;
-    
+
     {Get Width / Height}
     Window.Width:=((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth);
     Window.Height:=((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth);
@@ -654,7 +654,7 @@ begin
       FreeMem(Window);
       Exit;
      end;
-    
+
     {Get MaxX,Y}
     Window.MaxX:=Window.Width - 1;
     Window.MaxY:=Window.Height - 1;
@@ -662,11 +662,11 @@ begin
     {Get Cols / Rows}
     Window.Cols:=Window.Width;
     Window.Rows:=Window.Height;
-    
+
     {Get CaretX / CaretY}
     Window.CaretX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + Window.CursorX;
     Window.CaretY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Window.CursorY;
-    
+
     {Create Lock}
     Window.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
     if Window.Lock = INVALID_HANDLE_VALUE then
@@ -676,7 +676,7 @@ begin
       FreeMem(Window);
       Exit;
      end;
-    
+
     {Insert Window}
     if CriticalSectionLock(Console.WindowLock) = ERROR_SUCCESS then
      begin
@@ -692,23 +692,23 @@ begin
          Console.WindowFirst.Prev:=Window;
          Console.WindowFirst:=Window;
         end;
-    
+
        {Increment Count}
        Inc(Console.WindowCount);
-       
+
        {Check Default}
        {No default for graphics windows}
-        
+
        {Check Visible}
        if State = WINDOW_STATE_VISIBLE then
         begin
          {Set Active}
          if Console.WindowActive = nil then Console.WindowActive:=Window;
-         
+
          {Draw Window}
          ConsoleDeviceDrawWindow(Console,TWindowHandle(Window),WINDOW_DRAW_FLAG_ALL);
-        end; 
-       
+        end;
+
        {Return Result}
        Result:=TWindowHandle(Window);
       finally
@@ -722,18 +722,18 @@ begin
        begin
         MutexDestroy(Window.Lock);
        end;
-       
+
       {Free Window}
       FreeMem(Window);
-     end;  
+     end;
    finally
     MutexUnlock(Console.Lock);
-   end; 
+   end;
   end;
 end;
- 
+
 {==============================================================================}
- 
+
 function GraphicsWindowDestroy(Handle:TWindowHandle):LongWord; inline;
 {Close and Destroy an existing console window}
 {Handle: The handle of the window to destroy}
@@ -939,54 +939,54 @@ begin
 
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- try 
+ try
   {Check Console}
   if Window.Console = nil then Exit;
-  
+
   {Check Position}
   if GraphicsWindowFind(Window.Console,Position) <> INVALID_HANDLE_VALUE then Exit;
- 
+
   {Save State}
   State:=Window.WindowState;
   try
    {Update Caret}
    ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   
+
    {Hide Window}
    Window.WindowState:=WINDOW_STATE_INVISIBLE;
-   
+
    {Draw Window}
    if State = WINDOW_STATE_VISIBLE then ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window),WINDOW_DRAW_FLAG_ALL);
-   
+
    {Get Position}
    if ConsoleDeviceGetPosition(Window.Console,Position,X1,Y1,X2,Y2) <> ERROR_SUCCESS then Exit;
-   
+
    {Check Viewport}
    Viewport:=False;
    if (Window.MinX <> 0) or (Window.MinY <> 0) or (Window.MaxX <> (Window.Width - 1)) or (Window.MaxY <> (Window.Height - 1)) then
     begin
      Viewport:=True;
     end;
-   
+
    {Update Window}
    Window.X1:=X1;
    Window.Y1:=Y1;
    Window.X2:=X2;
    Window.Y2:=Y2;
-  
+
    {Get Width / Height}
    Window.Width:=((Window.X2 - Window.X1) + 1) - (2 * Window.Borderwidth);
    Window.Height:=((Window.Y2 - Window.Y1) + 1) - (2 * Window.Borderwidth);
-   
+
    if not Viewport then
     begin
      {Get MinX,Y / MaxX,Y}
@@ -994,7 +994,7 @@ begin
      Window.MinY:=0;
      Window.MaxX:=Window.Width - 1;
      Window.MaxY:=Window.Height - 1;
-     
+
      {Get Cols / Rows}
      Window.Cols:=Window.Width;
      Window.Rows:=Window.Height;
@@ -1006,44 +1006,44 @@ begin
      if Window.MinY >= Window.Height then Window.MinY:=0;
      if Window.MaxX >= Window.Width then Window.MaxX:=Window.Width - 1;
      if Window.MaxY >= Window.Height then Window.MaxY:=Window.Height - 1;
-     
+
      {Get Cols / Rows}
      Window.Cols:=(Window.MaxX - Window.MinX) + 1;
      Window.Rows:=(Window.MaxY - Window.MinY) + 1;
-    end; 
-   
+    end;
+
    {Get Cursor X,Y}
    if Window.CursorX >= Window.Cols then Window.CursorX:=0;
    if Window.CursorY >= Window.Rows then Window.CursorY:=0;
-   
+
    {Get CaretX / CaretY}
    Window.CaretX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + Window.CursorX;
    Window.CaretY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Window.CursorY;
-   
+
    {Return Result}
    Result:=ERROR_SUCCESS;
   finally
    {Restore State}
    Window.WindowState:=State;
-   
+
    {Check Visible}
    if State = WINDOW_STATE_VISIBLE then
     begin
      {Draw Window}
      ConsoleDeviceDrawWindow(Window.Console,TWindowHandle(Window),WINDOW_DRAW_FLAG_ALL);
-     
+
      {Check Flag}
      if ((Window.WindowFlags and WINDOW_FLAG_FOCUS_CURSOR) = 0) or (Window.Console.WindowActive = Window) then
       begin
        {Update Caret}
        ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,(Window.CursorState = CURSOR_STATE_ON),Window.CursorBlink);
-      end; 
-    end; 
+      end;
+    end;
   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1071,22 +1071,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get MinX}
  Result:=Window.MinX;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -1104,22 +1104,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get MinY}
  Result:=Window.MinY;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -1137,22 +1137,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get MaxX}
  Result:=Window.MaxX;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -1170,22 +1170,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get MaxY}
  Result:=Window.MaxY;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -1245,27 +1245,27 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
  {Get Viewport}
- X1:=Window.MinX; 
+ X1:=Window.MinX;
  Y1:=Window.MinY;
  X2:=Window.MaxX;
  Y2:=Window.MaxY;
-  
+
  Result:=ERROR_SUCCESS;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -1287,16 +1287,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
@@ -1312,23 +1312,23 @@ begin
    {Window.Y}
    Window.Cols:=(Window.MaxX - Window.MinX) + 1;
    Window.Rows:=(Window.MaxY - Window.MinY) + 1;
-   
+
    {Unlock Window}
    MutexUnlock(Window.Lock);
-   
+
    {Set Cursor XY}
    Result:=ConsoleWindowSetCursorXY(Handle,0,0);
   end
  else
-  begin 
+  begin
    {Unlock Window}
    MutexUnlock(Window.Lock);
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
-function GraphicsWindowResetViewport(Handle:TWindowHandle):LongWord; 
+function GraphicsWindowResetViewport(Handle:TWindowHandle):LongWord;
 {Reset the window viewport for an existing console window to the maximum size}
 {Handle: The handle of the window to reset the viewport for}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
@@ -1337,16 +1337,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
-  
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
@@ -1362,11 +1362,11 @@ begin
 
  {Unlock Window}
  MutexUnlock(Window.Lock);
- 
+
  {Set Cursor XY}
  Result:=ConsoleWindowSetCursorXY(Handle,0,0);
-end; 
- 
+end;
+
 {==============================================================================}
 
 function GraphicsWindowGetCols(Handle:TWindowHandle):LongWord;
@@ -1380,22 +1380,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Cols}
  Result:=Window.Cols;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -1413,22 +1413,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Rows}
  Result:=Window.Rows;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -1446,22 +1446,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Width}
  Result:=Window.Width;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -1479,22 +1479,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Height}
  Result:=Window.Height;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -1510,22 +1510,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Get Format}
  Result:=Window.Format;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -1541,22 +1541,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
  {Get Forecolor}
  Result:=Window.Forecolor;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -1573,27 +1573,27 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Color}
  {if Color = COLOR_NONE then Exit;}
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
  {Set Forecolor}
  Window.Forecolor:=Color;
- 
+
  Result:=ERROR_SUCCESS;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -1609,22 +1609,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
  {Get Backcolor}
  Result:=Window.Backcolor;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -1641,27 +1641,27 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Color}
  {if Color = COLOR_NONE then Exit;}
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
  {Set Backcolor}
  Window.Backcolor:=Color;
- 
+
  Result:=ERROR_SUCCESS;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -1677,22 +1677,22 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
 
  {Get Font}
  Result:=Window.Font;
- 
+
  {Unlock Window}
  MutexUnlock(Window.Lock);
 end;
@@ -1711,19 +1711,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Font}
  if Font = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -1741,32 +1741,32 @@ begin
     if Window.FontWidth = 0 then Window.FontWidth:=1;
     Window.FontHeight:=FontHeight * Window.Console.FontRatio;
     if Window.FontHeight = 0 then Window.FontHeight:=1;
-    
+
     {Delete Caret}
     if Window.CaretHandle <> INVALID_HANDLE_VALUE then
      begin
       ConsoleDeviceDeleteCaret(Window.Console,Window.CaretHandle);
       Window.CaretHandle:=INVALID_HANDLE_VALUE;
-     end; 
-    
+     end;
+
     {Check Visible}
     if Window.WindowState = WINDOW_STATE_VISIBLE then
      begin
       {Update Cursor}
       GraphicsWindowCursorMove(Handle,Window.CursorX,Window.CursorY);
-     end; 
-    
+     end;
+
     {Return Result}
     Result:=ERROR_SUCCESS;
-   end; 
- finally 
+   end;
+ finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
-  
+
 function GraphicsWindowGetCursorXY(Handle:TWindowHandle;var X,Y:LongWord):LongWord; inline;
 {Get the current cursor X and Y positions of an existing console window}
 {Handle: The handle of the window to get cursor X and Y for}
@@ -1779,10 +1779,10 @@ begin
  {}
  Result:=ConsoleWindowGetCursorXY(Handle,X,Y);
 end;
-  
+
 {==============================================================================}
-  
-function GraphicsWindowSetCursorXY(Handle:TWindowHandle;X,Y:LongWord):LongWord; 
+
+function GraphicsWindowSetCursorXY(Handle:TWindowHandle;X,Y:LongWord):LongWord;
 {Set the current cursor X and Y positions of an existing console window}
 {Handle: The handle of the window to set cursor X and Y for}
 {X: The new cursor X value}
@@ -1795,19 +1795,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
- 
+
  {Check Cursor State}
  if Window.CursorState = CURSOR_STATE_ON then
   begin
@@ -1825,11 +1825,11 @@ begin
      {Set Cursor XY}
      Window.CursorX:=X;
      Window.CursorY:=Y;
-     
+
      {Get CaretX / CaretY}
      Window.CaretX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + Window.CursorX;
      Window.CaretY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Window.CursorY;
-     
+
      Result:=ERROR_SUCCESS;
 
      {Unlock Window}
@@ -1839,8 +1839,8 @@ begin
     begin
      {Unlock Window}
      MutexUnlock(Window.Lock);
-    end; 
-  end;  
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -1865,9 +1865,9 @@ begin
  {}
  Result:=ConsoleWindowSetCursorMode(Handle,CursorMode);
 end;
-  
+
 {==============================================================================}
-  
+
 function GraphicsWindowGetCursorBlink(Handle:TWindowHandle):Boolean; inline;
 {Get the current cursor blink state of an existing console window}
 {Handle: The handle of the window to get blink state for}
@@ -1876,9 +1876,9 @@ begin
  {}
  Result:=ConsoleWindowGetCursorBlink(Handle);
 end;
-  
+
 {==============================================================================}
-  
+
 function GraphicsWindowSetCursorBlink(Handle:TWindowHandle;CursorBlink:Boolean):LongWord; inline;
 {Set the current cursor blink state of an existing console window}
 {Handle: The handle of the window to set the blink state for}
@@ -1888,9 +1888,9 @@ begin
  {}
  Result:=ConsoleWindowSetCursorBlink(Handle,CursorBlink);
 end;
-  
+
 {==============================================================================}
-  
+
 function GraphicsWindowGetCursorState(Handle:TWindowHandle):TCursorState; inline;
 {Get the current cursor state of an existing console window}
 {Handle: The handle of the window to get the state for}
@@ -1899,9 +1899,9 @@ begin
  {}
  Result:=ConsoleWindowGetCursorState(Handle);
 end;
-  
+
 {==============================================================================}
-  
+
 function GraphicsWindowSetCursorState(Handle:TWindowHandle;CursorState:TCursorState):LongWord; inline;
 {Set the current cursor state of an existing console window}
 {Handle: The handle of the window to set the state for}
@@ -1911,9 +1911,9 @@ begin
  {}
  Result:=ConsoleWindowSetCursorState(Handle,CursorState);
 end;
-  
+
 {==============================================================================}
-  
+
 function GraphicsWindowGetCursorShape(Handle:TWindowHandle):TCursorShape; inline;
 {Get the current cursor shape of an existing console window}
 {Handle: The handle of the window to get the shape for}
@@ -1922,9 +1922,9 @@ begin
  {}
  Result:=ConsoleWindowGetCursorShape(Handle);
 end;
-  
+
 {==============================================================================}
-  
+
 function GraphicsWindowSetCursorShape(Handle:TWindowHandle;CursorShape:TCursorShape):LongWord; inline;
 {Set the current cursor shape of an existing console window}
 {Handle: The handle of the window to set the shape for}
@@ -1934,9 +1934,9 @@ begin
  {}
  Result:=ConsoleWindowSetCursorShape(Handle,CursorShape);
 end;
-  
+
 {==============================================================================}
-  
+
 function GraphicsWindowCursorOn(Handle:TWindowHandle):LongWord; inline;
 {Enable the cursor on an existing console window}
 {Handle: The handle of the window to enable the cursor for}
@@ -1945,9 +1945,9 @@ begin
  {}
  Result:=ConsoleWindowCursorOn(Handle);
 end;
-  
+
 {==============================================================================}
-  
+
 function GraphicsWindowCursorOff(Handle:TWindowHandle):LongWord; inline;
 {Disable the cursor on an existing console window}
 {Handle: The handle of the window to disable the cursor for}
@@ -1956,9 +1956,9 @@ begin
  {}
  Result:=ConsoleWindowCursorOff(Handle);
 end;
-  
+
 {==============================================================================}
-  
+
 function GraphicsWindowCursorLine(Handle:TWindowHandle):LongWord; inline;
 {Change the cursor to a vertical line on an existing console window}
 {Handle: The handle of the window to change the cursor for}
@@ -1967,9 +1967,9 @@ begin
  {}
  Result:=ConsoleWindowCursorLine(Handle);
 end;
-  
+
 {==============================================================================}
-  
+
 function GraphicsWindowCursorBar(Handle:TWindowHandle):LongWord; inline;
 {Change the cursor to a horizontal bar on an existing console window}
 {Handle: The handle of the window to change the cursor for}
@@ -1978,9 +1978,9 @@ begin
  {}
  Result:=ConsoleWindowCursorBar(Handle);
 end;
-  
+
 {==============================================================================}
-  
+
 function GraphicsWindowCursorBlock(Handle:TWindowHandle):LongWord; inline;
 {Change the cursor to a solid block on an existing console window}
 {Handle: The handle of the window to change the cursor for}
@@ -1989,9 +1989,9 @@ begin
  {}
  Result:=ConsoleWindowCursorBlock(Handle);
 end;
- 
+
 {==============================================================================}
-  
+
 function GraphicsWindowCursorMove(Handle:TWindowHandle;X,Y:LongWord):LongWord;
 {Move the cursor on an existing console window}
 {Handle: The handle of the window to move the cursor for}
@@ -2005,33 +2005,33 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PConsoleWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
-  
+
   {Check Cursor X,Y}
   if ((Window.MinX + X) <= Window.MaxX) and ((Window.MinY + Y) <= Window.MaxY) then
    begin
     {Set Cursor XY}
     Window.CursorX:=X;
     Window.CursorY:=Y;
- 
+
     {Get CaretX / CaretY}
     Window.CaretX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + Window.CursorX;
     Window.CaretY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Window.CursorY;
-    
+
     {Check Cursor State and Visible}
     if (Window.CursorState = CURSOR_STATE_ON) and (Window.WindowState = WINDOW_STATE_VISIBLE) then
      begin
@@ -2043,18 +2043,18 @@ begin
         if Result <> ERROR_SUCCESS then Exit;
        end;
      end;
-   
-    {Return Result} 
+
+    {Return Result}
     Result:=ERROR_SUCCESS;
-   end; 
- finally 
+   end;
+ finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
-  
+
 function GraphicsWindowCursorBlink(Handle:TWindowHandle;Enabled:Boolean):LongWord; inline;
 {Set the blink state of the cursor on an existing console window}
 {Handle: The handle of the window to set the blink state for}
@@ -2080,53 +2080,53 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Check Visible}
  if Window.WindowState <> WINDOW_STATE_VISIBLE then
   begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   end; 
-  
+   end;
+
   {Calculate X1,Y1,X2,Y2}
   ClearX1:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX;
   ClearY1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY;
-  ClearX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MaxX; 
+  ClearX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MaxX;
   ClearY2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MaxY;
- 
+
   {Console Draw Block}
   Result:=ConsoleDeviceDrawBlock(Window.Console,ClearX1,ClearY1,ClearX2,ClearY2,Window.Backcolor);
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2151,10 +2151,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -2167,7 +2167,7 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -2181,33 +2181,33 @@ begin
   if (Window.MinY + Y1) > Window.MaxY then Exit;
   if (Window.MinX + X2) > Window.MaxX then Exit;
   if (Window.MinY + Y2) > Window.MaxY then Exit;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   end; 
-  
+   end;
+
   {Calculate X1,Y1,X2,Y2}
   ClearX1:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X1;
   ClearY1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y1;
-  ClearX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X2; 
+  ClearX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X2;
   ClearY2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y2;
- 
+
   {Console Draw Block}
   Result:=ConsoleDeviceDrawBlock(Window.Console,ClearX1,ClearY1,ClearX2,ClearY2,Color);
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function GraphicsWindowDrawBox(Handle:TWindowHandle;X1,Y1,X2,Y2,Color,Width:LongWord):LongWord;
@@ -2231,10 +2231,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -2247,7 +2247,7 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -2261,31 +2261,31 @@ begin
   if (Window.MinY + Y1) > Window.MaxY then Exit;
   if (Window.MinX + X2) > Window.MaxX then Exit;
   if (Window.MinY + Y2) > Window.MaxY then Exit;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   end; 
-  
+   end;
+
   {Calculate X1,Y1,X2,Y2}
   BoxX1:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X1;
   BoxY1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y1;
-  BoxX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X2; 
+  BoxX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X2;
   BoxY2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y2;
- 
+
   {Console Draw Box}
   Result:=ConsoleDeviceDrawBox(Window.Console,BoxX1,BoxY1,BoxX2,BoxY2,Color,Width);
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2311,10 +2311,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -2327,31 +2327,31 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check X1,Y1,X2,Y2}
   if (Window.MinX + X1) > Window.MaxX then Exit;
   if (Window.MinY + Y1) > Window.MaxY then Exit;
   if (Window.MinX + X2) > Window.MaxX then Exit;
   if (Window.MinY + Y2) > Window.MaxY then Exit;
- 
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   end; 
- 
+   end;
+
   {Calculate X1,Y1,X2,Y2}
   LineX1:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X1;
   LineY1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y1;
-  LineX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X2; 
+  LineX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X2;
   LineY2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y2;
- 
+
   {Check X1,Y1,X2,Y2}
   if ((X1 = X2) and (Y2 > Y1)) or ((Y1 = Y2) and (X2 > X1)) then
    begin
@@ -2362,17 +2362,17 @@ begin
    begin
     {Console Plot Line}
     Result:=ConsoleDevicePlotLine(Window.Console,LineX1,LineY1,LineX2,LineY2,Color,Width);
-   end; 
+   end;
 
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2397,10 +2397,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -2413,13 +2413,13 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check X1,Y1,X2,Y2}
   if X1 > X2 then Exit;
   if Y1 > Y2 then Exit;
@@ -2427,31 +2427,31 @@ begin
   if (Window.MinY + Y1) > Window.MaxY then Exit;
   if (Window.MinX + X2) > Window.MaxX then Exit;
   if (Window.MinY + Y2) > Window.MaxY then Exit;
- 
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   end; 
- 
+   end;
+
   {Calculate X1,Y1,X2,Y2}
   BlockX1:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X1;
   BlockY1:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y1;
-  BlockX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X2; 
+  BlockX2:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X2;
   BlockY2:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y2;
- 
+
   {Console Draw Block}
   Result:=ConsoleDeviceDrawBlock(Window.Console,BlockX1,BlockY1,BlockX2,BlockY2,Color);
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2474,10 +2474,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -2490,39 +2490,39 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check X,Y}
   if (Window.MinX + X) > Window.MaxX then Exit;
   if (Window.MinY + Y) > Window.MaxY then Exit;
- 
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   end; 
- 
+   end;
+
   {Calculate X,Y}
   CircleX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X;
   CircleY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y;
 
   {Console Draw Circle}
   Result:=ConsoleDeviceDrawCircle(Window.Console,CircleX,CircleY,Color,Width,Radius);
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2543,10 +2543,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -2559,45 +2559,45 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check X,Y}
   if (Window.MinX + X) > Window.MaxX then Exit;
   if (Window.MinY + Y) > Window.MaxY then Exit;
- 
+
   {Check Height}
   if (Window.MinY + Y + (Window.FontHeight - 1)) > Window.MaxY then Exit;
-  
+
   {Check Width}
   if (Window.MinX + X + (Window.FontWidth - 1)) > Window.MaxX then Exit;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   end; 
-  
+   end;
+
   {Calculate X,Y}
   CharX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X;
   CharY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y;
 
   {Console Draw Char}
   Result:=ConsoleDeviceDrawChar(Window.Console,Window.Font,Ch,CharX,CharY,Window.Forecolor,Window.Backcolor);
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2621,13 +2621,13 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Font}
  if Font = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -2640,45 +2640,45 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
-  
+
   {Check X,Y}
   if (Window.MinX + X) > Window.MaxX then Exit;
   if (Window.MinY + Y) > Window.MaxY then Exit;
- 
+
   {Check Height}
   if (Window.MinY + Y + (FontGetHeight(Font) - 1)) > Window.MaxY then Exit;
 
   {Check Width}
-  if (Window.MinX + X + (FontGetWidth(Font) - 1)) > Window.MaxX then Exit; 
-  
+  if (Window.MinX + X + (FontGetWidth(Font) - 1)) > Window.MaxX then Exit;
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   end; 
-  
+   end;
+
   {Calculate X,Y}
   CharX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X;
   CharY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y;
 
   {Console Draw Char}
   Result:=ConsoleDeviceDrawChar(Window.Console,Font,Ch,CharX,CharY,Forecolor,Backcolor);
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2700,10 +2700,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -2716,54 +2716,54 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
-  
+
   {Check X,Y}
   if (Window.MinX + X) > Window.MaxX then Exit;
   if (Window.MinY + Y) > Window.MaxY then Exit;
-  
+
   {Check Height}
   if (Window.MinY + Y + (Window.FontHeight - 1)) > Window.MaxY then Exit;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   end; 
-  
+   end;
+
   {Get Length}
   TextLength:=Length(Text);
   if (Window.MinX + X + ((TextLength * Window.FontWidth) - 1)) > Window.MaxX then TextLength:=(Window.MaxX - (Window.MinX + X) + 1) div Window.FontWidth;
-  
+
   {Check Length}
   if (TextLength > 0) then
    begin
     {Calculate X,Y}
     TextX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X;
     TextY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y;
-  
+
     {Console Draw Text}
     Result:=ConsoleDeviceDrawText(Window.Console,Window.Font,Text,TextX,TextY,Window.Forecolor,Window.Backcolor,TextLength);
     if Result <> ERROR_SUCCESS then Exit;
    end;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
-   end; 
-  
+   end;
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2788,13 +2788,13 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Font}
  if Font = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -2807,54 +2807,54 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
-  
+
   {Check X,Y}
   if (Window.MinX + X) > Window.MaxX then Exit;
   if (Window.MinY + Y) > Window.MaxY then Exit;
-  
+
   {Check Height}
   if (Window.MinY + Y + (FontGetHeight(Font) - 1)) > Window.MaxY then Exit;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   end; 
-  
+   end;
+
   {Get Length}
   TextLength:=Length(Text);
   if (Window.MinX + X + ((TextLength * FontGetWidth(Font)) - 1)) > Window.MaxX then TextLength:=(Window.MaxX - (Window.MinX + X) + 1) div FontGetWidth(Font);
-  
+
   {Check Length}
   if (TextLength > 0) then
    begin
     {Calculate X,Y}
     TextX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X;
     TextY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y;
-  
+
     {Console Draw Text}
     Result:=ConsoleDeviceDrawText(Window.Console,Font,Text,TextX,TextY,Forecolor,Backcolor,TextLength);
     if Result <> ERROR_SUCCESS then Exit;
    end;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
-   end; 
-  
+   end;
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2875,10 +2875,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -2891,39 +2891,39 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check X,Y}
   if (Window.MinX + X) > Window.MaxX then Exit;
   if (Window.MinY + Y) > Window.MaxY then Exit;
- 
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   end; 
- 
+   end;
+
   {Calculate X,Y}
   PixelX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X;
   PixelY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y;
 
   {Console Draw Pixel}
   Result:=ConsoleDeviceDrawPixel(Window.Console,PixelX,PixelY,Color);
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2951,16 +2951,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Image}
  if Image = nil then Exit;
- 
+
  {Check Width and Height}
  if (Width = 0) or (Height = 0) then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -2973,60 +2973,60 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check X,Y}
   if (Window.MinX + X) > Window.MaxX then Exit;
   if (Window.MinY + Y) > Window.MaxY then Exit;
- 
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   end; 
- 
+   end;
+
   {Check Width}
   ImageWidth:=Width;
   if (Window.MinX + X + (Width - 1)) > Window.MaxX then
    begin
     ImageWidth:=(Window.MaxX - (Window.MinX + X)) + 1;
    end;
-  
+
   {Check Height}
   ImageHeight:=Height;
-  if (Window.MinY + Y + (Height - 1)) > Window.MaxY then 
+  if (Window.MinY + Y + (Height - 1)) > Window.MaxY then
    begin
     ImageHeight:=(Window.MaxY - (Window.MinY + Y)) + 1;
    end;
-  
+
   {Get Skip}
   ImageSkip:=Width - ImageWidth;
-  
+
   {Get Format}
   ImageFormat:=Format;
   if ImageFormat = COLOR_FORMAT_UNKNOWN then ImageFormat:=Window.Format;
-  
+
   {Calculate X,Y}
   ImageX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X;
   ImageY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y;
 
   {Console Draw Image}
   Result:=ConsoleDeviceDrawImage(Window.Console,ImageX,ImageY,Image,ImageWidth,ImageHeight,ImageFormat,ImageSkip);
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3046,10 +3046,10 @@ var
 begin
  {}
  Result:=COLOR_NONE;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -3058,39 +3058,39 @@ begin
 
  {Check Visible}
  if Window.WindowState <> WINDOW_STATE_VISIBLE then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check X,Y}
   if (Window.MinX + X) > Window.MaxX then Exit;
   if (Window.MinY + Y) > Window.MaxY then Exit;
- 
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   end; 
- 
+   end;
+
   {Calculate X,Y}
   PixelX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X;
   PixelY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y;
- 
+
   {Console Get Pixel}
   ConsoleDeviceGetPixel(Window.Console,PixelX,PixelY,Result);
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3118,16 +3118,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Image}
  if Image = nil then Exit;
- 
+
  {Check Width and Height}
  if (Width = 0) or (Height = 0) then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -3140,60 +3140,60 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check X,Y}
   if (Window.MinX + X) > Window.MaxX then Exit;
   if (Window.MinY + Y) > Window.MaxY then Exit;
- 
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   end; 
- 
+   end;
+
   {Check Width}
   ImageWidth:=Width;
   if (Window.MinX + X + (Width - 1)) > Window.MaxX then
    begin
     ImageWidth:=(Window.MaxX - (Window.MinX + X)) + 1;
    end;
- 
+
   {Check Height}
   ImageHeight:=Height;
-  if (Window.MinY + Y + (Height - 1)) > Window.MaxY then 
+  if (Window.MinY + Y + (Height - 1)) > Window.MaxY then
    begin
     ImageHeight:=(Window.MaxY - (Window.MinY + Y)) + 1;
    end;
-  
+
   {Get Skip}
   ImageSkip:=Width - ImageWidth;
-  
+
   {Get Format}
   ImageFormat:=Format;
   if ImageFormat = COLOR_FORMAT_UNKNOWN then ImageFormat:=Window.Format;
-  
+
   {Calculate X,Y}
   ImageX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X;
   ImageY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y;
 
   {Console Get Image}
   Result:=ConsoleDeviceGetImage(Window.Console,ImageX,ImageY,Image,ImageWidth,ImageHeight,ImageFormat,ImageSkip);
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3236,10 +3236,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -3252,13 +3252,13 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check Source}
   if (Window.MinX + Source.X) > Window.MaxX then Exit;
   if (Window.MinY + Source.Y) > Window.MaxY then Exit;
@@ -3266,13 +3266,13 @@ begin
   {Check Dest}
   if (Window.MinX + Dest.X) > Window.MaxX then Exit;
   if (Window.MinY + Dest.Y) > Window.MaxY then Exit;
-  
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,False,Window.CursorBlink);
-   end; 
-  
+   end;
+
   {Check Width}
   ImageWidth:=Width;
   {Source}
@@ -3280,42 +3280,42 @@ begin
    begin
     ImageWidth:=(Window.MaxX - (Window.MinX + Source.X)) + 1;
    end;
-  {Dest} 
+  {Dest}
   if (Window.MinX + Dest.X + (ImageWidth - 1)) > Window.MaxX then
    begin
     ImageWidth:=(Window.MaxX - (Window.MinX + Dest.X)) + 1;
    end;
-  
+
   {Check Height}
   ImageHeight:=Height;
   {Source}
-  if (Window.MinY + Source.Y + (ImageHeight - 1)) > Window.MaxY then 
+  if (Window.MinY + Source.Y + (ImageHeight - 1)) > Window.MaxY then
    begin
     ImageHeight:=(Window.MaxY - (Window.MinY + Source.Y)) + 1;
    end;
-  {Dest}  
-  if (Window.MinY + Dest.Y + (ImageHeight - 1)) > Window.MaxY then 
+  {Dest}
+  if (Window.MinY + Dest.Y + (ImageHeight - 1)) > Window.MaxY then
    begin
     ImageHeight:=(Window.MaxY - (Window.MinY + Dest.Y)) + 1;
    end;
-  
+
   {Calculate Source}
   ImageSource.X:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + Source.X;
   ImageSource.Y:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Source.Y;
-  
+
   {Calculate Dest}
   ImageDest.X:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + Dest.X;
   ImageDest.Y:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Dest.Y;
-  
+
   {Console Copy Image}
   Result:=ConsoleDeviceCopyImage(Window.Console,ImageSource,ImageDest,ImageWidth,ImageHeight);
   if Result <> ERROR_SUCCESS then Exit;
-  
+
   {Check Fill}
   if Fillcolor <> COLOR_NONE then
    begin
     Filled:=False;
-    
+
     {Vertical Fill}
     if ImageSource.X < ImageDest.X then
      begin
@@ -3330,9 +3330,9 @@ begin
        begin
         {Partial Move}
         Result:=ConsoleDeviceDrawBlock(Window.Console,ImageSource.X,ImageSource.Y,ImageSource.X + ((ImageDest.X - ImageSource.X) - 1),ImageSource.Y + (ImageHeight - 1),Fillcolor);
-       end;       
+       end;
      end
-    else if ImageSource.X > ImageDest.X then 
+    else if ImageSource.X > ImageDest.X then
      begin
       {Moved Left}
       if ImageDest.X + (ImageWidth - 1) < ImageSource.X then
@@ -3345,9 +3345,9 @@ begin
        begin
         {Partial Move}
         Result:=ConsoleDeviceDrawBlock(Window.Console,ImageDest.X + ImageWidth,ImageSource.Y,ImageSource.X + (ImageWidth - 1),ImageSource.Y + (ImageHeight - 1),Fillcolor);
-       end;       
+       end;
      end;
-    
+
     if not(Filled) then
      begin
       {Horizontal Fill}
@@ -3365,7 +3365,7 @@ begin
           Result:=ConsoleDeviceDrawBlock(Window.Console,ImageSource.X,ImageSource.Y,ImageSource.X + (ImageWidth - 1),ImageSource.Y + ((ImageDest.Y - ImageSource.Y) - 1),Fillcolor);
          end;
        end
-      else if ImageSource.Y > ImageDest.Y then 
+      else if ImageSource.Y > ImageDest.Y then
        begin
         {Moved Up}
         if ImageDest.Y + (ImageHeight - 1) < ImageSource.Y then
@@ -3381,16 +3381,16 @@ begin
        end;
      end;
    end;
-   
+
   {Update Caret}
   if Window.CursorState = CURSOR_STATE_ON then
    begin
     ConsoleDeviceUpdateCaret(Window.Console,Window.CaretHandle,Window.CaretX,Window.CaretY,True,Window.CursorBlink);
-   end; 
+   end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3409,19 +3409,19 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Width and Height}
  if (Width = 0) or (Height = 0) then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
  if Window.Signature <> WINDOW_SIGNATURE then Exit;
  if Window.WindowMode <> WINDOW_MODE_GRAPHICS then Exit;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
@@ -3430,17 +3430,17 @@ begin
    begin
     Format:=Window.Format;
    end;
-   
-  {Get Bytes} 
+
+  {Get Bytes}
   Bytes:=ColorFormatToBytes(Format);
   if Bytes = 0 then Exit;
-  
+
   {Get Size}
   Result:=((Width * Height) * Bytes) + (Height * Stride);
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3473,16 +3473,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Stream}
  if Stream = nil then Exit;
- 
+
  {Check Width and Height}
  if (Width = 0) or (Height = 0) then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -3495,72 +3495,72 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check X,Y}
   if (Window.MinX + X) > Window.MaxX then Exit;
   if (Window.MinY + Y) > Window.MaxY then Exit;
- 
+
   {Check Width}
   ImageWidth:=Width;
   if (Window.MinX + X + (Width - 1)) > Window.MaxX then
    begin
     ImageWidth:=(Window.MaxX - (Window.MinX + X)) + 1;
    end;
-  
+
   {Check Height}
   ImageHeight:=Height;
-  if (Window.MinY + Y + (Height - 1)) > Window.MaxY then 
+  if (Window.MinY + Y + (Height - 1)) > Window.MaxY then
    begin
     ImageHeight:=(Window.MaxY - (Window.MinY + Y)) + 1;
    end;
-  
+
   {Get Skip}
   ImageSkip:=Width - ImageWidth;
-  
+
   {Get Format}
   ImageFormat:=Format;
   if ImageFormat = COLOR_FORMAT_UNKNOWN then ImageFormat:=Window.Format;
-  
+
   {Calculate X,Y}
   ImageX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X;
   ImageY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y;
-  
+
   {Get Size}
   Size:=Width * ColorFormatToBytes(ImageFormat);
   if Size = 0 then Exit;
-  
+
   {Allocate Line}
   Line:=GetMem(Size);
   if Line = nil then Exit;
   try
    {Set Count}
    if not(Invert) then Count:=0 else Count:=ImageHeight - 1;
-   
+
    {Read Lines}
    while True do
     begin
      {Read Line}
      if Stream.Read(Line^,Size) <> Size then Exit;
-    
+
      {Update Position}
      if Stride > 0 then Stream.Position:=Stream.Position + Stride;
-     
+
      {Console Draw Image}
      Result:=ConsoleDeviceDrawImage(Window.Console,ImageX,ImageY + Count,Line,ImageWidth,1,ImageFormat,ImageSkip);
      if Result <> ERROR_SUCCESS then Exit;
-    
+
      {Check Invert}
-     if not(Invert) then 
+     if not(Invert) then
       begin
        {Check Count}
        if Count = ImageHeight - 1 then Break;
-       
+
        {Update Count}
        Inc(Count);
       end
@@ -3571,18 +3571,18 @@ begin
 
        {Update Count}
        Dec(Count);
-      end;      
+      end;
     end;
 
    {Get Result}
-   Result:=ERROR_SUCCESS;   
+   Result:=ERROR_SUCCESS;
   finally
    FreeMem(Line);
-  end;  
+  end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3615,16 +3615,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Stream}
  if Stream = nil then Exit;
- 
+
  {Check Width and Height}
  if (Width = 0) or (Height = 0) then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Window}
  Window:=PGraphicsWindow(Handle);
  if Window = nil then Exit;
@@ -3637,46 +3637,46 @@ begin
    Result:=ERROR_SUCCESS;
    Exit;
   end;
- 
+
  {Lock Window}
  if MutexLock(Window.Lock) <> ERROR_SUCCESS then Exit;
  try
   {Check Console}
   if Window.Console = nil then Exit;
- 
+
   {Check X,Y}
   if (Window.MinX + X) > Window.MaxX then Exit;
   if (Window.MinY + Y) > Window.MaxY then Exit;
- 
+
   {Check Width}
   ImageWidth:=Width;
   if (Window.MinX + X + (Width - 1)) > Window.MaxX then
    begin
     ImageWidth:=(Window.MaxX - (Window.MinX + X)) + 1;
    end;
- 
+
   {Check Height}
   ImageHeight:=Height;
-  if (Window.MinY + Y + (Height - 1)) > Window.MaxY then 
+  if (Window.MinY + Y + (Height - 1)) > Window.MaxY then
    begin
     ImageHeight:=(Window.MaxY - (Window.MinY + Y)) + 1;
    end;
-  
+
   {Get Skip}
   ImageSkip:=Width - ImageWidth;
-  
+
   {Get Format}
   ImageFormat:=Format;
   if ImageFormat = COLOR_FORMAT_UNKNOWN then ImageFormat:=Window.Format;
-  
+
   {Calculate X,Y}
   ImageX:=Window.X1 + Window.Borderwidth + Window.OffsetX + Window.MinX + X;
   ImageY:=Window.Y1 + Window.Borderwidth + Window.OffsetY + Window.MinY + Y;
- 
+
   {Get Size}
   Size:=Width * ColorFormatToBytes(ImageFormat);
   if Size = 0 then Exit;
- 
+
   {Allocate Line}
   Line:=GetMem(Size);
   if Line = nil then Exit;
@@ -3684,25 +3684,25 @@ begin
    {Set Count}
    if not(Invert) then Count:=0 else Count:=ImageHeight - 1;
 
-   {Write Lines} 
+   {Write Lines}
    while True do
     begin
      {Console Get Image}
      Result:=ConsoleDeviceGetImage(Window.Console,ImageX,ImageY + Count,Line,ImageWidth,1,ImageFormat,ImageSkip);
      if Result <> ERROR_SUCCESS then Exit;
-     
+
      {Write Line}
      if Stream.Write(Line^,Size) <> Size then Exit;
-     
+
      {Update Position}
      if Stride > 0 then Stream.Position:=Stream.Position + Stride;
-   
+
      {Check Invert}
-     if not(Invert) then 
+     if not(Invert) then
       begin
        {Check Count}
        if Count = ImageHeight - 1 then Break;
-       
+
        {Update Count}
        Inc(Count);
       end
@@ -3713,18 +3713,18 @@ begin
 
        {Update Count}
        Dec(Count);
-      end;      
+      end;
     end;
 
    {Get Result}
-   Result:=ERROR_SUCCESS;   
+   Result:=ERROR_SUCCESS;
   finally
    FreeMem(Line);
-  end;  
+  end;
  finally
   {Unlock Window}
   MutexUnlock(Window.Lock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3767,9 +3767,9 @@ end;
 
 initialization
  GraphicsConsoleInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -3777,4 +3777,4 @@ finalization
 {==============================================================================}
 
 end.
- 
+

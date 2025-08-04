@@ -17,39 +17,39 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
   wiringPiSPI.c - Copyright (c) 2015 Gordon Henderson
- 
+
 References
 ==========
 
  WiringPi (Current) - http://wiringpi.com/
-  
+
 Wiring SPI
 ==========
 
  This unit reproduces the functionality of Gordon Henderson's WiringPiSPI library which is part
- of WiringPi. See the Wiring unit for an implementation of the core WiringPi library and for 
+ of WiringPi. See the Wiring unit for an implementation of the core WiringPi library and for
  more information.
- 
- As with the core Wiring API this unit maintains function names and parameters as closely as 
+
+ As with the core Wiring API this unit maintains function names and parameters as closely as
  possible to the original library to allow easy porting of existing code and examples.
- 
+
  To use the Wiring SPI unit you must also include the driver unit for the specific board that
- you are using by adding it to the uses clause in your program. 
- 
+ you are using by adding it to the uses clause in your program.
+
   For Raspberry Pi A/B/A+/B+/Zero add BCM2708
   For Raspberry Pi 2B add BCM2709
   For Raspberry Pi 3B/3A+/3B+ add BCM2710
   For Raspberry Pi 4B/400 add BCM2711
- 
+
  Currently based on WiringPi release 2.32
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -73,11 +73,11 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SPI,SysUtils,
 {==============================================================================}
 {type}
  {Wiring SPI specific types}
- 
+
 {==============================================================================}
 {var}
  {Wiring SPI specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 
@@ -97,7 +97,7 @@ implementation
 var
  {Wiring SPI specific variables}
  SPIDevice:PSPIDevice;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -114,13 +114,13 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if SPIDeviceWriteRead(SPIDevice,channel,data,data,len,SPI_TRANSFER_NONE,Count) = ERROR_SUCCESS then
   begin
    Result:=0;
   end;
 end;
- 
+
 {==============================================================================}
 
 function wiringPiSPISetupMode(channel,speed,mode:LongInt):LongInt;
@@ -131,17 +131,17 @@ var
 begin
  {}
  Result:=-1;
- 
+
  {Update Mode}
  mode:=mode and 3;
- 
+
  {Update Channel}
  channel:=channel and 1;
- 
+
  {Find SPI}
  SPIDevice:=SPIDeviceFindByName('SPI0');
  if SPIDevice = nil then Exit;
- 
+
  {Check Mode}
  if mode = 0 then
   begin
@@ -166,14 +166,14 @@ begin
    {mode 3 (CPOL = 1 / CPHA = 1)}
    ClockPolarity:=SPI_CLOCK_POLARITY_HIGH;
    ClockPhase:=SPI_CLOCK_PHASE_HIGH;
-  end;  
- 
+  end;
+
  {Set SPI Clock Rate}
  if SPIDeviceSetClockRate(SPIDevice,channel,speed) <> ERROR_SUCCESS then Exit;
- 
+
  {Start SPI}
  if SPIDeviceStart(SPIDevice,SPI_MODE_4WIRE,speed,ClockPhase,ClockPolarity) <> ERROR_SUCCESS then Exit;
- 
+
  Result:=LongInt(SPIDevice);
 end;
 
@@ -193,7 +193,7 @@ initialization
  {Nothing}
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -201,4 +201,4 @@ finalization
 {==============================================================================}
 
 end.
- 
+

@@ -17,22 +17,22 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
- 
- 
+
+
 References
 ==========
 
- 
+
 DHCP/BOOTP Protocol
 ===================
 
  Notes: Also contains BOOTP, ARP (Psuedo), RARP, Static and Loopback config clients
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -48,7 +48,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,SysUtils,Classes,Network,Tr
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-  
+
 {==============================================================================}
 const
  {DHCP specific constants}
@@ -235,7 +235,7 @@ type
   Tag:Byte;
   Hardware:THardwareAddress;
  end;
- 
+
 {==============================================================================}
 type
  {DHCP specific classes}
@@ -284,14 +284,14 @@ type
    function ExtractDHCPOption(AOption:Byte;AHeader:PDHCPHeader;AValue:Pointer;var ASize:Integer):Boolean;
   protected
    {Inherited Methods}
-   
+
   public
    {Public Properties}
 
    {Public Methods}
    function AddTransport(ATransport:TNetworkTransport):Boolean; override;
    function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
-   
+
    function StartConfig:Boolean; override;
    function StopConfig:Boolean; override;
    function ProcessConfig:Boolean; override;
@@ -331,14 +331,14 @@ type
    function ExtractBOOTPOption(AOption:Byte;AHeader:PBOOTPHeader;AValue:Pointer;var ASize:Integer):Boolean;
   protected
    {Inherited Methods}
-   
+
   public
    {Public Properties}
 
    {Public Methods}
    function AddTransport(ATransport:TNetworkTransport):Boolean; override;
    function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
-   
+
    function StartConfig:Boolean; override;
    function StopConfig:Boolean; override;
    function ProcessConfig:Boolean; override;
@@ -371,14 +371,14 @@ type
 
   protected
    {Inherited Methods}
-   
+
   public
    {Public Properties}
 
    {Public Methods}
    function AddTransport(ATransport:TNetworkTransport):Boolean; override;
    function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
-   
+
    function StartConfig:Boolean; override;
    function StopConfig:Boolean; override;
    function ProcessConfig:Boolean; override;
@@ -409,14 +409,14 @@ type
 
   protected
    {Inherited Methods}
-   
+
   public
    {Public Properties}
 
    {Public Methods}
    function AddTransport(ATransport:TNetworkTransport):Boolean; override;
    function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
-   
+
    function StartConfig:Boolean; override;
    function StopConfig:Boolean; override;
    function ProcessConfig:Boolean; override;
@@ -447,14 +447,14 @@ type
 
   protected
    {Inherited Methods}
-   
+
   public
    {Public Properties}
 
    {Public Methods}
    function AddTransport(ATransport:TNetworkTransport):Boolean; override;
    function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
-   
+
    function StartConfig:Boolean; override;
    function StopConfig:Boolean; override;
    function ProcessConfig:Boolean; override;
@@ -484,30 +484,30 @@ type
 
   protected
    {Inherited Methods}
-   
+
   public
    {Public Properties}
 
    {Public Methods}
    function AddTransport(ATransport:TNetworkTransport):Boolean; override;
    function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
-   
+
    function StartConfig:Boolean; override;
    function StopConfig:Boolean; override;
    function ProcessConfig:Boolean; override;
  end;
- 
+
 {==============================================================================}
 {var}
  {DHCP specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure DHCPInit;
 
 {==============================================================================}
 {DHCP Functions}
-  
+
 {==============================================================================}
 {DHCP Helper Functions}
 
@@ -546,10 +546,10 @@ begin
  try
   FUDP:=nil;
   FARP:=nil;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -573,7 +573,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: ConfigHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig:  Command = ' + ConfigCommandToString(ACommand));
@@ -581,17 +581,17 @@ begin
 
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Get Transport}
  Transport:=TDHCPConfigTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
  try
   {Check ARP Transport}
   if FARP = nil then Exit;
-  
+
   {Check UDP Protocol}
   if FUDP = nil then Exit;
-  
+
   {Check Address Family}
   case Transport.Transport.Family of
    AF_INET:begin
@@ -603,7 +603,7 @@ begin
         {$IFDEF DHCP_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Attempting DHCP Configuration - Discover');
         {$ENDIF}
-        
+
         {Set Configuring}
         AAdapter.Configuring:=True;
         try
@@ -611,48 +611,48 @@ begin
          if AAdapter.Configured then Exit;
 
          {Delay Init}
-         if FInitDelay > 0 then Sleep(FInitDelay); 
+         if FInitDelay > 0 then Sleep(FInitDelay);
          FInitDelay:=0;
-         
+
          {Add the ARP Address}
          FARP.LoadAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS,AAdapter.Hardware,ADDRESS_TYPE_LOCAL);
-         
+
          {Add the Address}
          TIPTransport(Transport.Transport).AddAddress(IP_DEFAULT_ADDRESS,AAdapter.Adapter,ADDRESS_TYPE_PRIMARY,False,NETWORK_LOCK_NONE);
-         
+
          {Add the Route}
          TIPTransport(Transport.Transport).AddRoute(IP_BROADCAST_NETWORK,IP_BROADCAST_NETMASK,IP_DEFAULT_ADDRESS,IP_DEFAULT_ADDRESS,ROUTE_TYPE_BROADCAST,False,NETWORK_LOCK_NONE);
          try
           Randomize;
-          
+
           {Create the Socket}
           Socket:=TUDPSocket(FUDP.Socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP));
           if TSocket(Socket) = INVALID_SOCKET then Exit;
-          
+
           {Lock Socket}
           Socket.ReaderLock;
           try
            {Set the Options}
            if FUDP.SetSockOpt(Socket,SOL_SOCKET,SO_REUSEADDR,'1111',4) = SOCKET_ERROR then Exit;
            if FUDP.SetSockOpt(Socket,SOL_SOCKET,SO_BROADCAST,'1111',4) = SOCKET_ERROR then Exit;
-           
+
            {Bind the Socket}
            SockAddr.sin_family:=AF_INET;
            SockAddr.sin_port:=WordNtoBE(IPPORT_BOOTPC);
            SockAddr.sin_addr.S_addr:=INADDR_ANY;
            if FUDP.Bind(Socket,SockAddr,SizeOf(TSockAddr)) = SOCKET_ERROR then Exit;
-           
+
            {Set the Timeout}
            Timeout:=FRetryTimeout;
            if FUDP.SetSockOpt(Socket,SOL_SOCKET,SO_RCVTIMEO,PChar(@Timeout),SizeOf(Integer)) = SOCKET_ERROR then Exit;
-           
+
            {Send the Request}
            Attempt:=0;
            while Attempt < Integer(FRetryCount) do {Attempt < DHCP_RETRIES} {Modified 29/8/2011}
             begin
              {Get Identifier}
              Identifier:=Random($7FFFFFFF);
-            
+
              {Send Discover}
              if SendDHCPDiscover(Socket,Transport,AAdapter,Identifier,Attempt) then
               begin
@@ -670,30 +670,30 @@ begin
                      Result:=RecvDHCPReply(Socket,Transport,AAdapter,Identifier,CONFIG_ADAPTER_REQUEST);
                      if Result then Exit;
                     end;
-                   
+
                    {Increment Count}
                    Inc(Count);
                   end;
                 end;
               end;
-              
-             {Increment Attempt} 
+
+             {Increment Attempt}
              Inc(Attempt);
             end;
           finally
            {Close the Socket}
            FUDP.CloseSocket(Socket);
-           
+
            {Unlock Socket}
            Socket.ReaderUnlock;
           end;
          finally
           {Remove the Route}
           TIPTransport(Transport.Transport).RemoveRoute(IP_BROADCAST_NETWORK,IP_DEFAULT_ADDRESS);
-          
+
           {Remove the Address}
           TIPTransport(Transport.Transport).RemoveAddress(IP_DEFAULT_ADDRESS);
-          
+
           {Remove the ARP Address}
           FARP.UnloadAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS);
          end;
@@ -707,59 +707,59 @@ begin
         {$IFDEF DHCP_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Attempting DHCP Configuration - Reboot');
         {$ENDIF}
-        
+
         {Set Configuring}
         AAdapter.Configuring:=True;
         try
          {Check the Adapter}
          if AAdapter.Configured then Exit;
-         
+
          {Check the Address}
          if TIPTransport(Transport.Transport).CompareDefault(TIPTransportAdapter(AAdapter).Address) then Exit;
 
          {Delay Init}
-         if FInitDelay > 0 then Sleep(FInitDelay); 
+         if FInitDelay > 0 then Sleep(FInitDelay);
          FInitDelay:=0;
-         
+
          {Add the ARP Address}
          FARP.LoadAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS,AAdapter.Hardware,ADDRESS_TYPE_LOCAL);
-         
+
          {Add the Address}
          TIPTransport(Transport.Transport).AddAddress(IP_DEFAULT_ADDRESS,AAdapter.Adapter,ADDRESS_TYPE_PRIMARY,False,NETWORK_LOCK_NONE);
-         
+
          {Add the Route}
          TIPTransport(Transport.Transport).AddRoute(IP_BROADCAST_NETWORK,IP_BROADCAST_NETMASK,IP_DEFAULT_ADDRESS,IP_DEFAULT_ADDRESS,ROUTE_TYPE_BROADCAST,False,NETWORK_LOCK_NONE);
          try
           Randomize;
-          
+
           {Create the Socket}
           Socket:=TUDPSocket(FUDP.Socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP));
           if TSocket(Socket) = INVALID_SOCKET then Exit;
-          
+
           {Lock Socket}
           Socket.ReaderLock;
           try
            {Set the Options}
            if FUDP.SetSockOpt(Socket,SOL_SOCKET,SO_REUSEADDR,'1111',4) = SOCKET_ERROR then Exit;
            if FUDP.SetSockOpt(Socket,SOL_SOCKET,SO_BROADCAST,'1111',4) = SOCKET_ERROR then Exit;
-           
+
            {Bind the Socket}
            SockAddr.sin_family:=AF_INET;
            SockAddr.sin_port:=WordNtoBE(IPPORT_BOOTPC);
            SockAddr.sin_addr.S_addr:=INADDR_ANY;
            if FUDP.Bind(Socket,SockAddr,SizeOf(TSockAddr)) = SOCKET_ERROR then Exit;
-           
+
            {Set the Timeout}
            Timeout:=FRetryTimeout;
            if FUDP.SetSockOpt(Socket,SOL_SOCKET,SO_RCVTIMEO,PChar(@Timeout),SizeOf(Integer)) = SOCKET_ERROR then Exit;
-           
+
            {Send the Request}
            Count:=0;
            while Count < Integer(FRetryCount) do {Count < DHCP_RETRIES} {Modified 29/8/2011}
             begin
              {Get Identifier}
              Identifier:=Random($7FFFFFFF);
-             
+
              {Send Reboot}
              if SendDHCPReboot(Socket,Transport,AAdapter,Identifier,Count) then
               begin
@@ -767,24 +767,24 @@ begin
                Result:=RecvDHCPReply(Socket,Transport,AAdapter,Identifier,ACommand);
                if Result then Exit;
               end;
-             
+
              {Increment Count}
              Inc(Count);
             end;
           finally
            {Close the Socket}
            FUDP.CloseSocket(Socket);
-           
+
            {Unlock Socket}
            Socket.ReaderUnlock;
           end;
          finally
           {Remove the Route}
           TIPTransport(Transport.Transport).RemoveRoute(IP_BROADCAST_NETWORK,IP_DEFAULT_ADDRESS);
-          
+
           {Remove the Address}
           TIPTransport(Transport.Transport).RemoveAddress(IP_DEFAULT_ADDRESS);
-          
+
           {Remove the ARP Address}
           FARP.UnloadAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS);
          end;
@@ -798,40 +798,40 @@ begin
         {$IFDEF DHCP_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Attempting DHCP Configuration - Release/Renew/Rebind/Inform');
         {$ENDIF}
-        
+
         {Set Configuring}
         AAdapter.Configuring:=True;
         try
          Randomize;
-         
+
          {Create the Socket}
          Socket:=TUDPSocket(FUDP.Socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP));
          if TSocket(Socket) = INVALID_SOCKET then Exit;
-         
+
          {Lock Socket}
          Socket.ReaderLock;
          try
           {Set the Options}
           if FUDP.SetSockOpt(Socket,SOL_SOCKET,SO_REUSEADDR,'1111',4) = SOCKET_ERROR then Exit;
           if FUDP.SetSockOpt(Socket,SOL_SOCKET,SO_BROADCAST,'1111',4) = SOCKET_ERROR then Exit;
-          
+
           {Bind the Socket}
           SockAddr.sin_family:=AF_INET;
           SockAddr.sin_port:=WordNtoBE(IPPORT_BOOTPC);
           SockAddr.sin_addr.S_addr:=INADDR_ANY;
           if FUDP.Bind(Socket,SockAddr,SizeOf(TSockAddr)) = SOCKET_ERROR then Exit;
-          
+
           {Set the Timeout}
           Timeout:=FRetryTimeout;
           if FUDP.SetSockOpt(Socket,SOL_SOCKET,SO_RCVTIMEO,PChar(@Timeout),SizeOf(Integer)) = SOCKET_ERROR then Exit;
-          
+
           {Send the Request}
           Count:=0;
           while Count < Integer(FRetryCount) do {Count < DHCP_RETRIES} {Modified 29/8/2011}
            begin
             {Get Identifier}
             Identifier:=Random($7FFFFFFF);
-            
+
             {Check Command}
             case ACommand of
              CONFIG_ADAPTER_RELEASE:begin
@@ -867,14 +867,14 @@ begin
                 end;
               end;
             end;
-            
+
             {Increment Count}
             Inc(Count);
            end;
          finally
           {Close the Socket}
           FUDP.CloseSocket(Socket);
-          
+
           {Unlock Socket}
           Socket.ReaderUnlock;
          end;
@@ -886,14 +886,14 @@ begin
      end;
     end;
    AF_INET6:begin
-   
+
      //To Do
-     
+
     end;
   end;
  finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -904,10 +904,10 @@ function TDHCPConfig.GetDHCPClientId(AAdapter:TTransportAdapter):TDHCPClientId;
 begin
  {}
  FillChar(Result,SizeOf(TDHCPClientId),0);
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Return Result}
  Result.Tag:=1;
  Result.Hardware:=AAdapter.Hardware;
@@ -923,20 +923,20 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Header}
  if AHeader = nil then Exit;
- 
+
  {Get Header Size}
  Result:=SizeOf(TDHCPHeader) - DHCP_OPTIONS_SIZE;
- 
+
  {Interate the Options starting after Magic Cookie}
  Count:=4;
  while Count < DHCP_OPTIONS_SIZE do
   begin
    {Check for End Option}
    if AHeader.Options[Count] = END_OPT then Break;
-   
+
    {Check for Pad Option}
    if AHeader.Options[Count] = PAD_OPT then
     begin
@@ -947,15 +947,15 @@ begin
     begin
      {Check for end of buffer}
      if (Count + 1) > (DHCP_OPTIONS_SIZE - 1) then Break;
-     
+
      {Get the Length}
      Size:=AHeader.Options[Count + 1];
-     
+
      {Move to Next Option}
      Inc(Count,Size + 2);
     end;
   end;
-  
+
  {Return Result}
  Result:=Result + Min(Count + 1,DHCP_OPTIONS_SIZE);
 end;
@@ -970,33 +970,33 @@ function TDHCPConfig.CreateDHCPRequest(AHeader:PDHCPHeader;ATransport:TDHCPConfi
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Creating DHCP Request');
  {$ENDIF}
- 
+
  {Check Header}
  if AHeader = nil then Exit;
- 
+
  {Check Transport}
  {if ATransport = nil then Exit;} {Not Used}
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Zero the Header}
  FillChar(AHeader^,SizeOf(TDHCPHeader),0);
- 
+
  {Set the BOOTP Fields}
  AHeader.Opcode:=BOOTP_REQUEST;
- AHeader.HardwareType:=MEDIA_TYPE_ETHERNET; 
+ AHeader.HardwareType:=MEDIA_TYPE_ETHERNET;
  AHeader.HardwareLength:=SizeOf(THardwareAddress);
  AHeader.Hops:=0;
  AHeader.Identifier:=LongWordNtoBE(AIdentifier);
  AHeader.Seconds:=WordNtoBE(ACount * (FRetryTimeout div 1000)); {WordNtoBE(ACount * (DHCP_TIMEOUT div 1000));} {Modified 29/8/2011}
  {AHeader.ClientIP:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Address);} {Varies depending on Request type}
  AHeader.ClientHardware:=AAdapter.Hardware;
- 
+
  {Set the DHCP Fields}
  {Magic Cookie}
  AHeader.Options[0]:=99;
@@ -1021,34 +1021,34 @@ function TDHCPConfig.CheckDHCPReply(AHeader:PDHCPHeader;ATransport:TDHCPConfigTr
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Checking DHCP Reply');
  {$ENDIF}
- 
+
  {Check Header}
  if AHeader = nil then Exit;
- 
+
  {Check Transport}
  {if ATransport = nil then Exit;} {Not Used}
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Check the BOOTP Fields}
  if AHeader.Opcode <> BOOTP_REPLY then Exit;
  if AHeader.HardwareType <> MEDIA_TYPE_ETHERNET then Exit;
  if AHeader.HardwareLength <> SizeOf(THardwareAddress) then Exit;
  if LongWordBEtoN(AHeader.Identifier) <> AIdentifier then Exit;
  if not AAdapter.Adapter.CompareAddress(AHeader.ClientHardware,AAdapter.Hardware) then Exit;
- 
+
  {Check the DHCP Fields}
  {Magic Cookie}
  if AHeader.Options[0] <> 99 then Exit;
  if AHeader.Options[1] <> 130 then Exit;
  if AHeader.Options[2] <> 83 then Exit;
  if AHeader.Options[3] <> 99 then Exit;
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -1064,20 +1064,20 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Handling DHCP Reply');
  {$ENDIF}
- 
+
  {Check Header}
  if AHeader = nil then Exit;
- 
+
  {Check Transport}
  if ATransport = nil then Exit;
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Create buffer for Options}
  Option:=GetMem(SizeOf(TDHCPHeader));
  if Option = nil then Exit;
@@ -1090,28 +1090,28 @@ begin
       CONFIG_ADAPTER_DISCOVER:begin
         {Get the Message Type}
         if not ExtractDHCPOption(DHCP_MSG_TYPE,AHeader,Option,Length) then Exit;
-        
+
         {Check Message Type}
         if PByte(Option)^ <> DHCP_OFFER then Exit;
-        
+
         {Get the Address}
         TIPTransportAdapter(AAdapter).Address:=InAddrToHost(AHeader.YourIP);
-        
+
         {Get the Netmask}
         if not ExtractDHCPOption(SUBNET_MASK,AHeader,Option,Length) then Exit;
         if Length <> SizeOf(TInAddr) then Exit;
         TIPTransportAdapter(AAdapter).Netmask:=InAddrToHost(PInAddr(Option)^);
-        
+
         {Get the Server}
         if not ExtractDHCPOption(DHCP_SRV_IDENTIFIER,AHeader,Option,Length) then Exit;
         if Length <> SizeOf(TInAddr) then Exit;
         TIPTransportAdapter(AAdapter).Server:=InAddrToHost(PInAddr(Option)^);
-        
+
         {Get the Lease Time}
         if not ExtractDHCPOption(DHCP_IP_ADDR_LEASE_TIME,AHeader,Option,Length) then Exit;
         if Length <> SizeOf(LongWord) then Exit;
         TIPTransportAdapter(AAdapter).LeaseTime:=(LongWordBEtoN(PLongWord(Option)^) * 1000);
-        
+
         {Get the Gateway}
         if ExtractDHCPOption(ROUTERS_ON_SNET,AHeader,Option,Length) then
          begin
@@ -1120,7 +1120,7 @@ begin
             TIPTransportAdapter(AAdapter).Gateway:=InAddrToHost(PInAddr(Option)^);
            end;
          end;
-        
+
         {Get the Nameservers}
         if ExtractDHCPOption(DNS_SRV,AHeader,Option,Length) then
          begin
@@ -1130,12 +1130,12 @@ begin
             while (Offset + SizeOf(TInAddr)) <= LongWord(Length) do
              begin
               TIPTransport(ATransport.Transport).AddNameserver(InAddrToHost(PInAddr(PtrUInt(Option) + Offset)^));
-              
+
               Inc(Offset,SizeOf(TInAddr));
              end;
            end;
          end;
-        
+
         {Get the Domainname}
         if ExtractDHCPOption(DOMAIN_NAME,AHeader,Option,Length) then
          begin
@@ -1146,10 +1146,10 @@ begin
             {TIPTransport(ATransport.Transport).DomainName:=PChar(Option);}
            end;
          end;
-        
+
         {Get the Expiry Time}
         TIPTransportAdapter(AAdapter).ExpiryTime:=GetTickCount64 + TIPTransportAdapter(AAdapter).LeaseTime;
-        
+
         {Get the Renewal Time}
         TIPTransportAdapter(AAdapter).RenewalTime:=GetTickCount64 + Trunc(TIPTransportAdapter(AAdapter).LeaseTime * 0.5);
         if ExtractDHCPOption(DHCP_T1_VALUE,AHeader,Option,Length) then
@@ -1159,7 +1159,7 @@ begin
             TIPTransportAdapter(AAdapter).RenewalTime:=GetTickCount64 + (LongWordBEtoN(PLongWord(Option)^) * 1000);
            end;
          end;
-        
+
         {Get the Rebinding Time}
         TIPTransportAdapter(AAdapter).RebindingTime:=GetTickCount64 + Trunc(TIPTransportAdapter(AAdapter).LeaseTime * 0.875);
         if ExtractDHCPOption(DHCP_T2_VALUE,AHeader,Option,Length) then
@@ -1169,7 +1169,7 @@ begin
             TIPTransportAdapter(AAdapter).RebindingTime:=GetTickCount64 + (LongWordBEtoN(PLongWord(Option)^) * 1000);
            end;
          end;
-        
+
         {Check for Address in use} {Note: DHCP Server seems to already check it}
         {if not FARP.ConfirmAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS,TIPTransportAdapter(AAdapter).Address) then}
         { begin}
@@ -1177,48 +1177,48 @@ begin
         {  SendDHCPDecline( //To Do}
         {  Exit;}
         { end;}
-        
+
         {Return Result}
         Result:=True;
        end;
       CONFIG_ADAPTER_REQUEST:begin
         {Get the Message Type}
         if not ExtractDHCPOption(DHCP_MSG_TYPE,AHeader,Option,Length) then Exit;
-        
+
         {Check Message Type}
         if PByte(Option)^ <> DHCP_ACK then Exit;
-        
+
         {Advertise the Address} {Note: No one seems to listen to this}
         {FARP.AdvertiseAddress(AAdapter.Adapter,TIPTransportAdapter(AAdapter).Address);}
-        
+
         {Return Result}
         Result:=True;
        end;
       CONFIG_ADAPTER_REBOOT:begin
         {Get the Message Type}
         if not ExtractDHCPOption(DHCP_MSG_TYPE,AHeader,Option,Length) then Exit;
-        
+
         {Check Message Type}
         if PByte(Option)^ <> DHCP_ACK then Exit;
-        
+
         {Get the Address}
         TIPTransportAdapter(AAdapter).Address:=InAddrToHost(AHeader.YourIP);
-        
+
         {Get the Netmask}
         if not ExtractDHCPOption(SUBNET_MASK,AHeader,Option,Length) then Exit;
         if Length <> SizeOf(TInAddr) then Exit;
         TIPTransportAdapter(AAdapter).Netmask:=InAddrToHost(PInAddr(Option)^);
-        
+
         {Get the Server}
         if not ExtractDHCPOption(DHCP_SRV_IDENTIFIER,AHeader,Option,Length) then Exit;
         if Length <> SizeOf(TInAddr) then Exit;
         TIPTransportAdapter(AAdapter).Server:=InAddrToHost(PInAddr(Option)^);
-        
+
         {Get the Lease Time}
         if not ExtractDHCPOption(DHCP_IP_ADDR_LEASE_TIME,AHeader,Option,Length) then Exit;
         if Length <> SizeOf(LongWord) then Exit;
         TIPTransportAdapter(AAdapter).LeaseTime:=(LongWordBEtoN(PLongWord(Option)^) * 1000);
-        
+
         {Get the Gateway}
         if ExtractDHCPOption(ROUTERS_ON_SNET,AHeader,Option,Length) then
          begin
@@ -1227,7 +1227,7 @@ begin
             TIPTransportAdapter(AAdapter).Gateway:=InAddrToHost(PInAddr(Option)^);
            end;
          end;
-         
+
         {Get the Nameservers}
         if ExtractDHCPOption(DNS_SRV,AHeader,Option,Length) then
          begin
@@ -1237,12 +1237,12 @@ begin
             while (Offset + SizeOf(TInAddr)) <= LongWord(Length) do
              begin
               TIPTransport(ATransport.Transport).AddNameserver(InAddrToHost(PInAddr(PtrUInt(Option) + Offset)^));
-              
+
               Inc(Offset,SizeOf(TInAddr));
              end;
            end;
          end;
-        
+
         {Get the Domainname}
         if ExtractDHCPOption(DOMAIN_NAME,AHeader,Option,Length) then
          begin
@@ -1253,10 +1253,10 @@ begin
             {TIPTransport(ATransport.Transport).DomainName:=PChar(Option);}
            end;
          end;
-        
+
         {Get the Expiry Time}
         TIPTransportAdapter(AAdapter).ExpiryTime:=GetTickCount64 + TIPTransportAdapter(AAdapter).LeaseTime;
-        
+
         {Get the Renewal Time}
         TIPTransportAdapter(AAdapter).RenewalTime:=GetTickCount64 + Trunc(TIPTransportAdapter(AAdapter).LeaseTime * 0.5);
         if ExtractDHCPOption(DHCP_T1_VALUE,AHeader,Option,Length) then
@@ -1266,7 +1266,7 @@ begin
             TIPTransportAdapter(AAdapter).RenewalTime:=GetTickCount64 + (LongWordBEtoN(PLongWord(Option)^) * 1000);
            end;
          end;
-        
+
         {Get the Rebinding Time}
         TIPTransportAdapter(AAdapter).RebindingTime:=GetTickCount64 + Trunc(TIPTransportAdapter(AAdapter).LeaseTime * 0.875);
         if ExtractDHCPOption(DHCP_T2_VALUE,AHeader,Option,Length) then
@@ -1276,48 +1276,48 @@ begin
             TIPTransportAdapter(AAdapter).RebindingTime:=GetTickCount64 + (LongWordBEtoN(PLongWord(Option)^) * 1000);
            end;
          end;
-        
+
         {Check for Address in use} {Note: DHCP Server seems to already check it}
         if not FARP.ConfirmAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS,TIPTransportAdapter(AAdapter).Address) then Exit;
-        
+
         {Advertise the Address} {Note: No one seems to listen to this}
         {FARP.AdvertiseAddress(AAdapter.Adapter,TIPTransportAdapter(AAdapter).Address);}
-        
+
         {Return Result}
         Result:=True;
        end;
       CONFIG_ADAPTER_RELEASE:begin {Note: Release does not wait for a response}
         {Get the Message Type}
         if not ExtractDHCPOption(DHCP_MSG_TYPE,AHeader,Option,Length) then Exit;
-        
+
         {Check Message Type}
         if PByte(Option)^ <> DHCP_ACK then Exit;
-        
+
         {Don't clear the Addresses, IP needs them to cleanup}
         Result:=True;
        end;
       CONFIG_ADAPTER_RENEW,CONFIG_ADAPTER_REBIND:begin
         {Get the Message Type}
         if not ExtractDHCPOption(DHCP_MSG_TYPE,AHeader,Option,Length) then Exit;
-        
+
         {Check Message Type}
         if PByte(Option)^ <> DHCP_ACK then
          begin
           {On DHCP NAK expire the address immediately to restart init}
           if PByte(Option)^ = DHCP_NAK then TIPTransportAdapter(AAdapter).ExpiryTime:=GetTickCount64;
-           
+
           Exit;
          end;
-        
+
         {Get the Lease Time}
         if not ExtractDHCPOption(DHCP_IP_ADDR_LEASE_TIME,AHeader,Option,Length) then Exit;
         if Length <> SizeOf(LongWord) then Exit;
-        
+
         TIPTransportAdapter(AAdapter).LeaseTime:=(LongWordBEtoN(PLongWord(Option)^) * 1000);
-        
+
         {Get the Expiry Time}
         TIPTransportAdapter(AAdapter).ExpiryTime:=GetTickCount64 + TIPTransportAdapter(AAdapter).LeaseTime;
-        
+
         {Get the Renewal Time}
         TIPTransportAdapter(AAdapter).RenewalTime:=GetTickCount64 + Trunc(TIPTransportAdapter(AAdapter).LeaseTime * 0.5);
         if ExtractDHCPOption(DHCP_T1_VALUE,AHeader,Option,Length) then
@@ -1327,7 +1327,7 @@ begin
             TIPTransportAdapter(AAdapter).RenewalTime:=GetTickCount64 + (LongWordBEtoN(PLongWord(Option)^) * 1000);
            end;
          end;
-        
+
         {Get the Rebinding Time}
         TIPTransportAdapter(AAdapter).RebindingTime:=GetTickCount64 + Trunc(TIPTransportAdapter(AAdapter).LeaseTime * 0.875);
         if ExtractDHCPOption(DHCP_T2_VALUE,AHeader,Option,Length) then
@@ -1337,17 +1337,17 @@ begin
             TIPTransportAdapter(AAdapter).RebindingTime:=GetTickCount64 + (LongWordBEtoN(PLongWord(Option)^) * 1000);
            end;
          end;
-        
+
         {Return Result}
         Result:=True;
        end;
       CONFIG_ADAPTER_INFORM:begin
         {Get the Message Type}
         if not ExtractDHCPOption(DHCP_MSG_TYPE,AHeader,Option,Length) then Exit;
-        
+
         {Check Message Type}
         if PByte(Option)^ <> DHCP_ACK then Exit;
-        
+
         {Get the Gateway}
         if ExtractDHCPOption(ROUTERS_ON_SNET,AHeader,Option,Length) then
          begin
@@ -1356,7 +1356,7 @@ begin
             TIPTransportAdapter(AAdapter).Gateway:=InAddrToHost(PInAddr(Option)^);
            end;
          end;
-        
+
         {Get the Nameservers}
         if ExtractDHCPOption(DNS_SRV,AHeader,Option,Length) then
          begin
@@ -1366,12 +1366,12 @@ begin
             while (Offset + SizeOf(TInAddr)) <= LongWord(Length) do
              begin
               TIPTransport(ATransport.Transport).AddNameserver(InAddrToHost(PInAddr(PtrUInt(Option) + Offset)^));
-              
+
               Inc(Offset,SizeOf(TInAddr));
              end;
            end;
          end;
-        
+
         {Get the Domainname}
         if ExtractDHCPOption(DOMAIN_NAME,AHeader,Option,Length) then
          begin
@@ -1382,16 +1382,16 @@ begin
             {TIPTransport(ATransport.Transport).DomainName:=PChar(Option);}
            end;
          end;
-        
+
         {Return Result}
         Result:=True;
        end;
      end;
     end;
    AF_INET6:begin
-   
+
      //To Do
-     
+
     end;
   end;
  finally
@@ -1414,17 +1414,17 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Discover');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Transport}
  if ATransport = nil then Exit;
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
 
@@ -1434,7 +1434,7 @@ begin
    {Set the DHCP Fields}
    Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=IP_DEFAULT_ADDRESS;
-   
+
    {Add the Options}
    Option:=GetMem(SizeOf(TDHCPHeader));
    if Option = nil then Exit;
@@ -1442,15 +1442,15 @@ begin
     {Message Type}
     PByte(Option)^:=DHCP_DISCOVER;
     if not InsertDHCPOption(DHCP_MSG_TYPE,@Header,Option,1) then Exit;
-    
+
     {Client Identifier}
     ClientId:=GetDHCPClientId(AAdapter);
     if not InsertDHCPOption(DHCP_CLIENT_ID,@Header,@ClientId,SizeOf(TDHCPClientId)) then Exit;
-    
+
     {Host Name}
     HostName:=Manager.Settings.HostName;
     if Length(HostName) <> 0 then if not InsertDHCPOption(HOST_NAME,@Header,PChar(HostName),Length(HostName)) then Exit;
-    
+
     {Requested Options}
     PByte(Option)^:=SUBNET_MASK;
     PByte(PtrUInt(Option) + 1)^:=ROUTERS_ON_SNET;
@@ -1460,19 +1460,19 @@ begin
     PByte(PtrUInt(Option) + 5)^:=DHCP_T1_VALUE;
     PByte(PtrUInt(Option) + 6)^:=DHCP_T2_VALUE;
     if not InsertDHCPOption(DHCP_PARAM_REQUEST,@Header,Option,7) then Exit;
-    
+
     {Max Message Size}
     PWord(Option)^:=WordNtoBE(DHCP_MESSAGE_SIZE);
     if not InsertDHCPOption(DHCP_MAX_MSG_SIZE,@Header,Option,2) then Exit;
-    
+
     {Get the Size}
     Size:=GetDHCPHeaderSize(@Header);
-    
+
     {Set the Address}
     SockAddr.sin_family:=AF_INET;
     SockAddr.sin_port:=WordNtoBE(IPPORT_BOOTPS);
     LongWord(SockAddr.sin_addr.S_addr):=INADDR_BROADCAST;
-    
+
     {Send the Request}
     Result:=FUDP.SendTo(ASocket,Header,Size,0,SockAddr,SizeOf(TSockAddr)) = Size;
    finally
@@ -1496,27 +1496,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Request');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Transport}
  if ATransport = nil then Exit;
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Create the Header}
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
    Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=IP_DEFAULT_ADDRESS;
-   
+
    {Add the Options}
    Option:=GetMem(SizeOf(TDHCPHeader));
    if Option = nil then Exit;
@@ -1524,15 +1524,15 @@ begin
     {Message Type}
     PByte(Option)^:=DHCP_REQUEST;
     if not InsertDHCPOption(DHCP_MSG_TYPE,@Header,Option,1) then Exit;
-    
+
     {Client Identifier}
     ClientId:=GetDHCPClientId(AAdapter);
     if not InsertDHCPOption(DHCP_CLIENT_ID,@Header,@ClientId,SizeOf(TDHCPClientId)) then Exit;
-    
+
     {Host Name}
     HostName:=Manager.Settings.HostName;
     if Length(HostName) <> 0 then if not InsertDHCPOption(HOST_NAME,@Header,PChar(HostName),Length(HostName)) then Exit;
-    
+
     {Requested Options}
     PByte(Option)^:=SUBNET_MASK;
     PByte(PtrUInt(Option) + 1)^:=ROUTERS_ON_SNET;
@@ -1542,27 +1542,27 @@ begin
     PByte(PtrUInt(Option) + 5)^:=DHCP_T1_VALUE;
     PByte(PtrUInt(Option) + 6)^:=DHCP_T2_VALUE;
     if not InsertDHCPOption(DHCP_PARAM_REQUEST,@Header,Option,7) then Exit;
-    
+
     {Server Identifier}
     PInAddr(Option)^:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Server);
     if not InsertDHCPOption(DHCP_SRV_IDENTIFIER,@Header,Option,SizeOf(TInAddr)) then Exit;
-    
+
     {Requested Address}
     PInAddr(Option)^:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Address);
     if not InsertDHCPOption(DHCP_REQUESTED_IP_ADDR,@Header,Option,SizeOf(TInAddr)) then Exit;
-    
+
     {Max Message Size}
     PWord(Option)^:=WordNtoBE(DHCP_MESSAGE_SIZE);
     if not InsertDHCPOption(DHCP_MAX_MSG_SIZE,@Header,Option,2) then Exit;
-    
+
     {Get the Size}
     Size:=GetDHCPHeaderSize(@Header);
-    
+
     {Set the Address}
     SockAddr.sin_family:=AF_INET;
     SockAddr.sin_port:=WordNtoBE(IPPORT_BOOTPS);
     LongWord(SockAddr.sin_addr.S_addr):=INADDR_BROADCAST;
-    
+
     {Send the Request}
     Result:=FUDP.SendTo(ASocket,Header,Size,0,SockAddr,SizeOf(TSockAddr)) = Size;
    finally
@@ -1585,27 +1585,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Decline');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Transport}
  if ATransport = nil then Exit;
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Create the Header}
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
    Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=IP_DEFAULT_ADDRESS;
-   
+
    {Add the Options}
    Option:=GetMem(SizeOf(TDHCPHeader));
    if Option = nil then Exit;
@@ -1613,27 +1613,27 @@ begin
     {Message Type}
     PByte(Option)^:=DHCP_DECLINE;
     if not InsertDHCPOption(DHCP_MSG_TYPE,@Header,Option,1) then Exit;
-    
+
     {Client Identifier}
     ClientId:=GetDHCPClientId(AAdapter);
     if not InsertDHCPOption(DHCP_CLIENT_ID,@Header,@ClientId,SizeOf(TDHCPClientId)) then Exit;
-    
+
     {Server Identifier}
     PInAddr(Option)^:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Server);
     if not InsertDHCPOption(DHCP_SRV_IDENTIFIER,@Header,Option,SizeOf(TInAddr)) then Exit;
-    
+
     {Requested Address}
     PInAddr(Option)^:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Address);
     if not InsertDHCPOption(DHCP_REQUESTED_IP_ADDR,@Header,Option,SizeOf(TInAddr)) then Exit;
-    
+
     {Get the Size}
     Size:=GetDHCPHeaderSize(@Header);
-    
+
     {Set the Address}
     SockAddr.sin_family:=AF_INET;
     SockAddr.sin_port:=WordNtoBE(IPPORT_BOOTPS);
     LongWord(SockAddr.sin_addr.S_addr):=INADDR_BROADCAST;
-    
+
     {Send the Request}
     Result:=FUDP.SendTo(ASocket,Header,Size,0,SockAddr,SizeOf(TSockAddr)) = Size;
    finally
@@ -1656,26 +1656,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Release');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Transport}
  if ATransport = nil then Exit;
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Create the Header}
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
    Header.ClientIP:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Address);
-   
+
    {Add the Options}
    Option:=GetMem(SizeOf(TDHCPHeader));
    if Option = nil then Exit;
@@ -1683,23 +1683,23 @@ begin
     {Message Type}
     PByte(Option)^:=DHCP_RELEASE;
     if not InsertDHCPOption(DHCP_MSG_TYPE,@Header,Option,1) then Exit;
-    
+
     {Client Identifier}
     ClientId:=GetDHCPClientId(AAdapter);
     if not InsertDHCPOption(DHCP_CLIENT_ID,@Header,@ClientId,SizeOf(TDHCPClientId)) then Exit;
-    
+
     {Server Identifier}
     PInAddr(Option)^:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Server);
     if not InsertDHCPOption(DHCP_SRV_IDENTIFIER,@Header,Option,SizeOf(TInAddr)) then Exit;
-    
+
     {Get the Size}
     Size:=GetDHCPHeaderSize(@Header);
-    
+
     {Set the Address}
     SockAddr.sin_family:=AF_INET;
     SockAddr.sin_port:=WordNtoBE(IPPORT_BOOTPS);
     SockAddr.sin_addr:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Server);
-    
+
     {Send the Request}
     Result:=FUDP.SendTo(ASocket,Header,Size,0,SockAddr,SizeOf(TSockAddr)) = Size;
    finally
@@ -1723,27 +1723,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Inform');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Transport}
  if ATransport = nil then Exit;
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Create the Header}
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
    Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Address);
-   
+
    {Add the Options}
    Option:=GetMem(SizeOf(TDHCPHeader));
    if Option = nil then Exit;
@@ -1751,15 +1751,15 @@ begin
     {Message Type}
     PByte(Option)^:=DHCP_INFORM;
     if not InsertDHCPOption(DHCP_MSG_TYPE,@Header,Option,1) then Exit;
-    
+
     {Client Identifier}
     ClientId:=GetDHCPClientId(AAdapter);
     if not InsertDHCPOption(DHCP_CLIENT_ID,@Header,@ClientId,SizeOf(TDHCPClientId)) then Exit;
-    
+
     {Host Name}
     HostName:=Manager.Settings.HostName;
     if Length(HostName) <> 0 then if not InsertDHCPOption(HOST_NAME,@Header,PChar(HostName),Length(HostName)) then Exit;
-    
+
     {Requested Options}
     PByte(Option)^:=SUBNET_MASK;
     PByte(PtrUInt(Option) + 1)^:=ROUTERS_ON_SNET;
@@ -1768,19 +1768,19 @@ begin
     PByte(PtrUInt(Option) + 4)^:=DHCP_T1_VALUE;
     PByte(PtrUInt(Option) + 5)^:=DHCP_T2_VALUE;
     if not InsertDHCPOption(DHCP_PARAM_REQUEST,@Header,Option,6) then Exit;
-    
+
     {Max Message Size}
     PWord(Option)^:=WordNtoBE(DHCP_MESSAGE_SIZE);
     if not InsertDHCPOption(DHCP_MAX_MSG_SIZE,@Header,Option,2) then Exit;
-    
+
     {Get the Size}
     Size:=GetDHCPHeaderSize(@Header);
-    
+
     {Set the Address}
     SockAddr.sin_family:=AF_INET;
     SockAddr.sin_port:=WordNtoBE(IPPORT_BOOTPS);
     LongWord(SockAddr.sin_addr.S_addr):=INADDR_BROADCAST;
-    
+
     {Send the Request}
     Result:=FUDP.SendTo(ASocket,Header,Size,0,SockAddr,SizeOf(TSockAddr)) = Size;
    finally
@@ -1804,26 +1804,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Request (Renew)');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Transport}
  if ATransport = nil then Exit;
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Create the Header}
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
    Header.ClientIP:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Address);
-   
+
    {Add the Options}
    Option:=GetMem(SizeOf(TDHCPHeader));
    if Option = nil then Exit;
@@ -1831,7 +1831,7 @@ begin
     {Message Type}
     PByte(Option)^:=DHCP_REQUEST;
     if not InsertDHCPOption(DHCP_MSG_TYPE,@Header,Option,1) then Exit;
-    
+
     {Client Identifier}
     ClientId:=GetDHCPClientId(AAdapter);
     if not InsertDHCPOption(DHCP_CLIENT_ID,@Header,@ClientId,SizeOf(TDHCPClientId)) then Exit;
@@ -1839,23 +1839,23 @@ begin
     {Host Name}
     HostName:=Manager.Settings.HostName;
     if Length(HostName) <> 0 then if not InsertDHCPOption(HOST_NAME,@Header,PChar(HostName),Length(HostName)) then Exit;
-    
+
     {Requested Options}
     PByte(Option)^:=DHCP_IP_ADDR_LEASE_TIME;
     if not InsertDHCPOption(DHCP_PARAM_REQUEST,@Header,Option,1) then Exit;
-    
+
     {Max Message Size}
     PWord(Option)^:=WordNtoBE(DHCP_MESSAGE_SIZE);
     if not InsertDHCPOption(DHCP_MAX_MSG_SIZE,@Header,Option,2) then Exit;
-    
+
     {Get the Size}
     Size:=GetDHCPHeaderSize(@Header);
-    
-    {Set the Address}    
+
+    {Set the Address}
     SockAddr.sin_family:=AF_INET;
     SockAddr.sin_port:=WordNtoBE(IPPORT_BOOTPS);
     SockAddr.sin_addr:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Server);
-    
+
     {Send the Request}
     Result:=FUDP.SendTo(ASocket,Header,Size,0,SockAddr,SizeOf(TSockAddr)) = Size;
    finally
@@ -1879,27 +1879,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Request (Rebind)');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Transport}
  if ATransport = nil then Exit;
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Create the Header}
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
    Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Address);
-   
+
    {Add the Options}
    Option:=GetMem(SizeOf(TDHCPHeader));
    if Option = nil then Exit;
@@ -1907,7 +1907,7 @@ begin
     {Message Type}
     PByte(Option)^:=DHCP_REQUEST;
     if not InsertDHCPOption(DHCP_MSG_TYPE,@Header,Option,1) then Exit;
-    
+
     {Client Identifier}
     ClientId:=GetDHCPClientId(AAdapter);
     if not InsertDHCPOption(DHCP_CLIENT_ID,@Header,@ClientId,SizeOf(TDHCPClientId)) then Exit;
@@ -1915,23 +1915,23 @@ begin
     {Host Name}
     HostName:=Manager.Settings.HostName;
     if Length(HostName) <> 0 then if not InsertDHCPOption(HOST_NAME,@Header,PChar(HostName),Length(HostName)) then Exit;
-    
+
     {Requested Options}
     PByte(Option)^:=DHCP_IP_ADDR_LEASE_TIME;
     if not InsertDHCPOption(DHCP_PARAM_REQUEST,@Header,Option,1) then Exit;
-    
+
     {Max Message Size}
     PWord(Option)^:=WordNtoBE(DHCP_MESSAGE_SIZE);
     if not InsertDHCPOption(DHCP_MAX_MSG_SIZE,@Header,Option,2) then Exit;
-    
+
     {Get the Size}
     Size:=GetDHCPHeaderSize(@Header);
-    
-    {Set the Address}    
+
+    {Set the Address}
     SockAddr.sin_family:=AF_INET;
     SockAddr.sin_port:=WordNtoBE(IPPORT_BOOTPS);
     LongWord(SockAddr.sin_addr.S_addr):=INADDR_BROADCAST;
-    
+
     {Send the Request}
     Result:=FUDP.SendTo(ASocket,Header,Size,0,SockAddr,SizeOf(TSockAddr)) = Size;
    finally
@@ -1955,27 +1955,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Request (Reboot)');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Transport}
  if ATransport = nil then Exit;
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Create the Header}
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
    Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=IP_DEFAULT_ADDRESS;
-   
+
    {Add the Options}
    Option:=GetMem(SizeOf(TDHCPHeader));
    if Option = nil then Exit;
@@ -1983,15 +1983,15 @@ begin
     {Message Type}
     PByte(Option)^:=DHCP_REQUEST;
     if not InsertDHCPOption(DHCP_MSG_TYPE,@Header,Option,1) then Exit;
-    
+
     {Client Identifier}
     ClientId:=GetDHCPClientId(AAdapter);
     if not InsertDHCPOption(DHCP_CLIENT_ID,@Header,@ClientId,SizeOf(TDHCPClientId)) then Exit;
-    
+
     {Host Name}
     HostName:=Manager.Settings.HostName;
     if Length(HostName) <> 0 then if not InsertDHCPOption(HOST_NAME,@Header,PChar(HostName),Length(HostName)) then Exit;
-    
+
     {Requested Options}
     PByte(Option)^:=SUBNET_MASK;
     PByte(PtrUInt(Option) + 1)^:=ROUTERS_ON_SNET;
@@ -2001,23 +2001,23 @@ begin
     PByte(PtrUInt(Option) + 5)^:=DHCP_T1_VALUE;
     PByte(PtrUInt(Option) + 6)^:=DHCP_T2_VALUE;
     if not InsertDHCPOption(DHCP_PARAM_REQUEST,@Header,Option,7) then Exit;
-    
+
     {Requested Address}
     PInAddr(Option)^:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Address);
     if not InsertDHCPOption(DHCP_REQUESTED_IP_ADDR,@Header,Option,SizeOf(TInAddr)) then Exit;
-    
+
     {Max Message Size}
     PWord(Option)^:=WordNtoBE(DHCP_MESSAGE_SIZE);
     if not InsertDHCPOption(DHCP_MAX_MSG_SIZE,@Header,Option,2) then Exit;
-    
+
     {Get the Size}
     Size:=GetDHCPHeaderSize(@Header);
-    
-    {Set the Address}    
+
+    {Set the Address}
     SockAddr.sin_family:=AF_INET;
     SockAddr.sin_port:=WordNtoBE(IPPORT_BOOTPS);
     LongWord(SockAddr.sin_addr.S_addr):=INADDR_BROADCAST;
-    
+
     {Send the Request}
     Result:=FUDP.SendTo(ASocket,Header,Size,0,SockAddr,SizeOf(TSockAddr)) = Size;
    finally
@@ -2038,30 +2038,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Receiving DHCP Reply');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Transport}
  if ATransport = nil then Exit;
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Get the Size}
  Size:=SizeOf(TDHCPHeader) * 2; {Double Allocate for Safety}
- 
+
  {Create the Buffer}
  Header:=GetMem(Size);
  if Header = nil then Exit;
  try
   {Zero the Header}
   FillChar(Header^,SizeOf(TDHCPHeader) * 2,0);
- 
+
   {Receive Datagram}
   SockSize:=SizeOf(TSockAddr);
   if FUDP.RecvFrom(ASocket,Header^,Size,0,SockAddr,SockSize) > 0 then
@@ -2090,18 +2090,18 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Inserting DHCP Option');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig:  Option = '  + IntToStr(AOption));
  {$ENDIF}
- 
+
  {Check Header}
  if AHeader = nil then Exit;
- 
+
  {Check Value}
  if AValue = nil then Exit;
- 
+
  {Interate the Options starting after Magic Cookie}
  Count:=4;
  while Count < DHCP_OPTIONS_SIZE do
@@ -2116,33 +2116,33 @@ begin
     begin
      {Check for end of buffer}
      if (Count + 1) > (DHCP_OPTIONS_SIZE - 1) then Exit;
-     
+
      {Get the Length}
      Size:=AHeader.Options[Count + 1];
-     
+
      {Check for End Option}
      if AHeader.Options[Count] = END_OPT then
       begin
        {Check for end of buffer}
        if (Count + ASize + 2) > (DHCP_OPTIONS_SIZE - 1) then Exit;
-       
+
        {Set the Option}
        AHeader.Options[Count]:=AOption;
-       
+
        {Set the Length}
        AHeader.Options[Count + 1]:=ASize;
-       
+
        {Set the Value}
        System.Move(AValue^,AHeader.Options[Count + 2],ASize);
-       
+
        {Set the End Option}
        AHeader.Options[Count + ASize + 2]:=END_OPT;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-      
+
      {Move to Next Option}
      Inc(Count,Size + 2);
     end;
@@ -2160,24 +2160,24 @@ begin
  {}
  //To Do //Account for the overflow option (quite easy)
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Extracting DHCP Option');
  {$ENDIF}
- 
+
  {Check Header}
  if AHeader = nil then Exit;
- 
+
  {Check Value}
  if AValue = nil then Exit;
- 
+
  {Interate the Options starting after Magic Cookie}
  Count:=4;
  while Count < DHCP_OPTIONS_SIZE do
   begin
    {Check for End Option}
    if AHeader.Options[Count] = END_OPT then Exit;
-   
+
    {Check for Pad Option}
    if AHeader.Options[Count] = PAD_OPT then
     begin
@@ -2188,28 +2188,28 @@ begin
     begin
      {Check for end of buffer}
      if (Count + 1) > (DHCP_OPTIONS_SIZE - 1) then Exit;
-     
+
      {Get the Length}
      ASize:=AHeader.Options[Count + 1];
-     
+
      {Check for Option}
      if AHeader.Options[Count] = AOption then
       begin
        {$IFDEF DHCP_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: ExtractDHCPOption - Found Option');
        {$ENDIF}
-       
+
        {Check for end of buffer}
        if (Count + ASize + 1) > (DHCP_OPTIONS_SIZE - 1) then Exit;
-       
+
        {Get the Value}
        System.Move(AHeader.Options[Count + 2],AValue^,ASize);
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-      
+
      {Move to Next Option}
      Inc(Count,ASize + 2);
     end;
@@ -2229,15 +2229,15 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: AddTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
-  
-  {Get Transport} 
+
+  {Get Transport}
   Transport:=TDHCPConfigTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_READ));
   if Transport = nil then
    begin
@@ -2253,19 +2253,19 @@ begin
          Transport.Handle:=Handle;
          Transport.ConfigType:=CONFIG_TYPE_DHCP;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Return Result}
           Result:=True;
-         finally 
+         finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end; 
+         end;
         end;
       end;
      AF_INET6:begin
@@ -2278,19 +2278,19 @@ begin
          Transport.Handle:=Handle;
          Transport.ConfigType:=CONFIG_TYPE_DHCP;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Return Result}
           Result:=True;
-         finally 
+         finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end; 
+         end;
         end;
       end;
     end;
@@ -2299,13 +2299,13 @@ begin
    begin
     {Unlock Transport}
     Transport.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2320,18 +2320,18 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: RemoveTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
-  
+
   {Get Transport}
   Transport:=TDHCPConfigTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Transport = nil then Exit;
-  
+
   {Check Address Family}
   case ATransport.Family of
    AF_INET:begin
@@ -2343,19 +2343,19 @@ begin
        try
         {Remove Transport}
         FTransports.Remove(Transport);
-       
+
         {Unlock Transport}
         Transport.WriterUnlock;
-       
+
         {Destroy Transport}
         Transport.Free;
-       
+
         {Return Result}
         Result:=True;
-       finally 
+       finally
         {Release Lock}
         FTransports.WriterUnlock;
-       end; 
+       end;
       end;
     end;
    AF_INET6:begin
@@ -2367,25 +2367,25 @@ begin
        try
         {Remove Transport}
         FTransports.Remove(Transport);
-       
+
         {Unlock Transport}
         Transport.WriterUnlock;
-       
+
         {Destroy Transport}
         Transport.Free;
-       
+
         {Return Result}
         Result:=True;
-       finally 
+       finally
         {Release Lock}
         FTransports.WriterUnlock;
-       end; 
+       end;
       end;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2399,49 +2399,49 @@ begin
  ReaderLock;
  try
   Result:=False;
- 
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: StartConfig');
   {$ENDIF}
- 
+
   {Check Manager}
   if Manager = nil then Exit;
- 
+
   {Locate ARP Transport}
   FARP:=TARPTransport(Manager.Transports.GetTransportByType(AF_UNSPEC,PACKET_TYPE_ARP,False,NETWORK_LOCK_NONE)); //To Do //AddTransport ? //Some way to track this, applies to IP as well //Client ?
   if FARP = nil then Exit;
- 
+
   {Locate UDP Protocol}
   FUDP:=TUDPProtocol(Manager.GetProtocolByType(IPPROTO_UDP,SOCK_DGRAM,False,NETWORK_LOCK_NONE)); //To Do //AddProtocol ? //Some way to track this, applies to IP as well //Client ?
   if FUDP = nil then Exit;
- 
+
   {Register with IP Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
     AddTransport(Transport);
-     
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Register with IP6 Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
     AddTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2455,47 +2455,47 @@ begin
  ReaderLock;
  try
   Result:=False;
- 
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: StopConfig');
   {$ENDIF}
- 
+
   {Check Manager}
   if Manager = nil then Exit;
- 
+
   {Deregister with IP Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Deregister with IP6 Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Remove UDP Protocol}
   FUDP:=nil;
- 
+
   {Remove ARP Transport}
   FARP:=nil;
- 
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2517,13 +2517,13 @@ begin
  WriterLock;
  try
   Result:=True;
-  
+
   if (AInitDelay >= DHCP_MIN_DELAY) and (AInitDelay <= DHCP_MAX_DELAY) then FInitDelay:=AInitDelay;
   if (ARetryCount >= DHCP_MIN_RETRIES) and (ARetryCount <= DHCP_MAX_RETRIES) then FRetryCount:=ARetryCount;
   if (ARetryTimeout >= DHCP_MIN_TIMEOUT) and (ARetryTimeout <= DHCP_MAX_TIMEOUT) then FRetryTimeout:=ARetryTimeout;
- finally 
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2550,10 +2550,10 @@ begin
  try
   FUDP:=nil;
   FARP:=nil;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2575,12 +2575,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: ConfigHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig:  Command = ' + ConfigCommandToString(ACommand));
  {$ENDIF}
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
 
@@ -2590,10 +2590,10 @@ begin
  try
   {Check ARP Transport}
   if FARP = nil then Exit;
-  
+
   {Check UDP Protocol}
   if FUDP = nil then Exit;
-  
+
   {Check Command}
   case ACommand of
    CONFIG_ADAPTER_DISCOVER:begin
@@ -2601,7 +2601,7 @@ begin
      {$IFDEF DHCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: Attempting BOOTP Configuration');
      {$ENDIF}
-     
+
      {Set Configuring}
      AAdapter.Configuring:=True;
      try
@@ -2612,48 +2612,48 @@ begin
          if AAdapter.Configured then Exit;
 
          {Delay Init}
-         if FInitDelay > 0 then Sleep(FInitDelay); 
+         if FInitDelay > 0 then Sleep(FInitDelay);
          FInitDelay:=0;
-         
+
          {Add the ARP Address}
          FARP.LoadAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS,AAdapter.Hardware,ADDRESS_TYPE_LOCAL);
-         
+
          {Add the Address}
          TIPTransport(Transport.Transport).AddAddress(IP_DEFAULT_ADDRESS,AAdapter.Adapter,ADDRESS_TYPE_PRIMARY,False,NETWORK_LOCK_NONE);
-         
+
          {Add the Route}
          TIPTransport(Transport.Transport).AddRoute(IP_BROADCAST_NETWORK,IP_BROADCAST_NETMASK,IP_DEFAULT_ADDRESS,IP_DEFAULT_ADDRESS,ROUTE_TYPE_BROADCAST,False,NETWORK_LOCK_NONE);
          try
           Randomize;
-          
+
           {Create the Socket}
           Socket:=TUDPSocket(FUDP.Socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP));
           if TSocket(Socket) = INVALID_SOCKET then Exit;
-          
+
           {Lock Socket}
           Socket.ReaderLock;
           try
            {Set the Options}
            if FUDP.SetSockOpt(Socket,SOL_SOCKET,SO_REUSEADDR,'1111',4) = SOCKET_ERROR then Exit;
            if FUDP.SetSockOpt(Socket,SOL_SOCKET,SO_BROADCAST,'1111',4) = SOCKET_ERROR then Exit;
-           
+
            {Bind the Socket}
            SockAddr.sin_family:=AF_INET;
            SockAddr.sin_port:=WordNtoBE(IPPORT_BOOTPC);
            SockAddr.sin_addr.S_addr:=INADDR_ANY;
            if FUDP.Bind(Socket,SockAddr,SizeOf(TSockAddr)) = SOCKET_ERROR then Exit;
-           
+
            {Set the Timeout}
            Timeout:=FRetryTimeout;
            if FUDP.SetSockOpt(Socket,SOL_SOCKET,SO_RCVTIMEO,PChar(@Timeout),SizeOf(Integer)) = SOCKET_ERROR then Exit;
-           
+
            {Send the Request}
            Count:=0;
            while Count < Integer(FRetryCount) do  {Count < BOOTP_RETRIES} {Modified 29/8/2011}
             begin
              {Get Identifier}
              Identifier:=Random($7FFFFFFF);
-             
+
              {Send Request}
              if SendBOOTPRequest(Socket,Transport,AAdapter,Identifier,Count) then
               begin
@@ -2661,24 +2661,24 @@ begin
                Result:=RecvBOOTPReply(Socket,Transport,AAdapter,Identifier);
                if Result then Exit;
               end;
-              
-             {Increment Count} 
+
+             {Increment Count}
              Inc(Count);
             end;
           finally
            {Close the Socket}
            FUDP.CloseSocket(Socket);
-           
+
            {Unlock Socket}
            Socket.ReaderUnlock;
           end;
          finally
           {Remove the Route}
           TIPTransport(Transport.Transport).RemoveRoute(IP_BROADCAST_NETWORK,IP_DEFAULT_ADDRESS);
-          
+
           {Remove the Address}
           TIPTransport(Transport.Transport).RemoveAddress(IP_DEFAULT_ADDRESS);
-          
+
           {Remove the ARP Address}
           FARP.UnloadAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS);
          end;
@@ -2696,7 +2696,7 @@ begin
   end;
  finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2706,23 +2706,23 @@ function TBOOTPConfig.CreateBOOTPRequest(AHeader:PBOOTPHeader;ATransport:TBOOTPC
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: Creating BOOTP Request');
  {$ENDIF}
- 
+
  {Check Header}
  if AHeader = nil then Exit;
- 
+
  {Check Transport}
  {if ATransport = nil then Exit;} {Not Used}
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Zero the Header}
  FillChar(AHeader^,SizeOf(TBOOTPHeader),0);
- 
+
  {Set the BOOTP Fields}
  AHeader.Opcode:=BOOTP_REQUEST;
  AHeader.HardwareType:=MEDIA_TYPE_ETHERNET;
@@ -2732,16 +2732,16 @@ begin
  AHeader.Seconds:=WordNtoBE(ACount * (FRetryTimeout div 1000)); {WordNtoBE(ACount * (BOOTP_TIMEOUT div 1000));} {Modified 29/8/2011}
  AHeader.ClientIP:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Address);
  AHeader.ClientHardware:=AAdapter.Hardware;
- 
+
  {Magic Cookie}
  AHeader.VendorData[0]:=99;
  AHeader.VendorData[1]:=130;
  AHeader.VendorData[2]:=83;
  AHeader.VendorData[3]:=99;
- 
+
  {End of Vendor Data}
  AHeader.VendorData[4]:=END_OPT;
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -2753,27 +2753,27 @@ function TBOOTPConfig.CheckBOOTPReply(AHeader:PBOOTPHeader;ATransport:TBOOTPConf
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: Checking BOOTP Reply');
  {$ENDIF}
- 
+
  {Check Header}
  if AHeader = nil then Exit;
- 
+
  {Check Transport}
  {if ATransport = nil then Exit;} {Not Used}
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Check the BOOTP Fields}
  if AHeader.Opcode <> BOOTP_REPLY then Exit;
  if AHeader.HardwareType <> MEDIA_TYPE_ETHERNET then Exit;
  if AHeader.HardwareLength <> SizeOf(THardwareAddress) then Exit;
  if LongWordBEtoN(AHeader.Identifier) <> AIdentifier then Exit;
  if not AAdapter.Adapter.CompareAddress(AHeader.ClientHardware,AAdapter.Hardware) then Exit;
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -2789,20 +2789,20 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: Handling BOOTP Reply');
  {$ENDIF}
- 
+
  {Check Header}
  if AHeader = nil then Exit;
- 
+
  {Check Transport}
  if ATransport = nil then Exit;
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Create buffer for Options}
  Option:=GetMem(SizeOf(TBOOTPHeader));
  if Option = nil then Exit;
@@ -2812,7 +2812,7 @@ begin
    AF_INET:begin
      {Get the Address}
      TIPTransportAdapter(AAdapter).Address:=InAddrToHost(AHeader.YourIP);
-     
+
      {Get the Netmask}
      if ExtractBOOTPOption(SUBNET_MASK,AHeader,Option,Length) then
       begin
@@ -2821,10 +2821,10 @@ begin
          TIPTransportAdapter(AAdapter).Netmask:=InAddrToHost(PInAddr(Option)^);
         end;
       end;
-     
+
      {Guess the Netmask}
      if TIPTransport(ATransport.Transport).CompareDefault(TIPTransportAdapter(AAdapter).Netmask) then TIPTransportAdapter(AAdapter).Netmask:=IP_CLASSC_NETMASK;
-     
+
      {Get the Gateway}
      if ExtractBOOTPOption(ROUTERS_ON_SNET,AHeader,Option,Length) then
       begin
@@ -2833,7 +2833,7 @@ begin
          TIPTransportAdapter(AAdapter).Gateway:=InAddrToHost(PInAddr(Option)^);
         end;
       end;
-     
+
      {Get the Nameservers}
      if ExtractBOOTPOption(DNS_SRV,AHeader,Option,Length) then
       begin
@@ -2847,7 +2847,7 @@ begin
           end;
         end;
       end;
-     
+
      {Get the Domainname}
      if ExtractBOOTPOption(DOMAIN_NAME,AHeader,Option,Length) then
       begin
@@ -2858,8 +2858,8 @@ begin
          {TIPTransport(ATransport.Transport).DomainName:=PChar(Option);}
         end;
       end;
-      
-     {Return Result} 
+
+     {Return Result}
      Result:=True;
     end;
   end;
@@ -2879,20 +2879,20 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: Sending BOOTP Request');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Transport}
  if ATransport = nil then Exit;
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Get the Size}
  Size:=SizeOf(TBOOTPHeader);
 
@@ -2903,7 +2903,7 @@ begin
    SockAddr.sin_family:=AF_INET;
    SockAddr.sin_port:=WordNtoBE(IPPORT_BOOTPS);
    LongWord(SockAddr.sin_addr.S_addr):=INADDR_BROADCAST;
-   
+
    {Send the Request}
    Result:=FUDP.SendTo(ASocket,Header,Size,0,SockAddr,SizeOf(TSockAddr)) = Size;
   end;
@@ -2921,30 +2921,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: Receiving BOOTP Reply');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Transport}
  if ATransport = nil then Exit;
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Get the Size}
  Size:=SizeOf(TBOOTPHeader) * 2; {Double Allocate for Safety}
- 
+
  {Create the Buffer}
  Header:=GetMem(Size);
  if Header = nil then Exit;
  try
   {Zero the Header}
   FillChar(Header^,SizeOf(TBOOTPHeader) * 2,0);
-  
+
   {Receive Datagram}
   SockSize:=SizeOf(TSockAddr);
   if FUDP.RecvFrom(ASocket,Header^,Size,0,SockAddr,SockSize) > 0 then
@@ -2973,24 +2973,24 @@ begin
  {}
  //To Do //Account for the overflow option (quite easy)
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: Extracting BOOTP Option');
  {$ENDIF}
- 
+
  {Check Header}
  if AHeader = nil then Exit;
- 
+
  {Check Value}
  if AValue = nil then Exit;
- 
+
  {Interate the Options starting after Magic Cookie}
  Count:=4;
  while Count < BOOTP_VENDOR_SIZE do
   begin
    {Check for End Option}
    if AHeader.VendorData[Count] = END_OPT then Exit;
-   
+
    {Check for Pad Option}
    if AHeader.VendorData[Count] = PAD_OPT then
     begin
@@ -3001,28 +3001,28 @@ begin
     begin
      {Check for end of buffer}
      if (Count + 1) > (BOOTP_VENDOR_SIZE - 1) then Exit;
-     
+
      {Get the Length}
      ASize:=AHeader.VendorData[Count + 1];
-     
+
      {Check for Option}
      if AHeader.VendorData[Count] = AOption then
       begin
        {$IFDEF DHCP_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: ExtractBOOTPOption - Found Option');
        {$ENDIF}
-       
+
        {Check for end of buffer}
        if (Count + ASize + 1) > (BOOTP_VENDOR_SIZE - 1) then Exit;
-       
+
        {Get the Value}
        System.Move(AHeader.VendorData[Count + 2],AValue^,ASize);
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Move to Next Option}
      Inc(Count,ASize + 2);
     end;
@@ -3042,15 +3042,15 @@ begin
  ReaderLock;
  try
   Result:=False;
- 
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: AddTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
-  
-  {Get Transport} 
+
+  {Get Transport}
   Transport:=TBOOTPConfigTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_READ));
   if Transport = nil then
    begin
@@ -3071,13 +3071,13 @@ begin
          try
           {Add Transport}
           FTransports.Add(Transport);
-          
+
           {Return Result}
           Result:=True;
-         finally 
+         finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end; 
+         end;
         end;
       end;
     end;
@@ -3086,13 +3086,13 @@ begin
    begin
     {Unlock Transport}
     Transport.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3107,18 +3107,18 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: RemoveTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
-  
+
   {Get Transport}
   Transport:=TBOOTPConfigTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Transport = nil then Exit;
-  
+
   {Check Address Family}
   case ATransport.Family of
    AF_INET:begin
@@ -3133,22 +3133,22 @@ begin
 
         {Unlock Transport}
         Transport.WriterUnlock;
-       
+
         {Destroy Transport}
         Transport.Free;
-        
+
         {Return Result}
         Result:=True;
-       finally 
+       finally
         {Release Lock}
         FTransports.WriterUnlock;
-       end; 
+       end;
       end;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3177,23 +3177,23 @@ begin
   {Locate UDP Protocol}
   FUDP:=TUDPProtocol(Manager.GetProtocolByType(IPPROTO_UDP,SOCK_DGRAM,False,NETWORK_LOCK_NONE)); //To Do //AddProtocol ? //Some way to track this, applies to IP as well //Client ?
   if FUDP = nil then Exit;
-  
+
   {Register with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
     AddTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
-  
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3207,35 +3207,35 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: StopConfig');
   {$ENDIF}
-  
+
   if Manager = nil then Exit;
-  
+
   {Deregister with IP Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
-  
+   end;
+
   {Remove UDP Protocol}
   FUDP:=nil;
-  
+
   {Remove ARP Transport}
   FARP:=nil;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3257,13 +3257,13 @@ begin
  WriterLock;
  try
   Result:=True;
-  
+
   if (AInitDelay >= BOOTP_MIN_DELAY) and (AInitDelay <= BOOTP_MAX_DELAY) then FInitDelay:=AInitDelay;
   if (ARetryCount >= BOOTP_MIN_RETRIES) and (ARetryCount <= BOOTP_MAX_RETRIES) then FRetryCount:=ARetryCount;
   if (ARetryTimeout >= BOOTP_MIN_TIMEOUT) and (ARetryTimeout <= BOOTP_MAX_TIMEOUT) then FRetryTimeout:=ARetryTimeout;
- finally 
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3285,10 +3285,10 @@ begin
  WriterLock;
  try
   FARP:=nil;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3308,22 +3308,22 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARPConfig: ConfigHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARPConfig:  Command = ' + ConfigCommandToString(ACommand));
  {$ENDIF}
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Get Transport}
  Transport:=TARPConfigTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
  try
   {Check ARP Transport}
   if FARP = nil then Exit;
-  
+
   {Check Command}
   case ACommand of
    CONFIG_ADAPTER_DISCOVER:begin
@@ -3331,7 +3331,7 @@ begin
      {$IFDEF DHCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARPConfig: Attempting ARP Configuration');
      {$ENDIF}
-     
+
      {Set Configuring}
      AAdapter.Configuring:=True;
      try
@@ -3340,37 +3340,37 @@ begin
        AF_INET:begin
          {Check the Adapter}
          if AAdapter.Configured then Exit;
-         
+
          {Add the ARP Address}
          FARP.LoadAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS,AAdapter.Hardware,ADDRESS_TYPE_LOCAL);
          try
           Randomize;
-          
+
           {Setup start of range (Random 192.168.100.1 to 192.168.100.100) or (Random Start to Start + 100)}
           LongWord(Address.S_addr):=ARP_CONFIG_START + LongWord(Random(75));
           if not TIPTransport(Transport.Transport).CompareDefault(TIPTransportAdapter(AAdapter).Address) then LongWord(Address.S_addr):=LongWord(TIPTransportAdapter(AAdapter).Address.S_addr) + LongWord(Random(75));
-          
+
           {Setup end of range (192.168.100.100) or (Start + 100)}
           LongWord(Range.S_addr):=ARP_CONFIG_STOP;
           if not TIPTransport(Transport.Transport).CompareDefault(TIPTransportAdapter(AAdapter).Address) then LongWord(Range.S_addr):=LongWord(TIPTransportAdapter(AAdapter).Address.S_addr) + LongWord(100);
           Hardware:=HARDWARE_DEFAULT;
-          
+
           {Check for Address in use}
           while FARP.ResolveAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS,Address,Hardware) do
            begin
             {Move to Next}
             Inc(LongWord(Address.S_addr));
-            
+
             {Check for end of range}
             if LongWord(Address.S_addr) > LongWord(Range.S_addr) then Exit;
            end;
-          
+
           {Return the Address}
           TIPTransportAdapter(AAdapter).Address:=Address;
-          
+
           {Return the Netmask}
           if TIPTransport(Transport.Transport).CompareDefault(TIPTransportAdapter(AAdapter).Netmask) then TIPTransportAdapter(AAdapter).Netmask:=IP_CLASSC_NETMASK;
-          
+
           {Return Result}
           Result:=True;
          finally
@@ -3391,7 +3391,7 @@ begin
   end;
  finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3407,15 +3407,15 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARPConfig: AddTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
-  
-  {Get Transport} 
+
+  {Get Transport}
   Transport:=TARPConfigTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_READ));
   if Transport = nil then
    begin
@@ -3431,19 +3431,19 @@ begin
          Transport.Handle:=Handle;
          Transport.ConfigType:=CONFIG_TYPE_PSEUDO;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Return Result}
           Result:=True;
-         finally 
+         finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end; 
+         end;
         end;
       end;
     end;
@@ -3452,13 +3452,13 @@ begin
    begin
     {Unlock Transport}
     Transport.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3473,18 +3473,18 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARPConfig: RemoveTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
-  
+
   {Get Transport}
   Transport:=TARPConfigTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Transport = nil then Exit;
-  
+
   {Check Address Family}
   case ATransport.Family of
    AF_INET:begin
@@ -3496,25 +3496,25 @@ begin
        try
         {Remove Transport}
         FTransports.Remove(Transport);
-       
+
         {Unlock Transport}
         Transport.WriterUnlock;
-       
+
         {Destroy Transport}
         Transport.Free;
-       
+
         {Return Result}
         Result:=True;
-       finally 
+       finally
         {Release Lock}
         FTransports.WriterUnlock;
-       end; 
+       end;
       end;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3528,34 +3528,34 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARPConfig: StartConfig');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Locate ARP Transport}
   FARP:=TARPTransport(Manager.Transports.GetTransportByType(AF_UNSPEC,PACKET_TYPE_ARP,False,NETWORK_LOCK_NONE)); //To Do //AddTransport ? //Some way to track this, applies to IP as well //Client ?
   if FARP = nil then Exit;
-  
+
   {Register with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
     AddTransport(Transport);
-     
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3569,33 +3569,33 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARPConfig: StopConfig');
-  {$ENDIF} 
-  
+  {$ENDIF}
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Deregister with IP Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Remove ARP Transport}
   FARP:=nil;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3627,10 +3627,10 @@ begin
  WriterLock;
  try
   FRARP:=nil;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3648,22 +3648,22 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARPConfig: ConfigHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARPConfig:  Command = ' + ConfigCommandToString(ACommand));
  {$ENDIF}
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Get Transport}
  Transport:=TRARPConfigTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
  try
   {Check RARP Transport}
   if FRARP = nil then Exit;
-  
+
   {Check Command}
   case ACommand of
    CONFIG_ADAPTER_DISCOVER:begin
@@ -3671,7 +3671,7 @@ begin
      {$IFDEF DHCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARPConfig: Attempting RARP Configuration');
      {$ENDIF}
-     
+
      {Set Configuring}
      AAdapter.Configuring:=True;
      try
@@ -3680,16 +3680,16 @@ begin
        AF_INET:begin
          {Check the Adapter}
          if AAdapter.Configured then Exit;
-         
+
          {Request Address}
          if not FRARP.ResolveHardware(AAdapter.Adapter,Address) then Exit;
-         
+
          {Return the Address}
          TIPTransportAdapter(AAdapter).Address:=Address;
-         
+
          {Return the Netmask (Guessed)}
          if TIPTransport(Transport.Transport).CompareDefault(TIPTransportAdapter(AAdapter).Netmask) then TIPTransportAdapter(AAdapter).Netmask:=IP_CLASSC_NETMASK;
-         
+
          {Return Result}
          Result:=True;
         end;
@@ -3706,7 +3706,7 @@ begin
   end;
  finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3722,15 +3722,15 @@ begin
  ReaderLock;
  try
   Result:=False;
- 
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARPConfig: AddTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
 
-  {Get Transport} 
+  {Get Transport}
   Transport:=TRARPConfigTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_READ));
   if Transport = nil then
    begin
@@ -3746,19 +3746,19 @@ begin
          Transport.Handle:=Handle;
          Transport.ConfigType:=CONFIG_TYPE_RARP;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Return Result}
           Result:=True;
-         finally 
+         finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end; 
+         end;
         end;
       end;
     end;
@@ -3767,13 +3767,13 @@ begin
    begin
     {Unlock Transport}
     Transport.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3788,18 +3788,18 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARPConfig: RemoveTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
-  
+
   {Get Transport}
   Transport:=TRARPConfigTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Transport = nil then Exit;
-  
+
   {Check Address Family}
   case ATransport.Family of
    AF_INET:begin
@@ -3811,25 +3811,25 @@ begin
        try
         {Remove Transport}
         FTransports.Remove(Transport);
-       
+
         {Unlock Transport}
         Transport.WriterUnlock;
-       
+
         {Destroy Transport}
         Transport.Free;
-       
+
         {Return Result}
         Result:=True;
-       finally 
+       finally
         {Release Lock}
         FTransports.WriterUnlock;
-       end; 
+       end;
       end;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3843,34 +3843,34 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARPConfig: StartConfig');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Locate RARP Transport}
   FRARP:=TRARPTransport(Manager.Transports.GetTransportByType(AF_UNSPEC,PACKET_TYPE_RARP,False,NETWORK_LOCK_NONE)); //To Do //AddTransport ? //Some way to track this, applies to IP as well //Client ?
   if FRARP = nil then Exit;
-  
+
   {Register with IP Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
     AddTransport(Transport);
-     
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3884,33 +3884,33 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARPConfig: StopConfig');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Deregister with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Remove RARP Transport}
   FRARP:=nil;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3942,10 +3942,10 @@ begin
  WriterLock;
  try
   FARP:=nil;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3962,22 +3962,22 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'StaticConfig: ConfigHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'StaticConfig:  Command = ' + ConfigCommandToString(ACommand));
  {$ENDIF}
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Get Transport}
  Transport:=TStaticConfigTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
  try
   {Check ARP Transport}
   if FARP = nil then Exit;
-  
+
   {Check Command}
   case ACommand of
    CONFIG_ADAPTER_REQUEST:begin
@@ -3985,7 +3985,7 @@ begin
      {$IFDEF DHCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'StaticConfig: Attempting Static Configuration');
      {$ENDIF}
-     
+
      {Set Configuring}
      AAdapter.Configuring:=True;
      try
@@ -3994,23 +3994,23 @@ begin
        AF_INET:begin
          {Check the Adapter}
          if AAdapter.Configured then Exit;
-         
+
          {Check for Defaults}
          if TIPTransport(Transport.Transport).CompareDefault(TIPTransportAdapter(AAdapter).Address) then Exit;
          if TIPTransport(Transport.Transport).CompareDefault(TIPTransportAdapter(AAdapter).Netmask) then Exit;
-         
+
          {Check the Address}
          if TIPTransport(Transport.Transport).GetAddressByAddress(TIPTransportAdapter(AAdapter).Address,False,NETWORK_LOCK_NONE) <> nil then Exit;
-         
+
          {Add the ARP Address}
          FARP.LoadAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS,AAdapter.Hardware,ADDRESS_TYPE_LOCAL);
          try
           {Check for Address in use}
           if not FARP.ConfirmAddress(AAdapter.Adapter,IP_DEFAULT_ADDRESS,TIPTransportAdapter(AAdapter).Address) then Exit;
-          
+
           {Advertise the Address} {Note: No one seems to listen to this}
           {FARP.AdvertiseAddress(AAdapter.Adapter,TIPTransportAdapter(AAdapter).Address);}
-          
+
           {Return Result}
           Result:=True;
          finally
@@ -4019,9 +4019,9 @@ begin
          end;
         end;
        AF_INET6:begin
-         
+
          //To Do
-         
+
         end;
       end;
      finally
@@ -4036,7 +4036,7 @@ begin
   end;
  finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4052,15 +4052,15 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'StaticConfig: AddTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
-  
-  {Get Transport} 
+
+  {Get Transport}
   Transport:=TStaticConfigTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_READ));
   if Transport = nil then
    begin
@@ -4076,19 +4076,19 @@ begin
          Transport.Handle:=Handle;
          Transport.ConfigType:=CONFIG_TYPE_STATIC;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Return Result}
           Result:=True;
-         finally 
+         finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end; 
+         end;
         end;
       end;
      AF_INET6:begin
@@ -4101,19 +4101,19 @@ begin
          Transport.Handle:=Handle;
          Transport.ConfigType:=CONFIG_TYPE_STATIC;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Return Result}
           Result:=True;
-         finally 
+         finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end; 
+         end;
         end;
       end;
     end;
@@ -4122,13 +4122,13 @@ begin
    begin
     {Unlock Transport}
     Transport.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4143,18 +4143,18 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'StaticConfig: RemoveTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
-  
+
   {Get Transport}
   Transport:=TStaticConfigTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Transport = nil then Exit;
-  
+
   {Check Address Family}
   case ATransport.Family of
    AF_INET:begin
@@ -4166,19 +4166,19 @@ begin
        try
         {Remove Transport}
         FTransports.Remove(Transport);
-       
+
         {Unlock Transport}
         Transport.WriterUnlock;
-       
+
         {Destroy Transport}
         Transport.Free;
-       
+
         {Return Result}
         Result:=True;
-       finally 
+       finally
         {Release Lock}
         FTransports.WriterUnlock;
-       end; 
+       end;
       end;
     end;
    AF_INET6:begin
@@ -4190,25 +4190,25 @@ begin
        try
         {Remove Transport}
         FTransports.Remove(Transport);
-       
+
         {Unlock Transport}
         Transport.WriterUnlock;
-       
+
         {Destroy Transport}
         Transport.Free;
-       
+
         {Return Result}
         Result:=True;
-       finally 
+       finally
         {Release Lock}
         FTransports.WriterUnlock;
-       end; 
+       end;
       end;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4222,45 +4222,45 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'StaticConfig: StartConfig');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Locate ARP Transport}
   FARP:=TARPTransport(Manager.Transports.GetTransportByType(AF_UNSPEC,PACKET_TYPE_ARP,False,NETWORK_LOCK_NONE)); //To Do //AddTransport ? //Some way to track this, applies to IP as well //Client ?
   if FARP = nil then Exit;
-  
+
   {Register with IP Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
     AddTransport(Transport);
-     
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
-  
+   end;
+
   {Register with IP6 Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
     AddTransport(Transport);
-     
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4274,44 +4274,44 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'StaticConfig: StopConfig');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Deregister with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
-  
+   end;
+
   {Deregister with IP6 Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
-  
+   end;
+
   {Remove ARP Transport}
   FARP:=nil;
- 
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4356,15 +4356,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF DHCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackConfig: ConfigHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackConfig:  Command = ' + ConfigCommandToString(ACommand));
  {$ENDIF}
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Get Transport}
  Transport:=TLoopbackConfigTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
@@ -4376,7 +4376,7 @@ begin
      {$IFDEF DHCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackConfig: Attempting Loopback Configuration');
      {$ENDIF}
-     
+
      {Set Configuring}
      AAdapter.Configuring:=True;
      try
@@ -4385,24 +4385,24 @@ begin
        AF_INET:begin
          {Check the Adapter}
          if AAdapter.Configured then Exit;
-         
+
          {Check for Defaults}
          if TIPTransport(Transport.Transport).CompareDefault(TIPTransportAdapter(AAdapter).Address) then Exit;
          if TIPTransport(Transport.Transport).CompareDefault(TIPTransportAdapter(AAdapter).Netmask) then Exit;
-         
+
          {Check for Loopback}
          if not TIPTransport(Transport.Transport).CompareLoopback(TIPTransportAdapter(AAdapter).Address) then Exit;
-         
+
          {Check the Address}
          if TIPTransport(Transport.Transport).GetAddressByAddress(TIPTransportAdapter(AAdapter).Address,False,NETWORK_LOCK_NONE) <> nil then Exit;
-         
+
          {Return Result}
          Result:=True;
         end;
        AF_INET6:begin
-        
+
          //To Do
-        
+
         end;
       end;
      finally
@@ -4417,7 +4417,7 @@ begin
   end;
  finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4433,15 +4433,15 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackConfig: AddTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
-  
-  {Get Transport} 
+
+  {Get Transport}
   Transport:=TLoopbackConfigTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_READ));
   if Transport = nil then
    begin
@@ -4457,19 +4457,19 @@ begin
          Transport.Handle:=Handle;
          Transport.ConfigType:=CONFIG_TYPE_LOOPBACK;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Return Result}
           Result:=True;
-         finally 
+         finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end; 
+         end;
         end;
       end;
      AF_INET6:begin
@@ -4482,19 +4482,19 @@ begin
          Transport.Handle:=Handle;
          Transport.ConfigType:=CONFIG_TYPE_LOOPBACK;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Return Result}
           Result:=True;
-         finally 
+         finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end; 
+         end;
         end;
       end;
     end;
@@ -4503,13 +4503,13 @@ begin
    begin
     {Unlock Transport}
     Transport.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4524,18 +4524,18 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackConfig: RemoveTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
- 
+
   {Get Transport}
   Transport:=TLoopbackConfigTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Transport = nil then Exit;
-  
+
   {Check Address Family}
   case ATransport.Family of
    AF_INET:begin
@@ -4547,19 +4547,19 @@ begin
        try
         {Remove Transport}
         FTransports.Remove(Transport);
-       
+
         {Unlock Transport}
         Transport.WriterUnlock;
-       
+
         {Destroy Transport}
         Transport.Free;
-       
+
         {Return Result}
         Result:=True;
-       finally 
+       finally
         {Release Lock}
         FTransports.WriterUnlock;
-       end; 
+       end;
       end;
     end;
    AF_INET6:begin
@@ -4571,25 +4571,25 @@ begin
        try
         {Remove Transport}
         FTransports.Remove(Transport);
-       
+
         {Unlock Transport}
         Transport.WriterUnlock;
-       
+
         {Destroy Transport}
         Transport.Free;
-       
+
         {Return Result}
         Result:=True;
-       finally 
+       finally
         {Release Lock}
         FTransports.WriterUnlock;
-       end; 
+       end;
       end;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4603,41 +4603,41 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackConfig: StartConfig');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Register with IP Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
     AddTransport(Transport);
-     
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
-  
+   end;
+
   {Register with IP6 Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
     AddTransport(Transport);
-     
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
-  
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4651,41 +4651,41 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF DHCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackConfig: StopConfig');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Deregister with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
-  
+   end;
+
   {Deregister with IP6 Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
-  
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4716,73 +4716,73 @@ begin
  {}
  {Check Initialized}
  if DHCPInitialized then Exit;
- 
+
  {Setup Loopback Config}
  if NetworkSettings.GetBoolean('LOOPBACK_NETWORK_ENABLED') then NetworkSettings.AddBoolean('LOOPBACK_CONFIG_ENABLED',True);
- 
+
  {Create Loopback Config}
  if NetworkSettings.GetBooleanDefault('LOOPBACK_CONFIG_ENABLED',LOOPBACK_CONFIG_ENABLED) then
   begin
    TLoopbackConfig.Create(ProtocolManager);
-  end; 
- 
+  end;
+
  {Create Static Config}
  if NetworkSettings.GetBooleanDefault('STATIC_CONFIG_ENABLED',STATIC_CONFIG_ENABLED) then
   begin
    TStaticConfig.Create(ProtocolManager);
-  end; 
- 
+  end;
+
  {Create DHCP Config}
- if NetworkSettings.GetBooleanDefault('DHCP_CONFIG_ENABLED',DHCP_CONFIG_ENABLED) then  
+ if NetworkSettings.GetBooleanDefault('DHCP_CONFIG_ENABLED',DHCP_CONFIG_ENABLED) then
   begin
    DHCPConfig:=TDHCPConfig.Create(ProtocolManager);
-   
+
    {Get Configuration}
    InitDelay:=NetworkSettings.GetIntegerDefault('DHCP_CONFIG_DELAY',DHCP_DELAY);
    RetryCount:=NetworkSettings.GetIntegerDefault('DHCP_CONFIG_RETRIES',DHCP_RETRIES);
    RetryTimeout:=NetworkSettings.GetIntegerDefault('DHCP_CONFIG_TIMEOUT',DHCP_TIMEOUT);
-   
+
    {Set Configuration}
    DHCPConfig.SetConfig(InitDelay,RetryCount,RetryTimeout);
-  end; 
- 
+  end;
+
  {Create BOOTP Config}
- if NetworkSettings.GetBooleanDefault('BOOTP_CONFIG_ENABLED',BOOTP_CONFIG_ENABLED) then  
+ if NetworkSettings.GetBooleanDefault('BOOTP_CONFIG_ENABLED',BOOTP_CONFIG_ENABLED) then
   begin
    BOOTPConfig:=TBOOTPConfig.Create(ProtocolManager);
-   
+
    {Get Configuration}
    InitDelay:=NetworkSettings.GetIntegerDefault('BOOTP_CONFIG_DELAY',BOOTP_DELAY);
    RetryCount:=NetworkSettings.GetIntegerDefault('BOOTP_CONFIG_RETRIES',BOOTP_RETRIES);
    RetryTimeout:=NetworkSettings.GetIntegerDefault('BOOTP_CONFIG_TIMEOUT',BOOTP_TIMEOUT);
-   
+
    {Set Configuration}
    BOOTPConfig.SetConfig(InitDelay,RetryCount,RetryTimeout);
-  end; 
- 
+  end;
+
  {Create RARP Config}
- if NetworkSettings.GetBooleanDefault('RARP_CONFIG_ENABLED',RARP_CONFIG_ENABLED) then  
+ if NetworkSettings.GetBooleanDefault('RARP_CONFIG_ENABLED',RARP_CONFIG_ENABLED) then
   begin
    TRARPConfig.Create(ProtocolManager);
-  end; 
- 
+  end;
+
  {Create ARP Config}
- if NetworkSettings.GetBooleanDefault('ARP_CONFIG_ENABLED',ARP_CONFIG_ENABLED) then  
+ if NetworkSettings.GetBooleanDefault('ARP_CONFIG_ENABLED',ARP_CONFIG_ENABLED) then
   begin
    TARPConfig.Create(ProtocolManager);
-  end; 
- 
+  end;
+
  DHCPInitialized:=True;
 end;
 
 {==============================================================================}
 {==============================================================================}
 {DHCP Functions}
-  
+
 {==============================================================================}
 {==============================================================================}
 {DHCP Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -4790,12 +4790,12 @@ initialization
  DHCPInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 end.
- 
+

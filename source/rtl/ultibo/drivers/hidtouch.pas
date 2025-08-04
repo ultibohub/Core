@@ -298,7 +298,7 @@ begin
   begin
    TimerDestroy(PHIDTouchDevice(Touch).Timer);
    PHIDTouchDevice(Touch).Timer:=INVALID_HANDLE_VALUE;
-  end; 
+  end;
 
  {Cancel Reports}
  Definition:=PHIDTouchDevice(Touch).Definitions;
@@ -388,7 +388,7 @@ begin
 
       {Reset First Identifier}
       PHIDTouchDevice(Touch).FirstIdentifier:=INFINITE;
-      
+
       {Update Flags}
       if MaxPoints > 1 then
        begin
@@ -932,7 +932,7 @@ begin
       if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) <> 0 then
        begin
         TimerDisable(Touch.Timer);
-       end; 
+       end;
 
       {Check State}
       if Touch.Touch.TouchState <> TOUCH_STATE_ENABLED then
@@ -1144,7 +1144,7 @@ begin
       if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_RELEASE_TIMER) <> 0 then
        begin
         TimerEnable(Touch.Timer);
-       end; 
+       end;
 
       Result:=ERROR_SUCCESS;
      finally

@@ -3,7 +3,7 @@
     Copyright (c) 2024 by Free Pascal development team
 
     Dos unit for Ultibo target.
-    
+
     See the file COPYING.FPC, included in this distribution,
     for details about the copyright.
 
@@ -34,7 +34,7 @@ type
    dwLowDateTime:DWORD;
    dwHighDateTime:DWORD;
   end;
-  
+
 type
   {Find Data (Exactly equivalent to Win32}
   TWin32FindDataA = record
@@ -88,7 +88,7 @@ type
  {Environment Functions}
  TDosEnvCount = function:Longint;
  TDosEnvStr = function(Index:LongInt):String;
- TDosGetEnv = function(envvar:String):String; 
+ TDosGetEnv = function(envvar:String):String;
 
 var
  {Conversion Functions}
@@ -117,7 +117,7 @@ var
  DosEnvCountHandler:TDosEnvCount;
  DosEnvStrHandler:TDosEnvStr;
  DosGetEnvHandler:TDosGetEnv;
- 
+
 implementation
 
 {$DEFINE HAS_GETMSCOUNT}
@@ -142,7 +142,7 @@ begin
  else
   begin
    Result:=0;
-  end; 
+  end;
 end;
 
 {******************************************************************************
@@ -158,7 +158,7 @@ begin
  else
   begin
    Result:=0;
-  end; 
+  end;
 end;
 
 procedure GetDate(var Year, Month, MDay, WDay: Word);
@@ -215,7 +215,7 @@ begin
  else
   begin
    Result:=-1;
-  end; 
+  end;
 end;
 
 function DiskSize(Drive: Byte): Int64;
@@ -227,7 +227,7 @@ begin
  else
   begin
    Result:=-1;
-  end; 
+  end;
 end;
 
 {******************************************************************************
@@ -237,7 +237,7 @@ end;
 procedure FindFirst(const Path: PathStr; Attr: Word; var f: SearchRec);
 begin
  FillChar(f,SizeOf(SearchRec),0);
- 
+
  if Assigned(DosFindFirstHandler) then
   begin
    DosError:=DosFindFirstHandler(Path,Attr,f);
@@ -245,7 +245,7 @@ begin
  else
   begin
    DosError:=18;
-  end; 
+  end;
 end;
 
 procedure FindNext(var f: SearchRec);
@@ -257,7 +257,7 @@ begin
  else
   begin
    DosError:=18;
-  end; 
+  end;
 end;
 
 procedure FindClose(var f: SearchRec);
@@ -286,12 +286,12 @@ begin
    Result:=path;
    Exit;
   end;
-  
+
  {No wildcards allowed in these things}
  if (Pos('?',path) <> 0) or (Pos('*',path) <> 0) then
   begin
    Result:=''
-  end 
+  end
  else
   begin
    {Allow slash as backslash}
@@ -308,21 +308,21 @@ begin
       NewDir:=dirlist;
       dirlist:='';
      end;
-    
+
     if (NewDir <> '') and (not(NewDir[Length(NewDir)] in ['\',':'])) then
      NewDir:=NewDir + '\';
-    
+
     FindFirst(NewDir + path,anyfile and not(directory),S);
     if DosError = 0 then
      NewDir:=NewDir + path
     else
      NewDir:='';
-      
+
    until (dirlist = '') or (NewDir <> '');
-   
+
    Result:=NewDir;
   end;
-   
+
  FindClose(S);
 end;
 
@@ -335,7 +335,7 @@ begin
  else
   begin
    DosError:=18;
-  end; 
+  end;
 end;
 
 procedure SetFTime(var f; time : longint);
@@ -347,7 +347,7 @@ begin
  else
   begin
    DosError:=18;
-  end; 
+  end;
 end;
 
 procedure GetFAttr(var f; var attr : word);
@@ -359,7 +359,7 @@ begin
  else
   begin
    DosError:=18;
-  end; 
+  end;
 end;
 
 procedure SetFAttr(var f; attr : word);
@@ -368,7 +368,7 @@ begin
  if (attr and VolumeID) <> 0 then
   begin
    DosError:=5
-  end 
+  end
  else
   begin
    if Assigned(DosSetFAttrHandler) then
@@ -378,8 +378,8 @@ begin
    else
     begin
      DosError:=18;
-    end; 
-  end; 
+    end;
+  end;
 end;
 
 function GetShortName(var p : String) : boolean;
@@ -391,7 +391,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 function GetLongName(var p : String) : boolean;
@@ -403,7 +403,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {******************************************************************************
@@ -419,7 +419,7 @@ begin
  else
   begin
    Result:=-1;
-  end; 
+  end;
 end;
 
 function EnvStr(Index: LongInt): String;
@@ -431,7 +431,7 @@ begin
  else
   begin
    Result:='';
-  end; 
+  end;
 end;
 
 function GetEnv(envvar : String): String;
@@ -443,7 +443,7 @@ begin
  else
   begin
    Result:='';
-  end; 
+  end;
 end;
 
 begin

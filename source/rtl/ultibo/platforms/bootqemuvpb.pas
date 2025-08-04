@@ -12,67 +12,67 @@ Arch
 Boards
 ======
 
- QEMU - VersatilePB 
+ QEMU - VersatilePB
 
 Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
- 
+
   Linux - \arch\arm\mach-versatile\*
-  
+
 References
 ==========
- 
+
  Cortex-A8 Technical Reference Manual
- 
+
  http://wiki.qemu.org/download/qemu-doc.html#ARM-System-emulator
- 
+
  http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0224i/index.html
- 
+
 QEMU VersatilePB
 ================
- 
+
  SoC: ARM926EJ-S (Emulated)
- 
+
  CPU: Cortex A8 (ARMv7) (1 @ ???MHz)
   or  Cortex A53 (ARMv8) (1 @ ???MHz)
- 
+
  Cache: L1 16KB / L2 0KB
     or  L1 ??KB / L2 ??KB
-    
+
  FPU: VFPV3
   or  VFP
-  
+
  GPU: (None)
- 
+
  RAM: 256MB
- 
+
  USB: PCI OHCI USB controller
- 
- LAN: SMC 91c111 Ethernet adapter 
-  
+
+ LAN: SMC 91c111 Ethernet adapter
+
  SD/MMC: PL181 MultiMedia Card Interface with SD card
- 
+
  WiFi: (None)
- 
+
  Bluetooth: (None)
- 
- Other: PL190 Vectored Interrupt Controller 
+
+ Other: PL190 Vectored Interrupt Controller
         Four PL011 UARTs
-        PL110 LCD controller 
+        PL110 LCD controller
         PL050 KMI with PS/2 keyboard and mouse
         PCI host bridge
         PCI OHCI USB controller
         LSI53C895A PCI SCSI Host Bus Adapter with hard disk and CD-ROM devices
- 
+
         GPIO / I2C / Watchdog / SP804 Timer
- 
+
 Boot QEMUVPB
 ============
 
@@ -84,7 +84,7 @@ Boot QEMUVPB
  R2 - Address of the ARM Tags structure (Normally 0x0100)
 
  On entry to this code the processor will be in the following state:
- 
+
  World - Secure
  Mode - Supervisor (ARM_MODE_SVC)
  MMU - Disabled
@@ -97,11 +97,11 @@ Boot QEMUVPB
  Ultibo switches the processor to System mode for all operations and remains in the Secure world.
 
  The initialization process enables the MMU, FPU, L1 Cache and other performance optimizations.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
-{$H+}          {Default to AnsiString} 
+{$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
 unit BootQEMUVPB;
@@ -112,13 +112,13 @@ interface
 {Global definitions} {Must be prior to uses}
 {$INCLUDE ..\core\GlobalDefines.inc}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,VersatilePB,Platform,PlatformQEMUVPB,{$IFDEF CPUARM}PlatformARM,PlatformARMv7,{$ENDIF CPUARM}{$IFDEF CPUAARCH64}PlatformAARCH64,PlatformARMv8,{$ENDIF CPUAARCH64}Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF}; 
- 
+uses GlobalConfig,GlobalConst,GlobalTypes,VersatilePB,Platform,PlatformQEMUVPB,{$IFDEF CPUARM}PlatformARM,PlatformARMv7,{$ENDIF CPUARM}{$IFDEF CPUAARCH64}PlatformAARCH64,PlatformARMv8,{$ENDIF CPUAARCH64}Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF};
+
 {==============================================================================}
 {Boot Functions}
 procedure Startup;
 
-procedure Vectors; 
+procedure Vectors;
 
 procedure StartupHandler;
 
@@ -133,7 +133,7 @@ implementation
 procedure Startup; assembler; nostackframe; public name '_START';
 {Entry point of Ultibo on QEMU VersatilePB, this will be the very first byte executed
  and will be loaded by QEMU at address 0x00010000}
-{$IFDEF CPUARM} 
+{$IFDEF CPUARM}
 asm
  //Save the pointer to the ARM Tags that the bootloader should have passed
  //to us in R2.
@@ -147,33 +147,33 @@ asm
  //in R1. See: http://www.arm.linux.org.uk/developer/machines/
  ldr r3, .LARMMachineType
  str r1, [r3]
- 
+
  //Save the ARM Boot Mode that the CPU was in at startup
  ldr r3, .LARMBootMode
  mrs r0, cpsr
  and r0, r0, #ARM_MODE_BITS
- str r0, [r3] 
+ str r0, [r3]
 
  //Save the Vector Base Address that was current at startup
  ldr r3, .LARMBootVectors
  mrc p15, #0, r0, cr12, cr0, #0
- str r0, [r3] 
- 
- //Disable Secure Boot 
+ str r0, [r3]
+
+ //Disable Secure Boot
  //Versatile PB does not support PL3 (TrustZone)
  ldr r3, .LARMSecureBoot
  mov r0, #0
- str r0, [r3] 
- 
+ str r0, [r3]
+
  //Continue execution at the StartupHandler
  b StartupHandler
-  
+
 .LARMBootMode:
   .long ARMBootMode
 .LARMBootVectors:
   .long ARMBootVectors
 .LARMTagsAddress:
-  .long ARMTagsAddress  
+  .long ARMTagsAddress
 .LARMMachineType:
   .long ARMMachineType
 .LARMSecureBoot:
@@ -186,9 +186,9 @@ asm
  mov x0, #0x101f
  lsl x0, x0, #16
  add x0, x0, #0x1000
- 
+
  //VERSATILEPB_UART0_REGS_BASE
- //mov  x0, #0x1000 
+ //mov  x0, #0x1000
  //movk x0, #0x101f, lsl #16
 
  mov w1, #72  //H
@@ -205,13 +205,13 @@ asm
 
  mov w1, #79  //O
  str w1,[x0]
- 
+
  mov w1, #32  //<Space>
  str w1,[x0]
- 
+
  mov w1, #85  //U
  str w1,[x0]
- 
+
  mov w1, #76  //L
  str w1,[x0]
 
@@ -226,7 +226,7 @@ asm
 
  mov w1, #79  //O
  str w1,[x0]
- 
+
  mov w1, #32  //<Space>
  str w1,[x0]
 
@@ -235,11 +235,11 @@ asm
 
  mov w1, #52  //4
  str w1,[x0]
- 
-.Loop:  
- 
+
+.Loop:
+
  b .Loop
- 
+
  //TestingAARCH64
  bl QEMUVPBBootOutput
 end;
@@ -247,36 +247,36 @@ end;
 
 {==============================================================================}
 
-procedure Vectors; assembler; nostackframe; 
+procedure Vectors; assembler; nostackframe;
 {ARM exception vector table which is copied to address 0 by the StartupHandler
  See A2.6 "Exceptions" of the ARM Architecture Reference Manual}
 {$IFDEF CPUARM}
 asm
- ldr pc, .Lreset_addr     //Reset Handler 
- ldr pc, .Lundef_addr	  //Undefined Instruction Handler 
- ldr pc, .Lswi_addr	      //Software Interrupt Handler 
- ldr pc, .Lprefetch_addr  //Prefetch Abort Handler 
- ldr pc, .Labort_addr	  //Data Abort Handler 
+ ldr pc, .Lreset_addr     //Reset Handler
+ ldr pc, .Lundef_addr      //Undefined Instruction Handler
+ ldr pc, .Lswi_addr          //Software Interrupt Handler
+ ldr pc, .Lprefetch_addr  //Prefetch Abort Handler
+ ldr pc, .Labort_addr      //Data Abort Handler
  ldr pc, .Lreserved_addr  //Reserved Handler
- ldr pc, .Lirq_addr	      //IRQ (Interrupt Request) Handler 
- ldr pc, .Lfiq_addr	      //FIQ (Fast Interrupt Request) Handler 
+ ldr pc, .Lirq_addr          //IRQ (Interrupt Request) Handler
+ ldr pc, .Lfiq_addr          //FIQ (Fast Interrupt Request) Handler
 
 .Lreset_addr:
-  .long ARMv7ResetHandler   
-.Lundef_addr:     
-  .long ARMv7UndefinedInstructionHandler      
-.Lswi_addr:       
-  .long ARMv7SoftwareInterruptHandler        
-.Lprefetch_addr:  
-  .long ARMv7PrefetchAbortHandler   
-.Labort_addr:     
-  .long ARMv7DataAbortHandler      
-.Lreserved_addr:  
-  .long ARMv7ReservedHandler  
-.Lirq_addr:       
-  .long ARMv7IRQHandler      
-.Lfiq_addr:       
-  .long ARMv7FIQHandler        
+  .long ARMv7ResetHandler
+.Lundef_addr:
+  .long ARMv7UndefinedInstructionHandler
+.Lswi_addr:
+  .long ARMv7SoftwareInterruptHandler
+.Lprefetch_addr:
+  .long ARMv7PrefetchAbortHandler
+.Labort_addr:
+  .long ARMv7DataAbortHandler
+.Lreserved_addr:
+  .long ARMv7ReservedHandler
+.Lirq_addr:
+  .long ARMv7IRQHandler
+.Lfiq_addr:
+  .long ARMv7FIQHandler
 end;
 {$ENDIF CPUARM}
 {$IFDEF CPUAARCH64}
@@ -287,16 +287,16 @@ end;
 
 {==============================================================================}
 
-procedure StartupHandler; assembler; nostackframe; 
+procedure StartupHandler; assembler; nostackframe;
 {Startup handler routine executed to start the Ultibo kernel}
 {$IFDEF CPUARM}
 asm
  //Invalidate all Caches before starting the boot process
  bl ARMv7InvalidateCache
- 
+
  //Invalidate the TLB before starting the boot process
  bl ARMv7InvalidateTLB
- 
+
  //Change to SYS mode and ensure all interrupts are disabled
  //so the ARM processor is in a known state.
  cpsid if, #ARM_MODE_SYS
@@ -313,7 +313,7 @@ asm
  //register to the address of the vector table base above.
  mov r0, #QEMUVPB_VECTOR_TABLE_BASE
  mcr p15, #0, r0, cr12, cr0, #0
- 
+
  //Enable Unaligned Memory Accesses (U Bit) in the System Control
  //Register to simplify memory access routines from Pascal code.
  //
@@ -322,7 +322,7 @@ asm
  //mrc p15, #0, r0, cr1, cr0, #0
  //orr r0, #ARMV7_CP15_C1_U_BIT
  //mcr p15, #0, r0, cr1, cr0, #0
- 
+
  //Clear the entire .bss section of the kernel image.
  //Linker should have aligned bss start and end to a 4KB boundary
  ldr r0, .L_bss_start
@@ -335,8 +335,8 @@ asm
 .Lbssloopb:
  stmia r0!, {r2-r5}
 .Lbssloopa:
- cmp r0, r1 	    //Check if we have reached bss_end yet.
- bcc .Lbssloopb	    //Repeat the loop if still more to go.
+ cmp r0, r1         //Check if we have reached bss_end yet.
+ bcc .Lbssloopb        //Repeat the loop if still more to go.
 
  //Ensure INITIAL_STACK_SIZE is a multiple of 4KB
  ldr r0, .LINITIAL_STACK_SIZE
@@ -349,9 +349,9 @@ asm
  beq .LSkipRoundStack
  mov r2, r3
  add r2, r2, #4096
- str r2, [r0] 
+ str r2, [r0]
 .LSkipRoundStack:
-  
+
  //Ensure INITIAL_HEAP_SIZE is a multiple of 4KB
  ldr r0, .LINITIAL_HEAP_SIZE
  ldr r2, [r0]
@@ -363,9 +363,9 @@ asm
  beq .LSkipRoundHeap
  mov r2, r3
  add r2, r2, #4096
- str r2, [r0] 
+ str r2, [r0]
 .LSkipRoundHeap:
-  
+
  //Determine how many second level page tables are required.
  //Each one represents 1MB and is 1KB in size (256 4 byte entries).
  //R1 will contain the address of the bss_end from above.
@@ -378,13 +378,13 @@ asm
  ldr r0, [r0]
  add r3, r3, r0
  //Divide R3 by 1MB to get the count.
- lsr r2, r3, #20 
+ lsr r2, r3, #20
  //Add one for any leftover amount and one for safety.
  add r2, r2, #2
  //Store the second level page table used count
  ldr r0, .LPAGE_TABLES_USED
  str r2, [r0]
- 
+
  //Get the second level page table free count
  ldr r0, .LPAGE_TABLES_FREE
  ldr r0, [r0]
@@ -393,7 +393,7 @@ asm
  //Store the second level page table count
  ldr r0, .LPAGE_TABLES_COUNT
  str r2, [r0]
- 
+
  //Put the second level page tables directly after the kernel image.
  //R1 will contain the address of the bss_end from above.
  //Store the start address of the second level page tables.
@@ -414,20 +414,20 @@ asm
 .LSkipRoundTables:
  //Store the size of the second level page tables.
  ldr r0, .LPAGE_TABLES_LENGTH
- str r2, [r0]  
+ str r2, [r0]
  add r1, r1, r2
-  
+
  //Put the initial thread stack directly after the page tables.
  //R1 will contain the end address of the page tables.
  ldr r0, .LINITIAL_STACK_SIZE
  ldr r0, [r0]
  add sp, r1, r0
-  
+
  //Store the pointer to the top of the initial thread stack.
  //SP will contain the address of the top of the initial stack.
  ldr r0, .LINITIAL_STACK_BASE
  str sp, [r0]
-  
+
  //Store the start address of the initial memory heap.
  //SP will contain the address of the top of the initial stack
  //which will also be the starting address of the initial heap.
@@ -436,10 +436,10 @@ asm
 
  //Move the initial stack away from the initial heap but remain 8 byte aligned.
  sub sp, sp, #8
- 
+
  //Initialize the QEMUVPB Platform specific behaviour (Memory, Peripherals, Interrupts etc).
  bl QEMUVPBInit
-  
+
  //Initialize the ARM Platform specific behaviour (IRQ, FIQ, Abort etc).
  bl ARMInit
 
@@ -448,40 +448,40 @@ asm
 
  //Initialize the Ultibo Platform (CPU, FPU, MMU, Heap, Clock, Interrupts, ATAGS, Power etc).
  bl PlatformInit
- 
+
  {$IFDEF CONSOLE_EARLY_INIT}
  //Initialize the Ultibo Locking primitives
  bl LocksInit
-  
+
  //Initialize the Ultibo Device manager
  bl DevicesInit
-  
+
  //Initialize the Peripheral settings
  bl PeripheralInit
-  
+
  //Initialize the Framebuffer device
  bl FramebufferInit
-  
+
  //Initialize the Console device
  bl ConsoleInit
- 
+
  //Start the Boot Console device
  bl BootConsoleStart
  {$ENDIF}
-  
+
  //Initialize the Ultibo Threading which will create the IRQ, FIQ and Idle Threads
- //and branch to the platform independent Pascal startup code. 
+ //and branch to the platform independent Pascal startup code.
  //This should never return unless an error occurs during startup.
- bl ThreadsInit 
- 
+ bl ThreadsInit
+
  //If ThreadsInit returns then halt the CPU
  b ARMv7Halt
-  
+
 .L_vectors:
   .long Vectors
-  
+
 .LPAGE_TABLES_USED:
-  .long PAGE_TABLES_USED  
+  .long PAGE_TABLES_USED
 .LPAGE_TABLES_FREE:
   .long PAGE_TABLES_FREE
 .LPAGE_TABLES_COUNT:
@@ -490,7 +490,7 @@ asm
   .long PAGE_TABLES_ADDRESS
 .LPAGE_TABLES_LENGTH:
   .long PAGE_TABLES_LENGTH
-  
+
 .LINITIAL_STACK_SIZE:
   .long INITIAL_STACK_SIZE
 .LINITIAL_STACK_BASE:
@@ -523,5 +523,5 @@ end;
 
 {==============================================================================}
 {==============================================================================}
- 
+
 end.

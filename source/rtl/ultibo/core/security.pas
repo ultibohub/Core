@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -34,7 +34,7 @@ Security
  This unit implements the security support for Ultibo.
 
  This unit provides compatible implementations of the following functions:
- 
+
         AddAccessAllowedAce
         AddAccessAllowedAceEx
         AddAccessDeniedAce
@@ -116,7 +116,7 @@ Security
         SetPrivateObjectSecurity
         SetThreadToken
         SetTokenInformation
-        SetUserObjectSecurity 
+        SetUserObjectSecurity
 
         Most of the above are currently not implemented.
 
@@ -146,7 +146,7 @@ const
  ANYSIZE_ARRAY = 1;
 
 {==============================================================================}
- 
+
 ////////////////////////////////////////////////////////////////////////
 //                                                                    //
 //              Security Id     (SID)                                 //
@@ -176,7 +176,7 @@ const
 
 type
  {Security specific types}
- {SID Identifier Authority} 
+ {SID Identifier Authority}
  PSID_IDENTIFIER_AUTHORITY = ^SID_IDENTIFIER_AUTHORITY;
  _SID_IDENTIFIER_AUTHORITY = record
    Value: array [0..5] of Byte;
@@ -196,7 +196,7 @@ type
  SID = _SID;
  PPSID = ^PSID;
  TSid = SID;
- 
+
 {==============================================================================}
 const
  {Security specific constants}
@@ -231,7 +231,7 @@ const
 
  AclRevisionInformation = 1;
  AclSizeInformation = 2;
- 
+
  {ACE}
  {The following are the predefined ace types that go into the AceType field of an Ace header}
  ACCESS_MIN_MS_ACE_TYPE    = $0;
@@ -300,22 +300,22 @@ const
  SE_SACL_PROTECTED        = $2000;
  SE_RM_CONTROL_VALID      = $4000;
  SE_SELF_RELATIVE         = $8000;
- 
+
 {==============================================================================}
 type
  {Security specific types}
  {Signed types}
  BOOL = LongBool;
- 
+
  {Unsigned types}
  UCHAR = Byte;
- 
+
  {Pointer types}
  PUCHAR = ^Byte;
 
  {GUID types}
  GUID = TGUID;
- 
+
  {SID}
  _SID_NAME_USE = DWORD;
  SID_NAME_USE = _SID_NAME_USE;
@@ -336,7 +336,7 @@ type
  PSID_AND_ATTRIBUTES_ARRAY = ^SID_AND_ATTRIBUTES_ARRAY;
  PSidAndAttributesArray = ^TSidAndAttributesArray;
  TSidAndAttributesArray = SID_AND_ATTRIBUTES_ARRAY;
- 
+
  {ACL}
  PACL = ^ACL;
  _ACL = record
@@ -353,7 +353,7 @@ type
  _ACL_INFORMATION_CLASS = DWORD;
  ACL_INFORMATION_CLASS = _ACL_INFORMATION_CLASS;
  TAclInformationClass = ACL_INFORMATION_CLASS;
- 
+
  {This record is returned/sent if the user is requesting/setting the AclRevisionInformation}
  PACL_REVISION_INFORMATION = ^ACL_REVISION_INFORMATION;
  _ACL_REVISION_INFORMATION = record
@@ -378,8 +378,8 @@ type
  ACCESS_MASK = DWORD;
  PACCESS_MASK = ^ACCESS_MASK;
  TAccessMask = ACCESS_MASK;
- PAccessMask = PACCESS_MASK;  
- 
+ PAccessMask = PACCESS_MASK;
+
  PACE_HEADER = ^ACE_HEADER;
  _ACE_HEADER = record
    AceType: Byte;
@@ -489,7 +489,7 @@ type
  PSECURITY_DESCRIPTOR_CONTROL = ^SECURITY_DESCRIPTOR_CONTROL;
  TSecurityDescriptorControl = SECURITY_DESCRIPTOR_CONTROL;
  PSecurityDescriptorControl = PSECURITY_DESCRIPTOR_CONTROL;
- 
+
  PSECURITY_DESCRIPTOR_RELATIVE = ^SECURITY_DESCRIPTOR_RELATIVE;
  _SECURITY_DESCRIPTOR_RELATIVE = record
    Revision: Byte;
@@ -503,7 +503,7 @@ type
  SECURITY_DESCRIPTOR_RELATIVE = _SECURITY_DESCRIPTOR_RELATIVE;
  TSecurityDescriptorRelative = SECURITY_DESCRIPTOR_RELATIVE;
  PSecurityDescriptorRelative = PSECURITY_DESCRIPTOR_RELATIVE;
- 
+
  PSECURITY_DESCRIPTOR = ^SECURITY_DESCRIPTOR;
  _SECURITY_DESCRIPTOR = record
    Revision: Byte;
@@ -518,7 +518,7 @@ type
  TSecurityDescriptor = SECURITY_DESCRIPTOR;
  PSecurityDescriptor = PSECURITY_DESCRIPTOR;
  PPSECURITY_DESCRIPTOR = ^PSECURITY_DESCRIPTOR;
- 
+
 type
  {$PACKENUM 1} {--$Z4} {Change to LongWord Enumerated Types}
  WELL_KNOWN_SID_TYPE = (
@@ -575,14 +575,14 @@ type
   WinAccountRasAndIasServersSid);
  TWellKnownSidType = WELL_KNOWN_SID_TYPE;
  {$PACKENUM DEFAULT}  {--$Z1}
- 
+
 type
  PWellKnownSid = ^TWellKnownSid;
  TWellKnownSid = record
   SidHeader:TSID;
   SubAuthorities:array[0..5] of DWORD;
  end;
- 
+
  TWellKnownAce = record {Not Packed}        {Descriptor Ace defaults}
   AceType:Byte;
   AceFlags:Byte;
@@ -616,7 +616,7 @@ type
 {==============================================================================}
 {var}
  {Security specific variables}
- 
+
 {==============================================================================}
 const
  {Security specific constants}
@@ -699,7 +699,7 @@ const
               )
         );
   );
- 
+
 /////////////////////////////////////////////////////////////////////////////
 //                                                                         //
 // Universal well-known SIDs                                               //
@@ -717,9 +717,9 @@ const
 /////////////////////////////////////////////////////////////////////////////
 
 const
- SECURITY_NULL_SID_IDENTIFIER	      = 0;
- SECURITY_WORLD_SID_IDENTIFIER	      = 1;
- SECURITY_LOCAL_SID_IDENTIFIER	      = 2;
+ SECURITY_NULL_SID_IDENTIFIER          = 0;
+ SECURITY_WORLD_SID_IDENTIFIER          = 1;
+ SECURITY_LOCAL_SID_IDENTIFIER          = 2;
  SECURITY_CREATOR_SID_IDENTIFIER      = 3;
  SECURITY_NON_UNIQUE_IDENTIFIER       = 4;
  SECURITY_RESOURCE_MANAGER_IDENTIFIER = 9;
@@ -1040,10 +1040,10 @@ const
  LOCAL_ALIAS_RID_NETWORK_CONFIGURATION_OPS:TWellKnownSid =
   (SidHeader:(Revision:1;SubAuthorityCount:2;IdentifierAuthority:(Value:(0,0,0,0,0,SECURITY_NT_IDENTIFIER));SubAuthority:(0));
    SubAuthorities:(SECURITY_BUILTIN_DOMAIN_RID,DOMAIN_ALIAS_RID_NETWORK_CONFIGURATION_OPS,0,0,0,0););
- 
+
 {==============================================================================}
 {Initialization Functions}
- 
+
 {==============================================================================}
 {Security Functions}
 function IsWellKnownSid(Sid: PSID; WellKnownSidType: WELL_KNOWN_SID_TYPE): BOOL;
@@ -1135,7 +1135,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Security Functions}
@@ -1146,7 +1146,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  Size:=SECURITY_MAX_SID_SIZE;
  WellKnownSid:=AllocMem(Size);
  try
@@ -1170,7 +1170,7 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_PARAMETER);
- 
+
  NewSid:=nil;
  WellKnownSid:=nil;
  case WellKnownSidType of
@@ -1329,7 +1329,7 @@ begin
    end;
  end;
  if WellKnownSid = nil then Exit;
- 
+
  {Create Sid}
  if AllocateAndInitializeSid(WellKnownSid.SidHeader.IdentifierAuthority,WellKnownSid.SidHeader.SubAuthorityCount,WellKnownSid.SubAuthorities[0],WellKnownSid.SubAuthorities[1],WellKnownSid.SubAuthorities[2],WellKnownSid.SubAuthorities[3],WellKnownSid.SubAuthorities[4],WellKnownSid.SubAuthorities[5],0,0,NewSid) then
   begin
@@ -1340,7 +1340,7 @@ begin
     if CopySid(cbSid,Sid,NewSid) then
      begin
       cbSid:=Size;
-      
+
       SetLastError(ERROR_SUCCESS);
       Result:=True;
      end;
@@ -1428,10 +1428,10 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_SID);
- 
+
  if nSubAuthorityCount < 1 then Exit;
  if nSubAuthorityCount > 8 then Exit;
- 
+
  Sid:=AllocMem(GetSidLengthRequired(nSubAuthorityCount));
  if Sid = nil then Exit;
 
@@ -1446,7 +1446,7 @@ begin
  if nSubAuthorityCount > 5 then PLongWord(PtrUInt(@Sid.SubAuthority[0]) + LongWord(5 * SizeOf(DWORD)))^:=nSubAuthority5;
  if nSubAuthorityCount > 6 then PLongWord(PtrUInt(@Sid.SubAuthority[0]) + LongWord(6 * SizeOf(DWORD)))^:=nSubAuthority6;
  if nSubAuthorityCount > 7 then PLongWord(PtrUInt(@Sid.SubAuthority[0]) + LongWord(7 * SizeOf(DWORD)))^:=nSubAuthority7;
- 
+
  SetLastError(ERROR_SUCCESS);
  Result:=True;
 end;
@@ -1458,9 +1458,9 @@ begin
  {}
  Result:=Sid;
  SetLastError(ERROR_INVALID_SID);
- 
+
  if Sid = nil then Exit;
- 
+
  FreeMem(Sid);
 
  SetLastError(ERROR_SUCCESS);
@@ -1474,13 +1474,13 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_SID);
- 
+
  if Sid = nil then Exit;
- 
+
  Sid.Revision:=SID_REVISION;
  Sid.SubAuthorityCount:=nSubAuthorityCount;
  Sid.IdentifierAuthority:=pIdentifierAuthority;
- 
+
  SetLastError(ERROR_SUCCESS);
  Result:=True;
 end;
@@ -1491,7 +1491,7 @@ function GetSidIdentifierAuthority(Sid: PSID): PSIDIdentifierAuthority;
 begin
  {}
  {Do not check for null SID}
- 
+
  SetLastError(ERROR_SUCCESS);
  Result:=@Sid.IdentifierAuthority;
 end;
@@ -1502,7 +1502,7 @@ function GetSidSubAuthority(Sid: PSID; nSubAuthority: DWORD): PDWORD;
 begin
  {}
  {Do not check for null SID}
- 
+
  SetLastError(ERROR_SUCCESS);
  Result:=PDWORD(PtrUInt(@Sid.SubAuthority[0]) + LongWord((nSubAuthority) * SizeOf(DWORD))); {Sub Authority is zero based index}
 end;
@@ -1513,7 +1513,7 @@ function GetSidSubAuthorityCount(Sid: PSID): PUCHAR;
 begin
  {}
  {Do not check for null SID}
- 
+
  SetLastError(ERROR_SUCCESS);
  Result:=PUCHAR(@Sid.SubAuthorityCount);
 end;
@@ -1524,7 +1524,7 @@ function GetLengthSid(Sid: PSID): DWORD;
 begin
  {}
  {Do not check for null SID}
- 
+
  SetLastError(ERROR_SUCCESS);
  Result:=(SizeOf(TSID) - SizeOf(DWORD)) + (Sid.SubAuthorityCount * SizeOf(DWORD)); {Account for SubAuthority[0]}
 end;
@@ -1536,13 +1536,13 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_SID);
- 
+
  if pSourceSid = nil then Exit;
  if pDestinationSid = nil then Exit;
  if nDestinationSidLength < GetLengthSid(pSourceSid) then Exit;
- 
+
  System.Move(pSourceSid^,pDestinationSid^,GetLengthSid(pSourceSid)); {System.Move(pSourceSid^,pDestinationSid^,nDestinationSidLength);} {Must copy source length not dest length}
- 
+
  SetLastError(ERROR_SUCCESS);
  Result:=True;
 end;
@@ -1561,20 +1561,20 @@ begin
  try
   SetLastError(ERROR_INVALID_PARAMETER);
   if Sid = nil then Exit;
-  
+
   SetLastError(ERROR_INVALID_SID);
   if not IsValidSid(Sid) then Exit;
-  
+
   {Get Revision}
   WorkBuffer:='S-' + IntToStr(Sid.Revision) + '-';
-  
+
   {Get Identifier Authority}
   IdentifierAuthority:=GetSidIdentifierAuthority(Sid);
   WorkBuffer:=WorkBuffer + IntToStr(IdentifierAuthority.Value[5]) + '-';
-  
+
   {Get Sub Authority Count}
   SubAuthorityCount:=GetSidSubAuthorityCount(Sid)^; {Dereference Pointer}
-  
+
   {Get Sub Authorities}
   for Count:=0 to SubAuthorityCount - 1 do
    begin
@@ -1587,11 +1587,11 @@ begin
       WorkBuffer:=WorkBuffer + IntToStr(GetSidSubAuthority(Sid,Count)^) + '-';
      end;
    end;
-  
+
   {Return String}
   StringSid:=PChar(AllocMem(Length(WorkBuffer) + 1));
   StrLCopy(StringSid,PChar(WorkBuffer),Length(WorkBuffer) + 1);
-  
+
   SetLastError(ERROR_SUCCESS);
   Result:=True;
  except
@@ -1616,28 +1616,28 @@ begin
   WorkBuffer:=Uppercase(Trim(WorkBuffer));
   if Length(WorkBuffer) = 0 then Exit;
   SetLastError(ERROR_INVALID_SID);
-  
+
   {Check Prefix}
   if Copy(WorkBuffer,1,2) <> 'S-' then Exit;
-  
+
   {Split String}
   Values:=SplitStringSid(WorkBuffer);
   try
    {Check Values}
    if Values.Count < 4 then Exit;
-   
+
    {Check Prefix and Revision}
    if Values.Strings[0] <> 'S' then Exit;
    if Values.Strings[1] <> IntToStr(SID_REVISION) then Exit;
-   
+
    {Get Identifier Authority}
    FillChar(IdentifierAuthority,SizeOf(TSIDIdentifierAuthority),0);
    IdentifierAuthority.Value[5]:=StrToInt(Values.Strings[2]);
-   
+
    {Allocate and Initialize Sid}
    SubAuthorityCount:=Values.Count - 3;
    while Values.Count < 11 do Values.Add('0');
-   
+
    Result:=AllocateAndInitializeSid(IdentifierAuthority,SubAuthorityCount,StrToInt64(Values.Strings[3]),StrToInt64(Values.Strings[4]),StrToInt64(Values.Strings[5]),StrToInt64(Values.Strings[6]),StrToInt64(Values.Strings[7]),StrToInt64(Values.Strings[8]),StrToInt64(Values.Strings[9]),StrToInt64(Values.Strings[10]),Sid);
   finally
    Values.Free;
@@ -1654,11 +1654,11 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_ACL);
- 
+
  if pAcl.AclRevision < MIN_ACL_REVISION then Exit;
  if pAcl.AclRevision > MAX_ACL_REVISION then Exit;
  if pAcl.AclSize < (SizeOf(TACL) + (pAcl.AceCount * SizeOf(TAceHeader))) then Exit; {Note: This needs to be expanded to fully check the Ace and Sid entries}
- 
+
  SetLastError(ERROR_SUCCESS);
  Result:=True;
 end;
@@ -1670,15 +1670,15 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_ACL);
- 
+
  if (dwAclRevision <> ACL_REVISION) and (dwAclRevision <> ACL_REVISION_DS) then Exit;
- 
+
  pAcl.AclRevision:=dwAclRevision;
  pAcl.Sbz1:=0;
  pAcl.AclSize:=nAclLength;
  pAcl.AceCount:=0;
  pAcl.Sbz2:=0;
- 
+
  Result:=IsValidAcl(pAcl);
 end;
 
@@ -1691,13 +1691,13 @@ begin
  SetLastError(ERROR_INVALID_PARAMETER);
 
  {Do not check for null ACL}
- 
+
  case dwAclInformationClass of
   AclRevisionInformation:begin
     SetLastError(ERROR_INSUFFICIENT_BUFFER);
     if nAclInformationLength < SizeOf(TAclRevisionInformation) then Exit;
     PAclRevisionInformation(pAclInformation).AclRevision:=pAcl.AclRevision;
-    
+
     SetLastError(ERROR_SUCCESS);
     Result:=True;
    end;
@@ -1707,7 +1707,7 @@ begin
     PAclSizeInformation(pAclInformation).AceCount:=pAcl.AceCount;
     PAclSizeInformation(pAclInformation).AclBytesInUse:=pAcl.AclSize; {Note: This needs to be implemented}
     PAclSizeInformation(pAclInformation).AclBytesFree:=0;             {Note: This needs to be implemented}
-    
+
     SetLastError(ERROR_SUCCESS);
     Result:=True;
    end;
@@ -1755,9 +1755,9 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_PARAMETER);
- 
+
  if dwAceIndex >= pAcl.AceCount then Exit;
- 
+
  Index:=0;
  Offset:=SizeOf(TACL);
  AceHeader:=PAceHeader(PtrUInt(@pAcl) + Offset);
@@ -1769,7 +1769,7 @@ begin
    if Index = dwAceIndex then Break;
   end;
  pAce:=AceHeader;
- 
+
  SetLastError(ERROR_SUCCESS);
  Result:=True;
 end;
@@ -1881,9 +1881,9 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_PARAMETER);
- 
+
  if dwRevision <> SECURITY_DESCRIPTOR_REVISION then Exit;
- 
+
  pSecurityDescriptor.Revision:=dwRevision;
  pSecurityDescriptor.Sbz1:=0;
  pSecurityDescriptor.Control:=0;
@@ -1891,7 +1891,7 @@ begin
  pSecurityDescriptor.Group:=nil;
  pSecurityDescriptor.Sacl:=nil;  {Sacl is prior to Dacl in structure (Offset always places it after)}
  pSecurityDescriptor.Dacl:=nil;
- 
+
  SetLastError(ERROR_SUCCESS);
  Result:=True;
 end;
@@ -1906,10 +1906,10 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_SECURITY_DESCR);
- 
+
  if pSecurityDescriptor = nil then Exit;
  if pSecurityDescriptor.Revision <> SECURITY_DESCRIPTOR_REVISION then Exit;
- 
+
  {Check Relative}
  if (pSecurityDescriptor.Control and SE_SELF_RELATIVE) = SE_SELF_RELATIVE then
   begin
@@ -1920,21 +1920,21 @@ begin
      Sid:=PSID(PtrUInt(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Owner);
      if not IsValidSid(Sid) then Exit;
     end;
-   
+
    {Check Group}
    if PSecurityDescriptorRelative(pSecurityDescriptor).Group > 0 then
     begin
      Sid:=PSID(PtrUInt(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Group);
      if not IsValidSid(Sid) then Exit;
     end;
-   
+
    {Check DACL}
    if PSecurityDescriptorRelative(pSecurityDescriptor).Dacl > 0 then
     begin
      Acl:=PACL(PtrUInt(pSecurityDescriptor) + PSecurityDescriptorRelative(pSecurityDescriptor).Dacl);
      if not IsValidAcl(Acl^) then Exit;
     end;
-   
+
    {Check SACL}
    if PSecurityDescriptorRelative(pSecurityDescriptor).Sacl > 0 then
     begin
@@ -1951,21 +1951,21 @@ begin
     begin
      if not IsValidSid(Sid) then Exit;
     end;
-   
+
    {Check Group}
    Sid:=PSID(pSecurityDescriptor.Group);
    if Sid <> nil then
     begin
      if not IsValidSid(Sid) then Exit;
     end;
-   
+
    {Check DACL}
    Acl:=pSecurityDescriptor.Dacl;
    if Acl <> nil then
     begin
      if not IsValidAcl(Acl^) then Exit;
     end;
-   
+
    {Check SACL}
    Acl:=pSecurityDescriptor.Sacl;
    if Acl <> nil then
@@ -1973,7 +1973,7 @@ begin
      if not IsValidAcl(Acl^) then Exit;
     end;
   end;
-  
+
  SetLastError(ERROR_SUCCESS);
  Result:=True;
 end;
@@ -1990,9 +1990,9 @@ begin
  {}
  SetLastError(ERROR_SUCCESS);
  Result:=SECURITY_DESCRIPTOR_MIN_LENGTH;
- 
+
  {Do not check for null Descriptor}
- 
+
  {Get Owner}
  Sid:=nil;
  Defaulted:=False;
@@ -2000,7 +2000,7 @@ begin
   begin
    if Sid <> nil then Result:=Result + GetLengthSid(Sid);
   end;
- 
+
  {Get Group}
  Sid:=nil;
  Defaulted:=False;
@@ -2008,7 +2008,7 @@ begin
   begin
    if Sid <> nil then Result:=Result + GetLengthSid(Sid);
   end;
- 
+
  {Get DACL}
  Acl:=nil;
  Present:=False;
@@ -2017,7 +2017,7 @@ begin
   begin
    if Acl <> nil then Result:=Result + Acl.AclSize;
   end;
- 
+
  {Get SACL}
  Acl:=nil;
  Present:=False;
@@ -2035,15 +2035,15 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_SECURITY_DESCR);
- 
+
  if pSecurityDescriptor = nil then Exit;
- 
+
  {Get Revision}
  pControl:=pSecurityDescriptor.Control;
- 
+
  {Get Control}
  lpdwRevision:=pSecurityDescriptor.Revision;
- 
+
  SetLastError(ERROR_SUCCESS);
  Result:=True;
 end;
@@ -2065,15 +2065,15 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_SECURITY_DESCR);
- 
+
  if pSecurityDescriptor = nil then Exit;
- 
+
  {Check Present}
  lpbDaclPresent:=((pSecurityDescriptor.Control and SE_DACL_PRESENT) = SE_DACL_PRESENT);
- 
+
  {Check Defaulted}
  lpbDaclDefaulted:=((pSecurityDescriptor.Control and SE_DACL_DEFAULTED) = SE_DACL_DEFAULTED);
- 
+
  {Check Relative}
  if (pSecurityDescriptor.Control and SE_SELF_RELATIVE) = SE_SELF_RELATIVE then
   begin
@@ -2089,7 +2089,7 @@ begin
    {Absolute Descriptor}
    pDacl:=pSecurityDescriptor.Dacl;
   end;
- 
+
  SetLastError(ERROR_SUCCESS);
  Result:=True;
 end;
@@ -2111,15 +2111,15 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_SECURITY_DESCR);
- 
+
  if pSecurityDescriptor = nil then Exit;
- 
+
  {Check Present}
  lpbSaclPresent:=((pSecurityDescriptor.Control and SE_SACL_PRESENT) = SE_SACL_PRESENT);
- 
+
  {Check Defaulted}
  lpbSaclDefaulted:=((pSecurityDescriptor.Control and SE_SACL_DEFAULTED) = SE_SACL_DEFAULTED);
- 
+
  {Check Relative}
  if (pSecurityDescriptor.Control and SE_SELF_RELATIVE) = SE_SELF_RELATIVE then
   begin
@@ -2135,7 +2135,7 @@ begin
    {Absolute Descriptor}
    pSacl:=pSecurityDescriptor.Sacl;
   end;
- 
+
  SetLastError(ERROR_SUCCESS);
  Result:=True;
 end;
@@ -2157,12 +2157,12 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_SECURITY_DESCR);
- 
+
  if pSecurityDescriptor = nil then Exit;
- 
+
  {Check Defaulted}
  lpbOwnerDefaulted:=((pSecurityDescriptor.Control and SE_OWNER_DEFAULTED) = SE_OWNER_DEFAULTED);
- 
+
  {Check Relative}
  if (pSecurityDescriptor.Control and SE_SELF_RELATIVE) = SE_SELF_RELATIVE then
   begin
@@ -2178,7 +2178,7 @@ begin
    {Absolute Descriptor}
    pOwner:=pSecurityDescriptor.Owner;
   end;
- 
+
  SetLastError(ERROR_SUCCESS);
  Result:=True;
 end;
@@ -2200,12 +2200,12 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_SECURITY_DESCR);
- 
+
  if pSecurityDescriptor = nil then Exit;
- 
+
  {Check Defaulted}
  lpbGroupDefaulted:=((pSecurityDescriptor.Control and SE_GROUP_DEFAULTED) = SE_GROUP_DEFAULTED);
- 
+
  {Check Relative}
  if (pSecurityDescriptor.Control and SE_SELF_RELATIVE) = SE_SELF_RELATIVE then
   begin
@@ -2221,7 +2221,7 @@ begin
    {Absolute Descriptor}
    pGroup:=pSecurityDescriptor.Group;
   end;
- 
+
  SetLastError(ERROR_SUCCESS);
  Result:=True;
 end;
@@ -2246,9 +2246,9 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_SECURITY_DESCR);
- 
+
  if pAbsoluteSecurityDescriptor = nil then Exit;
- 
+
  {Check Relative}
  if (pAbsoluteSecurityDescriptor.Control and SE_SELF_RELATIVE) = SE_SELF_RELATIVE then
   begin
@@ -2263,10 +2263,10 @@ begin
     end;
    SetLastError(ERROR_INVALID_SECURITY_DESCR);
    if pSelfRelativeSecurityDescriptor = nil then Exit;
-   
+
    {Copy Descriptor}
    System.Move(pAbsoluteSecurityDescriptor^,pSelfRelativeSecurityDescriptor^,Size);
-   
+
    SetLastError(ERROR_SUCCESS);
    Result:=True;
   end
@@ -2283,13 +2283,13 @@ begin
     end;
    SetLastError(ERROR_INVALID_SECURITY_DESCR);
    if pSelfRelativeSecurityDescriptor = nil then Exit;
-   
+
    {Convert Descriptor}
    Offset:=SECURITY_DESCRIPTOR_MIN_LENGTH;
    FillChar(pSelfRelativeSecurityDescriptor^,lpdwBufferLength,0);
    pSelfRelativeSecurityDescriptor.Revision:=pAbsoluteSecurityDescriptor.Revision;
    pSelfRelativeSecurityDescriptor.Control:=(pAbsoluteSecurityDescriptor.Control or SE_SELF_RELATIVE);
-   
+
    {Convert Owner}
    if pAbsoluteSecurityDescriptor.Owner <> nil then
     begin
@@ -2298,7 +2298,7 @@ begin
      System.Move(pAbsoluteSecurityDescriptor.Owner^,Pointer(PtrUInt(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Owner)^,Size);
      Inc(Offset,Size);
     end;
-   
+
    {Convert Group}
    if pAbsoluteSecurityDescriptor.Group <> nil then
     begin
@@ -2307,7 +2307,7 @@ begin
      System.Move(pAbsoluteSecurityDescriptor.Group^,Pointer(PtrUInt(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Group)^,Size);
      Inc(Offset,Size);
     end;
-    
+
    {Convert Dacl}
    if pAbsoluteSecurityDescriptor.Dacl <> nil then
     begin
@@ -2316,7 +2316,7 @@ begin
      System.Move(pAbsoluteSecurityDescriptor.Dacl^,Pointer(PtrUInt(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Dacl)^,Size);
      Inc(Offset,Size);
     end;
-   
+
    {Convert Sacl}
    if pAbsoluteSecurityDescriptor.Sacl <> nil then
     begin
@@ -2325,7 +2325,7 @@ begin
      System.Move(pAbsoluteSecurityDescriptor.Sacl^,Pointer(PtrUInt(pSelfRelativeSecurityDescriptor) + PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Sacl)^,Size);
      {Inc(Offset,Size);} {Not Required}
     end;
-   
+
    SetLastError(ERROR_SUCCESS);
    Result:=True;
   end;
@@ -2344,9 +2344,9 @@ begin
  {}
  Result:=False;
  SetLastError(ERROR_INVALID_SECURITY_DESCR);
- 
+
  if pSelfRelativeSecurityDescriptor = nil then Exit;
- 
+
  {Check Relative}
  if (pSelfRelativeSecurityDescriptor.Control and SE_SELF_RELATIVE) = SE_SELF_RELATIVE then
   begin
@@ -2361,12 +2361,12 @@ begin
     end;
    SetLastError(ERROR_INVALID_SECURITY_DESCR);
    if pAbsoluteSecurityDescriptor = nil then Exit;
-   
+
    {Convert Descriptor}
    FillChar(pAbsoluteSecurityDescriptor^,lpdwAbsoluteSecurityDescriptorSi,0);
    pAbsoluteSecurityDescriptor.Revision:=pSelfRelativeSecurityDescriptor.Revision;
    pAbsoluteSecurityDescriptor.Control:=(pSelfRelativeSecurityDescriptor.Control and not(SE_SELF_RELATIVE));
-   
+
    {Convert Owner}
    if PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Owner > 0 then
     begin
@@ -2385,7 +2385,7 @@ begin
      System.Move(Sid^,pOwner^,Size);
      pAbsoluteSecurityDescriptor.Owner:=pOwner;
     end;
-   
+
    {Convert Group}
    if PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Group > 0 then
     begin
@@ -2404,7 +2404,7 @@ begin
      System.Move(Sid^,pPrimaryGroup^,Size);
      pAbsoluteSecurityDescriptor.Group:=pPrimaryGroup;
     end;
-   
+
    {Convert Dacl}
    if PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Dacl > 0 then
     begin
@@ -2423,7 +2423,7 @@ begin
      System.Move(Acl^,pDacl,Size);
      pAbsoluteSecurityDescriptor.Dacl:=@pDacl;
     end;
-   
+
    {Convert Sacl}
    if PSecurityDescriptorRelative(pSelfRelativeSecurityDescriptor).Sacl > 0 then
     begin
@@ -2442,7 +2442,7 @@ begin
      System.Move(Acl^,pSacl,Size);
      pAbsoluteSecurityDescriptor.Sacl:=@pSacl;
     end;
-   
+
    SetLastError(ERROR_SUCCESS);
    Result:=True;
   end
@@ -2459,10 +2459,10 @@ begin
     end;
    SetLastError(ERROR_INVALID_SECURITY_DESCR);
    if pAbsoluteSecurityDescriptor = nil then Exit;
-   
+
    {Copy Descriptor}
    System.Move(pSelfRelativeSecurityDescriptor^,pAbsoluteSecurityDescriptor^,Size);
-   
+
    {Copy Owner}
    if pSelfRelativeSecurityDescriptor.Owner <> nil then
     begin
@@ -2478,7 +2478,7 @@ begin
      System.Move(pSelfRelativeSecurityDescriptor.Owner^,pOwner^,Size);
      pAbsoluteSecurityDescriptor.Owner:=pOwner;
     end;
-   
+
    {Copy Group}
    if pSelfRelativeSecurityDescriptor.Group <> nil then
     begin
@@ -2494,7 +2494,7 @@ begin
      System.Move(pSelfRelativeSecurityDescriptor.Group^,pPrimaryGroup^,Size);
      pAbsoluteSecurityDescriptor.Group:=pPrimaryGroup;
     end;
-   
+
    {Copy Dacl}
    if pSelfRelativeSecurityDescriptor.Dacl <> nil then
     begin
@@ -2508,7 +2508,7 @@ begin
      System.Move(pSelfRelativeSecurityDescriptor.Dacl^,pDacl,Size);
      pAbsoluteSecurityDescriptor.Dacl:=@pDacl;
     end;
-   
+
    {Copy Sacl}
    if pSelfRelativeSecurityDescriptor.Sacl <> nil then
     begin
@@ -2522,7 +2522,7 @@ begin
      System.Move(pSelfRelativeSecurityDescriptor.Sacl^,pSacl,Size);
      pAbsoluteSecurityDescriptor.Sacl:=@pSacl;
     end;
-   
+
    SetLastError(ERROR_SUCCESS);
    Result:=True;
   end;
@@ -2540,7 +2540,7 @@ begin
                //This appears to be an inplace conversion to Absolute //Simple enough
                //Change Control flags //Change Offsets to Pointers etc
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Security Helper Functions}
@@ -2863,8 +2863,8 @@ begin
  {Default Behaviour}
  FreeMem(pMergedSecurityDescriptor);
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 
-end. 
+end.

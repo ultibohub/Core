@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -37,7 +37,7 @@ XMPP
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit XMPP; 
+unit XMPP;
 
 interface
 
@@ -56,7 +56,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
 {==============================================================================}
 //type
  {XMPP specific types}
- 
+
 {==============================================================================}
 var
  {XMPP specific variables}
@@ -65,13 +65,13 @@ var
 {==============================================================================}
 {Initialization Functions}
 procedure XMPPInit;
- 
+
 {==============================================================================}
 {XMPP Functions}
- 
+
 {==============================================================================}
 {XMPP Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -85,12 +85,12 @@ begin
  {}
  {Check Initialized}
  if XMPPInitialized then Exit;
- 
+
  //To Do
- 
+
  XMPPInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {XMPP Functions}
@@ -106,7 +106,7 @@ initialization
  XMPPInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

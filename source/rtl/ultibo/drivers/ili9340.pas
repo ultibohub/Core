@@ -17,7 +17,7 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -26,33 +26,33 @@ Credits
   Linux - \drivers\staging\fbtft\fb_ili9340.c - Copyright (C) 2013 Noralf Tronnes
   Linux - \drivers\staging\fbtft\fbtft_device.c - Copyright (C) 2013 Noralf Tronnes
   Linux - \drivers\staging\fbtft\fbtft-core.c - Copyright (C) 2013 Noralf Tronnes
-  
+
 References
 ==========
- 
+
   ILI9340 - https://cdn-shop.adafruit.com/datasheets/ILI9340.pdf
- 
+
   https://github.com/notro/fbtft/wiki
   https://github.com/notro/fbtft/wiki/LCD-Modules
   https://github.com/notro/fbtft/wiki/LCD-Shields
-  
+
 ILITEK ILI9340
 ==============
- 
+
  The ILITEK ILI9340 is a 240x320 Resolution RGB 262K color TFT LCD Single Chip Driver
  that supports color depths of 16 or 18bit. This driver supports the chip only in 16
  bit depth using RGB565 format.
- 
+
  The chip provides an SPI interface at up to 32MHz and supports rotations of
  0, 90, 180 and 270 degrees.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit ILI9340; 
+unit ILI9340;
 
 interface
 
@@ -66,51 +66,51 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,SPI,Fram
 const
  {ILI9340 specific constants}
  ILI9340_FRAMEBUFFER_DESCRIPTION = 'ILITEK ILI9340 TFT LCD';  {Description of ILI9340 device}
-  
+
  {ILI9340 SPI constants}
  ILI9340_SPI_RATE = 32000000; {Default SPI clock rate}
-  
+
  {ILI9340 Command constants}
  ILI9340_CMD_NOP      = $00; {8.2.1. NOP: No Operation}
  ILI9340_CMD_SWRESET  = $01; {8.2.2. SWRESET: Software Reset}
- 
+
  ILI9340_CMD_SLPOUT   = $11; {8.2.12. SLPOUT: Sleep Out (This command turns off sleep mode)}
- 
+
  ILI9340_CMD_GAMSET   = $26; {8.2.17. GAMSET: Gamma Set (This command is used to select the desired Gamma curve for the current display)}
- 
+
  ILI9340_CMD_DISPOFF  = $28; {8.2.18. DISPOFF: Display OFF (This command is used to enter into DISPLAY OFF mode. In this mode, the output from Frame Memory is disabled and blank page inserted)}
  ILI9340_CMD_DISPON   = $29; {8.2.19. DISPON: Display ON (This command is used to recover from DISPLAY OFF mode. Output from the Frame Memory is enabled)}
- 
+
  ILI9340_CMD_CASET    = $2A; {8.2.20. CASET: Column Address Set (This command is used to define area of frame memory where MCU can access)}
  ILI9340_CMD_PASET    = $2B; {8.2.21. PASET: Page Address Set (This command is used to define area of frame memory where MCU can access)}
  ILI9340_CMD_RAMWR    = $2C; {8.2.22. Memory Write (This command is used to transfer data from MCU to frame memory)}
- 
+
  ILI9340_CMD_MADCTL   = $36; {8.2.29. MADCTL: Memory Access Control (This command defines read/write scanning direction of frame memory)}
- 
+
  ILI9340_CMD_COLMOD   = $3A; {8.2.33. COLMOD: Pixel Format Set (This command sets the pixel format for the RGB image data used by the interface)}
- 
+
  ILI9340_CMD_FRMCTR1  = $B1; {8.3.2. FRMCTR1: Frame Rate Control (In Normal Mode/Full Colors)}
- 
+
  ILI9340_CMD_DISCTRL  = $B6; {8.3.7. DISCTRL: Display Function Control}
- 
+
  ILI9340_CMD_PWCTRL1  = $C0; {8.3.16. PWCTRL1: Power Control 1}
  ILI9340_CMD_PWCTRL2  = $C1; {8.3.17. PWCTRL2: Power Control 2}
- 
+
  ILI9340_CMD_VMCTRL1  = $C5; {8.3.21. VMCTRL1: VCOM Control 1}
  ILI9340_CMD_VMCTRL2  = $C7; {8.3.22. VMCTRL2: VCOM Control 2}
- 
+
  ILI9340_CMD_PGAMCTRL = $E0; {8.3.27. PGAMCTRL: Positive Gamma Correction (Set the gray scale voltage to adjust the gamma characteristics of the TFT panel)}
  ILI9340_CMD_NGAMCTRL = $E1; {8.3.28. NGAMCTRL: Negative Gamma Correction (Set the gray scale voltage to adjust the gamma characteristics of the TFT panel)}
- 
+
  {ILI9340 Memory access control constants (See ILI9340 datasheet 8.2.29. Memory Access Control)}
  ILI9340_CMD_MADCTL_MY  = $80; {Row Address Order}
  ILI9340_CMD_MADCTL_MX  = $40; {Column Address Order}
  ILI9340_CMD_MADCTL_MV  = $20; {Row / Column Exchange}
  ILI9340_CMD_MADCTL_ML  = $10; {Vertical Refresh Order}
  ILI9340_CMD_MADCTL_RGB = $00; {Colour selector switch control(0=RGB colour filter panel, 1=BGR colour filter panel)}
- ILI9340_CMD_MADCTL_BGR = $08; 
+ ILI9340_CMD_MADCTL_BGR = $08;
  ILI9340_CMD_MADCTL_MH  = $04; {Horizontal Refresh Order}
-  
+
 {==============================================================================}
 type
  {ILI9340 specific types}
@@ -119,27 +119,27 @@ type
   {TFT Properties}
   TFT:TTFTFramebuffer;
   {ILI9340 Properties}
- end; 
-  
+ end;
+
 {==============================================================================}
 {var}
  {ILI9340 specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
- 
+
 {==============================================================================}
 {ILI9340 Functions}
 function ILI9340FramebufferCreate(SPI:PSPIDevice;ChipSelect:Word;const Name:String;Rotation,Width,Height:LongWord;RST,DC,BL:PGPIOInfo):PFramebufferDevice;{$IFDEF API_EXPORT_ILI9340} stdcall; public name 'ili9340_framebuffer_create';{$ENDIF}
-  
+
 function ILI9340FramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;{$IFDEF API_EXPORT_ILI9340} stdcall; public name 'ili9340_framebuffer_destroy';{$ENDIF}
 
 {==============================================================================}
 {ILI9340 Framebuffer Functions}
 function ILI9340FramebufferBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):LongWord;
-  
+
 function ILI9340FramebufferSetBacklight(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
-  
+
 {==============================================================================}
 {ILI9340 TFTFramebuffer Functions}
 function ILI9340TFTFramebufferInitialize(Framebuffer:PTFTFramebuffer;Defaults:PFramebufferProperties):LongWord;
@@ -156,7 +156,7 @@ function ILI9340TFTFramebufferWriteMemory(Framebuffer:PTFTFramebuffer;Address:Pt
 function ILI9340WriteCommand(Framebuffer:PTFTFramebuffer;Value:Byte):LongWord;
 function ILI9340WriteCommandEx(Framebuffer:PTFTFramebuffer;const Values:array of Byte):LongWord;
 
-function ILI9340WriteData(Framebuffer:PTFTFramebuffer;Value:Byte):LongWord; 
+function ILI9340WriteData(Framebuffer:PTFTFramebuffer;Value:Byte):LongWord;
 function ILI9340WriteDataEx(Framebuffer:PTFTFramebuffer;const Values:array of Byte):LongWord;
 
 {==============================================================================}
@@ -168,11 +168,11 @@ implementation
 {==============================================================================}
 {var}
  {ILI9340 specific variables}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 {ILI9340 Functions}
@@ -195,24 +195,24 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {$IF DEFINED(ILI9340_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9340: Framebuffer Create (Name=' + Name + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
  {$ENDIF}
- 
+
  {Check Rotation}
  if Rotation > FRAMEBUFFER_ROTATION_270 then Exit;
- 
+
  {Check Width and Height}
  if Width < 1 then Exit;
  if Height < 1 then Exit;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
 
  {Check Chip Select}
  if ChipSelect = SPI_CS_NONE then Exit;
- 
+
  {Check RST Pin}
  if RST <> nil then
   begin
@@ -221,8 +221,8 @@ begin
      {Setup RST Pin}
      if GPIODeviceFunctionSelect(RST.GPIO,RST.Pin,GPIO_FUNCTION_OUT) <> ERROR_SUCCESS then Exit;
      if GPIODevicePullSelect(RST.GPIO,RST.Pin,GPIO_PULL_NONE) <> ERROR_SUCCESS then Exit;
-    end; 
-  end; 
+    end;
+  end;
 
  {Check DC Pin}
  if DC = nil then Exit;
@@ -232,7 +232,7 @@ begin
  {Setup DC Pin}
  if GPIODeviceFunctionSelect(DC.GPIO,DC.Pin,GPIO_FUNCTION_OUT) <> ERROR_SUCCESS then Exit;
  if GPIODevicePullSelect(DC.GPIO,DC.Pin,GPIO_PULL_NONE) <> ERROR_SUCCESS then Exit;
-  
+
  {Check BL Pin}
  if BL <> nil then
   begin
@@ -241,19 +241,19 @@ begin
      {Setup BL Pin}
      if GPIODeviceFunctionSelect(BL.GPIO,BL.Pin,GPIO_FUNCTION_OUT) <> ERROR_SUCCESS then Exit;
      if GPIODevicePullSelect(BL.GPIO,BL.Pin,GPIO_PULL_NONE) <> ERROR_SUCCESS then Exit;
-     
+
      {Enable Backlight}
      GPIODeviceOutputSet(BL.GPIO,BL.Pin,GPIO_LEVEL_HIGH);
-    end; 
-  end; 
- 
+    end;
+  end;
+
  {Create Framebuffer}
  ILI9340Framebuffer:=PILI9340Framebuffer(FramebufferDeviceCreateEx(SizeOf(TILI9340Framebuffer)));
  if ILI9340Framebuffer <> nil then
   begin
    {Update Framebuffer}
    {Device}
-   ILI9340Framebuffer.TFT.Framebuffer.Device.DeviceBus:=DEVICE_BUS_SPI; 
+   ILI9340Framebuffer.TFT.Framebuffer.Device.DeviceBus:=DEVICE_BUS_SPI;
    ILI9340Framebuffer.TFT.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
    ILI9340Framebuffer.TFT.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_MARK or FRAMEBUFFER_FLAG_COMMIT or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_CACHED or FRAMEBUFFER_FLAG_BACKLIGHT{$IFNDEF FPC_BIG_ENDIAN}or FRAMEBUFFER_FLAG_SWAP{$ENDIF FPC_BIG_ENDIAN};
    ILI9340Framebuffer.TFT.Framebuffer.Device.DeviceData:=nil;
@@ -295,12 +295,12 @@ begin
    ILI9340Framebuffer.TFT.TransferSize:=LongWord(-1);
    if SPIDeviceGetProperties(SPI,@SPIProperties) = ERROR_SUCCESS then
     begin
-     if SPIProperties.MaxSize <> 0 then ILI9340Framebuffer.TFT.TransferSize:=SPIProperties.MaxSize; 
-    end; 
+     if SPIProperties.MaxSize <> 0 then ILI9340Framebuffer.TFT.TransferSize:=SPIProperties.MaxSize;
+    end;
 
    {Setup Flags}
    {Nothing}
-   
+
    {Register Framebuffer}
    Status:=FramebufferDeviceRegister(@ILI9340Framebuffer.TFT.Framebuffer);
    if Status = ERROR_SUCCESS then
@@ -310,7 +310,7 @@ begin
      if Status = ERROR_SUCCESS then
       begin
        {Return Result}
-       Result:=PFramebufferDevice(ILI9340Framebuffer); 
+       Result:=PFramebufferDevice(ILI9340Framebuffer);
       end
      else
       begin
@@ -324,7 +324,7 @@ begin
       end;
     end
    else
-    begin     
+    begin
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'ILI9340: Failed to register new framebuffer device: ' + ErrorToString(Status));
 
      {Destroy Framebuffer}
@@ -346,14 +346,14 @@ function ILI9340FramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;{$IF
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- 
+
  {$IF DEFINED(ILI9340_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9340: Framebuffer Destroy');
  {$ENDIF}
- 
+
  {Release Framebuffer}
  Result:=FramebufferDeviceRelease(Framebuffer);
  if Result = ERROR_SUCCESS then
@@ -372,12 +372,12 @@ begin
    else
     begin
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'ILI9340: Failed to deregister framebuffer device: ' + ErrorToString(Result));
-    end;    
+    end;
   end
  else
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'ILI9340: Failed to release framebuffer device: ' + ErrorToString(Result));
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -389,15 +389,15 @@ function ILI9340FramebufferBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):L
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(ILI9340_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9340: Framebuffer Blank (Blank=' + BooleanToString(Blank) + ')');
  {$ENDIF}
- 
+
  {Check Blank}
  if Blank then
   begin
@@ -408,26 +408,26 @@ begin
   begin
    {Display On}
    Result:=ILI9340WriteCommand(PTFTFramebuffer(Framebuffer),ILI9340_CMD_DISPON);
-  end;  
+  end;
 end;
-  
+
 {==============================================================================}
-  
+
 function ILI9340FramebufferSetBacklight(Framebuffer:PFramebufferDevice;Brightness:LongWord):LongWord;
 {Implementation of FramebufferDeviceSetBacklight API for ILI9340}
 {Note: Not intended to be called directly by applications, use FramebufferDeviceSetBacklight instead}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(ILI9340_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9340: Framebuffer Set Backlight (Brightness=' + IntToStr(Brightness) + ')');
  {$ENDIF}
- 
+
  {Check Backlight}
  if (PTFTFramebuffer(Framebuffer).BL.GPIO <> nil) and (PTFTFramebuffer(Framebuffer).BL.Pin <> GPIO_PIN_UNKNOWN) then
   begin
@@ -438,17 +438,17 @@ begin
      Result:=GPIODeviceOutputSet(PTFTFramebuffer(Framebuffer).BL.GPIO,PTFTFramebuffer(Framebuffer).BL.Pin,GPIO_LEVEL_LOW);
     end
    else
-    begin   
+    begin
      {Enable Backlight}
      Result:=GPIODeviceOutputSet(PTFTFramebuffer(Framebuffer).BL.GPIO,PTFTFramebuffer(Framebuffer).BL.Pin,GPIO_LEVEL_HIGH);
-    end; 
+    end;
   end
  else
   begin
    Result:=ERROR_NOT_SUPPORTED;
-  end;  
+  end;
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {ILI9340 TFTFramebuffer Functions}
@@ -460,101 +460,101 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- 
+
  {$IF DEFINED(ILI9340_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9340: Framebuffer Initialize');
  {$ENDIF}
- 
+
  {Check Defaults}
  if Defaults = nil then Exit;
- 
+
  {Set the SPI clock rate}
  if SPIDeviceSetClockRate(Framebuffer.SPI,Framebuffer.ChipSelect,ILI9340_SPI_RATE) <> ERROR_SUCCESS then
   begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Start the SPI device}
  if SPIDeviceStart(Framebuffer.SPI,SPI_MODE_4WIRE,ILI9340_SPI_RATE,SPI_CLOCK_PHASE_LOW,SPI_CLOCK_POLARITY_LOW) <> ERROR_SUCCESS then
   begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
-  
+
  {Check Reset}
  if (Framebuffer.RST.GPIO <> nil) and (Framebuffer.RST.Pin <> GPIO_PIN_UNKNOWN) then
   begin
    {Set Low}
    GPIODeviceOutputSet(Framebuffer.RST.GPIO,Framebuffer.RST.Pin,GPIO_LEVEL_LOW);
-   
+
    {Delay 20us}
    MicrosecondDelay(20);
-   
+
    {Set High}
    GPIODeviceOutputSet(Framebuffer.RST.GPIO,Framebuffer.RST.Pin,GPIO_LEVEL_HIGH);
-   
+
    {Sleep 120ms}
    Sleep(120);
   end;
-  
+
  {Initialize Device}
  {Software Reset}
  ILI9340WriteCommand(Framebuffer,ILI9340_CMD_SWRESET);
  Sleep(5);
- 
+
  {Undocumented}
  ILI9340WriteCommand(Framebuffer,$EF);
  ILI9340WriteDataEx(Framebuffer,[$03, $80, $02]);
- 
+
  {Undocumented}
  ILI9340WriteCommand(Framebuffer,$CF);
  ILI9340WriteDataEx(Framebuffer,[$00, $C1, $30]);
- 
+
  {Undocumented}
  ILI9340WriteCommand(Framebuffer,$ED);
  ILI9340WriteDataEx(Framebuffer,[$64, $03, $12, $81]);
- 
+
  {Undocumented}
  ILI9340WriteCommand(Framebuffer,$E8);
  ILI9340WriteDataEx(Framebuffer,[$85, $00, $78]);
- 
+
  {Undocumented}
  ILI9340WriteCommand(Framebuffer,$CB);
  ILI9340WriteDataEx(Framebuffer,[$39, $2C, $00, $34, $02]);
- 
+
  {Undocumented}
  ILI9340WriteCommand(Framebuffer,$F7);
  ILI9340WriteData(Framebuffer,$20);
- 
+
  {Undocumented}
  ILI9340WriteCommand(Framebuffer,$EA);
  ILI9340WriteDataEx(Framebuffer,[$00, $00]);
- 
+
  {Power Control 1}
  ILI9340WriteCommand(Framebuffer,ILI9340_CMD_PWCTRL1);
  ILI9340WriteData(Framebuffer,$23);
- 
+
  {Power Control 2}
  ILI9340WriteCommand(Framebuffer,ILI9340_CMD_PWCTRL2);
  ILI9340WriteData(Framebuffer,$10);
- 
+
  {VCOM Control 1}
  ILI9340WriteCommand(Framebuffer,ILI9340_CMD_VMCTRL1);
  ILI9340WriteDataEx(Framebuffer,[$3E, $28]);
- 
+
  {VCOM Control 2}
  ILI9340WriteCommand(Framebuffer,ILI9340_CMD_VMCTRL2);
  ILI9340WriteData(Framebuffer,$86);
- 
+
  {COLMOD: Pixel Format Set}
  {0x55 = 16 bits/pixel / 0x66 = 18 bits/pixel}
  ILI9340WriteCommand(Framebuffer,ILI9340_CMD_COLMOD);
  ILI9340WriteData(Framebuffer,$55);
- 
+
  {Memory access control}
  ILI9340WriteCommand(Framebuffer,ILI9340_CMD_MADCTL);
  Value:=0;
@@ -576,7 +576,7 @@ begin
   begin
    Value:=Value or ILI9340_CMD_MADCTL_MV or ILI9340_CMD_MADCTL_MY or ILI9340_CMD_MADCTL_MX;
   end
- else if Defaults.Rotation = FRAMEBUFFER_ROTATION_180 then 
+ else if Defaults.Rotation = FRAMEBUFFER_ROTATION_180 then
   begin
    Value:=Value or ILI9340_CMD_MADCTL_MY;
   end
@@ -584,42 +584,42 @@ begin
   begin
    Value:=Value or ILI9340_CMD_MADCTL_MV;
   end;
- ILI9340WriteData(Framebuffer,Value); 
- 
+ ILI9340WriteData(Framebuffer,Value);
+
  {Frame Rate Control (Division ratio = fosc, Frame Rate = 79Hz)}
  ILI9340WriteCommand(Framebuffer,ILI9340_CMD_FRMCTR1);
  ILI9340WriteDataEx(Framebuffer,[$00, $18]);
- 
+
  {Display Function Control}
  ILI9340WriteCommand(Framebuffer,ILI9340_CMD_DISCTRL);
  ILI9340WriteDataEx(Framebuffer,[$08, $82, $27]);
- 
+
  {Gamma Function Disable}
  ILI9340WriteCommand(Framebuffer,$F2);
  ILI9340WriteData(Framebuffer,$00);
- 
+
  {Gamma curve selected}
  ILI9340WriteCommand(Framebuffer,ILI9340_CMD_GAMSET);
  ILI9340WriteData(Framebuffer,$01);
- 
+
  {Positive Gamma Correction}
  ILI9340WriteCommand(Framebuffer,ILI9340_CMD_PGAMCTRL);
  ILI9340WriteDataEx(Framebuffer,[$0F, $31, $2B, $0C, $0E, $08, $4E, $F1, $37, $07, $10, $03, $0E, $09, $00]);
- 
+
  {Negative Gamma Correction}
  ILI9340WriteCommand(Framebuffer,ILI9340_CMD_NGAMCTRL);
  ILI9340WriteDataEx(Framebuffer,[$00, $0E, $14, $03, $11, $07, $31, $C1, $48, $08, $0F, $0C, $31, $36, $0F]);
- 
+
  {Sleep OUT}
  ILI9340WriteCommand(Framebuffer,ILI9340_CMD_SLPOUT);
  Sleep(5); {Linux driver sleeps for 120ms}
- 
+
  {Display On}
  ILI9340WriteCommand(Framebuffer,ILI9340_CMD_DISPON);
- 
+
  Result:=ERROR_SUCCESS;
 end;
-  
+
 {==============================================================================}
 
 function ILI9340TFTFramebufferDeinitialize(Framebuffer:PTFTFramebuffer):LongWord;
@@ -628,55 +628,55 @@ function ILI9340TFTFramebufferDeinitialize(Framebuffer:PTFTFramebuffer):LongWord
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- 
+
  {$IF DEFINED(ILI9340_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9340: Framebuffer Initialize');
  {$ENDIF}
 
  {Display Off}
  ILI9340WriteCommand(Framebuffer,ILI9340_CMD_DISPOFF);
- 
+
  Result:=ERROR_SUCCESS;
 end;
-  
+
 {==============================================================================}
-  
+
 function ILI9340TFTFramebufferGetDefaults(Framebuffer:PTFTFramebuffer;Properties,Defaults:PFramebufferProperties):LongWord;
 {Implementation of TFTFramebufferGetDefaults API for ILI9340}
 {Note: Not intended to be called directly by applications}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- 
+
  {$IF DEFINED(ILI9340_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9340: Framebuffer Get Defaults');
  {$ENDIF}
- 
+
  {Check Defaults}
  if Defaults = nil then Exit;
- 
+
  {Get Defaults}
  Defaults.Depth:=FRAMEBUFFER_DEPTH_16;
  Defaults.Order:=FRAMEBUFFER_ORDER_RGB;
  Defaults.Mode:=FRAMEBUFFER_MODE_IGNORED;
  Defaults.PhysicalWidth:=Framebuffer.Width;
  Defaults.PhysicalHeight:=Framebuffer.Height;
- Defaults.VirtualWidth:=Defaults.PhysicalWidth; 
+ Defaults.VirtualWidth:=Defaults.PhysicalWidth;
  Defaults.VirtualHeight:=Defaults.PhysicalHeight;
- Defaults.OffsetX:=0;                           
- Defaults.OffsetY:=0;                            
- Defaults.OverscanTop:=0;                         
- Defaults.OverscanBottom:=0;                      
- Defaults.OverscanLeft:=0;                        
- Defaults.OverscanRight:=0;                       
+ Defaults.OffsetX:=0;
+ Defaults.OffsetY:=0;
+ Defaults.OverscanTop:=0;
+ Defaults.OverscanBottom:=0;
+ Defaults.OverscanLeft:=0;
+ Defaults.OverscanRight:=0;
  Defaults.Rotation:=Framebuffer.Rotation;
- 
+
  {Check Properties}
  if Properties <> nil then
   begin
@@ -689,7 +689,7 @@ begin
    {Check Rotation}
    if Properties.Rotation <> Framebuffer.Rotation then
     begin
-     if (Properties.Rotation = FRAMEBUFFER_ROTATION_90) or (Properties.Rotation = FRAMEBUFFER_ROTATION_270) then 
+     if (Properties.Rotation = FRAMEBUFFER_ROTATION_90) or (Properties.Rotation = FRAMEBUFFER_ROTATION_270) then
       begin
        if (Framebuffer.Rotation <> FRAMEBUFFER_ROTATION_90) and (Framebuffer.Rotation <> FRAMEBUFFER_ROTATION_270) then
         begin
@@ -704,14 +704,14 @@ begin
          Defaults.PhysicalWidth:=Framebuffer.Height;
          Defaults.PhysicalHeight:=Framebuffer.Width;
         end;
-      end;      
-      
-     Defaults.VirtualWidth:=Defaults.PhysicalWidth; 
+      end;
+
+     Defaults.VirtualWidth:=Defaults.PhysicalWidth;
      Defaults.VirtualHeight:=Defaults.PhysicalHeight;
     end;
-  end; 
+  end;
 
- {Get Format}  
+ {Get Format}
  case Defaults.Depth of
   FRAMEBUFFER_DEPTH_16:begin
     if Defaults.Order = FRAMEBUFFER_ORDER_RGB then
@@ -724,10 +724,10 @@ begin
      end;
    end;
  end;
- 
+
  Result:=ERROR_SUCCESS;
 end;
-  
+
 {==============================================================================}
 
 function ILI9340TFTFramebufferSetWriteAddress(Framebuffer:PTFTFramebuffer;X1,Y1,X2,Y2:LongWord):LongWord;
@@ -736,7 +736,7 @@ function ILI9340TFTFramebufferSetWriteAddress(Framebuffer:PTFTFramebuffer;X1,Y1,
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
 
@@ -757,12 +757,12 @@ begin
 
  {Set DC High}
  GPIODeviceOutputSet(Framebuffer.DC.GPIO,Framebuffer.DC.Pin,GPIO_LEVEL_HIGH);
- 
+
  Result:=ERROR_SUCCESS;
 end;
-  
+
 {==============================================================================}
-  
+
 function ILI9340TFTFramebufferWriteMemory(Framebuffer:PTFTFramebuffer;Address:PtrUInt;Size:LongWord):LongWord;
 {Implementation of TFTFramebufferWriteMemory API for ILI9340}
 {Note: Not intended to be called directly by applications}
@@ -773,7 +773,7 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
 
@@ -783,20 +783,20 @@ begin
 
  {Check Size}
  if Size < 1 then Exit;
- 
+
  Offset:=0;
  Remain:=Size;
- while Remain > 0 do 
+ while Remain > 0 do
   begin
    if Remain > Framebuffer.TransferSize then
     begin
      {Write Memory}
      Result:=SPIDeviceWrite(Framebuffer.SPI,Framebuffer.ChipSelect,Pointer(Address + Offset),Framebuffer.TransferSize,SPI_TRANSFER_DMA,Count);
      if Result <> ERROR_SUCCESS then Exit;
-     
+
      {Update Remain}
      Dec(Remain,Framebuffer.TransferSize);
-     
+
      {Update Offset}
      Inc(Offset,Framebuffer.TransferSize);
     end
@@ -805,18 +805,18 @@ begin
      {Write Memory}
      Result:=SPIDeviceWrite(Framebuffer.SPI,Framebuffer.ChipSelect,Pointer(Address + Offset),Remain,SPI_TRANSFER_DMA,Count);
      if Result <> ERROR_SUCCESS then Exit;
-     
+
      {Update Remain}
      Dec(Remain,Remain);
-     
+
      {Update Offset}
      Inc(Offset,Remain);
     end;
-  end; 
- 
+  end;
+
  Result:=ERROR_SUCCESS;
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {ILI9340 Helper Functions}
@@ -827,17 +827,17 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
 
  {$IF DEFINED(ILI9340_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9340: Write Command (Value=' + IntToHex(Value,2) + ')');
  {$ENDIF}
- 
+
  {Set DC Low}
  GPIODeviceOutputSet(Framebuffer.DC.GPIO,Framebuffer.DC.Pin,GPIO_LEVEL_LOW);
- 
+
  {Write Command}
  Result:=SPIDeviceWrite(Framebuffer.SPI,Framebuffer.ChipSelect,@Value,SizeOf(Byte),SPI_TRANSFER_NONE,Count);
 end;
@@ -851,17 +851,17 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
 
  {$IF DEFINED(ILI9340_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9340: Write Command Ex (Values size=' + IntToStr(Length(Values)) + ')');
  {$ENDIF}
- 
+
  {Set DC Low}
  GPIODeviceOutputSet(Framebuffer.DC.GPIO,Framebuffer.DC.Pin,GPIO_LEVEL_LOW);
- 
+
  {Write Command}
  Result:=SPIDeviceWrite(Framebuffer.SPI,Framebuffer.ChipSelect,@Values[0],Length(Values),SPI_TRANSFER_NONE,Count);
 end;
@@ -875,17 +875,17 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
 
  {$IF DEFINED(ILI9340_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9340: Write Data (Value=' + IntToHex(Value,2) + ')');
  {$ENDIF}
- 
+
  {Set DC High}
  GPIODeviceOutputSet(Framebuffer.DC.GPIO,Framebuffer.DC.Pin,GPIO_LEVEL_HIGH);
- 
+
  {Write Data}
  Result:=SPIDeviceWrite(Framebuffer.SPI,Framebuffer.ChipSelect,@Value,SizeOf(Byte),SPI_TRANSFER_NONE,Count);
 end;
@@ -899,29 +899,29 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
 
  {$IF DEFINED(ILI9340_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'ILI9340: Write Data Ex (Values size=' + IntToStr(Length(Values)) + ')');
  {$ENDIF}
- 
+
  {Set DC High}
  GPIODeviceOutputSet(Framebuffer.DC.GPIO,Framebuffer.DC.Pin,GPIO_LEVEL_HIGH);
- 
+
  {Write Data}
  Result:=SPIDeviceWrite(Framebuffer.SPI,Framebuffer.ChipSelect,@Values[0],Length(Values),SPI_TRANSFER_NONE,Count);
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 
 {initialization}
  {Nothing}
- 
+
 {==============================================================================}
- 
+
 {finalization}
  {Nothing}
 
@@ -929,4 +929,4 @@ end;
 {==============================================================================}
 
 end.
-  
+

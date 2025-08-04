@@ -17,18 +17,18 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
  RFC1939 - Post Office Protocol (Version 3) - https://www.ietf.org/rfc/rfc1939.txt
- 
+
 POP3
 ====
 
@@ -52,9 +52,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils,Classes,Ulti
 const
  {POP3 specific constants}
  POP3_LINE_END = Chr(13) + Chr(10); {CR LF}
- 
+
  POP3_BUFFER_SIZE = SIZE_4K;
- 
+
  {POP3 Status constants}
  POP3_STATUS_NONE = 0;
  POP3_STATUS_CONN = 1;
@@ -64,9 +64,9 @@ const
  POP3_STATUS_DATA = 5;
  POP3_STATUS_QUIT = 6;
  //To Do //Align these with states in RFC1939 (TRANSACTION / AUTHORIZATION etc)
- 
+
  POP3_MAX_STATUS = 6;
- 
+
  POP3_STATUS_STRINGS:array[0..POP3_MAX_STATUS] of String = (
   'None',
   'Connect',
@@ -75,7 +75,7 @@ const
   'Authenticate',
   'Data',
   'Disconnect');
- 
+
  {POP3 Command constants}
  POP3_COMMAND_STAT = 'STAT';
  POP3_COMMAND_LIST = 'LIST';
@@ -84,18 +84,18 @@ const
  POP3_COMMAND_NOOP = 'NOOP';
  POP3_COMMAND_RSET = 'RSET';
  POP3_COMMAND_QUIT = 'QUIT';
- 
+
  POP3_COMMAND_TOP  = 'TOP';
  POP3_COMMAND_UIDL = 'UIDL';
  POP3_COMMAND_USER = 'USER';
  POP3_COMMAND_PASS = 'PASS';
  POP3_COMMAND_APOP = 'APOP';
- 
+
  {POP3 String constants}
  POP3_STRING_SUCCESS  = '+OK ';
  POP3_STRING_FAILURE  = '-ERR ';
  POP3_STRING_COMPLETE = '.';
- 
+
  POP3_STRING_SIGNON = 'Ultibo POP3 server (version ' + ULTIBO_RELEASE_VERSION + ')';
  POP3_STRING_SIGNOFF = 'Ultibo POP3 server closing connection';
  POP3_STRING_EMPTY_STAT = '0 0';
@@ -105,7 +105,7 @@ const
  POP3_STRING_BAD_USERNAME = 'Invalid username or password';
  POP3_STRING_BAD_PASSWORD = 'Invalid username or password';
  POP3_STRING_NO_PERMISSION = 'Permission denied';
- 
+
  {POP3 logging}
  POP3_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {POP3 debugging messages}
  POP3_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {POP3 informational messages}
@@ -113,13 +113,13 @@ const
  POP3_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {POP3 error messages}
  POP3_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No POP3 messages}
 
-var 
- POP3_DEFAULT_LOG_LEVEL:LongWord = POP3_LOG_LEVEL_DEBUG; {Minimum level for POP3 messages.  Only messages with level greater than or equal to this will be printed} 
- 
-var 
+var
+ POP3_DEFAULT_LOG_LEVEL:LongWord = POP3_LOG_LEVEL_DEBUG; {Minimum level for POP3 messages.  Only messages with level greater than or equal to this will be printed}
+
+var
  {POP3 logging}
- POP3_LOG_ENABLED:Boolean; 
-              
+ POP3_LOG_ENABLED:Boolean;
+
 {==============================================================================}
 {type}
  {POP3 specific types}
@@ -136,29 +136,29 @@ type
  private
   {Internal Variables}
   FLock:TCriticalSectionHandle;
-  
+
   FData:Pointer;
   FSize:LongWord;
   FCount:LongWord;
   FStart:LongWord;
-  
+
   {Internal Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
 
-  function GetCount:LongWord;  
+  function GetCount:LongWord;
  public
   {Public Properties}
   property Count:LongWord read GetCount;
-  
+
   {Public Methods}
   function ReadData:Char;
   function WriteData(AChar:Char):Boolean;
-  
+
   function WriteLock(var ASize:LongWord):Pointer;
   function WriteUnlock(ACount:LongWord):Boolean;
  end;
- 
+
  {Client classes}
  TPOP3ClientNotifyEvent = procedure(const ARequest:String) of Object;
 
@@ -187,9 +187,9 @@ type
 
   property OnRequestStart:TNotifyEvent read FOnRequestStart write FOnRequestStart;
   property OnRequestEnd:TNotifyEvent read FOnRequestEnd write FOnRequestEnd;
- 
+
   property Buffer:TPOP3Buffer read FBuffer;
- 
+
   {Public Methods}
   function DoConn(const AHost,APort:String;var AReply:String):Boolean;
   function DoStat(var AReply:String):Boolean;
@@ -199,14 +199,14 @@ type
   function DoNoop(var AReply:String):Boolean;
   function DoRset(var AReply:String):Boolean;
   function DoQuit(var AReply:String):Boolean;
-  
+
   function DoTop(const AMessage,ACount:String;var AReply:String):Boolean;
   function DoUidl(const AMessage:String;var AReply:String):Boolean;
   function DoUser(const AUsername:String;var AReply:String):Boolean;
   function DoPass(const APassword:String;var AReply:String):Boolean;
   function DoApop(const AUsername,ADigest:String;var AReply:String):Boolean;
  end;
- 
+
  {Server classes}
  TPOP3Connection = class(TListObject)
  public
@@ -216,7 +216,7 @@ type
  private
   {Internal Variables}
   FLock:TCriticalSectionHandle;
-  
+
   FHandle:THandle;
   FRxByteCount:Int64;         {Bytes Recv Count from Connection}
   FTxByteCount:Int64;         {Bytes Sent Count to Connection}
@@ -232,11 +232,11 @@ type
 
   FThread:TThread;            {TWinsock2TCPServerThread}
   FBuffer:TPOP3Buffer;        {Buffer for received data}
-  
+
   {Internal Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
-  
+
   procedure SetHandle(AHandle:THandle);
   function GetRxByteCount:Int64;
   procedure SetRxByteCount(const ARxByteCount:Int64);
@@ -259,7 +259,7 @@ type
   procedure SetPassword(const APassword:String);
   function GetTimestamp:String;
   procedure SetTimestamp(const ATimestamp:String);
-  
+
   procedure SetThread(AThread:TThread);
  public
   {Public Properties}
@@ -275,24 +275,24 @@ type
   property Username:String read GetUsername write SetUsername;
   property Password:String read GetPassword write SetPassword;
   property Timestamp:String read GetTimestamp write SetTimestamp;
-  
+
   property Thread:TThread read FThread  write SetThread;
   property Buffer:TPOP3Buffer read FBuffer;
-  
+
   {Public Methods}
   procedure IncrementRxByteCount(const ARxByteCount:Int64);
   procedure IncrementTxByteCount(const ATxByteCount:Int64);
   procedure IncrementRequestCount;
   procedure IncrementReplyCount;
  end;
-  
+
  TPOP3HostEvent = function(AConnection:TPOP3Connection):Boolean of Object;
  TPOP3CountEvent = function(AConnection:TPOP3Connection):Boolean of Object;
  TPOP3NotifyEvent = procedure(AConnection:TPOP3Connection;const ARequest:String) of Object;
  TPOP3RequestEvent = function(AConnection:TPOP3Connection;const ARequest:String;var AReply:String):Boolean of Object;
  TPOP3RequestExEvent = function(AConnection:TPOP3Connection;const ARequest,AData:String;var AReply:String):Boolean of Object;
  TPOP3ConnectionEvent = procedure(AConnection:TPOP3Connection) of Object;
- 
+
  TPOP3Listener = class(TWinsock2TCPListener)
  public
   {}
@@ -316,7 +316,7 @@ type
   FOnNoop:TPOP3RequestEvent;
   FOnRset:TPOP3RequestEvent;
   FOnQuit:TPOP3RequestEvent;
-  
+
   FOnTop:TPOP3RequestExEvent;
   FOnUidl:TPOP3RequestEvent;
   FOnUser:TPOP3RequestEvent;
@@ -329,7 +329,7 @@ type
 
   function DoCheckHost(AThread:TWinsock2TCPServerThread):Boolean; virtual;
   function DoCheckCount(AThread:TWinsock2TCPServerThread):Boolean; virtual;
-  
+
   function DoExecute(AThread:TWinsock2TCPServerThread):Boolean; override;
 
   procedure DoConn(AThread:TWinsock2TCPServerThread);
@@ -346,7 +346,7 @@ type
   procedure DoUser(AThread:TWinsock2TCPServerThread;const AUsername:String);
   procedure DoPass(AThread:TWinsock2TCPServerThread;const APassword:String);
   procedure DoApop(AThread:TWinsock2TCPServerThread;const AUsername,ADigest:String);
-  
+
   function GetRequest(AThread:TWinsock2TCPServerThread;var ARequest:String):Boolean;
   function SendReply(AThread:TWinsock2TCPServerThread;const AReply:String):Boolean;
  public
@@ -375,11 +375,11 @@ type
   property OnPass:TPOP3RequestEvent read FOnPass write FOnPass;
   property OnApop:TPOP3RequestExEvent read FOnApop write FOnApop;
  end;
- 
+
 {==============================================================================}
 {var}
  {POP3 specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure POP3Init;
@@ -414,18 +414,18 @@ begin
  {}
  inherited Create;
  FLock:=CriticalSectionCreate;
- 
+
  FData:=nil;
  FSize:=ASize;
  FCount:=0;
  FStart:=0;
- 
+
  if FSize <> 0 then FData:=GetMem(FSize);
 end;
 
 {==============================================================================}
 
-destructor TPOP3Buffer.Destroy; 
+destructor TPOP3Buffer.Destroy;
 begin
  {}
  AcquireLock;
@@ -433,7 +433,7 @@ begin
   if FData <> nil then FreeMem(FData);
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -456,16 +456,16 @@ end;
 
 {==============================================================================}
 
-function TPOP3Buffer.GetCount:LongWord;  
+function TPOP3Buffer.GetCount:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FCount;
- 
- ReleaseLock; 
+
+ ReleaseLock;
 end;
 
 {==============================================================================}
@@ -474,23 +474,23 @@ function TPOP3Buffer.ReadData:Char;
 begin
  {}
  Result:=#0;
- 
+
  if not AcquireLock then Exit;
  try
   if FCount > 0 then
    begin
     {Read Char}
     Result:=Char(Pointer(PtrUInt(FData) + PtrUInt(FStart))^);
-    
+
     {Update Start}
     FStart:=(FStart + 1) mod FSize;
 
     {Update Count}
     Dec(FCount);
-   end; 
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -499,20 +499,20 @@ function TPOP3Buffer.WriteData(AChar:Char):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FCount < FSize then
    begin
     {Write Char}
     Char(Pointer(PtrUInt(FData) + PtrUInt((FStart + FCount) mod FSize))^):=AChar;
-    
+
     {Update Count}
     Inc(FCount);
-   end; 
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -526,7 +526,7 @@ begin
  Result:=nil;
 
  if not AcquireLock then Exit;
- 
+
  if FCount < FSize then
   begin
    {Check Wraparound}
@@ -534,7 +534,7 @@ begin
     begin
      {Get Size}
      ASize:=FStart - ((FStart + FCount) mod FSize);
-     
+
      {Get Data}
      Result:=Pointer(PtrUInt(FData) + PtrUInt((FStart + FCount) mod FSize));
     end
@@ -542,15 +542,15 @@ begin
     begin
      {Get Size}
      ASize:=FSize - (FStart + FCount);
-     
+
      {Get Data}
      Result:=Pointer(PtrUInt(FData) + PtrUInt((FStart + FCount) mod FSize));
-    end;    
+    end;
   end
  else
   begin
    ReleaseLock;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -559,13 +559,13 @@ function TPOP3Buffer.WriteUnlock(ACount:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if (FCount + ACount) <= FSize then
   begin
    {Update Count}
    Inc(FCount,ACount);
   end;
-  
+
  ReleaseLock;
 end;
 
@@ -581,7 +581,7 @@ end;
 
 {==============================================================================}
 
-destructor TPOP3Client.Destroy; 
+destructor TPOP3Client.Destroy;
 begin
  {}
  FBuffer.Free;
@@ -606,7 +606,7 @@ begin
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Client: GetReply');
  {$ENDIF}
- 
+
  {Get Request}
  Completed:=False;
  while not(Completed) do
@@ -614,13 +614,13 @@ begin
    {$IFDEF POP3_DEBUG}
    if POP3_LOG_ENABLED then POP3LogDebug('Client:  Buffer Count = ' + IntToStr(FBuffer.Count));
    {$ENDIF}
-   
+
    {Read from Buffer}
    while FBuffer.Count > 0 do
     begin
      {Read Value}
      Value:=FBuffer.ReadData;
-     
+
      {Check for CR LF}
      if not(Value in [#10,#13]) then
       begin
@@ -634,12 +634,12 @@ begin
          Completed:=True;
          Break;
         end;
-      end;      
+      end;
     end;
-   
+
    {Check Completed}
    if Completed then Break;
-   
+
    {Read from Socket}
    Data:=FBuffer.WriteLock(Size);
    if Data = nil then Exit;
@@ -649,32 +649,32 @@ begin
     {$ENDIF}
 
     Count:=0;
-      
+
     {Read Available}
     if not ReadAvailable(Data,Size,LongInt(Count),Closed) then Exit;
-    
+
     {$IFDEF POP3_DEBUG}
     if POP3_LOG_ENABLED then POP3LogDebug('Client:  Buffer Write Count = ' + IntToStr(Count));
     {$ENDIF}
    finally
     FBuffer.WriteUnlock(Count);
-   end; 
-  end;  
- 
+   end;
+  end;
+
  {Reply Event}
  if Assigned(FOnReply) then
   begin
    FOnReply(AReply);
-  end; 
-   
+  end;
+
  {Return Result}
- Result:=True; 
-   
+ Result:=True;
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Client:  Reply = ' + AReply);
  {$ENDIF}
 end;
- 
+
 {==============================================================================}
 
 function TPOP3Client.SendRequest(const ARequest:String):Boolean;
@@ -686,23 +686,23 @@ begin
  if POP3_LOG_ENABLED then POP3LogDebug('Client: SendRequest');
  if POP3_LOG_ENABLED then POP3LogDebug('Client:  Request = ' + ARequest);
  {$ENDIF}
- 
+
  {Send Request}
  if not WriteData(PChar(ARequest),Length(ARequest)) then Exit;
- 
+
  {Send Line End}
  if not WriteData(PChar(POP3_LINE_END),Length(POP3_LINE_END)) then Exit;
- 
+
  {Request Event}
  if Assigned(FOnRequest) then
   begin
    FOnRequest(ARequest);
   end;
-  
+
  {Return Result}
- Result:=True; 
+ Result:=True;
 end;
- 
+
 {==============================================================================}
 
 function TPOP3Client.DoConn(const AHost,APort:String;var AReply:String):Boolean;
@@ -716,25 +716,25 @@ begin
   if POP3_LOG_ENABLED then POP3LogDebug('Client:  Host = ' + AHost);
   if POP3_LOG_ENABLED then POP3LogDebug('Client:  Port = ' + APort);
   {$ENDIF}
- 
+
   {Request Start Event}
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if Connected then Exit;
-   
+
    {Set Host and Port}
    RemoteHost:=AHost;
    RemotePort:=StrToInt(APort);
-   
+
    {Connect}
    if not Connect then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Reply}
    if Uppercase(Copy(Trim(AReply),1,Length(Trim(POP3_STRING_SUCCESS)))) = Uppercase(Trim(POP3_STRING_SUCCESS)) then
     begin
@@ -771,16 +771,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(POP3_COMMAND_STAT) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Reply}
    if Uppercase(Copy(Trim(AReply),1,Length(Trim(POP3_STRING_SUCCESS)))) = Uppercase(Trim(POP3_STRING_SUCCESS)) then
     begin
@@ -813,16 +813,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(POP3_COMMAND_LIST + ' ' + AMessage) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Reply}
    if Uppercase(Copy(Trim(AReply),1,Length(Trim(POP3_STRING_SUCCESS)))) = Uppercase(Trim(POP3_STRING_SUCCESS)) then
     begin
@@ -855,16 +855,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(POP3_COMMAND_RETR + ' ' + AMessage) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Reply}
    if Uppercase(Copy(Trim(AReply),1,Length(Trim(POP3_STRING_SUCCESS)))) = Uppercase(Trim(POP3_STRING_SUCCESS)) then
     begin
@@ -897,16 +897,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(POP3_COMMAND_DELE + ' ' + AMessage) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Reply}
    if Uppercase(Copy(Trim(AReply),1,Length(Trim(POP3_STRING_SUCCESS)))) = Uppercase(Trim(POP3_STRING_SUCCESS)) then
     begin
@@ -938,16 +938,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(POP3_COMMAND_NOOP) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Reply}
    if Uppercase(Copy(Trim(AReply),1,Length(Trim(POP3_STRING_SUCCESS)))) = Uppercase(Trim(POP3_STRING_SUCCESS)) then
     begin
@@ -979,16 +979,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(POP3_COMMAND_RSET) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Reply}
    if Uppercase(Copy(Trim(AReply),1,Length(Trim(POP3_STRING_SUCCESS)))) = Uppercase(Trim(POP3_STRING_SUCCESS)) then
     begin
@@ -1020,25 +1020,25 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(POP3_COMMAND_QUIT) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Reply}
    if Uppercase(Copy(Trim(AReply),1,Length(Trim(POP3_STRING_SUCCESS)))) = Uppercase(Trim(POP3_STRING_SUCCESS)) then
     begin
      {Return Result}
      Result:=True;
     end;
-    
+
    {Disconnect}
-   Disconnect;   
+   Disconnect;
   finally
    {Request End Event}
    if Assigned(FOnRequestEnd) then FOnRequestEnd(Self);
@@ -1049,7 +1049,7 @@ begin
 end;
 
 {==============================================================================}
-  
+
 function TPOP3Client.DoTop(const AMessage,ACount:String;var AReply:String):Boolean;
 {POP3 server will return +OK for success and -ERR for failure}
 begin
@@ -1066,16 +1066,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(POP3_COMMAND_TOP + ' ' + AMessage + ' ' + ACount) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Reply}
    if Uppercase(Copy(Trim(AReply),1,Length(Trim(POP3_STRING_SUCCESS)))) = Uppercase(Trim(POP3_STRING_SUCCESS)) then
     begin
@@ -1108,16 +1108,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(POP3_COMMAND_UIDL + ' ' + AMessage) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Reply}
    if Uppercase(Copy(Trim(AReply),1,Length(Trim(POP3_STRING_SUCCESS)))) = Uppercase(Trim(POP3_STRING_SUCCESS)) then
     begin
@@ -1150,16 +1150,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(POP3_COMMAND_USER + ' ' + AUsername) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Reply}
    if Uppercase(Copy(Trim(AReply),1,Length(Trim(POP3_STRING_SUCCESS)))) = Uppercase(Trim(POP3_STRING_SUCCESS)) then
     begin
@@ -1192,16 +1192,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(POP3_COMMAND_PASS + ' ' + APassword) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Reply}
    if Uppercase(Copy(Trim(AReply),1,Length(Trim(POP3_STRING_SUCCESS)))) = Uppercase(Trim(POP3_STRING_SUCCESS)) then
     begin
@@ -1235,16 +1235,16 @@ begin
   if Assigned(FOnRequestStart) then FOnRequestStart(Self);
   try
    AReply:='';
-   
+
    {Check Connected}
    if not Connected then Exit;
-   
+
    {Send Request}
    if not SendRequest(POP3_COMMAND_APOP + ' ' + AUsername + ' ' + ADigest) then Exit;
-   
+
    {Get Reply}
    if not GetReply(AReply) then Exit;
-   
+
    {Check Reply}
    if Uppercase(Copy(Trim(AReply),1,Length(Trim(POP3_STRING_SUCCESS)))) = Uppercase(Trim(POP3_STRING_SUCCESS)) then
     begin
@@ -1268,7 +1268,7 @@ begin
  {}
  inherited Create;
  FLock:=CriticalSectionCreate;
- 
+
  FHandle:=THandle(Self);
  FRxByteCount:=0;
  FTxByteCount:=0;
@@ -1281,14 +1281,14 @@ begin
  FUsername:='';
  FPassword:='';
  FTimestamp:='';
- 
+
  FThread:=nil;
  FBuffer:=TPOP3Buffer.Create(POP3_BUFFER_SIZE);
 end;
 
 {==============================================================================}
 
-destructor TPOP3Connection.Destroy; 
+destructor TPOP3Connection.Destroy;
 begin
  {}
  AcquireLock;
@@ -1297,7 +1297,7 @@ begin
   FBuffer.Free;
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -1336,7 +1336,7 @@ function TPOP3Connection.GetRxByteCount:Int64;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FRxByteCount;
@@ -1362,7 +1362,7 @@ function TPOP3Connection.GetTxByteCount:Int64;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FTxByteCount;
@@ -1388,7 +1388,7 @@ function TPOP3Connection.GetRequestCount:Int64;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FRequestCount;
@@ -1414,7 +1414,7 @@ function TPOP3Connection.GetReplyCount:Int64;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FReplyCount;
@@ -1440,7 +1440,7 @@ function TPOP3Connection.GetRequestTime:TDateTime;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FRequestTime;
@@ -1466,7 +1466,7 @@ function TPOP3Connection.GetReplyTime:TDateTime;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FReplyTime;
@@ -1492,7 +1492,7 @@ function TPOP3Connection.GetRemoteAddress:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FRemoteAddress;
@@ -1532,7 +1532,7 @@ function TPOP3Connection.GetUsername:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FUsername;
@@ -1560,7 +1560,7 @@ function TPOP3Connection.GetPassword:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FPassword;
@@ -1588,7 +1588,7 @@ function TPOP3Connection.GetTimestamp:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FTimestamp;
@@ -1611,7 +1611,7 @@ begin
 end;
 
 {==============================================================================}
- 
+
 procedure TPOP3Connection.SetThread(AThread:TThread);
 begin
  {}
@@ -1683,20 +1683,20 @@ end;
 
 {==============================================================================}
 
-procedure TPOP3Listener.DoConnect(AThread:TWinsock2TCPServerThread); 
+procedure TPOP3Listener.DoConnect(AThread:TWinsock2TCPServerThread);
 var
  Connection:TPOP3Connection;
 begin
  {}
  inherited DoConnect(AThread);
- 
+
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoConnect');
  {$ENDIF}
- 
+
  {Create Connection}
  Connection:=TPOP3Connection.Create;
  Connection.RemoteAddress:=AThread.Server.PeerAddress;
@@ -1704,16 +1704,16 @@ begin
  Connection.RequestTime:=Now;
  Connection.ReplyTime:=Now;
  Connection.Timestamp:=IntToStr(GetCurrentThreadId) + '.' + IntToStr(GetTickCount64) + '@' + LocalHost;
- 
+
  {Update Thread}
  AThread.Data:=Connection;
- 
+
  {Connected Event}
  if Assigned(FOnConnected) then
   begin
    FOnConnected(Connection);
   end;
- 
+
  {Check Host Event}
  if not DoCheckHost(AThread) then
   begin
@@ -1721,7 +1721,7 @@ begin
    AThread.Server.Disconnect;
    Exit;
   end;
-  
+
  {Check Count Event}
  if not DoCheckCount(AThread) then
   begin
@@ -1730,23 +1730,23 @@ begin
    Exit;
   end;
 
- {Conn Event}  
+ {Conn Event}
  DoConn(AThread);
 end;
 
 {==============================================================================}
 
-procedure TPOP3Listener.DoDisconnect(AThread:TWinsock2TCPServerThread); 
+procedure TPOP3Listener.DoDisconnect(AThread:TWinsock2TCPServerThread);
 begin
  {}
  inherited DoDisconnect(AThread);
- 
+
  if AThread = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoDisconnect');
  {$ENDIF}
- 
+
  {Disconnected Event}
  if Assigned(FOnDisconnected) then
   begin
@@ -1756,17 +1756,17 @@ end;
 
 {==============================================================================}
 
-function TPOP3Listener.DoCheckHost(AThread:TWinsock2TCPServerThread):Boolean; 
+function TPOP3Listener.DoCheckHost(AThread:TWinsock2TCPServerThread):Boolean;
 begin
  {}
  Result:=True;
- 
+
  if AThread = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoCheckHost');
  {$ENDIF}
- 
+
  {Check Host Event}
  if Assigned(FOnCheckHost) then
   begin
@@ -1776,17 +1776,17 @@ end;
 
 {==============================================================================}
 
-function TPOP3Listener.DoCheckCount(AThread:TWinsock2TCPServerThread):Boolean; 
+function TPOP3Listener.DoCheckCount(AThread:TWinsock2TCPServerThread):Boolean;
 begin
  {}
  Result:=True;
- 
+
  if AThread = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoCheckCount');
  {$ENDIF}
- 
+
  {Check Count Event}
  if Assigned(FOnCheckCount) then
   begin
@@ -1795,8 +1795,8 @@ begin
 end;
 
 {==============================================================================}
-  
-function TPOP3Listener.DoExecute(AThread:TWinsock2TCPServerThread):Boolean; 
+
+function TPOP3Listener.DoExecute(AThread:TWinsock2TCPServerThread):Boolean;
 var
  Reply:String;
  Request:String;
@@ -1808,24 +1808,24 @@ begin
  {}
  Result:=inherited DoExecute(AThread);
  if not Result then Exit;
- 
+
  Result:=False;
 
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoExecute');
  {$ENDIF}
- 
+
  if AThread.Server.Connected then
   begin
    {Get Request}
    if not GetRequest(AThread,Request) then Exit;
-   
+
    {Set Default Reply}
    Reply:=POP3_STRING_FAILURE + POP3_STRING_BAD_COMMAND;
- 
+
    {Process Request}
    if Trim(Request) <> '' then
     begin
@@ -1833,11 +1833,11 @@ begin
       begin
        {Get POP3 Command}
        POP3Command:=Trim(Uppercase(Copy(Trim(Request),1,4)));
-     
+
        {Get POP3 Data}
        POP3Data:=Trim(Copy(Trim(Request),Length(POP3Command) + 1,Length(Request)));
        POP3Extra:='';
-       
+
        {Check POP3 Commands (Mandatory)}
        if POP3Command = POP3_COMMAND_STAT then
         begin
@@ -1884,7 +1884,7 @@ begin
            POP3Extra:=Copy(POP3Data,PosIdx + 1,Length(POP3Data));
            POP3Data:=Copy(POP3Data,1,PosIdx - 1);
           end;
-         
+
          {Top Event}
          DoTop(AThread,POP3Data,POP3Extra);
         end
@@ -1912,7 +1912,7 @@ begin
            POP3Extra:=Copy(POP3Data,PosIdx + 1,Length(POP3Data));
            POP3Data:=Copy(POP3Data,1,PosIdx - 1);
           end;
-        
+
          {Apop Event}
          DoApop(AThread,POP3Data,POP3Extra);
         end
@@ -1933,11 +1933,11 @@ begin
      {Invalid Command}
      if not SendReply(AThread,Reply) then Exit;
     end;
-  
+
    Result:=True;
   end;
 end;
-  
+
 {==============================================================================}
 
 procedure TPOP3Listener.DoConn(AThread:TWinsock2TCPServerThread);
@@ -1949,26 +1949,26 @@ begin
  {}
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoConn');
  {$ENDIF}
- 
+
  Request:='';
- 
+
  {Set Default Reply}
  Reply:=POP3_STRING_SUCCESS + POP3_STRING_SIGNON;
- 
+
  {Get Connection}
  Connection:=TPOP3Connection(AThread.Data);
- if Connection <> nil then 
+ if Connection <> nil then
   begin
    Connection.Status:=POP3_STATUS_CONN;
-   
+
    {Add Timestamp}
    if Assigned(FOnApop) then Reply:=Reply + ' <' + Connection.Timestamp + '>';
-  end; 
- 
+  end;
+
  {Conn Event}
  if Assigned(FOnConn) then
   begin
@@ -2000,16 +2000,16 @@ var
 begin
  {}
  if AThread = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoStat');
  {$ENDIF}
- 
+
  Request:='';
- 
+
  {Set Default Reply}
  Reply:=POP3_STRING_SUCCESS + POP3_STRING_EMPTY_STAT;
- 
+
  {Get Connection}
  Connection:=TPOP3Connection(AThread.Data);
 
@@ -2025,7 +2025,7 @@ begin
     begin
      {Send Reply}
      if not SendReply(AThread,Reply) then Exit;
-    end;    
+    end;
   end
  else
   begin
@@ -2033,7 +2033,7 @@ begin
    if not SendReply(AThread,Reply) then Exit;
   end;
 end;
- 
+
 {==============================================================================}
 
 procedure TPOP3Listener.DoList(AThread:TWinsock2TCPServerThread;const AMessage:String);
@@ -2044,18 +2044,18 @@ var
 begin
  {}
  if AThread = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoList');
  if POP3_LOG_ENABLED then POP3LogDebug('Listener:  Message = ' + AMessage);
  {$ENDIF}
- 
+
  Request:=AMessage;
- 
+
  {Set Default Reply}
  Reply:=POP3_STRING_SUCCESS + POP3_STRING_EMPTY_LIST;
  if Length(Request) <> 0 then Reply:=POP3_STRING_FAILURE + POP3_STRING_BAD_MESSAGE;
- 
+
  {Get Connection}
  Connection:=TPOP3Connection(AThread.Data);
 
@@ -2071,7 +2071,7 @@ begin
     begin
      {Send Reply}
      if not SendReply(AThread,Reply) then Exit;
-    end;    
+    end;
   end
  else
   begin
@@ -2090,17 +2090,17 @@ var
 begin
  {}
  if AThread = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoRetr');
  if POP3_LOG_ENABLED then POP3LogDebug('Listener:  Message = ' + AMessage);
  {$ENDIF}
- 
+
  Request:=AMessage;
- 
+
  {Set Default Reply}
  Reply:=POP3_STRING_FAILURE + POP3_STRING_BAD_MESSAGE;
- 
+
  {Get Connection}
  Connection:=TPOP3Connection(AThread.Data);
 
@@ -2116,7 +2116,7 @@ begin
     begin
      {Send Reply}
      if not SendReply(AThread,Reply) then Exit;
-    end;    
+    end;
   end
  else
   begin
@@ -2135,17 +2135,17 @@ var
 begin
  {}
  if AThread = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoDele');
  if POP3_LOG_ENABLED then POP3LogDebug('Listener:  Message = ' + AMessage);
  {$ENDIF}
- 
+
  Request:=AMessage;
- 
+
  {Set Default Reply}
  Reply:=POP3_STRING_FAILURE + POP3_STRING_BAD_MESSAGE;
- 
+
  {Get Connection}
  Connection:=TPOP3Connection(AThread.Data);
 
@@ -2161,7 +2161,7 @@ begin
     begin
      {Send Reply}
      if not SendReply(AThread,Reply) then Exit;
-    end;    
+    end;
   end
  else
   begin
@@ -2180,16 +2180,16 @@ var
 begin
  {}
  if AThread = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoNoop');
  {$ENDIF}
- 
+
  Request:='';
- 
+
  {Set Default Reply}
  Reply:=POP3_STRING_SUCCESS;
- 
+
  {Get Connection}
  Connection:=TPOP3Connection(AThread.Data);
 
@@ -2205,7 +2205,7 @@ begin
     begin
      {Send Reply}
      if not SendReply(AThread,Reply) then Exit;
-    end;    
+    end;
   end
  else
   begin
@@ -2224,16 +2224,16 @@ var
 begin
  {}
  if AThread = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoRset');
  {$ENDIF}
- 
+
  Request:='';
- 
+
  {Set Default Reply}
  Reply:=POP3_STRING_SUCCESS;
- 
+
  {Get Connection}
  Connection:=TPOP3Connection(AThread.Data);
 
@@ -2249,7 +2249,7 @@ begin
     begin
      {Send Reply}
      if not SendReply(AThread,Reply) then Exit;
-    end;    
+    end;
   end
  else
   begin
@@ -2269,31 +2269,31 @@ begin
  {}
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoQuit');
  {$ENDIF}
- 
+
  Request:='';
- 
+
  {Set Default Reply}
  Reply:=POP3_STRING_SUCCESS + POP3_STRING_SIGNOFF;
- 
+
  {Get Connection}
  Connection:=TPOP3Connection(AThread.Data);
  if Connection <> nil then
   begin
    Connection.Status:=POP3_STATUS_QUIT;
   end;
-  
- {Quit Event}  
+
+ {Quit Event}
  if Assigned(FOnQuit) then
   begin
    FOnQuit(Connection,Request,Reply);
-   
+
    {Send Reply}
    if not SendReply(AThread,Reply) then Exit;
-   
+
    {Close Connection}
    AThread.Server.Disconnect;
   end
@@ -2301,7 +2301,7 @@ begin
   begin
    {Default Reply}
    if not SendReply(AThread,Reply) then Exit;
-   
+
    {Close Connection}
    AThread.Server.Disconnect;
   end;
@@ -2318,19 +2318,19 @@ var
 begin
  {}
  if AThread = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoTop');
  if POP3_LOG_ENABLED then POP3LogDebug('Listener:  Message = ' + AMessage);
  if POP3_LOG_ENABLED then POP3LogDebug('Listener:  Count = ' + ACount);
  {$ENDIF}
- 
+
  Request:=AMessage;
  Data:=ACount;
- 
+
  {Set Default Reply}
  Reply:=POP3_STRING_FAILURE + POP3_STRING_BAD_MESSAGE;
- 
+
  {Get Connection}
  Connection:=TPOP3Connection(AThread.Data);
 
@@ -2346,7 +2346,7 @@ begin
     begin
      {Send Reply}
      if not SendReply(AThread,Reply) then Exit;
-    end;    
+    end;
   end
  else
   begin
@@ -2365,17 +2365,17 @@ var
 begin
  {}
  if AThread = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoUidl');
  if POP3_LOG_ENABLED then POP3LogDebug('Listener:  Message = ' + AMessage);
  {$ENDIF}
- 
+
  Request:=AMessage;
- 
+
  {Set Default Reply}
  Reply:=POP3_STRING_FAILURE + POP3_STRING_BAD_MESSAGE;
- 
+
  {Get Connection}
  Connection:=TPOP3Connection(AThread.Data);
 
@@ -2391,7 +2391,7 @@ begin
     begin
      {Send Reply}
      if not SendReply(AThread,Reply) then Exit;
-    end;    
+    end;
   end
  else
   begin
@@ -2411,25 +2411,25 @@ var
 begin
  {}
  if AThread = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoUser');
  if POP3_LOG_ENABLED then POP3LogDebug('Listener:  Username = ' + AUsername);
  {$ENDIF}
- 
+
  Request:=AUsername;
- 
+
  {Set Default Reply}
  Reply:=POP3_STRING_FAILURE + POP3_STRING_BAD_USERNAME;
- 
+
  {Get Connection}
  Connection:=TPOP3Connection(AThread.Data);
  if Connection <> nil then
   begin
    Connection.Status:=POP3_STATUS_USER;
    Connection.Username:=AUsername;
-  end; 
- 
+  end;
+
  {User Event}
  if Assigned(FOnUser) then
   begin
@@ -2442,7 +2442,7 @@ begin
     begin
      {Send Reply}
      if not SendReply(AThread,Reply) then Exit;
-    end;    
+    end;
   end
  else
   begin
@@ -2461,24 +2461,24 @@ var
 begin
  {}
  if AThread = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoPass');
  if POP3_LOG_ENABLED then POP3LogDebug('Listener:  Password = ' + APassword);
  {$ENDIF}
- 
+
  Request:=APassword;
- 
+
  {Set Default Reply}
  Reply:=POP3_STRING_FAILURE + POP3_STRING_BAD_PASSWORD;
- 
+
  {Get Connection}
  Connection:=TPOP3Connection(AThread.Data);
  if Connection <> nil then
   begin
    Connection.Status:=POP3_STATUS_PASS;
    Connection.Password:=APassword;
-  end; 
+  end;
 
  {Pass Event}
  if Assigned(FOnPass) then
@@ -2487,7 +2487,7 @@ begin
     begin
      {Send Reply}
      if not SendReply(AThread,Reply) then Exit;
-     
+
      {Update Connection}
      if Connection <> nil then
       begin
@@ -2498,7 +2498,7 @@ begin
     begin
      {Send Reply}
      if not SendReply(AThread,Reply) then Exit;
-    end;    
+    end;
   end
  else
   begin
@@ -2518,26 +2518,26 @@ var
 begin
  {}
  if AThread = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: DoApop');
  if POP3_LOG_ENABLED then POP3LogDebug('Listener:  Username = ' + AUsername);
  if POP3_LOG_ENABLED then POP3LogDebug('Listener:  Digest = ' + ADigest);
  {$ENDIF}
- 
+
  Request:=AUsername;
  Data:=ADigest;
- 
+
  {Set Default Reply}
  Reply:=POP3_STRING_FAILURE + POP3_STRING_NO_PERMISSION;
- 
+
  {Get Connection}
  Connection:=TPOP3Connection(AThread.Data);
  if Connection <> nil then
   begin
    Connection.Status:=POP3_STATUS_APOP;
    Connection.Username:=AUsername;
-  end; 
+  end;
 
  {Apop Event}
  if Assigned(FOnApop) then
@@ -2551,7 +2551,7 @@ begin
     begin
      {Send Reply}
      if not SendReply(AThread,Reply) then Exit;
-    end;    
+    end;
   end
  else
   begin
@@ -2575,18 +2575,18 @@ begin
  {}
  Result:=False;
  ARequest:='';
- 
+
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: GetRequest');
  {$ENDIF}
- 
+
  {Get Connection}
  Connection:=TPOP3Connection(AThread.Data);
  if Connection = nil then Exit;
- 
+
  {Get Request}
  Completed:=False;
  while not(Completed) do
@@ -2594,13 +2594,13 @@ begin
    {$IFDEF POP3_DEBUG}
    if POP3_LOG_ENABLED then POP3LogDebug('Listener:  Buffer Count = ' + IntToStr(Connection.Buffer.Count));
    {$ENDIF}
-   
+
    {Read from Buffer}
    while Connection.Buffer.Count > 0 do
     begin
      {Read Value}
      Value:=Connection.Buffer.ReadData;
-     
+
      {Check for CR LF}
      if not(Value in [#10,#13]) then
       begin
@@ -2614,12 +2614,12 @@ begin
          Completed:=True;
          Break;
         end;
-      end;      
+      end;
     end;
-   
+
    {Check Completed}
    if Completed then Break;
-   
+
    {Read from Socket}
    Data:=Connection.Buffer.WriteLock(Size);
    if Data = nil then Exit;
@@ -2629,32 +2629,32 @@ begin
     {$ENDIF}
 
     Count:=0;
-      
+
     {Read Available}
     if not AThread.Server.ReadAvailable(Data,Size,LongInt(Count),Closed) then Exit;
-    
+
     {$IFDEF POP3_DEBUG}
     if POP3_LOG_ENABLED then POP3LogDebug('Listener:  Buffer Write Count = ' + IntToStr(Count));
     {$ENDIF}
    finally
     Connection.Buffer.WriteUnlock(Count);
-   end; 
-  end;  
- 
+   end;
+  end;
+
  {Update Connection}
  Connection.RequestTime:=Now;
  Connection.IncrementRequestCount;
  Connection.IncrementRxByteCount(Length(ARequest));
- 
+
  {Request Event}
  if Assigned(FOnRequest) then
   begin
    FOnRequest(Connection,ARequest);
   end;
-  
+
  {Return Result}
- Result:=True; 
-  
+ Result:=True;
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener:  Request = ' + ARequest);
  {$ENDIF}
@@ -2668,40 +2668,40 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  {$IFDEF POP3_DEBUG}
  if POP3_LOG_ENABLED then POP3LogDebug('Listener: SendReply');
  if POP3_LOG_ENABLED then POP3LogDebug('Listener:  Reply = ' + AReply);
  {$ENDIF}
- 
+
  {Get Connection}
  Connection:=TPOP3Connection(AThread.Data);
  if Connection = nil then Exit;
 
  {Send Reply}
  if not AThread.Server.WriteData(PChar(AReply),Length(AReply)) then Exit;
- 
+
  {Send Line End}
  if not AThread.Server.WriteData(PChar(POP3_LINE_END),Length(POP3_LINE_END)) then Exit;
- 
+
  {Update Connection}
  Connection.ReplyTime:=Now;
  Connection.IncrementReplyCount;
  Connection.IncrementTxByteCount(Length(AReply));
- 
+
  {Reply Event}
  if Assigned(FOnReply) then
   begin
    FOnReply(Connection,AReply);
   end;
-  
+
  {Return Result}
- Result:=True; 
+ Result:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -2710,10 +2710,10 @@ begin
  {}
  {Check Initialized}
  if POP3Initialized then Exit;
- 
+
  {Initialize Logging}
- POP3_LOG_ENABLED:=(POP3_DEFAULT_LOG_LEVEL <> POP3_LOG_LEVEL_NONE); 
- 
+ POP3_LOG_ENABLED:=(POP3_DEFAULT_LOG_LEVEL <> POP3_LOG_LEVEL_NONE);
+
  POP3Initialized:=True;
 end;
 
@@ -2731,7 +2731,7 @@ begin
  {}
  {Check Level}
  if Level < POP3_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = POP3_LOG_LEVEL_DEBUG then
@@ -2746,10 +2746,10 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'POP3: ';
- 
+
  {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_POP,LogLevelToLoggingSeverity(Level),'POP3',WorkBuffer + AText);
 end;
@@ -2793,7 +2793,7 @@ initialization
  POP3Init;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

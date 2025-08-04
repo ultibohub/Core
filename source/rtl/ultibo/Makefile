@@ -194,7 +194,7 @@ endif
 endif
 ifeq ($(CPU_OS_TARGET),aarch64-embedded)
 endif
-ifdef SUB_TARGET 
+ifdef SUB_TARGET
 FPCOPT+=-t$(SUB_TARGET)
 FPMAKE_OPT+=--subtarget=$(SUB_TARGET)
 endif

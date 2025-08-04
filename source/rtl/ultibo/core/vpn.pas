@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -37,7 +37,7 @@ VPN
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit VPN; 
+unit VPN;
 
 interface
 
@@ -56,7 +56,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
 {==============================================================================}
 //type
  {VPN specific types}
- 
+
 {==============================================================================}
 var
  {VPN specific variables}
@@ -65,13 +65,13 @@ var
 {==============================================================================}
 {Initialization Functions}
 procedure VPNInit;
- 
+
 {==============================================================================}
 {VPN Functions}
- 
+
 {==============================================================================}
 {VPN Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -85,12 +85,12 @@ begin
  {}
  {Check Initialized}
  if VPNInitialized then Exit;
- 
+
  //To Do
- 
+
  VPNInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {VPN Functions}
@@ -106,7 +106,7 @@ initialization
  VPNInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

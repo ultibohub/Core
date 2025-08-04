@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -63,7 +63,7 @@ var
  BluetoothInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure BluetoothInit;
@@ -85,9 +85,9 @@ begin
  {}
  {Check Initialized}
  if BluetoothInitialized then Exit;
- 
+
  //To Do
- 
+
  BluetoothInitialized:=True;
 end;
 
@@ -103,7 +103,7 @@ initialization
  BluetoothInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

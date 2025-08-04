@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -48,7 +48,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {CP1253ANSI specific constants}
@@ -64,13 +64,13 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Initialization Functions}
 procedure CP1253ANSIInit;
- 
+
 {==============================================================================}
 {CP1253ANSI Functions}
- 
+
 {==============================================================================}
 {CP1253ANSI Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -124,7 +124,7 @@ var
   $03C0,$03C1,$03C2,$03C3,$03C4,$03C5,$03C6,$03C7,
   $03C8,$03C9,$03CA,$03CB,$03CC,$03CD,$03CE,$F8FB)
  );
- 
+
  CP1253Lower:TLowerTable = (
   LowerID:1253;
   Values:(
@@ -145,7 +145,7 @@ var
   $E0,$E1,$E2,$E3,$E4,$E5,$E6,$E7,$E8,$E9,$EA,$EB,$EC,$ED,$EE,$EF,
   $F0,$F1,$F2,$F3,$F4,$F5,$F6,$F7,$F8,$F9,$FA,$FB,$FC,$FD,$FE,$FF)
  );
- 
+
  CP1253Upper:TUpperTable = (
   UpperID:1253;
   Values:(
@@ -166,7 +166,7 @@ var
   $E0,$C1,$C2,$C3,$C4,$C5,$C6,$C7,$C8,$C9,$CA,$CB,$CC,$CD,$CE,$CF,
   $D0,$D1,$F2,$D3,$D4,$D5,$D6,$D7,$D8,$D9,$DA,$DB,$BC,$BE,$BF,$FF)
  );
- 
+
  CP1253TO737:TTransTable = (
   TransID:737;
   Values:(
@@ -187,7 +187,7 @@ var
   $5F,$98,$99,$9A,$9B,$9C,$9D,$9E,$9F,$A0,$A1,$A2,$A3,$A4,$A5,$A6,
   $A7,$A8,$AA,$A9,$AB,$AC,$AD,$AE,$AF,$E0,$E4,$E8,$E6,$E7,$E9,$5F)
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -217,9 +217,9 @@ end;
 
 initialization
  CP1253ANSIInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

@@ -12,12 +12,12 @@ Boards
 ======
 
  Raspberry Pi 3 - Model B+
- 
+
 Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -29,13 +29,13 @@ References
 ==========
 
  Product Information
- 
+
   https://www.microchip.com/wwwproducts/en/LAN7800
- 
+
  Datasheet
- 
+
   http://ww1.microchip.com/downloads/en/DeviceDoc/00001992F.pdf
- 
+
 Microchip LAN78xx
 =================
 
@@ -56,8 +56,8 @@ USB core.
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit LAN78XX; 
-  
+unit LAN78XX;
+
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Network,SysUtils;
@@ -70,15 +70,15 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Network,S
 const
  {LAN78XX specific constants}
  LAN78XX_NETWORK_DESCRIPTION = 'Microchip LAN78XX USB Ethernet Adapter';  {Description of LAN78XX device}
- 
+
  LAN78XX_DRIVER_NAME = 'Microchip LAN78XX USB Ethernet Adapter Driver'; {Name of LAN78XX driver}
- 
+
  LAN78XX_USB_VENDOR_ID  = $0424;
- LAN7800_USB_PRODUCT_ID	= $7800;
+ LAN7800_USB_PRODUCT_ID    = $7800;
  LAN7850_USB_PRODUCT_ID = $7850;
-  
+
  LAN78XX_DEVICE_ID_COUNT = 2; {Number of supported Device IDs}
- 
+
  LAN78XX_DEVICE_ID:array[0..LAN78XX_DEVICE_ID_COUNT - 1] of TUSBDeviceId = (
   (idVendor:LAN78XX_USB_VENDOR_ID;idProduct:LAN7800_USB_PRODUCT_ID),  {LAN7800/7801}
   (idVendor:LAN78XX_USB_VENDOR_ID;idProduct:LAN7850_USB_PRODUCT_ID)); {LAN7850}
@@ -92,30 +92,30 @@ const
  LAN78XX_DEFAULT_BURST_CAP_SIZE = 32 * 1024; {Originally LAN78XX_MAX_RX_FIFO_SIZE (12 * 1024)}
  LAN78XX_DEFAULT_BULK_IN_DELAY = $0800;      {2048 x 16.667 ns = 34.133 us}
  LAN78XX_MAX_SINGLE_PACKET_SIZE = 9000;
- 
+
  LAN78XX_TX_OVERHEAD = 8;  {TX Command A + TX Command B}
  LAN78XX_RX_OVERHEAD = 10; {RX Command A + RX Command B + RX Command C}
  LAN78XX_RXW_PADDING = 2;
 
  LAN78XX_RX_MAX_QUEUE_MEMORY = 512 * (ETHERNET_MAX_PACKET_SIZE + LAN78XX_RX_OVERHEAD); {Originally 60 * 1518}
  LAN78XX_TX_MAX_QUEUE_MEMORY = 64 * (ETHERNET_MAX_PACKET_SIZE + LAN78XX_TX_OVERHEAD); {Originally 60 * 1518}
- 
+
  LAN78XX_EEPROM_MAGIC = $78A5;
  LAN78XX_OTP_MAGIC = $78F3;
 
  LAN78XX_PHY_ADDRESS = 1;
- 
+
  LAN78XX_EEPROM_INDICATOR = $A5;
  LAN78XX_EEPROM_MAC_OFFSET = $01;
  LAN78XX_MAX_EEPROM_SIZE = 512;
  LAN78XX_OTP_INDICATOR_1 = $F3;
  LAN78XX_OTP_INDICATOR_2 = $F7;
- 
+
  {LAN78XX USB Vendor Requests}
  LAN78XX_USB_VENDOR_REQUEST_WRITE_REGISTER = $A0;
  LAN78XX_USB_VENDOR_REQUEST_READ_REGISTER  = $A1;
  LAN78XX_USB_VENDOR_REQUEST_GET_STATS      = $A2;
- 
+
  {Interrupt Endpoint status word bitfields}
  LAN78XX_INT_ENP_EEE_START_TX_LPI_INT = (1 shl 26);
  LAN78XX_INT_ENP_EEE_STOP_TX_LPI_INT  = (1 shl 25);
@@ -133,7 +133,7 @@ const
 
  LAN78XX_TX_PKT_ALIGNMENT  = 4;
  LAN78XX_RX_PKT_ALIGNMENT  = 4;
- 
+
  {Tx Command A}
  LAN78XX_TX_CMD_A_IGE       = $20000000;
  LAN78XX_TX_CMD_A_ICE       = $10000000;
@@ -446,7 +446,7 @@ const
  LAN78XX_HS_ATTR_DEV_DESC_SIZE_MASK  = $0000FF00;
  LAN78XX_HS_ATTR_CFG_BLK_SIZE_MASK  = $000000FF;
 
- {FS DESCRIPTOR ATTRIBUTES REGISTER (FS_ATTR)} 
+ {FS DESCRIPTOR ATTRIBUTES REGISTER (FS_ATTR)}
  LAN78XX_FS_ATTR    = $05C;
  LAN78XX_FS_ATTR_POLL_INT_MASK  = $00FF0000;
  LAN78XX_FS_ATTR_DEV_DESC_SIZE_MASK  = $0000FF00;
@@ -469,7 +469,7 @@ const
 
  {SOFTWARE GENERAL PURPOSE REGISTER X (SW_GPX)}
  {0x6C - 0x77}
- 
+
  {USB CONFIGURATION REGISTER 0 (USB_CFG0)}
  LAN78XX_USB_CFG0   = $080;
  LAN78XX_USB_CFG_LPM_RESPONSE  = $80000000;
@@ -565,7 +565,7 @@ const
 
  {U1 EXIT LATENCY REGISTER (U1_LATENCY)}
  LAN78XX_U1_LATENCY   = $A0;
- 
+
  {U2 EXIT LATENCY REGISTER (U2_LATENCY)}
  LAN78XX_U2_LATENCY   = $A4;
 
@@ -656,7 +656,7 @@ const
  LAN78XX_FCT_FLOW_OFF_MASK  = $00007F00;
  LAN78XX_FCT_FLOW_ON_MASK  = $0000007F;
 
- {RX DATAPATH STORAGE (RX_DP_STOR)} 
+ {RX DATAPATH STORAGE (RX_DP_STOR)}
  LAN78XX_RX_DP_STOR   = $0D4;
  LAN78XX_RX_DP_STORE_TOT_RXUSED_MASK  = $FFFF0000;
  LAN78XX_RX_DP_STORE_UTX_RXUSED_MASK  = $0000FFFF;
@@ -937,7 +937,7 @@ const
 
  {SYN IPV4 SOURCE ADDRESS REGISTER (SYN_IPV4_ADDR_SRC}
  LAN78XX_SYN_IPV4_ADDR_SRC  = $690;
- 
+
  {SYN IPV4 DESTINATION ADDRESS REGISTER (SYN_IPV4_ADDR_DEST)}
  LAN78XX_SYN_IPV4_ADDR_DEST  = $694;
 
@@ -967,7 +967,7 @@ const
 
  {ARP SENDER PROTOCOL ADDRESS REGISTER (ARP_SPA)}
  LAN78XX_ARP_SPA    = $6C0;
- 
+
  {ARP TARGET PROTOCOL ADDRESS REGISTER (ARP_TPA)}
  LAN78XX_ARP_TPA    = $6C4;
 
@@ -1067,7 +1067,7 @@ const
  LAN78XX_OTP_TPVSR_VAL    = LAN78XX_OTP_BASE_ADDR + 4 * $3A;
  LAN78XX_OTP_TPVHR_VAL    = LAN78XX_OTP_BASE_ADDR + 4 * $3B;
  LAN78XX_OTP_TPVSA_VAL    = LAN78XX_OTP_BASE_ADDR + 4 * $3C;
- 
+
  {LAN78XX/LAN88XX PHY}
  LAN88XX_INT_MASK   = $19;
  LAN88XX_INT_MASK_MDINTPIN_EN  = $8000;
@@ -1120,7 +1120,7 @@ const
  {MMD 3 Registers}
  LAN88XX_MMD3_CHIP_ID = 32877;
  LAN88XX_MMD3_CHIP_REV = 32878;
- 
+
 {==============================================================================}
 type
  {LAN78XX specific types}
@@ -1147,8 +1147,8 @@ type
   InterruptEndpoint:PUSBEndpointDescriptor;     {Interrupt IN Endpoint}
   PendingCount:LongWord;                        {Number of USB requests pending for this network}
   WaiterThread:TThreadId;                       {Thread waiting for pending requests to complete (for network close)}
- end; 
- 
+ end;
+
  PLAN78XXStatistics = ^TLAN78XXStatistics;
  TLAN78XXStatistics = record
   RXFCSErrors:LongWord;
@@ -1199,15 +1199,15 @@ type
   EEETXLPITransitions:LongWord;
   EEETXLPITime:LongWord;
  end;
- 
+
 {==============================================================================}
 {var}
  {LAN78XX specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure LAN78XXInit;
- 
+
 {==============================================================================}
 {LAN78XX Network Functions}
 function LAN78XXNetworkOpen(Network:PNetworkDevice):LongWord;
@@ -1225,16 +1225,16 @@ procedure LAN78XXTransmitStart(Network:PLAN78XXNetwork);
 {LAN78XX USB Functions}
 function LAN78XXDriverBind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 function LAN78XXDriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
- 
-procedure LAN78XXReceiveWorker(Request:PUSBRequest); 
-procedure LAN78XXReceiveComplete(Request:PUSBRequest); 
 
-procedure LAN78XXTransmitWorker(Request:PUSBRequest); 
-procedure LAN78XXTransmitComplete(Request:PUSBRequest); 
+procedure LAN78XXReceiveWorker(Request:PUSBRequest);
+procedure LAN78XXReceiveComplete(Request:PUSBRequest);
+
+procedure LAN78XXTransmitWorker(Request:PUSBRequest);
+procedure LAN78XXTransmitComplete(Request:PUSBRequest);
 
 procedure LAN78XXInterruptWorker(Request:PUSBRequest);
 procedure LAN78XXInterruptComplete(Request:PUSBRequest);
- 
+
 {==============================================================================}
 {LAN78XX Helper Functions}
 function LAN78XXCheckDevice(Device:PUSBDevice):LongWord;
@@ -1261,7 +1261,7 @@ function LAN78XXGetStatistics(Device:PUSBDevice;var Statistics:TLAN78XXStatistic
 
 function LAN78XXGetMacAddress(Device:PUSBDevice;Address:PHardwareAddress):LongWord;
 function LAN78XXSetMacAddress(Device:PUSBDevice;Address:PHardwareAddress):LongWord;
-              
+
 {==============================================================================}
 {==============================================================================}
 
@@ -1271,8 +1271,8 @@ implementation
 {==============================================================================}
 var
  {LAN78XX specific variables}
- LAN78XXInitialized:Boolean; 
- 
+ LAN78XXInitialized:Boolean;
+
  LAN78XXDriver:PUSBDriver;  {LAN78XX Driver interface (Set by LAN78XXInit)}
 
 {==============================================================================}
@@ -1314,7 +1314,7 @@ begin
   begin
    {Update LAN78XX Network Driver}
    {Driver}
-   LAN78XXDriver.Driver.DriverName:=LAN78XX_DRIVER_NAME; 
+   LAN78XXDriver.Driver.DriverName:=LAN78XX_DRIVER_NAME;
    {USB}
    LAN78XXDriver.DriverBind:=LAN78XXDriverBind;
    LAN78XXDriver.DriverUnbind:=LAN78XXDriverUnbind;
@@ -1333,10 +1333,10 @@ begin
   begin
    if USB_LOG_ENABLED then USBLogError(nil,'LAN78XX: Failed to create LAN78XX driver');
   end;
- 
+
  LAN78XXInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {LAN78XX Network Functions}
@@ -1361,11 +1361,11 @@ begin
  {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'LAN78XX: Network Open');
  {$ENDIF}
- 
+
  {Get Device}
  Device:=PUSBDevice(Network.Device.DeviceData);
  if Device = nil then Exit;
- 
+
  {Acquire the Lock}
  if MutexLock(Network.Lock) = ERROR_SUCCESS then
   begin
@@ -1376,39 +1376,39 @@ begin
 
     {Set Result}
     Result:=ERROR_OPERATION_FAILED;
- 
+
     {Reset Device}
     //To Do //lan78xx_reset
-    
+
     {Set MAC Address}
     //To Do //lan78xx_init_mac_address (Remove from DriverBind)
-    
+
     {Get Revision ID}
     Status:=LAN78XXReadRegister(Device,LAN78XX_ID_REV,Buffer);
     if Status <> USB_STATUS_SUCCESS then Exit;
-    
+
     {Get Chip ID and Revision}
     PLAN78XXNetwork(Network).ChipID:=(Buffer and LAN78XX_ID_REV_CHIP_ID_MASK) shr 16;
     PLAN78XXNetwork(Network).ChipRevision:=Buffer and LAN78XX_ID_REV_CHIP_REV_MASK;
     {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
     if USB_LOG_ENABLED then USBLogDebug(Device,'LAN78XX: ID=' + IntToHex(PLAN78XXNetwork(Network).ChipID,4) + ' Revision=' + IntToHex(PLAN78XXNetwork(Network).ChipRevision,4));
     {$ENDIF}
-    
+
     {Respond to Bulk In request with a NAK when the RX FIFO is empty}
     Status:=LAN78XXSetRegisterBits(Device,LAN78XX_USB_CFG0,LAN78XX_USB_CFG_BIR);
     if Status <> USB_STATUS_SUCCESS then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to enable bulk in request: ' + USBStatusToString(Status));
       Exit;
-     end; 
-    
+     end;
+
     //To Do //lan78xx_init_ltm
-    
+
     {Check the Speed}
     if Device.Speed = USB_SPEED_SUPER then
      begin
       Buffer:=LAN78XX_DEFAULT_BURST_CAP_SIZE div LAN78XX_SS_USB_PKT_SIZE;
-      
+
       {Set RX and TX Sizes}
       PLAN78XXNetwork(Network).ReceiveRequestSize:=LAN78XX_DEFAULT_BURST_CAP_SIZE;
       PLAN78XXNetwork(Network).TransmitRequestSize:=ETHERNET_MAX_PACKET_SIZE + LAN78XX_TX_OVERHEAD;
@@ -1417,13 +1417,13 @@ begin
       PLAN78XXNetwork(Network).ReceivePacketCount:=LAN78XX_DEFAULT_BURST_CAP_SIZE div (ETHERNET_MIN_PACKET_SIZE + LAN78XX_RX_OVERHEAD);
       PLAN78XXNetwork(Network).TransmitPacketCount:=1;
      end
-    else if Device.Speed = USB_SPEED_HIGH then 
+    else if Device.Speed = USB_SPEED_HIGH then
      begin
       Buffer:=LAN78XX_DEFAULT_BURST_CAP_SIZE div LAN78XX_HS_USB_PKT_SIZE;
-      
+
       {Set RX and TX Sizes}
       PLAN78XXNetwork(Network).ReceiveRequestSize:=LAN78XX_DEFAULT_BURST_CAP_SIZE;
-      PLAN78XXNetwork(Network).TransmitRequestSize:=ETHERNET_MAX_PACKET_SIZE + LAN78XX_TX_OVERHEAD;      
+      PLAN78XXNetwork(Network).TransmitRequestSize:=ETHERNET_MAX_PACKET_SIZE + LAN78XX_TX_OVERHEAD;
       PLAN78XXNetwork(Network).ReceiveEntryCount:=LAN78XX_RX_MAX_QUEUE_MEMORY div PLAN78XXNetwork(Network).ReceiveRequestSize;
       PLAN78XXNetwork(Network).TransmitEntryCount:=LAN78XX_TX_MAX_QUEUE_MEMORY div PLAN78XXNetwork(Network).TransmitRequestSize;
       PLAN78XXNetwork(Network).ReceivePacketCount:=LAN78XX_DEFAULT_BURST_CAP_SIZE div (ETHERNET_MIN_PACKET_SIZE + LAN78XX_RX_OVERHEAD);
@@ -1432,10 +1432,10 @@ begin
     else
      begin
       Buffer:=LAN78XX_DEFAULT_BURST_CAP_SIZE div LAN78XX_FS_USB_PKT_SIZE;
-      
+
       {Set RX and TX Sizes}
       PLAN78XXNetwork(Network).ReceiveRequestSize:=LAN78XX_DEFAULT_BURST_CAP_SIZE;
-      PLAN78XXNetwork(Network).TransmitRequestSize:=ETHERNET_MAX_PACKET_SIZE + LAN78XX_TX_OVERHEAD;      
+      PLAN78XXNetwork(Network).TransmitRequestSize:=ETHERNET_MAX_PACKET_SIZE + LAN78XX_TX_OVERHEAD;
       PLAN78XXNetwork(Network).ReceiveEntryCount:=4;
       PLAN78XXNetwork(Network).TransmitEntryCount:=4;
       PLAN78XXNetwork(Network).ReceivePacketCount:=LAN78XX_DEFAULT_BURST_CAP_SIZE div (ETHERNET_MIN_PACKET_SIZE + LAN78XX_RX_OVERHEAD);
@@ -1451,54 +1451,54 @@ begin
       USBLogDebug(Device,'LAN78XX: TransmitEntryCount=' + IntToStr(PLAN78XXNetwork(Network).TransmitEntryCount));
       USBLogDebug(Device,'LAN78XX: ReceivePacketCount=' + IntToStr(PLAN78XXNetwork(Network).ReceivePacketCount));
       USBLogDebug(Device,'LAN78XX: TransmitPacketCount=' + IntToStr(PLAN78XXNetwork(Network).TransmitPacketCount));
-     end; 
+     end;
     {$ENDIF}
-    
+
     {Set the maximum USB (not network) packets per USB Receive transfer}
     Status:=LAN78XXWriteRegister(Device,LAN78XX_BURST_CAP,Buffer);
     if Status <> USB_STATUS_SUCCESS then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to set burst cap size: ' + USBStatusToString(Status));
       Exit;
-     end; 
-    
+     end;
+
     {Set the USB Bulk IN delay (How long to delay a bulk IN request once a packet has been received)}
     Status:=LAN78XXWriteRegister(Device,LAN78XX_BULK_IN_DLY,LAN78XX_DEFAULT_BULK_IN_DELAY);
     if Status <> USB_STATUS_SUCCESS then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to set bulk IN delay: ' + USBStatusToString(Status));
       Exit;
-     end; 
-    
+     end;
+
     {Get Hardware Configuration}
     Status:=LAN78XXReadRegister(Device,LAN78XX_HW_CFG,Buffer);
     if Status <> USB_STATUS_SUCCESS then Exit;
-    
+
     {Enable multiple ethernet frames per packet}
     Buffer:=Buffer or LAN78XX_HW_CFG_MEF;
-    
+
     {If no valid EEPROM and no valid OTP, enable the LEDs by default}
     if (LAN78XXReadEEPROM(Device,0,0,nil) <> USB_STATUS_SUCCESS) and (LAN78XXReadOTP(Device,0,0,nil) <> USB_STATUS_SUCCESS) then
      begin
       Buffer:=Buffer or LAN78XX_HW_CFG_LED0_EN or LAN78XX_HW_CFG_LED1_EN;
-     end;  
-    
+     end;
+
     {Set Hardware Configuration}
     Status:=LAN78XXWriteRegister(Device,LAN78XX_HW_CFG,Buffer);
     if Status <> USB_STATUS_SUCCESS then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to set hardware configuration: ' + USBStatusToString(Status));
       Exit;
-     end; 
-    
-    {Enable USB burst cap mode} 
+     end;
+
+    {Enable USB burst cap mode}
     Status:=LAN78XXSetRegisterBits(Device,LAN78XX_USB_CFG0,LAN78XX_USB_CFG_BCE);
     if Status <> USB_STATUS_SUCCESS then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to enable burst cap mode: ' + USBStatusToString(Status));
       Exit;
-     end; 
-    
+     end;
+
     {Set RX FIFO size}
     Buffer:=(LAN78XX_MAX_RX_FIFO_SIZE - 512) div 512;
     Status:=LAN78XXWriteRegister(Device,LAN78XX_FCT_RX_FIFO_END,Buffer);
@@ -1506,8 +1506,8 @@ begin
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to set RX FIFO size: ' + USBStatusToString(Status));
       Exit;
-     end; 
-   
+     end;
+
     {Set TX FIFO size}
     Buffer:=(LAN78XX_MAX_TX_FIFO_SIZE - 512) div 512;
     Status:=LAN78XXWriteRegister(Device,LAN78XX_FCT_TX_FIFO_END,Buffer);
@@ -1515,8 +1515,8 @@ begin
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to set TX FIFO size: ' + USBStatusToString(Status));
       Exit;
-     end; 
-    
+     end;
+
     {Clear INT_STS, FLOW and FCT_FLOW registers}
     Status:=LAN78XXWriteRegister(Device,LAN78XX_INT_STS,LAN78XX_INT_STS_CLEAR_ALL);
     if Status <> USB_STATUS_SUCCESS then Exit;
@@ -1524,17 +1524,17 @@ begin
     if Status <> USB_STATUS_SUCCESS then Exit;
     Status:=LAN78XXWriteRegister(Device,LAN78XX_FCT_FLOW,0);
     if Status <> USB_STATUS_SUCCESS then Exit;
-    
+
     {Enable broadcast packets and destination address filtering}
     Status:=LAN78XXSetRegisterBits(Device,LAN78XX_RFE_CTL,LAN78XX_RFE_CTL_BCAST_EN or LAN78XX_RFE_CTL_DA_PERFECT);
     if Status <> USB_STATUS_SUCCESS then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to enable receive filtering: ' + USBStatusToString(Status));
       Exit;
-     end; 
-    
+     end;
+
     //To Do //lan78xx_set_multicast
-    
+
     {Reset PHY}
     Status:=LAN78XXSetRegisterBits(Device,LAN78XX_PMT_CTL,LAN78XX_PMT_CTL_PHY_RST);
     if Status <> USB_STATUS_SUCCESS then Exit;
@@ -1548,34 +1548,34 @@ begin
        Exit;
       end;
     until ((Buffer and LAN78XX_PMT_CTL_PHY_RST) = 0) and ((Buffer and LAN78XX_PMT_CTL_READY) <> 0);
-    
+
     {Enable Auto Negotiation}
     Status:=LAN78XXSetRegisterBits(Device,LAN78XX_MAC_CR,LAN78XX_MAC_CR_AUTO_DUPLEX or LAN78XX_MAC_CR_AUTO_SPEED);
     if Status <> USB_STATUS_SUCCESS then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to set MAC control: ' + USBStatusToString(Status));
       Exit;
-     end; 
-    
+     end;
+
     try
      {Allocate Receive Queue Buffer}
      Network.ReceiveQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry),PLAN78XXNetwork(Network).ReceiveEntryCount);
      if Network.ReceiveQueue.Buffer = INVALID_HANDLE_VALUE then
       begin
        if NETWORK_LOG_ENABLED then NetworkLogError(Network,'LAN78XX: Failed to create receive queue buffer');
-       
+
        Exit;
       end;
-     
+
      {Allocate Receive Queue Semaphore}
      Network.ReceiveQueue.Wait:=SemaphoreCreate(0);
      if Network.ReceiveQueue.Wait = INVALID_HANDLE_VALUE then
       begin
        if NETWORK_LOG_ENABLED then NetworkLogError(Network,'LAN78XX: Failed to create receive queue semaphore');
-       
+
        Exit;
       end;
-     
+
      {Allocate Receive Queue Buffers}
      Entry:=BufferIterate(Network.ReceiveQueue.Buffer,nil);
      while Entry <> nil do
@@ -1584,45 +1584,45 @@ begin
        Entry.Size:=PLAN78XXNetwork(Network).ReceiveRequestSize;
        Entry.Offset:=LAN78XX_RX_OVERHEAD;
        Entry.Count:=0; {PLAN78XXNetwork(Network).ReceivePacketCount}
-       
+
        {Allocate USB Request Buffer}
        Entry.Buffer:=USBBufferAllocate(Device,Entry.Size);
        if Entry.Buffer = nil then
         begin
          if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to allocate USB receive buffer');
-         
+
          Exit;
         end;
-       
+
        {Initialize Packets}
        SetLength(Entry.Packets,PLAN78XXNetwork(Network).ReceivePacketCount);
-       
+
        {Initialize First Packet}
        Entry.Packets[0].Buffer:=Entry.Buffer;
        Entry.Packets[0].Data:=Entry.Buffer + Entry.Offset;
        Entry.Packets[0].Length:=Entry.Size - Entry.Offset;
-       
+
        Entry:=BufferIterate(Network.ReceiveQueue.Buffer,Entry);
       end;
-     
+
      {Allocate Receive Queue Entries}
      SetLength(Network.ReceiveQueue.Entries,PLAN78XXNetwork(Network).ReceiveEntryCount);
-     
+
      {Allocate Transmit Queue Buffer}
      Network.TransmitQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry),PLAN78XXNetwork(Network).TransmitEntryCount);
      if Network.TransmitQueue.Buffer = INVALID_HANDLE_VALUE then
       begin
        if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to create transmit queue buffer');
-       
+
        Exit;
       end;
-     
+
      {Allocate Transmit Queue Semaphore}
      Network.TransmitQueue.Wait:=SemaphoreCreate(PLAN78XXNetwork(Network).TransmitEntryCount);
      if Network.TransmitQueue.Wait = INVALID_HANDLE_VALUE then
       begin
        if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to create transmit queue semaphore');
-       
+
        Exit;
       end;
 
@@ -1634,36 +1634,36 @@ begin
        Entry.Size:=PLAN78XXNetwork(Network).TransmitRequestSize;
        Entry.Offset:=LAN78XX_TX_OVERHEAD;
        Entry.Count:=PLAN78XXNetwork(Network).TransmitPacketCount;
-       
+
        {Allocate USB Request Buffer}
        Entry.Buffer:=USBBufferAllocate(Device,Entry.Size);
        if Entry.Buffer = nil then
         begin
          if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to allocate USB transmit buffer');
-         
+
          Exit;
         end;
-        
+
        {Initialize Packets}
        SetLength(Entry.Packets,PLAN78XXNetwork(Network).TransmitPacketCount);
-      
+
        {Initialize First Packet}
        Entry.Packets[0].Buffer:=Entry.Buffer;
        Entry.Packets[0].Data:=Entry.Buffer + Entry.Offset;
        Entry.Packets[0].Length:=Entry.Size - Entry.Offset;
-       
+
        Entry:=BufferIterate(Network.TransmitQueue.Buffer,Entry);
       end;
-      
+
      {Allocate Transmit Queue Entries}
      SetLength(Network.TransmitQueue.Entries,PLAN78XXNetwork(Network).TransmitEntryCount);
-     
+
      {Allocate Transmit Request}
      PLAN78XXNetwork(Network).TransmitRequest:=USBRequestAllocate(Device,PLAN78XXNetwork(Network).TransmitEndpoint,LAN78XXTransmitComplete,0,nil);
      if PLAN78XXNetwork(Network).TransmitRequest = nil then
       begin
        if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to allocate transmit request');
-       
+
        Exit;
       end;
 
@@ -1672,10 +1672,10 @@ begin
      if PLAN78XXNetwork(Network).ReceiveRequest = nil then
       begin
        if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to allocate receive request');
-       
+
        Exit;
       end;
-      
+
      {Submit Receive Request}
      {Get Entry}
      Entry:=BufferGet(Network.ReceiveQueue.Buffer);
@@ -1683,139 +1683,139 @@ begin
       begin
        {Update Pending}
        Inc(PLAN78XXNetwork(Network).PendingCount);
-       
+
        {Update Entry}
        Entry.DriverData:=Network;
-       
+
        {Initialize Request}
        USBRequestInitialize(PLAN78XXNetwork(Network).ReceiveRequest,LAN78XXReceiveComplete,Entry.Buffer,Entry.Size,Entry);
-       
+
        {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
        if USB_LOG_ENABLED then USBLogDebug(Device,'LAN78XX: Submitting receive request');
        {$ENDIF}
-       
+
        {Submit Request}
        Status:=USBRequestSubmit(PLAN78XXNetwork(Network).ReceiveRequest);
        if Status <> USB_STATUS_SUCCESS then
         begin
          if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to submit receive request: ' + USBStatusToString(Status));
-         
+
          {Update Pending}
          Dec(PLAN78XXNetwork(Network).PendingCount);
-         
+
          {Update Entry}
          Entry.DriverData:=nil;
-         
+
          {Free Entry}
          BufferFree(Entry);
          Exit;
-        end; 
+        end;
       end
      else
       begin
        if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to get receive buffer entry');
-       
+
        Exit;
-      end;      
-     
+      end;
+
      {Allocate Interrupt Request}
-     PLAN78XXNetwork(Network).InterruptRequest:=USBRequestAllocate(Device,PLAN78XXNetwork(Network).InterruptEndpoint,LAN78XXInterruptComplete,PLAN78XXNetwork(Network).InterruptEndpoint.wMaxPacketSize,Network); 
+     PLAN78XXNetwork(Network).InterruptRequest:=USBRequestAllocate(Device,PLAN78XXNetwork(Network).InterruptEndpoint,LAN78XXInterruptComplete,PLAN78XXNetwork(Network).InterruptEndpoint.wMaxPacketSize,Network);
      if PLAN78XXNetwork(Network).InterruptRequest = nil then
       begin
        if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to allocate interrupt request');
-       
+
        Exit;
       end;
-      
+
      {Update Pending}
      Inc(PLAN78XXNetwork(Network).PendingCount);
-      
+
      {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
      if USB_LOG_ENABLED then USBLogDebug(Device,'LAN78XX: Submitting interrupt request');
      {$ENDIF}
-     
+
      {Submit Interrupt Request}
      Status:=USBRequestSubmit(PLAN78XXNetwork(Network).InterruptRequest);
      if Status <> USB_STATUS_SUCCESS then
       begin
        if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to submit interrupt request: ' + USBStatusToString(Status));
-       
+
        {Update Pending}
        Dec(PLAN78XXNetwork(Network).PendingCount);
        Exit;
       end;
-     
+
      {Enable Endpoint Interrupts}
      Status:=LAN78XXSetRegisterBits(Device,LAN78XX_INT_EP_CTL,LAN78XX_INT_EP_PHY_INT_EN);
      if Status <> USB_STATUS_SUCCESS then
       begin
        if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to enable endpoint interrupts: ' + USBStatusToString(Status));
        Exit;
-      end; 
-     
+      end;
+
      {Enable TX}
      Status:=LAN78XXSetRegisterBits(Device,LAN78XX_MAC_TX,LAN78XX_MAC_TX_TXEN);
      if Status <> USB_STATUS_SUCCESS then
       begin
        if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to enable transmit: ' + USBStatusToString(Status));
        Exit;
-      end; 
- 
+      end;
+
      Status:=LAN78XXSetRegisterBits(Device,LAN78XX_FCT_TX_CTL,LAN78XX_FCT_TX_CTL_EN);
      if Status <> USB_STATUS_SUCCESS then
       begin
        if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to set transmit control: ' + USBStatusToString(Status));
        Exit;
-      end; 
-     
+      end;
+
      {Set Max RX Frame Size}
      Status:=LAN78XXModifyRegister(Device,LAN78XX_MAC_RX,not(LAN78XX_MAC_RX_MAX_SIZE_MASK),ETHERNET_MAX_PACKET_SIZE shl LAN78XX_MAC_RX_MAX_SIZE_SHIFT);
      if Status <> USB_STATUS_SUCCESS then
       begin
        if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to set maximum receive size: ' + USBStatusToString(Status));
        Exit;
-      end; 
-     
+      end;
+
      {Enable RX}
      Status:=LAN78XXSetRegisterBits(Device,LAN78XX_MAC_RX,LAN78XX_MAC_RX_RXEN);
      if Status <> USB_STATUS_SUCCESS then
       begin
        if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to enable receive: ' + USBStatusToString(Status));
        Exit;
-      end; 
-     
+      end;
+
      Status:=LAN78XXSetRegisterBits(Device,LAN78XX_FCT_RX_CTL,LAN78XX_FCT_RX_CTL_EN);
      if Status <> USB_STATUS_SUCCESS then
       begin
        if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to set receive control: ' + USBStatusToString(Status));
        Exit;
-      end; 
-     
+      end;
+
      {Initialize PHY (Interrupts, AutoMDIX, LEDs)}
      Status:=LAN78XXPHYInitialize(Device);
      if Status <> USB_STATUS_SUCCESS then
       begin
        if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to initialize PHY: ' + USBStatusToString(Status));
        {Exit;} {Do not fail}
-      end; 
-     
+      end;
+
      {Set State to Open}
      Network.NetworkState:=NETWORK_STATE_OPEN;
- 
+
      {Notify the State}
-     NotifierNotify(@Network.Device,DEVICE_NOTIFICATION_OPEN); 
-  
+     NotifierNotify(@Network.Device,DEVICE_NOTIFICATION_OPEN);
+
      {Get Network Status}
      LAN78XXPHYRead(Device,MII_BMSR,Value);
      if (Value and BMSR_LSTATUS) <> 0 then
       begin
        {Set Status to Up}
        Network.NetworkStatus:=NETWORK_STATUS_UP;
-       
+
        {Notify the Status}
-       NotifierNotify(@Network.Device,DEVICE_NOTIFICATION_UP); 
+       NotifierNotify(@Network.Device,DEVICE_NOTIFICATION_UP);
       end;
-  
+
      {Return Result}
      Result:=ERROR_SUCCESS;
     finally
@@ -1827,97 +1827,97 @@ begin
         begin
          {Cancel Interrupt Request}
          USBRequestCancel(PLAN78XXNetwork(Network).InterruptRequest);
-         
+
          {Release Interrupt Request}
          USBRequestRelease(PLAN78XXNetwork(Network).InterruptRequest);
         end;
-       
+
        {Check Receive Request}
        if PLAN78XXNetwork(Network).ReceiveRequest <> nil then
         begin
          {Cancel Receive Request}
          USBRequestCancel(PLAN78XXNetwork(Network).ReceiveRequest);
-         
+
          {Release Receive Request}
          USBRequestRelease(PLAN78XXNetwork(Network).ReceiveRequest);
         end;
-       
+
        {Check Transmit Request}
        if PLAN78XXNetwork(Network).TransmitRequest <> nil then
         begin
          {Release Transmit Request}
          USBRequestRelease(PLAN78XXNetwork(Network).TransmitRequest);
         end;
-       
+
        {Check Transmit Queue Buffer}
        if Network.TransmitQueue.Buffer <> INVALID_HANDLE_VALUE then
         begin
          {Deallocate Transmit Queue Entries}
          SetLength(Network.TransmitQueue.Entries,0);
-          
+
          {Deallocate Transmit Queue Buffers}
          Entry:=BufferIterate(Network.TransmitQueue.Buffer,nil);
          while Entry <> nil do
           begin
            {Release USB Request Buffer}
            USBBufferRelease(Entry.Buffer);
-            
+
            {Deinitialize Packets}
            SetLength(Entry.Packets,0);
-           
+
            Entry:=BufferIterate(Network.TransmitQueue.Buffer,Entry);
           end;
-        
+
          {Deallocate Transmit Queue Buffer}
          BufferDestroy(Network.TransmitQueue.Buffer);
-         
+
          Network.TransmitQueue.Buffer:=INVALID_HANDLE_VALUE;
         end;
-       
+
        {Check Transmit Queue Semaphore}
        if Network.TransmitQueue.Wait <> INVALID_HANDLE_VALUE then
         begin
          {Deallocate Transmit Queue Semaphore}
          SemaphoreDestroy(Network.TransmitQueue.Wait);
-          
+
          Network.TransmitQueue.Wait:=INVALID_HANDLE_VALUE;
         end;
-       
+
        {Check Receive Queue Buffer}
        if Network.ReceiveQueue.Buffer <> INVALID_HANDLE_VALUE then
         begin
          {Deallocate Receive Queue Entries}
          SetLength(Network.ReceiveQueue.Entries,0);
-        
+
          {Deallocate Receive Queue Buffers}
          Entry:=BufferIterate(Network.ReceiveQueue.Buffer,nil);
          while Entry <> nil do
           begin
            {Release USB Request Buffer}
            USBBufferRelease(Entry.Buffer);
-          
+
            {Deinitialize Packets}
            SetLength(Entry.Packets,0);
-           
+
            Entry:=BufferIterate(Network.ReceiveQueue.Buffer,Entry);
           end;
-         
+
          {Deallocate Receive Queue Buffer}
          BufferDestroy(Network.ReceiveQueue.Buffer);
-         
+
          Network.ReceiveQueue.Buffer:=INVALID_HANDLE_VALUE;
         end;
-        
+
        {Check Receive Queue Semaphore}
        if Network.ReceiveQueue.Wait <> INVALID_HANDLE_VALUE then
         begin
          {Deallocate Receive Queue Semaphore}
          SemaphoreDestroy(Network.ReceiveQueue.Wait);
-          
+
          Network.ReceiveQueue.Wait:=INVALID_HANDLE_VALUE;
         end;
       end;
-    end;    
+    end;
    finally
     {Release the Lock}
     MutexUnlock(Network.Lock);
@@ -1926,9 +1926,9 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
 
 function LAN78XXNetworkClose(Network:PNetworkDevice):LongWord;
@@ -1950,19 +1950,19 @@ begin
  {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'LAN78XX: Network Close');
  {$ENDIF}
- 
+
  {Get Device}
  Device:=PUSBDevice(Network.Device.DeviceData);
  if Device = nil then Exit;
- 
+
  {Check State}
  Result:=ERROR_NOT_OPEN;
  if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
- 
+
  {Set State to Closing}
  Result:=ERROR_OPERATION_FAILED;
  if NetworkDeviceSetState(Network,NETWORK_STATE_CLOSING) <> ERROR_SUCCESS then Exit;
- 
+
  {Acquire the Lock}
  if MutexLock(Network.Lock) = ERROR_SUCCESS then
   begin
@@ -1981,25 +1981,25 @@ begin
       {$ENDIF}
 
       {Wait for Pending}
- 
+
       {Setup Waiter}
-      PLAN78XXNetwork(Network).WaiterThread:=GetCurrentThreadId; 
-   
+      PLAN78XXNetwork(Network).WaiterThread:=GetCurrentThreadId;
+
       {Release the Lock}
       MutexUnlock(Network.Lock);
-   
+
       {Wait for Message}
-      ThreadReceiveMessage(Message); 
-      
+      ThreadReceiveMessage(Message);
+
       {Acquire the Lock}
       if MutexLock(Network.Lock) <> ERROR_SUCCESS then Exit;
      end;
-       
+
     {Set State to Closed}
     Network.NetworkState:=NETWORK_STATE_CLOSED;
- 
+
     {Notify the State}
-    NotifierNotify(@Network.Device,DEVICE_NOTIFICATION_CLOSE); 
+    NotifierNotify(@Network.Device,DEVICE_NOTIFICATION_CLOSE);
 
     {Disable TX}
     Status:=LAN78XXClearRegisterBits(Device,LAN78XX_MAC_TX,LAN78XX_MAC_TX_TXEN);
@@ -2007,113 +2007,113 @@ begin
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to disable transmit: ' + USBStatusToString(Status));
       Exit;
-     end; 
-    
+     end;
+
     {Disable RX}
     Status:=LAN78XXClearRegisterBits(Device,LAN78XX_MAC_RX,LAN78XX_MAC_RX_RXEN);
     if Status <> USB_STATUS_SUCCESS then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to disable receive: ' + USBStatusToString(Status));
       Exit;
-     end; 
-    
+     end;
+
     {Disable LEDs}
     Status:=LAN78XXClearRegisterBits(Device,LAN78XX_HW_CFG,LAN78XX_HW_CFG_LED0_EN or LAN78XX_HW_CFG_LED1_EN);
     if Status <> USB_STATUS_SUCCESS then
      begin
       if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to set hardware configuration: ' + USBStatusToString(Status));
       Exit;
-     end; 
-    
+     end;
+
     {Check Interrupt Request}
     if PLAN78XXNetwork(Network).InterruptRequest <> nil then
      begin
       {Release Interrupt Request}
       USBRequestRelease(PLAN78XXNetwork(Network).InterruptRequest);
      end;
-    
+
     {Check Receive Request}
     if PLAN78XXNetwork(Network).ReceiveRequest <> nil then
      begin
       {Release Receive Request}
       USBRequestRelease(PLAN78XXNetwork(Network).ReceiveRequest);
      end;
-    
+
     {Check Transmit Request}
     if PLAN78XXNetwork(Network).TransmitRequest <> nil then
      begin
       {Release Transmit Request}
       USBRequestRelease(PLAN78XXNetwork(Network).TransmitRequest);
      end;
-    
+
     {Check Transmit Queue Buffer}
     if Network.TransmitQueue.Buffer <> INVALID_HANDLE_VALUE then
      begin
       {Deallocate Transmit Queue Entries}
       SetLength(Network.TransmitQueue.Entries,0);
-       
+
       {Deallocate Transmit Queue Buffers}
       Entry:=BufferIterate(Network.TransmitQueue.Buffer,nil);
       while Entry <> nil do
        begin
         {Release USB Request Buffer}
         USBBufferRelease(Entry.Buffer);
-        
+
         {Deinitialize Packets}
         SetLength(Entry.Packets,0);
-        
+
         Entry:=BufferIterate(Network.TransmitQueue.Buffer,Entry);
        end;
-     
+
       {Deallocate Transmit Queue Buffer}
       BufferDestroy(Network.TransmitQueue.Buffer);
-      
+
       Network.TransmitQueue.Buffer:=INVALID_HANDLE_VALUE;
      end;
-    
+
     {Check Transmit Queue Semaphore}
     if Network.TransmitQueue.Wait <> INVALID_HANDLE_VALUE then
      begin
       {Deallocate Transmit Queue Semaphore}
       SemaphoreDestroy(Network.TransmitQueue.Wait);
-       
+
       Network.TransmitQueue.Wait:=INVALID_HANDLE_VALUE;
      end;
-    
+
     {Check Receive Queue Buffer}
     if Network.ReceiveQueue.Buffer <> INVALID_HANDLE_VALUE then
      begin
       {Deallocate Receive Queue Entries}
       SetLength(Network.ReceiveQueue.Entries,0);
-     
+
       {Deallocate Receive Queue Buffers}
       Entry:=BufferIterate(Network.ReceiveQueue.Buffer,nil);
       while Entry <> nil do
        begin
         {Release USB Request Buffer}
         USBBufferRelease(Entry.Buffer);
-       
+
         {Initialize Packets}
         SetLength(Entry.Packets,0);
-        
+
         Entry:=BufferIterate(Network.ReceiveQueue.Buffer,Entry);
        end;
-      
+
       {Deallocate Receive Queue Buffer}
       BufferDestroy(Network.ReceiveQueue.Buffer);
-      
+
       Network.ReceiveQueue.Buffer:=INVALID_HANDLE_VALUE;
      end;
-     
+
     {Check Receive Queue Semaphore}
     if Network.ReceiveQueue.Wait <> INVALID_HANDLE_VALUE then
      begin
       {Deallocate Receive Queue Semaphore}
       SemaphoreDestroy(Network.ReceiveQueue.Wait);
-       
+
       Network.ReceiveQueue.Wait:=INVALID_HANDLE_VALUE;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2124,7 +2124,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2143,15 +2143,15 @@ begin
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'LAN78XX: Network Control (Request=' + IntToStr(Request) + ')');
  {$ENDIF}
- 
+
  {Get Device}
  Device:=PUSBDevice(Network.Device.DeviceData);
  if Device = nil then Exit;
- 
+
  {Acquire the Lock}
  if MutexLock(Network.Lock) = ERROR_SUCCESS then
   begin
@@ -2159,7 +2159,7 @@ begin
     {Set Result}
     Result:=ERROR_OPERATION_FAILED;
     Status:=USB_STATUS_SUCCESS;
-    
+
     {Check Request}
     case Request of
      NETWORK_CONTROL_CLEAR_STATS:begin
@@ -2175,11 +2175,11 @@ begin
        Network.StatusErrors:=0;
        Network.BufferOverruns:=0;
        Network.BufferUnavailable:=0;
-      end; 
+      end;
      NETWORK_CONTROL_GET_STATS:begin
        {Get Statistics}
        if Argument2 < SizeOf(TNetworkStatistics) then Exit;
-       
+
        {Network}
        PNetworkStatistics(Argument1).ReceiveBytes:=Network.ReceiveBytes;
        PNetworkStatistics(Argument1).ReceiveCount:=Network.ReceiveCount;
@@ -2191,17 +2191,17 @@ begin
        PNetworkStatistics(Argument1).StatusErrors:=Network.StatusErrors;
        PNetworkStatistics(Argument1).BufferOverruns:=Network.BufferOverruns;
        PNetworkStatistics(Argument1).BufferUnavailable:=Network.BufferUnavailable;
-      end;     
-     NETWORK_CONTROL_SET_MAC:begin     
+      end;
+     NETWORK_CONTROL_SET_MAC:begin
        {Set the MAC for this device}
        Status:=LAN78XXSetMacAddress(Device,PHardwareAddress(Argument1));
-      end; 
-     NETWORK_CONTROL_GET_MAC:begin    
+      end;
+     NETWORK_CONTROL_GET_MAC:begin
        {Get the MAC for this device}
        Status:=LAN78XXGetMacAddress(Device,PHardwareAddress(Argument1));
-      end; 
-     NETWORK_CONTROL_SET_LOOPBACK:begin  
-       {Set Loopback Mode}          
+      end;
+     NETWORK_CONTROL_SET_LOOPBACK:begin
+       {Set Loopback Mode}
        if LongBool(Argument1) then
         begin
          Status:=LAN78XXSetRegisterBits(Device,LAN78XX_MAC_CR,LAN78XX_MAC_CR_LOOPBACK);
@@ -2209,32 +2209,32 @@ begin
        else
         begin
          Status:=LAN78XXClearRegisterBits(Device,LAN78XX_MAC_CR,LAN78XX_MAC_CR_LOOPBACK);
-        end;     
-      end; 
-     NETWORK_CONTROL_RESET:begin       
-       {Reset the device}  
+        end;
+      end;
+     NETWORK_CONTROL_RESET:begin
+       {Reset the device}
        //To Do
-      end; 
-     NETWORK_CONTROL_DISABLE:begin     
+      end;
+     NETWORK_CONTROL_DISABLE:begin
        {Disable the device}
        //To Do
-      end; 
-     NETWORK_CONTROL_GET_HARDWARE:begin     
+      end;
+     NETWORK_CONTROL_GET_HARDWARE:begin
        {Get Hardware address for this device}
        Status:=LAN78XXGetMacAddress(Device,PHardwareAddress(Argument1));
-      end; 
-     NETWORK_CONTROL_GET_BROADCAST:begin     
+      end;
+     NETWORK_CONTROL_GET_BROADCAST:begin
        {Get Broadcast address for this device}
        PHardwareAddress(Argument1)^:=ETHERNET_BROADCAST;
-      end; 
-     NETWORK_CONTROL_GET_MTU:begin     
+      end;
+     NETWORK_CONTROL_GET_MTU:begin
        {Get MTU for this device}
-       Argument2:=ETHERNET_MTU; 
-      end; 
+       Argument2:=ETHERNET_MTU;
+      end;
      NETWORK_CONTROL_GET_HEADERLEN:begin
        {Get Header length for this device}
        Argument2:=ETHERNET_HEADER_SIZE;
-      end;  
+      end;
      NETWORK_CONTROL_GET_LINK:begin
        {Get Link State for this device}
        LAN78XXPHYRead(Device,MII_BMSR,Value);
@@ -2248,17 +2248,17 @@ begin
          {Link Down}
          Argument2:=NETWORK_LINK_DOWN;
         end;
-      end; 
+      end;
      else
       begin
        Exit;
-      end;   
+      end;
     end;
-    
+
     {Check Status}
     if Status <> USB_STATUS_SUCCESS then Exit;
 
-    {Return Result}  
+    {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     {Release the Lock}
@@ -2268,7 +2268,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2279,22 +2279,22 @@ function LAN78XXBufferAllocate(Network:PNetworkDevice;var Entry:PNetworkEntry):L
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Setup Entry}
  Entry:=nil;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'LAN78XX: Buffer Allocate');
  {$ENDIF}
- 
+
  {Check State}
  Result:=ERROR_NOT_READY;
  if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
- 
+
  {Set Result}
  Result:=ERROR_OPERATION_FAILED;
 
@@ -2306,19 +2306,19 @@ begin
    Entry.Size:=PLAN78XXNetwork(Network).TransmitRequestSize;
    Entry.Offset:=LAN78XX_TX_OVERHEAD;
    Entry.Count:=PLAN78XXNetwork(Network).TransmitPacketCount;
-   
+
    {Update First Packet}
    Entry.Packets[0].Buffer:=Entry.Buffer;
    Entry.Packets[0].Data:=Entry.Buffer + Entry.Offset;
    Entry.Packets[0].Length:=Entry.Size - Entry.Offset;
-   
+
    {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'LAN78XX:  Entry.Size = ' + IntToStr(Entry.Size));
    if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'LAN78XX:  Entry.Offset = ' + IntToStr(Entry.Offset));
    if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'LAN78XX:  Entry.Count = ' + IntToStr(Entry.Count));
    if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'LAN78XX:  Entry.Packets[0].Length = ' + IntToStr(Entry.Packets[0].Length));
    {$ENDIF}
-   
+
    {Return Result}
    Result:=ERROR_SUCCESS;
   end;
@@ -2332,22 +2332,22 @@ function LAN78XXBufferRelease(Network:PNetworkDevice;Entry:PNetworkEntry):LongWo
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'LAN78XX: Buffer Release');
  {$ENDIF}
- 
+
  {Check Entry}
  if Entry = nil then Exit;
- 
+
  {Check State}
  Result:=ERROR_NOT_READY;
  if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
- 
+
  {Acquire the Lock}
  if MutexLock(Network.Lock) = ERROR_SUCCESS then
   begin
@@ -2362,7 +2362,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2373,22 +2373,22 @@ function LAN78XXBufferReceive(Network:PNetworkDevice;var Entry:PNetworkEntry):Lo
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Setup Entry}
  Entry:=nil;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'LAN78XX: Buffer Receive');
  {$ENDIF}
-  
+
  {Check State}
  Result:=ERROR_NOT_READY;
  if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
- 
+
  {Wait for Entry}
  if SemaphoreWait(Network.ReceiveQueue.Wait) = ERROR_SUCCESS then
   begin
@@ -2398,13 +2398,13 @@ begin
      try
       {Remove Entry}
       Entry:=Network.ReceiveQueue.Entries[Network.ReceiveQueue.Start];
-      
+
       {Update Start}
       Network.ReceiveQueue.Start:=(Network.ReceiveQueue.Start + 1) mod PLAN78XXNetwork(Network).ReceiveEntryCount;
-      
+
       {Update Count}
       Dec(Network.ReceiveQueue.Count);
-      
+
       {Return Result}
       Result:=ERROR_SUCCESS;
      finally
@@ -2415,12 +2415,12 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;  
+    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2433,23 +2433,23 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(Network,'LAN78XX: Buffer Transmit');
  {$ENDIF}
-  
+
  {Check Entry}
  if Entry = nil then Exit;
  if (Entry.Count = 0) or (Entry.Count > 1) then Exit;
- 
+
  {Check State}
  Result:=ERROR_NOT_READY;
  if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
- 
+
  {Wait for Entry}
  if SemaphoreWait(Network.TransmitQueue.Wait) = ERROR_SUCCESS then
   begin
@@ -2459,20 +2459,20 @@ begin
      try
       {Check Empty}
       Empty:=(Network.TransmitQueue.Count = 0);
-      
+
       {Add Entry}
       Network.TransmitQueue.Entries[(Network.TransmitQueue.Start + Network.TransmitQueue.Count) mod PLAN78XXNetwork(Network).TransmitEntryCount]:=Entry;
-    
+
       {Update Count}
       Inc(Network.TransmitQueue.Count);
-    
+
       {Check Empty}
       if Empty then
        begin
         {Start Transmit}
         LAN78XXTransmitStart(PLAN78XXNetwork(Network));
-       end; 
-      
+       end;
+
       {Return Result}
       Result:=ERROR_SUCCESS;
      finally
@@ -2483,12 +2483,12 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;  
+    end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2511,34 +2511,34 @@ begin
  {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(@Network.Network,'LAN78XX: Transmit Start');
  {$ENDIF}
-  
+
  {Check Count}
  if Network.Network.TransmitQueue.Count = 0 then Exit;
 
  {Get Entry}
  Entry:=Network.Network.TransmitQueue.Entries[Network.Network.TransmitQueue.Start];
  if Entry = nil then Exit;
-   
+
  {Get Packet}
  Packet:=@Entry.Packets[0];
- 
+
  {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(@Network.Network,'LAN78XX: Packet Length = ' + IntToStr(Packet.Length));
  {$ENDIF}
- 
+
  {Get Request}
  Request:=Network.TransmitRequest;
- 
+
  {Update Entry}
  Entry.DriverData:=Network;
- 
+
  {Initialize Request}
  USBRequestInitialize(Request,LAN78XXTransmitComplete,Entry.Buffer,Entry.Size,Entry);
- 
+
  {Add TX Command A and B to the start of the packet data}
  PLongWord(PtrUInt(Request.Data) + 0)^:=LongWordNToLE(Packet.Length and LAN78XX_TX_CMD_A_LEN_MASK) or LAN78XX_TX_CMD_A_FCS;
  PLongWord(PtrUInt(Request.Data) + 4)^:=0;
- 
+
  {Update Request}
  Request.Size:=Packet.Length + LAN78XX_TX_OVERHEAD;
 
@@ -2548,8 +2548,8 @@ begin
  {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
  if USB_LOG_ENABLED then USBLogDebug(Request.Device,'LAN78XX: Submitting transmit request');
  {$ENDIF}
- 
- {Submit the Request} 
+
+ {Submit the Request}
  Status:=USBRequestSubmit(Request);
  if Status <> USB_STATUS_SUCCESS then
   begin
@@ -2557,12 +2557,12 @@ begin
 
    {Update Entry}
    Entry.DriverData:=nil;
-   
+
    {Update Pending}
    Dec(Network.PendingCount);
   end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {LAN78XX USB Functions}
@@ -2589,7 +2589,7 @@ begin
  {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
  if USB_LOG_ENABLED then USBLogDebug(Device,'LAN78XX: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
- 
+
  {Check Interface (Bind to device only)}
  if Interrface <> nil then
   begin
@@ -2600,7 +2600,7 @@ begin
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
+
  {Check LAN78XX Device}
  if LAN78XXCheckDevice(Device) <> USB_STATUS_SUCCESS then
   begin
@@ -2611,7 +2611,7 @@ begin
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
+
  {Check Interface}
  NetworkInterface:=USBDeviceFindInterfaceByIndex(Device,0);
  if NetworkInterface = nil then
@@ -2623,7 +2623,7 @@ begin
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
+
  {Check Bulk IN Endpoint}
  ReceiveEndpoint:=USBDeviceFindEndpointByType(Device,NetworkInterface,USB_DIRECTION_IN,USB_TRANSFER_TYPE_BULK);
  if ReceiveEndpoint = nil then
@@ -2635,7 +2635,7 @@ begin
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
+
  {Check Bulk OUT Endpoint}
  TransmitEndpoint:=USBDeviceFindEndpointByType(Device,NetworkInterface,USB_DIRECTION_OUT,USB_TRANSFER_TYPE_BULK);
  if TransmitEndpoint = nil then
@@ -2647,7 +2647,7 @@ begin
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
-  
+
  {Check Interrupt IN Endpoint}
  InterruptEndpoint:=USBDeviceFindEndpointByType(Device,NetworkInterface,USB_DIRECTION_IN,USB_TRANSFER_TYPE_INTERRUPT);
  if InterruptEndpoint = nil then
@@ -2659,44 +2659,44 @@ begin
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
-  
+
  {Check Configuration}
  if Device.ConfigurationValue = 0 then
   begin
    {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
    if USB_LOG_ENABLED then USBLogDebug(Device,'LAN78XX: Assigning configuration ' + IntToStr(Device.Configuration.Descriptor.bConfigurationValue) + ' (' + IntToStr(Device.Configuration.Descriptor.bNumInterfaces) + ' interfaces available)');
    {$ENDIF}
-   
+
    {Set Configuration}
    Status:=USBDeviceSetConfiguration(Device,Device.Configuration.Descriptor.bConfigurationValue);
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to set device configuration: ' + USBStatusToString(Status));
-     
+
      {Return Result}
      Result:=Status;
      Exit;
     end;
   end;
- 
+
  {USB device reset not required because the USB core already did a reset on the port during attach}
-  
+
  {Get MAC address}
  Address:=AllocMem(SizeOf(THardwareAddress));
  LAN78XXGetMacAddress(Device,Address);
  {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
  if USB_LOG_ENABLED then USBLogDebug(Device,'LAN78XX: Default Address = ' + HardwareAddressToString(Address^));
  {$ENDIF}
- 
+
  {Check MAC Address}
  if not ValidHardwareAddress(Address^) then
   begin
    {Convert MAC address}
-   Address^:=StringToHardwareAddress(LAN78XX_MAC_ADDRESS); 
+   Address^:=StringToHardwareAddress(LAN78XX_MAC_ADDRESS);
    {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
    if USB_LOG_ENABLED then USBLogDebug(Device,'LAN78XX: Hardware Address = ' + HardwareAddressToString(Address^));
    {$ENDIF}
-   
+
    {Check MAC Address}
    if not ValidHardwareAddress(Address^) then
     begin
@@ -2706,33 +2706,33 @@ begin
      if USB_LOG_ENABLED then USBLogDebug(Device,'LAN78XX: Random Address = ' + HardwareAddressToString(Address^));
      {$ENDIF}
     end;
-    
-   {Set MAC Address} 
+
+   {Set MAC Address}
    Status:=LAN78XXSetMacAddress(Device,Address);
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to set mac address: ' + USBStatusToString(Status));
      FreeMem(Address);
-     
+
      {Return Result}
      Result:=USB_STATUS_DEVICE_UNSUPPORTED;
      Exit;
     end;
-  end; 
+  end;
  FreeMem(Address);
- 
+
  {Create Network}
  Network:=PLAN78XXNetwork(NetworkDeviceCreateEx(SizeOf(TLAN78XXNetwork)));
  if Network = nil then
   begin
    if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to create new network device');
-   
+
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
- {Update Network} 
+
+ {Update Network}
  {Device}
  Network.Network.Device.DeviceBus:=DEVICE_BUS_USB;
  Network.Network.Device.DeviceType:=NETWORK_TYPE_ETHERNET;
@@ -2753,43 +2753,43 @@ begin
  Network.PHYLock:=INVALID_HANDLE_VALUE;
  {USB}
  Network.ReceiveEndpoint:=ReceiveEndpoint;
- Network.TransmitEndpoint:=TransmitEndpoint; 
- Network.InterruptEndpoint:=InterruptEndpoint;                
+ Network.TransmitEndpoint:=TransmitEndpoint;
+ Network.InterruptEndpoint:=InterruptEndpoint;
  Network.WaiterThread:=INVALID_HANDLE_VALUE;
- 
+
  {Create PHY Lock}
  Network.PHYLock:=MutexCreate;
  if Network.PHYLock = INVALID_HANDLE_VALUE then
   begin
    if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to create PHY lock for network');
-   
+
    {Destroy Network}
    NetworkDeviceDestroy(@Network.Network);
-   
+
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
- {Register Network} 
+
+ {Register Network}
  if NetworkDeviceRegister(@Network.Network) <> ERROR_SUCCESS then
   begin
    if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to register new network device');
-   
+
    {Destroy PHY Lock}
    MutexDestroy(Network.PHYLock);
-   
+
    {Destroy Network}
    NetworkDeviceDestroy(@Network.Network);
-   
+
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
+
  {Update Device}
  Device.DriverData:=Network;
- 
+
  {Return Result}
  Result:=USB_STATUS_SUCCESS;
 end;
@@ -2806,48 +2806,48 @@ var
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
  {Check Interface}
  if Interrface <> nil then Exit;
- 
+
  {Check Driver}
  if Device.Driver <> LAN78XXDriver then Exit;
- 
+
  {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
  if USB_LOG_ENABLED then USBLogDebug(Device,'LAN78XX: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
- 
+
  {Get Network}
  Network:=PLAN78XXNetwork(Device.DriverData);
  if Network = nil then Exit;
- 
+
  {Close Network}
  LAN78XXNetworkClose(@Network.Network);
- 
+
  {Destroy PHY Lock}
  if Network.PHYLock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Network.PHYLock);
   end;
-  
+
  {Update Device}
  Device.DriverData:=nil;
 
  {Deregister Network}
  if NetworkDeviceDeregister(@Network.Network) <> ERROR_SUCCESS then Exit;
- 
+
  {Destroy Network}
  NetworkDeviceDestroy(@Network.Network);
- 
+
  Result:=USB_STATUS_SUCCESS;
 end;
 
 {==============================================================================}
 
-procedure LAN78XXReceiveWorker(Request:PUSBRequest); 
+procedure LAN78XXReceiveWorker(Request:PUSBRequest);
 {Called (by a Worker thread) to process a completed USB request from the LAN78XX bulk IN endpoint}
 {Request: The USB request which has completed}
 var
@@ -2869,10 +2869,10 @@ begin
  {Get Entry}
  Entry:=PNetworkEntry(Request.DriverData);
  if Entry = nil then Exit;
- 
+
  {Get Network}
  Network:=PLAN78XXNetwork(Entry.DriverData);
- if Network <> nil then 
+ if Network <> nil then
   begin
    {Acquire the Lock}
    if MutexLock(Network.Network.Lock) = ERROR_SUCCESS then
@@ -2884,18 +2884,18 @@ begin
         {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'LAN78XX: Close pending, setting receive request status to USB_STATUS_DEVICE_DETACHED');
         {$ENDIF}
-      
+
         {Update Request}
         Request.Status:=USB_STATUS_DEVICE_DETACHED;
        end;
-       
-      {Check Result} 
+
+      {Check Result}
       if Request.Status = USB_STATUS_SUCCESS then
        begin
         {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'LAN78XX: Receive complete (Size=' + IntToStr(Request.Size) + ' Actual Size=' + IntToStr(Request.ActualSize) + ')');
         {$ENDIF}
- 
+
         {Get Data and Size}
         Data:=Request.Data;
         Size:=Request.ActualSize;
@@ -2907,8 +2907,8 @@ begin
            begin
             Next:=BufferGet(Network.Network.ReceiveQueue.Buffer);
            end;
-          
-          {Check Next} 
+
+          {Check Next}
           if Next <> nil then
            begin
             {Check Receive Queue Count}
@@ -2916,60 +2916,60 @@ begin
              begin
               {Update Entry}
               Entry.Count:=0;
-              
+
               while Size > 0 do
                begin
                 {Get Frame Length and Status from RX Command A}
                 FrameLength:=LongWordLEToN(PLongWord(PtrUInt(Data) + 0)^) and LAN78XX_RX_CMD_A_LEN_MASK;
                 ReceiveStatus:=LongWordLEToN(PLongWord(PtrUInt(Data) + 0)^) and (LAN78XX_RX_CMD_A_RED or LAN78XX_RX_CMD_A_RX_ERRS_MASK);
-                
+
                 {Check Receive Status and Frame Length}
                 if ((ReceiveStatus and LAN78XX_RX_CMD_A_RED) <> 0) or (FrameLength > (ETHERNET_MAX_PACKET_SIZE + ETHERNET_CRC_SIZE)) or (FrameLength < (ETHERNET_HEADER_SIZE + ETHERNET_CRC_SIZE)) then
                  begin
                   if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: Receive error (ReceiveStatus=' + IntToHex(ReceiveStatus,8) + ', FrameLength=' + IntToStr(FrameLength) + ')');
-                  
+
                   {Update Statistics}
-                  Inc(Network.Network.ReceiveErrors); 
+                  Inc(Network.Network.ReceiveErrors);
                  end
                 else if Entry.Count >= Network.ReceivePacketCount then
                  begin
                   if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: Buffer overrun, packet discarded');
-             
+
                   {Update Statistics}
-                  Inc(Network.Network.BufferOverruns); 
+                  Inc(Network.Network.BufferOverruns);
                  end
                 else
                  begin
                   {Update Entry}
                   Inc(Entry.Count);
-                  
+
                   {Update Packet}
                   Entry.Packets[Entry.Count - 1].Buffer:=Data;
                   Entry.Packets[Entry.Count - 1].Data:=Data + Entry.Offset;
                   Entry.Packets[Entry.Count - 1].Length:=FrameLength - ETHERNET_CRC_SIZE;
-                  
+
                   {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
                   if USB_LOG_ENABLED then USBLogDebug(Request.Device,'LAN78XX: Receiving packet (Length=' + IntToStr(Entry.Packets[Entry.Count - 1].Length) + ', Count=' + IntToStr(Entry.Count) + ')');
                   {$ENDIF}
-                  
+
                   {Update Statistics}
-                  Inc(Network.Network.ReceiveCount); 
-                  Inc(Network.Network.ReceiveBytes,Entry.Packets[Entry.Count - 1].Length); 
+                  Inc(Network.Network.ReceiveCount);
+                  Inc(Network.Network.ReceiveBytes,Entry.Packets[Entry.Count - 1].Length);
                  end;
-                
+
                 {Update Data and Size}
                 Inc(Data,LAN78XX_RX_OVERHEAD);
                 Dec(Size,LAN78XX_RX_OVERHEAD);
-                
+
                 {Update Size}
                 Dec(Size,FrameLength);
-                
+
                 {Check Size}
                 if Size > 0 then
                  begin
                   {Get Next Packet}
                   Inc(Data,FrameLength);
-                  
+
                   {Check padding before next packet}
                   AlignCount:=(4 - ((FrameLength + LAN78XX_RXW_PADDING) mod 4)) mod 4;
                   if AlignCount > 0 then
@@ -2977,19 +2977,19 @@ begin
                     {Update Data and Size}
                     Inc(Data,AlignCount);
                     Dec(Size,AlignCount);
-                   end; 
+                   end;
                  end;
                end;
-               
+
               {Check Count}
               if Entry.Count > 0 then
                begin
                 {Add Entry}
                 Network.Network.ReceiveQueue.Entries[(Network.Network.ReceiveQueue.Start + Network.Network.ReceiveQueue.Count) mod Network.ReceiveEntryCount]:=Entry;
-                    
+
                 {Update Count}
                 Inc(Network.Network.ReceiveQueue.Count);
-                    
+
                 {Signal Packet Received}
                 SemaphoreSignal(Network.Network.ReceiveQueue.Wait);
                end
@@ -3002,61 +3002,61 @@ begin
             else
              begin
               if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: Receive queue overrun, packet discarded');
-              
+
               {Free Entry}
               BufferFree(Entry);
-              
+
               {Update Statistics}
-              Inc(Network.Network.ReceiveErrors); 
-              Inc(Network.Network.BufferOverruns); 
+              Inc(Network.Network.ReceiveErrors);
+              Inc(Network.Network.BufferOverruns);
              end;
            end
           else
            begin
             if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: No receive buffer available, packet discarded');
-            
+
             {Get Next}
             Next:=Entry;
-            
+
             {Update Statistics}
-            Inc(Network.Network.ReceiveErrors); 
-            Inc(Network.Network.BufferUnavailable); 
+            Inc(Network.Network.ReceiveErrors);
+            Inc(Network.Network.BufferUnavailable);
            end;
          end
         else
          begin
           if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: Failed receive request (ActualSize=' + USBStatusToString(Request.ActualSize) + ')');
-          
+
           {Get Next}
           Next:=Entry;
-   
+
           {Update Statistics}
-          Inc(Network.Network.ReceiveErrors); 
+          Inc(Network.Network.ReceiveErrors);
          end;
        end
-      else 
+      else
        begin
         if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: Failed receive request (Status=' + USBStatusToString(Request.Status) + ')');
-   
+
         {Get Next}
         Next:=Entry;
-   
+
         {Update Statistics}
-        Inc(Network.Network.ReceiveErrors); 
+        Inc(Network.Network.ReceiveErrors);
        end;
- 
+
       {Update Pending}
-      Dec(Network.PendingCount); 
- 
+      Dec(Network.PendingCount);
+
       {Update Next}
       Next.DriverData:=nil;
- 
+
       {Check State}
       if Network.Network.NetworkState = NETWORK_STATE_CLOSING then
        begin
         {Free Next}
         BufferFree(Next);
-        
+
         {Check Pending}
         if Network.PendingCount = 0 then
          begin
@@ -3066,44 +3066,44 @@ begin
             {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'LAN78XX: Close pending, sending message to waiter thread (Thread=' + IntToHex(Network.WaiterThread,8) + ')');
             {$ENDIF}
-            
+
             {Send Message}
             FillChar(Message,SizeOf(TMessage),0);
             ThreadSendMessage(Network.WaiterThread,Message);
             Network.WaiterThread:=INVALID_HANDLE_VALUE;
-           end; 
+           end;
          end;
        end
       else
-       begin      
-        {Check Next} 
+       begin
+        {Check Next}
         if Next <> nil then
          begin
           {Update Pending}
           Inc(Network.PendingCount);
-   
+
           {Update Next}
           Next.DriverData:=Network;
-   
+
           {Initialize Request}
           USBRequestInitialize(Request,LAN78XXReceiveComplete,Next.Buffer,Next.Size,Next);
-          
+
           {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
           if USB_LOG_ENABLED then USBLogDebug(Request.Device,'LAN78XX: Resubmitting receive request');
           {$ENDIF}
-  
+
           {Resubmit Request}
           Status:=USBRequestSubmit(Request);
           if Status <> USB_STATUS_SUCCESS then
            begin
             if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: Failed to resubmit receive request: ' + USBStatusToString(Status));
-     
+
             {Update Pending}
             Dec(Network.PendingCount);
-            
+
             {Update Next}
             Next.DriverData:=nil;
-            
+
             {Free Next}
             BufferFree(Next);
            end;
@@ -3111,11 +3111,11 @@ begin
         else
          begin
           if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: No receive buffer available, cannot resubmit receive request');
-          
+
           {Update Statistics}
-          Inc(Network.Network.BufferUnavailable); 
+          Inc(Network.Network.BufferUnavailable);
          end;
-       end;  
+       end;
      finally
       {Release the Lock}
       MutexUnlock(Network.Network.Lock);
@@ -3129,9 +3129,9 @@ begin
  else
   begin
    if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: Receive request invalid');
-  end;    
+  end;
 end;
- 
+
 {==============================================================================}
 
 procedure LAN78XXReceiveComplete(Request:PUSBRequest);
@@ -3142,13 +3142,13 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  WorkerScheduleEx(0,WORKER_FLAG_PRIORITY,TWorkerTask(LAN78XXReceiveWorker),Request,nil);
 end;
 
 {==============================================================================}
 
-procedure LAN78XXTransmitWorker(Request:PUSBRequest); 
+procedure LAN78XXTransmitWorker(Request:PUSBRequest);
 {Called (by a Worker thread) to process a completed USB request to the LAN78XX bulk OUT endpoint}
 {Request: The USB request which has completed}
 var
@@ -3163,7 +3163,7 @@ begin
  {Get Entry}
  Entry:=PNetworkEntry(Request.DriverData);
  if Entry = nil then Exit;
- 
+
  {Get Network}
  Network:=PLAN78XXNetwork(Entry.DriverData);
  if Network <> nil then
@@ -3178,48 +3178,48 @@ begin
         {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'LAN78XX: Close pending, setting transmit request status to USB_STATUS_DEVICE_DETACHED');
         {$ENDIF}
-      
+
         {Update Request}
         Request.Status:=USB_STATUS_DEVICE_DETACHED;
        end;
-      
-      {Check Result} 
+
+      {Check Result}
       if Request.Status = USB_STATUS_SUCCESS then
        begin
         {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'LAN78XX: Transmit complete');
         {$ENDIF}
-        
+
         {Update Statistics}
-        Inc(Network.Network.TransmitCount); 
+        Inc(Network.Network.TransmitCount);
         Inc(Network.Network.TransmitBytes,Entry.Packets[0].Length);
        end
-      else 
+      else
        begin
         if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: Failed transmit request (Status=' + USBStatusToString(Request.Status) + ')');
-        
+
         {Update Statistics}
-        Inc(Network.Network.TransmitErrors); 
+        Inc(Network.Network.TransmitErrors);
        end;
 
       {Update Start}
       Network.Network.TransmitQueue.Start:=(Network.Network.TransmitQueue.Start + 1) mod PLAN78XXNetwork(Network).TransmitEntryCount;
-      
+
       {Update Count}
       Dec(Network.Network.TransmitQueue.Count);
-      
+
       {Signal Queue Free}
-      SemaphoreSignal(Network.Network.TransmitQueue.Wait); 
+      SemaphoreSignal(Network.Network.TransmitQueue.Wait);
 
       {Update Entry}
       Entry.DriverData:=nil;
-      
+
       {Free Entry (Transmit Buffer)}
       BufferFree(Entry);
-       
+
       {Update Pending}
-      Dec(Network.PendingCount); 
-     
+      Dec(Network.PendingCount);
+
       {Check State}
       if Network.Network.NetworkState = NETWORK_STATE_CLOSING then
        begin
@@ -3232,12 +3232,12 @@ begin
             {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'LAN78XX: Close pending, sending message to waiter thread (Thread=' + IntToHex(Network.WaiterThread,8) + ')');
             {$ENDIF}
-            
+
             {Send Message}
             FillChar(Message,SizeOf(TMessage),0);
             ThreadSendMessage(Network.WaiterThread,Message);
             Network.WaiterThread:=INVALID_HANDLE_VALUE;
-           end; 
+           end;
          end;
        end
       else
@@ -3262,9 +3262,9 @@ begin
  else
   begin
    if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: Transmit request invalid');
-  end;    
+  end;
 end;
- 
+
 {==============================================================================}
 
 procedure LAN78XXTransmitComplete(Request:PUSBRequest);
@@ -3275,7 +3275,7 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  WorkerScheduleEx(0,WORKER_FLAG_PRIORITY,TWorkerTask(LAN78XXTransmitWorker),Request,nil);
 end;
 
@@ -3304,7 +3304,7 @@ begin
     begin
      try
       {Update Statistics}
-      Inc(Network.Network.StatusCount); 
+      Inc(Network.Network.StatusCount);
 
       {Check State}
       if Network.Network.NetworkState = NETWORK_STATE_CLOSING then
@@ -3312,12 +3312,12 @@ begin
         {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'LAN78XX: Close pending, setting interrupt request status to USB_STATUS_DEVICE_DETACHED');
         {$ENDIF}
-      
+
         {Update Request}
         Request.Status:=USB_STATUS_DEVICE_DETACHED;
        end;
-      
-      {Check Result} 
+
+      {Check Result}
       if Request.Status = USB_STATUS_SUCCESS then
        begin
         {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
@@ -3326,23 +3326,23 @@ begin
 
         {Clear PHY Interrupt}
         LAN78XXPHYRead(Request.Device,LAN88XX_INT_STS,Value);
-        
+
         {Clear Interrupt Status}
         LAN78XXWriteRegister(Request.Device,LAN78XX_INT_STS,LAN78XX_INT_STS_CLEAR_ALL);
-        
+
         {Check Size}
         if Request.ActualSize <> 4 then
          begin
           if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: Interrupt error (Size=' + IntToStr(Request.ActualSize) + ')');
-         
+
           {Update Statistics}
-          Inc(Network.Network.StatusErrors); 
+          Inc(Network.Network.StatusErrors);
          end
         else
          begin
           {Get Interrupt Mask}
           Mask:=LongWordLEToN(PLongWord(Request.Data)^);
-          
+
           {Check for PHY Interrupt}
           if (Mask and LAN78XX_INT_ENP_PHY_INT) <> 0 then
            begin
@@ -3355,10 +3355,10 @@ begin
                begin
                 {Set Status to Up}
                 Network.Network.NetworkStatus:=NETWORK_STATUS_UP;
-              
+
                 {Notify the Status}
-                NotifierNotify(@Network.Network.Device,DEVICE_NOTIFICATION_UP); 
-               end; 
+                NotifierNotify(@Network.Network.Device,DEVICE_NOTIFICATION_UP);
+               end;
              end
             else
              begin
@@ -3367,32 +3367,32 @@ begin
                begin
                 {Set Status to Down}
                 Network.Network.NetworkStatus:=NETWORK_STATUS_DOWN;
-              
+
                 {Notify the Status}
-                NotifierNotify(@Network.Network.Device,DEVICE_NOTIFICATION_DOWN); 
-               end; 
+                NotifierNotify(@Network.Network.Device,DEVICE_NOTIFICATION_DOWN);
+               end;
              end;
            end
           else
            begin
             if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: Interrupt error - unknown interrupt (Mask=' + IntToHex(Mask,8) + ')');
-            
+
             {Update Statistics}
-            Inc(Network.Network.StatusErrors); 
+            Inc(Network.Network.StatusErrors);
            end;
          end;
        end
-      else 
+      else
        begin
         if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: Failed interrupt request (Status=' + USBStatusToString(Request.Status) + ')');
-        
+
         {Update Statistics}
-        Inc(Network.Network.StatusErrors); 
+        Inc(Network.Network.StatusErrors);
        end;
-     
+
       {Update Pending}
-      Dec(Network.PendingCount); 
-     
+      Dec(Network.PendingCount);
+
       {Check State}
       if Network.Network.NetworkState = NETWORK_STATE_CLOSING then
        begin
@@ -3405,19 +3405,19 @@ begin
             {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'LAN78XX: Close pending, sending message to waiter thread (Thread=' + IntToHex(Network.WaiterThread,8) + ')');
             {$ENDIF}
-            
+
             {Send Message}
             FillChar(Message,SizeOf(TMessage),0);
             ThreadSendMessage(Network.WaiterThread,Message);
             Network.WaiterThread:=INVALID_HANDLE_VALUE;
-           end; 
+           end;
          end;
        end
       else
        begin
         {Update Pending}
         Inc(Network.PendingCount);
- 
+
         {$IF DEFINED(LAN78XX_DEBUG) or DEFINED(NETWORK_DEBUG)}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'LAN78XX: Resubmitting interrupt request');
         {$ENDIF}
@@ -3427,7 +3427,7 @@ begin
         if Status <> USB_STATUS_SUCCESS then
          begin
           if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: Failed to resubmit interrupt request: ' + USBStatusToString(Status));
-   
+
           {Update Pending}
           Dec(Network.PendingCount);
          end;
@@ -3445,7 +3445,7 @@ begin
  else
   begin
    if USB_LOG_ENABLED then USBLogError(Request.Device,'LAN78XX: Interrupt request invalid');
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -3458,7 +3458,7 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  WorkerScheduleEx(0,WORKER_FLAG_PRIORITY,TWorkerTask(LAN78XXInterruptWorker),Request,nil);
 end;
 
@@ -3468,13 +3468,13 @@ end;
 function LAN78XXCheckDevice(Device:PUSBDevice):LongWord;
 {Check the Vendor and Device ID against the supported devices}
 {Device: USB device to check}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
  Count:Integer;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
@@ -3490,7 +3490,7 @@ begin
 
  Result:=USB_STATUS_DEVICE_UNSUPPORTED;
 end;
-    
+
 {==============================================================================}
 
 function LAN78XXReadRegister(Device:PUSBDevice;Index:LongWord;var Data:LongWord):LongWord;
@@ -3498,7 +3498,7 @@ function LAN78XXReadRegister(Device:PUSBDevice;Index:LongWord;var Data:LongWord)
 {Device: USB device to read from}
 {Index: Index of the register to read}
 {Data: Value to return the register contents}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
@@ -3517,29 +3517,29 @@ function LAN78XXWriteRegister(Device:PUSBDevice;Index,Data:LongWord):LongWord;
 {Device: USB device to write to}
 {Index: Index of the register to write}
 {Data: Value to write to the register}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Send Write Register Request}
  Result:=USBControlRequest(Device,nil,LAN78XX_USB_VENDOR_REQUEST_WRITE_REGISTER,USB_BMREQUESTTYPE_DIR_OUT or USB_BMREQUESTTYPE_TYPE_VENDOR or USB_BMREQUESTTYPE_RECIPIENT_DEVICE,0,Index,@Data,SizeOf(LongWord));
 end;
-    
+
 {==============================================================================}
-    
+
 function LAN78XXModifyRegister(Device:PUSBDevice;Index,Mask,Value:LongWord):LongWord;
 {Modify the value contained in a register on a LAN78XX USB Ethernet Adapter}
 {Device: USB device to modify}
 {Index: Index of the register to modify}
 {Mask: Mask that contains 1 for the bits where the old value in the register
-       will be kept rather than cleared (unless those bits also appear in 
+       will be kept rather than cleared (unless those bits also appear in
        Value, in which case they will still be set)}
 {Value: Mask of bits to set in the register}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
  Data:LongWord;
  Status:LongWord;
@@ -3549,7 +3549,7 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Read Register}
  Status:=LAN78XXReadRegister(Device,Index,Data);
  if Status <> USB_STATUS_SUCCESS then
@@ -3557,15 +3557,15 @@ begin
    Result:=Status;
    Exit;
   end;
-  
+
  {Modify Value}
  Data:=Data and Mask;
  Data:=Data or Value;
- 
+
  {Write Register}
  Result:=LAN78XXWriteRegister(Device,Index,Data);
 end;
-    
+
 {==============================================================================}
 
 function LAN78XXSetRegisterBits(Device:PUSBDevice;Index,Value:LongWord):LongWord;
@@ -3574,14 +3574,14 @@ function LAN78XXSetRegisterBits(Device:PUSBDevice;Index,Value:LongWord):LongWord
 {Index: Index of the register to modify}
 {Value: Bits to set in the register.  At positions where there is a 0, the old
         value in the register will be written}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Modify Register}
  Result:=LAN78XXModifyRegister(Device,Index,$FFFFFFFF,Value);
 end;
@@ -3594,26 +3594,26 @@ function LAN78XXClearRegisterBits(Device:PUSBDevice;Index,Value:LongWord):LongWo
 {Index: Index of the register to modify}
 {Value: Bits to clear in the register.  At positions where there is a 0, the old
         value in the register will be written}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Modify Register}
  Result:=LAN78XXModifyRegister(Device,Index,not(Value),0);
 end;
-    
+
 {==============================================================================}
-    
+
 function LAN78XXPHYRead(Device:PUSBDevice;Index:LongWord;var Value:Word):LongWord;
 {Read a register from the MII Management serial interface on a LAN78XX USB Ethernet Adapter}
 {Device: USB device to read from}
 {Index: Index of the register to read}
 {Value: Value to return the register contents}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
  Data:LongWord;
  Status:LongWord;
@@ -3625,14 +3625,14 @@ begin
 
  {Setup Value}
  Value:=0;
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Get Network}
  Network:=PLAN78XXNetwork(Device.DriverData);
  if Network = nil then Exit;
- 
+
  {Acquire PHY Lock}
  if MutexLock(Network.PHYLock) = ERROR_SUCCESS then
   begin
@@ -3644,7 +3644,7 @@ begin
       Result:=Status;
       Exit;
      end;
-     
+
     {Set the Address, Index and Direction (Read from PHY)}
     Address:=(LAN78XX_PHY_ADDRESS shl LAN78XX_MII_ACC_PHY_ADDR_SHIFT) and LAN78XX_MII_ACC_PHY_ADDR_MASK;
     Address:=Address or (Index shl LAN78XX_MII_ACC_MIIRINDA_SHIFT) and LAN78XX_MII_ACC_MIIRINDA_MASK;
@@ -3655,7 +3655,7 @@ begin
       Result:=Status;
       Exit;
      end;
-    
+
     {Wait for MII not busy}
     Status:=LAN78XXPHYWaitNotBusy(Device);
     if Status <> USB_STATUS_SUCCESS then
@@ -3663,7 +3663,7 @@ begin
       Result:=Status;
       Exit;
      end;
-     
+
     {Read the Data}
     Status:=LAN78XXReadRegister(Device,LAN78XX_MII_DATA,Data);
     if Status <> USB_STATUS_SUCCESS then
@@ -3671,10 +3671,10 @@ begin
       Result:=Status;
       Exit;
      end;
-    
+
     {Return Value}
     Value:=Data and $FFFF;
-    
+
     {Return Result}
     Result:=USB_STATUS_SUCCESS;
    finally
@@ -3691,7 +3691,7 @@ function LAN78XXPHYWrite(Device:PUSBDevice;Index:LongWord;Value:Word):LongWord;
 {Device: USB device to write to}
 {Index: Index of the register to write}
 {Value: Value to write to the register}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
  Status:LongWord;
  Address:LongWord;
@@ -3702,11 +3702,11 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Get Network}
  Network:=PLAN78XXNetwork(Device.DriverData);
  if Network = nil then Exit;
- 
+
  {Acquire PHY Lock}
  if MutexLock(Network.PHYLock) = ERROR_SUCCESS then
   begin
@@ -3718,7 +3718,7 @@ begin
       Result:=Status;
       Exit;
      end;
-    
+
     {Write the Data}
     Status:=LAN78XXWriteRegister(Device,LAN78XX_MII_DATA,Value);
     if Status <> USB_STATUS_SUCCESS then
@@ -3726,7 +3726,7 @@ begin
       Result:=Status;
       Exit;
      end;
-    
+
     {Set the Address, Index and Direction (Write to PHY)}
     Address:=(LAN78XX_PHY_ADDRESS shl LAN78XX_MII_ACC_PHY_ADDR_SHIFT) and LAN78XX_MII_ACC_PHY_ADDR_MASK;
     Address:=Address or (Index shl LAN78XX_MII_ACC_MIIRINDA_SHIFT) and LAN78XX_MII_ACC_MIIRINDA_MASK;
@@ -3737,7 +3737,7 @@ begin
       Result:=Status;
       Exit;
      end;
-    
+
     {Wait for MII not busy}
     Status:=LAN78XXPHYWaitNotBusy(Device);
     if Status <> USB_STATUS_SUCCESS then
@@ -3745,7 +3745,7 @@ begin
       Result:=Status;
       Exit;
      end;
-    
+
     {Return Result}
     Result:=USB_STATUS_SUCCESS;
    finally
@@ -3760,7 +3760,7 @@ end;
 function LAN78XXPHYInitialize(Device:PUSBDevice):LongWord;
 {Initialize default MII Management serial interface options on a LAN78XX USB Ethernet Adapter}
 {Device: USB device to initialize}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
  Value:Word;
 begin
@@ -3769,20 +3769,20 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Clear Interrupt Status}
  LAN78XXPHYRead(Device,LAN88XX_INT_STS,Value);
- 
+
  {Enable PHY Interrupts}
  LAN78XXPHYWrite(Device,LAN88XX_INT_MASK,LAN88XX_INT_MASK_MDINTPIN_EN or LAN88XX_INT_MASK_LINK_CHANGE);
 
- {Enable Auto MDIX} 
+ {Enable Auto MDIX}
  LAN78XXPHYWrite(Device,LAN88XX_EXT_PAGE_ACCESS,LAN88XX_EXT_PAGE_SPACE_1);
- 
+
  LAN78XXPHYRead(Device,LAN88XX_EXT_MODE_CTRL,Value);
  Value:=Value and not(LAN88XX_EXT_MODE_CTRL_MDIX_MASK);
  LAN78XXPHYWrite(Device,LAN88XX_EXT_MODE_CTRL,Value or LAN88XX_EXT_MODE_CTRL_AUTO_MDIX);
- 
+
  LAN78XXPHYWrite(Device,LAN88XX_EXT_PAGE_ACCESS,LAN88XX_EXT_PAGE_SPACE_0);
 
  {Change LED defaults:
@@ -3798,17 +3798,17 @@ begin
  Value:=Value and not($FF);
  Value:=Value or (1 shl 0) or (6 shl 4);
  LAN78XXPHYWrite(Device,$1D,Value);
- 
+
  {Return Result}
  Result:=USB_STATUS_SUCCESS;
 end;
-    
+
 {==============================================================================}
-    
+
 function LAN78XXPHYWaitNotBusy(Device:PUSBDevice):LongWord;
 {Wait for the MII Management serial interface to be not busy on a LAN78XX USB Ethernet Adapter}
 {Device: USB device to wait for}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 
 {Note: Caller must hold the PHY Lock}
 var
@@ -3821,7 +3821,7 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Wait for MII Busy}
  Current:=GetTickCount64;
  repeat
@@ -3831,26 +3831,26 @@ begin
     Result:=Status;
     Exit;
    end;
-  
+
   if (Value and LAN78XX_MII_ACC_MII_BUSY) = 0 then
    begin
     Result:=USB_STATUS_SUCCESS;
     Exit;
    end;
  until GetTickCount64 > (Current + MILLISECONDS_PER_SECOND);
- 
+
  Result:=USB_STATUS_TIMEOUT;
 end;
 
 {==============================================================================}
-    
+
 function LAN78XXReadEEPROM(Device:PUSBDevice;Offset,Length:LongWord;Data:PByte):LongWord;
 {Read from the EEPROM (if present) on a LAN78XX USB Ethernet Adapter}
 {Device: USB device to read from}
 {Offset: The byte offset to start reading}
 {Length: The number of bytes to read}
 {Data: Pointer to a buffer to receive the data}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
  Signature:Byte;
 begin
@@ -3858,12 +3858,12 @@ begin
  Result:=LAN78XXReadRawEEPROM(Device,0,1,@Signature);
  if (Result = USB_STATUS_SUCCESS) and (Signature = LAN78XX_EEPROM_INDICATOR) then
   begin
-   Result:=LAN78XXReadRawEEPROM(Device,Offset,Length,Data);  
+   Result:=LAN78XXReadRawEEPROM(Device,Offset,Length,Data);
   end
  else
   begin
    Result:=USB_STATUS_INVALID_PARAMETER;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -3874,26 +3874,26 @@ function LAN78XXReadRawEEPROM(Device:PUSBDevice;Offset,Length:LongWord;Data:PByt
 {Offset: The byte offset to start reading}
 {Length: The number of bytes to read}
 {Data: Pointer to a buffer to receive the data}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  //To Do //lan78xx_read_raw_eeprom
 end;
 
 {==============================================================================}
 
 function LAN78XXReadOTP(Device:PUSBDevice;Offset,Length:LongWord;Data:PByte):LongWord;
-{Read from the OTP (if present) on a LAN78XX USB Ethernet Adapter}    
-{Device: USB device to read from}    
+{Read from the OTP (if present) on a LAN78XX USB Ethernet Adapter}
+{Device: USB device to read from}
 {Offset: The byte offset to start reading}
 {Length: The number of bytes to read}
 {Data: Pointer to a buffer to receive the data}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
  Signature:Byte;
 begin
@@ -3914,8 +3914,8 @@ begin
      Result:=USB_STATUS_INVALID_PARAMETER;
      Exit;
     end;
-   
-   Result:=LAN78XXReadRawOTP(Device,Offset,Length,Data);  
+
+   Result:=LAN78XXReadRawOTP(Device,Offset,Length,Data);
   end;
 end;
 
@@ -3927,24 +3927,24 @@ function LAN78XXReadRawOTP(Device:PUSBDevice;Offset,Length:LongWord;Data:PByte):
 {Offset: The byte offset to start reading}
 {Length: The number of bytes to read}
 {Data: Pointer to a buffer to receive the data}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  //To Do //lan78xx_read_raw_otp
 end;
 
 {==============================================================================}
-    
+
 function LAN78XXGetStatistics(Device:PUSBDevice;var Statistics:TLAN78XXStatistics):LongWord;
 {Get the statistics from a LAN78XX USB Ethernet Adapter}
 {Device: USB device to read from}
 {Statistics: The returned statistics from the device}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
@@ -3955,7 +3955,7 @@ begin
  {Send Read Statistics Request}
  Result:=USBControlRequest(Device,nil,LAN78XX_USB_VENDOR_REQUEST_GET_STATS,USB_BMREQUESTTYPE_DIR_IN or USB_BMREQUESTTYPE_TYPE_VENDOR or USB_BMREQUESTTYPE_RECIPIENT_DEVICE,0,0,@Statistics,SizeOf(TLAN78XXStatistics));
 end;
-    
+
 {==============================================================================}
 
 function LAN78XXGetMacAddress(Device:PUSBDevice;Address:PHardwareAddress):LongWord;
@@ -3973,10 +3973,10 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Check Address}
  if Address = nil then Exit;
- 
+
  {Read Address Low}
  Status:=LAN78XXReadRegister(Device,LAN78XX_RX_ADDRL,AddressLow);
  if Status <> USB_STATUS_SUCCESS then
@@ -3984,7 +3984,7 @@ begin
    Result:=Status;
    Exit;
   end;
- 
+
  {Read Address High}
  Status:=LAN78XXReadRegister(Device,LAN78XX_RX_ADDRH,AddressHigh);
  if Status <> USB_STATUS_SUCCESS then
@@ -3992,7 +3992,7 @@ begin
    Result:=Status;
    Exit;
   end;
- 
+
  {Decode Address}
  Address[0]:=(AddressLow shr 0) and $ff;
  Address[1]:=(AddressLow shr 8) and $ff;
@@ -4000,18 +4000,18 @@ begin
  Address[3]:=(AddressLow shr 24) and $ff;
  Address[4]:=(AddressHigh shr 0) and $ff;
  Address[5]:=(AddressHigh shr 8) and $ff;
- 
+
  {Return Result}
  Result:=USB_STATUS_SUCCESS;
 end;
-    
+
 {==============================================================================}
 
 function LAN78XXSetMacAddress(Device:PUSBDevice;Address:PHardwareAddress):LongWord;
 {Set the MAC address of a LAN78XX USB Ethernet Adapter}
 {Device: USB device to write to}
 {Address: MAC address value to set}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
  Status:LongWord;
  AddressLow:LongWord;
@@ -4022,14 +4022,14 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Check Address}
  if Address = nil then Exit;
-    
- {Encode Address} 
+
+ {Encode Address}
  AddressLow:=Address[0] or (Address[1] shl 8) or (Address[2] shl 16) or (Address[3] shl 24);
  AddressHigh:=Address[4] or (Address[5] shl 8);
- 
+
  {Write Address Low}
  Status:=LAN78XXWriteRegister(Device,LAN78XX_RX_ADDRL,AddressLow);
  if Status <> USB_STATUS_SUCCESS then
@@ -4037,15 +4037,15 @@ begin
    Result:=Status;
    Exit;
   end;
- 
- {Write Address High} 
+
+ {Write Address High}
  Status:=LAN78XXWriteRegister(Device,LAN78XX_RX_ADDRH,AddressHigh);
  if Status <> USB_STATUS_SUCCESS then
   begin
    Result:=Status;
    Exit;
   end;
- 
+
  {Add MAC Address Perfect Filter Entry}
  Status:=LAN78XXWriteRegister(Device,LAN78XX_MAF_LO(0),AddressLow);
  if Status <> USB_STATUS_SUCCESS then
@@ -4053,22 +4053,22 @@ begin
    Result:=Status;
    Exit;
   end;
- 
+
  Result:=LAN78XXWriteRegister(Device,LAN78XX_MAF_HI(0),AddressHigh or LAN78XX_MAF_HI_VALID);
 end;
-       
+
 {==============================================================================}
 {==============================================================================}
 
 initialization
  LAN78XXInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
- 
+
 {==============================================================================}
 {==============================================================================}
 
-end.    
+end.

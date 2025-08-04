@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -54,9 +54,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,PCI,USB;
 //const
  {EHCI specific constants}
 
-//To Do //A generic EHCI unit 
-                           
-              
+//To Do //A generic EHCI unit
+
+
 {==============================================================================}
 //type
  {EHCI specific types}
@@ -68,7 +68,7 @@ var
  EHCIInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure EHCIInit;
@@ -90,9 +90,9 @@ begin
  {}
  {Check Initialized}
  if EHCIInitialized then Exit;
- 
+
  //To Do
- 
+
  EHCIInitialized:=True;
 end;
 
@@ -108,7 +108,7 @@ initialization
  EHCIInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

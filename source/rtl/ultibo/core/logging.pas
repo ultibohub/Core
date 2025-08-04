@@ -17,7 +17,7 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -54,16 +54,16 @@ const
 
  LOGGING_THREAD_NAME = 'Logging';                  {Thread name for Logging threads}
  LOGGING_THREAD_PRIORITY = THREAD_PRIORITY_NORMAL; {Thread priority for Logging threads}
- 
+
  {Logging Device Types}
  LOGGING_TYPE_NONE      = 0;
  LOGGING_TYPE_CONSOLE   = 1;
  LOGGING_TYPE_FILE      = 2;
  LOGGING_TYPE_SYSLOG    = 3;
  LOGGING_TYPE_SERIAL    = 4;
- 
+
  LOGGING_TYPE_MAX       = 4;
-  
+
  {Logging Type Names}
  LOGGING_TYPE_NAMES:array[LOGGING_TYPE_NONE..LOGGING_TYPE_MAX] of String = (
   'LOGGING_TYPE_NONE',
@@ -71,18 +71,18 @@ const
   'LOGGING_TYPE_FILE',
   'LOGGING_TYPE_SYSLOG',
   'LOGGING_TYPE_SERIAL');
- 
+
  {Logging Device States}
  LOGGING_STATE_DISABLED   = 0;
  LOGGING_STATE_ENABLED    = 1;
- 
+
  LOGGING_STATE_MAX        = 1;
- 
+
  {Logging State Names}
  LOGGING_STATE_NAMES:array[LOGGING_STATE_DISABLED..LOGGING_STATE_ENABLED] of String = (
   'LOGGING_STATE_DISABLED',
   'LOGGING_STATE_ENABLED');
- 
+
  {Logging Device Flags}
  LOGGING_FLAG_NONE      = $00000000;
 
@@ -90,7 +90,7 @@ const
 const
  {Console Logging specific constants}
  CONSOLE_LOGGING_DESCRIPTION = 'Console Logging';
- 
+
 {==============================================================================}
 type
  {Logging specific types}
@@ -109,14 +109,14 @@ type
   Severity:PtrInt;        {TMessage.lParam:PtrInt}
   Facility:LongWord;      {TMessage.Time:LongWord}
  end;
- 
+
  PLoggingDevice = ^TLoggingDevice;
- 
+
  {Logging Enumeration Callback}
  TLoggingEnumerate = function(Logging:PLoggingDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Logging Notification Callback}
  TLoggingNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Logging Device Methods}
  TLoggingDeviceStart = function(Logging:PLoggingDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TLoggingDeviceStop = function(Logging:PLoggingDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -124,7 +124,7 @@ type
  TLoggingDeviceOutputEx = function(Logging:PLoggingDevice;Facility,Severity:LongWord;const Tag,Content:String):LongWord;{$IFDEF i386} stdcall;{$ENDIF} {Syslog compatible output}
  TLoggingDeviceGetTarget = function(Logging:PLoggingDevice):String;{$IFDEF i386} stdcall;{$ENDIF}
  TLoggingDeviceSetTarget = function(Logging:PLoggingDevice;const Target:String):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Logging Device}
  TLoggingDevice = record
   {Device Properties}
@@ -154,7 +154,7 @@ type
 type
  {Console Logging specific types}
  PConsoleLogging = ^TConsoleLogging;
- 
+
  {Console Logging}
  TConsoleLogging = record
   {Logging Properties}
@@ -164,11 +164,11 @@ type
   Window:TWindowHandle;    {The console window for logging output}
   Existing:LongBool;       {True if the console window already existed when logging started}
  end;
- 
+
 {==============================================================================}
 {var}
  {Logging specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure LoggingInit;
@@ -227,14 +227,14 @@ procedure SysLoggingOutputEx(AFacility,ASeverity:LongWord;const ATag,AContent:St
 function LoggingDeviceGetCount:LongWord;
 
 function LoggingDeviceGetDefault:PLoggingDevice;
-function LoggingDeviceSetDefault(Logging:PLoggingDevice):LongWord; 
+function LoggingDeviceSetDefault(Logging:PLoggingDevice):LongWord;
 
 function LoggingDeviceCheck(Logging:PLoggingDevice):PLoggingDevice;
 
 function LoggingTypeToString(LoggingType:LongWord):String;
 function LoggingStateToString(LoggingState:LongWord):String;
 
-function LoggingDeviceRedirectOutput(Logging:PLoggingDevice):Boolean; 
+function LoggingDeviceRedirectOutput(Logging:PLoggingDevice):Boolean;
 
 function LoggingGetMessageslotFlags:LongWord;
 
@@ -254,27 +254,27 @@ implementation
 var
  {Logging specific variables}
  LoggingInitialized:Boolean;
- 
+
  LoggingThread:TThreadHandle = INVALID_HANDLE_VALUE;
  LoggingMessageslot:TMessageslotHandle = INVALID_HANDLE_VALUE;
- 
+
  LoggingDeviceTable:PLoggingDevice;
  LoggingDeviceTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  LoggingDeviceTableCount:LongWord;
- 
+
  LoggingDeviceDefault:PLoggingDevice;
 
  LoggingDirectLock:TMutexHandle = INVALID_HANDLE_VALUE;
  LoggingOutputCount:LongWord;
- 
+
  LoggingTextIOOutputDevice:PLoggingDevice;
- 
+
 {==============================================================================}
 {==============================================================================}
 threadvar
  {Logging specific thread variables}
  LoggingTextIOBuffer:String;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -282,46 +282,46 @@ procedure LoggingInit;
 var
  WorkInt:LongWord;
  WorkBuffer:String;
- Thread:TThreadHandle; 
+ Thread:TThreadHandle;
 begin
  {}
  {Check Initialized}
  if LoggingInitialized then Exit;
- 
+
  {$IFDEF LOGGING_EARLY_INIT}
  {Initialize Device Support}
  DevicesInit;
- 
+
  {Initialize Console Support}
  ConsoleInit;
  {$ENDIF}
- 
+
  {Initialize Logging Device Table}
  LoggingDeviceTable:=nil;
- LoggingDeviceTableLock:=CriticalSectionCreate; 
+ LoggingDeviceTableLock:=CriticalSectionCreate;
  LoggingDeviceTableCount:=0;
  if LoggingDeviceTableLock = INVALID_HANDLE_VALUE then
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create logging device table lock');
   end;
  LoggingDeviceDefault:=nil;
- 
+
  {Create Logging Messageslot}
  LoggingMessageslot:=MessageslotCreateEx(LOGGING_MESSAGESLOT_MAXIMUM,LoggingGetMessageslotFlags);
- 
- {Create Logging Thread} 
+
+ {Create Logging Thread}
  LoggingThread:=BeginThread(LoggingExecute,nil,Thread,THREAD_STACK_DEFAULT_SIZE);
- if LoggingThread = INVALID_HANDLE_VALUE then 
+ if LoggingThread = INVALID_HANDLE_VALUE then
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create logging thread');
   end
  else
-  begin 
+  begin
    {Setup Logging Thread}
    ThreadSetName(LoggingThread,LOGGING_THREAD_NAME);
    ThreadSetPriority(LoggingThread,LOGGING_THREAD_PRIORITY);
   end;
- 
+
  {Create Direct Logging Lock}
  LoggingDirectLock:=MutexCreate;
  if LoggingDirectLock = INVALID_HANDLE_VALUE then
@@ -333,33 +333,33 @@ begin
  {CONSOLE_REGISTER_LOGGING}
  WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_REGISTER_LOGGING'),0);
  if WorkInt <> 0 then CONSOLE_REGISTER_LOGGING:=True;
- 
+
  {CONSOLE_LOGGING_DEFAULT}
  WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_LOGGING_DEFAULT'),0);
  if WorkInt <> 0 then CONSOLE_LOGGING_DEFAULT:=True;
- 
+
  {CONSOLE_LOGGING_POSITION}
  WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_LOGGING_POSITION'),0);
  if WorkInt > 0 then CONSOLE_LOGGING_POSITION:=WorkInt;
- 
+
  {CONSOLE_LOGGING_DEVICE}
  WorkBuffer:=EnvironmentGet('CONSOLE_LOGGING_DEVICE');
  if Length(WorkBuffer) <> 0 then CONSOLE_LOGGING_DEVICE:=WorkBuffer;
- 
+
  {Enumerate Consoles}
  ConsoleDeviceEnumerate(LoggingConsoleDeviceEnum,nil);
- 
+
  {Register Notification}
  ConsoleDeviceNotification(nil,LoggingConsoleDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_OPEN or DEVICE_NOTIFICATION_CLOSE,NOTIFIER_FLAG_WORKER);
-  
+
  {Register Platform Text IO Handlers}
  {TextIOWriteCharHandler:=SysTextIOWriteChar;}     {Only registered when calling LoggingDeviceRedirectOutput}
  {TextIOWriteBufferHandler:=SysTextIOWriteBuffer;} {Only registered when calling LoggingDeviceRedirectOutput}
-  
+
  {Register Platform Logging Handlers}
  LoggingOutputHandler:=SysLoggingOutput;
  LoggingOutputExHandler:=SysLoggingOutputEx;
- 
+
  LoggingInitialized:=True;
 end;
 
@@ -395,20 +395,20 @@ begin
          begin
           WorkBuffer:=LoggingEntry.Data;
          end;
-    
+
         {Output Logging}
         LoggingDeviceOutput(LoggingDeviceDefault,WorkBuffer);
-   
+
         {Update Logging Count}
         Inc(LoggingOutputCount);
-        
+
         {Release Logging}
         SetLength(LoggingEntry.Data,0);
        end
       else
        begin
         LoggingEntryEx:=PLoggingEntryEx(@Message); {Do not free}
-        
+
         {Setup Logging}
         if LOGGING_INCLUDE_COUNTER then
          begin
@@ -418,28 +418,28 @@ begin
          begin
           WorkBuffer:=LoggingEntryEx.Content;
          end;
-        
+
         {Output Logging}
         LoggingDeviceOutputEx(LoggingDeviceDefault,LoggingEntryEx.Facility,LoggingEntryEx.Severity,LoggingEntryEx.Tag,WorkBuffer);
-   
+
         {Update Logging Count}
         Inc(LoggingOutputCount);
-        
+
         {Release Logging}
         SetLength(LoggingEntryEx.Tag,0);
         SetLength(LoggingEntryEx.Content,0);
        end;
      end;
-    
-    {Yield}   
+
+    {Yield}
     {ThreadYield;}
-   end; 
+   end;
  except
   on E: Exception do
    begin
     if DEVICE_LOG_ENABLED then DeviceLogError(nil,'LoggingThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -449,11 +449,11 @@ function LoggingDeviceStart(Logging:PLoggingDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(LOGGING_DEBUG) or DEFINED(DEVICE_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Logging Device Start');
  {$ENDIF}
@@ -469,14 +469,14 @@ begin
    {Call Device Start}
    Result:=Logging.DeviceStart(Logging);
    if Result <> ERROR_SUCCESS then Exit;
-  end; 
- 
+  end;
+
  {Enable Device}
  Logging.LoggingState:=LOGGING_STATE_ENABLED;
 
  {Notify Enable}
  NotifierNotify(@Logging.Device,DEVICE_NOTIFICATION_ENABLE);
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -486,11 +486,11 @@ function LoggingDeviceStop(Logging:PLoggingDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(LOGGING_DEBUG) or DEFINED(DEVICE_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Logging Device Stop');
  {$ENDIF}
@@ -498,21 +498,21 @@ begin
  {Check Enabled}
  Result:=ERROR_SUCCESS;
  if Logging.LoggingState <> LOGGING_STATE_ENABLED then Exit;
- 
+
  {Check Stop}
  if Assigned(Logging.DeviceStop) then
   begin
    {Call Device Stop}
    Result:=Logging.DeviceStop(Logging);
    if Result <> ERROR_SUCCESS then Exit;
-  end; 
- 
+  end;
+
  {Disable Device}
  Logging.LoggingState:=LOGGING_STATE_DISABLED;
 
  {Notify Disable}
  NotifierNotify(@Logging.Device,DEVICE_NOTIFICATION_DISABLE);
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -522,15 +522,15 @@ function LoggingDeviceOutput(Logging:PLoggingDevice;const Data:String):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if Logging.LoggingState <> LOGGING_STATE_ENABLED then Exit;
- 
+
  if Assigned(Logging.DeviceOutput) then
   begin
    Result:=Logging.DeviceOutput(Logging,Data);
@@ -543,20 +543,20 @@ function LoggingDeviceOutputEx(Logging:PLoggingDevice;Facility,Severity:LongWord
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if Logging.LoggingState <> LOGGING_STATE_ENABLED then Exit;
- 
+
  if Assigned(Logging.DeviceOutputEx) then
   begin
    Result:=Logging.DeviceOutputEx(Logging,Facility,Severity,Tag,Content);
   end
- else if Assigned(Logging.DeviceOutput) then 
+ else if Assigned(Logging.DeviceOutput) then
   begin
    {Default to Output}
    Result:=Logging.DeviceOutput(Logging,Content);
@@ -569,18 +569,18 @@ function LoggingDeviceGetTarget(Logging:PLoggingDevice):String;
 begin
  {}
  Result:='';
- 
+
  {Check Logging}
  if Logging = nil then Exit;
  if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IF DEFINED(LOGGING_DEBUG) or DEFINED(DEVICE_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Logging Device Get Target');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if Logging.LoggingState <> LOGGING_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if Assigned(Logging.DeviceGetTarget) then
   begin
    Result:=Logging.DeviceGetTarget(Logging);
@@ -588,12 +588,12 @@ begin
  else
   begin
    if MutexLock(Logging.Lock) <> ERROR_SUCCESS then Exit;
-   
+
    Result:=Logging.Target;
    UniqueString(Result);
-   
+
    MutexUnlock(Logging.Lock);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -602,18 +602,18 @@ function LoggingDeviceSetTarget(Logging:PLoggingDevice;const Target:String):Long
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
  if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IF DEFINED(LOGGING_DEBUG) or DEFINED(DEVICE_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Logging Device Set Target');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if Logging.LoggingState <> LOGGING_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if Assigned(Logging.DeviceSetTarget) then
   begin
    Result:=Logging.DeviceSetTarget(Logging,Target);
@@ -621,14 +621,14 @@ begin
  else
   begin
    if MutexLock(Logging.Lock) <> ERROR_SUCCESS then Exit;
-   
+
    Logging.Target:=Target;
    UniqueString(Logging.Target);
-   
+
    Result:=ERROR_SUCCESS;
-   
+
    MutexUnlock(Logging.Lock);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -652,16 +652,16 @@ function LoggingDeviceCreateEx(Size:LongWord;Default:Boolean):PLoggingDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TLoggingDevice) then Exit;
- 
+
  {Create Logging}
  Result:=PLoggingDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=LOGGING_TYPE_NONE;
  Result.Device.DeviceFlags:=LOGGING_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -678,7 +678,7 @@ begin
  Result.Handle:=INVALID_HANDLE_VALUE;
  Result.Target:='';
  Result.Default:=Default;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreate;
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -697,25 +697,25 @@ function LoggingDeviceDestroy(Logging:PLoggingDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
  if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Logging}
  Result:=ERROR_IN_USE;
  if LoggingDeviceCheck(Logging) = Logging then Exit;
 
  {Check State}
  if Logging.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Lock}
  if Logging.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Logging.Lock);
   end;
- 
- {Destroy Logging} 
+
+ {Destroy Logging}
  Result:=DeviceDestroy(@Logging.Device);
 end;
 
@@ -728,22 +728,22 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
  if Logging.LoggingId <> DEVICE_ID_ANY then Exit;
  if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Interfaces}
  if not(Assigned(Logging.DeviceOutput)) then Exit;
- 
+
  {Check Logging}
  Result:=ERROR_ALREADY_EXISTS;
  if LoggingDeviceCheck(Logging) = Logging then Exit;
- 
+
  {Check State}
  if Logging.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Logging}
  if CriticalSectionLock(LoggingDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -755,19 +755,19 @@ begin
       Inc(LoggingId);
      end;
     Logging.LoggingId:=LoggingId;
-    
+
     {Update Device}
     Logging.Device.DeviceName:=LOGGING_NAME_PREFIX + IntToStr(Logging.LoggingId);
     Logging.Device.DeviceClass:=DEVICE_CLASS_LOGGING;
-    
+
     {Register Device}
     Result:=DeviceRegister(@Logging.Device);
     if Result <> ERROR_SUCCESS then
      begin
       Logging.LoggingId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link Logging}
     if LoggingDeviceTable = nil then
      begin
@@ -779,16 +779,16 @@ begin
       LoggingDeviceTable.Prev:=Logging;
       LoggingDeviceTable:=Logging;
      end;
- 
+
     {Increment Count}
     Inc(LoggingDeviceTableCount);
-    
+
     {Check Default}
     if (LoggingDeviceDefault = nil) and (Logging.Default) then
      begin
       LoggingDeviceDefault:=Logging;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -798,7 +798,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -811,19 +811,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
  if Logging.LoggingId = DEVICE_ID_ANY then Exit;
  if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Logging}
  Result:=ERROR_NOT_FOUND;
  if LoggingDeviceCheck(Logging) <> Logging then Exit;
- 
+
  {Check State}
  if Logging.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove Logging}
  if CriticalSectionLock(LoggingDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -831,7 +831,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@Logging.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink Logging}
     Prev:=Logging.Prev;
     Next:=Logging.Next;
@@ -841,7 +841,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -849,28 +849,28 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(LoggingDeviceTableCount);
- 
+
     {Check Default}
     if LoggingDeviceDefault = Logging then
      begin
       LoggingDeviceDefault:=LoggingDeviceTable;
-      
+
       while (LoggingDeviceDefault <> nil) do
        begin
         if LoggingDeviceDefault.Default then Break;
-        
+
         LoggingDeviceDefault:=LoggingDeviceDefault.Next;
        end;
      end;
-     
+
     {Update Logging}
     Logging.LoggingId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -880,7 +880,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -891,10 +891,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if LoggingId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(LoggingDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -970,10 +970,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(LoggingDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1027,10 +1027,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(LoggingDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1044,11 +1044,11 @@ begin
        begin
         if Callback(Logging,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Logging:=Logging.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1059,7 +1059,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1068,19 +1068,19 @@ function LoggingDeviceNotification(Logging:PLoggingDevice;Callback:TLoggingNotif
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_LOGGING,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check Logging}
    if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@Logging.Device,DEVICE_CLASS_LOGGING,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1092,17 +1092,17 @@ function ConsoleLoggingStart(Logging:PLoggingDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
     if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
     {Check Console}
     if PConsoleLogging(Logging).Console = nil then Exit;
 
@@ -1121,7 +1121,7 @@ begin
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1137,20 +1137,20 @@ function ConsoleLoggingStop(Logging:PLoggingDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
-    if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+    if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
     {Check Console}
     if PConsoleLogging(Logging).Console = nil then Exit;
- 
+
     {Check Window}
     if PConsoleLogging(Logging).Window = INVALID_HANDLE_VALUE then Exit;
 
@@ -1166,7 +1166,7 @@ begin
      end;
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1182,34 +1182,34 @@ function ConsoleLoggingOutput(Logging:PLoggingDevice;const Data:String):LongWord
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
-    if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+    if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
     {Check Window}
     if PConsoleLogging(Logging).Window = INVALID_HANDLE_VALUE then Exit;
- 
+
     {Check Console}
     if PConsoleLogging(Logging).Console = nil then Exit;
- 
+
     {Console WriteLn}
     Result:=ConsoleWindowWriteLn(PConsoleLogging(Logging).Window,Data);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Update Statistics}
     Inc(Logging.OutputCount);
-    
+
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1230,9 +1230,9 @@ begin
 
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
@@ -1302,7 +1302,7 @@ function SysTextIOWriteChar(ACh:Char;AUserData:Pointer):Boolean;
 begin
  {}
  Result:=True;
- 
+
  {Check Char}
  case ACh of
   #10:begin
@@ -1315,16 +1315,16 @@ begin
          LoggingOutput(LoggingTextIOBuffer);
         end
        else
-        begin       
+        begin
          {Output Logging}
          LoggingDeviceOutput(LoggingTextIOOutputDevice,LoggingTextIOBuffer);
-        end; 
-       
+        end;
+
        {Clear Buffer}
        SetLength(LoggingTextIOBuffer,0);
       end;
-    end;  
-   end; 
+    end;
+   end;
   #13:begin
     case DefaultTextLineBreakStyle of
      tlbsCR:begin
@@ -1335,22 +1335,22 @@ begin
          LoggingOutput(LoggingTextIOBuffer);
         end
        else
-        begin       
+        begin
          {Output Logging}
          LoggingDeviceOutput(LoggingTextIOOutputDevice,LoggingTextIOBuffer);
-        end; 
-       
+        end;
+
        {Clear Buffer}
        SetLength(LoggingTextIOBuffer,0);
       end;
     end;
-   end;  
+   end;
   else
    begin
     {Add to Buffer}
     LoggingTextIOBuffer:=LoggingTextIOBuffer + ACh;
    end;
- end;  
+ end;
 end;
 
 {==============================================================================}
@@ -1364,15 +1364,15 @@ var
 begin
  {}
  Result:=0;
- 
+
  if (ABuffer <> nil) and (ACount > 0) then
   begin
    {Allocate Buffer}
    SetLength(WorkBuffer,ACount);
-   
+
    {Copy Buffer}
    StrLCopy(PChar(WorkBuffer),ABuffer,ACount);
-   
+
    {Check Default}
    if LoggingTextIOOutputDevice = LoggingDeviceDefault then
     begin
@@ -1380,13 +1380,13 @@ begin
      LoggingOutput(WorkBuffer);
     end
    else
-    begin   
+    begin
      {Output Logging}
      if LoggingDeviceOutput(LoggingTextIOOutputDevice,WorkBuffer) <> ERROR_SUCCESS then Exit;
-    end; 
+    end;
   end;
 
- Result:=ACount;  
+ Result:=ACount;
 end;
 
 {==============================================================================}
@@ -1403,7 +1403,7 @@ begin
  if LOGGING_DIRECT_ENABLE then
   begin
    if MutexLock(LoggingDirectLock) <> ERROR_SUCCESS then Exit;
-   
+
    {Setup Logging}
    if CPUGetCount > 1 then
     begin
@@ -1413,12 +1413,12 @@ begin
     begin
      WorkBuffer:=IntToHex(ThreadGetCurrent,8) + ' - ' + AText;
     end;
-   
+
    {Check Options}
    if LOGGING_INCLUDE_TICKCOUNT then
     begin
      WorkBuffer:=IntToHex(GetTickCount64,16) + ' - ' + WorkBuffer;
-    end; 
+    end;
    if LOGGING_INCLUDE_DATETIME or (LOGGING_INCLUDE_DATE and LOGGING_INCLUDE_TIME) then
     begin
      WorkBuffer:=SystemDateTimeToString(Now) + ' - ' + WorkBuffer;
@@ -1437,26 +1437,26 @@ begin
    if LOGGING_INCLUDE_COUNTER then
     begin
      WorkBuffer:=IntToHex(LoggingOutputCount,8) + ' - ' + WorkBuffer;
-    end; 
+    end;
 
    {Remove CRLF}
    if WorkBuffer[Length(WorkBuffer)] = Chr(10) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
    if WorkBuffer[Length(WorkBuffer)] = Chr(13) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
-   
+
    {Output Logging}
    LoggingDeviceOutput(LoggingDeviceDefault,WorkBuffer);
-   
+
    {Update Logging Count}
    Inc(LoggingOutputCount);
-   
+
    MutexUnlock(LoggingDirectLock);
   end
- else 
+ else
   begin
- {$ENDIF} 
+ {$ENDIF}
    {Initialize Message}
    FillChar(Message,SizeOf(TMessage),0);
-   
+
    {Setup Logging}
    if CPUGetCount > 1 then
     begin
@@ -1466,12 +1466,12 @@ begin
     begin
      WorkBuffer:=IntToHex(ThreadGetCurrent,8) + ' - ' + AText;
      end;
-     
+
    {Check Options}
    if LOGGING_INCLUDE_TICKCOUNT then
     begin
      WorkBuffer:=IntToHex(GetTickCount64,16) + ' - ' + WorkBuffer;
-    end; 
+    end;
    if LOGGING_INCLUDE_DATETIME or (LOGGING_INCLUDE_DATE and LOGGING_INCLUDE_TIME) then
     begin
      WorkBuffer:=SystemDateTimeToString(Now) + ' - ' + WorkBuffer;
@@ -1486,26 +1486,26 @@ begin
       begin
        WorkBuffer:=SystemTimeToString(Now) + ' - ' + WorkBuffer;
       end;
-    end; 
+    end;
 
    {Remove CRLF}
    if WorkBuffer[Length(WorkBuffer)] = Chr(10) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
    if WorkBuffer[Length(WorkBuffer)] = Chr(13) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
-   
+
    {Create Logging Entry}
    LoggingEntry:=PLoggingEntry(@Message); {Do not free}
    LoggingEntry.Data:=WorkBuffer;
    LoggingEntry.Reserved2:=LongInt(LOGGING_SEVERITY_INVALID);   {Severity}
    LoggingEntry.Reserved3:=LOGGING_FACILITY_INVALID;            {Facility}
-   
+
    {Submit Logging Entry}
    if MessageslotSend(LoggingMessageslot,Message) <> ERROR_SUCCESS then
     begin
      SetLength(LoggingEntry.Data,0);
     end;
- {$IF not(DEFINED(INTERRUPT_DEBUG)) and not(DEFINED(HEAP_DEBUG)) and not(DEFINED(THREAD_DEBUG)) and not(DEFINED(PLATFORM_DEBUG))}  
+ {$IF not(DEFINED(INTERRUPT_DEBUG)) and not(DEFINED(HEAP_DEBUG)) and not(DEFINED(THREAD_DEBUG)) and not(DEFINED(PLATFORM_DEBUG))}
   end;
- {$ENDIF}  
+ {$ENDIF}
 end;
 
 {==============================================================================}
@@ -1521,7 +1521,7 @@ begin
  if LOGGING_DIRECT_ENABLE then
   begin
    if MutexLock(LoggingDirectLock) <> ERROR_SUCCESS then Exit;
-   
+
    {Setup Logging}
    if CPUGetCount > 1 then
     begin
@@ -1531,12 +1531,12 @@ begin
     begin
      WorkBuffer:=IntToHex(ThreadGetCurrent,8) + ' - ' + AContent;
     end;
-   
+
    {Check Options}
    if LOGGING_INCLUDE_TICKCOUNT then
     begin
      WorkBuffer:=IntToHex(GetTickCount64,16) + ' - ' + WorkBuffer;
-    end; 
+    end;
    if LOGGING_INCLUDE_DATETIME or (LOGGING_INCLUDE_DATE and LOGGING_INCLUDE_TIME) then
     begin
      WorkBuffer:=SystemDateTimeToString(Now) + ' - ' + WorkBuffer;
@@ -1551,30 +1551,30 @@ begin
       begin
        WorkBuffer:=SystemTimeToString(Now) + ' - ' + WorkBuffer;
       end;
-    end; 
+    end;
    if LOGGING_INCLUDE_COUNTER then
     begin
      WorkBuffer:=IntToHex(LoggingOutputCount,8) + ' - ' + WorkBuffer;
-    end; 
+    end;
 
    {Remove CRLF}
    if WorkBuffer[Length(WorkBuffer)] = Chr(10) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
    if WorkBuffer[Length(WorkBuffer)] = Chr(13) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
-   
+
    {Output Logging}
    LoggingDeviceOutputEx(LoggingDeviceDefault,AFacility,ASeverity,ATag,WorkBuffer);
-   
+
    {Update Logging Count}
    Inc(LoggingOutputCount);
-   
+
    MutexUnlock(LoggingDirectLock);
   end
- else 
+ else
   begin
- {$ENDIF} 
+ {$ENDIF}
    {Initialize Message}
    FillChar(Message,SizeOf(TMessage),0);
-   
+
    {Setup Logging}
    if CPUGetCount > 1 then
     begin
@@ -1584,12 +1584,12 @@ begin
     begin
      WorkBuffer:=IntToHex(ThreadGetCurrent,8) + ' - ' + AContent;
     end;
-    
+
    {Check Options}
    if LOGGING_INCLUDE_TICKCOUNT then
     begin
      WorkBuffer:=IntToHex(GetTickCount64,16) + ' - ' + WorkBuffer;
-    end; 
+    end;
    if LOGGING_INCLUDE_DATETIME or (LOGGING_INCLUDE_DATE and LOGGING_INCLUDE_TIME) then
     begin
      WorkBuffer:=SystemDateTimeToString(Now) + ' - ' + WorkBuffer;
@@ -1604,28 +1604,28 @@ begin
       begin
        WorkBuffer:=SystemTimeToString(Now) + ' - ' + WorkBuffer;
       end;
-    end; 
+    end;
 
    {Remove CRLF}
    if WorkBuffer[Length(WorkBuffer)] = Chr(10) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
    if WorkBuffer[Length(WorkBuffer)] = Chr(13) then SetLength(WorkBuffer,Length(WorkBuffer) - 1);
-   
+
    {Create Logging Entry}
    LoggingEntryEx:=PLoggingEntryEx(@Message); {Do not free}
    LoggingEntryEx.Content:=WorkBuffer;
    LoggingEntryEx.Tag:=ATag;
    LoggingEntryEx.Severity:=ASeverity;
    LoggingEntryEx.Facility:=AFacility;
-   
+
    {Submit Logging Entry}
    if MessageslotSend(LoggingMessageslot,Message) <> ERROR_SUCCESS then
     begin
      SetLength(LoggingEntryEx.Tag,0);
      SetLength(LoggingEntryEx.Content,0);
     end;
- {$IF not(DEFINED(INTERRUPT_DEBUG)) and not(DEFINED(HEAP_DEBUG)) and not(DEFINED(THREAD_DEBUG)) and not(DEFINED(PLATFORM_DEBUG))}  
+ {$IF not(DEFINED(INTERRUPT_DEBUG)) and not(DEFINED(HEAP_DEBUG)) and not(DEFINED(THREAD_DEBUG)) and not(DEFINED(PLATFORM_DEBUG))}
   end;
- {$ENDIF}  
+ {$ENDIF}
 end;
 
 {==============================================================================}
@@ -1649,26 +1649,26 @@ end;
 
 {==============================================================================}
 
-function LoggingDeviceSetDefault(Logging:PLoggingDevice):LongWord; 
+function LoggingDeviceSetDefault(Logging:PLoggingDevice):LongWord;
 {Set the current default logging device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
  if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(LoggingDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
     if LoggingDeviceCheck(Logging) <> Logging then Exit;
-    
+
     {Set Logging Default}
     LoggingDeviceDefault:=Logging;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1691,11 +1691,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
  if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(LoggingDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1710,7 +1710,7 @@ begin
         Result:=Logging;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -1728,7 +1728,7 @@ function LoggingTypeToString(LoggingType:LongWord):String;
 begin
  {}
  Result:='LOGGING_TYPE_UNKNOWN';
- 
+
  if LoggingType <= LOGGING_TYPE_MAX then
   begin
    Result:=LOGGING_TYPE_NAMES[LoggingType];
@@ -1742,7 +1742,7 @@ function LoggingStateToString(LoggingState:LongWord):String;
 begin
  {}
  Result:='LOGGING_STATE_UNKNOWN';
- 
+
  if LoggingState <= LOGGING_STATE_MAX then
   begin
    Result:=LOGGING_STATE_NAMES[LoggingState];
@@ -1751,7 +1751,7 @@ end;
 
 {==============================================================================}
 
-function LoggingDeviceRedirectOutput(Logging:PLoggingDevice):Boolean; 
+function LoggingDeviceRedirectOutput(Logging:PLoggingDevice):Boolean;
 {Redirect standard output to the logging device specified by Logging}
 {Logging: The logging device to redirect output to (or nil to stop redirection)}
 {Return: True if completed successfully or False if an error occurred}
@@ -1761,27 +1761,27 @@ function LoggingDeviceRedirectOutput(Logging:PLoggingDevice):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Logging = nil then
   begin
    {Stop Redirection}
    TextIOWriteCharHandler:=nil;
    TextIOWriteBufferHandler:=nil;
-   
+
    LoggingTextIOOutputDevice:=nil;
   end
  else
   begin
    {Check Logging}
    if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
-   
+
    {Start Redirection}
    TextIOWriteCharHandler:=SysTextIOWriteChar;
    TextIOWriteBufferHandler:=SysTextIOWriteBuffer;
-  
+
    LoggingTextIOOutputDevice:=Logging;
-  end;  
-  
+  end;
+
  Result:=True;
 end;
 
@@ -1815,7 +1815,7 @@ var
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {Check Logging}
  if LoggingDeviceFindByDevice(@Console.Device) = nil then
   begin
@@ -1830,21 +1830,21 @@ begin
         begin
          {Check Description}
          if ConsoleDeviceFindByDescription(CONSOLE_LOGGING_DEVICE) <> Console then Exit;
-        end; 
+        end;
       end
      else
       begin
        {Check Default}
        if ConsoleDeviceGetDefault <> Console then Exit;
-      end;    
-    
+      end;
+
      {Create Logging}
      Logging:=PConsoleLogging(LoggingDeviceCreateEx(SizeOf(TConsoleLogging),CONSOLE_LOGGING_DEFAULT));
      if Logging <> nil then
       begin
        {Update Logging}
        {Device}
-       Logging.Logging.Device.DeviceBus:=DEVICE_BUS_NONE; 
+       Logging.Logging.Device.DeviceBus:=DEVICE_BUS_NONE;
        Logging.Logging.Device.DeviceType:=LOGGING_TYPE_CONSOLE;
        Logging.Logging.Device.DeviceFlags:=LOGGING_FLAG_NONE;
        Logging.Logging.Device.DeviceData:=@Console.Device;
@@ -1859,7 +1859,7 @@ begin
        {Console}
        Logging.Console:=Console;
        Logging.Window:=INVALID_HANDLE_VALUE;
-       
+
        {Register Logging}
        Status:=LoggingDeviceRegister(@Logging.Logging);
        if Status = ERROR_SUCCESS then
@@ -1877,7 +1877,7 @@ begin
            LoggingDeviceDestroy(@Logging.Logging);
           end;
         end
-       else 
+       else
         begin
          if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to register new console logging device: ' + ErrorToString(Status));
 
@@ -1885,12 +1885,12 @@ begin
          LoggingDeviceDestroy(@Logging.Logging);
         end;
       end
-     else 
+     else
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to create new console logging device');
       end;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1902,7 +1902,7 @@ var
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {Check Logging}
  Logging:=PConsoleLogging(LoggingDeviceFindByDevice(@Console.Device));
  if Logging <> nil then
@@ -1920,35 +1920,35 @@ begin
        if Status <> ERROR_SUCCESS then
         begin
          if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to destroy console logging device');
-        end; 
+        end;
       end
      else
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to deregister console logging device: ' + ErrorToString(Status));
-      end;      
+      end;
     end
    else
-    begin   
+    begin
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to stop console logging device: ' + ErrorToString(Status));
     end;
   end;
 end;
-  
+
 {==============================================================================}
 
 function LoggingConsoleDeviceEnum(Console:PConsoleDevice;Data:Pointer):LongWord;
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {$IF DEFINED(LOGGING_DEBUG) or DEFINED(DEVICE_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Logging: Console device enumeration');
  {$ENDIF}
- 
+
  {Check Console}
  if Console = nil then Exit;
- if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit; 
- 
+ if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
+
  {Add Console}
  Result:=LoggingConsoleDeviceAdd(Console);
 end;
@@ -1961,14 +1961,14 @@ var
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {$IF DEFINED(LOGGING_DEBUG) or DEFINED(DEVICE_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Logging: Console device notification (Notification=' + NotificationToString(Notification) + ')');
  {$ENDIF}
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Get Console}
  Console:=PConsoleDevice(Device);
 
@@ -1976,15 +1976,15 @@ begin
  if (Notification and DEVICE_NOTIFICATION_REGISTER) <> 0 then
   begin
    {Check Console}
-   if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit; 
-   
+   if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
+
    {Add Console}
    Result:=LoggingConsoleDeviceAdd(Console);
   end
  else if (Notification and DEVICE_NOTIFICATION_OPEN) <> 0 then
   begin
    {Check Console}
-   if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit; 
+   if Console.ConsoleState <> CONSOLE_STATE_OPEN then Exit;
 
    {Add Console}
    Result:=LoggingConsoleDeviceAdd(Console);
@@ -2000,15 +2000,15 @@ begin
    Result:=LoggingConsoleDeviceRemove(Console);
   end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 
 initialization
  LoggingInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

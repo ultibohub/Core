@@ -17,39 +17,39 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
   wiringPiI2C.c - Copyright (c) 2013 Gordon Henderson
- 
+
 References
 ==========
 
  WiringPi (Current) - http://wiringpi.com/
-  
+
 Wiring I2C
 ==========
 
  This unit reproduces the functionality of Gordon Henderson's WiringPiI2C library which is part
- of WiringPi. See the Wiring unit for an implementation of the core WiringPi library and for 
+ of WiringPi. See the Wiring unit for an implementation of the core WiringPi library and for
  more information.
- 
- As with the core Wiring API this unit maintains function names and parameters as closely as 
+
+ As with the core Wiring API this unit maintains function names and parameters as closely as
  possible to the original library to allow easy porting of existing code and examples.
- 
+
  To use the Wiring I2C unit you must also include the driver unit for the specific board that
- you are using by adding it to the uses clause in your program. 
- 
+ you are using by adding it to the uses clause in your program.
+
   For Raspberry Pi A/B/A+/B+/Zero add BCM2708
   For Raspberry Pi 2B add BCM2709
   For Raspberry Pi 3B/3A+/3B+ add BCM2710
   For Raspberry Pi 4B/400 add BCM2711
- 
+
  Currently based on WiringPi release 2.32
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -73,11 +73,11 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,I2C,SysUtils,
 {==============================================================================}
 {type}
  {Wiring I2C specific types}
- 
+
 {==============================================================================}
 {var}
  {Wiring I2C specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 
@@ -102,7 +102,7 @@ implementation
 {==============================================================================}
 {var}
  {Wiring I2C specific variables}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -118,7 +118,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if I2CDeviceRead(PI2CDevice(fd),I2C_ADDRESS_INVALID,@Data,SizeOf(Byte),Count) = ERROR_SUCCESS then
   begin
    Result:=Data;
@@ -136,7 +136,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  Initial:=reg;
  if I2CDeviceWriteRead(PI2CDevice(fd),I2C_ADDRESS_INVALID,@Initial,SizeOf(Byte),@Data,SizeOf(Byte),Count) = ERROR_SUCCESS then
   begin
@@ -155,7 +155,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  Initial:=reg;
  if I2CDeviceWriteRead(PI2CDevice(fd),I2C_ADDRESS_INVALID,@Initial,SizeOf(Byte),@Data,SizeOf(Word),Count) = ERROR_SUCCESS then
   begin
@@ -173,7 +173,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  Buffer:=data;
  if I2CDeviceWrite(PI2CDevice(fd),I2C_ADDRESS_INVALID,@Buffer,SizeOf(Byte),Count) = ERROR_SUCCESS then
   begin
@@ -192,7 +192,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  Data:=value;
  Initial:=reg;
  if I2CDeviceWriteWrite(PI2CDevice(fd),I2C_ADDRESS_INVALID,@Initial,SizeOf(Byte),@Data,SizeOf(Byte),Count) = ERROR_SUCCESS then
@@ -212,7 +212,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  Data:=value;
  Initial:=reg;
  if I2CDeviceWriteWrite(PI2CDevice(fd),I2C_ADDRESS_INVALID,@Initial,SizeOf(Byte),@Data,SizeOf(Word),Count) = ERROR_SUCCESS then
@@ -230,7 +230,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  {Find I2C}
  I2CDevice:=I2CDeviceFindByName(device);
  if I2CDevice = nil then
@@ -238,10 +238,10 @@ begin
    I2CDevice:=I2CDeviceFindByDescription(device);
    if I2CDevice = nil then Exit;
   end;
- 
+
  {Start I2C (Default Rate)}
  if I2CDeviceStart(I2CDevice,0) <> ERROR_SUCCESS then Exit;
- 
+
  {Set Address}
  if I2CDeviceSetAddress(I2CDevice,devId) <> ERROR_SUCCESS then
   begin
@@ -249,7 +249,7 @@ begin
    I2CDeviceStop(I2CDevice);
    Exit;
   end;
-  
+
  Result:=LongInt(I2CDevice);
 end;
 
@@ -263,7 +263,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  rev:=piBoardRev;
  if rev = 1 then
   begin
@@ -276,8 +276,8 @@ begin
  else
   begin
    Exit;
-  end;  
-  
+  end;
+
  Result:=wiringPiI2CSetupInterface(device,devId);
 end;
 
@@ -288,7 +288,7 @@ initialization
  {Nothing}
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -296,4 +296,4 @@ finalization
 {==============================================================================}
 
 end.
- 
+

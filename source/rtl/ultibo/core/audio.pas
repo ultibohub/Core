@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -51,10 +51,10 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Codec,SysUtil
 //To Do //Add PCM/I2S, MPEG etc //No, they should include audio if required
 
 //To Do //This unit should also include the generic USB Audio driver ? //No, seperate unit ?
-     
+
 //To Do //See also: \source\packages\a52\src\a52.pas
 //To Do //See also: \source\packages\fcl-sound\src
-     
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -66,14 +66,14 @@ const
 
  {Audio Device Types}
  AUDIO_TYPE_NONE      = 0;
- 
+
  {Audio Device States}
  AUDIO_STATE_DISABLED = 0;
  AUDIO_STATE_ENABLED  = 1;
- 
+
  {Audio Device Flags}
  AUDIO_FLAG_NONE      = $00000000;
- 
+
  {Audio logging}
  AUDIO_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Audio debugging messages}
  AUDIO_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Audio informational messages, such as a device being attached or detached}
@@ -81,13 +81,13 @@ const
  AUDIO_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Audio error messages}
  AUDIO_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Audio messages}
 
-var 
+var
  AUDIO_DEFAULT_LOG_LEVEL:LongWord = AUDIO_LOG_LEVEL_DEBUG; {Minimum level for Audio messages.  Only messages with level greater than or equal to this will be printed}
- 
-var 
+
+var
  {Audio logging}
- AUDIO_LOG_ENABLED:Boolean; 
- 
+ AUDIO_LOG_ENABLED:Boolean;
+
 {==============================================================================}
 type
  {Audio specific types}
@@ -98,20 +98,20 @@ type
   Flags:LongWord;        {Device flags (eg AUDIO_FLAG_????)}
   //To do
  end;
- 
+
  {Audio Device}
  PAudioDevice = ^TAudioDevice;
- 
+
  {Audio Enumeration Callback}
  TAudioEnumerate = function(Audio:PAudioDevice;Data:Pointer):LongWord;
  {Audio Notification Callback}
  TAudioNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
- 
+
  {Audio Device Methods}
  //To do
- 
+
  TAudioDeviceGetProperties = function(Audio:PAudioDevice;Properties:PAudioProperties):LongWord;
- 
+
  TAudioDevice = record
   {Device Properties}
   Device:TDevice;                                 {The Device entry for this Audio device}
@@ -126,15 +126,15 @@ type
   Lock:TMutexHandle;                              {Device lock}
   //To Do
   Properties:TAudioProperties;                    {Device properties}
-  {Internal Properties}                                                                        
+  {Internal Properties}
   Prev:PAudioDevice;                              {Previous entry in Audio device table}
   Next:PAudioDevice;                              {Next entry in Audio device table}
- end; 
-  
+ end;
+
 {==============================================================================}
 {var}
  {Audio specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure AudioInit;
@@ -144,7 +144,7 @@ procedure AudioInit;
 //To Do
 
 function AudioDeviceGetProperties(Audio:PAudioDevice;Properties:PAudioProperties):LongWord;
-  
+
 function AudioDeviceCreate:PAudioDevice;
 function AudioDeviceCreateEx(Size:LongWord):PAudioDevice;
 function AudioDeviceDestroy(Audio:PAudioDevice):LongWord;
@@ -156,7 +156,7 @@ function AudioDeviceFind(AudioId:LongWord):PAudioDevice;
 function AudioDeviceFindByName(const Name:String):PAudioDevice; inline;
 function AudioDeviceFindByDescription(const Description:String):PAudioDevice; inline;
 function AudioDeviceEnumerate(Callback:TAudioEnumerate;Data:Pointer):LongWord;
- 
+
 function AudioDeviceNotification(Audio:PAudioDevice;Callback:TAudioNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
 
 {==============================================================================}
@@ -167,7 +167,7 @@ function AudioDeviceNotification(Audio:PAudioDevice;Callback:TAudioNotification;
 {Audio Helper Functions}
 function AudioGetCount:LongWord;
 function AudioDeviceGetDefault:PAudioDevice;
-function AudioDeviceSetDefault(Audio:PAudioDevice):LongWord; 
+function AudioDeviceSetDefault(Audio:PAudioDevice):LongWord;
 
 function AudioDeviceCheck(Audio:PAudioDevice):PAudioDevice;
 
@@ -193,7 +193,7 @@ var
  AudioDeviceTableCount:LongWord;
 
  AudioDeviceDefault:PAudioDevice;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -205,23 +205,23 @@ begin
  {}
  {Check Initialized}
  if AudioInitialized then Exit;
- 
+
  {Initialize Logging}
- AUDIO_LOG_ENABLED:=(AUDIO_DEFAULT_LOG_LEVEL <> AUDIO_LOG_LEVEL_NONE); 
- 
+ AUDIO_LOG_ENABLED:=(AUDIO_DEFAULT_LOG_LEVEL <> AUDIO_LOG_LEVEL_NONE);
+
  {Initialize Audio Device Table}
  AudioDeviceTable:=nil;
- AudioDeviceTableLock:=CriticalSectionCreate; 
+ AudioDeviceTableLock:=CriticalSectionCreate;
  AudioDeviceTableCount:=0;
  if AudioDeviceTableLock = INVALID_HANDLE_VALUE then
   begin
    if AUDIO_LOG_ENABLED then AudioLogError(nil,'Failed to create Audio device table lock');
   end;
  AudioDeviceDefault:=nil;
- 
+
  {Register Platform Audio Handlers}
  //To Do
- 
+
  AudioInitialized:=True;
 end;
 
@@ -231,7 +231,7 @@ end;
 //To Do
 
 {==============================================================================}
- 
+
 function AudioDeviceGetProperties(Audio:PAudioDevice;Properties:PAudioProperties):LongWord;
 {Get the properties for the specified Audio device}
 {Audio: The Audio device to get properties from}
@@ -240,22 +240,22 @@ function AudioDeviceGetProperties(Audio:PAudioDevice;Properties:PAudioProperties
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Properties}
  if Properties = nil then Exit;
- 
+
  {Check Audio}
  if Audio = nil then Exit;
- if Audio.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Audio.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF AUDIO_DEBUG}
  if AUDIO_LOG_ENABLED then AudioLogDebug(Audio,'Audio Device Get Properties');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if Audio.AudioState <> AUDIO_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(Audio.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Audio.DeviceGetProperties) then
@@ -267,17 +267,17 @@ begin
     begin
      {Get Properties}
      System.Move(Audio.Properties,Properties^,SizeOf(TAudioProperties));
-       
+
      {Return Result}
      Result:=ERROR_SUCCESS;
-    end;  
-    
+    end;
+
    MutexUnlock(Audio.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -299,16 +299,16 @@ function AudioDeviceCreateEx(Size:LongWord):PAudioDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TAudioDevice) then Exit;
- 
+
  {Create Audio}
  Result:=PAudioDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=AUDIO_TYPE_NONE;
  Result.Device.DeviceFlags:=AUDIO_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -319,7 +319,7 @@ begin
  //To Do
  Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -338,25 +338,25 @@ function AudioDeviceDestroy(Audio:PAudioDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Audio}
  if Audio = nil then Exit;
  if Audio.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Audio}
  Result:=ERROR_IN_USE;
  if AudioDeviceCheck(Audio) = Audio then Exit;
 
  {Check State}
  if Audio.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Lock}
  if Audio.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Audio.Lock);
   end;
- 
- {Destroy Audio} 
+
+ {Destroy Audio}
  Result:=DeviceDestroy(@Audio.Device);
 end;
 
@@ -369,22 +369,22 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Audio}
  if Audio = nil then Exit;
  if Audio.AudioId <> DEVICE_ID_ANY then Exit;
  if Audio.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Interfaces}
  //To Do
- 
+
  {Check Audio}
  Result:=ERROR_ALREADY_EXISTS;
  if AudioDeviceCheck(Audio) = Audio then Exit;
- 
+
  {Check State}
  if Audio.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Audio}
  if CriticalSectionLock(AudioDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -396,19 +396,19 @@ begin
       Inc(AudioId);
      end;
     Audio.AudioId:=AudioId;
-    
+
     {Update Device}
-    Audio.Device.DeviceName:=AUDIO_NAME_PREFIX + IntToStr(Audio.AudioId); 
+    Audio.Device.DeviceName:=AUDIO_NAME_PREFIX + IntToStr(Audio.AudioId);
     Audio.Device.DeviceClass:=DEVICE_CLASS_AUDIO;
-    
+
     {Register Device}
     Result:=DeviceRegister(@Audio.Device);
     if Result <> ERROR_SUCCESS then
      begin
       Audio.AudioId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link Audio}
     if AudioDeviceTable = nil then
      begin
@@ -420,16 +420,16 @@ begin
       AudioDeviceTable.Prev:=Audio;
       AudioDeviceTable:=Audio;
      end;
- 
+
     {Increment Count}
     Inc(AudioDeviceTableCount);
-    
+
     {Check Default}
     if AudioDeviceDefault = nil then
      begin
       AudioDeviceDefault:=Audio;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -439,7 +439,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -452,19 +452,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Audio}
  if Audio = nil then Exit;
  if Audio.AudioId = DEVICE_ID_ANY then Exit;
  if Audio.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Audio}
  Result:=ERROR_NOT_FOUND;
  if AudioDeviceCheck(Audio) <> Audio then Exit;
- 
+
  {Check State}
  if Audio.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove Audio}
  if CriticalSectionLock(AudioDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -472,7 +472,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@Audio.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink Audio}
     Prev:=Audio.Prev;
     Next:=Audio.Next;
@@ -482,7 +482,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -490,21 +490,21 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(AudioDeviceTableCount);
- 
+
     {Check Default}
     if AudioDeviceDefault = Audio then
      begin
       AudioDeviceDefault:=AudioDeviceTable;
      end;
- 
+
     {Update Audio}
     Audio.AudioId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -514,7 +514,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -525,10 +525,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if AudioId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(AudioDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -547,7 +547,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       Audio:=Audio.Next;
      end;
@@ -573,7 +573,7 @@ begin
  {}
  Result:=PAudioDevice(DeviceFindByDescription(Description));
 end;
-       
+
 {==============================================================================}
 
 function AudioDeviceEnumerate(Callback:TAudioEnumerate;Data:Pointer):LongWord;
@@ -582,10 +582,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(AudioDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -599,11 +599,11 @@ begin
        begin
         if Callback(Audio,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Audio:=Audio.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -614,7 +614,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -623,19 +623,19 @@ function AudioDeviceNotification(Audio:PAudioDevice;Callback:TAudioNotification;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Audio}
  if Audio = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_Audio,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check Audio}
    if Audio.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@Audio.Device,DEVICE_CLASS_AUDIO,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -663,26 +663,26 @@ end;
 
 {==============================================================================}
 
-function AudioDeviceSetDefault(Audio:PAudioDevice):LongWord; 
+function AudioDeviceSetDefault(Audio:PAudioDevice):LongWord;
 {Set the current default Audio device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Audio}
  if Audio = nil then Exit;
  if Audio.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(AudioDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Audio}
     if AudioDeviceCheck(Audio) <> Audio then Exit;
-    
+
     {Set Audio Default}
     AudioDeviceDefault:=Audio;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -705,11 +705,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Audio}
  if Audio = nil then Exit;
  if Audio.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(AudioDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -724,7 +724,7 @@ begin
         Result:=Audio;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -744,7 +744,7 @@ begin
  {}
  {Check Level}
  if Level < AUDIO_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = AUDIO_LOG_LEVEL_DEBUG then
@@ -759,17 +759,17 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'Audio: ';
- 
+
  {Check Audio}
  if Audio <> nil then
   begin
    WorkBuffer:=WorkBuffer + AUDIO_NAME_PREFIX + IntToStr(Audio.AudioId) + ': ';
   end;
 
- {Output Logging}  
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_AUDIO,LogLevelToLoggingSeverity(Level),'Audio',WorkBuffer + AText);
 end;
 
@@ -812,7 +812,7 @@ initialization
  AudioInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

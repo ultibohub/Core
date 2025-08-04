@@ -17,19 +17,19 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
  <See NTFS.pas>
- 
+
 References
 ==========
 
  <See NTFS.pas>
- 
+
 NT Filesystem
 =============
 
@@ -46,7 +46,7 @@ NT Filesystem
 
         In all cases, Create means create a new object (possibly added to list/tree) but do not update (only used when loading)
                       New means create a new object (possibly added to list/tree) and update values
-                      
+
         In all cases, Delete means delete from list/tree but do not free object
                       Remove means delete from list/tree and free the object
                       Destroy means delete from list/tree and free the object (only used when loading)
@@ -98,7 +98,7 @@ NT Filesystem
                        Sacl
 
                       Note: This is only true for Self Relative descriptors as used by NTFS etc
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -111,28 +111,28 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Threads,FileSystem,SysUtils,Classes,Unicode,Security,Ultibo,UltiboUtils,UltiboClasses,
      NTFSConst,NTFSTypes,NTFSUtils;
-     
+
 //To Do //Look for:
 
 //LongWord(Pointer()^) -> PLongWord()^
 
 //Testing
-   
+
 //WideString
   //Change to UnicodeString for FPC
-   
-//Critical   
-  
+
+//Critical
+
 //Protected
 
 //Lock
 
 //) = Uppercase(  //Use WorkBuffer
-  
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-     
+
 {==============================================================================}
 type
  {NTFS specific classes}
@@ -216,7 +216,7 @@ type
   public
    {Public Properties}
    property LocalLock:TMutexHandle read FLocalLock write FLocalLock;
-   
+
    property PrevEntry:TNTFSDiskEntry read FPrevEntry write FPrevEntry;
    property NextEntry:TNTFSDiskEntry read FNextEntry write FNextEntry;
 
@@ -369,23 +369,23 @@ type
    destructor Destroy; override;
   private
    {Private Variables}
-   FLock:TSynchronizerHandle; 
+   FLock:TSynchronizerHandle;
    FRecordLocal:TMutexHandle;
-   
-   FRunsLock:TSynchronizerHandle; 
-   FItemsLock:TSynchronizerHandle; 
-   FNodesLock:TSynchronizerHandle; 
-   FIndexLock:TSynchronizerHandle; 
-   FExtendedsLock:TSynchronizerHandle; 
-   FAttributesLock:TSynchronizerHandle; 
-   
+
+   FRunsLock:TSynchronizerHandle;
+   FItemsLock:TSynchronizerHandle;
+   FNodesLock:TSynchronizerHandle;
+   FIndexLock:TSynchronizerHandle;
+   FExtendedsLock:TSynchronizerHandle;
+   FAttributesLock:TSynchronizerHandle;
+
    FRunLocal:TMutexHandle;
    FItemLocal:TMutexHandle;
    FKeyLocal:TMutexHandle;
    FNodeLocal:TMutexHandle;
    FExtendedLocal:TMutexHandle;
    FAttributeLocal:TMutexHandle;
-   
+
    {Private Methods}
    function Find(const ARecordNumber:Int64;ACurrent:TNTFSDiskRecord):TNTFSDiskRecord;
   protected
@@ -408,14 +408,14 @@ type
 
    {Public Methods}
    function FindRecord(const ARecordNumber:Int64):TNTFSDiskRecord;
-   
+
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
    function ReaderConvert:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
    function WriterConvert:Boolean;
-   
+
    function RunsReaderLock:Boolean;
    function RunsReaderUnlock:Boolean;
    function RunsWriterLock:Boolean;
@@ -430,7 +430,7 @@ type
    function NodesReaderUnlock:Boolean;
    function NodesWriterLock:Boolean;
    function NodesWriterUnlock:Boolean;
-   
+
    function IndexReaderLock:Boolean;
    function IndexReaderUnlock:Boolean;
    function IndexWriterLock:Boolean;
@@ -440,7 +440,7 @@ type
    function ExtendedsReaderUnlock:Boolean;
    function ExtendedsWriterLock:Boolean;
    function ExtendedsWriterUnlock:Boolean;
-   
+
    function AttributesReaderLock:Boolean;
    function AttributesReaderUnlock:Boolean;
    function AttributesWriterLock:Boolean;
@@ -456,21 +456,21 @@ type
   private
    {Private Variables}
    FLocalLock:TMutexHandle;
-   
-   FRunsLock:TSynchronizerHandle; 
-   FItemsLock:TSynchronizerHandle; 
-   FNodesLock:TSynchronizerHandle; 
-   FIndexLock:TSynchronizerHandle; 
-   FExtendedsLock:TSynchronizerHandle; 
-   FAttributesLock:TSynchronizerHandle; 
-   
+
+   FRunsLock:TSynchronizerHandle;
+   FItemsLock:TSynchronizerHandle;
+   FNodesLock:TSynchronizerHandle;
+   FIndexLock:TSynchronizerHandle;
+   FExtendedsLock:TSynchronizerHandle;
+   FAttributesLock:TSynchronizerHandle;
+
    FRunLocal:TMutexHandle;
    FItemLocal:TMutexHandle;
    FKeyLocal:TMutexHandle;
    FNodeLocal:TMutexHandle;
    FExtendedLocal:TMutexHandle;
    FAttributeLocal:TMutexHandle;
-   
+
    FStatus:LongWord;
 
    FPrevRecord:TNTFSDiskRecord;
@@ -502,7 +502,7 @@ type
    {Private Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    function GetResizing:Boolean;
    procedure SetResizing(AValue:Boolean);
    function GetRemoving:Boolean;
@@ -667,7 +667,7 @@ type
    {Private Variables}
    FLock:TSynchronizerHandle;
    FKeyLocal:TMutexHandle;
-   
+
    FStatus:LongWord;
 
    FSectorSize:Word;
@@ -702,10 +702,10 @@ type
 
    {Private Methods}
    function GetNodesLock:TSynchronizerHandle;
-   
+
    function GetKeyLocal:TMutexHandle;
    function GetNodeLocal:TMutexHandle;
-   
+
    function GetLoaded:Boolean;
    procedure SetLoaded(AValue:Boolean);
    function GetChanged:Boolean;
@@ -827,7 +827,7 @@ type
 
    function ReadKeys(AParent:TNTFSDiskKey;ANode:TNTFSDiskNode;ABuffer:Pointer;var AOffset,ASize:LongWord;AVersion:Word):Boolean;
    function WriteKeys(AParent:TNTFSDiskKey;ANode:TNTFSDiskNode;ABuffer:Pointer;var AOffset,ASize:LongWord;AVersion:Word):Boolean;
-   
+
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
@@ -938,7 +938,7 @@ type
   private
    {Private Variables}
    FNodeLocal:TMutexHandle;
-   
+
    {Private Methods}
    function GetModified:Boolean;
    procedure SetModified(AValue:Boolean);
@@ -958,7 +958,7 @@ type
   private
    {Private Variables}
    FLocalLock:TMutexHandle;
-   
+
    FStatus:LongWord;
 
    {Index Variables} {TNTFSIndexRecord / TNTFSIndexHeader}
@@ -1057,7 +1057,7 @@ type
   private
    {Private Variables}
    FLocalLock:TMutexHandle;
-   
+
    FStatus:LongWord;
    FKey:Pointer;
 
@@ -1206,16 +1206,16 @@ type
 
   {Run}
  TNTFSDiskRun = class;
- TNTFSDiskRuns = class(TFileSysListEx) 
+ TNTFSDiskRuns = class(TFileSysListEx)
    constructor Create(ARunLocal:TMutexHandle;ALock:TSynchronizerHandle);
    destructor Destroy; override;
   private
    {Private Variables}
    FRunLocal:TMutexHandle;
-   
+
    FRecent:TNTFSDiskRun;
    FRecentVCN:Int64;
-   
+
    {Private Methods}
    function GetStart:TNTFSDiskRun;
    function GetFinal:TNTFSDiskRun;
@@ -1236,12 +1236,12 @@ type
  end;
 
  TNTFSDiskRun = class(TListObject)
-   constructor Create(ALocalLock:TMutexHandle;AAttribute:TNTFSDiskAttribute); 
+   constructor Create(ALocalLock:TMutexHandle;AAttribute:TNTFSDiskAttribute);
    destructor Destroy; override;
   private
    {Private Variables}
    FLocalLock:TMutexHandle;
-   
+
    {Run Variables}
    FStart:Int64;                             {Run start logical cluster}
    FOffset:Int64;                            {Run start cluster offset}
@@ -1294,7 +1294,7 @@ type
   private
    {Private Variables}
    FItemLocal:TMutexHandle;
-   
+
    FStatus:LongWord;
 
    {Private Methods}
@@ -1318,7 +1318,7 @@ type
   private
    {Private Variables}
    FLocalLock:TMutexHandle;
-   
+
    FStatus:LongWord;
 
    {Item Variables}
@@ -1387,7 +1387,7 @@ type
   private
    {Private Variables}
    FAttributeLocal:TMutexHandle;
-   
+
    {Private Methods}
    function GetPrevious(AAttribute:TNTFSDiskAttribute):TNTFSDiskAttribute;
   public
@@ -1407,7 +1407,7 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Protected Variables}
    FStatus:LongWord;
@@ -1445,17 +1445,17 @@ type
    {Protected Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    function GetRunsLock:TSynchronizerHandle;
    function GetItemsLock:TSynchronizerHandle;
    function GetIndexLock:TSynchronizerHandle;
    function GetExtendedsLock:TSynchronizerHandle;
-   
+
    function GetRunLocal:TMutexHandle;
    function GetItemLocal:TMutexHandle;
    function GetKeyLocal:TMutexHandle;
    function GetExtendedLocal:TMutexHandle;
-   
+
    function GetUpdating:Boolean;
    procedure SetUpdating(AValue:Boolean);
 
@@ -1624,7 +1624,7 @@ type
    FUpdateSequenceNumber:Int64;              {Update Sequence Number}
 
    {Private Methods}
-   
+
   public
    {Public Properties}
 
@@ -1661,7 +1661,7 @@ type
    {Attribute Variables}    {TNTFSAttributeList}
 
    {Private Methods}
-   
+
   public
    {Public Properties}
 
@@ -1744,7 +1744,7 @@ type
    FDomainId:TGUID;                          {GUID Domain Id Domain in which object was created}
 
    {Private Methods}
-   
+
   public
    {Public Properties}
 
@@ -1770,7 +1770,7 @@ type
    {Attribute Variables}    {TNTFSVolumeVersion}
 
    {Private Methods}
-   
+
   protected
    {Protected Variables}
 
@@ -1859,7 +1859,7 @@ type
    FVolumeFlags:Word;                        {Flags}
 
    {Private Methods}
-   
+
   public
    {Public Properties}
 
@@ -1884,7 +1884,7 @@ type
    {Attribute Variables}    {TNTFSData}
 
    {Private Methods}
-   
+
   protected
    {Protected Variables}
 
@@ -1913,7 +1913,7 @@ type
    FIndexCounterOffset:LongWord;             {Index Record Number increment}
 
    {Private Methods}
-   
+
   public
    {Public Properties}
 
@@ -1943,7 +1943,7 @@ type
    {Attribute Variables}    {TNTFSIndexAllocation}
 
    {Private Methods}
-   
+
   protected
    {Protected Variables}
 
@@ -1968,7 +1968,7 @@ type
    {Attribute Variables}    {TNTFSBitmap}
 
    {Private Methods}
-   
+
   protected
    {Protected Variables}
 
@@ -2045,7 +2045,7 @@ type
    {Attribute Variables}    {TNTFSSymbolicLink}
 
    {Private Methods}
-   
+
   protected
    {Protected Variables}
 
@@ -2071,7 +2071,7 @@ type
    FUnpackedSize:LongWord;                   {Size of the unpacked Extended Attributes}
 
    {Private Methods}
-   
+
   public
    {Public Properties}
 
@@ -2101,7 +2101,7 @@ type
    FExtendeds:TNTFSExtendeds;              {List of attributes of this attribute}
 
    {Private Methods}
-   
+
   public
    {Public Properties}
 
@@ -2138,7 +2138,7 @@ type
    {Attribute Variables}    {TNTFSPropertySet}
 
    {Private Methods}
-   
+
   protected
    {Protected Variables}
 
@@ -2161,7 +2161,7 @@ type
    {Attribute Variables}    {TNTFSLoggedUtilityStream}
 
    {Private Methods}
-   
+
   protected
    {Protected Variables}
 
@@ -2184,7 +2184,7 @@ type
    {Attribute Variables}    {TNTFSEnd}
 
    {Private Methods}
-   
+
   public
    {Public Properties}
 
@@ -2208,7 +2208,7 @@ type
    {Attribute Variables}    {TNTFSUnknown}
 
    {Private Methods}
-   
+
   protected
    {Protected Variables}
 
@@ -2249,8 +2249,8 @@ type
    destructor Destroy; override;
   private
    {Private Variables}
-   FLock:TSynchronizerHandle; 
-   
+   FLock:TSynchronizerHandle;
+
    FData:Pointer;
 
    {Private Methods}
@@ -2279,7 +2279,7 @@ type
   private
    {Private Variables}
    FAttrDefLocal:TMutexHandle;
-   
+
    {Private Methods}
    function GetPrevious(AAttrDef:TNTFSAttrDef):TNTFSAttrDef;
   public
@@ -2317,7 +2317,7 @@ type
   private
    {Private Variables}
    FLocalLock:TMutexHandle;
-   
+
    FAttributeName:String;                {Label in Unicode} {Change to WideString}
    FAttributeType:LongWord;              {Type}
    FDisplayRule:LongWord;                {Display rule}
@@ -2471,13 +2471,13 @@ type
    function WriteReparse(ABuffer:Pointer;var AOffset,ASize:LongWord;AVersion:Word):Boolean; override;
  end;
 
- TNTFSExtendeds = class(TFileSysListEx) 
+ TNTFSExtendeds = class(TFileSysListEx)
    constructor Create(AExtendedLocal:TMutexHandle;ALock:TSynchronizerHandle);
    destructor Destroy; override;
   private
    {Private Variables}
    FExtendedLocal:TMutexHandle;
-   
+
    {Private Methods}
 
   public
@@ -2495,7 +2495,7 @@ type
   private
    {Private Variables}
    FLocalLock:TMutexHandle;
-   
+
    FExtendedOffset:LongWord;                 {Offset to next Extended Attribute} {Offset to next EA is the size of this EA}
    FExtendedFlags:Byte;                      {Flags}
    FExtendedName:String;                     {Name} {Note: No offset so always in the same location} {Not Unicode}
@@ -2532,7 +2532,7 @@ type
  end;
 
  TNTFSSecurityItem = class;
- TNTFSSecurityItems = class(TFileSysList) 
+ TNTFSSecurityItems = class(TFileSysList)
    constructor Create;
    destructor Destroy; override;
   private
@@ -2571,7 +2571,7 @@ type
   private
    {Private Variables}
    FLocalLock:TMutexHandle;
-   
+
    FSecurityHash:LongWord;              {Hash of Security Descriptor}
    FSecurityId:LongWord;                {Security Id}
    FSecurityOffset:Int64;               {Offset of this entry in $SDS}
@@ -2601,7 +2601,7 @@ type
    function UpdateSecurity(ASecurity:TNTFSSecurity):Boolean;
    function DeleteSecurity:Boolean;
    function RemoveSecurity(AFree:Boolean):Boolean;
-   
+
    function MirrorOffset:Int64;
 
    function Init(ASecurityId:LongWord;AVersion:Word):Boolean;
@@ -2781,7 +2781,7 @@ begin
  if not AcquireLock then Exit;
 
  FOrigin:=AOrigin;
- 
+
  ReleaseLock;
 end;
 
@@ -2794,10 +2794,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Relative}
  if (Attributes and (faDot or faDotDot)) <> faNone then Exit;
- 
+
  {Check Directory}
  if (Attributes and faDirectory) = faDirectory then
   begin
@@ -2810,7 +2810,7 @@ begin
        Result:=Entry;
        Exit;
       end;
-      
+
      Entry:=TNTFSDiskEntry(Entry.Next);
     end;
   end;
@@ -2825,10 +2825,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Relative}
  if (Attributes and (faDot or faDotDot)) <> faNone then Exit;
- 
+
  {Check Directory}
  if (Attributes and faDirectory) = faDirectory then
   begin
@@ -2841,7 +2841,7 @@ begin
        Result:=Entry;
        Exit;
       end;
-      
+
      Entry:=TNTFSDiskEntry(Entry.Next);
     end;
   end;
@@ -2854,10 +2854,10 @@ function TNTFSDiskEntry.CreateDot:TNTFSDiskEntry;
 begin
  {}
  Result:=nil;
- 
+
  {Check Relative}
  if (Attributes and (faDot or faDotDot)) <> faNone then Exit;
- 
+
  {Check Directory}
  if (Attributes and faDirectory) = faDirectory then
   begin
@@ -2885,13 +2885,13 @@ function TNTFSDiskEntry.CreateDotDot:TNTFSDiskEntry;
 begin
  {}
  Result:=nil;
- 
+
  {Check Parent}
  if Parent = nil then Exit;
- 
+
  {Check Relative}
  if (Attributes and (faDot or faDotDot)) <> faNone then Exit;
- 
+
  {Check Directory}
  if (Attributes and faDirectory) = faDirectory then
   begin
@@ -2919,10 +2919,10 @@ function TNTFSDiskEntry.UpdateDot:Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Parent}
  if Parent = nil then Exit;
- 
+
  {Check Dot}
  if (Attributes and faDot) = faDot then
   begin
@@ -2950,10 +2950,10 @@ function TNTFSDiskEntry.UpdateDotDot(AEntry:TNTFSDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Entry}
  if AEntry = nil then Exit;
- 
+
  {Check DotDot}
  if (Attributes and faDotDot) = faDotDot then
   begin
@@ -2981,15 +2981,15 @@ function TNTFSDiskEntry.RecordNumber:Int64;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
  try
   if FOrigin = nil then Exit;
- 
+
   Result:=FOrigin.RecordNumber;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2998,15 +2998,15 @@ function TNTFSDiskEntry.FileReference:Int64;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
  try
   if FOrigin = nil then Exit;
- 
+
   Result:=FOrigin.FileReference;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3017,30 +3017,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FOrigin = nil then Exit;
-  
+
   {Get Attribute} {StandardInformation}
   Attribute:=FOrigin.GetAttribute(ntfsAttrTypeStandardInformation,ntfsBlankName,ntfsInstanceFirst);
   if Attribute = nil then Exit;
   if not Attribute.UpdateEntry(Self) then Exit;
-  
+
   {Check Entry}
   if (Attributes and faStream) = faNone then
    begin
     {Get Attribute} {Data} {Optional}
     Attribute:=FOrigin.GetAttribute(ntfsAttrTypeData,ntfsBlankName,ntfsInstanceFirst);
     if Attribute <> nil then if not Attribute.UpdateEntry(Self) then Exit;
-    
+
     {Check Attribute} {FileName}
     if FAttribute = nil then Exit;
     if not FAttribute.UpdateEntry(Self) then Exit;
-    
+
     {Check Alternate} {FileName} {Optional}
     if FAlternate <> nil then if not FAlternate.UpdateEntry(Self) then Exit;
-    
+
     Result:=True;
    end
   else
@@ -3048,15 +3048,15 @@ begin
     {Check Attribute} {Data}
     if FAttribute = nil then Exit;
     if not FAttribute.UpdateEntry(Self) then Exit;
-    
+
     {Check Alternate} {None}
     if FAlternate <> nil then Exit;
-    
+
     Result:=True;
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3068,30 +3068,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FOrigin = nil then Exit;
-  
+
   {Get Attribute} {StandardInformation}
   Attribute:=FOrigin.GetAttribute(ntfsAttrTypeStandardInformation,ntfsBlankName,ntfsInstanceFirst);
   if Attribute = nil then Exit;
   if not Attribute.UpdateAttribute(Self) then Exit;
-  
+
   {Check Entry}
   if (Attributes and faStream) = faNone then
    begin
     {Get Attribute} {Data} {Optional}
     Attribute:=FOrigin.GetAttribute(ntfsAttrTypeData,ntfsBlankName,ntfsInstanceFirst);
     if Attribute <> nil then if not Attribute.UpdateAttribute(Self) then Exit;
-    
+
     {Check Attribute} {FileName}
     if FAttribute = nil then Exit;
     if not FAttribute.UpdateAttribute(Self) then Exit;
-    
+
     {Check Alternate} {FileName} {Optional}
     if FAlternate <> nil then if not FAlternate.UpdateAttribute(Self) then Exit;
-    
+
     Result:=True;
    end
   else
@@ -3099,15 +3099,15 @@ begin
     {Check Attribute} {Data}
     if FAttribute = nil then Exit;
     if not FAttribute.UpdateAttribute(Self) then Exit;
-    
+
     {Check Alternate} {None}
     if FAlternate <> nil then Exit;
-    
+
     Result:=True;
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3119,7 +3119,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if FOrigin = nil then Exit;
@@ -3131,7 +3131,7 @@ begin
   Base:=FOrigin.Origin;
   if Base = nil then Exit;
   if Base.Links = nil then Exit;
- 
+
   {Get First Name}
   Result:=Base.Links.FirstEntry;
 
@@ -3139,7 +3139,7 @@ begin
   if AReference and (Result <> nil) then Result.AddReference;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3151,7 +3151,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if AHandle = nil then Exit;
@@ -3161,7 +3161,7 @@ begin
   {Get Current}
   Current:=TNTFSDiskEntry(AHandle.CurrentEntry);
   if Current = nil then Exit;
-  
+
   {Get Prev Name}
   Result:=Current.PrevEntry;
 
@@ -3169,7 +3169,7 @@ begin
   if AReference and (Result <> nil) then Result.AddReference;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3181,7 +3181,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if AHandle = nil then Exit;
@@ -3191,7 +3191,7 @@ begin
   {Get Current}
   Current:=TNTFSDiskEntry(AHandle.CurrentEntry);
   if Current = nil then Exit;
-  
+
   {Get Next Name}
   Result:=Current.NextEntry;
 
@@ -3199,7 +3199,7 @@ begin
   if AReference and (Result <> nil) then Result.AddReference;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3211,7 +3211,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if FOrigin = nil then Exit;
@@ -3223,15 +3223,15 @@ begin
   Base:=FOrigin.Origin;
   if Base = nil then Exit;
   if Base.Links = nil then Exit;
-  
+
   {Get Last Name}
   Result:=Base.Links.LastEntry;
-  
+
   {Add Reference}
   if AReference and (Result <> nil) then Result.AddReference;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3281,7 +3281,7 @@ begin
  inherited Create;
  FFirstEntry:=nil;
  FLastEntry:=nil;
- 
+
  FEntryCount:=0;
 end;
 
@@ -3303,9 +3303,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AEntry = nil then Exit;
- 
+
  PrevEntry:=FLastEntry;
  if PrevEntry = nil then
   begin
@@ -3314,7 +3314,7 @@ begin
    AEntry.NextEntry:=nil;
    FFirstEntry:=AEntry;
    FLastEntry:=AEntry;
-   
+
    Result:=True;
   end
  else
@@ -3324,7 +3324,7 @@ begin
    AEntry.PrevEntry:=PrevEntry;
    AEntry.NextEntry:=nil;
    FLastEntry:=AEntry;
-   
+
    Result:=True;
   end;
 end;
@@ -3338,9 +3338,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AEntry = nil then Exit;
- 
+
  if AEntry.PrevEntry <> nil then
   begin
    {Not First Object}
@@ -3376,10 +3376,10 @@ begin
      FLastEntry:=nil;
     end;
   end;
-  
+
  AEntry.PrevEntry:=nil;
  AEntry.NextEntry:=nil;
- 
+
  Result:=True;
 end;
 
@@ -3390,13 +3390,13 @@ function TNTFSEntryList.Add(AEntry:TNTFSDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AEntry = nil then Exit;
- 
+
  if Link(AEntry) then
   begin
    Inc(FEntryCount);
-   
+
    Result:=True;
   end;
 end;
@@ -3408,13 +3408,13 @@ function TNTFSEntryList.Remove(AEntry:TNTFSDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AEntry = nil then Exit;
- 
+
  if Unlink(AEntry) then
   begin
    Dec(FEntryCount);
-   
+
    Result:=True;
   end;
 end;
@@ -3440,7 +3440,7 @@ begin
  inherited Create;
  FFirstRecord:=nil;
  FLastRecord:=nil;
- 
+
  FRecordCount:=0;
 end;
 
@@ -3462,9 +3462,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ARecord = nil then Exit;
- 
+
  PrevRecord:=FLastRecord;
  if PrevRecord = nil then
   begin
@@ -3473,7 +3473,7 @@ begin
    ARecord.NextRecord:=nil;
    FFirstRecord:=ARecord;
    FLastRecord:=ARecord;
-   
+
    Result:=True;
   end
  else
@@ -3483,7 +3483,7 @@ begin
    ARecord.PrevRecord:=PrevRecord;
    ARecord.NextRecord:=nil;
    FLastRecord:=ARecord;
-   
+
    Result:=True;
   end;
 end;
@@ -3497,9 +3497,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ARecord = nil then Exit;
- 
+
  if ARecord.PrevRecord <> nil then
   begin
    {Not First Object}
@@ -3535,10 +3535,10 @@ begin
      FLastRecord:=nil;
     end;
   end;
-  
+
  ARecord.PrevRecord:=nil;
  ARecord.NextRecord:=nil;
- 
+
  Result:=True;
 end;
 
@@ -3549,13 +3549,13 @@ function TNTFSRecordList.Add(ARecord:TNTFSDiskRecord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ARecord = nil then Exit;
- 
+
  if Link(ARecord) then
   begin
    Inc(FRecordCount);
-   
+
    Result:=True;
   end;
 end;
@@ -3567,13 +3567,13 @@ function TNTFSRecordList.Remove(ARecord:TNTFSDiskRecord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ARecord = nil then Exit;
- 
+
  if Unlink(ARecord) then
   begin
    Dec(FRecordCount);
-   
+
    Result:=True;
   end;
 end;
@@ -3599,21 +3599,21 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FRecordLocal:=MutexCreate;
- 
+
  FRunsLock:=SynchronizerCreate;
  FItemsLock:=SynchronizerCreate;
  FNodesLock:=SynchronizerCreate;
  FIndexLock:=SynchronizerCreate;
  FExtendedsLock:=SynchronizerCreate;
  FAttributesLock:=SynchronizerCreate;
- 
+
  FRunLocal:=MutexCreate;
  FItemLocal:=MutexCreate;
  FKeyLocal:=MutexCreate;
  FNodeLocal:=MutexCreate;
  FExtendedLocal:=MutexCreate;
  FAttributeLocal:=MutexCreate;
- 
+
  Order:=12; //36; {May need to be adjusted}  //To Do //Testing8
 end;
 
@@ -3630,14 +3630,14 @@ begin
   MutexDestroy(FKeyLocal);
   MutexDestroy(FItemLocal);
   MutexDestroy(FRunLocal);
- 
+
   SynchronizerDestroy(FAttributesLock);
   SynchronizerDestroy(FExtendedsLock);
   SynchronizerDestroy(FIndexLock);
   SynchronizerDestroy(FNodesLock);
   SynchronizerDestroy(FItemsLock);
   SynchronizerDestroy(FRunsLock);
- 
+
   MutexDestroy(FRecordLocal);
   inherited Destroy;
  finally
@@ -3653,9 +3653,9 @@ function TNTFSRecordIndex.Find(const ARecordNumber:Int64;ACurrent:TNTFSDiskRecor
 begin
  {}
  Result:=nil;
- 
+
  if ACurrent = nil then Exit;
- 
+
  if ACurrent.Blank then
   begin
    Result:=Find(ARecordNumber,TNTFSDiskRecord(ACurrent.Child));
@@ -3684,7 +3684,7 @@ begin
  {}
  Result:=TNTFSDiskRecord.Create(FRecordLocal,nil);
  Result.Blank:=True;
- 
+
  {List Locks}
  TNTFSDiskRecord(Result).FRunsLock:=FRunsLock;
  TNTFSDiskRecord(Result).FItemsLock:=FItemsLock;
@@ -3692,7 +3692,7 @@ begin
  TNTFSDiskRecord(Result).FIndexLock:=FIndexLock;
  TNTFSDiskRecord(Result).FExtendedsLock:=FExtendedsLock;
  TNTFSDiskRecord(Result).FAttributesLock:=FAttributesLock;
- 
+
  {Local Locks}
  TNTFSDiskRecord(Result).FRunLocal:=FRunLocal;
  TNTFSDiskRecord(Result).FItemLocal:=FItemLocal;
@@ -3708,14 +3708,14 @@ function TNTFSRecordIndex.Compare(AEntry1,AEntry2:TBtreeObject):Integer;
 begin
  {}
  Result:=ntfsCompareEqual; {Equal to fail Insert/Merge/Borrow}
- 
+
  if AEntry1 = nil then Exit;
  if AEntry2 = nil then Exit;
- 
+
  Result:=ntfsCompareLess;
- 
+
  if AEntry2.Blank then Exit;
- 
+
  {AEntry1.Blank is an error}
  if TNTFSDiskRecord(AEntry1).RecordNumber = TNTFSDiskRecord(AEntry2).RecordNumber then
   begin
@@ -3748,7 +3748,7 @@ begin
  Result.FIndexLock:=FIndexLock;
  Result.FExtendedsLock:=FExtendedsLock;
  Result.FAttributesLock:=FAttributesLock;
- 
+
  {Local Locks}
  Result.FRunLocal:=FRunLocal;
  Result.FItemLocal:=FItemLocal;
@@ -3756,7 +3756,7 @@ begin
  Result.FNodeLocal:=FNodeLocal;
  Result.FExtendedLocal:=FExtendedLocal;
  Result.FAttributeLocal:=FAttributeLocal;
- 
+
  {Add to List}
  if Result.Base = nil then Result.CreateRecords(True);     {Add new record to its own record list}
  if Result.Base <> nil then Result.Base.AddRecord(Result); {Add new record to parents record list}
@@ -3770,15 +3770,15 @@ function TNTFSRecordIndex.DestroyRecord(ARecord:TNTFSDiskRecord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ARecord = nil then Exit;
- 
+
  {Remove from List}
  if ARecord.Base <> nil then ARecord.Base.RemoveRecord(ARecord);
- 
+
  {Free Record}
  ARecord.Free;
- 
+
  Result:=True;
 end;
 
@@ -3791,7 +3791,7 @@ begin
  {Create Record}
  Result:=CreateRecord(ABase,ARecordNumber,AVersion);
  if Result = nil then Exit;
- 
+
  {Setup Record}
  Result.CreateAttributes(AVersion,True);  {Add the end attribute to the new record}
 end;
@@ -3804,10 +3804,10 @@ function TNTFSRecordIndex.InsertRecord(ARecord:TNTFSDiskRecord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ARecord = nil then Exit;
  if ARecord.Blank then Exit;
- 
+
  {Insert Record}
  Result:=Insert(ARecord);
 end;
@@ -3820,10 +3820,10 @@ function TNTFSRecordIndex.DeleteRecord(ARecord:TNTFSDiskRecord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ARecord = nil then Exit;
  if ARecord.Blank then Exit;
- 
+
  {Remove Record}
  Result:=Remove(ARecord);
 end;
@@ -3836,19 +3836,19 @@ function TNTFSRecordIndex.RemoveRecord(ARecord:TNTFSDiskRecord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ARecord = nil then Exit;
  if ARecord.Blank then Exit;
- 
+
  {Remove from List}
  if ARecord.Base <> nil then ARecord.Base.RemoveRecord(ARecord);
- 
+
  {Remove Record}
  if not Remove(ARecord) then Exit;
- 
+
  {Free Record}
  ARecord.Free;
- 
+
  Result:=True;
 end;
 
@@ -3879,7 +3879,7 @@ end;
 
 {==============================================================================}
 
-function TNTFSRecordIndex.ReaderConvert:Boolean; 
+function TNTFSRecordIndex.ReaderConvert:Boolean;
 {Convert a Reader lock to a Writer lock}
 begin
  {}
@@ -4111,21 +4111,21 @@ begin
  {}
  inherited Create;
  FLocalLock:=ALocalLock;
- 
+
  FRunsLock:=INVALID_HANDLE_VALUE;
  FItemsLock:=INVALID_HANDLE_VALUE;
  FNodesLock:=INVALID_HANDLE_VALUE;
  FIndexLock:=INVALID_HANDLE_VALUE;
  FExtendedsLock:=INVALID_HANDLE_VALUE;
  FAttributesLock:=INVALID_HANDLE_VALUE;
-   
+
  FRunLocal:=INVALID_HANDLE_VALUE;
  FItemLocal:=INVALID_HANDLE_VALUE;
  FKeyLocal:=INVALID_HANDLE_VALUE;
  FNodeLocal:=INVALID_HANDLE_VALUE;
  FExtendedLocal:=INVALID_HANDLE_VALUE;
  FAttributeLocal:=INVALID_HANDLE_VALUE;
- 
+
  FStatus:=ntfsStatusNone;
 
  FPrevRecord:=nil;
@@ -4170,14 +4170,14 @@ begin
  FNodeLocal:=INVALID_HANDLE_VALUE;
  FExtendedLocal:=INVALID_HANDLE_VALUE;
  FAttributeLocal:=INVALID_HANDLE_VALUE;
- 
+
  FRunsLock:=INVALID_HANDLE_VALUE;
  FItemsLock:=INVALID_HANDLE_VALUE;
  FNodesLock:=INVALID_HANDLE_VALUE;
  FIndexLock:=INVALID_HANDLE_VALUE;
  FExtendedsLock:=INVALID_HANDLE_VALUE;
  FAttributesLock:=INVALID_HANDLE_VALUE;
- 
+
  FLocalLock:=INVALID_HANDLE_VALUE;
  inherited Destroy;
 end;
@@ -4481,12 +4481,12 @@ function TNTFSDiskRecord.GetOrigin:TNTFSDiskRecord;
 begin
  {}
  Result:=Self;
- 
+
  {Check Base}
  if FBase <> nil then
   begin
    Result:=FBase;
-   
+
    {Check Base}
    while Result.FBase <> nil do
     begin
@@ -4511,7 +4511,7 @@ begin
      {Nothing}
     end;
   end;
-  
+
  Result:=FLinks;
 end;
 
@@ -4568,12 +4568,12 @@ begin
   begin
    {Create Attributes}
    FAttributes:=TNTFSDiskAttributes.Create(FAttributeLocal,FAttributesLock);
-   
+
    {Check New}
    if ANew then
     begin
      Result:=nil;
-     
+
      {Add End Attribute}
      Attribute:=CreateAttribute(ntfsAttrTypeEnd,AVersion,False);
      if Attribute = nil then Exit;
@@ -4593,9 +4593,9 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AAttribute = nil then Exit;
- 
+
  {Check Base}
  if FBase <> nil then
   begin
@@ -4607,18 +4607,18 @@ begin
    if AAttribute.AttributeType = ntfsAttrTypeFileName then
     begin
      if FLinks = nil then CreateLinks(ANew);
-     
+
      {Create Link}
      Link:=TNTFSDiskEntry.Create(INVALID_HANDLE_VALUE,Self,AAttribute);
      Link.Alternate:=AAlternate;
-     
+
      {Setup Link}
      if IsFolder then Link.Attributes:=(Link.Attributes or faDirectory);
      if not IsFolder then Link.Attributes:=(Link.Attributes or faFile);
-     
+
      {Add Link}
      FLinks.Add(Link);
-     
+
      Result:=Link;
     end;
   end;
@@ -4632,9 +4632,9 @@ function TNTFSDiskRecord.DestroyLink(ALink:TNTFSDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ALink = nil then Exit;
- 
+
  {Check Base}
  if FBase <> nil then
   begin
@@ -4643,13 +4643,13 @@ begin
  else
   begin
    if FLinks = nil then Exit;
-   
+
    {Remove Link}
    FLinks.Remove(ALink);
-   
+
    {Free Link}
    ALink.Free;
-   
+
    Result:=True;
   end;
 end;
@@ -4686,7 +4686,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Base}
  if FBase <> nil then
   begin
@@ -4696,7 +4696,7 @@ begin
   begin
    if FLinks = nil then Exit;
    if AAttribute = nil then Exit;
-   
+
    {Check Links}
    Link:=TNTFSDiskEntry(FLinks.FirstEntry);
    while Link <> nil do
@@ -4706,7 +4706,7 @@ begin
        Result:=Link;
        Exit;
       end;
-     
+
      Link:=TNTFSDiskEntry(Link.NextEntry);
     end;
   end;
@@ -4720,9 +4720,9 @@ function TNTFSDiskRecord.DeleteLink(ALink:TNTFSDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ALink = nil then Exit;
- 
+
  {Check Base}
  if FBase <> nil then
   begin
@@ -4735,7 +4735,7 @@ begin
    {Update Record}
    Dec(FHardLinkCount);
    if ALink.Alternate <> nil then Dec(FHardLinkCount);
-   
+
    {Remove Link}
    Result:=FLinks.Remove(ALink);
   end;
@@ -4749,10 +4749,10 @@ function TNTFSDiskRecord.RenameLink(ALink:TNTFSDiskEntry;AAttribute,AAlternate:T
 begin
  {}
  Result:=False;
- 
+
  if ALink = nil then Exit;
  if AAttribute = nil then Exit;
- 
+
  {Check Base}
  if FBase <> nil then
   begin
@@ -4772,10 +4772,10 @@ begin
       begin
        if ALink.Alternate <> nil then Dec(FHardLinkCount);
       end;
-     
+
      {Update Link}
      ALink.Alternate:=AAlternate;
-     
+
      Result:=True;
     end;
   end;
@@ -4791,9 +4791,9 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AAttribute = nil then Exit;
- 
+
  {Check Base}
  if FBase <> nil then
   begin
@@ -4805,16 +4805,16 @@ begin
    if AAttribute.AttributeType = ntfsAttrTypeData then
     begin
      if FStreams = nil then CreateStreams(ANew);
-     
+
      {Create Stream}
      Stream:=TNTFSDiskEntry.Create(INVALID_HANDLE_VALUE,Self,AAttribute);
-     
+
      {Setup Stream}
      Stream.Attributes:=(Stream.Attributes or faStream);
-     
+
      {Add Stream}
      FStreams.Add(Stream);
-     
+
      Result:=Stream;
     end;
   end;
@@ -4828,9 +4828,9 @@ function TNTFSDiskRecord.DestroyStream(AStream:TNTFSDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AStream = nil then Exit;
- 
+
  {Check Base}
  if FBase <> nil then
   begin
@@ -4839,13 +4839,13 @@ begin
  else
   begin
    if FStreams = nil then Exit;
-   
+
    {Remove Stream}
    FStreams.Remove(AStream);
-   
+
    {Free Stream}
    AStream.Free;
-   
+
    Result:=True;
   end;
 end;
@@ -4866,7 +4866,7 @@ begin
   begin
    Result:=CreateStream(AAttribute,True);
    if Result = nil then Exit;
-   
+
    {Nothing}
   end;
 end;
@@ -4889,7 +4889,7 @@ begin
   begin
    if FStreams = nil then Exit;
    if AAttribute = nil then Exit;
-   
+
    {Check Streams}
    Stream:=TNTFSDiskEntry(FStreams.FirstEntry);
    while Stream <> nil do
@@ -4899,7 +4899,7 @@ begin
        Result:=Stream;
        Exit;
       end;
-     
+
      Stream:=TNTFSDiskEntry(Stream.NextEntry);
     end;
   end;
@@ -4913,7 +4913,7 @@ function TNTFSDiskRecord.DeleteStream(AStream:TNTFSDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Base}
  if FBase <> nil then
   begin
@@ -4923,7 +4923,7 @@ begin
   begin
    if AStream = nil then Exit;
    if FStreams = nil then Exit;
-   
+
    {Remove Stream}
    Result:=FStreams.Remove(AStream);
   end;
@@ -4942,20 +4942,20 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AKey = nil then Exit;
  if AKey.Key = nil then Exit;
  if AKey.KeySize < ntfsFileNameSize then Exit;
 
  {Get Data}
  FileName:=PNTFSFileName(AKey.Key);
- 
+
  {Get Name}
  Name:=NTFSWideBufferToString(@FileName.FileName[0],0,FileName.FileNameLength);
- 
+
  {Calculate Hash}
  Hash:=GenerateNameHash(Name,NAME_HASH_SIZE);
- 
+
  {Get Attribute}
  Instance:=1;
  Attribute:=GetAttribute(ntfsAttrTypeFileName,ntfsAnyName,Instance);
@@ -4976,7 +4976,7 @@ begin
         end;
       end;
     end;
-   
+
    {Get Attribute}
    Inc(Instance);
    Attribute:=GetAttribute(ntfsAttrTypeFileName,ntfsAnyName,Instance);
@@ -4997,15 +4997,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  Count:=0;
  Previous:=nil;
- 
+
  {Calculate Hash}
  Hash:=0;                                                           //To Do //Testing4
  Wildcard:=(Length(AName) = ntfsAnyNameLength) and (AName = ntfsAnyName); {Modified 14/2/2011}
  if not Wildcard then Hash:=GenerateNameHash(AName,NAME_HASH_SIZE);  //To Do //Testing4
- 
+
  {Get Attribute}
  Instance:=1;
  Attribute:=GetAttribute(ntfsAttrTypeFileName,ntfsAnyName,Instance);
@@ -5030,12 +5030,12 @@ begin
         end;
       end;
     end;
-    
+
    {Get Attribute}
    Inc(Instance);
    Attribute:=GetAttribute(ntfsAttrTypeFileName,ntfsAnyName,Instance);
   end;
-  
+
  {Get Last}
  if AInstance = ntfsInstanceLast then Result:=Previous;
 end;
@@ -5054,15 +5054,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  Count:=0;
  Previous:=nil;
- 
+
  {Calculate Hash}
  Hash:=0;                                                           //To Do //Testing4
  Wildcard:=(Length(AName) = ntfsAnyNameLength) and (AName = ntfsAnyName); {Modified 14/2/2011}
  if not Wildcard then Hash:=GenerateNameHash(AName,NAME_HASH_SIZE);  //To Do //Testing4
- 
+
  {Get Attribute}
  Instance:=1;
  Attribute:=GetAttribute(ntfsAttrTypeFileName,ntfsAnyName,Instance);
@@ -5090,12 +5090,12 @@ begin
         end;
       end;
     end;
-    
+
    {Get Attribute}
    Inc(Instance);
    Attribute:=GetAttribute(ntfsAttrTypeFileName,ntfsAnyName,Instance);
   end;
-  
+
  {Get Last}
  if AInstance = ntfsInstanceLast then Result:=Previous;
 end;
@@ -5114,15 +5114,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  Count:=0;
  Previous:=nil;
- 
+
  {Calculate Hash}
  Hash:=0;                                                          //To Do //Testing4
  Wildcard:=(Length(AName) = ntfsAnyNameLength) and (AName = ntfsAnyName); {Modified 14/2/2011}
  if not Wildcard then Hash:=GenerateNameHash(AName,NAME_HASH_SIZE); //To Do //Testing4
- 
+
  {Get Attribute}
  Instance:=1;
  Attribute:=GetAttribute(ntfsAttrTypeFileName,ntfsAnyName,Instance);
@@ -5153,12 +5153,12 @@ begin
         end;
       end;
     end;
-    
+
    {Get Attribute}
    Inc(Instance);
    Attribute:=GetAttribute(ntfsAttrTypeFileName,ntfsAnyName,Instance);
   end;
-  
+
  {Get Last}
  if AInstance = ntfsInstanceLast then Result:=Previous;
 end;
@@ -5175,10 +5175,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  Count:=0;
  Previous:=nil;
- 
+
  {Check Base}
  if FBase <> nil then
   begin
@@ -5206,11 +5206,11 @@ begin
            Exit;
           end;
         end;
-       
+
        {Get Record}
        Current:=Current.NextRecord;
       end;
-     
+
      {Get Last}
      if AInstance = ntfsInstanceLast then Result:=Previous;
     end
@@ -5222,7 +5222,7 @@ begin
        {Get List}
        Attribute:=GetAttribute(ntfsAttrTypeAttributeList,ntfsBlankName,ntfsInstanceFirst);
        if Attribute = nil then Exit;
-       
+
        {Get Attribute}
        Result:=Attribute.GetRecord(AInstance);
       end
@@ -5248,7 +5248,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get Record}
  Instance:=1;
  Current:=GetRecord(Instance);
@@ -5275,7 +5275,7 @@ begin
        Exit;
       end;
     end;
-    
+
    {Get Record}
    Inc(Instance);
    Current:=GetRecord(Instance);
@@ -5291,7 +5291,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get Record}
  Instance:=1;
  Current:=GetRecord(Instance);
@@ -5303,7 +5303,7 @@ begin
      Result:=Current;
      Exit;
     end;
-    
+
    {Get Record}
    Inc(Instance);
    Current:=GetRecord(Instance);
@@ -5316,13 +5316,13 @@ function TNTFSDiskRecord.AddRecord(ARecord:TNTFSDiskRecord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ARecord = nil then Exit;
  if FRecords = nil then CreateRecords(True);
- 
+
  {Add Record}
  FRecords.Add(ARecord);
- 
+
  Result:=True;
 end;
 
@@ -5332,13 +5332,13 @@ function TNTFSDiskRecord.RemoveRecord(ARecord:TNTFSDiskRecord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ARecord = nil then Exit;
  if FRecords = nil then Exit;
- 
+
  {Remove Record}
  FRecords.Remove(ARecord);
- 
+
  Result:=True;
 end;
 
@@ -5351,7 +5351,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AItem = nil then Exit;
  if FAttributes = nil then Exit;
 
@@ -5372,7 +5372,7 @@ begin
         end;
       end;
     end;
-   
+
    Attribute:=TNTFSDiskAttribute(Attribute.Next);
   end;
 end;
@@ -5386,7 +5386,7 @@ function TNTFSDiskRecord.GetAttributeByStatus(AInclude,AExclude:Word;AInstance:I
 begin
  {}
  Result:=nil;
- 
+
  {Get Attribute}
  //Attribute:=GetAttribute(ntfsAttrTypeAny //To Do //Not Needed ?
 end;
@@ -5404,7 +5404,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AAttribute = nil then Exit;
 
  {Check Attribute}
@@ -5429,12 +5429,12 @@ begin
        Result:=Attribute;
        Exit;
       end;
-      
+
      {Get Attribute}
      Inc(Instance);
      Attribute:=GetAttribute(AAttribute.AttributeType,AAttribute.AttributeName,Instance);
     end;
-   
+
    {Check Start}
    if Start > 1 then
     begin
@@ -5450,7 +5450,7 @@ begin
          Result:=Attribute;
          Exit;
         end;
-        
+
        {Get Attribute}
        if Instance = Start then Break;
        Inc(Instance);
@@ -5472,7 +5472,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AAttribute = nil then Exit;
 
  {Check Resident}
@@ -5481,13 +5481,13 @@ begin
    {Get Attribute}
    Attribute:=GetAttribute(AAttribute.AttributeType,AAttribute.AttributeName,ntfsInstanceFirst);
    if Attribute = nil then Exit;
-   
+
    {Check Compressed}
    if (Attribute.IsCompressed) and (Attribute.CompressionUnit <> 0) then
     begin
      {Get Unit VCN}
      VCN:=(AUnit shl Attribute.CompressionUnit);
-     
+
      {Get Attribute by VCN}
      Result:=GetAttributeByVCN(AAttribute,VCN,AInstance);
     end;
@@ -5504,9 +5504,9 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FAttributes = nil then CreateAttributes(AVersion,ANew);
- 
+
  {Check Type}
  Attribute:=nil;
  case AType of
@@ -5595,7 +5595,7 @@ function TNTFSDiskRecord.DestroyAttribute(AAttribute:TNTFSDiskAttribute):Boolean
 begin
  {}
  Result:=False;
- 
+
  if AAttribute = nil then Exit;
  if FAttributes = nil then Exit;
 
@@ -5608,10 +5608,10 @@ begin
   begin
    {Remove Attribute}
    FAttributes.Remove(AAttribute);
-   
+
    {Free Attribute}
    AAttribute.Free;
-   
+
    Result:=True;
   end;
 end;
@@ -5626,11 +5626,11 @@ var
 begin
  {Check Records}
  if (FBase = nil) and (FRecords = nil) then CreateRecords(True);    {Add record to its own record list}
- 
+
  {Create Attribute}
  Result:=CreateAttribute(AType,AVersion,True);
  if Result = nil then Exit;
- 
+
  {Set Values}
  Result.AttributeId:=NextAttributeId;
  NextAttributeId:=NextAttributeId + 1;
@@ -5642,7 +5642,7 @@ begin
    Result.Indexed:=APrevious.Indexed;
    Result.StartVCN:=APrevious.LastVCN + 1;
   end;
-  
+
  {Check Type}
  case AType of
   ntfsAttrTypeNone:begin
@@ -5758,10 +5758,10 @@ begin
     {Nothing}
    end;
  end;
- 
+
  {Get Previous}
  Previous:=FAttributes.GetPrevious(Result);
- 
+
  {Insert Attribute}
  FAttributes.Insert(Previous,Result);
 end;
@@ -5779,15 +5779,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  //Count:=0;
  //Previous:=nil;
- 
+
  //{Calculate Hash}
  //Hash:=0;                                                          //To Do //Testing4
  //Wildcard:=(Length(AName) = ntfsAnyNameLength) and (AName = ntfsAnyName); {Modified 14/2/2011}
  //if not Wildcard then Hash:=GenerateNameHash(AName,NAME_HASH_SIZE); //To Do //Testing4
- 
+
  {Check Base}
  if FBase <> nil then
   begin
@@ -5801,7 +5801,7 @@ begin
      {Get List}
      Attribute:=GetAttribute(ntfsAttrTypeAttributeList,ntfsBlankName,ntfsInstanceFirst);
      if Attribute = nil then Exit;
-     
+
      {Get Attribute}
      Result:=Attribute.GetAttribute(AType,AName,AInstance);
     end
@@ -5810,7 +5810,7 @@ begin
      //To Do //Testing
      Count:=0;
      Previous:=nil;
-     
+
      {Calculate Hash}
      Hash:=0;                                                           //To Do //Testing4
      Wildcard:=(Length(AName) = ntfsAnyNameLength) and (AName = ntfsAnyName); {Modified 14/2/2011}
@@ -5847,11 +5847,11 @@ begin
               end;
             end;
           end;
-          
+
          Attribute:=TNTFSDiskAttribute(Attribute.Next);
         end;
       end;
-      
+
      {Get Last}
      if AInstance = ntfsInstanceLast then Result:=Previous;
     end;
@@ -5866,7 +5866,7 @@ function TNTFSDiskRecord.RemoveAttribute(AAttribute:TNTFSDiskAttribute):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AAttribute = nil then Exit;
  if FAttributes = nil then Exit;
 
@@ -5879,13 +5879,13 @@ begin
   begin
    {Update Record}
     {Nothing}
-   
+
    {Remove Attribute}
    FAttributes.Remove(AAttribute);
-   
+
    {Free Attribute}
    AAttribute.Free;
-   
+
    Result:=True;
   end;
 end;
@@ -5900,7 +5900,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ADest = nil then Exit;
  if AAttribute = nil then Exit;
  if FAttributes = nil then Exit;
@@ -5915,21 +5915,21 @@ begin
   begin
    {Update Record}
     {Nothing}
-   
+
    {Remove Attribute}
    FAttributes.Remove(AAttribute);
-   
+
    {Update Attribute}
    AAttribute.Parent:=ADest;
    AAttribute.AttributeId:=ADest.NextAttributeId;
    ADest.NextAttributeId:=ADest.NextAttributeId + 1;
-   
+
    {Get Previous}
    Previous:=ADest.Attributes.GetPrevious(AAttribute);
-   
+
    {Insert Attribute}
    ADest.Attributes.Insert(Previous,AAttribute);
-   
+
    Result:=True;
   end;
 end;
@@ -5944,7 +5944,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AAttribute = nil then Exit;
  if FAttributes = nil then Exit;
 
@@ -5957,19 +5957,19 @@ begin
   begin
    {Update Record}
     {Nothing}
-   
+
    {Remove Attribute}
    FAttributes.Remove(AAttribute);
-   
+
    {Update Attribute}
    AAttribute.AttributeName:=AName;
-   
+
    {Get Previous}
    Previous:=FAttributes.GetPrevious(AAttribute);
-   
+
    {Insert Attribute}
    FAttributes.Insert(Previous,AAttribute);
-   
+
    Result:=True;
   end;
 end;
@@ -5992,9 +5992,9 @@ function TNTFSDiskRecord.BaseReference:Int64;
 begin
  {}
  Result:=0;
- 
+
  if FBase = nil then Exit;
- 
+
  Result:=FBase.FileReference;
 end;
 
@@ -6004,9 +6004,9 @@ function TNTFSDiskRecord.LinkCount:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FLinks = nil then Exit;
- 
+
  Result:=FLinks.EntryCount;
 end;
 
@@ -6016,9 +6016,9 @@ function TNTFSDiskRecord.StreamCount:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FStreams = nil then Exit;
- 
+
  Result:=FStreams.EntryCount;
 end;
 
@@ -6028,9 +6028,9 @@ function TNTFSDiskRecord.RecordCount:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FRecords = nil then Exit;
- 
+
  Result:=FRecords.RecordCount;
 end;
 
@@ -6040,9 +6040,9 @@ function TNTFSDiskRecord.AttributeCount:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FAttributes = nil then Exit;
- 
+
  Result:=FAttributes.Count;
 end;
 
@@ -6064,21 +6064,21 @@ var
 begin
  {Subtract Header}
  Result:=FRecordAllocated - FAttributeOffset;
- 
+
  {Subtract StandardInformation}
  if (FBase = nil) and (AType <> ntfsAttrTypeStandardInformation) then
   begin
    Attribute:=GetAttribute(ntfsAttrTypeStandardInformation,ntfsBlankName,ntfsInstanceFirst);
    if Attribute <> nil then Dec(Result,Attribute.AttributeSize); {Use AttributeSize not CalculatedSize}
   end;
- 
+
  {Subtract List}
  if (FBase = nil) and (Overflow) and (AType <> ntfsAttrTypeAttributeList) then
   begin
    Attribute:=GetAttribute(ntfsAttrTypeAttributeList,ntfsBlankName,ntfsInstanceFirst);
    if Attribute <> nil then Dec(Result,Attribute.AttributeSize); {Use AttributeSize not CalculatedSize}
   end;
- 
+
  {Subtract End}
  if (AType <> ntfsAttrTypeEnd) then
   begin
@@ -6096,17 +6096,17 @@ var
 begin
  {}
  Result:=FAttributeOffset;
- 
+
  if FAttributes = nil then Exit;
- 
+
  Attribute:=TNTFSDiskAttribute(FAttributes.First);
  while Attribute <> nil do
   begin
    Inc(Result,Attribute.AttributeSize); {Use AttributeSize not CalculatedSize}
-   
+
    Attribute:=TNTFSDiskAttribute(Attribute.Next);
   end;
- 
+
  Result:=NTFSRoundLongWordTo8Bytes(Result);
 end;
 
@@ -6117,7 +6117,7 @@ function TNTFSDiskRecord.CalculatedOffset(AVersion:Word):Word;
 begin
  {}
  Result:=0;
- 
+
  case AVersion of
   ntfsNTFS12,ntfsNTFS30:Result:=NTFSRoundWordTo8Bytes(ntfsFileRecord12Size + (FUpdateSequenceLength shl 1)); {Multiply by SizeOf(Word)}
   ntfsNTFS31:Result:=NTFSRoundWordTo8Bytes(ntfsFileRecord31Size + (FUpdateSequenceLength shl 1)); {Multiply by SizeOf(Word)}
@@ -6131,7 +6131,7 @@ function TNTFSDiskRecord.CalculatedSequenceOffset(AVersion:Word):Word;
 begin
  {}
  Result:=0;
- 
+
  case AVersion of
   ntfsNTFS12,ntfsNTFS30:Result:=ntfsFileRecord12Size;
   ntfsNTFS31:Result:=ntfsFileRecord31Size;
@@ -6148,7 +6148,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if ASectorSize = 0 then Exit;
 
  Result:=1;
@@ -6173,7 +6173,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if AAttribute = nil then Exit;
 
  {Get Attribute}
@@ -6182,7 +6182,7 @@ begin
  while Attribute <> nil do
   begin
    Result:=Result + Attribute.CalculatedStreamUsed(AVersion);
-   
+
    {Get Attribute}
    Inc(Instance);
    Attribute:=GetAttribute(AAttribute.AttributeType,AAttribute.AttributeName,Instance);
@@ -6199,13 +6199,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
 
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskRecord.ReadAttributes - RecordNumber = ' + IntToHex(FRecordNumber,16));
  {$ENDIF}
- 
+
  {Check Used}
  if (FRecordFlags and ntfsFileRecordFlagInUse) = ntfsFileRecordFlagInUse then
   begin
@@ -6214,17 +6214,17 @@ begin
     begin
      {Get Header}
      AttributeHeader:=PNTFSAttributeHeader(PtrUInt(ABuffer) + AOffset);
-     
+
      {Check None}
      if AttributeHeader.AttributeType = ntfsAttrTypeNone then Break;
-     
+
      {Create Attribute}
      Attribute:=CreateAttribute(AttributeHeader.AttributeType,AVersion,False);
      if Attribute = nil then Exit;
-     
+
      {Read Attribute}
      if not Attribute.ReadAttribute(ABuffer,AOffset,ASize,AVersion) then Exit;
-     
+
      {Check Last}
      if AttributeHeader.AttributeType = ntfsAttrTypeEnd then Break;
     end;
@@ -6234,23 +6234,23 @@ begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskRecord.ReadAttributes - Reading Free Record');
    {$ENDIF}
-   
+
    {Check Size}
    if ASize >= ntfsEndSize then {SizeOf(LongWord)}
     begin
      {Create Attribute}
      Attribute:=CreateAttribute(ntfsAttrTypeEnd,AVersion,False);
      if Attribute = nil then Exit;
-     
+
      {Read Attribute}
      {if not Attribute.ReadAttribute(ABuffer,AOffset,ASize,AVersion) then Exit;} {Read will overwrite the AttributeType value}
-     
+
      {Update Offset}
      Dec(ASize,Attribute.AttributeSize);
      Inc(AOffset,Attribute.AttributeSize);
     end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -6263,13 +6263,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
 
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskRecord.WriteAttributes - RecordNumber = ' + IntToHex(FRecordNumber,16));
  {$ENDIF}
- 
+
  {Get Attribute}
  if FAttributes = nil then Exit;
 
@@ -6279,14 +6279,14 @@ begin
   begin
    {Check Size}
    if ASize < ntfsAttributeTypeSize then Exit;
-  
+
    {Write Attribute}
    if not Attribute.WriteAttribute(ABuffer,AOffset,ASize,AVersion) then Exit;
-  
+
    {Get Attribute}
    Attribute:=TNTFSDiskAttribute(Attribute.Next);
   end;
- 
+
  Result:=True;
 end;
 
@@ -6304,34 +6304,34 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Record}
  FileRecord12:=PNTFS12FileRecord(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Magic}
  if FileRecord12.MagicNumber <> ntfsFileSignature then
   begin
    {Check Free}
    if not AFree then Exit;
-   
+
    {Check Size}
    if ASize >= ntfsFileRecord12Size then
     begin
      {Clear Status}
      FStatus:=ntfsStatusNone;
-     
+
      {Get Update}
      UpdateSequenceRecord:=PNTFSUpdateSequenceRecord(PtrUInt(ABuffer) + AOffset); { + FileRecord12.UpdateSequenceOffset}
-     
+
      {Read Update}
      FUpdateSequenceNumber:=UpdateSequenceRecord.UpdateSequenceNumber;
-     
+
      {Update Offset}
      Dec(ASize,ntfsFileRecord12Size);
      Inc(AOffset,ntfsFileRecord12Size);
-     
+
      Result:=True;
     end;
   end
@@ -6342,7 +6342,7 @@ begin
     begin
      {Clear Status}
      FStatus:=ntfsStatusNone;
-    
+
      {Read Record}
      FRecordFlags:=FileRecord12.RecordFlags;
      FHardLinkCount:=FileRecord12.HardLinkCount;
@@ -6354,16 +6354,16 @@ begin
      FUpdateSequenceOffset:=FileRecord12.UpdateSequenceOffset;
      FUpdateSequenceLength:=FileRecord12.UpdateSequenceLength;
      FLogFileSequenceNumber:=FileRecord12.LogFileSequenceNumber;
-    
+
      {Check Size}
      if FRecordSize < ntfsFileRecord12Size then Exit;
-    
+
      {Check Version}
      case AVersion of
       ntfsNTFS31:begin
         {Get Record}
         FileRecord31:=PNTFS31FileRecord(PtrUInt(ABuffer) + AOffset);
-       
+
         {Check Size}
         if ASize >= ntfsFileRecord31Size then
         begin
@@ -6377,17 +6377,17 @@ begin
          end;
        end;
      end;
-    
+
      {Get Update}
      UpdateSequenceRecord:=PNTFSUpdateSequenceRecord(PtrUInt(ABuffer) + AOffset + FileRecord12.UpdateSequenceOffset);
-    
+
      {Read Update}
      FUpdateSequenceNumber:=UpdateSequenceRecord.UpdateSequenceNumber;
-    
+
      {Update Offset}
      Dec(ASize,FileRecord12.AttributeOffset);
      Inc(AOffset,FileRecord12.AttributeOffset);
-    
+
      Result:=True;
     end;
   end;
@@ -6404,16 +6404,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
 
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskRecord.WriteRecord - RecordNumber = ' + IntToHex(FRecordNumber,16));
  {$ENDIF}
- 
+
  {Get Record}
  FileRecord12:=PNTFS12FileRecord(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsFileRecord12Size then
   begin
@@ -6430,13 +6430,13 @@ begin
    FileRecord12.UpdateSequenceLength:=FUpdateSequenceLength;
    FileRecord12.LogFileSequenceNumber:=FLogFileSequenceNumber;
    FileRecord12.BaseReference:=BaseReference;
-  
+
    {Check Version}
    case AVersion of
     ntfsNTFS31:begin
       {Get Record}
       FileRecord31:=PNTFS31FileRecord(PtrUInt(ABuffer) + AOffset);
-     
+
       {Check Size}
       if ASize >= ntfsFileRecord31Size then
        begin
@@ -6448,17 +6448,17 @@ begin
        end;
      end;
    end;
-  
+
    {Get Update}
    UpdateSequenceRecord:=PNTFSUpdateSequenceRecord(PtrUInt(ABuffer) + AOffset + FileRecord12.UpdateSequenceOffset);
-  
+
    {Write Update}
    UpdateSequenceRecord.UpdateSequenceNumber:=FUpdateSequenceNumber;
-  
+
    {Update Offset}
    Dec(ASize,FileRecord12.AttributeOffset);
    Inc(AOffset,FileRecord12.AttributeOffset);
-  
+
    Result:=True;
   end;
 end;
@@ -6472,9 +6472,9 @@ begin
  inherited Create;
  FLock:=ALock;
  FKeyLocal:=AKeyLocal;
- 
+
  FSwapLeft:=True;
- 
+
  FStatus:=ntfsStatusNone;
 
  FSectorSize:=ASectorSize;
@@ -6497,7 +6497,7 @@ begin
  FFreeIndexRecordCount:=ntfsUnknownRecordNumber;
 
  FCompareSecurityDescriptor:=nil;
- 
+
  FUpCase:=nil;
 
  FNodes:=nil;
@@ -6527,7 +6527,7 @@ begin
  try
   if FNodes <> nil then FNodes.Free;
   FAttribute:=nil;
-  
+
   FKeyLocal:=INVALID_HANDLE_VALUE;
   inherited Destroy;
  finally
@@ -6542,10 +6542,10 @@ function TNTFSDiskIndex.GetNodesLock:TSynchronizerHandle;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if FAttribute = nil then Exit;
  if FAttribute.Parent = nil then Exit;
- 
+
  Result:=FAttribute.Parent.FNodesLock;
 end;
 
@@ -6555,10 +6555,10 @@ function TNTFSDiskIndex.GetKeyLocal:TMutexHandle;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if FAttribute = nil then Exit;
  if FAttribute.Parent = nil then Exit;
- 
+
  Result:=FAttribute.Parent.FKeyLocal;
 end;
 
@@ -6568,10 +6568,10 @@ function TNTFSDiskIndex.GetNodeLocal:TMutexHandle;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if FAttribute = nil then Exit;
  if FAttribute.Parent = nil then Exit;
- 
+
  Result:=FAttribute.Parent.FNodeLocal;
 end;
 
@@ -6606,16 +6606,16 @@ var
 begin
  {Check Index}
  Result:=False;
- 
+
  if FNodes = nil then Exit;
- 
+
  {Check Nodes}
  Node:=TNTFSDiskNode(FNodes.First);
  while Node <> nil do
   begin
    Result:=Node.Changed;
    if Result then Exit;
-   
+
    Node:=TNTFSDiskNode(Node.Next);
   end;
 end;
@@ -6626,7 +6626,7 @@ function TNTFSDiskIndex.GetUpCase:PNTFSUpCaseData;
 begin
  {}
  Result:=nil;
- 
+
  if FUpCase = nil then
   begin
    Result:=NTFSGetUpCase;
@@ -6645,10 +6645,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  Key:=TNTFSDiskKey(Root);
  if Key = nil then Exit;
- 
+
  Result:=Key.Node;
 end;
 
@@ -6661,14 +6661,14 @@ begin
   begin
    {Create Nodes}
    FNodes:=TNTFSDiskNodes.Create(GetNodeLocal,GetNodesLock);
-   
+
    {Check New}
    if ANew then
     begin
      {Nothing}
     end;
   end;
-  
+
  Result:=FNodes;
 end;
 
@@ -6681,10 +6681,10 @@ begin
  //To Do //Testing2 //if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.CompareKey - Size1 = ' + IntToStr(ASize1) + ' Size2 = ' + IntToStr(ASize2));
  {$ENDIF}
  Result:=ntfsCompareGreater; {Default to Greater to continue Find}
- 
+
  if AEntry1 = nil then Exit;
  if AEntry2 = nil then Exit;
- 
+
  case FCollateRule of
   ntfsCollateTypeBinary:begin
     Result:=CompareBinary(AEntry1,AEntry2,ASize1,ASize2);
@@ -6719,9 +6719,9 @@ var
 begin
  {}
  Result:=ntfsCompareEqual;
- 
+
  if (ASize1 = 0) and (ASize2 = 0) then Exit;
- 
+
  {Check Bytes}
  Offset:=0;
  Size:=Min(ASize1,ASize2);
@@ -6738,10 +6738,10 @@ begin
      Result:=ntfsCompareGreater;
      Exit;
     end;
-   
+
    Inc(Offset);
   end;
-  
+
  {Check Sizes} {All Bytes are equal}
  if ASize1 = ASize2 then
   begin
@@ -6770,12 +6770,12 @@ var
 begin
  {}
  Result:=ntfsCompareEqual;
- 
+
  if (ASize1 = 0) and (ASize2 = 0) then Exit;
- 
+
  UpCaseData:=GetUpCase;
  if UpCaseData = nil then Exit;
- 
+
  {Check Words}
  Offset:=0;
  Count:=0;
@@ -6793,11 +6793,11 @@ begin
      Result:=ntfsCompareGreater;
      Exit;
     end;
-    
+
    Inc(Count);
    Inc(Offset,2);
   end;
-  
+
  {Check Sizes} {All Bytes are equal}
  if ASize1 = ASize2 then
   begin
@@ -6827,9 +6827,9 @@ var
 begin
  {}
  Result:=ntfsCompareEqual;
- 
+
  if (ASize1 = 0) and (ASize2 = 0) then Exit;
- 
+
  {Check Words}
  Offset:=0;
  Count:=0;
@@ -6847,11 +6847,11 @@ begin
      Result:=ntfsCompareGreater;
      Exit;
     end;
-   
+
    Inc(Count);
    Inc(Offset,2);
   end;
-  
+
  {Check Sizes} {All Bytes are equal}
  if ASize1 = ASize2 then
   begin
@@ -6873,10 +6873,10 @@ function TNTFSDiskIndex.CompareLongWord(AEntry1,AEntry2:LongWord;ASize1,ASize2:W
 begin
  {}
  Result:=ntfsCompareGreater; {Default to Greater to continue Find}
- 
+
  if ASize1 <> SizeOf(LongWord) then Exit;
  if ASize2 <> SizeOf(LongWord) then Exit;
- 
+
  {Check Values}
  if AEntry1 = AEntry2 then
   begin
@@ -6902,10 +6902,10 @@ var
 begin
  {}
  Result:=ntfsCompareGreater; {Default to Greater to continue Find}
- 
+
  if ASize1 < (SizeOf(SID) - SizeOf(DWORD)) then Exit;
  if ASize2 < (SizeOf(SID) - SizeOf(DWORD)) then Exit;
- 
+
  {Check Revision}
  if AEntry1.Revision < AEntry2.Revision then
   begin
@@ -6917,7 +6917,7 @@ begin
    Result:=ntfsCompareGreater;
    Exit;
   end;
-  
+
  {Check Sub Authority Count}
  if AEntry1.SubAuthorityCount < AEntry2.SubAuthorityCount then
   begin
@@ -6929,7 +6929,7 @@ begin
    Result:=ntfsCompareGreater;
    Exit;
   end;
-  
+
  {Check Identifier Authority}
  for Count:=0 to 5 do
   begin
@@ -6944,7 +6944,7 @@ begin
      Exit;
     end;
   end;
-  
+
  {Check Sub Authorities}
  Offset:=0;
  Count:=0;
@@ -6961,11 +6961,11 @@ begin
      Result:=ntfsCompareGreater;
      Exit;
     end;
-    
+
    Inc(Count);
    Inc(Offset,SizeOf(DWORD));
   end;
-  
+
  Result:=ntfsCompareEqual; {Default to Equal (Sub Authority Counts were previously checked)}
 end;
 
@@ -6975,10 +6975,10 @@ function TNTFSDiskIndex.CompareSecurityHash(AEntry1,AEntry2:PNTFSSecurityHashKey
 begin
  {}
  Result:=ntfsCompareGreater; {Default to Greater to continue Find}
- 
+
  if ASize1 < SizeOf(TNTFSSecurityHashKeyData) then Exit;
  if ASize2 < SizeOf(TNTFSSecurityHashKeyData) then Exit;
- 
+
  {Check Security Hash}
  if AEntry1.SecurityHash < AEntry2.SecurityHash then
   begin
@@ -6990,7 +6990,7 @@ begin
    Result:=ntfsCompareGreater;
    Exit;
   end;
- 
+
  {Check Security Id}
  if AEntry1.SecurityId < AEntry2.SecurityId then
   begin
@@ -7002,7 +7002,7 @@ begin
    Result:=ntfsCompareGreater;
    Exit;
   end;
- 
+
  Result:=ntfsCompareEqual; {Default to Equal (Sizes are assumed the same)}
 end;
 
@@ -7015,10 +7015,10 @@ var
 begin
  {}
  Result:=ntfsCompareGreater; {Default to Greater to continue Find}
- 
+
  if ASize1 < SizeOf(TNTFSReparseKeyData) then Exit; {Reparse Key is only 12 bytes not 16 bytes as per GUID}
  if ASize2 < SizeOf(TNTFSReparseKeyData) then Exit;
- 
+
  {Check D1}
  if AEntry1.D1 < AEntry2.D1 then
   begin
@@ -7030,7 +7030,7 @@ begin
    Result:=ntfsCompareGreater;
    Exit;
   end;
- 
+
  {Check D2}
  if AEntry1.D2 < AEntry2.D2 then
   begin
@@ -7042,7 +7042,7 @@ begin
    Result:=ntfsCompareGreater;
    Exit;
   end;
- 
+
  {Check D3}
  if AEntry1.D3 < AEntry2.D3 then
   begin
@@ -7054,7 +7054,7 @@ begin
    Result:=ntfsCompareGreater;
    Exit;
   end;
- 
+
  {Check D4}
  Maximum:=7;
  if ASize1 < SizeOf(TGUID) then Maximum:=3;
@@ -7072,7 +7072,7 @@ begin
      Exit;
     end;
   end;
-  
+
  Result:=ntfsCompareEqual; {Default to Equal (Sizes are assumed the same)}
 end;
 
@@ -7092,9 +7092,9 @@ begin
     end;
   end;
  {$ENDIF}
- 
+
  Result:=inherited GetEnd(AEntry);
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetEnd - Result = ' + PtrToHex(Result));
  {$ENDIF}
@@ -7116,9 +7116,9 @@ begin
     end;
   end;
  {$ENDIF}
- 
+
  Result:=inherited GetStart(AEntry);
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetStart - Result = ' + PtrToHex(Result));
  {$ENDIF}
@@ -7140,9 +7140,9 @@ begin
     end;
   end;
  {$ENDIF}
- 
+
  Result:=inherited GetBlank(AEntry);
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetBlank - Result = ' + PtrToHex(Result));
  {$ENDIF}
@@ -7163,7 +7163,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetMedian');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetMedian - Entry = ' + PtrToHex(AEntry));
@@ -7175,26 +7175,26 @@ begin
     end;
   end;
  {$ENDIF}
- 
+
  if AEntry = nil then Exit;
- 
+
  {Get Node}
  Node:=TNTFSDiskKey(AEntry).Node;
  if Node = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetMedian - Entry.Node = ' + IntToHex(Node.RecordNumber,16));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetMedian - Entry.Node.KeyCount = ' + IntToStr(Node.KeyCount));
  {$ENDIF}
- 
+
  {Get Total}
  Total:=Node.KeyCount;    {Node.KeyCount - 1} {Must be at least 3 keys including blank}
  if Total < 3 then Exit;  {Total < 2}
- 
+
  {Get Offset}
  Offset:=(Total shr 1); {Divide by 2}
  if (Total mod 2) > 0 then Inc(Offset);
- 
+
  {Get Median}
  Count:=0;
  Sibling:=TNTFSDiskKey(GetStart(AEntry));
@@ -7204,9 +7204,9 @@ begin
    if Count = Offset then Break;
    Sibling:=TNTFSDiskKey(Sibling.Right);
   end;
- 
+
  Result:=Sibling; {Sibling will only be not nil if Median was reached}
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetMedian - Total = ' + IntToStr(Total) + ' Offset = ' + IntToStr(Offset));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetMedian - Result = ' + PtrToHex(Result));
@@ -7230,31 +7230,31 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Entry = ' + PtrToHex(AEntry));
  {$ENDIF}
- 
+
  if AEntry = nil then Exit;
- 
+
  {Get Left}
  ALeft:=False;
- 
+
  {Get Lefthand/Righthand}
  Lefthand:=GetLefthand(AEntry);
  Righthand:=GetRighthand(AEntry);
- 
+
  {Check Lefthand/Righthand}
  Result:=Righthand;
  if Result = nil then Result:=Lefthand;
- 
+
  {Return Entry}
  if Result = nil then Result:=AEntry;
- 
+
  {Check Left}
  if Result = Lefthand then ALeft:=True;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Entry.Blank = ' + BoolToStr(AEntry.Blank));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetDrop - Entry.Left = ' + PtrToHex(AEntry.Left));
@@ -7304,7 +7304,7 @@ function TNTFSDiskIndex.GetMerge(AEntry:TBtreeObject):TBtreeObject;
 begin
  {}
  Result:=nil;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetMerge');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetMerge - Entry = ' + PtrToHex(AEntry));
@@ -7316,9 +7316,9 @@ begin
     end;
   end;
  {$ENDIF}
- 
+
  if AEntry = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetMerge - Result = ' + PtrToHex(Result));
  {$ENDIF}
@@ -7332,7 +7332,7 @@ function TNTFSDiskIndex.GetBorrow(AEntry:TBtreeObject):TBtreeObject;
 begin
  {}
  Result:=nil;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetBorrow');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetBorrow - Entry = ' + PtrToHex(AEntry));
@@ -7344,9 +7344,9 @@ begin
     end;
   end;
  {$ENDIF}
- 
+
  if AEntry = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetBorrow - Result = ' + PtrToHex(Result));
  {$ENDIF}
@@ -7364,15 +7364,15 @@ function TNTFSDiskIndex.GetTarget(ADrop:TBtreeObject;ALeft:Boolean):TBtreeObject
 begin
  {}
  Result:=ADrop;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetTarget');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetTarget - Drop = ' + PtrToHex(ADrop) + ' Left = ' + BoolToStr(ALeft));
  {$ENDIF}
- 
+
  if ADrop = nil then Exit;
  if ADrop.Child = nil then Exit;
- 
+
  {Check Left}
  if not(ALeft) then
   begin
@@ -7389,7 +7389,7 @@ begin
    Result:=GetBlank(Result); {Rightmost returns the key left of blank}
    if Result = nil then Exit;
   end;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetTarget - Target.Blank = ' + BoolToStr(Result.Blank));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.GetTarget - Target.Left = ' + PtrToHex(Result.Left));
@@ -7413,29 +7413,29 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.PushNode');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.PushNode - Entry = ' + PtrToHex(AEntry));
  {$ENDIF}
- 
+
  if AEntry = nil then Exit;
- 
- 
+
+
  {Get Node}
  Node:=TNTFSDiskKey(AEntry).Node;
  if Node = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.PushNode - Entry.Node = ' + IntToHex(Node.RecordNumber,16));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.PushNode - Entry.Node.KeyCount = ' + IntToStr(Node.KeyCount));
  {$ENDIF}
- 
+
  {Update Node}
  Node.Changed:=True;
- 
+
  Result:=True;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.PushNode - Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -7450,28 +7450,28 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SplitNode');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SplitNode - Entry = ' + PtrToHex(AEntry));
  {$ENDIF}
- 
+
  if AEntry = nil then Exit;
- 
+
  {Get Node}
  Node:=TNTFSDiskKey(AEntry).Node;
  if Node = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SplitNode - Entry.Node = ' + IntToHex(Node.RecordNumber,16));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SplitNode - Entry.Node.KeyCount = ' + IntToStr(Node.KeyCount));
  {$ENDIF}
- 
+
  {Update Node}
  Node.Changed:=True;
- 
+
  Result:=True;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SplitNode - Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -7486,60 +7486,60 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode - Entry = ' + PtrToHex(AEntry) + ' Drop = ' + PtrToHex(ADrop) + ' Target = ' + PtrToHex(ATarget) + ' Left = ' + BoolToStr(ALeft));
  {$ENDIF}
- 
+
  if AEntry = nil then Exit; {Drop may be nil} {Target may be nil}
- 
+
  {Get Node}
  Node:=TNTFSDiskKey(AEntry).Node;
  if Node = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode - Entry.Node = ' + IntToHex(Node.RecordNumber,16));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode - Entry.Node.KeyCount = ' + IntToStr(Node.KeyCount));
  {$ENDIF}
- 
+
  {Update Node}
  Node.Changed:=True;
- 
+
  {Check Drop Node}
  if ADrop <> nil then
   begin
    {Get Drop Node}
    Node:=TNTFSDiskKey(ADrop).Node;
    if Node = nil then Exit;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode - Drop.Node = ' + IntToHex(Node.RecordNumber,16));
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode - Drop.Node.KeyCount = ' + IntToStr(Node.KeyCount));
    {$ENDIF}
-   
+
    {Update Drop Node}
    Node.Changed:=True;
   end;
-  
+
  {Check Target Node}
  if ATarget <> nil then
   begin
    {Get Target Node}
    Node:=TNTFSDiskKey(ATarget).Node;
    if Node = nil then Exit;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode - Target.Node = ' + IntToHex(Node.RecordNumber,16));
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode - Target.Node.KeyCount = ' + IntToStr(Node.KeyCount));
    {$ENDIF}
-   
+
    {Update Target Node}
    Node.Changed:=True;
   end;
-  
+
  Result:=True;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DropNode - Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -7554,41 +7554,41 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.MergeNode');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.MergeNode - Entry = ' + PtrToHex(AEntry) + ' Merge = ' + PtrToHex(AMerge));
  {$ENDIF}
- 
+
  if AEntry = nil then Exit;
  if AMerge = nil then Exit;
- 
+
  {Get Node}
  Node:=TNTFSDiskKey(AEntry).Node;
  if Node = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.MergeNode - Entry.Node = ' + IntToHex(Node.RecordNumber,16));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.MergeNode - Entry.Node.KeyCount = ' + IntToStr(Node.KeyCount));
  {$ENDIF}
- 
+
  {Update Node}
  Node.Changed:=True;
- 
+
  {Get Merge Node}
  Node:=TNTFSDiskKey(AMerge).Node;
  if Node = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.MergeNode - Merge.Node = ' + IntToHex(Node.RecordNumber,16));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.MergeNode - Merge.Node.KeyCount = ' + IntToStr(Node.KeyCount));
  {$ENDIF}
- 
+
  {Update Merge Node}
  Node.Changed:=True;
- 
+
  Result:=True;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.MergeNode - Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -7601,23 +7601,23 @@ function TNTFSDiskIndex.BorrowEntry(AEntry,ABorrow:TBtreeObject):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.BorrowEntry');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.BorrowEntry - Entry = ' + PtrToHex(AEntry) + ' Borrow = ' + PtrToHex(ABorrow));
  {$ENDIF}
- 
+
  if AEntry = nil then Exit;
  if ABorrow = nil then Exit;
- 
+
  {Update Entry}
  TNTFSDiskKey(AEntry).Changed:=True;
- 
+
  {Update Borrow}
  TNTFSDiskKey(ABorrow).Changed:=True;
- 
+
  Result:=True;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.BorrowEntry - Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -7632,49 +7632,49 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SwapEntry');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SwapEntry - Entry = ' + PtrToHex(AEntry) + ' Swap = ' + PtrToHex(ASwap) + ' Left = ' + BoolToStr(ALeft));
  {$ENDIF}
- 
+
  if AEntry = nil then Exit;
  if ASwap = nil then Exit;
 
  {Update Entry}
  TNTFSDiskKey(AEntry).Changed:=True;
- 
+
  {Get Node}
  Node:=TNTFSDiskKey(AEntry).Node;
  if Node = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SwapEntry - Entry.Node = ' + IntToHex(Node.RecordNumber,16));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SwapEntry - Entry.Node.KeyCount = ' + IntToStr(Node.KeyCount));
  {$ENDIF}
- 
+
  {Update Node}
  Node.Changed:=True;
 
  {Update Swap}
  TNTFSDiskKey(ASwap).Changed:=True;
- 
+
  {Get Swap Node}
  Node:=TNTFSDiskKey(ASwap).Node;
  if Node = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SwapEntry - Swap.Node = ' + IntToHex(Node.RecordNumber,16));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SwapEntry - Swap.Node.KeyCount = ' + IntToStr(Node.KeyCount));
  {$ENDIF}
- 
+
  {Update Swap Node}
  Node.Changed:=True;
 
  //To Do //Testing2
  {Update Entry}
  TNTFSDiskKey(AEntry).Node:=nil;
- 
+
  {Update Swap}
  TNTFSDiskKey(ASwap).Node:=nil;
  //To Do //Testing2
@@ -7690,7 +7690,7 @@ begin
  //To Do //Testing
 
  Result:=True;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SwapEntry - Entry = ' + PtrToHex(AEntry));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SwapEntry - Entry.Blank = ' + BoolToStr(AEntry.Blank));
@@ -7721,44 +7721,44 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SetParentEntry');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SetParentEntry - Entry = ' + PtrToHex(AEntry) + ' Parent = ' + PtrToHex(AParent));
  {$ENDIF}
- 
+
  if AEntry = nil then Exit;
- 
+
  {Parent may be nil}
- 
+
  {Update Entry}
  TNTFSDiskKey(AEntry).Changed:=True;
- 
+
  {Check Node}
  if TNTFSDiskKey(AEntry).Node = nil then {Node may have been set to nil by Detach during some operations}
   begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SetParentEntry - Entry Node is nil');
    {$ENDIF}
-   
+
    {Get Blank}
    Blank:=TNTFSDiskKey(GetBlank(AEntry));
    if Blank = nil then Exit;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SetParentEntry - Blank = ' + PtrToHex(Blank));
    {$ENDIF}
-   
+
    if Blank.Node = nil then Exit;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SetParentEntry - Blank.Node = ' + IntToHex(Blank.Node.RecordNumber,16));
    {$ENDIF}
-   
+
    {Update Entry}
    TNTFSDiskKey(AEntry).Node:=Blank.Node;
   end;
-  
+
  {Check Parent}
  if AParent <> nil then
   begin
@@ -7774,23 +7774,23 @@ begin
      {$IFDEF NTFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SetParentEntry - Parent Node is nil');
      {$ENDIF}
-     
+
      {Get Blank}
      Blank:=TNTFSDiskKey(GetBlank(AParent));
      if Blank = nil then Exit;
-     
+
      {$IFDEF NTFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SetParentEntry - Blank = ' + PtrToHex(Blank));
      {$ENDIF}
-     
+
      if AParent <> Blank then {During Split entry becomes a parent before Blank is created}
       begin
        if Blank.Node = nil then Exit;
-       
+
        {$IFDEF NTFS_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SetParentEntry - Blank.Node = ' + IntToHex(Blank.Node.RecordNumber,16));
        {$ENDIF}
-       
+
        {Update Parent}
        TNTFSDiskKey(AParent).Node:=Blank.Node;
       end;
@@ -7805,7 +7805,7 @@ begin
      {$IFDEF NTFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SetParentEntry -  Parent is the Root Node');
      {$ENDIF}
-     
+
      {Get Node}
      Node:=TNTFSDiskKey(AParent).Node;
      if Node <> nil then {Node may be nil while some operations are in progress}
@@ -7813,15 +7813,15 @@ begin
        {$IFDEF NTFS_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SetParentEntry - Parent.Node = ' + IntToHex(Node.RecordNumber,16));
        {$ENDIF}
-       
+
        {Update Node}
        Node.IndexSize:=Node.CalculatedSize(FVolumeVersion);
        Node.IndexAllocated:=Node.CalculatedAllocated(FVolumeVersion);
       end;
-      
+
      {Update Attribute}
      if Attribute = nil then Exit;
-     
+
      Attribute.DataSize:=Attribute.CalculatedStreamSize(FVolumeVersion);
      Attribute.AttributeSize:=Attribute.CalculatedSize(FVolumeVersion);
     end
@@ -7832,7 +7832,7 @@ begin
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SetParentEntry - Parent is a Sub Node');
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SetParentEntry - Parent.Parent = ' + PtrToHex(Parent));
      {$ENDIF}
-     
+
      {Get Node}
      Node:=TNTFSDiskKey(AParent).Node;
      if Node <> nil then {Node may be nil while some operations are in progress}
@@ -7840,16 +7840,16 @@ begin
        {$IFDEF NTFS_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SetParentEntry - Parent.Node = ' + IntToHex(Node.RecordNumber,16));
        {$ENDIF}
-       
+
        {Update Node}
        Node.IndexSize:=Node.CalculatedSize(FVolumeVersion);
       end;
-      
+
      {Update Parent}
      Parent.Changed:=True;
      Parent.HasSubNode:=True;
      Parent.EntrySize:=Parent.CalculatedSize(FVolumeVersion);
-     
+
      {Get Parent Node}
      Node:=Parent.Node;
      if Node <> nil then {Node may be nil while some operations are in progress}
@@ -7857,7 +7857,7 @@ begin
        {$IFDEF NTFS_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SetParentEntry - Parent.Parent.Node = ' + IntToHex(Node.RecordNumber,16));
        {$ENDIF}
-       
+
        {Update Parent Node}
        Node.Changed:=True;
        Node.HasSubNodes:=True;
@@ -7865,9 +7865,9 @@ begin
       end;
     end;
   end;
-  
+
  Result:=True;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.SetParentEntry - Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -7882,32 +7882,32 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DeleteBlank');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DeleteBlank - Blank = ' + PtrToHex(ABlank));
  {$ENDIF}
- 
+
  {Check Blank}
  if ABlank = nil then Exit;
  if not ABlank.Blank then Exit;
- 
+
  {Get Node}
  Node:=TNTFSDiskKey(ABlank).Node;
  if Node = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DeleteBlank - Node = ' + IntToHex(Node.RecordNumber,16));
  {$ENDIF}
- 
+
  {Delete Node}
  if not DeleteNode(Node) then Exit;
- 
+
  {Delete Blank}
  {ABlank.Free;} {Blank will be freed by Node on destruction}
- 
+
  Result:=True;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DeleteBlank - Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -7923,16 +7923,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.AttachBlank');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.AttachBlank - Blank = ' + PtrToHex(ABlank));
  {$ENDIF}
- 
+
  {Check Blank}
  if ABlank = nil then Exit;
  if not ABlank.Blank then Exit; {Cannot Attach Non Blank}
- 
+
  {Get Parent}
  Parent:=TNTFSDiskKey(ABlank.Parent);
  if Parent = nil then
@@ -7941,25 +7941,25 @@ begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.AttachBlank - Blank is the Root Node');
    {$ENDIF}
-   
+
    {Get Node}
    Node:=TNTFSDiskKey(ABlank).Node;
    if Node = nil then Exit;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.AttachBlank - Blank.Node = ' + IntToHex(Node.RecordNumber,16));
    {$ENDIF}
-   
+
    {Update Node} {The order of these is highly important}
    Node.UpdateSequenceOffset:=Node.CalculatedSequenceOffset(FVolumeVersion);
    Node.UpdateSequenceLength:=Node.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
    Node.EntryOffset:=Node.CalculatedOffset(FVolumeVersion);
    Node.IndexSize:=Node.CalculatedSize(FVolumeVersion);
    Node.IndexAllocated:=Node.CalculatedAllocated(FVolumeVersion);
-   
+
    {Update Attribute}
    if Attribute = nil then Exit;
-   
+
    Attribute.DataSize:=Attribute.CalculatedStreamSize(FVolumeVersion);
    Attribute.AttributeSize:=Attribute.CalculatedSize(FVolumeVersion);
   end
@@ -7970,27 +7970,27 @@ begin
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.AttachBlank - Blank is a Sub Node');
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.AttachBlank - Blank.Parent = ' + PtrToHex(Parent));
    {$ENDIF}
-   
+
    {Get Node}
    Node:=TNTFSDiskKey(ABlank).Node;
    if Node = nil then Exit;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.AttachBlank - Parent.Node = ' + IntToHex(Node.RecordNumber,16));
    {$ENDIF}
-   
+
    {Update Node} {The order of these is highly important}
    Node.IndexAllocated:=Node.CalculatedAllocated(FVolumeVersion);
    Node.UpdateSequenceOffset:=Node.CalculatedSequenceOffset(FVolumeVersion);
    Node.UpdateSequenceLength:=Node.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
    Node.EntryOffset:=Node.CalculatedOffset(FVolumeVersion);
    Node.IndexSize:=Node.CalculatedSize(FVolumeVersion);
-   
+
    {Update Parent}
    Parent.Changed:=True;
    Parent.HasSubNode:=True;
    Parent.EntrySize:=Parent.CalculatedSize(FVolumeVersion);
-   
+
    {Get Parent Node}
    Node:=Parent.Node;
    if Node <> nil then {Node may be nil while some operations are in progress}
@@ -8001,9 +8001,9 @@ begin
      Node.IndexSize:=Node.CalculatedSize(FVolumeVersion);
     end;
   end;
-  
+
  Result:=True;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.AttachBlank - Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -8019,16 +8019,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DetachBlank');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.DetachBlank - Blank = ' + PtrToHex(ABlank));
  {$ENDIF}
- 
+
  {Check Blank}
  if ABlank = nil then Exit;
  if not ABlank.Blank then Exit; {Cannot Detach Non Blank}
- 
+
  {Get Parent}
  Parent:=TNTFSDiskKey(ABlank.Parent);
  if Parent <> nil then
@@ -8038,10 +8038,10 @@ begin
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DetachBlank - Blank is a Sub Node');
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DetachBlank - Blank.Parent = ' + PtrToHex(Parent));
    {$ENDIF}
-   
+
    {Update Parent}
    Parent.Changed:=True;
-   
+
    {Get Parent Node}
    Node:=Parent.Node;
    if Node <> nil then {Node may be nil while some operations are in progress}
@@ -8049,14 +8049,14 @@ begin
      {$IFDEF NTFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DetachBlank - Parent.Node = ' + IntToHex(Node.RecordNumber,16));
      {$ENDIF}
-     
+
      {Update Parent Node}
      Node.Changed:=True;
     end;
   end;
-  
+
  Result:=True;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.DetachBlank - Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -8072,41 +8072,41 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.AttachEntry');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.AttachEntry - Entry = ' + PtrToHex(AEntry));
  {$ENDIF}
- 
+
  {Check Entry}
  if AEntry = nil then Exit;
  if AEntry.Blank then Exit; {Cannot Attach Blank}
- 
+
  {Get Blank}
  Blank:=TNTFSDiskKey(GetBlank(AEntry));
  if Blank = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.AttachEntry - Blank = ' + PtrToHex(Blank));
  {$ENDIF}
- 
+
  {Get Node}
  Node:=Blank.Node;
  if Node = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.AttachEntry - Blank.Node = ' + IntToHex(Node.RecordNumber,16));
  {$ENDIF}
- 
+
  {Update Entry}
  TNTFSDiskKey(AEntry).Changed:=True;
  TNTFSDiskKey(AEntry).Node:=Node;
- 
+
  {Update Node}
  Node.Changed:=True;
- 
+
  Result:=True;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.AttachEntry - Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -8121,38 +8121,38 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DetachEntry');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DetachEntry - Entry = ' + PtrToHex(AEntry));
  {$ENDIF}
- 
+
  {Check Entry}
  if AEntry = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DetachEntry - Entry.Blank = ' + BoolToStr(AEntry.Blank));
  {$ENDIF}
- 
+
  if AEntry.Blank then Exit; {Cannot Detach Blank}
- 
+
  {Get Node}
  Node:=TNTFSDiskKey(AEntry).Node;
  if Node = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DetachEntry - Entry.Node = ' + IntToHex(Node.RecordNumber,16));
  {$ENDIF}
- 
+
  {Update Entry}
  TNTFSDiskKey(AEntry).Changed:=True;
  TNTFSDiskKey(AEntry).Node:=nil;
- 
+
  {Update Node}
  Node.Changed:=True;
- 
+
  Result:=True;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.DetachEntry - Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -8175,14 +8175,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequirePush');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequirePush - Entry = ' + PtrToHex(AEntry));
  {$ENDIF}
- 
+
  if AEntry = nil then Exit;
- 
+
  {Get Parent}
  Parent:=TNTFSDiskKey(AEntry.Parent);
  if Parent = nil then
@@ -8191,43 +8191,43 @@ begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequirePush - Entry is the Root Node');
    {$ENDIF}
-   
+
    {Get Node}
    Node:=TNTFSDiskKey(AEntry).Node;
    if Node = nil then Exit;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequirePush - Node = ' + IntToHex(Node.RecordNumber,16));
    {$ENDIF}
-   
+
    {Update Node}
    Node.IndexSize:=Node.CalculatedSize(FVolumeVersion);
    Node.IndexAllocated:=Node.CalculatedAllocated(FVolumeVersion);
-   
+
    {Update Attribute}
    if Attribute = nil then Exit;
    Attribute.DataSize:=Attribute.CalculatedStreamSize(FVolumeVersion);
    Attribute.AttributeSize:=Attribute.CalculatedSize(FVolumeVersion);
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequirePush - KeyCount = ' + IntToStr(Node.KeyCount));
    {$ENDIF}
-   
+
    {Check Count}
    if Node.KeyCount < 2 then Exit; {Can push with only 1 key plus blank}
-   
+
    {Get Record}
    Current:=Attribute.Parent;
    if Current = nil then Exit;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequirePush - CalculatedSize = ' + IntToStr(Current.CalculatedSize(FVolumeVersion)) + ' RecordAllocated = ' + IntToStr(Current.RecordAllocated));
    {$ENDIF}
-   
+
    {Check Size}
    if Current.CalculatedSize(FVolumeVersion) <= Current.RecordAllocated then Exit;
    Result:=True;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequirePush - Result = ' + BoolToStr(Result));
    {$ENDIF}
@@ -8250,14 +8250,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireSplit');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireSplit - Entry = ' + PtrToHex(AEntry));
  {$ENDIF}
- 
+
  if AEntry = nil then Exit;
- 
+
  {Get Parent}
  Parent:=TNTFSDiskKey(AEntry.Parent);
  if Parent = nil then
@@ -8266,44 +8266,44 @@ begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireSplit - Entry is the Root Node');
    {$ENDIF}
-   
+
    {Get Node}
    Node:=TNTFSDiskKey(AEntry).Node;
    if Node = nil then Exit;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireSplit - Node = ' + IntToHex(Node.RecordNumber,16));
    {$ENDIF}
-   
+
    {Update Node}
    Node.IndexSize:=Node.CalculatedSize(FVolumeVersion);
    Node.IndexAllocated:=Node.CalculatedAllocated(FVolumeVersion);
-   
+
    {Update Attribute}
    if Attribute = nil then Exit;
    Attribute.DataSize:=Attribute.CalculatedStreamSize(FVolumeVersion);
    Attribute.AttributeSize:=Attribute.CalculatedSize(FVolumeVersion);
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireSplit - KeyCount = ' + IntToStr(Node.KeyCount));
    {$ENDIF}
-   
+
    {Check Count}
    if Node.KeyCount < 3 then Exit;
-   
+
    {Get Record}
    Current:=Attribute.Parent;
    if Current = nil then Exit;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireSplit - CalculatedSize = ' + IntToStr(Current.CalculatedSize(FVolumeVersion)) + ' RecordAllocated = ' + IntToStr(Current.RecordAllocated));
    {$ENDIF}
-   
+
    {Check Size}
    if Current.CalculatedSize(FVolumeVersion) <= Current.RecordAllocated then Exit;
-   
+
    Result:=True;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireSplit - Result = ' + BoolToStr(Result));
    {$ENDIF}
@@ -8315,34 +8315,34 @@ begin
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireSplit - Entry is a Sub Node');
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireSplit - Parent = ' + PtrToHex(Parent));
    {$ENDIF}
-   
+
    {Get Node}
    Node:=TNTFSDiskKey(AEntry).Node;
    if Node = nil then Exit;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireSplit - Node = ' + IntToHex(Node.RecordNumber,16));
    {$ENDIF}
-   
+
    {Update Node}
    Node.IndexSize:=Node.CalculatedSize(FVolumeVersion);
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireSplit - KeyCount = ' + IntToStr(Node.KeyCount));
    {$ENDIF}
-   
+
    {Check Count}
    if Node.KeyCount < 3 then Exit;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireSplit - IndexSize = ' + IntToStr(Node.IndexSize) + ' IndexAllocated = ' + IntToStr(Node.IndexAllocated));
    {$ENDIF}
-   
+
    {Check Size}
    if Node.IndexSize <= Node.IndexAllocated then Exit;
-   
+
    Result:=True;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireSplit - Result = ' + BoolToStr(Result));
    {$ENDIF}
@@ -8364,14 +8364,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireDrop');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireDrop - Entry = ' + PtrToHex(AEntry));
  {$ENDIF}
- 
+
  if AEntry = nil then Exit;
- 
+
  {Get Parent}
  Parent:=TNTFSDiskKey(AEntry.Parent);
  if Parent <> nil then
@@ -8381,27 +8381,27 @@ begin
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireDrop - Entry is a SubNode');
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireDrop - Parent = ' + PtrToHex(Parent));
    {$ENDIF}
-   
+
    {Get Node}
    Node:=TNTFSDiskKey(AEntry).Node;
    if Node = nil then Exit;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireDrop - Node = ' + IntToHex(Node.RecordNumber,16));
    {$ENDIF}
-   
+
    {Update Node}
    Node.IndexSize:=Node.CalculatedSize(FVolumeVersion);
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireDrop - KeyCount = ' + IntToStr(Node.KeyCount));
    {$ENDIF}
-   
+
    {Check Count}
    if Node.KeyCount > 1 then Exit;
-   
+
    Result:=True;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireDrop - Result = ' + BoolToStr(Result));
    {$ENDIF}
@@ -8418,14 +8418,14 @@ function TNTFSDiskIndex.RequireMerge(AEntry:TBtreeObject):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireMerge');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireMerge - Entry = ' + PtrToHex(AEntry));
  {$ENDIF}
- 
+
  if AEntry = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireMerge - Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -8441,14 +8441,14 @@ function TNTFSDiskIndex.RequireBorrow(AEntry:TBtreeObject):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireBorrow');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireBorrow - Entry = ' + PtrToHex(AEntry));
  {$ENDIF}
- 
+
  if AEntry = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.RequireBorrow - Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -8460,9 +8460,9 @@ function TNTFSDiskIndex.NodeCount:Integer;
 begin
  {}
  Result:=0;
- 
+
  if FNodes = nil then Exit;
- 
+
  Result:=FNodes.Count;
 end;
 
@@ -8482,11 +8482,11 @@ function TNTFSDiskIndex.DestroyKey(AKey:TNTFSDiskKey):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AKey = nil then Exit;
- 
+
  AKey.Free;
- 
+
  Result:=True;
 end;
 
@@ -8517,10 +8517,10 @@ function TNTFSDiskIndex.AddKey(AParent,AKey:TNTFSDiskKey):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AKey = nil then Exit;
  {if AParent = nil then Exit;} {Parent may be nil}
- 
+
  Result:=Add(AParent,AKey);
 end;
 
@@ -8531,10 +8531,10 @@ function TNTFSDiskIndex.InsertKey(AKey:TNTFSDiskKey):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AKey = nil then Exit;
  if AKey.Blank then Exit;
- 
+
  Result:=Insert(AKey);
 end;
 
@@ -8545,14 +8545,14 @@ function TNTFSDiskIndex.RemoveKey(AKey:TNTFSDiskKey):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AKey = nil then Exit;
  if AKey.Blank then Exit;
- 
+
  if not Remove(AKey) then Exit;
- 
+
  AKey.Free;
- 
+
  Result:=True;
 end;
 
@@ -8565,15 +8565,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FNodes = nil then CreateNodes(ANew);
- 
+
  {Create Node}
  Node:=TNTFSDiskNode.Create(GetNodeLocal,Self);
- 
+
  {Add Node}
  FNodes.Add(Node);
- 
+
  Result:=Node;
 end;
 
@@ -8584,16 +8584,16 @@ function TNTFSDiskIndex.DestroyNode(ANode:TNTFSDiskNode):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ANode = nil then Exit;
  if FNodes = nil then Exit;
- 
+
  {Remove Node}
  FNodes.Remove(ANode);
- 
+
  {Free Node}
  ANode.Free;
- 
+
  Result:=True;
 end;
 
@@ -8605,7 +8605,7 @@ begin
  {}
  Result:=CreateNode(True);
  if Result = nil then Exit;
- 
+
  {Setup Node}
  Result.Added:=True;
  Result.RecordNumber:=ARecordNumber;
@@ -8619,9 +8619,9 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FNodes = nil then Exit;
- 
+
  {Check Nodes}
  Node:=TNTFSDiskNode(FNodes.First);
  while Node <> nil do
@@ -8632,7 +8632,7 @@ begin
      Result:=Node;
      Exit;
     end;
-    
+
    Node:=TNTFSDiskNode(Node.Next);
   end;
 end;
@@ -8644,13 +8644,13 @@ function TNTFSDiskIndex.DeleteNode(ANode:TNTFSDiskNode):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ANode = nil then Exit;
  if FNodes = nil then Exit;
- 
+
  {Delete Node}
  ANode.Deleted:=True;
- 
+
  Result:=True;
 end;
 
@@ -8661,16 +8661,16 @@ function TNTFSDiskIndex.RemoveNode(ANode:TNTFSDiskNode):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ANode = nil then Exit;
  if FNodes = nil then Exit;
- 
+
  {Remove Node}
  FNodes.Remove(ANode);
- 
+
  {Free Node}
  ANode.Free;
- 
+
  Result:=True;
 end;
 
@@ -8682,30 +8682,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FNodes = nil then Exit;
 
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.UpdateNodes');
  {$ENDIF}
- 
+
  {First pass for Node and Flags}
  Node:=TNTFSDiskNode(FNodes.First);
  while Node <> nil do
   begin
    {Update Keys}
    if not Node.UpdateKeys(AVersion) then Exit;
-   
+
    Node:=TNTFSDiskNode(Node.Next);
   end;
-  
+
  {Second pass for SubNodeNumber}
  Node:=TNTFSDiskNode(FNodes.First);
  while Node <> nil do
   begin
    {Update Keys}
    if not Node.UpdateKeys(AVersion) then Exit;
-   
+
    {Check Root}
    if Node.IsRoot then
     begin
@@ -8716,7 +8716,7 @@ begin
      Node.EntryOffset:=Node.CalculatedOffset(FVolumeVersion);
      Node.IndexSize:=Node.CalculatedSize(FVolumeVersion);
      Node.IndexAllocated:=Node.CalculatedAllocated(FVolumeVersion);
-     
+
      {$IFDEF NTFS_DEBUG}
      if Node.IndexSize > Node.IndexAllocated then
       begin
@@ -8734,7 +8734,7 @@ begin
      Node.UpdateSequenceLength:=Node.CalculatedSequenceLength(ntfsUpdateSequenceSize); {Previously FSectorSize however always 512} //To Do //Testing
      Node.EntryOffset:=Node.CalculatedOffset(FVolumeVersion);
      Node.IndexSize:=Node.CalculatedSize(FVolumeVersion);
-     
+
      {$IFDEF NTFS_DEBUG}
      if Node.IndexSize > Node.IndexAllocated then
       begin
@@ -8748,10 +8748,10 @@ begin
       end;
      {$ENDIF}
     end;
-    
+
    Node:=TNTFSDiskNode(Node.Next);
   end;
-  
+
  Result:=True;
 end;
 
@@ -8772,27 +8772,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  if Loaded then Exit;
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.ReadRoot - Offset = ' + IntToStr(AOffset) + ' Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Size}
  if ASize >= ntfsIndexHeaderSize then
   begin
    {Create Node}
    Node:=CreateNode(False);
    if Node = nil then Exit;
-   
+
    {Read Header}
    if not Node.ReadHeader(ABuffer,AOffset,ASize,AVersion) then Exit;
-   
+
    {Read Keys}
    if not ReadKeys(nil,Node,ABuffer,AOffset,ASize,AVersion) then Exit;
-   
+
    Result:=True;
   end;
 end;
@@ -8806,27 +8806,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not Loaded then Exit;
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.WriteRoot - Offset = ' + IntToStr(AOffset) + ' Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Size}
  if ASize >= ntfsIndexHeaderSize then
   begin
    {Get Node}
    Node:=RootNode;
    if Node = nil then Exit;
-   
+
    {Write Header}
    if not Node.WriteHeader(ABuffer,AOffset,ASize,AVersion) then Exit;
-   
+
    {Write Keys}
    if not WriteKeys(nil,Node,ABuffer,AOffset,ASize,AVersion) then Exit;
-   
+
    Result:=True;
   end;
 end;
@@ -8841,36 +8841,36 @@ var
 begin
  {}
  Result:=False;
- 
+
  if Loaded then Exit;
  if ABuffer = nil then Exit;
  if ANode = nil then Exit;
  {if AParent = nil then Exit;} {Parent may be nil}
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.ReadKeys - Offset = ' + IntToStr(AOffset) + ' Size = ' + IntToStr(ASize) + ' RecordNumber = ' + IntToHex(ANode.FRecordNumber,16));
  {$ENDIF}
- 
+
  {Check Size}
  while ASize >= ntfsIndexEntrySize do
   begin
    {Get Entry}
    IndexEntry:=PNTFSIndexEntry(PtrUInt(ABuffer) + AOffset);
-   
+
    {Create Key}
    Key:=CreateKey(ANode,((IndexEntry.EntryFlags and ntfsIndexEntryFlagLastNode) = ntfsIndexEntryFlagLastNode));
    if Key = nil then Exit;
-   
+
    {Read Key}
    if not Key.ReadKey(ABuffer,AOffset,ASize,AVersion) then Exit;
-   
+
    {Add Key}
    if not AddKey(AParent,Key) then Exit;
-   
+
    {Check Last}
    if ((IndexEntry.EntryFlags and ntfsIndexEntryFlagLastNode) = ntfsIndexEntryFlagLastNode) then Break;
   end;
-  
+
  Result:=True;
 end;
 
@@ -8883,32 +8883,32 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not Loaded then Exit;
  if ABuffer = nil then Exit;
  if ANode = nil then Exit;
  {if AParent = nil then Exit;} {Parent may be nil}
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskIndex.WriteKeys - Offset = ' + IntToStr(AOffset) + ' Size = ' + IntToStr(ASize) + ' RecordNumber = ' + IntToHex(ANode.FRecordNumber,16));
  {$ENDIF}
- 
+
  {Get Key}
  Key:=ANode.Start;
- 
+
  {Write Keys}
  while Key <> nil do
   begin
    {Check Size}
    if ASize < ntfsIndexEntrySize then Exit;
-   
+
    {Write Key}
    if not Key.WriteKey(ABuffer,AOffset,ASize,AVersion) then Exit;
-   
+
    {Get Key}
    Key:=TNTFSDiskKey(Key.Right);
   end;
-  
+
  Result:=True;
 end;
 
@@ -8951,7 +8951,7 @@ function TNTFSDataIndex.CompareSecurityDescriptor(AHash1,AHash2,ASecurityId:Long
 begin
  {}
  Result:=ntfsCompareGreater; {Default to Greater to continue Find}
- 
+
  {Check Security Hash}
  if AHash1 < AHash2 then
   begin
@@ -8963,7 +8963,7 @@ begin
    Result:=ntfsCompareGreater;
    Exit;
   end;
-  
+
  {Check Security Descriptor}
  if Assigned(FCompareSecurityDescriptor) then
   begin
@@ -8982,15 +8982,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if ACurrent = nil then Exit;
- 
+
  if ACurrent.Blank then
   begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.Find - Blank');
    {$ENDIF}
-   
+
    Result:=Find(AValue,ASize,TNTFSDataKey(ACurrent.Child));
   end
  else
@@ -9004,14 +9004,14 @@ begin
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.Find - Current.Node = ' + IntToHex(ACurrent.Node.RecordNumber,16));
     end;
    {$ENDIF}
-   
+
    Value:=CompareKey(AValue,ACurrent.Key,ASize,ACurrent.KeySize);
    if Value = ntfsCompareEqual then
     begin
      {$IFDEF NTFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.Find - Equal');
      {$ENDIF}
-     
+
      Result:=ACurrent;
     end
    else if Value = ntfsCompareLess then
@@ -9019,7 +9019,7 @@ begin
      {$IFDEF NTFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.Find - Less');
      {$ENDIF}
-     
+
      Result:=Find(AValue,ASize,TNTFSDataKey(ACurrent.Child));
     end
    else if Value = ntfsCompareGreater then
@@ -9027,7 +9027,7 @@ begin
      {$IFDEF NTFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.Find - Greater');
      {$ENDIF}
-     
+
      Result:=Find(AValue,ASize,TNTFSDataKey(ACurrent.Right));
     end;
   end;
@@ -9041,15 +9041,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if ACurrent = nil then Exit;
- 
+
  if ACurrent.Blank then
   begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.FindEx - Blank');
    {$ENDIF}
-   
+
    Result:=FindEx(AValue,ASize,AHash,TNTFSDataKey(ACurrent.Child));
   end
  else
@@ -9063,7 +9063,7 @@ begin
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.FindEx - Current.Node = ' + IntToHex(ACurrent.Node.RecordNumber,16));
     end;
    {$ENDIF}
-   
+
    if ACurrent.Key <> nil then
     begin
      case FCollateRule of
@@ -9074,7 +9074,7 @@ begin
           {$IFDEF NTFS_DEBUG}
           if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.FindEx - Equal');
           {$ENDIF}
-          
+
           Result:=ACurrent;
          end
         else if Value = ntfsCompareLess then
@@ -9082,7 +9082,7 @@ begin
           {$IFDEF NTFS_DEBUG}
           if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.FindEx - Less');
           {$ENDIF}
-          
+
           Result:=FindEx(AValue,ASize,AHash,TNTFSDataKey(ACurrent.Child));
          end
         else if Value = ntfsCompareGreater then
@@ -9090,7 +9090,7 @@ begin
           {$IFDEF NTFS_DEBUG}
           if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.FindEx - Greater');
           {$ENDIF}
-          
+
           Result:=FindEx(AValue,ASize,AHash,TNTFSDataKey(ACurrent.Right));
          end;
        end;
@@ -9109,27 +9109,27 @@ begin
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.CreateBlank');
  {$ENDIF}
- 
+
  {Create Blank}
  Result:=TNTFSDataKey.Create(GetKeyLocal);
  Result.Blank:=True;
- 
+
  {Create Node}
  Node:=NewNode(ntfsUnknownRecordNumber);
  if Node = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.CreateBlank - Node = ' + IntToHex(Node.RecordNumber,16));
  {$ENDIF}
- 
+
  {Update Node}
  Node.Blank:=TNTFSDataKey(Result);
- 
+
  {Update Key}
  TNTFSDataKey(Result).Node:=Node;
  TNTFSDataKey(Result).IsLastNode:=True;
  TNTFSDataKey(Result).EntrySize:=TNTFSDataKey(Result).CalculatedSize(FVolumeVersion);
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.CreateBlank - Result = ' + PtrToHex(Result));
  {$ENDIF}
@@ -9141,15 +9141,15 @@ function TNTFSDataIndex.Compare(AEntry1,AEntry2:TBtreeObject):Integer;
 begin
  {}
  Result:=ntfsCompareEqual; {Equal to fail Insert/Merge/Borrow}
- 
+
  if AEntry1 = nil then Exit;
  if AEntry2 = nil then Exit;
- 
+
  Result:=ntfsCompareLess;
- 
+
  if AEntry2.Blank then Exit;
  {AEntry1.Blank is an error}
- 
+
  Result:=ntfsCompareEqual; {Equal to fail Insert/Merge/Borrow}
  if (TNTFSDiskKey(AEntry1).Key <> nil) and (TNTFSDiskKey(AEntry2).Key <> nil) then
   begin
@@ -9164,17 +9164,17 @@ function TNTFSDataIndex.CreateKey(ANode:TNTFSDiskNode;ABlank:Boolean):TNTFSDiskK
 begin
  {}
  Result:=nil;
- 
+
  {Check Node}
  if ABlank and (ANode = nil) then Exit;
- 
+
  {Create Key}
  Result:=TNTFSDataKey.Create(GetKeyLocal);
- 
+
  {Setup Key}
  Result.Blank:=ABlank;
  Result.Node:=ANode;
- 
+
  {Check Blank}
  if ABlank then
   begin
@@ -9190,12 +9190,12 @@ function TNTFSDataIndex.NewKey(AKey,AData:Pointer;AKeySize,ADataSize:Word):TNTFS
 begin
  {}
  Result:=nil;
- 
+
  if AKey = nil then Exit;
- 
+
  Result:=CreateKey(nil,False);
  if Result = nil then Exit;
- 
+
  {Setup Key}
  TNTFSDataKey(Result).KeySize:=AKeySize;
  TNTFSDataKey(Result).DataSize:=ADataSize;
@@ -9211,39 +9211,39 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AValue = nil then Exit;
- 
+
  case FCollateRule of
   ntfsCollateTypeBinary,ntfsCollateTypeFileName,ntfsCollateTypeUnicode,
   ntfsCollateTypeLongWord,ntfsCollateTypeGUID:begin
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.FindKey - Size = ' + IntToStr(ASize));
     {$ENDIF}
-    
+
     Result:=Find(AValue,ASize,TNTFSDataKey(FRoot));
    end;
   ntfsCollateTypeSID:begin
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.FindKey - Size = ' + IntToStr(ASize));
     {$ENDIF}
-    
+
     if not Security.IsValidSid(AValue) then Exit;
-    
+
     Result:=Find(AValue,ASize,TNTFSDataKey(FRoot));
    end;
   ntfsCollateTypeSecurityHash:begin
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.FindKey - Size = ' + IntToStr(ASize));
     {$ENDIF}
-    
+
     if not Security.IsValidSecurityDescriptor(AValue) then Exit;
     Hash:=NTFSGenerateSecurityHash(AValue,ASize);
-    
+
     Result:=FindEx(AValue,ASize,Hash,TNTFSDataKey(FRoot));
    end;
  end;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataIndex.FindKey - Result = ' + PtrToHex(Result));
  {$ENDIF}
@@ -9260,27 +9260,27 @@ begin
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSPaddedIndex.CreateBlank');
  {$ENDIF}
- 
+
  {Create Blank}
  Result:=TNTFSPaddedKey.Create(GetKeyLocal);
  Result.Blank:=True;
- 
+
  {Create Node}
  Node:=NewNode(ntfsUnknownRecordNumber);
  if Node = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSPaddedIndex.CreateBlank - Node = ' + IntToHex(Node.RecordNumber,16));
  {$ENDIF}
- 
+
  {Update Node}
  Node.Blank:=TNTFSPaddedKey(Result);
- 
+
  {Update Key}
  TNTFSPaddedKey(Result).Node:=Node;
  TNTFSPaddedKey(Result).IsLastNode:=True;
  TNTFSPaddedKey(Result).EntrySize:=TNTFSPaddedKey(Result).CalculatedSize(FVolumeVersion);
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSPaddedIndex.CreateBlank - Result = ' + PtrToHex(Result));
  {$ENDIF}
@@ -9293,17 +9293,17 @@ function TNTFSPaddedIndex.CreateKey(ANode:TNTFSDiskNode;ABlank:Boolean):TNTFSDis
 begin
  {}
  Result:=nil;
- 
+
  {Check Node}
  if ABlank and (ANode = nil) then Exit;
- 
+
  {Create Key}
  Result:=TNTFSPaddedKey.Create(GetKeyLocal);
- 
+
  {Setup Key}
  Result.Blank:=ABlank;
  Result.Node:=ANode;
- 
+
  {Check Blank}
  if ABlank then
   begin
@@ -9328,12 +9328,12 @@ function TNTFSPaddedIndex.NewKeyEx(AKey,AData,APadding:Pointer;AKeySize,ADataSiz
 begin
  {}
  Result:=nil;
- 
+
  if AKey = nil then Exit;
- 
+
  Result:=CreateKey(nil,False);
  if Result = nil then Exit;
- 
+
  {Setup Key}
  TNTFSPaddedKey(Result).KeySize:=AKeySize;
  TNTFSPaddedKey(Result).DataSize:=ADataSize;
@@ -9352,14 +9352,14 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if ACurrent = nil then Exit;
  if ACurrent.Blank then
   begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeIndex.Find - Blank');
    {$ENDIF}
-   
+
    Result:=Find(AValue,ASize,TNTFSAttributeKey(ACurrent.Child));
   end
  else
@@ -9373,7 +9373,7 @@ begin
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeIndex.Find - Current.Node = ' + IntToHex(ACurrent.Node.RecordNumber,16));
     end;
    {$ENDIF}
-   
+
    if ACurrent.Key <> nil then
     begin
      case FIndexType of
@@ -9385,7 +9385,7 @@ begin
           if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeIndex.Find - Equal');
           if ACurrent.Attribute <> nil then if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeIndex.Find - ' + TNTFSFileNameAttribute(ACurrent.Attribute).FileName);
           {$ENDIF}
-          
+
           Result:=ACurrent;
          end
         else if Value = ntfsCompareLess then
@@ -9394,7 +9394,7 @@ begin
           if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeIndex.Find - Less');
           if ACurrent.Attribute <> nil then if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeIndex.Find - ' + TNTFSFileNameAttribute(ACurrent.Attribute).FileName);
           {$ENDIF}
-          
+
           Result:=Find(AValue,ASize,TNTFSAttributeKey(ACurrent.Child));
          end
         else if Value = ntfsCompareGreater then
@@ -9403,7 +9403,7 @@ begin
           if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeIndex.Find - Greater');
           if ACurrent.Attribute <> nil then if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeIndex.Find - ' + TNTFSFileNameAttribute(ACurrent.Attribute).FileName);
           {$ENDIF}
-          
+
           Result:=Find(AValue,ASize,TNTFSAttributeKey(ACurrent.Right));
          end;
        end;
@@ -9422,27 +9422,27 @@ begin
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeIndex.CreateBlank');
  {$ENDIF}
- 
+
  {Create Blank}
  Result:=TNTFSAttributeKey.Create(GetKeyLocal);
  Result.Blank:=True;
- 
+
  {Create Node}
  Node:=NewNode(ntfsUnknownRecordNumber);
  if Node = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeIndex.CreateBlank - Node = ' + IntToHex(Node.RecordNumber,16));
  {$ENDIF}
- 
+
  {Update Node}
  Node.Blank:=TNTFSAttributeKey(Result);
- 
+
  {Update Key}
  TNTFSAttributeKey(Result).Node:=Node;
  TNTFSAttributeKey(Result).IsLastNode:=True;
  TNTFSAttributeKey(Result).EntrySize:=TNTFSAttributeKey(Result).CalculatedSize(FVolumeVersion);
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeIndex.CreateBlank - Result = ' + PtrToHex(Result));
  {$ENDIF}
@@ -9454,15 +9454,15 @@ function TNTFSAttributeIndex.Compare(AEntry1,AEntry2:TBtreeObject):Integer;
 begin
  {}
  Result:=ntfsCompareEqual; {Equal to fail Insert/Merge/Borrow}
- 
+
  if AEntry1 = nil then Exit;
  if AEntry2 = nil then Exit;
- 
+
  Result:=ntfsCompareLess;
- 
+
  if AEntry2.Blank then Exit;
  {AEntry1.Blank is an error}
- 
+
  Result:=ntfsCompareEqual; {Equal to fail Insert/Merge/Borrow}
  if (TNTFSDiskKey(AEntry1).Key <> nil) and (TNTFSDiskKey(AEntry2).Key <> nil) then
   begin
@@ -9481,17 +9481,17 @@ function TNTFSAttributeIndex.CreateKey(ANode:TNTFSDiskNode;ABlank:Boolean):TNTFS
 begin
  {}
  Result:=nil;
- 
+
  {Check Node}
  if ABlank and (ANode = nil) then Exit;
- 
+
  {Create Key}
  Result:=TNTFSAttributeKey.Create(GetKeyLocal);
- 
+
  {Setup Key}
  Result.Blank:=ABlank;
  Result.Node:=ANode;
- 
+
  {Check Blank}
  if ABlank then
   begin
@@ -9507,13 +9507,13 @@ function TNTFSAttributeIndex.NewKey(AKey,AData:Pointer;AKeySize,ADataSize:Word):
 begin
  {}
  Result:=nil;
- 
+
  if AKey = nil then Exit;
  if AData = nil then Exit;
- 
+
  Result:=CreateKey(nil,False);
  if Result = nil then Exit;
- 
+
  {Setup Key}
  if AKeySize = 0 then
   begin
@@ -9539,22 +9539,22 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Index}
  if FIndexType <> ntfsAttrTypeFileName then Exit;
  if FCollateRule <> ntfsCollateTypeFileName then Exit;
- 
+
  {Get Size and Length}
  Size:=System.Length(AFileName) shl 1; {Multiply by SizeOf(WideChar) / SizeOf(Word)}
  Length:=System.Length(AFileName);
- 
+
  {Get Buffer}
  Buffer:=GetMem(Size);
  if Buffer = nil then Exit;
  try
   {Get FileName}
   if not NTFSStringToWideBuffer(AFileName,Buffer,0,Length) then Exit;
-  
+
   {Get Key}
   Result:=FindKey(Buffer,Length);
  finally
@@ -9570,15 +9570,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AAttribute = nil then Exit;
- 
+
  {Check Attribute}
  if AAttribute.AttributeType = FIndexType then
   begin
    {Get Reference}
    Reference:=AAttribute.BaseReference;
-   
+
    {Add Key}
    Result:=NewKey(@AAttribute,@Reference,0,0);
   end;
@@ -9594,27 +9594,27 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AAttribute = nil then Exit;
- 
+
  {Check Attribute}
  if AAttribute.AttributeType = ntfsAttrTypeFileName then
   begin
    {Check Index}
    if FIndexType <> ntfsAttrTypeFileName then Exit;
    if FCollateRule <> ntfsCollateTypeFileName then Exit;
-   
+
    {Get Size and Length}
    Size:=TNTFSFileNameAttribute(AAttribute).FileNameSize;
    Length:=TNTFSFileNameAttribute(AAttribute).FileNameLength;
-   
+
    {Get Buffer}
    Buffer:=GetMem(Size);
    if Buffer = nil then Exit;
    try
     {Get FileName}
     if not NTFSStringToWideBuffer(TNTFSFileNameAttribute(AAttribute).FileName,Buffer,0,Length) then Exit;
-    
+
     {Get Key}
     Result:=FindKey(Buffer,Length);
    finally
@@ -9629,15 +9629,15 @@ function TNTFSAttributeIndex.FindKey(AValue:Pointer;ASize:Word):TNTFSDiskKey;
 begin
  {}
  Result:=nil;
- 
+
  if AValue = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeIndex.FindKey - Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  Result:=Find(AValue,ASize,TNTFSAttributeKey(FRoot));
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeIndex.FindKey - Result = ' + PtrToHex(Result));
  {$ENDIF}
@@ -9655,7 +9655,7 @@ end;
 
 {==============================================================================}
 
-destructor TNTFSDiskNodes.Destroy; 
+destructor TNTFSDiskNodes.Destroy;
 begin
  {}
  WriterLock;
@@ -9675,13 +9675,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  Node:=TNTFSDiskNode(First);
  while Node <> nil do
   begin
    Result:=Node.Modified;
    if Result then Exit;
-   
+
    Node:=TNTFSDiskNode(Node.Next);
   end;
 end;
@@ -9697,7 +9697,7 @@ begin
  while Node <> nil do
   begin
    Node.Modified:=AValue;
-   
+
    Node:=TNTFSDiskNode(Node.Next);
   end;
 end;
@@ -9710,12 +9710,12 @@ var
 begin
  {}
  Result:=0;
- 
+
  Node:=TNTFSDiskNode(First);
  while Node <> nil do
   begin
    Inc(Result,Node.IndexSize); {Use IndexSize not CalculatedSize}
-   
+
    Node:=TNTFSDiskNode(Node.Next);
   end;
 end;
@@ -9736,7 +9736,7 @@ begin
  {}
  inherited Create;
  FLocalLock:=ALocalLock;
- 
+
  FStatus:=ntfsStatusNone;
 
  FIndexFlags:=ntfsIndexHeaderFlagNone;
@@ -9763,7 +9763,7 @@ begin
  FIndex:=nil;
  if (Deleted) and (FBlank <> nil) then FBlank.Free;
  FBlank:=nil;
- 
+
  FLocalLock:=INVALID_HANDLE_VALUE;
  inherited Destroy;
 end;
@@ -9839,14 +9839,14 @@ begin
  {Check Node}
  Result:=((FStatus and ntfsStatusChanged) = ntfsStatusChanged);
  if Result then Exit;
- 
+
  {Check Keys}
  Key:=TNTFSDiskKey(FBlank);
  while Key <> nil do
   begin
    Result:=Key.Changed;
    if Result then Exit;
-   
+
    Key:=TNTFSDiskKey(Key.Left);
   end;
 end;
@@ -9866,7 +9866,7 @@ begin
   begin
    {Set Node}
    FStatus:=(FStatus and not ntfsStatusChanged);
-   
+
    {Set Keys}
    Key:=TNTFSDiskKey(FBlank);
    while Key <> nil do
@@ -9883,7 +9883,7 @@ function TNTFSDiskNode.GetModified:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Added or Deleted or Changed then
   begin
    Result:=True;
@@ -9913,9 +9913,9 @@ function TNTFSDiskNode.GetIsRoot:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FBlank = nil then Exit;
- 
+
  Result:=(FBlank.Parent = nil);
 end;
 
@@ -9951,12 +9951,12 @@ function TNTFSDiskNode.GetStart:TNTFSDiskKey;
 begin
  {}
  Result:=nil;
- 
+
  {Check Blank}
  if FBlank <> nil then
   begin
    Result:=FBlank;
-   
+
    {Check Left}
    while Result.Left <> nil do
     begin
@@ -9974,12 +9974,12 @@ var
 begin
  {}
  Result:=0;
- 
+
  Sibling:=GetStart;
  while Sibling <> nil do
   begin
    Inc(Result);
-   
+
    Sibling:=TNTFSDiskKey(Sibling.Right);
   end;
 end;
@@ -10004,20 +10004,20 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FBlank = nil then Exit;
 
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskNode.UpdateKeys - RecordNumber = ' + IntToHex(FRecordNumber,16)  + ' KeyCount = ' + IntToStr(KeyCount) + ' Changed = ' + BoolToStr(Changed) +  ' Added = ' + BoolToStr(Added) +  ' Deleted = ' + BoolToStr(Deleted));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskNode.UpdateKeys - Blank.Parent = ' + PtrToHex(TNTFSDiskKey(FBlank).Parent));
  {$ENDIF}
- 
+
  {Set Sub Nodes}
  SubNodes:=False;
- 
+
  {Get Blank}
  Key:=TNTFSDiskKey(FBlank);
- 
+
  {Set Last}
  Key.IsLastNode:=True;
  {$IFDEF NTFS_DEBUG}
@@ -10034,7 +10034,7 @@ begin
   begin
    {Set Node}
    Key.Node:=Self;
-   
+
    {Set Size}
    Key.EntrySize:=Key.CalculatedSize(AVersion);
    {$IFDEF NTFS_DEBUG}
@@ -10104,13 +10104,13 @@ begin
        end;
      end;
    {$ENDIF}
-   
+
    {Check Child}
    if Key.Child = nil then
     begin
      {Set Sub Node}
      Key.HasSubNode:=False;
-     
+
      {Set Sub Node Number}
      Key.SubNodeNumber:=ntfsUnknownRecordNumber;
     end
@@ -10118,13 +10118,13 @@ begin
     begin
      {Set Sub Nodes}
      SubNodes:=True;
-     
+
      {Set Sub Node}
      Key.HasSubNode:=True;
-     
+
      {Get Node}
      Node:=TNTFSDiskKey(Key.Child).Node;
-     
+
      {Set Sub Node Number}
      if Node <> nil then Key.SubNodeNumber:=Node.RecordNumber; {Node may be nil until the second pass}
       {$IFDEF NTFS_DEBUG}
@@ -10169,13 +10169,13 @@ begin
        end;
       {$ENDIF}
     end;
-    
+
    Key:=TNTFSDiskKey(Key.Left);
   end;
-  
+
  {Set Sub Nodes}
  HasSubNodes:=SubNodes;
- 
+
  Result:=True;
 end;
 
@@ -10188,15 +10188,15 @@ var
 begin
  {}
  Result:=FEntryOffset;
- 
+
  Key:=TNTFSDiskKey(FBlank);
  while Key <> nil do
   begin
    Inc(Result,Key.EntrySize); {Use EntrySize not CalculatedSize}
-   
+
    Key:=TNTFSDiskKey(Key.Left);
   end;
-  
+
  Result:=NTFSRoundLongWordTo8Bytes(Result);
 end;
 
@@ -10208,7 +10208,7 @@ function TNTFSDiskNode.CalculatedOffset(AVersion:Word):LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FBlank = nil then Exit;
 
  if FBlank.Parent = nil then
@@ -10231,7 +10231,7 @@ function TNTFSDiskNode.CalculatedAllocated(AVersion:Word):LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FIndex = nil then Exit;
  if FBlank = nil then Exit;
 
@@ -10255,7 +10255,7 @@ function TNTFSDiskNode.CalculatedSequenceOffset(AVersion:Word):Word;
 begin
  {}
  Result:=0;
- 
+
  if FBlank = nil then Exit;
 
  if FBlank.Parent <> nil then
@@ -10275,7 +10275,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if FBlank = nil then Exit;
  if ASectorSize = 0 then Exit;
 
@@ -10310,14 +10310,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FIndex = nil then Exit;
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskNode.WriteEmpty - Offset = ' + IntToStr(AOffset) + ' Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Values}
   {Entry Size}
  AEntrySize:=ntfsIndexEntrySize;
@@ -10337,10 +10337,10 @@ begin
  AEntryOffset:=NTFSRoundLongWordTo8Bytes(ntfsIndexHeaderSize + (AUpdateSequenceLength shl 1)); {Multiply by SizeOf(Word)}
   {Index Size}
  AIndexSize:=NTFSRoundLongWordTo8Bytes(AEntryOffset + AEntrySize);
- 
+
  {Get Record}
  IndexRecord:=PNTFSIndexRecord(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >=ntfsIndexRecordSize then
   begin
@@ -10350,20 +10350,20 @@ begin
    IndexRecord.UpdateSequenceOffset:=AUpdateSequenceOffset;
    IndexRecord.UpdateSequenceLength:=AUpdateSequenceLength;
    IndexRecord.LogFileSequenceNumber:=FLogFileSequenceNumber;
-   
+
    {Get Update}
    UpdateSequenceRecord:=PNTFSUpdateSequenceRecord(PtrUInt(ABuffer) + AOffset + IndexRecord.UpdateSequenceOffset);
-   
+
    {Write Update}
    UpdateSequenceRecord.UpdateSequenceNumber:=FUpdateSequenceNumber;
-   
+
    {Update Offset}
    Dec(ASize,ntfsIndexRecordSize);
    Inc(AOffset,ntfsIndexRecordSize);
-   
+
    {Get Header}
    IndexHeader:=PNTFSIndexHeader(PtrUInt(ABuffer) + AOffset);
-   
+
    {Check Size}
    if ASize >= ntfsIndexHeaderSize then
     begin
@@ -10373,14 +10373,14 @@ begin
      IndexHeader.IndexAllocated:=AIndexAllocated;
      IndexHeader.EntryOffset:=AEntryOffset;
      IndexHeader.Reserved1:=0;
-     
+
      {Update Offset}
      Dec(ASize,IndexHeader.EntryOffset);
      Inc(AOffset,IndexHeader.EntryOffset);
-     
+
      {Get Entry}
      IndexEntry:=PNTFSIndexEntry(PtrUInt(ABuffer) + AOffset);
-     
+
      {Check Size}
      if ASize >= ntfsIndexEntrySize then
       begin
@@ -10390,11 +10390,11 @@ begin
        IndexEntry.EntrySize:=AEntrySize;
        IndexEntry.KeySize:=0;
        IndexEntry.Reserved2:=0;
-       
+
        {Update Offset}
        Dec(ASize,IndexEntry.EntrySize);
        Inc(AOffset,IndexEntry.EntrySize);
-       
+
        Result:=True;
       end;
     end;
@@ -10413,48 +10413,48 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskNode.ReadRecord - Offset = ' + IntToStr(AOffset) + ' Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Record}
  IndexRecord:=PNTFSIndexRecord(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Magic}
  if IndexRecord.MagicNumber <> ntfsIndexSignature then Exit;
- 
+
  {Check Size}
  if ASize >=ntfsIndexRecordSize then
   begin
    {Clear Status}
    FStatus:=ntfsStatusNone;
-   
+
    {Read Record}
    FRecordNumber:=IndexRecord.RecordNumber;
    FUpdateSequenceOffset:=IndexRecord.UpdateSequenceOffset;
    FUpdateSequenceLength:=IndexRecord.UpdateSequenceLength;
    FLogFileSequenceNumber:=IndexRecord.LogFileSequenceNumber;
-   
+
    {Get Update}
    UpdateSequenceRecord:=PNTFSUpdateSequenceRecord(PtrUInt(ABuffer) + AOffset + IndexRecord.UpdateSequenceOffset);
-   
+
    {Read Update}
    FUpdateSequenceNumber:=UpdateSequenceRecord.UpdateSequenceNumber;
-   
+
    {Set Offset}
    Size:=ASize - ntfsIndexRecordSize;
    Offset:=AOffset + ntfsIndexRecordSize;
-   
+
    {Read Header}
    if not ReadHeader(ABuffer,Offset,Size,AVersion) then Exit;
-   
+
    {Update Offset}
    Dec(ASize,ntfsIndexRecordSize + FEntryOffset);
    Inc(AOffset,ntfsIndexRecordSize + FEntryOffset);
-   
+
    Result:=True;
   end;
 end;
@@ -10471,16 +10471,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskNode.WriteRecord - Offset = ' + IntToStr(AOffset) + ' Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Record}
  IndexRecord:=PNTFSIndexRecord(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >=ntfsIndexRecordSize then
   begin
@@ -10490,24 +10490,24 @@ begin
    IndexRecord.UpdateSequenceOffset:=FUpdateSequenceOffset;
    IndexRecord.UpdateSequenceLength:=FUpdateSequenceLength;
    IndexRecord.LogFileSequenceNumber:=FLogFileSequenceNumber;
-   
+
    {Get Update}
    UpdateSequenceRecord:=PNTFSUpdateSequenceRecord(PtrUInt(ABuffer) + AOffset + IndexRecord.UpdateSequenceOffset);
-   
+
    {Write Update}
    UpdateSequenceRecord.UpdateSequenceNumber:=FUpdateSequenceNumber;
-   
+
    {Set Offset}
    Size:=ASize - ntfsIndexRecordSize;
    Offset:=AOffset + ntfsIndexRecordSize;
-   
+
    {Write Header}
    if not WriteHeader(ABuffer,Offset,Size,AVersion) then Exit;
-   
+
    {Update Offset}
    Dec(ASize,ntfsIndexRecordSize + FEntryOffset);
    Inc(AOffset,ntfsIndexRecordSize + FEntryOffset);
-   
+
    Result:=True;
   end;
 end;
@@ -10521,35 +10521,35 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskNode.ReadHeader - Offset = ' + IntToStr(AOffset) + ' Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Header}
  IndexHeader:=PNTFSIndexHeader(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsIndexHeaderSize then
   begin
    {Clear Status}
    FStatus:=ntfsStatusNone;
-   
+
    {Read Header}
    FIndexFlags:=IndexHeader.IndexFlags;
    FIndexSize:=IndexHeader.IndexSize;
    FIndexAllocated:=IndexHeader.IndexAllocated;
    FEntryOffset:=IndexHeader.EntryOffset;
-   
+
    {Check Size}
    if FIndexSize < ntfsIndexHeaderSize then Exit;
-   
+
    {Update Offset}
    Dec(ASize,IndexHeader.EntryOffset);
    Inc(AOffset,IndexHeader.EntryOffset);
-   
+
    Result:=True;
   end;
 end;
@@ -10563,16 +10563,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskNode.WriteHeader - Offset = ' + IntToStr(AOffset) + ' Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Header}
  IndexHeader:=PNTFSIndexHeader(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsIndexHeaderSize then
   begin
@@ -10582,11 +10582,11 @@ begin
    IndexHeader.IndexAllocated:=FIndexAllocated;
    IndexHeader.EntryOffset:=FEntryOffset;
    IndexHeader.Reserved1:=0;
-   
+
    {Update Offset}
    Dec(ASize,IndexHeader.EntryOffset);
    Inc(AOffset,IndexHeader.EntryOffset);
-   
+
    Result:=True;
   end;
 end;
@@ -10599,7 +10599,7 @@ begin
  {}
  inherited Create;
  FLocalLock:=ALocalLock;
- 
+
  FStatus:=ntfsStatusNone;
  FKey:=nil;
 
@@ -10618,7 +10618,7 @@ begin
  {}
  if FKey <> nil then FreeMem(FKey);
  FNode:=nil;
- 
+
  FLocalLock:=INVALID_HANDLE_VALUE;
  inherited Destroy;
 end;
@@ -10757,44 +10757,44 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskKey.ReadKey - Offset = ' + IntToStr(AOffset) + ' Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Entry}
  IndexEntry:=PNTFSIndexEntry(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsIndexEntrySize then
   begin
    {Clear Status}
    FStatus:=ntfsStatusNone;
-   
+
    {Read Entry}
    FEntryFlags:=IndexEntry.EntryFlags;
    FEntrySize:=IndexEntry.EntrySize;
    FKeySize:=IndexEntry.KeySize;
-   
+
    {Check Size}
    if FEntrySize < ntfsIndexEntrySize then Exit;
-   
+
    {Check Sub Node}
    if ((IndexEntry.EntryFlags and ntfsIndexEntryFlagSubNode) = ntfsIndexEntryFlagSubNode) then
     begin
      {Get Sub Node}
      SubNodeRecord:=PNTFSSubNodeRecord(PtrUInt(ABuffer) + AOffset + LongWord(IndexEntry.EntrySize - 8));
-     
+
      {Read Sub Node}
      FSubNodeNumber:=SubNodeRecord.SubNodeNumber;
     end;
-    
+
    {Update Offset}
    {Dec(ASize,IndexEntry.EntrySize);}
    {Inc(AOffset,IndexEntry.EntrySize);} {Update must be done by child class}
-   
+
    Result:=True;
   end;
 end;
@@ -10809,16 +10809,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskKey.WriteKey - Offset = ' + IntToStr(AOffset) + ' Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Entry}
  IndexEntry:=PNTFSIndexEntry(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsIndexEntrySize then
   begin
@@ -10827,7 +10827,7 @@ begin
    IndexEntry.EntrySize:=FEntrySize;
    IndexEntry.KeySize:=FKeySize;
    IndexEntry.Reserved2:=0;
-   
+
    {Check Sub Node}
    if ((FEntryFlags and ntfsIndexEntryFlagSubNode) = ntfsIndexEntryFlagSubNode) then
     begin
@@ -10836,11 +10836,11 @@ begin
      {Write Sub Node}
      SubNodeRecord.SubNodeNumber:=FSubNodeNumber;
     end;
-   
+
    {Update Offset}
    {Dec(ASize,IndexEntry.EntrySize);}
    {Inc(AOffset,IndexEntry.EntrySize);} {Update must be done by child class}
-   
+
    Result:=True;
   end;
 end;
@@ -10946,32 +10946,32 @@ begin
  {}
  Result:=inherited ReadKey(ABuffer,AOffset,ASize,AVersion);
  if not Result then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataKey.ReadKey - Offset = ' + IntToStr(AOffset) + ' Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Entry}
  DataIndexEntry:=PNTFSDataIndexEntry(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsIndexEntrySize then
   begin
    {Read Entry}
    FDataSize:=DataIndexEntry.DataSize;
-   
+
    {Set Sizes}
    SetKeySize(FKeySize);
    SetDataSize(FDataSize);
-   
+
    {Read Data}
    if FKey <> nil then System.Move(DataIndexEntry.Key[0],FKey^,FKeySize);
    if FData <> nil then System.Move(Pointer(PtrUInt(ABuffer) + AOffset + DataIndexEntry.DataOffset)^,FData^,FDataSize);
-   
+
    {Update Offset}
    Dec(ASize,DataIndexEntry.EntrySize);
    Inc(AOffset,DataIndexEntry.EntrySize);
-   
+
    Result:=True;
   end;
 end;
@@ -10986,14 +10986,14 @@ begin
  {}
  Result:=inherited WriteKey(ABuffer,AOffset,ASize,AVersion);
  if not Result then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDataKey.WriteKey - Offset = ' + IntToStr(AOffset) + ' Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Entry}
  DataIndexEntry:=PNTFSDataIndexEntry(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsIndexEntrySize then
   begin
@@ -11001,15 +11001,15 @@ begin
    DataIndexEntry.DataSize:=FDataSize;
    DataIndexEntry.DataOffset:=DataOffset;
    DataIndexEntry.Reserved1:=0;
-   
+
    {Write Data}
    if FKey <> nil then System.Move(FKey^,DataIndexEntry.Key[0],FKeySize);
    if FData <> nil then System.Move(FData^,Pointer(PtrUInt(ABuffer) + AOffset + DataIndexEntry.DataOffset)^,FDataSize);
-   
+
    {Update Offset}
    Dec(ASize,DataIndexEntry.EntrySize);
    Inc(AOffset,DataIndexEntry.EntrySize);
-   
+
    Result:=True;
   end;
 end;
@@ -11074,28 +11074,28 @@ begin
  {}
  Result:=inherited ReadKey(ABuffer,AOffset,ASize,AVersion);
  if not Result then Exit;
- 
+
  {Check Last}
  if not IsLastNode then
   begin
    {Check Child}
    SubNodeSize:=0;
    if Child <> nil then Inc(SubNodeSize,8); {SizeOf(Int64)}
-   
+
    {Inherited method has already read the Key, just read the Padding}
    if FEntrySize > (SubNodeSize + DataOffset + FDataSize) then
     begin
      {Set Sizes}
      SetPaddingSize(FEntrySize - (SubNodeSize + DataOffset + FDataSize));
-     
+
      {Read Data}
      if FPadding <> nil then System.Move(Pointer(PtrUInt(ABuffer) + PtrUInt(AOffset - (SubNodeSize + FPaddingSize)))^,FPadding^,FPaddingSize);
     end;
-    
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSPaddedKey.ReadKey - PaddingSize = ' + IntToStr(FPaddingSize));
    {$ENDIF}
-   
+
    Result:=True;
   end;
 end;
@@ -11110,25 +11110,25 @@ begin
  {}
  Result:=inherited WriteKey(ABuffer,AOffset,ASize,AVersion);
  if not Result then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSPaddedKey.WriteKey - PaddingSize = ' + IntToStr(FPaddingSize));
  {$ENDIF}
- 
+
  {Check Last}
  if not IsLastNode then
   begin
    {Check Child}
    SubNodeSize:=0;
    if Child <> nil then Inc(SubNodeSize,8); {SizeOf(Int64)}
-   
+
    {Inherited method has already written the Key, just write the Padding}
    if (FEntrySize - (SubNodeSize + DataOffset + FDataSize)) = FPaddingSize then
     begin
      {Write Data}
      if FPadding <> nil then System.Move(FPadding^,Pointer(PtrUInt(ABuffer) + PtrUInt(AOffset - (SubNodeSize + FPaddingSize)))^,FPaddingSize);
     end;
-    
+
    Result:=True;
   end;
 end;
@@ -11252,30 +11252,30 @@ begin
  {}
  Result:=inherited ReadKey(ABuffer,AOffset,ASize,AVersion);
  if not Result then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeKey.ReadKey - Offset = ' + IntToStr(AOffset) + ' Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Entry}
  AttributeIndexEntry:=PNTFSAttributeIndexEntry(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsIndexEntrySize then
   begin
    {Read Entry}
    FFileReference:=AttributeIndexEntry.FileReference;
-   
+
    {Set Size}
    SetKeySize(FKeySize);
-   
+
    {Read Data}
    if FKey <> nil then System.Move(AttributeIndexEntry.Key[0],FKey^,FKeySize);
-   
+
    {Update Offset}
    Dec(ASize,AttributeIndexEntry.EntrySize);
    Inc(AOffset,AttributeIndexEntry.EntrySize);
-   
+
    Result:=True;
   end;
 end;
@@ -11290,27 +11290,27 @@ begin
  {}
  Result:=inherited WriteKey(ABuffer,AOffset,ASize,AVersion);
  if not Result then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeKey.WriteKey - Offset = ' + IntToStr(AOffset) + ' Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Entry}
  AttributeIndexEntry:=PNTFSAttributeIndexEntry(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsIndexEntrySize then
   begin
    {Write Entry}
    AttributeIndexEntry.FileReference:=FFileReference;
-   
+
    {Write Data}
    if FKey <> nil then System.Move(FKey^,AttributeIndexEntry.Key[0],FKeySize);
-   
+
    {Update Offset}
    Dec(ASize,AttributeIndexEntry.EntrySize);
    Inc(AOffset,AttributeIndexEntry.EntrySize);
-   
+
    Result:=True;
   end;
 end;
@@ -11323,14 +11323,14 @@ begin
  {}
  inherited Create(ALock);
  FRunLocal:=ARunLocal;
- 
+
  FRecent:=nil;
  FRecentVCN:=ntfsUnknownCluster;
 end;
 
 {==============================================================================}
 
-destructor TNTFSDiskRuns.Destroy; 
+destructor TNTFSDiskRuns.Destroy;
 begin
  {}
  WriterLock;
@@ -11360,7 +11360,7 @@ begin
      Result:=Run;
      Exit;
     end;
-    
+
    Run:=TNTFSDiskRun(Run.Next);
   end;
 end;
@@ -11383,7 +11383,7 @@ begin
      Result:=Run;
      Exit;
     end;
-    
+
    Run:=TNTFSDiskRun(Run.Prev);
   end;
 end;
@@ -11408,7 +11408,7 @@ begin
        Inc(Result,Run.Length);
       end;
     end;
-    
+
    Run:=TNTFSDiskRun(Run.Next);
   end;
 end;
@@ -11433,7 +11433,7 @@ begin
        Inc(Result,Run.Length);
       end;
     end;
-    
+
    Run:=TNTFSDiskRun(Run.Next);
   end;
 end;
@@ -11455,7 +11455,7 @@ begin
     begin
      Inc(Result,Run.Length);
     end;
-    
+
    Run:=TNTFSDiskRun(Run.Next);
   end;
 end;
@@ -11468,12 +11468,12 @@ var
 begin
  {}
  Result:=0;
- 
+
  Run:=TNTFSDiskRun(First);
  while Run <> nil do
   begin
    Inc(Result,Run.RunSize);
-   
+
    Run:=TNTFSDiskRun(Run.Next);
   end;
 end;
@@ -11494,7 +11494,7 @@ begin
  {}
  inherited Create;
  FLocalLock:=ALocalLock;
- 
+
  FStart:=ntfsUnknownCluster;
  FOffset:=ntfsStartCluster;
  FLength:=0;
@@ -11508,7 +11508,7 @@ destructor TNTFSDiskRun.Destroy;
 begin
  {}
  FAttribute:=nil;
- 
+
  FLocalLock:=INVALID_HANDLE_VALUE;
  inherited Destroy;
 end;
@@ -11670,7 +11670,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get Next}
  Run:=TNTFSDiskRun(Next);
  while Run <> nil do
@@ -11685,7 +11685,7 @@ begin
        Exit;
       end;
     end;
-    
+
    {Get Next}
    Run:=TNTFSDiskRun(Run.Next);
   end;
@@ -11700,7 +11700,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get Next}
  Run:=TNTFSDiskRun(Prev);
  while Run <> nil do
@@ -11715,7 +11715,7 @@ begin
        Exit;
       end;
     end;
-    
+
    {Get Next}
    Run:=TNTFSDiskRun(Run.Prev);
   end;
@@ -11751,22 +11751,22 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Run}
  RunData:=PNTFSRunData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Read Run}
  OffsetSize:=(Byte(RunData^) and ntfsRunOffsetMask) shr 4;
  LengthSize:=(Byte(RunData^) and ntfsRunLengthMask);
- 
+
  {Update Offset}
  Inc(AOffset);
- 
+
  {Get Length}
  RunLength:=PNTFSRunLength(PtrUInt(ABuffer) + AOffset);
- 
+
  {Read Length}
  case LengthSize of
   1:begin
@@ -11782,44 +11782,44 @@ begin
     FLength:=(RunLength.Length8 and ntfsRunDecode8Masks[LengthSize]);
    end;
  end;
- 
+
  {Update Offset}
  Inc(AOffset,LengthSize);
- 
+
  {Get Offset}
  RunOffset:=PNTFSRunOffset(PtrUInt(ABuffer) + AOffset);
- 
+
  {Read Offset}
  case OffsetSize of
   1:begin
     FOffset:=(RunOffset.Offset1 and ShortInt(ntfsRunDecode1Masks[OffsetSize]));
-    
+
     {Check Negative}
     if FOffset >= ntfsRunDecode1Tests[OffsetSize] then FOffset:=(FOffset or ShortInt(not(ntfsRunDecode1Masks[OffsetSize])));
    end;
   2:begin
     FOffset:=(RunOffset.Offset2 and SmallInt(ntfsRunDecode2Masks[OffsetSize]));
-    
+
     {Check Negative}
     if FOffset >= ntfsRunDecode2Tests[OffsetSize] then FOffset:=(FOffset or SmallInt(not(ntfsRunDecode2Masks[OffsetSize])));
    end;
   3,4:begin
     FOffset:=(RunOffset.Offset4 and LongInt(ntfsRunDecode4Masks[OffsetSize]));
-    
+
     {Check Negative}
     if FOffset >= ntfsRunDecode4Tests[OffsetSize] then FOffset:=(FOffset or LongInt(not(ntfsRunDecode4Masks[OffsetSize])));
    end;
   5,6,7,8:begin
     FOffset:=(RunOffset.Offset8 and Int64(ntfsRunDecode8Masks[OffsetSize]));
-    
+
     {Check Negative}
     if FOffset >= ntfsRunDecode8Tests[OffsetSize] then FOffset:=(FOffset or Int64(not(ntfsRunDecode8Masks[OffsetSize])));
    end;
  end;
- 
+
  {Set Offset (If not Sparse or Last)}
  if OffsetSize > 0 then SetOffset(FOffset);
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then
   begin
@@ -11837,10 +11837,10 @@ begin
     end;
   end;
  {$ENDIF}
- 
+
  {Update Offset}
  Inc(AOffset,OffsetSize);
- 
+
  Result:=True;
 end;
 
@@ -11857,27 +11857,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskRun.WriteRun - Length = ' + IntToHex(FLength,16) + ' Offset = ' + IntToHex(FOffset,16) + ' Start = ' + IntToHex(FStart,16));
  {$ENDIF}
- 
+
  {Get Run}
  RunData:=PNTFSRunData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Write Run}
  OffsetSize:=GetOffsetSize;
  LengthSize:=GetLengthSize;
  Byte(RunData^):=((OffsetSize shl 4) or LengthSize);
- 
+
  {Update Offset}
  Inc(AOffset);
- 
+
  {Get Length}
  RunLength:=PNTFSRunLength(PtrUInt(ABuffer) + AOffset);
- 
+
  {Write Length}
  case LengthSize of
   1:begin
@@ -11893,13 +11893,13 @@ begin
     RunLength.Length8:=(FLength and ntfsRunEncodeMasks[LengthSize]);
    end;
  end;
- 
+
  {Update Offset}
  Inc(AOffset,LengthSize);
- 
+
  {Get Offset}
  RunOffset:=PNTFSRunOffset(PtrUInt(ABuffer) + AOffset);
- 
+
  {Write Offset}
  case OffsetSize of
   1:begin
@@ -11915,10 +11915,10 @@ begin
     RunOffset.Offset8:=(FOffset and ntfsRunEncodeMasks[OffsetSize]);
    end;
  end;
- 
+
  {Update Offset}
  Inc(AOffset,OffsetSize);
- 
+
  Result:=True;
 end;
 
@@ -11930,13 +11930,13 @@ begin
  {}
  inherited Create(ALock);
  FItemLocal:=AItemLocal;
- 
+
  FStatus:=ntfsStatusNone;
 end;
 
 {==============================================================================}
 
-destructor TNTFSDiskItems.Destroy; 
+destructor TNTFSDiskItems.Destroy;
 begin
  {}
  WriterLock;
@@ -11980,13 +11980,13 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AItem = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskItems.GetPrevious - Name = ' + AItem.AttributeName + ' Type = ' + IntToHex(AItem.AttributeType,8));
  {$ENDIF}
- 
+
  {Check Items}
  Current:=TNTFSDiskItem(First);
  while Current <> nil do
@@ -11994,9 +11994,9 @@ begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskItems.GetPrevious - Comparing with Name = ' + Current.AttributeName + ' Type = ' + IntToHex(Current.AttributeType,8));
    {$ENDIF}
-   
+
    if AItem.Compare(Current) = ntfsCompareGreater then Exit;
-   
+
    Result:=Current;
    Current:=TNTFSDiskItem(Current.Next);
   end;
@@ -12010,12 +12010,12 @@ var
 begin
  {}
  Result:=0;
- 
+
  Item:=TNTFSDiskItem(First);
  while Item <> nil do
   begin
    Inc(Result,Item.ItemSize);
-   
+
    Item:=TNTFSDiskItem(Item.Next);
   end;
 end;
@@ -12036,7 +12036,7 @@ begin
  {}
  inherited Create;
  FLocalLock:=ALocalLock;
- 
+
  FStatus:=ntfsStatusNone;
 
  FItemSize:=0;
@@ -12059,7 +12059,7 @@ begin
  {}
  FParent:=nil;
  FAttribute:=nil;
- 
+
  FLocalLock:=INVALID_HANDLE_VALUE;
  inherited Destroy;
 end;
@@ -12109,12 +12109,12 @@ function TNTFSDiskItem.GetAttributeName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FAttributeName;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12124,12 +12124,12 @@ procedure TNTFSDiskItem.SetAttributeName(const AAttributeName:String);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FAttributeName:=AAttributeName;
  UniqueString(FAttributeName);
  FAttributeHash:=GenerateNameHash(FAttributeName,NAME_HASH_SIZE);
  {Do not update ItemSize}
- 
+
  ReleaseLock;
 end;
 
@@ -12140,14 +12140,14 @@ begin
  {}
  if AAttribute = nil then Exit;
  if FAttribute = AAttribute then Exit;
- 
+
  FAttribute:=AAttribute;
  FStartVCN:=FAttribute.StartVCN;
  FFileReference:=FAttribute.FileReference;
  FAttributeType:=FAttribute.AttributeType;
  FAttributeId:=FAttribute.AttributeId;
  AttributeName:=FAttribute.AttributeName;
- 
+
  {Do not update ItemSize}
 end;
 
@@ -12161,16 +12161,16 @@ function TNTFSDiskItem.Compare(AItem:TNTFSDiskItem):Integer;
 begin
  {}
  Result:=ntfsCompareGreater; {Default to greater}
- 
+
  if AItem = nil then Exit;
- 
+
  {Check Attribute Type}
  if AItem.AttributeType < FAttributeType then
   begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskItem.Compare - Type ' + IntToHex(AItem.AttributeType,8) + ' < ' + IntToHex(FAttributeType,8));
    {$ENDIF}
-   
+
    Result:=ntfsCompareLess;
   end
  else if AItem.AttributeType > FAttributeType then
@@ -12178,7 +12178,7 @@ begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskItem.Compare - Type ' + IntToHex(AItem.AttributeType,8) + ' > ' + IntToHex(FAttributeType,8));
    {$ENDIF}
-   
+
    Result:=ntfsCompareGreater;
   end
  else
@@ -12190,7 +12190,7 @@ begin
      {$IFDEF NTFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskItem.Compare - Name ' + AItem.AttributeName + ' < ' + AttributeName);
      {$ENDIF}
-     
+
      Result:=ntfsCompareLess;
     end
    else if Result > ntfsCompareEqual then
@@ -12198,7 +12198,7 @@ begin
      {$IFDEF NTFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskItem.Compare - Name ' + AItem.AttributeName + ' > ' + AttributeName);
      {$ENDIF}
-     
+
      Result:=ntfsCompareGreater;
     end
    else
@@ -12209,7 +12209,7 @@ begin
        {$IFDEF NTFS_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskItem.Compare - StartVCN ' + IntToHex(AItem.StartVCN,16) + ' < ' + IntToHex(FStartVCN,16));
        {$ENDIF}
-       
+
        Result:=ntfsCompareLess;
       end
      else if AItem.StartVCN > FStartVCN then
@@ -12217,7 +12217,7 @@ begin
        {$IFDEF NTFS_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskItem.Compare - StartVCN ' + IntToHex(AItem.StartVCN,16) + ' > ' + IntToHex(FStartVCN,16));
        {$ENDIF}
-       
+
        Result:=ntfsCompareGreater;
       end;
     end;
@@ -12240,11 +12240,11 @@ function TNTFSDiskItem.AttributeNameSize:Word;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=Length(FAttributeName) shl 1; {Multiply by SizeOf(WideChar) / SizeOf(Word)}
- 
+
  ReleaseLock;
 end;
 
@@ -12254,11 +12254,11 @@ function TNTFSDiskItem.AttributeNameLength:Byte;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=Length(FAttributeName);
- 
+
  ReleaseLock;
 end;
 
@@ -12276,9 +12276,9 @@ function TNTFSDiskItem.UpdateItem:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FAttribute = nil then Exit;
- 
+
  FStartVCN:=FAttribute.StartVCN;
  FFileReference:=FAttribute.FileReference;
  FAttributeType:=FAttribute.AttributeType;
@@ -12286,7 +12286,7 @@ begin
  AttributeName:=FAttribute.AttributeName;
 
  {Do not update ItemSize}
- 
+
  Result:=True;
 end;
 
@@ -12308,12 +12308,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Item}
  ItemData:=PNTFSItemData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsItemSize then
   begin
@@ -12323,14 +12323,14 @@ begin
    FFileReference:=ItemData.FileReference;
    FAttributeType:=ItemData.AttributeType;
    FAttributeId:=ItemData.AttributeId;
-   
+
    {Read Name}
    AttributeName:=NTFSWideBufferToString(ItemData,ItemData.AttributeNameOffset,ItemData.AttributeNameLength);
-   
+
    {Update Offset}
    Dec(ASize,ItemData.ItemSize);
    Inc(AOffset,ItemData.ItemSize);
-   
+
    Result:=True;
   end;
 end;
@@ -12344,12 +12344,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Item}
  ItemData:=PNTFSItemData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsItemSize then
   begin
@@ -12359,16 +12359,16 @@ begin
    ItemData.FileReference:=FFileReference;
    ItemData.AttributeType:=FAttributeType;
    ItemData.AttributeId:=FAttributeId;
-   
+
    {Write Name}
    ItemData.AttributeNameLength:=AttributeNameLength;
    ItemData.AttributeNameOffset:=AttributeNameOffset;
    if not NTFSStringToWideBuffer(AttributeName,ItemData,ItemData.AttributeNameOffset,ItemData.AttributeNameLength) then Exit;
-   
+
    {Update Offset}
    Dec(ASize,ItemData.ItemSize);
    Inc(AOffset,ItemData.ItemSize);
-   
+
    Result:=True;
   end;
 end;
@@ -12385,7 +12385,7 @@ end;
 
 {==============================================================================}
 
-destructor TNTFSDiskAttributes.Destroy; 
+destructor TNTFSDiskAttributes.Destroy;
 begin
  {}
  WriterLock;
@@ -12406,13 +12406,13 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AAttribute = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskAttributes.GetPrevious - Name = ' + AAttribute.AttributeName + ' Type = ' + IntToHex(AAttribute.AttributeType,8));
  {$ENDIF}
- 
+
  {Check Attributes}
  Current:=TNTFSDiskAttribute(First);
  while Current <> nil do
@@ -12420,9 +12420,9 @@ begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskAttributes.GetPrevious - Comparing with Name = ' + Current.AttributeName + ' Type = ' + IntToHex(Current.AttributeType,8));
    {$ENDIF}
-   
+
    if AAttribute.Compare(Current) = ntfsCompareGreater then Exit;
-   
+
    Result:=Current;
    Current:=TNTFSDiskAttribute(Current.Next);
   end;
@@ -12437,12 +12437,12 @@ var
 begin
  {}
  Result:=0;
- 
+
  Attribute:=TNTFSDiskAttribute(First);
  while Attribute <> nil do
   begin
    Inc(Result,Attribute.AttributeSize);
-   
+
    Attribute:=TNTFSDiskAttribute(Attribute.Next);
   end;
 end;
@@ -12464,7 +12464,7 @@ begin
  {}
  inherited Create;
  FLocalLock:=ALocalLock;
- 
+
  FStatus:=ntfsStatusNone;
  FData:=nil;
 
@@ -12504,7 +12504,7 @@ begin
  if FItems <> nil then FItems.Free;
  if FIndex <> nil then FIndex.Free;
  FParent:=nil;
- 
+
  FLocalLock:=INVALID_HANDLE_VALUE;
  inherited Destroy;
 end;
@@ -12531,9 +12531,9 @@ function TNTFSDiskAttribute.GetRunsLock:TSynchronizerHandle;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if FParent = nil then Exit;
- 
+
  Result:=FParent.FRunsLock;
 end;
 
@@ -12543,9 +12543,9 @@ function TNTFSDiskAttribute.GetItemsLock:TSynchronizerHandle;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if FParent = nil then Exit;
- 
+
  Result:=FParent.FItemsLock;
 end;
 
@@ -12555,9 +12555,9 @@ function TNTFSDiskAttribute.GetIndexLock:TSynchronizerHandle;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if FParent = nil then Exit;
- 
+
  Result:=FParent.FIndexLock;
 end;
 
@@ -12567,9 +12567,9 @@ function TNTFSDiskAttribute.GetExtendedsLock:TSynchronizerHandle;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if FParent = nil then Exit;
- 
+
  Result:=FParent.FExtendedsLock;
 end;
 
@@ -12579,9 +12579,9 @@ function TNTFSDiskAttribute.GetRunLocal:TMutexHandle;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if FParent = nil then Exit;
- 
+
  Result:=FParent.FRunLocal;
 end;
 
@@ -12591,9 +12591,9 @@ function TNTFSDiskAttribute.GetItemLocal:TMutexHandle;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if FParent = nil then Exit;
- 
+
  Result:=FParent.FItemLocal;
 end;
 
@@ -12603,9 +12603,9 @@ function TNTFSDiskAttribute.GetKeyLocal:TMutexHandle;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if FParent = nil then Exit;
- 
+
  Result:=FParent.FKeyLocal;
 end;
 
@@ -12615,9 +12615,9 @@ function TNTFSDiskAttribute.GetExtendedLocal:TMutexHandle;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if FParent = nil then Exit;
- 
+
  Result:=FParent.FExtendedLocal;
 end;
 
@@ -12759,12 +12759,12 @@ function TNTFSDiskAttribute.GetAttributeName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FAttributeName;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12774,12 +12774,12 @@ procedure TNTFSDiskAttribute.SetAttributeName(const AAttributeName:String);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FAttributeName:=AAttributeName;
  UniqueString(FAttributeName);
  FAttributeHash:=GenerateNameHash(FAttributeName,NAME_HASH_SIZE);
  {Do not update AttributeSize}
- 
+
  ReleaseLock;
 end;
 
@@ -12809,16 +12809,16 @@ function TNTFSDiskAttribute.Compare(AAttribute:TNTFSDiskAttribute):Integer;
 begin
  {}
  Result:=ntfsCompareGreater; {Default to greater}
- 
+
  if AAttribute = nil then Exit;
- 
+
  {Check Attribute Type}
  if AAttribute.AttributeType < FAttributeType then
   begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskAttribute.Compare - Type ' + IntToHex(AAttribute.AttributeType,8) + ' < ' + IntToHex(FAttributeType,8));
    {$ENDIF}
-   
+
    Result:=ntfsCompareLess;
   end
  else if AAttribute.AttributeType > FAttributeType then
@@ -12826,7 +12826,7 @@ begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskAttribute.Compare - Type ' + IntToHex(AAttribute.AttributeType,8) + ' > ' + IntToHex(FAttributeType,8));
    {$ENDIF}
-   
+
    Result:=ntfsCompareGreater;
   end
  else
@@ -12838,7 +12838,7 @@ begin
      {$IFDEF NTFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskAttribute.Compare - Name ' + AAttribute.AttributeName + ' < ' + AttributeName);
      {$ENDIF}
-     
+
      Result:=ntfsCompareLess;
     end
    else if Result > ntfsCompareEqual then
@@ -12846,7 +12846,7 @@ begin
      {$IFDEF NTFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskAttribute.Compare - Name ' + AAttribute.AttributeName + ' > ' + AttributeName);
      {$ENDIF}
-     
+
      Result:=ntfsCompareGreater;
     end
    else
@@ -12857,7 +12857,7 @@ begin
        {$IFDEF NTFS_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskAttribute.Compare - StartVCN ' + IntToHex(AAttribute.StartVCN,16) + ' < ' + IntToHex(FStartVCN,16));
        {$ENDIF}
-       
+
        Result:=ntfsCompareLess;
       end
      else if AAttribute.StartVCN > FStartVCN then
@@ -12865,7 +12865,7 @@ begin
        {$IFDEF NTFS_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskAttribute.Compare - StartVCN ' + IntToHex(AAttribute.StartVCN,16) + ' > ' + IntToHex(FStartVCN,16));
        {$ENDIF}
-       
+
        Result:=ntfsCompareGreater;
       end;
     end;
@@ -12883,12 +12883,12 @@ begin
   begin
    {Create Runs}
    FRuns:=TNTFSDiskRuns.Create(GetRunLocal,GetRunsLock);
-   
+
    {Check New}
    if ANew then
     begin
      Result:=nil;
-     
+
      {Add Last}
      Run:=CreateRun(False);
      if Run = nil then Exit;
@@ -12896,7 +12896,7 @@ begin
      Run.Length:=0;
     end;
   end;
-  
+
  Result:=FRuns;
 end;
 
@@ -12909,14 +12909,14 @@ begin
   begin
    {Create Items}
    FItems:=TNTFSDiskItems.Create(GetItemLocal,GetItemsLock);
-   
+
    {Check New}
    if ANew then
     begin
      {Nothing}
     end;
   end;
-  
+
  Result:=FItems;
 end;
 
@@ -12931,12 +12931,12 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FItems = nil then Exit;
- 
+
  Count:=0;
  Previous:=nil;
- 
+
  {Check Items}
  Item:=TNTFSDiskItem(FItems.First);
  while Item <> nil do
@@ -12962,10 +12962,10 @@ begin
         end;
       end;
     end;
-    
+
    Item:=TNTFSDiskItem(Item.Next);
   end;
-  
+
  {Get Last}
  if AInstance = ntfsInstanceLast then Result:=Previous;
 end;
@@ -12983,17 +12983,17 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FItems = nil then Exit;
- 
+
  Count:=0;
  Previous:=nil;
- 
+
  {Calculate Hash}
  Hash:=0;                                                          //To Do //Testing4
  Wildcard:=(Length(AName) = ntfsAnyNameLength) and (AName = ntfsAnyName); {Modified 14/2/2011}
  if not Wildcard then Hash:=GenerateNameHash(AName,NAME_HASH_SIZE); //To Do //Testing4
- 
+
  {Check Items}
  Item:=TNTFSDiskItem(FItems.First);
  while Item <> nil do
@@ -13026,10 +13026,10 @@ begin
         end;
       end;
     end;
-    
+
    Item:=TNTFSDiskItem(Item.Next);
   end;
- 
+
  {Get Last}
  if AInstance = ntfsInstanceLast then Result:=Previous;
 end;
@@ -13044,27 +13044,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FRuns = nil then Exit;
 
  {Get Run}
  Run:=GetRun(AVCN,AStartVCN);
  if Run = nil then Exit;
  if Run.IsLast then Exit;
- 
+
  {Get Count}
  ACount:=(Run.Length - (AVCN - StartVCN));
- 
+
  {Get Run}
  Run:=TNTFSDiskRun(Run.Next);
  while Run <> nil do
   begin
    {Get Count}
    Inc(ACount,Run.Length);
-   
+
    Run:=TNTFSDiskRun(Run.Next);
   end;
-  
+
  Result:=True;
 end;
 
@@ -13078,17 +13078,17 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FRuns = nil then Exit;
 
  {Get Run}
  Run:=GetRun(AVCN,AStartVCN);
  if Run = nil then Exit;
  if Run.IsLast then Exit;
- 
+
  {Get Length}
  ALength:=(Run.Length - (AVCN - StartVCN));
- 
+
  Result:=True;
 end;
 
@@ -13103,7 +13103,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FRuns = nil then Exit;
 
  {Check Resident}
@@ -13114,7 +13114,7 @@ begin
     begin
      {Get Unit VCN}
      VCN:=(AUnit shl FCompressionUnit);
-     
+
      {Get Run by VCN}
      Result:=GetRun(VCN,AStartVCN);
     end;
@@ -13132,11 +13132,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FRuns = nil then Exit;
 
  CurrentVCN:=FStartVCN; {Allow for multiple instances}
- 
+
  {Check Runs}
  Run:=TNTFSDiskRun(FRuns.First);
  while Run <> nil do
@@ -13150,9 +13150,9 @@ begin
        Exit;
       end;
     end;
-    
+
    Inc(CurrentVCN,Run.Length);
-   
+
    Run:=TNTFSDiskRun(Run.Next);
   end;
 end;
@@ -13166,19 +13166,19 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FRuns = nil then CreateRuns(ANew);
- 
+
  {Create Run}
  Run:=TNTFSDiskRun.Create(GetRunLocal,Self);
- 
+
  {Update Recent (Only if not new)}
  if not ANew then FRuns.RecentVCN:=ntfsUnknownCluster;
  if not ANew then FRuns.Recent:=nil;
- 
+
  {Add Run (Only if not new)}
  if not ANew then FRuns.Add(Run);
- 
+
  Result:=Run;
 end;
 
@@ -13189,20 +13189,20 @@ function TNTFSDiskAttribute.DestroyRun(ARun:TNTFSDiskRun):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ARun = nil then Exit;
  if FRuns = nil then Exit;
- 
+
  {Update Recent}
  FRuns.RecentVCN:=ntfsUnknownCluster;
  FRuns.Recent:=nil;
- 
+
  {Remove Run}
  FRuns.Remove(ARun);
- 
+
  {Free Run}
  ARun.Free;
- 
+
  Result:=True;
 end;
 
@@ -13214,18 +13214,18 @@ begin
  {Create Run}
  Result:=CreateRun(True);
  if Result = nil then Exit;
- 
+
  {Update Recent}
  FRuns.RecentVCN:=ntfsUnknownCluster;
  FRuns.Recent:=nil;
- 
+
  {Insert Run}
  FRuns.Insert(FRuns.GetFinal,Result);
- 
+
  {Set Values}
  Result.Start:=AStart;
  Result.Length:=ALength;
- 
+
  {Update Attribute}
  if FLastVCN = ntfsUnknownCluster then FLastVCN:=FStartVCN + (Result.Length - 1) else Inc(FLastVCN,Result.Length);
 end;
@@ -13237,27 +13237,27 @@ function TNTFSDiskAttribute.InsertRun(APrev:TNTFSDiskRun;const AStart,ALength:In
 begin
  {}
  Result:=nil;
- 
+
  if APrev = nil then Exit;
- 
+
  {Create Run}
  Result:=CreateRun(True);
  if Result = nil then Exit;
- 
+
  {Update Recent}
  FRuns.RecentVCN:=ntfsUnknownCluster;
  FRuns.Recent:=nil;
- 
+
  {Insert Run}
  FRuns.Insert(APrev,Result);
- 
+
  {Set Values}
  Result.Start:=AStart;
  Result.Length:=ALength;
- 
+
  {Update Attribute}
  if FLastVCN = ntfsUnknownCluster then FLastVCN:=FStartVCN + (Result.Length - 1) else Inc(FLastVCN,Result.Length);
- 
+
  {Update Runs}
  UpdateRun(Result.GetSuccessor);
 end;
@@ -13273,14 +13273,14 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FRuns = nil then Exit;
 
  {Check Recent}
  if (FRuns.Recent <> nil) and (AVCN >= FRuns.RecentVCN) then
   begin
    CurrentVCN:=FRuns.RecentVCN; {Allow for multiple instances}
-   
+
    {Check Runs}
    Run:=FRuns.Recent;           {Start at Previous not Next}
    Start:=Run; {FRuns.Recent}   {Only read Recent once in case of change}
@@ -13294,11 +13294,11 @@ begin
        Result:=Run;
        Exit;
       end;
-      
+
      Inc(CurrentVCN,Run.Length);
-     
+
      Run:=TNTFSDiskRun(Run.Next);
-     
+
      if (Start <> nil) and (Run = nil) then CurrentVCN:=FStartVCN; {Allow for multiple instances}
      if (Start <> nil) and (Run = nil) then Run:=TNTFSDiskRun(FRuns.First); {Start again from First}
      if (Start <> nil) and (Run = Start) then Break; {Break if returned to Start}
@@ -13307,7 +13307,7 @@ begin
  else
   begin
    CurrentVCN:=FStartVCN; {Allow for multiple instances}
-   
+
    {Check Runs}
    Run:=TNTFSDiskRun(FRuns.First);
    while Run <> nil do
@@ -13320,9 +13320,9 @@ begin
        Result:=Run;
        Exit;
       end;
-      
+
      Inc(CurrentVCN,Run.Length);
-     
+
      Run:=TNTFSDiskRun(Run.Next);
     end;
   end;
@@ -13339,7 +13339,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ARun = nil then Exit;
  if FRuns = nil then Exit;
 
@@ -13347,30 +13347,30 @@ begin
  Run:=TNTFSDiskRun(ARun.Next);
  if Run = nil then Exit;
  if Run.IsLast then Exit;
- 
+
  {Check Last}
  if ARun.IsLast then Exit;
- 
+
  {Check Sparse}
  if ARun.IsSparse then
   begin
    {Sparse Run}
    {Check Sparse}
    if not Run.IsSparse then Exit;
-   
+
    {Update Run}
    ARun.Length:=ARun.Length + Run.Length;
-   
+
    {Update Recent}
    FRuns.RecentVCN:=ntfsUnknownCluster;
    FRuns.Recent:=nil;
-   
+
    {Remove Run}
    FRuns.Remove(Run);
-   
+
    {Free Run}
    Run.Free;
-   
+
    Result:=True;
   end
  else
@@ -13378,26 +13378,26 @@ begin
    {Normal Run}
    {Check Sparse}
    if Run.IsSparse then Exit;
-   
+
    {Check Start}
    if Run.Start <> (ARun.Start + ARun.Length) then Exit;
-   
+
    {Update Run}
    ARun.Length:=ARun.Length + Run.Length;
-   
+
    {Update Recent}
    FRuns.RecentVCN:=ntfsUnknownCluster;
    FRuns.Recent:=nil;
-   
+
    {Remove Run}
    FRuns.Remove(Run);
-   
+
    {Free Run}
    Run.Free;
-   
+
    {Update Runs}
    UpdateRun(ARun.GetSuccessor);
-   
+
    Result:=True;
   end;
 end;
@@ -13415,55 +13415,55 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ARun = nil then Exit;
  if FRuns = nil then Exit;
 
  {Check Last}
  if ARun.IsLast then Exit;
- 
+
  {Check Sparse}
  if ARun.IsSparse then
   begin
    {Check Length}
    if ALength >= ARun.Length then Exit;
-   
+
    {Get Length}
    Length:=(ARun.Length - ALength);
-   
+
    {Update Run}
    ARun.Length:=ALength;
-   
+
    {Update Attribute}
    if (FLastVCN - Length) < FStartVCN then FLastVCN:=ntfsUnknownCluster else Dec(FLastVCN,Length);
-   
+
    {Create Run}
    Run:=InsertRun(ARun,ntfsUnknownCluster,Length);
    if Run = nil then Exit;
-   
+
    Result:=True;
   end
  else
   begin
    {Check Length}
    if ALength >= ARun.Length then Exit;
-   
+
    {Get Length}
    Length:=(ARun.Length - ALength);
-   
+
    {Get Start}
    Start:=(ARun.Start + ALength);
-   
+
    {Update Run}
    ARun.Length:=ALength;
-   
+
    {Update Attribute}
    if (FLastVCN - Length) < FStartVCN then FLastVCN:=ntfsUnknownCluster else Dec(FLastVCN,Length);
-   
+
    {Create Run}
    Run:=InsertRun(ARun,Start,Length);
    if Run = nil then Exit;
-   
+
    Result:=True;
   end;
 end;
@@ -13476,26 +13476,26 @@ function TNTFSDiskAttribute.RemoveRun(ARun:TNTFSDiskRun):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ARun = nil then Exit;
  if FRuns = nil then Exit;
 
  {Check Last}
  if ARun.IsLast then Exit;
- 
+
  {Update Attribute}
  if (FLastVCN - ARun.Length) < FStartVCN then FLastVCN:=ntfsUnknownCluster else Dec(FLastVCN,ARun.Length);
- 
+
  {Update Recent}
  FRuns.RecentVCN:=ntfsUnknownCluster;
  FRuns.Recent:=nil;
- 
+
  {Remove Run}
  FRuns.Remove(ARun);
- 
+
  {Free Run}
  ARun.Free;
- 
+
  Result:=True;
 end;
 
@@ -13508,7 +13508,7 @@ function TNTFSDiskAttribute.MoveRun(ADest:TNTFSDiskAttribute;ARun:TNTFSDiskRun):
 begin
  {}
  Result:=False;
- 
+
  if ARun = nil then Exit;
  if ADest = nil then Exit;
  if FRuns = nil then Exit;
@@ -13516,31 +13516,31 @@ begin
 
  {Check Last}
  if ARun.IsLast then Exit;
- 
+
  {Update Attribute}
  if (FLastVCN - ARun.Length) < FStartVCN then FLastVCN:=ntfsUnknownCluster else Dec(FLastVCN,ARun.Length);
- 
+
  {Update Recent}
  FRuns.RecentVCN:=ntfsUnknownCluster;
  FRuns.Recent:=nil;
- 
+
  {Remove Run}
  FRuns.Remove(ARun);
- 
+
  {Update Recent}
  ADest.FRuns.RecentVCN:=ntfsUnknownCluster;
  ADest.FRuns.Recent:=nil;
- 
+
  {Insert Run}
  ADest.FRuns.Insert(nil,ARun);
- 
+
  {Update Attribute}
  ADest.FStartVCN:=FLastVCN + 1;
  if ADest.FLastVCN = ntfsUnknownCluster then ADest.FLastVCN:=ADest.FStartVCN + (ARun.Length - 1); {Do not increment unless first}
- 
+
  {Update Runs}
  ADest.UpdateRun(ARun);
- 
+
  Result:=True;
 end;
 
@@ -13553,10 +13553,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FItems = nil then Exit;
  if AAttribute = nil then Exit;
- 
+
  {Check Items}
  Item:=TNTFSDiskItem(FItems.First);
  while Item <> nil do
@@ -13566,7 +13566,7 @@ begin
      Result:=Item;
      Exit;
     end;
-    
+
    Item:=TNTFSDiskItem(Item.Next);
   end;
 end;
@@ -13580,15 +13580,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FItems = nil then CreateItems(ANew);
- 
+
  {Create Item}
  Item:=TNTFSDiskItem.Create(GetItemLocal,Self);
- 
+
  {Add Item  (Only if not new)}
  if not ANew then FItems.Add(Item);
- 
+
  Result:=Item;
 end;
 
@@ -13599,13 +13599,13 @@ function TNTFSDiskAttribute.DestroyItem(AItem:TNTFSDiskItem):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AItem = nil then Exit;
  if FItems = nil then Exit;
- 
+
  {Remove Item}
  FItems.Remove(AItem);
- 
+
  {Free Item}
  AItem.Free;
 end;
@@ -13620,13 +13620,13 @@ begin
  {Create Item}
  Result:=CreateItem(True);
  if Result = nil then Exit;
- 
+
  {Set Values}
  Result.Attribute:=AAttribute;
- 
+
  {Get Previous}
  Previous:=FItems.GetPrevious(Result);
- 
+
  {Insert Item}
  FItems.Insert(Previous,Result);
 end;
@@ -13644,17 +13644,17 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FItems = nil then Exit;
- 
+
  Count:=0;
  Previous:=nil;
- 
+
  {Calculate Hash}
  Hash:=0;                                                          //To Do //Testing4
  Wildcard:=(Length(AName) = ntfsAnyNameLength) and (AName = ntfsAnyName); {Modified 14/2/2011}
  if not Wildcard then Hash:=GenerateNameHash(AName,NAME_HASH_SIZE); //To Do //Testing4
- 
+
  {Check Items}
  Item:=TNTFSDiskItem(FItems.First);
  while Item <> nil do
@@ -13682,10 +13682,10 @@ begin
         end;
       end;
     end;
-    
+
    Item:=TNTFSDiskItem(Item.Next);
   end;
-  
+
  {Get Last}
  if AInstance = ntfsInstanceLast then Result:=Previous;
 end;
@@ -13697,19 +13697,19 @@ function TNTFSDiskAttribute.RemoveItem(AItem:TNTFSDiskItem):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AItem = nil then Exit;
  if FItems = nil then Exit;
- 
+
  {Update Attribute}
   {Nothing}
- 
+
  {Remove Item}
  FItems.Remove(AItem);
- 
+
  {Free Item}
  AItem.Free;
- 
+
  Result:=True;
 end;
 
@@ -13722,26 +13722,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AItem = nil then Exit;
  if FItems = nil then Exit;
  if AAttribute = nil then Exit;
 
  {Update Attribute}
   {Nothing}
- 
+
  {Remove Item}
  FItems.Remove(AItem);
- 
+
  {Update Item}
  AItem.UpdateItem;
- 
+
  {Get Previous}
  Previous:=FItems.GetPrevious(AItem);
- 
+
  {Insert Item}
  FItems.Insert(Previous,AItem);
- 
+
  Result:=True;
 end;
 
@@ -13778,9 +13778,9 @@ function TNTFSDiskAttribute.RecordNumber:Int64;
 begin
  {}
  Result:=0;
- 
+
  if FParent = nil then Exit;
- 
+
  Result:=FParent.RecordNumber;
 end;
 
@@ -13790,9 +13790,9 @@ function TNTFSDiskAttribute.FileReference:Int64;
 begin
  {}
  Result:=0;
- 
+
  if FParent = nil then Exit;
- 
+
  Result:=FParent.FileReference;
 end;
 
@@ -13803,9 +13803,9 @@ function TNTFSDiskAttribute.BaseReference:Int64;
 begin
  {}
  Result:=0;
- 
+
  if FParent = nil then Exit;
- 
+
  if FParent.Base = nil then
   begin
    Result:=FParent.FileReference;
@@ -13822,7 +13822,7 @@ function TNTFSDiskAttribute.RunOffset:Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then
   begin
@@ -13845,7 +13845,7 @@ function TNTFSDiskAttribute.DataOffset:Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeResident then
   begin
@@ -13859,11 +13859,11 @@ function TNTFSDiskAttribute.AttributeNameSize:Word;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=Length(FAttributeName) shl 1; {Multiply by SizeOf(WideChar) / SizeOf(Word)}
- 
+
  ReleaseLock;
 end;
 
@@ -13873,11 +13873,11 @@ function TNTFSDiskAttribute.AttributeNameLength:Byte;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=Length(FAttributeName);
- 
+
  ReleaseLock;
 end;
 
@@ -13888,7 +13888,7 @@ function TNTFSDiskAttribute.AttributeNameOffset:Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeResident then
   begin
@@ -13914,9 +13914,9 @@ function TNTFSDiskAttribute.RunCount:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FRuns = nil then Exit;
- 
+
  Result:=FRuns.Count;
 end;
 
@@ -13926,9 +13926,9 @@ function TNTFSDiskAttribute.ItemCount:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FItems = nil then Exit;
- 
+
  Result:=FItems.Count;
 end;
 
@@ -13939,13 +13939,13 @@ function TNTFSDiskAttribute.CalculatedSize(AVersion:Word):LongWord;
 begin
  {}
  Result:=0;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeResident then
   begin
    {Resident}
    Inc(Result,ntfsResidentHeaderSize + NTFSRoundWordTo8Bytes(AttributeNameSize) + DataSize); {Must round name size as DataOffset is 8 byte aligned}
-   
+
    {Round Result}
    Result:=NTFSRoundLongWordTo8Bytes(Result);
   end
@@ -13957,7 +13957,7 @@ begin
      {Compressed}
      Inc(Result,ntfsCompressedHeaderSize + NTFSRoundWordTo8Bytes(AttributeNameSize)); {Must round name size as RunOffset is 8 byte aligned}
      if FRuns <> nil then Inc(Result,FRuns.TotalSize);
-     
+
      {Round Result}
      Result:=NTFSRoundLongWordTo8Bytes(Result);
     end
@@ -13966,7 +13966,7 @@ begin
      {Non Resident}
      Inc(Result,ntfsNonResidentHeaderSize + NTFSRoundWordTo8Bytes(AttributeNameSize)); {Must round name size as RunOffset is 8 byte aligned}
      if FRuns <> nil then Inc(Result,FRuns.TotalSize);
-     
+
      {Round Result}
      Result:=NTFSRoundLongWordTo8Bytes(Result);
     end;
@@ -13983,7 +13983,7 @@ function TNTFSDiskAttribute.CalculatedDataSize(AVersion:Word):LongWord;
 begin
  {Virtual Base}
  Result:=0;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeResident then
   begin
@@ -14007,7 +14007,7 @@ function TNTFSDiskAttribute.CalculatedStreamSize(AVersion:Word):Int64;
 begin
  {Virtual Base}
  Result:=0;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeResident then
   begin
@@ -14031,7 +14031,7 @@ function TNTFSDiskAttribute.CalculatedStreamUsed(AVersion:Word):Int64;
 begin
  {Virtual Base}
  Result:=0;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then
   begin
@@ -14053,14 +14053,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Run may be nil}
  if FRuns = nil then Exit;
 
  {Get Start}
  Run:=ARun;
  if Run = nil then Run:=TNTFSDiskRun(FRuns.First); {Not Start}
- 
+
  {Coalesce Runs}
  while Run <> nil do
   begin
@@ -14087,11 +14087,11 @@ begin
         end;
       end;
     end;
-    
+
    {Get Run} {Not Successor}
    Run:=TNTFSDiskRun(Current.Next);
   end;
-  
+
  Result:=True;
 end;
 
@@ -14104,24 +14104,24 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Run may be nil}
  if FRuns = nil then Exit;
 
  {Get Start}
  Run:=ARun;
  if Run = nil then Run:=FRuns.GetStart;
- 
+
  {Update Runs}
  while Run <> nil do
   begin
    {Update Run}
    Run.UpdateRun;
-   
+
    {Get Run}
    Run:=Run.GetSuccessor;
   end;
-  
+
  Result:=True;
 end;
 
@@ -14131,9 +14131,9 @@ function TNTFSDiskAttribute.UpdateKey(AKey:TNTFSDiskKey):Boolean;
 begin
  {Virtual Base}
  Result:=False;
- 
+
  if AKey = nil then Exit;
- 
+
  Result:=TNTFSAttributeKey(AKey).UpdateKey;
 end;
 
@@ -14143,9 +14143,9 @@ function TNTFSDiskAttribute.UpdateItem(AItem:TNTFSDiskItem):Boolean;
 begin
  {Virtual Base}
  Result:=False;
- 
+
  if AItem = nil then Exit;
- 
+
  Result:=AItem.UpdateItem;
 end;
 
@@ -14174,23 +14174,23 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Read Runs}
  while True do
   begin
    {Create Run}
    Run:=CreateRun(False);
    if Run = nil then Exit;
-   
+
    {Read Run}
    if not Run.ReadRun(ABuffer,AOffset,AVersion) then Exit;
-   
+
    {Check Last}
    if Run.IsLast then Break;
   end;
-  
+
  Result:=True;
 end;
 
@@ -14203,23 +14203,23 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Run}
  if Runs = nil then Exit;
  Run:=TNTFSDiskRun(Runs.First);
- 
+
  {Write Runs}
  while Run <> nil do
   begin
    {Write Run}
    if not Run.WriteRun(ABuffer,AOffset,AVersion) then Exit;
-   
+
    {Get Run}
    Run:=TNTFSDiskRun(Run.Next);
   end;
-  
+
  Result:=True;
 end;
 
@@ -14233,29 +14233,29 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Size}
  while ASize >= ntfsItemSize do
   begin
    {Get Data}
    ItemData:=PNTFSItemData(PtrUInt(ABuffer) + AOffset);
-   
+
    {Check None}
    if ItemData.AttributeType = ntfsAttrTypeNone then Break;
-   
+
    {Check Last}
    if ItemData.AttributeType = ntfsAttrTypeEnd then Break;
-   
+
    {Create Item}
    Item:=CreateItem(False);
    if Item = nil then Exit;
-   
+
    {Read Item}
    if not Item.ReadItem(ABuffer,AOffset,ASize,AVersion) then Exit;
   end;
- 
+
  Result:=True;
 end;
 
@@ -14268,26 +14268,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Item}
  if Items = nil then Exit;
  Item:=TNTFSDiskItem(Items.First);
- 
+
  {Write Items}
  while Item <> nil do
   begin
    {Check Size}
    if ASize < ntfsItemSize then Exit;
-   
+
    {Write Item}
    if not Item.WriteItem(ABuffer,AOffset,ASize,AVersion) then Exit;
-   
+
    {Get Item}
    Item:=TNTFSDiskItem(Item.Next);
   end;
-  
+
  Result:=True;
 end;
 
@@ -14300,15 +14300,15 @@ var
 begin
  {Virtual Base}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSUnknown:=PNTFSUnknown(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize > ntfsUnknownSize then {Not Equal}
   begin
@@ -14317,14 +14317,14 @@ begin
    {Read Data}
    System.Move(NTFSUnknown.Data[0],FData^,FDataSize);
   end;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskAttribute.ReadData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -14337,29 +14337,29 @@ var
 begin
  {Virtual Base}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskAttribute.WriteData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSUnknown:=PNTFSUnknown(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize > ntfsUnknownSize then {Not Equal}
   begin
    {Write Data}
    System.Move(FData^,NTFSUnknown.Data[0],FDataSize);
   end;
-  
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -14376,47 +14376,47 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Header}
  AttributeHeader:=PNTFSAttributeHeader(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsAttributeHeaderSize then
   begin
    {Preserve Status}
    if (IsFixed or IsSingle or IsUnlisted or IsUnmovable or IsManaged) then FStatus:=(FStatus and (ntfsStatusFixed or ntfsStatusSingle or ntfsStatusUnlisted or ntfsStatusUnmovable or ntfsStatusManaged)) else FStatus:=ntfsStatusNone;
-   
+
    {Read Header}
    FAttributeType:=AttributeHeader.AttributeType;
    FAttributeSize:=AttributeHeader.AttributeSize;
    FAttributeFlags:=AttributeHeader.AttributeFlags;
    FAttributeId:=AttributeHeader.AttributeId;
    FNonResident:=AttributeHeader.NonResident;
-   
+
    {Check Size}
    if FAttributeSize < ntfsAttributeHeaderSize then Exit;
-   
+
    {Check Resident}
    if FNonResident = ntfsAttributeResident then
     begin
      {Get Header}
      ResidentHeader:=PNTFSResidentAttributeHeader(PtrUInt(ABuffer) + AOffset);
-     
+
      {Check Size}
      if ASize >= ntfsResidentHeaderSize then
       begin
        {Read Header}
        FIndexed:=ResidentHeader.Indexed;
        FDataSize:=ResidentHeader.DataSize;
-       
+
        {Read Name}
        AttributeName:=NTFSWideBufferToString(ResidentHeader,ResidentHeader.AttributeNameOffset,ResidentHeader.AttributeNameLength);
-       
+
        {Set Offset}
        Offset:=AOffset + ResidentHeader.DataOffset;
-       
+
        {Read Data}
        if not ReadData(ABuffer,Offset,AVersion) then Exit;
       end;
@@ -14425,7 +14425,7 @@ begin
     begin
      {Get Header}
      NonResidentHeader:=PNTFSNonResidentAttributeHeader(PtrUInt(ABuffer) + AOffset);
-     
+
      {Check Size}
      if ASize >= ntfsNonResidentHeaderSize then
       begin
@@ -14436,39 +14436,39 @@ begin
        FStreamAllocated:=NonResidentHeader.StreamAllocated;
        FInitializedSize:=NonResidentHeader.InitializedSize;
        FCompressionUnit:=NonResidentHeader.CompressionUnit;
-       
+
        {Read Name}
        AttributeName:=NTFSWideBufferToString(NonResidentHeader,NonResidentHeader.AttributeNameOffset,NonResidentHeader.AttributeNameLength);
-       
+
        {Check Compressed}
        if ((FAttributeFlags and ntfsAttributeFlagCompressed) = ntfsAttributeFlagCompressed) and (FCompressionUnit <> 0) then
         begin
          {Get Header}
          CompressedHeader:=PNTFSCompressedAttributeHeader(PtrUInt(ABuffer) + AOffset);
-         
+
          {Check Size}
          if ASize >= ntfsCompressedHeaderSize then
           begin
            FStreamUsed:=CompressedHeader.StreamUsed;
           end;
         end;
-        
+
        {Set Offset}
        Offset:=AOffset + NonResidentHeader.RunOffset;
-       
+
        {Read Runs}
        if not ReadRuns(ABuffer,Offset,AVersion) then Exit;
       end;
     end;
-    
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskAttribute.ReadAttribute - Type = ' + IntToHex(FAttributeType,8) + ' Name = ' + AttributeName);
    {$ENDIF}
-   
+
    {Update Offset}
    Dec(ASize,AttributeHeader.AttributeSize);
    Inc(AOffset,AttributeHeader.AttributeSize);
-   
+
    Result:=True;
   end;
 end;
@@ -14486,16 +14486,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskAttribute.WriteAttribute - Type = ' + IntToHex(FAttributeType,8) + ' Name = ' + AttributeName);
  {$ENDIF}
- 
+
  {Get Header}
  AttributeHeader:=PNTFSAttributeHeader(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsAttributeHeaderSize then
   begin
@@ -14505,13 +14505,13 @@ begin
    AttributeHeader.AttributeFlags:=FAttributeFlags;
    AttributeHeader.AttributeId:=FAttributeId;
    AttributeHeader.NonResident:=FNonResident;
-   
+
    {Check Resident}
    if FNonResident = ntfsAttributeResident then
     begin
      {Get Header}
      ResidentHeader:=PNTFSResidentAttributeHeader(PtrUInt(ABuffer) + AOffset);
-     
+
      {Check Size}
      if ASize >= ntfsResidentHeaderSize then
       begin
@@ -14520,15 +14520,15 @@ begin
        ResidentHeader.Reserved1:=0;
        ResidentHeader.DataSize:=DataSize; {Must be DataSize not FDataSize to pickup any overridden methods}
        ResidentHeader.DataOffset:=DataOffset;
-       
+
        {Write Name}
        ResidentHeader.AttributeNameOffset:=AttributeNameOffset;
        ResidentHeader.AttributeNameLength:=AttributeNameLength;
        if not NTFSStringToWideBuffer(AttributeName,ResidentHeader,ResidentHeader.AttributeNameOffset,ResidentHeader.AttributeNameLength) then Exit;
-       
+
        {Set Offset}
        Offset:=AOffset + ResidentHeader.DataOffset;
-       
+
        {Write Data}
        if not WriteData(ABuffer,Offset,AVersion) then Exit;
       end;
@@ -14537,7 +14537,7 @@ begin
     begin
      {Get Header}
      NonResidentHeader:=PNTFSNonResidentAttributeHeader(PtrUInt(ABuffer) + AOffset);
-     
+
      {Check Size}
      if ASize >= ntfsNonResidentHeaderSize then
       begin
@@ -14550,37 +14550,37 @@ begin
        NonResidentHeader.StreamAllocated:=FStreamAllocated;
        NonResidentHeader.InitializedSize:=FInitializedSize;
        NonResidentHeader.CompressionUnit:=FCompressionUnit;
-       
+
        {Write Name}
        NonResidentHeader.AttributeNameOffset:=AttributeNameOffset;
        NonResidentHeader.AttributeNameLength:=AttributeNameLength;
        if not NTFSStringToWideBuffer(AttributeName,NonResidentHeader,NonResidentHeader.AttributeNameOffset,NonResidentHeader.AttributeNameLength) then Exit;
-       
+
        {Check Compressed}
        if ((FAttributeFlags and ntfsAttributeFlagCompressed) = ntfsAttributeFlagCompressed) and (FCompressionUnit <> 0) then
         begin
          {Get Header}
          CompressedHeader:=PNTFSCompressedAttributeHeader(PtrUInt(ABuffer) + AOffset);
-         
+
          {Check Size}
          if ASize >= ntfsCompressedHeaderSize then
           begin
            CompressedHeader.StreamUsed:=FStreamUsed;
           end;
         end;
-        
+
        {Set Offset}
        Offset:=AOffset + NonResidentHeader.RunOffset;
-       
+
        {Write Runs}
        if not WriteRuns(ABuffer,Offset,AVersion) then Exit;
       end;
     end;
-    
+
    {Update Offset}
    Dec(ASize,AttributeHeader.AttributeSize);
    Inc(AOffset,AttributeHeader.AttributeSize);
-   
+
    Result:=True;
   end;
 end;
@@ -14624,7 +14624,7 @@ function TNTFSStandardInformationAttribute.CalculatedStreamSize(AVersion:Word):I
 begin
  {}
  Result:=0;
- 
+
  case AVersion of
   ntfsNTFS12:begin
     Result:=ntfsStandardInformation12Size;
@@ -14641,7 +14641,7 @@ function TNTFSStandardInformationAttribute.UpdateEntry(AEntry:TNTFSDiskEntry):Bo
 begin
  {}
  Result:=False;
- 
+
  {Check Entry}
  if AEntry <> nil then
   begin
@@ -14653,7 +14653,7 @@ begin
    {AEntry.Attributes:=(AEntry.Attributes or (FAttributes and faFindMask));}
    AEntry.Attributes:=((AEntry.Attributes and (faFlagMask or faMatchMask)) or (FAttributes and faFindMask)); {Preserve Internal Attributes} {Preserve VolumeId and Directory}
    //To Do //Show faNormal
-   
+
    Result:=True;
   end;
 end;
@@ -14664,13 +14664,13 @@ function TNTFSStandardInformationAttribute.UpdateAttribute(AEntry:TNTFSDiskEntry
 begin
  {}
  Result:=False;
- 
+
  {Check Entry}
  if AEntry <> nil then
   begin
    {Update Entry}
    AEntry.ChangeTime:=Ultibo.DateTimeToFileTime(Now); {Converted to UTC}
-   
+
    {Update Attribute}
    FWriteTime:=AEntry.WriteTime;
    FCreateTime:=AEntry.CreateTime;
@@ -14680,7 +14680,7 @@ begin
    FAttributes:=(AEntry.Attributes and (faFindMask and not(faVolumeID or faDirectory))); {Hide Internal Attributes} {Hide VolumeId and Directory}
    if FParent <> nil then if FParent.IsIndexView then FAttributes:=(FAttributes or faMftIndexView);
    //To Do //Hide faNormal
-   
+
    Result:=True;
   end;
 end;
@@ -14695,15 +14695,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSStandardInformation12:=PNTFS12StandardInformation(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize >= ntfsStandardInformation12Size then
   begin
@@ -14716,13 +14716,13 @@ begin
    FMaxVersions:=NTFSStandardInformation12.MaxVersions;
    FVersionNo:=NTFSStandardInformation12.VersionNo;
    FClassId:=NTFSStandardInformation12.ClassId;
-   
+
    {Check Version}
    case AVersion of
     ntfsNTFS30,ntfsNTFS31:begin
       {Get Data}
       NTFSStandardInformation30:=PNTFS30StandardInformation(PtrUInt(ABuffer) + AOffset);
-      
+
       {Check Size}
       if FDataSize >= ntfsStandardInformation30Size then
        begin
@@ -14735,14 +14735,14 @@ begin
      end;
    end;
   end;
-  
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSStandardInformationAttribute.ReadData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -14756,19 +14756,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSStandardInformationAttribute.WriteData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSStandardInformation12:=PNTFS12StandardInformation(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize >= ntfsStandardInformation12Size then
   begin
@@ -14781,13 +14781,13 @@ begin
    NTFSStandardInformation12.MaxVersions:=FMaxVersions;
    NTFSStandardInformation12.VersionNo:=FVersionNo;
    NTFSStandardInformation12.ClassId:=FClassId;
-   
+
    {Check Version}
    case AVersion of
     ntfsNTFS30,ntfsNTFS31:begin
       {Get Data}
       NTFSStandardInformation30:=PNTFS30StandardInformation(PtrUInt(ABuffer) + AOffset);
-      
+
       {Check Size}
       if FDataSize >= ntfsStandardInformation30Size then
        begin
@@ -14800,10 +14800,10 @@ begin
      end;
    end;
   end;
-  
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -14836,7 +14836,7 @@ function TNTFSAttributeListAttribute.CalculatedStreamSize(AVersion:Word):Int64;
 begin
  {}
  Result:=0;
- 
+
  if FItems <> nil then Result:=FItems.TotalSize;
 end;
 
@@ -14850,30 +14850,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Check Size}
  if FDataSize > ntfsAttributeListSize then {Not Equal}
   begin
    {Set Offset}
    Size:=FDataSize;
    Offset:=AOffset;
-   
+
    {Read Items}
    if not ReadItems(ABuffer,Offset,Size,AVersion) then Exit;
   end;
-  
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeListAttribute.ReadData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -14887,30 +14887,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttributeListAttribute.WriteData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Check Size}
  if FDataSize > ntfsAttributeListSize then {Not Equal}
   begin
    {Set Offset}
    Size:=FDataSize;
    Offset:=AOffset;
-   
+
    {Write Items}
    if not WriteItems(ABuffer,Offset,Size,AVersion) then Exit;
   end;
-  
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -14953,12 +14953,12 @@ function TNTFSFileNameAttribute.GetFileName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FFileName;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -14968,11 +14968,11 @@ procedure TNTFSFileNameAttribute.SetFileName(const AFileName:String);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FFileName:=AFileName;
  UniqueString(FFileName);
  FFileHash:=GenerateNameHash(FFileName,NAME_HASH_SIZE);
- 
+
  ReleaseLock;
 end;
 
@@ -14982,11 +14982,11 @@ function TNTFSFileNameAttribute.FileNameSize:Word;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=Length(FFileName) shl 1; {Multiply by SizeOf(WideChar) / SizeOf(Word)}
- 
+
  ReleaseLock;
 end;
 
@@ -14996,11 +14996,11 @@ function TNTFSFileNameAttribute.FileNameLength:Byte;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=Length(FFileName);
- 
+
  ReleaseLock;
 end;
 
@@ -15029,12 +15029,12 @@ function TNTFSFileNameAttribute.UpdateEntry(AEntry:TNTFSDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Entry}
  if AEntry <> nil then
   begin
    if (AEntry.Attributes and faStream) = faStream then Exit;
-   
+
    {Update Entry}
    case FNameSpace of
     ntfsNameSpacePosix:begin {HardLinks use Posix namespace}
@@ -15062,7 +15062,7 @@ begin
    {AEntry.Used:=0;} {Used is obtained from the Data attribute}
    {AEntry.Allocated:=FFileAllocated;} {Allocated is obtained from the Data attribute}
    if FReparseTag <> 0 then AEntry.ReparseTag:=FReparseTag;
-   
+
    Result:=True;
   end;
 end;
@@ -15073,12 +15073,12 @@ function TNTFSFileNameAttribute.UpdateAttribute(AEntry:TNTFSDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Entry}
  if AEntry <> nil then
   begin
    if (AEntry.Attributes and faStream) = faStream then Exit;
-   
+
    {Update Attribute}
    case FNameSpace of
     ntfsNameSpacePosix:begin {HardLinks use Posix namespace}
@@ -15094,7 +15094,7 @@ begin
       FileName:=AEntry.Name;
      end;
    end;
-   
+
    FWriteTime:=AEntry.WriteTime; {WriteTime is obtained from the Standard Information attribute (But is updated to File Name attribute)}
    FCreateTime:=AEntry.CreateTime; {CreateTime is obtained from the Standard Information attribute (But is updated to File Name attribute)}
    FAccessTime:=AEntry.AccessTime; {AccessTime is obtained from the Standard Information attribute (But is updated to File Name attribute)}
@@ -15107,7 +15107,7 @@ begin
    if FParent <> nil then if FParent.IsFolder then FFileFlags:=(FFileFlags or faMftDirectory);
    if FParent <> nil then if FParent.IsIndexView then FFileFlags:=(FFileFlags or faMftIndexView);
    FReparseTag:=AEntry.ReparseTag;
-   
+
    Result:=True;
   end;
 end;
@@ -15121,15 +15121,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSFileName:=PNTFSFileName(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize >= ntfsFileNameSize then
   begin
@@ -15144,18 +15144,18 @@ begin
    FFileFlags:=NTFSFileName.FileFlags;
    FReparseTag:=NTFSFileName.ReparseTag;
    FNameSpace:=NTFSFileName.NameSpace;
-   
+
    {Read Name}
    FileName:=NTFSWideBufferToString(@NTFSFileName.FileName[0],0,NTFSFileName.FileNameLength);
   end;
-  
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileNameAttribute.ReadData - Offset = ' + IntToStr(AOffset) + ' FileName = ' + FileName + ' NameSpace = ' + IntToStr(FNameSpace));
  {$ENDIF}
- 
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -15168,19 +15168,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileNameAttribute.WriteData - Offset = ' + IntToStr(AOffset) + ' FileName = ' + FileName + ' NameSpace = ' + IntToStr(FNameSpace));
  {$ENDIF}
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSFileName:=PNTFSFileName(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize >= ntfsFileNameSize then
   begin
@@ -15195,15 +15195,15 @@ begin
    NTFSFileName.FileFlags:=FFileFlags;
    NTFSFileName.ReparseTag:=FReparseTag;
    NTFSFileName.NameSpace:=FNameSpace;
-   
+
    {Write Name}
    NTFSFileName.FileNameLength:=FileNameLength;
    if not NTFSStringToWideBuffer(FileName,@NTFSFileName.FileName[0],0,NTFSFileName.FileNameLength) then Exit;
   end;
-  
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -15238,7 +15238,7 @@ function TNTFSObjectIdAttribute.CalculatedStreamSize(AVersion:Word):Int64;
 begin
  {}
  Result:=ntfsObjectIdSize;
- 
+
  if not NullGUID(FBirthVolumeId) then Inc(Result,ntfsObjectIdSize);
  if not NullGUID(FBirthObjectId) then Inc(Result,ntfsObjectIdSize);
  if not NullGUID(FDomainId) then Inc(Result,ntfsObjectIdSize);
@@ -15253,15 +15253,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSObjectId:=PNTFSObjectId(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize >= ntfsObjectIdSize then
   begin
@@ -15272,14 +15272,14 @@ begin
    if FDataSize >= ntfsObjectIdSize4 then FDomainId:=NTFSObjectId.DomainId;
    //To Do //Can be up to 256 bytes, need to Read and store any remainder //In Data ? Elsewhere ?
   end;
-  
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSObjectIdAttribute.ReadData - Offset = ' + IntToStr(AOffset) + ' ObjectId = ' + GUIDToString(FObjectId));
  {$ENDIF}
- 
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -15292,19 +15292,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSObjectIdAttribute.WriteData - Offset = ' + IntToStr(AOffset) + ' ObjectId = ' + GUIDToString(FObjectId));
  {$ENDIF}
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSObjectId:=PNTFSObjectId(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize >= ntfsObjectIdSize then
   begin
@@ -15315,10 +15315,10 @@ begin
    if FDataSize >= ntfsObjectIdSize4 then NTFSObjectId.DomainId:=FDomainId;
    //To Do //Can be up to 256 bytes, need to Store and Write any remainder
   end;
-  
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -15349,8 +15349,8 @@ var
  Buffer:Pointer;
 begin
  {}
- //To Do //Lock 
- 
+ //To Do //Lock
+
  if AValue = 0 then
   begin
    if FData <> nil then FreeMem(FData);
@@ -15363,11 +15363,11 @@ begin
    Size:=FDataSize;
    FDataSize:=AValue;
    FData:=AllocMem(FDataSize);
-   
+
    if Buffer <> nil then
     begin
      if FData <> nil then System.Move(Buffer^,FData^,Min(Size,FDataSize));
-     
+
      FreeMem(Buffer);
     end;
   end;
@@ -15402,12 +15402,12 @@ function TNTFSSecurityDescriptorAttribute.CreateSecurity:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FSecurity <> nil then Exit;
- 
+
  {Create Security}
  FSecurity:=TNTFSSecurity.Create(INVALID_HANDLE_VALUE); //To Do //Critical
- 
+
  Result:=True;
 end;
 
@@ -15421,14 +15421,14 @@ begin
   begin
    Result:=CreateSecurity;
    if not Result then Exit;
-   
+
    {Setup Security}
    FSecurity.Control:=SE_SELF_RELATIVE;
   end
  else
   begin
    FSecurity:=ASecurity;
-   
+
    Result:=True;
   end;
 end;
@@ -15440,7 +15440,7 @@ function TNTFSSecurityDescriptorAttribute.CalculatedStreamSize(AVersion:Word):In
 begin
  {}
  Result:=0;
- 
+
  if FSecurity <> nil then Result:=FSecurity.SecuritySize;
 end;
 
@@ -15450,19 +15450,19 @@ function TNTFSSecurityDescriptorAttribute.ReadSecurity(ABuffer:Pointer;var AOffs
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Size}
  if ASize >= ntfsSecuritySize then
   begin
    {Create Security}
    if not CreateSecurity then Exit;
-   
+
    {Read Security}
    if not FSecurity.ReadSecurity(ABuffer,AOffset,ASize,AVersion) then Exit;
   end;
-  
+
  Result:=True;
 end;
 
@@ -15472,19 +15472,19 @@ function TNTFSSecurityDescriptorAttribute.WriteSecurity(ABuffer:Pointer;var AOff
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Size}
  if ASize >= ntfsSecuritySize then
   begin
    {Check Security}
    if FSecurity = nil then Exit;
-   
+
    {Write Security}
    if not FSecurity.WriteSecurity(ABuffer,AOffset,ASize,AVersion) then Exit;
   end;
-  
+
  Result:=True;
 end;
 
@@ -15498,30 +15498,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Check Size}
  if FDataSize > ntfsSecurityDescriptorSize then {Not Equal}
   begin
    {Set Offset}
    Size:=FDataSize;
    Offset:=AOffset;
-   
+
    {Read Security}
    if not ReadSecurity(ABuffer,Offset,Size,AVersion) then Exit;
   end;
-  
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSSecurityDescriptorAttribute.ReadData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -15535,30 +15535,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSSecurityDescriptorAttribute.WriteData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Check Size}
  if FDataSize > ntfsSecurityDescriptorSize then {Not Equal}
   begin
    {Set Offset}
    Size:=FDataSize;
    Offset:=AOffset;
-   
+
    {Write Security}
    if not WriteSecurity(ABuffer,Offset,Size,AVersion) then Exit;
   end;
-  
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -15589,12 +15589,12 @@ function TNTFSVolumeNameAttribute.GetVolumeName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FVolumeName;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -15604,11 +15604,11 @@ procedure TNTFSVolumeNameAttribute.SetVolumeName(const AVolumeName:String);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FVolumeName:=AVolumeName;
  UniqueString(FVolumeName);
  {Do not update AttributeSize or DataSize}
- 
+
  ReleaseLock;
 end;
 
@@ -15619,11 +15619,11 @@ function TNTFSVolumeNameAttribute.CalculatedStreamSize(AVersion:Word):Int64;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=Length(FVolumeName) shl 1; {Multiply by SizeOf(WideChar) / SizeOf(Word)}
- 
+
  ReleaseLock;
 end;
 
@@ -15636,29 +15636,29 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSVolumeName:=PNTFSVolumeName(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize > ntfsVolumeNameSize then {Not Equal}
   begin
    {Read Name}
    VolumeName:=NTFSWideBufferToString(@NTFSVolumeName.VolumeName[0],0,(FDataSize shr 1)); {Divide by SizeOf(WideChar) / SizeOf(Word)}
   end;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSVolumeNameAttribute.ReadData - Offset = ' + IntToStr(AOffset) + ' VolumeName = ' + VolumeName);
  {$ENDIF}
- 
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -15671,19 +15671,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSVolumeNameAttribute.WriteData - Offset = ' + IntToStr(AOffset) + ' VolumeName = ' + VolumeName);
  {$ENDIF}
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSVolumeName:=PNTFSVolumeName(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize > ntfsVolumeNameSize then {Not Equal}
   begin
@@ -15691,10 +15691,10 @@ begin
    {DataSize is updated by SizeAttribute in FileSystem}
    if not NTFSStringToWideBuffer(VolumeName,@NTFSVolumeName.VolumeName[0],0,(FDataSize shr 1)) then Exit; {Divide by SizeOf(WideChar) / SizeOf(Word)}
   end;
- 
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -15739,15 +15739,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSVolumeInformation:=PNTFSVolumeInformation(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize >= ntfsVolumeInformationSize then
   begin
@@ -15756,14 +15756,14 @@ begin
    FMinorVersion:=NTFSVolumeInformation.MinorVersion;
    FVolumeFlags:=NTFSVolumeInformation.VolumeFlags;
   end;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSVolumeInformationAttribute.ReadData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -15776,19 +15776,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSVolumeInformationAttribute.WriteData - Offset = ' + IntToStr(AOffset) + ' Major = ' + IntToStr(FMajorVersion) + ' Minor = ' + IntToStr(FMinorVersion) + ' Flags = ' + IntToHex(FVolumeFlags,4));
  {$ENDIF}
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSVolumeInformation:=PNTFSVolumeInformation(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize >= ntfsVolumeInformationSize then
   begin
@@ -15797,10 +15797,10 @@ begin
    NTFSVolumeInformation.MinorVersion:=FMinorVersion;
    NTFSVolumeInformation.VolumeFlags:=FVolumeFlags;
   end;
- 
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -15830,8 +15830,8 @@ var
  Buffer:Pointer;
 begin
  {}
- //To Do //Lock 
- 
+ //To Do //Lock
+
  if AValue = 0 then
   begin
    if FData <> nil then FreeMem(FData);
@@ -15844,11 +15844,11 @@ begin
    Size:=FDataSize;
    FDataSize:=AValue;
    FData:=AllocMem(FDataSize);
-   
+
    if Buffer <> nil then
     begin
      if FData <> nil then System.Move(Buffer^,FData^,Min(Size,FDataSize));
-     
+
      FreeMem(Buffer);
     end;
   end;
@@ -15860,7 +15860,7 @@ function TNTFSDataAttribute.UpdateEntry(AEntry:TNTFSDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Entry}
  if AEntry <> nil then
   begin
@@ -15873,7 +15873,7 @@ begin
      if FNonResident = ntfsAttributeNonResident then AEntry.Size:=FStreamSize;
      if FNonResident = ntfsAttributeNonResident then AEntry.Used:=FStreamUsed;
      if FNonResident = ntfsAttributeNonResident then AEntry.Allocated:=FStreamAllocated;
-     
+
      Result:=True;
     end
    else
@@ -15887,7 +15887,7 @@ begin
      if FNonResident = ntfsAttributeNonResident then AEntry.Size:=FStreamSize;
      if FNonResident = ntfsAttributeNonResident then AEntry.Used:=FStreamUsed;
      if FNonResident = ntfsAttributeNonResident then AEntry.Allocated:=FStreamAllocated;
-     
+
      Result:=True;
     end;
   end;
@@ -15900,7 +15900,7 @@ function TNTFSDataAttribute.UpdateAttribute(AEntry:TNTFSDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Entry}
  if AEntry <> nil then
   begin
@@ -15910,7 +15910,7 @@ begin
      if FNonResident = ntfsAttributeResident then FDataSize:=AEntry.Size else FStreamSize:=AEntry.Size;
      if FNonResident = ntfsAttributeNonResident then FStreamUsed:=AEntry.Used;
      if FNonResident = ntfsAttributeNonResident then FStreamAllocated:=AEntry.Allocated;
-     
+
      Result:=True;
     end
    else
@@ -15920,7 +15920,7 @@ begin
      if FNonResident = ntfsAttributeResident then FDataSize:=AEntry.Size else FStreamSize:=AEntry.Size;
      if FNonResident = ntfsAttributeNonResident then FStreamUsed:=AEntry.Used;
      if FNonResident = ntfsAttributeNonResident then FStreamAllocated:=AEntry.Allocated;
-     
+
      Result:=True;
     end;
   end;
@@ -15957,9 +15957,9 @@ function TNTFSIndexRootAttribute.CreateIndex(AVersion,ASector:Word):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FIndex <> nil then Exit;
- 
+
  {Check Type}
  if FIndexType = ntfsAttrTypeNone then
   begin
@@ -15971,7 +15971,7 @@ begin
      FIndex.FCollateRule:=FCollateRule;
      FIndex.FIndexRecordSize:=FIndexRecordSize;
      FIndex.FIndexCounterOffset:=FIndexCounterOffset;
-     
+
      Result:=True;
     end
    else
@@ -15982,7 +15982,7 @@ begin
      FIndex.FCollateRule:=FCollateRule;
      FIndex.FIndexRecordSize:=FIndexRecordSize;
      FIndex.FIndexCounterOffset:=FIndexCounterOffset;
-     
+
      Result:=True;
     end;
   end
@@ -15994,7 +15994,7 @@ begin
    FIndex.FCollateRule:=FCollateRule;
    FIndex.FIndexRecordSize:=FIndexRecordSize;
    FIndex.FIndexCounterOffset:=FIndexCounterOffset;
-   
+
    Result:=True;
   end
 end;
@@ -16006,17 +16006,17 @@ function TNTFSIndexRootAttribute.NewIndex(AVersion,ASector:Word;AType,ARule,ASiz
 begin
  {}
  Result:=False;
- 
+
  {Setup Parameters}
  FIndexType:=AType;
  FCollateRule:=ARule;
  FIndexRecordSize:=ASize;
  FIndexCounterOffset:=AOffset;
- 
+
  {Create Index}
  Result:=CreateIndex(AVersion,ASector);
  if not Result then Exit;
- 
+
  {Setup Index}
  FIndex.EmptyBtree;
 end;
@@ -16030,7 +16030,7 @@ var
 begin
  {}
  Result:=ntfsIndexRootSize;
- 
+
  if FIndex <> nil then
   begin
    Node:=FIndex.RootNode;
@@ -16049,15 +16049,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSIndexRoot:=PNTFSIndexRoot(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize >= ntfsIndexRootSize then
   begin
@@ -16066,25 +16066,25 @@ begin
    FCollateRule:=NTFSIndexRoot.CollateRule;
    FIndexRecordSize:=NTFSIndexRoot.IndexRecordSize;
    FIndexCounterOffset:=NTFSIndexRoot.IndexCounterOffset;
-   
+
    {Set Offset}
    Size:=FDataSize - ntfsIndexRootSize;
    Offset:=AOffset + ntfsIndexRootSize;
-   
+
    {Create Index}
    if not CreateIndex(AVersion,0) then Exit; {Created here as Index Root is always Resident}
-   
+
    {Read Root}
    if not FIndex.ReadRoot(ABuffer,Offset,Size,AVersion) then Exit;
   end;
-  
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSIndexRootAttribute.ReadData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -16099,19 +16099,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSIndexRootAttribute.WriteData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSIndexRoot:=PNTFSIndexRoot(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize >= ntfsIndexRootSize then
   begin
@@ -16120,21 +16120,21 @@ begin
    NTFSIndexRoot.CollateRule:=FCollateRule;
    NTFSIndexRoot.IndexRecordSize:=FIndexRecordSize;
    NTFSIndexRoot.IndexCounterOffset:=FIndexCounterOffset;
-   
+
    {Set Offset}
    Size:=FDataSize - ntfsIndexRootSize;
    Offset:=AOffset + ntfsIndexRootSize;
-   
+
    {Check Index}
    if FIndex = nil then Exit;
-   
+
    {Write Root}
    if not FIndex.WriteRoot(ABuffer,Offset,Size,AVersion) then Exit;
   end;
-  
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -16164,8 +16164,8 @@ var
  Buffer:Pointer;
 begin
  {}
- //To Do //Lock 
- 
+ //To Do //Lock
+
  if AValue = 0 then
   begin
    if FData <> nil then FreeMem(FData);
@@ -16178,11 +16178,11 @@ begin
    Size:=FDataSize;
    FDataSize:=AValue;
    FData:=AllocMem(FDataSize);
-   
+
    if Buffer <> nil then
     begin
      if FData <> nil then System.Move(Buffer^,FData^,Min(Size,FDataSize));
-     
+
      FreeMem(Buffer);
     end;
   end;
@@ -16218,8 +16218,8 @@ var
  Buffer:Pointer;
 begin
  {}
- //To Do //Lock 
- 
+ //To Do //Lock
+
  if AValue = 0 then
   begin
    if FData <> nil then FreeMem(FData);
@@ -16232,11 +16232,11 @@ begin
    Size:=FDataSize;
    FDataSize:=AValue;
    FData:=AllocMem(FDataSize);
-   
+
    if Buffer <> nil then
     begin
      if FData <> nil then System.Move(Buffer^,FData^,Min(Size,FDataSize));
-     
+
      FreeMem(Buffer);
     end;
   end;
@@ -16262,11 +16262,11 @@ begin
    Size:=FBitmapSize;
    FBitmapSize:=AValue;
    FBitmap:=AllocMem(FBitmapSize);
-   
+
    if Buffer <> nil then
     begin
      if FBitmap <> nil then System.Move(Buffer^,FBitmap^,Min(Size,FBitmapSize));
-     
+
      FreeMem(Buffer);
     end;
   end;
@@ -16279,7 +16279,7 @@ function TNTFSBitmapAttribute.CalculatedStreamSize(AVersion:Word):Int64;
 begin
  {}
  Result:=0;
- 
+
  if FBitmap <> nil then Result:=FBitmapSize else Result:=FDataSize;
 end;
 
@@ -16385,28 +16385,28 @@ function TNTFSReparsePointAttribute.CreateReparse:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FReparse <> nil then Exit;
- 
+
  {Check Type}
  case FReparseTag of
   ntfsReparseTagSymbolicLink:begin
     {Create Reparse Sym Link}
     FReparse:=TNTFSReparseSymLink.Create(INVALID_HANDLE_VALUE,Self); //To Do //Critical
-    
+
     Result:=True;
    end;
   ntfsReparseTagMountPoint:begin
     {Create Reparse Mount Point}
     FReparse:=TNTFSReparseMountPoint.Create(INVALID_HANDLE_VALUE,Self); //To Do //Critical
-    
+
     Result:=True;
    end;
   else
    begin
     {Create Reparse}
     FReparse:=TNTFSReparse.Create(INVALID_HANDLE_VALUE,Self); //To Do //Critical
-    
+
     Result:=True;
    end;
  end;
@@ -16419,14 +16419,14 @@ function TNTFSReparsePointAttribute.NewReparse(AReparseTag:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FReparse <> nil then Exit;
- 
+
  FReparseTag:=AReparseTag;
- 
+
  Result:=CreateReparse;
  if not Result then Exit;
- 
+
  {Setup Reparse}
  {Nothing}
 end;
@@ -16438,7 +16438,7 @@ function TNTFSReparsePointAttribute.CalculatedStreamSize(AVersion:Word):Int64;
 begin
  {}
  Result:=0;
- 
+
  if IsMicrosoft then
   begin
    Result:=ntfsReparsePointMicrosoftSize + FReparseSize;
@@ -16459,33 +16459,33 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Data}
  ReparsePoint:=PNTFSReparsePoint(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsReparsePointSize then
   begin
    {Read Data}
    FReparseTag:=ReparsePoint.ReparseTag;
    FReparseSize:=ReparsePoint.ReparseSize;
-   
+
    {Check Tag}
    if (FReparseTag and ntfsReparseTagFlagIsMicrosoft) = ntfsReparseTagFlagIsMicrosoft then
     begin
      {Update Offset}
      Dec(ASize,ntfsReparsePointSize);
      Inc(AOffset,ntfsReparsePointSize);
-     
+
      {Check Size}
      {if ASize >= ntfsReparseSize then}
      if ASize >= FReparseSize then
       begin
        {Create Reparse}
        if not CreateReparse then Exit;
-       
+
        {Read Reparse}
        if not FReparse.ReadReparse(ABuffer,AOffset,ASize,AVersion) then Exit;
       end;
@@ -16494,31 +16494,31 @@ begin
     begin
      {Get Data}
      ReparsePointOther:=PNTFSReparsePointOther(PtrUInt(ABuffer) + AOffset);
-     
+
      {Check Size}
      if ASize >= ntfsReparsePointOtherSize then
       begin
        {Read Data}
        FReparseGUID:=ReparsePointOther.ReparseGUID;
-       
+
        {Update Offset}
        Dec(ASize,ntfsReparsePointOtherSize);
        Inc(AOffset,ntfsReparsePointOtherSize);
-       
+
        {Check Size}
        {if ASize >= ntfsReparseSize then}
        if ASize >= FReparseSize then
         begin
          {Create Reparse}
          if not CreateReparse then Exit;
-         
+
          {Read Reparse}
          if not FReparse.ReadReparse(ABuffer,AOffset,ASize,AVersion) then Exit;
         end;
       end;
     end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -16532,33 +16532,33 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Data}
  ReparsePoint:=PNTFSReparsePoint(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsReparsePointSize then
   begin
    {Write Data}
    ReparsePoint.ReparseTag:=ReparseTag;
    ReparsePoint.ReparseSize:=ReparseSize;
-   
+
    {Check Tag}
    if (ReparseTag and ntfsReparseTagFlagIsMicrosoft) = ntfsReparseTagFlagIsMicrosoft then
     begin
      {Update Offset}
      Dec(ASize,ntfsReparsePointSize);
      Inc(AOffset,ntfsReparsePointSize);
-     
+
      {Check Size}
      {if ASize >= ntfsReparseSize then}
      if ASize >= ReparseSize then
       begin
        {Check Reparse}
        if FReparse = nil then Exit;
-       
+
        {Write Reparse}
        if not FReparse.WriteReparse(ABuffer,AOffset,ASize,AVersion) then Exit;
       end;
@@ -16567,31 +16567,31 @@ begin
     begin
      {Get Data}
      ReparsePointOther:=PNTFSReparsePointOther(PtrUInt(ABuffer) + AOffset);
-     
+
      {Check Size}
      if ASize >= ntfsReparsePointOtherSize then
       begin
        {Write Data}
        ReparsePointOther.ReparseGUID:=ReparseGUID;
-       
+
        {Update Offset}
        Dec(ASize,ntfsReparsePointOtherSize);
        Inc(AOffset,ntfsReparsePointOtherSize);
-       
+
        {Check Size}
        {if ASize >= ntfsReparseSize then}
        if ASize >= ReparseSize then
         begin
          {Check Reparse}
          if FReparse = nil then Exit;
-         
+
          {Write Reparse}
          if not FReparse.WriteReparse(ABuffer,AOffset,ASize,AVersion) then Exit;
         end;
       end;
     end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -16605,30 +16605,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Check Size}
  if FDataSize >= ntfsReparsePointSize then
   begin
    {Set Offset}
    Size:=FDataSize;
    Offset:=AOffset;
-   
+
    {Read Reparse}
    if not ReadReparse(ABuffer,Offset,Size,AVersion) then Exit;
   end;
-  
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSReparsePointAttribute.ReadData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -16642,30 +16642,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSReparsePointAttribute.WriteData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Check Size}
  if FDataSize >= ntfsReparsePointSize then
   begin
    {Set Offset}
    Size:=FDataSize;
    Offset:=AOffset;
-   
+
    {Write Reparse}
    if not WriteReparse(ABuffer,Offset,Size,AVersion) then Exit;
   end;
-  
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -16695,8 +16695,8 @@ var
  Buffer:Pointer;
 begin
  {}
- //To Do //Lock 
- 
+ //To Do //Lock
+
  if AValue = 0 then
   begin
    if FData <> nil then FreeMem(FData);
@@ -16709,11 +16709,11 @@ begin
    Size:=FDataSize;
    FDataSize:=AValue;
    FData:=AllocMem(FDataSize);
-   
+
    if Buffer <> nil then
     begin
      if FData <> nil then System.Move(Buffer^,FData^,Min(Size,FDataSize));
-     
+
      FreeMem(Buffer);
     end;
   end;
@@ -16760,15 +16760,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSExtendedAttrInformation:=PNTFSExtendedAttrInformation(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize >= ntfsExtendedAttrInformationSize then
   begin
@@ -16777,14 +16777,14 @@ begin
    FFlagCount:=NTFSExtendedAttrInformation.FlagCount;
    FUnpackedSize:=NTFSExtendedAttrInformation.UnpackedSize;
   end;
-  
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSExtendedAttrInformationAttribute.ReadData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -16797,19 +16797,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSExtendedAttrInformationAttribute.WriteData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Get Data}
  NTFSExtendedAttrInformation:=PNTFSExtendedAttrInformation(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if FDataSize >= ntfsExtendedAttrInformationSize then
   begin
@@ -16818,10 +16818,10 @@ begin
    NTFSExtendedAttrInformation.FlagCount:=FlagCount;
    NTFSExtendedAttrInformation.UnpackedSize:=UnpackedSize;
   end;
- 
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -16856,15 +16856,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FExtendeds = nil then FExtendeds:=TNTFSExtendeds.Create(GetExtendedLocal,GetExtendedsLock);
- 
+
  {Create Extended}
  Extended:=TNTFSExtended.Create(GetExtendedLocal);
- 
+
  {Add Extended}
  FExtendeds.Add(Extended);
- 
+
  Result:=Extended;
 end;
 
@@ -16875,16 +16875,16 @@ function TNTFSExtendedAttrAttribute.DestroyExtended(AExtended:TNTFSExtended):Boo
 begin
  {}
  Result:=False;
- 
+
  if AExtended = nil then Exit;
  if FExtendeds = nil then Exit;
- 
+
  {Remove Extended}
  FExtendeds.Remove(AExtended);
- 
+
  {Free Extended}
  AExtended.Free;
- 
+
  Result:=True;
 end;
 
@@ -16896,7 +16896,7 @@ begin
  {}
  Result:=CreateExtended;
  if Result = nil then Exit;
- 
+
  {Setup Extended}
  Result.ExtendedName:=AName;
 end;
@@ -16912,14 +16912,14 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FExtendeds = nil then Exit;
- 
+
  {Calculate Hash}
  Hash:=0;                                                          //To Do //Testing4
  Wildcard:=(Length(AName) = ntfsAnyNameLength) and (AName = ntfsAnyName); {Modified 14/2/2011}
  if not Wildcard then Hash:=GenerateNameHash(AName,NAME_HASH_SIZE); //To Do //Testing4
- 
+
  {Check Extendeds}
  Extended:=TNTFSExtended(FExtendeds.First);
  while Extended <> nil do
@@ -16932,7 +16932,7 @@ begin
        Exit;
       end;
     end;
-    
+
    Extended:=TNTFSExtended(Extended.Next);
   end;
 end;
@@ -16944,16 +16944,16 @@ function TNTFSExtendedAttrAttribute.RemoveExtended(AExtended:TNTFSExtended):Bool
 begin
  {}
  Result:=False;
- 
+
  if AExtended = nil then Exit;
  if FExtendeds = nil then Exit;
- 
+
  {Remove Extended}
  FExtendeds.Remove(AExtended);
- 
+
  {Free Extended}
  AExtended.Free;
- 
+
  Result:=True;
 end;
 
@@ -16963,9 +16963,9 @@ function TNTFSExtendedAttrAttribute.ExtendedCount:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FExtendeds = nil then Exit;
- 
+
  Result:=FExtendeds.Count;
 end;
 
@@ -16976,7 +16976,7 @@ function TNTFSExtendedAttrAttribute.CalculatedStreamSize(AVersion:Word):Int64;
 begin
  {}
  Result:=0;
- 
+
  if FExtendeds <> nil then Result:=FExtendeds.TotalSize;
 end;
 
@@ -16990,26 +16990,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Size}
  while ASize >= ntfsExtendedSize do
   begin
    {Get Data}
    ExtendedData:=PNTFSExtendedData(PtrUInt(ABuffer) + AOffset);
-   
+
    {Create Extended}
    Extended:=CreateExtended;
    if Extended = nil then Exit;
-   
+
    {Read Extended}
    if not Extended.ReadExtended(ABuffer,AOffset,ASize,AVersion) then Exit;
-   
+
    {Check Last}
    if ExtendedData.ExtendedOffset = 0 then Break;
   end;
-  
+
  Result:=True;
 end;
 
@@ -17022,26 +17022,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Extended}
  if Extendeds = nil then Exit;
  Extended:=TNTFSExtended(Extendeds.First);
- 
+
  {Write Extendeds}
  while Extended <> nil do
   begin
    {Check Size}
    if ASize < ntfsExtendedSize then Exit;
-   
+
    {Write Extended}
    if not Extended.WriteExtended(ABuffer,AOffset,ASize,AVersion) then Exit;
-   
+
    {Get Extended}
    Extended:=TNTFSExtended(Extended.Next);
   end;
-  
+
  Result:=True;
 end;
 
@@ -17055,30 +17055,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Check Size}
  if FDataSize > ntfsExtendedAttrSize then {Not Equal}
   begin
    {Set Offset}
    Size:=FDataSize;
    Offset:=AOffset;
-   
+
    {Read Extendeds}
    if not ReadExtendeds(ABuffer,Offset,Size,AVersion) then Exit;
   end;
-  
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSExtendedAttrAttribute.ReadData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -17092,30 +17092,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSExtendedAttrAttribute.WriteData - Offset = ' + IntToStr(AOffset));
  {$ENDIF}
- 
+
  {Check Resident}
  if FNonResident = ntfsAttributeNonResident then Exit;
- 
+
  {Check Size}
  if FDataSize > ntfsExtendedAttrSize then {Not Equal}
   begin
    {Set Offset}
    Size:=FDataSize;
    Offset:=AOffset;
-   
+
    {Write Extendeds}
    if not WriteExtendeds(ABuffer,Offset,Size,AVersion) then Exit;
   end;
-  
+
  {Update Offset}
  Inc(AOffset,FDataSize);
- 
+
  Result:=True;
 end;
 
@@ -17145,8 +17145,8 @@ var
  Buffer:Pointer;
 begin
  {}
- //To Do //Lock 
- 
+ //To Do //Lock
+
  if AValue = 0 then
   begin
    if FData <> nil then FreeMem(FData);
@@ -17159,11 +17159,11 @@ begin
    Size:=FDataSize;
    FDataSize:=AValue;
    FData:=AllocMem(FDataSize);
-   
+
    if Buffer <> nil then
     begin
      if FData <> nil then System.Move(Buffer^,FData^,Min(Size,FDataSize));
-     
+
      FreeMem(Buffer);
     end;
   end;
@@ -17195,8 +17195,8 @@ var
  Buffer:Pointer;
 begin
  {}
- //To Do //Lock 
- 
+ //To Do //Lock
+
  if AValue = 0 then
   begin
    if FData <> nil then FreeMem(FData);
@@ -17209,11 +17209,11 @@ begin
    Size:=FDataSize;
    FDataSize:=AValue;
    FData:=AllocMem(FDataSize);
-   
+
    if Buffer <> nil then
     begin
      if FData <> nil then System.Move(Buffer^,FData^,Min(Size,FDataSize));
-     
+
      FreeMem(Buffer);
     end;
   end;
@@ -17275,26 +17275,26 @@ var
 begin
  {}
  Result:=False; {No Inherited}
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Attribute}
  AttributeHeader:=PNTFSAttributeHeader(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= FAttributeSize then
   begin
    {Read Header}
    FAttributeType:=AttributeHeader.AttributeType;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSEndAttribute.ReadAttribute - Offset = ' + IntToStr(AOffset));
    {$ENDIF}
-   
+
    {Update Offset}
    Dec(ASize,FAttributeSize);
    Inc(AOffset,FAttributeSize);
-   
+
    Result:=True;
   end;
 end;
@@ -17308,26 +17308,26 @@ var
 begin
  {}
  Result:=False; {No Inherited}
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSDiskAttribute.WriteAttribute - Type = ' + IntToHex(FAttributeType,8) + ' Name = ' + AttributeName);
  {$ENDIF}
- 
+
  {Get Attribute}
  AttributeHeader:=PNTFSAttributeHeader(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= FAttributeSize then
   begin
    {Write Header}
    AttributeHeader.AttributeType:=FAttributeType;
-   
+
    {Update Offset}
    Dec(ASize,FAttributeSize);
    Inc(AOffset,FAttributeSize);
-   
+
    Result:=True;
   end;
 end;
@@ -17358,8 +17358,8 @@ var
  Buffer:Pointer;
 begin
  {}
- //To Do //Lock 
- 
+ //To Do //Lock
+
  if AValue = 0 then
   begin
    if FData <> nil then FreeMem(FData);
@@ -17372,11 +17372,11 @@ begin
    Size:=FDataSize;
    FDataSize:=AValue;
    FData:=AllocMem(FDataSize);
-   
+
    if Buffer <> nil then
     begin
      if FData <> nil then System.Move(Buffer^,FData^,Min(Size,FDataSize));
-     
+
      FreeMem(Buffer);
     end;
   end;
@@ -17390,7 +17390,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- 
+
  FData:=GetMem(ntfsFileSizeUpCase)
 end;
 
@@ -17450,7 +17450,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   {Create default table}
@@ -17462,14 +17462,14 @@ begin
     Inc(Count);
     Inc(Offset,2);
    end;
-  
+
   {Initialize default values}
   for Count:=0 to ntfsMaxUpcaseConvert do
    begin
     Offset:=(ntfsUpcaseConverts[Count].Count shl 1);
     PWord(PtrUInt(FData) + Offset)^:=ntfsUpcaseConverts[Count].Value;
    end;
-  
+
   Result:=True;
  finally
   WriterUnlock;
@@ -17485,13 +17485,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if ASize = 0 then Exit;
   if ADest = nil then Exit;
   if ASource = nil then Exit;
-  
+
   Count:=0;
   while Count < ASize do
    begin
@@ -17513,24 +17513,24 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   if ABuffer = nil then Exit;
-  
+
   {Get Data}
   UpCaseData:=PNTFSUpCaseData(PtrUInt(ABuffer) + AOffset);
-  
+
   {Check Size}
   if ASize >= ntfsFileSizeUpCase then
    begin
     {Read Data}
     System.Move(UpCaseData.Data[0],FData^,ntfsFileSizeUpCase);
-    
+
     {Update Offset}
     Dec(ASize,ntfsFileSizeUpCase);
     Inc(AOffset,ntfsFileSizeUpCase);
-    
+
     Result:=True;
    end;
  finally
@@ -17547,24 +17547,24 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if ABuffer = nil then Exit;
-  
+
   {Get Data}
   UpCaseData:=PNTFSUpCaseData(PtrUInt(ABuffer) + AOffset);
-  
+
   {Check Size}
   if ASize >= ntfsFileSizeUpCase then
    begin
     {Write Data}
     System.Move(FData^,UpCaseData.Data[0],ntfsFileSizeUpCase);
-    
+
     {Update Offset}
     Dec(ASize,ntfsFileSizeUpCase);
     Inc(AOffset,ntfsFileSizeUpCase);
-    
+
     Result:=True;
    end;
  finally
@@ -17584,7 +17584,7 @@ end;
 
 {==============================================================================}
 
-destructor TNTFSAttrDefs.Destroy; 
+destructor TNTFSAttrDefs.Destroy;
 begin
  {}
  WriterLock;
@@ -17605,13 +17605,13 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AAttrDef = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttrDefs.GetPrevious - Name = ' + AAttrDef.AttributeName + ' Type = ' + IntToHex(AAttrDef.AttributeType,8));
  {$ENDIF}
- 
+
  {Check Items}
  Current:=TNTFSAttrDef(First);
  while Current <> nil do
@@ -17619,9 +17619,9 @@ begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttrDefs.GetPrevious - Comparing with Name = ' + Current.AttributeName + ' Type = ' + IntToHex(Current.AttributeType,8));
    {$ENDIF}
-   
+
    if AAttrDef.Compare(Current) = ntfsCompareGreater then Exit;
-   
+
    Result:=Current;
    Current:=TNTFSAttrDef(Current.Next);
   end;
@@ -17636,15 +17636,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not WriterLock then Exit;
  try
   {Create AttrDef}
   AttrDef:=TNTFSAttrDef.Create(FAttrDefLocal);
-  
+
   {Add AttrDef  (Only if not new)}
   if not ANew then Add(AttrDef);
-  
+
   Result:=AttrDef;
  finally
   WriterUnlock;
@@ -17658,17 +17658,17 @@ function TNTFSAttrDefs.DestroyAttrDef(AAttrDef:TNTFSAttrDef):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   if AAttrDef = nil then Exit;
-  
+
   {Remove AttrDef}
   Remove(AAttrDef);
-  
+
   {Free AttrDef}
   AAttrDef.Free;
-  
+
   Result:=True;
  finally
   WriterUnlock;
@@ -17685,16 +17685,16 @@ begin
  {}
  Result:=CreateAttrDef(AType,AVersion,True);
  if Result = nil then Exit;
-  
+
  if not WriterLock then Exit;
  try
   {Set Values}
   Result.AttributeName:=AName;
   Result.AttributeType:=AType;
-  
+
   {Get Previous}
   Previous:=GetPrevious(Result);
-  
+
   {Insert AttrDef}
   Insert(Previous,Result);
  finally
@@ -17713,14 +17713,14 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not ReaderLock then Exit;
  try
   {Calculate Hash}
   Hash:=0;                                                          //To Do //Testing4
   Wildcard:=(Length(AName) = ntfsAnyNameLength) and (AName = ntfsAnyName); {Modified 14/2/2011}
   if not Wildcard then Hash:=GenerateNameHash(AName,NAME_HASH_SIZE); //To Do //Testing4
-  
+
   {Check AttrDefs}
   AttrDef:=TNTFSAttrDef(First);
   while AttrDef <> nil do
@@ -17738,7 +17738,7 @@ begin
          end;
        end;
      end;
-     
+
     AttrDef:=TNTFSAttrDef(AttrDef.Next);
    end;
  finally
@@ -17754,16 +17754,16 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not ReaderLock then Exit;
  try
   if AIndex < 0 then Exit;
-  
+
   {Check Version}
   case AVersion of
    ntfsNTFS12:begin
      if AIndex > ntfs12MaxAttrDefine then Exit;
-     
+
      {Check Attr Defs}
      AttrDef:=TNTFSAttrDef(First);
      while AttrDef <> nil do
@@ -17773,13 +17773,13 @@ begin
          Result:=AttrDef;
          Exit;
         end;
-        
+
        AttrDef:=TNTFSAttrDef(AttrDef.Next);
       end;
     end;
    ntfsNTFS30:begin
      if AIndex > ntfs30MaxAttrDefine then Exit;
-     
+
      {Check Attr Defs}
      AttrDef:=TNTFSAttrDef(First);
      while AttrDef <> nil do
@@ -17789,13 +17789,13 @@ begin
          Result:=AttrDef;
          Exit;
         end;
-        
+
        AttrDef:=TNTFSAttrDef(AttrDef.Next);
       end;
     end;
    ntfsNTFS31:begin
      if AIndex > ntfs31MaxAttrDefine then Exit;
-     
+
      {Check Attr Defs}
      AttrDef:=TNTFSAttrDef(First);
      while AttrDef <> nil do
@@ -17805,7 +17805,7 @@ begin
          Result:=AttrDef;
          Exit;
         end;
-        
+
        AttrDef:=TNTFSAttrDef(AttrDef.Next);
       end;
     end;
@@ -17823,23 +17823,23 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AWrite then
   begin
    if not WriterLock then Exit;
   end
  else
-  begin 
+  begin
    if not ReaderLock then Exit;
-  end; 
+  end;
  try
   if AIndex < 0 then Exit;
-  
+
   {Check Version}
   case AVersion of
    ntfsNTFS12:begin
      if AIndex > ntfs12MaxAttrDefine then Exit;
-     
+
      {Check Attr Defs}
      AttrDef:=TNTFSAttrDef(First);
      while AttrDef <> nil do
@@ -17849,13 +17849,13 @@ begin
          Result:=AttrDef;
          Exit;
         end;
-        
+
        AttrDef:=TNTFSAttrDef(AttrDef.Next);
       end;
     end;
    ntfsNTFS30:begin
      if AIndex > ntfs30MaxAttrDefine then Exit;
-     
+
      {Check Attr Defs}
      AttrDef:=TNTFSAttrDef(First);
      while AttrDef <> nil do
@@ -17865,13 +17865,13 @@ begin
          Result:=AttrDef;
          Exit;
         end;
-        
+
        AttrDef:=TNTFSAttrDef(AttrDef.Next);
       end;
     end;
    ntfsNTFS31:begin
      if AIndex > ntfs31MaxAttrDefine then Exit;
-     
+
      {Check Attr Defs}
      AttrDef:=TNTFSAttrDef(First);
      while AttrDef <> nil do
@@ -17881,7 +17881,7 @@ begin
          Result:=AttrDef;
          Exit;
         end;
-        
+
        AttrDef:=TNTFSAttrDef(AttrDef.Next);
       end;
     end;
@@ -17892,9 +17892,9 @@ begin
     WriterUnlock;
    end
   else
-   begin  
+   begin
     ReaderUnlock;
-   end; 
+   end;
  end;
 end;
 
@@ -17906,11 +17906,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not ReaderLock then Exit;
  try
   if AAttribute = nil then Exit;
-  
+
   {Check Attr Defs}
   AttrDef:=TNTFSAttrDef(First);
   while AttrDef <> nil do
@@ -17920,7 +17920,7 @@ begin
       Result:=AttrDef;
       Exit;
      end;
-     
+
     AttrDef:=TNTFSAttrDef(AttrDef.Next);
    end;
  finally
@@ -17935,17 +17935,17 @@ function TNTFSAttrDefs.RemoveAttrDef(AAttrDef:TNTFSAttrDef):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   if AAttrDef = nil then Exit;
-  
+
   {Remove AttrDef}
   Remove(AAttrDef);
-  
+
   {Free AttrDef}
   AAttrDef.Free;
-  
+
   Result:=True;
  finally
   WriterUnlock;
@@ -17961,19 +17961,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if AAttribute = nil then Exit;
-  
+
   {Get Attr Def}
   AttrDef:=GetAttrDefByAttribute(AAttribute);
   if AttrDef = nil then Exit;
-  
+
   {Check Size}
   if AttrDef.MinimumSize > ASize then Exit;
   if AttrDef.MaximumSize < ASize then Exit;
-  
+
   Result:=True;
  finally
   ReaderUnlock;
@@ -17989,18 +17989,18 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if AAttribute = nil then Exit;
-  
+
   {Get Attr Def}
   AttrDef:=GetAttrDefByAttribute(AAttribute);
   if AttrDef = nil then Exit;
-  
+
   {Check Flags}
   if (AttrDef.AttrDefFlags and ntfsAttrDefFlagIndexed) = ntfsAttrDefFlagNone then Exit;
-  
+
   Result:=True;
  finally
   ReaderUnlock;
@@ -18016,18 +18016,18 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if AAttribute = nil then Exit;
-  
+
   {Get Attr Def}
   AttrDef:=GetAttrDefByAttribute(AAttribute);
   if AttrDef = nil then Exit;
-  
+
   {Check Flags}
   if (AttrDef.AttrDefFlags and ntfsAttrDefFlagResident) = ntfsAttrDefFlagNone then Exit;
-  
+
   Result:=True;
  finally
   ReaderUnlock;
@@ -18043,18 +18043,18 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if AAttribute = nil then Exit;
-  
+
   {Get Attr Def}
   AttrDef:=GetAttrDefByAttribute(AAttribute);
   if AttrDef = nil then Exit;
-  
+
   {Check Flags}
   if (AttrDef.AttrDefFlags and ntfsAttrDefFlagUncompressed) = ntfsAttrDefFlagNone then Exit;
-  
+
   Result:=True;
  finally
   ReaderUnlock;
@@ -18069,14 +18069,14 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   AttrDef:=TNTFSAttrDef(First);
   while AttrDef <> nil do
    begin
     Inc(Result,ntfsAttrDefSize);
-    
+
     AttrDef:=TNTFSAttrDef(AttrDef.Next);
    end;
  finally
@@ -18090,7 +18090,7 @@ function TNTFSAttrDefs.AttrDefCount:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   Result:=Count;
@@ -18116,14 +18116,14 @@ begin
   Upper:=ntfs31MaxAttrDefine;
   if AVersion = ntfsNTFS30 then Upper:=ntfs30MaxAttrDefine;
   if AVersion = ntfsNTFS12 then Upper:=ntfs12MaxAttrDefine;
-  
+
   {Create AttrDefs}
   for Count:=0 to Upper do
    begin
     {Check AttrDef}
     AttrDef:=GetAttrDefByIndexEx(Count,AVersion,True);
     if AttrDef <> nil then Exit;
-    
+
     AttrDef:=CreateAttrDef(ntfsAttrTypeNone,AVersion,False);
     if not AttrDef.Init(Count,AVersion) then
      begin
@@ -18137,7 +18137,7 @@ begin
      {$ENDIF}
      end;
    end;
-   
+
   Result:=True;
  finally
   WriterUnlock;
@@ -18154,24 +18154,24 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   if ABuffer = nil then Exit;
-  
+
   {Check Size}
   while ASize >= ntfsAttrDefSize do
    begin
     {Get Data}
     AttrDefData:=PNTFSAttrDefData(PtrUInt(ABuffer) + AOffset);
-    
+
     {Check Last}
     if AttrDefData.AttributeType = ntfsAttrTypeEnd then Break;
     if AttrDefData.AttributeType = ntfsAttrTypeNone then Break;
-    
+
     {Create AttrDef}
     AttrDef:=CreateAttrDef(AttrDefData.AttributeType,AVersion,False);
-    
+
     {Read AttrDef}
     if not AttrDef.ReadAttrDef(ABuffer,AOffset,ASize,AVersion) then
      begin
@@ -18186,7 +18186,7 @@ begin
      {$ENDIF}
      end;
    end;
-   
+
   Result:=True;
  finally
   WriterUnlock;
@@ -18202,27 +18202,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if ABuffer = nil then Exit;
-  
+
   {Get AttrDef}
   AttrDef:=TNTFSAttrDef(First);
-  
+
   {Write AttrDefs}
   while AttrDef <> nil do
    begin
     {Check Size}
     if ASize < ntfsAttrDefSize then Exit;
-    
+
     {Write AttrDef}
     if not AttrDef.WriteAttrDef(ABuffer,AOffset,ASize,AVersion) then Exit;
-    
+
     {Get AttrDef}
     AttrDef:=TNTFSAttrDef(AttrDef.Next);
    end;
-   
+
   Result:=True;
  finally
   ReaderUnlock;
@@ -18237,7 +18237,7 @@ begin
  {}
  inherited Create;
  FLocalLock:=ALocalLock;
- 
+
  FAttributeName:=ntfsBlankName;
  FAttributeType:=ntfsAttrTypeNone;
  FDisplayRule:=ntfsDisplayTypeNone;
@@ -18280,7 +18280,7 @@ function TNTFSAttrDef.GetAttributeName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FAttributeName;
@@ -18336,16 +18336,16 @@ function TNTFSAttrDef.Compare(AAttrDef:TNTFSAttrDef):Integer;
 begin
  {}
  Result:=ntfsCompareGreater;
- 
+
  if AAttrDef = nil then Exit;
- 
+
  {Check Attribute Type}
  if AAttrDef.AttributeType < FAttributeType then
   begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttrDef.Compare - Type ' + IntToHex(AAttrDef.AttributeType,8) + ' < ' + IntToHex(FAttributeType,8));
    {$ENDIF}
-   
+
    Result:=ntfsCompareLess;
   end
  else if AAttrDef.AttributeType > FAttributeType then
@@ -18353,7 +18353,7 @@ begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttrDef.Compare - Type ' + IntToHex(AAttrDef.AttributeType,8) + ' > ' + IntToHex(FAttributeType,8));
    {$ENDIF}
-   
+
    Result:=ntfsCompareGreater;
   end
  else
@@ -18365,7 +18365,7 @@ begin
      {$IFDEF NTFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttrDef.Compare - Name ' + AAttrDef.AttributeName + ' < ' + AttributeName);
      {$ENDIF}
-     
+
      Result:=ntfsCompareLess;
     end
    else if Result > ntfsCompareEqual then
@@ -18373,7 +18373,7 @@ begin
      {$IFDEF NTFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSAttrDef.Compare - Name ' + AAttrDef.AttributeName + ' > ' + AttributeName);
      {$ENDIF}
-     
+
      Result:=ntfsCompareGreater;
     end;
   end;
@@ -18387,12 +18387,12 @@ begin
  Result:=False;
 
  if AIndex < 0 then Exit;
-  
+
  {Check Version}
  case AVersion of
   ntfsNTFS12:begin
     if AIndex > ntfs12MaxAttrDefine then Exit;
-    
+
     {Load Defaults}
     AttributeName:=ntfs12AttrDefines[AIndex].AttributeName;
     FAttributeType:=ntfs12AttrDefines[AIndex].AttributeType;
@@ -18401,12 +18401,12 @@ begin
     FAttrDefFlags:=ntfs12AttrDefines[AIndex].AttrDefFlags;
     FMinimumSize:=ntfs12AttrDefines[AIndex].MinimumSize;
     FMaximumSize:=ntfs12AttrDefines[AIndex].MaximumSize;
-    
+
     Result:=True;
    end;
   ntfsNTFS30:begin
     if AIndex > ntfs30MaxAttrDefine then Exit;
-    
+
     {Load Defaults}
     AttributeName:=ntfs30AttrDefines[AIndex].AttributeName;
     FAttributeType:=ntfs30AttrDefines[AIndex].AttributeType;
@@ -18415,12 +18415,12 @@ begin
     FAttrDefFlags:=ntfs30AttrDefines[AIndex].AttrDefFlags;
     FMinimumSize:=ntfs30AttrDefines[AIndex].MinimumSize;
     FMaximumSize:=ntfs30AttrDefines[AIndex].MaximumSize;
-    
+
     Result:=True;
    end;
   ntfsNTFS31:begin
     if AIndex > ntfs31MaxAttrDefine then Exit;
-    
+
     {Load Defaults}
     AttributeName:=ntfs31AttrDefines[AIndex].AttributeName;
     FAttributeType:=ntfs31AttrDefines[AIndex].AttributeType;
@@ -18429,7 +18429,7 @@ begin
     FAttrDefFlags:=ntfs31AttrDefines[AIndex].AttrDefFlags;
     FMinimumSize:=ntfs31AttrDefines[AIndex].MinimumSize;
     FMaximumSize:=ntfs31AttrDefines[AIndex].MaximumSize;
-    
+
     Result:=True;
    end;
  end;
@@ -18444,12 +18444,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Data}
  AttrDefData:=PNTFSAttrDefData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsAttrDefSize then
   begin
@@ -18460,14 +18460,14 @@ begin
    FAttrDefFlags:=AttrDefData.AttrDefFlags;
    FMinimumSize:=AttrDefData.MinimumSize;
    FMaximumSize:=AttrDefData.MaximumSize;
-   
+
    {Read Name}
    AttributeName:=NTFSWideBufferToString(@AttrDefData.AttributeName[0],0,64);
-   
+
    {Update Offset}
    Dec(ASize,ntfsAttrDefSize);
    Inc(AOffset,ntfsAttrDefSize);
-   
+
    Result:=True;
   end;
 end;
@@ -18481,12 +18481,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Data}
  AttrDefData:=PNTFSAttrDefData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsAttrDefSize then
   begin
@@ -18497,14 +18497,14 @@ begin
    AttrDefData.AttrDefFlags:=FAttrDefFlags;
    AttrDefData.MinimumSize:=FMinimumSize;
    AttrDefData.MaximumSize:=FMaximumSize;
-   
+
    {Write Name}
    if not NTFSStringToWideBuffer(AttributeName,@AttrDefData.AttributeName[0],0,64) then Exit;
-   
+
    {Update Offset}
    Dec(ASize,ntfsAttrDefSize);
    Inc(AOffset,ntfsAttrDefSize);
-   
+
    Result:=True;
   end;
 end;
@@ -18543,11 +18543,11 @@ begin
   if AData = nil then Exit;
   if FData = nil then Exit;
   if FDataSize = 0 then Exit;
- 
+
   System.Move(AData^,FData^,FDataSize);
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18598,30 +18598,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
  if FAttribute = nil then Exit;
- 
+
  {Get Data}
  ReparseData:=PNTFSReparseData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= TNTFSReparsePointAttribute(FAttribute).ReparseSize then
   begin
    {Set Size}
    SetDataSize(TNTFSReparsePointAttribute(FAttribute).ReparseSize);
-   
+
    if not AcquireLock then Exit;
 
    {Read Data}
    System.Move(ReparseData.Data[0],FData^,FDataSize);
-   
+
    ReleaseLock;
-   
+
    {Update Offset}
    Dec(ASize,TNTFSReparsePointAttribute(FAttribute).ReparseSize);
    Inc(AOffset,TNTFSReparsePointAttribute(FAttribute).ReparseSize);
-   
+
    Result:=True;
   end;
 end;
@@ -18635,27 +18635,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
  if FAttribute = nil then Exit;
- 
+
  {Get Data}
  ReparseData:=PNTFSReparseData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= TNTFSReparsePointAttribute(FAttribute).ReparseSize then
   begin
    if not AcquireLock then Exit;
-   
+
    {Write Data}
    System.Move(FData^,ReparseData.Data[0],FDataSize);
-   
+
    ReleaseLock;
 
    {Update Offset}
    Dec(ASize,TNTFSReparsePointAttribute(FAttribute).ReparseSize);
    Inc(AOffset,TNTFSReparsePointAttribute(FAttribute).ReparseSize);
-   
+
    Result:=True;
   end;
 end;
@@ -18703,12 +18703,12 @@ function TNTFSReparseSymLink.GetTarget:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FSubstituteName;
  UniqueString(Result);
- 
+
  ReleaseLock;
 
  if Copy(Result,1,Length(ntfsReparsePointPrefix)) = ntfsReparsePointPrefix then Delete(Result,1,Length(ntfsReparsePointPrefix));
@@ -18720,12 +18720,12 @@ function TNTFSReparseSymLink.GetPrintName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FPrintName;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -18735,11 +18735,11 @@ procedure TNTFSReparseSymLink.SetPrintName(const APrintName:String);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FPrintName:=APrintName;
  UniqueString(FPrintName);
  FPrintHash:=GenerateNameHash(FPrintName,NAME_HASH_SIZE);
- 
+
  ReleaseLock;
 end;
 
@@ -18749,12 +18749,12 @@ function TNTFSReparseSymLink.GetSubstituteName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FSubstituteName;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -18764,11 +18764,11 @@ procedure TNTFSReparseSymLink.SetSubstituteName(const ASubstituteName:String);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FSubstituteName:=ASubstituteName;
  UniqueString(FSubstituteName);
  FSubstituteHash:=GenerateNameHash(FSubstituteName,NAME_HASH_SIZE);
- 
+
  ReleaseLock;
 end;
 
@@ -18778,7 +18778,7 @@ function TNTFSReparseSymLink.PrintNameSize:Word;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=Length(FPrintName) shl 1; {Multiply by SizeOf(WideChar) / SizeOf(Word)}
@@ -18800,7 +18800,7 @@ function TNTFSReparseSymLink.PrintNameLength:Word;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=Length(FPrintName);
@@ -18814,7 +18814,7 @@ function TNTFSReparseSymLink.SubstituteNameSize:Word;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=Length(FSubstituteName) shl 1; {Multiply by SizeOf(WideChar) / SizeOf(Word)}
@@ -18836,7 +18836,7 @@ function TNTFSReparseSymLink.SubstituteNameLength:Word;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=Length(FSubstituteName);
@@ -18861,25 +18861,25 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Data}
  ReparseData:=PNTFSReparseSymLinkData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsReparseSize then
   begin
    {Read Names}
    PrintName:=NTFSWideBufferToString(ReparseData,ntfsReparseSize + ReparseData.PrintNameOffset,ReparseData.PrintNameLength shr 1); {Divide by SizeOf(WideChar) / SizeOf(Word)}
    SubstituteName:=NTFSWideBufferToString(ReparseData,ntfsReparseSize + ReparseData.SubstituteNameOffset,ReparseData.SubstituteNameLength shr 1); {Divide by SizeOf(WideChar) / SizeOf(Word)}
-   
+
    {Update Offset}
    Dec(ASize,ntfsReparseSize + PrintNameSize + SubstituteNameSize);
    Inc(AOffset,ntfsReparseSize + PrintNameSize + SubstituteNameSize);
-   
+
    Result:=True;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSReparseSymLink.ReadReparse - PrintName = ' + PrintName + ' SubstituteName = ' + SubstituteName);
    {$ENDIF}
@@ -18895,12 +18895,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Data}
  ReparseData:=PNTFSReparseSymLinkData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsReparseSize then
   begin
@@ -18911,13 +18911,13 @@ begin
    ReparseData.SubstituteNameOffset:=SubstituteNameOffset;
    ReparseData.SubstituteNameLength:=SubstituteNameSize; {SubstituteNameLength} {Bytes not Chars}
    if not NTFSStringToWideBuffer(SubstituteName,ReparseData,ntfsReparseSize + ReparseData.SubstituteNameOffset,ReparseData.SubstituteNameLength shr 1) then Exit; {Divide by SizeOf(WideChar) / SizeOf(Word)}
-   
+
    {Update Offset}
    Dec(ASize,ntfsReparseSize + PrintNameSize + SubstituteNameSize);
    Inc(AOffset,ntfsReparseSize + PrintNameSize + SubstituteNameSize);
-   
+
    Result:=True;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSReparseSymLink.WriteReparse - PrintName = ' + PrintName + ' SubstituteName = ' + SubstituteName);
    {$ENDIF}
@@ -18947,11 +18947,11 @@ function TNTFSReparseMountPoint.PrintNameSize:Word;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=Length(FPrintName) shl 1; {Multiply by SizeOf(WideChar) / SizeOf(Word)}
- 
+
  ReleaseLock;
 end;
 
@@ -18969,11 +18969,11 @@ function TNTFSReparseMountPoint.PrintNameLength:Word;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=Length(FPrintName);
- 
+
  ReleaseLock;
 end;
 
@@ -18983,11 +18983,11 @@ function TNTFSReparseMountPoint.SubstituteNameSize:Word;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=Length(FSubstituteName) shl 1; {Multiply by SizeOf(WideChar) / SizeOf(Word)}
- 
+
  ReleaseLock;
 end;
 
@@ -19005,11 +19005,11 @@ function TNTFSReparseMountPoint.SubstituteNameLength:Word;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=Length(FSubstituteName);
- 
+
  ReleaseLock;
 end;
 
@@ -19030,12 +19030,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Data}
  ReparseData:=PNTFSReparseMountPointData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsReparseSize then
   begin
@@ -19046,9 +19046,9 @@ begin
    {Update Offset}
    Dec(ASize,ntfsReparseSize + PrintNameSize + SubstituteNameSize);  {ntfsReparseSize includes the 2 null chars}
    Inc(AOffset,ntfsReparseSize + PrintNameSize + SubstituteNameSize);  {ntfsReparseSize includes the 2 null chars}
-   
+
    Result:=True;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSReparseMountPoint.ReadReparse - PrintName = ' + PrintName + ' SubstituteName = ' + SubstituteName);
    {$ENDIF}
@@ -19064,12 +19064,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Data}
  ReparseData:=PNTFSReparseMountPointData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsReparseSize then
   begin
@@ -19080,13 +19080,13 @@ begin
    ReparseData.SubstituteNameOffset:=SubstituteNameOffset;
    ReparseData.SubstituteNameLength:=SubstituteNameSize; {SubstituteNameLength} {Bytes not Chars}
    if not NTFSStringToWideBuffer(SubstituteName,ReparseData,(ntfsReparseSize - 4) + ReparseData.SubstituteNameOffset,ReparseData.SubstituteNameLength shr 1) then Exit; {Divide by SizeOf(WideChar) / SizeOf(Word)}
-   
+
    {Update Offset}
    Dec(ASize,ntfsReparseSize + PrintNameSize + SubstituteNameSize);  {ntfsReparseSize includes the 2 null chars}
    Inc(AOffset,ntfsReparseSize + PrintNameSize + SubstituteNameSize);  {ntfsReparseSize includes the 2 null chars}
-   
+
    Result:=True;
-   
+
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSReparseMountPoint.WriteReparse - PrintName = ' + PrintName + ' SubstituteName = ' + SubstituteName);
    {$ENDIF}
@@ -19105,7 +19105,7 @@ end;
 
 {==============================================================================}
 
-destructor TNTFSExtendeds.Destroy; 
+destructor TNTFSExtendeds.Destroy;
 begin
  {}
  WriterLock;
@@ -19125,12 +19125,12 @@ var
 begin
  {}
  Result:=0;
- 
+
  Extended:=TNTFSExtended(First);
  while Extended <> nil do
   begin
    Inc(Result,Extended.ExtendedSize);
-   
+
    Extended:=TNTFSExtended(Extended.Next);
   end;
 end;
@@ -19151,7 +19151,7 @@ begin
  {}
  inherited Create;
  FLocalLock:=ALocalLock;
- 
+
  FExtendedOffset:=0;
  FExtendedFlags:=ntfsExtendedAttributeFlagNone;
  FExtendedName:=ntfsBlankName;
@@ -19167,7 +19167,7 @@ destructor TNTFSExtended.Destroy;
 begin
  {}
  if FExtendedData <> nil then FreeMem(FExtendedData);
- 
+
  FLocalLock:=INVALID_HANDLE_VALUE;
  inherited Destroy;
 end;
@@ -19194,12 +19194,12 @@ function TNTFSExtended.GetExtendedName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FExtendedName;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -19209,11 +19209,11 @@ procedure TNTFSExtended.SetExtendedName(const AExtendedName:String);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FExtendedName:=AExtendedName;
  UniqueString(FExtendedName);
  FExtendedHash:=GenerateNameHash(FExtendedName,NAME_HASH_SIZE);
- 
+
  ReleaseLock;
 end;
 
@@ -19222,8 +19222,8 @@ end;
 procedure TNTFSExtended.SetExtendedDataSize(ASize:Word);
 begin
  {}
- //To Do //Lock 
- 
+ //To Do //Lock
+
  if ASize = 0 then
   begin
    if FExtendedData <> nil then FreeMem(FExtendedData);
@@ -19236,8 +19236,8 @@ begin
    FExtendedDataSize:=ASize;
    FExtendedData:=AllocMem(FExtendedDataSize);
   end;
-  
- //To Do //Lock 
+
+ //To Do //Lock
 end;
 
 {==============================================================================}
@@ -19254,11 +19254,11 @@ function TNTFSExtended.ExtendedNameSize:Word;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=Length(FExtendedName); {SizeOf(Char)}
- 
+
  ReleaseLock;
 end;
 
@@ -19268,11 +19268,11 @@ function TNTFSExtended.ExtendedNameLength:Byte;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=Length(FExtendedName);
- 
+
  ReleaseLock;
 end;
 
@@ -19285,12 +19285,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Data}
  ExtendedData:=PNTFSExtendedData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsExtendedSize then
   begin
@@ -19298,23 +19298,23 @@ begin
    FExtendedOffset:=ExtendedData.ExtendedOffset;
    FExtendedFlags:=ExtendedData.ExtendedFlags;
    FExtendedDataSize:=ExtendedData.ExtendedDataSize;
-   
+
    {Read Name}
    ExtendedName:=NTFSBufferToString(@ExtendedData.ExtendedName[0],0,ExtendedData.ExtendedNameLength);
-   
+
    {Set Size}
    SetExtendedDataSize(FExtendedDataSize);
-   
+
    {Read Data}
    if FExtendedDataSize > 0 then
     begin
      System.Move(Pointer(PtrUInt(ExtendedData) + AOffset + ExtendedData.ExtendedNameLength)^,FExtendedData^,FExtendedDataSize);
     end;
-   
+
    {Update Offset}
    Dec(ASize,ExtendedData.ExtendedOffset);
    Inc(AOffset,ExtendedData.ExtendedOffset);
-   
+
    Result:=True;
   end;
 end;
@@ -19328,12 +19328,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Data}
  ExtendedData:=PNTFSExtendedData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsExtendedSize then
   begin
@@ -19342,20 +19342,20 @@ begin
    ExtendedData.ExtendedFlags:=FExtendedFlags;
    ExtendedData.ExtendedDataSize:=FExtendedDataSize;
    ExtendedData.ExtendedNameLength:=ExtendedNameLength;
-   
+
    {Write Name}
    if not NTFSStringToBuffer(ExtendedName,@ExtendedData.ExtendedName[0],0,ExtendedData.ExtendedNameLength) then Exit;
-   
+
    {Write Data}
    if FExtendedDataSize > 0 then
     begin
      System.Move(FExtendedData^,Pointer(PtrUInt(ExtendedData) + AOffset + ExtendedData.ExtendedNameLength)^,FExtendedDataSize);
     end;
-   
+
    {Update Offset}
    Dec(ASize,ExtendedData.ExtendedOffset);
    Inc(AOffset,ExtendedData.ExtendedOffset);
-   
+
    Result:=True;
   end;
 end;
@@ -19372,7 +19372,7 @@ end;
 
 {==============================================================================}
 
-destructor TNTFSSecurityItems.Destroy; 
+destructor TNTFSSecurityItems.Destroy;
 begin
  {}
  WriterLock;
@@ -19393,13 +19393,13 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if ASecurityItem = nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSSecurityItems.GetPrevious - Hash = ' + IntToHex(ASecurityItem.SecurityHash,8) + ' Id = ' + IntToHex(ASecurityItem.SecurityId,8) + ' Offset = ' + IntToHex(ASecurityItem.SecurityOffset,16));
  {$ENDIF}
- 
+
  {Check Items}
  Current:=TNTFSSecurityItem(First);
  while Current <> nil do
@@ -19407,9 +19407,9 @@ begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSSecurityItems.GetPrevious - Comparing with Hash = ' + IntToHex(Current.SecurityHash,8) + ' Id = ' + IntToHex(Current.SecurityId,8) + ' Offset = ' + IntToHex(Current.SecurityOffset,16));
    {$ENDIF}
-   
+
    if ASecurityItem.Compare(Current) = ntfsCompareGreater then Exit;
-   
+
    Result:=Current;
    Current:=TNTFSSecurityItem(Current.Next);
   end;
@@ -19424,15 +19424,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not WriterLock then Exit;
  try
   {Create SecurityItem}
   SecurityItem:=TNTFSSecurityItem.Create(FSecurityLocal);
-  
+
   {Add SecurityItem  (Only if not new)}
   if not ANew then Add(SecurityItem);
-  
+
   Result:=SecurityItem;
  finally
   WriterUnlock;
@@ -19446,17 +19446,17 @@ function TNTFSSecurityItems.DestroySecurityItem(ASecurityItem:TNTFSSecurityItem)
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   if ASecurityItem = nil then Exit;
-  
+
   {Remove SecurityItem}
   Remove(ASecurityItem);
-  
+
   {Free SecurityItem}
   ASecurityItem.Free;
-  
+
   Result:=True;
  finally
   WriterUnlock;
@@ -19472,15 +19472,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not WriterLock then Exit;
  try
   if ASecurity = nil then Exit;
   if ASecurityId = 0 then Exit;
-  
+
   Result:=CreateSecurityItem(True);
   if Result = nil then Exit;
-  
+
   {Set Values}
   Result.SecurityId:=ASecurityId;
   Result.SecurityOffset:=ASecurityOffset;
@@ -19488,10 +19488,10 @@ begin
    begin
     Result.SecurityHash:=ASecurity.SecurityHash;
     Result.SecuritySize:=(ntfsSecurityItemSize - ntfsSecuritySize) + ASecurity.SecuritySize;
-    
+
     {Get Previous}
     Previous:=GetPrevious(Result);
-    
+
     {Insert SecurityItem}
     Insert(Previous,Result);
    end
@@ -19514,7 +19514,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not ReaderLock then Exit;
  try
   {Check SecurityItems}
@@ -19526,7 +19526,7 @@ begin
       Result:=SecurityItem;
       Exit;
      end;
-     
+
     SecurityItem:=TNTFSSecurityItem(SecurityItem.Next);
    end;
  finally
@@ -19543,15 +19543,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AWrite then
   begin
    if not WriterLock then Exit;
   end
  else
-  begin 
+  begin
    if not ReaderLock then Exit;
-  end; 
+  end;
  try
   {Check SecurityItems}
   SecurityItem:=TNTFSSecurityItem(First);
@@ -19562,7 +19562,7 @@ begin
       Result:=SecurityItem;
       Exit;
      end;
-     
+
     SecurityItem:=TNTFSSecurityItem(SecurityItem.Next);
    end;
  finally
@@ -19571,9 +19571,9 @@ begin
     WriterUnlock;
    end
   else
-   begin  
+   begin
     ReaderUnlock;
-   end; 
+   end;
  end;
 end;
 
@@ -19584,7 +19584,7 @@ function TNTFSSecurityItems.UpdateSecurityItem(ASecurityItem:TNTFSSecurityItem;A
 begin
  {}
  Result:=False;
- 
+
  //To Do //Call SecurityItem.UpdateSecurity, Set Id to supplied, Offset to Existing, Size to supplied + item
 end;
 
@@ -19595,9 +19595,9 @@ function TNTFSSecurityItems.DeleteSecurityItem(ASecurityItem:TNTFSSecurityItem):
 begin
  {}
  Result:=False;
- 
+
  if ASecurityItem = nil then Exit;
- 
+
  //To Do //Call SecurityItem.DeleteSecurity, Set Id to 0, Offset to Existing, Size to Existing
 end;
 
@@ -19608,20 +19608,20 @@ function TNTFSSecurityItems.RemoveSecurityItem(ASecurityItem:TNTFSSecurityItem;A
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   if ASecurityItem = nil then Exit;
-  
+
   {Remove Security}
   ASecurityItem.RemoveSecurity(AFree);
-  
+
   {Remove SecurityItem}
   Remove(ASecurityItem);
-  
+
   {Free SecurityItem}
   ASecurityItem.Free;
-  
+
   Result:=True;
  finally
   WriterUnlock;
@@ -19636,14 +19636,14 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   SecurityItem:=TNTFSSecurityItem(First);
   while SecurityItem <> nil do
    begin
     Inc(Result,SecurityItem.SecuritySize); //To Do //NTFSRoundLongWordTo16Bytes ? //What about Mirror entries ?
-    
+
     SecurityItem:=TNTFSSecurityItem(SecurityItem.Next);                                 //Dont round Last Mirror Item ?
    end;
  finally
@@ -19679,21 +19679,21 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   {Check Version}
   Lower:=ntfsDefaultSecurityId100;
   Upper:=ntfsDefaultSecurityId101; {ntfsDefaultSecurityId103}
   Offset:=0;
-  
+
   {Create Security Items}
   for Count:=Lower to Upper do
    begin
     {Check Security Item}
     SecurityItem:=GetSecurityItemEx(Count,True);
     if SecurityItem <> nil then Exit;
-    
+
     SecurityItem:=CreateSecurityItem(False);
     if not SecurityItem.Init(Count,AVersion) then
      begin
@@ -19705,13 +19705,13 @@ begin
       {Update Offset}
       SecurityItem.SecurityOffset:=Offset;
       Inc(Offset,NTFSRoundLongWordTo16Bytes(SecurityItem.SecuritySize));
-      
+
       {$IFDEF NTFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSSecurityItems.Init - Id = ' + IntToHex(SecurityItem.SecurityId,8) + ' Hash = ' + IntToHex(SecurityItem.SecurityHash,8) + ' Offset = ' + IntToHex(SecurityItem.SecurityOffset,16) + ' Size = ' + IntToHex(SecurityItem.SecuritySize,8));
       {$ENDIF}
      end;
    end;
-   
+
   Result:=True;
  finally
   WriterUnlock;
@@ -19731,27 +19731,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   if ABuffer = nil then Exit;
-  
+
   {Check Size}
   while ASize >= ntfsSecurityItemSize do
    begin
     {Get Data}
     SecurityItemData:=PNTFSSecurityItemData(PtrUInt(ABuffer) + AOffset);
-    
+
     {Check Last}
     if SecurityItemData.SecuritySize = 0 then Break;
     {if SecurityItemData.SecurityOffset <> AOffset then Break;} {Offset can be zero}
     if (SecurityItemData.SecurityOffset <> 0) and (SecurityItemData.SecurityOffset <> AOffset) then Break;
     {if (SecurityItemData.SecurityId <> 0) and (SecurityItemData.SecurityOffset <> AOffset) then Break;} {Is this a better test}
-    
+
     {Create SecurityItem}
     SecurityItem:=CreateSecurityItem(False);
     if SecurityItem = nil then Exit;
-    
+
     {Read SecurityItem}
     if not SecurityItem.ReadSecurityItem(ABuffer,AOffset,ASize,AVersion) then
      begin
@@ -19771,37 +19771,37 @@ begin
         end;
      {$ENDIF}
      end;
- 
+
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                          AOffset = ' + IntToHex(AOffset,8));
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                            ASize = ' + IntToHex(ASize,8));
     {$ENDIF}
-    
+
     {Check Size}
     if ASize >= ntfsSecurityItemSize then
      begin
       {Check Offset}
       Offset:=(AOffset and ntfsSecurityOffsetMask);   {Get the offset within this Section}
       Section:=(AOffset and ntfsSecuritySectionMask); {Get the starting offset of this Section}
-      
+
       {$IFDEF NTFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('                                           Offset = ' + IntToHex(Offset,8));
       if FILESYS_LOG_ENABLED then FileSysLogDebug('                                          Section = ' + IntToHex(Section,8));
       {$ENDIF}
-      
+
       if (Offset = 0) and ((Section and ntfsSecurityMirrorTest) = ntfsSecurityMirrorTest) then
        begin
         {Update Offset}
         Size:=(ntfsSecuritySectionOffset - Offset);  {Get the bytes remaining before the start of the next Section}
-        
+
         {$IFDEF NTFS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('                                  Size (Boundary) = ' + IntToHex(Size,8));
         {$ENDIF}
-        
+
         if Size > ASize then Break;
         Dec(ASize,Size);
         Inc(AOffset,Size);
-        
+
         {$IFDEF NTFS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('                                AOffset (Updated) = ' + IntToHex(AOffset,8));
         if FILESYS_LOG_ENABLED then FileSysLogDebug('                                  ASize (Updated) = ' + IntToHex(ASize,8));
@@ -19811,21 +19811,21 @@ begin
        begin
         {Check Data}
         SecurityItemData:=PNTFSSecurityItemData(PtrUInt(ABuffer) + AOffset);
-        
+
         {Check Last}
         if SecurityItemData.SecuritySize = 0 then
          begin
           {Update Offset}
           Size:=(ntfsSecuritySectionOffset - Offset); {Get the bytes remaining before the end of this Section}
-          
+
           {$IFDEF NTFS_DEBUG}
           if FILESYS_LOG_ENABLED then FileSysLogDebug('                                     Size (Below) = ' + IntToHex(Size,8));
           {$ENDIF}
-          
+
           if (Size + ntfsSecuritySectionOffset) > ASize then Break;
           Dec(ASize,Size + ntfsSecuritySectionOffset);
           Inc(AOffset,Size + ntfsSecuritySectionOffset);
-          
+
           {$IFDEF NTFS_DEBUG}
           if FILESYS_LOG_ENABLED then FileSysLogDebug('                                AOffset (Updated) = ' + IntToHex(AOffset,8));
           if FILESYS_LOG_ENABLED then FileSysLogDebug('                                  ASize (Updated) = ' + IntToHex(ASize,8));
@@ -19834,11 +19834,11 @@ begin
        end;
      end;
    end;
-   
+
   {$IFDEF NTFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSSecurityItems.ReadSecurityItems - Success');
   {$ENDIF}
-  
+
   Result:=True;
  finally
   WriterUnlock;
@@ -19857,14 +19857,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if ABuffer = nil then Exit;
-  
+
   {Get SecurityItem}
   SecurityItem:=TNTFSSecurityItem(First);
-  
+
   {Write SecurityItems}
   while SecurityItem <> nil do
    begin
@@ -19874,51 +19874,51 @@ begin
     {if SecurityItem.SecurityOffset <> AOffset then Exit;} {Offset can be zero}
     if (SecurityItem.SecurityOffset <> 0) and (SecurityItem.SecurityOffset <> AOffset) then Exit;
     {if (SecurityItem.SecurityId <> 0) and (SecurityItem.SecurityOffset <> AOffset) then Exit;} {Is this a better test}
-    
+
     {Write SecurityItem}
     if not SecurityItem.WriteSecurityItem(ABuffer,AOffset,ASize,AVersion) then Exit;
-    
+
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSSecurityItems.WriteSecurityItems - SecurityId = ' + IntToHex(SecurityItem.SecurityId,8));
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                      SecuritySize = ' + IntToHex(SecurityItem.SecuritySize,8));
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                    SecurityOffset = ' + IntToHex(SecurityItem.SecurityOffset,16));
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                      SecurityHash = ' + IntToHex(SecurityItem.SecurityHash,8));
     {$ENDIF}
-    
+
     {Get SecurityItem}
     SecurityItem:=TNTFSSecurityItem(SecurityItem.Next);
     if SecurityItem = nil then Break;
- 
+
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                           AOffset = ' + IntToHex(AOffset,8));
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                                             ASize = ' + IntToHex(ASize,8));
     {$ENDIF}
-    
+
     {Check SecurityItem}
     if SecurityItem.SecurityOffset <> AOffset then
      begin
       {Check Offset}
       Offset:=(AOffset and ntfsSecurityOffsetMask);   {Get the offset within this Section}
       Section:=(AOffset and ntfsSecuritySectionMask); {Get the starting offset of this Section}
-      
+
       {$IFDEF NTFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('                                            Offset = ' + IntToHex(Offset,8));
       if FILESYS_LOG_ENABLED then FileSysLogDebug('                                           Section = ' + IntToHex(Section,8));
       {$ENDIF}
-      
+
       if (Offset = 0) and ((Section and ntfsSecurityMirrorTest) = ntfsSecurityMirrorTest) then
        begin
         {Update Offset}
         Size:=(ntfsSecuritySectionOffset - Offset);  {Get the bytes remaining before the start of the next Section}
-        
+
         {$IFDEF NTFS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   Size (Boundary) = ' + IntToHex(Size,8));
         {$ENDIF}
-        
+
         if Size > ASize then Break;
         Dec(ASize,Size);
         Inc(AOffset,Size);
-        
+
         {$IFDEF NTFS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('                                 AOffset (Updated) = ' + IntToHex(AOffset,8));
         if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   ASize (Updated) = ' + IntToHex(ASize,8));
@@ -19928,15 +19928,15 @@ begin
        begin
         {Update Offset}
         Size:=(ntfsSecuritySectionOffset - Offset); {Get the bytes remaining before the end of this Section}
-        
+
         {$IFDEF NTFS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('                                      Size (Below) = ' + IntToHex(Size,8));
         {$ENDIF}
-        
+
         if (Size + ntfsSecuritySectionOffset) > ASize then Break;
         Dec(ASize,Size + ntfsSecuritySectionOffset);
         Inc(AOffset,Size + ntfsSecuritySectionOffset);
-        
+
         {$IFDEF NTFS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('                                 AOffset (Updated) = ' + IntToHex(AOffset,8));
         if FILESYS_LOG_ENABLED then FileSysLogDebug('                                   ASize (Updated) = ' + IntToHex(ASize,8));
@@ -19944,11 +19944,11 @@ begin
        end;
      end;
    end;
-   
+
   {$IFDEF NTFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSSecurityItems.WriteSecurityItems - Success');
   {$ENDIF}
-  
+
   Result:=True;
  finally
   ReaderUnlock;
@@ -19963,7 +19963,7 @@ begin
  {}
  inherited Create;
  FLocalLock:=ALocalLock;
- 
+
  FSecurity:=nil;
 end;
 
@@ -19974,7 +19974,7 @@ begin
  {}
  if FSecurity <> nil then FSecurity.Free;
  FSecurity:=nil;
- 
+
  FLocalLock:=INVALID_HANDLE_VALUE;
  inherited Destroy;
 end;
@@ -20002,16 +20002,16 @@ function TNTFSSecurityItem.Compare(ASecurityItem:TNTFSSecurityItem):Integer;
 begin
  {}
  Result:=ntfsCompareGreater;
- 
+
  if ASecurityItem = nil then Exit;
- 
+
  {Check Security Offset}
  if ASecurityItem.SecurityOffset = FSecurityOffset then
   begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSSecurityItem.Compare - Offset ' + IntToHex(ASecurityItem.SecurityOffset,16) + ' = ' + IntToHex(FSecurityOffset,16));
    {$ENDIF}
-   
+
    Result:=ntfsCompareEqual;
   end
  else if ASecurityItem.SecurityOffset < FSecurityOffset then
@@ -20019,7 +20019,7 @@ begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSSecurityItem.Compare - Offset ' + IntToHex(ASecurityItem.SecurityOffset,16) + ' < ' + IntToHex(FSecurityOffset,16));
    {$ENDIF}
-   
+
    Result:=ntfsCompareLess;
   end
  else if ASecurityItem.SecurityOffset > FSecurityOffset then
@@ -20027,7 +20027,7 @@ begin
    {$IFDEF NTFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSSecurityItem.Compare - Offset ' + IntToHex(ASecurityItem.SecurityOffset,16) + ' > ' + IntToHex(FSecurityOffset,16));
    {$ENDIF}
-   
+
    Result:=ntfsCompareGreater;
   end
 end;
@@ -20039,12 +20039,12 @@ function TNTFSSecurityItem.CreateSecurity:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FSecurity <> nil then Exit;
- 
+
  {Create Security}
  FSecurity:=TNTFSSecurity.Create(INVALID_HANDLE_VALUE); //To Do //Critical
- 
+
  Result:=True;
 end;
 
@@ -20058,14 +20058,14 @@ begin
   begin
    Result:=CreateSecurity;
    if not Result then Exit;
-   
+
    {Setup Security}
    FSecurity.Control:=SE_SELF_RELATIVE;
   end
  else
   begin
    FSecurity:=ASecurity;
-   
+
    Result:=True;
   end;
 end;
@@ -20076,7 +20076,7 @@ function TNTFSSecurityItem.UpdateSecurity(ASecurity:TNTFSSecurity):Boolean;
 begin
  {}
  Result:=False;
- 
+
  //To Do //Called by UpdateSecurityItem to convert a Blank to an Item
 end;
 
@@ -20086,7 +20086,7 @@ function TNTFSSecurityItem.DeleteSecurity:Boolean;
 begin
  {}
  Result:=False;
- 
+
  //To Do //Called by DeleteSecurityItem to convert an Item to a Blank
                //Delete and Free the Security descriptor
 end;
@@ -20098,7 +20098,7 @@ function TNTFSSecurityItem.RemoveSecurity(AFree:Boolean):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FSecurity = nil then
   begin
    Result:=True;
@@ -20107,7 +20107,7 @@ begin
   begin
    if AFree then FSecurity.Free;
    FSecurity:=nil;
-   
+
    Result:=True;
   end;
 end;
@@ -20150,16 +20150,16 @@ begin
   {Create Security}
   if not CreateSecurity then Exit;
   if FSecurity = nil then Exit;
-  
+
   {Setup Security}
   if not FSecurity.CopyFromDescriptor(Descriptor,{Security.}GetSecurityDescriptorLength(Descriptor)) then Exit; {Security references the internal property}
-  
+
   {Update Item}
   FSecurityHash:=FSecurity.SecurityHash;
   FSecurityId:=ASecurityId;
   FSecurityOffset:=0;
   FSecuritySize:=(ntfsSecurityItemSize - ntfsSecuritySize) + FSecurity.SecuritySize;
-  
+
   Result:=True;
  finally
   NTFSDestroyDefaultDescriptor(Descriptor,AVersion);
@@ -20177,18 +20177,18 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Size}
  if ASize >= ntfsSecurityItemSize then
   begin
    {Get Data}
    SecurityItemData:=PNTFSSecurityItemData(PtrUInt(ABuffer) + AOffset);
-   
+
    {Check Last}
    if SecurityItemData.SecuritySize = 0 then Exit;
-   
+
    {Read Data}
    FSecurityHash:=SecurityItemData.SecurityHash;
    FSecurityId:=SecurityItemData.SecurityId;
@@ -20203,10 +20203,10 @@ begin
      {Set Offset}
      Size:=FSecuritySize - (ntfsSecurityItemSize - ntfsSecuritySize);
      Offset:=AOffset + (ntfsSecurityItemSize - ntfsSecuritySize);
-     
+
      {Create Security}
      if not CreateSecurity then Exit;
-     
+
      {Read Security}
      if not FSecurity.ReadSecurity(ABuffer,Offset,Size,AVersion) then Exit;
     end;
@@ -20214,7 +20214,7 @@ begin
    {Update Offset}
    Dec(ASize,NTFSRoundLongWordTo16Bytes(FSecuritySize));
    Inc(AOffset,NTFSRoundLongWordTo16Bytes(FSecuritySize));
-   
+
    Result:=True;
   end;
 end;
@@ -20230,18 +20230,18 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Check Size}
  if ASize >= ntfsSecurityItemSize then
   begin
    {Get Data}
    SecurityItemData:=PNTFSSecurityItemData(PtrUInt(ABuffer) + AOffset);
-   
+
    {Check Size}
    if FSecuritySize = 0 then Exit;
-   
+
    {Write Data}
    SecurityItemData.SecurityHash:=FSecurityHash;
    SecurityItemData.SecurityId:=FSecurityId;
@@ -20256,10 +20256,10 @@ begin
      {Set Offset}
      Size:=FSecuritySize - (ntfsSecurityItemSize - ntfsSecuritySize);
      Offset:=AOffset + (ntfsSecurityItemSize - ntfsSecuritySize);
-     
+
      {Check Security}
      if FSecurity = nil then Exit;
-     
+
      {Write Security}
      if not FSecurity.WriteSecurity(ABuffer,Offset,Size,AVersion) then Exit;
     end;
@@ -20269,7 +20269,7 @@ begin
     begin
      {Get Data (Mirror)}
      SecurityItemData:=PNTFSSecurityItemData(PtrUInt(ABuffer) + AOffset + ntfsSecurityMirrorOffset);
-     
+
      {Write Data (Mirror)}
      SecurityItemData.SecurityHash:=FSecurityHash;
      SecurityItemData.SecurityId:=FSecurityId;
@@ -20284,10 +20284,10 @@ begin
        {Set Offset (Mirror)}
        Size:=FSecuritySize - (ntfsSecurityItemSize - ntfsSecuritySize);
        Offset:=AOffset  + ntfsSecurityMirrorOffset + (ntfsSecurityItemSize - ntfsSecuritySize);
-       
+
        {Check Security}
        if FSecurity = nil then Exit;
-       
+
        {Write Security (Mirror)}
        if not FSecurity.WriteSecurity(ABuffer,Offset,Size,AVersion) then Exit;
       end;
@@ -20296,7 +20296,7 @@ begin
    {Update Offset}
    Dec(ASize,NTFSRoundLongWordTo16Bytes(FSecuritySize));
    Inc(AOffset,NTFSRoundLongWordTo16Bytes(FSecuritySize));
-   
+
    Result:=True;
   end;
 end;
@@ -20322,10 +20322,10 @@ constructor TNTFSSecurity.CreateFromSecurity(ALocalLock:TMutexHandle;ASecurity:T
 begin
  {}
  Create(ALocalLock);
- 
+
  if ASecurity = nil then Exit;
  if not(ASecurity is TNTFSSecurity) then Exit;
- 
+
  Revision:=TNTFSSecurity(ASecurity).Revision;
  Control:=TNTFSSecurity(ASecurity).Control;
  Sacl:=TNTFSSecurity(ASecurity).Sacl;
@@ -20343,12 +20343,12 @@ var
 begin
  {}
  Create(ALocalLock);
- 
+
  if ADescriptor = nil then Exit;
 
  Size:=Security.GetSecurityDescriptorLength(ADescriptor);
  if Size < ntfsSecuritySize then Exit;
- 
+
  Offset:=0;
  ReadSecurity(ADescriptor,Offset,Size,ntfsNTFS31); //To Do //AVersion ? //From where ?
 end;
@@ -20513,9 +20513,9 @@ function TNTFSSecurity.SaclSize:Word;
 begin
  {}
  Result:=0;
- 
+
  if FSacl = nil then Exit;
- 
+
  Result:=FSacl.AclSize;
 end;
 
@@ -20525,9 +20525,9 @@ function TNTFSSecurity.DaclSize:Word;
 begin
  {}
  Result:=0;
- 
+
  if FDacl = nil then Exit;
- 
+
  Result:=FDacl.AclSize;
 end;
 
@@ -20537,9 +20537,9 @@ function TNTFSSecurity.OwnerSize:Word;
 begin
  {}
  Result:=0;
- 
+
  if FOwner = nil then Exit;
- 
+
  Result:=Security.GetLengthSid(FOwner);
 end;
 
@@ -20549,9 +20549,9 @@ function TNTFSSecurity.GroupSize:Word;
 begin
  {}
  Result:=0;
- 
+
  if FGroup = nil then Exit;
- 
+
  Result:=Security.GetLengthSid(FGroup);
 end;
 
@@ -20562,9 +20562,9 @@ function TNTFSSecurity.SaclOffset:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FSacl = nil then Exit;
- 
+
  Result:=ntfsSecuritySize;
 end;
 
@@ -20575,11 +20575,11 @@ function TNTFSSecurity.DaclOffset:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FDacl = nil then Exit;
- 
+
  Result:=ntfsSecuritySize;
- 
+
  if FSacl <> nil then Inc(Result,SaclSize);
 end;
 
@@ -20590,11 +20590,11 @@ function TNTFSSecurity.OwnerOffset:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FOwner = nil then Exit;
- 
+
  Result:=ntfsSecuritySize;
- 
+
  if FSacl <> nil then Inc(Result,SaclSize);
  if FDacl <> nil then Inc(Result,DaclSize);
 end;
@@ -20606,11 +20606,11 @@ function TNTFSSecurity.GroupOffset:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FGroup = nil then Exit;
- 
+
  Result:=ntfsSecuritySize;
- 
+
  if FSacl <> nil then Inc(Result,SaclSize);
  if FDacl <> nil then Inc(Result,DaclSize);
  if FOwner <> nil then Inc(Result,OwnerSize);
@@ -20624,7 +20624,7 @@ function TNTFSSecurity.SaclOffsetEx(ALocal:Boolean):LongWord;  {Offset to SACL}
 begin
  {}
  Result:=0;
- 
+
  if FSacl = nil then Exit;
 
  if ALocal then
@@ -20634,7 +20634,7 @@ begin
  else
   begin
    Result:=ntfsSecuritySize;
-   
+
    if FOwner <> nil then Inc(Result,OwnerSize);
    if FGroup <> nil then Inc(Result,GroupSize);
    if FDacl <> nil then Inc(Result,DaclSize);
@@ -20649,7 +20649,7 @@ function TNTFSSecurity.DaclOffsetEx(ALocal:Boolean):LongWord;  {Offset to DACL}
 begin
  {}
  Result:=0;
- 
+
  if FDacl = nil then Exit;
 
  if ALocal then
@@ -20659,7 +20659,7 @@ begin
  else
   begin
    Result:=ntfsSecuritySize;
-   
+
    if FOwner <> nil then Inc(Result,OwnerSize);
    if FGroup <> nil then Inc(Result,GroupSize);
   end;
@@ -20673,7 +20673,7 @@ function TNTFSSecurity.OwnerOffsetEx(ALocal:Boolean):LongWord; {Offset to Owner 
 begin
  {}
  Result:=0;
- 
+
  if FOwner = nil then Exit;
 
  if ALocal then
@@ -20694,7 +20694,7 @@ function TNTFSSecurity.GroupOffsetEx(ALocal:Boolean):LongWord; {Offset to Group 
 begin
  {}
  Result:=0;
- 
+
  if FGroup = nil then Exit;
 
  if ALocal then
@@ -20704,7 +20704,7 @@ begin
  else
   begin
    Result:=ntfsSecuritySize;
-   
+
    if FOwner <> nil then Inc(Result,OwnerSize);
   end;
 end;
@@ -20730,13 +20730,13 @@ var
 begin
  {}
  Result:=0;
- 
+
  Descriptor:=SecurityDescriptor;
  if Descriptor = nil then Exit;
  try
   Size:=Security.GetSecurityDescriptorLength(Descriptor);
   if Size < ntfsSecuritySize then Exit;
-  
+
   Result:=NTFSGenerateSecurityHash(Descriptor,Size);
  finally
   FreeMem(Descriptor);
@@ -20752,14 +20752,14 @@ var
 begin
  {}
  Result:=nil;
- 
+
  Size:=SecuritySize;
  if Size < ntfsSecuritySize then Exit;
- 
+
  Offset:=0;
  Result:=AllocMem(Size);
  if Result = nil then Exit;
- 
+
  if not WriteSecurity(Result,Offset,Size,ntfsNTFS31) then //To Do //AVersion ? //From where ?
   begin
    FreeMem(Result);
@@ -20777,7 +20777,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if ALocal then
   begin
    Result:=SecurityDescriptor;
@@ -20786,11 +20786,11 @@ begin
   begin
    Size:=SecuritySize;
    if Size < ntfsSecuritySize then Exit;
-   
+
    Offset:=0;
    Result:=AllocMem(Size);
    if Result = nil then Exit;
-   
+
    if not WriteSecurityEx(Result,Offset,Size,ALocal,ntfsNTFS31) then //To Do //AVersion ? //From where ?
     begin
      FreeMem(Result);
@@ -20807,7 +20807,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get Descriptor}
  Descriptor:=SecurityDescriptor;
  if Descriptor = nil then Exit;
@@ -20830,7 +20830,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get Descriptor}
  Descriptor:=SecurityDescriptor;
  if Descriptor = nil then Exit;
@@ -20851,7 +20851,7 @@ function TNTFSSecurity.ReleaseDescriptor(ADescriptor:Pointer;AInherited,AMerged:
 begin
  {}
  Result:=False;
- 
+
  if ADescriptor = nil then Exit;
 
  if AInherited then
@@ -20865,7 +20865,7 @@ begin
  else
   begin
    FreeMem(ADescriptor);
-   
+
    Result:=True;
   end;
 end;
@@ -20876,7 +20876,7 @@ function TNTFSSecurity.CopyToSecurity(ASecurity:TDiskSecurity):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if ASecurity = nil then Exit;
  if not(ASecurity is TNTFSSecurity) then Exit;
 
@@ -20886,7 +20886,7 @@ begin
  TNTFSSecurity(ASecurity).Dacl:=Dacl;
  TNTFSSecurity(ASecurity).Owner:=Owner;
  TNTFSSecurity(ASecurity).Group:=Group;
- 
+
  Result:=True;
 end;
 
@@ -20899,13 +20899,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ADescriptor = nil then Exit;
 
  Size:=SecuritySize;
  if ASize < Size then Exit;
  if Size < ntfsSecuritySize then Exit;
- 
+
  Offset:=0;
  if WriteSecurity(ADescriptor,Offset,Size,ntfsNTFS31) then //To Do //AVersion ? //From where ?
   begin
@@ -20923,7 +20923,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ADescriptor = nil then Exit;
 
  if ALocal then
@@ -20935,7 +20935,7 @@ begin
    Size:=SecuritySize;
    if ASize < Size then Exit;
    if Size < ntfsSecuritySize then Exit;
-   
+
    Offset:=0;
    if WriteSecurityEx(ADescriptor,Offset,Size,ALocal,ntfsNTFS31) then //To Do //AVersion ? //From where ?
     begin
@@ -20953,12 +20953,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ADescriptor = nil then Exit;
 
  Size:=ASize;
  if Size < ntfsSecuritySize then Exit;
- 
+
  Offset:=0;
  if ReadSecurity(ADescriptor,Offset,Size,ntfsNTFS31) then //To Do //AVersion ? //From where ?
   begin
@@ -20977,63 +20977,63 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Data}
  SecurityData:=PNTFSSecurityData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsSecuritySize then
   begin
    {Read Data}
    FRevision:=SecurityData.Revision;
    FControl:=SecurityData.Control;
-   
+
    {Check Offset}
    if SecurityData.SaclOffset > 0 then
     begin
      {Get Sacl}
      Acl:=PACL(PtrUInt(ABuffer) + AOffset + SecurityData.SaclOffset);
-     
+
      {Read Sacl}
      SetSacl(Acl);
     end;
-   
+
    {Check Offset}
    if SecurityData.DaclOffset > 0 then
     begin
      {Get Dacl}
      Acl:=PACL(PtrUInt(ABuffer) + AOffset + SecurityData.DaclOffset);
-     
+
      {Read Dacl}
      SetDacl(Acl);
     end;
-   
+
    {Check Offset}
    if SecurityData.OwnerOffset > 0 then
     begin
      {Get Owner}
      Sid:=PSID(PtrUInt(ABuffer) + AOffset + SecurityData.OwnerOffset);
-     
+
      {Read Owner}
      SetOwner(Sid);
     end;
-   
+
    {Check Offset}
    if SecurityData.GroupOffset > 0 then
     begin
      {Get Group}
      Sid:=PSID(PtrUInt(ABuffer) + AOffset + SecurityData.GroupOffset);
-     
+
      {Read Group}
      SetGroup(Sid);
     end;
-   
+
    {Update Offset}
    Dec(ASize,SecuritySize);
    Inc(AOffset,SecuritySize);
-   
+
    Result:=True;
   end;
 end;
@@ -21049,12 +21049,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Get Data}
  SecurityData:=PNTFSSecurityData(PtrUInt(ABuffer) + AOffset);
- 
+
  {Check Size}
  if ASize >= ntfsSecuritySize then
   begin
@@ -21066,7 +21066,7 @@ begin
    SecurityData.DaclOffset:=DaclOffset;
    SecurityData.OwnerOffset:=OwnerOffset;
    SecurityData.GroupOffset:=GroupOffset;
-   
+
    {Check Object}
    if FSacl <> nil then
     begin
@@ -21074,7 +21074,7 @@ begin
      Acl:=PACL(PtrUInt(ABuffer) + AOffset + SecurityData.SaclOffset);
      System.Move(FSacl^,Acl^,SaclSize);
     end;
-   
+
    {Check Object}
    if FDacl <> nil then
     begin
@@ -21082,7 +21082,7 @@ begin
      Acl:=PACL(PtrUInt(ABuffer) + AOffset + SecurityData.DaclOffset);
      System.Move(FDacl^,Acl^,DaclSize);
     end;
-   
+
    {Check Object}
    if FOwner <> nil then
     begin
@@ -21090,7 +21090,7 @@ begin
      Sid:=PSID(PtrUInt(ABuffer) + AOffset + SecurityData.OwnerOffset);
      System.Move(FOwner^,Sid^,OwnerSize);
     end;
-   
+
    {Check Object}
    if FGroup <> nil then
     begin
@@ -21098,11 +21098,11 @@ begin
      Sid:=PSID(PtrUInt(ABuffer) + AOffset + SecurityData.GroupOffset);
      System.Move(FGroup^,Sid^,GroupSize);
     end;
-   
+
    {Update Offset}
    Dec(ASize,SecuritySize);
    Inc(AOffset,SecuritySize);
-   
+
    Result:=True;
   end;
 end;
@@ -21119,7 +21119,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
 
  if ALocal then
@@ -21130,7 +21130,7 @@ begin
   begin
    {Get Data}
    SecurityData:=PNTFSSecurityData(PtrUInt(ABuffer) + AOffset);
-   
+
    {Check Size}
    if ASize >= ntfsSecuritySize then
     begin
@@ -21142,7 +21142,7 @@ begin
      SecurityData.DaclOffset:=DaclOffsetEx(ALocal);
      SecurityData.OwnerOffset:=OwnerOffsetEx(ALocal);
      SecurityData.GroupOffset:=GroupOffsetEx(ALocal);
-     
+
      {Check Object}
      if FSacl <> nil then
       begin
@@ -21150,7 +21150,7 @@ begin
        Acl:=PACL(PtrUInt(ABuffer) + AOffset + SecurityData.SaclOffset);
        System.Move(FSacl^,Acl^,SaclSize);
       end;
-     
+
      {Check Object}
      if FDacl <> nil then
       begin
@@ -21158,7 +21158,7 @@ begin
        Acl:=PACL(PtrUInt(ABuffer) + AOffset + SecurityData.DaclOffset);
        System.Move(FDacl^,Acl^,DaclSize);
       end;
-     
+
      {Check Object}
      if FOwner <> nil then
       begin
@@ -21166,7 +21166,7 @@ begin
        Sid:=PSID(PtrUInt(ABuffer) + AOffset + SecurityData.OwnerOffset);
        System.Move(FOwner^,Sid^,OwnerSize);
       end;
-     
+
      {Check Object}
      if FGroup <> nil then
       begin
@@ -21174,11 +21174,11 @@ begin
        Sid:=PSID(PtrUInt(ABuffer) + AOffset + SecurityData.GroupOffset);
        System.Move(FGroup^,Sid^,GroupSize);
       end;
-     
+
      {Update Offset}
      Dec(ASize,SecuritySize);
      Inc(AOffset,SecuritySize);
-     
+
      Result:=True;
     end;
   end;
@@ -21187,4 +21187,4 @@ end;
 {==============================================================================}
 {==============================================================================}
 
-end.      
+end.

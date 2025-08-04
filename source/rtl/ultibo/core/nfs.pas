@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -47,7 +47,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,FileSystem,Sy
 
 //To Do //This unit will provide the NFS client and NFS server (using Winsock2)
                       //As well as the TNFSFileSystem and TNFSRedirector (using FileSystem)
-                      
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -57,8 +57,8 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,FileSystem,Sy
  {NFS specific constants}
 
 //To Do //See: POP3 for framework
-                           
-              
+
+
 {==============================================================================}
 //type
  {NFS specific types}
@@ -70,7 +70,7 @@ var
  NFSInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure NFSInit;
@@ -92,9 +92,9 @@ begin
  {}
  {Check Initialized}
  if NFSInitialized then Exit;
- 
+
  //To Do
- 
+
  NFSInitialized:=True;
 end;
 
@@ -110,7 +110,7 @@ initialization
  NFSInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

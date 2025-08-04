@@ -21,7 +21,7 @@ uses
  rtlconsts,
  getopts,
  lineinfo,
-  
+
  dos,
  ctypes,
  charset,
@@ -29,17 +29,17 @@ uses
  sysconst,
  character,
  fpwidestring,
- 
+
  {Ultibo Boot/Platform Units (ARM)}
  platformarm,
- 
+
  {Ultibo Boot/Platform Units (ARMv6)}
  bootrpi,
  bcm2835,
  bcm2708,
  platformarmv6,
  platformrpi,
- 
+
  {Ultibo Boot/Platform Units (ARMv7)}
  bootrpi2,
  bootbpi,
@@ -68,32 +68,32 @@ uses
  platformodroidxu3,
  platformpcduino,
  platformqemuvpb,
- 
+
  {Ultibo Boot/Platform Units (AARCH64)}
  platformaarch64,
- 
+
  {Ultibo Boot/Platform Units (ARMv8)}
  bootrpi3,
  bcm2837,
  bcm2710,
  platformarmv8,
  platformrpi3,
- 
+
  {Ultibo Boot/Platform Units (MIPS)}
  bootci20,
  platformmips,
  platformmips32,
  platformci20,
-                       
+
  {Ultibo Boot/Platform Units (x86)}
  bootpcx86,
  platformx86,
  platformpc,
- 
+
  {Ultibo Boot/Platform Units (x86_64)}
  bootpcx86_64,
  platformx86_64,
- 
+
  {Ultibo RTL Units}
  globalconfig,
  globalconst,
@@ -205,8 +205,8 @@ uses
  shell,
  graphicsconsole,
  syscalls,
- 
- {Ultibo CodePage Units} 
+
+ {Ultibo CodePage Units}
  cp720oem,
  cp737oem,
  cp775oem,
@@ -224,8 +224,8 @@ uses
  cp1256ansi,
  cp1257ansi,
  cp1258ansi,
- 
- {Ultibo Driver Units} 
+
+ {Ultibo Driver Units}
  af16x2lcd,
  ds1307,
  ftdiserial,
@@ -250,33 +250,33 @@ uses
  rtlwifi,
  stmpe,
  usbcdcacm,
- 
- {Ultibo Font Units} 
+
+ {Ultibo Font Units}
  Latin1_8x8,
  Latin1_8x10,
  Latin1_8x12,
  Latin1_8x14,
  Sun_12x22,
- 
- {Ultibo Keymap Units} 
+
+ {Ultibo Keymap Units}
  keymap_de,
  keymap_es,
  keymap_fr,
  keymap_uk,
  keymap_us,
  keymap_us_intl,
- 
- {Ultibo Extra Units} 
+
+ {Ultibo Extra Units}
  ConsoleShell,
  RemoteShell,
  ShellFilesystem,
  ShellUpdate,
  WebStatus,
- 
+
  WiringI2C,
  WiringSerial,
  WiringSPI,
- 
+
  RaspberryPi,
  RaspberryPi2,
  RaspberryPi3,

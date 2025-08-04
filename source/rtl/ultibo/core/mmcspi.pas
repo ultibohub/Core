@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -60,19 +60,19 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,MMC,SPI,SysUt
 //const
  {MMC SPI specific constants}
  //To Do
- 
+
 {==============================================================================}
 //type
  {MMC SPI specific types}
  //To Do
- 
+
 {==============================================================================}
 var
  {MMC SPI specific variables}
  MMCSPIInitialized:Boolean;
- 
+
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure MMCSPIInit;
@@ -100,10 +100,10 @@ begin
  if MMCSPIInitialized then Exit;
 
  //To Do
- 
+
  MMCSPIInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {MMC SPI Functions}
@@ -121,7 +121,7 @@ initialization
  MMCSPIInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

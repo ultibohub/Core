@@ -4901,7 +4901,7 @@ begin
  else
   begin
    {s = 128 * ceil(len(IV)/128) - len(IV)
-		J_0 = GHASH_H(IV || 0^(s+64) || [len(IV)]_64)}
+        J_0 = GHASH_H(IV || 0^(s+64) || [len(IV)]_64)}
 
    GCMGHashStart(J0);
    GCMGHash(H,IV,IVSize,J0);
@@ -4936,9 +4936,9 @@ var
 begin
  {}
  {u = 128 * ceil[len(C)/128] - len(C)
-	v = 128 * ceil[len(A)/128] - len(A)
-	S = GHASH_H(A || 0^v || C || 0^u || [len(A)]64 || [len(C)]64)
-	(i.e., zero padded to block size A || C and lengths of each in bits)}
+    v = 128 * ceil[len(A)/128] - len(A)
+    S = GHASH_H(A || 0^v || C || 0^u || [len(A)]64 || [len(C)]64)
+    (i.e., zero padded to block size A || C and lengths of each in bits)}
 
  GCMGHashStart(S);
  GCMGHash(H,AAD,AADSize,S);
@@ -6680,36 +6680,36 @@ begin
   begin
    {Default Method}
    Result:=False;
-   
+
    if RandomAvailable then
     begin
      {Get Start}
      Offset:=0;
      Remain:=Count;
      Data:=PLongWord(Buffer);
-     
+
      {Get Data}
      while Remain >= SizeOf(LongWord) do
       begin
        {Read LongWord}
        Data[Offset]:=RandomReadLongInt(0);
-       
+
        {Update Position}
        Inc(Offset);
        Dec(Remain,SizeOf(LongWord));
       end;
-    
+
      {Check Remain}
      while Remain > 0 do
       begin
        {Read Byte}
        Buffer[Count - Remain]:=RandomReadLongInt(0);
-       
+
        {Update Position}
        Dec(Remain);
       end;
-      
-     Result:=True; 
+
+     Result:=True;
     end;
   end;
 end;
@@ -6794,7 +6794,7 @@ begin
     CRC:=CRC32Table[(CRC xor Data[1]) and $FF] xor (CRC shr 8);
     CRC:=CRC32Table[(CRC xor Data[2]) and $FF] xor (CRC shr 8);
     CRC:=CRC32Table[(CRC xor Data[3]) and $FF] xor (CRC shr 8);
-    
+
     Inc(Data,4);
     Dec(Size,4);
   end;
@@ -6802,11 +6802,11 @@ begin
   while (Size > 0) do
   begin
     CRC:=CRC32Table[(CRC xor Data^) and $FF] xor (CRC shr 8);
-    
+
     Inc(Data);
     Dec(Size);
   end;
- 
+
  Result:=CRC xor $FFFFFFFF;
 end;
 
@@ -9485,7 +9485,7 @@ begin
  {$ELSE}
  CRC32Table:=GetMem(SizeOf(TCRC32Table));
  if CRC32Table = nil then Exit;
- 
+
  for Index:=0 to 255 do
   begin
    Value:=Index;

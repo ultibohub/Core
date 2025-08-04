@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
- 
+
 IMAP4
 =====
 
@@ -50,9 +50,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils,Classes,Ulti
 {==============================================================================}
 const
  {IMAP4 specific constants}
- 
+
  //To Do //See: POP3 etc for framework
-        
+
  {IMAP4 logging}
  IMAP4_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {IMAP4 debugging messages}
  IMAP4_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {IMAP4 informational messages}
@@ -60,14 +60,14 @@ const
  IMAP4_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {IMAP4 error messages}
  IMAP4_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No IMAP4 messages}
 
-var 
- IMAP4_DEFAULT_LOG_LEVEL:LongWord = IMAP4_LOG_LEVEL_DEBUG; {Minimum level for IMAP4 messages.  Only messages with level greater than or equal to this will be printed} 
- 
-var 
+var
+ IMAP4_DEFAULT_LOG_LEVEL:LongWord = IMAP4_LOG_LEVEL_DEBUG; {Minimum level for IMAP4 messages.  Only messages with level greater than or equal to this will be printed}
+
+var
  {IMAP4 logging}
- IMAP4_LOG_ENABLED:Boolean; 
-        
-              
+ IMAP4_LOG_ENABLED:Boolean;
+
+
 {==============================================================================}
 //type
  {IMAP4 specific types}
@@ -80,13 +80,13 @@ var
  {Helper classes}
 
  {Client classes}
- 
+
  {Server classes}
- 
+
 {==============================================================================}
 {var}
  {IMAP4 specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure IMAP4Init;
@@ -128,7 +128,7 @@ var
 {==============================================================================}
 {==============================================================================}
 {TIMAP4Listener}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -137,10 +137,10 @@ begin
  {}
  {Check Initialized}
  if IMAP4Initialized then Exit;
- 
+
  {Initialize Logging}
- IMAP4_LOG_ENABLED:=(IMAP4_DEFAULT_LOG_LEVEL <> IMAP4_LOG_LEVEL_NONE); 
- 
+ IMAP4_LOG_ENABLED:=(IMAP4_DEFAULT_LOG_LEVEL <> IMAP4_LOG_LEVEL_NONE);
+
  IMAP4Initialized:=True;
 end;
 
@@ -158,7 +158,7 @@ begin
  {}
  {Check Level}
  if Level < IMAP4_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = IMAP4_LOG_LEVEL_DEBUG then
@@ -173,11 +173,11 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'IMAP4: ';
 
- {Output Logging} 
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_IMAP,LogLevelToLoggingSeverity(Level),'IMAP4',WorkBuffer + AText);
 end;
 
@@ -220,7 +220,7 @@ initialization
  IMAP4Init;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

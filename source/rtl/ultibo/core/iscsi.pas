@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -51,9 +51,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Storage,Winso
 //const
  {iSCSI specific constants}
 
-//To Do //A generic iSCSI unit 
-                           
-              
+//To Do //A generic iSCSI unit
+
+
 {==============================================================================}
 //type
  {iSCSI specific types}
@@ -65,7 +65,7 @@ var
  iSCSIInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure iSCSIInit;
@@ -87,9 +87,9 @@ begin
  {}
  {Check Initialized}
  if iSCSIInitialized then Exit;
- 
+
  //To Do
- 
+
  iSCSIInitialized:=True;
 end;
 
@@ -105,7 +105,7 @@ initialization
  iSCSIInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

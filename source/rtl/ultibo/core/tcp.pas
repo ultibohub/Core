@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
- 
- 
+
+
 References
 ==========
 
- 
+
 Transmission Control Protocol
 =============================
 
@@ -59,7 +59,7 @@ Transmission Control Protocol
         GEQ  = (A - B) >= 0
 
         See GlobalSock.pas for actual functions that implement this.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -71,12 +71,12 @@ unit TCP;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,SysUtils,Classes,Network,Transport,Protocol,IP,IPv6,ICMP,ICMPv6,Ultibo,UltiboClasses;
-                                                   
+
 //To Do //Look for:
 
 //Testing
 
-//Critical 
+//Critical
 
 //ScheduleSocket
 
@@ -89,15 +89,15 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,SysUtils,Classes,Network,Tr
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-  
+
 {==============================================================================}
 const
  {TCP specific constants}
  {Note: Some TCP definitions are in the Protocol or IP modules}
  TCP_PROTOCOL_NAME = 'TCP';
- 
+
  TCP_TIMER_INTERVAL = 1;    {1ms timer interval for TCP}
- 
+
  {TCP Constants}
  MIN_TCP_PACKET = 20;       {Not Counting Adapter and Transport Header}
  MAX_TCP_PACKET = 1480;     {Not Counting Adapter and Transport Header}
@@ -110,21 +110,21 @@ const
  TCP_TIMEOUT = 0;           {Wait forever on a TCP Read/Write}
  TCP_BUFFER_SIZE = 262144;  {65536;} {TCP Send/Receive Buffer Sizes}
  TCP_WINDOW_SIZE = 64240;   {Sliding Window Receive Size (44 x MSS)}
- TCP_INITIAL_WINDOW = 8192; {Initial Window to advertise in SYN packet} 
- 
+ TCP_INITIAL_WINDOW = 8192; {Initial Window to advertise in SYN packet}
+
  TCP_TIMEOUT_OFFSET = 10;   {How much time offset to allow from the designated value}
- 
+
  TCP_ADVERT_TIMEOUT = 100;  {Time to wait before sending a window size update after closing the receive window}
- 
+
  TCP_WINDOW_TIMEOUT = 5000; {Time to wait before probing small/zero Window}
  TCP_ACK_TIMEOUT = 200;     {Max Delayed Ack Time}
 
  TCP_CONNECT_COUNT = 3;     {Number of Connect retries (on RST) before Failure}
  TCP_RESTART_TIMEOUT = 400; {Timeout between Connect retries (Milliseconds)}
- 
+
  TCP_RETRY_COUNT = 10;      {Number of Retransmits before Reset}
  TCP_RETRY_TIMEOUT:array[1..TCP_RETRY_COUNT] of LongWord = (250,500,1000,2000,4000,8000,15000,30000,60000,120000);
- 
+
  TCP_KEEPALIVE_COUNT = 3;   {Number of Failed Keepalives before Reset}
  TCP_KEEPALIVE_TIMEOUT:array[1..TCP_KEEPALIVE_COUNT] of LongWord = (600000,60000,60000);
 
@@ -180,8 +180,8 @@ const
  INIT_VJSA  = 220;
 
  TCP_PORT_START = 49152;   {First dynamic port (Previously 1024)} {As per IANA assignment}
- TCP_PORT_STOP  = 65534;   {Last dynamic port (Previously 5000)}  {Short of IANA assignment to allow for rollover} 
-  
+ TCP_PORT_STOP  = 65534;   {Last dynamic port (Previously 5000)}  {Short of IANA assignment to allow for rollover}
+
 {==============================================================================}
 type
  {TCP specific types}
@@ -216,10 +216,10 @@ type
   Timeout:Int64;           {Transmit (Send) / Acknowledge (Recv) Timeout}
   Prev:PTCPSegment;        {Pointer to Prev Segment}
   Next:PTCPSegment;        {Pointer to Next Segment}
-  
+
   Item:TSocketTimerItem;   {Socket Timer Item for this Segment}
  end;
-  
+
 {==============================================================================}
 type
  {TCP specific classes}
@@ -244,9 +244,9 @@ type
    FMinBacklog:Integer;
    FMaxBacklog:Integer;
    FReceiveBacklog:Integer;
-   
+
    {Status Variables}
-      
+
    {Internal Methods}
    function PacketHandler(AHandle:THandle;ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean;
    function SegmentHandler(ASocket:TTCPSocket;ASource,ADest,APacket:Pointer;ASize:Integer):Boolean;
@@ -299,14 +299,14 @@ type
    {Public Methods}
    function AddTransport(ATransport:TNetworkTransport):Boolean; override;
    function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
-   
+
    function FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket; override;
    procedure FlushSockets(All:Boolean); override;
-   
+
    function StartProtocol:Boolean; override;
    function StopProtocol:Boolean; override;
    function ProcessProtocol:Boolean; override;
-   
+
    function ProcessSockets:Boolean; override;
    function ProcessSocket(ASocket:TProtocolSocket):Boolean; override;
  end;
@@ -320,7 +320,7 @@ type
    destructor Destroy; override;
   private
    {Internal Variables}
-   
+
    {TCP Layer Variables}
    FBackLog:Integer;          {Backlog size of Listen/Accept Queue}
    FListener:TProtocolSocket; {The Listener socket for this socket (If applicable)}
@@ -330,7 +330,7 @@ type
    {Data Layer Variables}
    FSendData:TTCPSendBuffer;
    FRecvData:TTCPRecvBuffer;
-   
+
    {Internal Methods}
    procedure SetBackLog(ABackLog:Integer);
    procedure SetListener(AListener:TProtocolSocket);
@@ -376,7 +376,7 @@ type
 
    {Socket States}
    procedure SetState(AState:LongWord);
-   
+
    function GetListening:Boolean;
    procedure SetListening(AValue:Boolean);
    //To Do //
@@ -438,11 +438,11 @@ type
    {TCP Layer Variables}
    FMaxSeg:Word;          {MSS Option in TCP Header} {MSS we send to Remote}
    FWindowScale:Byte;     {Window Scale Option in TCP Header} {Window Scale we send to Remote}
-   
+
    {Internal Methods}
-   procedure SetMaxSeg(AMaxSeg:Word); 
+   procedure SetMaxSeg(AMaxSeg:Word);
    procedure SetWindowScale(AWindowScale:Byte);
-   
+
    function GetOptions:Pointer;
    function GetNoDelay:Boolean;
    procedure SetNoDelay(ANoDelay:Boolean);
@@ -523,7 +523,7 @@ type
 
    {Public Methods}
    function CheckIdle:Boolean;
-   
+
    function SynAcknowledged:Boolean;
    function FinAcknowledged:Boolean;
 
@@ -588,7 +588,7 @@ type
    WindowSize:LongWord;        {Local Window Size (RCV.WND)}
    WindowScale:Byte;           {Local Window Scale}
    LastWindow:LongWord;        {Last Window value sent to Remote}
-   
+
    SynSequence:LongWord;       {Sequence number of remote SYN}
    FinSequence:LongWord;       {Sequence number of remote FIN}
 
@@ -613,11 +613,11 @@ type
    function TimestampSegment(AOptions:Pointer;var AOffset:Word):Boolean;
    function SelectiveAckSegments(AOptions:Pointer;var AOffset:Word):Boolean;
  end;
-  
+
 {==============================================================================}
 {var}
  {TCP specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure TCPInit;
@@ -634,7 +634,7 @@ function GetTCPDataLength(AFamily:Word;ABuffer:Pointer):Word;
 
 function ChecksumTCPRecv(AFamily:Word;APseudo:PIPPseudo;ABuffer:Pointer;AOffset,ALength:Word):Word;
 function ChecksumTCPSend(AFamily:Word;APseudo:PIPPseudo;AHeader:PTCPHeader;AOptions,AData:Pointer;AOptionsLength,ADataLength:Word):Word;
-  
+
 {==============================================================================}
 {TCP Helper Functions}
 
@@ -667,10 +667,10 @@ begin
  WriterLock;
  try
   Socket:=nil;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -715,21 +715,21 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: PacketHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Dest}
  {if ADest = nil then Exit;} {Not Used}
- 
+
  {Check Source}
- {if ASource = nil then Exit;} {Not Used} 
-  
+ {if ASource = nil then Exit;} {Not Used}
+
  {Check Packet}
  if APacket = nil then Exit;
- 
+
  {Get Transport}
  Transport:=TTCPProtocolTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
@@ -737,17 +737,17 @@ begin
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Family = ' + AddressFamilyToString(Transport.Transport.Family));
   {$ENDIF}
- 
+
   {Check Transport Family}
   case Transport.Transport.Family of
    AF_INET:begin
-     {Get Header}  
+     {Get Header}
      IP:=PIPHeader(APacket);
-    
+
      {$IFDEF TCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Protocol = ' + ProtocolToString(Transport.Protocol));
      {$ENDIF}
-    
+
      {Check Protocol}
      case Transport.Protocol of
       IPPROTO_TCP:begin
@@ -756,22 +756,22 @@ begin
          begin
           {Get Header}
           TCP:=PTCPHeader(PtrUInt(IP) + GetTCPHeaderOffset(AF_INET,IP));
-          
+
           {Set the Ports to Host order}
           TCP.DestPort:=WordBEtoN(TCP.DestPort);
           TCP.SourcePort:=WordBEtoN(TCP.SourcePort);
-          
+
           {$IFDEF TCP_DEBUG}
           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  DestPort = ' + IntToStr(TCP.DestPort));
           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  SourcePort = ' + IntToStr(TCP.SourcePort));
           {$ENDIF}
-          
+
           {Set the Fields to Host order}
           TCP.Sequence:=LongWordBEtoN(TCP.Sequence);
           TCP.Acknowledge:=LongWordBEtoN(TCP.Acknowledge);
           TCP.WindowSize:=WordBEtoN(TCP.WindowSize);
           TCP.Urgent:=WordBEtoN(TCP.Urgent);
-          
+
           {Check for a Connected Socket}
           Socket:=TTCPSocket(FindSocket(AF_INET,SOCK_STREAM,IPPROTO_TCP,@IP.DestIP,@IP.SourceIP,TCP.DestPort,TCP.SourcePort,ABroadcast,False,True,NETWORK_LOCK_READ));
           if Socket = nil then
@@ -786,11 +786,11 @@ begin
              begin
               {Process Segment}
               SegmentHandler(Socket,@IP.SourceIP,@IP.DestIP,IP,ASize);
-              
+
               {Return True even if the Handler failed (eg Sequence/Acknowledge is wrong, Socket is Closed etc)}
               Result:=True;
              end;
-            
+
             {Unlock Socket}
             Socket.ReaderUnlock;
            end
@@ -801,13 +801,13 @@ begin
              begin
               {Lock Socket}
               Transport.Socket.ReaderLock;
-              
+
               {Send Reset}
               ResetHandler(Transport.Socket,@IP.SourceIP,@IP.DestIP,IP,ASize);
-              
+
               {Return True even if the Handler failed (eg Reset was Set etc)}
               Result:=True;
-              
+
               {Unlock Socket}
               Transport.Socket.ReaderUnlock;
              end;
@@ -825,7 +825,7 @@ begin
          begin
           {Get Header}
           ICMP:=PICMPHeader(PtrUInt(IP) + GetICMPHeaderOffset(AF_INET,IP));
-          
+
           {Check for a Type that we handle}
           case ICMP.Unused.ICMPType of
            ICMP_UNREACH:begin
@@ -846,15 +846,15 @@ begin
      end;
     end;
    AF_INET6:begin
-     {Get Header}  
+     {Get Header}
      IP6:=PIP6Header(APacket);
-   
+
      //To Do //Extensions
-     
+
      {$IFDEF TCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Protocol = ' + ProtocolToString(Transport.Protocol));
      {$ENDIF}
-  
+
      {Check Protocol}
      case Transport.Protocol of
       IPPROTO_TCP:begin
@@ -863,17 +863,17 @@ begin
          begin
           {Get Header}
           TCP:=PTCPHeader(PtrUInt(IP6) + GetTCPHeaderOffset(AF_INET6,IP6));
-          
+
           {Set the Ports to Host order}
           TCP.DestPort:=WordBEtoN(TCP.DestPort);
           TCP.SourcePort:=WordBEtoN(TCP.SourcePort);
-          
+
           {Set the Fields to Host order}
           TCP.Sequence:=LongWordBEtoN(TCP.Sequence);
           TCP.Acknowledge:=LongWordBEtoN(TCP.Acknowledge);
           TCP.WindowSize:=WordBEtoN(TCP.WindowSize);
           TCP.Urgent:=WordBEtoN(TCP.Urgent);
-        
+
           {Check for a Connected Socket}
           Socket:=TTCPSocket(FindSocket(AF_INET6,SOCK_STREAM,IPPROTO_TCP,@IP6.DestIP,@IP6.SourceIP,TCP.DestPort,TCP.SourcePort,ABroadcast,False,True,NETWORK_LOCK_READ));
           if Socket = nil then
@@ -888,11 +888,11 @@ begin
              begin
               {Process Segment}
               SegmentHandler(Socket,@IP6.SourceIP,@IP6.DestIP,IP6,ASize);
-              
+
               {Return True even if the Handler failed (eg Sequence/Acknowledge is wrong, Socket is Closed etc)}
               Result:=True;
              end;
-            
+
             {Unlock Socket}
             Socket.ReaderUnlock;
            end
@@ -903,13 +903,13 @@ begin
              begin
               {Lock Socket}
               Transport.Socket.ReaderLock;
-              
+
               {Send Reset}
               ResetHandler(Transport.Socket,@IP6.SourceIP,@IP6.DestIP,IP6,ASize);
-              
+
               {Return True even if the Handler failed (eg Reset was Set etc)}
               Result:=True;
-              
+
               {Unlock Socket}
               Transport.Socket.ReaderUnlock;
              end;
@@ -927,11 +927,11 @@ begin
          begin
           {Get Header}
           ICMP6:=PICMP6Header(PtrUInt(IP6) + GetICMP6HeaderOffset(AF_INET6,IP6));
-        
+
           {Check for a Type that we handle}
 
           //To do
-        
+
          end;
        end;
      end;
@@ -939,7 +939,7 @@ begin
   end;
  finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -963,37 +963,37 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: SegmentHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Packet}
  if APacket = nil then Exit;
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {Get the IP}
     IP:=PIPHeader(APacket);
-    
+
     {Get the TCP}
     TCP:=PTCPHeader(PtrUInt(IP) + GetTCPHeaderOffset(AF_INET,IP));
-    
+
     {Get the Flags}
     Flags:=(TCP.Flags and TCP_FLAG_MASK);
-    
+
     {Get the Options}
     Options:=nil;
     if GetTCPOptionsLength(AF_INET,IP) > 0 then
      begin
       Options:=Pointer(PtrUInt(TCP) + TCP_HEADER_SIZE);
      end;
-    
+
     {Get the Offset and Length}
     Offset:=GetTCPDataOffset(AF_INET,IP);
     Length:=GetTCPDataLength(AF_INET,IP);
@@ -1001,58 +1001,58 @@ begin
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Offset = ' + IntToStr(Offset));
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Length = ' + IntToStr(Length));
     {$ENDIF}
-    
+
     {Check the State}
     case TTCPState(ASocket.ProtocolState).State of
      TCP_STATE_LISTEN:begin
        {Check for RST}
        if (Flags and TCP_FLAG_RST) = TCP_FLAG_RST then Exit;
-       
+
        {Check for FIN}
        if (Flags and TCP_FLAG_FIN) = TCP_FLAG_FIN then Exit;
-       
+
        {Check for ACK}
        if (Flags and TCP_FLAG_ACK) = TCP_FLAG_ACK then
         begin
          {Call Reset Handler}
          Result:=ResetHandler(ASocket,@IP.SourceIP,@IP.DestIP,IP,ASize);
-         
+
          {No further Processing}
          Exit;
         end;
-       
+
        {Check for SYN}
        if (Flags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
         begin
          {Check Backlog}
          if ASocket.AcceptQueue.Count >= ASocket.BackLog then Exit;
-         
+
          {Check Receive Backlog}
          if ASocket.ReceiveQueue.Count >= FReceiveBacklog then Exit;
-         
+
          {Clone Socket}
          Socket:=CloneSocket(ASocket,@IP.DestIP,@IP.SourceIP,TCP.DestPort,TCP.SourcePort,True,NETWORK_LOCK_READ);
          if Socket = nil then Exit;
-         
+
          {Extract the Options (Cloned Socket)}
          if Options <> nil then HandleTCPOptions(Socket,Options,Flags);
-         
+
          {Receive Data (Cloned Socket in TCP_STATE_CLOSED)}
          Result:=Socket.RecvSegment(TCP.Sequence,TCP.Acknowledge,TCP.WindowSize,TCP.Urgent,Flags,Pointer(PtrUInt(IP) + Offset),Length);
-         
+
          {Unlock Socket}
          Socket.ReaderUnlock;
-         
+
          {No further Processing}
          Exit;
         end;
-       
+
        {All others are dropped}
       end;
      TCP_STATE_SYNSENT:begin
        {Check for FIN}
        if (Flags and TCP_FLAG_FIN) = TCP_FLAG_FIN then Exit;
-       
+
        {Check for ACK}
        if (Flags and TCP_FLAG_ACK) = TCP_FLAG_ACK then
         begin
@@ -1061,15 +1061,15 @@ begin
           begin
            {Call Reset Handler}
            Result:=ResetHandler(ASocket,@IP.SourceIP,@IP.DestIP,IP,ASize);
-           
+
            {No further Processing}
            Exit;
           end;
         end;
-        
+
        {Extract the Options}
        if Options <> nil then HandleTCPOptions(ASocket,Options,Flags);
-       
+
        {Receive Data}
        Result:=ASocket.RecvSegment(TCP.Sequence,TCP.Acknowledge,TCP.WindowSize,TCP.Urgent,Flags,Pointer(PtrUInt(IP) + Offset),Length);
       end;
@@ -1079,23 +1079,23 @@ begin
         begin
          {Check for RST}
          if (Flags and TCP_FLAG_RST) = TCP_FLAG_RST then Exit;
-         
+
          {Send an ACK}
          Result:=SendAcknowledge(ASocket);
-         
+
          {No further Processing}
          Exit;
         end;
-       
+
        {Check for SYN}
        if (Flags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
         begin
          {Call Reset Handler}
          Result:=ResetHandler(ASocket,@IP.SourceIP,@IP.DestIP,IP,ASize);
-         
+
          {Continue Processing (Will cause a Close)}
         end;
-       
+
        {Check for ACK}
        if (Flags and TCP_FLAG_ACK) = TCP_FLAG_ACK then
         begin
@@ -1104,15 +1104,15 @@ begin
           begin
            {Call Reset Handler}
            Result:=ResetHandler(ASocket,@IP.SourceIP,@IP.DestIP,IP,ASize);
-           
+
            {No further Processing}
            Exit;
           end;
         end;
-       
+
        {Extract the Options}
        if Options <> nil then HandleTCPOptions(ASocket,Options,Flags);
-       
+
        {Receive Data}
        Result:=ASocket.RecvSegment(TCP.Sequence,TCP.Acknowledge,TCP.WindowSize,TCP.Urgent,Flags,Pointer(PtrUInt(IP) + Offset),Length);
       end;
@@ -1123,23 +1123,23 @@ begin
         begin
          {Check for RST}
          if (Flags and TCP_FLAG_RST) = TCP_FLAG_RST then Exit;
-         
+
          {Send an ACK}
          Result:=SendAcknowledge(ASocket);
-         
+
          {No further Processing}
          Exit;
         end;
-       
+
        {Check for SYN}
        if (Flags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
         begin
          {Call Reset Handler}
          Result:=ResetHandler(ASocket,@IP.SourceIP,@IP.DestIP,IP,ASize);
-         
+
          {Continue Processing (Will cause a Close)}
         end;
-       
+
        {Check for ACK}
        if (Flags and TCP_FLAG_ACK) = TCP_FLAG_ACK then
         begin
@@ -1148,18 +1148,18 @@ begin
           begin
            {Check for RST}
            if (Flags and TCP_FLAG_RST) = TCP_FLAG_RST then Exit;
-           
+
            {Send an ACK}
            Result:=SendAcknowledge(ASocket);
-           
+
            {No further Processing}
            Exit;
           end;
         end;
-       
+
        {Extract the Options}
        if Options <> nil then HandleTCPOptions(ASocket,Options,Flags);
-       
+
        {Receive Data}
        Result:=ASocket.RecvSegment(TCP.Sequence,TCP.Acknowledge,TCP.WindowSize,TCP.Urgent,Flags,Pointer(PtrUInt(IP) + Offset),Length);
       end;
@@ -1168,7 +1168,7 @@ begin
      TCP_STATE_CLOSED:begin
        {Check for FIN}
        if (Flags and TCP_FLAG_FIN) = TCP_FLAG_FIN then Exit;
-       
+
        {Call Reset Handler}
        Result:=ResetHandler(ASocket,@IP.SourceIP,@IP.DestIP,IP,ASize);
       end;
@@ -1177,20 +1177,20 @@ begin
   AF_INET6:begin
     {Get the IP6}
     IP6:=PIP6Header(APacket);
-    
+
     {Get the TCP}
     TCP:=PTCPHeader(PtrUInt(IP6) + GetTCPHeaderOffset(AF_INET6,IP6));
-    
+
     {Get the Flags}
     Flags:=(TCP.Flags and TCP_FLAG_MASK);
-    
+
     {Get the Options}
     Options:=nil;
     if GetTCPOptionsLength(AF_INET6,IP6) > 0 then
      begin
       Options:=Pointer(PtrUInt(TCP) + TCP_HEADER_SIZE);
      end;
-    
+
     {Get the Offset and Length}
     Offset:=GetTCPDataOffset(AF_INET6,IP6);
     Length:=GetTCPDataLength(AF_INET6,IP6);
@@ -1198,11 +1198,11 @@ begin
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Offset = ' + IntToStr(Offset));
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Length = ' + IntToStr(Length));
     {$ENDIF}
-    
+
     {Check the State}
-  
+
     //To do
-    
+
    end;
  end;
 end;
@@ -1225,48 +1225,48 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: ResetHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Packet}
  if APacket = nil then Exit;
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
     {Get the IP}
     IP:=PIPHeader(APacket);
-    
+
     {Get the TCP}
     TCP:=PTCPHeader(PtrUInt(IP) + GetTCPHeaderOffset(AF_INET,IP));
-    
+
     {Get the Flags}
     Flags:=(TCP.Flags and TCP_FLAG_MASK);
-    
+
     {Get the Length}
     Length:=GetTCPDataLength(AF_INET,IP);
-    
+
     {Check for SYN}
     if (Flags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
      begin
       Inc(Length);
      end;
-    
+
     {Check for FIN}
     if (Flags and TCP_FLAG_FIN) = TCP_FLAG_FIN then
      begin
       Inc(Length);
      end;
-    
+
     {Check for RST}
     if (Flags and TCP_FLAG_RST) = TCP_FLAG_RST then Exit;
-    
+
     {Check for ACK}
     if (Flags and TCP_FLAG_ACK) <> TCP_FLAG_ACK then
      begin
@@ -1282,31 +1282,31 @@ begin
   AF_INET6:begin
     {Get the IP6}
     IP6:=PIP6Header(APacket);
-    
+
     {Get the TCP}
     TCP:=PTCPHeader(PtrUInt(IP6) + GetTCPHeaderOffset(AF_INET6,IP6));
-    
+
     {Get the Flags}
     Flags:=(TCP.Flags and TCP_FLAG_MASK);
-    
+
     {Get the Length}
     Length:=GetTCPDataLength(AF_INET6,IP6);
-    
+
     {Check for SYN}
     if (Flags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
      begin
       Inc(Length);
      end;
-    
+
     {Check for FIN}
     if (Flags and TCP_FLAG_FIN) = TCP_FLAG_FIN then
      begin
       Inc(Length);
      end;
-    
+
     {Check for RST}
     if (Flags and TCP_FLAG_RST) = TCP_FLAG_RST then Exit;
-    
+
     {Check for ACK}
     if (Flags and TCP_FLAG_ACK) <> TCP_FLAG_ACK then
      begin
@@ -1333,26 +1333,26 @@ function TTCPProtocol.CloneSocket(ASocket:TTCPSocket;ALocalAddress,ARemoteAddres
 begin
  {}
  Result:=nil;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: CloneSocket');
   {$ENDIF}
-  
+
   {Check Socket}
   if ASocket = nil then Exit;
-  
+
   {Check Address Family}
   case ASocket.Family of
    AF_INET:begin
      {Create the Socket}
      Result:=TTCPSocket.Create(ASocket.Protocol,ASocket.Transport);
-     
+
      {Copy the Socket State}
      Result.SocketState.NonBlocking:=ASocket.SocketState.NonBlocking;
      Result.SocketState.Async:=ASocket.SocketState.Async;
-     
+
      {Copy the Socket Options}
      Result.SocketOptions.Linger:=ASocket.SocketOptions.Linger;
      Result.SocketOptions.SendBuffer:=ASocket.SocketOptions.SendBuffer;
@@ -1368,14 +1368,14 @@ begin
      Result.SocketOptions.DontRoute:=ASocket.SocketOptions.DontRoute;
      Result.SocketOptions.UseLoopback:=ASocket.SocketOptions.UseLoopback;
      Result.SocketOptions.UrgentInline:=ASocket.SocketOptions.UrgentInline;
-     
+
      {Copy the Transport Options}
      TIPOptions(Result.TransportOptions).TOS:=TIPOptions(ASocket.TransportOptions).TOS;
      TIPOptions(Result.TransportOptions).TTL:=TIPOptions(ASocket.TransportOptions).TTL;
      TIPOptions(Result.TransportOptions).Flags:=TIPOptions(ASocket.TransportOptions).Flags;
      {TIPOptions(Result.TransportOptions).Length:=TIPOptions(ASocket.TransportOptions).Length;}
      {TIPOptions(Result.TransportOptions).Options:=TIPOptions(ASocket.TransportOptions).Options;}
-     
+
      {Copy the Protocol Options}
      TTCPOptions(Result.ProtocolOptions).MaxSeg:=TTCPOptions(ASocket.ProtocolOptions).MaxSeg;
      TTCPOptions(Result.ProtocolOptions).NoDelay:=TTCPOptions(ASocket.ProtocolOptions).NoDelay;
@@ -1384,56 +1384,56 @@ begin
      TTCPOptions(Result.ProtocolOptions).BsdUrgent:=TTCPOptions(ASocket.ProtocolOptions).BsdUrgent;
      TTCPOptions(Result.ProtocolOptions).WindowScale:=TTCPOptions(ASocket.ProtocolOptions).WindowScale;
      TTCPOptions(Result.ProtocolOptions).NoSack:=TTCPOptions(ASocket.ProtocolOptions).NoSack;
-     
+
      {Copy the Send Buffer Options}
      Result.SendData.Size:=ASocket.SendData.Size;
      Result.SendData.NoPush:=ASocket.SendData.NoPush;
      Result.SendData.NoSack:=ASocket.SendData.NoSack;
      Result.SendData.NoNagle:=ASocket.SendData.NoNagle;
-     
+
      {Copy the Recv Buffer Options}
      Result.RecvData.Size:=ASocket.RecvData.Size;
      Result.RecvData.MaxSeg:=ASocket.RecvData.MaxSeg;
      Result.RecvData.WindowScale:=ASocket.RecvData.WindowScale;
      Result.RecvData.NoSack:=ASocket.RecvData.NoSack;
-     
+
      {Set the Binding}
      OpenPort(Result,ALocalPort);
      TIPState(Result.TransportState).LocalAddress:=PInAddr(ALocalAddress)^;
      Result.SocketState.LocalAddress:=True;
-     
+
      {Set the Connection}
      Result.ProtocolState.RemotePort:=ARemotePort;
      TIPState(Result.TransportState).RemoteAddress:=PInAddr(ARemoteAddress)^;
      Result.SocketState.RemoteAddress:=True;
-     
+
      {Set the Listener}
      Result.Listener:=ASocket;
-     
+
      {Acquire Lock}
      FSockets.WriterLock;
      try
       {Add the Socket}
       FSockets.Add(Result);
-      
+
       {Add the Socket}
       ASocket.ReceiveQueue.Add(Result);
-      
+
       {Lock Socket}
       if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
-     finally 
+     finally
       {Release Lock}
       FSockets.WriterUnlock;
-     end; 
+     end;
     end;
    AF_INET6:begin
      {Create the Socket}
      Result:=TTCPSocket.Create(ASocket.Protocol,ASocket.Transport);
-     
+
      {Copy the Socket State}
      Result.SocketState.NonBlocking:=ASocket.SocketState.NonBlocking;
      Result.SocketState.Async:=ASocket.SocketState.Async;
-     
+
      {Copy the Socket Options}
      Result.SocketOptions.Linger:=ASocket.SocketOptions.Linger;
      Result.SocketOptions.SendBuffer:=ASocket.SocketOptions.SendBuffer;
@@ -1449,13 +1449,13 @@ begin
      Result.SocketOptions.DontRoute:=ASocket.SocketOptions.DontRoute;
      Result.SocketOptions.UseLoopback:=ASocket.SocketOptions.UseLoopback;
      Result.SocketOptions.UrgentInline:=ASocket.SocketOptions.UrgentInline;
-     
+
      {Copy the Transport Options}
      //To Do
      TIP6Options(Result.TransportOptions).HopLimit:=TIP6Options(ASocket.TransportOptions).HopLimit;
      {TIP6Options(Result.TransportOptions).Length:=TIP6Options(ASocket.TransportOptions).Length;}
      {TIP6Options(Result.TransportOptions).Options:=TIP6Options(ASocket.TransportOptions).Options;}
-     
+
      {Copy the Protocol Options}
      TTCPOptions(Result.ProtocolOptions).MaxSeg:=TTCPOptions(ASocket.ProtocolOptions).MaxSeg;
      TTCPOptions(Result.ProtocolOptions).NoDelay:=TTCPOptions(ASocket.ProtocolOptions).NoDelay;
@@ -1464,50 +1464,50 @@ begin
      TTCPOptions(Result.ProtocolOptions).BsdUrgent:=TTCPOptions(ASocket.ProtocolOptions).BsdUrgent;
      TTCPOptions(Result.ProtocolOptions).WindowScale:=TTCPOptions(ASocket.ProtocolOptions).WindowScale;
      TTCPOptions(Result.ProtocolOptions).NoSack:=TTCPOptions(ASocket.ProtocolOptions).NoSack;
-     
+
      {Copy the Send Buffer Options}
      Result.SendData.NoPush:=ASocket.SendData.NoPush;
      Result.SendData.NoSack:=ASocket.SendData.NoSack;
      Result.SendData.NoNagle:=ASocket.SendData.NoNagle;
-     
+
      {Copy the Recv Buffer Options}
      Result.RecvData.MaxSeg:=ASocket.RecvData.MaxSeg;
      Result.RecvData.WindowScale:=ASocket.RecvData.WindowScale;
      Result.RecvData.NoSack:=ASocket.RecvData.NoSack;
-     
+
      {Set the Binding}
      OpenPort(Result,ALocalPort);
      TIP6State(Result.TransportState).LocalAddress:=PIn6Addr(ALocalAddress)^;
      Result.SocketState.LocalAddress:=True;
-     
+
      {Set the Connection}
      Result.ProtocolState.RemotePort:=ARemotePort;
      TIP6State(Result.TransportState).RemoteAddress:=PIn6Addr(ARemoteAddress)^;
      Result.SocketState.RemoteAddress:=True;
-     
+
      {Set the Listener}
      Result.Listener:=ASocket;
-     
+
      {Acquire Lock}
      FSockets.WriterLock;
      try
       {Add the Socket}
       FSockets.Add(Result);
-      
+
       {Add the Socket}
-      ASocket.ReceiveQueue.Add(Result); 
-      
+      ASocket.ReceiveQueue.Add(Result);
+
       {Lock Socket}
       if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
-     finally 
+     finally
       {Release Lock}
       FSockets.WriterUnlock;
-     end; 
+     end;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1523,24 +1523,24 @@ var
 begin
  {}
  Result:=0;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: GetTCPOptionsSize');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Options}
  if AOptions = nil then Exit;
- 
+
  {Check Offset}
  Offset:=0;
  while Offset < TCP_OPTIONS_SIZE do
   begin
    {Check for End Option}
    if PByte(PtrUInt(AOptions) + Offset)^ = TCPOPT_EOL then Break;
-   
+
    {Check for Noop Option}
    if PByte(PtrUInt(AOptions) + Offset)^ = TCPOPT_NOP then
     begin
@@ -1551,18 +1551,18 @@ begin
     begin
      {Check for end of buffer}
      if (Offset + 1) > (TCP_OPTIONS_SIZE - 1) then Break;
-     
+
      {Get the Length}
      Size:=PByte(PtrUInt(AOptions) + Offset + 1)^;
-     
+
      {Move to Next Option}
      Inc(Offset,Size); {Size includes Option and Size bytes}
     end;
   end;
- 
+
  {Return the Result (Offset + 1 for EOL Option)}
  if Offset > 0 then Result:=Min(Offset + 1,TCP_OPTIONS_SIZE);
- 
+
  {Pad the Result to 32 bits}
  Remain:=(Result mod 4);
  if Remain > 0 then Result:=Result + (4 - Remain);
@@ -1576,29 +1576,29 @@ function TTCPProtocol.CreateTCPOptions(ASocket:TTCPSocket;AOptions:Pointer;AFlag
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: CreateTCPOptions');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Options}
  if AOptions = nil then Exit;
- 
+
  {Erase Options}
  FillChar(AOptions^,TCP_OPTIONS_SIZE,0);
- 
+
  {End of Options}
  PByte(AOptions)^:=TCPOPT_EOL;
- 
+
  {Check the Flags}
  if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
   begin
    {On SYN do MaxSeg / Window Scale / Sack Ok}
    if not InsertTCPOption(ASocket,AOptions,TCPOPT_MAXSEG) then Exit;
-   
+
    {Check the Options}
    //To Do
   end
@@ -1608,7 +1608,7 @@ begin
    {Check the Options}
    //To Do
   end;
- 
+
  Result:=True;
 end;
 
@@ -1620,23 +1620,23 @@ function TTCPProtocol.HandleTCPOptions(ASocket:TTCPSocket;AOptions:Pointer;AFlag
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: HandleTCPOptions');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Options}
  if AOptions = nil then Exit;
- 
+
  {Check the Flags}
  if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
   begin
    {On SYN do MaxSeg / Window Scale / Sack Ok}
    ExtractTCPOption(ASocket,AOptions,TCP_MAXSEG);
-   
+
    {Check the Options}
    //To Do
   end
@@ -1646,7 +1646,7 @@ begin
    {Check the Options}
    //To Do
   end;
- 
+
  Result:=True;
 end;
 
@@ -1662,17 +1662,17 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: InsertTCPOption');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Options}
  if AOptions = nil then Exit;
- 
+
  {Iterate the current Options}
  Offset:=0;
  while Offset < TCP_OPTIONS_SIZE do
@@ -1687,10 +1687,10 @@ begin
     begin
      {Check for end of buffer}
      if (Offset + 1) > (TCP_OPTIONS_SIZE - 1) then Exit;
-     
+
      {Get the Length}
      Size:=PByte(PtrUInt(AOptions) + Offset + 1)^;
-     
+
      {Check for End Option}
      if PByte(PtrUInt(AOptions) + Offset)^ = TCPOPT_EOL then
       begin
@@ -1700,33 +1700,33 @@ begin
           {Max Seg - Size = 2 + 2}
           {Check for end of buffer}
           if (Offset + 4) > (TCP_OPTIONS_SIZE - 1) then Exit;
-          
+
           {Set the Option}
           PByte(PtrUInt(AOptions) + Offset)^:=AOption;
-          
+
           {Set the Length}
           PByte(PtrUInt(AOptions) + Offset + 1)^:=4;
-          
+
           {Set the Value}
           PWord(PtrUInt(AOptions) + Offset + 2)^:=WordNtoBE(TTCPOptions(ASocket.ProtocolOptions).MaxSeg);
-          
+
           Inc(Offset,4);
          end;
         TCPOPT_WINDOW:begin
           {Window Scale - Size = 2 + 1}
-          
+
           {Check for end of buffer}
           if (Offset + 3) > (TCP_OPTIONS_SIZE - 1) then Exit;
-          
+
           {Set the Option}
           PByte(PtrUInt(AOptions) + Offset)^:=AOption;
-          
+
           {Set the Length}
           PByte(PtrUInt(AOptions) + Offset + 1)^:=3;
-          
+
           {Set the Value}
           PByte(PtrUInt(AOptions) + Offset + 2)^:=TTCPOptions(ASocket.ProtocolOptions).WindowScale;
-          
+
           Inc(Offset,3);
          end;
         TCPOPT_SACKOK:begin
@@ -1735,13 +1735,13 @@ begin
            begin
             {Check for end of buffer}
             if (Offset + 2) > (TCP_OPTIONS_SIZE - 1) then Exit;
-            
+
             {Set the Option}
             PByte(PtrUInt(AOptions) + Offset)^:=AOption;
-            
+
             {Set the Length}
             PByte(PtrUInt(AOptions) + Offset + 1)^:=2;
-            
+
             Inc(Offset,2);
            end;
          end;
@@ -1749,7 +1749,7 @@ begin
           {Selective Ack - Size = 2 + (4 per Segment)}
           {Check for end of buffer (Allow for at least 1 SACK)}
           if (Offset + 6) > (TCP_OPTIONS_SIZE - 1) then Exit;
-          
+
           {Call Selective Ack Segments}
           ASocket.RecvData.SelectiveAckSegments(AOptions,Offset);
          end;
@@ -1757,19 +1757,19 @@ begin
           {Timestamp - Size = 2 + 8}
           {Check for end of buffer}
           if (Offset + 10) > (TCP_OPTIONS_SIZE - 1) then Exit;
-          
+
           {Call Timestamp Segment}
           ASocket.RecvData.TimestampSegment(AOptions,Offset);
          end;
        end;
-       
+
        {Set the End Option}
        PByte(PtrUInt(AOptions) + Offset)^:=TCPOPT_EOL;
-       
+
        Result:=True;
        Exit;
       end;
-     
+
      {Move to Next Option}
      Inc(Offset,Size); {Size includes Option and Size bytes}
     end;
@@ -1788,24 +1788,24 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: ExtractTCPOption');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check Options}
  if AOptions = nil then Exit;
- 
+
  {Iterate the current Options}
  Offset:=0;
  while Offset < TCP_OPTIONS_SIZE do
   begin
    {Check for End Option}
    if PByte(PtrUInt(AOptions) + Offset)^ = TCPOPT_EOL then Exit;
-   
+
    {Check for Noop Option}
    if PByte(PtrUInt(AOptions) + Offset)^ = TCPOPT_NOP then
     begin
@@ -1816,20 +1816,20 @@ begin
     begin
      {Check for end of buffer}
      if (Offset + 1) > (TCP_OPTIONS_SIZE - 1) then Exit;
-     
+
      {Get the Length}
      Size:=PByte(PtrUInt(AOptions) + Offset + 1)^;
-     
+
      {Check for Option}
      if PByte(PtrUInt(AOptions) + Offset)^ = AOption then
       begin
        {$IFDEF TCP_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: ExtractTCPOption - Found Option');
        {$ENDIF}
-       
+
        {Check for end of buffer}
        if (Offset + Size) > (TCP_OPTIONS_SIZE - 1) then Exit;
-       
+
        {Check the Option type}
        case AOption of
         TCPOPT_MAXSEG:begin
@@ -1858,7 +1858,7 @@ begin
           ASocket.SendData.TimestampSegment(AOptions,Offset);
          end;
        end;
-       
+
        Result:=True;
        Exit;
       end;
@@ -1880,14 +1880,14 @@ function TTCPProtocol.SendReset(ASocket:TTCPSocket):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: SendReset');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Send Segment} {SEQ = SND.NXT, ACK = 0, CTL = RST}
  Result:=(SendSegment(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@TIPState(ASocket.TransportState).RemoteAddress,ASocket.ProtocolState.LocalPort,ASocket.ProtocolState.RemotePort,ASocket.SendData.NextSequence,0,0,0,TCP_FLAG_RST,nil,nil,0) <> SOCKET_ERROR);
 end;
@@ -1900,25 +1900,25 @@ function TTCPProtocol.SendAcknowledge(ASocket:TTCPSocket):Boolean;
 {Note: Caller must hold the Socket lock}
 var
  Window:Word;
- Acknowledge:LongWord; 
+ Acknowledge:LongWord;
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: SendAcknowledge');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Get Acknowledge to Send (Forced to prevent Delayed ACK)}
  ASocket.RecvData.AcknowledgeSegments(Acknowledge,Window,True);
- 
+
  {Send Segment}
  Result:=(SendSegment(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@TIPState(ASocket.TransportState).RemoteAddress,ASocket.ProtocolState.LocalPort,ASocket.ProtocolState.RemotePort,ASocket.SendData.NextSequence,Acknowledge,Window,0,TCP_FLAG_ACK,nil,nil,0) <> SOCKET_ERROR);
- 
- {Signal the Thread} 
+
+ {Signal the Thread}
  ASocket.SendSocket;
 end;
 
@@ -1944,14 +1944,14 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: SendSegment');
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Get the Options Length}
  Length:=GetTCPOptionsSize(ASocket,AOptions);
 
@@ -1968,7 +1968,7 @@ begin
  TCP.WindowSize:=WordNtoBE(AWindow);
  TCP.Checksum:=0;
  TCP.Urgent:=WordNtoBE(AUrgent);
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
@@ -1979,10 +1979,10 @@ begin
       NetworkSetLastError(WSAENETUNREACH);
       Route:=TIPTransport(ASocket.Transport).GetRouteByAddress(PInAddr(ADest)^,True,NETWORK_LOCK_READ);
       if Route = nil then Exit;
-      
+
       {Fill in the Pseudo Header}
       Pseudo.SourceIP:=InAddrToNetwork(TIPRouteEntry(Route).Address);
-      
+
       {Unlock Route}
       Route.ReaderUnlock;
      end
@@ -1991,32 +1991,32 @@ begin
       {Fill in the Pseudo Header}
       Pseudo.SourceIP:=InAddrToNetwork(PInAddr(ASource)^);
      end;
-    
+
     {Fill in the Pseudo Header}
     Pseudo.DestIP:=InAddrToNetwork(PInAddr(ADest)^);
     Pseudo.Mbz:=0;
     Pseudo.Protocol:=IPPROTO_TCP;
     Pseudo.Length:=WordNtoBE(Size);
-    
+
     {Calculate the Checksum}
     TCP.Checksum:=ChecksumTCPSend(AF_INET,@Pseudo,@TCP,AOptions,AData,Length,ASize);
-    
+
     {Create the Header}
     Header.Size:=TCP_HEADER_SIZE;
     Header.Data:=@TCP;
-    
+
     {Check Options}
     if AOptions <> nil then
      begin
       Header.Next:=@Options;
-      
+
       {Create the Options}
       Options.Size:=Length;
       Options.Data:=AOptions;
       if AData <> nil then
        begin
         Options.Next:=@Packet;
-        
+
         {Create the Data}
         Packet.Size:=ASize;
         Packet.Data:=AData;
@@ -2032,7 +2032,7 @@ begin
       if AData <> nil then
        begin
         Header.Next:=@Packet;
-        
+
         {Create the Data}
         Packet.Size:=ASize;
         Packet.Data:=AData;
@@ -2043,25 +2043,25 @@ begin
         Header.Next:=nil;
        end;
      end;
-    
+
     {Get Transport}
     Transport:=TTCPProtocolTransport(GetTransportByTransport(ASocket.Transport,True,NETWORK_LOCK_READ));
     if Transport = nil then Exit;
-    
+
     {Send the Packet}
     if TIPTransport(ASocket.Transport).SendPacket(ASocket,ASource,ADest,@Header,Size,0) = Size then
      begin
       {Return passed size not sent size}
       Result:=ASize;
      end;
-     
+
     {Unlock Transport}
     Transport.ReaderUnlock;
    end;
   AF_INET6:begin
-    
+
     //To do
-    
+
    end;
  end;
 end;
@@ -2077,17 +2077,17 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: OpenPort');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Port = '  + IntToStr(APort));
   {$ENDIF}
-  
+
   {Check Socket}
   if ASocket = nil then Exit;
-  
+
   {Check for Any Port}
   if APort <> IPPORT_ANY then
    begin
@@ -2104,39 +2104,39 @@ begin
         begin
          {Add Socket}
          Port.Sockets.Add(ASocket);
-         
+
          {Set Local Port}
          ASocket.ProtocolState.LocalPort:=APort;
-         
+
          {Return Result}
          Result:=True;
-        end; 
- 
+        end;
+
        {Unlock Port}
-       Port.ReleaseLock;      
+       Port.ReleaseLock;
       end
      else
       begin
        {Create Port}
        Port:=TProtocolPort.Create;
        Port.Port:=APort;
-       
+
        {Add Socket}
        Port.Sockets.Add(ASocket);
-       
+
        {Add Port}
        FPorts.Add(Port);
-       
+
        {Set Local Port}
        ASocket.ProtocolState.LocalPort:=APort;
-       
+
        {Return Result}
        Result:=True;
       end;
     finally
      {Release Lock}
      FPorts.WriterUnlock;
-    end;  
+    end;
    end
   else
    begin
@@ -2150,37 +2150,37 @@ begin
        //To Do //Check the LocalAddress as well as Port
        {Increment Port}
        Inc(FNextPort);
-       
+
        {Check for wrap around}
        if FNextPort > TCP_PORT_STOP then FNextPort:=TCP_PORT_START;
-       
+
        {Check for a complete cycle}
        if FNextPort = Start then Exit;
       end;
-     
+
      {Create Port}
      Port:=TProtocolPort.Create;
      Port.Port:=FNextPort;
-     
+
      {Add Socket}
      Port.Sockets.Add(ASocket);
-     
+
      {Add Port}
      FPorts.Add(Port);
-     
+
      {Set Local Port}
      ASocket.ProtocolState.LocalPort:=FNextPort;
-     
+
      {Return Result}
      Result:=True;
     finally
      {Release Lock}
      FPorts.WriterUnlock;
-    end;  
+    end;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2193,23 +2193,23 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: ClosePort');
   {$ENDIF}
-  
+
   {Check Socket}
   if ASocket = nil then Exit;
- 
+
   {Get Port}
   Port:=FindPort(ASocket.ProtocolState.LocalPort,False,True); {Reader Lock / Lock Return}
   if Port = nil then Exit;
-  
+
   {Remove Socket}
   Port.Sockets.Remove(ASocket);
- 
+
   {Check Count}
   if Port.Sockets.Count = 0 then
    begin
@@ -2221,25 +2221,25 @@ begin
 
      {Unlock Port}
      Port.ReleaseLock;
-    
+
      {Destroy Port}
      Port.Free;
     finally
      {Release Lock}
      FPorts.WriterUnlock;
-    end;  
+    end;
    end
   else
    begin
     {Unlock Port}
     Port.ReleaseLock;
    end;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2254,24 +2254,24 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AWrite then
   begin
    if not FPorts.WriterLock then Exit;
   end
  else
-  begin 
+  begin
    if not FPorts.ReaderLock then Exit;
-  end; 
+  end;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: FindPort');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Port = '  + IntToStr(APort));
   {$ENDIF}
-  
+
   {Check Port}
   if APort = IPPORT_ANY then Exit;
-  
+
   {Get Port}
   Port:=TProtocolPort(FPorts.First);
   while Port <> nil do
@@ -2280,25 +2280,25 @@ begin
      begin
       {Lock Port}
       if ALock then Port.AcquireLock;
-      
+
       {Return Result}
       Result:=Port;
       Exit;
      end;
-     
+
     {Get Next}
     Port:=TProtocolPort(Port.Next);
    end;
- finally 
+ finally
   if AWrite then
    begin
     FPorts.WriterUnlock;
    end
   else
-   begin  
+   begin
     FPorts.ReaderUnlock;
-   end; 
- end; 
+   end;
+ end;
 end;
 
 {==============================================================================}
@@ -2311,31 +2311,31 @@ var
 begin
  {}
  Result:=0;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: SelectCheck');
  {$ENDIF}
- 
+
  {Check Dest}
  if ADest = nil then Exit;
- 
+
  {Check Source}
  if ASource = nil then Exit;
- 
+
  {Check Code}
  case ACode of
   SELECT_READ:begin
     Result:=SOCKET_ERROR;
-    
+
     {Get Sockets}
     for Count:=ASource.fd_count - 1 downto 0 do
      begin
       {Get Socket}
       Socket:=TTCPSocket(ASource.fd_array[Count]);
-      
+
       {Check Socket}
       if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
-      
+
       {Check Socket State}
       if Socket.SocketState.Listening then
        begin
@@ -2361,7 +2361,7 @@ begin
             FD_SET(TSocket(Socket),ADest^);
            end;
          end;
-        
+
         {Check Urgent if SO_OOBINLINE}
         if Socket.SocketOptions.UrgentInline then
          begin
@@ -2374,9 +2374,9 @@ begin
              end;
            end;
          end;
-        
+
         {Check for Closed, Unconnected, Disconnecting or Error}
-        if (Socket.SocketState.Closed) or (Socket.SocketState.Unconnected) or (Socket.SocketState.Disconnecting) or (Socket.SocketError <> ERROR_SUCCESS) then 
+        if (Socket.SocketState.Closed) or (Socket.SocketState.Unconnected) or (Socket.SocketState.Disconnecting) or (Socket.SocketError <> ERROR_SUCCESS) then
          begin
           {Check Set}
           if not FD_ISSET(TSocket(Socket),ADest^) then
@@ -2385,26 +2385,26 @@ begin
            end;
          end;
        end;
-     
-      {Unlock Socket} 
+
+      {Unlock Socket}
       Socket.ReaderUnlock;
      end;
-     
-    {Return Result} 
+
+    {Return Result}
     Result:=ADest.fd_count;
    end;
   SELECT_WRITE:begin
     Result:=SOCKET_ERROR;
-    
+
     {Get Sockets}
     for Count:=ASource.fd_count - 1 downto 0 do
      begin
       {Get Socket}
       Socket:=TTCPSocket(ASource.fd_array[Count]);
-      
+
       {Check Socket}
       if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
-      
+
       {All Sockets}
       {Check for Connected}
       if (Socket.SocketState.Connected) and (Socket.SendData.GetFree > 0) then
@@ -2415,26 +2415,26 @@ begin
           FD_SET(TSocket(Socket),ADest^);
          end;
        end;
-     
-      {Unlock Socket} 
+
+      {Unlock Socket}
       Socket.ReaderUnlock;
      end;
-     
+
     {Return Result}
     Result:=ADest.fd_count;
    end;
   SELECT_ERROR:begin
     Result:=SOCKET_ERROR;
-    
+
     {Get Sockets}
     for Count:=ASource.fd_count - 1 downto 0 do
      begin
       {Get Socket}
       Socket:=TTCPSocket(ASource.fd_array[Count]);
-      
+
       {Check Socket}
       if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
-      
+
       {All Sockets}
       {Check for Error}
       if Socket.SocketError <> ERROR_SUCCESS then
@@ -2445,7 +2445,7 @@ begin
           FD_SET(TSocket(Socket),ADest^);
          end;
        end;
-      
+
       {Check Urgent if not SO_OOBINLINE}
       if not Socket.SocketOptions.UrgentInline then
        begin
@@ -2458,11 +2458,11 @@ begin
            end;
          end;
        end;
-     
-      {Unlock Socket} 
+
+      {Unlock Socket}
       Socket.ReaderUnlock;
      end;
-    
+
     {Return Result}
     Result:=ADest.fd_count;
    end;
@@ -2471,7 +2471,7 @@ end;
 
 {==============================================================================}
 
-function TTCPProtocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; 
+function TTCPProtocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer;
 {Socket is the single socket to check, Code is the type of check, Timeout is how long to wait}
 var
  StartTime:Int64;
@@ -2479,14 +2479,14 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: SelectWait');
  {$ENDIF}
 
  {Get Socket}
  Socket:=TTCPSocket(ASocket);
- 
+
  {Check Socket}
  if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
  try
@@ -2518,7 +2518,7 @@ begin
              Exit;
             end;
           end
-         else 
+         else
           begin
            {Wait for Event}
            if not Socket.WaitChangeEx(ATimeout) then
@@ -2535,7 +2535,7 @@ begin
              Result:=0;
              Exit;
             end;
-          end;           
+          end;
         end;
       end
      else
@@ -2550,13 +2550,13 @@ begin
           begin
            Break;
           end;
-         
+
          {Check for Closed, Unconnected, Disconnecting or Error}
          if (Socket.SocketState.Closed) or (Socket.SocketState.Unconnected) or (Socket.SocketState.Disconnecting) or (Socket.SocketError <> ERROR_SUCCESS) then
           begin
            Break;
           end;
-         
+
          {Check Timeout}
          if ATimeout = 0 then
           begin
@@ -2574,7 +2574,7 @@ begin
              Exit;
             end;
           end
-         else 
+         else
           begin
            {Wait for Event}
            if not Socket.WaitChangeEx(ATimeout) then
@@ -2591,12 +2591,12 @@ begin
              Result:=0;
              Exit;
             end;
-          end;           
+          end;
         end;
       end;
-      
+
      {Return One}
-     Result:=1; 
+     Result:=1;
     end;
    SELECT_WRITE:begin
      {All Sockets}
@@ -2609,7 +2609,7 @@ begin
          {Return Zero}
          Result:=0;
          Exit;
-        end;         
+        end;
 
        {Check Timeout}
        if ATimeout = 0 then
@@ -2628,7 +2628,7 @@ begin
            Exit;
           end;
         end
-       else 
+       else
         begin
          {Wait for Event}
          if not Socket.WaitChangeEx(ATimeout) then
@@ -2645,11 +2645,11 @@ begin
            Result:=0;
            Exit;
           end;
-        end;           
-      end; 
-     
+        end;
+      end;
+
      {Return One}
-     Result:=1; 
+     Result:=1;
     end;
    SELECT_ERROR:begin
      {All Sockets}
@@ -2662,7 +2662,7 @@ begin
         begin
          Break;
         end;
-      
+
        {Check Timeout}
        if ATimeout = 0 then
         begin
@@ -2680,7 +2680,7 @@ begin
            Exit;
           end;
         end
-       else 
+       else
         begin
          {Wait for Event}
          if not Socket.WaitChangeEx(ATimeout) then
@@ -2697,18 +2697,18 @@ begin
            Result:=0;
            Exit;
           end;
-        end;           
+        end;
       end;
-     
+
      {Return One}
-     Result:=1; 
+     Result:=1;
     end;
   end;
-   
+
  finally
-  {Unlock Socket} 
+  {Unlock Socket}
   Socket.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2731,15 +2731,15 @@ begin
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: Accept');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Listening or Closed}
    NetworkSetLastError(WSAEINVAL);
    if ASocket.SocketState.Closed then Exit;
    if not ASocket.SocketState.Listening then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -2747,8 +2747,8 @@ begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if (AAddrLength <> nil) and (AAddrLength^ < SizeOf(TSockAddr)) then Exit;
-      
-      {Wait for Connection} 
+
+      {Wait for Connection}
       Socket:=TTCPSocket(TTCPSocket(ASocket).Accept(False,True,NETWORK_LOCK_READ));
       while Socket = nil do
        begin
@@ -2757,18 +2757,18 @@ begin
          begin
           NetworkSetLastError(WSAEINTR);
           Exit;
-         end; 
-        
+         end;
+
         {Check for Closed}
         if ASocket.SocketState.Closed then
          begin
           NetworkSetLastError(WSAEINTR);
           Exit;
          end;
-         
+
         Socket:=TTCPSocket(TTCPSocket(ASocket).Accept(False,True,NETWORK_LOCK_READ));
        end;
-      
+
       {Return the Peer Details}
       if ASockAddr <> nil then
        begin
@@ -2777,23 +2777,23 @@ begin
         ASockAddr^.sin_addr:=InAddrToNetwork(TIPState(Socket.TransportState).RemoteAddress);
        end;
       if AAddrLength <> nil then AAddrLength^:=SizeOf(TSockAddr);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=Socket;
-      
+
       {Unlock Socket}
       Socket.ReaderUnlock;
      end;
     AF_INET6:begin
       {Get Socket Address}
       SockAddr6:=PSockAddr6(ASockAddr);
-      
+
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if (AAddrLength <> nil) and (AAddrLength^ < SizeOf(TSockAddr6)) then Exit;
-      
-      {Wait for Connection} 
+
+      {Wait for Connection}
       Socket:=TTCPSocket(TTCPSocket(ASocket).Accept(False,True,NETWORK_LOCK_READ));
       while Socket = nil do
        begin
@@ -2802,18 +2802,18 @@ begin
          begin
           NetworkSetLastError(WSAEINTR);
           Exit;
-         end; 
-        
+         end;
+
         {Check for Closed}
         if ASocket.SocketState.Closed then
          begin
           NetworkSetLastError(WSAEINTR);
           Exit;
-         end; 
-         
+         end;
+
         Socket:=TTCPSocket(TTCPSocket(ASocket).Accept(False,True,NETWORK_LOCK_READ));
        end;
-      
+
       {Return the Peer Details}
       if SockAddr6 <> nil then
        begin
@@ -2822,11 +2822,11 @@ begin
         SockAddr6^.sin6_addr:=TIP6State(Socket.TransportState).RemoteAddress;
        end;
       if AAddrLength <> nil then AAddrLength^:=SizeOf(TSockAddr6);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=Socket;
-      
+
       {Unlock Socket}
       Socket.ReaderUnlock;
      end;
@@ -2849,19 +2849,19 @@ function TTCPProtocol.Bind(ASocket:TProtocolSocket;var ASockAddr:TSockAddr;AAddr
 {SockAddr: The socket address (Network Order)}
 {AddrLength: The socket address length}
 
-{Note: SockAddr is passed in Network order} 
+{Note: SockAddr is passed in Network order}
 {Note: Caller must hold the Socket lock}
 var
  SockAddr6:PSockAddr6;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: Bind');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected, Listening or Bound}
@@ -2869,7 +2869,7 @@ begin
    if ASocket.SocketState.Listening then Exit;
    if ASocket.SocketState.Connected then Exit;
    if ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -2877,26 +2877,26 @@ begin
       {Check Address Family}
       NetworkSetLastError(WSAEAFNOSUPPORT);
       if ASocket.Family <> ASockAddr.sin_family then Exit;
-      
+
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Check LocalAddress}
       if not TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then
        begin
         NetworkSetLastError(WSAEADDRNOTAVAIL);
         if TIPTransport(ASocket.Transport).GetAddressByAddress(InAddrToHost(ASockAddr.sin_addr),False,NETWORK_LOCK_NONE) = nil then Exit;
        end;
-      
+
       {Bind the Port}
       NetworkSetLastError(WSAEADDRINUSE);
       if not OpenPort(ASocket,WordBEtoN(ASockAddr.sin_port)) then Exit;
-      
+
       {Bind the Address}
       ASocket.SocketState.LocalAddress:=True;
       TIPState(ASocket.TransportState).LocalAddress:=InAddrToHost(ASockAddr.sin_addr);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -2904,30 +2904,30 @@ begin
     AF_INET6:begin
       {Get Socket Address}
       SockAddr6:=PSockAddr6(@ASockAddr);
-      
+
       {Check Address Family}
       NetworkSetLastError(WSAEAFNOSUPPORT);
       if ASocket.Family <> SockAddr6.sin6_family then Exit;
-      
+
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
+
       {Check LocalAddress}
       if not TIP6Transport(ASocket.Transport).CompareDefault(SockAddr6.sin6_addr) then
        begin
         NetworkSetLastError(WSAEADDRNOTAVAIL);
         if TIP6Transport(ASocket.Transport).GetAddressByAddress(SockAddr6.sin6_addr,False,NETWORK_LOCK_NONE) = nil then Exit;
        end;
-      
+
       {Bind the Port}
       NetworkSetLastError(WSAEADDRINUSE);
       if not OpenPort(ASocket,WordBEtoN(SockAddr6.sin6_port)) then Exit;
-      
+
       {Bind the Address}
       ASocket.SocketState.LocalAddress:=True;
       TIP6State(ASocket.TransportState).LocalAddress:=SockAddr6.sin6_addr;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -2952,12 +2952,12 @@ function TTCPProtocol.CloseSocket(ASocket:TProtocolSocket):Integer;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: CloseSocket');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Listening} {Must be before Unconnected}
@@ -2966,13 +2966,13 @@ begin
      {Disconnect Socket}
      NetworkSetLastError(WSAEINVAL);
      if not TTCPSocket(ASocket).Disconnect then Exit;
-     
+
      {Return Result}
      NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
      Exit;
     end;
-   
+
    {Check for Closed or Unconnected}
    if (ASocket.SocketState.Closed) or (ASocket.SocketState.Unconnected) then
     begin
@@ -2981,17 +2981,17 @@ begin
      Result:=NO_ERROR;
      Exit;
     end;
-   
+
    {All other States}
    NetworkSetLastError(WSAEINVAL);
-   
+
    {Check Linger}
    if ASocket.SocketOptions.Linger.l_onoff = 0 then
     begin
      {Linger Off}
      {Graceful Close - Send FIN}
      if not TTCPSocket(ASocket).Disconnect then Exit;
-     
+
      {Return Result}
      NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
@@ -3004,15 +3004,15 @@ begin
       begin
        {Hard Close - Send RST}
        if not SendReset(TTCPSocket(ASocket)) then Exit;
-       
+
        {Close Socket}
        TTCPState(ASocket.ProtocolState).State:=TCP_STATE_CLOSED;
        ASocket.SocketState.Closed:=True;
        ASocket.CloseTime:=GetTickCount64;
-       
+
        {Signal the Event}
        ASocket.SignalChange;
-       
+
        {Return Result}
        NetworkSetLastError(ERROR_SUCCESS);
        Result:=NO_ERROR;
@@ -3023,7 +3023,7 @@ begin
        {Graceful Close - Send FIN}
        if not TTCPSocket(ASocket).Disconnect then Exit;
        ASocket.LingerTime:=GetTickCount64;
-       
+
        {Wait for Close}
        while (not ASocket.SocketState.Closed) and (not ASocket.SocketState.Unconnected) do
         begin
@@ -3031,15 +3031,15 @@ begin
          if not ASocket.WaitChangeEx(ASocket.SocketOptions.Linger.l_linger) then
           begin
            Break;
-          end; 
-         
+          end;
+
          {Check for Timeout}
          if GetTickCount64 >= (ASocket.LingerTime + ASocket.SocketOptions.Linger.l_linger) then
           begin
            Break;
           end;
         end;
-       
+
        {Return Result}
        NetworkSetLastError(ERROR_SUCCESS);
        Result:=NO_ERROR;
@@ -3075,23 +3075,23 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: Connect');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
    NetworkSetLastError(WSAEISCONN);
    if ASocket.SocketState.Connected then Exit;
-   
+
    {Check for Listening or Closed}
    NetworkSetLastError(WSAEINVAL);
    if ASocket.SocketState.Closed then Exit;
    if ASocket.SocketState.Listening then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -3099,23 +3099,23 @@ begin
       {Check Address Family}
       NetworkSetLastError(WSAEAFNOSUPPORT);
       if ASocket.Family <> ASockAddr.sin_family then Exit;
-      
+
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Check for Default Remote Port}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if WordBEtoN(ASockAddr.sin_port) = IPPORT_ANY then Exit;
-      
+
       {Check for Default RemoteAddress}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then Exit;
-      
+
       {Check for Broadcast RemoteAddress}
       NetworkSetLastError(WSAEADDRNOTAVAIL); {Normally WSAEACCES but TCP does not support Broadcast}
       if TIPTransport(ASocket.Transport).CompareBroadcast(InAddrToHost(ASockAddr.sin_addr)) or TIPTransport(ASocket.Transport).CompareDirected(InAddrToHost(ASockAddr.sin_addr)) then Exit;
-      
+
       {Check the Route}
       NetworkSetLastError(WSAENETUNREACH);
       Route:=TIPTransport(ASocket.Transport).GetRouteByAddress(InAddrToHost(ASockAddr.sin_addr),True,NETWORK_LOCK_READ);
@@ -3132,36 +3132,36 @@ begin
           {Bind the Port}
           NetworkSetLastError(WSAEADDRINUSE);
           if not OpenPort(ASocket,WordBEtoN(IPPORT_ANY)) then Exit;
-        
+
           {Bind the Address}
           ASocket.SocketState.LocalAddress:=True;
           TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
          end;
-      
+
         {Check for Default Binding}
         if TIPTransport(ASocket.Transport).CompareDefault(TIPState(ASocket.TransportState).LocalAddress) then
          begin
           {Set the LocalAddress}
           TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
          end;
-        
+
         {Connect the Socket}
         ASocket.SocketState.RemoteAddress:=True;
         ASocket.ProtocolState.RemotePort:=WordBEtoN(ASockAddr.sin_port);
         TIPState(ASocket.TransportState).RemoteAddress:=InAddrToHost(ASockAddr.sin_addr);
-       
+
         {Start the Handshake}
         NetworkSetLastError(WSAENOBUFS);
         if not TTCPSocket(ASocket).Connect then Exit;
-      
+
         {Unlock Route}
         Route.ReaderUnlock;
         Route:=nil;
-        
+
         {Unlock Address}
         Address.ReaderUnlock;
         Address:=nil;
-        
+
         {Count the Retries}
         Count:=0;
         while Count < TCP_CONNECT_COUNT do
@@ -3178,8 +3178,8 @@ begin
                begin
                 NetworkSetLastError(WSAECONNREFUSED);
                 Exit;
-               end; 
-              
+               end;
+
               {Check for Timeout}
               if GetTickCount64 >= (StartTime + ASocket.SocketOptions.ConnTimeout) then
                begin
@@ -3194,14 +3194,14 @@ begin
                begin
                 NetworkSetLastError(WSAECONNREFUSED);
                 Exit;
-               end; 
-             end;             
-           
+               end;
+             end;
+
             {Check for Closed}
             if ASocket.SocketState.Closed then
              begin
               NetworkSetLastError(WSAECONNREFUSED);
-              
+
               {Check for Error}
               if ASocket.SocketError <> ERROR_SUCCESS then
                begin
@@ -3210,20 +3210,20 @@ begin
               Break;
              end;
            end;
-           
+
           {Check for Connected}
           if ASocket.SocketState.Connected then Break;
-         
+
           {Check for Retry}
           Inc(Count);
           if Count >= TCP_CONNECT_COUNT then Exit;
-        
+
           {Restart the Handshake}
           Sleep(TCP_RESTART_TIMEOUT);
           NetworkSetLastError(WSAENOBUFS);
           if not TTCPSocket(ASocket).Reconnect then Exit;
          end;
-      
+
         {Return Result}
         NetworkSetLastError(ERROR_SUCCESS);
         Result:=NO_ERROR;
@@ -3232,32 +3232,32 @@ begin
        end;
       finally
        if Route <> nil then Route.ReaderUnlock;
-      end;      
+      end;
      end;
     AF_INET6:begin
       {Get Socket Address}
       SockAddr6:=PSockAddr6(@ASockAddr);
-      
+
       {Check Address Family}
       NetworkSetLastError(WSAEAFNOSUPPORT);
       if ASocket.Family <> SockAddr6.sin6_family then Exit;
-      
+
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
+
       {Check for Default Remote Port}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if WordBEtoN(SockAddr6.sin6_port) = IPPORT_ANY then Exit;
-     
+
       {Check for Default RemoteAddress}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if TIP6Transport(ASocket.Transport).CompareDefault(SockAddr6.sin6_addr) then Exit;
-     
+
       {Check for Broadcast RemoteAddress}
       NetworkSetLastError(WSAEADDRNOTAVAIL); {Normally WSAEACCES but TCP does not support Broadcast}
       if TIP6Transport(ASocket.Transport).CompareBroadcast(SockAddr6.sin6_addr) or TIP6Transport(ASocket.Transport).CompareDirected(SockAddr6.sin6_addr) then Exit;
-      
+
       {Check the Route}
       NetworkSetLastError(WSAENETUNREACH);
       Route:=TIP6Transport(ASocket.Transport).GetRouteByAddress(SockAddr6.sin6_addr,True,NETWORK_LOCK_READ);
@@ -3274,36 +3274,36 @@ begin
           {Bind the Port}
           NetworkSetLastError(WSAEADDRINUSE);
           if not OpenPort(ASocket,WordBEtoN(IPPORT_ANY)) then Exit;
-          
+
           {Bind the Address}
           ASocket.SocketState.LocalAddress:=True;
           TIP6State(ASocket.TransportState).LocalAddress:=TIP6AddressEntry(Address).Address;
          end;
-         
+
         {Check for Default Binding}
         if TIP6Transport(ASocket.Transport).CompareDefault(TIP6State(ASocket.TransportState).LocalAddress) then
          begin
           {Set the LocalAddress}
           TIP6State(ASocket.TransportState).LocalAddress:=TIP6AddressEntry(Address).Address;
          end;
-      
+
         {Connect the Socket}
         ASocket.SocketState.RemoteAddress:=True;
         ASocket.ProtocolState.RemotePort:=WordBEtoN(SockAddr6.sin6_port);
         TIP6State(ASocket.TransportState).RemoteAddress:=SockAddr6.sin6_addr;
-      
+
         {Start the Handshake}
         NetworkSetLastError(WSAENOBUFS);
         if not TTCPSocket(ASocket).Connect then Exit;
-      
+
         {Unlock Route}
         Route.ReaderUnlock;
         Route:=nil;
-        
+
         {Unlock Address}
         Address.ReaderUnlock;
         Address:=nil;
-      
+
         {Count the Retries}
         Count:=0;
         while Count < TCP_CONNECT_COUNT do
@@ -3320,8 +3320,8 @@ begin
                begin
                 NetworkSetLastError(WSAECONNREFUSED);
                 Exit;
-               end; 
-              
+               end;
+
               {Check for Timeout}
               if GetTickCount64 >= (StartTime + ASocket.SocketOptions.ConnTimeout) then
                begin
@@ -3336,14 +3336,14 @@ begin
                begin
                 NetworkSetLastError(WSAECONNREFUSED);
                 Exit;
-               end; 
-             end;             
-           
+               end;
+             end;
+
             {Check for Closed}
             if ASocket.SocketState.Closed then
              begin
               NetworkSetLastError(WSAECONNREFUSED);
-              
+
               {Check for Error}
               if ASocket.SocketError <> ERROR_SUCCESS then
                begin
@@ -3352,20 +3352,20 @@ begin
               Break;
              end;
            end;
-           
+
           {Check for Connected}
           if ASocket.SocketState.Connected then Break;
-         
+
           {Check for Retry}
           Inc(Count);
           if Count >= TCP_CONNECT_COUNT then Exit;
-        
+
           {Restart the Handshake}
           Sleep(TCP_RESTART_TIMEOUT);
           NetworkSetLastError(WSAENOBUFS);
           if not TTCPSocket(ASocket).Reconnect then Exit;
          end;
-      
+
         {Return Result}
         NetworkSetLastError(ERROR_SUCCESS);
         Result:=NO_ERROR;
@@ -3374,7 +3374,7 @@ begin
        end;
       finally
        if Route <> nil then Route.ReaderUnlock;
-      end;      
+      end;
      end;
    end;
   end
@@ -3397,12 +3397,12 @@ function TTCPProtocol.IoctlSocket(ASocket:TProtocolSocket;ACmd:DWORD;var AArg:u_
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: IoctlSocket');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Pass the call to the socket}
@@ -3430,18 +3430,18 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: GetPeerName');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Connected}
    NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -3449,13 +3449,13 @@ begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Return the Peer Details}
       ASockAddr.sin_family:=ASocket.Family;
       ASockAddr.sin_port:=WordNtoBE(ASocket.ProtocolState.RemotePort);
       ASockAddr.sin_addr:=InAddrToNetwork(TIPState(ASocket.TransportState).RemoteAddress);
       AAddrLength:=SizeOf(TSockAddr);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -3463,17 +3463,17 @@ begin
     AF_INET6:begin
       {Get Socket Address}
       SockAddr6:=PSockAddr6(@ASockAddr);
-      
+
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
+
       {Return the Peer Details}
       SockAddr6.sin6_family:=ASocket.Family;
       SockAddr6.sin6_port:=WordNtoBE(ASocket.ProtocolState.RemotePort);
       SockAddr6.sin6_addr:=TIP6State(ASocket.TransportState).RemoteAddress;
       AAddrLength:=SizeOf(TSockAddr6);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -3502,18 +3502,18 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: GetSockName');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -3521,13 +3521,13 @@ begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Return the Socket Details}
       ASockAddr.sin_family:=ASocket.Family;
       ASockAddr.sin_port:=WordNtoBE(ASocket.ProtocolState.LocalPort);
       ASockAddr.sin_addr:=InAddrToNetwork(TIPState(ASocket.TransportState).LocalAddress);
       AAddrLength:=SizeOf(TSockAddr);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -3535,17 +3535,17 @@ begin
     AF_INET6:begin
       {Get Socket Address}
       SockAddr6:=PSockAddr6(@ASockAddr);
-      
+
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
+
       {Return the Peer Details}
       SockAddr6.sin6_family:=ASocket.Family;
       SockAddr6.sin6_port:=WordNtoBE(ASocket.ProtocolState.LocalPort);
       SockAddr6.sin6_addr:=TIP6State(ASocket.TransportState).LocalAddress;
       AAddrLength:=SizeOf(TSockAddr6);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -3573,12 +3573,12 @@ function TTCPProtocol.GetSockOpt(ASocket:TProtocolSocket;ALevel,AOptName:Integer
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: GetSockOpt');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Level}
@@ -3622,34 +3622,34 @@ function TTCPProtocol.Listen(ASocket:TProtocolSocket;ABacklog:Integer):Integer;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: Listen');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Listening}
    NetworkSetLastError(WSAEINVAL);
    if ASocket.SocketState.Listening then Exit;
-   
+
    {Check for Connected}
    NetworkSetLastError(WSAEISCONN);
    if ASocket.SocketState.Connected then Exit;
-   
+
    {Check for Closed or not Bound}
    NetworkSetLastError(WSAEINVAL);
    if ASocket.SocketState.Closed then Exit;
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Start Listening}
    NetworkSetLastError(WSAENOBUFS);
    if not TTCPSocket(ASocket).Listen then Exit;
 
    {Set Backlog}
    TTCPSocket(ASocket).Backlog:=ABacklog;
-   
+
    {Check Backlog}
    if TTCPSocket(ASocket).Backlog = SOMAXCONN then
     begin
@@ -3666,7 +3666,7 @@ begin
      {Update Backlog}
      TTCPSocket(ASocket).Backlog:=TCP_MAX_BACKLOG;
     end;
-   
+
    {Return Result}
    NetworkSetLastError(ERROR_SUCCESS);
    Result:=NO_ERROR;
@@ -3694,12 +3694,12 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: Recv');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
@@ -3709,15 +3709,15 @@ begin
      {Check for CLOSWAIT}
      if TTCPState(ASocket.ProtocolState).State <> TCP_STATE_CLOSWAIT then Exit;
     end;
-   
+
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantRecvMore then Exit;
-   
+
    {Wait for Data}
    StartTime:=GetTickCount64;
    while TTCPSocket(ASocket).RecvData.GetAvailable = 0 do
@@ -3733,8 +3733,8 @@ begin
           begin
            NetworkSetLastError(WSAECONNABORTED);
            Exit;
-          end; 
-  
+          end;
+
          {Check for Timeout}
          if GetTickCount64 >= (StartTime + ASocket.SocketOptions.RecvTimeout) then
           begin
@@ -3749,10 +3749,10 @@ begin
           begin
            NetworkSetLastError(WSAECONNABORTED);
            Exit;
-          end; 
+          end;
         end;
       end;
-     
+
      {Check for Closed}
      if ASocket.SocketState.Closed then
       begin
@@ -3765,7 +3765,7 @@ begin
         end;
        Exit;
       end;
-     
+
      {Check for Unconnected}
      if ASocket.SocketState.Unconnected then
       begin
@@ -3773,7 +3773,7 @@ begin
        Result:=0;
        Exit;
       end;
-     
+
      {Check for Disconnecting}
      if (ASocket.SocketState.Disconnecting) and (TTCPSocket(ASocket).RecvData.GetAvailable = 0) then
       begin
@@ -3782,13 +3782,13 @@ begin
        Exit;
       end;
     end;
-   
+
    {Check Size}
    NetworkSetLastError(ERROR_SUCCESS);
    Size:=TTCPSocket(ASocket).RecvData.GetAvailable;
    if Size > ALength then Size:=ALength;
    //To Do //MSG_OOB !!! What about SO_OOBLINE etc
-   
+
    {Read Data}
    if TTCPSocket(ASocket).RecvData.ReadData(ABuffer,Size,AFlags) then
     begin
@@ -3837,26 +3837,26 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: Send');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
    NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
-   
+
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantSendMore then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -3873,7 +3873,7 @@ begin
            begin
             NetworkSetLastError(WSAECONNABORTED);
             Exit;
-           end; 
+           end;
 
           {Check for Timeout}
           if GetTickCount64 >= (StartTime + ASocket.SocketOptions.SendTimeout) then
@@ -3889,9 +3889,9 @@ begin
            begin
             NetworkSetLastError(WSAECONNABORTED);
             Exit;
-           end; 
-         end;         
-        
+           end;
+         end;
+
         {Check for Closed}
         if ASocket.SocketState.Closed then
          begin
@@ -3903,7 +3903,7 @@ begin
            end;
           Exit;
          end;
-        
+
         {Check for Unconnected}
         if ASocket.SocketState.Unconnected then
          begin
@@ -3912,13 +3912,13 @@ begin
           Exit;
          end;
        end;
-      
+
       {Check Size}
       NetworkSetLastError(ERROR_SUCCESS);
       Size:=TTCPSocket(ASocket).SendData.GetFree;
       if Size > ALength then Size:=ALength;
       //To Do //MSG_OOB !!! What about SO_OOBLINE etc - OOBINLINE not relevant to Send ?
-      
+
       {Write Data}
       if TTCPSocket(ASocket).SendData.WriteData(ABuffer,Size,AFlags) then
        begin
@@ -3926,7 +3926,7 @@ begin
        end;
      end;
     AF_INET6:begin
-      {Wait for Space} 
+      {Wait for Space}
       StartTime:=GetTickCount64;
       while TTCPSocket(ASocket).SendData.GetFree = 0 do
        begin
@@ -3938,7 +3938,7 @@ begin
            begin
             NetworkSetLastError(WSAECONNABORTED);
             Exit;
-           end; 
+           end;
 
           {Check for Timeout}
           if GetTickCount64 >= (StartTime + ASocket.SocketOptions.SendTimeout) then
@@ -3954,9 +3954,9 @@ begin
            begin
             NetworkSetLastError(WSAECONNABORTED);
             Exit;
-           end; 
-         end;         
-        
+           end;
+         end;
+
         {Check for Closed}
         if ASocket.SocketState.Closed then
          begin
@@ -3968,7 +3968,7 @@ begin
            end;
           Exit;
          end;
-        
+
         {Check for Unconnected}
         if ASocket.SocketState.Unconnected then
          begin
@@ -3977,13 +3977,13 @@ begin
           Exit;
          end;
        end;
-      
+
       {Check Size}
       NetworkSetLastError(ERROR_SUCCESS);
       Size:=TTCPSocket(ASocket).SendData.GetFree;
       if Size > ALength then Size:=ALength;
       //To Do //MSG_OOB !!! What about SO_OOBLINE etc - OOBINLINE not relevant to Send ?
-      
+
       {Write Data}
       if TTCPSocket(ASocket).SendData.WriteData(ABuffer,Size,AFlags) then
        begin
@@ -4031,12 +4031,12 @@ function TTCPProtocol.SetSockOpt(ASocket:TProtocolSocket;ALevel,AOptName:Integer
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: SetSockOpt');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Level}
@@ -4047,7 +4047,7 @@ begin
       case AOptName of
        SO_RCVBUF:begin
          NetworkSetLastError(WSAEFAULT);
-         
+
          if AOptLength >= SizeOf(Integer) then
           begin
            TTCPSocket(ASocket).RecvData.Size:=PInteger(AOptValue)^;
@@ -4055,14 +4055,14 @@ begin
         end;
        SO_SNDBUF:begin
          NetworkSetLastError(WSAEFAULT);
-         
+
          if AOptLength >= SizeOf(Integer) then
           begin
            TTCPSocket(ASocket).SendData.Size:=PInteger(AOptValue)^;
           end;
         end;
       end;
-      
+
       {Pass the call to the socket}
       Result:=ASocket.SetOption(ALevel,AOptName,AOptValue,AOptLength);
      end;
@@ -4106,24 +4106,24 @@ function TTCPProtocol.Shutdown(ASocket:TProtocolSocket;AHow:Integer):Integer;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: Shutdown');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
    NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
-   
+
    {Check Direction}
    case AHow of
     SHUTDOWN_RECV:begin
       {Shutdown Receive}
       ASocket.SocketState.CantRecvMore:=True;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -4131,11 +4131,11 @@ begin
     SHUTDOWN_SEND:begin
       {Shutdown Send - Must Send FIN}
       ASocket.SocketState.CantSendMore:=True;
-      
+
       {Disconnect Socket}
       NetworkSetLastError(WSAENOBUFS);
       if not TTCPSocket(ASocket).Disconnect then Exit;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -4144,11 +4144,11 @@ begin
       {Shutdown Both - Must Send FIN}
       ASocket.SocketState.CantRecvMore:=True;
       ASocket.SocketState.CantSendMore:=True;
-      
+
       {Disconnect Socket}
       NetworkSetLastError(WSAENOBUFS);
       if not TTCPSocket(ASocket).Disconnect then Exit;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -4180,7 +4180,7 @@ var
 begin
  {}
  Result:=TProtocolSocket(INVALID_SOCKET);
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
@@ -4189,11 +4189,11 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Struct = ' + SocketTypeToString(AStruct));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
-  
+
   {Check Socket Type}
   NetworkSetLastError(WSAESOCKTNOSUPPORT);
   if AStruct <> SOCK_STREAM then Exit;
-  
+
   {Check Address Family}
   NetworkSetLastError(WSAEAFNOSUPPORT);
   if (AFamily = AF_UNSPEC) and (AProtocol <> IPPROTO_IP) then AFamily:=AF_INET;
@@ -4201,14 +4201,14 @@ begin
   {Check Protocol}
   NetworkSetLastError(WSAEPROTOTYPE);
   if (AProtocol <> IPPROTO_TCP) and (AProtocol <> IPPROTO_IP) then Exit;
-  
+
   {Get Transport}
   Transport:=TTCPProtocolTransport(GetTransportByFamily(AFamily,True,NETWORK_LOCK_READ));
   if Transport = nil then Exit;
-  
+
   {Create Socket}
   Result:=TTCPSocket.Create(Self,Transport.Transport);
-  
+
   {Unlock Transport}
   Transport.ReaderUnlock;
 
@@ -4217,13 +4217,13 @@ begin
   try
    {Add Socket}
    FSockets.Add(Result);
-  finally 
+  finally
    {Release Lock}
    FSockets.WriterUnlock;
-  end; 
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4237,17 +4237,17 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: AddTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
- 
-  {Get Transport} 
+
+  {Get Transport}
   Transport:=TTCPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_READ));
   if Transport = nil then
    begin
@@ -4263,20 +4263,20 @@ begin
          Transport.Handle:=Handle;
          Transport.Protocol:=IPPROTO_TCP;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Add Control Socket}
           Transport.Socket:=TTCPSocket.Create(Self,ATransport);
           {FSockets.Add(Transport.Socket);} {Dont add this one to the list}
-         
+
           {Add Proto Entry}
           TIPTransport(ATransport).AddProto(TCP_PROTOCOL_NAME,IPPROTO_TCP,False);
-         
+
           {Add Serv Entries}
           TIPTransport(ATransport).AddServ('ECHO',TCP_PROTOCOL_NAME,7,False);
           TIPTransport(ATransport).AddServ('DISCARD',TCP_PROTOCOL_NAME,9,False);
@@ -4302,15 +4302,15 @@ begin
           TIPTransport(ATransport).AddServ('NNTP',TCP_PROTOCOL_NAME,119,False);
           TIPTransport(ATransport).AddServ('NBSESSION',TCP_PROTOCOL_NAME,139,False);
           TIPTransport(ATransport).AddServ('IMAP4',TCP_PROTOCOL_NAME,143,False);
-         
+
           {Return Result}
           Result:=True;
          finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end;  
+         end;
         end;
-        
+
        {Add ICMP Protocol}
        Handle:=TIPTransport(ATransport).AddProtocol(IPPROTO_ICMP,PacketHandler,nil);
        if Handle <> INVALID_HANDLE_VALUE then
@@ -4320,19 +4320,19 @@ begin
          Transport.Handle:=Handle;
          Transport.Protocol:=IPPROTO_ICMP;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Return Result}
           Result:=True;
          finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end;  
+         end;
         end;
       end;
      AF_INET6:begin
@@ -4345,20 +4345,20 @@ begin
          Transport.Handle:=Handle;
          Transport.Protocol:=IPPROTO_TCP;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Add Control Socket}
           Transport.Socket:=TTCPSocket.Create(Self,ATransport);
           {FSockets.Add(Transport.Socket);} {Dont add this one to the list}
-          
+
           {Add Proto Entry}
           TIP6Transport(ATransport).AddProto(TCP_PROTOCOL_NAME,IPPROTO_TCP,False);
-          
+
           {Add Serv Entries}
           TIP6Transport(ATransport).AddServ('ECHO',TCP_PROTOCOL_NAME,7,False);
           TIP6Transport(ATransport).AddServ('DISCARD',TCP_PROTOCOL_NAME,9,False);
@@ -4384,15 +4384,15 @@ begin
           TIP6Transport(ATransport).AddServ('NNTP',TCP_PROTOCOL_NAME,119,False);
           TIP6Transport(ATransport).AddServ('NBSESSION',TCP_PROTOCOL_NAME,139,False);
           TIP6Transport(ATransport).AddServ('IMAP4',TCP_PROTOCOL_NAME,143,False);
-          
+
           {Return Result}
           Result:=True;
          finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end;  
+         end;
         end;
-        
+
        {Add ICMP6 Protocol}
        Handle:=TIP6Transport(ATransport).AddProtocol(IPPROTO_ICMPV6,PacketHandler,nil);
        if Handle <> INVALID_HANDLE_VALUE then
@@ -4402,19 +4402,19 @@ begin
          Transport.Handle:=Handle;
          Transport.Protocol:=IPPROTO_ICMPV6;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Return Result}
           Result:=True;
          finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end;  
+         end;
         end;
       end;
     end;
@@ -4423,13 +4423,13 @@ begin
    begin
     {Unlock Transport}
     Transport.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4442,16 +4442,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: RemoveTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
-  
+
   {Check Address Family}
   case ATransport.Family of
    AF_INET:begin
@@ -4490,32 +4490,32 @@ begin
             TIPTransport(ATransport).RemoveServ('NNTP',TCP_PROTOCOL_NAME);
             TIPTransport(ATransport).RemoveServ('NBSESSION',TCP_PROTOCOL_NAME);
             TIPTransport(ATransport).RemoveServ('IMAP4',TCP_PROTOCOL_NAME);
-            
+
             {Remove Proto Entry}
             TIPTransport(ATransport).RemoveProto(TCP_PROTOCOL_NAME);
-            
+
             {Remove Control Socket}
             {FSockets.Remove(Transport.Socket);} {This one is not on the list}
             Transport.Socket.Free;
-            
+
             {Acquire Lock}
             FTransports.WriterLock;
             try
              {Remove Transport}
              FTransports.Remove(Transport);
-            
+
              {Unlock Transport}
              Transport.WriterUnlock;
-            
+
              {Destroy Transport}
              Transport.Free;
-            
+
              {Return Result}
              Result:=True;
             finally
              {Release Lock}
              FTransports.WriterUnlock;
-            end;  
+            end;
            end;
          end;
         IPPROTO_ICMP:begin
@@ -4527,31 +4527,31 @@ begin
             try
              {Remove Transport}
              FTransports.Remove(Transport);
-            
+
              {Unlock Transport}
              Transport.WriterUnlock;
-            
+
              {Destroy Transport}
              Transport.Free;
-            
+
              {Return Result}
              Result:=True;
             finally
              {Release Lock}
              FTransports.WriterUnlock;
-            end;  
+            end;
            end;
          end;
         else
          begin
           {Unlock Transport}
           Transport.WriterUnlock;
-         end;         
-       end;  
-    
+         end;
+       end;
+
        {Get Transport}
        Transport:=TTCPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
-      end; 
+      end;
     end;
    AF_INET6:begin
      {Get Transport}
@@ -4590,32 +4590,32 @@ begin
             TIP6Transport(ATransport).RemoveServ('NNTP',TCP_PROTOCOL_NAME);
             TIP6Transport(ATransport).RemoveServ('NBSESSION',TCP_PROTOCOL_NAME);
             TIP6Transport(ATransport).RemoveServ('IMAP4',TCP_PROTOCOL_NAME);
-            
+
             {Remove Proto Entry}
             TIP6Transport(ATransport).RemoveProto(TCP_PROTOCOL_NAME);
-            
+
             {Remove Control Socket}
             {FSockets.Remove(Transport.Socket);} {This one is not on the list}
             Transport.Socket.Free;
-            
+
             {Acquire Lock}
             FTransports.WriterLock;
             try
              {Remove Transport}
              FTransports.Remove(Transport);
-            
+
              {Unlock Transport}
              Transport.WriterUnlock;
-             
+
              {Destroy Transport}
              Transport.Free;
-            
+
              {Return Result}
              Result:=True;
             finally
              {Release Lock}
              FTransports.WriterUnlock;
-            end;  
+            end;
            end;
          end;
         IPPROTO_ICMPV6:begin
@@ -4627,36 +4627,36 @@ begin
             try
              {Remove Transport}
              FTransports.Remove(Transport);
-            
+
              {Unlock Transport}
              Transport.WriterUnlock;
-            
+
              {Destroy Transport}
              Transport.Free;
-            
+
              {Return Result}
              Result:=True;
             finally
              {Release Lock}
              FTransports.WriterUnlock;
-            end;  
+            end;
            end;
          end;
         else
          begin
           {Unlock Transport}
           Transport.WriterUnlock;
-         end;         
-       end;  
-      
+         end;
+       end;
+
        {Get Transport}
        Transport:=TTCPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
-      end; 
+      end;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4678,7 +4678,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FSockets.ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
@@ -4687,7 +4687,7 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Struct = ' + SocketTypeToString(AStruct));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
-  
+
   {Get Socket}
   Socket:=TTCPSocket(FSockets.First);
   while Socket <> nil do
@@ -4705,7 +4705,7 @@ begin
            begin
             {Lock Socket}
             if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-            
+
             {Return Result}
             Result:=Socket;
             Exit;
@@ -4718,7 +4718,7 @@ begin
            begin
             {Lock Socket}
             if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-            
+
             {Return Result}
             Result:=Socket;
             Exit;
@@ -4726,13 +4726,13 @@ begin
          end;
        end;
      end;
-     
+
     {Get Next}
     Socket:=TTCPSocket(Socket.Next);
    end;
- finally 
+ finally
   FSockets.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4750,10 +4750,10 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: FlushSockets');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  All = ' + BoolToStr(All));
  {$ENDIF}
- 
+
  {Get Tick Count}
  CurrentTime:=GetTickCount64;
-  
+
  {Get Socket}
  Socket:=TTCPSocket(GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
  while Socket <> nil do
@@ -4761,7 +4761,7 @@ begin
    {Get Next}
    Current:=Socket;
    Socket:=TTCPSocket(GetSocketByNext(Current,True,False,NETWORK_LOCK_READ));
-    
+
    {Check Socket State}
    if (Current.SocketState.Closed) or (All) then
     begin
@@ -4773,23 +4773,23 @@ begin
         begin
          {Close Port}
          ClosePort(Current);
-        
+
          {Acquire Lock}
          FSockets.WriterLock;
-        
+
          {Remove Socket}
          FSockets.Remove(Current);
 
          {Release Lock}
          FSockets.WriterUnlock;
-         
+
          {Unlock Socket}
          Current.WriterUnlock;
-        
+
          {Free Socket}
          Current.Free;
          Current:=nil;
-        end; 
+        end;
       end;
     end
    else if TTCPState(Current.ProtocolState).State = TCP_STATE_TIMEWAIT then
@@ -4802,12 +4802,12 @@ begin
        Current.SocketState.Closed:=True;
        Current.CloseTime:=GetTickCount64;
        TTCPState(Current.ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        Current.SignalChange;
       end;
     end;
-    
+
    {Unlock Socket}
    if Current <> nil then Current.ReaderUnlock;
   end;
@@ -4822,65 +4822,65 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: StartProtocol');
   {$ENDIF}
- 
+
   {Check Manager}
   if Manager = nil then Exit;
- 
+
   {Register with IP Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
     AddTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Register with IP6 Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Add Transport}
     AddTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Get Min Backlog}
   FMinBacklog:=Manager.Settings.GetIntegerDefault('TCP_MIN_BACKLOG',TCP_MIN_BACKLOG);
 
   {Get Max Backlog}
   FMaxBacklog:=Manager.Settings.GetIntegerDefault('TCP_MAX_BACKLOG',TCP_MAX_BACKLOG);
-  
+
   {Get Receive Backlog}
   FReceiveBacklog:=Manager.Settings.GetIntegerDefault('TCP_RECEIVE_BACKLOG',TCP_RECEIVE_BACKLOG);
-  
+
   {Create Thread}
   FThread:=TSocketThread.Create(Self);
   {FThread.FreeOnTerminate:=True;} {Freed by StopProtocol}
-  
+
   {Start Thread}
   FThread.Start;
- 
+
   {Create Timer}
   FTimer:=TSocketTimer.Create(Self);
-  
+
   {Start Timer}
   FTimer.StartTimer(TCP_TIMER_INTERVAL);
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4892,72 +4892,72 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: StopProtocol');
   {$ENDIF}
- 
+
   {Check Manager}
   if Manager = nil then Exit;
- 
+
   {Check Timer}
   if FTimer = nil then Exit;
-  
+
   {Check Thread}
   if FThread = nil then Exit;
- 
+
   {Stop Timer}
   FTimer.StopTimer;
-  
+
   {Destroy Timer}
   FTimer.Free;
   FTimer:=nil;
-  
+
   {Terminate Thread}
   FThread.Terminate;
-  
+
   {Release Thread}
   FThread.SendSocket(nil);
-  
+
   {Wait For Thread}
   FThread.WaitFor;
-  
+
   {Destroy Thread}
   FThread.Free;
   FThread:=nil;
-  
+
   {Close all Sockets}
   FlushSockets(True);
- 
+
   {Deregister with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Deregister with IP6 Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
- 
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4968,7 +4968,7 @@ begin
  {}
  {Close old Sockets}
  FlushSockets(False);
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -4985,7 +4985,7 @@ end;
 
 {==============================================================================}
 
-function TTCPProtocol.ProcessSocket(ASocket:TProtocolSocket):Boolean; 
+function TTCPProtocol.ProcessSocket(ASocket:TProtocolSocket):Boolean;
 {Process periodic tasks for a protocol socket}
 var
  Size:Word;
@@ -5000,7 +5000,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Get Socket}
  Socket:=TTCPSocket(ASocket);
  if Socket <> nil then
@@ -5015,7 +5015,7 @@ begin
         {Insert the Flags}
         if Acknowledge <> 0 then Flags:=Flags or TCP_FLAG_ACK; //To Do //RecvBuffer.AckSegment should probably set this as <> 0 is not a good test !!
         if Urgent <> 0 then Flags:=Flags or TCP_FLAG_URG; //To Do //SendBuffer.ReadSegment will probably set this as Segment.Control will contain URG when needed !!
-      
+
         {Insert the Options}
         Options:=nil;
         if not TTCPOptions(Socket.ProtocolOptions).NoOpt then
@@ -5023,15 +5023,15 @@ begin
           Options:=TTCPOptions(Socket.ProtocolOptions).Options;
           if not CreateTCPOptions(Socket,Options,Flags) then Exit;
          end;
-        
+
         {Send the Segment}
         Result:=(SendSegment(Socket,@TIPState(Socket.TransportState).LocalAddress,@TIPState(Socket.TransportState).RemoteAddress,Socket.ProtocolState.LocalPort,Socket.ProtocolState.RemotePort,Sequence,Acknowledge,Window,Urgent,Flags,Options,Data,Size) <> SOCKET_ERROR);
-       end;     
+       end;
      finally
       {Unlock Socket}
       Socket.ReaderUnlock;
-     end;     
-    end;  
+     end;
+    end;
   end;
 end;
 
@@ -5042,7 +5042,7 @@ constructor TTCPSocket.Create(AProtocol:TNetworkProtocol;ATransport:TNetworkTran
 begin
  {}
  inherited Create(AProtocol,ATransport);
- 
+
  {Check Address Family}
  case Family of
   AF_INET:begin
@@ -5050,7 +5050,7 @@ begin
     FTransportState:=TIPState.Create;
     {Create IP Transport Options}
     FTransportOptions:=TIPOptions.Create;
-    
+
     {Set IP Defaults}
     TIPOptions(FTransportOptions).TTL:=TIPTransport(ATransport).DefaultTTL;
     TIPOptions(FTransportOptions).Flags:=IP_DF;
@@ -5089,7 +5089,7 @@ begin
 
  {Create Receive Queue}
  FReceiveQueue:=TSocketList.Create;
- 
+
  {Create Send and Receive Buffer}
  FSendData:=TTCPSendBuffer.Create(Self);
  FRecvData:=TTCPRecvBuffer.Create(Self);
@@ -5117,11 +5117,11 @@ begin
 
   {Free Receive Queue}
   FReceiveQueue.Free;
-  
+
   {Free Accept Queue}
   FAcceptQueue.Free;
   FListener:=nil;
-  
+
   {Free Protocol Options}
   FProtocolOptions.Free;
   {Free Protocol State}
@@ -5131,10 +5131,10 @@ begin
   FTransportOptions.Free;
   {Free Transport State}
   FTransportState.Free;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5168,29 +5168,29 @@ function TTCPSocket.GetOption(ALevel,AOptName:Integer;AOptValue:PChar;var AOptLe
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket: GetOption');
   {$ENDIF}
-  
+
   {Check Level}
   case ALevel of
    IPPROTO_TCP:begin
      NetworkSetLastError(WSAENOPROTOOPT);
-     
+
      {Check Option}
      case AOptName of
       TCP_NODELAY,TCP_MAXSEG,TCP_NOPUSH,TCP_NOOPT,TCP_BSDURGENT,TCP_WSCALE,TCP_NOSACK:begin
         NetworkSetLastError(WSAEFAULT);
-        
+
         if AOptLength >= SizeOf(Integer) then
          begin
           {Setup Return}
           PInteger(AOptValue)^:=0;
           AOptLength:=SizeOf(Integer);
-          
+
           {Check Option}
           case AOptName of
            TCP_NODELAY:begin
@@ -5215,7 +5215,7 @@ begin
              if TTCPOptions(ProtocolOptions).NoSack then PInteger(AOptValue)^:=1;
             end;
           end;
-          
+
           {Return Result}
           NetworkSetLastError(ERROR_SUCCESS);
           Result:=NO_ERROR;
@@ -5228,9 +5228,9 @@ begin
      Result:=inherited GetOption(ALevel,AOptName,AOptValue,AOptLength);
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5240,23 +5240,23 @@ function TTCPSocket.SetOption(ALevel,AOptName:Integer;AOptValue:PChar;AOptLength
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket: SetOption');
   {$ENDIF}
-  
+
   {Check Level}
   case ALevel of
    IPPROTO_TCP:begin
      NetworkSetLastError(WSAENOPROTOOPT);
-     
+
      {Check Option}
      case AOptName of
       TCP_NODELAY,TCP_MAXSEG,TCP_NOPUSH,TCP_NOOPT,TCP_BSDURGENT,TCP_WSCALE,TCP_NOSACK:begin
         NetworkSetLastError(WSAEFAULT);
-        
+
         if AOptLength >= SizeOf(Integer) then
          begin
           {Check Option}
@@ -5294,7 +5294,7 @@ begin
              RecvData.NoSack:=(PInteger(AOptValue)^ <> 0);
             end;
           end;
-          
+
           {Return Result}
           NetworkSetLastError(ERROR_SUCCESS);
           Result:=NO_ERROR;
@@ -5307,9 +5307,9 @@ begin
      Result:=inherited SetOption(ALevel,AOptName,AOptValue,AOptLength);
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5318,33 +5318,33 @@ function TTCPSocket.IoCtl(ACommand:DWORD;var AArgument:u_long):Integer;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket: IoCtl');
   {$ENDIF}
- 
+
   {Check Commmand}
   NetworkSetLastError(WSAEINVAL);
   case ACommand of
    FIONREAD:begin
      AArgument:=RecvData.GetAvailable;
-     
+
      {Return Result}
      NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
     end;
    FIONBIO:begin
      SocketState.NonBlocking:=(AArgument <> 0);
-     
+
      {Return Result}
      NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
     end;
    FIOASYNC:begin
      SocketState.Async:=(AArgument <> 0);
-     
+
      {Return Result}
      NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
@@ -5356,15 +5356,15 @@ begin
      //otherwise returns False and because it is OOBINLINE
      //the next Recv will read OOB data
      //RecvData.GetUrgent
-     
+
      {Return Result}
      NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5375,66 +5375,66 @@ function TTCPSocket.IsConnected(ALocalAddress,ARemoteAddress:Pointer;ALocalPort,
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket: IsConnected');
   {$ENDIF}
-  
+
   {Note: TCP Sockets dont allow Broadcasts}
   if ABroadcast then Exit;
 
   {Check Local}
   if ALocalAddress = nil then Exit;
-  
+
   {Check Remote}
   if ARemoteAddress = nil then Exit;
-  
+
   {Check for Bound}
   if not SocketState.LocalAddress then Exit;
-  
+
   {Check for Connected}
   if not SocketState.RemoteAddress then Exit; {Instead of Connected for Handshake and Close}
-  
+
   {Check Address Family}
   case Family of
    AF_INET:begin
      {Check the Bound LocalAddress}
      if not TIPTransport(Transport).CompareAddress(TIPState(TransportState).LocalAddress,PInAddr(ALocalAddress)^) then Exit;
-     
+
      {Check the Bound LocalPort}
      if ProtocolState.LocalPort <> ALocalPort then Exit;
-     
+
      {Check the Connected RemoteAddress}
      if not TIPTransport(Transport).CompareAddress(TIPState(TransportState).RemoteAddress,PInAddr(ARemoteAddress)^) then Exit;
-     
+
      {Check the Connected RemotePort}
      if ProtocolState.RemotePort <> ARemotePort then Exit;
-     
+
      {Return Result}
      Result:=True;
     end;
    AF_INET6:begin
      {Check the Bound LocalAddress}
      if not TIP6Transport(Transport).CompareAddress(TIP6State(TransportState).LocalAddress,PIn6Addr(ALocalAddress)^) then Exit;
-     
+
      {Check the Bound LocalPort}
      if ProtocolState.LocalPort <> ALocalPort then Exit;
-     
+
      {Check the Connected RemoteAddress}
      if not TIP6Transport(Transport).CompareAddress(TIP6State(TransportState).RemoteAddress,PIn6Addr(ARemoteAddress)^) then Exit;
-     
+
      {Check the Connected RemotePort}
      if ProtocolState.RemotePort <> ARemotePort then Exit;
-     
+
      {Return Result}
      Result:=True;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5445,28 +5445,28 @@ function TTCPSocket.IsListening(ALocalAddress,ARemoteAddress:Pointer;ALocalPort,
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket: IsListening');
   {$ENDIF}
-  
+
   {Note: TCP Sockets dont allow Broadcasts}
   if ABroadcast then Exit;
-  
+
   {Check Local}
   if ALocalAddress = nil then Exit;
-  
+
   {Check Remote}
   {if ARemoteAddress = nil then Exit;} {Not Used}
-  
+
   {Check for Bound}
   if not SocketState.LocalAddress then Exit;
-  
+
   {Check for Listening}
   if not SocketState.Listening then Exit; {Dont check for Connected}
-  
+
   {Check Address Family}
   case Family of
    AF_INET:begin
@@ -5476,10 +5476,10 @@ begin
        {Check the Bound LocalAddress}
        if not TIPTransport(Transport).CompareAddress(TIPState(TransportState).LocalAddress,PInAddr(ALocalAddress)^) then Exit;
       end;
-     
+
      {Check the Bound LocalPort}
      if ProtocolState.LocalPort <> ALocalPort then Exit;
-     
+
      {Return Result}
      Result:=True;
     end;
@@ -5490,17 +5490,17 @@ begin
        {Check the Bound LocalAddress}
        if not TIP6Transport(Transport).CompareAddress(TIP6State(TransportState).LocalAddress,PIn6Addr(ALocalAddress)^) then Exit;
       end;
-     
+
      {Check the Bound LocalPort}
      if ProtocolState.LocalPort <> ALocalPort then Exit;
-     
+
      {Return Result}
      Result:=True;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5511,35 +5511,35 @@ function TTCPSocket.Listen:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket: Listen');
   {$ENDIF}
-  
+
   {Check the State}
   case TTCPState(ProtocolState).State of
    TCP_STATE_CLOSED:begin {Socket is newly created}
      {Clear the Queues}
      AcceptQueue.ClearList;
      ReceiveQueue.ClearList;
-     
+
      {Change State to Listen}
      TTCPState(ProtocolState).State:=TCP_STATE_LISTEN;
      SocketOptions.Accept:=True;
      SocketState.Listening:=True;
-     
+
      {Signal the Event}
      SignalChange;
-     
+
      {Return Result}
      Result:=True;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5551,49 +5551,49 @@ function TTCPSocket.Connect:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket: Connect');
   {$ENDIF}
-  
+
   {Check the State}
   case TTCPState(ProtocolState).State of
    TCP_STATE_SYNREC:begin {Socket has received a SYN}
      {Send a SYN}
      if not SendData.Synchronize then Exit;
-     
+
      {TCP State already set by Receive Segment}
      {Open Time already set by Receive Segment}
      SocketState.Connecting:=True;
-     
+
      {Signal the Event}
      SignalChange;
-     
+
      {Return Result}
      Result:=True;
     end;
    TCP_STATE_CLOSED:begin {Socket is newly created}
      {Send a SYN}
      if not SendData.Synchronize then Exit;
-     
+
      {Change State to SynSent}
      TTCPState(ProtocolState).State:=TCP_STATE_SYNSENT;
      SocketState.Connecting:=True;
      OpenTime:=GetTickCount64;
      //To Do //Is it here where we set NoNagle and MaxSeg etc //on SendBuffer ??
-     
+
      {Signal the Event}
      SignalChange;
-     
+
      {Return Result}
      Result:=True;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5604,13 +5604,13 @@ function TTCPSocket.Reconnect:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket: Reconnect');
   {$ENDIF}
-  
+
   {Check the State}
   case TTCPState(ProtocolState).State of
    TCP_STATE_CLOSED:begin {Socket is newly created}
@@ -5618,29 +5618,29 @@ begin
      SocketError:=ERROR_SUCCESS;
      SocketState.Closed:=False;
      CloseTime:=0;
-     
+
      {Reset Send}
      SendData.SynSequence:=0;
-     
+
      {Send a SYN}
      if not SendData.Synchronize then Exit;
-     
+
      {Change State to SynSent}
      TTCPState(ProtocolState).State:=TCP_STATE_SYNSENT;
      SocketState.Connecting:=True;
      OpenTime:=GetTickCount64;
      //To Do //Is it here where we set NoNagle and MaxSeg etc //on SendBuffer ??
-     
+
      {Signal the Event}
      SignalChange;
-     
+
      {Return Result}
      Result:=True;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5651,13 +5651,13 @@ function TTCPSocket.Disconnect:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket: Disconnect');
   {$ENDIF}
-  
+
   {Check the State}
   case TTCPState(ProtocolState).State of
    TCP_STATE_LISTEN:begin
@@ -5666,10 +5666,10 @@ begin
      SocketOptions.Accept:=False;
      SocketState.Closed:=True;
      CloseTime:=GetTickCount64;
-     
+
      {Signal the Event}
      SignalChange;
-     
+
      {Return Result}
      Result:=True;
     end;
@@ -5678,45 +5678,45 @@ begin
      TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
      SocketState.Closed:=True;
      CloseTime:=GetTickCount64;
-     
+
      {Signal the Event}
      SignalChange;
-     
+
      {Return Result}
      Result:=True;
     end;
    TCP_STATE_SYNREC,TCP_STATE_ESTAB:begin {Socket has sent and/or received a SYN and/or ACK}
      {Send a FIN}
      if not SendData.Finish then Exit;
-     
+
      {Change State to FinWait1}
      TTCPState(ProtocolState).State:=TCP_STATE_FINWAIT1;
      SocketState.Disconnecting:=True;
-     
+
      {Signal the Event}
      SignalChange;
-     
+
      {Return Result}
      Result:=True;
     end;
    TCP_STATE_CLOSWAIT:begin {Socket has received a FIN}
      {Send a FIN}
      if not SendData.Finish then Exit;
-     
+
      {Change State to LastAck}
      TTCPState(ProtocolState).State:=TCP_STATE_LASTACK; {Not CLOSING - See RFC 1122}
      SocketState.Disconnecting:=True;
-     
+
      {Signal the Event}
      SignalChange;
-     
+
      {Return Result}
      Result:=True;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5730,13 +5730,13 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket: Accept');
   {$ENDIF}
-  
+
   {Check the State}
   case TTCPState(ProtocolState).State of
    TCP_STATE_LISTEN:begin {Socket is Listening}
@@ -5755,10 +5755,10 @@ begin
            begin
             {Remove from the Queue}
             if not APeek then AcceptQueue.Remove(Socket);
-            
+
             {Lock Socket}
             if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-           
+
             {Return Result}
             Result:=Socket;
             Exit;
@@ -5767,12 +5767,12 @@ begin
        end;
      finally
       AcceptQueue.ReleaseLock;
-     end;     
+     end;
     end;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5787,7 +5787,7 @@ function TTCPSocket.RecvSegment(ASequence,AAcknowledge:LongWord;AWindow,AUrgent:
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
@@ -5798,20 +5798,20 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket:  Urgent      = ' + IntToStr(AUrgent));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket:  Size        = ' + IntToStr(ASize));
   {$ENDIF}
-  
+
   {Check the State}
   case TTCPState(ProtocolState).State of
    TCP_STATE_SYNSENT:begin
      {$IFDEF TCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket:  State       = TCP_STATE_SYNSENT');
      {$ENDIF}
-     
+
      {Check for ACK}
      if (AFlags and TCP_FLAG_ACK) = TCP_FLAG_ACK then
       begin
        {Check Acknowledge}
        if not SendData.AcknowledgeSegments(ASequence,AAcknowledge,AWindow) then Exit;
-       
+
        {Check for RST}
        if (AFlags and TCP_FLAG_RST) = TCP_FLAG_RST then
         begin
@@ -5820,26 +5820,26 @@ begin
          SocketState.Closed:=True;
          CloseTime:=GetTickCount64;
          TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-         
+
          {Signal the Event}
          SignalChange;
-         
+
          {Return Result}
          Result:=True;
          Exit;
         end;
-       
+
        {Check for SYN}
        if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
         begin
          {Write Data}
          if not RecvData.WriteSegment(ASequence,AUrgent,AFlags,AData,ASize) then Exit;
-         
+
          {Initial Window}
          SendData.WindowSequence:=ASequence;
          SendData.WindowAcknowledge:=AAcknowledge;
          SendData.WindowSize:=(AWindow shl SendData.WindowScale);
-         
+
          {Check SYN Acknowledged}
          if SendData.SynAcknowledged then
           begin
@@ -5848,20 +5848,20 @@ begin
            SocketState.Connected:=True;
            TTCPState(ProtocolState).State:=TCP_STATE_ESTAB;
 
-           {Check the Listener}           
+           {Check the Listener}
            if Listener <> nil then
             begin
              if CheckSocket(Listener,True,NETWORK_LOCK_READ) then
               begin
                {Remove the Socket}
                TTCPSocket(Listener).ReceiveQueue.Remove(Self);
-               
+
                {Add the Socket}
                TTCPSocket(Listener).AcceptQueue.Add(Self);
-               
+
                {Signal the Listener}
                Listener.SignalChange;
-               
+
                {Unlock Listener}
                Listener.ReaderUnlock;
               end;
@@ -5874,10 +5874,10 @@ begin
            SocketState.Connecting:=True;
            TTCPState(ProtocolState).State:=TCP_STATE_SYNREC;
           end;
-         
+
          {Signal the Event}
          SignalChange;
-          
+
          {Return Result}
          Result:=True;
          Exit;
@@ -5890,23 +5890,23 @@ begin
         begin
          {Write Data}
          if not RecvData.WriteSegment(ASequence,AUrgent,AFlags,AData,ASize) then Exit;
-         
+
          {Initial Window}
          SendData.WindowSequence:=ASequence;
          SendData.WindowSize:=(AWindow shl SendData.WindowScale);
-         
+
          {Connection Restarted}
          SocketError:=ERROR_SUCCESS;
          SocketState.Connecting:=True;
          OpenTime:=GetTickCount64;
          TTCPState(ProtocolState).State:=TCP_STATE_SYNREC;
-         
+
          {Reset Send and Send SYN}
          SendData.SynSequence:=0;
 
          {Signal the Event}
          SignalChange;
-         
+
          {Return Result}
          Result:=Connect;
          Exit;
@@ -5917,7 +5917,7 @@ begin
      {$IFDEF TCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket:  State       = TCP_STATE_SYNREC');
      {$ENDIF}
-     
+
      {Check for RST}
      if (AFlags and TCP_FLAG_RST) = TCP_FLAG_RST then
       begin
@@ -5926,15 +5926,15 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Check for SYN}
      if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
       begin
@@ -5943,34 +5943,34 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Check for ACK}
      if (AFlags and TCP_FLAG_ACK) = TCP_FLAG_ACK then
       begin
        {Check Acknowledge}
        if not SendData.AcknowledgeSegments(ASequence,AAcknowledge,AWindow) then Exit;
-       
+
        {Write Data}
        if not RecvData.WriteSegment(ASequence,AUrgent,AFlags,AData,ASize) then Exit;
-       
+
        {Check for FIN}
        if (AFlags and TCP_FLAG_FIN) = TCP_FLAG_FIN then
         begin
          //To Do //Should we check SynAcknowledged ???
-         //RFC says shouldn't go to CLOSWAIT unless SYN is ACKed !! - Yes !! 
+         //RFC says shouldn't go to CLOSWAIT unless SYN is ACKed !! - Yes !!
 
          //To do so we would need WriteSegment to check for SYN/FIN and
          //set SynSequence/FinSequence and then have functions for
          //SynReceived/FinReceived so that we could check later ?? - Done
- 
+
          {Connection Closing}
          SocketError:=ERROR_SUCCESS;
          SocketState.Disconnecting:=True;
@@ -5985,31 +5985,31 @@ begin
            SocketError:=ERROR_SUCCESS;
            SocketState.Connected:=True;
            TTCPState(ProtocolState).State:=TCP_STATE_ESTAB;
-           
-           {Check the Listener}           
+
+           {Check the Listener}
            if Listener <> nil then
             begin
              if CheckSocket(Listener,True,NETWORK_LOCK_READ) then
               begin
                {Remove the Socket}
                TTCPSocket(Listener).ReceiveQueue.Remove(Self);
-               
+
                {Add the Socket}
                TTCPSocket(Listener).AcceptQueue.Add(Self);
-               
+
                {Signal the Listener}
                Listener.SignalChange;
-               
+
                {Unlock Listener}
                Listener.ReaderUnlock;
               end;
             end;
           end;
         end;
-       
+
        {Signal the Event}
        SignalChange;
-        
+
        {Return Result}
        Result:=True;
        Exit;
@@ -6019,7 +6019,7 @@ begin
      {$IFDEF TCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket:  State       = TCP_STATE_ESTAB');
      {$ENDIF}
-     
+
      {Check for RST}
      if (AFlags and TCP_FLAG_RST) = TCP_FLAG_RST then
       begin
@@ -6028,15 +6028,15 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Check for SYN}
      if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
       begin
@@ -6045,25 +6045,25 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Check for ACK}
      if (AFlags and TCP_FLAG_ACK) = TCP_FLAG_ACK then
       begin
-       
+
        {Check Acknowledge}
        if not SendData.AcknowledgeSegments(ASequence,AAcknowledge,AWindow) then Exit;
-       
+
        {Write Data}
        if not RecvData.WriteSegment(ASequence,AUrgent,AFlags,AData,ASize) then Exit;
-       
+
        {Check for FIN}
        if (AFlags and TCP_FLAG_FIN) = TCP_FLAG_FIN then
         begin
@@ -6074,7 +6074,7 @@ begin
         end;
        //To Do //See handling of FIN above //Need to check FinReceived and move to
        //CLOSWAIT
-       
+
        {Signal the Event}
        SignalChange;
 
@@ -6087,7 +6087,7 @@ begin
      {$IFDEF TCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket:  State       = TCP_STATE_FINWAIT1');
      {$ENDIF}
-     
+
      {Check for RST}
      if (AFlags and TCP_FLAG_RST) = TCP_FLAG_RST then
       begin
@@ -6096,15 +6096,15 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Check for SYN}
      if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
       begin
@@ -6113,24 +6113,24 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-      
+
      {Check for ACK}
      if (AFlags and TCP_FLAG_ACK) = TCP_FLAG_ACK then
       begin
        {Check Acknowledge}
        if not SendData.AcknowledgeSegments(ASequence,AAcknowledge,AWindow) then Exit;
-       
+
        {Write Data}
        if not RecvData.WriteSegment(ASequence,AUrgent,AFlags,AData,ASize) then Exit;
-       
+
        {Check for FIN}
        if (AFlags and TCP_FLAG_FIN) = TCP_FLAG_FIN then
         begin
@@ -6162,10 +6162,10 @@ begin
            TTCPState(ProtocolState).State:=TCP_STATE_FINWAIT2;
           end;
         end;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
@@ -6175,7 +6175,7 @@ begin
      {$IFDEF TCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket:  State       = TCP_STATE_FINWAIT2');
      {$ENDIF}
-     
+
      {Check for RST}
      if (AFlags and TCP_FLAG_RST) = TCP_FLAG_RST then
       begin
@@ -6184,15 +6184,15 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-      
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Check for SYN}
      if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
       begin
@@ -6201,24 +6201,24 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Check for ACK}
      if (AFlags and TCP_FLAG_ACK) = TCP_FLAG_ACK then
       begin
        {Check Acknowledge}
        if not SendData.AcknowledgeSegments(ASequence,AAcknowledge,AWindow) then Exit;
-       
+
        {Write Data}
        if not RecvData.WriteSegment(ASequence,AUrgent,AFlags,AData,ASize) then Exit;
-       
+
        {Check for FIN}
        if (AFlags and TCP_FLAG_FIN) = TCP_FLAG_FIN then
         begin
@@ -6228,10 +6228,10 @@ begin
          TimewaitTime:=GetTickCount64;
          TTCPState(ProtocolState).State:=TCP_STATE_TIMEWAIT;
         end;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
@@ -6241,7 +6241,7 @@ begin
      {$IFDEF TCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket:  State       = TCP_STATE_CLOSWAIT');
      {$ENDIF}
-     
+
      {Check for RST}
      if (AFlags and TCP_FLAG_RST) = TCP_FLAG_RST then
       begin
@@ -6250,15 +6250,15 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Check for SYN}
      if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
       begin
@@ -6267,27 +6267,27 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Check for ACK}
      if (AFlags and TCP_FLAG_ACK) = TCP_FLAG_ACK then
       begin
        {Check Acknowledge}
        if not SendData.AcknowledgeSegments(ASequence,AAcknowledge,AWindow) then Exit;
-       
+
        {Write Data}
        if not RecvData.WriteSegment(ASequence,AUrgent,AFlags,AData,ASize) then Exit;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Waiting for call to CloseSocket}
        Result:=True;
        Exit;
@@ -6297,7 +6297,7 @@ begin
      {$IFDEF TCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket:  State       = TCP_STATE_CLOSING');
      {$ENDIF}
-     
+
      {Check for RST}
      if (AFlags and TCP_FLAG_RST) = TCP_FLAG_RST then
       begin
@@ -6305,15 +6305,15 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Check for SYN}
      if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
       begin
@@ -6322,24 +6322,24 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Check for ACK}
      if (AFlags and TCP_FLAG_ACK) = TCP_FLAG_ACK then
       begin
        {Check Acknowledge}
        if not SendData.AcknowledgeSegments(ASequence,AAcknowledge,AWindow) then Exit;
-       
+
        {Write Data}
        if not RecvData.WriteSegment(ASequence,AUrgent,AFlags,AData,ASize) then Exit;
-       
+
        {Check FIN Acknowledged}
        if SendData.FinAcknowledged then
         begin
@@ -6349,10 +6349,10 @@ begin
          TimewaitTime:=GetTickCount64;
          TTCPState(ProtocolState).State:=TCP_STATE_TIMEWAIT;
         end;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
@@ -6362,7 +6362,7 @@ begin
      {$IFDEF TCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket:  State       = TCP_STATE_LASTACK');
      {$ENDIF}
-     
+
      {Check for RST}
      if (AFlags and TCP_FLAG_RST) = TCP_FLAG_RST then
       begin
@@ -6370,15 +6370,15 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Check for SYN}
      if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
       begin
@@ -6387,24 +6387,24 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Check for ACK}
      if (AFlags and TCP_FLAG_ACK) = TCP_FLAG_ACK then
       begin
        {Check Acknowledge}
        if not SendData.AcknowledgeSegments(ASequence,AAcknowledge,AWindow) then Exit;
-       
+
        {Write Data}
        if not RecvData.WriteSegment(ASequence,AUrgent,AFlags,AData,ASize) then Exit;
-       
+
        {Check FIN Acknowledged}
        if SendData.FinAcknowledged then
         begin
@@ -6413,10 +6413,10 @@ begin
          CloseTime:=GetTickCount64;
          TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
         end;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
@@ -6426,7 +6426,7 @@ begin
      {$IFDEF TCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket:  State       = TCP_STATE_TIMEWAIT');
      {$ENDIF}
-     
+
      {Check for RST}
      if (AFlags and TCP_FLAG_RST) = TCP_FLAG_RST then
       begin
@@ -6434,15 +6434,15 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Check for SYN}
      if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then
       begin
@@ -6451,26 +6451,26 @@ begin
        SocketState.Closed:=True;
        CloseTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_CLOSED;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
       end;
-     
+
      {Check for ACK}
      if (AFlags and TCP_FLAG_ACK) = TCP_FLAG_ACK then
       begin
        {Check Acknowledge}
        if not SendData.AcknowledgeSegments(ASequence,AAcknowledge,AWindow) then Exit;
-       
+
        {Write Data}
        if not RecvData.WriteSegment(ASequence,AUrgent,AFlags,AData,ASize) then Exit;
        //To Do //Send an Acknowledge - Must be a Retransmit of FIN
                      //Do this in SegmentHandler ??? - Already Done ??? by CheckSequence
-       
+
        {Check for FIN}
        if (AFlags and TCP_FLAG_FIN) = TCP_FLAG_FIN then
         begin
@@ -6479,10 +6479,10 @@ begin
          //To Do //Send an Acknowledge - Must be a Retransmit of FIN
                        //Do this in SegmentHandler ??? - Already Done ??? by CheckSequence
         end;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=True;
        Exit;
@@ -6492,7 +6492,7 @@ begin
      {$IFDEF TCP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket:  State       = TCP_STATE_CLOSED');
      {$ENDIF}
-     
+
      {Can only occur on a newly cloned Socket}
      {Otherwise the Segment Handler rejects it}
      {Check for SYN}
@@ -6500,20 +6500,20 @@ begin
       begin
        {Write Data}
        if not RecvData.WriteSegment(ASequence,AUrgent,AFlags,AData,ASize) then Exit;
-       
+
        {Initial Window}
        SendData.WindowSequence:=ASequence;
        SendData.WindowSize:=(AWindow shl SendData.WindowScale);
-       
+
        {Connection Started}
        SocketError:=ERROR_SUCCESS;
        SocketState.Connecting:=True;
        OpenTime:=GetTickCount64;
        TTCPState(ProtocolState).State:=TCP_STATE_SYNREC;
-       
+
        {Signal the Event}
        SignalChange;
-       
+
        {Return Result}
        Result:=Connect;
        Exit;
@@ -6521,9 +6521,9 @@ begin
     end;
   end;
   {All others should not happen}
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6535,20 +6535,20 @@ function TTCPSocket.SendSegment(var ASequence,AAcknowledge:LongWord;var AWindow,
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Socket: SendSegment');
   {$ENDIF}
-  
+
   {Check for Send}
   {Get Segment to (Re)send}
   if SendData.ReadSegment(ASequence,AUrgent,AFlags,AData,ASize,False) then
    begin
     {Get Acknowledge to Send (Forced to prevent Delayed ACK)}
     RecvData.AcknowledgeSegments(AAcknowledge,AWindow,True);
-    
+
     {Return Result}
     Result:=True;
    end
@@ -6557,9 +6557,9 @@ begin
     {Get Acknowledge to Send (If any is available)}
     Result:=RecvData.AcknowledgeSegments(AAcknowledge,AWindow,False);
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6580,10 +6580,10 @@ begin
  AcquireLock;
  try
   FState:=TCP_STATE_CLOSED;
- finally 
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+ finally
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6665,7 +6665,7 @@ function TTCPState.GetSynchronized:Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check State}
  case FState of
   TCP_STATE_ESTAB,TCP_STATE_FINWAIT1,TCP_STATE_FINWAIT2,TCP_STATE_CLOSWAIT,TCP_STATE_CLOSING,TCP_STATE_LASTACK,TCP_STATE_TIMEWAIT:begin
@@ -6684,7 +6684,7 @@ begin
  FMemory:=TMemoryStream.Create;
  FMemory.SetSize(TCP_OPTIONS_SIZE);
  FOptions:=TCP_NOSACK; //To Do //Defaults  //Nagle/Sack/Timestamp/WindowScale ??
- 
+
  FMaxSeg:=TCP_MAX_MSS;
  FWindowScale:=0;
 end;
@@ -6697,15 +6697,15 @@ begin
  AcquireLock;
  try
   FMemory.Free;
- finally 
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+ finally
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-procedure TTCPOptions.SetMaxSeg(AMaxSeg:Word); 
+procedure TTCPOptions.SetMaxSeg(AMaxSeg:Word);
 begin
  {}
  if not AcquireLock then Exit;
@@ -6872,14 +6872,14 @@ begin
  WindowSize:=(MaxSeg * 4); {Start with a 4 x MSS Window as per RFC - Remote will tell us with SYN}
  WindowScale:=0;
  WindowTimeout:=0;
- 
+
  CongestionWindow:=MaxSeg; {Slow Start Window of 1 Segment}
 
  SynSequence:=0;
  FinSequence:=0;
 
  WindowSequence:=0;
- WindowAcknowledge:=StartSequence; 
+ WindowAcknowledge:=StartSequence;
 
  NoPush:=False;             {Enable Push by Default}
  NoSack:=True;              {Disable Selective Ack by Default}
@@ -6898,10 +6898,10 @@ begin
  AcquireLock;
  try
   FlushSegments(True);
- finally 
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+ finally
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6913,20 +6913,20 @@ function TTCPSendBuffer.AddSegment(ASequence:LongWord;AFlags:Byte;ASize:Word):PT
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: AddSegment');
   {$ENDIF}
-  
+
   {Check Buffer Free}
   if ASize > FFree then Exit;
-  
+
   {Create a new Segment and Data}
   Result:=GetMem(SizeOf(TTCPSegment) + TCP_MAX_MSS); {TCP_SEGMENT_SIZE}
   if Result = nil then Exit;
-  
+
   {Update Segment}
   Result.Size:=ASize;
   Result.Data:=Pointer(PtrUInt(Result) + SizeOf(TTCPSegment)); {TCP_SEGMENT_SIZE}
@@ -6942,11 +6942,11 @@ begin
   Result.Prev:=nil;
   Result.Next:=nil;
   Result.Item.Flags:=SOCKET_TIMER_FLAG_NONE;
-  
+
   {Check Flags}
   if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then Inc(Result.LastSequence);
   if (AFlags and TCP_FLAG_FIN) = TCP_FLAG_FIN then Inc(Result.LastSequence);
-  
+
   {Add to List}
   if FLast = nil then
    begin
@@ -6961,9 +6961,9 @@ begin
     Result.Prev:=FLast;
     FLast:=Result;
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6973,16 +6973,16 @@ function TTCPSendBuffer.RemoveSegment(ASegment:PTCPSegment):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: RemoveSegment');
   {$ENDIF}
-  
+
   {Check Segment}
   if ASegment = nil then Exit;
-  
+
   {Remove from List}
   if ASegment.Prev <> nil then
    begin
@@ -7016,18 +7016,18 @@ begin
       FLast:=nil;
      end;
    end;
-  
-  {Unschedule the Thread} 
+
+  {Unschedule the Thread}
   TProtocolSocket(FSocket).UnscheduleSocketItem(@ASegment.Item);
-  
+
   {Free the Segment and Data}
   FreeMem(ASegment,SizeOf(TTCPSegment) + TCP_MAX_MSS); {TCP_SEGMENT_SIZE}
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7048,7 +7048,7 @@ begin
     {Get Next}
     Current:=Segment;
     Segment:=Current.Next;
-    
+
     {Check Status}
     if ((Current.Acknowledged and Current.Transferred)) or (All) then
      begin
@@ -7061,9 +7061,9 @@ begin
       Exit;
      end;
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7077,20 +7077,20 @@ begin
  try
   {Check Size}
   if ASize = 0 then Exit;
-  
+
   {Get Size}
   ASize:=Max(ASize,TCP_BUFFER_SIZE);
   ASize:=Max(FSize,ASize);
-  
+
   {Set the Buffer Values}
   FSize:=ASize;
-  
+
   {Set the Data Values}
   FUsed:=FUsed;
   FFree:=FSize - FUsed;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7100,20 +7100,20 @@ function TTCPSendBuffer.CheckIdle:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: CheckIdle');
   {$ENDIF}
-  
+
   {Check the Sequence}
   if (NextSequence = LastSequence) and (NextSequence = LastAcknowledge) then Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function TTCPSendBuffer.SynAcknowledged:Boolean;
@@ -7121,24 +7121,24 @@ function TTCPSendBuffer.SynAcknowledged:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: SynAcknowledged');
   {$ENDIF}
-  
+
   {Check Syn Sequence}
   if SynSequence = 0 then Exit;
-  
+
   {Check Syn Acknowledge}
   if SequenceLEQ(LastAcknowledge,SynSequence) then Exit;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7148,24 +7148,24 @@ function TTCPSendBuffer.FinAcknowledged:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: FinAcknowledged');
   {$ENDIF}
-  
+
   {Check Fin Sequence}
   if FinSequence = 0 then Exit;
-  
+
   {Check Fin Acknowledge}
   if SequenceLEQ(LastAcknowledge,FinSequence) then Exit;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7177,7 +7177,7 @@ function TTCPSendBuffer.TestAcknowledge(AAcknowledge:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
@@ -7186,15 +7186,15 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  NextSequence  = ' + IntToStr(NextSequence));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Acknowledge   = ' + IntToStr(AAcknowledge));
   {$ENDIF}
-  
+
   {Check Acknowledge}
   if SequenceLEQ(AAcknowledge,StartSequence) or SequenceGT(AAcknowledge,NextSequence) then Exit;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7206,7 +7206,7 @@ function TTCPSendBuffer.CheckAcknowledge(AAcknowledge:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
@@ -7215,18 +7215,18 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  NextSequence  = ' + IntToStr(NextSequence));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Acknowledge   = ' + IntToStr(AAcknowledge));
   {$ENDIF}
-  
+
   {Check Acknowledge}
   if SequenceLT(AAcknowledge,LastAcknowledge) then Exit;
-  
+
   {Check Sequence}
   if SequenceGT(AAcknowledge,NextSequence) then Exit;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7238,7 +7238,7 @@ function TTCPSendBuffer.ValidateAcknowledge(AAcknowledge:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
@@ -7246,15 +7246,15 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  NextSequence  = ' + IntToStr(NextSequence));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Acknowledge   = ' + IntToStr(AAcknowledge));
   {$ENDIF}
-  
+
   {Check Sequence}
   if SequenceGT(AAcknowledge,NextSequence) then Exit;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7280,25 +7280,25 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Clear old Segments}
-  FlushSegments(False); 
-  
+  FlushSegments(False);
+
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: WriteData');
   {$ENDIF}
-  
+
   {Check the Data Size}
   if ASize = 0 then Exit; {Check for at least 1 byte of Data}
-  
+
   {Check the Free Space}
   if FFree < 1 then Exit; {Check for at least 1 byte Free}
-  
+
   {Set Sequenced}
   Sequenced:=False;
-  
+
   {Check for Segment Size}
   Offset:=0;
   while ASize > 0 do
@@ -7306,7 +7306,7 @@ begin
     {Get the Size to Write}
     WriteNext:=nil;
     WriteSize:=Min(MaxSeg,ASize);
-    
+
     {Check Last Segment}
     Segment:=nil;
     if (AFlags and MSG_OOB) <> MSG_OOB then
@@ -7323,7 +7323,7 @@ begin
           LastSequence:=Segment.LastSequence;  //To Do //Check this - Correct !!
          end;
        end;
-      
+
       {Create a Segment}
       if Segment = nil then
        begin
@@ -7342,39 +7342,39 @@ begin
       LastSequence:=Segment.LastSequence;  //To Do //Check this
       WriteNext:=Segment.Data;
      end;
-    
+
     {Write the Segment Data}
     System.Move(Pointer(PtrUInt(@ABuffer) + Offset)^,WriteNext^,WriteSize);
-    
+
     {Update the Free and Used}
     Dec(FFree,WriteSize);
     Inc(FUsed,WriteSize);
     {$IFDEF TCP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: WriteData: Free = ' + IntToStr(FFree) + ' Used = ' + IntToStr(FUsed));
     {$ENDIF}
-    
+
     {Update Segement}
     Segment.Transferred:=True;
-    
+
     {Check Sequenced}
     if (Segment.Prev = nil) or (Segment.Prev.Count > 0) then Sequenced:=True;
-    
+
     {Update Offset and Size}
     Inc(Offset,WriteSize);
     Dec(ASize,WriteSize);
-    
+
     {Mark Push on the last Segment}
     if (ASize = 0) and not(NoPush) then Segment.Control:=Segment.Control or TCP_FLAG_PUSH;
    end;
-  
+
   {Signal the Thread}
   if Sequenced then TProtocolSocket(FSocket).SendSocket;
-  
-  {Return Result} 
+
+  {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7389,33 +7389,33 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Finish');
   {$ENDIF}
-  
+
   {Check already sent}
   if FinSequence <> 0 then Exit; {Could be a better test than <> 0}
-  
+
   {Create FIN Segment}
   Segment:=AddSegment(LastSequence,TCP_FLAG_FIN,0);
   if Segment = nil then Exit;
   LastSequence:=Segment.LastSequence;
   FinSequence:=Segment.FirstSequence;
-  
+
   {Update Segement}
   Segment.Transferred:=True;
-  
-  {Signal the Thread}  
+
+  {Signal the Thread}
   TProtocolSocket(FSocket).SendSocket;
-  
-  {Return Result} 
+
+  {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7430,42 +7430,42 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Synchronize');
   {$ENDIF}
-  
+
   {Check already sent}
   if SynSequence <> 0 then Exit; {Could be a better test than <> 0}
-  
+
   {Clear any Segments}
   FlushSegments(True);
-  
+
   {Set Sequence numbers}
   StartSequence:=GetTickCount; //To Do //Should this be something else now ?
   NextSequence:=StartSequence;
   LastSequence:=StartSequence;
   LastAcknowledge:=StartSequence;
-  
+
   {Create SYN Segment}
   Segment:=AddSegment(LastSequence,TCP_FLAG_SYN,0);
   if Segment = nil then Exit;
   LastSequence:=Segment.LastSequence;
   SynSequence:=Segment.FirstSequence;
-  
+
   {Update Segement}
   Segment.Transferred:=True;
-  
-  {Signal the Thread}  
+
+  {Signal the Thread}
   TProtocolSocket(FSocket).SendSocket;
-  
-  {Return Result} 
+
+  {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7477,7 +7477,7 @@ function TTCPSendBuffer.ReadSegment(var ASequence:LongWord;var AUrgent:Word;var 
 
 {Socket Timing                                                                 }
 { For each sent segment a notification is scheduled for the socket thread to   }
-{ check the socket in TCP_RETRY_TIMEOUT[Segment.Count] milliseconds. This is   }  
+{ check the socket in TCP_RETRY_TIMEOUT[Segment.Count] milliseconds. This is   }
 { to ensure that the segment is retried if not acknowledged by that time.      }
 {                                                                              }
 { For each sent segment that has a following segment a notification is sent to }
@@ -7498,26 +7498,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Clear old Segments}
   {FlushSegments(False);}
-  
+
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: ReadSegment');
   {$ENDIF}
-  
+
   {Get the Defaults}
   ASequence:=NextSequence;
   AUrgent:=UrgentPointer;
   AFlags:=0;
   AData:=nil;
   ASize:=0;
-  
+
   {Check the Sequence}
   if (NextSequence = LastSequence) and (NextSequence = LastAcknowledge) then Exit;
-  
+
   {Check Segments}
   CurrentTime:=GetTickCount64;
   Segment:=FFirst;
@@ -7538,23 +7538,23 @@ begin
           AFlags:=Segment.Control;
           AData:=Segment.Data;
           ASize:=Segment.Size;
-          
+
           {Stamp the Segment}
           Inc(Segment.Count);
           Segment.Timeout:=CurrentTime;
-          
+
           {Move the NextSequence}
           NextSequence:=Segment.LastSequence;
-          
+
           {Reset the Window Timeout}
           WindowTimeout:=0;
-                    
-          {Schedule the Thread}  
+
+          {Schedule the Thread}
           TProtocolSocket(FSocket).ScheduleSocketItem(@Segment.Item,TCP_RETRY_TIMEOUT[Segment.Count]);
-          
-          {Signal the Thread}  
+
+          {Signal the Thread}
           if Segment.Next <> nil then TProtocolSocket(FSocket).SendSocket;
-          
+
           {$IFDEF TCP_DEBUG}
           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Acceptable Segment');
           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.Size = ' + IntToStr(Segment.Size));
@@ -7563,30 +7563,30 @@ begin
             if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: No following segment');
            end;
           {$ENDIF}
-          
+
           {Return Result}
           Result:=True;
-          
+
         {$IFDEF TCP_DEBUG}
          end
         else
          begin
-          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Unacceptable Segment');  
+          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Unacceptable Segment');
           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  NextSequence = ' + IntToStr(NextSequence));
-          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  LastAcknowledge = ' + IntToStr(LastAcknowledge)); 
+          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  LastAcknowledge = ' + IntToStr(LastAcknowledge));
           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.Size = ' + IntToStr(Segment.Size));
-          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  MaxSeg = ' + IntToStr(MaxSeg)); 
-        {$ENDIF}  
-         end;         
+          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  MaxSeg = ' + IntToStr(MaxSeg));
+        {$ENDIF}
+         end;
        end
       else
        begin
         {$IFDEF TCP_DEBUG}
-        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: No available window'); 
-        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  WindowSize = ' + IntToStr(WindowSize)); 
-        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  WindowScale = ' + IntToStr(WindowScale)); 
-        {$ENDIF}  
-        
+        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: No available window');
+        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  WindowSize = ' + IntToStr(WindowSize));
+        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  WindowScale = ' + IntToStr(WindowScale));
+        {$ENDIF}
+
         {Not enough Window available}
         if WindowTimeout <> 0 then
          begin
@@ -7597,23 +7597,23 @@ begin
             if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Sending window probe');
             if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  NextSequence = ' + IntToStr(NextSequence));
             if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.Size = ' + IntToStr(Segment.Size));
-            {$ENDIF}  
-            
+            {$ENDIF}
+
             {Send a keep alive to probe the Window (Instead of a 1 byte probe segment)}
             ASequence:=NextSequence - 1;
             AUrgent:=UrgentPointer;
             AFlags:=0;
             AData:=nil; {Zero length keep alive}
             ASize:=0;
-            
+
             {Do not update segment or next sequence}
-            
+
             {Set the Window Timeout}
             WindowTimeout:=CurrentTime;
-            
-            {Schedule the Thread}  
+
+            {Schedule the Thread}
             TProtocolSocket(FSocket).ScheduleSocket(TCP_WINDOW_TIMEOUT);
-            
+
             {Return Result}
             Result:=True;
            end;
@@ -7621,17 +7621,17 @@ begin
         else
          begin
           {$IFDEF TCP_DEBUG}
-          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Scheduling window timeout'); 
-          {$ENDIF}  
-          
+          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Scheduling window timeout');
+          {$ENDIF}
+
           {Set the Window Timeout}
           WindowTimeout:=CurrentTime;
-          
-          {Schedule the Thread}  
+
+          {Schedule the Thread}
           TProtocolSocket(FSocket).ScheduleSocket(TCP_WINDOW_TIMEOUT);
          end;
        end;
-       
+
       {Exit if we found an unsent Segment (even if we didnt send it)}
       Exit;
      end
@@ -7648,60 +7648,60 @@ begin
           AUrgent:=0; //To Do //UrgentPointer  ?? UrgentPointer - Segment.FirstSequence ??
           AFlags:=Segment.Control;
           AData:=Segment.Data;
-          ASize:=Segment.Size; 
+          ASize:=Segment.Size;
 
           {Resent Count exceeded close the Socket}
           if Segment.Count >= TCP_RETRY_COUNT then
            begin
             {$IFDEF TCP_DEBUG}
-            if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Retransmit Count Exceeded'); 
+            if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Retransmit Count Exceeded');
             if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.FirstSequence = ' + IntToStr(Segment.FirstSequence));
             if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.Size = ' + IntToStr(Segment.Size));
             if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.Count = ' + IntToStr(Segment.Count));
-            {$ENDIF}  
-            
+            {$ENDIF}
+
             {Connection Timeout}
             FSocket.SocketError:=WSAETIMEDOUT;
             FSocket.SocketState.Closed:=True;
             FSocket.CloseTime:=GetTickCount64;
             TTCPState(TTCPSocket(FSocket).ProtocolState).State:=TCP_STATE_CLOSED;
-            
+
             {Signal the Event}
-            TProtocolSocket(FSocket).SignalChange; 
-            
+            TProtocolSocket(FSocket).SignalChange;
+
             Exit;
-           end; 
+           end;
 
           {$IFDEF TCP_DEBUG}
-          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Retransmitting Segment'); 
+          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Retransmitting Segment');
           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.FirstSequence = ' + IntToStr(Segment.FirstSequence));
           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.Size = ' + IntToStr(Segment.Size));
           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.Count = ' + IntToStr(Segment.Count));
-          {$ENDIF}  
+          {$ENDIF}
 
           {Restamp the Segment}
           Inc(Segment.Count);
           Segment.Timeout:=CurrentTime;
-          
+
           {Schedule the Thread}
           TProtocolSocket(FSocket).ScheduleSocketItem(@Segment.Item,TCP_RETRY_TIMEOUT[Segment.Count]);
-          
-          {Signal the Thread}  
+
+          {Signal the Thread}
           if (Segment.Next <> nil) and (Segment.Next.Count = 0) then TProtocolSocket(FSocket).SendSocket;
-          
+
           {Return Result}
           Result:=True;
           Exit;
          end;
        end;
      end;
-    
+
     {Get Next}
     Segment:=Segment.Next;
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7720,28 +7720,28 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Clear old Segments}
   {FlushSegments(False);}
-  
+
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: AcknowledgeSegments');
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Sequence = ' + IntToStr(ASequence));  
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Acknowledge = ' + IntToStr(AAcknowledge));  
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Window = ' + IntToStr(AWindow)); 
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Sequence = ' + IntToStr(ASequence));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Acknowledge = ' + IntToStr(AAcknowledge));
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Window = ' + IntToStr(AWindow));
   {$ENDIF}
-  
+
   {Check the Acknowledge}
   if SequenceGT(AAcknowledge,NextSequence) then Exit;
-  
+
   {Check for Duplicate}
   if SequenceGT(AAcknowledge,LastAcknowledge) then
    begin
     {Set Acknowledged}
     Acknowledged:=False;
-    
+
     {Check Segments}
     Segment:=FFirst;
     while Segment <> nil do
@@ -7756,16 +7756,16 @@ begin
 
           {Update Segment}
           Segment.Acknowledged:=True;
-          
+
           {Update the Free and Used}
           Inc(FFree,Segment.Size);
           Dec(FUsed,Segment.Size);
-          
+
           {Set Acknowledged}
           Acknowledged:=True;
-          
+
           {$IFDEF TCP_DEBUG}
-          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Acknowledge Segment'); 
+          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Acknowledge Segment');
           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  Segment.LastSequence = ' + IntToStr(Segment.LastSequence));
           {$ENDIF}
          end
@@ -7775,40 +7775,40 @@ begin
           Break;
          end;
        end;
-      
+
       {Get Next}
       Segment:=Segment.Next;
      end;
-    
+
     {Signal the Thread}
     if Acknowledged and not(NoNagle) then TProtocolSocket(FSocket).SendSocket;
-    
+
     {Move the LastAcknowledge}
     LastAcknowledge:=AAcknowledge;
    end;
-    
+
   {$IFDEF TCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Update Window'); 
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: Update Window');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  WindowSequence = ' + IntToStr(WindowSequence));
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  WindowAcknowledge = ' + IntToStr(WindowAcknowledge)); 
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer:  WindowAcknowledge = ' + IntToStr(WindowAcknowledge));
   {$ENDIF}
-  
+
   {Update the Window}
   if SequenceLEQ(WindowSequence,ASequence) and SequenceLEQ(WindowAcknowledge,AAcknowledge) then
    begin
     WindowSequence:=ASequence;
     WindowAcknowledge:=AAcknowledge;
     WindowSize:=(AWindow shl WindowScale);
-    
+
     {Signal the Thread}
     if WindowTimeout <> 0 then TProtocolSocket(FSocket).SendSocket;
    end;
-   
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7819,20 +7819,20 @@ function TTCPSendBuffer.TimestampSegment(AOptions:Pointer;var AOffset:Word):Bool
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: TimestampSegment');
   {$ENDIF}
-  
+
   {Check Options}
   if AOptions = nil then Exit;
-  
+
   //To Do
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7843,23 +7843,23 @@ function TTCPSendBuffer.SelectiveAckSegments(AOptions:Pointer;var AOffset:Word;A
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Send Buffer: SelectiveAckSegments');
   {$ENDIF}
-  
+
   {Check Options}
   if AOptions = nil then Exit;
-  
+
   {Check Selective Ack (Sack)}
   if NoSack then Exit;
-  
+
   //To do
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7902,10 +7902,10 @@ begin
  AcquireLock;
  try
   FlushSegments(True);
- finally 
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+ finally
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7916,23 +7916,23 @@ function TTCPRecvBuffer.DelayOverride(ASegment:PTCPSegment):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Segment}
   if ASegment = nil then Exit;
-  
+
   {Check for following segment}
   if ASegment.Next = nil then Exit;
-  
+
   {Check if following segment is next in sequence}
   if SequenceLT(ASegment.LastSequence,ASegment.Next.FirstSequence) then Exit;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7956,7 +7956,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
@@ -7965,7 +7965,7 @@ begin
 
   {Check Length}
   if ALength = 0 then Exit;
-  
+
   {Get Segment}
   Segment:=FFirst;
   while Segment <> nil do
@@ -7977,13 +7977,13 @@ begin
       Result:=Segment;
       Exit;
      end;
-    
+
     {Get Next}
     Segment:=Segment.Next;
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8007,7 +8007,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
@@ -8034,13 +8034,13 @@ begin
       Result:=Segment;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Segment:=Segment.Next;
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8069,7 +8069,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
@@ -8078,7 +8078,7 @@ begin
 
   {Check Length}
   if ALength = 0 then Exit;
-  
+
   {Get Segment}
   Segment:=FFirst;
   while Segment <> nil do
@@ -8102,13 +8102,13 @@ begin
       Result:=Segment;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Segment:=Segment.Next;
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8120,20 +8120,20 @@ function TTCPRecvBuffer.AddSegment(APrev:PTCPSegment;ASequence:LongWord;AFlags:B
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: AddSegment');
   {$ENDIF}
-  
+
   {Check Buffer Free}
   if ASize > FFree then Exit;
-  
+
   {Create a new Segment and Data}
   Result:=GetMem(SizeOf(TTCPSegment) + TCP_MAX_MSS); {TCP_SEGMENT_SIZE}
   if Result = nil then Exit;
-  
+
   {Update Segment}
   Result.Size:=ASize;
   Result.Data:=Pointer(PtrUInt(Result) + SizeOf(TTCPSegment)); {TCP_SEGMENT_SIZE}
@@ -8149,11 +8149,11 @@ begin
   Result.Prev:=nil;
   Result.Next:=nil;
   Result.Item.Flags:=SOCKET_TIMER_FLAG_NONE;
-  
+
   {Check Flags}
   if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then Inc(Result.LastSequence);
   if (AFlags and TCP_FLAG_FIN) = TCP_FLAG_FIN then Inc(Result.LastSequence);
-  
+
   {Add to List}
   if APrev = nil then
    begin
@@ -8189,9 +8189,9 @@ begin
       Result.Prev:=APrev;
      end;
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8201,16 +8201,16 @@ function TTCPRecvBuffer.RemoveSegment(ASegment:PTCPSegment):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: RemoveSegment');
   {$ENDIF}
-  
+
   {Check Segment}
   if ASegment = nil then Exit;
-  
+
   {Remove from List}
   if ASegment.Prev <> nil then
    begin
@@ -8244,18 +8244,18 @@ begin
       FLast:=nil;
      end;
    end;
-   
-  {Unschedule the Thread} 
+
+  {Unschedule the Thread}
   TProtocolSocket(FSocket).UnscheduleSocketItem(@ASegment.Item);
-   
+
   {Free the Segment and Data}
   FreeMem(ASegment,SizeOf(TTCPSegment) + TCP_MAX_MSS); {TCP_SEGMENT_SIZE}
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8276,7 +8276,7 @@ begin
     {Get Next}
     Current:=Segment;
     Segment:=Current.Next;
-    
+
     {Check Status}
     if ((Current.Acknowledged and Current.Transferred)) or (All) then
      begin
@@ -8289,9 +8289,9 @@ begin
       Exit;
      end;
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8305,20 +8305,20 @@ begin
  try
   {Check Size}
   if ASize = 0 then Exit;
-  
+
   {Get Size}
   ASize:=Max(ASize,TCP_BUFFER_SIZE);
   ASize:=Max(FSize,ASize);
-  
+
   {Set the Buffer Values}
   FSize:=ASize;
-  
+
   {Set the Data Values}
   FUsed:=FUsed;
   FFree:=FSize - FUsed;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8328,20 +8328,20 @@ function TTCPRecvBuffer.CheckIdle:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: CheckIdle');
   {$ENDIF}
-  
+
   {Check the Sequence}
   if (NextSequence = LastSequence) and (NextSequence = LastAcknowledge) then Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function TTCPRecvBuffer.GetUrgent:LongWord;
@@ -8366,13 +8366,13 @@ function TTCPRecvBuffer.SynReceived:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
 
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: SynReceived');
  {$ENDIF}
-  
+
  {Check Syn Sequence}
  Result:=SynSequence <> 0; {Could be a better test than <> 0}
 
@@ -8387,13 +8387,13 @@ function TTCPRecvBuffer.FinReceived:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
 
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: FinReceived');
  {$ENDIF}
-  
+
  {Check Fin Seqeuence}
  Result:=FinSequence <> 0; {Could be a better test than <> 0}
 
@@ -8411,13 +8411,13 @@ function TTCPRecvBuffer.CheckSequence(ASequence:LongWord;ASize:Word):Boolean;
     0      >0     RCV.NXT =< SEG.SEQ < RCV.NXT+RCV.WND
    >0       0     not acceptable
    >0      >0     RCV.NXT =< SEG.SEQ < RCV.NXT+RCV.WND or RCV.NXT =< SEG.SEQ+SEG.LEN-1 < RCV.NXT+RCV.WND}
-   
+
 //To Do //this may need to be changed to account for SYN/FIN in Sequence space
               //since the passed ASize is only the Data size
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
@@ -8427,10 +8427,10 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer:  Sequence      = ' + IntToStr(ASequence));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer:  Size          = ' + IntToStr(ASize));
   {$ENDIF}
-  
+
   {Default True}
   Result:=True;
-  
+
   {Check Size}
   if ASize = 0 then
    begin
@@ -8459,12 +8459,12 @@ begin
       if (SequenceLEQ(NextSequence,ASequence) and SequenceLT(ASequence,(NextSequence + WindowSize))) or (SequenceLEQ(NextSequence,(ASequence + ASize - 1)) and SequenceLT((ASequence + ASize - 1),(NextSequence + WindowSize))) then Exit;
      end;
    end;
-   
-  {Return Result} 
+
+  {Return Result}
   Result:=False;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8482,27 +8482,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   //To Do //Handling of OOB
-  
+
   {Clear old Segments}
   FlushSegments(False);
-  
+
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: ReadData');
   {$ENDIF}
-  
+
   {Check Buffer Size}
   if ASize = 0 then Exit;
-  
+
   {Check there is Data}
   if FAvailable < 1 then Exit;
-  
+
   {Get the Read Size}
   BufferSize:=Min(ASize,FAvailable);
-  
+
   {Check for Segments}
   ASize:=0;
   Offset:=0;
@@ -8521,37 +8521,37 @@ begin
           {Get the Start and Size}
           ReadNext:=Segment.Data;
           ReadSize:=Segment.Size;
-          
+
           {Read the Data}
           if BufferSize < ReadSize then
            begin
             {$IFDEF TCP_DEBUG}
             if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: ReadData: Read Partial Segment');
             {$ENDIF}
-            
+
             System.Move(ReadNext^,Pointer(PtrUInt(@ABuffer) + Offset)^,BufferSize);
-            
+
             {Update the Return Size}
             Inc(ASize,BufferSize);
-            
+
             {Check for Peek Flag}
             if (AFlags and MSG_PEEK) = 0 then
              begin
               {Update Available}
               Dec(FAvailable,BufferSize);
-              
+
               {Update Free and Used}
               Inc(FFree,BufferSize);
               Dec(FUsed,BufferSize);
-              
+
               {Shrink Segment}
               Segment.Control:=Segment.Control and not(TCP_FLAG_SYN);
               Inc(PtrUInt(Segment.Data),BufferSize);
               Dec(Segment.Size,BufferSize);
-              
+
               {Dont mark as Read as there is more data}
              end;
-            
+
             {Update Offset and Size}
             Inc(Offset,BufferSize);
             Dec(BufferSize,BufferSize);
@@ -8561,26 +8561,26 @@ begin
             {$IFDEF TCP_DEBUG}
             if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: ReadData: Read Full Segment');
             {$ENDIF}
-            
+
             System.Move(ReadNext^,Pointer(PtrUInt(@ABuffer) + Offset)^,ReadSize);
-            
+
             {Update the Return Size}
             Inc(ASize,ReadSize);
-            
+
             {Check for Peek Flag}
             if (AFlags and MSG_PEEK) = 0 then
              begin
               {Update Available}
               Dec(FAvailable,ReadSize);
-              
+
               {Update Free and Used}
               Inc(FFree,ReadSize);
               Dec(FUsed,ReadSize);
-              
+
               {Mark as Read}
               Segment.Transferred:=True;
              end;
-            
+
             {Update Offset and Size}
             Inc(Offset,ReadSize);
             Dec(BufferSize,ReadSize);
@@ -8595,15 +8595,15 @@ begin
             Segment.Transferred:=True;
            end;
          end;
-        
+
         {$IFDEF TCP_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: ReadData: Free = ' + IntToStr(FFree) + ' Used = ' + IntToStr(FUsed));
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: ReadData: Available = ' + IntToStr(FAvailable));
         {$ENDIF}
-        
+
         {Return Result}
         Result:=True;
-        
+
         {Check Buffer Size}
         if BufferSize < 1 then Exit;
        end;
@@ -8613,13 +8613,13 @@ begin
       {Exit if we found an out of order Segment}
       Exit;
      end;
-    
+
     {Get Next}
     Segment:=Segment.Next;
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8656,22 +8656,22 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Clear old Segments}
   {FlushSegments(False);}
-  
+
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: WriteSegment');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer:  Sequence = ' + IntToStr(ASequence));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer:  Urgent   = ' + IntToStr(AUrgent));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer:  Size     = ' + IntToStr(ASize));
   {$ENDIF}
-  
+
   {Check the Size}
   if ASize > FFree then Exit;
-  
+
   {Check Start Sequence (Zero when in SYNSENT State)}
   if StartSequence = 0 then
    begin
@@ -8680,22 +8680,22 @@ begin
     LastSequence:=ASequence;
     LastAcknowledge:=ASequence;
    end;
-  
+
   {Get the Length}
   Offset:=0;
   Length:=ASize;
   if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then Inc(Length);
   if (AFlags and TCP_FLAG_FIN) = TCP_FLAG_FIN then Inc(Length);
-  
+
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer:  Length   = ' + IntToStr(Length));
   {$ENDIF}
-  
+
   {Check the Sequence}
   //To Do //Put this simply after StartSequence check
   //To Do //What to Check (Sequence + Size (Length !!) is in Window) ??
   //Already done by CheckSequence really ?? //See RFC 793 Page 24
-  
+
   {Trim before NextSequence}
   if SequenceLT(ASequence,NextSequence) then
    begin
@@ -8704,38 +8704,38 @@ begin
     Dec(ASize,NextSequence - ASequence);
     Inc(Offset,NextSequence - ASequence);
     ASequence:=NextSequence;
-    
+
     {Turn off SYN}
     if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then Inc(ASize);
     if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then Dec(Offset);
     AFlags:=AFlags and not(TCP_FLAG_SYN);
    end;
-   
+
   {Trim after WindowSize}
   if SequenceGT((ASequence + Length),(NextSequence + WindowSize)) then
    begin
     {Adjust Size and Length}
     Length:=(NextSequence + WindowSize) - ASequence;
     ASize:=(NextSequence + WindowSize) - ASequence;
-    
+
     {Turn off FIN}
     AFlags:=AFlags and not(TCP_FLAG_FIN);
    end;
-  
+
   {Check for zero Length}
   if Length > 0 then
    begin
     {Set Sequenced}
     Sequenced:=False;
-    
+
     {Check for Duplicated Segment} {Done here to save overlap checks}
     if GetSegment(ASequence,Length) = nil then
      begin
       {Add the Segment}
       if SequenceLEQ(ASequence,NextSequence) and SequenceGT((ASequence + Length),NextSequence) then
        begin
-        {Sequence is on the left hand edge of the Window} 
-        
+        {Sequence is on the left hand edge of the Window}
+
         {Check for Overlapped Segment}
         Current:=GetOverlapped(ASequence,Length);
         while Current <> nil do
@@ -8746,24 +8746,24 @@ begin
           if SequenceLEQ(ASequence,Current.FirstSequence) and SequenceGEQ((ASequence + Length),Current.LastSequence) then
            begin
             {Overlaps the entire Segment}
-            
+
             {Update Free and Used}
             Inc(FFree,Current.Size);
             Dec(FUsed,Current.Size);
-            
+
             {Remove Existing Segment}
             RemoveSegment(Current);
            end
           else if SequenceGT(ASequence,Current.FirstSequence) and SequenceGT((ASequence + Length),Current.LastSequence) then
            begin
             {Overlaps at the left hand edge}
-            
+
             {Adjust Sequence, Size and Length}
             Dec(Length,Current.LastSequence - ASequence);
             Dec(ASize,Current.LastSequence - ASequence);
             Inc(Offset,Current.LastSequence - ASequence);
             ASequence:=Current.LastSequence;
-            
+
             {Turn off SYN}
             if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then Inc(ASize);
             if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then Dec(Offset);
@@ -8772,11 +8772,11 @@ begin
           else if SequenceLT(ASequence,Current.FirstSequence) and SequenceLT((ASequence + Length),Current.LastSequence) then
            begin
             {Overlaps at the right hand edge}
-            
+
             {Adjust Size and Length}
             Length:=Current.FirstSequence - ASequence;
             ASize:=Current.FirstSequence - ASequence;
-            
+
             {Turn off FIN}
             AFlags:=AFlags and not(TCP_FLAG_FIN);
            end
@@ -8786,59 +8786,59 @@ begin
             Length:=0;
             ASize:=0;
             Offset:=0;
-            
+
             {Turn off SYN}
             AFlags:=AFlags and not(TCP_FLAG_SYN);
-            
+
             {Turn off FIN}
             AFlags:=AFlags and not(TCP_FLAG_FIN);
-            
+
             {Discard the Segment and Return True}
             Break;
            end;
-           
-          {Get Next} 
+
+          {Get Next}
           Current:=GetOverlapped(ASequence,Length);
-         end; 
+         end;
 
         {Check for zero Length}
         if Length > 0 then
          begin
           {Get the Previous Segment}
           Current:=GetPrevious(ASequence,Length);
-          
+
           {Check Sequenced}
           if (Current <> nil) and not(Current.Acknowledged) then Sequenced:=True;
-           
+
           {Create a Segment}
           Segment:=AddSegment(Current,ASequence,AFlags,ASize);
           if Segment = nil then Exit;
-          
+
           {Update the Last Sequence}
           if SequenceGT(Segment.LastSequence,LastSequence) then
            begin
             LastSequence:=Segment.LastSequence;
            end;
-          
+
           {Write the Segment Data}
           if ASize > 0 then
            begin
             System.Move(Pointer(PtrUInt(AData) + Offset)^,Segment.Data^,ASize);
            end;
-          
+
           {Stamp the Segment}
           Segment.Timeout:=GetTickCount64;
-          
+
           {Move the Next Sequence}
           NextSequence:=Segment.LastSequence;
-          
+
           {Update Free and Used}
           Dec(FFree,Segment.Size);
           Inc(FUsed,Segment.Size);
-          
+
           {Update Available}
           Inc(FAvailable,Segment.Size);
-          
+
           {Check Queued Segments}
           Current:=Segment.Next;
           while Current <> nil do
@@ -8847,10 +8847,10 @@ begin
              begin
               {Move the Next Sequence}
               NextSequence:=Current.LastSequence;
-              
+
               {Update Available}
               Inc(FAvailable,Current.Size);
-              
+
               {Set Sequenced}
               Sequenced:=True;
              end
@@ -8859,11 +8859,11 @@ begin
               {Stop if we found an out of order Segment}
               Break;
              end;
-             
-            {Get Next} 
+
+            {Get Next}
             Current:=Current.Next;
            end;
-           
+
           if Sequenced then
            begin
             {Signal the Thread}
@@ -8871,15 +8871,15 @@ begin
            end
           else
            begin
-            {Schedule the Thread} 
+            {Schedule the Thread}
             TProtocolSocket(FSocket).ScheduleSocketItem(@Segment.Item,TCP_ACK_TIMEOUT);
-           end;           
+           end;
          end;
        end
       else
        begin
-        {Sequence is in the Window but not on the left hand edge} 
-        
+        {Sequence is in the Window but not on the left hand edge}
+
         {Check for Overlapped Segment}
         Current:=GetOverlapped(ASequence,Length);
         while Current <> nil do
@@ -8890,24 +8890,24 @@ begin
           if SequenceLEQ(ASequence,Current.FirstSequence) and SequenceGEQ((ASequence + Length),Current.LastSequence) then
            begin
             {Overlaps the entire Segment}
-            
+
             {Update Free and Used}
             Inc(FFree,Current.Size);
             Dec(FUsed,Current.Size);
-            
+
             {Remove Existing Segment}
             RemoveSegment(Current);
            end
           else if SequenceGT(ASequence,Current.FirstSequence) and SequenceGT((ASequence + Length),Current.LastSequence) then
            begin
             {Overlaps at the left hand edge}
-            
+
             {Adjust Sequence, Size and Length}
             Dec(Length,Current.LastSequence - ASequence);
             Dec(ASize,Current.LastSequence - ASequence);
             Inc(Offset,Current.LastSequence - ASequence);
             ASequence:=Current.LastSequence;
-            
+
             {Turn off SYN}
             if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then Inc(ASize);
             if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then Dec(Offset);
@@ -8916,11 +8916,11 @@ begin
           else if SequenceLT(ASequence,Current.FirstSequence) and SequenceLT((ASequence + Length),Current.LastSequence) then
            begin
             {Overlaps at the right hand edge}
-            
+
             {Adjust Size and Length}
             Length:=Current.FirstSequence - ASequence;
             ASize:=Current.FirstSequence - ASequence;
-            
+
             {Turn off FIN}
             AFlags:=AFlags and not(TCP_FLAG_FIN);
            end
@@ -8930,27 +8930,27 @@ begin
             Length:=0;
             ASize:=0;
             Offset:=0;
-            
+
             {Turn off SYN}
             AFlags:=AFlags and not(TCP_FLAG_SYN);
-            
+
             {Turn off FIN}
             AFlags:=AFlags and not(TCP_FLAG_FIN);
-            
+
             {Discard the Segment and Return True}
             Break;
            end;
-           
-          {Get Next} 
+
+          {Get Next}
           Current:=GetOverlapped(ASequence,Length);
-         end; 
+         end;
 
         {Check for zero Length}
         if Length > 0 then
          begin
           {Get the Previous Segment}
           Current:=GetPrevious(ASequence,Length);
-          
+
           {Create a Segment}
           Segment:=AddSegment(Current,ASequence,AFlags,ASize);
           if Segment = nil then Exit;
@@ -8960,39 +8960,39 @@ begin
            begin
             LastSequence:=Segment.LastSequence;
            end;
-          
+
           {Write the Segment Data}
           if ASize > 0 then
            begin
             System.Move(Pointer(PtrUInt(AData) + Offset)^,Segment.Data^,ASize);
            end;
-          
+
           {Stamp the Segment}
           Segment.Timeout:=GetTickCount64;
-          
+
           {Update Free and Used}
           Dec(FFree,Segment.Size);
           Inc(FUsed,Segment.Size);
-         
-          {Schedule the Thread (Immediate for Fast Retransmit} 
+
+          {Schedule the Thread (Immediate for Fast Retransmit}
           TProtocolSocket(FSocket).ScheduleSocket(TCP_TIMER_INTERVAL);
-          
-          {Schedule the Thread} 
+
+          {Schedule the Thread}
           TProtocolSocket(FSocket).ScheduleSocketItem(@Segment.Item,TCP_ACK_TIMEOUT);
          end;
-       end; 
+       end;
 
       {Check the Flags} {SYN is before the first byte, FIN is after the last byte}
       if (AFlags and TCP_FLAG_SYN) = TCP_FLAG_SYN then SynSequence:=ASequence;
       if (AFlags and TCP_FLAG_FIN) = TCP_FLAG_FIN then FinSequence:=ASequence + Length; //To Do //Is this off by one ?? - Use ASize ?
      end;
    end;
-   
-  {Return Result} 
+
+  {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -9012,16 +9012,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Clear old Segments}
   {FlushSegments(False);}
-  
+
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: AcknowledgeSegments');
   {$ENDIF}
-  
+
   {Get the Defaults}
   AAcknowledge:=LastAcknowledge;
   AWindow:=Min((WindowSize shr WindowScale),FFree);
@@ -9032,10 +9032,10 @@ begin
      {Send a Window Update}
      Result:=True;
     end;
-   
+
    {Check the Sequence}
    if (NextSequence = LastSequence) and (NextSequence = LastAcknowledge) then Exit;
-   
+
    {Check Segments}
    CurrentTime:=GetTickCount64;
    Segment:=FFirst;
@@ -9052,18 +9052,18 @@ begin
           begin
            {Unschedule the Thread}
            TProtocolSocket(FSocket).UnscheduleSocketItem(@Segment.Item);
-          
+
            {Acknowledge Segment}
            Segment.Acknowledged:=True;
            LastAcknowledge:=Segment.LastSequence;
            AAcknowledge:=LastAcknowledge;
-           
+
            {Update Window}
            AWindow:=Min((WindowSize shr WindowScale) - (NextSequence - LastAcknowledge),FFree);
-            
+
            {Return Result}
            Result:=True;
-           
+
            {Continue looking for Segments}
           end;
         end
@@ -9071,29 +9071,29 @@ begin
         begin
          {Send a Duplicate ACK for Fast Retransmit}
          Result:=True;
-         
+
          {Exit if we found an out of order Segment}
          Exit;
         end;
       end;
-      
-     {Get Next} 
+
+     {Get Next}
      Segment:=Segment.Next;
     end;
   finally
    {Save the Window}
    LastWindow:=AWindow;
-  
+
    {Check the Window}
    if LastWindow < MaxSeg then
     begin
-     {Schedule the Thread} 
+     {Schedule the Thread}
      TProtocolSocket(FSocket).ScheduleSocket(TCP_ADVERT_TIMEOUT);
     end;
   end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -9104,20 +9104,20 @@ function TTCPRecvBuffer.TimestampSegment(AOptions:Pointer;var AOffset:Word):Bool
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: TimestampSegment');
   {$ENDIF}
-  
+
   {Check Options}
   if AOptions = nil then Exit;
-  
+
   //To do
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -9128,25 +9128,25 @@ function TTCPRecvBuffer.SelectiveAckSegments(AOptions:Pointer;var AOffset:Word):
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF TCP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP Recv Buffer: SelectiveAckSegments');
   {$ENDIF}
-  
+
   {Check Options}
   if AOptions = nil then Exit;
-  
+
   {Check Selective Ack (Sack)}
   if NoSack then Exit;
-  
+
   //To Do //
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -9157,11 +9157,11 @@ begin
  if TCPInitialized then Exit;
 
  {Create TCP Protocol}
- if NetworkSettings.GetBooleanDefault('TCP_PROTOCOL_ENABLED',TCP_PROTOCOL_ENABLED) then 
+ if NetworkSettings.GetBooleanDefault('TCP_PROTOCOL_ENABLED',TCP_PROTOCOL_ENABLED) then
   begin
    TTCPProtocol.Create(ProtocolManager,TCP_PROTOCOL_NAME);
-  end; 
- 
+  end;
+
  TCPInitialized:=True;
 end;
 
@@ -9181,20 +9181,20 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF TCP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP: CheckTCP');
  {$ENDIF}
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
     {Get Header}
     IP:=PIPHeader(ABuffer);
-    
+
     {Get Header}
     TCP:=PTCPHeader(PtrUInt(IP) + GetIPHeaderLength(ABuffer));
-    
+
     {Check Length}
     Length:=GetIPDataLength(ABuffer);
     if Length >= TCP_HEADER_SIZE then
@@ -9205,7 +9205,7 @@ begin
       Pseudo.Mbz:=0;
       Pseudo.Protocol:=IP.Protocol;
       Pseudo.Length:=WordNtoBE(Length);
-      
+
       {Validate the Checksum}
       {$IFDEF TCP_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'TCP:  Original Checksum   = ' + IntToHex(WordBEtoN(TCP.Checksum),4));
@@ -9221,12 +9221,12 @@ begin
   AF_INET6:begin
     {Get Header}
     IP6:=PIP6Header(ABuffer);
-    
+
     {Get Header}
     TCP:=PTCPHeader(PtrUInt(IP6) + GetIP6HeaderLength(ABuffer));
-    
+
     //To do
-    
+
    end;
  end;
 end;
@@ -9238,7 +9238,7 @@ function GetTCPHeaderOffset(AFamily:Word;ABuffer:Pointer):Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
@@ -9246,9 +9246,9 @@ begin
     Result:=(PIPHeader(ABuffer).VersionLength and $0F) shl 2;
    end;
   AF_INET6:begin
-    
+
     //To do
-    
+
    end;
  end;
 end;
@@ -9262,21 +9262,21 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
     {Get Start of TCP Header (Length of IP Header)}
     Offset:=(PIPHeader(ABuffer).VersionLength and $0F) shl 2;
-    
+
     {Return TCP Header Length field divided by 4 (shr 2) (Including Options)}
     {Same Result as ((HeaderLength shr 4) * 4)}
     Result:=(PTCPHeader(PtrUInt(ABuffer) + Offset).HeaderLength and $F0) shr 2;
    end;
   AF_INET6:begin
-    
+
     //To do
-    
+
    end;
  end;
 end;
@@ -9290,21 +9290,21 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
     {Get Start of TCP Header (Length of IP Header)}
     Offset:=(PIPHeader(ABuffer).VersionLength and $0F) shl 2;
-    
+
     {Return TCP Header Length field divided by 4 (shr 2) (minus TCP_HEADER_SIZE}
     {Same Result as ((HeaderLength shr 4) * 4)}
     Result:=((PTCPHeader(PtrUInt(ABuffer) + Offset).HeaderLength and $F0) shr 2) - TCP_HEADER_SIZE;
    end;
   AF_INET6:begin
-    
+
     //To do
-    
+
    end;
  end;
 end;
@@ -9319,23 +9319,23 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
     {Get Start of TCP Header (Length of IP Header)}
     Offset:=(PIPHeader(ABuffer).VersionLength and $0F) shl 2;
-    
+
     {Get TCP Header Length field divided by 4 (shr 2) (Including Options)}
     Length:=(PTCPHeader(PtrUInt(ABuffer) + Offset).HeaderLength and $F0) shr 2;
-    
+
     {Return Start of TCP Data (IP Header + TCP Header}
     Result:=Offset + Length;
    end;
   AF_INET6:begin
-    
+
     //To do
-    
+
    end;
  end;
 end;
@@ -9350,23 +9350,23 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
     {Get Start of TCP Header (Length of IP Header)}
     Offset:=(PIPHeader(ABuffer).VersionLength and $0F) shl 2;
-    
+
     {Get TCP Header Length field divided by 4 (shr 2)}
     Length:=(PTCPHeader(PtrUInt(ABuffer) + Offset).HeaderLength and $F0) shr 2;
-    
+
     {Return Size of TCP Data (IP Total Length - IP Header - TCP Header)}
     Result:=(WordBEtoN(PIPHeader(ABuffer).TotalLength) - Offset) - Length;
    end;
   AF_INET6:begin
-    
+
     //To do
-    
+
    end;
  end;
 end;
@@ -9381,27 +9381,27 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
     {Get Header}
     TCP:=PTCPHeader(PtrUInt(ABuffer) + AOffset);
-    
+
     {Save Checksum}
     Original:=TCP.Checksum;
     TCP.Checksum:=0;
-    
+
     {Calculate 1s Compliment Checksum on TCP Pseudo, Header and Data}
     Result:=GetChecksum2(APseudo,ABuffer,IP_PSEUDO_SIZE,AOffset,ALength);
-    
+
     {Restore Checksum}
     TCP.Checksum:=Original;
    end;
   AF_INET6:begin
-    
+
     //To do
-    
+
    end;
  end;
 end;
@@ -9415,7 +9415,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
@@ -9430,17 +9430,17 @@ begin
     AHeader.Checksum:=Original;
    end;
   AF_INET6:begin
-    
+
     //To do
-    
+
    end;
  end;
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {TCP Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -9448,12 +9448,12 @@ initialization
  TCPInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 end.
-  
+

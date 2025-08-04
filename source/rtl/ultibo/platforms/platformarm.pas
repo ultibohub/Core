@@ -9,7 +9,7 @@ Arch
  ARMv6 (ARM1176)
  ARMv7 (Cortex A5/A7/A8/A9/A15/A17)
  ARMv8 (Cortex A53/A57/A72)
- 
+
 Boards
 ======
 
@@ -17,23 +17,23 @@ Boards
  Raspberry Pi - Model Zero/ZeroW
  Raspberry Pi 2 - Model B
  Raspberry Pi 3 - Model B/B+/A+
- Raspberry Pi CM3/CM3+ 
+ Raspberry Pi CM3/CM3+
  Raspberry Pi 4 - Model B
  Raspberry Pi 400
  Raspberry Pi CM4
  QEMU VersatilePB
- 
+
 Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -47,7 +47,7 @@ Platform ARM
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit PlatformARM; 
+unit PlatformARM;
 
 interface
 
@@ -60,22 +60,22 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads{$IFDEF DE
 {==============================================================================}
 const
  {ARM specific constants}
- 
+
  {Program Status Register (CPSR and SPSR) bit definitions}
  {Definitions of Mode bits (Bits 4..0) in the ARM program status register.  See: A2.2 Processor Modes of the ARM Architecture Reference Manual and also A2.5.7 The mode bits}
  {                                                                     See also: B1.3.1 ARM processor modes of the ARM Architecture Reference Manual (ARMv7-A and ARMv7-R edition)}
- ARM_MODE_USR = $10;    {Normal User Mode}                                       
+ ARM_MODE_USR = $10;    {Normal User Mode}
  ARM_MODE_FIQ = $11;    {FIQ Processing Fast Interrupts Mode}
- ARM_MODE_IRQ = $12;    {IRQ Processing Standard Interrupts Mode}                
+ ARM_MODE_IRQ = $12;    {IRQ Processing Standard Interrupts Mode}
  ARM_MODE_SVC = $13;    {Supervisor Processing Software Interrupts Mode}
- ARM_MODE_MON = $16;    {Secure Monitor Mode (For Secure / Non Secure Switching)} 
- ARM_MODE_ABT = $17;    {Abort Processing memory Faults Mode}                    
- ARM_MODE_HYP = $1A;    {Hypervisor Mode}                                    
- ARM_MODE_UND = $1B;    {Undefined Processing Undefined Instructions Mode}       
- ARM_MODE_SYS = $1F;    {System Running Priviledged Operating System Tasks Mode} 
- 
+ ARM_MODE_MON = $16;    {Secure Monitor Mode (For Secure / Non Secure Switching)}
+ ARM_MODE_ABT = $17;    {Abort Processing memory Faults Mode}
+ ARM_MODE_HYP = $1A;    {Hypervisor Mode}
+ ARM_MODE_UND = $1B;    {Undefined Processing Undefined Instructions Mode}
+ ARM_MODE_SYS = $1F;    {System Running Priviledged Operating System Tasks Mode}
+
  ARM_MODE_BITS = $0000001F; {Mask of the mode bits in the program status register}
-  
+
  {Definitions of Interrupt disable bits (Bits 7 and 6) in the ARM program status register. See: A2.5.6 "The interrupt disable bits" of the ARM Architecture Reference Manual}
  ARM_I_BIT = $00000080;    {IRQs disabled when set to 1}
  ARM_F_BIT = $00000040;    {FIQs disabled when set to 1}
@@ -83,13 +83,13 @@ const
  {Definitions of Thumb and Jazelle bits (Bits 24 and 5) in the ARM program status register. See: A2.5.8 "The T and J bits" of the ARM Architecture Reference Manual}
  ARM_T_BIT = $00000020;    {Thumb mode enabled when set to 1}
  ARM_J_BIT = $01000000;    {Jazelle mode enabled when set to 1}
- 
+
  {Definition of Abort bit (Bit 8) in the ARM program status register}
  ARM_A_BIT = $00000100;    {Data Abort masked when set to 1}
- 
+
 {==============================================================================}
 const
- {Definitions of ARM Boot Tags}  
+ {Definitions of ARM Boot Tags}
  ATAG_NONE       = $00000000;
  ATAG_CORE       = $54410001;
  ATAG_MEM        = $54410002;
@@ -101,14 +101,14 @@ const
  ATAG_REVISION   = $54410007;
  ATAG_VIDEOLFB   = $54410008;
  ATAG_CMDLINE    = $54410009;
- 
+
  ARMTAGS_INITIAL = $FFFFFFFF;
- 
+
 {==============================================================================}
 const
- {Definitions of Device Tree Blob}  
+ {Definitions of Device Tree Blob}
  DTB_SIGNATURE = $d00dfeed; {See: https://github.com/devicetree-org/devicetree-specification/releases/download/v0.3/devicetree-specification-v0.3.pdf}
- 
+
 {==============================================================================}
 const
  {Definitions of ARM Machine Types}
@@ -117,12 +117,12 @@ const
  ARM_MACHINE_BCM2709      = $00000C42; {BCM2709 uses the same Machine Type as BCM2708}
  ARM_MACHINE_BCM2710      = $00000C42; {BCM2710 uses the same Machine Type as BCM2708}
  ARM_MACHINE_BCM2711      = $00000C42; {BCM2711 uses the same Machine Type as BCM2708}
- 
+
 {==============================================================================}
 type
  {ARM specific types}
- 
- {ARM Boot Tag Structure Definitions} 
+
+ {ARM Boot Tag Structure Definitions}
  {ARM Boot Tag header}
  PARMTagHeader = ^TARMTagHeader;
  TARMTagHeader = record
@@ -137,7 +137,7 @@ type
   PageSize:LongWord;           {Systems page size (usually 4k)}
   RootDev:LongWord;            {Root device number}
  end;
- 
+
  {Description of memory region (ATAG_MEM)}
  PARMTagMemory = ^TARMTagMemory;
  TARMTagMemory = record
@@ -156,9 +156,9 @@ type
   Video_ega_bx:Word;
   Video_lines:Byte;
   Video_isvga:Byte;
-  Video_points:Word; 
+  Video_points:Word;
  end;
- 
+
  {Description of how the ramdisk will be used by the kernel (ATAG_RAMDISK)}
  PARMTagRamdisk = ^TARMTagRamdisk;
  TARMTagRamdisk = record
@@ -166,27 +166,27 @@ type
   Size:LongWord;       {Decompressed ramdisk size in _kilo_ bytes}
   Start:LongWord;      {Starting block of floppy-based RAM disk image}
  end;
- 
+
  {Description of the physical location of the compressed ramdisk image (ATAG_INITRD2)}
  PARMTagInitRd2 = ^TARMTagInitRd2;
  TARMTagInitRd2 = record
   Start:LongWord;      {Physical start address}
   Size:LongWord;       {Size of compressed ramdisk image in bytes}
  end;
- 
+
  {Board serial number (ATAG_SERIAL)}
  PARMTagSerial = ^TARMTagSerial;
  TARMTagSerial = record
   Low:LongWord;
   High:LongWord;
- end; 
+ end;
 
  {Board revision (ATAG_REVISION)}
  PARMTagRevision = ^TARMTagRevision;
  TARMTagRevision = record
   Revision:LongWord;
  end;
- 
+
  {Description of the parameters for a linear framebuffer type display (ATAG_VIDEOLFB)}
  PARMTagVideoFB = ^TARMTagVideoFB;
  TARMTagVideoFB = record
@@ -203,15 +203,15 @@ type
   Blue_size:Byte;
   Blue_pos:Byte;
   Rsvd_size:Byte;
-  Rsvd_pos:Byte; 
+  Rsvd_pos:Byte;
  end;
- 
+
  {Commandline for the kernel (ATAG_CMDLINE)}
  PARMTagCommand = ^TARMTagCommand;
  TARMTagCommand = record
-  Cmdline:array[0..0] of AnsiChar;     {This is the minimum size} 
+  Cmdline:array[0..0] of AnsiChar;     {This is the minimum size}
  end;
- 
+
  {Format of ARM Boot Tag}
  PARMTag = ^TARMTag;
  TARMTag = record
@@ -226,9 +226,9 @@ type
    6:(Revision:TARMTagRevision);
    7:(VideoFB:TARMTagVideoFB);
    8:(Command:TARMTagCommand)
- end; 
- 
-{$IFNDEF DEVICE_TREE_ENABLE}  
+ end;
+
+{$IFNDEF DEVICE_TREE_ENABLE}
 type
  {Device Tree Blob header}
  PDTBHeader = ^TDTBHeader;
@@ -244,24 +244,24 @@ type
   StringsSize:LongWord;         {The length in bytes of the strings block section of the devicetree blob (big-endian)}
   StructureSize:LongWord;       {The length in bytes of the structure block section of the devicetree blob (big-endian)}
  end;
-{$ENDIF DEVICE_TREE_ENABLE} 
- 
-type 
+{$ENDIF DEVICE_TREE_ENABLE}
+
+type
  {Prototypes for Wait Handlers}
  TARMWait = procedure;
  TARMLongWait = procedure;
  TARMShortWait = procedure;
- 
-type 
+
+type
  {Prototypes for Blink Handlers}
  TARMSlowBlink = procedure;
  TARMFastBlink = procedure;
- 
+
 {==============================================================================}
 var
  {ARM specific variables}
  ARMInitialized:Boolean;
- 
+
  ARMBootMode:LongWord = 0;                  {The ARM Mode that the processor was in at boot time (Set by Startup)}
  ARMBootVectors:LongWord = 0;               {The Vector Base Address that was current at boot time (Set by Startup)}
  ARMTagsAddress:PtrUInt = ARMTAGS_INITIAL;  {Pointer to the ARM TAGS provided by the bootloader at startup (Set by Startup)}
@@ -272,10 +272,10 @@ var
 var
  {ARM Tags Variables}
  ARMTagsCount:LongWord;       {Number of ARM Tags found during parse}
- 
+
  {Tag None Variables}
  TagNoneCount:LongWord;       {Number of ARM NONE Tags found during parse}
- 
+
  {Tag Core Variables}
  TagCoreCount:LongWord;       {Number of ARM CORE Tags found during parse}
  TagCoreFlags:LongWord;
@@ -291,18 +291,18 @@ var
 
  {Tag Video Text Variables}
  TagVideoTextCount:LongWord;  {Number of ARM VIDEOTEXT Tags found during parse}
- 
+
  {Tag Ramdisk Variables}
  TagRamdiskCount:LongWord;    {Number of ARM RAMDISK Tags found during parse}
- 
+
  {Tag Init RD Variables}
  TagInitRdCount:LongWord;     {Number of ARM INITRD Tags found during parse (Deprecated)}
- 
+
  {Tag Init RD2 Variables}
  TagInitRd2Count:LongWord;    {Number of ARM INITRD2 Tags found during parse}
  TagInitRd2Start:LongWord;
  TagInitRd2Size:LongWord;
- 
+
  {Tag Serial Variables}
  TagSerialCount:LongWord;     {Number of ARM SERIAL Tags found during parse}
  TagSerialNoLow:LongWord;
@@ -326,16 +326,16 @@ var
  ARMWaitHandler:TARMWait;
  ARMLongWaitHandler:TARMLongWait;
  ARMShortWaitHandler:TARMShortWait;
- 
+
 var
  {Blink Handlers}
  ARMSlowBlinkHandler:TARMSlowBlink;
  ARMFastBlinkHandler:TARMFastBlink;
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure ARMInit;
- 
+
 {==============================================================================}
 {ARM Platform Functions}
 procedure ARMParseBootTags;
@@ -346,16 +346,16 @@ function ARMGetSP:PtrUInt;
 function ARMGetPC:PtrUInt;
 
 function ARMGetIRQ:Boolean;
-procedure ARMEnableIRQ; 
-procedure ARMDisableIRQ; 
+procedure ARMEnableIRQ;
+procedure ARMDisableIRQ;
 function ARMSaveIRQ:TIRQMask;
-function ARMRestoreIRQ(IRQMask:TIRQMask):TIRQMask; 
+function ARMRestoreIRQ(IRQMask:TIRQMask):TIRQMask;
 
 function ARMGetFIQ:Boolean;
-procedure ARMEnableFIQ; 
-procedure ARMDisableFIQ; 
+procedure ARMEnableFIQ;
+procedure ARMDisableFIQ;
 function ARMSaveFIQ:TFIQMask;
-function ARMRestoreFIQ(FIQMask:TFIQMask):TFIQMask; 
+function ARMRestoreFIQ(FIQMask:TFIQMask):TFIQMask;
 
 procedure ARMEnableIRQFIQ;
 procedure ARMDisableIRQFIQ;
@@ -367,7 +367,7 @@ procedure ARMEnableAbort;
 procedure ARMDisableAbort;
 function ARMSaveAbort:TAbortMask;
 function ARMRestoreAbort(AbortMask:TAbortMask):TAbortMask;
- 
+
 {==============================================================================}
 {ARM Helper Functions}
 procedure ARMWait; inline;
@@ -391,10 +391,10 @@ procedure ARMInit;
 begin
  {}
  if ARMInitialized then Exit;
- 
- {Setup STACK_MIN_ALIGNMENT} 
+
+ {Setup STACK_MIN_ALIGNMENT}
  STACK_MIN_ALIGNMENT:=SIZE_8;
- 
+
  {Register Platform ParseBootTags Handler}
  ParseBootTagsHandler:=ARMParseBootTags;
 
@@ -403,11 +403,11 @@ begin
 
  {Register Platform ParseEnvironment Handler}
  ParseEnvironmentHandler:=ARMParseEnvironment;
- 
+
  {Register Platform GetSP/PC Handlers}
  GetSPHandler:=ARMGetSP;
  GetPCHandler:=ARMGetPC;
- 
+
  {Register Platform Enable/Disable/Save/RestoreIRQ Handlers}
  GetIRQHandler:=ARMGetIRQ;
  EnableIRQHandler:=ARMEnableIRQ;
@@ -421,20 +421,20 @@ begin
  DisableFIQHandler:=ARMDisableFIQ;
  SaveFIQHandler:=ARMSaveFIQ;
  RestoreFIQHandler:=ARMRestoreFIQ;
- 
+
  {Register Platform Enable/Disable/Save/RestoreIRQFIQ Handlers}
  EnableIRQFIQHandler:=ARMEnableIRQFIQ;
  DisableIRQFIQHandler:=ARMDisableIRQFIQ;
  SaveIRQFIQHandler:=ARMSaveIRQFIQ;
  RestoreIRQFIQHandler:=ARMRestoreIRQFIQ;
- 
+
  {Register Platform Enable/Disable/Save/RestoreAbort Handlers}
  GetAbortHandler:=ARMGetAbort;
  EnableAbortHandler:=ARMEnableAbort;
  DisableAbortHandler:=ARMDisableAbort;
  SaveAbortHandler:=ARMSaveAbort;
  RestoreAbortHandler:=ARMRestoreAbort;
- 
+
  ARMInitialized:=True;
 end;
 
@@ -444,7 +444,7 @@ end;
 procedure ARMParseBootTags;
 {Extract some information from the ARM boot tag list and use it to load the
  memory manager, some other information is stored in variables for future use}
- 
+
  function ExtractCommandLine(Value:PAnsiChar):Boolean;
  var
   CommandOffset:PAnsiChar;
@@ -452,12 +452,12 @@ procedure ARMParseBootTags;
  begin
   {}
   Result:=False;
-  
+
   if Value = nil then Exit;
-  
+
   {Save Address}
   TagCommandAddress:=Value;
-  
+
   {Count the command line parameters}
   TagCommandSize:=SizeOf(AnsiChar); {Must be at least the null terminator}
   TagCommandCount:=0;
@@ -471,26 +471,26 @@ procedure ARMParseBootTags;
        begin
         Inc(TagCommandCount);
        end;
-       
+
       CommandLength:=0;
      end
     else
      begin
       Inc(CommandLength);
-     end;             
+     end;
     Inc(TagCommandSize,SizeOf(AnsiChar));
-    Inc(CommandOffset,SizeOf(AnsiChar)); 
-   end; 
-  
+    Inc(CommandOffset,SizeOf(AnsiChar));
+   end;
+
   {Check last paramter}
   if CommandLength > 0 then
    begin
     Inc(TagCommandCount);
    end;
-   
-  Result:=True; 
+
+  Result:=True;
  end;
- 
+
  function ExtractMemoryBlock(Address,Size:LongWord):Boolean;
  var
   BlockSize:LongWord;
@@ -499,12 +499,12 @@ procedure ARMParseBootTags;
  begin
   {}
   Result:=False;
-  
+
   if Size = 0 then Exit;
 
   BlockAddress:=Address;
   BlockSize:=Size;
-  
+
   {Save Size and Start}
   TagMemorySize:=BlockSize;
   TagMemoryStart:=BlockAddress;
@@ -520,10 +520,10 @@ procedure ARMParseBootTags;
        end
       else
        begin
-        BlockSize:=0; 
+        BlockSize:=0;
        end;
      end;
-    
+
     {Save Address and Length}
     TagMemoryAddress:=StartAddress;
     TagMemoryLength:=BlockSize;
@@ -531,19 +531,19 @@ procedure ARMParseBootTags;
      begin
       {Register Block}
       RegisterHeapBlock(Pointer(StartAddress),BlockSize);
-     end;           
+     end;
    end;
-  
-  Result:=True; 
+
+  Result:=True;
  end;
- 
+
  function ExtractInitialRamdisk(Address,Size:LongWord):Boolean;
  begin
   {}
   Result:=False;
-  
+
   if (Address = 0) or (Size = 0) then Exit;
-  
+
   {Save Address and Size}
   TagInitRd2Start:=Address;
   TagInitRd2Size:=Size;
@@ -554,11 +554,11 @@ procedure ARMParseBootTags;
     {Update Configuration}
     INITIAL_RAMDISK_BASE:=Address;
     INITIAL_RAMDISK_SIZE:=Size;
-   end; 
- 
-  Result:=True; 
+   end;
+
+  Result:=True;
  end;
- 
+
 var
  ARMTag:PARMTag;
 
@@ -583,7 +583,7 @@ begin
    TagRevisionCount:=0;
    TagVideoFBCount:=0;
    TagCmdCount:=0;
-   
+
    {$IFDEF DEVICE_TREE_ENABLE}
    {Check for valid Device Tree Blob}
    if (ARMTagsAddress <> ARMTAGS_INITIAL) then
@@ -591,7 +591,7 @@ begin
      DEVICE_TREE_VALID:=DeviceTreeValidate(ARMTagsAddress,DEVICE_TREE_SIZE);
      if DEVICE_TREE_VALID then DEVICE_TREE_BASE:=ARMTagsAddress;
     end;
-    
+
    {Check for default Tag Address value or for Device Tree Blob available}
    if (ARMTagsAddress = ARMTAGS_INITIAL) or DEVICE_TREE_VALID then
     begin
@@ -611,14 +611,14 @@ begin
          Inc(ARMTagsCount);
          Inc(TagMemoryCount);
         end;
-       
+
        {Get Command Line}
        if ExtractCommandLine(DeviceTreeGetBootArgs) then
         begin
          Inc(ARMTagsCount);
          Inc(TagCmdCount);
         end;
-       
+
        {Get Ramdisk}
        if DeviceTreeGetRamdisk(Address,Size) then
         begin
@@ -640,7 +640,7 @@ begin
          Inc(ARMTagsCount);
          Inc(TagMemoryCount);
         end;
-      end;  
+      end;
     end
    {$ELSE DEVICE_TREE_ENABLE}
    {Check for default Tag Address value and for Device Tree Blob signature}
@@ -654,7 +654,7 @@ begin
        DEVICE_TREE_BASE:=ARMTagsAddress;
        DEVICE_TREE_SIZE:=LongWordBEtoN(PDTBHeader(ARMTagsAddress).TotalSize);
       end;
-   
+
      {Get Memory Block}
      if ExtractMemoryBlock(CPU_MEMORY_BASE,CPU_MEMORY_SIZE) then
       begin
@@ -677,7 +677,7 @@ begin
           {NONE}
           Inc(TagNoneCount);
           {Must be last in the list, will have a size of 0}
-         end;    
+         end;
         ATAG_CORE:begin
           {CORE}
           Inc(TagCoreCount);
@@ -688,15 +688,15 @@ begin
             TagCorePageSize:=ARMTag.Core.PageSize;
             TagCoreRootDevice:=ARMTag.Core.RootDev;
            end;
-         end;    
-        ATAG_MEM:begin      
+         end;
+        ATAG_MEM:begin
           {MEM}
           Inc(TagMemoryCount);
           if ARMTag.Header.Size > 2 then
            begin
             ExtractMemoryBlock(ARMTag.Memory.Start,ARMTag.Memory.Size);
            end;
-         end;    
+         end;
         ATAG_VIDEOTEXT:begin
           {VIDEOTEXT}
           Inc(TagVideoTextCount);
@@ -704,17 +704,17 @@ begin
            begin
             {Not relevant to Ultibo}
            end;
-         end;    
-        ATAG_RAMDISK:begin 
+         end;
+        ATAG_RAMDISK:begin
           {RAMDISK}
           Inc(TagRamdiskCount);
           {Not relevant to Ultibo}
-         end;    
+         end;
         ATAG_INITRD:begin
           {INITRD}
           Inc(TagInitRdCount);
           {Not relevant to Ultibo (Deprecated)}
-         end;    
+         end;
         ATAG_INITRD2:begin
           {INITRD2}
           Inc(TagInitRd2Count);
@@ -722,8 +722,8 @@ begin
            begin
             ExtractInitialRamdisk(ARMTag.InitRd2.Start,ARMTag.InitRd2.Size);
            end;
-         end;    
-        ATAG_SERIAL:begin   
+         end;
+        ATAG_SERIAL:begin
           {SERIAL}
           Inc(TagSerialCount);
           if ARMTag.Header.Size > 2 then
@@ -731,7 +731,7 @@ begin
             TagSerialNoLow:=ARMTag.Serial.Low;
             TagSerialNoHigh:=ARMTag.Serial.High;
            end;
-         end;    
+         end;
         ATAG_REVISION:begin
           {REVISION}
           Inc(TagRevisionCount);
@@ -739,7 +739,7 @@ begin
            begin
             TagRevisionNo:=ARMTag.Revision.Revision;
            end;
-         end;    
+         end;
         ATAG_VIDEOLFB:begin
           {VIDEOLFB}
           Inc(TagVideoFBCount);
@@ -747,7 +747,7 @@ begin
            begin
             {Not relevant to Ultibo}
            end;
-         end;    
+         end;
         ATAG_CMDLINE:begin
           {CMDLINE}
           Inc(TagCmdCount);
@@ -755,9 +755,9 @@ begin
            begin
             ExtractCommandLine(@ARMTag.Command.Cmdline[0]);
            end;
-         end;    
+         end;
        end;
-       
+
        {Get Next Tag}
        ARMTag:=PARMTag(PtrUInt(ARMTag) + (ARMTag.Header.Size * SizeOf(LongWord)));
       end;
@@ -781,14 +781,14 @@ begin
   begin
    {Update argc}
    argc:=TagCommandCount + 1; {Add one for ParamStr(0)}
-     
+
    {Update argv}
    argv:=AllocMem(SizeOf(PAnsiChar) * (TagCommandCount + 1)); {Add one for ParamStr(0)}
-   
+
    {Get Kernal Name}
    CommandCount:=0;
    argv[CommandCount]:=KERNEL_NAME;
-     
+
    {Check Command Line}
    if TagCommandAddress <> nil then
     begin
@@ -809,14 +809,14 @@ begin
              {Allocate Command}
              Inc(CommandCount);
              argv[CommandCount]:=AllocMem(SizeOf(AnsiChar) * (CommandLength + 1)); {Add one for null terminator}
-             
+
              {Copy Command}
              System.Move(CommandStart^,argv[CommandCount]^,CommandLength);
             end;
-            
+
            {Update Offset}
-           Inc(CommandOffset,SizeOf(AnsiChar));  
-           
+           Inc(CommandOffset,SizeOf(AnsiChar));
+
            {Get Next Command}
            CommandStart:=CommandOffset;
            CommandLength:=0;
@@ -824,39 +824,39 @@ begin
          else
           begin
            {Update Offset}
-           Inc(CommandOffset,SizeOf(AnsiChar));  
-           
+           Inc(CommandOffset,SizeOf(AnsiChar));
+
            {Update Length}
            Inc(CommandLength);
-          end;      
-        end;  
-       
-       {Check Last Command}     
+          end;
+        end;
+
+       {Check Last Command}
        if CommandLength > 0 then
         begin
          {Allocate Command}
          Inc(CommandCount);
          argv[CommandCount]:=AllocMem(SizeOf(AnsiChar) * (CommandLength + 1)); {Add one for null terminator}
-         
+
          {Copy Command}
          System.Move(CommandStart^,argv[CommandCount]^,CommandLength);
         end;
-      end;  
-     
+      end;
+
      {Check Command Size}
      if TagCommandSize > 0 then
       begin
        {Update cmdline}
        cmdline:=AllocMem(TagCommandSize);
-       
+
        {Copy Command Line}
        System.Move(TagCommandAddress^,cmdline^,TagCommandSize);
-      end; 
-     
+      end;
+
      {Process Command Line}
       {No currently supported ARM command line options}
-    end; 
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -878,10 +878,10 @@ begin
     begin
      ENVIRONMENT_STRING_COUNT:=TagCommandCount;
     end;
-    
+
    {Update envp}
    envp:=AllocMem(SizeOf(PAnsiChar) * (ENVIRONMENT_STRING_COUNT + 1)); {Add one for terminating null}
-   
+
    {Check Command Line}
    if TagCommandAddress <> nil then
     begin
@@ -902,17 +902,17 @@ begin
             begin
              {Allocate Command}
              envp[CommandCount]:=AllocMem(SizeOf(AnsiChar) * (CommandLength + 1)); {Add one for null terminator}
-             
+
              {Copy Command}
              System.Move(CommandStart^,envp[CommandCount]^,CommandLength);
-             
+
              {Update Count}
              Inc(CommandCount);
             end;
-            
+
            {Update Offset}
-           Inc(CommandOffset,SizeOf(AnsiChar));  
-           
+           Inc(CommandOffset,SizeOf(AnsiChar));
+
            {Get Next Command}
            CommandStart:=CommandOffset;
            CommandLength:=0;
@@ -920,33 +920,33 @@ begin
          else
           begin
            {Update Offset}
-           Inc(CommandOffset,SizeOf(AnsiChar));  
-           
+           Inc(CommandOffset,SizeOf(AnsiChar));
+
            {Update Length}
            Inc(CommandLength);
-          end;      
-        end;  
-       
-       {Check Last Command}     
+          end;
+        end;
+
+       {Check Last Command}
        if CommandLength > 0 then
         begin
          {Allocate Command}
          envp[CommandCount]:=AllocMem(SizeOf(AnsiChar) * (CommandLength + 1)); {Add one for null terminator}
-         
+
          {Copy Command}
          System.Move(CommandStart^,envp[CommandCount]^,CommandLength);
         end;
-      end;  
-     
+      end;
+
      {Process Environment}
       {No currently supported ARM environment options}
-    end; 
+    end;
   end;
 end;
 
 {==============================================================================}
 
-function ARMGetSP:PtrUInt; assembler; nostackframe; 
+function ARMGetSP:PtrUInt; assembler; nostackframe;
 {Get the current stack pointer (SP)}
 asm
  //Copy stack pointer to R0
@@ -955,7 +955,7 @@ end;
 
 {==============================================================================}
 
-function ARMGetPC:PtrUInt; assembler; nostackframe; 
+function ARMGetPC:PtrUInt; assembler; nostackframe;
 {Get the current program counter (PC)}
 asm
  //Copy link register (Return program counter) to R0
@@ -964,7 +964,7 @@ end;
 
 {==============================================================================}
 
-function ARMGetIRQ:Boolean; assembler; nostackframe; 
+function ARMGetIRQ:Boolean; assembler; nostackframe;
 {Get Interrupts (IRQ) state}
 {Return: True is enabled, False if disabled (Returned in R0)}
 asm
@@ -986,25 +986,25 @@ end;
 
 {==============================================================================}
 
-procedure ARMEnableIRQ; assembler; nostackframe; 
+procedure ARMEnableIRQ; assembler; nostackframe;
 {Enable Interrupts (IRQ) unconditionally}
 asm
  //Change program status interrupt enable
- cpsie i 
+ cpsie i
 end;
 
 {==============================================================================}
 
-procedure ARMDisableIRQ; assembler; nostackframe;  
+procedure ARMDisableIRQ; assembler; nostackframe;
 {Disable Interrupts (IRQ) unconditionally}
 asm
  //Change program status interrupt disable
- cpsid i 
+ cpsid i
 end;
 
 {==============================================================================}
 
-function ARMSaveIRQ:TIRQMask; assembler; nostackframe; 
+function ARMSaveIRQ:TIRQMask; assembler; nostackframe;
 {Disable Interrupts (IRQ) and return the previous state}
 {Return: IRQ state when called (Returned in R0)}
 asm
@@ -1018,7 +1018,7 @@ end;
 
 {==============================================================================}
 
-function ARMRestoreIRQ(IRQMask:TIRQMask):TIRQMask; assembler; nostackframe;  
+function ARMRestoreIRQ(IRQMask:TIRQMask):TIRQMask; assembler; nostackframe;
 {Restore Interrupts (IRQ) to a previous state}
 {IRQMask: IRQ state to restore (Passed in R0)}
 {Return: IRQ state when called (Returned in R0)}
@@ -1038,7 +1038,7 @@ asm
 
 .LEnable:
  //Change program status interrupt enable
- cpsie i 
+ cpsie i
 
 .LCompleted:
  //Return the previous state
@@ -1047,7 +1047,7 @@ end;
 
 {==============================================================================}
 
-function ARMGetFIQ:Boolean; assembler; nostackframe; 
+function ARMGetFIQ:Boolean; assembler; nostackframe;
 {Get Fast Interrupts (FIQ) state}
 {Return: True is enabled, False if disabled (Returned in R0)}
 asm
@@ -1069,25 +1069,25 @@ end;
 
 {==============================================================================}
 
-procedure ARMEnableFIQ; assembler; nostackframe; 
+procedure ARMEnableFIQ; assembler; nostackframe;
 {Enable Fast Interrupts (FIQ) unconditionally}
 asm
  //Change program status interrupt enable
- cpsie f 
+ cpsie f
 end;
 
 {==============================================================================}
 
-procedure ARMDisableFIQ; assembler; nostackframe; 
+procedure ARMDisableFIQ; assembler; nostackframe;
 {Disable Fast Interrupts (FIQ) unconditionally}
 asm
  //Change program status interrupt disable
- cpsid f 
+ cpsid f
 end;
 
 {==============================================================================}
 
-function ARMSaveFIQ:TFIQMask; assembler; nostackframe; 
+function ARMSaveFIQ:TFIQMask; assembler; nostackframe;
 {Disable Fast Interrupts (FIQ) and return the previous state}
 {Return: FIQ state when called (Returned in R0)}
 asm
@@ -1101,7 +1101,7 @@ end;
 
 {==============================================================================}
 
-function ARMRestoreFIQ(FIQMask:TFIQMask):TFIQMask; assembler; nostackframe; 
+function ARMRestoreFIQ(FIQMask:TFIQMask):TFIQMask; assembler; nostackframe;
 {Restore Fast Interrupts (FIQ) to a previous state}
 {FIQMask: FIQ state to restore (Passed in R0)}
 {Return: FIQ state when called (Returned in R0)}
@@ -1121,7 +1121,7 @@ asm
 
 .LEnable:
  //Change program status interrupt enable
- cpsie f 
+ cpsie f
 
 .LCompleted:
  //Return the previous state
@@ -1130,25 +1130,25 @@ end;
 
 {==============================================================================}
 
-procedure ARMEnableIRQFIQ; assembler; nostackframe; 
+procedure ARMEnableIRQFIQ; assembler; nostackframe;
 {Enable Interrupts and Fast Interrupts (IRQ/FIQ) unconditionally}
 asm
  //Change program status interrupt enable
- cpsie if 
+ cpsie if
 end;
 
 {==============================================================================}
 
-procedure ARMDisableIRQFIQ; assembler; nostackframe; 
+procedure ARMDisableIRQFIQ; assembler; nostackframe;
 {Disable Interrupts and Fast Interrupts (IRQ/FIQ) unconditionally}
 asm
  //Change program status interrupt disable
- cpsid if 
+ cpsid if
 end;
 
 {==============================================================================}
 
-function ARMSaveIRQFIQ:TIRQFIQMask; assembler; nostackframe; 
+function ARMSaveIRQFIQ:TIRQFIQMask; assembler; nostackframe;
 {Disable Interrupts and Fast Interrupts (IRQ/FIQ) and return the previous state}
 {Return: IRQ/FIQ state when called (Returned in R0)}
 asm
@@ -1162,7 +1162,7 @@ end;
 
 {==============================================================================}
 
-function ARMRestoreIRQFIQ(IRQFIQMask:TIRQFIQMask):TIRQFIQMask; assembler; nostackframe; 
+function ARMRestoreIRQFIQ(IRQFIQMask:TIRQFIQMask):TIRQFIQMask; assembler; nostackframe;
 {Restore Interrupts and Fast Interrupts (IRQ/FIQ) to a previous state}
 {IRQFIQMask: IRQ/FIQ state to restore (Passed in R0)}
 {Return: IRQ/FIQ state when called (Returned in R0)}
@@ -1171,7 +1171,7 @@ asm
  mrs r1, cpsr
  //Mask off everything except IRQ/FIQ bits
  and r1, r1, #ARM_I_BIT | ARM_F_BIT
- 
+
 .LCheckIRQ:
  //Extract the supplied IRQ bit
  and r2, r0, #ARM_I_BIT
@@ -1186,8 +1186,8 @@ asm
 
 .LEnableIRQ:
  //Change program status interrupt enable
- cpsie i 
- 
+ cpsie i
+
 .LCheckFIQ:
  //Extract the supplied FIQ bit
  and r2, r0, #ARM_F_BIT
@@ -1199,11 +1199,11 @@ asm
  //Change program status interrupt disable
  cpsid f
  b   .LCompleted
- 
+
 .LEnableFIQ:
  //Change program status interrupt enable
- cpsie f 
- 
+ cpsie f
+
 .LCompleted:
  //Return the previous state
  mov r0, r1
@@ -1211,7 +1211,7 @@ end;
 
 {==============================================================================}
 
-function ARMGetAbort:Boolean; assembler; nostackframe; 
+function ARMGetAbort:Boolean; assembler; nostackframe;
 {Get Abort state}
 {Return: True is enabled, False if disabled (Returned in R0)}
 asm
@@ -1233,25 +1233,25 @@ end;
 
 {==============================================================================}
 
-procedure ARMEnableAbort; assembler; nostackframe; 
+procedure ARMEnableAbort; assembler; nostackframe;
 {Enable Aborts unconditionally}
 asm
  //Change program status interrupt enable
- cpsie a 
+ cpsie a
 end;
 
 {==============================================================================}
 
-procedure ARMDisableAbort; assembler; nostackframe; 
+procedure ARMDisableAbort; assembler; nostackframe;
 {Disable Aborts unconditionally}
 asm
  //Change program status interrupt disable
- cpsid a 
+ cpsid a
 end;
 
 {==============================================================================}
 
-function ARMSaveAbort:TAbortMask; assembler; nostackframe; 
+function ARMSaveAbort:TAbortMask; assembler; nostackframe;
 {Disable Aborts and return the previous state}
 {Return: Abort state when called (Returned in R0)}
 asm
@@ -1265,7 +1265,7 @@ end;
 
 {==============================================================================}
 
-function ARMRestoreAbort(AbortMask:TAbortMask):TAbortMask; assembler; nostackframe; 
+function ARMRestoreAbort(AbortMask:TAbortMask):TAbortMask; assembler; nostackframe;
 {Restore Aborts to a previous state}
 {AbortMask: Abort state to restore (Passed in R0)}
 {Return: Abort state when called (Returned in R0)}
@@ -1285,7 +1285,7 @@ asm
 
 .LEnable:
  //Change program status interrupt enable
- cpsie a 
+ cpsie a
 
 .LCompleted:
  //Return the previous state
@@ -1354,7 +1354,7 @@ function ARMModeToString(ARMMode:LongWord):String;
 begin
  {}
  Result:='ARM_MODE_INVALID';
- 
+
  case ARMMode of
   ARM_MODE_USR:Result:='ARM_MODE_USR';
   ARM_MODE_FIQ:Result:='ARM_MODE_FIQ';

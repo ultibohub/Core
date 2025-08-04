@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
- 
+
 LDAP
 ====
 
@@ -53,9 +53,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils,Classes,Ulti
 {==============================================================================}
 const
  {LDAP specific constants}
- 
+
  //To Do //See: POP3 for framework
-        
+
  {LDAP logging}
  LDAP_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {LDAP debugging messages}
  LDAP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {LDAP informational messages}
@@ -63,13 +63,13 @@ const
  LDAP_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {LDAP error messages}
  LDAP_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No LDAP messages}
 
-var 
- LDAP_DEFAULT_LOG_LEVEL:LongWord = LDAP_LOG_LEVEL_DEBUG; {Minimum level for LDAP messages.  Only messages with level greater than or equal to this will be printed} 
- 
-var 
+var
+ LDAP_DEFAULT_LOG_LEVEL:LongWord = LDAP_LOG_LEVEL_DEBUG; {Minimum level for LDAP messages.  Only messages with level greater than or equal to this will be printed}
+
+var
  {LDAP logging}
- LDAP_LOG_ENABLED:Boolean; 
-              
+ LDAP_LOG_ENABLED:Boolean;
+
 {==============================================================================}
 //type
  {LDAP specific types}
@@ -82,13 +82,13 @@ var
  {Helper classes}
 
  {Client classes}
- 
+
  {Server classes}
- 
+
 {==============================================================================}
 {var}
  {LDAP specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure LDAPInit;
@@ -130,7 +130,7 @@ var
 {==============================================================================}
 {==============================================================================}
 {TLDAPListener}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -139,10 +139,10 @@ begin
  {}
  {Check Initialized}
  if LDAPInitialized then Exit;
- 
+
  {Initialize Logging}
- LDAP_LOG_ENABLED:=(LDAP_DEFAULT_LOG_LEVEL <> LDAP_LOG_LEVEL_NONE); 
- 
+ LDAP_LOG_ENABLED:=(LDAP_DEFAULT_LOG_LEVEL <> LDAP_LOG_LEVEL_NONE);
+
  LDAPInitialized:=True;
 end;
 
@@ -160,7 +160,7 @@ begin
  {}
  {Check Level}
  if Level < LDAP_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = LDAP_LOG_LEVEL_DEBUG then
@@ -175,11 +175,11 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'LDAP: ';
 
- {Output Logging} 
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_IMAP,LogLevelToLoggingSeverity(Level),'LDAP',WorkBuffer + AText);
 end;
 
@@ -222,7 +222,7 @@ initialization
  LDAPInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

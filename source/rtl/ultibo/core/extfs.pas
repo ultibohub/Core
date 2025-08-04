@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
- 
+
 EXT FileSystem
 ==============
 
@@ -63,12 +63,12 @@ const
   'EXT4');
 
  //To Do
-              
+
 {==============================================================================}
 type
  {EXTFS specific types}
  TEXTFSType = (etNONE,etEXT2,etEXT3,etEXT4);
- 
+
  //To Do
 
 {==============================================================================}
@@ -78,7 +78,7 @@ type
    constructor Create(ADriver:TFileSysDriver);
   private
    {Private Variables}
-   
+
   protected
    {Protected Variables}
 
@@ -90,12 +90,12 @@ type
    {Public Methods}
    function RecognizePartitionId(APartitionId:Byte):Boolean; override;
    function RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; override;
-   
+
    function RecognizePartition(APartition:TDiskPartition):Boolean; override;
    function RecognizeVolume(AVolume:TDiskVolume):Boolean; override;
    function MountVolume(AVolume:TDiskVolume;ADrive:TDiskDrive):Boolean; override;
  end;
- 
+
  TEXTFSPartitioner = class(TDiskPartitioner)
    constructor Create(ADriver:TFileSysDriver;ARecognizer:TRecognizer);
   private
@@ -118,7 +118,7 @@ type
    {Public Methods}
    function AcceptPartition(ADevice:TDiskDevice;APartition,AParent:TDiskPartition;APartitionId:Byte):Boolean; override;
  end;
- 
+
  TEXTFSFileSystem = class(TFileSystem)
    constructor Create(ADriver:TFileSysDriver;AVolume:TDiskVolume;ADrive:TDiskDrive);
    destructor Destroy; override;
@@ -128,11 +128,11 @@ type
    {Public Variables}
    //To Do
  end;
- 
+
 {==============================================================================}
 {var}
  {EXTFS specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure EXTFSInit;
@@ -140,11 +140,11 @@ procedure EXTFSQuit;
 
 {==============================================================================}
 {EXTFS Functions}
-//To Do 
+//To Do
 
 {==============================================================================}
 {EXTFS Helper Functions}
-//To Do 
+//To Do
 
 {==============================================================================}
 {==============================================================================}
@@ -166,7 +166,7 @@ begin
  inherited Create(ADriver);
  FAllowDrive:=False;
  FAllowDefault:=False;
- 
+
  FPartitioner:=TEXTFSPartitioner.Create(FDriver,Self);
  //To Do
 end;
@@ -181,7 +181,7 @@ end;
 
 {==============================================================================}
 
-function TEXTFSRecognizer.RecognizePartitionId(APartitionId:Byte):Boolean; 
+function TEXTFSRecognizer.RecognizePartitionId(APartitionId:Byte):Boolean;
 begin
  {}
  Result:=False;
@@ -193,7 +193,7 @@ begin
   {$IFDEF EXTFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TEXTFSRecognizer.RecognizePartitionId (PartitionId = ' + IntToStr(APartitionId) + ')');
   {$ENDIF}
-  
+
   case APartitionId of
    pidLinuxExtended,pidExtended,pidExtLBA:begin
      {Linux or DOS Extended Partition}
@@ -208,14 +208,14 @@ begin
      Result:=True;
     end;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
-  
-function TEXTFSRecognizer.RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; 
+
+function TEXTFSRecognizer.RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean;
 begin
  {}
  Result:=False;
@@ -225,11 +225,11 @@ begin
   if FDriver = nil then Exit;
 
   //To Do
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function TEXTFSRecognizer.RecognizePartition(APartition:TDiskPartition):Boolean;
@@ -247,26 +247,26 @@ begin
      {Linux or DOS Extended Partition}
      APartition.Extended:=True;
      APartition.Recognized:=True;
-     
+
      Result:=True;
     end;
    pidLinuxSwap:begin
      {Linux Swap Partition}
      APartition.Recognized:=True;
      APartition.NonVolume:=True;
-     
+
      Result:=True;
     end;
    pidLinuxNative:begin
      {Linux Native Partition}
      APartition.Recognized:=True;
-     
+
      Result:=True;
     end;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -282,9 +282,9 @@ begin
   if AVolume = nil then Exit;
 
   //To Do
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -308,11 +308,11 @@ begin
   FileSystem:=TEXTFSFileSystem.Create(FDriver,AVolume,ADrive);
   FileSystem.FileSystemInit;
   FileSystem.MountFileSystem;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -331,14 +331,14 @@ function TEXTFSPartitioner.CheckLogical(ADevice:TDiskDevice;AParent:TDiskPartiti
 begin
  {}
  Result:=False;
- 
+
  if ADevice = nil then Exit;
 
  {Check Type}
  case APartitionId of
   pidLinuxNative:begin
     if AParent = nil then Exit;
-    
+
     Result:=True;
    end;
  end;
@@ -351,7 +351,7 @@ function TEXTFSPartitioner.CheckExtended(ADevice:TDiskDevice;AParent:TDiskPartit
 begin
  {}
  Result:=False;
- 
+
  if ADevice = nil then Exit;
 
  {Check Type}
@@ -372,7 +372,7 @@ var
 begin
  {}
  Result:=pidUnused;
- 
+
  if ACount = 0 then Exit;
  if ADevice = nil then Exit;
 
@@ -389,7 +389,7 @@ begin
        pidExtended,pidExtLBA:begin
          {Parent is DOS Extended}
          Result:=pidExtended;
-         
+
          {DOS only allows standard type for second level Extended}
          {if (LBA) and (AParent = nil) then Result:=pidExtLBA;}
         end;
@@ -424,7 +424,7 @@ function TEXTFSPartitioner.InitPartition(ADevice:TDiskDevice;AParent:TDiskPartit
 begin
  {}
  Result:=False;
- 
+
  if ACount = 0 then Exit;
  if ADevice = nil then Exit;
 
@@ -460,10 +460,10 @@ begin
    begin
     {Accept Create Partition}
     if ADevice = nil then Exit;
-    
+
     {Check Device}
     if (ADevice.MediaType <> mtFIXED) and (ADevice.MediaType <> mtREMOVABLE) then Exit;
-    
+
     {Check Partition and Volume}
     if FDriver.GetPartitionByDevice(ADevice,False,FILESYS_LOCK_NONE) = nil then {Do not lock}
      begin
@@ -473,28 +473,28 @@ begin
         try
          {Check File System Type}
          if Volume.FileSysType <> fsUNKNOWN then Exit;
-        finally  
+        finally
          Volume.ReaderUnlock;
-        end; 
+        end;
        end;
-     end; 
-    
+     end;
+
     {Check Parent}
     if AParent <> nil then
      begin
       {Check Extended}
       if not AParent.Extended then Exit;
-      
+
       {Check First Level}
       if AParent.Partition <> nil then Exit;
      end;
-     
+
     {Check Type}
     case APartitionId of
      pidLinuxExtended,pidExtended,pidExtLBA,pidLinuxSwap:begin
        {Check Parent}
        if AParent <> nil then Exit;
-       
+
        Result:=True;
       end;
      pidLinuxNative:begin
@@ -509,7 +509,7 @@ begin
       {Accept Delete Partition}
       {Check Children}
       if (AParent = nil) and (FDriver.GetPartitionByPartition(APartition,False,FILESYS_LOCK_NONE) <> nil) then Exit; {Do not lock}
-      
+
       Result:=True;
      end
     else if APartitionId <> APartition.PartitionId then
@@ -517,7 +517,7 @@ begin
       {Accept Modify Partition}
       {Check Extended}
       if APartition.Extended then Exit;
-      
+
       {Nothing}
      end
     else if APartitionId = APartition.PartitionId then
@@ -525,7 +525,7 @@ begin
       {Accept Activate Partition}
       {Check Primary}
       if not APartition.Primary then Exit;
-      
+
       {Check Type}
       case APartitionId of
        pidLinuxNative:begin
@@ -534,9 +534,9 @@ begin
       end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -551,7 +551,7 @@ begin
  FDataStreams:=False;
  FReparsePoints:=False;
  FCaseSensitive:=True;
- //To Do 
+ //To Do
 end;
 
 {==============================================================================}
@@ -559,7 +559,7 @@ end;
 destructor TEXTFSFileSystem.Destroy;
 begin
  {}
- //To Do 
+ //To Do
  inherited Destroy;
 end;
 
@@ -573,10 +573,10 @@ begin
  {}
  {Check Initialized}
  if EXTFSInitialized then Exit;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Create EXTFS Recognizer}
  if FILESYS_EXTFS_ENABLED then
   begin
@@ -584,7 +584,7 @@ begin
    Recognizer.AllowDrive:=FILESYS_DRIVES_ENABLED;
    Recognizer.AllowDefault:=EXTFS_DEFAULT;
   end;
- 
+
  EXTFSInitialized:=True;
 end;
 
@@ -600,22 +600,22 @@ begin
  {}
  {Check Initialized}
  if not EXTFSInitialized then Exit;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Terminate FileSystems}
- NextFileSystem:=FileSysDriver.GetFileSystemByNext(nil,True,False,FILESYS_LOCK_READ); 
+ NextFileSystem:=FileSysDriver.GetFileSystemByNext(nil,True,False,FILESYS_LOCK_READ);
  while NextFileSystem <> nil do
   begin
    CurrentFileSystem:=NextFileSystem;
-   NextFileSystem:=FileSysDriver.GetFileSystemByNext(CurrentFileSystem,True,False,FILESYS_LOCK_READ); 
-   
+   NextFileSystem:=FileSysDriver.GetFileSystemByNext(CurrentFileSystem,True,False,FILESYS_LOCK_READ);
+
    if CurrentFileSystem is TEXTFSFileSystem then
     begin
      {Convert FileSystem}
      CurrentFileSystem.ReaderConvert;
-    
+
      {FileSysDriver.RemoveFileSystem(CurrentFileSystem);} {Done by Destroy}
      CurrentFileSystem.DismountFileSystem;
      CurrentFileSystem.Free;
@@ -624,16 +624,16 @@ begin
     begin
      {Unlock FileSystem}
      CurrentFileSystem.ReaderUnlock;
-    end;    
+    end;
   end;
 
  {Terminate Recognizer}
- NextRecognizer:=FileSysDriver.GetRecognizerByNext(nil,True,False,FILESYS_LOCK_READ); 
+ NextRecognizer:=FileSysDriver.GetRecognizerByNext(nil,True,False,FILESYS_LOCK_READ);
  while NextRecognizer <> nil do
   begin
    CurrentRecognizer:=NextRecognizer;
    NextRecognizer:=FileSysDriver.GetRecognizerByNext(CurrentRecognizer,True,False,FILESYS_LOCK_READ);
-   
+
    if CurrentRecognizer is TEXTFSRecognizer then
     begin
      {Convert Recognizer}
@@ -646,9 +646,9 @@ begin
     begin
      {Unlock Recognizer}
      CurrentRecognizer.ReaderUnlock;
-    end;    
+    end;
   end;
- 
+
  EXTFSInitialized:=False;
 end;
 
@@ -667,7 +667,7 @@ initialization
  EXTFSInit;
 
 {==============================================================================}
- 
+
 finalization
  EXTFSQuit;
 

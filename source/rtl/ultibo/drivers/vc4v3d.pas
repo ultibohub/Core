@@ -21,19 +21,19 @@ Boards
  Raspberry Pi 4 - Model B
  Raspberry Pi 400
  Raspberry Pi CM4
- 
+
 Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
-  
+
   PeterLemon (RaspberryPi) - https://github.com/PeterLemon/RaspberryPi
-  
+
 References
 ==========
 
@@ -44,13 +44,13 @@ VideoCore IV V3D
 
  V3D Interface
  -------------
- 
+
  The V3D is one of many components that make up the VideoCore IV GPU.
- 
+
  This unit defines register values and constants needed for programming the V3D.
- 
+
  For full documentation please see the VideoCore IV 3D Architecture Reference Guide
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -66,12 +66,12 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,S
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
- 
+
 {==============================================================================}
 const
  {V3D specific constants}
  V3D_BASE  =  $C00000;  {V3D Base Address (PERIPHERALS_BASE + V3D_BASE)}
- 
+
  {V3D Register Address Map}
  V3D_IDENT0  = $00000;  {V3D Identification 0 (V3D Block Identity)}
  V3D_IDENT1  = $00004;  {V3D Identification 1 (V3D Configuration A)}
@@ -169,12 +169,12 @@ const
  V3D_FDBGR   = $00F0C;  {V3D FEP Internal Ready Signals}
  V3D_FDBGS   = $00F10;  {V3D FEP Internal Stall Input Signals}
  V3D_ERRSTAT = $00F20;  {V3D Miscellaneous Error Signals (VPM, VDW, VCD, VCM, L2C)}
- 
+
  {V3D Identity Registers}
  {V3D_IDENT0: V3D Identification 0 (V3D Block Identity) Register Description}
  IDSTR = $00FFFFFF;  {V3D_IDENT0: V3D ID String (Reads As "V3D") READ}
  TVER  = $FF000000;  {V3D_IDENT0: V3D Technology Version (Reads Technology Version = 2) READ}
- 
+
  {V3D_IDENT1: V3D Identification 1 (V3D Configuration A) Register Description}
  REVR  = $0000000F;  {V3D_IDENT1: V3D Revision READ}
  NSLC  = $000000F0;  {V3D_IDENT1: Number Of Slices READ}
@@ -183,47 +183,47 @@ const
  NSEM  = $00FF0000;  {V3D_IDENT1: Number Of Semaphores READ}
  HDRT  = $0F000000;  {V3D_IDENT1: HDR Support (0 = Not Supported, 1 = Supported) READ}
  VPMSZ = $F0000000;  {V3D_IDENT1: VPM Memory Size (Multiples Of 1K, 0 => 16K) READ}
- 
+
  {V3D_IDENT2: V3D Identification 2 (V3D Configuration B) Register Description}
  VRISZ = $0000000F;  {V3D_IDENT2: VRI Memory Size (0 = Half Size, 1 = Full Size) READ}
  TLBSZ = $000000F0;  {V3D_IDENT2: Tile Buffer Size (0 = Quarter Size, 1 = Half Size, 2 = Full Size (32x32msm)) READ}
  TLBDB = $00000F00;  {V3D_IDENT2: Tile Buffer Double-Buffer Mode Support (0 = Not Supported, 1 = Supported) READ}
- 
+
  {V3D Miscellaneous Registers}
  {V3D_SCRATCH: V3D Scratch Register Description}
  SCRATCH = $FFFFFFFF;  {V3D_SCRATCH: Scratch Register (Read/Write Registers For General Purposes) READ/WRITE}
- 
+
  {V3D Cache Control Registers}
  {V3D_L2CACTL: V3D L2 Cache Control Register Description}
  L2CENA = $00000001;  {V3D_L2CACTL: L2 Cache Enable (Reads State Of Cache Enable Bit, Write To Enable The L2 Cache) READ/WRITE}
  L2CDIS = $00000002;  {V3D_L2CACTL: L2 Cache Disable (Write To Disable The L2 Cache) WRITE}
  L2CCLR = $00000004;  {V3D_L2CACTL: L2 Cache Clear (Write To Clear The L2 Cache) WRITE}
- 
+
  {V3D_SLCACTL: V3D Slices Cache Control Register Description}
  ICCS0_to_ICCS3   = $0000000F;  {V3D_SLCACTL: Instruction Cache Clear Bits (Write To Clear Instruction Cache) WRITE}
  UCCS0_to_UCCS3   = $00000F00;  {V3D_SLCACTL: Uniforms Cache Clear Bits (Write To Clear Uniforms Cache) WRITE}
  T0CCS0_to_T0CCS3 = $000F0000;  {V3D_SLCACTL: TMU0 Cache Clear Bits (Write To Clear TMU0 Cache) WRITE}
  T1CCS0_to_T1CCS3 = $0F000000;  {V3D_SLCACTL: TMU1 Cache Clear Bits (Write To Clear TMU1 Cache) WRITE}
- 
+
  {V3D Pipeline Interrupt Control}
  {V3D_INTCTL: V3D Interrupt Control Register Description}
  INT_FRDONE   = $00000001;  {V3D_INTCTL: Render Mode Frame Done Interrupt Status (Set When All Tiles Of The Frame Have Been Written To Memory) READ/WRITE}
  INT_FLDONE   = $00000002;  {V3D_INTCTL: Binning Mode Flush Done Interrupt Status (Set When Binning Is Complete With All Tile Lists Flushed To Memory) READ/WRITE}
  INT_OUTOMEM  = $00000004;  {V3D_INTCTL: Binner Out Of Memory Interrupt Status (Set While The Binner Needs More Memory To Complete) READ/WRITE}
  INT_SPILLUSE = $00000008;  {V3D_INTCTL: Binner Used Overspill Memory Interrupt Status (Set When The Binner Starts Using The (Valid) Overspill Memory Buffer) READ/WRITE}
- 
+
  {V3D_INTENA: V3D Interrupt Enables Register Description}
  EI_FRDONE   = $00000001;  {V3D_INTENA: Render Mode Frame Done Interrupt Enable (Set When The INT_FRDONE Interrupt Is Set) READ/WRITE}
  EI_FLDONE   = $00000002;  {V3D_INTENA: Binning Mode Flush Done Interrupt Enable (Set When The INT_FLDONE Interrupt Is Set) READ/WRITE}
  EI_OUTOMEM  = $00000004;  {V3D_INTENA: Binner Out Of Memory Interrupt Enable (Set When The INT_OUTOMEM Interrupt Is Set) READ/WRITE}
  EI_SPILLUSE = $00000008;  {V3D_INTENA: Binner Used Overspill Memory Interrupt Enable (Set When The INT_SPILLUSE Interrupt Is Set) READ/WRITE}
- 
+
  {V3D_INTDIS: V3D Interrupt Disables Register Description}
  DI_FRDONE   = $00000001;  {V3D_INTDIS: Render Mode Frame Done Interrupt Disable (Set When The INT_FRDONE Interrupt Is Set) READ/WRITE}
  DI_FLDONE   = $00000002;  {V3D_INTDIS: Binning Mode Flush Done Interrupt Disable (Set When The INT_FLDONE Interrupt Is Set) READ/WRITE}
  DI_OUTOMEM  = $00000004;  {V3D_INTDIS: Binner Out Of Memory Interrupt Disable (Set When The INT_OUTOMEM Interrupt Is Set) READ/WRITE}
  DI_SPILLUSE = $00000008;  {V3D_INTDIS: Binner Used Overspill Memory Interrupt Disable (Set When The INT_SPILLUSE Interrupt Is Set) READ/WRITE}
- 
+
  {V3D Control List Executor Registers (Per Thread)}
  {V3D_CTnCS: V3D Control List Executor Thread n Control & Status Register Description}
  CTMODE = $00000001;  {V3D_CTnCS: Control Thread Mode (Binning Mode Thread Only) READ}
@@ -233,23 +233,23 @@ const
  CTRTSD = $00000300;  {V3D_CTnCS: Return Stack Depth (Number Of Levels Of List Nesting) READ}
  CTSEMA = $00007000;  {V3D_CTnCS: Counting Semaphore (Current State Of The Counting Semaphore For This Thread) READ}
  CTRSTA = $00008000;  {V3D_CTnCS: Reset Bit (Writing 1 Stops The Control Thread & Resets All Bits In This Register) WRITE}
- 
+
  {V3D_CTnEA: V3D Control List Executor Thread n End Address Register Description}
  CTLEA = $FFFFFFFF;  {V3D_CTnEA: Control List End Address (Set To The Byte Address After The Last Record In The Control List) READ/WRITE}
- 
+
  {V3D_CTnCA: V3D Control List Executor Thread n Current Address Register Description}
  CTLCA = $FFFFFFFF;  {V3D_CTnCA: Control List Current Address (Points To The Address Of The Current Record In The Control List) READ/WRITE}
- 
+
  {V3D_CTnRA0: V3D Control List Executor Thread n Return Address Register Description}
  CTLRA = $FFFFFFFF;  {V3D_CTnRA0: Control List Return Address 0 (Address On Return Address Stack) READ}
- 
+
  {V3D_CTnLC: V3D Control List Executor Thread n List Counter Register Description}
  CTLSLCS = $0000FFFF;  {V3D_CTnLC: Sub-list Counter (Count Of Return Commands Encountered) READ/WRITE}
  CTLLCM  = $FFFF0000;  {V3D_CTnLC: Major List Counter (Count Of Flush Commands Encountered) READ/WRITE}
- 
+
  {V3D_CTnPC: V3D Control List Executor Thread n Primitive List Counter Register Description}
  CTLPC = $FFFFFFFF;  {V3D_CTnPC: Primitive List Counter (Count Of Primitives Remaining Whilst Processing A Primitive List) READ}
- 
+
  {V3D Pipeline Registers}
  {V3D_PCS: V3D Pipeline Control & Status Register Description}
  BMACTIVE = $00000001;  {V3D_PCS: Binning Mode Active (Set While Binning Pipeline Is In Use) READ}
@@ -257,25 +257,25 @@ const
  RMACTIVE = $00000004;  {V3D_PCS: Rendering Mode Active (Set While Rendering Pipeline Is In Use) READ}
  RMBUSY   = $00000008;  {V3D_PCS: Rendering Mode Busy (Set While Any Rendering Operations Are Actually In Progress) READ}
  BMOOM    = $00000100;  {V3D_PCS: Binning Mode Out Of Memory (Set When PTB Runs Out Of Binning Memory While Binning) READ}
- 
+
  {V3D_BFC: V3D Binning Mode Flush Count Register Description}
  BMFCT = $000000FF;  {V3D_BFC: Flush Count (Count Increments In Binning Mode Once PTB Has Flushed All Tile Lists To Mem & PTB Has Finished With Tile State Data Array) READ/WRITE}
- 
+
  {V3D_RFC: V3D Rendering Mode Frame Count Register Description}
  RMFCT = $000000FF;  {V3D_RFC: Frame Count (Count Increments In Rendering Mode When Last Tile Store Operation Of Frame Completes, The Tile Has Fully Written Out To Mem) READ/WRITE}
- 
+
  {V3D_BPCA: V3D Current Address Of Binning Memory Pool Register Description}
  BMPCA = $FFFFFFFF;  {V3D_BPCA: Current Pool Address (The Address Of The Current Allocation Pointer In The Binning Memory Pool) READ}
- 
+
  {V3D_BPCS: V3D Remaining Size Of Binning Memory Pool Register Description}
  BMPRS = $FFFFFFFF;  {V3D_BPCS: Size Of Pool Remaining (The Number Of Bytes Remaining In The Binning Memory Pool) READ}
- 
+
  {V3D_BPOA: V3D Address Of Overspill Binning Memory Block Register Description}
  BMPOA = $FFFFFFFF;  {V3D_BPOA: Address Of Overspill Memory Block For Binning (Address Of Additional Mem That PTB Can Use For Binning Once Initial Pool Runs Out) READ/WRITE}
- 
+
  {V3D_BPOS: V3D Size Of Overspill Binning Memory Block Register Description}
  BMPOS = $FFFFFFFF;  {V3D_BPOS: Size Of Overspill Memory Block For Binning (Number Of Bytes Of Additional Mem That PTB Can Use For Binning Once Initial Pool Runs Out) READ/WRITE}
- 
+
  {V3D QPU Scheduler Registers}
  {V3D_SQRSV0: V3D Reserve QPUs 0-7 Register Description}
  QPURSV0 = $0000000F;  {V3D_SQRSV0: Reservation Settings For QPU 0 READ/WRITE}
@@ -286,7 +286,7 @@ const
  QPURSV5 = $00F00000;  {V3D_SQRSV0: Reservation Settings For QPU 5 READ/WRITE}
  QPURSV6 = $0F000000;  {V3D_SQRSV0: Reservation Settings For QPU 6 READ/WRITE}
  QPURSV7 = $F0000000;  {V3D_SQRSV0: Reservation Settings For QPU 7 READ/WRITE}
- 
+
  {V3D_SQRSV1: V3D Reserve QPUs 8-15 Register Description}
  QPURSV8  = $0000000F;  {V3D_SQRSV1: Reservation Settings For QPU 8 READ/WRITE}
  QPURSV9  = $000000F0;  {V3D_SQRSV1: Reservation Settings For QPU 9 READ/WRITE}
@@ -296,26 +296,26 @@ const
  QPURSV13 = $00F00000;  {V3D_SQRSV1: Reservation Settings For QPU 13 READ/WRITE}
  QPURSV14 = $0F000000;  {V3D_SQRSV1: Reservation Settings For QPU 14 READ/WRITE}
  QPURSV15 = $F0000000;  {V3D_SQRSV1: Reservation Settings For QPU 15 READ/WRITE}
- 
+
  {V3D_SQCNTL: V3D QPU Scheduler Control Register Description}
  VSRBL = $00000003;  {V3D_SQCNTL: Vertex Shader Scheduling Bypass Limit READ/WRITE}
  CSRBL = $0000000C;  {V3D_SQCNTL: Coordinate Shader Scheduling Bypass Limit READ/WRITE}
- 
+
  {V3D_SRQPC: V3D QPU User Program Request Program Address Register Description}
  QPURQPC = $FFFFFFFF;  {V3D_SRQPC: Program Address (Writing This Register Queues A Request To Run A Program Starting At The Given Address) WRITE}
- 
+
  {V3D_SRQUA: V3D QPU User Program Request Uniforms Address Register Description}
  QPURQUA = $FFFFFFFF;  {V3D_SRQUA: Uniforms Address (Contains The Address Of The Uniforms Stream For The Next User Program To Be Queued Via A Write To V3DRQPC) READ/WRITE}
- 
+
  {V3D_SRQUL: V3D QPU User Program Request Uniforms Length Register Description}
  QPURQUL = $00000FFF;  {V3D_SRQUL: Uniforms Length (Contains The Max Length Of The Uniforms Stream For The Next User Program To Be Queued Via A Write To V3DRQPC) READ/WRITE}
- 
+
  {V3D_SRQCS: V3D QPU User Program Request Control & Status Register Description}
  QPURQL   = $0000003F;  {V3D_SRQCS: Queue Length (Contains The Number Of Program Requests Currently Queued) READ/WRITE}
  QPURQERR = $00000080;  {V3D_SRQCS: Queue Error (Set When A Request Has Been Made When The Queue Is Full) READ/WRITE}
  QPURQCM  = $0000FF00;  {V3D_SRQCS: Count Of User Program Requests Made (Contains The Total Number Of User Program Requests Made, Modulo 256) READ/WRITE}
  QPURQCC  = $00FF0000;  {V3D_SRQCS: Count Of User Programs Completed (Contains The Total Number Of User Programs That Have Run & Completed, Modulo 256) READ/WRITE}
- 
+
  {V3D VPM Registers}
  {V3D_VPACNTL: V3D VPM Allocator Control Register Description}
  VPARALIM = $00000007;  {V3D_VPACNTL: Rendering VPM Allocation Limit (Limits The Amount Of VPM Memory Allocated To Rendering Mode) READ/WRITE}
@@ -324,17 +324,17 @@ const
  VPABATO  = $00000E00;  {V3D_VPACNTL: Binning VPM Allocation Timeout (Sets A Timeout For Raising The Priority Of Binning Mode Allocation Requests) READ/WRITE}
  VPALIMEN = $00001000;  {V3D_VPACNTL: Enable VPM Allocation Limits (Enables VPM Memory Allocation Limiting Using VPARALIM & VPABALIM) READ/WRITE}
  VPATOEN  = $00002000;  {V3D_VPACNTL: Enable VPM Allocation Timeout (Enables VPM Memory Allocation Timeout Using VPARATO & VPABATO) READ/WRITE}
- 
+
  {V3D_VPMBASE: V3D VPM Base (User) Memory Reservation Register Description}
  VPMURSV = $0000001F;  {V3D_VPMBASE: VPM Memory Reserved For User Programs (Contains Amount Of VPM Mem Reserved For All User Programs, In Multiples Of 256 Bytes) READ/WRITE}
- 
+
  {V3D QPU Interrupt Control}
  {V3D_DBQITE: V3D QPU Interrupt Enables Register Description}
  IE_QPU0_to_IE_QPU15 = $0000FFFF;  {V3D_DBQITE: QPU Interrupt Enable bits (Set Bit To Allow QPU To Generate An Interrupt) READ/WRITE}
- 
+
  {V3D_DBQITC: V3D QPU Interrupt Control Register Description}
  IC_QPU0_to_IC_QPU15 = $0000FFFF;  {V3D_DBQITC: QPU Interrupt Control Bits (Reads When Interrupt Is Latched, Write To Clear Interrupt) READ/WRITE}
- 
+
  {V3D Performance Counters}
  {V3D Sources For Performance Counters}
  COUNT_ID_0  =  0;  {FEP Valid Primitives That Result In No Rendered Pixels, For All Rendered Tiles}
@@ -367,24 +367,24 @@ const
  COUNT_ID_27 = 27;  {VPM Total Clock Cycles VCD Is Stalled Waiting For VPM Access}
  COUNT_ID_28 = 28;  {L2C Total Level 2 Cache Hits}
  COUNT_ID_29 = 29;  {L2C Total Level 2 Cache Misses}
- 
+
  {V3D_PCTRC: V3D Performance Counter Clear Register Description}
  CTCLR0_CTCLR15 = $0000FFFF;  {V3D_PCTRC: Performance Counter Clear Bits (Write To Clear The Performance Counter) WRITE}
- 
+
  {V3D_PCTRE: V3D Performance Counter Enables Register Description}
  CTEN0_CTEN15 = $0000FFFF;  {V3D_PCTRE: Performance Counter Enable Bits (0 = Counter Disabled, 1 = Performance Counter Enabled To Count) READ/WRITE}
- 
+
  {V3D_PCTRn: V3D Performance Counter Count n Register Description}
  PCTR = $FFFFFFFF;  {V3D_PCTRn: Performance Count (Count Value) READ/WRITE}
- 
+
  {V3D_PCTRSn: V3D Performance Counter Mapping n Register Description}
  PCTRS = $0000001F;  {V3D_PCTRSn: Performance Counter Device ID READ/WRITE}
- 
+
  {V3D Error & Diagnostic Registers}
  {V3D_BXCF: V3D Binner Debug Register Description}
  FWDDISA  = $00000001;  {V3D_BXCF: Disable Forwarding In State Cache READ/WRITE}
  CLIPDISA = $00000002;  {V3D_BXCF: Disable Clipping READ/WRITE}
- 
+
  {V3D_DBGE: V3D PSE Error Signals Register Description}
  VR1_A        = $00000002;  {V3D_DBGE: Error A Reading VPM READ}
  VR1_B        = $00000004;  {V3D_DBGE: Error B Reading VPM READ}
@@ -393,7 +393,7 @@ const
  MULIP2       = $00040000;  {V3D_DBGE: Error Mulip 2 READ}
  IPD2_VALID   = $00080000;  {V3D_DBGE: Error IPD2 Valid READ}
  IPD2_FPDUSED = $00100000;  {V3D_DBGE: Error IPD2 FPD Used READ}
- 
+
  {V3D_FDBGO: V3D FEP Overrun Error Signals Register Description}
  WCOEFF_FIFO_FULL = $00000002;  {V3D_FDBGO: Not An Error READ}
  XYRELZ_FIFO_FULL = $00000004;  {V3D_FDBGO: Not An Error READ}
@@ -409,7 +409,7 @@ const
  DEPTHO_ORUN      = $00004000;  {V3D_FDBGO: Error READ}
  EZVAL_FIFO_ORUN  = $00008000;  {V3D_FDBGO: Error READ}
  EZREQ_FIFO_ORUN  = $00020000;  {V3D_FDBGO: Error READ}
- 
+
  {V3D_FDBGB: V3D FEP Interface Ready & Stall Signals, FEP Busy Signals Register Description}
  EDGES_STALL        = $00000001;  {V3D_FDBGB: Stall READ}
  EDGES_READY        = $00000002;  {V3D_FDBGB: Ready READ}
@@ -422,7 +422,7 @@ const
  RAST_BUSY          = $04000000;  {V3D_FDBGB: Busy READ}
  QXYF_FIFO_OP_READY = $08000000;  {V3D_FDBGB: Ready READ}
  XYFO_FIFO_OP_READY = $10000000;  {V3D_FDBGB: Ready READ}
- 
+
  {V3D_FDBGR: V3D FEP Internal Ready Signals Register Description}
  QXYF_FIFO_READY   = $00000001;  {V3D_FDBGR: Ready READ}
  EZREQ_FIFO_READY  = $00000002;  {V3D_FDBGR: Ready READ}
@@ -447,7 +447,7 @@ const
  INTERPRW_READY    = $08000000;  {V3D_FDBGR: Ready READ}
  RECIPW_READY      = $10000000;  {V3D_FDBGR: Ready READ}
  FIXZ_READY        = $40000000;  {V3D_FDBGR: Ready READ}
- 
+
  {V3D_FDBGS: V3D FEP Internal Stall Input Signals Register Description}
  EZTEST_IP_QSTALL     = $00000001;  {V3D_FDBGS: Stall READ}
  EZTEST_IP_PRSTALL    = $00000002;  {V3D_FDBGS: Stall READ}
@@ -471,7 +471,7 @@ const
  INTERPW_IP_STALL     = $00400000;  {V3D_FDBGS: Stall READ}
  RECIPW_IP_STALL      = $02000000;  {V3D_FDBGS: Stall READ}
  ZO_FIFO_IP_STALL     = $10000000;  {V3D_FDBGS: Stall READ}
- 
+
  {V3D_ERRSTAT: V3D Miscellaneous Error Signals (VPM, VDW, VCD, VCM, L2C) Register Description}
  VPAEABB  = $00000001;  {V3D_ERRSTAT: VPM Allocator Error - Allocating Base While Busy READ}
  VPAERGS  = $00000002;  {V3D_ERRSTAT: VPM Allocator Error - Request Too Big READ}
@@ -489,32 +489,32 @@ const
  VCMRE    = $00002000;  {V3D_ERRSTAT: VCM Error (Renderer) READ}
  VCMBE    = $00004000;  {V3D_ERRSTAT: VCM Error (Binner) READ}
  L2CARE   = $00008000;  {V3D_ERRSTAT: L2C AXI Receive Fifo Overrun Error READ}
- 
+
 {==============================================================================}
 //type
  {V3D specific types}
  //To Do //Continuing
-  
+
 {==============================================================================}
 {var}
  {V3D specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
- 
+
 {==============================================================================}
 {V3D Mailbox Functions}
-function V3DQPUEnable(Enable:LongWord):LongWord; 
+function V3DQPUEnable(Enable:LongWord):LongWord;
 function V3DQPUExecute(NumQPUs,Control,NoFlush,Timeout:LongWord):LongWord;
- 
+
 {==============================================================================}
 {V3D Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 implementation
- 
+
 uses {$IFDEF CPUARMV6}BCM2835{$ELSE}BCM2837{$ENDIF};
 
 {==============================================================================}
@@ -527,7 +527,7 @@ const
  V3D_MBOX_TAG_END = BCM2835_MBOX_TAG_END;
  V3D_MBOX_TAG_EXECUTE_QPU = BCM2835_MBOX_TAG_EXECUTE_QPU;
  V3D_MBOX_TAG_ENABLE_QPU = BCM2835_MBOX_TAG_ENABLE_QPU;
- 
+
  V3D_MAILBOX_0 = BCM2835_MAILBOX_0;
  V3D_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC = BCM2835_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC;
  {$ELSE}
@@ -536,7 +536,7 @@ const
  V3D_MBOX_TAG_END = BCM2837_MBOX_TAG_END;
  V3D_MBOX_TAG_EXECUTE_QPU = BCM2837_MBOX_TAG_EXECUTE_QPU;
  V3D_MBOX_TAG_ENABLE_QPU = BCM2837_MBOX_TAG_ENABLE_QPU;
- 
+
  V3D_MAILBOX_0 = BCM2837_MAILBOX_0;
  V3D_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC = BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC;
  {$ENDIF}
@@ -547,31 +547,31 @@ type
  {$IFDEF CPUARMV6}
  TV3DMailboxHeader = TBCM2835MailboxHeader;
  PV3DMailboxHeader = PBCM2835MailboxHeader;
- 
+
  TV3DMailboxFooter = TBCM2835MailboxFooter;
  PV3DMailboxFooter = PBCM2835MailboxFooter;
- 
+
  TV3DMailboxTagHeader = TBCM2835MailboxTagHeader;
  PV3DMailboxTagHeader = PBCM2835MailboxTagHeader;
- 
+
  TV3DMailboxTagExecuteQPU = TBCM2835MailboxTagExecuteQPU;
  PV3DMailboxTagExecuteQPU = PBCM2835MailboxTagExecuteQPU;
- 
+
  TV3DMailboxTagEnableQPU = TBCM2835MailboxTagEnableQPU;
  PV3DMailboxTagEnableQPU = PBCM2835MailboxTagEnableQPU;
  {$ELSE}
  TV3DMailboxHeader = TBCM2837MailboxHeader;
  PV3DMailboxHeader = PBCM2837MailboxHeader;
- 
+
  TV3DMailboxFooter = TBCM2837MailboxFooter;
  PV3DMailboxFooter = PBCM2837MailboxFooter;
- 
+
  TV3DMailboxTagHeader = TBCM2837MailboxTagHeader;
  PV3DMailboxTagHeader = PBCM2837MailboxTagHeader;
- 
+
  TV3DMailboxTagExecuteQPU = TBCM2837MailboxTagExecuteQPU;
  PV3DMailboxTagExecuteQPU = PBCM2837MailboxTagExecuteQPU;
- 
+
  TV3DMailboxTagEnableQPU = TBCM2837MailboxTagEnableQPU;
  PV3DMailboxTagEnableQPU = PBCM2837MailboxTagEnableQPU;
  {$ENDIF}
@@ -579,15 +579,15 @@ type
 {==============================================================================}
 {var}
  {V3D specific variables}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 {V3D Mailbox Functions}
-function V3DQPUEnable(Enable:LongWord):LongWord; 
+function V3DQPUEnable(Enable:LongWord):LongWord;
 {Enable QPUs using the Mailbox property tags channel}
 var
  Size:LongWord;
@@ -599,14 +599,14 @@ var
 begin
  {}
  Result:=LongWord(-1);
- 
+
  {$IFDEF VC4V3D_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('V3D: V3DQPUEnable (Enable=' + IntToStr(Enable) + ')');
  {$ENDIF}
- 
+
  {Calculate Size}
  Size:=SizeOf(TV3DMailboxHeader) + SizeOf(TV3DMailboxTagEnableQPU) + SizeOf(TV3DMailboxFooter);
- 
+
  {Allocate Mailbox Buffer}
  {$IFDEF CPUARMV6}
  Header:=GetSharedAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -618,34 +618,34 @@ begin
  try
   {Clear Buffer}
   FillChar(Header^,Size,0);
- 
+
   {Setup Header}
   Header.Size:=Size;
   Header.Code:=V3D_MBOX_REQUEST_CODE;
- 
+
   {Setup Tag}
   Tag:=PV3DMailboxTagEnableQPU(PtrUInt(Header) + PtrUInt(SizeOf(TV3DMailboxHeader)));
   Tag.Header.Tag:=V3D_MBOX_TAG_ENABLE_QPU;
   Tag.Header.Size:=SizeOf(TV3DMailboxTagEnableQPU) - SizeOf(TV3DMailboxTagHeader);
   Tag.Header.Length:=SizeOf(Tag.Request);
   Tag.Request.Enable:=Enable;
- 
+
   {Setup Footer}
   Footer:=PV3DMailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TV3DMailboxTagEnableQPU)));
   Footer.Tag:=V3D_MBOX_TAG_END;
-  
+
   {Call Mailbox}
   Status:=MailboxPropertyCall(V3D_MAILBOX_0,V3D_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response);
   if Status <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('V3D: V3DQPUEnable - MailboxPropertyCall failed (Status=' + ErrorToString(Status) + ')');
-    
+
     Exit;
-   end; 
+   end;
 
   {Get Result}
   Result:=Tag.Response.Status;
-  
+
   {$IFDEF VC4V3D_DEBUG}
   if PLATFORM_LOG_ENABLED then PlatformLogDebug('V3D: V3DQPUEnable (Result=' + IntToHex(Result,8) + ')');
   {$ENDIF}
@@ -668,14 +668,14 @@ var
 begin
  {}
  Result:=LongWord(-1);
- 
+
  {$IFDEF VC4V3D_DEBUG}
  if PLATFORM_LOG_ENABLED then PlatformLogDebug('V3D: V3DQPUExecute (NumQPUs=' + IntToStr(NumQPUs) + ' Control=' + IntToStr(Control) + ' NoFlush=' + IntToStr(NoFlush) + ' Timeout=' + IntToStr(Timeout) + ')');
  {$ENDIF}
- 
+
  {Calculate Size}
  Size:=SizeOf(TV3DMailboxHeader) + SizeOf(TV3DMailboxTagExecuteQPU) + SizeOf(TV3DMailboxFooter);
- 
+
  {Allocate Mailbox Buffer}
  {$IFDEF CPUARMV6}
  Header:=GetSharedAlignedMem(Size,SIZE_16); {Must be 16 byte aligned}
@@ -687,11 +687,11 @@ begin
  try
   {Clear Buffer}
   FillChar(Header^,Size,0);
- 
+
   {Setup Header}
   Header.Size:=Size;
   Header.Code:=V3D_MBOX_REQUEST_CODE;
- 
+
   {Setup Tag}
   Tag:=PV3DMailboxTagExecuteQPU(PtrUInt(Header) + PtrUInt(SizeOf(TV3DMailboxHeader)));
   Tag.Header.Tag:=V3D_MBOX_TAG_EXECUTE_QPU;
@@ -701,23 +701,23 @@ begin
   Tag.Request.Control:=Control;
   Tag.Request.NoFlush:=NoFlush;
   Tag.Request.Timeout:=Timeout;
- 
+
   {Setup Footer}
   Footer:=PV3DMailboxFooter(PtrUInt(Tag) + PtrUInt(SizeOf(TV3DMailboxTagExecuteQPU)));
   Footer.Tag:=V3D_MBOX_TAG_END;
-  
+
   {Call Mailbox}
   Status:=MailboxPropertyCallEx(V3D_MAILBOX_0,V3D_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC,Header,Response,Timeout);
   if Status <> ERROR_SUCCESS then
    begin
     if PLATFORM_LOG_ENABLED then PlatformLogError('V3D: V3DQPUExecute - MailboxPropertyCallEx failed (Status=' + ErrorToString(Status) + ')');
-    
+
     Exit;
-   end; 
+   end;
 
   {Get Result}
   Result:=Tag.Response.Status;
-  
+
   {$IFDEF VC4V3D_DEBUG}
   if PLATFORM_LOG_ENABLED then PlatformLogDebug('V3D: V3DQPUExecute (Result=' + IntToHex(Result,8) + ')');
   {$ENDIF}
@@ -737,7 +737,7 @@ end;
  {Nothing}
 
 {==============================================================================}
- 
+
 {finalization}
  {Nothing}
 
@@ -745,4 +745,4 @@ end;
 {==============================================================================}
 
 end.
- 
+

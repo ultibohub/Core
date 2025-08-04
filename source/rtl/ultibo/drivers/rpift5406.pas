@@ -25,7 +25,7 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -35,9 +35,9 @@ Credits
 
 References
 ==========
-  
+
   FT5406 - http://www.haoyuelectronics.com/Attachment/HY101CTP/FocalTech-FT5x06%20DataSheet%20V4.0_1212.pdf
-   
+
 Raspberry Pi FT5406
 ===================
 
@@ -106,7 +106,7 @@ unit RPiFT5406;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads,Devices,Touch,Mouse,SysUtils;
-     
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
@@ -115,21 +115,21 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads,Devices,T
 const
  {RPiFT5406 specific constants}
  RPIFT5406_TOUCH_DESCRIPTION = 'Raspberry Pi FT5406 Touch Controller';  {Description of RPiFT5406 Touch device}
- 
+
  RPIFT5406_THREAD_NAME = 'RPiFT5406 Touch'; {Name of the RPiFT5406 Touch polling thread}
- 
+
  RPIFT5406_MAX_POINTS = 10;
  RPIFT5406_MAX_X = $FFF;
  RPIFT5406_MAX_Y = $FFF;
  RPIFT5406_MAX_Z = 0;
- 
+
  RPIFT5406_SCREEN_WIDTH  = 800;
  RPIFT5406_SCREEN_HEIGHT = 480;
- 
+
  RPIFT5406_TOUCH_DOWN    = 0;
  RPIFT5406_TOUCH_UP      = 1;
  RPIFT5406_TOUCH_CONTACT = 2;
- 
+
 {==============================================================================}
 type
  {RPiFT5406 specific types}
@@ -142,7 +142,7 @@ type
   res1:Byte;
   res2:Byte;
  end;
- 
+
  PRPiFT5406Registers = ^TRPiFT5406Registers;
  TRPiFT5406Registers = record
   DeviceMode:Byte;
@@ -150,7 +150,7 @@ type
   NumPoints:Byte;
   Point:array[0..RPIFT5406_MAX_POINTS - 1] of TRPiFT5406TouchPoint;
  end;
- 
+
  PRPiFT5406Touch = ^TRPiFT5406Touch;
  TRPiFT5406Touch = record
   {Touch Properties}
@@ -167,11 +167,11 @@ type
   Terminate:Boolean;
   Registers:PRPiFT5406Registers;
  end;
- 
+
 {==============================================================================}
 {var}
  {RPiFT5406 specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure RPiFT5406Init;
@@ -190,7 +190,7 @@ function RPiFT5406TouchExecute(Touch:PRPiFT5406Touch):PtrInt;
 
 {==============================================================================}
 {RPiFT5406 Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -222,14 +222,14 @@ begin
  {}
  {Check Initialized}
  if RPiFT5406Initialized then Exit;
- 
+
  {Create Touch}
  RPiFT5406Touch:=PRPiFT5406Touch(TouchDeviceCreateEx(SizeOf(TRPiFT5406Touch)));
  if RPiFT5406Touch <> nil then
   begin
    {Update Touch}
    {Device}
-   RPiFT5406Touch.Touch.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+   RPiFT5406Touch.Touch.Device.DeviceBus:=DEVICE_BUS_MMIO;
    RPiFT5406Touch.Touch.Device.DeviceType:=TOUCH_TYPE_CAPACITIVE;
    RPiFT5406Touch.Touch.Device.DeviceFlags:=RPiFT5406Touch.Touch.Device.DeviceFlags or TOUCH_FLAG_MULTI_POINT;
    RPiFT5406Touch.Touch.Device.DeviceData:=nil;
@@ -259,7 +259,7 @@ begin
    RPiFT5406Touch.Thread:=INVALID_HANDLE_VALUE;
    RPiFT5406Touch.Terminate:=False;
    RPiFT5406Touch.Registers:=nil;
-   
+
    {Register Touch}
    Status:=TouchDeviceRegister(@RPiFT5406Touch.Touch);
    if Status = ERROR_SUCCESS then
@@ -269,27 +269,27 @@ begin
      if Status <> ERROR_SUCCESS then
       begin
        if TOUCH_LOG_ENABLED then TouchLogError(nil,'RPiFT5406: Failed to start new Touch device: ' + ErrorToString(Status));
-       
+
        {Deregister Touch}
        TouchDeviceDeregister(@RPiFT5406Touch.Touch);
-       
+
        {Destroy Touch}
        TouchDeviceDestroy(@RPiFT5406Touch.Touch);
       end;
     end
-   else 
+   else
     begin
      if TOUCH_LOG_ENABLED then TouchLogError(nil,'RPiFT5406: Failed to register new Touch device: ' + ErrorToString(Status));
-     
+
      {Destroy Touch}
      TouchDeviceDestroy(@RPiFT5406Touch.Touch);
     end;
   end
- else 
+ else
   begin
    if TOUCH_LOG_ENABLED then TouchLogError(nil,'RPiFT5406: Failed to create new Touch device');
-  end; 
- 
+  end;
+
  RPiFT5406Initialized:=True;
 end;
 
@@ -306,10 +306,10 @@ function RPiFT5406TouchStart(Touch:PTouchDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Touch}
  if Touch = nil then Exit;
- 
+
  {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
  if TOUCH_LOG_ENABLED then TouchLogDebug(Touch,'RPiFT5406: Touch Start');
  {$ENDIF}
@@ -318,17 +318,17 @@ begin
  Result:=RPiFT5406UpdateConfig(PRPiFT5406Touch(Touch));
  if Result <> ERROR_SUCCESS then Exit;
 
- {Create Thread} 
+ {Create Thread}
  PRPiFT5406Touch(Touch).Thread:=BeginThread(TThreadFunc(RPiFT5406TouchExecute),Touch,PRPiFT5406Touch(Touch).Thread,THREAD_STACK_DEFAULT_SIZE);
  if PRPiFT5406Touch(Touch).Thread = INVALID_HANDLE_VALUE then
   begin
    if TOUCH_LOG_ENABLED then TouchLogError(nil,'RPiFT5406: Failed to create Touch device thread');
    Exit;
   end;
- 
+
  {Set Thread Name}
  ThreadSetName(PRPiFT5406Touch(Touch).Thread,RPIFT5406_THREAD_NAME);
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -341,24 +341,24 @@ function RPiFT5406TouchStop(Touch:PTouchDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Touch}
  if Touch = nil then Exit;
- 
+
  {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
  if TOUCH_LOG_ENABLED then TouchLogDebug(Touch,'RPiFT5406: Touch Stop');
  {$ENDIF}
- 
+
  if PRPiFT5406Touch(Touch).Thread <> INVALID_HANDLE_VALUE then
   begin
    {Signal Terminate}
    PRPiFT5406Touch(Touch).Terminate:=True;
-   
+
    {Wait}
    ThreadWaitTerminate(PRPiFT5406Touch(Touch).Thread,INFINITE);
    PRPiFT5406Touch(Touch).Thread:=INVALID_HANDLE_VALUE;
   end;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -403,7 +403,7 @@ function RPiFT5406TouchExecute(Touch:PRPiFT5406Touch):PtrInt;
 {Thread function for the RPiFT5406 Touch controller driver. The thread polls the
  memory touch buffer approximately 60 times per second for new touch data and
  inserts received touch points into the buffer of the passed device}
-{Note: Not intended to be called directly by applications} 
+{Note: Not intended to be called directly by applications}
 var
  X:Word;
  Y:Word;
@@ -426,25 +426,25 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Touch}
  if Touch = nil then Exit;
- 
+
  {Setup Defaults}
  Buffer:=nil;
  CachedBuffer:=False;
- 
+
  {Get Size}
  Size:=RoundUp(MEMORY_PAGE_SIZE,DMA_MULTIPLIER);
 
  {Get Board Type}
  BoardType:=BoardGetType;
- 
+
  {Check Registers}
  while Touch.Registers = nil do
   begin
    {Check Buffer}
-   if Buffer = nil then 
+   if Buffer = nil then
     begin
      {Check Board Type}
      case BoardType of
@@ -472,18 +472,18 @@ begin
         Buffer:=AllocNoCacheAlignedMem(Size,DMA_ALIGNMENT);
        end;
      end;
-     
+
      {Check Buffer}
-     if Buffer = nil then 
+     if Buffer = nil then
       begin
        {Allocate Normal}
        Buffer:=AllocAlignedMem(Size,DMA_ALIGNMENT);
-       
+
        {Set Caching}
        CachedBuffer:=not(DMA_CACHE_COHERENT);
       end;
-    end;  
-   
+    end;
+
    {Check Buffer}
    if Buffer <> nil then
     begin
@@ -494,7 +494,7 @@ begin
       begin
        {Get Registers}
        Touch.Registers:=PRPiFT5406Registers(Buffer);
-       
+
        Break;
       end
      else
@@ -502,7 +502,7 @@ begin
        {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
        if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406: TouchSetBuffer Failed (Status=' + IntToHex(Status,8) + ')');
        {$ENDIF}
-       
+
        {Get Touch Buffer}
        Address:=0;
        Status:=TouchGetBuffer(Address);
@@ -512,14 +512,14 @@ begin
           begin
            {Get Registers}
            Touch.Registers:=PRPiFT5406Registers(BusAddressToPhysical(Pointer(Address)));
-           
+
            {Set Caching}
            CachedBuffer:=True;
-           
+
            {Free Buffer}
            FreeMem(Buffer);
            Buffer:=nil;
-           
+
            Break;
           end;
         end
@@ -528,40 +528,40 @@ begin
          {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
          if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406: TouchGetBuffer Failed (Status=' + IntToHex(Status,8) + ')');
          {$ENDIF}
-        end; 
+        end;
       end;
-    end; 
-   
+    end;
+
    {Check Terminate}
    if Touch.Terminate then Break;
-   
+
    ThreadSleep(1000);
   end;
 
  {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
  if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406: Touch Execute (Registers=' + PtrToHex(Touch.Registers) + ' Caching=' + BoolToStr(CachedBuffer) + ')');
  {$ENDIF}
- 
+
  {Setup Defaults}
  LastPoints:=0;
- 
+
  {Poll Registers}
  while not(Touch.Terminate) do
   begin
    ThreadSleep(17); {17ms equals approx 60 times per second}
-   
+
    {Invalidate Cache}
    if CachedBuffer then InvalidateDataCacheRange(PtrUInt(Touch.Registers),SizeOf(TRPiFT5406Registers));
-   
+
    {Copy Registers}
    System.Move(Touch.Registers^,Registers,SizeOf(TRPiFT5406Registers));
-   
+
    {Write 99 to the NumPoints registers so we know if the GPU modified them}
    Touch.Registers.NumPoints:=99;
-   
+
    {Clean Cache}
    if CachedBuffer then CleanDataCacheRange(PtrUInt(Touch.Registers),SizeOf(TRPiFT5406Registers));
-   
+
    {Check if anything changed}
    if (Registers.NumPoints <> 99) and ((Registers.NumPoints <> 0) or (LastPoints <> 0)) then
     begin
@@ -571,13 +571,13 @@ begin
        {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
        if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406: Touch Execute (NumPoints=' + IntToStr(Registers.NumPoints) + ')');
        {$ENDIF}
-       
+
        {Setup Defaults}
        ModifiedPoints:=0;
 
        {Clear Mouse Data}
        FillChar(MouseData,SizeOf(TMouseData),0);
-       
+
        {Check Modified Points}
        if Registers.NumPoints > 0 then
         begin
@@ -597,7 +597,7 @@ begin
              X:=Y;
              Y:=Temp;
             end;
-        
+
            {Check Invert}
            if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_INVERT_X) <> 0 then
             begin
@@ -613,10 +613,10 @@ begin
            {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
            if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406:  Modified X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' TouchID=' + IntToStr(TouchID) + ' EventType=' + IntToStr(EventType));
            {$ENDIF}
-           
+
            {Store Point}
            ModifiedPoints:=ModifiedPoints or (1 shl TouchID);
-          
+
            {Check Event Type}
            if (EventType = RPIFT5406_TOUCH_DOWN) or (EventType = RPIFT5406_TOUCH_CONTACT) then
             begin
@@ -664,7 +664,7 @@ begin
                      end;
                    end;
                    TouchData.PositionZ:=0;
-                   
+
                    {Check Event}
                    if Assigned(Touch.Touch.Event) then
                     begin
@@ -686,11 +686,11 @@ begin
                 end
                else
                 begin
-                 if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'RPiFT5406: Buffer overflow, packet discarded'); 
-                   
+                 if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'RPiFT5406: Buffer overflow, packet discarded');
+
                  {Update Statistics}
-                 Inc(Touch.Touch.BufferOverruns); 
-                end;                           
+                 Inc(Touch.Touch.BufferOverruns);
+                end;
               end
              else
               begin
@@ -727,30 +727,30 @@ begin
                    end;
                  end;
                  MouseData.OffsetWheel:=0;
-                 
+
                  {Maximum X, Y and Wheel}
                  MouseData.MaximumX:=Touch.Touch.Properties.MaxX;
                  MouseData.MaximumY:=Touch.Touch.Properties.MaxY;
                  MouseData.MaximumWheel:=0;
-                 
+
                  {Write Mouse Data}
                  if MouseWrite(@MouseData,SizeOf(TMouseData),1) <> ERROR_SUCCESS then
                   begin
-                   if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'RPiFT5406: Failed to write mouse data, packet discarded'); 
-                   
+                   if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'RPiFT5406: Failed to write mouse data, packet discarded');
+
                    {Update Statistics}
-                   Inc(Touch.Touch.ReceiveErrors); 
+                   Inc(Touch.Touch.ReceiveErrors);
                   end;
                 end;
-              end; 
+              end;
             end;
           end;
         end;
-        
+
        {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
        if TOUCH_LOG_ENABLED and (ModifiedPoints > 0) then TouchLogDebug(@Touch.Touch,'RPiFT5406:  Modified Points=' + IntToHex(ModifiedPoints,8));
        {$ENDIF}
-        
+
        {Check Released Points}
        ReleasedPoints:=LastPoints and not(ModifiedPoints);
        if ReleasedPoints > 0 then
@@ -762,7 +762,7 @@ begin
              {$IF DEFINED(RPIFT5406_DEBUG) or DEFINED(TOUCH_DEBUG)}
              if TOUCH_LOG_ENABLED then TouchLogDebug(@Touch.Touch,'RPiFT5406:  Released TouchID=' + IntToStr(Count));
              {$ENDIF}
-             
+
              {Check Flags}
              if (Touch.Touch.Device.DeviceFlags and TOUCH_FLAG_MOUSE_DATA) = 0 then
               begin
@@ -782,7 +782,7 @@ begin
                    TouchData.PositionX:=TOUCH_X_UNKNOWN;
                    TouchData.PositionY:=TOUCH_Y_UNKNOWN;
                    TouchData.PositionZ:=TOUCH_Z_UNKNOWN;
-               
+
                    {Check Event}
                    if Assigned(Touch.Touch.Event) then
                     begin
@@ -804,11 +804,11 @@ begin
                 end
                else
                 begin
-                 if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'RPiFT5406: Buffer overflow, packet discarded'); 
-                   
+                 if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'RPiFT5406: Buffer overflow, packet discarded');
+
                  {Update Statistics}
-                 Inc(Touch.Touch.BufferOverruns); 
-                end;                           
+                 Inc(Touch.Touch.BufferOverruns);
+                end;
               end
              else
               begin
@@ -820,36 +820,36 @@ begin
                  MouseData.OffsetX:=0; {No Offset X, Y or Wheel}
                  MouseData.OffsetY:=0;
                  MouseData.OffsetWheel:=0;
-                 
+
                  {Maximum X, Y and Wheel}
                  MouseData.MaximumX:=Touch.Touch.Properties.MaxX;
                  MouseData.MaximumY:=Touch.Touch.Properties.MaxY;
                  MouseData.MaximumWheel:=0;
-                 
+
                  {Write Mouse Data}
                  if MouseWrite(@MouseData,SizeOf(TMouseData),1) <> ERROR_SUCCESS then
                   begin
-                   if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'RPiFT5406: Failed to write mouse data, packet discarded'); 
-                   
+                   if TOUCH_LOG_ENABLED then TouchLogError(@Touch.Touch,'RPiFT5406: Failed to write mouse data, packet discarded');
+
                    {Update Statistics}
-                   Inc(Touch.Touch.ReceiveErrors); 
+                   Inc(Touch.Touch.ReceiveErrors);
                   end;
                 end;
-              end; 
-            end; 
-          end; 
-        end; 
-  
+              end;
+            end;
+          end;
+        end;
+
        {Save Last Points}
        LastPoints:=ModifiedPoints;
-     
+
        {Release Lock}
        MutexUnlock(Touch.Touch.Lock);
-      end;      
+      end;
     end;
-  end; 
-  
- {Note: Do not free buffer, firmware may still be writing data to it} 
+  end;
+
+ {Note: Do not free buffer, firmware may still be writing data to it}
 end;
 
 {==============================================================================}
@@ -930,9 +930,9 @@ end;
 
 initialization
  RPiFT5406Init;
- 
+
 {==============================================================================}
- 
+
 {finalization}
  {Nothing}
 

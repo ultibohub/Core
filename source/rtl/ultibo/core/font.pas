@@ -17,48 +17,48 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
- 
+
   Linux - KBD – Linux keyboard tools - http://kbd-project.org/
 
 References
 ==========
 
   PC Screen Fonts (PSF) - https://en.wikipedia.org/wiki/PC_Screen_Font
-  
+
   A number of PSF format fonts in various stlyes and sizes are available from:
-  
+
    http://v3.sk/~lkundrak/fonts/kbd/
-   
+
   Note that this site also lists a number of other fonts in raw format (no header)
   which contain the font character data in the same format as the PSF files but
   cannot currently be loaded by this unit.
 
-   http://v3.sk/~lkundrak/fonts/  
-  
+   http://v3.sk/~lkundrak/fonts/
+
 Fonts
 =====
 
  The fonts supported by Ultibo are a bitmap format that contains a block of data
  where each character is represented by a number of consecutive bytes.
- 
+
  Fonts can either be statically compiled as a pascal unit and loaded during startup
  or can be dynamically loaded by passing a header and data block to the FontLoad()
  function. A Font Builder tool is available to convert common bitmap font formats
  into a pascal unit for compiling with a project.
- 
+
  For an 8x16 (8 pixels wide and 16 pixels high) font the data contains 8 bits (1 byte)
  for each of the 16 rows that make up a character and each character would be
  16 bytes long.
- 
+
  For a 12x22 font the data contains 12 bits padded to 16 bits (2 bytes) for each of
  the 22 rows that make up a character. Therefore each character would be 44 bytes
  in length.
- 
+
  This unit can support any size font from 8x6 to 32x64 including every combination
  in between.
 
@@ -69,7 +69,7 @@ Fonts
  that writing of Unicode text to the console can be supported as well as an extended
  bitmap format where character data includes alpha or color information or both. These
  features are yet to be fully implemented.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -79,7 +79,7 @@ Fonts
 unit Font;
 
 interface
-                      
+
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils;
 
 {==============================================================================}
@@ -90,26 +90,26 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils;
 const
  {Font specific constants}
  FONT_MIN_COUNT = 256;
- 
+
  FONT_MIN_WIDTH = 8;
  FONT_MAX_WIDTH = 32;
- 
+
  FONT_MIN_HEIGHT = 6;
  FONT_MAX_HEIGHT = 64;
- 
+
  {Font Signature}
  FONT_SIGNATURE = $77DE1BBC;
 
  {Font name constants}
  FONT_NAME_LENGTH = SIZE_64;   {Length of font name}
  FONT_DESC_LENGTH = SIZE_128;  {Length of font description}
- 
+
  {Font Mode constants}
  FONT_MODE_NONE   = 0;
  FONT_MODE_PIXEL  = 1; {A font with 1 bit per pixel in the character data}
  FONT_MODE_ALPHA8 = 2; {A font with 8 bits of alpha blending per pixel in the character data}
  FONT_MODE_RGBA32 = 3; {A font with 32 bits RGBA per pixel in the character data}
- 
+
  {Font Flag constants}
  FONT_FLAG_NONE       = $00000000;
  FONT_FLAG_UNICODE    = $00000001; {Font includes a unicode translation table}
@@ -117,15 +117,15 @@ const
  FONT_FLAG_BIGENDIAN  = $00000004; {Font characters are in big endian order (Only applies to characters larger than one byte)}
  FONT_FLAG_RIGHTALIGN = $00000008; {Font characters are right aligned, no need to shift during load}
  FONT_FLAG_VARIABLE   = $00000010; {Font characters are variable width rather than fixed}
- 
+
 {==============================================================================}
 //const
  {PSF Font specific constants}
- 
+
 {==============================================================================}
 type
  {Font specific types}
- 
+
  {Font Header}
  PFontHeader = ^TFontHeader;
  TFontHeader = record
@@ -139,102 +139,102 @@ type
   Name:String[63];         {Font name}
   Description:String[127]; {Font description}
  end;
- 
+
  {Font Data}
  PFontData = ^TFontData;
  TFontData = record
   Data:array[0..0] of Byte;
  end;
- 
+
  {Font Data (8 bit width) (Byte)}
  PFontData8x6 = ^TFontData8x6;
- TFontData8x6 = record Data:array[0..255,0..5] of Byte; end; 
+ TFontData8x6 = record Data:array[0..255,0..5] of Byte; end;
 
  PFontData8x7 = ^TFontData8x7;
- TFontData8x7 = record Data:array[0..255,0..6] of Byte; end; 
- 
+ TFontData8x7 = record Data:array[0..255,0..6] of Byte; end;
+
  PFontData8x8 = ^TFontData8x8;
- TFontData8x8 = record Data:array[0..255,0..7] of Byte; end; 
+ TFontData8x8 = record Data:array[0..255,0..7] of Byte; end;
 
  PFontData8x9 = ^TFontData8x9;
- TFontData8x9 = record Data:array[0..255,0..8] of Byte; end; 
+ TFontData8x9 = record Data:array[0..255,0..8] of Byte; end;
 
  PFontData8x10 = ^TFontData8x10;
- TFontData8x10 = record Data:array[0..255,0..9] of Byte; end; 
+ TFontData8x10 = record Data:array[0..255,0..9] of Byte; end;
 
  PFontData8x11 = ^TFontData8x11;
- TFontData8x11 = record Data:array[0..255,0..10] of Byte; end; 
- 
+ TFontData8x11 = record Data:array[0..255,0..10] of Byte; end;
+
  PFontData8x12 = ^TFontData8x12;
- TFontData8x12 = record Data:array[0..255,0..11] of Byte; end; 
+ TFontData8x12 = record Data:array[0..255,0..11] of Byte; end;
 
  PFontData8x13 = ^TFontData8x13;
- TFontData8x13 = record Data:array[0..255,0..12] of Byte; end; 
+ TFontData8x13 = record Data:array[0..255,0..12] of Byte; end;
 
  PFontData8x14 = ^TFontData8x14;
- TFontData8x14 = record Data:array[0..255,0..13] of Byte; end; 
+ TFontData8x14 = record Data:array[0..255,0..13] of Byte; end;
 
  PFontData8x15 = ^TFontData8x15;
- TFontData8x15 = record Data:array[0..255,0..14] of Byte; end; 
- 
+ TFontData8x15 = record Data:array[0..255,0..14] of Byte; end;
+
  PFontData8x16 = ^TFontData8x16;
- TFontData8x16 = record Data:array[0..255,0..15] of Byte; end; 
+ TFontData8x16 = record Data:array[0..255,0..15] of Byte; end;
 
  {Font Data (12 bit width) (Word)}
  PFontData12x12 = ^TFontData12x12;
- TFontData12x12 = record Data:array[0..255,0..11] of Word; end; 
+ TFontData12x12 = record Data:array[0..255,0..11] of Word; end;
 
  PFontData12x14 = ^TFontData12x14;
- TFontData12x14 = record Data:array[0..255,0..13] of Word; end; 
+ TFontData12x14 = record Data:array[0..255,0..13] of Word; end;
 
  PFontData12x16 = ^TFontData12x16;
- TFontData12x16 = record Data:array[0..255,0..15] of Word; end; 
+ TFontData12x16 = record Data:array[0..255,0..15] of Word; end;
 
  PFontData12x18 = ^TFontData12x18;
- TFontData12x18 = record Data:array[0..255,0..17] of Word; end; 
+ TFontData12x18 = record Data:array[0..255,0..17] of Word; end;
 
  PFontData12x20 = ^TFontData12x20;
- TFontData12x20 = record Data:array[0..255,0..19] of Word; end; 
+ TFontData12x20 = record Data:array[0..255,0..19] of Word; end;
 
  PFontData12x22 = ^TFontData12x22;
- TFontData12x22 = record Data:array[0..255,0..21] of Word; end; 
- 
+ TFontData12x22 = record Data:array[0..255,0..21] of Word; end;
+
  {Font Data (16 bit width) (Word)}
  PFontData16x16 = ^TFontData16x16;
- TFontData16x16 = record Data:array[0..255,0..15] of Word; end; 
+ TFontData16x16 = record Data:array[0..255,0..15] of Word; end;
 
  PFontData16x24 = ^TFontData16x24;
- TFontData16x24 = record Data:array[0..255,0..23] of Word; end; 
- 
+ TFontData16x24 = record Data:array[0..255,0..23] of Word; end;
+
  PFontData16x32 = ^TFontData16x32;
- TFontData16x32 = record Data:array[0..255,0..31] of Word; end; 
+ TFontData16x32 = record Data:array[0..255,0..31] of Word; end;
 
  {Font Data (32 bit width) (LongWord)}
  PFontData32x32 = ^TFontData32x32;
- TFontData32x32 = record Data:array[0..255,0..31] of LongWord; end; 
+ TFontData32x32 = record Data:array[0..255,0..31] of LongWord; end;
 
  PFontData32x48 = ^TFontData32x48;
- TFontData32x48 = record Data:array[0..255,0..47] of LongWord; end; 
- 
+ TFontData32x48 = record Data:array[0..255,0..47] of LongWord; end;
+
  PFontData32x64 = ^TFontData32x64;
- TFontData32x64 = record Data:array[0..255,0..63] of LongWord; end; 
- 
+ TFontData32x64 = record Data:array[0..255,0..63] of LongWord; end;
+
  {Font Chars}
  PFontChars8 = ^TFontChars8;
  TFontChars8 = array[0..0] of Byte;
 
- PFontChars16 = ^TFontChars16; 
+ PFontChars16 = ^TFontChars16;
  TFontChars16 = array[0..0] of Word;
 
  PFontChars32 = ^TFontChars32;
  TFontChars32 = array[0..0] of LongWord;
- 
+
  {Font Unicode}
  PFontUnicode = ^TFontUnicode;
  TFontUnicode = record
-  //To Do 
+  //To Do
  end;
- 
+
  {Font Properties}
  PFontProperties = ^TFontProperties;
  TFontProperties = record
@@ -250,10 +250,10 @@ type
  end;
 
  PFontEntry = ^TFontEntry;
- 
+
  {Font Enumeration Callback}
  TFontEnumerate = function(Handle:TFontHandle;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Font Entry}
  TFontEntry = record
   {Font Properties}
@@ -278,11 +278,11 @@ type
 {==============================================================================}
 //type
  {PSF Font specific types}
- 
+
 {==============================================================================}
 {var}
  {Font specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure FontInit;
@@ -307,8 +307,8 @@ function FontCharHeight(Handle:TFontHandle;Character:Word):LongWord;
 function FontTextWidth(Handle:TFontHandle;const Text:String):LongWord;
 function FontTextHeight(Handle:TFontHandle;const Text:String):LongWord;
 
-function FontFindByName(const Name:String):TFontHandle; 
-function FontFindByDescription(const Description:String):TFontHandle; 
+function FontFindByName(const Name:String):TFontHandle;
+function FontFindByDescription(const Description:String):TFontHandle;
 function FontEnumerate(Callback:TFontEnumerate;Data:Pointer):LongWord;
 
 {==============================================================================}
@@ -341,10 +341,10 @@ var
  FontTable:PFontEntry;
  FontTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  FontTableCount:LongWord;
- 
+
  FontDefault:TFontHandle = INVALID_HANDLE_VALUE;
- 
-var 
+
+var
  {Default Font - Latin-1 (8x16) Console Font (ISO-8859-1)}
  FONT_LATIN1_8x16_HEADER:TFontHeader = (
   Width:8;
@@ -357,8 +357,8 @@ var
   Name:('Latin1-8x16');
   Description:('Latin-1 (8x16) Console Font')
   );
-  
- FONT_LATIN1_8X16_DATA:TFontData8x16 = ( 
+
+ FONT_LATIN1_8X16_DATA:TFontData8x16 = (
   Data:(($00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00),
         ($00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00),
         ($00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00),
@@ -617,7 +617,7 @@ var
         ($00, $00, $00, $6C, $00, $C6, $C6, $C6, $C6, $C6, $C6, $7E, $06, $0C, $F8, $00))
   );
 
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -626,24 +626,24 @@ begin
  {}
  {Check Initialized}
  if FontInitialized then Exit;
- 
+
  {Initialize Font Table}
  FontTable:=nil;
- FontTableLock:=CriticalSectionCreate; 
+ FontTableLock:=CriticalSectionCreate;
  FontTableCount:=0;
  if FontTableLock = INVALID_HANDLE_VALUE then
   begin
    if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to create font table lock');
   end;
  FontDefault:=INVALID_HANDLE_VALUE;
- 
+
  {Load Default Font}
  FontDefault:=FontLoad(@FONT_LATIN1_8x16_HEADER,@FONT_LATIN1_8X16_DATA,SizeOf(TFontData8x16));
  if FontDefault = INVALID_HANDLE_VALUE then
   begin
    if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to load default font');
   end;
- 
+
  FontInitialized:=True;
 end;
 
@@ -673,7 +673,7 @@ var
  Font:PFontEntry;
  RowSize:LongWord;
  TotalSize:LongWord;
- 
+
  Swap:Boolean;
  Shift:LongWord;
  Row:LongWord;
@@ -690,36 +690,36 @@ begin
 
  {Check Unicode}
  {if Unicode = nil then Exit;} {May be nil}
- 
+
  {Check Header}
  if (Header = nil) and (Properties = nil) then Exit;
- 
+
  {Check Properties}
  if Properties = nil then
   begin
    {Check Width}
    if Header.Width < FONT_MIN_WIDTH then Exit;
    if Header.Width > FONT_MAX_WIDTH then Exit;
-   
+
    {Check Height}
    if Header.Height < FONT_MIN_HEIGHT then Exit;
    if Header.Height > FONT_MAX_HEIGHT then Exit;
-   
+
    {Check Count}
    if Header.Count < FONT_MIN_COUNT then Exit;
-   
+
    {Get Size}
    RowSize:=((Header.Width + 7) div 8);
    if RowSize = 3 then Inc(RowSize); {Account for fonts 17 to 24 bits wide}
    TotalSize:=(RowSize * Header.Height) * Header.Count;
-   
+
    {Check Size}
    if Size < TotalSize then Exit;
-   
+
    {Create Font}
    Font:=PFontEntry(AllocMem(SizeOf(TFontEntry)));
    if Font = nil then Exit;
-   
+
    {Update Font}
    Font.Signature:=FONT_SIGNATURE;
    Font.FontMode:=Header.Mode;
@@ -735,30 +735,30 @@ begin
    Font.UnicodeData:=nil;
   end
  else
-  begin 
+  begin
    {Check Width}
    if Properties.CharWidth < FONT_MIN_WIDTH then Exit;
    if Properties.CharWidth > FONT_MAX_WIDTH then Exit;
- 
+
    {Check Height}
    if Properties.CharHeight < FONT_MIN_HEIGHT then Exit;
    if Properties.CharHeight > FONT_MAX_HEIGHT then Exit;
- 
+
    {Check Count}
    if Properties.CharCount < FONT_MIN_COUNT then Exit;
- 
+
    {Get Size}
    RowSize:=((Properties.CharWidth + 7) div 8);
    if RowSize = 3 then Inc(RowSize); {Account for fonts 17 to 24 bits wide}
    TotalSize:=(RowSize * Properties.CharHeight) * Properties.CharCount;
-   
+
    {Check Size}
    if Size < TotalSize then Exit;
-   
+
    {Create Font}
    Font:=PFontEntry(AllocMem(SizeOf(TFontEntry)));
    if Font = nil then Exit;
-   
+
    {Update Font}
    Font.Signature:=FONT_SIGNATURE;
    Font.FontMode:=Properties.FontMode;
@@ -781,25 +781,25 @@ begin
    FreeMem(Font);
    Exit;
   end;
-  
+
  {Copy Data}
  System.Move(Data.Data[0],Font.CharData^,TotalSize);
-  
+
  {Update Data}
  case Font.CharWidth of
   1..8:begin
     {Get Buffer}
     Buffer8:=Font.CharData;
-  
+
     {No Swap}
-    
+
     {Check Shift}
     Shift:=0;
     if (Font.FontFlags and FONT_FLAG_RIGHTALIGN) = 0 then
      begin
       Shift:=8 - Font.CharWidth;
-     end; 
-    
+     end;
+
     {Update Characters}
     if Shift > 0 then
      begin
@@ -808,7 +808,7 @@ begin
         for Row:=0 to Font.CharHeight - 1 do
          begin
           Buffer8^:=Buffer8^ shr Shift;
-          
+
           Inc(Buffer8);
          end;
        end;
@@ -817,20 +817,20 @@ begin
   9..16:begin
     {Get Buffer}
     Buffer16:=Font.CharData;
-    
+
     {Check Swap}
     Swap:=True;
     if (Font.FontFlags and FONT_FLAG_BIGENDIAN) <> 0 then
      begin
       Swap:=False;
      end;
-     
+
     {Check Shift}
     Shift:=0;
     if (Font.FontFlags and FONT_FLAG_RIGHTALIGN) = 0 then
      begin
       Shift:=16 - Font.CharWidth;
-     end; 
+     end;
 
     {Update Characters}
     if Swap or (Shift > 0) then
@@ -841,7 +841,7 @@ begin
          begin
           if Swap then Buffer16^:=SwapEndian(Buffer16^);
           Buffer16^:=Buffer16^ shr Shift;
-          
+
           Inc(Buffer16);
          end;
        end;
@@ -850,20 +850,20 @@ begin
   17..32:begin
     {Get Buffer}
     Buffer32:=Font.CharData;
-    
+
     {Check Swap}
     Swap:=True;
     if (Font.FontFlags and FONT_FLAG_BIGENDIAN) <> 0 then
      begin
       Swap:=False;
      end;
-     
+
     {Check Shift}
     Shift:=0;
     if (Font.FontFlags and FONT_FLAG_RIGHTALIGN) = 0 then
      begin
       Shift:=32 - Font.CharWidth;
-     end; 
+     end;
 
     {Update Characters}
     if Swap or (Shift > 0) then
@@ -874,14 +874,14 @@ begin
          begin
           if Swap then Buffer32^:=SwapEndian(Buffer32^);
           Buffer32^:=Buffer32^ shr Shift;
-          
+
           Inc(Buffer32);
          end;
        end;
      end;
-   end;      
+   end;
  end;
-  
+
  {Insert Font}
  if CriticalSectionLock(FontTableLock) = ERROR_SUCCESS then
   begin
@@ -897,16 +897,16 @@ begin
       FontTable.Prev:=Font;
       FontTable:=Font;
      end;
- 
+
     {Increment Count}
     Inc(FontTableCount);
-    
+
     {Check Default}
     if FontDefault = INVALID_HANDLE_VALUE then
      begin
       FontDefault:=TFontHandle(Font);
      end;
-     
+
     {Return Result}
     Result:=TFontHandle(Font);
    finally
@@ -920,13 +920,13 @@ begin
     begin
      FreeMem(Font.UnicodeData);
     end;
-    
+
    {Free Pixel or Bitmap data}
    FreeMem(Font.CharData);
-   
+
    {Free Font}
    FreeMem(Font);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -939,19 +939,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Font}
  Font:=PFontEntry(Handle);
  if Font = nil then Exit;
  if Font.Signature <> FONT_SIGNATURE then Exit;
- 
+
  {Check Font}
  Result:=ERROR_NOT_FOUND;
  if FontCheck(Font) <> Font then Exit;
- 
+
  {Remove Font}
  if CriticalSectionLock(FontTableLock) = ERROR_SUCCESS then
   begin
@@ -965,7 +965,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -973,33 +973,33 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(FontTableCount);
- 
+
     {Check Default}
     if FontDefault = Handle then
      begin
       FontDefault:=TFontHandle(FontTable);
      end;
-     
+
     {Update Font}
     Font.Signature:=0;
- 
+
     {Free Unicode data}
     if Font.UnicodeData <> nil then
      begin
       FreeMem(Font.UnicodeData);
      end;
- 
+
     {Free Pixel or Bitmap data}
     FreeMem(Font.CharData);
-     
+
     {Free Font}
     FreeMem(Font);
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1009,7 +1009,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1020,15 +1020,15 @@ var
 begin
  {}
  Result:='';
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Font}
  Font:=PFontEntry(Handle);
  if Font = nil then Exit;
  if Font.Signature <> FONT_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(FontTableLock) = ERROR_SUCCESS then
   begin
@@ -1055,15 +1055,15 @@ var
 begin
  {}
  Result:='';
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Font}
  Font:=PFontEntry(Handle);
  if Font = nil then Exit;
  if Font.Signature <> FONT_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(FontTableLock) = ERROR_SUCCESS then
   begin
@@ -1090,15 +1090,15 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Font}
  Font:=PFontEntry(Handle);
  if Font = nil then Exit;
  if Font.Signature <> FONT_SIGNATURE then Exit;
- 
+
  {Get Width}
  Result:=Font.CharWidth;
 end;
@@ -1111,15 +1111,15 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Font}
  Font:=PFontEntry(Handle);
  if Font = nil then Exit;
  if Font.Signature <> FONT_SIGNATURE then Exit;
- 
+
  {Get Height}
  Result:=Font.CharHeight;
 end;
@@ -1132,18 +1132,18 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
 
  {Check Properties}
  if Properties = nil then Exit;
- 
+
  {Get Font}
  Font:=PFontEntry(Handle);
  if Font = nil then Exit;
  if Font.Signature <> FONT_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(FontTableLock) = ERROR_SUCCESS then
   begin
@@ -1158,7 +1158,7 @@ begin
     Properties.CharCount:=Font.CharCount;
     Properties.CharMask:=Font.CharMask;
     Properties.CodePage:=Font.CodePage;
-    
+
     Result:=ERROR_SUCCESS;
    finally
     CriticalSectionUnlock(FontTableLock);
@@ -1167,7 +1167,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1178,15 +1178,15 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Font}
  Font:=PFontEntry(Handle);
  if Font = nil then Exit;
  if Font.Signature <> FONT_SIGNATURE then Exit;
- 
+
  {Check Flags}
  if (Font.FontFlags and FONT_FLAG_VARIABLE) = 0 then
   begin
@@ -1208,15 +1208,15 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Font}
  Font:=PFontEntry(Handle);
  if Font = nil then Exit;
  if Font.Signature <> FONT_SIGNATURE then Exit;
- 
+
  {Check Flags}
  if (Font.FontFlags and FONT_FLAG_VARIABLE) = 0 then
   begin
@@ -1238,15 +1238,15 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Font}
  Font:=PFontEntry(Handle);
  if Font = nil then Exit;
  if Font.Signature <> FONT_SIGNATURE then Exit;
- 
+
  {Check Flags}
  if (Font.FontFlags and FONT_FLAG_VARIABLE) = 0 then
   begin
@@ -1268,15 +1268,15 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Font}
  Font:=PFontEntry(Handle);
  if Font = nil then Exit;
  if Font.Signature <> FONT_SIGNATURE then Exit;
- 
+
  {Check Flags}
  if (Font.FontFlags and FONT_FLAG_VARIABLE) = 0 then
   begin
@@ -1292,13 +1292,13 @@ end;
 
 {==============================================================================}
 
-function FontFindByName(const Name:String):TFontHandle; 
+function FontFindByName(const Name:String):TFontHandle;
 var
  Font:PFontEntry;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(FontTableLock) = ERROR_SUCCESS then
   begin
@@ -1317,7 +1317,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       Font:=Font.Next;
      end;
@@ -1330,13 +1330,13 @@ end;
 
 {==============================================================================}
 
-function FontFindByDescription(const Description:String):TFontHandle; 
+function FontFindByDescription(const Description:String):TFontHandle;
 var
  Font:PFontEntry;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(FontTableLock) = ERROR_SUCCESS then
   begin
@@ -1355,7 +1355,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       Font:=Font.Next;
      end;
@@ -1374,7 +1374,7 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
 
@@ -1391,11 +1391,11 @@ begin
        begin
         if Callback(TFontHandle(Font),Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Font:=Font.Next;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1406,7 +1406,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1416,9 +1416,9 @@ function PSFFontLoad(const FileName:String):TFontHandle;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  //To Do //Continuing
- 
+
 end;
 
 {==============================================================================}
@@ -1429,9 +1429,9 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  //To Do //Continuing
- 
+
 end;
 
 {==============================================================================}
@@ -1465,22 +1465,22 @@ begin
 
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Font}
  Font:=PFontEntry(Handle);
  if Font = nil then Exit;
  if Font.Signature <> FONT_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(FontTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Font}
     if FontCheck(Font) <> Font then Exit;
-    
+
     {Set Font Default}
     FontDefault:=Handle;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1490,9 +1490,9 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
 
 function FontCheck(Font:PFontEntry):PFontEntry;
@@ -1502,11 +1502,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Font}
  if Font = nil then Exit;
  if Font.Signature <> FONT_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(FontTableLock) = ERROR_SUCCESS then
   begin
@@ -1521,7 +1521,7 @@ begin
         Result:=Font;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -1543,7 +1543,7 @@ initialization
  FontInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -1551,4 +1551,4 @@ finalization
 {==============================================================================}
 
 end.
-                      
+

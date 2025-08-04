@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -55,7 +55,7 @@ const
  SHELL_DEFAULT_BANNER = 'Ultibo Core (Release: ' + ULTIBO_RELEASE_NAME + ' Version: ' + ULTIBO_RELEASE_VERSION + ' Date: ' + ULTIBO_RELEASE_DATE + ')';
  SHELL_DEFAULT_PROMPT = '>';
  SHELL_DEFAULT_ERROR = 'Huh?';
- 
+
  {Shell Flag constants}
  SHELL_FLAG_NONE        = $00000000;
  SHELL_FLAG_CLEAR       = $00000001;
@@ -63,19 +63,19 @@ const
  SHELL_FLAG_CURSOR      = $00000004;
  SHELL_FLAG_COLORS      = $00000008;
  SHELL_FLAG_COORDINATES = $00000010;
- 
+
  {Shell Cursor Mode constants}
  SHELL_CURSOR_MODE_INSERT    = 0;
  SHELL_CURSOR_MODE_OVERWRITE = 1;
- 
+
  {Shell Cursor Shape constants}
  SHELL_CURSOR_SHAPE_LINE  = 0;
  SHELL_CURSOR_SHAPE_BAR   = 1;
  SHELL_CURSOR_SHAPE_BLOCK = 2;
- 
+
  {Shell Session Flag constants}
  SHELL_SESSION_FLAG_NONE = $00000000;
- 
+
  {Shell Command Flag constants}
  SHELL_COMMAND_FLAG_NONE       = $00000000;
  SHELL_COMMAND_FLAG_HIDDEN     = $00000001;  {Hidden command, do not show in HELP or INFO}
@@ -84,11 +84,11 @@ const
  SHELL_COMMAND_FLAG_DEFAULT    = $00000008;  {Default command, pass unknown commands to this before showing error}
  SHELL_COMMAND_FLAG_EXTENDED   = $00000008;  {Extended command, pass command name to command for extended handling}
  SHELL_COMMAND_FLAG_COMPLETION = $00000008;  {Command supports auto completion}
- 
+
  {Shell Alias Flag constants}
  SHELL_ALIAS_FLAG_NONE   = $00000000;
  SHELL_ALIAS_FLAG_HIDDEN = $00000001;  {Hidden alias, do not show in HELP or INFO}
- 
+
  {Shell Command constants}
  SHELL_COMMAND_HELP     = 'HELP';
  SHELL_COMMAND_INFO     = 'INFO';
@@ -103,16 +103,16 @@ const
  SHELL_COMMAND_THREAD   = 'THREAD';
  SHELL_COMMAND_MEMORY   = 'MEMORY';
  SHELL_COMMAND_DEVICE   = 'DEVICE';
- 
+
  {Shell Alias constants}
  SHELL_ALIAS_HELP    = '?';
  SHELL_ALIAS_VERSION = 'VERSION';
  SHELL_ALIAS_CLEAR   = 'CLEAR';
  SHELL_ALIAS_REBOOT  = 'REBOOT';
- 
+
  {Shell History constants}
  SHELL_HISTORY_MAX_COUNT = 100;
- 
+
  {Shell logging}
  SHELL_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Shell debugging messages}
  SHELL_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Shell informational messages}
@@ -120,13 +120,13 @@ const
  SHELL_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Shell error messages}
  SHELL_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Shell messages}
 
-var 
- SHELL_DEFAULT_LOG_LEVEL:LongWord = SHELL_LOG_LEVEL_DEBUG; {Minimum level for Shell messages.  Only messages with level greater than or equal to this will be printed} 
- 
-var 
+var
+ SHELL_DEFAULT_LOG_LEVEL:LongWord = SHELL_LOG_LEVEL_DEBUG; {Minimum level for Shell messages.  Only messages with level greater than or equal to this will be printed}
+
+var
  {Shell logging}
- SHELL_LOG_ENABLED:Boolean; 
- 
+ SHELL_LOG_ENABLED:Boolean;
+
 {==============================================================================}
 {type}
  {Shell specific types}
@@ -143,13 +143,13 @@ type
   destructor Destroy; override;
  private
   {Internal Variables}
-  FLock:TCriticalSectionHandle; 
-  
+  FLock:TCriticalSectionHandle;
+
   FShells:TLinkedList;
   FCommands:TLinkedList;
-  
+
   {Internal Methods}
-  
+
  protected
   {Internal Variables}
 
@@ -162,18 +162,18 @@ type
   {Public Methods}
   function GetShell(APrevious:TShell;ALock,AUnlock:Boolean):TShell;
   function FindShell(const AName:String):TShell;
-  
+
   function RegisterShell(AShell:TShell):Boolean;
   function DeregisterShell(AShell:TShell):Boolean;
-  
+
   function GetCommand(APrevious:TShellCommand;ALock,AUnlock:Boolean):TShellCommand;
   function FindCommand(const AName:String):TShellCommand;
   function DefaultCommand:TShellCommand;
-  
+
   function RegisterCommand(ACommand:TShellCommand):Boolean;
   function DeregisterCommand(ACommand:TShellCommand):Boolean;
  end;
- 
+
  TShellSession = class;
  TShell = class(TListObject)
  public
@@ -184,30 +184,30 @@ type
   {Internal Variables}
   FManager:TShellManager;
   FAuthenticator:TAuthenticator;
-  
+
   FLock:TCriticalSectionHandle;
-  
+
   FSessions:TLinkedList;
   FCommands:TLinkedList;
-  
+
   FBanner:String;
   FPrompt:String;
   FError:String;
-  
+
   FName:String;
   FHash:LongWord;
   FFlags:LongWord;
-  
+
   {Internal Methods}
   procedure SetAuthenticator(AAuthenticator:TAuthenticator);
-  
+
   function GetBanner:String;
-  procedure SetBanner(const ABanner:String); 
+  procedure SetBanner(const ABanner:String);
   function GetPrompt:String;
   procedure SetPrompt(const APrompt:String);
   function GetError:String;
   procedure SetError(const AError:String);
-  
+
   function GetName:String;
   procedure SetName(const AName:String);
   procedure SetFlags(AFlags:LongWord);
@@ -221,68 +221,68 @@ type
   {Public Properties}
   property Manager:TShellManager read FManager;
   property Authenticator:TAuthenticator read FAuthenticator write SetAuthenticator;
-  
+
   property Banner:String read GetBanner write SetBanner;
   property Prompt:String read GetPrompt write SetPrompt;
   property Error:String read GetError write SetError;
-  
+
   property Name:String read GetName write SetName;
   property Hash:LongWord read FHash;
   property Flags:LongWord read FFlags write SetFlags;
-  
+
   {Public Methods}
   function DoReset(ASession:TShellSession):Boolean; virtual;
-  
+
   function DoClear(ASession:TShellSession):Boolean; virtual;
-  
+
   function DoBanner(ASession:TShellSession):Boolean; virtual;
   function DoPrompt(ASession:TShellSession):Boolean; virtual;
   function DoError(ASession:TShellSession):Boolean; virtual;
-  
+
   function DoInput(ASession:TShellSession;var AInput:String):Boolean; virtual;
-  
+
   function DoOutput(ASession:TShellSession;const AOutput:String):Boolean; virtual;
   function DoOutputEx(ASession:TShellSession;const AOutput:String;AReturn:Boolean):Boolean; virtual;
-  
+
   function DoGetSize(ASession:TShellSession;var ARows,ACols:LongWord):Boolean; virtual;
   function DoSetSize(ASession:TShellSession;ARows,ACols:LongWord):Boolean; virtual;
-  
+
   function DoGetCursor(ASession:TShellSession;var ARow,ACol:LongWord):Boolean; virtual;
   function DoSetCursor(ASession:TShellSession;ARow,ACol:LongWord):Boolean; virtual;
 
   function DoGetColors(ASession:TShellSession;var AForecolor,ABackcolor:LongWord):Boolean; virtual;
   function DoSetColors(ASession:TShellSession;AForecolor,ABackcolor:LongWord):Boolean; virtual;
-  
+
   function DoGetCoordinates(ASession:TShellSession;var ARow,ACol:LongWord):Boolean; virtual;
   function DoSetCoordinates(ASession:TShellSession;ARow,ACol:LongWord):Boolean; virtual;
-  
+
   function DoGetCursorMode(ASession:TShellSession;var AMode:LongWord):Boolean; virtual;
   function DoSetCursorMode(ASession:TShellSession;AMode:LongWord):Boolean; virtual;
-  
+
   function DoGetCursorShape(ASession:TShellSession;var AShape:LongWord):Boolean; virtual;
   function DoSetCursorShape(ASession:TShellSession;AShape:LongWord):Boolean; virtual;
-  
+
   function GetSession(APrevious:TShellSession;ALock,AUnlock:Boolean):TShellSession;
   function FindSession(AIdentifier:LongWord):TShellSession;
-  
+
   function CreateSession(AIdentifier:LongWord):TShellSession;
   function DestroySession(ASession:TShellSession):Boolean;
-  
+
   function RegisterSession(ASession:TShellSession):Boolean;
   function DeregisterSession(ASession:TShellSession):Boolean;
-  
+
   function GetCommand(APrevious:TShellCommand;ALock,AUnlock:Boolean):TShellCommand;
   function FindCommand(const AName:String):TShellCommand;
   function DefaultCommand:TShellCommand;
-  
+
   function RegisterCommand(ACommand:TShellCommand):Boolean;
   function DeregisterCommand(ACommand:TShellCommand):Boolean;
-  
+
   function MatchCommand(const ACommand:String;var AName:String;var AParameters:TStrings;var AContinue:Boolean):TShellCommand; virtual;
   function CompleteCommand(ASession:TShellSession;const ACommand:String;var AError:Boolean):String; virtual;
-  
+
   function ProcessCommand(ASession:TShellSession;const ACommand:String):Boolean; virtual;
-  
+
   function CommandName(const ACommand:String):String;
   function CommandSplit(const ACommand:String):TStrings;
   function CommandJoin(AParameters:TStrings):String;
@@ -296,10 +296,10 @@ type
 
   function ParameterValueEx(const AParameter:String;AParameters:TStrings;APlus,AMinus:Boolean):String;
   function ParameterExistsEx(const AParameter:String;AParameters:TStrings;APlus,AMinus:Boolean):Boolean;
-  
+
   function AddOutput(var AOutput:String;ACol:LongWord;const AValue:String):Boolean;
  end;
- 
+
  TShellHistory = class;
  TShellSession = class(TListObject)
  public
@@ -309,23 +309,23 @@ type
  private
   {Internal Variables}
   FShell:TShell;
-  
-  FLock:TCriticalSectionHandle; 
-  
+
+  FLock:TCriticalSectionHandle;
+
   FIdentifier:LongWord;  {Unique identifier for this session}
   FFlags:LongWord;
 
   FPrompt:String;        {Current prompt for this session}
-  
+
   FData:Pointer;         {Shell private data for this session}
-  
+
   FHistories:TLinkedObjList;
   FCurrentHistory:TShellHistory;
-  
+
   {Internal Methods}
   procedure SetFlags(AFlags:LongWord);
   procedure SetData(AData:Pointer);
-  
+
   function GetPrompt:String;
   procedure SetPrompt(const APrompt:String);
  protected
@@ -337,14 +337,14 @@ type
  public
   {Public Properties}
   property Shell:TShell read FShell;
-  
+
   property Identifier:LongWord read FIdentifier;
   property Flags:LongWord read FFlags write SetFlags;
-  
+
   property Prompt:String read GetPrompt write SetPrompt;
-  
+
   property Data:Pointer read FData write SetData;
-  
+
   {Public Methods}
   function AddHistory(const ACommand:String):Boolean;
   procedure ClearHistory;
@@ -354,7 +354,7 @@ type
   function PrevHistory:String;
   function CurrentHistory:String;
  end;
- 
+
  TShellAlias = class;
  TShellCommand = class(TListObject)
  public
@@ -364,15 +364,15 @@ type
  private
   {Internal Variables}
   FManager:TShellManager;
-  
-  FLock:TCriticalSectionHandle; 
-  
+
+  FLock:TCriticalSectionHandle;
+
   FAliases:TLinkedList;
-  
+
   FName:String;
   FHash:LongWord;
   FFlags:LongWord;
-  
+
   {Internal Methods}
   function GetName:String;
   procedure SetName(const AName:String);
@@ -386,26 +386,26 @@ type
  public
   {Public Properties}
   property Manager:TShellManager read FManager;
-  
+
   property Name:String read GetName write SetName;
   property Hash:LongWord read FHash;
   property Flags:LongWord read FFlags write SetFlags;
-  
+
   {Public Methods}
   function DoHelp(AShell:TShell;ASession:TShellSession):Boolean; virtual;
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; virtual;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; virtual;
   function DoDefault(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings):Boolean; virtual;
   function DoExtended(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings):Boolean; virtual;
-  
+
   function DoCompletion(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings;var AError:Boolean):String; virtual;
-  
+
   function GetAlias(APrevious:TShellAlias;ALock,AUnlock:Boolean):TShellAlias;
   function FindAlias(const AName:String):TShellAlias;
-  
+
   function RegisterAlias(AAlias:TShellAlias):Boolean;
   function DeregisterAlias(AAlias:TShellAlias):Boolean;
-  
+
   function MatchAlias(const AName:String;var AContinue:Boolean):TShellAlias;
  end;
 
@@ -416,12 +416,12 @@ type
   destructor Destroy; override;
  private
   {Internal Variables}
-  FLock:TCriticalSectionHandle; 
- 
+  FLock:TCriticalSectionHandle;
+
   FName:String;
   FHash:LongWord;
   FFlags:LongWord;
- 
+
   {Internal Methods}
   function GetName:String;
   procedure SetName(const AName:String);
@@ -437,28 +437,28 @@ type
   property Name:String read GetName write SetName;
   property Hash:LongWord read FHash;
   property Flags:LongWord read FFlags write SetFlags;
-  
+
   {Public Methods}
- 
+
  end;
- 
+
  TShellHistory = class(TListObject)
  private
   {Internal Variables}
   FCommand:String;
   FLength:Integer;
-  
+
   {Internal Methods}
-  
+
  public
   {Public Properties}
   property Command:String read FCommand write FCommand;
   property Length:Integer read FLength write FLength;
-  
+
   {Public Methods}
- 
+
  end;
- 
+
  TShellCommandHelp = class(TShellCommand)
  public
   {}
@@ -466,14 +466,14 @@ type
   destructor Destroy; override;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -488,14 +488,14 @@ type
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -503,7 +503,7 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
- 
+
  TShellCommandVer = class(TShellCommand)
  public
   {}
@@ -511,14 +511,14 @@ type
   destructor Destroy; override;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -527,21 +527,21 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
- 
+
  TShellCommandTime = class(TShellCommand)
  public
   {}
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -550,7 +550,7 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
- 
+
  TShellCommandClear = class(TShellCommand)
  public
   {}
@@ -558,14 +558,14 @@ type
   destructor Destroy; override;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -574,7 +574,7 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
- 
+
  TShellCommandRestart = class(TShellCommand)
  public
   {}
@@ -582,14 +582,14 @@ type
   destructor Destroy; override;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -598,21 +598,21 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
- 
+
  TShellCommandShutdown = class(TShellCommand)
  public
   {}
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -621,23 +621,23 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
- 
+
  //TShellCommandCPU = class(TShellCommand) //To Do //Similar stuff to the WebStatus page (Utilization, Type, Current etc)
- 
+
  TShellCommandUptime = class(TShellCommand)
  public
   {}
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -646,23 +646,23 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
- 
+
  //TShellCommandWorker = class(TShellCommand) //To Do //Increase/Decrease Workers
- 
+
  TShellCommandThreads = class(TShellCommand)
  public
   {}
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -671,21 +671,21 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
- 
+
  TShellCommandMemory = class(TShellCommand)
  public
   {}
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -694,21 +694,21 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
- 
+
  TShellCommandDevices = class(TShellCommand)
  public
   {}
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -717,11 +717,11 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
- 
+
 {==============================================================================}
 {var}
  {Shell specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure ShellInit;
@@ -758,7 +758,7 @@ var
  ShellInitialized:Boolean;
 
  ShellManager:TShellManager;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TShellManager}
@@ -771,10 +771,10 @@ begin
  FShells:=TLinkedList.Create;
  FCommands:=TLinkedList.Create;
 end;
- 
+
 {==============================================================================}
 
-destructor TShellManager.Destroy; 
+destructor TShellManager.Destroy;
 begin
  {}
  AcquireLock;
@@ -783,7 +783,7 @@ begin
   FCommands.Free;
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -812,7 +812,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Previous}
@@ -824,7 +824,7 @@ begin
      begin
       {Lock Shell}
       if ALock then Shell.AcquireLock;
-      
+
       {Return Result}
       Result:=Shell;
      end;
@@ -837,17 +837,17 @@ begin
      begin
       {Lock Shell}
       if ALock then Shell.AcquireLock;
-      
+
       {Return Result}
       Result:=Shell;
      end;
 
     {Unlock Previous}
     if AUnlock then APrevious.ReleaseLock;
-   end;   
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -859,11 +859,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if Length(AName) = 0 then Exit;
-  
+
   Hash:=GenerateNameHash(AName,stringHashSize);
   Shell:=TShell(FShells.First);
   while Shell <> nil do
@@ -877,11 +877,11 @@ begin
        end;
      end;
 
-    Shell:=TShell(Shell.Next);   
+    Shell:=TShell(Shell.Next);
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -890,25 +890,25 @@ function TShellManager.RegisterShell(AShell:TShell):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF SHELL_DEBUG}
   if SHELL_LOG_ENABLED then ShellLogDebug('Manager: RegisterShell');
   {$ENDIF}
-  
+
   {Check Shell}
-  if AShell = nil then Exit; 
+  if AShell = nil then Exit;
   if Length(AShell.Name) = 0 then Exit;
-  
+
   {Check Name}
   if FindShell(AShell.Name) <> nil then Exit;
- 
+
   {Add Shell}
   Result:=FShells.Add(AShell);
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -917,24 +917,24 @@ function TShellManager.DeregisterShell(AShell:TShell):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF SHELL_DEBUG}
   if SHELL_LOG_ENABLED then ShellLogDebug('Manager: DeregisterShell');
   {$ENDIF}
- 
+
   {Check Shell}
-  if AShell = nil then Exit; 
- 
+  if AShell = nil then Exit;
+
   {Check Name}
   if FindShell(AShell.Name) = nil then Exit;
-  
+
   {Remove Shell}
   Result:=FShells.Remove(AShell);
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -945,7 +945,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Previous}
@@ -957,7 +957,7 @@ begin
      begin
       {Lock Command}
       if ALock then Command.AcquireLock;
-      
+
       {Return Result}
       Result:=Command;
      end;
@@ -970,17 +970,17 @@ begin
      begin
       {Lock Command}
       if ALock then Command.AcquireLock;
-      
+
       {Return Result}
       Result:=Command;
      end;
 
     {Unlock Previous}
     if AUnlock then APrevious.ReleaseLock;
-   end;   
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -992,11 +992,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if Length(AName) = 0 then Exit;
-  
+
   Hash:=GenerateNameHash(AName,stringHashSize);
   Command:=TShellCommand(FCommands.First);
   while Command <> nil do
@@ -1010,11 +1010,11 @@ begin
        end;
      end;
 
-    Command:=TShellCommand(Command.Next);   
+    Command:=TShellCommand(Command.Next);
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1025,7 +1025,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   Command:=TShellCommand(FCommands.First);
@@ -1037,11 +1037,11 @@ begin
       Exit;
      end;
 
-    Command:=TShellCommand(Command.Next);   
+    Command:=TShellCommand(Command.Next);
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1050,25 +1050,25 @@ function TShellManager.RegisterCommand(ACommand:TShellCommand):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF SHELL_DEBUG}
   if SHELL_LOG_ENABLED then ShellLogDebug('Manager: RegisterCommand');
   {$ENDIF}
-  
+
   {Check Command}
-  if ACommand = nil then Exit; 
+  if ACommand = nil then Exit;
   if Length(ACommand.Name) = 0 then Exit;
-  
+
   {Check Name}
   if FindCommand(ACommand.Name) <> nil then Exit;
- 
+
   {Add Command}
   Result:=FCommands.Add(ACommand);
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1077,24 +1077,24 @@ function TShellManager.DeregisterCommand(ACommand:TShellCommand):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF SHELL_DEBUG}
   if SHELL_LOG_ENABLED then ShellLogDebug('Manager: DeregisterCommand');
   {$ENDIF}
- 
+
   {Check Command}
-  if ACommand = nil then Exit; 
- 
+  if ACommand = nil then Exit;
+
   {Check Name}
   if FindCommand(ACommand.Name) = nil then Exit;
-  
+
   {Remove Command}
   Result:=FCommands.Remove(ACommand);
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1106,16 +1106,16 @@ begin
  inherited Create;
  FManager:=ShellManager;
  FAuthenticator:=nil;
- 
+
  FLock:=CriticalSectionCreate;
- 
+
  FSessions:=TLinkedList.Create;
  FCommands:=TLinkedList.Create;
- 
+
  Banner:=SHELL_DEFAULT_BANNER;
  Prompt:=SHELL_DEFAULT_PROMPT;
  Error:=SHELL_DEFAULT_ERROR;
- 
+
  FName:='';
  FHash:=0;
  FFlags:=SHELL_FLAG_NONE;
@@ -1123,14 +1123,14 @@ end;
 
 {==============================================================================}
 
-destructor TShell.Destroy; 
+destructor TShell.Destroy;
 begin
  {}
  AcquireLock;
  try
   FManager:=nil;
   FAuthenticator:=nil;
-  
+
   FSessions.Free;
   FCommands.Free;
   inherited Destroy;
@@ -1158,7 +1158,7 @@ function TShell.GetBanner:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FBanner;
@@ -1169,14 +1169,14 @@ end;
 
 {==============================================================================}
 
-procedure TShell.SetBanner(const ABanner:String); 
+procedure TShell.SetBanner(const ABanner:String);
 begin
  {}
  if not AcquireLock then Exit;
 
  FBanner:=ABanner;
  UniqueString(FBanner);
- 
+
  ReleaseLock;
 end;
 
@@ -1186,7 +1186,7 @@ function TShell.GetPrompt:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FPrompt;
@@ -1204,7 +1204,7 @@ begin
 
  FPrompt:=APrompt;
  UniqueString(FPrompt);
- 
+
  ReleaseLock;
 end;
 
@@ -1214,7 +1214,7 @@ function TShell.GetError:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FError;
@@ -1232,17 +1232,17 @@ begin
 
  FError:=AError;
  UniqueString(FError);
- 
+
  ReleaseLock;
 end;
 
 {==============================================================================}
-  
+
 function TShell.GetName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FName;
@@ -1261,7 +1261,7 @@ begin
  FName:=AName;
  UniqueString(FName);
  FHash:=GenerateNameHash(FName,stringHashSize);
- 
+
  ReleaseLock;
 end;
 
@@ -1302,16 +1302,16 @@ begin
 end;
 
 {==============================================================================}
- 
-function TShell.DoClear(ASession:TShellSession):Boolean; 
+
+function TShell.DoClear(ASession:TShellSession):Boolean;
 begin
  {Virtual Base}
  Result:=False;
 end;
- 
+
 {==============================================================================}
- 
-function TShell.DoBanner(ASession:TShellSession):Boolean; 
+
+function TShell.DoBanner(ASession:TShellSession):Boolean;
 begin
  {Virtual Base}
  Result:=DoOutput(ASession,Banner);
@@ -1319,20 +1319,20 @@ end;
 
 {==============================================================================}
 
-function TShell.DoPrompt(ASession:TShellSession):Boolean; 
+function TShell.DoPrompt(ASession:TShellSession):Boolean;
 begin
  {Virtual Base}
  Result:=False;
- 
+
  {Check Session}
  if ASession = nil then Exit;
- 
+
  Result:=DoOutputEx(ASession,ASession.Prompt,False);
 end;
 
 {==============================================================================}
 
-function TShell.DoError(ASession:TShellSession):Boolean; 
+function TShell.DoError(ASession:TShellSession):Boolean;
 begin
  {Virtual Base}
  Result:=DoOutput(ASession,Error);
@@ -1340,7 +1340,7 @@ end;
 
 {==============================================================================}
 
-function TShell.DoInput(ASession:TShellSession;var AInput:String):Boolean; 
+function TShell.DoInput(ASession:TShellSession;var AInput:String):Boolean;
 begin
  {Virtual Base}
  Result:=False;
@@ -1356,15 +1356,7 @@ end;
 
 {==============================================================================}
 
-function TShell.DoOutputEx(ASession:TShellSession;const AOutput:String;AReturn:Boolean):Boolean; 
-begin
- {Virtual Base}
- Result:=False;
-end;
- 
-{==============================================================================}
-  
-function TShell.DoGetSize(ASession:TShellSession;var ARows,ACols:LongWord):Boolean; 
+function TShell.DoOutputEx(ASession:TShellSession;const AOutput:String;AReturn:Boolean):Boolean;
 begin
  {Virtual Base}
  Result:=False;
@@ -1372,63 +1364,7 @@ end;
 
 {==============================================================================}
 
-function TShell.DoSetSize(ASession:TShellSession;ARows,ACols:LongWord):Boolean; 
-begin
- {Virtual Base}
- Result:=False;
-end;
- 
-{==============================================================================}
-
-function TShell.DoGetCursor(ASession:TShellSession;var ARow,ACol:LongWord):Boolean; 
-begin
- {Virtual Base}
- Result:=False;
-end;
- 
-{==============================================================================}
-
-function TShell.DoSetCursor(ASession:TShellSession;ARow,ACol:LongWord):Boolean; 
-begin
- {Virtual Base}
- Result:=False;
-end;
- 
-{==============================================================================}
-
-function TShell.DoGetColors(ASession:TShellSession;var AForecolor,ABackcolor:LongWord):Boolean; 
-begin
- {Virtual Base}
- Result:=False;
-end;
- 
-{==============================================================================}
-
-function TShell.DoSetColors(ASession:TShellSession;AForecolor,ABackcolor:LongWord):Boolean; 
-begin
- {Virtual Base}
- Result:=False;
-end;
- 
-{==============================================================================}
-
-function TShell.DoGetCoordinates(ASession:TShellSession;var ARow,ACol:LongWord):Boolean; 
-begin
- {Virtual Base}
- Result:=False;
-end;
- 
-{==============================================================================}
-
-function TShell.DoSetCoordinates(ASession:TShellSession;ARow,ACol:LongWord):Boolean; 
-begin
- {Virtual Base}
- Result:=False;
-end;
- 
-{==============================================================================}
- 
-function TShell.DoGetCursorMode(ASession:TShellSession;var AMode:LongWord):Boolean; 
+function TShell.DoGetSize(ASession:TShellSession;var ARows,ACols:LongWord):Boolean;
 begin
  {Virtual Base}
  Result:=False;
@@ -1436,7 +1372,7 @@ end;
 
 {==============================================================================}
 
-function TShell.DoSetCursorMode(ASession:TShellSession;AMode:LongWord):Boolean; 
+function TShell.DoSetSize(ASession:TShellSession;ARows,ACols:LongWord):Boolean;
 begin
  {Virtual Base}
  Result:=False;
@@ -1444,7 +1380,7 @@ end;
 
 {==============================================================================}
 
-function TShell.DoGetCursorShape(ASession:TShellSession;var AShape:LongWord):Boolean; 
+function TShell.DoGetCursor(ASession:TShellSession;var ARow,ACol:LongWord):Boolean;
 begin
  {Virtual Base}
  Result:=False;
@@ -1452,12 +1388,76 @@ end;
 
 {==============================================================================}
 
-function TShell.DoSetCursorShape(ASession:TShellSession;AShape:LongWord):Boolean; 
+function TShell.DoSetCursor(ASession:TShellSession;ARow,ACol:LongWord):Boolean;
 begin
  {Virtual Base}
  Result:=False;
 end;
- 
+
+{==============================================================================}
+
+function TShell.DoGetColors(ASession:TShellSession;var AForecolor,ABackcolor:LongWord):Boolean;
+begin
+ {Virtual Base}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TShell.DoSetColors(ASession:TShellSession;AForecolor,ABackcolor:LongWord):Boolean;
+begin
+ {Virtual Base}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TShell.DoGetCoordinates(ASession:TShellSession;var ARow,ACol:LongWord):Boolean;
+begin
+ {Virtual Base}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TShell.DoSetCoordinates(ASession:TShellSession;ARow,ACol:LongWord):Boolean;
+begin
+ {Virtual Base}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TShell.DoGetCursorMode(ASession:TShellSession;var AMode:LongWord):Boolean;
+begin
+ {Virtual Base}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TShell.DoSetCursorMode(ASession:TShellSession;AMode:LongWord):Boolean;
+begin
+ {Virtual Base}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TShell.DoGetCursorShape(ASession:TShellSession;var AShape:LongWord):Boolean;
+begin
+ {Virtual Base}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TShell.DoSetCursorShape(ASession:TShellSession;AShape:LongWord):Boolean;
+begin
+ {Virtual Base}
+ Result:=False;
+end;
+
 {==============================================================================}
 
 function TShell.GetSession(APrevious:TShellSession;ALock,AUnlock:Boolean):TShellSession;
@@ -1466,7 +1466,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Previous}
@@ -1478,7 +1478,7 @@ begin
      begin
       {Lock Session}
       if ALock then Session.AcquireLock;
-      
+
       {Return Result}
       Result:=Session;
      end;
@@ -1491,17 +1491,17 @@ begin
      begin
       {Lock Session}
       if ALock then Session.AcquireLock;
-      
+
       {Return Result}
       Result:=Session;
      end;
 
     {Unlock Previous}
     if AUnlock then APrevious.ReleaseLock;
-   end;   
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1512,7 +1512,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   Session:=TShellSession(FSessions.First);
@@ -1528,28 +1528,28 @@ begin
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
 function TShell.CreateSession(AIdentifier:LongWord):TShellSession;
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF SHELL_DEBUG}
   if SHELL_LOG_ENABLED then ShellLogDebug('Shell: CreateSession');
   {$ENDIF}
-  
+
   {Check Identifier}
   if FindSession(AIdentifier) <> nil then Exit;
- 
+
   {Create Session}
   Result:=TShellSession.Create(Self,AIdentifier);
- 
+
   {Add Session}
   if not FSessions.Add(Result) then
    begin
@@ -1558,39 +1558,39 @@ begin
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
 function TShell.DestroySession(ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF SHELL_DEBUG}
   if SHELL_LOG_ENABLED then ShellLogDebug('Shell: DestroySession');
   {$ENDIF}
- 
+
   {Check Session}
-  if ASession = nil then Exit; 
- 
+  if ASession = nil then Exit;
+
   {Check Identifier}
   if FindSession(ASession.Identifier) = nil then Exit;
-  
+
   {Remove Session}
   if FSessions.Remove(ASession) then
    begin
     {Destroy Session}
     ASession.Free;
-    
+
     Result:=True;
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1599,24 +1599,24 @@ function TShell.RegisterSession(ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF SHELL_DEBUG}
   if SHELL_LOG_ENABLED then ShellLogDebug('Shell: RegisterSession');
   {$ENDIF}
-  
+
   {Check Session}
-  if ASession = nil then Exit; 
- 
+  if ASession = nil then Exit;
+
   {Check Name}
   if FindSession(ASession.Identifier) <> nil then Exit;
- 
+
   {Add Session}
   Result:=FSessions.Add(ASession);
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1625,24 +1625,24 @@ function TShell.DeregisterSession(ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF SHELL_DEBUG}
   if SHELL_LOG_ENABLED then ShellLogDebug('Shell: DeregisterSession');
   {$ENDIF}
- 
+
   {Check Session}
-  if ASession = nil then Exit; 
- 
+  if ASession = nil then Exit;
+
   {Check Name}
   if FindSession(ASession.Identifier) = nil then Exit;
-  
+
   {Remove Session}
   Result:=FSessions.Remove(ASession);
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1653,7 +1653,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Previous}
@@ -1665,7 +1665,7 @@ begin
      begin
       {Lock Command}
       if ALock then Command.AcquireLock;
-      
+
       {Return Result}
       Result:=Command;
      end;
@@ -1678,17 +1678,17 @@ begin
      begin
       {Lock Command}
       if ALock then Command.AcquireLock;
-      
+
       {Return Result}
       Result:=Command;
      end;
 
     {Unlock Previous}
     if AUnlock then APrevious.ReleaseLock;
-   end;   
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1700,11 +1700,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if Length(AName) = 0 then Exit;
-  
+
   Hash:=GenerateNameHash(AName,stringHashSize);
   Command:=TShellCommand(FCommands.First);
   while Command <> nil do
@@ -1718,13 +1718,13 @@ begin
        end;
      end;
 
-    Command:=TShellCommand(Command.Next);   
+    Command:=TShellCommand(Command.Next);
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
 function TShell.DefaultCommand:TShellCommand;
@@ -1733,7 +1733,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   Command:=TShellCommand(FCommands.First);
@@ -1745,69 +1745,69 @@ begin
       Exit;
      end;
 
-    Command:=TShellCommand(Command.Next);   
+    Command:=TShellCommand(Command.Next);
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
 function TShell.RegisterCommand(ACommand:TShellCommand):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF SHELL_DEBUG}
   if SHELL_LOG_ENABLED then ShellLogDebug('Shell: RegisterCommand');
   {$ENDIF}
-  
+
   {Check Command}
-  if ACommand = nil then Exit; 
+  if ACommand = nil then Exit;
   if Length(ACommand.Name) = 0 then Exit;
-  
+
   {Check Name}
   if FindCommand(ACommand.Name) <> nil then Exit;
- 
+
   {Add Command}
   Result:=FCommands.Add(ACommand);
  finally
   ReleaseLock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
 function TShell.DeregisterCommand(ACommand:TShellCommand):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF SHELL_DEBUG}
   if SHELL_LOG_ENABLED then ShellLogDebug('Shell: DeregisterCommand');
   {$ENDIF}
- 
+
   {Check Command}
-  if ACommand = nil then Exit; 
- 
+  if ACommand = nil then Exit;
+
   {Check Name}
   if FindCommand(ACommand.Name) = nil then Exit;
-  
+
   {Remove Command}
   Result:=FCommands.Remove(ACommand);
  finally
   ReleaseLock;
- end; 
+ end;
 end;
- 
+
  {==============================================================================}
 
-function TShell.MatchCommand(const ACommand:String;var AName:String;var AParameters:TStrings;var AContinue:Boolean):TShellCommand; 
+function TShell.MatchCommand(const ACommand:String;var AName:String;var AParameters:TStrings;var AContinue:Boolean):TShellCommand;
 {Check the supplied command against registered commands, if matched return command as result}
 {Command: The command to match}
 {Name: The actual command name matched (May be an alias of the returned command)}
@@ -1820,11 +1820,11 @@ var
 begin
  {Virtual Base}
  Result:=nil;
- 
+
  {Setup Defaults}
  AName:='';
  AContinue:=False;
- 
+
  {Parse Command}
  Name:='';
  AParameters:=nil;
@@ -1849,13 +1849,13 @@ begin
          Result:=nil;
          AName:='';
          AContinue:=True;
-         
+
          {Unlock Command}
          Command.ReleaseLock;
          Exit;
         end;
       end;
-     
+
      {Check Aliases}
      Alias:=Command.MatchAlias(Name,AContinue);
      if Alias <> nil then
@@ -1872,28 +1872,28 @@ begin
          Result:=nil;
          AName:='';
          AContinue:=True;
-         
+
          {Unlock Command}
          Command.ReleaseLock;
          Exit;
         end;
       end;
-      
+
      {Check Continue}
      if AContinue then
       begin
        Result:=nil;
        AName:='';
-       
+
        {Unlock Command}
        Command.ReleaseLock;
        Exit;
       end;
-      
+
      {Get Next}
      Command:=Manager.GetCommand(Command,True,True);
     end;
-   
+
    {Check Local Commands}
    Command:=GetCommand(nil,True,False);
    while Command <> nil do
@@ -1913,13 +1913,13 @@ begin
          Result:=nil;
          AName:='';
          AContinue:=True;
-         
+
          {Unlock Command}
          Command.ReleaseLock;
          Exit;
         end;
       end;
-     
+
      {Check Aliases}
      Alias:=Command.MatchAlias(Name,AContinue);
      if Alias <> nil then
@@ -1936,33 +1936,33 @@ begin
          Result:=nil;
          AName:='';
          AContinue:=True;
-         
+
          {Unlock Command}
          Command.ReleaseLock;
          Exit;
         end;
       end;
-      
+
      {Check Continue}
      if AContinue then
       begin
        Result:=nil;
        AName:='';
-       
+
        {Unlock Command}
        Command.ReleaseLock;
        Exit;
       end;
-    
+
      {Get Next}
      Command:=GetCommand(Command,True,True);
-    end; 
-  end;  
+    end;
+  end;
 end;
 
 {==============================================================================}
 
-function TShell.CompleteCommand(ASession:TShellSession;const ACommand:String;var AError:Boolean):String; 
+function TShell.CompleteCommand(ASession:TShellSession;const ACommand:String;var AError:Boolean):String;
 {Attempt to complete the supplied command by matching an existing command and performing command completion}
 {Command: The command to complete}
 {Error: Returns true if there was on error in the supplied command}
@@ -1974,20 +1974,20 @@ var
 begin
  {}
  Result:=ACommand;
- 
+
  {Setup Default}
  AError:=False;
 
  {Check Session}
  if ASession = nil then Exit;
- 
+
  {Match Command}
  Name:='';
  Parameters:=nil;
  try
   Command:=MatchCommand(ACommand,Name,Parameters,Retry);
-  if Command = nil then Exit;    
-  
+  if Command = nil then Exit;
+
   {Check Flags}
   if (Command.Flags and SHELL_COMMAND_FLAG_COMPLETION) <> 0 then
    begin
@@ -2003,13 +2003,13 @@ begin
   if Parameters <> nil then
    begin
     Parameters.Free;
-   end; 
- end; 
+   end;
+ end;
 end;
 
 {==============================================================================}
 
-function TShell.ProcessCommand(ASession:TShellSession;const ACommand:String):Boolean; 
+function TShell.ProcessCommand(ASession:TShellSession;const ACommand:String):Boolean;
 {Process the supplied command against the registered commands}
 {Command: The command to process}
 var
@@ -2020,10 +2020,10 @@ var
 begin
  {Virtual Base}
  Result:=False;
- 
+
  {Check Session}
  if ASession = nil then Exit;
- 
+
  {Parse Command}
  Name:='';
  Parameters:=nil;
@@ -2036,7 +2036,7 @@ begin
      begin
       {Check Local Commands}
       Command:=FindCommand(Name);
-      if Command = nil then 
+      if Command = nil then
        begin
         {Check Global Aliases}
         Current:=Manager.GetCommand(nil,True,False);
@@ -2047,12 +2047,12 @@ begin
            begin
             {Get Command}
             Command:=Current;
-            
+
             {Unlock Current}
             Current.ReleaseLock;
             Break;
            end;
-           
+
           {Get Next}
           Current:=Manager.GetCommand(Current,True,True);
          end;
@@ -2068,19 +2068,19 @@ begin
            begin
             {Get Command}
             Command:=Current;
-            
+
             {Unlock Current}
             Current.ReleaseLock;
             Break;
            end;
-         
+
           {Get Next}
           Current:=GetCommand(Current,True,True);
          end;
        end;
      end;
-    
-    {Check Command}   
+
+    {Check Command}
     if Command <> nil then
      begin
       {Check Flags}
@@ -2093,7 +2093,7 @@ begin
        begin
         {Process Extended}
         Result:=Command.DoExtended(Self,ASession,Name,Parameters);
-       end;      
+       end;
      end
     else
      begin
@@ -2104,25 +2104,25 @@ begin
         {Check Local Default}
         Command:=DefaultCommand;
        end;
-       
+
       {Check Command}
       if Command <> nil then
-       begin     
+       begin
         {Process Default}
         Result:=Command.DoDefault(Self,ASession,Name,Parameters);
        end;
-       
+
       {Send Error}
       if not(Result) then DoError(ASession);
-     end;    
+     end;
    finally
     Parameters.Free;
-   end;   
-  end;  
+   end;
+  end;
 end;
- 
+
 {==============================================================================}
- 
+
 function TShell.CommandName(const ACommand:String):String;
 {Extract the command name from the command line}
 var
@@ -2131,7 +2131,7 @@ var
 begin
  {}
  Result:='';
- 
+
  {Trim Command}
  Command:=Trim(ACommand);
  if Length(Command) > 0 then
@@ -2150,7 +2150,7 @@ begin
     end;
   end;
 end;
- 
+
 {==============================================================================}
 
 function TShell.CommandSplit(const ACommand:String):TStrings;
@@ -2186,14 +2186,14 @@ begin
         begin
          {Delete Buffer}
          Delete(Command,1,Count);
-         
+
          {Add Result}
          Result.Add(Parameter);
-         
+
          Break;
         end;
       end
-     {Check Quote} 
+     {Check Quote}
      else if Command[Count] = '"' then
       begin
        {Toggle Quotes}
@@ -2204,16 +2204,16 @@ begin
        {Add Buffer}
        Parameter:=Parameter + Command[Count];
       end;
-      
+
      {Check End}
      if Count = Length(Command) then
       begin
        {Delete Buffer}
        Delete(Command,1,Count);
-       
+
        {Add Result}
        Result.Add(Parameter);
-       
+
        Break;
       end;
     end;
@@ -2231,10 +2231,10 @@ var
 begin
  {}
  Result:='';
- 
+
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Join Parameters}
  for Count:=0 to AParameters.Count - 1 do
   begin
@@ -2242,9 +2242,9 @@ begin
    Parameter:=AParameters.Strings[Count];
    if Pos(' ',Parameter) <> 0 then
     begin
-     Parameter:='"' + Parameter + '"';    
+     Parameter:='"' + Parameter + '"';
     end;
-   
+
    {Add Parameter}
    if Count = 0 then
     begin
@@ -2264,22 +2264,22 @@ function TShell.CommandParse(const ACommand:String;var AName:String;var AParamet
 begin
  {}
  Result:=False;
- 
+
  {Check Parameters}
  if AParameters <> nil then Exit;
- 
+
  {Get Name}
  AName:=CommandName(ACommand);
  if Length(AName) = 0 then Exit;
- 
+
  {Get Parameters}
  AParameters:=CommandSplit(ACommand);
  if AParameters = nil then Exit;
  if AParameters.Count = 0 then Exit;
- 
+
  {Delete Name}
  AParameters.Delete(0);
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -2291,13 +2291,13 @@ function TShell.CommandConcat(const AName:String;AParameters:TStrings):String;
 begin
  {}
  Result:='';
- 
+
  {Check Name}
  if Length(AName) = 0 then Exit;
- 
+
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Concatenate Name and Parameters}
  Result:=AName + ' ' + CommandJoin(AParameters);
 end;
@@ -2311,10 +2311,10 @@ var
 begin
  {}
  Result:='';
- 
+
  {Check Index}
  if AIndex < 0 then Exit;
- 
+
  {Split Command}
  Parameters:=CommandSplit(ACommand);
  try
@@ -2339,10 +2339,10 @@ begin
 
  {Check Index}
  if AIndex < 0 then Exit;
- 
+
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Index}
  if AIndex < AParameters.Count then
   begin
@@ -2381,7 +2381,7 @@ var
 begin
  {}
  Result:='';
- 
+
  {Check Exists}
  if ParameterExistsEx(AParameter,AParameters,APlus,AMinus) then
   begin
@@ -2391,27 +2391,27 @@ begin
     begin
      {Get Parameter}
      Current:=Trim(AParameters.Strings[Count]);
-     
+
      {Remove Slash}
      Current:=StripLeadingChar(Current,'/');
-     
+
      {Remove Plus}
      if APlus then Current:=StripLeadingChar(Current,'+');
-     
+
      {Remove Minus}
      if AMinus then Current:=StripLeadingChar(Current,'-');
-     
+
      {Get First Equals}
      PosIdx:=Pos('=',Current);
      if PosIdx <> 0 then
       begin
        {Get Value}
        Value:=Copy(Current,PosIdx + 1,Length(Current));
-       
+
        {Remove Value}
        Delete(Current,PosIdx,Length(Current));
-       
-       {Check Parameter} 
+
+       {Check Parameter}
        if Parameter = Uppercase(Current) then
         begin
          Result:=Value;
@@ -2435,10 +2435,10 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Parameter}
  if Trim(AParameter) = '' then Exit;
 
@@ -2448,16 +2448,16 @@ begin
   begin
    {Get Parameter}
    Current:=Trim(AParameters.Strings[Count]);
-   
+
    {Remove Slash}
    Current:=StripLeadingChar(Current,'/');
-   
+
    {Remove Plus}
    if APlus then Current:=StripLeadingChar(Current,'+');
-   
+
    {Remove Minus}
    if AMinus then Current:=StripLeadingChar(Current,'-');
-   
+
    {Get First Equals}
    PosIdx:=Pos('=',Current);
    if PosIdx <> 0 then
@@ -2465,8 +2465,8 @@ begin
      {Remove Value}
      Delete(Current,PosIdx,Length(Current));
     end;
-    
-   {Check Parameter} 
+
+   {Check Parameter}
    if Parameter = Uppercase(Current) then
     begin
      Result:=True;
@@ -2474,24 +2474,24 @@ begin
     end;
   end;
 end;
- 
+
 {==============================================================================}
- 
+
 function TShell.AddOutput(var AOutput:String;ACol:LongWord;const AValue:String):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Length(AOutput) = 0 then
   begin
    {Add Columns}
    if ACol > 0 then
     begin
-     AOutput:=AOutput + StringOfChar(' ',ACol);   
+     AOutput:=AOutput + StringOfChar(' ',ACol);
     end;
-   
+
    {Add Value}
-   AOutput:=AOutput + AValue;   
+   AOutput:=AOutput + AValue;
   end
  else
   begin
@@ -2500,21 +2500,21 @@ begin
     begin
      if Length(AOutput) < ACol then
       begin
-       AOutput:=AOutput + StringOfChar(' ',ACol - Length(AOutput));   
+       AOutput:=AOutput + StringOfChar(' ',ACol - Length(AOutput));
       end
-     else 
+     else
       begin
        AOutput:=Copy(AOutput,1,ACol);
-      end; 
+      end;
     end;
-   
+
    {Add Value}
-   AOutput:=AOutput + AValue;   
-  end;  
- 
+   AOutput:=AOutput + AValue;
+  end;
+
  Result:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TShellSession}
@@ -2523,22 +2523,22 @@ begin
  {}
  inherited Create;
  FShell:=AShell;
- 
+
  FLock:=CriticalSectionCreate;
- 
+
  FIdentifier:=AIdentifier;
  FFlags:=SHELL_SESSION_FLAG_NONE;
- 
+
  Prompt:=SHELL_DEFAULT_BANNER;
  if FShell <> nil then Prompt:=FShell.Prompt;
- 
+
  FHistories:=TLinkedObjList.Create;
  FCurrentHistory:=nil;
 end;
 
 {==============================================================================}
 
-destructor TShellSession.Destroy; 
+destructor TShellSession.Destroy;
 begin
  {}
  AcquireLock;
@@ -2552,7 +2552,7 @@ begin
   CriticalSectionDestroy(FLock);
  end;
 end;
- 
+
 {==============================================================================}
 
 procedure TShellSession.SetFlags(AFlags:LongWord);
@@ -2583,7 +2583,7 @@ function TShellSession.GetPrompt:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FPrompt;
@@ -2601,12 +2601,12 @@ begin
 
  FPrompt:=APrompt;
  UniqueString(FPrompt);
- 
+
  ReleaseLock;
 end;
 
 {==============================================================================}
- 
+
 function TShellSession.AcquireLock:Boolean;
 begin
  {}
@@ -2620,7 +2620,7 @@ begin
  {}
  Result:=(CriticalSectionUnlock(FLock) = ERROR_SUCCESS);
 end;
- 
+
 {==============================================================================}
 
 function TShellSession.AddHistory(const ACommand:String):Boolean;
@@ -2629,7 +2629,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if Length(ACommand) > 0 then
@@ -2642,34 +2642,34 @@ begin
        begin
         {Clear Current}
         FCurrentHistory:=nil;
-        
+
         {Return Result}
-        Result:=True;  
+        Result:=True;
         Exit;
-       end; 
+       end;
      end;
-     
+
     {Check Maximum}
     if FHistories.Count >= SHELL_HISTORY_MAX_COUNT then
      begin
       {Get First}
       History:=TShellHistory(FHistories.First);
-      
+
       {Delete First}
       FHistories.Remove(History);
       History.Free;
      end;
-    
+
     {Add History}
     History:=TShellHistory.Create;
     History.Command:=ACommand;
     History.Length:=Length(ACommand);
     FHistories.Add(History);
-    
+
     {Clear Current}
     FCurrentHistory:=nil;
    end;
- 
+
   Result:=True;
  finally
   ReleaseLock;
@@ -2682,10 +2682,10 @@ procedure TShellSession.ClearHistory;
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  {Clear Histories}
  FHistories.ClearList;
- 
+
  {Clear Current}
  FCurrentHistory:=nil;
 
@@ -2700,18 +2700,18 @@ var
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
  try
   History:=TShellHistory(FHistories.First);
   if History = nil then Exit;
- 
+
   FCurrentHistory:=History;
-  
+
   Result:=History.Command;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2722,18 +2722,18 @@ var
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
  try
   History:=TShellHistory(FHistories.Last);
   if History = nil then Exit;
- 
+
   FCurrentHistory:=History;
- 
+
   Result:=History.Command;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2742,7 +2742,7 @@ function TShellSession.NextHistory:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
  try
   {Check Current}
@@ -2759,22 +2759,22 @@ begin
     {Get Next}
     FCurrentHistory:=TShellHistory(FCurrentHistory.Next);
     if FCurrentHistory = nil then Exit;
-    
+
     {Return Result}
     Result:=FCurrentHistory.Command;
-   end;   
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
 function TShellSession.PrevHistory:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
  try
   {Check Current}
@@ -2783,7 +2783,7 @@ begin
     {Get Last}
     FCurrentHistory:=TShellHistory(FHistories.Last);
     if FCurrentHistory = nil then Exit;
-    
+
     {Return Result}
     Result:=FCurrentHistory.Command;
    end
@@ -2796,13 +2796,13 @@ begin
     {Get Previous}
     FCurrentHistory:=TShellHistory(FCurrentHistory.Prev);
     if FCurrentHistory = nil then Exit;
-    
+
     {Return Result}
     Result:=FCurrentHistory.Command;
-   end;   
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2813,7 +2813,7 @@ var
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
  try
   {Get Current}
@@ -2824,14 +2824,14 @@ begin
     History:=TShellHistory(FHistories.Last);
     if History = nil then Exit;
    end;
-   
+
   {Return Result}
   if History <> nil then Result:=History.Command;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TShellCommand}
@@ -2840,11 +2840,11 @@ begin
  {}
  inherited Create;
  FManager:=ShellManager;
- 
+
  FLock:=CriticalSectionCreate;
- 
+
  FAliases:=TLinkedList.Create;
- 
+
  FName:='';
  FHash:=0;
  FFlags:=SHELL_COMMAND_FLAG_NONE;
@@ -2852,28 +2852,28 @@ end;
 
 {==============================================================================}
 
-destructor TShellCommand.Destroy; 
+destructor TShellCommand.Destroy;
 begin
  {}
  AcquireLock;
  try
   FManager:=nil;
-  
+
   FAliases.Free;
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
 
 {==============================================================================}
-  
+
 function TShellCommand.GetName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FName;
@@ -2892,7 +2892,7 @@ begin
  FName:=AName;
  UniqueString(FName);
  FHash:=GenerateNameHash(FName,stringHashSize);
- 
+
  ReleaseLock;
 end;
 
@@ -2923,10 +2923,10 @@ begin
  {}
  Result:=(CriticalSectionUnlock(FLock) = ERROR_SUCCESS);
 end;
- 
+
 {==============================================================================}
- 
-function TShellCommand.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+
+function TShellCommand.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {Virtual Base}
  Result:=False;
@@ -2934,7 +2934,7 @@ end;
 
 {==============================================================================}
 
-function TShellCommand.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommand.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {Virtual Base}
  Result:=False;
@@ -2942,15 +2942,7 @@ end;
 
 {==============================================================================}
 
-function TShellCommand.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
-begin
- {Virtual Base}
- Result:=False;
-end;
-
-{==============================================================================}
- 
-function TShellCommand.DoDefault(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings):Boolean; 
+function TShellCommand.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 begin
  {Virtual Base}
  Result:=False;
@@ -2958,7 +2950,7 @@ end;
 
 {==============================================================================}
 
-function TShellCommand.DoExtended(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings):Boolean; 
+function TShellCommand.DoDefault(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings):Boolean;
 begin
  {Virtual Base}
  Result:=False;
@@ -2966,17 +2958,25 @@ end;
 
 {==============================================================================}
 
-function TShellCommand.DoCompletion(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings;var AError:Boolean):String; 
+function TShellCommand.DoExtended(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings):Boolean;
+begin
+ {Virtual Base}
+ Result:=False;
+end;
+
+{==============================================================================}
+
+function TShellCommand.DoCompletion(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings;var AError:Boolean):String;
 begin
  {Virtual Base}
  Result:='';
- 
+
  {Setup Defaults}
  AError:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Concatenate Command}
  Result:=AShell.CommandConcat(AName,AParameters);
 end;
@@ -2989,7 +2989,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Previous}
@@ -3001,7 +3001,7 @@ begin
      begin
       {Lock Alias}
       if ALock then Alias.AcquireLock;
-      
+
       {Return Result}
       Result:=Alias;
      end;
@@ -3014,21 +3014,21 @@ begin
      begin
       {Lock Alias}
       if ALock then Alias.AcquireLock;
-      
+
       {Return Result}
       Result:=Alias;
      end;
 
     {Unlock Previous}
     if AUnlock then APrevious.ReleaseLock;
-   end;   
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
- 
+
 function TShellCommand.FindAlias(const AName:String):TShellAlias;
 var
  Hash:LongWord;
@@ -3036,11 +3036,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if Length(AName) = 0 then Exit;
-  
+
   Hash:=GenerateNameHash(AName,stringHashSize);
   Alias:=TShellAlias(FAliases.First);
   while Alias <> nil do
@@ -3054,68 +3054,68 @@ begin
        end;
      end;
 
-    Alias:=TShellAlias(Alias.Next);   
+    Alias:=TShellAlias(Alias.Next);
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
- 
+
 function TShellCommand.RegisterAlias(AAlias:TShellAlias):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF SHELL_DEBUG}
   if SHELL_LOG_ENABLED then ShellLogDebug('Command: RegisterAlias');
   {$ENDIF}
-  
+
   {Check Alias}
-  if AAlias = nil then Exit; 
+  if AAlias = nil then Exit;
   if Length(AAlias.Name) = 0 then Exit;
-  
+
   {Check Name}
   if FindAlias(AAlias.Name) <> nil then Exit;
- 
+
   {Add Alias}
   Result:=FAliases.Add(AAlias);
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
- 
+
 function TShellCommand.DeregisterAlias(AAlias:TShellAlias):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF SHELL_DEBUG}
   if SHELL_LOG_ENABLED then ShellLogDebug('Command: DeregisterAlias');
   {$ENDIF}
- 
+
   {Check Alias}
-  if AAlias = nil then Exit; 
- 
+  if AAlias = nil then Exit;
+
   {Check Name}
   if FindAlias(AAlias.Name) = nil then Exit;
-  
+
   {Remove Alias}
   Result:=FAliases.Remove(AAlias);
  finally
   ReleaseLock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
- 
+
 function TShellCommand.MatchAlias(const AName:String;var AContinue:Boolean):TShellAlias;
 {Check the supplied command name against registered aliases, if matched return alias as result}
 {Name: The command name to match}
@@ -3125,14 +3125,14 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Setup Defaults}
  AContinue:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if Length(AName) = 0 then Exit;
- 
+
   Alias:=TShellAlias(FAliases.First);
   while Alias <> nil do
    begin
@@ -3148,18 +3148,18 @@ begin
         {Return Continue}
         Result:=nil;
         AContinue:=True;
-        
+
         Exit;
        end;
      end;
 
-    Alias:=TShellAlias(Alias.Next);   
+    Alias:=TShellAlias(Alias.Next);
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TShellAlias}
@@ -3168,7 +3168,7 @@ begin
  {}
  inherited Create;
  FLock:=CriticalSectionCreate;
- 
+
  FName:='';
  FHash:=0;
  FFlags:=SHELL_ALIAS_FLAG_NONE;
@@ -3176,14 +3176,14 @@ end;
 
 {==============================================================================}
 
-destructor TShellAlias.Destroy; 
+destructor TShellAlias.Destroy;
 begin
  {}
  AcquireLock;
  try
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -3194,7 +3194,7 @@ function TShellAlias.GetName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FName;
@@ -3213,7 +3213,7 @@ begin
  FName:=AName;
  UniqueString(FName);
  FHash:=GenerateNameHash(FName,stringHashSize);
- 
+
  ReleaseLock;
 end;
 
@@ -3257,11 +3257,11 @@ begin
 
  Name:=SHELL_COMMAND_HELP;
  Flags:=SHELL_COMMAND_FLAG_INFO;
- 
+
  {Create Alias}
  Alias:=TShellAlias.Create;
  Alias.Name:=SHELL_ALIAS_HELP;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
@@ -3269,40 +3269,40 @@ begin
    Alias.Free;
   end;
 end;
- 
+
 {==============================================================================}
- 
-destructor TShellCommandHelp.Destroy; 
+
+destructor TShellCommandHelp.Destroy;
 var
  Alias:TShellAlias;
 begin
  {}
  {Get Alias}
  Alias:=FindAlias(SHELL_ALIAS_HELP);
- 
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
-  
+
  inherited Destroy;
 end;
- 
+
 {==============================================================================}
 
-function TShellCommandHelp.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandHelp.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Show help for a specific command (HELP with no parameters lists all commands)');
 end;
@@ -3317,13 +3317,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Get Parameter}
  Parameter:=AShell.ParameterIndex(0,AParameters);
  if Length(Parameter) > 0 then
@@ -3335,7 +3335,7 @@ begin
     begin
      {Check Local Commands}
      Command:=AShell.FindCommand(Parameter);
-     if Command = nil then 
+     if Command = nil then
       begin
        {Check Global Aliases}
        Current:=Manager.GetCommand(nil,True,False);
@@ -3346,12 +3346,12 @@ begin
           begin
            {Get Command}
            Command:=Current;
-           
+
            {Unlock Current}
            Current.ReleaseLock;
            Break;
           end;
-          
+
          {Get Next}
          Current:=Manager.GetCommand(Current,True,True);
         end;
@@ -3367,18 +3367,18 @@ begin
           begin
            {Get Command}
            Command:=Current;
-           
+
            {Unlock Current}
            Current.ReleaseLock;
            Break;
           end;
-        
+
          {Get Next}
          Current:=AShell.GetCommand(Current,True,True);
         end;
-      end; 
-    end; 
-   
+      end;
+    end;
+
    {Check Command}
    if Command <> nil then
     begin
@@ -3388,7 +3388,7 @@ begin
        {Show Header}
        if not AShell.DoOutput(ASession,Command.Name + ' command help') then Exit;
        if not AShell.DoOutput(ASession,'') then Exit;
-       
+
        {Show Help}
        Result:=Command.DoHelp(AShell,ASession);
       end
@@ -3402,38 +3402,38 @@ begin
     begin
      {Show Error}
      AShell.DoOutput(ASession,Name + ' - Command "' + Parameter + '" not found');
-    end;    
+    end;
   end
  else
   begin
    {Show List of All Commands}
    if not AShell.DoOutput(ASession,'Available commands:') then Exit;
-   
+
    {Global Commands}
    Command:=Manager.GetCommand(nil,True,False);
    while Command <> nil do
     begin
      {Show Name}
      AShell.DoOutput(ASession,' ' + Command.Name);
-     
+
      {Get Next}
      Command:=Manager.GetCommand(Command,True,True);
     end;
-   
+
    {Local Commands}
    Command:=AShell.GetCommand(nil,True,False);
    while Command <> nil do
     begin
      {Show Name}
      AShell.DoOutput(ASession,' ' + Command.Name);
-     
+
      {Get Next}
      Command:=AShell.GetCommand(Command,True,True);
     end;
-   
+
    {Return Result}
    Result:=True;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -3447,17 +3447,17 @@ begin
  Name:=SHELL_COMMAND_INFO;
  Flags:=SHELL_COMMAND_FLAG_INFO;
 end;
- 
+
 {==============================================================================}
 
-function TShellCommandInfo.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandInfo.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Show brief info for a command (INFO with no parameters shows info for all commands)');
 end;
@@ -3472,13 +3472,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Get Parameter}
  Parameter:=AShell.ParameterIndex(0,AParameters);
  if Length(Parameter) > 0 then
@@ -3490,7 +3490,7 @@ begin
     begin
      {Check Local Commands}
      Command:=AShell.FindCommand(Parameter);
-     if Command = nil then 
+     if Command = nil then
       begin
        {Check Global Aliases}
        Current:=Manager.GetCommand(nil,True,False);
@@ -3501,12 +3501,12 @@ begin
           begin
            {Get Command}
            Command:=Current;
-           
+
            {Unlock Current}
            Current.ReleaseLock;
            Break;
           end;
-          
+
          {Get Next}
          Current:=Manager.GetCommand(Current,True,True);
         end;
@@ -3522,24 +3522,24 @@ begin
           begin
            {Get Command}
            Command:=Current;
-           
+
            {Unlock Current}
            Current.ReleaseLock;
            Break;
           end;
-        
+
          {Get Next}
          Current:=AShell.GetCommand(Current,True,True);
         end;
-      end; 
-    end; 
-   
+      end;
+    end;
+
    {Check Command}
    if Command <> nil then
     begin
      {Show Name}
      if not AShell.DoOutputEx(ASession,Command.Name + ' - ',False) then Exit;
-     
+
      {Check Flags}
      if (Command.Flags and SHELL_COMMAND_FLAG_INFO) <> 0 then
       begin
@@ -3556,20 +3556,20 @@ begin
     begin
      {Show Error}
      AShell.DoOutput(ASession,Name + ' - Command "' + Parameter + '" not found');
-    end;    
+    end;
   end
  else
   begin
    {Show Info for All Commands}
    if not AShell.DoOutput(ASession,'Available commands:') then Exit;
-   
+
    {Global Commands}
    Command:=Manager.GetCommand(nil,True,False);
    while Command <> nil do
     begin
      {Show Name}
      AShell.DoOutputEx(ASession,' ' + Command.Name + ' - ',False);
-     
+
      {Check Flags}
      if (Command.Flags and SHELL_COMMAND_FLAG_INFO) <> 0 then
       begin
@@ -3580,19 +3580,19 @@ begin
       begin
        {Show Error}
        AShell.DoOutput(ASession,'No info available');
-      end;      
-     
+      end;
+
      {Get Next}
      Command:=Manager.GetCommand(Command,True,True);
     end;
-   
+
    {Local Commands}
    Command:=AShell.GetCommand(nil,True,False);
    while Command <> nil do
     begin
      {Show Name}
      AShell.DoOutputEx(ASession,' ' + Command.Name + ' - ',False);
-     
+
      {Check Flags}
      if (Command.Flags and SHELL_COMMAND_FLAG_INFO) <> 0 then
       begin
@@ -3603,17 +3603,17 @@ begin
       begin
        {Show Error}
        AShell.DoOutput(ASession,'No info available');
-      end;      
-     
+      end;
+
      {Get Next}
      Command:=AShell.GetCommand(Command,True,True);
     end;
-   
+
    {Return Result}
    Result:=True;
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TShellCommandVer}
@@ -3626,11 +3626,11 @@ begin
 
  Name:=SHELL_COMMAND_VER;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
- 
+
  {Create Alias}
  Alias:=TShellAlias.Create;
  Alias.Name:=SHELL_ALIAS_VERSION;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
@@ -3640,66 +3640,66 @@ begin
 end;
 
 {==============================================================================}
- 
-destructor TShellCommandVer.Destroy; 
+
+destructor TShellCommandVer.Destroy;
 var
  Alias:TShellAlias;
 begin
  {}
  {Get Alias}
  Alias:=FindAlias(SHELL_ALIAS_VERSION);
- 
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
-  
+
  inherited Destroy;
 end;
 
 {==============================================================================}
 
-function TShellCommandVer.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandVer.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  Result:=AShell.DoOutput(ASession,'Show version information for Ultibo Core');
 end;
 
 {==============================================================================}
 
-function TShellCommandVer.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandVer.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Show version information');
 end;
 
 {==============================================================================}
 
-function TShellCommandVer.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellCommandVer.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Show Version}
  Result:=AShell.DoOutput(ASession,SHELL_DEFAULT_BANNER);
 end;
@@ -3718,28 +3718,28 @@ end;
 
 {==============================================================================}
 
-function TShellCommandTime.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandTime.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  Result:=AShell.DoOutput(ASession,'Display or set the current system time');
 end;
 
 {==============================================================================}
 
-function TShellCommandTime.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandTime.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Display or set the current system time');
 end;
@@ -3747,43 +3747,43 @@ end;
 {==============================================================================}
 
 function TShellCommandTime.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
-var 
+var
  Parameter:String;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Get Parameter}
  Parameter:=AShell.ParameterIndex(0,AParameters);
- 
+
  {Check Parameter}
  if (Length(Parameter) = 0) or (Uppercase(Parameter) = 'GET') then
   begin
    {Show Local Time}
    if not AShell.DoOutput(ASession,'Local time: ' + SystemDateTimeToString(Now)) then Exit;
-   
+
    {Show UTC Time}
    if not AShell.DoOutput(ASession,'UTC time: ' + SystemDateTimeToString(SystemFileTimeToDateTime(GetCurrentTime))) then Exit; {No Conversion}
-   
+
    {Show Timezone}
    Result:= AShell.DoOutput(ASession,'Timezone: ' + GetCurrentTimezone);
   end
  else if Uppercase(Parameter) = 'SET' then
   begin
-   //To Do 
+   //To Do
    Result:= AShell.DoOutput(ASession,'Sorry, not implemented yet');
   end
  else
   begin
    {Show Error}
    Result:=AShell.DoError(ASession);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -3798,11 +3798,11 @@ begin
 
  Name:=SHELL_COMMAND_CLS;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
- 
+
  {Create Alias}
  Alias:=TShellAlias.Create;
  Alias.Name:=SHELL_ALIAS_CLEAR;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
@@ -3810,68 +3810,68 @@ begin
    Alias.Free;
   end;
 end;
- 
+
 {==============================================================================}
- 
-destructor TShellCommandClear.Destroy; 
+
+destructor TShellCommandClear.Destroy;
 var
  Alias:TShellAlias;
 begin
  {}
  {Get Alias}
  Alias:=FindAlias(SHELL_ALIAS_CLEAR);
- 
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
-  
+
  inherited Destroy;
 end;
 
 {==============================================================================}
 
-function TShellCommandClear.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandClear.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  Result:=AShell.DoOutput(ASession,'Clear the screen if supported by the current shell');
 end;
 
 {==============================================================================}
 
-function TShellCommandClear.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandClear.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Clear the screen');
 end;
 
 {==============================================================================}
 
-function TShellCommandClear.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellCommandClear.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Clear Screen}
  Result:=AShell.DoClear(ASession);
 end;
@@ -3888,11 +3888,11 @@ begin
 
  Name:=SHELL_COMMAND_RESTART;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
- 
+
  {Create Alias}
  Alias:=TShellAlias.Create;
  Alias.Name:=SHELL_ALIAS_REBOOT;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
@@ -3900,40 +3900,40 @@ begin
    Alias.Free;
   end;
 end;
- 
+
 {==============================================================================}
 
-destructor TShellCommandRestart.Destroy; 
+destructor TShellCommandRestart.Destroy;
 var
  Alias:TShellAlias;
 begin
  {}
  {Get Alias}
  Alias:=FindAlias(SHELL_ALIAS_REBOOT);
- 
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
-  
+
  inherited Destroy;
 end;
 
 {==============================================================================}
 
-function TShellCommandRestart.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandRestart.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  if not AShell.DoOutput(ASession,'Restart the computer immediately or after a specified number of milliseconds') then Exit;
  if not AShell.DoOutput(ASession,'') then Exit;
@@ -3941,27 +3941,27 @@ begin
  if not AShell.DoOutput(ASession,'') then Exit;
  if not AShell.DoOutput(ASession,' Examples: RESTART      (Restart immediately)') then Exit;
  if not AShell.DoOutput(ASession,'           RESTART 5000 (Restart in 5000 milliseconds or 5 seconds)') then Exit;
- 
+
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellCommandRestart.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandRestart.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Restart the computer');
 end;
 
 {==============================================================================}
 
-function TShellCommandRestart.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellCommandRestart.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Delay:LongWord;
  Status:LongWord;
@@ -3969,19 +3969,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Get Parameter}
  Parameter:=AShell.ParameterIndex(0,AParameters);
- 
+
  {Get Delay}
  Delay:=StrToIntDef(Parameter,1000); {Default to 1 second}
- 
+
  {Restart}
  Status:=SystemRestart(Delay);
  if Status = ERROR_SUCCESS then
@@ -3993,7 +3993,7 @@ begin
   begin
    {Show Failure}
    Result:=AShell.DoOutput(ASession,'Restart request failed (Error=' + ErrorToString(Status) + ')');
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4007,17 +4007,17 @@ begin
  Name:=SHELL_COMMAND_SHUTDOWN;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
 end;
- 
+
 {==============================================================================}
 
-function TShellCommandShutdown.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandShutdown.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  if not AShell.DoOutput(ASession,'Shutdown the computer immediately or after a specified number of milliseconds') then Exit;
  if not AShell.DoOutput(ASession,'') then Exit;
@@ -4025,27 +4025,27 @@ begin
  if not AShell.DoOutput(ASession,'') then Exit;
  if not AShell.DoOutput(ASession,' Examples: SHUTDOWN      (Shutdown immediately)') then Exit;
  if not AShell.DoOutput(ASession,'           SHUTDOWN 5000 (Shutdown in 5000 milliseconds or 5 seconds)') then Exit;
- 
+
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellCommandShutdown.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandShutdown.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Shutdown the computer');
 end;
 
 {==============================================================================}
 
-function TShellCommandShutdown.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellCommandShutdown.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Delay:LongWord;
  Status:LongWord;
@@ -4053,19 +4053,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Get Parameter}
  Parameter:=AShell.ParameterIndex(0,AParameters);
- 
+
  {Get Delay}
  Delay:=StrToIntDef(Parameter,1000); {Default to 1 second}
- 
+
  {Shutdown}
  Status:=SystemShutdown(Delay);
  if Status = ERROR_SUCCESS then
@@ -4077,7 +4077,7 @@ begin
   begin
    {Show Failure}
    Result:=AShell.DoOutput(ASession,'Shutdown request failed (Error=' + ErrorToString(Status) + ')');
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4091,47 +4091,47 @@ begin
  Name:=SHELL_COMMAND_UPTIME;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
 end;
- 
+
 {==============================================================================}
 
-function TShellCommandUptime.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandUptime.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  Result:=AShell.DoOutput(ASession,'Show system uptime since last restart');
 end;
 
 {==============================================================================}
 
-function TShellCommandUptime.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandUptime.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Show system uptime since last restart');
 end;
 
 {==============================================================================}
 
-function TShellCommandUptime.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellCommandUptime.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  WorkTime:TDateTime;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Show Uptime}
  WorkTime:=SystemFileTimeToDateTime(Uptime); {No Conversion}
  Result:=AShell.DoOutput(ASession,'Uptime ' + SystemIntervalToString(WorkTime));
@@ -4148,45 +4148,45 @@ begin
  Name:=SHELL_COMMAND_THREAD;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
 end;
- 
+
 {==============================================================================}
 
-function TShellCommandThreads.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandThreads.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  Result:=AShell.DoOutput(ASession,'List or display information about threads');
 end;
 
 {==============================================================================}
 
-function TShellCommandThreads.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandThreads.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'List or display information about threads');
 end;
 
 {==============================================================================}
 
-function TShellCommandThreads.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellCommandThreads.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Command}
  //To Do
  Result:= AShell.DoOutput(ASession,'Sorry, not implemented yet');
@@ -4203,48 +4203,48 @@ begin
  Name:=SHELL_COMMAND_MEMORY;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
 end;
- 
+
 {==============================================================================}
 
-function TShellCommandMemory.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandMemory.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  Result:=AShell.DoOutput(ASession,'Display summary or detailed information about memory');
 end;
 
 {==============================================================================}
 
-function TShellCommandMemory.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandMemory.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Display summary or detailed information about memory');
 end;
 
 {==============================================================================}
 
-function TShellCommandMemory.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellCommandMemory.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Status:THeapStatus;
  FPCStatus:TFPCHeapStatus;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Command}
  {Heap Status}
  Status:=GetHeapStatus;
@@ -4262,7 +4262,7 @@ begin
  AShell.DoOutput(ASession,'Overhead:            ' + IntToStr(Status.Overhead));
  AShell.DoOutput(ASession,'Heap Error Code:     ' + IntToStr(Status.HeapErrorCode));
  AShell.DoOutput(ASession,'');
- 
+
  {FPC Heap Status}
  FPCStatus:=GetFPCHeapStatus;
  AShell.DoOutput(ASession,'FPC Heap Status');
@@ -4274,19 +4274,19 @@ begin
  AShell.DoOutput(ASession,'Current Heap Used: ' + IntToStr(FPCStatus.CurrHeapUsed));
  AShell.DoOutput(ASession,'Current Heap Free: ' + IntToStr(FPCStatus.CurrHeapFree));
  AShell.DoOutput(ASession,'');
- 
+
  //To Do //Make this Action = Status
  //To Do //Add Free and Used Heap Blocks
  //To Do //Add Heap Statistics (Optional)
- 
+
  //To Do //Add Heap Blocks (Action = Blocks)
  //To Do //Add Page Tables (Action = Pages)
- 
- 
+
+
  {Return Result}
  Result:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TShellCommandDevices}
@@ -4298,50 +4298,50 @@ begin
  Name:=SHELL_COMMAND_DEVICE;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
 end;
- 
+
 {==============================================================================}
 
-function TShellCommandDevices.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandDevices.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  Result:=AShell.DoOutput(ASession,'List or display information about devices');
 end;
 
 {==============================================================================}
 
-function TShellCommandDevices.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellCommandDevices.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'List or display information about devices');
 end;
 
 {==============================================================================}
 
-function TShellCommandDevices.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellCommandDevices.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Command}
  //To Do
  Result:= AShell.DoOutput(ASession,'Sorry, not implemented yet');
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -4350,13 +4350,13 @@ begin
  {}
  {Check Initialized}
  if ShellInitialized then Exit;
- 
+
  {Initialize Logging}
- SHELL_LOG_ENABLED:=(SHELL_DEFAULT_LOG_LEVEL <> SHELL_LOG_LEVEL_NONE); 
- 
+ SHELL_LOG_ENABLED:=(SHELL_DEFAULT_LOG_LEVEL <> SHELL_LOG_LEVEL_NONE);
+
  {Create Shell Manager}
  ShellManager:=TShellManager.Create;
- 
+
  {Register Default Commands}
  ShellManager.RegisterCommand(TShellCommandHelp.Create);
  ShellManager.RegisterCommand(TShellCommandInfo.Create);
@@ -4369,7 +4369,7 @@ begin
  ShellManager.RegisterCommand(TShellCommandThreads.Create);
  ShellManager.RegisterCommand(TShellCommandMemory.Create);
  ShellManager.RegisterCommand(TShellCommandDevices.Create);
- 
+
  ShellInitialized:=True;
 end;
 
@@ -4380,10 +4380,10 @@ function ShellGetShell(APrevious:TShell;ALock,AUnlock:Boolean):TShell;
 begin
  {}
  Result:=nil;
- 
+
  {Check Manager}
  if ShellManager = nil then Exit;
- 
+
  {Get Shell}
  Result:=ShellManager.GetShell(APrevious,ALock,AUnlock);
 end;
@@ -4395,10 +4395,10 @@ function ShellFindShell(const AName:String):TShell;
 begin
  {}
  Result:=nil;
- 
+
  {Check Manager}
  if ShellManager = nil then Exit;
- 
+
  {Find Shell}
  Result:=ShellManager.FindShell(AName);
 end;
@@ -4409,13 +4409,13 @@ function ShellRegisterShell(AShell:TShell):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Check Manager}
  if ShellManager = nil then Exit;
- 
+
  {Register Shell}
  Result:=ShellManager.RegisterShell(AShell);
 end;
@@ -4426,13 +4426,13 @@ function ShellDeregisterShell(AShell:TShell):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Check Manager}
  if ShellManager = nil then Exit;
- 
+
  {Deregister Shell}
  Result:=ShellManager.DeregisterShell(AShell);
 end;
@@ -4443,10 +4443,10 @@ function ShellGetCommand(APrevious:TShellCommand;ALock,AUnlock:Boolean):TShellCo
 begin
  {}
  Result:=nil;
- 
+
  {Check Manager}
  if ShellManager = nil then Exit;
- 
+
  {Get Command}
  Result:=ShellManager.GetCommand(APrevious,ALock,AUnlock);
 end;
@@ -4457,10 +4457,10 @@ function ShellFindCommand(const AName:String):TShellCommand;
 begin
  {}
  Result:=nil;
- 
+
  {Check Manager}
  if ShellManager = nil then Exit;
- 
+
  {Find Command}
  Result:=ShellManager.FindCommand(AName);
 end;
@@ -4471,13 +4471,13 @@ function ShellRegisterCommand(ACommand:TShellCommand):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Command}
  if ACommand = nil then Exit;
- 
+
  {Check Manager}
  if ShellManager = nil then Exit;
- 
+
  {Register Command}
  Result:=ShellManager.RegisterCommand(ACommand);
 end;
@@ -4488,13 +4488,13 @@ function ShellDeregisterCommand(ACommand:TShellCommand):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Command}
  if ACommand = nil then Exit;
- 
+
  {Check Manager}
  if ShellManager = nil then Exit;
- 
+
  {Deregister Command}
  Result:=ShellManager.DeregisterCommand(ACommand);
 end;
@@ -4509,7 +4509,7 @@ begin
  {}
  {Check Level}
  if Level < SHELL_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = SHELL_LOG_LEVEL_DEBUG then
@@ -4524,11 +4524,11 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'Shell: ';
 
- {Output Logging} 
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_SHELL,LogLevelToLoggingSeverity(Level),'Shell',WorkBuffer + AText);
 end;
 
@@ -4569,9 +4569,9 @@ end;
 
 initialization
  ShellInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

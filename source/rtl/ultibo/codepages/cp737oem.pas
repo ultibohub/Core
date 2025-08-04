@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -48,7 +48,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {CP737OEM specific constants}
@@ -64,13 +64,13 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Initialization Functions}
 procedure CP737OEMInit;
- 
+
 {==============================================================================}
 {CP737OEM Functions}
- 
+
 {==============================================================================}
 {CP737OEM Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -124,7 +124,7 @@ var
   $038F,$00B1,$2265,$2264,$03AA,$03AB,$00F7,$2248,
   $00B0,$2219,$00B7,$221A,$207F,$00B2,$25A0,$00A0)
  );
- 
+
  CP737TO1253:TTransTable = (
   TransID:1253;
   Values:(
@@ -145,7 +145,7 @@ var
   $F9,$DC,$DD,$DE,$FA,$DF,$FC,$FD,$FB,$FE,$A2,$B8,$B9,$BA,$BC,$BE,
   $BF,$B1,$5F,$5F,$DA,$DB,$5F,$5F,$B0,$5F,$B7,$5F,$5F,$B2,$A6,$A0)
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -175,9 +175,9 @@ end;
 
 initialization
  CP737OEMInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

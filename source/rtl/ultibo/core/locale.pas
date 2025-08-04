@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -33,9 +33,9 @@ Locale
 
  This unit implements the locale support for Ultibo and provides the code page
  support for the WideStringManager/UnicodeStringManager interface for the RTL.
- 
+
  This unit provides compatible implementations of the following functions:
- 
+
         ConvertDefaultLocale    EnumCalendarInfo          EnumCalendarInfoProc
         EnumCodePagesProc       EnumDateFormats           EnumDateFormatsProc
         EnumLocalesProc         EnumSystemCodePages       EnumSystemLocales
@@ -46,19 +46,19 @@ Locale
         GetUserDefaultLangID    GetUserDefaultLCID        IsValidCodePage
         IsValidLocale           SetLocaleInfo             GetConsoleCP
         GetConsoleOutputCP      SetConsoleCP              SetConsoleOutputCP
- 
+
         The following function are implemented by the Threads unit:
 
         GetThreadLocale (ThreadGetLocale) (GetThreadLocale is exposed in the Ultibo unit)
         SetThreadLocale (ThreadSetLocale) (SetThreadLocale is exposed in the Ultibo unit)
 
         Most of the above are currently not implemented.
-  
+
  OEM Code Page defaults to 437   (OEM United States)
  ANSI Code Page defaults to 1252 (ANSI Latin 1; Western European (Windows))
- 
+
  See also: https://msdn.microsoft.com/en-us/library/windows/desktop/dd319081%28v=vs.85%29.aspx
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -75,21 +75,21 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,SysUtils;
                       //See: https://msdn.microsoft.com/en-us/goglobal/bb896001.aspx
 
 //To Do //Code Page Identifiers are listed at https://msdn.microsoft.com/en-us/library/windows/desktop/dd317756%28v=vs.85%29.aspx
-                     
+
 //To Do //See also: \jwa\branches\2.3\Win32API\JwaWinNLS.pas
-          
+
 //To Do //See if any of this can be reworked to use the existing charset unit
         //\source\rtl\inc\charset.pp
         //and the units in \source\rtl\charmaps
-        
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-        
+
 {==============================================================================}
 const
  {Locale specific constants}
- 
+
  {Default Code Pages}
  //To Do //Most of these are defined in System (see: \source\rtl\inc\systemh.inc)
  CP_ACP        = 0;     {Default to ANSI code page}
@@ -117,7 +117,7 @@ const
  CP_OEM_866    = 866;  {Russian}
  CP_OEM_874    = 874;  {Thai}
  CP_OEM_1258   = 1258; {Vietnam}
- 
+
  CP_ANSI_1250  = 1250;  {Central Europe}
  CP_ANSI_1251  = 1251;  {Cyrillic}
  CP_ANSI_1252  = 1252;  {Latin I}
@@ -132,11 +132,11 @@ const
  {Default Locales}
  LOCALE_SYSTEM_DEFAULT = $800;
  LOCALE_USER_DEFAULT   = $400;
- 
+
  {String Length Maximums}
  MAX_LEADBYTES = 12;  {5 ranges, 2 bytes each, 0 terminated}
  MAX_DEFAULTCHAR = 2; {single or double byte}
- 
+
  {MBCS and Unicode Translation Flags}
  MB_PRECOMPOSED       = $00000001; {use precomposed chars}
  MB_COMPOSITE         = $00000002; {use composite chars}
@@ -149,12 +149,12 @@ const
  WC_DEFAULTCHAR    = $00000040; {replace w/ default AnsiChar}
 
  WC_NO_BEST_FIT_CHARS = $00000400; {do not use best fit chars}
- 
+
  {Character Type Flags}
  CT_CTYPE1 = $00000001; // ctype 1 information
  CT_CTYPE2 = $00000002; // ctype 2 information
  CT_CTYPE3 = $00000004; // ctype 3 information
- 
+
  {CType 1 Flag Bits}
  C1_UPPER  = $0001; // upper case
  C1_LOWER  = $0002; // lower case
@@ -166,7 +166,7 @@ const
  C1_XDIGIT = $0080; // other digits
  C1_ALPHA  = $0100; // any linguistic character
  C1_DEFINED = $0200; // defined character
- 
+
  {CType 2 Flag Bits}
  C2_LEFTTORIGHT = $0001; // left to right
  C2_RIGHTTOLEFT = $0002; // right to left
@@ -183,7 +183,7 @@ const
  C2_OTHERNEUTRAL     = $000B; // other neutrals
 
  C2_NOTAPPLICABLE = $0000; // no implicit directionality
- 
+
  {CType 3 Flag Bits}
  C3_NONSPACING = $0001; // nonspacing character
  C3_DIACRITIC  = $0002; // diacritic mark
@@ -201,7 +201,7 @@ const
  C3_ALPHA = $8000; // any linguistic AnsiChar (C1_ALPHA)
 
  C3_NOTAPPLICABLE = $0000; // ctype 3 is not applicable
- 
+
  {String Flags}
  NORM_IGNORECASE     = $00000001; // ignore case
  NORM_IGNORENONSPACE = $00000002; // ignore nonspacing chars
@@ -209,7 +209,7 @@ const
 
  NORM_IGNOREKANATYPE = $00010000; // ignore kanatype
  NORM_IGNOREWIDTH    = $00020000; // ignore width
- 
+
  {Locale Independent Mapping Flags}
  MAP_FOLDCZONE   = $00000010; // fold compatibility zone chars
  MAP_PRECOMPOSED = $00000020; // convert to precomposed chars
@@ -217,7 +217,7 @@ const
  MAP_FOLDDIGITS  = $00000080; // all digits to ASCII 0-9
 
  MAP_EXPAND_LIGATURES = $00002000; // expand all ligatures
- 
+
  {Locale Dependent Mapping Flags}
  LCMAP_LOWERCASE = $00000100; // lower case letters
  LCMAP_UPPERCASE = $00000200; // upper case letters
@@ -233,7 +233,7 @@ const
 
  LCMAP_SIMPLIFIED_CHINESE  = $02000000; // map traditional chinese to simplified chinese
  LCMAP_TRADITIONAL_CHINESE = $04000000; // map simplified chinese to traditional chinese
- 
+
  {Language Group Enumeration Flags}
  LGRPID_INSTALLED = $00000001; // installed language group ids
  LGRPID_SUPPORTED = $00000002; // supported language group ids
@@ -276,12 +276,12 @@ const
  //                        were
  //
  SORT_STRINGSORT = $00001000; // use string sort method
- 
+
  {Compare String Return Values}
  CSTR_LESS_THAN    = 1; // string 1 less than string 2
  CSTR_EQUAL        = 2; // string 1 equal to string 2
  CSTR_GREATER_THAN = 3; // string 1 greater than string 2
- 
+
  {Country/Region Codes}
  CTRY_DEFAULT = 0;
 
@@ -396,7 +396,7 @@ const
  CTRY_VIET_NAM           = 84; // Viet Nam
  CTRY_YEMEN              = 967; // Yemen
  CTRY_ZIMBABWE           = 263; // Zimbabwe
- 
+
  {Locale Types}
  //To Do
 
@@ -423,37 +423,37 @@ const
  //To Do
  LANG_ENGLISH    = $09;
  //To Do
- 
+
  {Sublanguage ID Values}
  SUBLANG_NEUTRAL     = $00; // language neutral
  SUBLANG_DEFAULT     = $01; // user default
  SUBLANG_SYS_DEFAULT = $02; // system default
- 
+
  //To Do
  SUBLANG_ENGLISH_US                 = $01; // English (USA)
  //To Do
- 
+
 {==============================================================================}
 type
  {Locale specific types}
- 
+
  {Locale and Language Ids}
  LCID = DWORD;
  PLCID = ^LCID;
  LANGID = Word;
  PLANGID = ^LANGID;
- 
+
  {Language Group ID}
- LGRPID = DWORD;  
+ LGRPID = DWORD;
  {Locale type constant}
  LCTYPE = DWORD;
  {Calendar type constant}
  CALTYPE = DWORD;
  {Calendar ID}
  CALID = DWORD;
- 
+
 type
- {CP Info} 
+ {CP Info}
  LPCPINFO = ^CPINFO;
  _cpinfo = record
    MaxCharSize: UINT; // max length (in bytes) of a AnsiChar
@@ -494,8 +494,8 @@ type
  LPCPINFOEX = LPCPINFOEXA;
  TCpInfoEx = TCpInfoExA;
  PCpInfoEx = PCpInfoExA;
- 
-type 
+
+type
  {Code Table - The OEM/ANSI to UNICODE Values of a Code Page}
  PCodeTable = ^TCodeTable;
  TCodeTable = record
@@ -518,16 +518,16 @@ type
   LowerID:Word;                    {Lowercase Code Page}
   Values:array[$00..$FF] of Word;  {Word to allow for DBCS}
  end;
- 
+
  {Upper Table - Lower to Upper case values of a Code Page}
  PUpperTable = ^TUpperTable;
  TUpperTable = record
   UpperID:Word;                    {Uppercase Code Page}
   Values:array[$00..$FF] of Word;  {Word to allow for DBCS}
  end;
- 
+
  //To Do //SortTable
- 
+
  {Unicode Table - The UNICODE to OEM/ANSI Values of a Code Page}
  PUnicodeTable = ^TUnicodeTable;
  TUnicodeTable = record
@@ -564,51 +564,51 @@ var
  OemPage:PCodePage;
  AnsiPage:PCodePage;
  DefaultPage:PCodePage;
- 
+
  CodePageLock:TPlatformLock;
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure LocaleInit;
 
 {==============================================================================}
 {Locale Functions}
-function IsValidCodePage(CodePage:UINT):BOOL; 
+function IsValidCodePage(CodePage:UINT):BOOL;
 
-function GetACP:UINT; 
-function GetOEMCP:UINT; 
+function GetACP:UINT;
+function GetOEMCP:UINT;
 
 function SetACP(CodePage:UINT):BOOL;
 function SetOEMCP(CodePage:UINT):BOOL;
 
-function GetConsoleCP:UINT; 
-function SetConsoleCP(wCodePageID:UINT):BOOL; 
+function GetConsoleCP:UINT;
+function SetConsoleCP(wCodePageID:UINT):BOOL;
 
-function GetConsoleOutputCP:UINT; 
-function SetConsoleOutputCP(wCodePageID:UINT):BOOL; 
+function GetConsoleOutputCP:UINT;
+function SetConsoleOutputCP(wCodePageID:UINT):BOOL;
 
-function GetCPInfo(CodePage:UINT;var lpCPInfo:TCPInfo):BOOL; 
+function GetCPInfo(CodePage:UINT;var lpCPInfo:TCPInfo):BOOL;
 
-function GetCPInfoEx(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL; 
-function GetCPInfoExA(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL; 
-function GetCPInfoExW(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXW):BOOL; 
+function GetCPInfoEx(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL;
+function GetCPInfoExA(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL;
+function GetCPInfoExW(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXW):BOOL;
 
-//EnumSystemCodePages //To Do 
+//EnumSystemCodePages //To Do
 
 function IsValidLocale(Locale:LCID;dwFlags:DWORD):BOOL;
 
-function GetSystemDefaultLCID:LCID; 
-function GetUserDefaultLCID:LCID; 
+function GetSystemDefaultLCID:LCID;
+function GetUserDefaultLCID:LCID;
 
 function SetSystemDefaultLCID(Locale:LCID):BOOL;
 
-function GetSystemDefaultLangID: LANGID; 
+function GetSystemDefaultLangID: LANGID;
 function GetUserDefaultLangID: LANGID;
 
-//GetLocaleInfo //To Do 
-//SetLocaleInfo //To Do 
+//GetLocaleInfo //To Do
+//SetLocaleInfo //To Do
 
-//EnumSystemLocales //To Do 
+//EnumSystemLocales //To Do
 
 {==============================================================================}
 {RTL Unicode String Manager Functions}
@@ -642,7 +642,7 @@ var
 
  FirstPage:PCodePage;
  LastPage:PCodePage;
- 
+
 var
  {Default Code Pages}
  CPOEM437:TCodeTable = (
@@ -685,7 +685,7 @@ var
   $2261,$00B1,$2265,$2264,$2320,$2321,$00F7,$2248,
   $00B0,$2219,$00B7,$221A,$207F,$00B2,$25A0,$00A0)
  );
- 
+
  CPANSI1252:TCodeTable = (
   MaxCharSize:1;
   DefaultChar:(
@@ -747,7 +747,7 @@ var
   $E0,$E1,$E2,$E3,$E4,$E5,$E6,$E7,$E8,$E9,$EA,$EB,$EC,$ED,$EE,$EF,
   $F0,$F1,$F2,$F3,$F4,$F5,$F6,$F7,$F8,$F9,$FA,$FB,$FC,$FD,$FE,$FF)
  );
- 
+
  CP1252Upper:TUpperTable = (
   UpperID:1252;
   Values:(
@@ -768,7 +768,7 @@ var
   $C0,$C1,$C2,$C3,$C4,$C5,$C6,$C7,$C8,$C9,$CA,$CB,$CC,$CD,$CE,$CF,
   $D0,$D1,$D2,$D3,$D4,$D5,$D6,$F7,$D8,$D9,$DA,$DB,$DC,$DD,$DE,$9F)
  );
- 
+
  CP437TO1252:TTransTable = (
   TransID:1252;
   Values:(
@@ -789,7 +789,7 @@ var
   $61,$DF,$47,$70,$53,$73,$B5,$74,$46,$54,$4F,$64,$38,$66,$65,$6E,
   $3D,$B1,$3D,$3D,$28,$29,$F7,$98,$B0,$B7,$B7,$76,$6E,$B2,$A6,$A0)
  );
- 
+
  CP1252TO437:TTransTable = (
   TransID:437;
   Values:(
@@ -824,59 +824,59 @@ begin
  CodePageLock.Lock:=INVALID_HANDLE_VALUE;
  CodePageLock.AcquireLock:=nil;
  CodePageLock.ReleaseLock:=nil;
- 
+
  {Setup Default Country}
  //COUNTRY_DEFAULT:= //To Do
- 
+
  {Setup Default Code Pages}
  CODEPAGE_OEM_DEFAULT:=CP_OEM_437;
  CODEPAGE_ANSI_DEFAULT:=CP_ANSI_1252;
  CODEPAGE_CONSOLE_INPUT:=CODEPAGE_ANSI_DEFAULT;
  CODEPAGE_CONSOLE_OUTPUT:=CODEPAGE_ANSI_DEFAULT;
- 
+
  {Setup Default Locale}
  //LOCALE_DEFAULT:= //To Do
 
  {Setup Default Language}
  LANGUAGE_DEFAULT:=MAKELANGID(LANG_ENGLISH,SUBLANG_ENGLISH_US);
- 
+
  {Load Default Code Pages}
  LoadPage(CP_OEM_437,@CPOEM437,nil,nil);
  LoadPage(CP_ANSI_1252,@CPANSI1252,@CP1252Lower,@CP1252Upper);
  InstallTrans(CP_OEM_437,@CP437TO1252);
  InstallTrans(CP_ANSI_1252,@CP1252TO437);
- 
+
  {Get Default Code Pages}
  OemPage:=GetPage(CP_OEM_437);
  AnsiPage:=GetPage(CP_ANSI_1252);
  DefaultPage:=GetPage(CP_ANSI_1252);
- 
+
  {Initialize Code Page Defaults}
  DefaultSystemCodePage:=GetACP;
  DefaultUnicodeCodePage:=CP_UTF16;
  DefaultFileSystemCodePage:=DefaultSystemCodePage; //CP_UTF8; //To Do //When filesystem APIs support native Unicode calling
  DefaultRTLFileSystemCodePage:=DefaultSystemCodePage;
- 
+
  LocaleInitialized:=True;
 end;
 
 {==============================================================================}
 {==============================================================================}
 {Locale Functions}
-function IsValidCodePage(CodePage:UINT):BOOL; 
+function IsValidCodePage(CodePage:UINT):BOOL;
 var
  PageID:Word;
 begin
  {Map Page}
  PageID:=MapPage(CodePage);
- 
+
  {Get Page}
  Result:=(GetPage(PageID) <> nil);
 end;
 
 {==============================================================================}
 
-function GetACP:UINT; 
+function GetACP:UINT;
 begin
  {}
  Result:=CODEPAGE_ANSI_DEFAULT;
@@ -884,7 +884,7 @@ end;
 
 {==============================================================================}
 
-function GetOEMCP:UINT; 
+function GetOEMCP:UINT;
 begin
  {}
  Result:=CODEPAGE_OEM_DEFAULT;
@@ -901,10 +901,10 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Map Page}
  AnsiID:=MapPage(CodePage);
- 
+
  {Get Page}
  Ansi:=GetPage(AnsiID);
  if Ansi = nil then Exit;
@@ -918,11 +918,11 @@ begin
     CP_ANSI_1255,CP_ANSI_1256,CP_ANSI_1257,CP_ANSI_1258,CP_ANSI_874:begin
       {Get OEM ID}
       OemID:=Ansi.TransTable.TransID;
-       
+
       {Get OEM Page}
       Oem:=GetPage(OemID);
       if Oem = nil then Exit;
-    
+
       {Update Code Page Defaults}
       if DefaultSystemCodePage = CODEPAGE_ANSI_DEFAULT then DefaultSystemCodePage:=AnsiID;
       if DefaultFileSystemCodePage = CODEPAGE_ANSI_DEFAULT then DefaultFileSystemCodePage:=AnsiID;
@@ -932,13 +932,13 @@ begin
       OemPage:=Oem;
       AnsiPage:=Ansi;
       DefaultPage:=Ansi;
-      
+
       {Update Default Code Pages}
       if CODEPAGE_CONSOLE_INPUT = CODEPAGE_ANSI_DEFAULT then CODEPAGE_CONSOLE_INPUT:=AnsiID;
       if CODEPAGE_CONSOLE_OUTPUT = CODEPAGE_ANSI_DEFAULT then CODEPAGE_CONSOLE_OUTPUT:=AnsiID;
       CODEPAGE_OEM_DEFAULT:=OemID;
       CODEPAGE_ANSI_DEFAULT:=AnsiID;
-      
+
       Result:=True;
      end;
    end;
@@ -946,7 +946,7 @@ begin
  else
   begin
    Result:=True;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -960,10 +960,10 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Map Page}
  OemID:=MapPage(CodePage);
- 
+
  {Get Page}
  Oem:=GetPage(OemID);
  if Oem = nil then Exit;
@@ -977,11 +977,11 @@ begin
     CP_OEM_857,CP_OEM_862,CP_OEM_866,CP_OEM_874,CP_OEM_1258:begin
       {Get ANSI ID}
       AnsiID:=Oem.TransTable.TransID;
-       
+
       {Get ANSI Page}
       Ansi:=GetPage(AnsiID);
       if Ansi = nil then Exit;
-   
+
       {Update Code Page Defaults}
       if DefaultSystemCodePage = CODEPAGE_ANSI_DEFAULT then DefaultSystemCodePage:=AnsiID;
       if DefaultFileSystemCodePage = CODEPAGE_ANSI_DEFAULT then DefaultFileSystemCodePage:=AnsiID;
@@ -991,25 +991,25 @@ begin
       OemPage:=Oem;
       AnsiPage:=Ansi;
       DefaultPage:=Ansi;
-      
+
       {Update Default Code Pages}
       if CODEPAGE_CONSOLE_INPUT = CODEPAGE_ANSI_DEFAULT then CODEPAGE_CONSOLE_INPUT:=AnsiID;
       if CODEPAGE_CONSOLE_OUTPUT = CODEPAGE_ANSI_DEFAULT then CODEPAGE_CONSOLE_OUTPUT:=AnsiID;
       CODEPAGE_OEM_DEFAULT:=OemID;
       CODEPAGE_ANSI_DEFAULT:=AnsiID;
-   
+
       {Check translation}
       if OemID = CP_OEM_437 then
        begin
         {Reinstall CP1252 to CP437 Trans table}
         InstallTrans(CP_ANSI_1252,@CP1252TO437);
        end
-      else if OemID = CP_OEM_850 then 
+      else if OemID = CP_OEM_850 then
        begin
         {Reinstall CP1252 to CP850 Trans table}
         //InstallTrans(CP_ANSI_1252,@CP1252TO850); //To Do //Move CP1252TO850 to this unit ?
        end;
-       
+
       Result:=True;
      end;
    end;
@@ -1017,12 +1017,12 @@ begin
  else
   begin
    Result:=True;
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function GetConsoleCP:UINT; 
+function GetConsoleCP:UINT;
 begin
  {}
  Result:=CODEPAGE_CONSOLE_INPUT;
@@ -1030,7 +1030,7 @@ end;
 
 {==============================================================================}
 
-function SetConsoleCP(wCodePageID:UINT):BOOL; 
+function SetConsoleCP(wCodePageID:UINT):BOOL;
 begin
  {}
  Result:=IsValidCodePage(wCodePageID);
@@ -1042,7 +1042,7 @@ end;
 
 {==============================================================================}
 
-function GetConsoleOutputCP:UINT; 
+function GetConsoleOutputCP:UINT;
 begin
  {}
  Result:=CODEPAGE_CONSOLE_OUTPUT;
@@ -1050,7 +1050,7 @@ end;
 
 {==============================================================================}
 
-function SetConsoleOutputCP(wCodePageID:UINT):BOOL; 
+function SetConsoleOutputCP(wCodePageID:UINT):BOOL;
 begin
  {}
  Result:=IsValidCodePage(wCodePageID);
@@ -1062,32 +1062,32 @@ end;
 
 {==============================================================================}
 
-function GetCPInfo(CodePage:UINT;var lpCPInfo:TCPInfo):BOOL; 
+function GetCPInfo(CodePage:UINT;var lpCPInfo:TCPInfo):BOOL;
 var
  PageID:Word;
  Page:PCodePage;
 begin
  {}
  Result:=False;
- 
+
  {Map Page}
  PageID:=MapPage(CodePage);
- 
+
  {Get Page}
  Page:=GetPage(PageID);
  if Page = nil then Exit;
- 
+
  {Get Info}
  lpCPInfo.MaxCharSize:=Page.CodeTable.MaxCharSize;
  System.Move(Page.CodeTable.DefaultChar[0],lpCPInfo.DefaultChar[0],MAX_DEFAULTCHAR);
  System.Move(Page.CodeTable.LeadByte[0],lpCPInfo.LeadByte[0],MAX_LEADBYTES);
- 
+
  Result:=True;
 end;
 
 {==============================================================================}
 
-function GetCPInfoEx(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL; 
+function GetCPInfoEx(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL;
 begin
  {}
  Result:=GetCPInfoExA(CodePage,dwFlags,lpCPInfoEx);
@@ -1095,21 +1095,21 @@ end;
 
 {==============================================================================}
 
-function GetCPInfoExA(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL; 
+function GetCPInfoExA(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL;
 var
  PageID:Word;
  Page:PCodePage;
 begin
  {}
  Result:=False;
- 
+
  {Map Page}
  PageID:=MapPage(CodePage);
- 
+
  {Get Page}
  Page:=GetPage(PageID);
  if Page = nil then Exit;
- 
+
  {Get Info Ex}
  lpCPInfoEx.MaxCharSize:=Page.CodeTable.MaxCharSize;
  System.Move(Page.CodeTable.DefaultChar[0],lpCPInfoEx.DefaultChar[0],MAX_DEFAULTCHAR);
@@ -1117,27 +1117,27 @@ begin
  //To Do //UnicodeDefaultChar
  lpCPInfoEx.CodePage:=CodePage;
  //To Do //CodePageName
- 
+
  Result:=True;
 end;
- 
+
 {==============================================================================}
 
-function GetCPInfoExW(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXW):BOOL; 
+function GetCPInfoExW(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXW):BOOL;
 var
  PageID:Word;
  Page:PCodePage;
 begin
  {}
  Result:=False;
- 
+
  {Map Page}
  PageID:=MapPage(CodePage);
- 
+
  {Get Page}
  Page:=GetPage(PageID);
  if Page = nil then Exit;
- 
+
  {Get Info Ex}
  lpCPInfoEx.MaxCharSize:=Page.CodeTable.MaxCharSize;
  System.Move(Page.CodeTable.DefaultChar[0],lpCPInfoEx.DefaultChar[0],MAX_DEFAULTCHAR);
@@ -1145,7 +1145,7 @@ begin
  //To Do //UnicodeDefaultChar
  lpCPInfoEx.CodePage:=CodePage;
  //To Do //CodePageName
- 
+
  Result:=True;
 end;
 
@@ -1155,15 +1155,15 @@ function IsValidLocale(Locale:LCID;dwFlags:DWORD):BOOL;
 begin
  {}
  Result:=False;
- 
- //To Do 
- 
+
+ //To Do
+
  Result:=True;
 end;
 
 {==============================================================================}
 
-function GetSystemDefaultLCID:LCID; 
+function GetSystemDefaultLCID:LCID;
 begin
  {}
  Result:=LOCALE_DEFAULT;
@@ -1171,7 +1171,7 @@ end;
 
 {==============================================================================}
 
-function GetUserDefaultLCID:LCID; 
+function GetUserDefaultLCID:LCID;
 begin
  {}
  Result:=LOCALE_DEFAULT;
@@ -1183,15 +1183,15 @@ function SetSystemDefaultLCID(Locale:LCID):BOOL;
 begin
  {}
  Result:=False;
- 
- LOCALE_DEFAULT:=Locale; //To Do 
+
+ LOCALE_DEFAULT:=Locale; //To Do
 
  Result:=True;
 end;
 
 {==============================================================================}
 
-function GetSystemDefaultLangID: LANGID; 
+function GetSystemDefaultLangID: LANGID;
 {Get the System Default Language Identifier (Combined Primary and Sub language Identifiers)}
 {Note: System and User values are the same for Ultibo}
 begin
@@ -1230,15 +1230,15 @@ function MapPage(CodePage:UINT):Word;
 begin
  {}
  Result:=CodePage;
- 
+
  case CodePage of
   CP_ACP:Result:=CODEPAGE_ANSI_DEFAULT;
   CP_OEMCP:Result:=CODEPAGE_OEM_DEFAULT;
-  CP_MACCP:Result:=CODEPAGE_ANSI_DEFAULT;  //To Do ??       
+  CP_MACCP:Result:=CODEPAGE_ANSI_DEFAULT;  //To Do ??
   CP_THREAD_ACP:Result:=CODEPAGE_ANSI_DEFAULT; //To Do ??
   CP_SYMBOL:Result:=CODEPAGE_OEM_DEFAULT; //To Do ??
-  CP_UTF7:Result:=CODEPAGE_OEM_DEFAULT;  //To Do ??        
-  CP_UTF8:Result:=CODEPAGE_OEM_DEFAULT;  //To Do ??        
+  CP_UTF7:Result:=CODEPAGE_OEM_DEFAULT;  //To Do ??
+  CP_UTF8:Result:=CODEPAGE_OEM_DEFAULT;  //To Do ??
   CP_NONE:Result:=CODEPAGE_ANSI_DEFAULT; //To Do ??
  end;
 end;
@@ -1252,10 +1252,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Acquire Lock}
  if CodePageLock.Lock <> INVALID_HANDLE_VALUE then CodePageLock.AcquireLock(CodePageLock.Lock);
- try 
+ try
   NextPage:=FirstPage;
   while NextPage <> nil do
    begin
@@ -1264,7 +1264,7 @@ begin
       Result:=NextPage;
       Exit;
      end;
-    
+
     NextPage:=NextPage.NextPage;
    end;
  finally
@@ -1282,10 +1282,10 @@ var
 begin
  {}
  Result:=True;
- 
+
  {Acquire Lock}
  if CodePageLock.Lock <> INVALID_HANDLE_VALUE then CodePageLock.AcquireLock(CodePageLock.Lock);
- try 
+ try
   NextPage:=FirstPage;
   while NextPage <> nil do
    begin
@@ -1293,10 +1293,10 @@ begin
      begin
       Exit;
      end;
-    
+
     NextPage:=NextPage.NextPage;
    end;
-  
+
   Result:=False;
  finally
   {Release Lock}
@@ -1313,12 +1313,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Acquire Lock}
  if CodePageLock.Lock <> INVALID_HANDLE_VALUE then CodePageLock.AcquireLock(CodePageLock.Lock);
- try 
+ try
   if Page = nil then Exit;
- 
+
   PrevPage:=LastPage;
   if PrevPage = nil then
    begin
@@ -1327,7 +1327,7 @@ begin
     Page.NextPage:=nil;
     FirstPage:=Page;
     LastPage:=Page;
-    
+
     Result:=True;
    end
   else
@@ -1337,7 +1337,7 @@ begin
     Page.PrevPage:=PrevPage;
     Page.NextPage:=nil;
     LastPage:=Page;
-    
+
     Result:=True;
    end;
  finally
@@ -1355,12 +1355,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Acquire Lock}
  if CodePageLock.Lock <> INVALID_HANDLE_VALUE then CodePageLock.AcquireLock(CodePageLock.Lock);
- try 
+ try
   if Page = nil then Exit;
-  
+
   if Page.PrevPage <> nil then
    begin
     {Not First Object}
@@ -1398,7 +1398,7 @@ begin
    end;
   Page.PrevPage:=nil;
   Page.NextPage:=nil;
-  
+
   Result:=True;
  finally
   {Release Lock}
@@ -1416,14 +1416,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  if Table = nil then Exit; {Lower and Upper may be nil}
  if GetPage(PageID) <> nil then Exit;
 
  {Create Page}
  Page:=AllocMem(SizeOf(TCodePage));
  if Page = nil then Exit;
- 
+
  {Load Code Table}
  Page.PageID:=PageID;
  Page.Handle:=INVALID_HANDLE_VALUE;
@@ -1431,10 +1431,10 @@ begin
 
  {Load Lower Table}
  Page.LowerTable:=Lower;
- 
+
  {Load Upper Table}
  Page.UpperTable:=Upper;
- 
+
  {Create Lead Bytes}
  Page.LeadBytes:=AllocMem(SizeOf(TLeadBytes));
  if Page.LeadBytes = nil then Exit;
@@ -1446,13 +1446,13 @@ begin
  {Create Unicode Table}
  Page.UnicodeTable:=AllocMem(SizeOf(TUnicodeTable));
  if Page.UnicodeTable = nil then Exit;
- 
+
  {Load Default Chars}
  for Count:=$0000 to $FFFF do
   begin
    Page.UnicodeTable.Values[Count]:=Word(Page.CodeTable.DefaultChar);
   end;
- 
+
  {Load Unicode Table}
  for Count:=$00 to $FF do
   begin
@@ -1479,37 +1479,37 @@ function UnloadPage(PageID:Word;Page:PCodePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Page = nil then Exit;
  if GetPage(PageID) = nil then Exit;
  if not CheckPage(Page) then Exit;
 
  {Unlink Page}
  if not UnlinkPage(Page) then Exit;
- 
+
  {Free Unicode Table}
  FreeMem(Page.UnicodeTable);
- 
+
  {Free Trans Table}
  FreeMem(Page.TransTable);
- 
+
  {Free Lead Bytes}
  FreeMem(Page.LeadBytes);
- 
+
  {Free Page}
  FreeMem(Page);
- 
+
  {Check Oem}
  if PageID = CODEPAGE_OEM_DEFAULT then CODEPAGE_OEM_DEFAULT:=CP_OEM_437;
  if not CheckPage(OemPage) then OemPage:=GetPage(CP_OEM_437);
- 
+
  {Check Ansi}
  if PageID = CODEPAGE_ANSI_DEFAULT then CODEPAGE_ANSI_DEFAULT:=CP_ANSI_1252;
  if not CheckPage(AnsiPage) then AnsiPage:=GetPage(CP_ANSI_1252);
- 
+
  {Check Default}
  if not CheckPage(DefaultPage) then DefaultPage:=GetPage(CP_ANSI_1252);
- 
+
  Result:=True;
 end;
 
@@ -1524,26 +1524,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Get Page}
  Page:=GetPage(PageID);
  if Page = nil then Exit;
- 
+
  {Get Trans Page}
  TransPage:=GetPage(TransID);
  if TransPage =  nil then Exit;
- 
+
  {Load Trans}
  Page.TransTable.TransID:=TransPage.PageID;
  for Count:=$00 to $FF do
   begin
    {Get Value}
    Value:=Page.CodeTable.Values[Count];
-   
+
    {Set Value}
    Page.TransTable.Values[Count]:=TransPage.UnicodeTable.Values[Value];
   end;
-  
+
  Result:=True;
 end;
 
@@ -1556,20 +1556,20 @@ var
 begin
  {}
  Result:=False;
- 
+
  if Table = nil then Exit;
 
  {Get Page}
  Page:=GetPage(PageID);
  if Page = nil then Exit;
- 
+
  {Load Trans}
  Page.TransTable.TransID:=Table.TransID;
  for Count:=$00 to $FF do
   begin
    Page.TransTable.Values[Count]:=Table.Values[Count];
   end;
-  
+
  Result:=True;
 end;
 
@@ -1578,9 +1578,9 @@ end;
 
 initialization
  LocaleInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

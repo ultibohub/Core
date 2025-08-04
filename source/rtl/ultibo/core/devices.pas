@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -75,13 +75,13 @@ Watchdog Devices
 //       and both the USB and Network consumers would be notified.
 //
 //    Bluetooth would be a specific example of a consumer and many providers.
-//    It would consume USB devices which are Bluetooth modules and then provide 
+//    It would consume USB devices which are Bluetooth modules and then provide
 //    Keyboard, Mouse, Audio, Network ? and others to other consumers.
 
 //    The Keyboard unit will include both the Keyboard consumer (ie Keyboard services) and
 //    the generic USB Keyboard device driver. (For simplicity)
 
-//    The Mouse unit will include both the Mouse consumer (ie Mouse services) and the 
+//    The Mouse unit will include both the Mouse consumer (ie Mouse services) and the
 //    generic USB Mouse device driver. (For simplicity)
 
 //    The Storage unit will include both the Storage consumer (which in turn is consumed by Filesystem)
@@ -95,7 +95,7 @@ Watchdog Devices
 //everything other than Console, Memory, Threads etc becomes optional.
 
 //For example, including the Keyboard unit would auto include Usb (because the Keyboard unit
-//will be both a consumer of USB and a provider of USB and KEYBOARD), the only other 
+//will be both a consumer of USB and a provider of USB and KEYBOARD), the only other
 //unit required would be DWCOTG which could be auto included based on defines
 //for the platform if needed ?
 
@@ -116,14 +116,14 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,SysUtils;
 const
  {Device specific constants}
  DEVICE_NAME_PREFIX = 'Device';  {Name prefix for Devices}
- 
+
  {Device Signature}
  DEVICE_SIGNATURE = $AD03FE3C;
- 
+
  {Device name constants}
  DEVICE_NAME_LENGTH = SIZE_64;   {Length of device name}
  DEVICE_DESC_LENGTH = SIZE_128;  {Length of device description}
- 
+
  {Device Busses}
  DEVICE_BUS_NONE             = 0;
  DEVICE_BUS_PCI              = 1;
@@ -145,9 +145,9 @@ const
  DEVICE_BUS_I2C              = 17; {I2C connected device}
  DEVICE_BUS_VIRTIO           = 18; {Virtual devices}
  DEVICE_BUS_BLUETOOTH        = 19; {Bluetooth connected devices}
- 
+
  DEVICE_BUS_MAX              = 19;
- 
+
  {Device Bus Names}
  DEVICE_BUS_NAMES:array[DEVICE_BUS_NONE..DEVICE_BUS_MAX] of String = (
   'DEVICE_BUS_NONE',
@@ -170,23 +170,23 @@ const
   'DEVICE_BUS_I2C',
   'DEVICE_BUS_VIRTIO',
   'DEVICE_BUS_BLUETOOTH');
- 
+
  {Device States}
  DEVICE_STATE_UNREGISTERED   = 0;
  DEVICE_STATE_REGISTERED     = 1;
- 
+
  DEVICE_STATE_MAX            = 1;
- 
+
  {Device State Names}
  DEVICE_STATE_NAMES:array[DEVICE_STATE_UNREGISTERED..DEVICE_STATE_MAX] of String = (
   'DEVICE_STATE_UNREGISTERED',
   'DEVICE_STATE_REGISTERED');
- 
+
  {Device Ids}
  DEVICE_ID_ANY               = $FFFFFFFF; {Any Device (Pass to DeviceFind to match all devices)}
- 
+
  {Device Classes}
- DEVICE_CLASS_NONE            = 0;  {No Device} 
+ DEVICE_CLASS_NONE            = 0;  {No Device}
  DEVICE_CLASS_USBHOST         = 1;  {A USB Host Controller (eg XHCI/EHCI/UHCI/OHCI or DWCOTG etc) (Implementing a standard USB host interface)}
  DEVICE_CLASS_PCIHOST         = 2;  {A PCI Host Controller (Implementing a standard PCI host interface)}
  DEVICE_CLASS_USB             = 3;  {A USB Device (eg Hub/Keyboard/Mouse/Mass Storage/Vendor Specific etc) (Implementing a standard USB device interface)}
@@ -241,7 +241,7 @@ const
  DEVICE_CLASS_CONSOLE         = 45; {A Console Device}
  DEVICE_CLASS_RTC             = 46; {A Real Time Clock (Battery Backed) Device}
  DEVICE_CLASS_USBHUB          = 47; {A USB Hub (Implementing a standard USB hub interface)}
- DEVICE_CLASS_LOGGING         = 48; {A Logging Device (Implementing a standard Logging device interface)}          
+ DEVICE_CLASS_LOGGING         = 48; {A Logging Device (Implementing a standard Logging device interface)}
  DEVICE_CLASS_PCM             = 49; {A PCM Sound Device (Implementing a standard PCM device interface)}
  DEVICE_CLASS_I2S             = DEVICE_CLASS_PCM;
  DEVICE_CLASS_PWM             = 50; {A Pulse Width Modulation (PWM) Device}
@@ -255,11 +255,11 @@ const
  DEVICE_CLASS_BLUETOOTHHOST   = 58; {A Bluetooth Host Controller (Implementing a standard Bluetooth host interface)}
  DEVICE_CLASS_JOYSTICK        = 59; {A Joystick or Gamepad Device}
  DEVICE_CLASS_HID             = 60; {A Human Interface Device (HID)}
- 
+
  DEVICE_CLASS_MAX             = 60;
- 
+
  DEVICE_CLASS_ANY             = $FFFFFFFF; {Any Device (Pass to DeviceFind or DeviceEnumerate to match all devices)}
- 
+
  {Device Class Names}
  DEVICE_CLASS_NAMES:array[DEVICE_CLASS_NONE..DEVICE_CLASS_MAX] of String = (
   'DEVICE_CLASS_NONE',
@@ -270,44 +270,44 @@ const
   'DEVICE_CLASS_NETWORK',
   'DEVICE_CLASS_STORAGE',
   'DEVICE_CLASS_FILESYSTEM',
-  'DEVICE_CLASS_PROTOCOL', 
-  'DEVICE_CLASS_KEYBOARD', 
-  'DEVICE_CLASS_MOUSE',      
-  'DEVICE_CLASS_BLUETOOTH', 
-  'DEVICE_CLASS_SERIAL',    
-  'DEVICE_CLASS_AUDIO',       
-  'DEVICE_CLASS_VIDEO',        
-  'DEVICE_CLASS_SCSI',         
-  'DEVICE_CLASS_ATA',           
-  'DEVICE_CLASS_IMAGE',          
-  'DEVICE_CLASS_PRINTER',        
-  'DEVICE_CLASS_COMMUNICATIONS', 
-  'DEVICE_CLASS_SMART_CARD',    
-  'DEVICE_CLASS_MONITOR',       
-  'DEVICE_CLASS_DISPLAY',        
-  'DEVICE_CLASS_AUDIOVIDEO',     
-  'DEVICE_CLASS_IRDA',           
-  'DEVICE_CLASS_SPI',            
-  'DEVICE_CLASS_I2C',            
-  'DEVICE_CLASS_UART',           
-  'DEVICE_CLASS_MMC',            
-  'DEVICE_CLASS_SD',             
-  'DEVICE_CLASS_SDHCI',          
-  'DEVICE_CLASS_DFU',            
-  'DEVICE_CLASS_GPIO',           
-  'DEVICE_CLASS_MAILBOX',        
-  'DEVICE_CLASS_OPENGL',         
-  'DEVICE_CLASS_DVB',            
-  'DEVICE_CLASS_DAB',            
-  'DEVICE_CLASS_DMA',            
-  'DEVICE_CLASS_SCSIHOST',       
-  'DEVICE_CLASS_ATAHOST',        
-  'DEVICE_CLASS_TIMER',          
-  'DEVICE_CLASS_RANDOM',         
-  'DEVICE_CLASS_FRAMEBUFFER',    
-  'DEVICE_CLASS_WATCHDOG',       
-  'DEVICE_CLASS_CLOCK',          
-  'DEVICE_CLASS_CONSOLE',        
+  'DEVICE_CLASS_PROTOCOL',
+  'DEVICE_CLASS_KEYBOARD',
+  'DEVICE_CLASS_MOUSE',
+  'DEVICE_CLASS_BLUETOOTH',
+  'DEVICE_CLASS_SERIAL',
+  'DEVICE_CLASS_AUDIO',
+  'DEVICE_CLASS_VIDEO',
+  'DEVICE_CLASS_SCSI',
+  'DEVICE_CLASS_ATA',
+  'DEVICE_CLASS_IMAGE',
+  'DEVICE_CLASS_PRINTER',
+  'DEVICE_CLASS_COMMUNICATIONS',
+  'DEVICE_CLASS_SMART_CARD',
+  'DEVICE_CLASS_MONITOR',
+  'DEVICE_CLASS_DISPLAY',
+  'DEVICE_CLASS_AUDIOVIDEO',
+  'DEVICE_CLASS_IRDA',
+  'DEVICE_CLASS_SPI',
+  'DEVICE_CLASS_I2C',
+  'DEVICE_CLASS_UART',
+  'DEVICE_CLASS_MMC',
+  'DEVICE_CLASS_SD',
+  'DEVICE_CLASS_SDHCI',
+  'DEVICE_CLASS_DFU',
+  'DEVICE_CLASS_GPIO',
+  'DEVICE_CLASS_MAILBOX',
+  'DEVICE_CLASS_OPENGL',
+  'DEVICE_CLASS_DVB',
+  'DEVICE_CLASS_DAB',
+  'DEVICE_CLASS_DMA',
+  'DEVICE_CLASS_SCSIHOST',
+  'DEVICE_CLASS_ATAHOST',
+  'DEVICE_CLASS_TIMER',
+  'DEVICE_CLASS_RANDOM',
+  'DEVICE_CLASS_FRAMEBUFFER',
+  'DEVICE_CLASS_WATCHDOG',
+  'DEVICE_CLASS_CLOCK',
+  'DEVICE_CLASS_CONSOLE',
   'DEVICE_CLASS_RTC',
   'DEVICE_CLASS_USBHUB',
   'DEVICE_CLASS_LOGGING',
@@ -323,7 +323,7 @@ const
   'DEVICE_CLASS_BLUETOOTHHOST',
   'DEVICE_CLASS_JOYSTICK',
   'DEVICE_CLASS_HID');
- 
+
  {Device Notification Flags}
  DEVICE_NOTIFICATION_NONE       = $00000000; {Pass to DeviceNotification to cancel an existing Notification}
  DEVICE_NOTIFICATION_REGISTER   = $00000001;
@@ -348,7 +348,7 @@ const
  DEVICE_NOTIFICATION_CLOSING    = $00080000;
  DEVICE_NOTIFICATION_RESIZE     = $00100000;
  DEVICE_NOTIFICATION_RESIZING   = $00200000;
-  
+
  {Firmware name constants}
  FIRMWARE_NAME_LENGTH = SIZE_256; {Length of firmware name}
 
@@ -361,23 +361,23 @@ const
  FIRMWARE_ACTION_CLOSE   = 5; {Close a handle to the firmware item}
  FIRMWARE_ACTION_ACQUIRE = 6; {Acquire a memory block containing the firmware item}
  FIRMWARE_ACTION_RELEASE = 7; {Release a memory block containing the firmware item}
- 
+
  {Firmware Constants}
  FIRMWARE_WAIT_DELAY = 100;     {Delay between retries for firmware while waiting for timeout (Milliseconds)}
  FIRMWARE_MAX_BUFFER = SIZE_4M; {Maximum size buffer able to be allocated for firmware by acquire}
- 
+
  {Notifier Signature}
  NOTIFIER_SIGNATURE = $6FA1BEC9;
- 
+
  {Notifier States}
  NOTIFIER_STATE_UNREGISTERED   = 0;
  NOTIFIER_STATE_REGISTERED     = 1;
-  
+
  {Notifier Flags}
  NOTIFIER_FLAG_NONE        = $00000000;
  NOTIFIER_FLAG_WORKER      = $00000001;  {If set, notification callback event will be scheduled on a worker thread}
  NOTIFIER_FLAG_UNLOCK      = $00000002;  {If set, the notifier table lock will be released before calling the notification callback event}
- 
+
  {Device logging}
  DEVICE_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Device debugging messages}
  DEVICE_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Device informational messages, such as a device being attached or detached}
@@ -385,35 +385,35 @@ const
  DEVICE_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Device error messages}
  DEVICE_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Device messages}
 
-var 
- DEVICE_DEFAULT_LOG_LEVEL:LongWord = DEVICE_LOG_LEVEL_DEBUG; {Minimum level for Device messages.  Only messages with level greater than or equal to this will be printed} 
- 
-var 
+var
+ DEVICE_DEFAULT_LOG_LEVEL:LongWord = DEVICE_LOG_LEVEL_DEBUG; {Minimum level for Device messages.  Only messages with level greater than or equal to this will be printed}
+
+var
  {Device logging}
- DEVICE_LOG_ENABLED:Boolean; 
+ DEVICE_LOG_ENABLED:Boolean;
 
 {==============================================================================}
 const
  {Driver specific constants}
  DRIVER_NAME_PREFIX = 'Driver';  {Name prefix for Drivers}
- 
+
  {Driver Signature}
  DRIVER_SIGNATURE = $1EB4980A;
 
  {Driver name constants}
  DRIVER_NAME_LENGTH = SIZE_64;  {Length of driver name}
- 
+
  {Driver States}
  DRIVER_STATE_UNREGISTERED   = 0;
  DRIVER_STATE_REGISTERED     = 1;
- 
+
  DRIVER_STATE_MAX            = 1;
- 
+
  {Driver State Names}
  DRIVER_STATE_NAMES:array[DRIVER_STATE_UNREGISTERED..DRIVER_STATE_MAX] of String = (
   'DRIVER_STATE_UNREGISTERED',
   'DRIVER_STATE_REGISTERED');
- 
+
  {Driver Ids}
  DRIVER_ID_ANY               = $FFFFFFFF; {Any Driver (Pass to DriverFind to match all drivers)}
 
@@ -425,9 +425,9 @@ const
  DRIVER_CLASS_BLUETOOTH       = 4;  {A Bluetooth Driver (Implementing a standard Bluetooth driver interface)}
  DRIVER_CLASS_VIRTIO          = 5;  {A VIRTIO Driver (Implementing a standard VIRTIO driver interface)}
  DRIVER_CLASS_HID             = 6;  {A Human Interface Device (HID) Driver (Implementing a standard HID driver interface)}
- 
+
  DRIVER_CLASS_MAX             = 6;
- 
+
  DRIVER_CLASS_ANY             = $FFFFFFFF; {Any Driver (Pass to DriverFind or DriverEnumerate to match all drivers)}
 
  {Driver Class Names}
@@ -439,43 +439,43 @@ const
   'DRIVER_CLASS_BLUETOOTH',
   'DRIVER_CLASS_VIRTIO',
   'DRIVER_CLASS_HID');
- 
+
 {==============================================================================}
 const
  {Host specific constants}
  HOST_NAME_PREFIX = 'Host';  {Name prefix for Hosts}
- 
+
  {Host Signature}
  HOST_SIGNATURE = $F45D30FE;
 
  {Host name constants}
  HOST_NAME_LENGTH = SIZE_64;  {Length of host name}
- 
+
  {Host States}
  HOST_STATE_UNREGISTERED   = 0;
  HOST_STATE_REGISTERED     = 1;
- 
+
  HOST_STATE_MAX            = 1;
- 
+
  {Host State Names}
  HOST_STATE_NAMES:array[HOST_STATE_UNREGISTERED..HOST_STATE_MAX] of String = (
   'HOST_STATE_UNREGISTERED',
   'HOST_STATE_REGISTERED');
- 
+
  {Host Ids}
  HOST_ID_ANY               = $FFFFFFFF; {Any Host (Pass to HostFind to match all hosts)}
- 
+
  {Host Classes}
- HOST_CLASS_NONE            = 0;  {No Host} 
+ HOST_CLASS_NONE            = 0;  {No Host}
  HOST_CLASS_USB             = 1;  {A USB Host (eg XHCI/EHCI/UHCI/OHCI or DWCOTG etc) (Implementing a standard USB host interface)}
  HOST_CLASS_PCI             = 2;  {A PCI Host (eg AHCI etc) (Implementing a standard PCI host interface)}
  HOST_CLASS_SD              = 3;  {An SD Host (eg MMC/SDIO etc) (Implementing a standard SD host interface)}
  HOST_CLASS_BLUETOOTH       = 4;  {A Bluetooth Host (Implementing a standard Bluetooth host interface)}
 
  HOST_CLASS_MAX             = 4;
- 
+
  HOST_CLASS_ANY             = $FFFFFFFF; {Any Host (Pass to HostFind or HostEnumerate to match all hosts)}
- 
+
  {Host Class Names}
  HOST_CLASS_NAMES:array[HOST_CLASS_NONE..HOST_CLASS_MAX] of String = (
   'HOST_CLASS_NONE',
@@ -483,39 +483,39 @@ const
   'HOST_CLASS_PCI',
   'HOST_CLASS_SD',
   'HOST_CLASS_BLUETOOTH');
- 
+
 {==============================================================================}
 const
  {Clock specific constants}
  CLOCK_NAME_PREFIX = 'Clock';    {Name prefix for Clock Devices}
- 
+
  {Clock Device Types}
  CLOCK_TYPE_NONE      = 0;
  CLOCK_TYPE_HARDWARE  = 1;
- 
+
  CLOCK_TYPE_MAX       = 1;
-  
+
  {Clock Type Names}
  CLOCK_TYPE_NAMES:array[CLOCK_TYPE_NONE..CLOCK_TYPE_MAX] of String = (
   'CLOCK_TYPE_NONE',
   'CLOCK_TYPE_HARDWARE');
- 
+
  {Clock Device States}
  CLOCK_STATE_DISABLED   = 0;
  CLOCK_STATE_ENABLED    = 1;
- 
+
  CLOCK_STATE_MAX        = 1;
- 
+
  {Clock State Names}
  CLOCK_STATE_NAMES:array[CLOCK_STATE_DISABLED..CLOCK_STATE_MAX] of String = (
   'CLOCK_STATE_DISABLED',
   'CLOCK_STATE_ENABLED');
- 
+
  {Clock Device Flags}
  CLOCK_FLAG_NONE      = $00000000;
  CLOCK_FLAG_WRITABLE  = $00000001; {Device supports writing the clock value}
  CLOCK_FLAG_VARIABLE  = $00000002; {Device supports setting the clock rate}
- 
+
 {==============================================================================}
 const
  {Timer specific constants}
@@ -524,69 +524,69 @@ const
  {Timer Device Types}
  TIMER_TYPE_NONE      = 0;
  TIMER_TYPE_HARDWARE  = 1;
-  
+
  TIMER_TYPE_MAX       = 1;
-  
+
  {Timer Type Names}
  TIMER_TYPE_NAMES:array[TIMER_TYPE_NONE..TIMER_TYPE_MAX] of String = (
   'TIMER_TYPE_NONE',
   'TIMER_TYPE_HARDWARE');
-  
+
  {Timer Device States}
  TIMER_STATE_DISABLED   = 0;
  TIMER_STATE_ENABLED    = 1;
- 
+
  TIMER_STATE_MAX        = 1;
- 
+
  {Timer State Names}
  TIMER_STATE_NAMES:array[TIMER_STATE_DISABLED..TIMER_STATE_MAX] of String = (
   'TIMER_STATE_DISABLED',
   'TIMER_STATE_ENABLED');
- 
+
  {Timer Device Flags}
  TIMER_FLAG_NONE       = $00000000;
  TIMER_FLAG_WRAPPING   = $00000001; {Device provides a wrapping or self reloading counter}
  TIMER_FLAG_COUNTER    = $00000002; {Device will appear as a continuously incrementing counter when read}
  TIMER_FLAG_DOWN       = $00000004; {Device counts down from the starting value to zero (And optionally triggers an event)}
- 
+
  {Timer Event Flags}
  TIMER_EVENT_FLAG_NONE      = $00000000;
  TIMER_EVENT_FLAG_REPEAT    = $00000001; {Event will be repeated until cancelled}
  TIMER_EVENT_FLAG_INTERRUPT = $00000002; {Event will be dispatched by interrupt handler (If applicable)}
                                          {Caution: Events called by the interrupt handler must obey interrupt rules with regard to locks, memory allocation and latency}
- 
+
 {==============================================================================}
 const
  {Random specific constants}
  RANDOM_NAME_PREFIX = 'Random';    {Name prefix for Random Devices}
- 
+
  {Random Device Types}
  RANDOM_TYPE_NONE      = 0;
  RANDOM_TYPE_HARDWARE  = 1;
  RANDOM_TYPE_SOFTWARE  = 2;
- 
+
  RANDOM_TYPE_MAX       = 2;
-  
+
  {Random Type Names}
  RANDOM_TYPE_NAMES:array[RANDOM_TYPE_NONE..RANDOM_TYPE_MAX] of String = (
   'RANDOM_TYPE_NONE',
   'RANDOM_TYPE_HARDWARE',
   'RANDOM_TYPE_SOFTWARE');
- 
+
  {Random Device States}
  RANDOM_STATE_DISABLED   = 0;
  RANDOM_STATE_ENABLED    = 1;
- 
+
  RANDOM_STATE_MAX        = 1;
- 
+
  {Random State Names}
  RANDOM_STATE_NAMES:array[RANDOM_STATE_DISABLED..RANDOM_STATE_MAX] of String = (
   'RANDOM_STATE_DISABLED',
   'RANDOM_STATE_ENABLED');
- 
+
  {Random Device Flags}
  RANDOM_FLAG_NONE      = $00000000;
-  
+
 {==============================================================================}
 const
  {Mailbox specific constants}
@@ -596,59 +596,59 @@ const
  MAILBOX_TYPE_NONE      = 0;
  MAILBOX_TYPE_GPU       = 1;
  MAILBOX_TYPE_LOCAL     = 2;
-  
+
  MAILBOX_TYPE_MAX       = 2;
-  
+
  {Mailbox Type Names}
  MAILBOX_TYPE_NAMES:array[MAILBOX_TYPE_NONE..MAILBOX_TYPE_MAX] of String = (
   'MAILBOX_TYPE_NONE',
   'MAILBOX_TYPE_GPU',
   'MAILBOX_TYPE_LOCAL');
-  
+
  {Mailbox Device States}
  MAILBOX_STATE_DISABLED   = 0;
  MAILBOX_STATE_ENABLED    = 1;
- 
+
  MAILBOX_STATE_MAX        = 1;
- 
+
  {Mailbox State Names}
  MAILBOX_STATE_NAMES:array[MAILBOX_STATE_DISABLED..MAILBOX_STATE_MAX] of String = (
   'MAILBOX_STATE_DISABLED',
   'MAILBOX_STATE_ENABLED');
- 
+
  {Mailbox Device Flags}
  MAILBOX_FLAG_NONE      = $00000000;
-  
+
 {==============================================================================}
 const
  {Watchdog specific constants}
  WATCHDOG_NAME_PREFIX = 'Watchdog';    {Name prefix for Watchdog Devices}
-  
+
  {Watchdog Device Types}
  WATCHDOG_TYPE_NONE      = 0;
  WATCHDOG_TYPE_HARDWARE  = 1;
- 
+
  WATCHDOG_TYPE_MAX       = 1;
-  
+
  {Watchdog Type Names}
  WATCHDOG_TYPE_NAMES:array[WATCHDOG_TYPE_NONE..WATCHDOG_TYPE_MAX] of String = (
   'WATCHDOG_TYPE_NONE',
   'WATCHDOG_TYPE_HARDWARE');
- 
+
  {Watchdog Device States}
  WATCHDOG_STATE_DISABLED   = 0;
  WATCHDOG_STATE_ENABLED    = 1;
- 
+
  WATCHDOG_STATE_MAX        = 1;
- 
+
  {Watchdog State Names}
  WATCHDOG_STATE_NAMES:array[WATCHDOG_STATE_DISABLED..WATCHDOG_STATE_MAX] of String = (
   'WATCHDOG_STATE_DISABLED',
   'WATCHDOG_STATE_ENABLED');
- 
+
  {Watchdog Device Flags}
  WATCHDOG_FLAG_NONE      = $00000000;
-  
+
 {==============================================================================}
 type
  {Device specific types}
@@ -676,14 +676,14 @@ type
   Prev:PDevice;             {Previous entry in Device table}
   Next:PDevice;             {Next entry in Device table}
  end;
- 
+
  PDeviceFirmware = ^TDeviceFirmware;
- 
+
  {Device Firmware Handler}
  TDeviceFirmwareHandler = function(Firmware:PDeviceFirmware;Action:LongWord;var Handle:THandle;var Buffer:Pointer;var Value:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  PFirmwareHandle = ^TFirmwareHandle;
- 
+
  {Device Firmware}
  TDeviceFirmware = record
   DeviceClass:LongWord;             {The Device class supported by this firmware (or DEVICE_CLASS_ANY for all devices)}
@@ -696,13 +696,13 @@ type
   Prev:PDeviceFirmware;             {Previous entry in Device Firmware table}
   Next:PDeviceFirmware;             {Next entry in Device Firmware table}
  end;
- 
+
  {Firmware Handle}
  TFirmwareHandle = record
   Handle:THandle;
   Next:PFirmwareHandle;
  end;
- 
+
  {Notifier Entry}
  PNotifier = ^TNotifier;
  TNotifier = record
@@ -719,32 +719,32 @@ type
   Prev:PNotifier;                {Previous entry in Notifier table}
   Next:PNotifier;                {Next entry in Notifier table}
  end;
- 
+
  {Notifier Task}
  PNotifierTask = ^TNotifierTask;
  TNotifierTask = record
   Device:PDevice;
   Callback:TDeviceNotification;
-  Data:Pointer; 
+  Data:Pointer;
   Notification:LongWord;
   Next:PNotifierTask;
  end;
- 
+
  {Notifier Retry}
  PNotifierRetry = ^TNotifierRetry;
  TNotifierRetry = record
   Device:PDevice;
   Notification:LongWord;
- end; 
- 
+ end;
+
 {==============================================================================}
 type
  {Driver specific types}
  PDriver = ^TDriver;
- 
+
  {Driver Enumeration Callback}
  TDriverEnumerate = function(Driver:PDriver;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Driver Entry}
  TDriver = record
   {Driver Properties}
@@ -762,23 +762,23 @@ type
 type
  {Host specific types}
  PHost = ^THost;
- 
+
  {Host Enumeration Callback}
  THostEnumerate = function(Host:PHost;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Host Entry}
  THost = record
   {Host Properties}
   Signature:LongWord;        {Signature for entry validation}
   HostId:LongWord;           {Unique Id of this Host in the Host table}
   HostState:LongWord;        {Host state (eg Registered/Unregistered)}
-  HostName:array[0..HOST_NAME_LENGTH - 1] of Char; {Descriptive name for the Host (eg DWC OTG Host)} 
+  HostName:array[0..HOST_NAME_LENGTH - 1] of Char; {Descriptive name for the Host (eg DWC OTG Host)}
   HostClass:LongWord;        {The class of this Host (eg HOST_CLASS_USB etc)}
   {Internal Properties}
   Prev:PHost;                {Previous entry in Host table}
   Next:PHost;                {Next entry in Host table}
  end;
- 
+
 {==============================================================================}
 type
  {Clock specific types}
@@ -790,15 +790,15 @@ type
   MinRate:LongWord;      {Device minimum clock rate (Hz)}
   MaxRate:LongWord;      {Device maximum clock rate (Hz)}
  end;
- 
+
  {Clock Device}
  PClockDevice = ^TClockDevice;
- 
+
  {Clock Enumeration Callback}
  TClockEnumerate = function(Clock:PClockDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Clock Notification Callback}
  TClockNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Clock Device Methods}
  TClockDeviceStart = function(Clock:PClockDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TClockDeviceStop = function(Clock:PClockDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -808,7 +808,7 @@ type
  TClockDeviceGetRate = function(Clock:PClockDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TClockDeviceSetRate = function(Clock:PClockDevice;Rate:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TClockDeviceGetProperties = function(Clock:PClockDevice;Properties:PClockProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Clock Device}
  TClockDevice = record
   {Device Properties}
@@ -836,12 +836,12 @@ type
   Prev:PClockDevice;                             {Previous entry in Clock device table}
   Next:PClockDevice;                             {Next entry in Clock device table}
  end;
- 
+
 {==============================================================================}
 type
  {Timer specific types}
  TTimerCallback = TCounterCallback; {Counter callback from Platform}
- 
+
  {Timer Properties}
  PTimerProperties = ^TTimerProperties;
  TTimerProperties = record
@@ -852,10 +852,10 @@ type
   MinInterval:LongWord;  {Device minimum interval (Ticks)}
   MaxInterval:LongWord;  {Device maximum interval (Ticks)}
  end;
- 
+
  {Timer Device}
  PTimerDevice = ^TTimerDevice; {Forward declared for TimerWaiter}
- 
+
  {Timer Waiter (TTimerEvent is used already by the Threads unit)}
  PTimerWaiter = ^TTimerWaiter;
  TTimerWaiter = record
@@ -865,12 +865,12 @@ type
   Prev:PTimerWaiter;       {Previous event in the list}
   Next:PTimerWaiter;       {Next event in the list}
  end;
- 
+
  {Timer Enumeration Callback}
  TTimerEnumerate = function(Timer:PTimerDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Timer Notification Callback}
  TTimerNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Timer Device Methods}
  TTimerDeviceStart = function(Timer:PTimerDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TTimerDeviceStop = function(Timer:PTimerDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -884,7 +884,7 @@ type
  TTimerDeviceGetInterval = function(Timer:PTimerDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TTimerDeviceSetInterval = function(Timer:PTimerDevice;Interval:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TTimerDeviceGetProperties = function(Timer:PTimerDevice;Properties:PTimerProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TTimerDevice = record
   {Device Properties}
   Device:TDevice;                                {The Device entry for this Timer device}
@@ -922,17 +922,17 @@ type
   Prev:PTimerDevice;                             {Previous entry in Timer device table}
   Next:PTimerDevice;                             {Next entry in Timer device table}
  end;
- 
+
 {==============================================================================}
 type
  {Random specific types}
  PRandomDevice = ^TRandomDevice;
- 
+
  {Random Enumeration Callback}
  TRandomEnumerate = function(Random:PRandomDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Random Notification Callback}
  TRandomNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Random Device Methods}
  TRandomDeviceStart = function(Random:PRandomDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TRandomDeviceStop = function(Random:PRandomDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -942,10 +942,10 @@ type
  TRandomDeviceReadLongWord = function(Random:PRandomDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TRandomDeviceReadQuadWord = function(Random:PRandomDevice):Int64;{$IFDEF i386} stdcall;{$ENDIF}
  TRandomDeviceReadDouble = function(Random:PRandomDevice):Double;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Random Device}
  TRandomDevice = record
-  {Device Properties}         
+  {Device Properties}
   Device:TDevice;                                {The Device entry for this Random device}
   {Random Properties}
   RandomId:LongWord;                             {Unique Id of this Random device in the Random device table}
@@ -954,10 +954,10 @@ type
   DeviceStop:TRandomDeviceStop;                  {A device specific DeviceStop method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceSeed:TRandomDeviceSeed;                  {A device specific DeviceSeed method implementing a standard random device interface (Or nil if the default method is suitable)}
   DeviceReadByte:TRandomDeviceReadByte;          {A device specific DeviceReadByte method implementing a standard random device interface (Or nil if the default method is suitable)}
-  DeviceReadWord:TRandomDeviceReadWord;          {A device specific DeviceReadWord method implementing a standard random device interface (Or nil if the default method is suitable)}  
-  DeviceReadLongWord:TRandomDeviceReadLongWord;  {A device specific DeviceReadLongWord method implementing a standard random device interface (Mandatory)}  
-  DeviceReadQuadWord:TRandomDeviceReadQuadWord;  {A device specific DeviceReadQuadWord method implementing a standard random device interface (Or nil if the default method is suitable)}  
-  DeviceReadDouble:TRandomDeviceReadDouble;      {A device specific DeviceReadDouble method implementing a standard random device interface (Or nil if the default method is suitable)}  
+  DeviceReadWord:TRandomDeviceReadWord;          {A device specific DeviceReadWord method implementing a standard random device interface (Or nil if the default method is suitable)}
+  DeviceReadLongWord:TRandomDeviceReadLongWord;  {A device specific DeviceReadLongWord method implementing a standard random device interface (Mandatory)}
+  DeviceReadQuadWord:TRandomDeviceReadQuadWord;  {A device specific DeviceReadQuadWord method implementing a standard random device interface (Or nil if the default method is suitable)}
+  DeviceReadDouble:TRandomDeviceReadDouble;      {A device specific DeviceReadDouble method implementing a standard random device interface (Or nil if the default method is suitable)}
   {Statistics Properties}
   SeedCount:LongWord;
   ReadCount:LongWord;
@@ -968,17 +968,17 @@ type
   Prev:PRandomDevice;                            {Previous entry in Random device table}
   Next:PRandomDevice;                            {Next entry in Random device table}
 end;
- 
+
 {==============================================================================}
 type
  {Mailbox specific types}
  PMailboxDevice = ^TMailboxDevice;
- 
+
  {Mailbox Enumeration Callback}
  TMailboxEnumerate = function(Mailbox:PMailboxDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Mailbox Notification Callback}
  TMailboxNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Mailbox Device Methods}
  TMailboxDeviceStart = function(Mailbox:PMailboxDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TMailboxDeviceStop = function(Mailbox:PMailboxDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -987,7 +987,7 @@ type
  TMailboxDeviceCall = function(Mailbox:PMailboxDevice;Channel,Data:LongWord;var Response:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TMailboxDeviceGetTimeout = function(Mailbox:PMailboxDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TMailboxDeviceSetTimeout = function(Mailbox:PMailboxDevice;Timeout:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Mailbox Device}
  TMailboxDevice = record
   {Device Properties}
@@ -1019,12 +1019,12 @@ type
 type
  {Watchdog specific types}
  PWatchdogDevice = ^TWatchdogDevice;
- 
+
  {Watchdog Enumeration Callback}
  TWatchdogEnumerate = function(Watchdog:PWatchdogDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Watchdog Notification Callback}
  TWatchdogNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Watchdog Device Methods}
  TWatchdogDeviceStart = function(Watchdog:PWatchdogDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TWatchdogDeviceStop = function(Watchdog:PWatchdogDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
@@ -1032,7 +1032,7 @@ type
  TWatchdogDeviceGetRemain = function(Watchdog:PWatchdogDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TWatchdogDeviceGetTimeout = function(Watchdog:PWatchdogDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TWatchdogDeviceSetTimeout = function(Watchdog:PWatchdogDevice;Timeout:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Watchdog Device}
  TWatchdogDevice = record
   {Device Properties}
@@ -1058,23 +1058,23 @@ type
   Prev:PWatchdogDevice;                          {Previous entry in Watchdog device table}
   Next:PWatchdogDevice;                          {Next entry in Watchdog device table}
  end;
- 
+
 {==============================================================================}
 {var}
  {Device specific variables}
- 
+
 {==============================================================================}
 {var}
  {Clock specific variables}
- 
+
 {==============================================================================}
 {var}
  {Timer specific variables}
- 
+
 {==============================================================================}
 {var}
  {Random specific variables}
-  
+
 {==============================================================================}
 {var}
  {Mailbox specific variables}
@@ -1082,7 +1082,7 @@ type
 {==============================================================================}
 {var}
  {Watchdog specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure DevicesInit;
@@ -1120,7 +1120,7 @@ function DeviceFirmwareDeregister(Handle:THandle):LongWord;
 function DeviceFirmwareFind(DeviceClass:LongWord;const Name:String):PDeviceFirmware;
 function DeviceFirmwareFindByHandle(Handle:THandle):PDeviceFirmware;
 
-function DeviceFirmwareOpen(DeviceClass:LongWord;const Name:String;Timeout:LongWord;var Handle:THandle):LongWord; 
+function DeviceFirmwareOpen(DeviceClass:LongWord;const Name:String;Timeout:LongWord;var Handle:THandle):LongWord;
 function DeviceFirmwareClose(Handle:THandle):LongWord;
 
 function DeviceFirmwareSize(Handle:THandle):LongInt;
@@ -1328,9 +1328,9 @@ function SysRandomReadDouble:Double;
 
 {==============================================================================}
 {RTL Watchdog Functions}
-function SysWatchdogAvailable:Boolean; 
+function SysWatchdogAvailable:Boolean;
 
-function SysWatchdogStart(Milliseconds:LongWord):LongWord; 
+function SysWatchdogStart(Milliseconds:LongWord):LongWord;
 function SysWatchdogStop:LongWord;
 function SysWatchdogRefresh(Milliseconds:LongWord):LongWord;
 
@@ -1369,7 +1369,7 @@ function DriverClassToString(DriverClass:LongWord):String;
 {Clock Device Helper Functions}
 function ClockDeviceGetCount:LongWord;
 function ClockDeviceGetDefault:PClockDevice;
-function ClockDeviceSetDefault(Clock:PClockDevice):LongWord; 
+function ClockDeviceSetDefault(Clock:PClockDevice):LongWord;
 
 function ClockDeviceCheck(Clock:PClockDevice):PClockDevice;
 
@@ -1380,7 +1380,7 @@ function ClockStateToString(ClockState:LongWord):String;
 {Timer Device Helper Functions}
 function TimerDeviceGetCount:LongWord;
 function TimerDeviceGetDefault:PTimerDevice;
-function TimerDeviceSetDefault(Timer:PTimerDevice):LongWord; 
+function TimerDeviceSetDefault(Timer:PTimerDevice):LongWord;
 
 function TimerDeviceCheck(Timer:PTimerDevice):PTimerDevice;
 
@@ -1397,7 +1397,7 @@ function TimerDeviceDeregisterWaiter(Timer:PTimerDevice;Waiter:PTimerWaiter):Lon
 {Random Device Helper Functions}
 function RandomDeviceGetCount:LongWord;
 function RandomDeviceGetDefault:PRandomDevice;
-function RandomDeviceSetDefault(Random:PRandomDevice):LongWord; 
+function RandomDeviceSetDefault(Random:PRandomDevice):LongWord;
 
 function RandomDeviceCheck(Random:PRandomDevice):PRandomDevice;
 
@@ -1408,7 +1408,7 @@ function RandomStateToString(RandomState:LongWord):String;
 {Mailbox Device Helper Functions}
 function MailboxDeviceGetCount:LongWord;
 function MailboxDeviceGetDefault:PMailboxDevice;
-function MailboxDeviceSetDefault(Mailbox:PMailboxDevice):LongWord; 
+function MailboxDeviceSetDefault(Mailbox:PMailboxDevice):LongWord;
 
 function MailboxDeviceCheck(Mailbox:PMailboxDevice):PMailboxDevice;
 
@@ -1436,50 +1436,50 @@ implementation
 var
  {Device specific variables}
  DevicesInitialized:Boolean;
- 
+
  DeviceTable:PDevice;
  DeviceTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  DeviceTableCount:LongWord;
- 
+
  DeviceNameLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
 
  DeviceFirmwareTable:PDeviceFirmware;
  DeviceFirmwareTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  DeviceFirmwareTableCount:LongWord;
- 
+
  DeviceFirmwareDefault:PDeviceFirmware;
- 
+
  NotifierTable:PNotifier;
  NotifierTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  NotifierTableCount:LongWord;
- 
+
 {==============================================================================}
 var
  {Driver specific variables}
  DriverTable:PDriver;
  DriverTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  DriverTableCount:LongWord;
- 
+
  DriverNameLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
- 
+
 {==============================================================================}
 var
  {Clock specific variables}
  ClockDeviceTable:PClockDevice;
  ClockDeviceTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  ClockDeviceTableCount:LongWord;
- 
+
  ClockDeviceDefault:PClockDevice;
- 
+
 {==============================================================================}
 var
  {Timer specific variables}
  TimerDeviceTable:PTimerDevice;
  TimerDeviceTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  TimerDeviceTableCount:LongWord;
- 
+
  TimerDeviceDefault:PTimerDevice;
- 
+
 {==============================================================================}
 var
  {Random specific variables}
@@ -1488,7 +1488,7 @@ var
  RandomDeviceTableCount:LongWord;
 
  RandomDeviceDefault:PRandomDevice;
- 
+
 {==============================================================================}
 var
  {Mailbox specific variables}
@@ -1497,22 +1497,22 @@ var
  MailboxDeviceTableCount:LongWord;
 
  MailboxDeviceDefault:PMailboxDevice;
- 
+
 {==============================================================================}
 var
  {Watchdog specific variables}
  WatchdogDeviceTable:PWatchdogDevice;
  WatchdogDeviceTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  WatchdogDeviceTableCount:LongWord;
- 
+
  WatchdogDeviceDefault:PWatchdogDevice;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Forward Declarations}
 function FileFirmwareHandler(Firmware:PDeviceFirmware;Action:LongWord;var Handle:THandle;var Buffer:Pointer;var Value:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF} forward;
 function BlockFirmwareHandler(Firmware:PDeviceFirmware;Action:LongWord;var Handle:THandle;var Buffer:Pointer;var Value:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF} forward;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -1524,15 +1524,15 @@ begin
  {}
  {Check Initialized}
  if DevicesInitialized then Exit;
- 
+
  {Initialize Logging}
- DEVICE_LOG_ENABLED:=(DEVICE_DEFAULT_LOG_LEVEL <> DEVICE_LOG_LEVEL_NONE); 
- 
+ DEVICE_LOG_ENABLED:=(DEVICE_DEFAULT_LOG_LEVEL <> DEVICE_LOG_LEVEL_NONE);
+
  {Initialize Device Table}
  DeviceTable:=nil;
- DeviceTableLock:=CriticalSectionCreate; 
+ DeviceTableLock:=CriticalSectionCreate;
  DeviceTableCount:=0;
- DeviceNameLock:=CriticalSectionCreate; 
+ DeviceNameLock:=CriticalSectionCreate;
  if (DeviceTableLock = INVALID_HANDLE_VALUE) or (DeviceNameLock = INVALID_HANDLE_VALUE) then
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create device table locks');
@@ -1540,89 +1540,89 @@ begin
 
  {Initialize Device Firmware Table}
  DeviceFirmwareTable:=nil;
- DeviceFirmwareTableLock:=CriticalSectionCreate; 
+ DeviceFirmwareTableLock:=CriticalSectionCreate;
  DeviceFirmwareTableCount:=0;
  if DeviceFirmwareTableLock = INVALID_HANDLE_VALUE then
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create device firmware table lock');
   end;
  DeviceFirmwareDefault:=nil;
- 
+
  {Initialize Notifier Table}
  NotifierTable:=nil;
- NotifierTableLock:=CriticalSectionCreate; 
+ NotifierTableLock:=CriticalSectionCreate;
  NotifierTableCount:=0;
  if NotifierTableLock = INVALID_HANDLE_VALUE then
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create notifier table lock');
   end;
-  
+
  {Initialize Driver Table}
  DriverTable:=nil;
- DriverTableLock:=CriticalSectionCreate; 
+ DriverTableLock:=CriticalSectionCreate;
  DriverTableCount:=0;
- DriverNameLock:=CriticalSectionCreate; 
+ DriverNameLock:=CriticalSectionCreate;
  if (DriverTableLock = INVALID_HANDLE_VALUE) or (DriverNameLock = INVALID_HANDLE_VALUE) then
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create driver table locks');
   end;
- 
+
  {Initialize Clock Device Table}
  ClockDeviceTable:=nil;
- ClockDeviceTableLock:=CriticalSectionCreate; 
+ ClockDeviceTableLock:=CriticalSectionCreate;
  ClockDeviceTableCount:=0;
  if ClockDeviceTableLock = INVALID_HANDLE_VALUE then
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create clock device table lock');
   end;
  ClockDeviceDefault:=nil;
- 
+
  {Initialize Timer Device Table}
  TimerDeviceTable:=nil;
- TimerDeviceTableLock:=CriticalSectionCreate; 
+ TimerDeviceTableLock:=CriticalSectionCreate;
  TimerDeviceTableCount:=0;
  if TimerDeviceTableLock = INVALID_HANDLE_VALUE then
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create timer device table lock');
   end;
  TimerDeviceDefault:=nil;
- 
+
  {Initialize Random Device Table}
  RandomDeviceTable:=nil;
- RandomDeviceTableLock:=CriticalSectionCreate; 
+ RandomDeviceTableLock:=CriticalSectionCreate;
  RandomDeviceTableCount:=0;
  if RandomDeviceTableLock = INVALID_HANDLE_VALUE then
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create random device table lock');
   end;
  RandomDeviceDefault:=nil;
- 
+
  {Initialize Mailbox Device Table}
  MailboxDeviceTable:=nil;
- MailboxDeviceTableLock:=CriticalSectionCreate; 
+ MailboxDeviceTableLock:=CriticalSectionCreate;
  MailboxDeviceTableCount:=0;
  if MailboxDeviceTableLock = INVALID_HANDLE_VALUE then
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create mailbox device table lock');
   end;
  MailboxDeviceDefault:=nil;
- 
+
  {Initialize Watchdog Device Table}
  WatchdogDeviceTable:=nil;
- WatchdogDeviceTableLock:=CriticalSectionCreate; 
+ WatchdogDeviceTableLock:=CriticalSectionCreate;
  WatchdogDeviceTableCount:=0;
  if WatchdogDeviceTableLock = INVALID_HANDLE_VALUE then
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Failed to create watchdog device table lock');
   end;
  WatchdogDeviceDefault:=nil;
- 
+
  {Register Platform Clock Handlers}
  if DEVICE_REGISTER_CLOCK then
   begin
    ClockGetCountHandler:=SysClockRead;
    ClockGetTotalHandler:=SysClockRead64;
-  end; 
+  end;
 
  {Register Platform Timer Handlers}
  if DEVICE_REGISTER_TIMER then
@@ -1637,8 +1637,8 @@ begin
    CounterSetRateHandler:=SysTimerSetRate;
    CounterGetIntervalHandler:=SysTimerGetInterval;
    CounterSetIntervalHandler:=SysTimerSetInterval;
-  end; 
- 
+  end;
+
  {Register Platform Random Handlers}
  if DEVICE_REGISTER_RANDOM then
   begin
@@ -1647,14 +1647,14 @@ begin
    RandomReadLongIntHandler:=SysRandomReadLongInt;
    RandomReadInt64Handler:=SysRandomReadInt64;
    RandomReadDoubleHandler:=SysRandomReadDouble;
-  end; 
+  end;
 
  {Register Platform Mailbox Handlers}
  if DEVICE_REGISTER_MAILBOX then
   begin
-   //To Do 
-  end; 
- 
+   //To Do
+  end;
+
  {Register Platform Watchdog Handlers}
  if DEVICE_REGISTER_WATCHDOG then
   begin
@@ -1662,7 +1662,7 @@ begin
    WatchdogStartHandler:=SysWatchdogStart;
    WatchdogStopHandler:=SysWatchdogStop;
    WatchdogRefreshHandler:=SysWatchdogRefresh;
-  end; 
+  end;
 
  {Register Default File Firmware Handler}
  DeviceFirmwareRegister(DEVICE_CLASS_ANY,'',FileFirmwareHandler);
@@ -1692,10 +1692,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TDevice) then Exit;
- 
+
  {Create Device}
  if DEVICE_SHARED_MEMORY then
   begin
@@ -1706,21 +1706,21 @@ begin
    Device:=AllocMem(Size);
   end;
  if Device = nil then Exit;
- 
+
  {Update Device}
  Device.Signature:=DEVICE_SIGNATURE;
  Device.DeviceId:=DEVICE_ID_ANY;
  Device.DeviceState:=DEVICE_STATE_UNREGISTERED;
- Device.DeviceName:=''; 
+ Device.DeviceName:='';
  Device.DeviceClass:=DEVICE_CLASS_ANY;
  Device.DeviceDescription:='';
 
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Created device (Handle=' + PtrToHex(Device) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Return Result}
- Result:=Device; 
+ Result:=Device;
 end;
 
 {==============================================================================}
@@ -1732,18 +1732,18 @@ function DeviceDestroy(Device:PDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
  if Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Device}
  Result:=ERROR_IN_USE;
  if DeviceCheck(Device) = Device then Exit;
- 
+
  {Check State}
  if Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(DeviceNameLock) = ERROR_SUCCESS then
   begin
@@ -1752,15 +1752,15 @@ begin
 
    {Free Device}
    FreeMem(Device);
- 
+
    {Release Lock}
    CriticalSectionUnlock(DeviceNameLock);
   end;
-  
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Destroyed device (Handle=' + PtrToHex(Device) + ')');
  {$ENDIF}
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -1777,7 +1777,7 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(DeviceNameLock) = ERROR_SUCCESS then
   begin
@@ -1813,17 +1813,17 @@ begin
 
  {Check Name}
  if Length(Name) = 0 then Exit;
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(DeviceNameLock) = ERROR_SUCCESS then
   begin
    try
     {Check Signature}
     if Device.Signature <> DEVICE_SIGNATURE then Exit;
-    
+
     {Set Name}
     StrLCopy(Device.DeviceName,PChar(Name),DEVICE_NAME_LENGTH - 1);
 
@@ -1848,7 +1848,7 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(DeviceNameLock) = ERROR_SUCCESS then
   begin
@@ -1884,17 +1884,17 @@ begin
 
  {Check Description}
  if Length(Description) = 0 then Exit;
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(DeviceNameLock) = ERROR_SUCCESS then
   begin
    try
     {Check Signature}
     if Device.Signature <> DEVICE_SIGNATURE then Exit;
-    
+
     {Set Description}
     StrLCopy(Device.DeviceDescription,PChar(Description),DEVICE_DESC_LENGTH - 1);
 
@@ -1923,16 +1923,16 @@ begin
  if Device = nil then Exit;
  if Device.Signature <> DEVICE_SIGNATURE then Exit;
  if Device.DeviceId <> DEVICE_ID_ANY then Exit;
- if StrLen(Device.DeviceName) = 0 then Exit; 
+ if StrLen(Device.DeviceName) = 0 then Exit;
  if Device.DeviceClass = DEVICE_CLASS_ANY then Exit;
- 
+
  {Check Device}
  Result:=ERROR_ALREADY_EXISTS;
  if DeviceCheck(Device) = Device then Exit;
 
  {Check State}
  if Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Device}
  if CriticalSectionLock(DeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1948,10 +1948,10 @@ begin
       DeviceTable.Prev:=Device;
       DeviceTable:=Device;
      end;
-    
+
     {Increment Count}
     Inc(DeviceTableCount);
-    
+
     {Update Device}
     DeviceId:=0;
     while DeviceFind(DEVICE_CLASS_ANY,DeviceId) <> nil do
@@ -1959,14 +1959,14 @@ begin
       Inc(DeviceId);
      end;
     Device.DeviceId:=DeviceId;
-    
+
     {Register Device}
     Device.DeviceState:=DEVICE_STATE_REGISTERED;
- 
+
     {Notify Register}
     Result:=NotifierNotify(Device,DEVICE_NOTIFICATION_REGISTER);
     if Result <> ERROR_SUCCESS then Exit;
-   
+
     if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Registered device (Handle=' + PtrToHex(Device) + ' Class=' + DeviceClassToString(Device.DeviceClass) + ' Name=' + DeviceGetName(Device) + ')');
 
     {Return Result}
@@ -1978,7 +1978,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1993,13 +1993,13 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
  if Device.Signature <> DEVICE_SIGNATURE then Exit;
  if Device.DeviceId = DEVICE_ID_ANY then Exit;
  if Device.DeviceClass = DEVICE_CLASS_ANY then Exit;
- 
+
  {Check Device}
  Result:=ERROR_NOT_FOUND;
  if DeviceCheck(Device) <> Device then Exit;
@@ -2014,10 +2014,10 @@ begin
     {Notify Deregister}
     Result:=NotifierNotify(Device,DEVICE_NOTIFICATION_DEREGISTER);
     if Result <> ERROR_SUCCESS then Exit;
- 
+
     {Deregister Device}
     Device.DeviceState:=DEVICE_STATE_UNREGISTERED;
- 
+
     {Unlink Device}
     Prev:=Device.Prev;
     Next:=Device.Next;
@@ -2027,7 +2027,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -2035,15 +2035,15 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
-    
+       end;
+     end;
+
     {Decrement Count}
     Dec(DeviceTableCount);
- 
+
     {Update Device}
     Device.DeviceId:=DEVICE_ID_ANY;
- 
+
     if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Deregistered device (Handle=' + PtrToHex(Device) + ' Class=' + DeviceClassToString(Device.DeviceClass) + ' Name=' + DeviceGetName(Device) + ')');
 
     {Return Result}
@@ -2055,7 +2055,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2070,7 +2070,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(DeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -2094,7 +2094,7 @@ begin
               Result:=Device;
               Exit;
              end;
-           end;  
+           end;
          end
         else
          begin
@@ -2104,9 +2104,9 @@ begin
             Result:=Device;
             Exit;
            end;
-         end;       
+         end;
        end;
-       
+
       {Get Next}
       Device:=Device.Next;
      end;
@@ -2128,7 +2128,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Device Data}
  if DeviceData = nil then Exit;
 
@@ -2150,7 +2150,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       Device:=Device.Next;
      end;
@@ -2171,9 +2171,9 @@ begin
  {}
  Result:=DeviceFindByNameEx(DEVICE_CLASS_ANY,Name);
 end;
-       
+
 {==============================================================================}
-       
+
 function DeviceFindByNameEx(DeviceClass:LongWord;const Name:String):PDevice;
 {Find a device by class and name in the device table}
 {DeviceClass: The class of the device to find (eg DEVICE_CLASS_USB) (DEVICE_CLASS_ANY for all classes)}
@@ -2184,7 +2184,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(DeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -2207,7 +2207,7 @@ begin
            end;
          end;
        end;
-       
+
       {Get Next}
       Device:=Device.Next;
      end;
@@ -2217,7 +2217,7 @@ begin
    end;
   end;
 end;
-       
+
 {==============================================================================}
 
 function DeviceFindByDescription(const Description:String):PDevice; inline;
@@ -2241,7 +2241,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(DeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -2263,8 +2263,8 @@ begin
             Exit;
            end;
          end;
-       end;  
-       
+       end;
+
       {Get Next}
       Device:=Device.Next;
      end;
@@ -2288,10 +2288,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(DeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -2309,11 +2309,11 @@ begin
           if Callback(Device,Data) <> ERROR_SUCCESS then Exit;
          end;
        end;
-      
+
       {Get Next}
       Device:=Device.Next;
      end;
-  
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2324,7 +2324,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2342,7 +2342,7 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
 
@@ -2365,11 +2365,11 @@ begin
        begin
         {Update Notifier}
         Notifier.Notification:=Notifier.Notification or Notification; {Add to existing}
-       end;       
-  
+       end;
+
       {Register Notifier}
       Notifier.NotifierState:=NOTIFIER_STATE_REGISTERED;
-   
+
       {Return Result}
       Result:=ERROR_SUCCESS;
      finally
@@ -2380,7 +2380,7 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;  
+    end;
   end
  else
   begin
@@ -2389,14 +2389,14 @@ begin
     begin
      try
       Result:=ERROR_NOT_FOUND;
-   
+
       {Get Notifier}
       Notifier:=NotifierFind(Device,DeviceClass,Callback,Data);
       if Notifier = nil then Exit;
-   
+
       {Deregister Notifier}
       Notifier.NotifierState:=NOTIFIER_STATE_UNREGISTERED;
-   
+
       {Release Notifier}
       Result:=NotifierRelease(Notifier);
      finally
@@ -2407,7 +2407,7 @@ begin
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
-    end;  
+    end;
   end;
 end;
 
@@ -2460,7 +2460,7 @@ begin
         DeviceFirmwareDeregister(Handle);
 
         Exit;
-       end; 
+       end;
 
       {Update Firmware}
       Firmware.Buffer:=Buffer;
@@ -2540,7 +2540,7 @@ begin
     if Length(Name) = 0 then DeviceFirmwareDefault:=Firmware;
 
     if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Registered device firmware (Handle=' + PtrToHex(Firmware) + ' Class=' + DeviceClassToString(Firmware.DeviceClass) + ' Name=' + Firmware.Name + ')');
-    
+
     {Return Result}
     Result:=THandle(Firmware);
    finally
@@ -2639,7 +2639,7 @@ begin
     FreeMem(Firmware);
 
     if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Deregistered device firmware (Handle=' + HandleToHex(Handle) + ')');
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2649,7 +2649,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2758,7 +2758,7 @@ end;
 
 {==============================================================================}
 
-function DeviceFirmwareOpen(DeviceClass:LongWord;const Name:String;Timeout:LongWord;var Handle:THandle):LongWord; 
+function DeviceFirmwareOpen(DeviceClass:LongWord;const Name:String;Timeout:LongWord;var Handle:THandle):LongWord;
 {Open the firmware for a specified device from a registered handler}
 {DeviceClass: The class of device for the firmware (eg DEVICE_CLASS_NETWORK)(or DEVICE_CLASS_ANY for any class)}
 {Name: The name of the device firmware which is a device specific value such as a filename, a device model, id or type}
@@ -2880,7 +2880,7 @@ begin
        {Restore Name and Class}
        Firmware.Name:=DefaultName;
        Firmware.DeviceClass:=DefaultClass;
-      end; 
+      end;
     end;
    finally
     {Release the Lock}
@@ -3231,11 +3231,11 @@ begin
 
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Create Notifier}
  Notifier:=AllocMem(SizeOf(TNotifier));
  if Notifier = nil then Exit;
- 
+
  {Update Notifier}
  Notifier.Signature:=NOTIFIER_SIGNATURE;
  Notifier.NotifierState:=NOTIFIER_STATE_UNREGISTERED;
@@ -3245,7 +3245,7 @@ begin
  Notifier.Callback:=Callback;
  Notifier.Data:=Data;
  Notifier.Notification:=Notification;
- 
+
  {Insert Notifier}
  if CriticalSectionLock(NotifierTableLock) = ERROR_SUCCESS then
   begin
@@ -3261,10 +3261,10 @@ begin
       NotifierTable.Prev:=Notifier;
       NotifierTable:=Notifier;
      end;
-    
+
     {Increment Count}
     Inc(NotifierTableCount);
- 
+
     if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Allocated device notification (Handle=' + PtrToHex(Notifier) + ' Device=' + PtrToHex(Notifier.Device) + ' Class=' + DeviceClassToString(Notifier.DeviceClass) + ' Notification=' + NotificationToString(Notifier.Notification) + ')');
     {Return Result}
     Result:=Notifier;
@@ -3284,14 +3284,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Notifier}
  if Notifier = nil then Exit;
  if Notifier.Signature <> NOTIFIER_SIGNATURE then Exit;
- 
+
  {Check Notifier}
  if NotifierCheck(Notifier) <> Notifier then Exit;
- 
+
  {Check State}
  if Notifier.NotifierState <> NOTIFIER_STATE_UNREGISTERED then Exit;
 
@@ -3308,7 +3308,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -3316,18 +3316,18 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
-    
+       end;
+     end;
+
     {Decrement Count}
     Dec(NotifierTableCount);
 
     {Invalidate Notifier}
     Notifier.Signature:=0;
- 
+
     {Free Notifier}
     FreeMem(Notifier);
-    
+
     if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Released device notification (Handle=' + PtrToHex(Notifier) + ')');
     {Return Result}
     Result:=ERROR_SUCCESS;
@@ -3338,7 +3338,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -3349,10 +3349,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(NotifierTableLock) = ERROR_SUCCESS then
   begin
@@ -3370,8 +3370,8 @@ begin
           Result:=Notifier;
           Exit;
          end;
-       end;  
-       
+       end;
+
       {Get Next}
       Notifier:=Notifier.Next;
      end;
@@ -3390,7 +3390,7 @@ function NotifierNotify(Device:PDevice;Notification:LongWord):LongWord;
  begin
   {}
   Result:=False;
-  
+
   case Notification of
    DEVICE_NOTIFICATION_REGISTER,
    DEVICE_NOTIFICATION_OPEN,
@@ -3406,7 +3406,7 @@ function NotifierNotify(Device:PDevice;Notification:LongWord):LongWord;
    DEVICE_NOTIFICATION_RESIZING:Result:=True;
   end;
  end;
- 
+
 const
  NOTIFIER_RETRY_TIMEOUT = 1000;
  NOTIFIER_RETRY_INTERVAL = 100;
@@ -3425,26 +3425,26 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
  if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Sending device notification (Name=' + DeviceGetName(Device) + ' Class=' + DeviceClassToString(Device.DeviceClass) + ' Notification=' + NotificationToString(Notification) + ')');
- 
+
  {Setup Defaults}
  List:=nil;
- 
+
  {$IFDEF DEVICE_NOTIFIER_RETRY}
  {Get Timeout}
  Timeout:=INFINITE;
  if IsRetryable(Notification) then Timeout:=NOTIFIER_RETRY_TIMEOUT;
- 
+
  {Acquire the Lock (with retry to prevent deadlocks)}
  Status:=CriticalSectionLockEx(NotifierTableLock,Timeout);
  if Status = ERROR_WAIT_TIMEOUT then
   begin
    Result:=ERROR_OPERATION_FAILED;
-   
+
    {Create Retry}
    Retry:=AllocMem(SizeOf(TNotifierRetry));
    if Retry <> nil then
@@ -3452,16 +3452,16 @@ begin
      {Setup Retry}
      Retry.Device:=Device;
      Retry.Notification:=Notification;
-     
+
      {Schedule Worker}
      if WorkerSchedule(NOTIFIER_RETRY_INTERVAL,TWorkerTask(NotifierRetry),Retry,nil) <> ERROR_SUCCESS then
       begin
        FreeMem(Retry);
        Exit;
       end;
-     
+
      Result:=ERROR_SUCCESS;
-    end; 
+    end;
   end
  else if Status = ERROR_SUCCESS then
  {$ELSE DEVICE_NOTIFIER_RETRY}
@@ -3471,7 +3471,7 @@ begin
   begin
    try
     Result:=ERROR_SUCCESS;
-    
+
     {Get Notifier}
     Notifier:=NotifierTable;
     while Notifier <> nil do
@@ -3506,7 +3506,7 @@ begin
                     Task.Callback:=Notifier.Callback;
                     Task.Data:=Notifier.Data;
                     Task.Notification:=Notification;
-                    
+
                     {Link to List}
                     Task.Next:=List;
                     List:=Task;
@@ -3524,15 +3524,15 @@ begin
                   Task.Callback:=Notifier.Callback;
                   Task.Data:=Notifier.Data;
                   Task.Notification:=Notification;
-                  
+
                   {Schedule Worker}
                   if WorkerSchedule(0,TWorkerTask(NotifierWorker),Task,nil) <> ERROR_SUCCESS then
                    begin
                     FreeMem(Task);
                    end;
                  end;
-               end; 
-             end; 
+               end;
+             end;
            end
           else
            begin
@@ -3557,7 +3557,7 @@ begin
                     Task.Callback:=Notifier.Callback;
                     Task.Data:=Notifier.Data;
                     Task.Notification:=Notification;
-                    
+
                     {Link to List}
                     Task.Next:=List;
                     List:=Task;
@@ -3575,7 +3575,7 @@ begin
                   Task.Callback:=Notifier.Callback;
                   Task.Data:=Notifier.Data;
                   Task.Notification:=Notification;
-                  
+
                   {Schedule Worker}
                   if WorkerSchedule(0,TWorkerTask(NotifierWorker),Task,nil) <> ERROR_SUCCESS then
                    begin
@@ -3584,10 +3584,10 @@ begin
                  end;
                end;
              end;
-           end;         
+           end;
          end;
-       end;  
-     
+       end;
+
       {Get Next}
       Notifier:=Notifier.Next;
      end;
@@ -3595,23 +3595,23 @@ begin
     {Release the Lock}
     CriticalSectionUnlock(NotifierTableLock);
    end;
-   
+
    {Check List}
    while List <> nil do
     begin
      {Get Next}
      Next:=List.Next;
-     
+
      {Check Callback}
      if Assigned(List.Callback) then
       begin
        {Call the Callback}
        List.Callback(List.Device,List.Data,List.Notification);
       end;
-     
+
      {Destroy Task}
-     FreeMem(List); 
-     
+     FreeMem(List);
+
      {Get List}
      List:=Next;
     end;
@@ -3619,7 +3619,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -3629,18 +3629,18 @@ begin
  {}
  {Check Retry}
  if Retry = nil then Exit;
- 
+
  {Check Device}
  if Retry.Device = nil then Exit;
  if Retry.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  if DEVICE_LOG_ENABLED then DeviceLogWarn(nil,'Retrying device notification (Name=' + DeviceGetName(Retry.Device) + ' Class=' + DeviceClassToString(Retry.Device.DeviceClass) + ' Notification=' + NotificationToString(Retry.Notification) + ')');
- 
+
  {Retry Notification}
  NotifierNotify(Retry.Device,Retry.Notification);
- 
+
  {Destroy Retry}
- FreeMem(Retry); 
+ FreeMem(Retry);
 end;
 
 {==============================================================================}
@@ -3650,16 +3650,16 @@ begin
  {}
  {Check Task}
  if Task = nil then Exit;
- 
+
  {Check Callback}
  if Assigned(Task.Callback) then
   begin
    {Call the Callback}
    Task.Callback(Task.Device,Task.Data,Task.Notification);
   end;
- 
+
  {Destroy Task}
- FreeMem(Task); 
+ FreeMem(Task);
 end;
 
 {==============================================================================}
@@ -3684,10 +3684,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TDriver) then Exit;
- 
+
  {Create Driver}
  if DRIVER_SHARED_MEMORY then
   begin
@@ -3696,9 +3696,9 @@ begin
  else
   begin
    Driver:=AllocMem(Size);
-  end; 
+  end;
  if Driver = nil then Exit;
- 
+
  {Update Driver}
  Driver.Signature:=DRIVER_SIGNATURE;
  Driver.DriverId:=DRIVER_ID_ANY;
@@ -3709,9 +3709,9 @@ begin
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Created driver (Driver=' + PtrToHex(Driver) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Return Result}
- Result:=Driver; 
+ Result:=Driver;
 end;
 
 {==============================================================================}
@@ -3723,18 +3723,18 @@ function DriverDestroy(Driver:PDriver):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Driver}
  if Driver = nil then Exit;
  if Driver.Signature <> DRIVER_SIGNATURE then Exit;
- 
+
  {Check Driver}
  Result:=ERROR_IN_USE;
  if DriverCheck(Driver) = Driver then Exit;
- 
+
  {Check State}
  if Driver.DriverState <> DRIVER_STATE_UNREGISTERED then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(DriverNameLock) = ERROR_SUCCESS then
   begin
@@ -3743,15 +3743,15 @@ begin
 
    {Free Driver}
    FreeMem(Driver);
-  
+
    {Release Lock}
    CriticalSectionUnlock(DriverNameLock);
-  end;  
- 
+  end;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Destroyed driver (Driver=' + PtrToHex(Driver) + ')');
  {$ENDIF}
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -3768,7 +3768,7 @@ begin
 
  {Check Driver}
  if Driver = nil then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(DriverNameLock) = ERROR_SUCCESS then
   begin
@@ -3804,17 +3804,17 @@ begin
 
  {Check Name}
  if Length(Name) = 0 then Exit;
- 
+
  {Check Driver}
  if Driver = nil then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(DriverNameLock) = ERROR_SUCCESS then
   begin
    try
     {Check Signature}
     if Driver.Signature <> DRIVER_SIGNATURE then Exit;
-    
+
     {Set Name}
     StrLCopy(Driver.DriverName,PChar(Name),DRIVER_NAME_LENGTH - 1);
 
@@ -3843,16 +3843,16 @@ begin
  if Driver = nil then Exit;
  if Driver.Signature <> DRIVER_SIGNATURE then Exit;
  if Driver.DriverId <> DRIVER_ID_ANY then Exit;
- if StrLen(Driver.DriverName) = 0 then Exit; 
+ if StrLen(Driver.DriverName) = 0 then Exit;
  if Driver.DriverClass = DRIVER_CLASS_ANY then Exit;
- 
+
  {Check Driver}
  Result:=ERROR_ALREADY_EXISTS;
  if DriverCheck(Driver) = Driver then Exit;
 
  {Check State}
  if Driver.DriverState <> DRIVER_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Driver}
  if CriticalSectionLock(DriverTableLock) = ERROR_SUCCESS then
   begin
@@ -3868,10 +3868,10 @@ begin
       DriverTable.Prev:=Driver;
       DriverTable:=Driver;
      end;
-    
+
     {Increment Count}
     Inc(DriverTableCount);
-    
+
     {Update Driver}
     DriverId:=0;
     while DriverFind(DRIVER_CLASS_ANY,DriverId) <> nil do
@@ -3879,10 +3879,10 @@ begin
       Inc(DriverId);
      end;
     Driver.DriverId:=DriverId;
-    
+
     {Register Driver}
     Driver.DriverState:=DRIVER_STATE_REGISTERED;
-  
+
     if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Registered driver (Driver=' + PtrToHex(Driver) + ' Class=' + DriverClassToString(Driver.DriverClass) + ' Name=' + DriverGetName(Driver) + ')');
     {Return Result}
     Result:=ERROR_SUCCESS;
@@ -3893,7 +3893,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -3908,13 +3908,13 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Driver}
  if Driver = nil then Exit;
  if Driver.Signature <> DRIVER_SIGNATURE then Exit;
  if Driver.DriverId = DRIVER_ID_ANY then Exit;
  if Driver.DriverClass = DRIVER_CLASS_ANY then Exit;
- 
+
  {Check Driver}
  Result:=ERROR_NOT_FOUND;
  if DriverCheck(Driver) <> Driver then Exit;
@@ -3928,7 +3928,7 @@ begin
    try
     {Deregister Driver}
     Driver.DriverState:=DRIVER_STATE_UNREGISTERED;
- 
+
     {Unlink Driver}
     Prev:=Driver.Prev;
     Next:=Driver.Next;
@@ -3938,7 +3938,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -3946,15 +3946,15 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
-    
+       end;
+     end;
+
     {Decrement Count}
     Dec(DriverTableCount);
- 
+
     {Update Driver}
     Driver.DriverId:=DRIVER_ID_ANY;
- 
+
     if DEVICE_LOG_ENABLED then DeviceLogInfo(nil,'Deregistered driver (Driver=' + PtrToHex(Driver) + ' Class=' + DriverClassToString(Driver.DriverClass) + ' Name=' + DriverGetName(Driver) + ')');
     {Return Result}
     Result:=ERROR_SUCCESS;
@@ -3965,7 +3965,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -3980,7 +3980,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(DriverTableLock) = ERROR_SUCCESS then
   begin
@@ -4004,7 +4004,7 @@ begin
               Result:=Driver;
               Exit;
              end;
-           end;  
+           end;
          end
         else
          begin
@@ -4014,9 +4014,9 @@ begin
             Result:=Driver;
             Exit;
            end;
-         end;       
+         end;
        end;
-       
+
       {Get Next}
       Driver:=Driver.Next;
      end;
@@ -4038,7 +4038,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(DriverTableLock) = ERROR_SUCCESS then
   begin
@@ -4057,7 +4057,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       Driver:=Driver.Next;
      end;
@@ -4081,10 +4081,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(DriverTableLock) = ERROR_SUCCESS then
   begin
@@ -4102,11 +4102,11 @@ begin
           if Callback(Driver,Data) <> ERROR_SUCCESS then Exit;
          end;
        end;
-      
+
       {Get Next}
       Driver:=Driver.Next;
      end;
-  
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -4117,7 +4117,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4130,11 +4130,11 @@ function ClockDeviceStart(Clock:PClockDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Clock}
  if Clock = nil then Exit;
- if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'Clock Device Start');
  {$ENDIF}
@@ -4150,17 +4150,17 @@ begin
    {Call Device Start}
    Result:=Clock.DeviceStart(Clock);
    if Result <> ERROR_SUCCESS then Exit;
-  end; 
- 
+  end;
+
  {Enable Device}
  Clock.ClockState:=CLOCK_STATE_ENABLED;
 
  {Notify Enable}
  NotifierNotify(@Clock.Device,DEVICE_NOTIFICATION_ENABLE);
- 
+
  Result:=ERROR_SUCCESS;
 end;
- 
+
 {==============================================================================}
 
 function ClockDeviceStop(Clock:PClockDevice):LongWord;
@@ -4170,11 +4170,11 @@ function ClockDeviceStop(Clock:PClockDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Clock}
  if Clock = nil then Exit;
- if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'Clock Device Stop');
  {$ENDIF}
@@ -4182,21 +4182,21 @@ begin
  {Check Enabled}
  Result:=ERROR_SUCCESS;
  if Clock.ClockState <> CLOCK_STATE_ENABLED then Exit;
- 
+
  {Check Stop}
  if Assigned(Clock.DeviceStop) then
   begin
    {Call Device Stop}
    Result:=Clock.DeviceStop(Clock);
    if Result <> ERROR_SUCCESS then Exit;
-  end; 
- 
+  end;
+
  {Disable Device}
  Clock.ClockState:=CLOCK_STATE_DISABLED;
 
  {Notify Disable}
  NotifierNotify(@Clock.Device,DEVICE_NOTIFICATION_DISABLE);
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -4209,18 +4209,18 @@ function ClockDeviceRead(Clock:PClockDevice):LongWord;
 begin
  {}
  Result:=0;
- 
+
  {Check Clock}
  if Clock = nil then Exit;
- if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'Clock Device Read');
  {$ENDIF}
- 
+
  {Check Enabled}
  if Clock.ClockState <> CLOCK_STATE_ENABLED then Exit;
- 
+
  if Assigned(Clock.DeviceRead) then
   begin
    Result:=Clock.DeviceRead(Clock);
@@ -4228,7 +4228,7 @@ begin
  else
   begin
    Result:=ClockDeviceRead64(Clock);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4240,18 +4240,18 @@ function ClockDeviceRead64(Clock:PClockDevice):Int64;
 begin
  {}
  Result:=0;
- 
+
  {Check Clock}
  if Clock = nil then Exit;
- if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'Clock Device Read64');
  {$ENDIF}
- 
+
  {Check Enabled}
  if Clock.ClockState <> CLOCK_STATE_ENABLED then Exit;
- 
+
  if Assigned(Clock.DeviceRead64) then
   begin
    Result:=Clock.DeviceRead64(Clock);
@@ -4270,19 +4270,19 @@ function ClockDeviceWrite64(Clock:PClockDevice;const Value:Int64):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Clock}
  if Clock = nil then Exit;
- if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'Clock Device Write64 (Value=' + IntToStr(Value) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if Clock.ClockState <> CLOCK_STATE_ENABLED then Exit;
- 
+
  if Assigned(Clock.DeviceWrite64) then
   begin
    Result:=Clock.DeviceWrite64(Clock,Value);
@@ -4298,18 +4298,18 @@ function ClockDeviceGetRate(Clock:PClockDevice):LongWord;
 begin
  {}
  Result:=0;
- 
+
  {Check Clock}
  if Clock = nil then Exit;
  if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(@Clock.Device,'Clock Device Get Rate');
  {$ENDIF}
 
  {Check Enabled}
  {if Clock.ClockState <> CLOCK_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if Assigned(Clock.DeviceGetRate) then
   begin
    Result:=Clock.DeviceGetRate(Clock);
@@ -4317,11 +4317,11 @@ begin
  else
   begin
    if MutexLock(Clock.Lock) <> ERROR_SUCCESS then Exit;
-   
+
    Result:=Clock.Rate;
-   
+
    MutexUnlock(Clock.Lock);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4336,18 +4336,18 @@ function ClockDeviceSetRate(Clock:PClockDevice;Rate:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Clock}
  if Clock = nil then Exit;
  if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Clock Device Set Rate (Rate=' + IntToStr(Rate) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if Clock.ClockState <> CLOCK_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if Assigned(Clock.DeviceSetRate) then
   begin
    {Call Device Set Rate}
@@ -4356,14 +4356,14 @@ begin
  else
   begin
    if MutexLock(Clock.Lock) <> ERROR_SUCCESS then Exit;
-   
+
    {Set Rate}
    Clock.Rate:=Rate;
-   
+
    Result:=ERROR_SUCCESS;
-   
+
    MutexUnlock(Clock.Lock);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4390,18 +4390,18 @@ function ClockDeviceGetProperties(Clock:PClockDevice;Properties:PClockProperties
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Properties}
  if Properties = nil then Exit;
- 
+
  {Check Clock}
  if Clock = nil then Exit;
  if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Clock Device Get Properties');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if Clock.ClockState <> CLOCK_STATE_ENABLED then Exit;} {Allow when disabled}
 
@@ -4413,20 +4413,20 @@ begin
  else
   begin
    if MutexLock(Clock.Lock) <> ERROR_SUCCESS then Exit;
-   
+
    {Get Properties}
    Properties.Flags:=Clock.Device.DeviceFlags;
    Properties.Rate:=Clock.Rate;
    Properties.MinRate:=Clock.MinRate;
    Properties.MaxRate:=Clock.MaxRate;
- 
+
    {Return Result}
    Result:=ERROR_SUCCESS;
-   
+
    MutexUnlock(Clock.Lock);
   end;
 end;
- 
+
 {==============================================================================}
 
 function ClockDeviceCreate:PClockDevice;
@@ -4446,16 +4446,16 @@ function ClockDeviceCreateEx(Size:LongWord):PClockDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TClockDevice) then Exit;
- 
+
  {Create Clock}
  Result:=PClockDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=CLOCK_TYPE_NONE;
  Result.Device.DeviceFlags:=CLOCK_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -4476,7 +4476,7 @@ begin
  Result.Rate:=0;
  Result.MinRate:=0;
  Result.MaxRate:=0;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreate;
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -4497,25 +4497,25 @@ function ClockDeviceDestroy(Clock:PClockDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Clock}
  if Clock = nil then Exit;
  if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Clock}
  Result:=ERROR_IN_USE;
  if ClockDeviceCheck(Clock) = Clock then Exit;
 
  {Check State}
  if Clock.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Lock}
  if Clock.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Clock.Lock);
   end;
- 
- {Destroy Clock} 
+
+ {Destroy Clock}
  Result:=DeviceDestroy(@Clock.Device);
 end;
 
@@ -4530,22 +4530,22 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Clock}
  if Clock = nil then Exit;
  if Clock.ClockId <> DEVICE_ID_ANY then Exit;
  if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Interfaces}
  if not(Assigned(Clock.DeviceRead64)) then Exit;
- 
+
  {Check Clock}
  Result:=ERROR_ALREADY_EXISTS;
  if ClockDeviceCheck(Clock) = Clock then Exit;
- 
+
  {Check State}
  if Clock.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Clock}
  if CriticalSectionLock(ClockDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -4557,19 +4557,19 @@ begin
       Inc(ClockId);
      end;
     Clock.ClockId:=ClockId;
-    
+
     {Update Device}
     Clock.Device.DeviceName:=CLOCK_NAME_PREFIX + IntToStr(Clock.ClockId);
     Clock.Device.DeviceClass:=DEVICE_CLASS_CLOCK;
-    
+
     {Register Device}
     Result:=DeviceRegister(@Clock.Device);
     if Result <> ERROR_SUCCESS then
      begin
       Clock.ClockId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link Clock}
     if ClockDeviceTable = nil then
      begin
@@ -4581,16 +4581,16 @@ begin
       ClockDeviceTable.Prev:=Clock;
       ClockDeviceTable:=Clock;
      end;
- 
+
     {Increment Count}
     Inc(ClockDeviceTableCount);
-    
+
     {Check Default}
     if ClockDeviceDefault = nil then
      begin
       ClockDeviceDefault:=Clock;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -4600,7 +4600,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4615,19 +4615,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Clock}
  if Clock = nil then Exit;
  if Clock.ClockId = DEVICE_ID_ANY then Exit;
  if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Clock}
  Result:=ERROR_NOT_FOUND;
  if ClockDeviceCheck(Clock) <> Clock then Exit;
- 
+
  {Check State}
  if Clock.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove Clock}
  if CriticalSectionLock(ClockDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -4635,7 +4635,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@Clock.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink Clock}
     Prev:=Clock.Prev;
     Next:=Clock.Next;
@@ -4645,7 +4645,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -4653,21 +4653,21 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(ClockDeviceTableCount);
- 
+
     {Check Default}
     if ClockDeviceDefault = Clock then
      begin
       ClockDeviceDefault:=ClockDeviceTable;
      end;
-     
+
     {Update Clock}
     Clock.ClockId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -4677,7 +4677,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4691,10 +4691,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if ClockId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(ClockDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -4758,10 +4758,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(ClockDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -4775,11 +4775,11 @@ begin
        begin
         if Callback(Clock,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Clock:=Clock.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -4790,7 +4790,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4805,19 +4805,19 @@ function ClockDeviceNotification(Clock:PClockDevice;Callback:TClockNotification;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Clock}
  if Clock = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_CLOCK,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check Clock}
    if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@Clock.Device,DEVICE_CLASS_CLOCK,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4830,11 +4830,11 @@ function TimerDeviceStart(Timer:PTimerDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
- if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Start');
  {$ENDIF}
@@ -4858,23 +4858,23 @@ begin
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
      end;
-      
- 
+
+
     {Enable Device}
     Timer.TimerState:=TIMER_STATE_ENABLED;
-    
+
     {Notify Enable}
     NotifierNotify(@Timer.Device,DEVICE_NOTIFICATION_ENABLE);
-    
+
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Timer.Lock);
-   end; 
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -4886,11 +4886,11 @@ function TimerDeviceStop(Timer:PTimerDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Stop');
  {$ENDIF}
@@ -4898,7 +4898,7 @@ begin
  {Check Enabled}
  Result:=ERROR_SUCCESS;
  if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;
- 
+
  if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -4913,23 +4913,23 @@ begin
      begin
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
-     end; 
-    
+     end;
+
     {Disable Device}
     Timer.TimerState:=TIMER_STATE_DISABLED;
-   
+
     {Notify Disable}
     NotifierNotify(@Timer.Device,DEVICE_NOTIFICATION_DISABLE);
-    
+
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Timer.Lock);
-   end; 
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -4941,18 +4941,18 @@ function TimerDeviceRead(Timer:PTimerDevice):LongWord;
 begin
  {}
  Result:=0;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Read');
  {$ENDIF}
- 
+
  {Check Enabled}
  if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;
- 
+
  if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Timer.DeviceRead) then
@@ -4964,9 +4964,9 @@ begin
     begin
      Result:=TimerDeviceRead64(Timer);
     end;
-    
+
    MutexUnlock(Timer.Lock);
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -4978,18 +4978,18 @@ function TimerDeviceRead64(Timer:PTimerDevice):Int64;
 begin
  {}
  Result:=0;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Read64');
  {$ENDIF}
- 
+
  {Check Enabled}
  if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;
- 
+
  if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Timer.DeviceRead64) then
@@ -5000,10 +5000,10 @@ begin
    else
     begin
      Result:=TimerDeviceRead(Timer);
-    end;  
-    
+    end;
+
    MutexUnlock(Timer.Lock);
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -5015,19 +5015,19 @@ function TimerDeviceWait(Timer:PTimerDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Wait');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;
- 
+
  if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Timer.DeviceWait) then
@@ -5035,13 +5035,13 @@ begin
      {Call Device Wait}
      Result:=Timer.DeviceWait(Timer);
     end;
-    
+
    MutexUnlock(Timer.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -5056,22 +5056,22 @@ function TimerDeviceEvent(Timer:PTimerDevice;Flags:LongWord;Callback:TTimerCallb
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Event');
  {$ENDIF}
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;
- 
+
  if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Timer.DeviceEvent) then
@@ -5079,13 +5079,13 @@ begin
      {Call Device Event}
      Result:=Timer.DeviceEvent(Timer,Flags,Callback,Data);
     end;
-    
+
    MutexUnlock(Timer.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -5097,19 +5097,19 @@ function TimerDeviceCancel(Timer:PTimerDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Cancel');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;
- 
+
  if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Timer.DeviceCancel) then
@@ -5117,13 +5117,13 @@ begin
      {Call Device Cancel}
      Result:=Timer.DeviceCancel(Timer);
     end;
-    
+
    MutexUnlock(Timer.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -5135,18 +5135,18 @@ function TimerDeviceGetRate(Timer:PTimerDevice):LongWord;
 begin
  {}
  Result:=0;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Get Rate');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Timer.DeviceGetRate) then
@@ -5158,8 +5158,8 @@ begin
     begin
      {Get Rate}
      Result:=Timer.Rate;
-    end;  
-    
+    end;
+
    MutexUnlock(Timer.Lock);
   end;
 end;
@@ -5174,18 +5174,18 @@ function TimerDeviceSetRate(Timer:PTimerDevice;Rate:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Set Rate (Rate=' + IntToStr(Rate) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Timer.DeviceSetRate) then
@@ -5197,10 +5197,10 @@ begin
     begin
      {Set Rate}
      Timer.Rate:=Rate;
-     
+
      Result:=ERROR_SUCCESS;
-    end; 
-    
+    end;
+
    MutexUnlock(Timer.Lock);
   end
  else
@@ -5220,18 +5220,18 @@ function TimerDeviceGetInterval(Timer:PTimerDevice):LongWord;
 begin
  {}
  Result:=0;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Get Interval');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Timer.DeviceGetInterval) then
@@ -5243,8 +5243,8 @@ begin
     begin
      {Get Interval}
      Result:=Timer.Interval;
-    end;  
-    
+    end;
+
    MutexUnlock(Timer.Lock);
   end;
 end;
@@ -5261,18 +5261,18 @@ function TimerDeviceSetInterval(Timer:PTimerDevice;Interval:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Set Interval (Interval=' + IntToStr(Interval) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Timer.DeviceSetInterval) then
@@ -5284,10 +5284,10 @@ begin
     begin
      {Set Interval}
      Timer.Interval:=Interval;
-     
+
      Result:=ERROR_SUCCESS;
-    end;  
-    
+    end;
+
    MutexUnlock(Timer.Lock);
   end
  else
@@ -5320,21 +5320,21 @@ function TimerDeviceGetProperties(Timer:PTimerDevice;Properties:PTimerProperties
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Properties}
  if Properties = nil then Exit;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Timer Device Get Properties');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if Timer.TimerState <> TIMER_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(Timer.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(Timer.DeviceGetProperties) then
@@ -5346,17 +5346,17 @@ begin
     begin
      {Get Properties}
      System.Move(Timer.Properties,Properties^,SizeOf(TTimerProperties));
-  
+
      {Return Result}
      Result:=ERROR_SUCCESS;
     end;
-    
+
    MutexUnlock(Timer.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -5378,14 +5378,14 @@ function TimerDeviceCreateEx(Size:LongWord):PTimerDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TTimerDevice) then Exit;
- 
+
  {Create Timer}
  Result:=PTimerDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
  Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=TIMER_TYPE_NONE;
@@ -5411,7 +5411,7 @@ begin
  Result.Address:=nil;
  Result.Rate:=0;
  Result.Interval:=0;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -5432,25 +5432,25 @@ function TimerDeviceDestroy(Timer:PTimerDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Timer}
  Result:=ERROR_IN_USE;
  if TimerDeviceCheck(Timer) = Timer then Exit;
 
  {Check State}
  if Timer.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Lock}
  if Timer.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Timer.Lock);
   end;
- 
- {Destroy Timer} 
+
+ {Destroy Timer}
  Result:=DeviceDestroy(@Timer.Device);
 end;
 
@@ -5465,24 +5465,24 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.TimerId <> DEVICE_ID_ANY then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Interfaces}
  if not(Assigned(Timer.DeviceStart)) then Exit;
  if not(Assigned(Timer.DeviceStop)) then Exit;
  if not(Assigned(Timer.DeviceRead)) and not(Assigned(Timer.DeviceRead64)) then Exit;
- 
+
  {Check Timer}
  Result:=ERROR_ALREADY_EXISTS;
  if TimerDeviceCheck(Timer) = Timer then Exit;
- 
+
  {Check State}
  if Timer.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Timer}
  if CriticalSectionLock(TimerDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -5494,19 +5494,19 @@ begin
       Inc(TimerId);
      end;
     Timer.TimerId:=TimerId;
-    
+
     {Update Device}
     Timer.Device.DeviceName:=TIMER_NAME_PREFIX + IntToStr(Timer.TimerId);
     Timer.Device.DeviceClass:=DEVICE_CLASS_TIMER;
-    
+
     {Register Device}
     Result:=DeviceRegister(@Timer.Device);
     if Result <> ERROR_SUCCESS then
      begin
       Timer.TimerId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link Timer}
     if TimerDeviceTable = nil then
      begin
@@ -5518,16 +5518,16 @@ begin
       TimerDeviceTable.Prev:=Timer;
       TimerDeviceTable:=Timer;
      end;
- 
+
     {Increment Count}
     Inc(TimerDeviceTableCount);
-    
+
     {Check Default}
     if TimerDeviceDefault = nil then
      begin
       TimerDeviceDefault:=Timer;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -5537,7 +5537,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -5552,19 +5552,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.TimerId = DEVICE_ID_ANY then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Timer}
  Result:=ERROR_NOT_FOUND;
  if TimerDeviceCheck(Timer) <> Timer then Exit;
- 
+
  {Check State}
  if Timer.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove Timer}
  if CriticalSectionLock(TimerDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -5572,7 +5572,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@Timer.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink Timer}
     Prev:=Timer.Prev;
     Next:=Timer.Next;
@@ -5582,7 +5582,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -5590,21 +5590,21 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(TimerDeviceTableCount);
- 
+
     {Check Default}
     if TimerDeviceDefault = Timer then
      begin
       TimerDeviceDefault:=TimerDeviceTable;
      end;
-     
+
     {Update Timer}
     Timer.TimerId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -5614,7 +5614,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -5628,10 +5628,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if TimerId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(TimerDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -5695,10 +5695,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(TimerDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -5712,11 +5712,11 @@ begin
        begin
         if Callback(Timer,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Timer:=Timer.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -5727,7 +5727,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -5742,19 +5742,19 @@ function TimerDeviceNotification(Timer:PTimerDevice;Callback:TTimerNotification;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timer}
  if Timer = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_TIMER,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check Timer}
    if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@Timer.Device,DEVICE_CLASS_TIMER,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5764,11 +5764,11 @@ function RandomDeviceStart(Random:PRandomDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Random}
  if Random = nil then Exit;
- if Random.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Random.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Random Device Start');
  {$ENDIF}
@@ -5776,35 +5776,35 @@ begin
  {Check Disabled}
  Result:=ERROR_SUCCESS;
  if Random.RandomState <> RANDOM_STATE_DISABLED then Exit;
- 
+
  {Check Start}
  Result:=ERROR_INVALID_PARAMETER;
  if not(Assigned(Random.DeviceStart)) then Exit;
- 
+
  {Call Device Start}
  Result:=Random.DeviceStart(Random);
  if Result <> ERROR_SUCCESS then Exit;
- 
+
  {Enable Device}
  Random.RandomState:=RANDOM_STATE_ENABLED;
 
  {Notify Enable}
  NotifierNotify(@Random.Device,DEVICE_NOTIFICATION_ENABLE);
- 
+
  Result:=ERROR_SUCCESS;
 end;
- 
+
 {==============================================================================}
- 
+
 function RandomDeviceStop(Random:PRandomDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Random}
  if Random = nil then Exit;
- if Random.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Random.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Random Device Stop');
  {$ENDIF}
@@ -5812,43 +5812,43 @@ begin
  {Check Enabled}
  Result:=ERROR_SUCCESS;
  if Random.RandomState <> RANDOM_STATE_ENABLED then Exit;
- 
+
  {Check Stop}
  if Assigned(Random.DeviceStop) then
   begin
    {Call Device Stop}
    Result:=Random.DeviceStop(Random);
    if Result <> ERROR_SUCCESS then Exit;
-  end; 
- 
+  end;
+
  {Disable Device}
  Random.RandomState:=RANDOM_STATE_DISABLED;
 
  {Notify Disable}
  NotifierNotify(@Random.Device,DEVICE_NOTIFICATION_DISABLE);
- 
+
  Result:=ERROR_SUCCESS;
 end;
- 
+
 {==============================================================================}
 
 function RandomDeviceSeed(Random:PRandomDevice;Seed:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Random}
  if Random = nil then Exit;
- if Random.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Random.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Random Device Seed');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if Random.RandomState <> RANDOM_STATE_ENABLED then Exit;
- 
+
  if Assigned(Random.DeviceSeed) then
   begin
    Result:=Random.DeviceSeed(Random,Seed);
@@ -5856,7 +5856,7 @@ begin
  else
   begin
    Result:=ERROR_SUCCESS;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -5865,18 +5865,18 @@ function RandomDeviceReadByte(Random:PRandomDevice):Byte;
 begin
  {}
  Result:=0;
- 
+
  {Check Random}
  if Random = nil then Exit;
- if Random.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Random.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Random Device Read Byte');
  {$ENDIF}
- 
+
  {Check Enabled}
  if Random.RandomState <> RANDOM_STATE_ENABLED then Exit;
- 
+
  if Assigned(Random.DeviceReadByte) then
   begin
    Result:=Random.DeviceReadByte(Random);
@@ -5884,7 +5884,7 @@ begin
  else
   begin
    Result:=RandomDeviceReadLongWord(Random);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -5893,18 +5893,18 @@ function RandomDeviceReadWord(Random:PRandomDevice):Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Random}
  if Random = nil then Exit;
- if Random.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Random.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Random Device Read Word');
  {$ENDIF}
- 
+
  {Check Enabled}
  if Random.RandomState <> RANDOM_STATE_ENABLED then Exit;
- 
+
  if Assigned(Random.DeviceReadWord) then
   begin
    Result:=Random.DeviceReadWord(Random);
@@ -5912,7 +5912,7 @@ begin
  else
   begin
    Result:=RandomDeviceReadLongWord(Random);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -5921,18 +5921,18 @@ function RandomDeviceReadLongWord(Random:PRandomDevice):LongWord;
 begin
  {}
  Result:=0;
- 
+
  {Check Random}
  if Random = nil then Exit;
- if Random.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Random.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Random Device Read LongWord');
  {$ENDIF}
- 
+
  {Check Enabled}
  if Random.RandomState <> RANDOM_STATE_ENABLED then Exit;
- 
+
  if Assigned(Random.DeviceReadLongWord) then
   begin
    Result:=Random.DeviceReadLongWord(Random);
@@ -5945,18 +5945,18 @@ function RandomDeviceReadQuadWord(Random:PRandomDevice):Int64;
 begin
  {}
  Result:=0;
- 
+
  {Check Random}
  if Random = nil then Exit;
- if Random.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Random.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Random Device Read QuadWord');
  {$ENDIF}
- 
+
  {Check Enabled}
  if Random.RandomState <> RANDOM_STATE_ENABLED then Exit;
- 
+
  if Assigned(Random.DeviceReadQuadWord) then
   begin
    Result:=Random.DeviceReadQuadWord(Random);
@@ -5965,7 +5965,7 @@ begin
   begin
    Int64Rec(Result).Lo:=RandomDeviceReadLongWord(Random);
    Int64Rec(Result).Hi:=RandomDeviceReadLongWord(Random);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -5974,18 +5974,18 @@ function RandomDeviceReadDouble(Random:PRandomDevice):Double;
 begin
  {}
  Result:=0;
- 
+
  {Check Random}
  if Random = nil then Exit;
- if Random.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Random.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Random Device Read Double');
  {$ENDIF}
- 
+
  {Check Enabled}
  if Random.RandomState <> RANDOM_STATE_ENABLED then Exit;
- 
+
  if Assigned(Random.DeviceReadDouble) then
   begin
    Result:=Random.DeviceReadDouble(Random);
@@ -5993,7 +5993,7 @@ begin
  else
   begin
    Result:=Frac(RandomDeviceReadLongWord(Random) / 1000000);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6024,16 +6024,16 @@ function RandomDeviceCreateEx(Size:LongWord):PRandomDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TRandomDevice) then Exit;
- 
+
  {Create Random}
  Result:=PRandomDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=RANDOM_TYPE_NONE;
  Result.Device.DeviceFlags:=RANDOM_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -6051,7 +6051,7 @@ begin
  Result.DeviceReadDouble:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Address:=nil;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreate;
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -6070,25 +6070,25 @@ function RandomDeviceDestroy(Random:PRandomDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Random}
  if Random = nil then Exit;
  if Random.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Random}
  Result:=ERROR_IN_USE;
  if RandomDeviceCheck(Random) = Random then Exit;
 
  {Check State}
  if Random.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Lock}
  if Random.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Random.Lock);
   end;
- 
- {Destroy Random} 
+
+ {Destroy Random}
  Result:=DeviceDestroy(@Random.Device);
 end;
 
@@ -6101,23 +6101,23 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Random}
  if Random = nil then Exit;
  if Random.RandomId <> DEVICE_ID_ANY then Exit;
  if Random.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Interfaces}
  if not(Assigned(Random.DeviceStart)) then Exit;
  if not(Assigned(Random.DeviceReadLongWord)) then Exit;
- 
+
  {Check Random}
  Result:=ERROR_ALREADY_EXISTS;
  if RandomDeviceCheck(Random) = Random then Exit;
- 
+
  {Check State}
  if Random.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Random}
  if CriticalSectionLock(RandomDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -6129,19 +6129,19 @@ begin
       Inc(RandomId);
      end;
     Random.RandomId:=RandomId;
-    
+
     {Update Device}
     Random.Device.DeviceName:=RANDOM_NAME_PREFIX + IntToStr(Random.RandomId);
     Random.Device.DeviceClass:=DEVICE_CLASS_RANDOM;
-    
+
     {Register Device}
     Result:=DeviceRegister(@Random.Device);
     if Result <> ERROR_SUCCESS then
      begin
       Random.RandomId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link Random}
     if RandomDeviceTable = nil then
      begin
@@ -6153,16 +6153,16 @@ begin
       RandomDeviceTable.Prev:=Random;
       RandomDeviceTable:=Random;
      end;
- 
+
     {Increment Count}
     Inc(RandomDeviceTableCount);
-    
+
     {Check Default}
     if RandomDeviceDefault = nil then
      begin
       RandomDeviceDefault:=Random;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -6172,7 +6172,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6185,19 +6185,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Random}
  if Random = nil then Exit;
  if Random.RandomId = DEVICE_ID_ANY then Exit;
  if Random.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Random}
  Result:=ERROR_NOT_FOUND;
  if RandomDeviceCheck(Random) <> Random then Exit;
- 
+
  {Check State}
  if Random.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove Random}
  if CriticalSectionLock(RandomDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -6205,7 +6205,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@Random.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink Random}
     Prev:=Random.Prev;
     Next:=Random.Next;
@@ -6215,7 +6215,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -6223,21 +6223,21 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(RandomDeviceTableCount);
- 
+
     {Check Default}
     if RandomDeviceDefault = Random then
      begin
       RandomDeviceDefault:=RandomDeviceTable;
      end;
-     
+
     {Update Random}
     Random.RandomId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -6247,7 +6247,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6258,10 +6258,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if RandomId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(RandomDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -6315,10 +6315,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(RandomDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -6332,11 +6332,11 @@ begin
        begin
         if Callback(Random,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Random:=Random.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -6347,7 +6347,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6356,19 +6356,19 @@ function RandomDeviceNotification(Random:PRandomDevice;Callback:TRandomNotificat
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Random}
  if Random = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_RANDOM,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check Random}
    if Random.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@Random.Device,DEVICE_CLASS_RANDOM,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -6378,11 +6378,11 @@ function MailboxDeviceStart(Mailbox:PMailboxDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mailbox}
  if Mailbox = nil then Exit;
- if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Mailbox Device Start');
  {$ENDIF}
@@ -6398,14 +6398,14 @@ begin
    {Call Device Start}
    Result:=Mailbox.DeviceStart(Mailbox);
    if Result <> ERROR_SUCCESS then Exit;
-  end; 
- 
+  end;
+
  {Enable Device}
  Mailbox.MailboxState:=MAILBOX_STATE_ENABLED;
 
  {Notify Enable}
  NotifierNotify(@Mailbox.Device,DEVICE_NOTIFICATION_ENABLE);
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -6415,11 +6415,11 @@ function MailboxDeviceStop(Mailbox:PMailboxDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mailbox}
  if Mailbox = nil then Exit;
- if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Mailbox Device Stop');
  {$ENDIF}
@@ -6427,21 +6427,21 @@ begin
  {Check Enabled}
  Result:=ERROR_SUCCESS;
  if Mailbox.MailboxState <> MAILBOX_STATE_ENABLED then Exit;
- 
+
  {Check Stop}
  if Assigned(Mailbox.DeviceStop) then
   begin
    {Call Device Stop}
    Result:=Mailbox.DeviceStop(Mailbox);
    if Result <> ERROR_SUCCESS then Exit;
-  end; 
- 
+  end;
+
  {Disable Device}
  Mailbox.MailboxState:=MAILBOX_STATE_DISABLED;
 
  {Notify Disable}
  NotifierNotify(@Mailbox.Device,DEVICE_NOTIFICATION_DISABLE);
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -6451,18 +6451,18 @@ function MailboxDeviceReceive(Mailbox:PMailboxDevice;Channel:LongWord):LongWord;
 begin
  {}
  Result:=0;
- 
+
  {Check Mailbox}
  if Mailbox = nil then Exit;
- if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Mailbox Device Receive');
  {$ENDIF}
- 
+
  {Check Enabled}
  if Mailbox.MailboxState <> MAILBOX_STATE_ENABLED then Exit;
- 
+
  if Assigned(Mailbox.DeviceReceive) then
   begin
    Result:=Mailbox.DeviceReceive(Mailbox,Channel);
@@ -6475,19 +6475,19 @@ function MailboxDeviceSend(Mailbox:PMailboxDevice;Channel,Data:LongWord):LongWor
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mailbox}
  if Mailbox = nil then Exit;
- if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Mailbox Device Send');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if Mailbox.MailboxState <> MAILBOX_STATE_ENABLED then Exit;
- 
+
  if Assigned(Mailbox.DeviceSend) then
   begin
    Result:=Mailbox.DeviceSend(Mailbox,Channel,Data);
@@ -6500,19 +6500,19 @@ function MailboxDeviceCall(Mailbox:PMailboxDevice;Channel,Data:LongWord;var Resp
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mailbox}
  if Mailbox = nil then Exit;
- if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Mailbox Device Call');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if Mailbox.MailboxState <> MAILBOX_STATE_ENABLED then Exit;
- 
+
  if Assigned(Mailbox.DeviceCall) then
   begin
    Result:=Mailbox.DeviceCall(Mailbox,Channel,Data,Response);
@@ -6525,18 +6525,18 @@ function MailboxDeviceGetTimeout(Mailbox:PMailboxDevice):LongWord;
 begin
  {}
  Result:=0;
- 
+
  {Check Mailbox}
  if Mailbox = nil then Exit;
  if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Mailbox Device Get Timeout');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if Mailbox.MailboxState <> MAILBOX_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if Assigned(Mailbox.DeviceGetTimeout) then
   begin
    Result:=Mailbox.DeviceGetTimeout(Mailbox);
@@ -6544,11 +6544,11 @@ begin
  else
   begin
    if MutexLock(Mailbox.Lock) <> ERROR_SUCCESS then Exit;
-   
+
    Result:=Mailbox.Timeout;
-   
+
    MutexUnlock(Mailbox.Lock);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6557,19 +6557,19 @@ function MailboxDeviceSetTimeout(Mailbox:PMailboxDevice;Timeout:LongWord):LongWo
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mailbox}
  if Mailbox = nil then Exit;
  if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Mailbox Device Set Timeout');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if Mailbox.MailboxState <> MAILBOX_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if Assigned(Mailbox.DeviceSetTimeout) then
   begin
    Result:=Mailbox.DeviceSetTimeout(Mailbox,Timeout);
@@ -6579,11 +6579,11 @@ begin
    if MutexLock(Mailbox.Lock) <> ERROR_SUCCESS then Exit;
 
    Mailbox.Timeout:=Timeout;
-   
+
    Result:=ERROR_SUCCESS;
-   
+
    MutexUnlock(Mailbox.Lock);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6605,16 +6605,16 @@ function MailboxDeviceCreateEx(Size:LongWord):PMailboxDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TMailboxDevice) then Exit;
- 
+
  {Create Mailbox}
  Result:=PMailboxDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=MAILBOX_TYPE_NONE;
  Result.Device.DeviceFlags:=MAILBOX_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -6632,7 +6632,7 @@ begin
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Address:=nil;
  Result.Timeout:=0;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreate;
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -6651,25 +6651,25 @@ function MailboxDeviceDestroy(Mailbox:PMailboxDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mailbox}
  if Mailbox = nil then Exit;
  if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Mailbox}
  Result:=ERROR_IN_USE;
  if MailboxDeviceCheck(Mailbox) = Mailbox then Exit;
 
  {Check State}
  if Mailbox.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Lock}
  if Mailbox.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Mailbox.Lock);
   end;
- 
- {Destroy Mailbox} 
+
+ {Destroy Mailbox}
  Result:=DeviceDestroy(@Mailbox.Device);
 end;
 
@@ -6682,24 +6682,24 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mailbox}
  if Mailbox = nil then Exit;
  if Mailbox.MailboxId <> DEVICE_ID_ANY then Exit;
  if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Interfaces}
  if not(Assigned(Mailbox.DeviceReceive)) then Exit;
  if not(Assigned(Mailbox.DeviceSend)) then Exit;
  if not(Assigned(Mailbox.DeviceCall)) then Exit;
- 
+
  {Check Mailbox}
  Result:=ERROR_ALREADY_EXISTS;
  if MailboxDeviceCheck(Mailbox) = Mailbox then Exit;
- 
+
  {Check State}
  if Mailbox.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Mailbox}
  if CriticalSectionLock(MailboxDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -6711,19 +6711,19 @@ begin
       Inc(MailboxId);
      end;
     Mailbox.MailboxId:=MailboxId;
-    
+
     {Update Device}
     Mailbox.Device.DeviceName:=MAILBOX_NAME_PREFIX + IntToStr(Mailbox.MailboxId);
     Mailbox.Device.DeviceClass:=DEVICE_CLASS_MAILBOX;
-    
+
     {Register Device}
     Result:=DeviceRegister(@Mailbox.Device);
     if Result <> ERROR_SUCCESS then
      begin
       Mailbox.MailboxId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link Mailbox}
     if MailboxDeviceTable = nil then
      begin
@@ -6735,16 +6735,16 @@ begin
       MailboxDeviceTable.Prev:=Mailbox;
       MailboxDeviceTable:=Mailbox;
      end;
- 
+
     {Increment Count}
     Inc(MailboxDeviceTableCount);
-    
+
     {Check Default}
     if MailboxDeviceDefault = nil then
      begin
       MailboxDeviceDefault:=Mailbox;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -6754,7 +6754,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6767,19 +6767,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mailbox}
  if Mailbox = nil then Exit;
  if Mailbox.MailboxId = DEVICE_ID_ANY then Exit;
  if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Mailbox}
  Result:=ERROR_NOT_FOUND;
  if MailboxDeviceCheck(Mailbox) <> Mailbox then Exit;
- 
+
  {Check State}
  if Mailbox.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove Mailbox}
  if CriticalSectionLock(MailboxDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -6787,7 +6787,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@Mailbox.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink Mailbox}
     Prev:=Mailbox.Prev;
     Next:=Mailbox.Next;
@@ -6797,7 +6797,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -6805,21 +6805,21 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(MailboxDeviceTableCount);
- 
+
     {Check Default}
     if MailboxDeviceDefault = Mailbox then
      begin
       MailboxDeviceDefault:=MailboxDeviceTable;
      end;
-     
+
     {Update Mailbox}
     Mailbox.MailboxId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -6829,7 +6829,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6840,10 +6840,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if MailboxId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(MailboxDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -6897,10 +6897,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(MailboxDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -6914,11 +6914,11 @@ begin
        begin
         if Callback(Mailbox,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Mailbox:=Mailbox.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -6929,7 +6929,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6938,19 +6938,19 @@ function MailboxDeviceNotification(Mailbox:PMailboxDevice;Callback:TMailboxNotif
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mailbox}
  if Mailbox = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_MAILBOX,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check Mailbox}
    if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@Mailbox.Device,DEVICE_CLASS_MAILBOX,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -6960,11 +6960,11 @@ function WatchdogDeviceStart(Watchdog:PWatchdogDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Watchdog}
  if Watchdog = nil then Exit;
  if Watchdog.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Watchdog Device Start');
  {$ENDIF}
@@ -6972,21 +6972,21 @@ begin
  {Check Disabled}
  Result:=ERROR_SUCCESS;
  if Watchdog.WatchdogState <> WATCHDOG_STATE_DISABLED then Exit;
- 
+
  {Check Start}
  Result:=ERROR_INVALID_PARAMETER;
  if not(Assigned(Watchdog.DeviceStart)) then Exit;
- 
+
  {Call Device Start}
  Result:=Watchdog.DeviceStart(Watchdog);
  if Result <> ERROR_SUCCESS then Exit;
- 
+
  {Enable Device}
  Watchdog.WatchdogState:=WATCHDOG_STATE_ENABLED;
 
  {Notify Enable}
  NotifierNotify(@Watchdog.Device,DEVICE_NOTIFICATION_ENABLE);
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -6996,11 +6996,11 @@ function WatchdogDeviceStop(Watchdog:PWatchdogDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Watchdog}
  if Watchdog = nil then Exit;
  if Watchdog.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Watchdog Device Stop');
  {$ENDIF}
@@ -7008,20 +7008,20 @@ begin
  {Check Enabled}
  Result:=ERROR_SUCCESS;
  if Watchdog.WatchdogState <> WATCHDOG_STATE_ENABLED then Exit;
- 
+
  {Check Stop}
  if not(Assigned(Watchdog.DeviceStop)) then Exit;
 
  {Call Device Stop}
  Result:=Watchdog.DeviceStop(Watchdog);
  if Result <> ERROR_SUCCESS then Exit;
- 
+
  {Disable Device}
  Watchdog.WatchdogState:=WATCHDOG_STATE_DISABLED;
 
  {Notify Disable}
  NotifierNotify(@Watchdog.Device,DEVICE_NOTIFICATION_DISABLE);
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -7031,19 +7031,19 @@ function WatchdogDeviceRefresh(Watchdog:PWatchdogDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Watchdog}
  if Watchdog = nil then Exit;
  if Watchdog.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Watchdog Device Refresh');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if Watchdog.WatchdogState <> WATCHDOG_STATE_ENABLED then Exit;
- 
+
  if Assigned(Watchdog.DeviceRefresh) then
   begin
    Result:=Watchdog.DeviceRefresh(Watchdog);
@@ -7056,18 +7056,18 @@ function WatchdogDeviceGetRemain(Watchdog:PWatchdogDevice):LongWord;
 begin
  {}
  Result:=0;
- 
+
  {Check Watchdog}
  if Watchdog = nil then Exit;
  if Watchdog.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Watchdog Device Get Remain');
  {$ENDIF}
- 
+
  {Check Enabled}
  if Watchdog.WatchdogState <> WATCHDOG_STATE_ENABLED then Exit;
- 
+
  if Assigned(Watchdog.DeviceGetRemain) then
   begin
    Result:=Watchdog.DeviceGetRemain(Watchdog);
@@ -7080,18 +7080,18 @@ function WatchdogDeviceGetTimeout(Watchdog:PWatchdogDevice):LongWord;
 begin
  {}
  Result:=0;
- 
+
  {Check Watchdog}
  if Watchdog = nil then Exit;
  if Watchdog.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Watchdog Device Get Timeout');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if Watchdog.WatchdogState <> WATCHDOG_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if Assigned(Watchdog.DeviceGetTimeout) then
   begin
    Result:=Watchdog.DeviceGetTimeout(Watchdog);
@@ -7099,11 +7099,11 @@ begin
  else
   begin
    if MutexLock(Watchdog.Lock) <> ERROR_SUCCESS then Exit;
-   
+
    Result:=Watchdog.Timeout;
-   
+
    MutexUnlock(Watchdog.Lock);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -7112,19 +7112,19 @@ function WatchdogDeviceSetTimeout(Watchdog:PWatchdogDevice;Timeout:LongWord):Lon
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Watchdog}
  if Watchdog = nil then Exit;
  if Watchdog.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IFDEF DEVICE_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'Watchdog Device Set Timeout');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if Watchdog.WatchdogState <> WATCHDOG_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if Assigned(Watchdog.DeviceSetTimeout) then
   begin
    Result:=Watchdog.DeviceSetTimeout(Watchdog,Timeout);
@@ -7134,11 +7134,11 @@ begin
    if MutexLock(Watchdog.Lock) <> ERROR_SUCCESS then Exit;
 
    Watchdog.Timeout:=Timeout;
-   
+
    Result:=ERROR_SUCCESS;
-   
+
    MutexUnlock(Watchdog.Lock);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -7160,16 +7160,16 @@ function WatchdogDeviceCreateEx(Size:LongWord):PWatchdogDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TWatchdogDevice) then Exit;
- 
+
  {Create Watchdog}
  Result:=PWatchdogDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=WATCHDOG_TYPE_NONE;
  Result.Device.DeviceFlags:=WATCHDOG_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -7186,7 +7186,7 @@ begin
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Address:=nil;
  Result.Timeout:=0;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreate;
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -7205,25 +7205,25 @@ function WatchdogDeviceDestroy(Watchdog:PWatchdogDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Watchdog}
  if Watchdog = nil then Exit;
  if Watchdog.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Watchdog}
  Result:=ERROR_IN_USE;
  if WatchdogDeviceCheck(Watchdog) = Watchdog then Exit;
 
  {Check State}
  if Watchdog.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Lock}
  if Watchdog.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Watchdog.Lock);
   end;
- 
- {Destroy Watchdog} 
+
+ {Destroy Watchdog}
  Result:=DeviceDestroy(@Watchdog.Device);
 end;
 
@@ -7236,25 +7236,25 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Watchdog}
  if Watchdog = nil then Exit;
  if Watchdog.WatchdogId <> DEVICE_ID_ANY then Exit;
  if Watchdog.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Interfaces}
  if not(Assigned(Watchdog.DeviceStart)) then Exit;
  if not(Assigned(Watchdog.DeviceStop)) then Exit;
  if not(Assigned(Watchdog.DeviceRefresh)) then Exit;
  if not(Assigned(Watchdog.DeviceGetRemain)) then Exit;
- 
+
  {Check Watchdog}
  Result:=ERROR_ALREADY_EXISTS;
  if WatchdogDeviceCheck(Watchdog) = Watchdog then Exit;
- 
+
  {Check State}
  if Watchdog.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Watchdog}
  if CriticalSectionLock(WatchdogDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -7266,19 +7266,19 @@ begin
       Inc(WatchdogId);
      end;
     Watchdog.WatchdogId:=WatchdogId;
-    
+
     {Update Device}
     Watchdog.Device.DeviceName:=WATCHDOG_NAME_PREFIX + IntToStr(Watchdog.WatchdogId);
     Watchdog.Device.DeviceClass:=DEVICE_CLASS_WATCHDOG;
-    
+
     {Register Device}
     Result:=DeviceRegister(@Watchdog.Device);
     if Result <> ERROR_SUCCESS then
      begin
       Watchdog.WatchdogId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link Watchdog}
     if WatchdogDeviceTable = nil then
      begin
@@ -7290,16 +7290,16 @@ begin
       WatchdogDeviceTable.Prev:=Watchdog;
       WatchdogDeviceTable:=Watchdog;
      end;
- 
+
     {Increment Count}
     Inc(WatchdogDeviceTableCount);
-    
+
     {Check Default}
     if WatchdogDeviceDefault = nil then
      begin
       WatchdogDeviceDefault:=Watchdog;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -7309,7 +7309,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -7322,19 +7322,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Watchdog}
  if Watchdog = nil then Exit;
  if Watchdog.WatchdogId = DEVICE_ID_ANY then Exit;
  if Watchdog.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Watchdog}
  Result:=ERROR_NOT_FOUND;
  if WatchdogDeviceCheck(Watchdog) <> Watchdog then Exit;
- 
+
  {Check State}
  if Watchdog.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove Watchdog}
  if CriticalSectionLock(WatchdogDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -7342,7 +7342,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@Watchdog.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink Watchdog}
     Prev:=Watchdog.Prev;
     Next:=Watchdog.Next;
@@ -7352,7 +7352,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -7360,21 +7360,21 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(WatchdogDeviceTableCount);
- 
+
     {Check Default}
     if WatchdogDeviceDefault = Watchdog then
      begin
       WatchdogDeviceDefault:=WatchdogDeviceTable;
      end;
- 
+
     {Update Watchdog}
     Watchdog.WatchdogId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -7384,7 +7384,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -7395,10 +7395,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if WatchdogId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(WatchdogDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -7452,10 +7452,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(WatchdogDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -7469,11 +7469,11 @@ begin
        begin
         if Callback(Watchdog,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Watchdog:=Watchdog.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -7484,7 +7484,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -7493,19 +7493,19 @@ function WatchdogDeviceNotification(Watchdog:PWatchdogDevice;Callback:TWatchdogN
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Watchdog}
  if Watchdog = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_WATCHDOG,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check Watchdog}
    if Watchdog.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@Watchdog.Device,DEVICE_CLASS_WATCHDOG,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -7515,7 +7515,7 @@ function SysClockRead:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if ClockDeviceDefault = nil then Exit;
 
  Result:=ClockDeviceRead(ClockDeviceDefault);
@@ -7527,7 +7527,7 @@ function SysClockRead64:Int64;
 begin
  {}
  Result:=0;
- 
+
  if ClockDeviceDefault = nil then Exit;
 
  Result:=ClockDeviceRead64(ClockDeviceDefault);
@@ -7551,7 +7551,7 @@ function SysTimerRead:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if TimerDeviceDefault = nil then Exit;
 
  Result:=TimerDeviceRead(TimerDeviceDefault);
@@ -7565,7 +7565,7 @@ function SysTimerRead64:Int64;
 begin
  {}
  Result:=0;
- 
+
  if TimerDeviceDefault = nil then Exit;
 
  Result:=TimerDeviceRead64(TimerDeviceDefault);
@@ -7579,7 +7579,7 @@ function SysTimerWait:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if TimerDeviceDefault = nil then Exit;
 
  Result:=TimerDeviceWait(TimerDeviceDefault);
@@ -7595,7 +7595,7 @@ function SysTimerEvent(Callback:TTimerCallback;Data:Pointer):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if TimerDeviceDefault = nil then Exit;
 
  Result:=TimerDeviceEvent(TimerDeviceDefault,TIMER_EVENT_FLAG_NONE,Callback,Data);
@@ -7609,9 +7609,9 @@ function SysTimerCancel:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if TimerDeviceDefault = nil then Exit;
- 
+
  Result:=TimerDeviceCancel(TimerDeviceDefault);
 end;
 
@@ -7623,7 +7623,7 @@ function SysTimerGetRate:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if TimerDeviceDefault = nil then Exit;
 
  Result:=TimerDeviceGetRate(TimerDeviceDefault);
@@ -7638,7 +7638,7 @@ function SysTimerSetRate(Rate:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if TimerDeviceDefault = nil then Exit;
 
  Result:=TimerDeviceSetRate(TimerDeviceDefault,Rate);
@@ -7654,7 +7654,7 @@ function SysTimerGetInterval:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if TimerDeviceDefault = nil then Exit;
 
  Result:=TimerDeviceGetInterval(TimerDeviceDefault);
@@ -7671,7 +7671,7 @@ function SysTimerSetInterval(Interval:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if TimerDeviceDefault = nil then Exit;
 
  Result:=TimerDeviceSetInterval(TimerDeviceDefault,Interval);
@@ -7713,25 +7713,25 @@ function SysRandomReadLongInt(Limit:LongInt):LongInt;
 begin
  {}
  Result:=Limit;
- 
+
  if RandomDeviceDefault = nil then Exit;
 
  Result:=RandomDeviceReadLongWord(RandomDeviceDefault);
- 
+
  if Limit <> 0 then Result:=(Result mod Limit);
 end;
- 
+
 {==============================================================================}
 
 function SysRandomReadInt64(Limit:Int64):Int64;
 begin
  {}
  Result:=Limit;
- 
+
  if RandomDeviceDefault = nil then Exit;
 
  Result:=RandomDeviceReadQuadWord(RandomDeviceDefault);
- 
+
  if Limit <> 0 then Result:=(Result mod Limit);
 end;
 
@@ -7741,7 +7741,7 @@ function SysRandomReadDouble:Double;
 begin
  {}
  Result:=0;
- 
+
  if RandomDeviceDefault = nil then Exit;
 
  Result:=RandomDeviceReadDouble(RandomDeviceDefault);
@@ -7754,7 +7754,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RTL Watchdog Functions}
-function SysWatchdogAvailable:Boolean; 
+function SysWatchdogAvailable:Boolean;
 {Check if a watchdog timer device is available}
 begin
  {}
@@ -7763,18 +7763,18 @@ end;
 
 {==============================================================================}
 
-function SysWatchdogStart(Milliseconds:LongWord):LongWord; 
+function SysWatchdogStart(Milliseconds:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_DEV_NOT_EXIST;
- 
+
  if WatchdogDeviceDefault = nil then Exit;
 
  Result:=WatchdogDeviceSetTimeout(WatchdogDeviceDefault,Milliseconds);
  if Result = ERROR_SUCCESS then
   begin
    Result:=WatchdogDeviceStart(WatchdogDeviceDefault);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -7783,7 +7783,7 @@ function SysWatchdogStop:LongWord;
 begin
  {}
  Result:=ERROR_DEV_NOT_EXIST;
- 
+
  if WatchdogDeviceDefault = nil then Exit;
 
  Result:=WatchdogDeviceStop(WatchdogDeviceDefault);
@@ -7795,7 +7795,7 @@ function SysWatchdogRefresh(Milliseconds:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_DEV_NOT_EXIST;
- 
+
  if WatchdogDeviceDefault = nil then Exit;
 
  if WatchdogDeviceGetTimeout(WatchdogDeviceDefault) <> Milliseconds then
@@ -7803,7 +7803,7 @@ begin
    Result:=WatchdogDeviceSetTimeout(WatchdogDeviceDefault,Milliseconds);
    if Result <> ERROR_SUCCESS then Exit;
   end;
-  
+
  Result:=WatchdogDeviceRefresh(WatchdogDeviceDefault);
 end;
 
@@ -7826,11 +7826,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Device}
  if Device = nil then Exit;
  if Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(DeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -7845,7 +7845,7 @@ begin
         Result:=Device;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -7874,11 +7874,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Notifier}
  if Notifier = nil then Exit;
  if Notifier.Signature <> NOTIFIER_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(NotifierTableLock) = ERROR_SUCCESS then
   begin
@@ -7893,7 +7893,7 @@ begin
         Result:=Notifier;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -7910,7 +7910,7 @@ function DeviceBusToString(DeviceBus:LongWord):String;
 begin
  {}
  Result:='DEVICE_BUS_UNKNOWN';
- 
+
  if DeviceBus <= DEVICE_BUS_MAX then
   begin
    Result:=DEVICE_BUS_NAMES[DeviceBus];
@@ -7923,7 +7923,7 @@ function DeviceStateToString(DeviceState:LongWord):String;
 begin
  {}
  Result:='DEVICE_STATE_UNKNOWN';
- 
+
  if DeviceState <= DEVICE_STATE_MAX then
   begin
    Result:=DEVICE_STATE_NAMES[DeviceState];
@@ -7936,7 +7936,7 @@ function DeviceClassToString(DeviceClass:LongWord):String;
 begin
  {}
  Result:='DEVICE_CLASS_UNKNOWN';
- 
+
  if DeviceClass <= DEVICE_CLASS_MAX then
   begin
    Result:=DEVICE_CLASS_NAMES[DeviceClass];
@@ -7953,7 +7953,7 @@ function NotificationToString(Notification:LongWord):String;
 begin
  {}
  Result:='';
- 
+
  {Check Notification}
  if (Notification and DEVICE_NOTIFICATION_REGISTER) <> 0 then
   begin
@@ -7972,79 +7972,79 @@ begin
    if Length(Result) > 0 then Result:=Result + ', ';
    Result:=Result + 'DEVICE_NOTIFICATION_OPEN';
   end;
- 
+
  if (Notification and DEVICE_NOTIFICATION_CLOSE) <> 0 then
   begin
    if Length(Result) > 0 then Result:=Result + ', ';
    Result:=Result + 'DEVICE_NOTIFICATION_CLOSE';
   end;
- 
+
  if (Notification and DEVICE_NOTIFICATION_UP) <> 0 then
   begin
    if Length(Result) > 0 then Result:=Result + ', ';
    Result:=Result + 'DEVICE_NOTIFICATION_UP';
   end;
-  
+
  if (Notification and DEVICE_NOTIFICATION_DOWN) <> 0 then
   begin
    if Length(Result) > 0 then Result:=Result + ', ';
    Result:=Result + 'DEVICE_NOTIFICATION_DOWN';
   end;
-  
+
  if (Notification and DEVICE_NOTIFICATION_INSERT) <> 0 then
   begin
    if Length(Result) > 0 then Result:=Result + ', ';
    Result:=Result + 'DEVICE_NOTIFICATION_INSERT';
   end;
-  
+
  if (Notification and DEVICE_NOTIFICATION_EJECT) <> 0 then
   begin
    if Length(Result) > 0 then Result:=Result + ', ';
    Result:=Result + 'DEVICE_NOTIFICATION_EJECT';
   end;
-  
+
  if (Notification and DEVICE_NOTIFICATION_ATTACH) <> 0 then
   begin
    if Length(Result) > 0 then Result:=Result + ', ';
    Result:=Result + 'DEVICE_NOTIFICATION_ATTACH';
   end;
-  
+
  if (Notification and DEVICE_NOTIFICATION_DETACH) <> 0 then
   begin
    if Length(Result) > 0 then Result:=Result + ', ';
    Result:=Result + 'DEVICE_NOTIFICATION_DETACH';
   end;
-  
+
  if (Notification and DEVICE_NOTIFICATION_ENABLE) <> 0 then
   begin
    if Length(Result) > 0 then Result:=Result + ', ';
    Result:=Result + 'DEVICE_NOTIFICATION_ENABLE';
   end;
-  
+
  if (Notification and DEVICE_NOTIFICATION_DISABLE) <> 0 then
   begin
    if Length(Result) > 0 then Result:=Result + ', ';
    Result:=Result + 'DEVICE_NOTIFICATION_DISABLE';
   end;
-  
+
  if (Notification and DEVICE_NOTIFICATION_BIND) <> 0 then
   begin
    if Length(Result) > 0 then Result:=Result + ', ';
    Result:=Result + 'DEVICE_NOTIFICATION_BIND';
   end;
-  
+
  if (Notification and DEVICE_NOTIFICATION_UNBIND) <> 0 then
   begin
    if Length(Result) > 0 then Result:=Result + ', ';
    Result:=Result + 'DEVICE_NOTIFICATION_UNBIND';
   end;
-  
+
  if (Notification and DEVICE_NOTIFICATION_ATTACHING) <> 0 then
   begin
    if Length(Result) > 0 then Result:=Result + ', ';
    Result:=Result + 'DEVICE_NOTIFICATION_ATTACHING';
   end;
-  
+
  if (Notification and DEVICE_NOTIFICATION_DETACHING) <> 0 then
   begin
    if Length(Result) > 0 then Result:=Result + ', ';
@@ -8062,7 +8062,7 @@ begin
    if Length(Result) > 0 then Result:=Result + ', ';
    Result:=Result + 'DEVICE_NOTIFICATION_EJECTING';
   end;
-  
+
  if (Notification and DEVICE_NOTIFICATION_OPENING) <> 0 then
   begin
    if Length(Result) > 0 then Result:=Result + ', ';
@@ -8097,7 +8097,7 @@ begin
  {}
  {Check Level}
  if Level < DEVICE_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = DEVICE_LOG_LEVEL_DEBUG then
@@ -8112,16 +8112,16 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'Device: ';
- 
+
  {Check Device}
  if Device <> nil then
   begin
    WorkBuffer:=WorkBuffer + DEVICE_NAME_PREFIX + IntToStr(Device.DeviceId) + ': ';
   end;
-  
+
  {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_DEVICES,LogLevelToLoggingSeverity(Level),'Device',WorkBuffer + AText);
 end;
@@ -8177,11 +8177,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Driver}
  if Driver = nil then Exit;
  if Driver.Signature <> DRIVER_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(DriverTableLock) = ERROR_SUCCESS then
   begin
@@ -8196,7 +8196,7 @@ begin
         Result:=Driver;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -8213,7 +8213,7 @@ function DriverStateToString(DriverState:LongWord):String;
 begin
  {}
  Result:='DRIVER_STATE_UNKNOWN';
- 
+
  if DriverState <= DRIVER_STATE_MAX then
   begin
    Result:=DRIVER_STATE_NAMES[DriverState];
@@ -8226,7 +8226,7 @@ function DriverClassToString(DriverClass:LongWord):String;
 begin
  {}
  Result:='DRIVER_CLASS_UNKNOWN';
- 
+
  if DriverClass <= DRIVER_CLASS_MAX then
   begin
    Result:=DRIVER_CLASS_NAMES[DriverClass];
@@ -8258,26 +8258,26 @@ end;
 
 {==============================================================================}
 
-function ClockDeviceSetDefault(Clock:PClockDevice):LongWord; 
+function ClockDeviceSetDefault(Clock:PClockDevice):LongWord;
 {Set the current default clock device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Clock}
  if Clock = nil then Exit;
  if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(ClockDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Clock}
     if ClockDeviceCheck(Clock) <> Clock then Exit;
-    
+
     {Set Clock Default}
     ClockDeviceDefault:=Clock;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -8300,11 +8300,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Clock}
  if Clock = nil then Exit;
  if Clock.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(ClockDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -8319,7 +8319,7 @@ begin
         Result:=Clock;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -8337,7 +8337,7 @@ function ClockTypeToString(ClockType:LongWord):String;
 begin
  {}
  Result:='CLOCK_TYPE_UNKNOWN';
- 
+
  if ClockType <= CLOCK_TYPE_MAX then
   begin
    Result:=CLOCK_TYPE_NAMES[ClockType];
@@ -8351,7 +8351,7 @@ function ClockStateToString(ClockState:LongWord):String;
 begin
  {}
  Result:='CLOCK_STATE_UNKNOWN';
- 
+
  if ClockState <= CLOCK_STATE_MAX then
   begin
    Result:=CLOCK_STATE_NAMES[ClockState];
@@ -8379,26 +8379,26 @@ end;
 
 {==============================================================================}
 
-function TimerDeviceSetDefault(Timer:PTimerDevice):LongWord; 
+function TimerDeviceSetDefault(Timer:PTimerDevice):LongWord;
 {Set the current default timer device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(TimerDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Timer}
     if TimerDeviceCheck(Timer) <> Timer then Exit;
-    
+
     {Set Timer Default}
     TimerDeviceDefault:=Timer;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -8421,11 +8421,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(TimerDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -8440,7 +8440,7 @@ begin
         Result:=Timer;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -8458,7 +8458,7 @@ function TimerTypeToString(TimerType:LongWord):String;
 begin
  {}
  Result:='TIMER_TYPE_UNKNOWN';
- 
+
  if TimerType <= TIMER_TYPE_MAX then
   begin
    Result:=TIMER_TYPE_NAMES[TimerType];
@@ -8467,12 +8467,12 @@ end;
 
 {==============================================================================}
 
-function TimerStateToString(TimerState:LongWord):String; 
+function TimerStateToString(TimerState:LongWord):String;
 {Convert a Timer state value to a string}
 begin
  {}
  Result:='TIMER_STATE_UNKNOWN';
- 
+
  if TimerState <= TIMER_STATE_MAX then
   begin
    Result:=TIMER_STATE_NAMES[TimerState];
@@ -8489,18 +8489,18 @@ function TimerDeviceCreateWaiter(Timer:PTimerDevice;Callback:TTimerCallback;Data
 begin
  {}
  Result:=nil;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Create Waiter}
  Result:=PTimerWaiter(GetMem(SizeOf(TTimerWaiter)));
  if Result = nil then Exit;
- 
+
  {Update Waiter}
  Result.Timer:=Timer;
  Result.Callback:=Callback;
@@ -8529,7 +8529,7 @@ begin
 
  {Destroy Waiter}
  FreeMem(Waiter);
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -8543,14 +8543,14 @@ function TimerDeviceRegisterWaiter(Timer:PTimerDevice;Waiter:PTimerWaiter):LongW
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Waiter}
  if Waiter = nil then Exit;
- 
+
  {Link Waiter}
  if Timer.Waiters = nil then
   begin
@@ -8562,7 +8562,7 @@ begin
    Timer.Waiters.Prev:=Waiter;
    Timer.Waiters:=Waiter;
   end;
-  
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -8579,14 +8579,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Timer}
  if Timer = nil then Exit;
  if Timer.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {Check Waiter}
  if Waiter = nil then Exit;
- 
+
  {Unlink Waiter}
  Prev:=Waiter.Prev;
  Next:=Waiter.Next;
@@ -8596,7 +8596,7 @@ begin
    if Next <> nil then
     begin
      Next.Prev:=nil;
-    end;       
+    end;
   end
  else
   begin
@@ -8604,13 +8604,13 @@ begin
    if Next <> nil then
     begin
      Next.Prev:=Prev;
-    end;       
-  end;     
- 
+    end;
+  end;
+
  {Update Waiter}
  Waiter.Prev:=nil;
  Waiter.Next:=nil;
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -8635,26 +8635,26 @@ end;
 
 {==============================================================================}
 
-function RandomDeviceSetDefault(Random:PRandomDevice):LongWord; 
+function RandomDeviceSetDefault(Random:PRandomDevice):LongWord;
 {Set the current default random device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Random}
  if Random = nil then Exit;
  if Random.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(RandomDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Random}
     if RandomDeviceCheck(Random) <> Random then Exit;
-    
+
     {Set Random Default}
     RandomDeviceDefault:=Random;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -8677,11 +8677,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Random}
  if Random = nil then Exit;
  if Random.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(RandomDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -8696,7 +8696,7 @@ begin
         Result:=Random;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -8714,7 +8714,7 @@ function RandomTypeToString(RandomType:LongWord):String;
 begin
  {}
  Result:='RANDOM_TYPE_UNKNOWN';
- 
+
  if RandomType <= RANDOM_TYPE_MAX then
   begin
    Result:=RANDOM_TYPE_NAMES[RandomType];
@@ -8728,7 +8728,7 @@ function RandomStateToString(RandomState:LongWord):String;
 begin
  {}
  Result:='RANDOM_STATE_UNKNOWN';
- 
+
  if RandomState <= RANDOM_STATE_MAX then
   begin
    Result:=RANDOM_STATE_NAMES[RandomState];
@@ -8756,26 +8756,26 @@ end;
 
 {==============================================================================}
 
-function MailboxDeviceSetDefault(Mailbox:PMailboxDevice):LongWord; 
+function MailboxDeviceSetDefault(Mailbox:PMailboxDevice):LongWord;
 {Set the current default mailbox device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mailbox}
  if Mailbox = nil then Exit;
  if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(MailboxDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Mailbox}
     if MailboxDeviceCheck(Mailbox) <> Mailbox then Exit;
-    
+
     {Set Mailbox Default}
     MailboxDeviceDefault:=Mailbox;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -8798,11 +8798,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Mailbox}
  if Mailbox = nil then Exit;
  if Mailbox.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(MailboxDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -8817,7 +8817,7 @@ begin
         Result:=Mailbox;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -8835,7 +8835,7 @@ function MailboxTypeToString(MailboxType:LongWord):String;
 begin
  {}
  Result:='MAILBOX_TYPE_UNKNOWN';
- 
+
  if MailboxType <= MAILBOX_TYPE_MAX then
   begin
    Result:=MAILBOX_TYPE_NAMES[MailboxType];
@@ -8849,7 +8849,7 @@ function MailboxStateToString(MailboxState:LongWord):String;
 begin
  {}
  Result:='MAILBOX_STATE_UNKNOWN';
- 
+
  if MailboxState <= MAILBOX_STATE_MAX then
   begin
    Result:=MAILBOX_STATE_NAMES[MailboxState];
@@ -8877,26 +8877,26 @@ end;
 
 {==============================================================================}
 
-function WatchdogDeviceSetDefault(Watchdog:PWatchdogDevice):LongWord; 
+function WatchdogDeviceSetDefault(Watchdog:PWatchdogDevice):LongWord;
 {Set the current default watchdog device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Watchdog}
  if Watchdog = nil then Exit;
  if Watchdog.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(WatchdogDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Watchdog}
     if WatchdogDeviceCheck(Watchdog) <> Watchdog then Exit;
-    
+
     {Set Watchdog Default}
     WatchdogDeviceDefault:=Watchdog;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -8919,11 +8919,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Watchdog}
  if Watchdog = nil then Exit;
  if Watchdog.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(WatchdogDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -8938,7 +8938,7 @@ begin
         Result:=Watchdog;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -8956,7 +8956,7 @@ function WatchdogTypeToString(WatchdogType:LongWord):String;
 begin
  {}
  Result:='WATCHDOG_TYPE_UNKNOWN';
- 
+
  if WatchdogType <= WATCHDOG_TYPE_MAX then
   begin
    Result:=WATCHDOG_TYPE_NAMES[WatchdogType];
@@ -8970,7 +8970,7 @@ function WatchdogStateToString(WatchdogState:LongWord):String;
 begin
  {}
  Result:='WATCHDOG_STATE_UNKNOWN';
- 
+
  if WatchdogState <= WATCHDOG_STATE_MAX then
   begin
    Result:=WATCHDOG_STATE_NAMES[WatchdogState];
@@ -9083,7 +9083,7 @@ begin
 
       Result:=ERROR_CAN_NOT_COMPLETE;
       Exit;
-     end; 
+     end;
 
     {Return Handle}
     Handle:=HandleEntry.Handle;
@@ -9222,7 +9222,7 @@ begin
     if FileFirmware.Size > FIRMWARE_MAX_BUFFER then Exit;
 
     Result:=ERROR_OUTOFMEMORY;
-    
+
     {Allocate Buffer}
     FileFirmware.Buffer:=GetMem(FileFirmware.Size);
     if FileFirmware.Buffer = nil then Exit;
@@ -9275,7 +9275,7 @@ begin
     {Return Result}
     Result:=ERROR_SUCCESS;
    end;
- end;  
+ end;
 end;
 
 {==============================================================================}
@@ -9493,7 +9493,7 @@ begin
     {Return Result}
     Result:=ERROR_SUCCESS;
    end;
- end;  
+ end;
 end;
 
 {==============================================================================}
@@ -9501,9 +9501,9 @@ end;
 
 initialization
  DevicesInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

@@ -24,7 +24,7 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -33,42 +33,42 @@ Credits
   Linux - \drivers\mfd\rpisense-core.c - Copyright (C) 2015 Raspberry Pi
   Linux - \drivers\video\fbdev\rpisense-fb.c - Copyright (C) 2015 Raspberry Pi
   Linux - \drivers\input\joystick\rpisense-js.c - Copyright (C) 2015 Raspberry Pi
-  
+
 References
 ==========
 
   Documentation
-  
+
    https://www.raspberrypi.org/documentation/hardware/sense-hat/README.md
-   
+
   Schematic
 
    https://www.raspberrypi.org/documentation/hardware/sense-hat/images/Sense-HAT-V1_0.pdf
- 
+
 Raspberry Pi Sense Hat
 ======================
- 
+
  The Sense HAT 8x8 LED matrix is presented in Ultibo as an 8x8 pixel framebuffer. This allows
  full access to the display at both the individual pixel level and also using the higher level
  console functions to display text and graphics on the matrix.
-  
+
  The framebuffer device supports rotation around the full 360 degrees by supplying the
  required rotation value in the framebuffer properties when calling FramebufferAllocate()
  or by calling the Sense HAT specific function RPiSenseFramebufferSetRotation().
- 
+
  As per the official Python libraries, the default rotation (FRAMEBUFFER_ROTATION_0) gives
  correct viewing when the HDMI port is facing downwards.
- 
+
  The Sense HAT joystick appears as a keyboard device and the pressed buttons are received as
  key presses that represent the Left, Right, Up, Down and Enter keys.
-  
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit RPiSenseHat; 
+unit RPiSenseHat;
 
 interface
 
@@ -77,21 +77,21 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,G
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-  
+
 {==============================================================================}
 const
  {RPiSenseHat specific constants}
- RPISENSE_SIGNATURE = $EAEBECED; 
- 
+ RPISENSE_SIGNATURE = $EAEBECED;
+
  {Framebuffer}
  RPISENSE_FRAMEBUFFER_DESCRIPTION = 'Raspberry Pi Sense HAT Framebuffer';  {Description of RPiSense framebuffer device}
- 
+
  RPISENSE_PHYSICAL_WIDTH = 8;
  RPISENSE_PHYSICAL_HEIGHT = 8;
- 
+
  {Joystick}
  RPISENSE_JOYSTICK_DESCRIPTION = 'Raspberry Pi Sense HAT Joystick';  {Description of RPiSense joystick device}
- 
+
  RPISENSE_JOYSTICK_KEYMAP:array[0..4] of Word = (
   SCAN_CODE_DOWN_ARROW,
   SCAN_CODE_RIGHT_ARROW,
@@ -99,19 +99,19 @@ const
   SCAN_CODE_ENTER,
   SCAN_CODE_LEFT_ARROW
  );
- 
+
  {RPiSenseHat register values}
  RPISENSE_FB = $00;
  RPISENSE_WAI = $F0;
  RPISENSE_VER = $F1;
  RPISENSE_KEYS = $F2;
  RPISENSE_EE_WP = $F3;
- 
+
  {RPiSenseHat gamma reset values}
  RPISENSE_GAMMA_VALUES_DEFAULT = 0;
  RPISENSE_GAMMA_VALUES_LOW = 1;
  RPISENSE_GAMMA_VALUES_USER = 2;
- 
+
 {==============================================================================}
 type
  {RPiSenseHat specific types}
@@ -123,10 +123,10 @@ type
   Framebuffer:PFramebufferDevice; {Framebuffer device}
   Joystick:PKeyboardDevice;       {Joystick (Keyboard) device}
  end;
- 
+
  PRPiSenseGamma = ^TRPiSenseGamma;
  TRPiSenseGamma = array[0..31] of Byte;
- 
+
  PRPiSenseFramebuffer = ^TRPiSenseFramebuffer;
  TRPiSenseFramebuffer = record
   {Framebuffer Properties}
@@ -147,8 +147,8 @@ type
   GammaUser:TRPiSenseGamma;                       {User gamma values}
   PixelData:array[0..63] of Word;                 {Pixel data for framebuffer update}
   BlockData:array[0..192] of Byte;                {Block data for display update}
- end; 
- 
+ end;
+
  PRPiSenseJoystick = ^TRPiSenseJoystick;
  TRPiSenseJoystick = record
   {Keyboard Properties}
@@ -159,10 +159,10 @@ type
   Pin:LongWord;                                            {The GPIO pin used to signal joystick events (GPIO_PIN_23)}
   Trigger:LongWord;                                        {The GPIO trigger to detect joystick events (GPIO_TRIGGER_RISING)}
   PreviousKeys:LongInt;                                    {The keys pressed on the last GPIO event callback}
-  {Statistics Properties}                                                   
+  {Statistics Properties}
   CallbackCount:LongWord;                                  {Number of callback requests received by the device}
- end; 
- 
+ end;
+
 {==============================================================================}
 var
  {RPiSenseHat specific variables}
@@ -171,13 +171,13 @@ var
  RPISENSE_FRAMEBUFFER_ROTATION:LongWord = FRAMEBUFFER_ROTATION_0;
  RPISENSE_FRAMEBUFFER_WIDTH:LongWord = RPISENSE_PHYSICAL_WIDTH;
  RPISENSE_FRAMEBUFFER_HEIGHT:LongWord = RPISENSE_PHYSICAL_HEIGHT;
- 
+
  RPISENSE_I2C_ADDRESS:Word = $46;
  RPISENSE_LSM9DS1_MAGN_ADDRESS:Word = $1C;
  RPISENSE_LSM9DS1_ACCEL_ADDRESS:Word = $6A;
  RPISENSE_LPS25H_PRESS_ADDRESS:Word = $5C;
  RPISENSE_HTS221_HUMID_ADDRESS:Word = $5F;
- 
+
  {RPiSenseHat gamma values}
  RPISENSE_GAMMA_DEFAULT:TRPiSenseGamma = (
   $00, $00, $00, $00, $00, $00, $01, $01,
@@ -185,21 +185,21 @@ var
   $08, $09, $0A, $0B, $0C, $0E, $0F, $11,
   $12, $14, $15, $17, $19, $1B, $1D, $1F
  );
- 
+
  RPISENSE_GAMMA_LOW:TRPiSenseGamma = (
   $00, $01, $01, $01, $01, $01, $01, $01,
   $01, $01, $01, $01, $01, $02, $02, $02,
   $03, $03, $03, $04, $04, $05, $05, $06,
   $06, $07, $07, $08, $08, $09, $0A, $0A
  );
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure RPiSenseInit;
- 
+
 function RPiSenseStart(const I2CDevice,GPIODevice:String;Rotation,Width,Height:LongWord):THandle;{$IFDEF API_EXPORT_RPISENSEHAT} stdcall; public name 'rpisense_start';{$ENDIF}
 function RPiSenseStop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_RPISENSEHAT} stdcall; public name 'rpisense_stop';{$ENDIF}
- 
+
 {==============================================================================}
 {RPiSenseHat Functions}
 //flip_h
@@ -220,7 +220,7 @@ function RPiSenseStop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_RPISENSEHAT} st
 //get_orientation_radians
 
 //https://github.com/RPi-Distro/python-sense-hat/blob/master/sense_hat/sense_hat.py
- 
+
 {==============================================================================}
 {RPiSenseHat Framebuffer Functions}
 function RPiSenseFramebufferCreate(I2C:PI2CDevice;const Name:String;Rotation,Width,Height:LongWord):PFramebufferDevice;
@@ -255,7 +255,7 @@ procedure RPiSenseJoystickCallback(Joystick:PRPiSenseJoystick;Pin,Trigger:LongWo
 {RPiSenseHat Helper Functions}
 function RPiSenseRegRead(I2C:PI2CDevice;Address:Word;Reg:Byte):LongInt;
 function RPiSenseBlockWrite(I2C:PI2CDevice;Address:Word;Data:PByte;Size:Integer):LongWord;
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -266,7 +266,7 @@ implementation
 var
  {RPiSenseHat specific variables}
  RPiSenseInitialized:Boolean;
- 
+
  RPiSenseDefault:THandle = INVALID_HANDLE_VALUE;
 
 {==============================================================================}
@@ -283,20 +283,20 @@ begin
  {}
  {Check Initialized}
  if RPiSenseInitialized then Exit;
- 
+
  {Check Environment Variables}
  {RPISENSE_AUTOSTART}
  WorkInt:=StrToIntDef(EnvironmentGet('RPISENSE_AUTOSTART'),1);
  if WorkInt = 0 then RPISENSE_AUTOSTART:=False;
- 
+
  {RPISENSE_I2C_DEVICE}
  WorkBuffer:=EnvironmentGet('RPISENSE_I2C_DEVICE');
  if Length(WorkBuffer) <> 0 then RPISENSE_I2C_DEVICE:=WorkBuffer;
- 
+
  {RPISENSE_GPIO_DEVICE}
  WorkBuffer:=EnvironmentGet('RPISENSE_GPIO_DEVICE');
  if Length(WorkBuffer) <> 0 then RPISENSE_GPIO_DEVICE:=WorkBuffer;
- 
+
  {RPISENSE_FRAMEBUFFER_ROTATION}
  WorkInt:=StrToIntDef(EnvironmentGet('RPISENSE_FRAMEBUFFER_ROTATION'),0);
  if WorkInt > FRAMEBUFFER_ROTATION_0 then RPISENSE_FRAMEBUFFER_ROTATION:=WorkInt;
@@ -308,13 +308,13 @@ begin
  {RPISENSE_FRAMEBUFFER_HEIGHT}
  WorkInt:=StrToIntDef(EnvironmentGet('RPISENSE_FRAMEBUFFER_HEIGHT'),0);
  if WorkInt > 0 then RPISENSE_FRAMEBUFFER_HEIGHT:=WorkInt;
- 
- {Start RPiSense} 
+
+ {Start RPiSense}
  if RPISENSE_AUTOSTART then
   begin
    RPiSenseDefault:=RPiSenseStart(RPISENSE_I2C_DEVICE,RPISENSE_GPIO_DEVICE,RPISENSE_FRAMEBUFFER_ROTATION,RPISENSE_FRAMEBUFFER_WIDTH,RPISENSE_FRAMEBUFFER_HEIGHT);
   end;
- 
+
  RPiSenseInitialized:=True;
 end;
 
@@ -336,25 +336,25 @@ var
  GPIO:PGPIODevice;
  Joystick:PKeyboardDevice;
  Framebuffer:PFramebufferDevice;
- 
+
  RPiSense:PRPiSense;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check I2C Device}
  if Length(I2CDevice) = 0 then Exit;
 
  {Check GPIO Device}
  if Length(GPIODevice) = 0 then Exit;
- 
+
  {Check Rotation}
  if Rotation > FRAMEBUFFER_ROTATION_270 then Exit;
 
  {Check Width and Height}
  if Width < RPISENSE_PHYSICAL_WIDTH then Width:=RPISENSE_PHYSICAL_WIDTH;
  if Height < RPISENSE_PHYSICAL_HEIGHT then Height:=RPISENSE_PHYSICAL_HEIGHT;
- 
+
  {Check I2C Device}
  I2C:=I2CDeviceFindByName(I2CDevice);
  if I2C = nil then
@@ -362,7 +362,7 @@ begin
    I2C:=I2CDeviceFindByDescription(I2CDevice);
    if I2C = nil then Exit;
   end;
- 
+
  {Check GPIO Device}
  GPIO:=GPIODeviceFindByName(GPIODevice);
  if GPIO = nil then
@@ -370,26 +370,26 @@ begin
    GPIO:=GPIODeviceFindByDescription(GPIODevice);
    if GPIO = nil then Exit;
   end;
- 
+
  {Start I2C Device}
  if I2CDeviceStart(I2C,0) <> ERROR_SUCCESS then Exit;
- 
+
  {Read RPISENSE_WAI}
  Value:=RPiSenseRegRead(I2C,RPISENSE_I2C_ADDRESS,RPISENSE_WAI);
  if Value = -1 then Exit;
  if Chr(Value) <> 's' then Exit;
- 
+
  {Read RPISENSE_VER}
  Value:=RPiSenseRegRead(I2C,RPISENSE_I2C_ADDRESS,RPISENSE_VER);
  if Value = -1 then Exit;
- 
+
  {$IFDEF RPISENSEHAT_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Raspberry Pi Sense HAT firmware version ' + IntToStr(Value));
  {$ENDIF}
- 
+
  {Setup GPIO}
  if GPIODeviceFunctionSelect(GPIO,GPIO_PIN_23,GPIO_FUNCTION_IN) <> ERROR_SUCCESS then Exit;
- 
+
  {Create Framebuffer}
  Framebuffer:=RPiSenseFramebufferCreate(I2C,RPISENSE_FRAMEBUFFER_DESCRIPTION,Rotation,Width,Height);
  if Framebuffer = nil then Exit;
@@ -401,17 +401,17 @@ begin
    {Create RPiSense}
    RPiSense:=AllocMem(SizeOf(TRPiSense));
    if RPiSense = nil then Exit;
-   
+
    {Update RPiSense}
    RPiSense.Signature:=RPISENSE_SIGNATURE;
    RPiSense.I2C:=I2C;
    RPiSense.GPIO:=GPIO;
    RPiSense.Framebuffer:=Framebuffer;
    RPiSense.Joystick:=Joystick;
-   
+
    {Return Result}
    Result:=THandle(RPiSense);
-   
+
    {Check Default}
    if RPiSenseDefault = INVALID_HANDLE_VALUE then
     begin
@@ -436,7 +436,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Handle:=RPiSenseDefault;
  if Handle = INVALID_HANDLE_VALUE then Exit;
@@ -445,7 +445,7 @@ begin
  RPiSense:=PRPiSense(Handle);
  if RPiSense = nil then Exit;
  if RPiSense.Signature <> RPISENSE_SIGNATURE then Exit;
- 
+
  {Check Joystick Device}
  if RPiSense.Joystick <> nil then
   begin
@@ -454,7 +454,7 @@ begin
     begin
      {Update RPiSense}
      RPiSense.Joystick:=nil;
-     
+
      {Check Framebuffer Device}
      if RPiSense.Framebuffer <> nil then
       begin
@@ -463,24 +463,24 @@ begin
         begin
          {Update RPiSense}
          RPiSense.Framebuffer:=nil;
-     
+
          {Check Default}
          if RPiSenseDefault = THandle(PtrUInt(RPiSense)) then
           begin
            RPiSenseDefault:=INVALID_HANDLE_VALUE;
           end;
-         
+
          {Invalidate RPiSense}
          RPiSense.Signature:=0;
-         
+
          {Destroy RPiSense}
          FreeMem(RPiSense);
-         
+
          {Return Result}
          Result:=True;
         end;
-      end;  
-    end;  
+      end;
+    end;
   end;
 end;
 
@@ -501,28 +501,28 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Framebuffer Create (Name=' + Name + ' Rotation=' + IntToStr(Rotation) + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
  {$ENDIF}
- 
+
  {Check I2C}
  if I2C = nil then Exit;
- 
+
  {Check Rotation}
  if Rotation > FRAMEBUFFER_ROTATION_270 then Exit;
 
  {Check Width and Height}
  if Width < RPISENSE_PHYSICAL_WIDTH then Width:=RPISENSE_PHYSICAL_WIDTH;
  if Height < RPISENSE_PHYSICAL_HEIGHT then Height:=RPISENSE_PHYSICAL_HEIGHT;
- 
+
  {Create Framebuffer}
  RPiSenseFramebuffer:=PRPiSenseFramebuffer(FramebufferDeviceCreateEx(SizeOf(TRPiSenseFramebuffer)));
  if RPiSenseFramebuffer <> nil then
   begin
    {Update Framebuffer}
    {Device}
-   RPiSenseFramebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_I2C; 
+   RPiSenseFramebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_I2C;
    RPiSenseFramebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
    RPiSenseFramebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_MARK or FRAMEBUFFER_FLAG_COMMIT or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_CACHED or FRAMEBUFFER_FLAG_VIRTUAL or FRAMEBUFFER_FLAG_OFFSETX or FRAMEBUFFER_FLAG_OFFSETY; //{$IFNDEF FPC_BIG_ENDIAN}or FRAMEBUFFER_FLAG_SWAP{$ENDIF FPC_BIG_ENDIAN};
    RPiSenseFramebuffer.Framebuffer.Device.DeviceData:=nil;
@@ -554,10 +554,10 @@ begin
    RPiSenseFramebuffer.FrameRate:=100;
    RPiSenseFramebuffer.Gamma:=RPISENSE_GAMMA_DEFAULT;
    RPiSenseFramebuffer.GammaUser:=RPISENSE_GAMMA_DEFAULT;
- 
+
    {Setup Flags}
    {Nothing}
-   
+
    {Register Framebuffer}
    Status:=FramebufferDeviceRegister(@RPiSenseFramebuffer.Framebuffer);
    if Status = ERROR_SUCCESS then
@@ -567,21 +567,21 @@ begin
      if Status = ERROR_SUCCESS then
       begin
        {Return Result}
-       Result:=PFramebufferDevice(RPiSenseFramebuffer); 
+       Result:=PFramebufferDevice(RPiSenseFramebuffer);
       end
      else
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'RPiSenseHat: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
-       
+
        {Deregister Framebuffer}
        FramebufferDeviceDeregister(@RPiSenseFramebuffer.Framebuffer);
-       
+
        {Destroy Framebuffer}
        FramebufferDeviceDestroy(@RPiSenseFramebuffer.Framebuffer);
       end;
     end
    else
-    begin     
+    begin
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'RPiSenseHat: Failed to register new framebuffer device: ' + ErrorToString(Status));
 
      {Destroy Framebuffer}
@@ -603,14 +603,14 @@ function RPiSenseFramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- 
+
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Framebuffer Destroy');
  {$ENDIF}
- 
+
  {Release Framebuffer}
  Result:=FramebufferDeviceRelease(Framebuffer);
  if Result = ERROR_SUCCESS then
@@ -629,12 +629,12 @@ begin
    else
     begin
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'RPiSenseHat: Failed to deregister framebuffer device: ' + ErrorToString(Result));
-    end;    
+    end;
   end
  else
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'RPiSenseHat: Failed to release framebuffer device: ' + ErrorToString(Result));
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -653,16 +653,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Framebuffer Allocate');
  {$ENDIF}
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     {Get Defaults}
@@ -671,25 +671,25 @@ begin
     Defaults.Mode:=FRAMEBUFFER_MODE_IGNORED;
     Defaults.PhysicalWidth:=RPISENSE_PHYSICAL_WIDTH;
     Defaults.PhysicalHeight:=RPISENSE_PHYSICAL_HEIGHT;
-    Defaults.VirtualWidth:=PRPiSenseFramebuffer(Framebuffer).Width; 
-    Defaults.VirtualHeight:=PRPiSenseFramebuffer(Framebuffer).Height; 
-    Defaults.OffsetX:=0;                           
-    Defaults.OffsetY:=0;                            
-    Defaults.OverscanTop:=0;                         
-    Defaults.OverscanBottom:=0;                      
-    Defaults.OverscanLeft:=0;                        
-    Defaults.OverscanRight:=0;                       
+    Defaults.VirtualWidth:=PRPiSenseFramebuffer(Framebuffer).Width;
+    Defaults.VirtualHeight:=PRPiSenseFramebuffer(Framebuffer).Height;
+    Defaults.OffsetX:=0;
+    Defaults.OffsetY:=0;
+    Defaults.OverscanTop:=0;
+    Defaults.OverscanBottom:=0;
+    Defaults.OverscanLeft:=0;
+    Defaults.OverscanRight:=0;
     Defaults.Rotation:=PRPiSenseFramebuffer(Framebuffer).Rotation;
- 
+
     {Check Properties}
     if Properties <> nil then
      begin
       {Adjust Physical Width} {Not supported, fixed at 8 pixels}
       PhysicalWidth:=Defaults.PhysicalWidth;
-      
+
       {Adjust Physical Height} {Not supported, fixed at 8 pixels}
       PhysicalHeight:=Defaults.PhysicalHeight;
-      
+
       {Adjust Virtual Width}
       VirtualWidth:=Defaults.VirtualWidth;
       if (Properties.VirtualWidth <> 0) and (Properties.VirtualWidth <> VirtualWidth) then
@@ -699,11 +699,11 @@ begin
          begin
           Properties.VirtualWidth:=PhysicalWidth;
          end;
-        
+
         VirtualWidth:=Properties.VirtualWidth;
         Defaults.VirtualWidth:=VirtualWidth;
        end;
- 
+
       {Adjust Virtual Height}
       VirtualHeight:=Defaults.VirtualHeight;
       if (Properties.VirtualHeight <> 0) and (Properties.VirtualHeight <> VirtualHeight) then
@@ -717,49 +717,49 @@ begin
         VirtualHeight:=Properties.VirtualHeight;
         Defaults.VirtualHeight:=VirtualHeight;
        end;
-       
+
       {Adjust Offset X}
-      if Properties.OffsetX <> 0 then  
+      if Properties.OffsetX <> 0 then
        begin
         {Check Offset X}
         if Properties.OffsetX > ((VirtualWidth - PhysicalWidth) - 1) then
          begin
           Properties.OffsetX:=0;
          end;
-        
+
         Defaults.OffsetX:=Properties.OffsetX;
        end;
 
       {Adjust Offset Y}
-      if Properties.OffsetY <> 0 then  
+      if Properties.OffsetY <> 0 then
        begin
         {Check Offset Y}
         if Properties.OffsetY > ((VirtualHeight - PhysicalHeight) - 1) then
          begin
           Properties.OffsetY:=0;
          end;
-        
+
         Defaults.OffsetY:=Properties.OffsetY;
-       end; 
- 
+       end;
+
       {Adjust Depth}
       {Not supported}
-      
+
       {Adjust Order}
       {Not supported}
-      
+
       {Adjust Rotation}
       if Properties.Rotation <= FRAMEBUFFER_ROTATION_270 then Defaults.Rotation:=Properties.Rotation;
- 
+
       {Check Rotation}
       if Properties.Rotation <> PRPiSenseFramebuffer(Framebuffer).Rotation then
        begin
-        if (Properties.Rotation = FRAMEBUFFER_ROTATION_90) or (Properties.Rotation = FRAMEBUFFER_ROTATION_270) then 
+        if (Properties.Rotation = FRAMEBUFFER_ROTATION_90) or (Properties.Rotation = FRAMEBUFFER_ROTATION_270) then
          begin
           if (PRPiSenseFramebuffer(Framebuffer).Rotation <> FRAMEBUFFER_ROTATION_90) and (PRPiSenseFramebuffer(Framebuffer).Rotation <> FRAMEBUFFER_ROTATION_270) then
            begin
             {Adjust Virtual Only}
-            Defaults.VirtualWidth:=VirtualHeight; 
+            Defaults.VirtualWidth:=VirtualHeight;
             Defaults.VirtualHeight:=VirtualWidth;
            end;
          end
@@ -768,26 +768,26 @@ begin
           if (PRPiSenseFramebuffer(Framebuffer).Rotation <> FRAMEBUFFER_ROTATION_0) and (PRPiSenseFramebuffer(Framebuffer).Rotation <> FRAMEBUFFER_ROTATION_180) then
            begin
             {Adjust Virtual Only}
-            Defaults.VirtualWidth:=VirtualHeight; 
+            Defaults.VirtualWidth:=VirtualHeight;
             Defaults.VirtualHeight:=VirtualWidth;
            end;
-         end;      
+         end;
        end;
      end;
- 
+
     {Get Format}
-    Defaults.Format:=COLOR_FORMAT_RGB16;    
-    
+    Defaults.Format:=COLOR_FORMAT_RGB16;
+
     {Get Bytes}
     Bytes:=ColorFormatToBytes(Defaults.Format);
     if Bytes = 0 then Exit;
-    
+
     {Get Size}
     Defaults.Size:=(Defaults.VirtualWidth * Defaults.VirtualHeight) * Bytes;
-    
+
     {Get Pitch}
     Defaults.Pitch:=Defaults.VirtualWidth * Bytes;
- 
+
     {Allocate Framebuffer}
     if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and DMAAvailable then
      begin
@@ -803,23 +803,23 @@ begin
         Buffer:=GetAlignedMem(RoundUp(Defaults.Size,DMA_MULTIPLIER),DMA_ALIGNMENT);
        end
       else
-       begin      
+       begin
         Buffer:=GetMem(Defaults.Size);
-       end; 
+       end;
      end;
     if Buffer = nil then
      begin
       Result:=ERROR_OPERATION_FAILED;
-      Exit; 
-     end; 
-    
+      Exit;
+     end;
+
     {Check Cache}
     if not(DMA_CACHE_COHERENT) then
      begin
       {Clean Cache (Dest)}
       CleanDataCacheRange(PtrUInt(Buffer),Defaults.Size);
      end;
- 
+
     {Update Framebuffer}
     Framebuffer.Address:=PtrUInt(Buffer);
     Framebuffer.Size:=Defaults.Size;
@@ -839,7 +839,7 @@ begin
     Framebuffer.OverscanLeft:=Defaults.OverscanLeft;
     Framebuffer.OverscanRight:=Defaults.OverscanRight;
     Framebuffer.Rotation:=Defaults.Rotation;
- 
+
     {Update Dirty Region}
     PRPiSenseFramebuffer(Framebuffer).DirtyY1:=Framebuffer.PhysicalHeight - 1;
     PRPiSenseFramebuffer(Framebuffer).DirtyY2:=0;
@@ -849,27 +849,27 @@ begin
      begin
       Result:=ERROR_OPERATION_FAILED;
       Exit;
-     end; 
-    
+     end;
+
     {Update Blank}
     PRPiSenseFramebuffer(Framebuffer).Blank:=False;
-    
+
     {Create Timer}
     PRPiSenseFramebuffer(Framebuffer).Timer:=TimerCreateEx(MILLISECONDS_PER_SECOND div PRPiSenseFramebuffer(Framebuffer).FrameRate,TIMER_STATE_DISABLED,TIMER_FLAG_WORKER,TTimerEvent(RpiSenseFramebufferUpdateDisplay),Framebuffer); {Scheduled as required}
     if PRPiSenseFramebuffer(Framebuffer).Timer = INVALID_HANDLE_VALUE then
      begin
       Result:=ERROR_OPERATION_FAILED;
       Exit;
-     end; 
-    
+     end;
+
     {Update Statistics}
     Inc(Framebuffer.AllocateCount);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -885,23 +885,23 @@ function RPiSenseFramebufferRelease(Framebuffer:PFramebufferDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Framebuffer Release');
  {$ENDIF}
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     {Destroy Timer}
     Result:=TimerDestroy(PRPiSenseFramebuffer(Framebuffer).Timer);
     if Result <> ERROR_SUCCESS then Exit;
     PRPiSenseFramebuffer(Framebuffer).Timer:=INVALID_HANDLE_VALUE;
- 
+
     {Release Framebuffer}
     if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and DMAAvailable then
      begin
@@ -914,7 +914,7 @@ begin
       {Release Normal Buffer (No DMA)}
       FreeMem(Pointer(Framebuffer.Address));
      end;
-     
+
     {Update Framebuffer}
     Framebuffer.Address:=0;
     Framebuffer.Size:=0;
@@ -934,25 +934,25 @@ begin
     Framebuffer.OverscanLeft:=0;
     Framebuffer.OverscanRight:=0;
     Framebuffer.Rotation:=FRAMEBUFFER_ROTATION_0;
-    
+
     {Update Dirty Region}
     MutexDestroy(PRPiSenseFramebuffer(Framebuffer).Lock);
     PRPiSenseFramebuffer(Framebuffer).Lock:=INVALID_HANDLE_VALUE;
     PRPiSenseFramebuffer(Framebuffer).DirtyY1:=RPISENSE_PHYSICAL_HEIGHT - 1;
     PRPiSenseFramebuffer(Framebuffer).DirtyY2:=0;
     PRPiSenseFramebuffer(Framebuffer).Ready:=True;
-    
+
     {Update Blank}
     PRPiSenseFramebuffer(Framebuffer).Blank:=False;
-    
+
     {Update Statistics}
     Inc(Framebuffer.ReleaseCount);
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -968,26 +968,26 @@ function RPiSenseFramebufferBlank(Framebuffer:PFramebufferDevice;Blank:Boolean):
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Framebuffer Blank (Blank=' + BooleanToString(Blank) + ')');
  {$ENDIF}
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     {Update Blank}
     PRPiSenseFramebuffer(Framebuffer).Blank:=Blank;
-    
+
     {Mark Update}
     Result:=FramebufferDeviceMark(Framebuffer,0,0,Framebuffer.PhysicalWidth,Framebuffer.PhysicalHeight,FRAMEBUFFER_TRANSFER_NONE);
    finally
     MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1006,35 +1006,35 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Framebuffer Mark (X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
  {$ENDIF}
- 
+
  {Acquire Dirty Region Lock}
- if MutexLock(PRPiSenseFramebuffer(Framebuffer).Lock) = ERROR_SUCCESS then 
+ if MutexLock(PRPiSenseFramebuffer(Framebuffer).Lock) = ERROR_SUCCESS then
   begin
    try
     Enable:=False;
-     
+
     {Check Y}
     if Y < PRPiSenseFramebuffer(Framebuffer).DirtyY1 then
      begin
       PRPiSenseFramebuffer(Framebuffer).DirtyY1:=Y;
       Enable:=True;
      end;
-    
+
     {Check Height}
     if (Y + (Height - 1)) > PRPiSenseFramebuffer(Framebuffer).DirtyY2 then
      begin
       PRPiSenseFramebuffer(Framebuffer).DirtyY2:=(Y + (Height - 1));
       Enable:=True;
      end;
- 
+
     {Check Enable and Ready}
     if Enable and (PRPiSenseFramebuffer(Framebuffer).Ready) then
      begin
@@ -1044,7 +1044,7 @@ begin
        begin
         {Clear Ready}
         PRPiSenseFramebuffer(Framebuffer).Ready:=False;
-       end; 
+       end;
      end
     else
      begin
@@ -1053,7 +1053,7 @@ begin
    finally
     {Release Dirty Region Lock}
     MutexUnlock(PRPiSenseFramebuffer(Framebuffer).Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1069,27 +1069,27 @@ function RPiSenseFramebufferCommit(Framebuffer:PFramebufferDevice;Address:PtrUIn
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Framebuffer Commit (Address=' + IntToHex(Address,8) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Check Flags}
  if (Flags and FRAMEBUFFER_TRANSFER_DMA) = 0 then
   begin
    {Clean Cache}
-   CleanAndInvalidateDataCacheRange(Address,Size); 
+   CleanAndInvalidateDataCacheRange(Address,Size);
   end
  else
   begin
    {Invalidate Cache}
    InvalidateDataCacheRange(Address,Size);
-  end;  
- 
+  end;
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -1102,34 +1102,34 @@ function RPiSenseFramebufferSetOffset(Framebuffer:PFramebufferDevice;X,Y:LongWor
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Framebuffer Set Offset (X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ')');
  {$ENDIF}
 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Offsets}
     if (X > 0) and (X > ((Framebuffer.VirtualWidth - Framebuffer.PhysicalWidth) - 1)) then Exit;
     if (Y > 0) and (Y > ((Framebuffer.VirtualHeight - Framebuffer.PhysicalHeight) - 1)) then Exit;
-    
+
     {Update Offset}
     if not(Pan) then
      begin
       Framebuffer.OffsetX:=X;
       Framebuffer.OffsetY:=Y;
-     end; 
-    
+     end;
+
     {Mark Update}
     Result:=FramebufferDeviceMark(Framebuffer,0,0,Framebuffer.PhysicalWidth,Framebuffer.PhysicalHeight,FRAMEBUFFER_TRANSFER_NONE);
    finally
     MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1147,26 +1147,26 @@ function RPiSenseFramebufferGetGamma(Framebuffer:PFramebufferDevice;var Gamma:TR
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Framebuffer Get Gamma');
  {$ENDIF}
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     {Get Gamma}
     Gamma:=PRPiSenseFramebuffer(Framebuffer).Gamma;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1184,26 +1184,26 @@ function RPiSenseFramebufferSetGamma(Framebuffer:PFramebufferDevice;const Gamma:
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Framebuffer Set Gamma');
  {$ENDIF}
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     {Set Gamma}
     PRPiSenseFramebuffer(Framebuffer).Gamma:=Gamma;
-    
+
     {Mark Update}
     Result:=FramebufferDeviceMark(Framebuffer,0,0,Framebuffer.PhysicalWidth,Framebuffer.PhysicalHeight,FRAMEBUFFER_TRANSFER_NONE);
    finally
     MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1221,19 +1221,19 @@ function RPiSenseFramebufferResetGamma(Framebuffer:PFramebufferDevice;Value:Long
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Framebuffer Reset Gamma (Value=' + IntToStr(Value) + ')');
  {$ENDIF}
- 
+
  {Check Value}
  if Value > 2 then Exit;
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     {Update Gamma}
@@ -1242,12 +1242,12 @@ begin
      1:PRPiSenseFramebuffer(Framebuffer).Gamma:=RPISENSE_GAMMA_LOW;
      2:PRPiSenseFramebuffer(Framebuffer).Gamma:=PRPiSenseFramebuffer(Framebuffer).GammaUser;
     end;
-   
+
     {Mark Update}
     Result:=FramebufferDeviceMark(Framebuffer,0,0,Framebuffer.PhysicalWidth,Framebuffer.PhysicalHeight,FRAMEBUFFER_TRANSFER_NONE);
    finally
     MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1261,30 +1261,30 @@ function RPiSenseFramebufferSetRotation(Framebuffer:PFramebufferDevice;Rotation:
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Framebuffer Set Rotation (Rotation=' + IntToStr(Rotation) + ')');
  {$ENDIF}
- 
+
  {Check Rotation}
  if Rotation > FRAMEBUFFER_ROTATION_270 then Exit;
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     {Update Rotation}
     Framebuffer.Rotation:=Rotation;
     PRPiSenseFramebuffer(Framebuffer).Rotation:=Rotation;
-    
+
     {Mark Update}
     Result:=FramebufferDeviceMark(Framebuffer,0,0,Framebuffer.PhysicalWidth,Framebuffer.PhysicalHeight,FRAMEBUFFER_TRANSFER_NONE);
    finally
     MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1302,7 +1302,7 @@ var
  Col:PtrUInt;
  Offset:PtrUInt;
  Address:PtrUInt;
- 
+
  Unlock:Boolean;
  DirtyY1:LongWord;
  DirtyY2:LongWord;
@@ -1310,22 +1310,22 @@ begin
  {}
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Framebuffer Update Display');
  {$ENDIF}
- 
+
  {Acquire Dirty Region Lock}
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     Unlock:=True;
-    
+
     {Get Dirty Region}
     DirtyY1:=Framebuffer.DirtyY1;
     DirtyY2:=Framebuffer.DirtyY2;
-    
+
     {Reset Dirty Region}
     Framebuffer.DirtyY1:=Framebuffer.Framebuffer.PhysicalHeight - 1;
     Framebuffer.DirtyY2:=0;
@@ -1337,24 +1337,24 @@ begin
       {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
       if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Error dirty region start is greater than end (DirtyY1=' + IntToStr(DirtyY1) + ' DirtyY2=' + IntToStr(DirtyY2) + ')');
       {$ENDIF}
-      
+
       {Set Ready}
       Framebuffer.Ready:=True;
       Exit;
      end;
- 
+
     {Check Dirty Region}
     if (DirtyY1 > (Framebuffer.Framebuffer.PhysicalHeight - 1)) or (DirtyY2 > (Framebuffer.Framebuffer.PhysicalHeight - 1)) then
      begin
       {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
       if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'RPiSenseHat: Error dirty region start or end is greater than maximum (DirtyY1=' + IntToStr(DirtyY1) + ' DirtyY2=' + IntToStr(DirtyY2) + ')');
       {$ENDIF}
-      
+
       {Set Ready}
       Framebuffer.Ready:=True;
       Exit;
      end;
- 
+
     {Check Blank}
     if Framebuffer.Blank then
      begin
@@ -1362,16 +1362,16 @@ begin
       FillChar(Framebuffer.PixelData[0],SizeOf(Framebuffer.PixelData),0);
      end
     else
-     begin    
+     begin
       {Get Address}
       Address:=Framebuffer.Framebuffer.Address + (Framebuffer.Framebuffer.OffsetY * Framebuffer.Framebuffer.Pitch) + (Framebuffer.Framebuffer.OffsetX * (Framebuffer.Framebuffer.Depth shr 3));
-      
+
       {Check Rotation}
       case Framebuffer.Framebuffer.Rotation of
        FRAMEBUFFER_ROTATION_0:begin
          {No Rotation}
          Offset:=0;
-         
+
          {Copy Pixel Data}
          for Row:=0 to 7 do
           begin
@@ -1379,12 +1379,12 @@ begin
             begin
              {Store Pixel}
              Framebuffer.PixelData[Offset]:=PWord(Address + (Col * (Framebuffer.Framebuffer.Depth shr 3)))^;
-             
+
              {Update Offset}
              Inc(Offset);
             end;
-            
-           {Update Address} 
+
+           {Update Address}
            Inc(Address,Framebuffer.Framebuffer.Pitch);
           end;
         end;
@@ -1395,24 +1395,24 @@ begin
           begin
            {Update Offset}
            Offset:=7 - Row;
-           
+
            for Col:=0 to 7 do
             begin
              {Store Pixel}
              Framebuffer.PixelData[Offset]:=PWord(Address + (Col * (Framebuffer.Framebuffer.Depth shr 3)))^;
-             
+
              {Update Offset}
              Inc(Offset,8);
             end;
-           
-           {Update Address} 
+
+           {Update Address}
            Inc(Address,Framebuffer.Framebuffer.Pitch);
           end;
         end;
        FRAMEBUFFER_ROTATION_180:begin
          {180 degree rotation}
          Offset:=63;
-         
+
          {Copy Pixel Data}
          for Row:=0 to 7 do
           begin
@@ -1420,12 +1420,12 @@ begin
             begin
              {Store Pixel}
              Framebuffer.PixelData[Offset]:=PWord(Address + (Col * (Framebuffer.Framebuffer.Depth shr 3)))^;
-             
+
              {Update Offset}
              Dec(Offset);
             end;
-            
-           {Update Address} 
+
+           {Update Address}
            Inc(Address,Framebuffer.Framebuffer.Pitch);
           end;
         end;
@@ -1436,45 +1436,45 @@ begin
           begin
            {Update Offset}
            Offset:=56 + Row;
-           
+
            for Col:=0 to 7 do
             begin
              {Store Pixel}
              Framebuffer.PixelData[Offset]:=PWord(Address + (Col * (Framebuffer.Framebuffer.Depth shr 3)))^;
-             
+
              {Update Offset}
              Dec(Offset,8);
             end;
-           
-           {Update Address} 
+
+           {Update Address}
            Inc(Address,Framebuffer.Framebuffer.Pitch);
           end;
         end;
       end;
-     end;  
-    
+     end;
+
     {Release Dirty Region Lock}
     MutexUnlock(Framebuffer.Lock);
     Unlock:=False;
-    
+
     {Create Block Data}
     for Row:=0 to 7 do
      begin
       for Col:=0 to 7 do
        begin
-		Framebuffer.BlockData[(Row * 24) + Col + 1]:=Framebuffer.Gamma[(Framebuffer.PixelData[(Row * 8) + Col] shr 11) and $1F];
-		Framebuffer.BlockData[(Row * 24) + (Col + 8) + 1]:=Framebuffer.Gamma[(Framebuffer.PixelData[(Row * 8) + Col] shr 6) and $1F];
-		Framebuffer.BlockData[(Row * 24) + (Col + 16) + 1]:=Framebuffer.Gamma[(Framebuffer.PixelData[(Row * 8) + Col]) and $1F];
+        Framebuffer.BlockData[(Row * 24) + Col + 1]:=Framebuffer.Gamma[(Framebuffer.PixelData[(Row * 8) + Col] shr 11) and $1F];
+        Framebuffer.BlockData[(Row * 24) + (Col + 8) + 1]:=Framebuffer.Gamma[(Framebuffer.PixelData[(Row * 8) + Col] shr 6) and $1F];
+        Framebuffer.BlockData[(Row * 24) + (Col + 16) + 1]:=Framebuffer.Gamma[(Framebuffer.PixelData[(Row * 8) + Col]) and $1F];
        end;
      end;
-    
+
     {Write Block Data}
     RPiSenseBlockWrite(Framebuffer.I2C,RPISENSE_I2C_ADDRESS,@Framebuffer.BlockData,193);
-    
+
     {Acquire Dirty Region Lock}
     if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
     Unlock:=True;
-    
+
     {Check Dirty}
     if Framebuffer.DirtyY1 <= Framebuffer.DirtyY2 then
      begin
@@ -1485,14 +1485,14 @@ begin
      begin
       {Set Ready}
       Framebuffer.Ready:=True;
-     end;     
+     end;
    finally
     {Release Dirty Region Lock}
     if Unlock then MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {RPiSenseHat Joystick Functions}
@@ -1508,24 +1508,24 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(KEYBOARD_DEBUG)}
  if KEYBOARD_LOG_ENABLED then KeyboardLogDebug(nil,'RPiSenseHat: Joystick Create (Name=' + Name + ')');
  {$ENDIF}
- 
+
  {Check I2C}
  if I2C = nil then Exit;
 
  {Check GPIO}
  if GPIO = nil then Exit;
- 
+
  {Create Joystick}
  RPiSenseJoystick:=PRPiSenseJoystick(KeyboardDeviceCreateEx(SizeOf(TRPiSenseJoystick)));
  if RPiSenseJoystick <> nil then
   begin
    {Update Keyboard}
    {Device}
-   RPiSenseJoystick.Keyboard.Device.DeviceBus:=DEVICE_BUS_I2C; 
+   RPiSenseJoystick.Keyboard.Device.DeviceBus:=DEVICE_BUS_I2C;
    RPiSenseJoystick.Keyboard.Device.DeviceType:=KEYBOARD_TYPE_NONE;
    RPiSenseJoystick.Keyboard.Device.DeviceFlags:=RPiSenseJoystick.Keyboard.Device.DeviceFlags; {Don't override defaults}
    RPiSenseJoystick.Keyboard.Device.DeviceData:=nil;
@@ -1537,7 +1537,7 @@ begin
    RPiSenseJoystick.GPIO:=GPIO;
    RPiSenseJoystick.Pin:=GPIO_PIN_23;
    RPiSenseJoystick.Trigger:=GPIO_TRIGGER_RISING;
-   
+
    {Register Keyboard}
    Status:=KeyboardDeviceRegister(@RPiSenseJoystick.Keyboard);
    if Status = ERROR_SUCCESS then
@@ -1548,23 +1548,23 @@ begin
       begin
        if KEYBOARD_LOG_ENABLED then KeyboardLogError(nil,'RPiSenseHat: Failed to register GPIO Joystick event: ' + ErrorToString(Status));
        Exit;
-      end; 
-     
+      end;
+
      {Set State to Attached}
      if KeyboardDeviceSetState(@RPiSenseJoystick.Keyboard,KEYBOARD_STATE_ATTACHED) <> ERROR_SUCCESS then Exit;
-     
+
      {Return Result}
-     Result:=PKeyboardDevice(RPiSenseJoystick); 
+     Result:=PKeyboardDevice(RPiSenseJoystick);
     end
    else
     begin
      if KEYBOARD_LOG_ENABLED then KeyboardLogError(nil,'RPiSenseHat: Failed to register new Joystick device: ' + ErrorToString(Status));
-     
+
      {Destroy Keyboard}
      KeyboardDeviceDestroy(@RPiSenseJoystick.Keyboard);
     end;
   end
- else 
+ else
   begin
    if KEYBOARD_LOG_ENABLED then KeyboardLogError(nil,'RPiSenseHat: Failed to create new Joystick device');
   end;
@@ -1579,17 +1579,17 @@ function RPiSenseJoystickDestroy(Joystick:PKeyboardDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Joystick}
  if Joystick = nil then Exit;
- 
+
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(KEYBOARD_DEBUG)}
  if KEYBOARD_LOG_ENABLED then KeyboardLogDebug(Joystick,'RPiSenseHat: Joystick Destroy');
  {$ENDIF}
 
- {Cancel the GPIO Event} 
+ {Cancel the GPIO Event}
  GPIODeviceInputCancel(PRPiSenseJoystick(Joystick).GPIO,PRPiSenseJoystick(Joystick).Pin);
- 
+
  {Deregister Joystick}
  Result:=KeyboardDeviceDeregister(Joystick);
  if Result <> ERROR_SUCCESS then
@@ -1604,8 +1604,8 @@ begin
   begin
    if KEYBOARD_LOG_ENABLED then KeyboardLogError(nil,'RPiSenseHat: Failed to destroy Joystick device: ' + ErrorToString(Result));
    Exit;
-  end; 
- 
+  end;
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -1619,47 +1619,47 @@ procedure RPiSenseJoystickCallback(Joystick:PRPiSenseJoystick;Pin,Trigger:LongWo
 var
  Index:Byte;
  Count:Integer;
- 
+
  Keys:LongInt;
  Changes:LongInt;
- 
+
  Data:TKeyboardData;
  Keymap:TKeymapHandle;
 begin
  {}
  {Check Joystick}
  if Joystick = nil then Exit;
- 
+
  {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(KEYBOARD_DEBUG)}
  if KEYBOARD_LOG_ENABLED then KeyboardLogDebug(@Joystick.Keyboard,'RPiSenseHat: Joystick Callback (Pin=' + GPIOPinToString(Pin) + ' Trigger=' + GPIOTriggerToString(Trigger) + ')');
  {$ENDIF}
- 
+
  {Update Statistics}
  Inc(Joystick.CallbackCount);
- 
+
  {Read Keys}
  Keys:=RPiSenseRegRead(Joystick.I2C,RPISENSE_I2C_ADDRESS,RPISENSE_KEYS);
  if Keys = -1 then Exit;
- 
+
  {Acquire the Lock}
  if MutexLock(Joystick.Keyboard.Lock) = ERROR_SUCCESS then
   begin
    try
     {Get Keymap}
     Keymap:=KeymapGetDefault;
-    
+
     {Get Keymap Index}
     Index:=KEYMAP_INDEX_NORMAL;
-    
+
     {Get Changes}
     Changes:=Keys xor Joystick.PreviousKeys;
-    
+
     {Save Keys}
     Joystick.PreviousKeys:=Keys;
-    
+
     {Clear Keyboard Data}
     FillChar(Data,SizeOf(TKeyboardData),0);
-    
+
     {Check Changes}
     for Count:=0 to 4 do
      begin
@@ -1671,37 +1671,37 @@ begin
         Data.KeyCode:=KeymapGetKeyCode(Keymap,Data.ScanCode,Index);
         Data.CharCode:=KeymapGetCharCode(Keymap,Data.KeyCode);
         Data.CharUnicode:=KeymapGetCharUnicode(Keymap,Data.KeyCode);
-        
+
         {Check Keyup or Keydown}
         if (Keys and 1) <> 0 then
          begin
           Data.Modifiers:=KEYBOARD_KEYDOWN;
-          
+
           {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(KEYBOARD_DEBUG)}
           if KEYBOARD_LOG_ENABLED then
            begin
             KeyboardLogDebug(@Joystick.Keyboard,'RPiSenseHat: Key Pressed (ScanCode=' + IntToStr(Data.ScanCode) + ' Modifiers=' + IntToHex(Data.Modifiers,8) + ' Index=' + IntToStr(Index) + ')');
             KeyboardLogDebug(@Joystick.Keyboard,'RPiSenseHat: Key Pressed (KeyCode=' + IntToHex(Data.KeyCode,4) + ' CharCode=' + IntToHex(Byte(Data.CharCode),2) + ' CharUnicode=' + IntToHex(Word(Data.CharUnicode),4) + ')');
-           end; 
+           end;
           {$ENDIF}
          end
         else
          begin
           Data.Modifiers:=KEYBOARD_KEYUP;
-  
+
           {$IF DEFINED(RPISENSEHAT_DEBUG) or DEFINED(KEYBOARD_DEBUG)}
-          if KEYBOARD_LOG_ENABLED then 
+          if KEYBOARD_LOG_ENABLED then
            begin
             KeyboardLogDebug(@Joystick.Keyboard,'RPiSenseHat: Key Released (ScanCode=' + IntToStr(Data.ScanCode) + ' Modifiers=' + IntToHex(Data.Modifiers,8) + ' Index=' + IntToStr(Index)+ ')');
             KeyboardLogDebug(@Joystick.Keyboard,'RPiSenseHat: Key Released (KeyCode=' + IntToHex(Data.KeyCode,4) + ' CharCode=' + IntToHex(Byte(Data.CharCode),2) + ' CharUnicode=' + IntToHex(Word(Data.CharUnicode),4) + ')');
-           end; 
+           end;
           {$ENDIF}
-         end;         
-       
+         end;
+
         {Insert Data}
         KeyboardInsertData(@Joystick.Keyboard,@Data,True);
        end;
-       
+
       {Update Keys and Changes}
       Keys:=Keys shr 1;
       Changes:=Changes shr 1;
@@ -1733,18 +1733,18 @@ var
 begin
  {}
  Result:=-1;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
- 
+
  {Read Register}
  Status:=I2CDeviceWriteRead(I2C,Address,@Reg,SizeOf(Byte),@Data,SizeOf(Byte),Count);
  if (Status <> ERROR_SUCCESS) or (Count <> SizeOf(Byte)) then
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'RPiSenseHat: Read from register ' + IntToHex(Reg,2) + ' failed: ' + ErrorToString(Status));
    Exit;
-  end; 
- 
+  end;
+
  {Due to the BCM270x I2C clock stretching bug, some values may have MSB set. Clear it to avoid incorrect values}
  Result:=Data and $7F;
 end;
@@ -1763,10 +1763,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
- 
+
  {Write Data}
  Result:=I2CDeviceWrite(I2C,Address,Data,Size,Count);
  if Result <> ERROR_SUCCESS then
@@ -1780,9 +1780,9 @@ end;
 
 initialization
  RPiSenseInit;
- 
+
 {==============================================================================}
- 
+
 {finalization}
  {Nothing}
 

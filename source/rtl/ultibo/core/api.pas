@@ -632,23 +632,23 @@ type
 type
  PHID_DEVICE = PHIDDevice;
  PHID_CONSUMER = PHIDConsumer;
- 
+
  PHID_STATE = PHIDState;
  PHID_STACK = PHIDStack;
- 
+
  PHID_USAGE = PHIDUsage;
  PHID_REPORT = PHIDReport;
  PHID_REPORTS = PHIDReports;
  PHID_COLLECTION = PHIDCollection;
  PHID_COLLECTIONS = PHIDCollections;
- 
+
  PHID_FIELD = PHIDField;
  PHID_DEFINITION = PHIDDefinition;
- 
+
  PHID_REPORT_DESCRIPTOR = PHIDReportDescriptor;
  PHID_PHYSICAL_DESCRIPTOR_SET = PHIDPhysicalDescriptorSet;
  PHID_PHYSICAL_DESCRIPTOR_SET0 = PHIDPhysicalDescriptorSet0;
- 
+
  hid_device_enumerate_cb = THIDDeviceEnumerate;
  hid_device_notification_cb = THIDDeviceNotification;
  hid_consumer_enumerate_cb = THIDConsumerEnumerate;
@@ -703,7 +703,7 @@ type
  PJOYSTICK_DATA = PJoystickData;
  PJOYSTICK_DEVICE = PJoystickDevice;
  PJOYSTICK_PROPERTIES = PJoystickProperties;
- 
+
  joystick_event_cb = TJoystickEvent;
  joystick_enumerate_cb = TJoystickEnumerate;
  joystick_notification_cb = TJoystickNotification;
@@ -791,7 +791,7 @@ type
 type
  TDRIVE_TYPE = TDriveType;
  TDRIVE_DATA = TDriveData;
- 
+
  TFILE_SYS_TYPE = TFileSysType;
 {$ENDIF}
 
@@ -31488,7 +31488,7 @@ var
 begin
  {}
  Result:=HIDExtractBitField(field,buffer,size,WorkBool);
- 
+
  {Return Value}
  value:=WorkBool;
 end;
@@ -34827,7 +34827,7 @@ var
 begin
  {}
  Result:=TimezoneCalculateOffset(datetime,offset,DST);
- 
+
  daylight:=DST;
 end;
 
@@ -36727,7 +36727,7 @@ begin
  {}
  {Check FDSet}
  if fdset = nil then Exit;
- 
+
  Winsock.FD_ZERO(fdset^);
 end;
 
@@ -36737,7 +36737,7 @@ function WsControl(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; pcbre
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {Check Parameters}
  NetworkSetLastError(WSAEINVAL);
  if pcbrequestinfolen = nil then Exit;
@@ -36771,7 +36771,7 @@ function WsControlEx(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; pcb
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {Check Parameters}
  NetworkSetLastError(WSAEINVAL);
  if pcbrequestinfolen = nil then Exit;
@@ -38108,7 +38108,7 @@ function WsControl(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; pcbre
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {Check Parameters}
  NetworkSetLastError(WSAEINVAL);
  if pcbrequestinfolen = nil then Exit;
@@ -38142,7 +38142,7 @@ function WsControlEx(proto: uint32_t; action: uint32_t; prequestinfo: PVOID; pcb
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {Check Parameters}
  NetworkSetLastError(WSAEINVAL);
  if pcbrequestinfolen = nil then Exit;

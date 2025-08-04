@@ -8,50 +8,50 @@ Arch
 
  ARMv7 (Cortex A8)
  ARMv8 (Cortex A53)
- 
+
 Boards
 ======
 
- QEMU - VersatilePB 
- 
+ QEMU - VersatilePB
+
 Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
   Linux - \arch\arm\mach-versatile\*
- 
+
   Linux - \drivers\clocksource\timer-sp804.c - Copyright (C) 1999 - 2003 ARM Limited
-  
+
   Linux - \drivers\irqchip\irq-vic.c - Copyright (C) 1999 - 2003 ARM Limited
- 
+
 References
 ==========
- 
+
  QEMU System ARM - http://wiki.qemu.org/download/qemu-doc.html#ARM-System-emulator
- 
+
  RealView Versatile PB - http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0224i/index.html
- 
+
  SP804 Dual Timer - http://infocenter.arm.com/help/topic/com.arm.doc.ddi0271d/DDI0271.pdf
- 
+
  PL190 Vectored Interrupt Controller - http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0181e/index.html
- 
+
 Platform QEMUVPB
 ================
- 
- 
+
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit PlatformQEMUVPB; 
+unit PlatformQEMUVPB;
 
 interface
 
@@ -64,7 +64,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,VersatilePB,Platform,{$IFDEF CPUARM}Pl
 {==============================================================================}
 {const}
  {QEMUVPB specific constants}
- 
+
  {Address of StartupHandler on Reset}
  {QEMUVPB_STARTUP_ADDRESS = $00010000;} {Obtain from linker}
 
@@ -72,23 +72,23 @@ const
  {Page Table Address and Size}
  QEMUVPB_PAGE_TABLE_BASE = $00004000;     {Place the first level Page Table after the interrupt vectors at 0x00001000 and before the code start at 0x00010000}
  QEMUVPB_PAGE_TABLE_SIZE = SIZE_16K;      {ARMv7 first level Page Table is exactly 16KB in size (4096 32 bit (4 byte) entries)}
- 
+
 const
- {Vector Table Address and Size} 
- QEMUVPB_VECTOR_TABLE_BASE  = $00001000;  {Place the Interrupt Vector Table at 0x00001000 before the code start at 0x00010000} 
+ {Vector Table Address and Size}
+ QEMUVPB_VECTOR_TABLE_BASE  = $00001000;  {Place the Interrupt Vector Table at 0x00001000 before the code start at 0x00010000}
  QEMUVPB_VECTOR_TABLE_SIZE  = SIZE_64;    {The Interrupt Vector Table is exactly 64 bytes (16 32 bit (4 byte) entries)}
  QEMUVPB_VECTOR_TABLE_COUNT = 8;          {The Interrupt Vector Table contains 8 entries on an ARMv7 device}
- 
+
 const
- {CPU Count, Boot and Mask} 
+ {CPU Count, Boot and Mask}
  QEMUVPB_CPU_COUNT = VERSATILEPB_CPU_COUNT;
  QEMUVPB_CPU_BOOT = CPU_ID_0;
  QEMUVPB_CPU_MASK = CPU_AFFINITY_0;
- 
+
 const
  {SWI}
  QEMUVPB_SWI_COUNT = 256;                 {Number of available SWI entries}
- 
+
 const
  {Kernel Image Name}
  {$IFDEF CPUARM}
@@ -101,7 +101,7 @@ const
  QEMUVPB_KERNEL_COMMAND = ''; {Not available as a file}
  QEMUVPB_FIRMWARE_FILES = ''; {Not available as a file}
  QEMUVPB_DTB_FILES = '';      {Not available as a file}
- 
+
 {$IFDEF CONSOLE_EARLY_INIT}
 const
  {PL110 specific constants}
@@ -133,15 +133,15 @@ const
  {PL110 Timing0 register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0161e/I913915.html)}
  PL110_CLCD_TIMING0_HBP = ($FF shl 24); {Horizontal back porch}
  PL110_CLCD_TIMING0_HFP = ($FF shl 16); {Horizontal front porch}
- PL110_CLCD_TIMING0_HSW = ($FF shl 8);  {Horizontal synchronization pulse width} 
+ PL110_CLCD_TIMING0_HSW = ($FF shl 8);  {Horizontal synchronization pulse width}
  PL110_CLCD_TIMING0_PPL = ($FC shl 2);  {Pixels-per-line (Actual pixels-per-line = 16 * (PPL + 1))}
 
  {PL110 Timing1 register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0161e/I913915.html)}
  PL110_CLCD_TIMING1_VBP = ($FF shl 24); {Vertical back porch}
- PL110_CLCD_TIMING1_VFP = ($FF shl 16); {Vertical front porch} 
+ PL110_CLCD_TIMING1_VFP = ($FF shl 16); {Vertical front porch}
  PL110_CLCD_TIMING1_VSW = ($FC shl 10); {Vertical synchronization pulse width}
- PL110_CLCD_TIMING1_LPP = ($3FF shl 0); {Lines per panel is the number of active lines per screen (Program to number of lines required minus 1)} 
- 
+ PL110_CLCD_TIMING1_LPP = ($3FF shl 0); {Lines per panel is the number of active lines per screen (Program to number of lines required minus 1)}
+
  {PL110 Timing2 register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0161e/I913915.html)}
  PL110_CLCD_TIMING2_PCD_HI = ($1F shl 27);  {Upper five bits of Panel Clock Divisor}
  PL110_CLCD_TIMING2_BCD    = (1 shl 26);    {Bypass pixel clock divider}
@@ -153,11 +153,11 @@ const
  PL110_CLCD_TIMING2_ACB    = ($1F shl 6);   {AC bias pin frequency}
  PL110_CLCD_TIMING2_CLKSEL = (1 shl 5);     {This bit drives the CLCDCLKSEL signal which is used as the select signal for the external LCD clock multiplexor}
  PL110_CLCD_TIMING2_PCD_LO = ($1F shl 0);   {Lower five bits of Panel Clock Divisor}
- 
+
  {PL110 Timing3 register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0161e/I913915.html)}
  PL110_CLCD_TIMING3_LEE = (1 shl 16);  {LCD Line end enable: 0 = CLLE disabled (held LOW) / 1 = CLLE signal active}
  PL110_CLCD_TIMING3_LED = ($3F shl 0); {Line-end signal delay from the rising-edge of the last panel clock}
- 
+
  {PL110 Control register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0161e/I913915.html)}
  PL110_CLCD_CONTROL_LCDEN           = (1 shl 0);  {}
  PL110_CLCD_CONTROL_LCDBPP1         = (0 shl 1);  {LCD bits per pixel: 000 = 1 bpp}
@@ -186,7 +186,7 @@ const
  {PL110 control constants}
  PL110_CONTROL_VGA = PL110_CLCD_CONTROL_LCDTFT or PL110_CLCD_CONTROL_LCDVCOMP_BPORCH;
  PL110_CONTROL_SVGA = PL110_CLCD_CONTROL_LCDTFT or PL110_CLCD_CONTROL_LCDVCOMP_BPORCH;
- 
+
  {PL110 timing0 constants}
  PL110_TIMING0_VGA = $3F1F3F9C;
  PL110_TIMING0_SVGA = $1313A4C4;
@@ -194,7 +194,7 @@ const
  {PL110 timing1 constants}
  PL110_TIMING1_VGA = $090B61DF;
  PL110_TIMING1_SVGA = $0505F657;
-  
+
  {PL110 timing2 constants}
  PL110_TIMING2_VGA = $067F1800;
  PL110_TIMING2_SVGA = $071F1800;
@@ -202,7 +202,7 @@ const
 {==============================================================================}
 {type}
  {QEMUVPB specific types}
- 
+
 {$IFDEF CONSOLE_EARLY_INIT}
 type
  {PL110 specific types}
@@ -222,8 +222,8 @@ type
   ICR:LongWord;     {Interrupt Clear Register}
   UPCURR:LongWord;  {Upper Panel Current Address Value Registers}
   LPCURR:LongWord;  {Lower Panel Current Address Value Registers}
- end; 
- 
+ end;
+
  PPL110Framebuffer = ^TPL110Framebuffer;
  TPL110Framebuffer = record
   {Framebuffer Properties}
@@ -241,41 +241,41 @@ type
   Timing2:LongWord;               {Preset Timing2 register value}
   Timing3:LongWord;               {Preset Timing2 register value}
   Registers:PPL110CLCDRegisters;  {PL110 registers}
- end; 
-{$ENDIF} 
+ end;
+{$ENDIF}
 {==============================================================================}
 var
  {QEMUVPB specific Ultibo variables}
  QEMUVPBInitialized:Boolean;
- 
+
 var
  {Clock Variables}
  ClockGetLast:LongWord;                        {Value of 24MHz Counter on last ClockGetCount or ClockGetTotal call}
  ClockGetBase:Int64;                           {Base value for 64-bit clock, incremented each time the 24MHz Counter rolls over (Only accurate if ClockGetCount/ClockGetTotal is called at least once per 178 seconds)}
  ClockGetLock:THandle = INVALID_HANDLE_VALUE;  {Lock handle for creating 64-bit clock from a 32-bit register}
  ClockGetTimer:THandle = INVALID_HANDLE_VALUE; {Timer handle for ensuring clock is read periodically to maintain accurracy}
-  
+
 var
  {Timer Variables}
  Timer0Registers:PSP804TimerRegisters; {Use Timer0 for Clock}
  Timer2Registers:PSP804TimerRegisters; {Use Timer2 for Scheduler}
- 
+
 var
  {Interrupt Variables}
  PrimaryInterruptRegisters:PPL190InterruptRegisters;
  SecondaryInterruptRegisters:PVersatilePBInterruptRegisters;
- 
+
  InterruptEntries:array[0..(VERSATILEPB_IRQ_COUNT - 1)] of PInterruptEntry;
 
 var
  {System Call Variables}
  SystemCallEntries:array[0..QEMUVPB_SWI_COUNT - 1] of TSystemCallEntry;
- 
+
 var
  {IRQ/FIQ Variables}
  IRQEnabled:array[0..1] of LongWord; {2 groups of IRQs to Enable/Disable (See: TPL190InterruptRegisters)}
  FIQEnabled:array[0..1] of LongWord; {2 groups of FIQs to Enable/Disable (See: TPL190InterruptRegisters)}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure QEMUVPBInit;
@@ -296,8 +296,8 @@ procedure QEMUVPBPageTableInit;
 function QEMUVPBRequestExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 function QEMUVPBReleaseExIRQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 
-function QEMUVPBRequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
-function QEMUVPBReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
+function QEMUVPBRequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
+function QEMUVPBReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 
 function QEMUVPBRegisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
 function QEMUVPBDeregisterInterrupt(Number,Mask,Priority,Flags:LongWord;Handler:TSharedInterruptHandler;Parameter:Pointer):LongWord;
@@ -306,13 +306,13 @@ function QEMUVPBRegisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHa
 function QEMUVPBDeregisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHandler;HandlerEx:TSystemCallExHandler):LongWord;
 
 function QEMUVPBGetInterruptEntry(Number,Instance:LongWord;var Interrupt:TInterruptEntry):LongWord;
-function QEMUVPBGetSystemCallEntry(Number:LongWord):TSystemCallEntry; 
+function QEMUVPBGetSystemCallEntry(Number:LongWord):TSystemCallEntry;
 
-function QEMUVPBSystemRestart(Delay:LongWord):LongWord; 
+function QEMUVPBSystemRestart(Delay:LongWord):LongWord;
 function QEMUVPBSystemShutdown(Delay:LongWord):LongWord;
 
 function QEMUVPBClockGetCount:LongWord;
-function QEMUVPBClockGetTotal:Int64; 
+function QEMUVPBClockGetTotal:Int64;
 procedure QEMUVPBClockGetTimer(Data:Pointer);
 
 {==============================================================================}
@@ -321,7 +321,7 @@ procedure QEMUVPBSchedulerInit;
 
 {==============================================================================}
 {QEMUVPB SWI Functions}
-function QEMUVPBDispatchSWI(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle; 
+function QEMUVPBDispatchSWI(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle;
 
 {==============================================================================}
 {QEMUVPB Clock Functions}
@@ -417,7 +417,7 @@ begin
 
  {Setup BUS_ALIAS}
  BUS_ALIAS:=$00000000;
- 
+
  {Setup SECURE_BOOT}
  SECURE_BOOT:=False; {Versatile PB does not support PL3 (TrustZone)}
 
@@ -426,7 +426,7 @@ begin
 
  {Setup STARTUP_ADDRESS}
  STARTUP_ADDRESS:=PtrUInt(@_text_start); {QEMUVPB_STARTUP_ADDRESS} {Obtain from linker}
- 
+
  {Setup PERIPHERALS_BASE and SIZE}
  PERIPHERALS_BASE:=VERSATILEPB_PERIPHERALS_BASE;
  PERIPHERALS_SIZE:=VERSATILEPB_PERIPHERALS_SIZE;
@@ -434,18 +434,18 @@ begin
  {Setup LOCAL_PERIPHERALS_BASE and SIZE}
  LOCAL_PERIPHERALS_BASE:=$00000000;
  LOCAL_PERIPHERALS_SIZE:=0;
- 
+
  {Setup MEMORY_BASE and SIZE}
  MEMORY_BASE:=$00000000;
  MEMORY_SIZE:=SIZE_256M;
- 
+
  {Setup MEMORY_PAGE_SIZE}
  MEMORY_PAGE_SIZE:=SIZE_4K;
  MEMORY_LARGEPAGE_SIZE:=SIZE_64K;
- 
+
  {Setup MEMORY_SECTION_SIZE}
  MEMORY_SECTION_SIZE:=SIZE_1M;
- 
+
  {Setup MEMORY_IRQ/FIQ/LOCAL/SHARED/DEVICE/NOCACHE/NONSHARED_SIZE}
  MEMORY_IRQ_SIZE:=SIZE_2M;
  MEMORY_FIQ_SIZE:=SIZE_2M;
@@ -454,17 +454,17 @@ begin
  MEMORY_DEVICE_SIZE:=SIZE_0;
  MEMORY_NOCACHE_SIZE:=SIZE_4M;
  MEMORY_NONSHARED_SIZE:=SIZE_0;
- 
+
  {Setup PAGE_TABLE_BASE and SIZE}
  PAGE_TABLE_BASE:=QEMUVPB_PAGE_TABLE_BASE;
  PAGE_TABLE_SIZE:=QEMUVPB_PAGE_TABLE_SIZE;
- 
+
  {Setup VECTOR_TABLE_BASE, SIZE and COUNT}
  VECTOR_TABLE_BASE:=QEMUVPB_VECTOR_TABLE_BASE;
  VECTOR_TABLE_SIZE:=QEMUVPB_VECTOR_TABLE_SIZE;
  VECTOR_TABLE_COUNT:=QEMUVPB_VECTOR_TABLE_COUNT;
- 
- {Setup MACHINE_TYPE} 
+
+ {Setup MACHINE_TYPE}
  MACHINE_TYPE:=MACHINE_TYPE_UNKNOWN;
  {$IFDEF CPUARM}
  case ARMMachineType of
@@ -474,10 +474,10 @@ begin
  {$ENDIF CPUAARCH64}
   ARM_MACHINE_VERSATILE_PB:MACHINE_TYPE:=MACHINE_TYPE_VERSATILEPB;
  end;
- 
+
  {Setup BOARD_TYPE}
  BOARD_TYPE:=BOARD_TYPE_QEMUVPB;
- 
+
  {Setup CPU_ARCH, TYPE and COUNT}
  {$IFDEF CPUARM}
  CPU_ARCH:=CPU_ARCH_ARM32;
@@ -491,43 +491,43 @@ begin
  CPU_BOOT:=QEMUVPB_CPU_BOOT;
  CPU_MASK:=QEMUVPB_CPU_MASK;
  CPU_MAX_COUNT:=QEMUVPB_CPU_COUNT;
- 
+
  {Setup CPU_MEMORY_BASE and SIZE}
  CPU_MEMORY_BASE:=$00000000;
  CPU_MEMORY_SIZE:=SIZE_256M;
- 
+
  {Setup CPU_MEMORY_RESTRICTED}
  CPU_MEMORY_RESTRICTED:=True;
- 
+
  {Setup FPU_TYPE}
  FPU_TYPE:=FPU_TYPE_VFPV3;
- 
+
  {Setup GPU_TYPE}
  GPU_TYPE:=GPU_TYPE_UNKNOWN;
- 
+
  {Setup GPU_MEMORY_BASE and SIZE}
  GPU_MEMORY_BASE:=$00000000;
  GPU_MEMORY_SIZE:=0;
- 
+
  {Setup GPU_MEMORY_CACHED}
  GPU_MEMORY_CACHED:=False;
- 
+
  {Setup IRQ/FIQ/SWI_COUNT/START/ROUTING}
  IRQ_COUNT:=VERSATILEPB_IRQ_COUNT;
  FIQ_COUNT:=VERSATILEPB_FIQ_COUNT;
- 
+
  IRQ_START:=0;                           {System wide IRQs start at zero}
 
  IRQ_ROUTING:=CPU_ID_0;                  {Route system wide IRQs to CPU0}
  FIQ_ROUTING:=CPU_ID_0;                  {Route system wide FIQs to CPU0}
- 
+
  IRQ_LOCAL_COUNT:=0;                     {There are no Local IRQs}
  FIQ_LOCAL_COUNT:=0;                     {There are no Local FIQs}
- 
+
  IRQ_LOCAL_START:=VERSATILEPB_IRQ_COUNT; {There are no Local IRQs}
- 
+
  SWI_COUNT:=QEMUVPB_SWI_COUNT;
- 
+
  {Setup IRQ/FIQ/IPI/SWI/UNDEF/ABORT_ENABLED}
  IRQ_ENABLED:=True;
  FIQ_ENABLED:=True;
@@ -535,14 +535,14 @@ begin
  SWI_ENABLED:=True;
  ABORT_ENABLED:=True;
  UNDEFINED_ENABLED:=True;
- 
+
  {Setup IRQ/FIQ/SWI/UNDEF/ABORT_STACK_ENABLED}
  IRQ_STACK_ENABLED:=True;
  FIQ_STACK_ENABLED:=True;
  SWI_STACK_ENABLED:=True;
  ABORT_STACK_ENABLED:=True;
  UNDEFINED_STACK_ENABLED:=True;
- 
+
  {Setup CLOCK_FREQUENCY/TICKS/CYCLES}
  CLOCK_FREQUENCY:=VERSATILEPB_TIMER_FREQUENCY;
  CLOCK_TICKS_PER_SECOND:=1000;   {Note: QEMU uses the timeGetDevCaps() function on Windows which returns wPeriodMin as 1 millisecond}
@@ -553,46 +553,46 @@ begin
  CLOCK_CYCLES_PER_NANOSECOND:=CLOCK_FREQUENCY div NANOSECONDS_PER_SECOND;
  CLOCK_CYCLES_TOLERANCE:=CLOCK_CYCLES_PER_TICK div 10;
  TIME_TICKS_PER_CLOCK_INTERRUPT:=TIME_TICKS_PER_MILLISECOND div CLOCK_TICKS_PER_MILLISECOND;
- 
+
  {Setup HEAP Behaviour}
  HEAP_NORMAL_NONSHARED:=True;
  HEAP_IRQ_CACHE_COHERENT:=True;
  HEAP_FIQ_CACHE_COHERENT:=True;
- 
+
  {Setup SCHEDULER_INTERRUPTS/CLOCKS}
  SCHEDULER_INTERRUPTS_PER_SECOND:=1000;   {Note: QEMU uses the timeGetDevCaps() function on Windows which returns wPeriodMin as 1 millisecond}
  SCHEDULER_INTERRUPTS_PER_MILLISECOND:=1; {      That means that any timer interval less then 1ms will not be honoured, the result will be 1ms}
  SCHEDULER_CLOCKS_PER_INTERRUPT:=CLOCK_FREQUENCY div SCHEDULER_INTERRUPTS_PER_SECOND;
  SCHEDULER_CLOCKS_TOLERANCE:=SCHEDULER_CLOCKS_PER_INTERRUPT div 10;
  TIME_TICKS_PER_SCHEDULER_INTERRUPT:=TIME_TICKS_PER_MILLISECOND div SCHEDULER_INTERRUPTS_PER_MILLISECOND;
- 
+
  {Setup SCHEDULER_IDLE}
  SCHEDULER_IDLE_WAIT:=False;
  SCHEDULER_IDLE_OFFSET:=1;
  SCHEDULER_IDLE_PER_SECOND:=SCHEDULER_INTERRUPTS_PER_SECOND;
- 
+
  {Setup KERNEL_NAME/CONFIG/COMMAND}
  KERNEL_NAME:=QEMUVPB_KERNEL_NAME;
  KERNEL_CONFIG:=QEMUVPB_KERNEL_CONFIG;
  KERNEL_COMMAND:=QEMUVPB_KERNEL_COMMAND;
  FIRMWARE_FILES:=QEMUVPB_FIRMWARE_FILES;
  DTB_FILES:=QEMUVPB_DTB_FILES;
- 
+
  {Register Platform BoardInit Handler}
  BoardInitHandler:=QEMUVPBBoardInit;
- 
+
  {Register Platform MemoryInit Handler}
  MemoryInitHandler:=QEMUVPBMemoryInit;
- 
+
  {Register Platform ClockInit Handler}
  ClockInitHandler:=QEMUVPBClockInit;
- 
+
  {Register Platform PowerInit Handler}
  PowerInitHandler:=QEMUVPBPowerInit;
- 
+
  {Register Platform InterruptInit Handler}
  InterruptInitHandler:=QEMUVPBInterruptInit;
- 
+
  {Register Platform PeripheralInit Handler}
  PeripheralInitHandler:=QEMUVPBPeripheralInit;
  {$IFDEF CONSOLE_EARLY_INIT}
@@ -607,11 +607,11 @@ begin
  {Register PlatformARMv8 PageTableInit Handler}
  ARMv8PageTableInitHandler:=QEMUVPBPageTableInit;
  {$ENDIF CPUAARCH64}
- 
+
  {Register Platform Boot Blink/Output Handlers}
  BootBlinkHandler:=QEMUVPBBootBlink;
  BootOutputHandler:=QEMUVPBBootOutput;
- 
+
  {Register Platform Boot Console Handlers}
  {$IFDEF CONSOLE_EARLY_INIT}
  BootConsoleStartHandler:=QEMUVPBBootConsoleStart;
@@ -620,7 +620,7 @@ begin
  BootConsoleGetXHandler:=QEMUVPBBootConsoleGetX;
  BootConsoleGetYHandler:=QEMUVPBBootConsoleGetY;
  {$ENDIF}
- 
+
  {Register Platform IRQ Handlers}
  RequestExIRQHandler:=QEMUVPBRequestExIRQ;
  ReleaseExIRQHandler:=QEMUVPBReleaseExIRQ;
@@ -639,32 +639,32 @@ begin
 
  {Register Platform Interrupt Handlers}
  GetInterruptEntryHandler:=QEMUVPBGetInterruptEntry;
- 
+
  {Register Platform System Call Handlers}
  GetSystemCallEntryHandler:=QEMUVPBGetSystemCallEntry;
- 
+
  {Register Platform System Handlers}
  SystemRestartHandler:=QEMUVPBSystemRestart;
  SystemShutdownHandler:=QEMUVPBSystemShutdown;
- 
+
  {Register Platform Clock Handlers}
  ClockGetCountHandler:=QEMUVPBClockGetCount;
  ClockGetTotalHandler:=QEMUVPBClockGetTotal;
- 
+
  {Register Threads SchedulerInit Handler}
  SchedulerInitHandler:=QEMUVPBSchedulerInit;
  {No SchedulerStart, QEMUVPB is Uniprocessor}
- 
+
  {Register Threads SecondaryBoot Handler}
  {Nothing, QEMUVPB is Uniprocessor}
- 
+
  {$IFDEF CPUARM}
  {Register PlatformARMv7 IRQ Handlers}
  ARMv7DispatchIRQHandler:=QEMUVPBDispatchIRQ;
 
  {Register PlatformARMv7 FIQ Handlers}
  ARMv7DispatchFIQHandler:=QEMUVPBDispatchFIQ;
- 
+
  {Register PlatformARMv7 SWI Handlers}
  ARMv7DispatchSWIHandler:=QEMUVPBDispatchSWI;
  {$ENDIF CPUARM}
@@ -674,11 +674,11 @@ begin
 
  {Register PlatformARMv8 FIQ Handlers}
  ARMv8DispatchFIQHandler:=QEMUVPBDispatchFIQ;
- 
+
  {Register PlatformARMv8 SWI Handlers}
  ARMv8DispatchSWIHandler:=QEMUVPBDispatchSWI;
  {$ENDIF CPUAARCH64}
- 
+
  {Set All Timers to Reference Clock (1MHz)}
  Value:=PLongWord(VERSATILEPB_SYSCTRL_REGS_BASE)^;
  Value:=Value or (VERSATILEPB_SYSCTRL_TIMCLK shl VERSATILEPB_SYSCTRL_TIMER0_ENSEL);
@@ -686,16 +686,16 @@ begin
  Value:=Value or (VERSATILEPB_SYSCTRL_TIMCLK shl VERSATILEPB_SYSCTRL_TIMER2_ENSEL);
  Value:=Value or (VERSATILEPB_SYSCTRL_TIMCLK shl VERSATILEPB_SYSCTRL_TIMER3_ENSEL);
  PLongWord(VERSATILEPB_SYSCTRL_REGS_BASE)^:=Value;
- 
+
  {Disable All Timers}
  PLongWord(VERSATILEPB_TIMER0_REGS_BASE + SP804_TIMER_CONTROL)^:=0;
  PLongWord(VERSATILEPB_TIMER1_REGS_BASE + SP804_TIMER_CONTROL)^:=0;
  PLongWord(VERSATILEPB_TIMER2_REGS_BASE + SP804_TIMER_CONTROL)^:=0;
  PLongWord(VERSATILEPB_TIMER3_REGS_BASE + SP804_TIMER_CONTROL)^:=0;
- 
+
  QEMUVPBInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {QEMUVPB Platform Functions}
@@ -719,33 +719,33 @@ procedure QEMUVPBClockInit;
 begin
  {}
  {Setup Timer Registers}
- Timer0Registers:=PSP804TimerRegisters(VERSATILEPB_TIMER0_REGS_BASE); 
- 
+ Timer0Registers:=PSP804TimerRegisters(VERSATILEPB_TIMER0_REGS_BASE);
+
  {Setup Clock Variables}
  ClockBase:=TIME_TICKS_TO_1899;
- ClockLast:=0; 
+ ClockLast:=0;
  {$IFDEF CLOCK_TICK_MANUAL}
  ClockTicks:=0;
  ClockSeconds:=0;
  {$ENDIF}
- 
+
  {Request the Clock IRQ/FIQ}
  if CLOCK_FIQ_ENABLED then
   begin
-   RequestFIQ(QEMUVPB_CPU_BOOT,VERSATILEPB_IRQ_TIMER0_1,QEMUVPBClockInterrupt,nil); 
+   RequestFIQ(QEMUVPB_CPU_BOOT,VERSATILEPB_IRQ_TIMER0_1,QEMUVPBClockInterrupt,nil);
   end
  else
   begin
-   RequestIRQ(QEMUVPB_CPU_BOOT,VERSATILEPB_IRQ_TIMER0_1,QEMUVPBClockInterrupt,nil); 
+   RequestIRQ(QEMUVPB_CPU_BOOT,VERSATILEPB_IRQ_TIMER0_1,QEMUVPBClockInterrupt,nil);
   end;
 
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
-  
+
  {Setup the Timer}
  Timer0Registers.Load:=CLOCK_CYCLES_PER_TICK;
  Timer0Registers.Control:=SP804_TIMER_CONTROL_32BIT or SP804_TIMER_CONTROL_PRESCALE1 or SP804_TIMER_CONTROL_INT_ENABLED or SP804_TIMER_CONTROL_PERIODIC or SP804_TIMER_CONTROL_TIMER_ENABLED;
- 
+
  {Setup the first Clock Interrupt}
  QEMUVPBClockUpdate(CLOCK_CYCLES_PER_TICK,ClockLast);
 end;
@@ -769,38 +769,38 @@ begin
  {Setup Interrupt Registers}
  PrimaryInterruptRegisters:=PPL190InterruptRegisters(VERSATILEPB_VIC_REGS_BASE);
  SecondaryInterruptRegisters:=PVersatilePBInterruptRegisters(VERSATILEPB_SIC_REGS_BASE);
- 
+
  {Setup Interrupt Entries}
  for Count:=0 to VERSATILEPB_IRQ_COUNT - 1 do
   begin
    InterruptEntries[Count]:=nil;
-  end; 
- 
+  end;
+
  {Setup System Call Entries}
  for Count:=0 to QEMUVPB_SWI_COUNT - 1 do
   begin
    FillChar(SystemCallEntries[Count],SizeOf(TSystemCallEntry),0);
-   
-   SystemCallEntries[Count].Number:=Count; 
+
+   SystemCallEntries[Count].Number:=Count;
    SystemCallEntries[Count].CPUID:=CPU_ID_ALL;
   end;
- 
+
  {Setup Enabled IRQ/FIQs}
  for Count:=0 to 1 do {Number of elements in IRQEnabled}
   begin
    IRQEnabled[Count]:=0;
    FIQEnabled[Count]:=0;
-  end; 
- 
+  end;
+
  {Clear Primary Interrupt Enable}
  PrimaryInterruptRegisters.INTENCLEAR:=$FFFFFFFF;
- 
+
  {Setup Primary Interrupt Sic Source (Secondary)}
  PrimaryInterruptRegisters.INTENABLE:=(1 shl VERSATILEPB_IRQ_SICSOURCE);
- 
+
  {Clear Secondary Interrupt Enable}
  SecondaryInterruptRegisters.SIC_ENCLR:=$FFFFFFFF;
- 
+
  {Setup Secondary Interrupt Pass Through}
  SecondaryInterruptRegisters.SIC_PICENSET:=VERSATILEPB_SIC_PIC_MASK;
 end;
@@ -814,22 +814,22 @@ begin
  {}
  {Get Cache Line Size}
  CacheLineSize:=Max(L1DataCacheGetLineSize,L2CacheGetLineSize);
- 
+
  {Setup Peripherals}
  INTERRUPT_REGS_BASE:=VERSATILEPB_VIC_REGS_BASE;
  SYSTEMTIMER_REGS_BASE:=VERSATILEPB_SYS_24MHZ;
  TIMER_REGS_BASE:=VERSATILEPB_TIMER0_REGS_BASE;
  GPIO_REGS_BASE:=VERSATILEPB_GPIO0_REGS_BASE;
  UART_REGS_BASE:=VERSATILEPB_UART0_REGS_BASE;
- 
+
  {Setup GPIO}
  {Not applicable}
- 
+
  {Setup LEDs}
  {Not applicable}
- 
+
  {Setup DMA}
- DMA_ALIGNMENT:=SizeOf(LongWord); 
+ DMA_ALIGNMENT:=SizeOf(LongWord);
  DMA_MULTIPLIER:=SizeOf(LongWord);
  DMA_SHARED_MEMORY:=True;
  DMA_NOCACHE_MEMORY:=False;
@@ -837,13 +837,13 @@ begin
  DMA_CACHE_COHERENT:=False; {True;} {L1 Cache is not coherent for normal memory}
  if CacheLineSize > DMA_ALIGNMENT then DMA_ALIGNMENT:=CacheLineSize;
  if CacheLineSize > DMA_MULTIPLIER then DMA_MULTIPLIER:=CacheLineSize;
- 
+
  {Setup USB}
  {Nothing}
- 
+
  {Setup MMC}
  {Nothing}
- 
+
  {Setup VersatilePB}
  {Done by QEMUVersatilePBInit}
 end;
@@ -862,7 +862,7 @@ begin
   begin
    {Update Framebuffer}
    {Device}
-   PL110Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+   PL110Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO;
    PL110Framebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
    PL110Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_COMMIT or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_CACHED{$IFDEF FPC_BIG_ENDIAN}or FRAMEBUFFER_FLAG_SWAP{$ENDIF FPC_BIG_ENDIAN};
    PL110Framebuffer.Framebuffer.Device.DeviceData:=nil;
@@ -891,10 +891,10 @@ begin
    PL110Framebuffer.Timing2:=PL110_TIMING2_SVGA;
    PL110Framebuffer.Timing3:=0;
    PL110Framebuffer.Registers:=PPL110CLCDRegisters(VERSATILEPB_CLCD_REGS_BASE);
-   
+
    {Setup Flags}
    {Nothing}
-   
+
    {Register Framebuffer}
    Status:=FramebufferDeviceRegister(@PL110Framebuffer.Framebuffer);
    if Status = ERROR_SUCCESS then
@@ -913,7 +913,7 @@ begin
       end;
     end
    else
-    begin     
+    begin
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'QEMUVPB: Failed to register new framebuffer device: ' + ErrorToString(Status));
 
      {Destroy Framebuffer}
@@ -946,7 +946,7 @@ begin
 
  {Parse Environment (Copy environment from zero page)}
  if not(ParseEnvironmentCompleted) then ParseEnvironment;
- 
+
  {$IFDEF CPUARM}
  {Create the first level page table}
  {Setup 1MB sections covering the entire 4GB address space with a default layout}
@@ -957,21 +957,21 @@ begin
    ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
    Inc(Address,SIZE_1M);
   end;
-  
+
  {Set the 1MB sections in the second 1GB as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Non Executable)(Read Write)}
  for Count:=1024 to 2047 do
   begin
    if CPU_MEMORY_RESTRICTED then
     begin
      ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_NONCACHED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_NONE);
-    end 
+    end
    else
     begin
       ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
-    end; 
+    end;
    Inc(Address,SIZE_1M);
   end;
-  
+
  {Set the 1MB sections in the remaining 2GB as ARMV7_L1D_CACHE_REMAP_NORMAL_NONCACHED (Non Shared)(Non Executable)(Read Write)}
  for Count:=2048 to 4095 do
   begin
@@ -982,11 +982,11 @@ begin
    else
     begin
      ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_NORMAL_NONCACHED or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
-    end; 
+    end;
    Inc(Address,SIZE_1M);
   end;
- 
- {Set the 1MB sections containing the PERIPHERALS_BASE to ARMV7_L1D_CACHE_REMAP_DEVICE (Non Shared)(Non Executable)(Read Write)} 
+
+ {Set the 1MB sections containing the PERIPHERALS_BASE to ARMV7_L1D_CACHE_REMAP_DEVICE (Non Shared)(Non Executable)(Read Write)}
  if PERIPHERALS_SIZE > 0 then
   begin
    Address:=(PERIPHERALS_BASE and ARMV7_L1D_SECTION_BASE_MASK);
@@ -995,18 +995,18 @@ begin
      ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_DEVICE or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
      Inc(Address,SIZE_1M);
     end;
-  end;  
- 
- {Set the 1MB sections containing the LOCAL_PERIPHERALS_BASE to ARMV7_L1D_CACHE_REMAP_DEVICE (Non Shared)(Non Executable)(Read Write)} 
+  end;
+
+ {Set the 1MB sections containing the LOCAL_PERIPHERALS_BASE to ARMV7_L1D_CACHE_REMAP_DEVICE (Non Shared)(Non Executable)(Read Write)}
  if LOCAL_PERIPHERALS_SIZE > 0 then
   begin
    Address:=(LOCAL_PERIPHERALS_BASE and ARMV7_L1D_SECTION_BASE_MASK);
    while Address < (LOCAL_PERIPHERALS_BASE + LOCAL_PERIPHERALS_SIZE) do
     begin
-     ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_DEVICE or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE); 
+     ARMv7SetPageTableSection(Address,Address,ARMV7_L1D_CACHE_REMAP_DEVICE or ARMV7_L1D_FLAG_XN or ARMV7_L1D_ACCESS_READWRITE);
      Inc(Address,SIZE_1M);
     end;
-  end;  
+  end;
 
  {Create the second level (Coarse) page tables}
  Table:=(PAGE_TABLES_ADDRESS and ARMV7_L1D_COARSE_BASE_MASK);
@@ -1018,28 +1018,28 @@ begin
    Inc(Address,SIZE_1M);
   end;
  PAGE_TABLES_NEXT:=Table;
- 
+
  {Set the 4KB zero page to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_NONCACHED (Non Shared)(Non Executable)(No Access)}
  Address:=$00000000;
- ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_NONCACHED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_NONE); 
+ ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_NONCACHED or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_NONE);
 
- {Set the 4KB pages containing the VECTOR_TABLE_BASE to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)} 
+ {Set the 4KB pages containing the VECTOR_TABLE_BASE to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)}
  Address:=(VECTOR_TABLE_BASE and ARMV7_L2D_SMALL_BASE_MASK);
  while Address < (VECTOR_TABLE_BASE + VECTOR_TABLE_SIZE) do
   begin
    ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH or ARMV7_L2D_ACCESS_READONLY);
    Inc(Address,SIZE_4K);
-  end; 
- 
- {Set the 4KB pages containing the first level page table to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)} 
+  end;
+
+ {Set the 4KB pages containing the first level page table to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
  Address:=(PAGE_TABLE_BASE and ARMV7_L2D_SMALL_BASE_MASK);
  while Address < (PAGE_TABLE_BASE + PAGE_TABLE_SIZE) do
   begin
    ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
- 
- {Set the 4KB pages containing the TEXT (Code) section to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)} 
+
+ {Set the 4KB pages containing the TEXT (Code) section to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_THROUGH (Non Shared)(Executable)(Read Only)}
  Address:=(PtrUInt(@_text_start) and ARMV7_L2D_SMALL_BASE_MASK);
  while Address < (PtrUInt(@_data)) do
   begin
@@ -1051,7 +1051,7 @@ begin
  Address:=(PtrUInt(@_data) and ARMV7_L2D_SMALL_BASE_MASK);
  while Address < (PtrUInt(@_bss_start)) do
   begin
-   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE); 
+   ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
 
@@ -1070,7 +1070,7 @@ begin
    ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
- 
+
  {Set the 4KB pages containing the initial stack to ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
  Address:=(INITIAL_STACK_BASE and ARMV7_L2D_SMALL_BASE_MASK);
  while Address < (INITIAL_STACK_BASE + INITIAL_STACK_SIZE) do
@@ -1086,18 +1086,18 @@ begin
    ARMv7SetPageTableSmall(Address,Address,ARMV7_L2D_SMALL_CACHE_REMAP_NORMAL_WRITE_ALLOCATE or ARMV7_L2D_FLAG_SMALL_XN or ARMV7_L2D_ACCESS_READWRITE);
    Inc(Address,SIZE_4K);
   end;
- 
+
  {Set the starting address for NoCache/Device/Shared/Local/IRQ/FIQ Blocks}
  if CPU_MEMORY_SIZE > 0 then
   begin
    {Get the top of CPU memory}
    RequestAddress:=CPU_MEMORY_BASE + CPU_MEMORY_SIZE;
-   
+
    {Round CPU memory to a 1MB multiple (Divide by 1MB / Multiply by 1MB)}
    RequestAddress:=(RequestAddress shr 20) shl 20;
    if RequestAddress > 0 then
     begin
-     {Round NoCache/Device/Shared/Local/IRQ/FIQ sizes to a 1MB multiple}   
+     {Round NoCache/Device/Shared/Local/IRQ/FIQ sizes to a 1MB multiple}
      MEMORY_NONSHARED_SIZE:=(MEMORY_NONSHARED_SIZE shr 20) shl 20;
      MEMORY_NOCACHE_SIZE:=(MEMORY_NOCACHE_SIZE shr 20) shl 20;
      MEMORY_DEVICE_SIZE:=(MEMORY_DEVICE_SIZE shr 20) shl 20;
@@ -1105,7 +1105,7 @@ begin
      MEMORY_LOCAL_SIZE:=(MEMORY_LOCAL_SIZE shr 20) shl 20;
      MEMORY_IRQ_SIZE:=(MEMORY_IRQ_SIZE shr 20) shl 20;
      MEMORY_FIQ_SIZE:=(MEMORY_FIQ_SIZE shr 20) shl 20;
-     
+
      {Subtract from top of CPU memory}
      Dec(RequestAddress,MEMORY_NONSHARED_SIZE);
      Dec(RequestAddress,MEMORY_NOCACHE_SIZE);
@@ -1114,7 +1114,7 @@ begin
      Dec(RequestAddress,MEMORY_LOCAL_SIZE * QEMUVPB_CPU_COUNT); {Local memory is per CPU}
      if IRQ_ENABLED then Dec(RequestAddress,MEMORY_IRQ_SIZE * QEMUVPB_CPU_COUNT); {IRQ memory is per CPU}
      if FIQ_ENABLED then Dec(RequestAddress,MEMORY_FIQ_SIZE * QEMUVPB_CPU_COUNT); {FIQ memory is per CPU}
-     
+
      {Register 1MB Non Shared Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
      if MEMORY_NONSHARED_SIZE > 0 then
       begin
@@ -1130,7 +1130,7 @@ begin
          Inc(RequestAddress,MEMORY_NONSHARED_SIZE);
         end;
       end;
-     
+
      {Register 1MB Non Cached Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_NONCACHED (Non Shared)(Non Executable)(Read Write)}
      if MEMORY_NOCACHE_SIZE > 0 then
       begin
@@ -1146,7 +1146,7 @@ begin
          Inc(RequestAddress,MEMORY_NOCACHE_SIZE);
         end;
       end;
-  
+
      {Register 1MB Device Memory Blocks as ARMV7_L1D_CACHE_REMAP_DEVICE (Non Shared)(Non Executable)(Read Write)}
      if MEMORY_DEVICE_SIZE > 0 then
       begin
@@ -1162,7 +1162,7 @@ begin
          Inc(RequestAddress,MEMORY_DEVICE_SIZE);
         end;
       end;
-     
+
      {Register 1MB Shared Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Shared)(Non Executable)(Read Write)}
      if MEMORY_SHARED_SIZE > 0 then
       begin
@@ -1178,7 +1178,7 @@ begin
          Inc(RequestAddress,MEMORY_SHARED_SIZE);
         end;
       end;
-   
+
      {Register 1MB Local Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
      if MEMORY_LOCAL_SIZE > 0 then
       begin
@@ -1197,7 +1197,7 @@ begin
           end;
         end;
       end;
-   
+
      {Register 1MB IRQ Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
      if IRQ_ENABLED and (MEMORY_IRQ_SIZE > 0) then
       begin
@@ -1214,9 +1214,9 @@ begin
             end;
            Inc(RequestAddress,MEMORY_IRQ_SIZE);
           end;
-        end;  
-      end; 
-   
+        end;
+      end;
+
      {Register 1MB FIQ Memory Blocks as ARMV7_L1D_CACHE_REMAP_NORMAL_WRITE_ALLOCATE (Non Shared)(Non Executable)(Read Write)}
      if FIQ_ENABLED and (MEMORY_FIQ_SIZE > 0) then
       begin
@@ -1233,15 +1233,15 @@ begin
             end;
            Inc(RequestAddress,MEMORY_FIQ_SIZE);
           end;
-        end;  
-      end; 
-    end; 
+        end;
+      end;
+    end;
   end;
  {$ENDIF CPUARM}
  {$IFDEF CPUAARCH64}
  //To Do
  {$ENDIF CPUAARCH64}
- 
+
  {Synchronization Barrier}
  DataSynchronizationBarrier;
 end;
@@ -1256,16 +1256,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
- 
+
  {Get Mask}
  Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
- 
+
  Result:=ERROR_NOT_ENOUGH_MEMORY;
- 
+
  {Allocate Entry}
  Entry:=AllocMem(SizeOf(TInterruptEntry));
  if Entry = nil then Exit;
@@ -1277,13 +1277,13 @@ begin
  Entry.HandlerEx:=HandlerEx;
  Entry.Parameter:=Parameter;
  Entry.Priority:=INTERRUPT_PRIORITY_DEFAULT;
- 
+
  {Get Flags}
  Entry.Flags:=INTERRUPT_FLAG_NONE;
- 
+
  {Register Entry}
  Result:=QEMUVPBInterruptRegisterEntry(Entry^);
- 
+
  {Release Entry on failure}
  if Result <> ERROR_SUCCESS then FreeMem(Entry);
 end;
@@ -1298,14 +1298,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
- 
+
  {Get Mask}
  Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
- 
+
  {Clear Entry}
  FillChar(Entry,SizeOf(TInterruptEntry),0);
 
@@ -1316,17 +1316,17 @@ begin
  Entry.HandlerEx:=HandlerEx;
  Entry.Parameter:=Parameter;
  Entry.Priority:=INTERRUPT_PRIORITY_DEFAULT;
- 
+
  {Get Flags}
  Entry.Flags:=INTERRUPT_FLAG_NONE;
- 
+
  {Deregister Entry}
  Result:=QEMUVPBInterruptDeregisterEntry(Entry);
 end;
 
 {==============================================================================}
 
-function QEMUVPBRequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
+function QEMUVPBRequestExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 {Request registration of the supplied handler to the specified FIQ number}
 var
  Mask:LongWord;
@@ -1334,16 +1334,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
- 
+
  {Get Mask}
  Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
- 
+
  Result:=ERROR_NOT_ENOUGH_MEMORY;
- 
+
  {Allocate Entry}
  Entry:=AllocMem(SizeOf(TInterruptEntry));
  if Entry = nil then Exit;
@@ -1355,20 +1355,20 @@ begin
  Entry.HandlerEx:=HandlerEx;
  Entry.Parameter:=Parameter;
  Entry.Priority:=INTERRUPT_PRIORITY_FIQ;
- 
+
  {Get Flags}
  Entry.Flags:=INTERRUPT_FLAG_NONE or INTERRUPT_FLAG_FIQ;
- 
+
  {Register Entry}
  Result:=QEMUVPBInterruptRegisterEntry(Entry^);
- 
+
  {Release Entry on failure}
  if Result <> ERROR_SUCCESS then FreeMem(Entry);
 end;
 
 {==============================================================================}
 
-function QEMUVPBReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord; 
+function QEMUVPBReleaseExFIQ(CPUID,Number:LongWord;Handler:TInterruptHandler;HandlerEx:TInterruptExHandler;Parameter:Pointer):LongWord;
 {Request deregistration of the supplied handler from the specified FIQ number}
 var
  Mask:LongWord;
@@ -1376,14 +1376,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
- 
+
  {Get Mask}
  Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
- 
+
  {Clear Entry}
  FillChar(Entry,SizeOf(TInterruptEntry),0);
 
@@ -1394,7 +1394,7 @@ begin
  Entry.HandlerEx:=HandlerEx;
  Entry.Parameter:=Parameter;
  Entry.Priority:=INTERRUPT_PRIORITY_FIQ;
- 
+
  {Get Flags}
  Entry.Flags:=INTERRUPT_FLAG_NONE or INTERRUPT_FLAG_FIQ;
 
@@ -1411,19 +1411,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handler}
  if not Assigned(Handler) then Exit;
- 
+
  {Get Mask}
  Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
-  
+
  Result:=ERROR_NOT_ENOUGH_MEMORY;
-   
+
  {Allocate Entry}
  Entry:=AllocMem(SizeOf(TInterruptEntry));
  if Entry = nil then Exit;
- 
+
  {Update Entry}
  Entry.CPUMask:=Mask;
  Entry.Number:=Number;
@@ -1431,10 +1431,10 @@ begin
  Entry.Flags:=Flags;
  Entry.SharedHandler:=Handler;
  Entry.Parameter:=Parameter;
-   
+
  {Register Entry}
  Result:=QEMUVPBInterruptRegisterEntry(Entry^);
- 
+
  {Release Entry on failure}
  if Result <> ERROR_SUCCESS then FreeMem(Entry);
 end;
@@ -1451,13 +1451,13 @@ begin
 
  {Check Handler}
  if not Assigned(Handler) then Exit;
- 
+
  {Get Mask}
  Mask:=CPUIDToMask(CPUGetCurrent); {Single CPU only}
- 
+
  {Clear Entry}
  FillChar(Entry,SizeOf(TInterruptEntry),0);
- 
+
  {Update Entry}
  Entry.CPUMask:=Mask;
  Entry.Number:=Number;
@@ -1465,7 +1465,7 @@ begin
  Entry.Flags:=Flags;
  Entry.SharedHandler:=Handler;
  Entry.Parameter:=Parameter;
-   
+
  {Deregister Entry}
  Result:=QEMUVPBInterruptDeregisterEntry(Entry);
 end;
@@ -1477,27 +1477,27 @@ function QEMUVPBRegisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCallHa
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Number}
  if Number > (SWI_COUNT - 1) then Exit;
- 
+
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
- 
+
  {Acquire Lock}
  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
+ try
   {Check Handlers}
   Result:=ERROR_ALREADY_ASSIGNED;
   if Assigned(SystemCallEntries[Number].Handler) and (@SystemCallEntries[Number].Handler <> @Handler) then Exit;
   if Assigned(SystemCallEntries[Number].HandlerEx) and (@SystemCallEntries[Number].HandlerEx <> @HandlerEx) then Exit;
- 
+
   {Register Entry}
   SystemCallEntries[Number].CPUID:=CPU_ID_ALL;
   SystemCallEntries[Number].Handler:=Handler;
   SystemCallEntries[Number].HandlerEx:=HandlerEx;
- 
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
@@ -1513,31 +1513,31 @@ function QEMUVPBDeregisterSystemCallEx(CPUID,Number:LongWord;Handler:TSystemCall
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Number}
  if Number > (SWI_COUNT - 1) then Exit;
- 
+
  {Check Handlers}
  if Assigned(Handler) and Assigned(HandlerEx) then Exit;
  if not(Assigned(@Handler)) and not(Assigned(@HandlerEx)) then Exit;
- 
+
  {Acquire Lock}
  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
+ try
   {Check Handlers}
   Result:=ERROR_NOT_ASSIGNED;
   if not(Assigned(SystemCallEntries[Number].Handler)) and not(Assigned(SystemCallEntries[Number].HandlerEx)) then Exit;
- 
+
   {Check Handlers}
   Result:=ERROR_ALREADY_ASSIGNED;
   if Assigned(SystemCallEntries[Number].Handler) and (@SystemCallEntries[Number].Handler <> @Handler) then Exit;
   if Assigned(SystemCallEntries[Number].HandlerEx) and (@SystemCallEntries[Number].HandlerEx <> @HandlerEx) then Exit;
- 
+
   {Deregister Entry}
   SystemCallEntries[Number].CPUID:=CPU_ID_ALL;
   SystemCallEntries[Number].Handler:=nil;
   SystemCallEntries[Number].HandlerEx:=nil;
- 
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
@@ -1557,18 +1557,18 @@ end;
 
 {==============================================================================}
 
-function QEMUVPBGetSystemCallEntry(Number:LongWord):TSystemCallEntry; 
+function QEMUVPBGetSystemCallEntry(Number:LongWord):TSystemCallEntry;
 {Get the system call entry for the specified system call number}
 begin
  {}
  FillChar(Result,SizeOf(TSystemCallEntry),0);
- 
+
  {Check Number}
  if Number > (SWI_COUNT - 1) then Exit;
- 
+
  {Acquire Lock}
  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
- try 
+ try
   {Return Entry}
   Result:=SystemCallEntries[Number];
  finally
@@ -1579,41 +1579,41 @@ end;
 
 {==============================================================================}
 
-function QEMUVPBSystemRestart(Delay:LongWord):LongWord; 
+function QEMUVPBSystemRestart(Delay:LongWord):LongWord;
 var
  Value:LongWord;
  Mask:TIRQFIQMask;
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {Delay}
  Sleep(Delay);
 
  {Disable IRQ/FIQ}
  Mask:=SaveIRQFIQ;
- 
+
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
- 
+
  {Get Register}
  Value:=PLongWord(VERSATILEPB_SYS_RESETCTL)^ or VERSATILEPB_SYS_RESETCTL_RESET or VERSATILEPB_SYS_RESETCTL_PORRESET;
- 
+
  {Unlock}
  PLongWord(VERSATILEPB_SYS_LOCK)^:=VERSATILEPB_SYS_LOCK_LOCKVAL;
- 
+
  {Reset}
  PLongWord(VERSATILEPB_SYS_RESETCTL)^:=Value;
- 
+
  {Lock}
  PLongWord(VERSATILEPB_SYS_LOCK)^:=0;
- 
+
  {Memory Barrier}
  DataMemoryBarrier; {After the Last Read}
- 
+
  {Delay (Non Sleep)}
  MillisecondDelay(1000);
- 
+
  {Restore IRQ/FIQ}
  RestoreIRQFIQ(Mask);
 end;
@@ -1630,7 +1630,7 @@ end;
 
 function QEMUVPBClockGetCount:LongWord;
 {Gets the current system clock count (32 least significant bits of total)}
-{Note: On the VersatilePB this comes from the 24MHz counter which will 
+{Note: On the VersatilePB this comes from the 24MHz counter which will
  overflow every 178 seconds and increment the rollover value. Because we
  return the lower 32 bits then the value returned by this function will
  rollover to zero every 4295 seconds or about every 71 minutes}
@@ -1641,10 +1641,10 @@ end;
 
 {==============================================================================}
 
-function QEMUVPBClockGetTotal:Int64; 
+function QEMUVPBClockGetTotal:Int64;
 {Gets the total system clock count}
-{Note: On the VersatilePB this comes from the 24MHz counter which will 
- overflow every 178 seconds and increment the rollover value. This is 
+{Note: On the VersatilePB this comes from the 24MHz counter which will
+ overflow every 178 seconds and increment the rollover value. This is
  only accurate if either ClockGetCount or ClockGetTotal is called at
  least once per 178 seconds in order to increment the rollover}
 var
@@ -1661,28 +1661,28 @@ begin
    else
     begin
      SpinLockIRQ(ClockGetLock);
-    end;    
-  end; 
+    end;
+  end;
 
  {Get 24MHz Counter}
  Value:=PLongWord(VERSATILEPB_SYS_24MHZ)^ div 24;
- 
+
  {Memory Barrier}
  DataMemoryBarrier; {After the Last Read}
- 
+
  {Check for Rollover}
  if Value < ClockGetLast then
   begin
    {Increment Base}
    Inc(ClockGetBase,178956970); {0xFFFFFFFF div 24}
   end;
- 
- {Save Last Value} 
+
+ {Save Last Value}
  ClockGetLast:=Value;
- 
+
  {Get Result}
- Result:=ClockGetBase + Value; 
- 
+ Result:=ClockGetBase + Value;
+
  {Release Lock}
  if ClockGetLock <> INVALID_HANDLE_VALUE then
   begin
@@ -1693,8 +1693,8 @@ begin
    else
     begin
      SpinUnlockIRQ(ClockGetLock);
-    end;    
-  end; 
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -1717,8 +1717,8 @@ procedure QEMUVPBSchedulerInit;
 begin
  {}
  {Setup Timer Registers}
- Timer2Registers:=PSP804TimerRegisters(VERSATILEPB_TIMER2_REGS_BASE); 
- 
+ Timer2Registers:=PSP804TimerRegisters(VERSATILEPB_TIMER2_REGS_BASE);
+
  {Request the Scheduler IRQ/FIQ}
  if SCHEDULER_FIQ_ENABLED then
   begin
@@ -1735,13 +1735,13 @@ begin
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
 
- {Setup the Timer} 
+ {Setup the Timer}
  Timer2Registers.Load:=SCHEDULER_CLOCKS_PER_INTERRUPT;
  Timer2Registers.Control:=SP804_TIMER_CONTROL_32BIT or SP804_TIMER_CONTROL_PRESCALE1 or SP804_TIMER_CONTROL_INT_ENABLED or SP804_TIMER_CONTROL_PERIODIC or SP804_TIMER_CONTROL_TIMER_ENABLED;
- 
+
  {Setup the first Clock Interrupt}
  QEMUVPBSchedulerUpdate(SCHEDULER_CLOCKS_PER_INTERRUPT,SchedulerLast[SCHEDULER_CPU_BOOT]);
- 
+
  {Create the Clock Lock (Here instead of ClockInit to ensure that locking is initialized)}
  ClockGetLock:=SpinCreate;
 end;
@@ -1749,38 +1749,38 @@ end;
 {==============================================================================}
 {==============================================================================}
 {QEMUVPB SWI Functions}
-function QEMUVPBDispatchSWI(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle; 
+function QEMUVPBDispatchSWI(CPUID:LongWord;Thread:TThreadHandle;Request:PSystemCallRequest):TThreadHandle;
 {Process an SWI request}
 {Called by ARMv7/8SoftwareInterruptHandler in PlatformARMv7/8}
-{Note: A DataMemoryBarrier is executed before and after calling this function} 
+{Note: A DataMemoryBarrier is executed before and after calling this function}
 var
  Entry:PSystemCallEntry;
 begin
  {}
  Result:=Thread;
- 
+
  {$IF DEFINED(SWI_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
  Inc(DispatchSystemCallCounter[CPUID]);
  {$ENDIF}
 
  {Check Request}
  if Request = nil then Exit;
- 
+
  {Check Number}
  if Request.Number > (SWI_COUNT - 1) then Exit;
- 
+
  {Get Entry}
  Entry:=@SystemCallEntries[Request.Number];
- 
+
  {Check System Call Handler}
  if Assigned(Entry.Handler) then
   begin
-   Entry.Handler(Request); 
+   Entry.Handler(Request);
   end
  else if Assigned(Entry.HandlerEx) then
   begin
-   Result:=Entry.HandlerEx(CPUID,Thread,Request);  
-  end;  
+   Result:=Entry.HandlerEx(CPUID,Thread,Request);
+  end;
 end;
 
 {==============================================================================}
@@ -1799,7 +1799,7 @@ begin
  {$IFDEF CLOCK_TICK_MANUAL}
  {Add another Clock Tick}
  Inc(ClockTicks);
- 
+
  {Update Clock Seconds}
  if ClockTicks = CLOCK_TICKS_PER_SECOND then
   begin
@@ -1810,14 +1810,14 @@ begin
 
  {Schedule the next Clock Interrupt}
  QEMUVPBClockUpdate(CLOCK_CYCLES_PER_TICK,ClockLast);
-  
+
  {Check Timer Queue}
  if TimerCheck = ERROR_SUCCESS then
   begin
    {Trigger Timer Events}
    TimerTrigger;
   end;
-  
+
  {Check Tasker List}
  if TaskerCheck = ERROR_SUCCESS then
   begin
@@ -1841,7 +1841,7 @@ begin
 
  {Get Timer Value}
  Current:=Timer0Registers.Value;
- 
+
  {Get Last}
  if Current > 0 then
   begin
@@ -1850,11 +1850,11 @@ begin
  else
   begin
    Last:=Cycles;
-  end;  
- 
+  end;
+
  {Clear Interrupt}
  Timer0Registers.IRQClear:=1;
- 
+
  {Memory Barrier}
  DataMemoryBarrier; {After the Last Read}
 end;
@@ -1863,20 +1863,20 @@ end;
 {==============================================================================}
 {QEMUVPB Scheduler Functions}
 function QEMUVPBSchedulerInterrupt(CPUID:LongWord;Thread:TThreadHandle;Parameter:Pointer):TThreadHandle;
-{Interrupt handler function for the scheduler interrupt. This schedules another 
+{Interrupt handler function for the scheduler interrupt. This schedules another
  scheduler interrupt to occur SCHEDULER_CLOCKS_PER_INTERRUPT in the future, then
  checks for threads to wakeup or timeout and the next thread to schedule}
 begin
  {}
  Result:=Thread;
- 
+
  {$IFDEF SCHEDULER_DEBUG}
  Inc(SchedulerInterruptCounter[CPUID]);
  {$ENDIF}
- 
+
  {Add another Scheduler Interrupt}
  Inc(SchedulerInterrupts[CPUID]);
- 
+
  {Update Utilization}
  if SchedulerInterrupts[CPUID] = SCHEDULER_INTERRUPTS_PER_SECOND then
   begin
@@ -1888,16 +1888,16 @@ begin
      UtilizationLast[CPUID]:=0;
     end;
   end;
- 
+
  {Schedule the next Scheduler Interrupt}
  QEMUVPBSchedulerUpdate(SCHEDULER_CLOCKS_PER_INTERRUPT,SchedulerLast[CPUID]);
- 
+
  {Check Sleep and Timeout Queues}
  if SchedulerCheck(CPUID) = ERROR_SUCCESS then
   begin
    {Wakeup Sleep Threads}
    SchedulerWakeup(CPUID);
-   
+
    {Expire Timeout Threads}
    SchedulerExpire(CPUID);
   end;
@@ -1906,7 +1906,7 @@ begin
   begin
    {Switch Threads}
    Result:=SchedulerSwitch(CPUID,Thread);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1924,10 +1924,10 @@ begin
  {}
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
- 
+
  {Get Timer Value}
  Current:=Timer2Registers.Value;
- 
+
  {Get Last}
  if Current > 0 then
   begin
@@ -1936,18 +1936,18 @@ begin
  else
   begin
    Last:=Cycles;
-  end;  
- 
+  end;
+
  {Clear Interrupt}
  Timer2Registers.IRQClear:=1;
- 
+
  {Memory Barrier}
  DataMemoryBarrier; {After the Last Read}
- 
+
  {$IFDEF SCHEDULER_DEBUG}
  CurrentCPU:=CPUGetCurrent;
  SchedulerInterruptOffset[CurrentCPU]:=Last;
- if SchedulerInterruptMinOffset[CurrentCPU] = 0 then SchedulerInterruptMinOffset[CurrentCPU]:=SchedulerInterruptOffset[CurrentCPU]; 
+ if SchedulerInterruptMinOffset[CurrentCPU] = 0 then SchedulerInterruptMinOffset[CurrentCPU]:=SchedulerInterruptOffset[CurrentCPU];
  if SchedulerInterruptOffset[CurrentCPU] < SchedulerInterruptMinOffset[CurrentCPU] then SchedulerInterruptMinOffset[CurrentCPU]:=SchedulerInterruptOffset[CurrentCPU];
  if SchedulerInterruptOffset[CurrentCPU] > SchedulerInterruptMaxOffset[CurrentCPU] then SchedulerInterruptMaxOffset[CurrentCPU]:=SchedulerInterruptOffset[CurrentCPU];
  {$ENDIF}
@@ -1983,16 +1983,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'QEMUVPB: Framebuffer Allocate');
  {$ENDIF}
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     {Get Defaults}
@@ -2001,16 +2001,16 @@ begin
     Defaults.Mode:=FRAMEBUFFER_MODE_IGNORED;
     Defaults.PhysicalWidth:=PPL110Framebuffer(Framebuffer).Width;
     Defaults.PhysicalHeight:=PPL110Framebuffer(Framebuffer).Height;
-    Defaults.VirtualWidth:=Defaults.PhysicalWidth; 
+    Defaults.VirtualWidth:=Defaults.PhysicalWidth;
     Defaults.VirtualHeight:=Defaults.PhysicalHeight;
-    Defaults.OffsetX:=0;                           
-    Defaults.OffsetY:=0;                            
-    Defaults.OverscanTop:=0;                         
-    Defaults.OverscanBottom:=0;                      
-    Defaults.OverscanLeft:=0;                        
-    Defaults.OverscanRight:=0;                       
+    Defaults.OffsetX:=0;
+    Defaults.OffsetY:=0;
+    Defaults.OverscanTop:=0;
+    Defaults.OverscanBottom:=0;
+    Defaults.OverscanLeft:=0;
+    Defaults.OverscanRight:=0;
     Defaults.Rotation:=PPL110Framebuffer(Framebuffer).Rotation;
- 
+
     {Check Properties}
     if Properties <> nil then
      begin
@@ -2023,7 +2023,7 @@ begin
       {Check Rotation}
       if Properties.Rotation <> PPL110Framebuffer(Framebuffer).Rotation then
        begin
-        if (Properties.Rotation = FRAMEBUFFER_ROTATION_90) or (Properties.Rotation = FRAMEBUFFER_ROTATION_270) then 
+        if (Properties.Rotation = FRAMEBUFFER_ROTATION_90) or (Properties.Rotation = FRAMEBUFFER_ROTATION_270) then
          begin
           if (PPL110Framebuffer(Framebuffer).Rotation <> FRAMEBUFFER_ROTATION_90) and (PPL110Framebuffer(Framebuffer).Rotation <> FRAMEBUFFER_ROTATION_270) then
            begin
@@ -2038,14 +2038,14 @@ begin
             Defaults.PhysicalWidth:=PPL110Framebuffer(Framebuffer).Height;
             Defaults.PhysicalHeight:=PPL110Framebuffer(Framebuffer).Width;
            end;
-         end;      
-         
-        Defaults.VirtualWidth:=Defaults.PhysicalWidth; 
+         end;
+
+        Defaults.VirtualWidth:=Defaults.PhysicalWidth;
         Defaults.VirtualHeight:=Defaults.PhysicalHeight;
        end;
      end;
- 
-    {Get Format}  
+
+    {Get Format}
     case Defaults.Depth of
      FRAMEBUFFER_DEPTH_16:begin
        Defaults.Format:=COLOR_FORMAT_RGB16;
@@ -2061,17 +2061,17 @@ begin
         end;
       end;
     end;
- 
+
     {Get Bytes}
     Bytes:=ColorFormatToBytes(Defaults.Format);
     if Bytes = 0 then Exit;
-    
+
     {Get Size}
     Defaults.Size:=(Defaults.PhysicalWidth * Defaults.PhysicalHeight) * Bytes;
-    
+
     {Get Pitch}
     Defaults.Pitch:=Defaults.PhysicalWidth * Bytes;
- 
+
     {Allocate Framebuffer}
     if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and DMAAvailable then
      begin
@@ -2087,23 +2087,23 @@ begin
         Buffer:=GetAlignedMem(RoundUp(Defaults.Size,DMA_MULTIPLIER),DMA_ALIGNMENT);
        end
       else
-       begin      
+       begin
         Buffer:=GetMem(Defaults.Size);
-       end; 
+       end;
      end;
     if Buffer = nil then
      begin
       Result:=ERROR_OPERATION_FAILED;
-      Exit; 
-     end; 
-    
+      Exit;
+     end;
+
     {Check Cache}
     if not(DMA_CACHE_COHERENT) then
      begin
       {Clean Cache (Dest)}
       CleanDataCacheRange(PtrUInt(Buffer),Defaults.Size);
      end;
- 
+
     {Update Framebuffer}
     Framebuffer.Address:=PtrUInt(Buffer);
     Framebuffer.Size:=Defaults.Size;
@@ -2123,10 +2123,10 @@ begin
     Framebuffer.OverscanLeft:=Defaults.OverscanLeft;
     Framebuffer.OverscanRight:=Defaults.OverscanRight;
     Framebuffer.Rotation:=Defaults.Rotation;
-    
+
     {Memory Barrier}
     DataMemoryBarrier; {Before the First Write}
-    
+
     {Setup PL110}
     Value:=PPL110Framebuffer(Framebuffer).Control;
     if Framebuffer.Depth = FRAMEBUFFER_DEPTH_16 then
@@ -2138,7 +2138,7 @@ begin
      begin
       Value:=Value or PL110_CLCD_CONTROL_LCDBPP24;
       if Framebuffer.Order = FRAMEBUFFER_ORDER_RGB then Value:=Value or PL110_CLCD_CONTROL_BGR; {Note: This appears reversed from the description of the register bits}
-     end;  
+     end;
     PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
     PPL110Framebuffer(Framebuffer).Registers.TIMING0:=(PPL110Framebuffer(Framebuffer).Timing0 and not(PL110_CLCD_TIMING0_PPL)) or (((Framebuffer.PhysicalWidth - 1) div 16) shl 2);
     PPL110Framebuffer(Framebuffer).Registers.TIMING1:=(PPL110Framebuffer(Framebuffer).Timing1 and not(PL110_CLCD_TIMING1_LPP)) or (Framebuffer.PhysicalHeight - 1);
@@ -2146,27 +2146,27 @@ begin
     PPL110Framebuffer(Framebuffer).Registers.TIMING3:=PPL110Framebuffer(Framebuffer).Timing3;
     PPL110Framebuffer(Framebuffer).Registers.UPBASE:=PtrUInt(Buffer);
     PPL110Framebuffer(Framebuffer).Registers.LPBASE:=PtrUInt(Buffer) + ((Framebuffer.PhysicalHeight * Framebuffer.Pitch) div 2);
-    
+
     {Enable PL110}
     Value:=PPL110Framebuffer(Framebuffer).Registers.CONTROL;
     Value:=Value or PL110_CLCD_CONTROL_LCDEN;
-    PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value; 
+    PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
     MillisecondDelay(20);
-    
+
     Value:=Value or PL110_CLCD_CONTROL_LCDPWR;
-    PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value; 
-    
+    PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
+
     {Memory Barrier}
-    DataMemoryBarrier; {After the Last Read} 
-    
+    DataMemoryBarrier; {After the Last Read}
+
     {Update Statistics}
     Inc(Framebuffer.AllocateCount);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -2184,21 +2184,21 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'QEMUVPB: Framebuffer Release');
  {$ENDIF}
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     {Memory Barrier}
     DataMemoryBarrier; {Before the First Write}
-   
+
     {Disable PL110}
     Value:=PPL110Framebuffer(Framebuffer).Registers.CONTROL;
     if (Value and PL110_CLCD_CONTROL_LCDPWR) <> 0 then
@@ -2207,16 +2207,16 @@ begin
       PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
       MillisecondDelay(20);
      end;
-     
+
     if (Value and PL110_CLCD_CONTROL_LCDEN) <> 0 then
      begin
       Value:=Value and not(PL110_CLCD_CONTROL_LCDEN);
-      PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value; 
+      PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
      end;
-    
+
     {Memory Barrier}
-    DataMemoryBarrier; {After the Last Read} 
-    
+    DataMemoryBarrier; {After the Last Read}
+
     {Release Framebuffer}
     if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and DMAAvailable then
      begin
@@ -2229,7 +2229,7 @@ begin
       {Release Normal Buffer (No DMA)}
       FreeMem(Pointer(Framebuffer.Address));
      end;
-     
+
     {Update Framebuffer}
     Framebuffer.Address:=0;
     Framebuffer.Size:=0;
@@ -2249,15 +2249,15 @@ begin
     Framebuffer.OverscanLeft:=0;
     Framebuffer.OverscanRight:=0;
     Framebuffer.Rotation:=FRAMEBUFFER_ROTATION_0;
-    
+
     {Update Statistics}
     Inc(Framebuffer.ReleaseCount);
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -2275,18 +2275,18 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'QEMUVPB: Framebuffer Blank (Blank=' + BooleanToString(Blank) + ')');
  {$ENDIF}
- 
+
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
- 
+
  {Check Blank}
  if Blank then
   begin
@@ -2298,11 +2298,11 @@ begin
      PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
      MillisecondDelay(20);
     end;
-    
+
    if (Value and PL110_CLCD_CONTROL_LCDEN) <> 0 then
     begin
      Value:=Value and not(PL110_CLCD_CONTROL_LCDEN);
-     PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value; 
+     PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
     end;
   end
  else
@@ -2310,16 +2310,16 @@ begin
    {Enable PL110}
    Value:=PPL110Framebuffer(Framebuffer).Registers.CONTROL;
    Value:=Value or PL110_CLCD_CONTROL_LCDEN;
-   PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value; 
+   PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
    MillisecondDelay(20);
-   
+
    Value:=Value or PL110_CLCD_CONTROL_LCDPWR;
-   PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value; 
-  end;  
-  
+   PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
+  end;
+
  {Memory Barrier}
- DataMemoryBarrier; {After the Last Read} 
-  
+ DataMemoryBarrier; {After the Last Read}
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -2335,12 +2335,12 @@ begin
 
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'QEMUVPB: Framebuffer Commit (Address=' + AddrToHex(Address) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Check Flags}
  if (Flags and FRAMEBUFFER_TRANSFER_DMA) = 0 then
   begin
@@ -2351,8 +2351,8 @@ begin
   begin
    {Invalidate Cache}
    //To Do //Continuing //Check for DMA Cache Coherent ?
-  end;  
- 
+  end;
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -2365,11 +2365,11 @@ procedure QEMUVPBBootBlink; assembler; nostackframe;
 {$IFDEF CPUARM}
 asm
  ldr r1, =VERSATILEPB_UART0_REGS_BASE
- 
-.Loop: 
+
+.Loop:
  mov r0, #65
  str r0, [r1]
- 
+
  b .Loop
 end;
 {$ENDIF CPUARM}
@@ -2392,7 +2392,7 @@ begin
  while True do
   begin
    Dec(Bits,4);
-   
+
    Character:=(Value shr Bits) and $0F;
    if Character > 9 then
     begin
@@ -2402,12 +2402,12 @@ begin
     begin
      Character:=Character + $30;
     end;
-    
+
    PLongWord(VERSATILEPB_UART0_REGS_BASE)^:=Character;
-   
+
    if Bits = 0 then Break;
   end;
- 
+
  {Line End}
  PLongWord(VERSATILEPB_UART0_REGS_BASE)^:=$0D;
  PLongWord(VERSATILEPB_UART0_REGS_BASE)^:=$0A;
@@ -2477,7 +2477,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Flags}
  if Entry.IsLocal then
   begin
@@ -2489,41 +2489,41 @@ begin
    {Software}
    Exit;
   end
- else 
+ else
   begin
    {Check Number (Global)}
    if not QEMUVPBInterruptIsGlobal(Entry.Number) then Exit;
-   
+
    {Check Mask Count}
    if CPUMaskCount(Entry.CPUMask) <> 1 then Exit;
- 
-   {Check Mask CPU (Single CPU only)} 
+
+   {Check Mask CPU (Single CPU only)}
    if (IRQ_ROUTING <> CPU_ID_ALL) and (IRQ_ROUTING <> CPUMaskToID(Entry.CPUMask)) then Exit;
-  end;  
- 
+  end;
+
  {Check Handlers}
  if not QEMUVPBInterruptCheckHandlers(Entry) then Exit;
-  
+
  {Check Priority}
  {Not applicable}
- 
+
  {Check FIQ}
  if Entry.IsFIQ then
   begin
    if not FIQ_ENABLED then Exit;
   end;
- 
+
  {Check IPI}
  {Not applicable}
- 
+
  {Check Shared}
  if Entry.IsShared then
   begin
    if not Assigned(Entry.SharedHandler) then Exit;
   end;
-  
+
  Result:=True;
-end;  
+end;
 
 {==============================================================================}
 
@@ -2532,22 +2532,22 @@ function QEMUVPBInterruptCheckHandlers(const Entry:TInterruptEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Handlers}
  if Assigned(Entry.Handler) then
   begin
    {Check Other Handlers}
    if Assigned(Entry.HandlerEx) then Exit;
    if Assigned(Entry.SharedHandler) then Exit;
-   
+
    Result:=True;
   end
- else if Assigned(Entry.HandlerEx) then 
+ else if Assigned(Entry.HandlerEx) then
   begin
    {Check Other Handlers}
    if Assigned(Entry.Handler) then Exit;
    if Assigned(Entry.SharedHandler) then Exit;
-   
+
    Result:=True;
   end
  else if Assigned(Entry.SharedHandler) then
@@ -2555,10 +2555,10 @@ begin
    {Check Other Handlers}
    if Assigned(Entry.Handler) then Exit;
    if Assigned(Entry.HandlerEx) then Exit;
-   
+
    Result:=True;
-  end;  
-end;  
+  end;
+end;
 
 {==============================================================================}
 
@@ -2567,22 +2567,22 @@ function QEMUVPBInterruptCompareHandlers(const Entry,Current:TInterruptEntry):Bo
 begin
  {}
  Result:=False;
- 
+
  {Check Handlers}
  if Assigned(Entry.Handler) then
   begin
    {Check Current Handlers}
    if not Assigned(Current.Handler) then Exit;
    if @Entry.Handler <> @Current.Handler then Exit;
-   
+
    Result:=True;
   end
- else if Assigned(Entry.HandlerEx) then 
+ else if Assigned(Entry.HandlerEx) then
   begin
    {Check Current Handlers}
    if not Assigned(Current.HandlerEx) then Exit;
    if @Entry.HandlerEx <> @Current.HandlerEx then Exit;
-   
+
    Result:=True;
   end
  else if Assigned(Entry.SharedHandler) then
@@ -2590,10 +2590,10 @@ begin
    {Check Current Handlers}
    if not Assigned(Current.SharedHandler) then Exit;
    if @Entry.SharedHandler <> @Current.SharedHandler then Exit;
-   
+
    Result:=True;
-  end;  
-end;  
+  end;
+end;
 
 {==============================================================================}
 
@@ -2636,7 +2636,7 @@ begin
  else if Entry.Number < 64 then
   begin
    {Secondary}
-   {if Entry.IsFIQ then Exit;} 
+   {if Entry.IsFIQ then Exit;}
 
    {FIQ not supported on Secondary Interrupt Controller, enable IRQ}
    {Check FIQ}
@@ -2649,14 +2649,14 @@ begin
    SecondaryInterruptRegisters.SIC_ENSET:=(1 shl (Entry.Number - 32));
    IRQEnabled[1]:=IRQEnabled[1] or (1 shl (Entry.Number - 32));
   end
- else 
+ else
   begin
    {Nothing under QEMU}
    Exit;
   end;
 
  Result:=True;
-end;  
+end;
 
 {==============================================================================}
 
@@ -2665,7 +2665,7 @@ function QEMUVPBInterruptDisable(const Entry:TInterruptEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Find Group}
  if Entry.Number < 32 then
   begin
@@ -2701,7 +2701,7 @@ begin
    {Secondary}
    {if Entry.IsFIQ then Exit;}
 
-   {FIQ not supported on Secondary Interrupt Controller, disable IRQ}   
+   {FIQ not supported on Secondary Interrupt Controller, disable IRQ}
    {Check FIQ}
    if (FIQEnabled[1] and (1 shl (Entry.Number - 32))) <> 0 then Exit;
 
@@ -2719,7 +2719,7 @@ begin
   end;
 
  Result:=True;
-end;  
+end;
 
 {==============================================================================}
 
@@ -2730,7 +2730,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Setup Defaults}
  Entry:=nil;
 
@@ -2740,16 +2740,16 @@ begin
    {Count Global}
    Entry:=InterruptEntries[Number];
   end;
-  
+
  {Count Entries}
  while Entry <> nil do
   begin
    Inc(Result);
-   
+
    {Get Next}
    Entry:=Entry.Next;
   end;
-end;  
+end;
 
 {==============================================================================}
 
@@ -2761,7 +2761,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Setup Defaults}
  Entry:=nil;
 
@@ -2771,24 +2771,24 @@ begin
    {Count Global}
    Entry:=InterruptEntries[Number];
   end;
-  
- {Get Entry} 
+
+ {Get Entry}
  Count:=0;
  while Entry <> nil do
   begin
    {Check Count}
    if Count = Index then
     begin
-     Result:=Entry; 
-     Exit;       
+     Result:=Entry;
+     Exit;
     end;
 
    Inc(Count);
-   
+
    {Get Next}
    Entry:=Entry.Next;
   end;
-end;  
+end;
 
 {==============================================================================}
 
@@ -2799,7 +2799,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Entry}
  if Entry = nil then Exit;
 
@@ -2812,11 +2812,11 @@ begin
     begin
      {Set Global}
      InterruptEntries[Number]:=Entry;
-     
+
      Result:=True;
     end;
   end;
- 
+
  {Check Current}
  if Current <> nil then
   begin
@@ -2826,15 +2826,15 @@ begin
      {Get Next}
      Current:=Current.Next;
     end;
-    
+
    {Add to end of list}
    Current.Next:=Entry;
    Entry.Prev:=Current;
    Entry.Next:=nil;
-   
+
    Result:=True;
   end;
-end;  
+end;
 
 {==============================================================================}
 
@@ -2845,7 +2845,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Entry}
  if Entry = nil then Exit;
 
@@ -2859,7 +2859,7 @@ begin
      InterruptEntries[Number]:=nil;
     end;
   end;
-  
+
  {Check Current}
  if Current <> nil then
   begin
@@ -2870,11 +2870,11 @@ begin
       begin
        Break;
       end;
-      
+
      {Get Next}
      Current:=Current.Next;
     end;
- 
+
    {Check Current}
    if Current <> nil then
     begin
@@ -2889,14 +2889,14 @@ begin
       end;
      Current.Prev:=nil;
      Current.Next:=nil;
-     
+
      {Free Entry}
      FreeMem(Current);
-     
+
      Result:=True;
     end;
   end;
-end;  
+end;
 
 {==============================================================================}
 
@@ -2907,10 +2907,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get Current}
  Current:=QEMUVPBInterruptGetCurrentEntry(Entry.CPUID,Entry.Number,0);
- 
+
  {Find Match}
  while Current <> nil do
   begin
@@ -2920,17 +2920,17 @@ begin
       begin
        Result:=Current;
        Exit;
-      end; 
+      end;
     end;
-    
+
    {Get Next}
    Current:=Current.Next;
   end;
-end;  
+end;
 
 {==============================================================================}
 
-function QEMUVPBInterruptGetEntry(CPUID,Number,Flags:LongWord;var Entry:TInterruptEntry;Index:LongWord):LongWord; 
+function QEMUVPBInterruptGetEntry(CPUID,Number,Flags:LongWord;var Entry:TInterruptEntry;Index:LongWord):LongWord;
 {Note: The returned Entry is a copy of the registered value. Caller should free Entry if required}
 {      For shared entries the Index parameter indicates which entry in the chain to return (0 equals first etc)}
 var
@@ -2938,7 +2938,7 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Setup Defaults}
  FillChar(Entry,SizeOf(TInterruptEntry),0);
 
@@ -2960,10 +2960,10 @@ begin
    begin
     {Global Entry}
     if not QEMUVPBInterruptIsGlobal(Number) then Exit;
-   end;   
-   
-  Result:=ERROR_NOT_FOUND;  
-  
+   end;
+
+  Result:=ERROR_NOT_FOUND;
+
   {Get Current}
   Current:=QEMUVPBInterruptGetCurrentEntry(CPUID,Number,Index);
   if Current <> nil then
@@ -2972,49 +2972,49 @@ begin
     Entry.Number:=Current.Number;
     Entry.Flags:=Current.Flags;
     Entry.CPUMask:=Current.CPUMask;
-    Entry.Priority:=Current.Priority;    
+    Entry.Priority:=Current.Priority;
     Entry.Handler:=Current.Handler;
     Entry.HandlerEx:=Current.HandlerEx;
     Entry.SharedHandler:=Current.SharedHandler;
     Entry.Parameter:=Current.Parameter;
-    
-    {Return Result}    
+
+    {Return Result}
     Result:=ERROR_SUCCESS;
    end;
  finally
   {Release Lock}
   if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
  end;
-end;  
+end;
 
 {==============================================================================}
 
 function QEMUVPBInterruptRegisterEntry(const Entry:TInterruptEntry):LongWord;
-{Note: Entry must be allocated from heap as a pointer to it will be retained while 
+{Note: Entry must be allocated from heap as a pointer to it will be retained while
        the interrupt remains registered. Entry must not be freed by the caller}
 var
  Current:PInterruptEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Acquire Lock}
  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
  try
   {Check Entry}
   if not QEMUVPBInterruptCheckValid(Entry) then Exit;
-  
+
   Result:=ERROR_ALREADY_ASSIGNED;
-  
+
   {Check Count}
   if QEMUVPBInterruptGetCurrentCount(Entry.CPUID,Entry.Number) = 0 then
    begin
     {Single Entry}
     Result:=ERROR_OPERATION_FAILED;
-    
+
     {Enable IRQ/FIQ}
     if not QEMUVPBInterruptEnable(Entry) then Exit;
-    
+
     {Add Entry}
     if not QEMUVPBInterruptAddCurrentEntry(Entry.CPUID,Entry.Number,@Entry) then Exit;
    end
@@ -3022,37 +3022,37 @@ begin
    begin
     {Shared Entry}
     Result:=ERROR_ALREADY_ASSIGNED;
-    
+
     {Check Shared}
     if not Entry.IsShared then Exit;
-    
+
     {Get Match}
     Current:=QEMUVPBInterruptFindMatchingEntry(Entry);
     if Current <> nil then Exit;
-    
+
     {Get Current}
     Current:=QEMUVPBInterruptGetCurrentEntry(Entry.CPUID,Entry.Number,0);
     if Current = nil then Exit;
-    
+
     {Check Shared}
     if not Current.IsShared then Exit;
-    
+
     {Check FIQ}
     if Entry.IsFIQ <> Current.IsFIQ then Exit;
-    
+
     Result:=ERROR_OPERATION_FAILED;
-    
+
     {Add Entry}
     if not QEMUVPBInterruptAddCurrentEntry(Entry.CPUID,Entry.Number,@Entry) then Exit;
    end;
-  
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Release Lock}
   if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
  end;
-end;  
+end;
 
 {==============================================================================}
 
@@ -3060,26 +3060,26 @@ function QEMUVPBInterruptDeregisterEntry(const Entry:TInterruptEntry):LongWord;
 {Note: The Entry can be a local temporary copy allocated either from the stack or on
        the heap, this routine will free the original Entry passed to Register once it
        is successfully deregistered. Caller should free Entry if required}
-var       
+var
  Current:PInterruptEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Acquire Lock}
  if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.AcquireLock(InterruptLock.Lock);
  try
   {Check Entry}
   if not QEMUVPBInterruptCheckValid(Entry) then Exit;
- 
+
   Result:=ERROR_NOT_ASSIGNED;
- 
+
   {Get Match}
   Current:=QEMUVPBInterruptFindMatchingEntry(Entry);
   if Current = nil then Exit;
-  
+
   Result:=ERROR_OPERATION_FAILED;
-  
+
   {Check Count}
   if QEMUVPBInterruptGetCurrentCount(Entry.CPUID,Entry.Number) = 1 then
    begin
@@ -3090,21 +3090,21 @@ begin
 
   {Delete Entry}
   if not QEMUVPBInterruptDeleteCurrentEntry(Entry.CPUID,Entry.Number,Current) then Exit;
-   
+
   {Return Result}
   Result:=ERROR_SUCCESS;
  finally
   {Release Lock}
   if InterruptLock.Lock <> INVALID_HANDLE_VALUE then InterruptLock.ReleaseLock(InterruptLock.Lock);
  end;
-end;  
+end;
 
 {==============================================================================}
 
 function QEMUVPBDispatchIRQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
 {Process any pending IRQ requests}
 {Called by ARMv7/8IRQHandler in PlatformARMv7/8}
-{Note: A DataMemoryBarrier is executed before and after calling this function} 
+{Note: A DataMemoryBarrier is executed before and after calling this function}
 var
  Group:LongWord;
  IRQBit:LongWord;
@@ -3112,11 +3112,11 @@ var
 begin
  {}
  Result:=Thread;
- 
+
  {$IF DEFINED(IRQ_STATISTICS) or DEFINED(INTERRUPT_DEBUG)}
  Inc(DispatchInterruptCounter[CPUID]);
  {$ENDIF}
- 
+
  {Check IRQ Groups}
  for Group:=0 to 1 do
   begin
@@ -3128,21 +3128,21 @@ begin
       0:IRQMatch:=(IRQEnabled[Group] and PrimaryInterruptRegisters.IRQSTATUS);
       {Check Secondary Controller IRQ}
       1:IRQMatch:=(IRQEnabled[Group] and SecondaryInterruptRegisters.SIC_STATUS);
-     end; 
+     end;
      {Check IRQ Match}
      while IRQMatch <> 0 do
       begin
        {Find first set bit}
-       IRQBit:=FirstBitSet(IRQMatch); 
-         
+       IRQBit:=FirstBitSet(IRQMatch);
+
        {Clear set bit}
        IRQMatch:=IRQMatch xor (1 shl IRQBit);
-         
+
        {Call IRQ Handler}
        Result:=QEMUVPBHandleInterrupt(IRQBit + (Group shl 5),CPU_ID_ALL,CPUID,Result); {Pass Result as Thread to allow for multiple calls}
-      end; 
+      end;
     end;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -3150,7 +3150,7 @@ end;
 function QEMUVPBDispatchFIQ(CPUID:LongWord;Thread:TThreadHandle):TThreadHandle;
 {Process any pending FIQ requests}
 {Called by ARMv7/8FIQHandler in PlatformARMv7/8}
-{Note: A DataMemoryBarrier is executed before and after calling this function} 
+{Note: A DataMemoryBarrier is executed before and after calling this function}
 var
  Group:LongWord;
  FIQBit:LongWord;
@@ -3210,11 +3210,11 @@ begin
    {Halt}
    {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
    if PLATFORM_LOG_ENABLED then PlatformLogDebug('No entry registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
-   {$ENDIF} 
-     
-   Halt;   
+   {$ENDIF}
+
+   Halt;
   end;
-  
+
  {Check Entry}
  if not Entry.IsIPI then
   begin
@@ -3227,11 +3227,11 @@ begin
        {Halt}
        {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
        if PLATFORM_LOG_ENABLED then PlatformLogDebug('No shared handler registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
-       {$ENDIF} 
-       
+       {$ENDIF}
+
        Halt;
       end;
-      
+
      {Call Handler}
      Status:=Entry.SharedHandler(Number,CPUID,Entry.Flags,Entry.Parameter);
      while Status <> INTERRUPT_RETURN_HANDLED do
@@ -3243,21 +3243,21 @@ begin
          {Halt}
          {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
          if PLATFORM_LOG_ENABLED then PlatformLogDebug('Unhandled interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
-         {$ENDIF} 
-         
+         {$ENDIF}
+
          Halt;
         end;
-       
+
        if not Assigned(Entry.SharedHandler) then
         begin
          {Halt}
          {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
          if PLATFORM_LOG_ENABLED then PlatformLogDebug('No shared handler registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
-         {$ENDIF} 
-         
+         {$ENDIF}
+
          Halt;
         end;
-       
+
        {Call Handler}
        Status:=Entry.SharedHandler(Number,CPUID,Entry.Flags,Entry.Parameter);
       end;
@@ -3268,12 +3268,12 @@ begin
      if Assigned(Entry.Handler) then
       begin
        {Call Handler}
-       Entry.Handler(Entry.Parameter); 
+       Entry.Handler(Entry.Parameter);
       end
      else if Assigned(Entry.HandlerEx) then
       begin
        {Call Handler}
-       Result:=Entry.HandlerEx(CPUID,Thread,Entry.Parameter);  
+       Result:=Entry.HandlerEx(CPUID,Thread,Entry.Parameter);
       end
      else if Assigned(Entry.SharedHandler) then
       begin
@@ -3285,13 +3285,13 @@ begin
        {Halt}
        {$IF DEFINED(PLATFORM_DEBUG) and DEFINED(INTERRUPT_DEBUG)}
        if PLATFORM_LOG_ENABLED then PlatformLogDebug('No handler registered for interrupt ' + IntToStr(Number) + ' on CPUID ' + IntToStr(CPUID));
-       {$ENDIF} 
-       
+       {$ENDIF}
+
        Halt;
-      end;        
+      end;
     end;
   end;
-end;  
+end;
 
 {==============================================================================}
 {==============================================================================}

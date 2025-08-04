@@ -17,7 +17,7 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -28,13 +28,13 @@ Credits
   Linux - \drivers\usb\serial\ftdi_sio_ids.h
   Linux - \drivers\usb\serial\usb-serial.c - Copyright (C) 2009 - 2013 Johan Hovold and others.
   Linux - \drivers\usb\serial\generic.c - Copyright (C) 2010 - 2013 Johan Hovold and others.
-  
+
 References
 ==========
 
  FTDI - https://en.wikipedia.org/wiki/FTDI
         http://www.ftdichip.com/FTProducts.htm
-   
+
 FTDI Serial
 ===========
 
@@ -43,21 +43,21 @@ FTDI Serial
  FT-X (FT201X, FT230X, FT231X), FT8U100AX and FT4232H as well as others, many of these chips
  utilize similar communications protocols and where different the driver attempts to account
  for those differences.
- 
+
  The driver also supports communication with many Arduino models that contain an FTDI serial
  device on board rather than the USB CDC ADM device found in more recent models.
- 
+
  Any device recognized as an FTDI Serial is presented as a generic serial interface device that
  can be accessed using the API in the Serial unit. It should not be necessary to directly call
  any of the functions in this unit from application code.
-  
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit FTDISerial; 
+unit FTDISerial;
 
 interface
 
@@ -71,19 +71,19 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Serial,Sy
 const
  {FTDI Serial specific constants}
  FTDISERIAL_DRIVER_NAME = 'FTDI USB to Serial Driver'; {Name of FTDI Serial driver}
- 
+
  FTDISERIAL_SERIAL_DESCRIPTION = 'FTDI USB to Serial'; {Description of FTDI Serial device}
- 
+
  FTDISERIAL_MIN_DATABITS = SERIAL_DATA_7BIT;
  FTDISERIAL_MAX_DATABITS = SERIAL_DATA_8BIT;
- 
+
  FTDISERIAL_MIN_STOPBITS = SERIAL_STOP_1BIT;
  FTDISERIAL_MAX_STOPBITS = SERIAL_STOP_1BIT5;
- 
+
  FTDISERIAL_MAX_PARITY = SERIAL_PARITY_SPACE;
- 
+
  FTDISERIAL_MAX_FLOW = SERIAL_FLOW_DSR_DTR;
- 
+
  {FTDI Serial chip types}
  FTDISERIAL_CHIP_NONE      = 0;
  FTDISERIAL_CHIP_SIO       = 1;
@@ -95,7 +95,7 @@ const
  FTDISERIAL_CHIP_FT4232H   = 7;
  FTDISERIAL_CHIP_FT232H    = 8;
  FTDISERIAL_CHIP_FTX       = 9;
- 
+
  {FTDI Serial SIO Chip baud rate divisors}
  FTDISERIAL_SIO_BAUD300    = 0;
  FTDISERIAL_SIO_BAUD600    = 1;
@@ -107,15 +107,15 @@ const
  FTDISERIAL_SIO_BAUD38400  = 7;
  FTDISERIAL_SIO_BAUD57600  = 8;
  FTDISERIAL_SIO_BAUD115200 = 9;
- 
+
  {FTDI Serial Bulk IN/OUT sizes}
  FTDISERIAL_BULK_IN_SIZE  = 512;
  FTDISERIAL_BULK_OUT_SIZE = 256;
- 
+
  {FTDI Serial USB timeouts}
  FTDISERIAL_TIMEOUT = 5000;
  FTDISERIAL_SHORT_TIMEOUT = 1000;
- 
+
  {FTDI Serial USB requests (ftdi_sio.h)}
  FTDISERIAL_RESET_REQUEST             = 0;  {Reset the port}
  FTDISERIAL_SET_MODEM_CTRL_REQUEST    = 1;  {Set the modem control register}
@@ -133,18 +133,18 @@ const
  FTDISERIAL_SET_MODEM_CTRL_REQUEST_TYPE    = $40;
  FTDISERIAL_SET_FLOW_CTRL_REQUEST_TYPE     = $40;
  FTDISERIAL_SET_BAUD_RATE_REQUEST_TYPE     = $40;
- FTDISERIAL_SET_DATA_REQUEST_TYPE	       = $40;
+ FTDISERIAL_SET_DATA_REQUEST_TYPE           = $40;
  FTDISERIAL_GET_MODEM_STATUS_REQUEST_TYPE  = $C0;
  FTDISERIAL_SET_EVENT_CHAR_REQUEST_TYPE    = $40;
  FTDISERIAL_SET_ERROR_CHAR_REQUEST_TYPE    = $40;
  FTDISERIAL_SET_LATENCY_TIMER_REQUEST_TYPE = $40;
  FTDISERIAL_GET_LATENCY_TIMER_REQUEST_TYPE = $C0;
- 
+
  {FTDI Serial reset constants (ftdi_sio.h)}  {wValue: Control Value}
  FTDISERIAL_RESET_SIO      = 0;              { 0 = Reset SIO}
  FTDISERIAL_RESET_PURGE_RX = 1;              { 1 = Purge RX buffer}
  FTDISERIAL_RESET_PURGE_TX = 2;              { 2 = Purge TX buffer}
- 
+
  {FTDI Serial set modem control constants (ftdi_sio.h)}                                        {wValue: ControlValue}
  FTDISERIAL_SET_MODEM_CTRL_NONE       = 0;
  FTDISERIAL_SET_MODEM_CTRL_DTR_ENABLE = 1;                                                     { B0    DTR state (0 = reset / 1 = set)}
@@ -153,13 +153,13 @@ const
  FTDISERIAL_SET_MODEM_CTRL_RTS_ENABLE = 2;                                                     { B8    DTR state enable (0 = ignore / 1 = use DTR state)}
  FTDISERIAL_SET_MODEM_CTRL_RTS_HIGH   = (2 or (FTDISERIAL_SET_MODEM_CTRL_RTS_ENABLE shl 8));   { B9    RTS state enable (0 = ignore / 1 = use RTS state)}
  FTDISERIAL_SET_MODEM_CTRL_RTS_LOW    = (0 or (FTDISERIAL_SET_MODEM_CTRL_RTS_ENABLE shl 8));   { B10..15 Reserved}
- 
+
  {FTDI Serial set flow control constants (ftdi_sio.h)} {wIndex: Protocol/Port - hIndex is protocol / lIndex is port}
  FTDISERIAL_SET_FLOW_CTRL_NONE     = (0 shl 8);        { hIndex protocol}
  FTDISERIAL_SET_FLOW_CTRL_RTS_CTS  = (1 shl 8);        {  B0 Output handshaking using RTS/CTS (0 = disabled / 1 = enabled)}
  FTDISERIAL_SET_FLOW_CTRL_DTR_DSR  = (2 shl 8);        {  B1 Output handshaking using DTR/DSR (0 = disabled / 1 = enabled)}
  FTDISERIAL_SET_FLOW_CTRL_XON_XOFF = (4 shl 8);        {  B2 Xon/Xoff handshaking (0 = disabled / 1 = enabled)}
- 
+
  {FTDI Serial set data constants (ftdi_sio.h)}   {Data characteristics}
  FTDISERIAL_SET_DATA_PARITY_NONE  = (0 shl 8);   { B0..7   Number of data bits}
  FTDISERIAL_SET_DATA_PARITY_ODD   = (1 shl 8);   { B8..10  Parity (0 = None / 1 = Odd / 2 = Even / 3 = Mark / 4 = Space)}
@@ -170,14 +170,14 @@ const
  FTDISERIAL_SET_DATA_STOP_BITS_15 = (1 shl 11);
  FTDISERIAL_SET_DATA_STOP_BITS_2  = (2 shl 11);
  FTDISERIAL_SET_BREAK             = (1 shl 14);
- 
+
  {FTDI Serial get modem status constants (ftdi_sio.h)} {One byte of data is returned}
  FTDISERIAL_GET_MODEM_STATUS_CTS  = $10;               { B0..3 0}
  FTDISERIAL_GET_MODEM_STATUS_DSR  = $20;               { B4    CTS (0 = inactive / 1 = active)}
  FTDISERIAL_GET_MODEM_STATUS_RI   = $40;               { B5    DSR (0 = inactive / 1 = active)}
  FTDISERIAL_GET_MODEM_STATUS_RLSD = $80;               { B6    Ring Indicator (RI) (0 = inactive / 1 = active)}
                                                        { B7    Receive Line Signal Detect (RLSD) (0 = inactive / 1 = active)}
-                                                       
+
  {FTDI Serial receive status constants (ftdi_sio.h)} {First two bytes of received packet}
  FTDISERIAL_RECEIVE_STATUS0_CTS   = (1 shl 4);       {Byte 0: Modem Status}
  FTDISERIAL_RECEIVE_STATUS0_DSR   = (1 shl 5);       { B0    Reserved - must be 1}
@@ -189,22 +189,22 @@ const
                                                      {Byte 1: Line Status}
  FTDISERIAL_RECEIVE_STATUS1_DR    = (1 shl 0);       { B0    Data Ready (DR)}
  FTDISERIAL_RECEIVE_STATUS1_OE    = (1 shl 1);       { B1    Overrun Error (OE)}
- FTDISERIAL_RECEIVE_STATUS1_PE    = (1 shl 2);       { B2    Parity Error (PE)}      
+ FTDISERIAL_RECEIVE_STATUS1_PE    = (1 shl 2);       { B2    Parity Error (PE)}
  FTDISERIAL_RECEIVE_STATUS1_FE    = (1 shl 3);       { B3    Framing Error (FE)}
  FTDISERIAL_RECEIVE_STATUS1_BI    = (1 shl 4);       { B4    Break Interrupt (BI)}
  FTDISERIAL_RECEIVE_STATUS1_THRE  = (1 shl 5);       { B5    Transmitter Holding Register (THRE)}
  FTDISERIAL_RECEIVE_STATUS1_TEMT  = (1 shl 6);       { B6    Transmitter Empty (TEMT)}
  FTDISERIAL_RECEIVE_STATUS1_FIFO  = (1 shl 7);       { B7    Error in RCVR FIFO}
-  
+
  FTDISERIAL_RECEIVE_STATUS0_MASK = FTDISERIAL_RECEIVE_STATUS0_CTS or FTDISERIAL_RECEIVE_STATUS0_DSR or FTDISERIAL_RECEIVE_STATUS0_RI or FTDISERIAL_RECEIVE_STATUS0_RLSD;
  FTDISERIAL_RECEIVE_STATUS1_MASK = FTDISERIAL_RECEIVE_STATUS1_OE or FTDISERIAL_RECEIVE_STATUS1_PE or FTDISERIAL_RECEIVE_STATUS1_FE or FTDISERIAL_RECEIVE_STATUS1_BI;
- 
+
  {FTDI Serial interface index constants (FT2232, FT2232H and FT4232H) (ftdi_sio.h)}
  FTDISERIAL_INTERFACE_A = 1;
  FTDISERIAL_INTERFACE_B = 2;
  FTDISERIAL_INTERFACE_C = 3;
  FTDISERIAL_INTERFACE_D = 4;
- 
+
  {FTDI Serial device quirks}
  FTDISERIAL_QUIRK_NONE       = $00000000;
  FTDISERIAL_QUIRK_8U2232C    = $00000001;
@@ -213,11 +213,11 @@ const
  FTDISERIAL_QUIRK_JTAG       = $00000008;
  FTDISERIAL_QUIRK_NDI_DEVICE = $00000010;
  FTDISERIAL_QUIRK_STMCLITE   = $00000020;
- 
+
  {FTDI Vendor and Product ID constants}
  {Devices using FTDI VID}
  FTDI_VID = $0403; {Vendor Id}
- 
+
  {Original FTDI device PIDs}
  FTDI_8U232AM_PID = $6001; {Similar device to SIO above}
  FTDI_8U232AM_ALT_PID = $6006; {FTDI's alternate PID for above}
@@ -227,7 +227,7 @@ const
  FTDI_FTX_PID   = $6015; {FT-X series (FT201X, FT230X, FT231X, etc)}
  FTDI_SIO_PID = $8372; {Product Id SIO application of 8U100AX}
  FTDI_232RL_PID  = $FBFA; {Product ID for FT232RL}
- 
+
  {Third-party PIDs (using FTDI_VID)}
  {Certain versions of the official Windows FTDI driver reprogrammed counterfeit FTDI devices to PID 0. Support these devices anyway}
  FTDI_BRICK_PID  = $0000;
@@ -267,9 +267,9 @@ const
 
  {Revolution Education Limited / PICAXE (http://www.picaxe.com)}
  FTDI_REVED_AXE027_PID = $BD90; {AXE027 PICAXE USB cable}
- 
+
  FTDI_TURTELIZER_PID = $BDC8; {JTAG/RS-232 adapter by egnite GmbH}
- 
+
  {OpenDCC (www.opendcc.de) product id}
  FTDI_OPENDCC_PID = $BFD8;
  FTDI_OPENDCC_SNIFFER_PID = $BFD9;
@@ -521,7 +521,7 @@ const
  {Ivium Technologies product IDs}
  FTDI_PALMSENS_PID = $F440;
  FTDI_IVIUM_XSTAT_PID = $F441;
- 
+
  {Linx Technologies product ids}
  LINX_SDMUSBQSS_PID = $F448; {Linx SDM-USB-QS-S}
  LINX_MASTERDEVEL2_PID = $F449; {Linx Master Development 2.0}
@@ -651,7 +651,7 @@ const
  {Texas Instruments}
  TI_VID = $0451;
  TI_CC3200_LAUNCHPAD_PID = $C32A; {SimpleLink Wi-Fi CC3200 LaunchPad}
- 
+
  {Blackfin gnICE JTAG http://docs.blackfin.uclinux.org/doku.php?id=hw:jtag:gnice}
  ADI_VID   = $0456;
  ADI_GNICE_PID  = $F000;
@@ -661,7 +661,7 @@ const
  CYPRESS_VID = $04B4;
  CYPRESS_WICED_BT_USB_PID = $009B;
  CYPRESS_WICED_WL_USB_PID = $F900;
- 
+
  {Microchip Technology, Inc}
  MICROCHIP_VID  = $04D8;
  MICROCHIP_USB_BOARD_PID = $000A; {CDC RS-232 Emulation Demo}
@@ -716,7 +716,7 @@ const
  {WICED USB UART}
  WICED_VID = $0A5C;
  WICED_USB20706V2_PID = $6422;
- 
+
  {Definitions for ID TECH (www.idt-net.com) devices}
  IDTECH_VID  = $0ACD; {ID TECH Vendor ID}
  IDTECH_IDT1221U_PID = $0300; {IDT1221U USB to RS-232 adapter}
@@ -865,7 +865,7 @@ const
  {Actel / Microsemi}
  ACTEL_VID = $1514;
  MICROSEMI_ARROW_SF2PLUS_BOARD_PID = $2008;
- 
+
  {Olimex}
  OLIMEX_VID   = $15BA;
  OLIMEX_ARM_USB_OCD_PID  = $0003;
@@ -886,7 +886,7 @@ const
  ICPDAS_I7560U_PID  = $0103;
  ICPDAS_I7561U_PID  = $0104;
  ICPDAS_I7563U_PID  = $0105;
- 
+
  {Airbus Defence and Space}
  AIRBUS_DS_VID = $1e8e; {Vendor ID}
  AIRBUS_DS_P8GR = $6001; {Tetra P8GR}
@@ -894,7 +894,7 @@ const
  {RT Systems programming cables for various ham radios}
  {This device uses the VID of FTDI}
  RTSYSTEMS_USB_VX8_PID = $9e50; {USB-VX8 USB to 7 pin modular plug for Yaesu VX-8 radio}
- 
+
  RTSYSTEMS_VID  = $2100; {Vendor ID}
  RTSYSTEMS_USB_S03_PID = $9001; {RTS-03 USB to Serial Adapter}
  RTSYSTEMS_USB_59_PID = $9e50; {USB-59 USB to 8 pin plug}
@@ -1263,7 +1263,7 @@ const
  {EZPrototypes (PID reseller)}
  EZPROTOTYPES_VID = $1c40;
  HJELMSLUND_USB485_ISO_PID = $0477;
- 
+
  {Dresden Elektronik Sensor Terminal Board}
  DE_VID   = $1cf1; {Vendor ID}
  STB_PID   = $0001; {Sensor Terminal Board}
@@ -1365,7 +1365,7 @@ const
 
  {Product: FirmwareHubEmulator Manufacturer: Harman Becker Automotive Systems}
  FTDI_FHE_PID = $A9A0;
- 
+
  {Product: Comet Caller ID decoder Manufacturer: Crucible Technologies}
  FTDI_CT_COMET_PID = $8e08;
 
@@ -1437,7 +1437,7 @@ const
 
  {FTDI Serial Device ID constants}
  FTDISERIAL_DEVICE_ID_COUNT = 828; {Number of supported Device IDs}
- 
+
  FTDISERIAL_DEVICE_ID:array[0..FTDISERIAL_DEVICE_ID_COUNT - 1] of TUSBDeviceId = (
   (idVendor:FTDI_VID;idProduct:FTDI_BRICK_PID),
   (idVendor:FTDI_VID;idProduct:FTDI_ZEITCONTROL_TAGTRACE_MIFARE_PID),
@@ -1898,8 +1898,8 @@ const
   (idVendor:FTDI_VID;idProduct:FTDI_TAVIR_STK500_PID),
   (idVendor:FTDI_VID;idProduct:FTDI_TIAO_UMPA_PID),  {FTDISERIAL_QUIRK_JTAG}
   (idVendor:FTDI_VID;idProduct:FTDI_NT_ORIONLXM_PID), {FTDISERIAL_QUIRK_JTAG}
-  (idVendor:FTDI_VID;idProduct:FTDI_NT_ORIONLX_PLUS_PID), 
-  (idVendor:FTDI_VID;idProduct:FTDI_NT_ORION_IO_PID), 
+  (idVendor:FTDI_VID;idProduct:FTDI_NT_ORIONLX_PLUS_PID),
+  (idVendor:FTDI_VID;idProduct:FTDI_NT_ORION_IO_PID),
   (idVendor:FTDI_VID;idProduct:FTDI_SYNAPSE_SS200_PID),
   (idVendor:FTDI_VID;idProduct:FTDI_CUSTOMWARE_MINIPLEX_PID),
   (idVendor:FTDI_VID;idProduct:FTDI_CUSTOMWARE_MINIPLEX2_PID),
@@ -2296,10 +2296,10 @@ const
 
  FTDISERIAL_DEVICE_INTERFACE_ID:array[0..FTDISERIAL_DEVICE_INTERFACE_ID_COUNT - 1] of TUSBDeviceAndInterfaceId = (
   (idVendor:MICROCHIP_VID;idProduct:MICROCHIP_USB_BOARD_PID;bInterfaceClass:USB_CLASS_CODE_VENDOR_SPECIFIC;bInterfaceSubClass:USB_SUBCLASS_VENDOR_SPECIFIC;bInterfaceProtocol:0));
- 
+
  {FTDI Serial Device and Interface No constants}
  FTDISERIAL_DEVICE_INTERFACE_NO_COUNT = 7; {Number of supported Device and Interface Nos}
- 
+
  FTDISERIAL_DEVICE_INTERFACE_NO:array[0..FTDISERIAL_DEVICE_INTERFACE_NO_COUNT - 1] of TUSBDeviceAndInterfaceNo = (
   {Infineon Devices}
   (idVendor:INFINEON_VID;idProduct:INFINEON_TRIBOARD_TC1798_PID;bInterfaceNumber:1),
@@ -2310,7 +2310,7 @@ const
   (idVendor:OLIMEX_VID;idProduct:OLIMEX_ARM_USB_TINY_PID;bInterfaceNumber:1),
   (idVendor:OLIMEX_VID;idProduct:OLIMEX_ARM_USB_TINY_H_PID;bInterfaceNumber:1)
   );
- 
+
 {==============================================================================}
 type
  {FTDI Serial specific types}
@@ -2343,11 +2343,11 @@ type
   ReceiveComplete:LongWord;
   TransmitComplete:LongWord;
  end;
- 
+
 {==============================================================================}
 {var}
  {FTDI Serial specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure FTDISerialInit;
@@ -2365,13 +2365,13 @@ function FTDISerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:Lo
 function FTDISerialDriverBind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 function FTDISerialDriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 
-procedure FTDISerialReceiveStart(Request:PUSBRequest);    
-procedure FTDISerialReceiveWorker(Request:PUSBRequest); 
-procedure FTDISerialReceiveComplete(Request:PUSBRequest); 
+procedure FTDISerialReceiveStart(Request:PUSBRequest);
+procedure FTDISerialReceiveWorker(Request:PUSBRequest);
+procedure FTDISerialReceiveComplete(Request:PUSBRequest);
 
-procedure FTDISerialTransmitStart(Request:PUSBRequest);  
-procedure FTDISerialTransmitWorker(Request:PUSBRequest); 
-procedure FTDISerialTransmitComplete(Request:PUSBRequest); 
+procedure FTDISerialTransmitStart(Request:PUSBRequest);
+procedure FTDISerialTransmitWorker(Request:PUSBRequest);
+procedure FTDISerialTransmitComplete(Request:PUSBRequest);
 
 {==============================================================================}
 {FTDI Serial Helper Functions}
@@ -2379,7 +2379,7 @@ function FTDISerialCheckDevice(Device:PUSBDevice):LongWord;
 function FTDISerialCheckDeviceAndInterface(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 
 function FTDISerialPatchDevice(Device:PUSBDevice;var Quirks:LongWord):LongWord;
-  
+
 function FTDISerialCheckJTAGDevice(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 function FTDISerialCheck8U2232CDevice(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 function FTDISerialCheckSTMCLiteDevice(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
@@ -2413,8 +2413,8 @@ implementation
 {==============================================================================}
 var
  {FTDI Serial specific variables}
- FTDISerialInitialized:Boolean; 
- 
+ FTDISerialInitialized:Boolean;
+
  FTDISerialDriver:PUSBDriver;  {FTDI Serial Driver interface (Set by FTDISerialInit)}
 
 {==============================================================================}
@@ -2435,7 +2435,7 @@ begin
   begin
    {Update FTDI Serial Driver}
    {Driver}
-   FTDISerialDriver.Driver.DriverName:=FTDISERIAL_DRIVER_NAME; 
+   FTDISerialDriver.Driver.DriverName:=FTDISERIAL_DRIVER_NAME;
    {USB}
    FTDISerialDriver.DriverBind:=FTDISerialDriverBind;
    FTDISerialDriver.DriverUnbind:=FTDISerialDriverUnbind;
@@ -2454,12 +2454,12 @@ begin
   begin
    if USB_LOG_ENABLED then USBLogError(nil,'FTDI Serial: Failed to create FTDI Serial driver');
   end;
- 
+
  {Check Environment Variables}
  {FTDISERIAL_MAX_TRANSMIT}
  WorkInt:=StrToIntDef(EnvironmentGet('FTDISERIAL_MAX_TRANSMIT'),0);
  if WorkInt <> 0 then FTDISERIAL_MAX_TRANSMIT:=WorkInt;
- 
+
  FTDISerialInitialized:=True;
 end;
 
@@ -2479,49 +2479,49 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {$IF DEFINED(FTDISERIAL_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'FTDI Serial: Device Open (BaudRate=' + IntToStr(BaudRate) + ' DataBits=' + SerialDataBitsToString(DataBits) + ' StopBits=' + SerialStopBitsToString(StopBits) + ' Parity=' + SerialParityToString(Parity) + ' FlowControl=' + SerialFlowControlToString(FlowControl) + ')');
  {$ENDIF}
- 
+
  {Get Device}
  Device:=PUSBDevice(Serial.Device.DeviceData);
  if Device = nil then Exit;
- 
+
  {Check Baud Rate}
  if ((BaudRate < Serial.Properties.MinRate) or (BaudRate > Serial.Properties.MaxRate)) and (BaudRate <> SERIAL_BAUD_RATE_DEFAULT) then Exit;
- 
+
  {Check Data Bits}
  if (DataBits < FTDISERIAL_MIN_DATABITS) or (DataBits > FTDISERIAL_MAX_DATABITS) then Exit;
- 
+
  {Check Stop Bits}
  if (StopBits < FTDISERIAL_MIN_STOPBITS) or (StopBits > FTDISERIAL_MAX_STOPBITS) then Exit;
- 
+
  {Check Parity}
  if Parity > FTDISERIAL_MAX_PARITY then Exit;
- 
+
  {Check Flow Control}
  if FlowControl > FTDISERIAL_MAX_FLOW then Exit;
- 
+
  {Adjust Baud Rate}
  if BaudRate = SERIAL_BAUD_RATE_DEFAULT then
   begin
    BaudRate:=SERIAL_BAUD_RATE_STANDARD;
    if (BaudRate > Serial.Properties.MaxRate) then BaudRate:=SERIAL_BAUD_RATE_FALLBACK;
-  end; 
- 
+  end;
+
  {Reset Device}
  if FTDISerialReset(PFTDISerialDevice(Serial),FTDISERIAL_RESET_SIO) <> ERROR_SUCCESS then
   begin
    if SERIAL_LOG_ENABLED then SerialLogError(Serial,'FTDI Serial: Reset device failed');
-   
+
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Setup Data}
  Data:=0;
  {Data Bits}
@@ -2543,22 +2543,22 @@ begin
   SERIAL_PARITY_MARK:Data:=Data or FTDISERIAL_SET_DATA_PARITY_MARK;
   SERIAL_PARITY_SPACE:Data:=Data or FTDISERIAL_SET_DATA_PARITY_SPACE;
  end;
- 
+
  {Set Data}
  if FTDISerialSetData(PFTDISerialDevice(Serial),Data) <> ERROR_SUCCESS then
   begin
    if SERIAL_LOG_ENABLED then SerialLogError(Serial,'FTDI Serial: Set data failed');
-   
+
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
-  
+
  {Get Divisor}
  Divisor:=FTDISerialGetDivisor(PFTDISerialDevice(Serial),BaudRate);
  if Divisor = LongWord(-1) then
   begin
    if SERIAL_LOG_ENABLED then SerialLogError(Serial,'FTDI Serial: Get divisor failed');
-   
+
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
@@ -2568,20 +2568,20 @@ begin
    Divisor:=PFTDISerialDevice(Serial).FixedDivisor;
    BaudRate:=PFTDISerialDevice(Serial).ForceBaud;
   end;
-  
+
  {$IF DEFINED(FTDISERIAL_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'FTDI Serial:  BaudRate=' + IntToStr(BaudRate) + ' Divisor=' + IntToStr(Divisor));
  {$ENDIF}
-  
+
  {Set Baud Rate}
  if FTDISerialSetBaudRate(PFTDISerialDevice(Serial),Divisor) <> ERROR_SUCCESS then
   begin
    if SERIAL_LOG_ENABLED then SerialLogError(Serial,'FTDI Serial: Set baud rate failed');
-   
+
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Setup Flow Control}
  Flow:=FTDISERIAL_SET_FLOW_CTRL_NONE;
  Modem:=FTDISERIAL_SET_MODEM_CTRL_NONE;
@@ -2595,22 +2595,22 @@ begin
   SERIAL_FLOW_RTS_CTS:begin
     Flow:=FTDISERIAL_SET_FLOW_CTRL_RTS_CTS;
     Modem:=FTDISERIAL_SET_MODEM_CTRL_RTS_HIGH;
-   end; 
+   end;
   SERIAL_FLOW_DSR_DTR:begin
     Flow:=FTDISERIAL_SET_FLOW_CTRL_DTR_DSR;
     Modem:=FTDISERIAL_SET_MODEM_CTRL_DTR_HIGH;
-   end; 
- end; 
- 
+   end;
+ end;
+
  {Clear Hardware Flow Control}
  if FTDISerialSetFlowControl(PFTDISerialDevice(Serial),FTDISERIAL_SET_FLOW_CTRL_NONE) <> ERROR_SUCCESS then
   begin
    if SERIAL_LOG_ENABLED then SerialLogError(Serial,'FTDI Serial: Clear flow control failed');
-   
+
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Check Modem Control}
  if Modem <> FTDISERIAL_SET_MODEM_CTRL_NONE then
   begin
@@ -2618,12 +2618,12 @@ begin
    if FTDISerialSetModemControl(PFTDISerialDevice(Serial),Modem) <> ERROR_SUCCESS then
     begin
      if SERIAL_LOG_ENABLED then SerialLogError(Serial,'FTDI Serial: Set modem control (RTS/DTR) failed');
-     
+
      Result:=ERROR_OPERATION_FAILED;
      Exit;
     end;
   end;
-  
+
  {Check Flow Control}
  if Flow <> FTDISERIAL_SET_FLOW_CTRL_NONE then
   begin
@@ -2631,21 +2631,21 @@ begin
    if FTDISerialSetFlowControl(PFTDISerialDevice(Serial),Flow) <> ERROR_SUCCESS then
     begin
      if SERIAL_LOG_ENABLED then SerialLogError(Serial,'FTDI Serial: Set flow control failed');
-     
+
      Result:=ERROR_OPERATION_FAILED;
      Exit;
     end;
-  end;  
- 
+  end;
+
  {Check Max Transmit}
  if FTDISERIAL_MAX_TRANSMIT = 0 then FTDISERIAL_MAX_TRANSMIT:=FTDISERIAL_BULK_OUT_SIZE;
- 
+
  {Check Receive Depth}
  if ReceiveDepth = 0 then ReceiveDepth:=SERIAL_RECEIVE_DEPTH_DEFAULT;
- 
+
  {Check Transmit Depth}
  if TransmitDepth = 0 then TransmitDepth:=SERIAL_TRANSMIT_DEPTH_DEFAULT;
- 
+
  {Allocate Recieve}
  EventReset(Serial.Receive.Wait);
  Serial.Receive.Start:=0;
@@ -2657,7 +2657,7 @@ begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Allocate Transmit}
  EventSet(Serial.Transmit.Wait);
  Serial.Transmit.Start:=0;
@@ -2668,13 +2668,13 @@ begin
   begin
    {Release Receive}
    FreeMem(Serial.Receive.Data);
-   
+
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Allocate Receive Request}
- PFTDISerialDevice(Serial).ReceiveRequest:=USBRequestAllocate(Device,PFTDISerialDevice(Serial).ReceiveEndpoint,FTDISerialReceiveComplete,FTDISERIAL_BULK_IN_SIZE,Serial); 
+ PFTDISerialDevice(Serial).ReceiveRequest:=USBRequestAllocate(Device,PFTDISerialDevice(Serial).ReceiveEndpoint,FTDISerialReceiveComplete,FTDISERIAL_BULK_IN_SIZE,Serial);
  if PFTDISerialDevice(Serial).ReceiveRequest = nil then
   begin
    {Release Receive}
@@ -2682,13 +2682,13 @@ begin
 
    {Release Transmit}
    FreeMem(Serial.Transmit.Data);
-   
+
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Allocate Transmit Request}
- PFTDISerialDevice(Serial).TransmitRequest:=USBRequestAllocate(Device,PFTDISerialDevice(Serial).TransmitEndpoint,FTDISerialTransmitComplete,FTDISERIAL_BULK_OUT_SIZE,Serial); 
+ PFTDISerialDevice(Serial).TransmitRequest:=USBRequestAllocate(Device,PFTDISerialDevice(Serial).TransmitEndpoint,FTDISerialTransmitComplete,FTDISERIAL_BULK_OUT_SIZE,Serial);
  if PFTDISerialDevice(Serial).TransmitRequest = nil then
   begin
    {Release Receive}
@@ -2696,52 +2696,52 @@ begin
 
    {Release Transmit}
    FreeMem(Serial.Transmit.Data);
-   
+
    {Release Receive Request}
    USBRequestRelease(PFTDISerialDevice(Serial).ReceiveRequest);
-   
+
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Update Pending}
  Inc(PFTDISerialDevice(Serial).PendingCount);
-  
+
  {Set Active}
  PFTDISerialDevice(Serial).ReceiveActive:=True;
-  
+
  {$IF DEFINED(FTDISERIAL_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'FTDI Serial: Submitting receive request');
  {$ENDIF}
- 
+
  {Submit Receive Request}
  Status:=USBRequestSubmit(PFTDISerialDevice(Serial).ReceiveRequest);
  if Status <> USB_STATUS_SUCCESS then
   begin
    if SERIAL_LOG_ENABLED then SerialLogError(Serial,'FTDI Serial: Failed to submit receive request: ' + USBStatusToString(Status));
-        
+
    {Reset Active}
    PFTDISerialDevice(Serial).ReceiveActive:=False;
-        
+
    {Update Pending}
    Dec(PFTDISerialDevice(Serial).PendingCount);
-   
+
    {Release Receive}
    FreeMem(Serial.Receive.Data);
 
    {Release Transmit}
    FreeMem(Serial.Transmit.Data);
-   
+
    {Release Receive Request}
    USBRequestRelease(PFTDISerialDevice(Serial).ReceiveRequest);
 
    {Release Transmit Request}
    USBRequestRelease(PFTDISerialDevice(Serial).TransmitRequest);
-   
+
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Update Properties}
  Serial.Properties.BaudRate:=BaudRate;
  Serial.Properties.DataBits:=DataBits;
@@ -2750,7 +2750,7 @@ begin
  Serial.Properties.FlowControl:=FlowControl;
  Serial.Properties.ReceiveDepth:=ReceiveDepth;
  Serial.Properties.TransmitDepth:=TransmitDepth;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -2760,22 +2760,22 @@ end;
 function FTDISerialDeviceClose(Serial:PSerialDevice):LongWord;
 {Implementation of SerialDeviceClose API for FTDI Serial}
 {Note: Not intended to be called directly by applications, use SerialDeviceClose instead}
-var 
+var
  Message:TMessage;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {$IF DEFINED(FTDISERIAL_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'FTDI Serial: Device Close');
  {$ENDIF}
 
  {Cancel Receive Request}
  USBRequestCancel(PFTDISerialDevice(Serial).ReceiveRequest);
- 
+
  {Check Pending}
  if PFTDISerialDevice(Serial).PendingCount <> 0 then
   begin
@@ -2784,26 +2784,26 @@ begin
    {$ENDIF}
 
    {Wait for Pending}
- 
+
    {Setup Waiter}
-   PFTDISerialDevice(Serial).WaiterThread:=GetCurrentThreadId; 
- 
+   PFTDISerialDevice(Serial).WaiterThread:=GetCurrentThreadId;
+
    {Release the Lock}
    MutexUnlock(Serial.Lock);
- 
+
    {Wait for Message}
-   ThreadReceiveMessage(Message); 
-   
+   ThreadReceiveMessage(Message);
+
    {Acquire the Lock}
    if MutexLock(Serial.Lock) <> ERROR_SUCCESS then Exit;
   end;
- 
+
  {Release Transmit Request}
  USBRequestRelease(PFTDISerialDevice(Serial).TransmitRequest);
- 
+
  {Release Receive Request}
  USBRequestRelease(PFTDISerialDevice(Serial).ReceiveRequest);
- 
+
  {Release Receive}
  Serial.Receive.Start:=0;
  Serial.Receive.Count:=0;
@@ -2815,7 +2815,7 @@ begin
  Serial.Transmit.Count:=0;
  Serial.Transmit.Size:=0;
  FreeMem(Serial.Transmit.Data);
- 
+
  {Update Properties}
  Serial.Properties.BaudRate:=SERIAL_BAUD_RATE_DEFAULT;
  Serial.Properties.DataBits:=SERIAL_DATA_8BIT;
@@ -2824,17 +2824,17 @@ begin
  Serial.Properties.FlowControl:=SERIAL_FLOW_NONE;
  Serial.Properties.ReceiveDepth:=SERIAL_RECEIVE_DEPTH_DEFAULT;
  Serial.Properties.TransmitDepth:=SERIAL_TRANSMIT_DEPTH_DEFAULT;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
- 
+
 {==============================================================================}
 
 function FTDISerialDeviceRead(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 {Implementation of SerialDeviceRead API for FTDI Serial}
 {Note: Not intended to be called directly by applications, use SerialDeviceRead instead}
-var 
+var
  Data:Pointer;
  Total:LongWord;
  Offset:PtrUint;
@@ -2845,17 +2845,17 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {$IF DEFINED(FTDISERIAL_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'FTDI Serial: Device Read (Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Read to Buffer}
  Offset:=0;
  Total:=Size;
@@ -2874,7 +2874,7 @@ begin
      Result:=ERROR_NO_MORE_ITEMS;
      Break;
     end;
- 
+
    {Check Peek Buffer}
    if (Flags and SERIAL_READ_PEEK_BUFFER) <> 0 then
     begin
@@ -2882,10 +2882,10 @@ begin
      Result:=ERROR_SUCCESS;
      Break;
     end;
- 
+
    {Release the Lock}
    MutexUnlock(Serial.Lock);
- 
+
    {Wait for Data}
    if EventWait(Serial.Receive.Wait) = ERROR_SUCCESS then
     begin
@@ -2898,34 +2898,34 @@ begin
         begin
          {Get Removed}
          Removed:=Min(Size,Available);
-         
+
          {Copy Data}
          System.Move(Data^,Pointer(Buffer + Offset)^,Removed);
 
          {Update Statistics}
          Inc(Serial.ReceiveCount,Removed);
-         
+
          {Update Count}
          Inc(Count,Removed);
-         
+
          {Update Size and Offset}
          Dec(Size,Removed);
          Inc(Offset,Removed);
-         
+
          {Complete Read}
          SerialBufferReadComplete(@Serial.Receive,Removed);
-         
+
          {Start Read}
          Data:=SerialBufferReadStart(@Serial.Receive,Available);
         end;
-       
+
        {Check Available}
        if Available = 0 then
         begin
          {Reset Event}
          EventReset(Serial.Receive.Wait);
         end;
-        
+
        {Check State}
        if (Size = 0) and not(PFTDISerialDevice(Serial).ReceiveActive) and ((Serial.Receive.Size - Serial.Receive.Count) >= PFTDISerialDevice(Serial).ReceiveSize) then
         begin
@@ -2937,21 +2937,21 @@ begin
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
        Exit;
-      end;      
+      end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
      Exit;
-    end;    
+    end;
   end;
- 
+
  {$IF DEFINED(FTDISERIAL_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'FTDI Serial:  Return Count=' + IntToStr(Count));
  {$ENDIF}
- 
+
  {Return Result}
- if (Total = Count) then Result:=ERROR_SUCCESS; 
+ if (Total = Count) then Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}
@@ -2959,7 +2959,7 @@ end;
 function FTDISerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 {Implementation of SerialDeviceWrite API for FTDI Serial}
 {Note: Not intended to be called directly by applications, use SerialDeviceWrite instead}
-var 
+var
  Data:Pointer;
  Empty:Boolean;
  Total:LongWord;
@@ -2971,17 +2971,17 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {$IF DEFINED(FTDISERIAL_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'FTDI Serial: Device Write (Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Write from Buffer}
  Offset:=0;
  Total:=Size;
@@ -2993,7 +2993,7 @@ begin
      Result:=ERROR_INSUFFICIENT_BUFFER;
      Break;
     end;
- 
+
    {Check Peek Buffer}
    if (Flags and SERIAL_WRITE_PEEK_BUFFER) <> 0 then
     begin
@@ -3001,10 +3001,10 @@ begin
      Result:=ERROR_SUCCESS;
      Break;
     end;
-   
+
    {Release the Lock}
    MutexUnlock(Serial.Lock);
-   
+
    {Wait for Space}
    if EventWait(Serial.Transmit.Wait) = ERROR_SUCCESS then
     begin
@@ -3013,65 +3013,65 @@ begin
       begin
        {Check Empty}
        Empty:=(Serial.Transmit.Count = 0);
-       
+
        {Start Write}
        Data:=SerialBufferWriteStart(@Serial.Transmit,Available);
        while (Data <> nil) and (Available > 0) and (Size > 0) do
         begin
          {Get Added}
          Added:=Min(Size,Available);
-         
+
          {Copy Data}
          System.Move(Pointer(Buffer + Offset)^,Data^,Added);
- 
+
          {Update Statistics}
          Inc(Serial.TransmitCount,Added);
-         
+
          {Update Count}
          Inc(Count,Added);
-         
+
          {Update Size and Offset}
          Dec(Size,Added);
          Inc(Offset,Added);
- 
+
          {Complete Write}
          SerialBufferWriteComplete(@Serial.Transmit,Added);
-         
+
          {Start Write}
          Data:=SerialBufferWriteStart(@Serial.Transmit,Available);
         end;
-       
+
        {Check Available}
        if Available = 0 then
         begin
          {Reset Event}
          EventReset(Serial.Transmit.Wait);
         end;
-        
+
        {Check Empty}
        if Empty and not(PFTDISerialDevice(Serial).TransmitActive) then
         begin
          {Start Transmit}
          FTDISerialTransmitStart(PFTDISerialDevice(Serial).TransmitRequest);
-        end; 
+        end;
       end
      else
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
        Exit;
-      end;      
+      end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
      Exit;
-    end;    
+    end;
   end;
-  
+
  {$IF DEFINED(FTDISERIAL_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'FTDI Serial:  Return Count=' + IntToStr(Count));
  {$ENDIF}
- 
+
  {Return Result}
  if (Total = Count) then Result:=ERROR_SUCCESS;
 end;
@@ -3101,7 +3101,7 @@ begin
  {$IFDEF FTDISERIAL_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'FTDI Serial: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
- 
+
  {Check Interface (Bind to either device or interface depending on match)}
  if Interrface = nil then
   begin
@@ -3117,9 +3117,9 @@ begin
     end;
   end
  else
-  begin 
+  begin
    {Check FTDI Serial Device and Interface}
-   if FTDISerialCheckDeviceAndInterface(Device,Interrface) <> USB_STATUS_SUCCESS then 
+   if FTDISerialCheckDeviceAndInterface(Device,Interrface) <> USB_STATUS_SUCCESS then
     begin
      {$IFDEF FTDISERIAL_DEBUG}
       if USB_LOG_ENABLED then USBLogDebug(Device,'FTDI Serial: Device not found in supported interface list');
@@ -3129,7 +3129,7 @@ begin
      Exit;
     end;
   end;
-  
+
  {Check Interface}
  if Interrface = nil then
   begin
@@ -3150,7 +3150,7 @@ begin
     {Get Interface (Supplied)}
     SerialInterface:=Interrface;
    end;
-  
+
  {Patch FTDI Serial Device}
  if FTDISerialPatchDevice(Device,Quirks) <> USB_STATUS_SUCCESS then
   begin
@@ -3161,7 +3161,7 @@ begin
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
-  
+
  {Check Quirks}
  if (Quirks and FTDISERIAL_QUIRK_8U2232C) <> 0 then
   begin
@@ -3175,7 +3175,7 @@ begin
      Result:=USB_STATUS_DEVICE_UNSUPPORTED;
      Exit;
     end;
-    
+
    {Get Interface (Index 1)}
    SerialInterface:=USBDeviceFindInterfaceByIndex(Device,1);
    if SerialInterface = nil then
@@ -3188,7 +3188,7 @@ begin
      Exit;
     end;
   end;
- if (Quirks and FTDISERIAL_QUIRK_JTAG) <> 0 then 
+ if (Quirks and FTDISERIAL_QUIRK_JTAG) <> 0 then
   begin
    {Check JTAG}
    if FTDISerialCheckJTAGDevice(Device,Interrface) <> USB_STATUS_SUCCESS then
@@ -3200,7 +3200,7 @@ begin
      Result:=USB_STATUS_DEVICE_UNSUPPORTED;
      Exit;
     end;
-    
+
    {Get Interface (Index 1)}
    SerialInterface:=USBDeviceFindInterfaceByIndex(Device,1);
    if SerialInterface = nil then
@@ -3213,7 +3213,7 @@ begin
      Exit;
     end;
   end;
- if (Quirks and FTDISERIAL_QUIRK_STMCLITE) <> 0 then 
+ if (Quirks and FTDISERIAL_QUIRK_STMCLITE) <> 0 then
   begin
    {Check STMCLite}
    if FTDISerialCheckSTMCLiteDevice(Device,Interrface) <> USB_STATUS_SUCCESS then
@@ -3225,7 +3225,7 @@ begin
      Result:=USB_STATUS_DEVICE_UNSUPPORTED;
      Exit;
     end;
-    
+
    {Get Interface (Index 2)}
    SerialInterface:=USBDeviceFindInterfaceByIndex(Device,2);
    if SerialInterface = nil then
@@ -3241,7 +3241,7 @@ begin
  {$IFDEF FTDISERIAL_DEBUG}
   if USB_LOG_ENABLED then USBLogDebug(Device,'FTDI Serial: Interface.bInterfaceNumber=' + IntToStr(SerialInterface.Descriptor.bInterfaceNumber));
  {$ENDIF}
- 
+
  {Check Bulk IN Endpoint}
  ReceiveEndpoint:=USBDeviceFindEndpointByType(Device,SerialInterface,USB_DIRECTION_IN,USB_TRANSFER_TYPE_BULK);
  if ReceiveEndpoint = nil then
@@ -3271,40 +3271,40 @@ begin
  {$IFDEF FTDISERIAL_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'FTDI Serial: BULK OUT Endpoint Count=' + IntToStr(USBDeviceCountEndpointsByType(Device,SerialInterface,USB_DIRECTION_OUT,USB_TRANSFER_TYPE_BULK)));
  {$ENDIF}
- 
+
  {Check Configuration}
  if (Interrface = nil) and (Device.ConfigurationValue = 0) then
   begin
    {$IFDEF FTDISERIAL_DEBUG}
    if USB_LOG_ENABLED then USBLogDebug(Device,'Assigning configuration ' + IntToStr(Device.Configuration.Descriptor.bConfigurationValue) + ' (' + IntToStr(Device.Configuration.Descriptor.bNumInterfaces) + ' interfaces available)');
    {$ENDIF}
-   
+
    {Set Configuration}
    Status:=USBDeviceSetConfiguration(Device,Device.Configuration.Descriptor.bConfigurationValue);
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(Device,'Failed to set device configuration: ' + USBStatusToString(Status));
-     
+
      {Return Result}
      Result:=Status;
      Exit;
     end;
   end;
- 
+
  {USB device reset not required because the USB core already did a reset on the port during attach}
- 
+
  {Create Serial}
  Serial:=PFTDISerialDevice(SerialDeviceCreateEx(SizeOf(TFTDISerialDevice)));
  if Serial = nil then
   begin
    if USB_LOG_ENABLED then USBLogError(Device,'FTDI Serial: Failed to create new serial device');
-   
+
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
- {Update Serial} 
+
+ {Update Serial}
  {Device}
  Serial.Serial.Device.DeviceBus:=DEVICE_BUS_USB;
  Serial.Serial.Device.DeviceType:=SERIAL_TYPE_USB;
@@ -3340,7 +3340,7 @@ begin
 
  {Determine Type}
  FTDISerialDetermineType(Serial);
- 
+
  {Check Type}
  case Serial.Chip of
   FTDISERIAL_CHIP_SIO:begin
@@ -3364,48 +3364,48 @@ begin
     Serial.Serial.Properties.MaxRate:=12000000;
    end;
  end;
- 
+
  {Check Quirks}
- if (Quirks and FTDISERIAL_QUIRK_HE_TIRA1) <> 0 then 
+ if (Quirks and FTDISERIAL_QUIRK_HE_TIRA1) <> 0 then
   begin
    {Force Baud to 100000}
    Serial.ForceBaud:=100000;
    Serial.ForceRTSCTS:=True;
    Serial.FixedDivisor:=240;
   end;
- if (Quirks and FTDISERIAL_QUIRK_USB_UIRT) <> 0 then 
+ if (Quirks and FTDISERIAL_QUIRK_USB_UIRT) <> 0 then
   begin
    {Force Baud to 312500}
    Serial.ForceBaud:=312500;
    Serial.FixedDivisor:=77;
   end;
- if (Quirks and FTDISERIAL_QUIRK_NDI_DEVICE) <> 0 then 
+ if (Quirks and FTDISERIAL_QUIRK_NDI_DEVICE) <> 0 then
   begin
    {Setup Latency}
    Serial.Latency:=1;
    FTDISerialSetLatency(Serial);
   end;
- 
+
  {Setup Latency Timer}
  if FTDISerialGetLatency(Serial) <> ERROR_SUCCESS then
   begin
    Serial.Latency:=16;
   end;
  FTDISerialSetLatency(Serial);
- 
- {Register Serial} 
+
+ {Register Serial}
  if SerialDeviceRegister(@Serial.Serial) <> ERROR_SUCCESS then
   begin
    if USB_LOG_ENABLED then USBLogError(Device,'FTDI Serial: Failed to register new serial device');
-   
+
    {Destroy Serial}
    SerialDeviceDestroy(@Serial.Serial);
-   
+
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
+
  {Check Interface}
  if Interrface = nil then
   begin
@@ -3413,15 +3413,15 @@ begin
    Device.DriverData:=Serial;
   end
  else
-  begin 
+  begin
    {Update Interface}
    Interrface.DriverData:=Serial;
-  end; 
- 
+  end;
+
  {Return Result}
  Result:=USB_STATUS_SUCCESS;
 end;
-  
+
 {==============================================================================}
 
 function FTDISerialDriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
@@ -3434,7 +3434,7 @@ var
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
@@ -3448,8 +3448,8 @@ begin
   begin
    {Check Driver}
    if Interrface.Driver <> FTDISerialDriver then Exit;
-  end;  
- 
+  end;
+
  {$IFDEF FTDISERIAL_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'FTDI Serial: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
@@ -3464,12 +3464,12 @@ begin
   begin
    {Get Serial}
    Serial:=PFTDISerialDevice(Interrface.DriverData);
-  end;  
+  end;
  if Serial = nil then Exit;
- 
+
  {Close Serial}
- SerialDeviceClose(@Serial.Serial); 
- 
+ SerialDeviceClose(@Serial.Serial);
+
  {Check Interface}
  if Interrface = nil then
   begin
@@ -3484,16 +3484,16 @@ begin
 
  {Deregister Serial}
  if SerialDeviceDeregister(@Serial.Serial) <> ERROR_SUCCESS then Exit;
- 
+
  {Destroy Serial}
  SerialDeviceDestroy(@Serial.Serial);
- 
+
  Result:=USB_STATUS_SUCCESS;
 end;
 
 {==============================================================================}
 
-procedure FTDISerialReceiveStart(Request:PUSBRequest);    
+procedure FTDISerialReceiveStart(Request:PUSBRequest);
 {Called to continue reception of data to the receive buffer}
 {Request: The USB receive request to use}
 
@@ -3507,11 +3507,11 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  {Get Serial}
  Serial:=PFTDISerialDevice(Request.DriverData);
  if Serial = nil then Exit;
- 
+
  {Setup Count}
  Count:=0;
  Available:=Serial.Serial.Receive.Size - Serial.Serial.Receive.Count;
@@ -3519,7 +3519,7 @@ begin
   begin
    Count:=FTDISERIAL_BULK_IN_SIZE;
   end
- else if Available >= Serial.ReceiveSize then 
+ else if Available >= Serial.ReceiveSize then
   begin
    Count:=Serial.ReceiveSize;
   end;
@@ -3529,7 +3529,7 @@ begin
   begin
    {Update Request}
    Request.Size:=Count;
-   
+
    {Update Pending}
    Inc(Serial.PendingCount);
 
@@ -3548,7 +3548,7 @@ begin
 
      {Reset Active}
      Serial.ReceiveActive:=False;
-     
+
      {Update Pending}
      Dec(Serial.PendingCount);
     end;
@@ -3556,8 +3556,8 @@ begin
 end;
 
 {==============================================================================}
-  
-procedure FTDISerialReceiveWorker(Request:PUSBRequest); 
+
+procedure FTDISerialReceiveWorker(Request:PUSBRequest);
 {Called (by a Worker thread) to process a completed USB request from the FTDI Serial bulk IN endpoint}
 {Request: The USB request which has completed}
 
@@ -3571,7 +3571,7 @@ procedure FTDISerialReceiveWorker(Request:PUSBRequest);
          Bit5 Data Set Ready (DSR)
          Bit6 Ring Indicator (RI)
          Bit7 Receive Line Signal Detect (RLSD)
-         
+
         Byte 1: Line Status
          Bit0 Data Ready (DR)
          Bit1 Overrun Error (OE)
@@ -3598,10 +3598,10 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  {Get Serial}
  Serial:=PFTDISerialDevice(Request.DriverData);
- if Serial <> nil then 
+ if Serial <> nil then
   begin
    {Acquire the Lock}
    if MutexLock(Serial.Serial.Lock) = ERROR_SUCCESS then
@@ -3609,19 +3609,19 @@ begin
      try
       {Update Statistics}
       Inc(Serial.ReceiveComplete);
- 
+
       {Check State}
       if Serial.Serial.SerialState = SERIAL_STATE_CLOSING then
        begin
         {$IFDEF FTDISERIAL_DEBUG}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'FTDI Serial: Close pending, setting receive request status to USB_STATUS_DEVICE_DETACHED');
         {$ENDIF}
-      
+
         {Update Request}
         Request.Status:=USB_STATUS_DEVICE_DETACHED;
        end;
- 
-      {Check Result} 
+
+      {Check Result}
       if Request.Status = USB_STATUS_SUCCESS then
        begin
         {$IFDEF FTDISERIAL_DEBUG}
@@ -3630,14 +3630,14 @@ begin
 
         {Update Status}
         Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus and not(SERIAL_STATUS_BREAK_ERROR or SERIAL_STATUS_PARITY_ERROR or SERIAL_STATUS_FRAMING_ERROR or SERIAL_STATUS_OVERRUN_ERROR);
-        
+
         {Check Size}
         if Request.ActualSize > 0 then
          begin
           {Setup Count and Size}
           Size:=Request.ActualSize;
           Count:=0;
-          
+
           {Setup Start}
           Start:=0;
           while Start < Size do
@@ -3648,7 +3648,7 @@ begin
              begin
               {Get Buffer}
               Buffer:=PByte(Request.Data + Start);
-              
+
               {Get Modem Status}
               Status:=Buffer[0];
               if (Status and FTDISERIAL_RECEIVE_STATUS0_MASK) <> (Serial.LastStatus and FTDISERIAL_RECEIVE_STATUS0_MASK) then
@@ -3656,22 +3656,22 @@ begin
                 {Set Status}
                 Serial.LastStatus:=Status;
                 Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus and not(SERIAL_STATUS_CTS or SERIAL_STATUS_DSR or SERIAL_STATUS_RI);
-                
+
                 {Update Status}
                 if (Status and FTDISERIAL_RECEIVE_STATUS0_CTS) <> 0 then
                  begin
                   Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_CTS;
                  end;
-                if (Status and FTDISERIAL_RECEIVE_STATUS0_DSR) <> 0 then 
+                if (Status and FTDISERIAL_RECEIVE_STATUS0_DSR) <> 0 then
                  begin
                   Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_DSR;
                  end;
-                if (Status and FTDISERIAL_RECEIVE_STATUS0_RI) <> 0 then 
+                if (Status and FTDISERIAL_RECEIVE_STATUS0_RI) <> 0 then
                  begin
                   Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_RI;
                  end;
                end;
-               
+
               {Get Line Status}
               Status:=Buffer[1];
               if (Status and FTDISERIAL_RECEIVE_STATUS1_MASK) <> 0 then
@@ -3680,65 +3680,65 @@ begin
                 if (Status and FTDISERIAL_RECEIVE_STATUS1_OE) <> 0 then
                  begin
                   Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_OVERRUN_ERROR;
-                  
-                  if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'FTDI Serial: Overrun error on receive character'); 
+
+                  if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'FTDI Serial: Overrun error on receive character');
                  end;
                 if (Status and FTDISERIAL_RECEIVE_STATUS1_PE) <> 0 then
                  begin
                   Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_PARITY_ERROR;
-                  
-                  if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'FTDI Serial: Parity error on receive character'); 
+
+                  if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'FTDI Serial: Parity error on receive character');
                  end;
                 if (Status and FTDISERIAL_RECEIVE_STATUS1_FE) <> 0 then
                  begin
                   Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_FRAMING_ERROR;
-                  
-                  if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'FTDI Serial: Framing error on receive character'); 
+
+                  if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'FTDI Serial: Framing error on receive character');
                  end;
                 if (Status and FTDISERIAL_RECEIVE_STATUS1_BI) <> 0 then
                  begin
                   Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_BREAK_ERROR;
-                  
-                  if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'FTDI Serial: Break error on receive character'); 
+
+                  if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'FTDI Serial: Break error on receive character');
                  end;
                end;
-               
+
               {Update Length}
               Dec(Len,2);
-              
+
               {Check Length}
               if Len > 0 then
                begin
                 {Setup Offset}
                 Offset:=0;
-                
+
                 {Update Buffer}
                 Inc(Buffer,2);
-                
+
                 {Start Write}
                 Data:=SerialBufferWriteStart(@Serial.Serial.Receive,Available);
                 while (Data <> nil) and (Available > 0) and (Len > 0) do
                  begin
                   {Get Added}
                   Added:=Min(Len,Available);
-                
+
                   {Copy Data}
                   System.Move(Pointer(Buffer + Offset)^,Data^,Added);
-                
+
                   {Update Count}
                   Inc(Count,Added);
-                  
+
                   {Update Length and Offset}
                   Dec(Len,Added);
                   Inc(Offset,Added);
-      
+
                   {Complete Write}
                   SerialBufferWriteComplete(@Serial.Serial.Receive,Added);
-               
+
                   {Start Write}
                   Data:=SerialBufferWriteStart(@Serial.Serial.Receive,Available);
-                 end; 
-               
+                 end;
+
                 {Check Length}
                 if Len > 0 then
                  begin
@@ -3749,37 +3749,37 @@ begin
             else
              begin
               if USB_LOG_ENABLED then USBLogError(Request.Device,'FTDI Serial: Malformed packet (Len=' + IntToStr(Len) + ')');
-              
+
               {Update Statistics}
-              Inc(Serial.Serial.ReceiveErrors); 
+              Inc(Serial.Serial.ReceiveErrors);
              end;
-            
+
             {Update Start}
             Inc(Start,Serial.ReceiveSize)
            end;
-          
+
           {Check Count}
           if Count > 0 then
            begin
             {Set Event}
             EventSet(Serial.Serial.Receive.Wait);
            end;
-         end; 
+         end;
        end
-      else 
+      else
        begin
         if USB_LOG_ENABLED then USBLogError(Request.Device,'FTDI Serial: Failed receive request (Status=' + USBStatusToString(Request.Status) + ')');
-   
+
         {Update Statistics}
-        Inc(Serial.Serial.ReceiveErrors); 
+        Inc(Serial.Serial.ReceiveErrors);
        end;
- 
+
       {Reset Active}
       Serial.ReceiveActive:=False;
- 
+
       {Update Pending}
-      Dec(Serial.PendingCount); 
-        
+      Dec(Serial.PendingCount);
+
       {Check State}
       if Serial.Serial.SerialState = SERIAL_STATE_CLOSING then
        begin
@@ -3792,19 +3792,19 @@ begin
             {$IFDEF FTDISERIAL_DEBUG}
             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'FTDI Serial: Close pending, sending message to waiter thread (Thread=' + IntToHex(Serial.WaiterThread,8) + ')');
             {$ENDIF}
-            
+
             {Send Message}
             FillChar(Message,SizeOf(TMessage),0);
             ThreadSendMessage(Serial.WaiterThread,Message);
             Serial.WaiterThread:=INVALID_HANDLE_VALUE;
-           end; 
+           end;
          end;
        end
       else
-       begin      
+       begin
         {Start Receive}
         FTDISerialReceiveStart(Request);
-       end;  
+       end;
      finally
       {Release the Lock}
       MutexUnlock(Serial.Serial.Lock);
@@ -3818,12 +3818,12 @@ begin
  else
   begin
    if USB_LOG_ENABLED then USBLogError(Request.Device,'FTDI Serial: Receive request invalid');
-  end;    
+  end;
 end;
-        
+
 {==============================================================================}
 
-procedure FTDISerialReceiveComplete(Request:PUSBRequest); 
+procedure FTDISerialReceiveComplete(Request:PUSBRequest);
 {Called when a USB request from the FTDI Serial bulk IN endpoint completes}
 {Request: The USB request which has completed}
 {Note: Request is passed to worker thread for processing to prevent blocking the USB completion}
@@ -3831,13 +3831,13 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  WorkerSchedule(0,TWorkerTask(FTDISerialReceiveWorker),Request,nil)
 end;
 
 {==============================================================================}
 
-procedure FTDISerialTransmitStart(Request:PUSBRequest);  
+procedure FTDISerialTransmitStart(Request:PUSBRequest);
 {Called to continue transmission of data from the transmit buffer}
 {Request: The USB transmit request to use}
 
@@ -3845,7 +3845,7 @@ procedure FTDISerialTransmitStart(Request:PUSBRequest);
         Bit0 1  Reserved must be 1
         Bit1 0  Reserved must be 0
         Bit2..7 Length of message (not including this byte)}
-        
+
 {Note: Caller must hold the lock on the serial device}
 var
  Len:LongWord;
@@ -3864,7 +3864,7 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  {Get Serial}
  Serial:=PFTDISerialDevice(Request.DriverData);
  if Serial = nil then Exit;
@@ -3886,40 +3886,40 @@ begin
      Len:=Min(Size - Start,Serial.TransmitSize) - 1;
      Current:=0;
      Offset:=Start;
-     
+
      {Start Read}
      Data:=SerialBufferReadStart(@Serial.Serial.Transmit,Available);
      while (Data <> nil) and (Available > 0) and (Len > 0) do
       begin
        {Get Removed}
        Removed:=Min(Len,Available);
-       
+
        {Copy Data}
        System.Move(Data^,Pointer(Request.Data + Offset + 1)^,Removed);
-       
+
        {Update Current}
        Inc(Current,Removed);
-       
+
        {Update Len and Offset}
        Dec(Len,Removed);
        Inc(Offset,Removed);
-       
+
        {Complete Read}
        SerialBufferReadComplete(@Serial.Serial.Transmit,Removed);
-       
+
        {Start Read}
        Data:=SerialBufferReadStart(@Serial.Serial.Transmit,Available);
-      end; 
+      end;
 
      {Check Current}
      if Current = 0 then Break;
-     
+
      {Set Length}
      Buffer[Start]:=(Current shl 2) or 1;
-     
+
      {Update Count}
      Inc(Count,Current + 1);
-     
+
      {Update Start}
      Inc(Start,Serial.TransmitSize)
     end;
@@ -3932,62 +3932,62 @@ begin
     begin
      {Get Removed}
      Removed:=Min(Size,Available);
-   
+
      {Copy Data}
      System.Move(Data^,Pointer(Request.Data + Offset)^,Removed);
-   
+
      {Update Count}
      Inc(Count,Removed);
-   
+
      {Update Size and Offset}
      Dec(Size,Removed);
      Inc(Offset,Removed);
-   
+
      {Complete Read}
      SerialBufferReadComplete(@Serial.Serial.Transmit,Removed);
-   
+
      {Start Read}
      Data:=SerialBufferReadStart(@Serial.Serial.Transmit,Available);
-    end; 
+    end;
   end;
- 
+
  {Check Count}
  if Count > 0 then
   begin
    {Set Event}
    EventSet(Serial.Serial.Transmit.Wait);
-  
+
    {Update Request}
    Request.Size:=Count;
-   
+
    {Update Pending}
    Inc(Serial.PendingCount);
- 
+
    {Set Active}
    Serial.TransmitActive:=True;
-   
+
    {$IFDEF FTDISERIAL_DEBUG}
    if USB_LOG_ENABLED then USBLogDebug(Request.Device,'FTDI Serial: Submitting transmit request');
    {$ENDIF}
-   
+
    {Submit Request}
    Status:=USBRequestSubmit(Request);
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(Request.Device,'FTDI Serial: Failed to submit transmit request: ' + USBStatusToString(Status));
-   
+
      {Reset Active}
      Serial.TransmitActive:=False;
-   
+
      {Update Pending}
      Dec(Serial.PendingCount);
     end;
-  end; 
+  end;
 end;
- 
+
 {==============================================================================}
 
-procedure FTDISerialTransmitWorker(Request:PUSBRequest); 
+procedure FTDISerialTransmitWorker(Request:PUSBRequest);
 {Called (by a Worker thread) to process a completed USB request to the FTDI Serial bulk OUT endpoint}
 {Request: The USB request which has completed}
 var
@@ -3997,10 +3997,10 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  {Get Serial}
  Serial:=PFTDISerialDevice(Request.DriverData);
- if Serial <> nil then 
+ if Serial <> nil then
   begin
    {Acquire the Lock}
    if MutexLock(Serial.Serial.Lock) = ERROR_SUCCESS then
@@ -4015,32 +4015,32 @@ begin
         {$IFDEF FTDISERIAL_DEBUG}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'FTDI Serial: Close pending, setting transmit request status to USB_STATUS_DEVICE_DETACHED');
         {$ENDIF}
-      
+
         {Update Request}
         Request.Status:=USB_STATUS_DEVICE_DETACHED;
        end;
-      
-      {Check Result} 
+
+      {Check Result}
       if Request.Status = USB_STATUS_SUCCESS then
        begin
         {$IFDEF FTDISERIAL_DEBUG}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'FTDI Serial: Transmit complete (Size=' + IntToStr(Request.Size) + ' Actual Size=' + IntToStr(Request.ActualSize) + ')');
         {$ENDIF}
        end
-      else 
+      else
        begin
         if USB_LOG_ENABLED then USBLogError(Request.Device,'FTDI Serial: Failed transmit request (Status=' + USBStatusToString(Request.Status) + ')');
-        
+
         {Update Statistics}
-        Inc(Serial.Serial.TransmitErrors); 
+        Inc(Serial.Serial.TransmitErrors);
        end;
-      
+
       {Reset Active}
       Serial.TransmitActive:=False;
-      
+
       {Update Pending}
-      Dec(Serial.PendingCount); 
-      
+      Dec(Serial.PendingCount);
+
       {Check State}
       if Serial.Serial.SerialState = SERIAL_STATE_CLOSING then
        begin
@@ -4053,19 +4053,19 @@ begin
             {$IFDEF FTDISERIAL_DEBUG}
             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'FTDI Serial: Close pending, sending message to waiter thread (Thread=' + IntToHex(Serial.WaiterThread,8) + ')');
             {$ENDIF}
-            
+
             {Send Message}
             FillChar(Message,SizeOf(TMessage),0);
             ThreadSendMessage(Serial.WaiterThread,Message);
             Serial.WaiterThread:=INVALID_HANDLE_VALUE;
-           end; 
+           end;
          end;
        end
       else
        begin
         {Start Transmit}
         FTDISerialTransmitStart(Request);
-       end;       
+       end;
      finally
       {Release the Lock}
       MutexUnlock(Serial.Serial.Lock);
@@ -4079,12 +4079,12 @@ begin
  else
   begin
    if USB_LOG_ENABLED then USBLogError(Request.Device,'FTDI Serial: Transmit request invalid');
-  end;    
+  end;
 end;
 
 {==============================================================================}
 
-procedure FTDISerialTransmitComplete(Request:PUSBRequest); 
+procedure FTDISerialTransmitComplete(Request:PUSBRequest);
 {Called when a USB request to the FTDI Serial bulk OUT endpoint completes}
 {Request: The USB request which has completed}
 {Note: Request is passed to worker thread for processing to prevent blocking the USB completion}
@@ -4092,23 +4092,23 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  WorkerSchedule(0,TWorkerTask(FTDISerialTransmitWorker),Request,nil)
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {FTDI Serial Helper Functions}
 function FTDISerialCheckDevice(Device:PUSBDevice):LongWord;
 {Check the Vendor and Device ID against the supported devices}
 {Device: USB device to check}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
  Count:Integer;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
@@ -4121,7 +4121,7 @@ begin
      Exit;
     end;
   end;
- 
+
  Result:=USB_STATUS_DEVICE_UNSUPPORTED;
 end;
 
@@ -4130,19 +4130,19 @@ end;
 function FTDISerialCheckDeviceAndInterface(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 {Check the Device and Interface against the supported devices}
 {Device: USB device to check}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
  Count:Integer;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
  {Check Interface}
  if Interrface = nil then Exit;
- 
+
  {Check Device and Interface IDs}
  for Count:=0 to FTDISERIAL_DEVICE_INTERFACE_ID_COUNT - 1 do
   begin
@@ -4152,7 +4152,7 @@ begin
       begin
        Result:=USB_STATUS_SUCCESS;
        Exit;
-      end; 
+      end;
     end;
   end;
 
@@ -4165,29 +4165,29 @@ begin
       begin
        Result:=USB_STATUS_SUCCESS;
        Exit;
-      end; 
+      end;
     end;
   end;
-  
+
  Result:=USB_STATUS_DEVICE_UNSUPPORTED;
 end;
 
 {==============================================================================}
- 
+
 function FTDISerialPatchDevice(Device:PUSBDevice;var Quirks:LongWord):LongWord;
 {Check the USB device for quirks information needed by the driver}
 {Device: USB device to check}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Setup Defaults}
  Quirks:=FTDISERIAL_QUIRK_NONE;
- 
+
  {Check Device ID}
  if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = FTDI_8U2232C_PID) then
   begin
@@ -4196,143 +4196,143 @@ begin
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = FTDI_HE_TIRA1_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_HE_TIRA1;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = FTDI_USB_UIRT_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_USB_UIRT;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = FTDI_TIAO_UMPA_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = FTDI_NT_ORIONLXM_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = FTDI_NDI_HUC_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_NDI_DEVICE;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = FTDI_NDI_SPECTRA_SCU_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_NDI_DEVICE;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = FTDI_NDI_FUTURE_2_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_NDI_DEVICE;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = FTDI_NDI_FUTURE_3_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_NDI_DEVICE;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = FTDI_NDI_AURORA_SCU_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_NDI_DEVICE;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = CYBER_CORTEX_AV_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = OLIMEX_VID) and (Device.Descriptor.idProduct = OLIMEX_ARM_USB_OCD_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = OLIMEX_VID) and (Device.Descriptor.idProduct = OLIMEX_ARM_USB_OCD_H_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FIC_VID) and (Device.Descriptor.idProduct = FIC_NEO1973_DEBUG_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = FTDI_OOCDLINK_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = LMI_LM3S_DEVEL_BOARD_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = LMI_LM3S_EVAL_BOARD_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = LMI_LM3S_ICDI_BOARD_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = FTDI_TURTELIZER_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = ADI_VID) and (Device.Descriptor.idProduct = ADI_GNICE_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = ADI_VID) and (Device.Descriptor.idProduct = ADI_GNICEPLUS_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = MARVELL_VID) and (Device.Descriptor.idProduct = MARVELL_SHEEVAPLUG_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = MARVELL_OPENRD_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = TI_XDS100V2_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = XVERVE_SIGNALYZER_ST_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = XVERVE_SIGNALYZER_SLITE_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = XVERVE_SIGNALYZER_SH2_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = XVERVE_SIGNALYZER_SH4_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = IONICS_VID) and (Device.Descriptor.idProduct = IONICS_PLUGCOMPUTER_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = QIHARDWARE_VID) and (Device.Descriptor.idProduct = MILKYMISTONE_JTAGSERIAL_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = ST_VID) and (Device.Descriptor.idProduct = ST_STMCLT_2232_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
-  end 
+  end
  else if (Device.Descriptor.idVendor = ST_VID) and (Device.Descriptor.idProduct = ST_STMCLT_4232_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_STMCLITE;
-  end 
+  end
  else if (Device.Descriptor.idVendor = FTDI_VID) and (Device.Descriptor.idProduct = FTDI_DISTORTEC_JTAG_LOCK_PICK_PID) then
   begin
    Quirks:=Quirks or FTDISERIAL_QUIRK_JTAG;
   end;
- 
+
  Result:=USB_STATUS_SUCCESS;
 end;
- 
+
 {==============================================================================}
- 
+
 function FTDISerialCheckJTAGDevice(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 {Check for the first port (interface) on JTAG adapters which is reserved for JTAG}
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
@@ -4345,7 +4345,7 @@ begin
      Exit;
     end;
   end;
-  
+
  Result:=USB_STATUS_SUCCESS;
 end;
 
@@ -4356,12 +4356,12 @@ function FTDISerialCheck8U2232CDevice(Device:PUSBDevice;Interrface:PUSBInterface
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
  //To Do //Check Manufacturer / Product (Exclude certain types) //See: ftdi_8u2232c_probe
- 
+
  {Check Interface}
  if Interrface <> nil then
   begin
@@ -4371,7 +4371,7 @@ begin
      Exit;
     end;
   end;
-  
+
  Result:=USB_STATUS_SUCCESS;
 end;
 
@@ -4383,7 +4383,7 @@ function FTDISerialCheckSTMCLiteDevice(Device:PUSBDevice;Interrface:PUSBInterfac
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
@@ -4396,7 +4396,7 @@ begin
      Exit;
     end;
   end;
-  
+
  Result:=USB_STATUS_SUCCESS;
 end;
 
@@ -4409,20 +4409,20 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {Get Device}
  Device:=PUSBDevice(Serial.Serial.Device.DeviceData);
  if Device = nil then Exit;
- 
+
  {Setup Defaults}
  Serial.BaudBase:=48000000 div 2;
- 
+
  {Get Version}
  Version:=WordLEToN(Device.Descriptor.bcdDevice);
- 
+
  {Check Interface Count}
  if Device.Configuration.Descriptor.bNumInterfaces > 1 then
   begin
@@ -4440,25 +4440,25 @@ begin
      Serial.Chip:=FTDISERIAL_CHIP_FT2232H;
      Serial.BaudBase:=120000000 div 2; {120MHz baud clock}
     end
-   else  
+   else
     begin
      {FT2232C}
      Serial.Chip:=FTDISERIAL_CHIP_FT2232C;
     end;
-    
+
    {Determine Interface Index}
    case Serial.SerialInterface.Descriptor.bInterfaceNumber of
     0:Serial.Index:=FTDISERIAL_INTERFACE_A;
     1:Serial.Index:=FTDISERIAL_INTERFACE_B;
     2:Serial.Index:=FTDISERIAL_INTERFACE_C;
     3:Serial.Index:=FTDISERIAL_INTERFACE_D;
-   end; 
-   
+   end;
+
    {Check Version}
    if Version < $0500 then
     begin
      if USB_LOG_ENABLED then USBLogInfo(Device,'FTDI Serial: bcdDevice value not valid for multi-interface device');
-    end; 
+    end;
   end
  else
   begin
@@ -4494,9 +4494,9 @@ begin
     begin
      {FT-X series}
      Serial.Chip:=FTDISERIAL_CHIP_FTX;
-    end;    
-  end;  
- 
+    end;
+  end;
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -4510,24 +4510,24 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {Get Device}
  Device:=PUSBDevice(Serial.Serial.Device.DeviceData);
  if Device = nil then Exit;
- 
+
  {Send Control Request}
  if USBControlRequestEx(Device,nil,FTDISERIAL_GET_LATENCY_TIMER_REQUEST,FTDISERIAL_GET_LATENCY_TIMER_REQUEST_TYPE,0,Serial.Index,@Value,SizeOf(Byte),FTDISERIAL_TIMEOUT,False) <> USB_STATUS_SUCCESS then
   begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Get Latency}
  Serial.Latency:=Value;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -4541,21 +4541,21 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {Get Device}
  Device:=PUSBDevice(Serial.Serial.Device.DeviceData);
  if Device = nil then Exit;
- 
+
  {Send Control Request}
  if USBControlRequestEx(Device,nil,FTDISERIAL_SET_LATENCY_TIMER_REQUEST,FTDISERIAL_SET_LATENCY_TIMER_REQUEST_TYPE,Serial.Latency,Serial.Index,nil,0,FTDISERIAL_TIMEOUT,False) <> USB_STATUS_SUCCESS then
   begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -4568,10 +4568,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {Get Device}
  Device:=PUSBDevice(Serial.Serial.Device.DeviceData);
  if Device = nil then Exit;
@@ -4582,7 +4582,7 @@ begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -4595,10 +4595,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {Get Device}
  Device:=PUSBDevice(Serial.Serial.Device.DeviceData);
  if Device = nil then Exit;
@@ -4609,11 +4609,11 @@ begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
- 
+
 {==============================================================================}
 
 function FTDISerialSetBaudRate(Serial:PFTDISerialDevice;Divisor:LongWord):LongWord;
@@ -4624,10 +4624,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {Get Device}
  Device:=PUSBDevice(Serial.Serial.Device.DeviceData);
  if Device = nil then Exit;
@@ -4635,21 +4635,21 @@ begin
  {Get Values}
  Value:=Divisor;
  Index:=Divisor shr 16;
- 
+
  {Check Type}
  case Serial.Chip of
   FTDISERIAL_CHIP_FT2232C,FTDISERIAL_CHIP_FT2232H,FTDISERIAL_CHIP_FT4232H,FTDISERIAL_CHIP_FT232H:begin
     Index:=(Index shl 8) or Serial.Index;
    end;
  end;
- 
+
  {Send Control Request}
  if USBControlRequestEx(Device,nil,FTDISERIAL_SET_BAUD_RATE_REQUEST,FTDISERIAL_SET_BAUD_RATE_REQUEST_TYPE,Value,Index,nil,0,FTDISERIAL_SHORT_TIMEOUT,False) <> USB_STATUS_SUCCESS then
   begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -4662,10 +4662,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {Get Device}
  Device:=PUSBDevice(Serial.Serial.Device.DeviceData);
  if Device = nil then Exit;
@@ -4676,7 +4676,7 @@ begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -4690,13 +4690,13 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Setup Defaults}
  Status:=0;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {Get Device}
  Device:=PUSBDevice(Serial.Serial.Device.DeviceData);
  if Device = nil then Exit;
@@ -4714,14 +4714,14 @@ begin
     Exit;
    end;
  end;
- 
+
  {Send Control Request}
  if USBControlRequestEx(Device,nil,FTDISERIAL_GET_MODEM_STATUS_REQUEST,FTDISERIAL_GET_MODEM_STATUS_REQUEST_TYPE,0,Serial.Index,@Status,Len,FTDISERIAL_TIMEOUT,False) <> USB_STATUS_SUCCESS then
   begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -4734,10 +4734,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {Get Device}
  Device:=PUSBDevice(Serial.Serial.Device.DeviceData);
  if Device = nil then Exit;
@@ -4748,11 +4748,11 @@ begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
- 
+
 {==============================================================================}
 
 function FTDISerialGetDivisor(Serial:PFTDISerialDevice;var BaudRate:LongWord):LongWord;
@@ -4763,34 +4763,34 @@ var
 begin
  {}
  Result:=LongWord(-1);
- 
+
  {Check Serial}
  if Serial = nil then Exit;
 
  {Setup Defaults}
  Divisor:=0;
- 
+
  {Check Baud}
  if BaudRate = 0 then BaudRate:=SERIAL_BAUD_RATE_STANDARD;
- 
+
  {Check Type}
  case Serial.Chip of
   FTDISERIAL_CHIP_SIO:begin
     {SIO}
     {Check Baud}
     case BaudRate of
-     300:Divisor:=FTDISERIAL_SIO_BAUD300; 
-     600:Divisor:=FTDISERIAL_SIO_BAUD600; 
-     1200:Divisor:=FTDISERIAL_SIO_BAUD1200; 
-     2400:Divisor:=FTDISERIAL_SIO_BAUD2400; 
-     4800:Divisor:=FTDISERIAL_SIO_BAUD4800; 
-     9600:Divisor:=FTDISERIAL_SIO_BAUD9600; 
-     19200:Divisor:=FTDISERIAL_SIO_BAUD19200; 
-     38400:Divisor:=FTDISERIAL_SIO_BAUD38400; 
-     57600:Divisor:=FTDISERIAL_SIO_BAUD57600;  
-     115200:Divisor:=FTDISERIAL_SIO_BAUD115200; 
+     300:Divisor:=FTDISERIAL_SIO_BAUD300;
+     600:Divisor:=FTDISERIAL_SIO_BAUD600;
+     1200:Divisor:=FTDISERIAL_SIO_BAUD1200;
+     2400:Divisor:=FTDISERIAL_SIO_BAUD2400;
+     4800:Divisor:=FTDISERIAL_SIO_BAUD4800;
+     9600:Divisor:=FTDISERIAL_SIO_BAUD9600;
+     19200:Divisor:=FTDISERIAL_SIO_BAUD19200;
+     38400:Divisor:=FTDISERIAL_SIO_BAUD38400;
+     57600:Divisor:=FTDISERIAL_SIO_BAUD57600;
+     115200:Divisor:=FTDISERIAL_SIO_BAUD115200;
     end;
-    
+
     {Check Divisor}
     if Divisor = 0 then
      begin
@@ -4812,7 +4812,7 @@ begin
       {Default to 9600}
       BaudRate:=9600;
       Divisor:=FTDISerialBaudToDivisor232AM(Serial,BaudRate);
-     end;     
+     end;
    end;
   FTDISERIAL_CHIP_FT232BM,FTDISERIAL_CHIP_FT2232C,FTDISERIAL_CHIP_FT232RL,FTDISERIAL_CHIP_FTX:begin
     {FT232BM / FT2232C / FT232RL / FT-X series}
@@ -4822,14 +4822,14 @@ begin
       {Get Device}
       Device:=PUSBDevice(Serial.Serial.Device.DeviceData);
       if Device = nil then Exit;
-      
+
       {Check Product Id}
       ProductId:=Device.Descriptor.idProduct;
       if ((ProductId = FTDI_NDI_HUC_PID) or (ProductId = FTDI_NDI_SPECTRA_SCU_PID) or (ProductId = FTDI_NDI_FUTURE_2_PID) or (ProductId = FTDI_NDI_FUTURE_3_PID) or (ProductId = FTDI_NDI_AURORA_SCU_PID)) and (BaudRate = 19200) then
        begin
         BaudRate:=1200000;
        end;
-      
+
       {Get Divisor}
       Divisor:=FTDISerialBaudToDivisor232BM(Serial,BaudRate);
      end
@@ -4838,7 +4838,7 @@ begin
       {Default to 9600}
       BaudRate:=9600;
       Divisor:=FTDISerialBaudToDivisor232BM(Serial,BaudRate);
-     end;     
+     end;
    end;
   FTDISERIAL_CHIP_FT2232H,FTDISERIAL_CHIP_FT4232H,FTDISERIAL_CHIP_FT232H:begin
     {FT2232H / FT4232H / FT232H}
@@ -4857,11 +4857,11 @@ begin
       {Default to 9600}
       BaudRate:=9600;
       Divisor:=FTDISerialBaudToDivisor232BM(Serial,BaudRate);
-     end;     
+     end;
    end;
  end;
 
- {Return Result} 
+ {Return Result}
  Result:=Divisor;
 end;
 
@@ -4875,17 +4875,17 @@ var
 begin
  {}
  Result:=LongWord(-1);
- 
+
  {Check Serial}
  if Serial = nil then Exit;
 
  {Check Baud}
  if BaudRate = 0 then Exit;
- 
+
  {Setup Defaults}
  Divisor:=0;
  BaudBase:=48000000;
- 
+
  {Get Divisor}
  Divisor3:=BaudBase div 2 div BaudRate;
  if (Divisor3 and $07) = $07 then Inc(Divisor3);
@@ -4909,7 +4909,7 @@ begin
    Divisor:=0;
   end;
 
- {Return Result} 
+ {Return Result}
  Result:=Divisor;
 end;
 
@@ -4920,29 +4920,29 @@ var
  Divisor:LongWord;
  Divisor3:LongWord;
  BaudBase:LongWord;
- 
+
 const
  DivisorFraction:array[0..7] of Byte = (0,3,2,4,1,5,6,7);
- 
+
 begin
  {}
  Result:=LongWord(-1);
- 
+
  {Check Serial}
  if Serial = nil then Exit;
 
  {Check Baud}
  if BaudRate = 0 then Exit;
- 
+
  {Setup Defaults}
  Divisor:=0;
  BaudBase:=48000000;
- 
+
  {Get Divisor}
  Divisor3:=BaudBase div 2 div BaudRate;
  Divisor:=Divisor3 shr 3;
  Divisor:=Divisor or (DivisorFraction[Divisor3 and $07] shl 14);
- 
+
  {Check Divisor (Special cases for highest baud rates)}
  if Divisor = 1 then
   begin
@@ -4952,8 +4952,8 @@ begin
   begin
    Divisor:=1;
   end;
- 
- {Return Result} 
+
+ {Return Result}
  Result:=Divisor;
 end;
 
@@ -4964,20 +4964,20 @@ var
  Divisor:LongWord;
  Divisor3:LongWord;
  BaudBase:LongWord;
- 
+
 const
  DivisorFraction:array[0..7] of Byte = (0,3,2,4,1,5,6,7);
- 
+
 begin
  {}
  Result:=LongWord(-1);
- 
+
  {Check Serial}
  if Serial = nil then Exit;
 
  {Check Baud}
  if BaudRate = 0 then Exit;
- 
+
  {Setup Defaults}
  Divisor:=0;
  BaudBase:=120000000;
@@ -4986,7 +4986,7 @@ begin
  Divisor3:=BaudBase * 8 div (BaudRate * 10);
  Divisor:=Divisor3 shr 3;
  Divisor:=Divisor or (DivisorFraction[Divisor3 and $07] shl 14);
- 
+
  {Check Divisor (Special cases for highest baud rates)}
  if Divisor = 1 then
   begin
@@ -4996,11 +4996,11 @@ begin
   begin
    Divisor:=1;
   end;
-  
+
  {Set this bit to turn off a divide by 2.5 on baud rate generator (This enables baud rates up to 12M but cannot go below 1200 with this bit set)}
  Divisor:=Divisor or $00020000;
- 
- {Return Result} 
+
+ {Return Result}
  Result:=Divisor;
 end;
 
@@ -5009,9 +5009,9 @@ end;
 
 initialization
  FTDISerialInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -5019,4 +5019,4 @@ finalization
 {==============================================================================}
 
 end.
-  
+

@@ -17,22 +17,22 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
- 
- 
+
+
 References
 ==========
 
- 
+
 User Datagram Protocol
 ======================
 
  Notes: UDP Checksum includes both Header and Data
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -48,13 +48,13 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,SysUtils,Classes,Network,Tr
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-  
+
 {==============================================================================}
 const
  {UDP specific constants}
  {Note: Some UDP definitions are in the Protocol or IP modules}
  UDP_PROTOCOL_NAME = 'UDP';
- 
+
  {UDP Constants}
  MIN_UDP_PACKET =  8;      {Not Counting Adapter and Transport Header}
  MAX_UDP_PACKET =  8192;   {Not Counting Adapter and Transport Header}
@@ -73,7 +73,7 @@ const
 
  UDP_PORT_START = 49152;    {First dynamic port (Previously 1024)} {As per IANA assignment}
  UDP_PORT_STOP  = 65534;    {Last dynamic port (Previously 5000)}  {Short of IANA assignment to allow for rollover}
-  
+
 {==============================================================================}
 type
  {UDP specific types}
@@ -87,12 +87,12 @@ type
  end;
 
  PUDPDatagram = ^TUDPDatagram;
- TUDPDatagram = record   {8 Bytes} {Used by UDPBuffer} 
+ TUDPDatagram = record   {8 Bytes} {Used by UDPBuffer}
   Size:Word;             {Word to keep size even}
   RemotePort:Word;
   Next:PUDPDatagram;
  end; {Followed by RemoteAddress (4 or 16 Bytes)}
-  
+
 {==============================================================================}
 type
  {UDP specific classes}
@@ -152,10 +152,10 @@ type
    {Public Methods}
    function AddTransport(ATransport:TNetworkTransport):Boolean; override;
    function RemoveTransport(ATransport:TNetworkTransport):Boolean; override;
-   
+
    function FindSocket(AFamily,AStruct,AProtocol:Word;ALocalAddress,ARemoteAddress:Pointer;ALocalPort,ARemotePort:Word;ABroadcast,AListen,ALock:Boolean;AState:LongWord):TProtocolSocket; override;
    procedure FlushSockets(All:Boolean); override;
-   
+
    function StartProtocol:Boolean; override;
    function StopProtocol:Boolean; override;
    function ProcessProtocol:Boolean; override;
@@ -169,9 +169,9 @@ type
    destructor Destroy; override;
   private
    {Internal Variables}
-   
+
    {UDP Layer Variables}
-   
+
    {Data Layer Variables}
    FRecvData:TUDPBuffer;
   public
@@ -193,11 +193,11 @@ type
    constructor Create;
   private
    {Internal Variables}
-   
-   
+
+
   public
    {Status Variables}
-   
+
  end;
 
  TUDPBuffer = class(TSocketBuffer)
@@ -246,11 +246,11 @@ type
    {Public Properties}
    property NoChecksum:Boolean read GetNoChecksum write SetNoChecksum;
  end;
-  
+
 {==============================================================================}
 {var}
  {UDP specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure UDPInit;
@@ -266,7 +266,7 @@ function GetUDPDataLength(AFamily:Word;ABuffer:Pointer):Word;
 
 function ChecksumUDPRecv(AFamily:Word;APseudo:PIPPseudo;ABuffer:Pointer;AOffset,ALength:Word):Word;
 function ChecksumUDPSend(AFamily:Word;APseudo:PIPPseudo;AHeader:PUDPHeader;AData:Pointer;ALength:Word):Word;
-  
+
 {==============================================================================}
 {UDP Helper Functions}
 
@@ -325,21 +325,21 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: PacketHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Dest}
  {if ADest = nil then Exit;} {Not Used}
- 
+
  {Check Source}
- {if ASource = nil then Exit;} {Not Used} 
-  
+ {if ASource = nil then Exit;} {Not Used}
+
  {Check Packet}
  if APacket = nil then Exit;
- 
+
  {Get Transport}
  Transport:=TUDPProtocolTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
@@ -351,13 +351,13 @@ begin
   {Check Transport Family}
   case Transport.Transport.Family of
    AF_INET:begin
-     {Get Header}  
+     {Get Header}
      IP:=PIPHeader(APacket);
-    
+
      {$IFDEF UDP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  Protocol = ' + ProtocolToString(Transport.Protocol));
      {$ENDIF}
-    
+
      {Check Protocol}
      case Transport.Protocol of
       IPPROTO_UDP:begin
@@ -366,16 +366,16 @@ begin
          begin
           {Get Header}
           UDP:=PUDPHeader(PtrUInt(IP) + GetUDPHeaderOffset(AF_INET,IP));
-         
+
           {Set the Ports to Host order}
           UDP.DestPort:=WordBEtoN(UDP.DestPort);
           UDP.SourcePort:=WordBEtoN(UDP.SourcePort);
-         
+
           {$IFDEF UDP_DEBUG}
           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  DestPort = ' + IntToStr(UDP.DestPort));
           if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  SourcePort = ' + IntToStr(UDP.SourcePort));
           {$ENDIF}
-         
+
           {Check for a Connected Socket}
           Socket:=TUDPSocket(FindSocket(AF_INET,SOCK_DGRAM,IPPROTO_UDP,@IP.DestIP,@IP.SourceIP,UDP.DestPort,UDP.SourcePort,ABroadcast,False,True,NETWORK_LOCK_READ));
           if Socket = nil then
@@ -388,20 +388,20 @@ begin
             {Get the Data Offset}
             Offset:=GetUDPDataOffset(AF_INET,IP);
             Length:=GetUDPDataLength(AF_INET,IP);
-            
+
             {$IFDEF UDP_DEBUG}
             if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  Offset = ' + IntToStr(Offset) + ' Length = ' + IntToStr(Length));
             {$ENDIF}
-            
+
             {Write the Data into the Receive Buffer}
             Socket.RecvData.WriteBuffer(Pointer(PtrUInt(IP) + Offset)^,Length,@IP.SourceIP,@UDP.SourcePort);
-            
+
             {Signal the Event}
             Socket.SignalChange;
-            
+
             {Return True even if the Write failed (eg Buffer is Full, Socket Shutdown etc)}
             Result:=True;
-           
+
             {Unlock Socket}
             Socket.ReaderUnlock;
            end
@@ -413,7 +413,7 @@ begin
               {Set the Ports to Network order}
               UDP.DestPort:=WordNtoBE(UDP.DestPort);
               UDP.SourcePort:=WordNtoBE(UDP.SourcePort);
-              
+
               {Send Control}
               Result:=TIPTransport(Transport.Transport).SendControl(@IP.DestIP,@IP.SourceIP,IPPROTO_ICMP,ICMP_UNREACH,ICMP_UNREACH_PORT,nil,IP,ASize);
              end;
@@ -431,36 +431,36 @@ begin
          begin
           {Get Header}
           ICMP:=PICMPHeader(PtrUInt(IP) + GetICMPHeaderOffset(AF_INET,IP));
-          
+
           {Check for a Type that we handle}
           case ICMP.Unused.ICMPType of
            ICMP_UNREACH:begin
              {$IFDEF UDP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  ICMP Unreach');
              {$ENDIF}
-             
+
              {Check the Protocol of the original packet}
              if ICMP.Unreach.IP.Protocol <> IPPROTO_UDP then Exit;
-             
+
              {Check that we sent the original packet}
              if TIPTransport(Transport.Transport).GetAddressByAddress(InAddrToHost(ICMP.Unreach.IP.SourceIP),False,NETWORK_LOCK_NONE) = nil then Exit;
-             
+
              {Check that the Dest is not Broadcast}
              if ABroadcast then Exit;
-             
+
              {Find the Socket}
              Result:=True;
-             
+
              {Set the Addresses to Host order}
              IP:=@ICMP.Unreach.IP;
              IP.DestIP:=InAddrToHost(IP.DestIP);
              IP.SourceIP:=InAddrToHost(IP.SourceIP);
-             
+
              {Set the Ports to Host order}
              UDP:=@ICMP.Unreach.Data;
              UDP.DestPort:=WordBEtoN(UDP.DestPort);
              UDP.SourcePort:=WordBEtoN(UDP.SourcePort);
-             
+
              {Check for a Connected Socket}
              Socket:=TUDPSocket(FindSocket(AF_INET,SOCK_DGRAM,IPPROTO_UDP,@IP.SourceIP,@IP.DestIP,UDP.SourcePort,UDP.DestPort,ABroadcast,False,True,NETWORK_LOCK_READ));
              if Socket = nil then
@@ -469,14 +469,14 @@ begin
                Socket:=TUDPSocket(FindSocket(AF_INET,SOCK_DGRAM,IPPROTO_UDP,@IP.SourceIP,@IP.DestIP,UDP.SourcePort,UDP.DestPort,ABroadcast,True,True,NETWORK_LOCK_READ));
               end;
              if Socket = nil then Exit;
-             
+
              {Set the Socket Error}
              case ICMP.Unreach.Code of
               ICMP_UNREACH_NET:Socket.SocketError:=WSAENETUNREACH;
               ICMP_UNREACH_HOST:Socket.SocketError:=WSAEHOSTUNREACH;
               ICMP_UNREACH_PROTOCOL,ICMP_UNREACH_PORT:Socket.SocketError:=WSAECONNREFUSED;
              end;
-             
+
              {Unlock Socket}
              Socket.ReaderUnlock;
             end;
@@ -484,29 +484,29 @@ begin
              {$IFDEF UDP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  ICMP Source Quench');
              {$ENDIF}
-             
+
              {Check the Protocol of the original packet}
              if ICMP.Quench.IP.Protocol <> IPPROTO_UDP then Exit;
-             
+
              {Check that we sent the original packet}
              if TIPTransport(Transport.Transport).GetAddressByAddress(InAddrToHost(ICMP.Quench.IP.SourceIP),False,NETWORK_LOCK_NONE) = nil then Exit;
-             
+
              {Check that the Dest is not Broadcast}
              if ABroadcast then Exit;
-            
+
              {Find the Socket}
              Result:=True;
-            
+
              {Set the Addresses to Host order}
              IP:=@ICMP.Quench.IP;
              IP.DestIP:=InAddrToHost(IP.DestIP);
              IP.SourceIP:=InAddrToHost(IP.SourceIP);
-            
+
              {Set the Ports to Host order}
              UDP:=@ICMP.Quench.Data;
              UDP.DestPort:=WordBEtoN(UDP.DestPort);
              UDP.SourcePort:=WordBEtoN(UDP.SourcePort);
-             
+
              {Check for a Connected Socket}
              Socket:=TUDPSocket(FindSocket(AF_INET,SOCK_DGRAM,IPPROTO_UDP,@IP.SourceIP,@IP.DestIP,UDP.SourcePort,UDP.DestPort,ABroadcast,False,True,NETWORK_LOCK_READ));
              if Socket = nil then
@@ -515,10 +515,10 @@ begin
                Socket:=TUDPSocket(FindSocket(AF_INET,SOCK_DGRAM,IPPROTO_UDP,@IP.SourceIP,@IP.DestIP,UDP.SourcePort,UDP.DestPort,ABroadcast,True,True,NETWORK_LOCK_READ));
               end;
              if Socket = nil then Exit;
-            
+
              {Set the Socket Error}
              Socket.SocketError:=WSAECONNRESET; {Not Really}
-             
+
              {Unlock Socket}
              Socket.ReaderUnlock;
             end;
@@ -526,29 +526,29 @@ begin
              {$IFDEF UDP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  ICMP Expire');
              {$ENDIF}
-             
+
              {Check the Protocol of the original packet}
              if ICMP.Expire.IP.Protocol <> IPPROTO_UDP then Exit;
-            
+
              {Check that we sent the original packet}
              if TIPTransport(Transport.Transport).GetAddressByAddress(InAddrToHost(ICMP.Expire.IP.SourceIP),False,NETWORK_LOCK_NONE) = nil then Exit;
-             
+
              {Check that the Dest is not Broadcast}
              if ABroadcast then Exit;
-             
+
              {Find the Socket}
              Result:=True;
-             
+
              {Set the Addresses to Host order}
              IP:=@ICMP.Expire.IP;
              IP.DestIP:=InAddrToHost(IP.DestIP);
              IP.SourceIP:=InAddrToHost(IP.SourceIP);
-            
+
              {Set the Ports to Host order}
              UDP:=@ICMP.Expire.Data;
              UDP.DestPort:=WordBEtoN(UDP.DestPort);
              UDP.SourcePort:=WordBEtoN(UDP.SourcePort);
-             
+
              {Check for a Connected Socket}
              Socket:=TUDPSocket(FindSocket(AF_INET,SOCK_DGRAM,IPPROTO_UDP,@IP.SourceIP,@IP.DestIP,UDP.SourcePort,UDP.DestPort,ABroadcast,False,True,NETWORK_LOCK_READ));
              if Socket = nil then
@@ -557,10 +557,10 @@ begin
                Socket:=TUDPSocket(FindSocket(AF_INET,SOCK_DGRAM,IPPROTO_UDP,@IP.SourceIP,@IP.DestIP,UDP.SourcePort,UDP.DestPort,ABroadcast,True,True,NETWORK_LOCK_READ));
               end;
              if Socket = nil then Exit;
-            
+
              {Set the Socket Error}
              Socket.SocketError:=WSAETIMEDOUT; {Not Really}
-            
+
              {Unlock Socket}
              Socket.ReaderUnlock;
             end;
@@ -568,29 +568,29 @@ begin
              {$IFDEF UDP_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  ICMP Param Problem');
              {$ENDIF}
-             
+
              {Check the Protocol of the original packet}
              if ICMP.Param.IP.Protocol <> IPPROTO_UDP then Exit;
-            
+
              {Check that we sent the original packet}
              if TIPTransport(Transport.Transport).GetAddressByAddress(InAddrToHost(ICMP.Param.IP.SourceIP),False,NETWORK_LOCK_NONE) = nil then Exit;
-             
+
              {Check that the Dest is not Broadcast}
              if ABroadcast then Exit;
-             
+
              {Find the Socket}
              Result:=True;
-             
+
              {Set the Addresses to Host order}
              IP:=@ICMP.Param.IP;
              IP.DestIP:=InAddrToHost(IP.DestIP);
              IP.SourceIP:=InAddrToHost(IP.SourceIP);
-             
+
              {Set the Ports to Host order}
              UDP:=@ICMP.Param.Data;
              UDP.DestPort:=WordBEtoN(UDP.DestPort);
              UDP.SourcePort:=WordBEtoN(UDP.SourcePort);
-             
+
              {Check for a Connected Socket}
              Socket:=TUDPSocket(FindSocket(AF_INET,SOCK_DGRAM,IPPROTO_UDP,@IP.SourceIP,@IP.DestIP,UDP.SourcePort,UDP.DestPort,ABroadcast,False,True,NETWORK_LOCK_READ));
              if Socket = nil then
@@ -599,10 +599,10 @@ begin
                Socket:=TUDPSocket(FindSocket(AF_INET,SOCK_DGRAM,IPPROTO_UDP,@IP.SourceIP,@IP.DestIP,UDP.SourcePort,UDP.DestPort,ABroadcast,True,True,NETWORK_LOCK_READ));
               end;
              if Socket = nil then Exit;
-             
+
              {Set the Socket Error}
              Socket.SocketError:=WSAECONNABORTED; {Not Really}
-             
+
              {Unlock Socket}
              Socket.ReaderUnlock;
             end;
@@ -612,15 +612,15 @@ begin
      end;
     end;
    AF_INET6:begin
-     {Get Header}  
+     {Get Header}
      IP6:=PIP6Header(APacket);
-   
+
      //To Do //Extensions
-     
+
      {$IFDEF UDP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  Protocol = ' + ProtocolToString(Transport.Protocol));
      {$ENDIF}
-   
+
      {Check Protocol}
      case Transport.Protocol of
       IPPROTO_UDP:begin
@@ -629,11 +629,11 @@ begin
          begin
           {Get Header}
           UDP:=PUDPHeader(PtrUInt(IP6) + GetUDPHeaderOffset(AF_INET6,IP6));
-         
+
           {Set the Ports to Host order}
           UDP.DestPort:=WordBEtoN(UDP.DestPort);
           UDP.SourcePort:=WordBEtoN(UDP.SourcePort);
-      
+
           {Check for a Connected Socket}
           Socket:=TUDPSocket(FindSocket(AF_INET6,SOCK_DGRAM,IPPROTO_UDP,@IP6.DestIP,@IP6.SourceIP,UDP.DestPort,UDP.SourcePort,ABroadcast,False,True,NETWORK_LOCK_READ));
           if Socket = nil then
@@ -646,20 +646,20 @@ begin
             {Get the Data Offset}
             Offset:=GetUDPDataOffset(AF_INET6,IP6);
             Length:=GetUDPDataLength(AF_INET6,IP6);
-            
+
             {$IFDEF UDP_DEBUG}
             if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  Offset = ' + IntToStr(Offset) + ' Length = ' + IntToStr(Length));
             {$ENDIF}
-            
+
             {Write the Data into the Receive Buffer}
             Socket.RecvData.WriteBuffer(Pointer(PtrUInt(IP6) + Offset)^,Length,@IP6.SourceIP,@UDP.SourcePort);
-            
+
             {Signal the Event}
             Socket.SignalChange;
-            
+
             {Return True even if the Write failed (eg Buffer is Full, Socket Shutdown etc)}
             Result:=True;
-           
+
             {Unlock Socket}
             Socket.ReaderUnlock;
            end
@@ -671,7 +671,7 @@ begin
               {Set the Ports to Network order}
               UDP.DestPort:=WordNtoBE(UDP.DestPort);
               UDP.SourcePort:=WordNtoBE(UDP.SourcePort);
-              
+
               {Send Control}
               Result:=TIP6Transport(Transport.Transport).SendControl(@IP6.DestIP,@IP6.SourceIP,IPPROTO_ICMP,ICMP_UNREACH,ICMP_UNREACH_PORT,nil,IP6,ASize);
              end;
@@ -689,11 +689,11 @@ begin
          begin
           {Get Header}
           ICMP6:=PICMP6Header(PtrUInt(IP6) + GetICMP6HeaderOffset(AF_INET6,IP6));
-        
+
           {Check for a Type that we handle}
-          
+
           //To do
-          
+
          end;
        end;
      end;
@@ -701,7 +701,7 @@ begin
   end;
  finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -715,17 +715,17 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: OpenPort');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  Port = '  + IntToStr(APort));
   {$ENDIF}
-  
+
   {Check Socket}
   if ASocket = nil then Exit;
-  
+
   {Check for Any Port}
   if APort <> IPPORT_ANY then
    begin
@@ -742,39 +742,39 @@ begin
         begin
          {Add Socket}
          Port.Sockets.Add(ASocket);
-         
+
          {Set Local Port}
          ASocket.ProtocolState.LocalPort:=APort;
-         
+
          {Return Result}
          Result:=True;
         end;
-        
+
        {Unlock Port}
-       Port.ReleaseLock;      
+       Port.ReleaseLock;
       end
      else
       begin
        {Create Port}
        Port:=TProtocolPort.Create;
        Port.Port:=APort;
-       
+
        {Add Socket}
        Port.Sockets.Add(ASocket);
-       
+
        {Add Port}
        FPorts.Add(Port);
-       
+
        {Set Local Port}
        ASocket.ProtocolState.LocalPort:=APort;
-       
+
        {Return Result}
        Result:=True;
       end;
     finally
      {Release Lock}
      FPorts.WriterUnlock;
-    end;  
+    end;
    end
   else
    begin
@@ -788,37 +788,37 @@ begin
        //To Do //Check the LocalAddress as well as Port
        {Increment Port}
        Inc(FNextPort);
-       
+
        {Check for wrap around}
        if FNextPort > UDP_PORT_STOP then FNextPort:=UDP_PORT_START;
-       
+
        {Check for a complete cycle}
        if FNextPort = Start then Exit;
       end;
-     
+
      {Create Port}
      Port:=TProtocolPort.Create;
      Port.Port:=FNextPort;
-     
+
      {Add Socket}
      Port.Sockets.Add(ASocket);
-    
+
      {Add Port}
      FPorts.Add(Port);
-    
+
      {Set Local Port}
      ASocket.ProtocolState.LocalPort:=FNextPort;
-    
+
      {Return Result}
      Result:=True;
     finally
      {Release Lock}
      FPorts.WriterUnlock;
-    end;  
+    end;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -831,23 +831,23 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: ClosePort');
   {$ENDIF}
-  
+
   {Check Socket}
   if ASocket = nil then Exit;
-  
+
   {Get Port}
   Port:=FindPort(ASocket.ProtocolState.LocalPort,False,True); {Reader Lock / Lock Return}
   if Port = nil then Exit;
-  
+
   {Remove Socket}
   Port.Sockets.Remove(ASocket);
-  
+
   {Check Count}
   if Port.Sockets.Count = 0 then
    begin
@@ -856,28 +856,28 @@ begin
     try
      {Remove Port}
      FPorts.Remove(Port);
-    
+
      {Unlock Port}
      Port.ReleaseLock;
-    
+
      {Destroy Port}
      Port.Free;
     finally
      {Release Lock}
      FPorts.WriterUnlock;
-    end;  
+    end;
    end
   else
    begin
     {Unlock Port}
     Port.ReleaseLock;
-   end;   
-  
+   end;
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -892,24 +892,24 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AWrite then
   begin
    if not FPorts.WriterLock then Exit;
   end
  else
-  begin 
+  begin
    if not FPorts.ReaderLock then Exit;
-  end; 
+  end;
  try
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: FindPort');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  Port = '  + IntToStr(APort));
   {$ENDIF}
-  
+
   {Check Port}
   if APort = IPPORT_ANY then Exit;
-  
+
   {Get Port}
   Port:=TProtocolPort(FPorts.First);
   while Port <> nil do
@@ -919,25 +919,25 @@ begin
      begin
       {Lock Port}
       if ALock then Port.AcquireLock;
-      
+
       {Return Result}
       Result:=Port;
       Exit;
      end;
-     
+
     {Get Next}
     Port:=TProtocolPort(Port.Next);
    end;
- finally 
+ finally
   if AWrite then
    begin
     FPorts.WriterUnlock;
    end
   else
-   begin  
+   begin
     FPorts.ReaderUnlock;
-   end; 
- end; 
+   end;
+ end;
 end;
 
 {==============================================================================}
@@ -950,31 +950,31 @@ var
 begin
  {}
  Result:=0;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: SelectCheck');
  {$ENDIF}
- 
+
  {Check Dest}
  if ADest = nil then Exit;
- 
+
  {Check Source}
  if ASource = nil then Exit;
- 
+
  {Check Code}
  case ACode of
   SELECT_READ:begin
     Result:=SOCKET_ERROR;
-    
+
     {Get Sockets}
     for Count:=ASource.fd_count - 1 downto 0 do
      begin
       {Get Socket}
       Socket:=TUDPSocket(ASource.fd_array[Count]);
-      
+
       {Check Socket}
       if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
-      
+
       {Check Receive Count}
       if Socket.RecvData.GetCount > 0 then
        begin
@@ -984,26 +984,26 @@ begin
           FD_SET(TSocket(Socket),ADest^);
          end;
        end;
-     
-      {Unlock Socket} 
+
+      {Unlock Socket}
       Socket.ReaderUnlock;
      end;
-     
+
     {Return Result}
     Result:=ADest.fd_count;
    end;
   SELECT_WRITE:begin
     Result:=SOCKET_ERROR;
-    
+
     {Get Sockets}
     for Count:=ASource.fd_count - 1 downto 0 do
      begin
       {Get Socket}
       Socket:=TUDPSocket(ASource.fd_array[Count]);
-      
+
       {Check Socket}
       if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
-      
+
       {Check Set}
       if not FD_ISSET(TSocket(Socket),ADest^) then
        begin
@@ -1013,22 +1013,22 @@ begin
       {Unlock Socket}
       Socket.ReaderUnlock;
      end;
-     
-    {Return Result} 
+
+    {Return Result}
     Result:=ADest.fd_count;
    end;
   SELECT_ERROR:begin
     Result:=SOCKET_ERROR;
-    
+
     {Get Sockets}
     for Count:=ASource.fd_count - 1 downto 0 do
      begin
       {Get Socket}
       Socket:=TUDPSocket(ASource.fd_array[Count]);
-      
+
       {Check Socket}
       if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
-      
+
       {Check Error}
       if Socket.SocketError <> ERROR_SUCCESS then
        begin
@@ -1038,12 +1038,12 @@ begin
           FD_SET(TSocket(Socket),ADest^);
          end;
        end;
-       
+
       {Unlock Socket}
       Socket.ReaderUnlock;
      end;
-    
-    {Return Result}     
+
+    {Return Result}
     Result:=ADest.fd_count;
    end;
  end;
@@ -1051,7 +1051,7 @@ end;
 
 {==============================================================================}
 
-function TUDPProtocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer; 
+function TUDPProtocol.SelectWait(ASocket:TProtocolSocket;ACode:Integer;ATimeout:LongWord):Integer;
 {Socket is the single socket to check, Code is the type of check, Timeout is how long to wait}
 var
  StartTime:Int64;
@@ -1059,17 +1059,17 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: SelectWait');
  {$ENDIF}
 
  {Get Socket}
  Socket:=TUDPSocket(ASocket);
- 
+
  {Check Socket}
  if not CheckSocket(Socket,True,NETWORK_LOCK_READ) then Exit;
- try 
+ try
   {Check Code}
   case ACode of
    SELECT_READ:begin
@@ -1094,7 +1094,7 @@ begin
            Exit;
           end;
         end
-       else 
+       else
         begin
          {Wait for Event}
          if not Socket.WaitChangeEx(ATimeout) then
@@ -1111,15 +1111,15 @@ begin
            Result:=0;
            Exit;
           end;
-        end;           
-      end; 
-     
+        end;
+      end;
+
      {Return One}
-     Result:=1; 
+     Result:=1;
     end;
    SELECT_WRITE:begin
      {Return One}
-     Result:=1; 
+     Result:=1;
     end;
    SELECT_ERROR:begin
      {Wait for Error}
@@ -1143,7 +1143,7 @@ begin
            Exit;
           end;
         end
-       else 
+       else
         begin
          {Wait for Event}
          if not Socket.WaitChangeEx(ATimeout) then
@@ -1160,18 +1160,18 @@ begin
            Result:=0;
            Exit;
           end;
-        end;           
+        end;
       end;
-      
+
      {Return One}
-     Result:=1; 
+     Result:=1;
     end;
   end;
- 
+
  finally
-  {Unlock Socket} 
+  {Unlock Socket}
   Socket.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1198,28 +1198,28 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: SendPacket');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Socket}
  if ASocket = nil then Exit;
- 
+
  {Check the Packet Size}
  NetworkSetLastError(WSAEMSGSIZE);
  if ASize > MAX_UDP_PACKET then Exit;
- 
+
  {Get the Size of the Packet}
  Size:=ASize + UDP_HEADER_SIZE;
- 
+
  {Fill in the UDP fields}
  UDP.SourcePort:=WordNtoBE(ASourcePort);
  UDP.DestPort:=WordNtoBE(ADestPort);
- UDP.Length:=WordNtoBE(Size); 
+ UDP.Length:=WordNtoBE(Size);
  UDP.Checksum:=0;
- 
+
  {Check Address Family}
  case ASocket.Family of
   AF_INET:begin
@@ -1233,10 +1233,10 @@ begin
         NetworkSetLastError(WSAENETUNREACH);
         Route:=TIPTransport(ASocket.Transport).GetRouteByAddress(PInAddr(ADest)^,True,NETWORK_LOCK_READ);
         if Route = nil then Exit;
-        
+
         {Fill in the Pseudo Header}
         Pseudo.SourceIP:=InAddrToNetwork(TIPRouteEntry(Route).Address);
-        
+
         {Unlock Route}
         Route.ReaderUnlock;
        end
@@ -1245,26 +1245,26 @@ begin
         {Fill in the Pseudo Header}
         Pseudo.SourceIP:=InAddrToNetwork(PInAddr(ASource)^);
        end;
-      
+
       {Fill in the Pseudo Header}
       Pseudo.DestIP:=InAddrToNetwork(PInAddr(ADest)^);
       Pseudo.Mbz:=0;
       Pseudo.Protocol:=IPPROTO_UDP;
-      Pseudo.Length:=WordNtoBE(Size); 
-      
+      Pseudo.Length:=WordNtoBE(Size);
+
       {Calculate the Checksum}
       UDP.Checksum:=ChecksumUDPSend(AF_INET,@Pseudo,@UDP,APacket.Data,ASize);
      end;
-    
+
     {Create the Fragment}
     Packet.Size:=UDP_HEADER_SIZE;
     Packet.Data:=@UDP;
     Packet.Next:=APacket;
-    
+
     {Get Transport}
     Transport:=TUDPProtocolTransport(GetTransportByTransport(ASocket.Transport,True,NETWORK_LOCK_READ));
     if Transport = nil then Exit;
-    
+
     {Send the Packet}
     if TIPTransport(ASocket.Transport).SendPacket(ASocket,ASource,ADest,@Packet,Size,AFlags) = Size then
      begin
@@ -1276,9 +1276,9 @@ begin
     Transport.ReaderUnlock;
    end;
   AF_INET6:begin
-    
+
     //To Do
-    
+
    end;
  end;
 end;
@@ -1295,12 +1295,12 @@ function TUDPProtocol.Accept(ASocket:TProtocolSocket;ASockAddr:PSockAddr;AAddrLe
 begin
  {}
  Result:=TProtocolSocket(INVALID_SOCKET);
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: Accept');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Not supported}
@@ -1329,19 +1329,19 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: Bind');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected or Bound}
    NetworkSetLastError(WSAEINVAL);
    if ASocket.SocketState.Connected then Exit;
    if ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -1349,26 +1349,26 @@ begin
       {Check Address Family}
       NetworkSetLastError(WSAEAFNOSUPPORT);
       if ASocket.Family <> ASockAddr.sin_family then Exit;
-    
+
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Check LocalAddress}
       if not TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then
        begin
         NetworkSetLastError(WSAEADDRNOTAVAIL);
         if TIPTransport(ASocket.Transport).GetAddressByAddress(InAddrToHost(ASockAddr.sin_addr),False,NETWORK_LOCK_NONE) = nil then Exit;
        end;
-      
+
       {Bind the Port}
       NetworkSetLastError(WSAEADDRINUSE);
       if not OpenPort(ASocket,WordBEtoN(ASockAddr.sin_port)) then Exit;
-      
+
       {Bind the Address}
       ASocket.SocketState.LocalAddress:=True;
       TIPState(ASocket.TransportState).LocalAddress:=InAddrToHost(ASockAddr.sin_addr);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -1376,30 +1376,30 @@ begin
     AF_INET6:begin
       {Get Socket Address}
       SockAddr6:=PSockAddr6(@ASockAddr);
-      
+
       {Check Address Family}
       NetworkSetLastError(WSAEAFNOSUPPORT);
       if ASocket.Family <> SockAddr6.sin6_family then Exit;
-      
+
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
+
       {Check LocalAddress}
       if not TIP6Transport(ASocket.Transport).CompareDefault(SockAddr6.sin6_addr) then
        begin
         NetworkSetLastError(WSAEADDRNOTAVAIL);
         if TIP6Transport(ASocket.Transport).GetAddressByAddress(SockAddr6.sin6_addr,False,NETWORK_LOCK_NONE) = nil then Exit;
        end;
-      
+
       {Bind the Port}
       NetworkSetLastError(WSAEADDRINUSE);
       if not OpenPort(ASocket,WordBEtoN(SockAddr6.sin6_port)) then Exit;
-      
+
       {Bind the Socket}
       ASocket.SocketState.LocalAddress:=True;
       TIP6State(ASocket.TransportState).LocalAddress:=SockAddr6.sin6_addr;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -1424,21 +1424,21 @@ function TUDPProtocol.CloseSocket(ASocket:TProtocolSocket):Integer;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: CloseSocket');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Close Socket}
    ASocket.SocketState.Closed:=True;
    ASocket.CloseTime:=GetTickCount64;
-   
+
    {Signal the Event}
    ASocket.SignalChange;
-   
+
    {Return Result}
    NetworkSetLastError(ERROR_SUCCESS);
    Result:=NO_ERROR;
@@ -1468,18 +1468,18 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: Connect');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
    NetworkSetLastError(WSAEISCONN);
    if ASocket.SocketState.Connected then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -1487,26 +1487,26 @@ begin
       {Check Address Family}
       NetworkSetLastError(WSAEAFNOSUPPORT);
       if ASocket.Family <> ASockAddr.sin_family then Exit;
-    
+
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Check for Default Remote Port}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if WordBEtoN(ASockAddr.sin_port) = IPPORT_ANY then Exit;
-      
+
       {Check for Default RemoteAddress}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if TIPTransport(ASocket.Transport).CompareDefault(InAddrToHost(ASockAddr.sin_addr)) then Exit;
-      
+
       {Check for Broadcast RemoteAddress}
       NetworkSetLastError(WSAEACCES);
       if TIPTransport(ASocket.Transport).CompareBroadcast(InAddrToHost(ASockAddr.sin_addr)) or TIPTransport(ASocket.Transport).CompareDirected(InAddrToHost(ASockAddr.sin_addr)) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
-      
+
       {Check the Route}
       NetworkSetLastError(WSAENETUNREACH);
       Route:=TIPTransport(ASocket.Transport).GetRouteByAddress(InAddrToHost(ASockAddr.sin_addr),True,NETWORK_LOCK_READ);
@@ -1523,28 +1523,28 @@ begin
           {Bind the Port}
           NetworkSetLastError(WSAEADDRINUSE);
           if not OpenPort(ASocket,WordBEtoN(IPPORT_ANY)) then Exit;
-          
+
           {Bind the Address}
           ASocket.SocketState.LocalAddress:=True;
           TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
          end;
-      
+
         {Check for Default Binding}
         if TIPTransport(ASocket.Transport).CompareDefault(TIPState(ASocket.TransportState).LocalAddress) then
          begin
           {Set the LocalAddress}
           TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
          end;
-      
+
         {Connect the Socket}
         ASocket.SocketState.Connected:=True;
         ASocket.SocketState.RemoteAddress:=True;
         ASocket.ProtocolState.RemotePort:=WordBEtoN(ASockAddr.sin_port);
         TIPState(ASocket.TransportState).RemoteAddress:=InAddrToHost(ASockAddr.sin_addr);
-       
+
         {Signal the Event}
         ASocket.SignalChange;
-       
+
         {Return Result}
         NetworkSetLastError(ERROR_SUCCESS);
         Result:=NO_ERROR;
@@ -1553,35 +1553,35 @@ begin
        end;
       finally
        Route.ReaderUnlock;
-      end;      
+      end;
      end;
     AF_INET6:begin
       {Get Socket Address}
       SockAddr6:=PSockAddr6(@ASockAddr);
-      
+
       {Check Address Family}
       NetworkSetLastError(WSAEAFNOSUPPORT);
       if ASocket.Family <> SockAddr6.sin6_family then Exit;
-      
+
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
+
       {Check for Default Remote Port}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if WordBEtoN(SockAddr6.sin6_port) = IPPORT_ANY then Exit;
-      
+
       {Check for Default RemoteAddress}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if TIP6Transport(ASocket.Transport).CompareDefault(SockAddr6.sin6_addr) then Exit;
-      
+
       {Check for Broadcast RemoteAddress}
       NetworkSetLastError(WSAEACCES);
       if TIP6Transport(ASocket.Transport).CompareBroadcast(SockAddr6.sin6_addr) or TIP6Transport(ASocket.Transport).CompareDirected(SockAddr6.sin6_addr) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
-      
+
       {Check the Route}
       NetworkSetLastError(WSAENETUNREACH);
       Route:=TIP6Transport(ASocket.Transport).GetRouteByAddress(SockAddr6.sin6_addr,True,NETWORK_LOCK_READ);
@@ -1598,28 +1598,28 @@ begin
           {Bind the Port}
           NetworkSetLastError(WSAEADDRINUSE);
           if not OpenPort(ASocket,WordBEtoN(IPPORT_ANY)) then Exit;
-          
+
           {Bind the Address}
           ASocket.SocketState.LocalAddress:=True;
           TIP6State(ASocket.TransportState).LocalAddress:=TIP6AddressEntry(Address).Address;
          end;
-         
+
         {Check for Default Binding}
         if TIP6Transport(ASocket.Transport).CompareDefault(TIP6State(ASocket.TransportState).LocalAddress) then
          begin
           {Set the LocalAddress}
           TIP6State(ASocket.TransportState).LocalAddress:=TIP6AddressEntry(Address).Address;
          end;
-         
+
         {Connect the Socket}
         ASocket.SocketState.Connected:=True;
         ASocket.SocketState.RemoteAddress:=True;
         ASocket.ProtocolState.RemotePort:=WordBEtoN(SockAddr6.sin6_port);
         TIP6State(ASocket.TransportState).RemoteAddress:=SockAddr6.sin6_addr;
-      
+
         {Signal the Event}
         ASocket.SignalChange;
-      
+
         {Return Result}
         NetworkSetLastError(ERROR_SUCCESS);
         Result:=NO_ERROR;
@@ -1628,7 +1628,7 @@ begin
        end;
       finally
        Route.ReaderUnlock;
-      end;      
+      end;
      end;
    end;
   end
@@ -1651,12 +1651,12 @@ function TUDPProtocol.IoctlSocket(ASocket:TProtocolSocket;ACmd:DWORD;var AArg:u_
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: IoctlSocket');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Pass the call to the socket}
@@ -1683,18 +1683,18 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: GetPeerName');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Connected}
    NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -1702,13 +1702,13 @@ begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Return the Peer Details}
       ASockAddr.sin_family:=ASocket.Family;
       ASockAddr.sin_port:=WordNtoBE(ASocket.ProtocolState.RemotePort);
       ASockAddr.sin_addr:=InAddrToNetwork(TIPState(ASocket.TransportState).RemoteAddress);
       AAddrLength:=SizeOf(TSockAddr);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -1716,17 +1716,17 @@ begin
     AF_INET6:begin
       {Get Socket Address}
       SockAddr6:=PSockAddr6(@ASockAddr);
-      
+
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
+
       {Return the Peer Details}
       SockAddr6.sin6_family:=ASocket.Family;
       SockAddr6.sin6_port:=WordNtoBE(ASocket.ProtocolState.RemotePort);
       SockAddr6.sin6_addr:=TIP6State(ASocket.TransportState).RemoteAddress;
       AAddrLength:=SizeOf(TSockAddr6);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -1754,18 +1754,18 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: GetSockName');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -1773,13 +1773,13 @@ begin
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Return the Socket Details}
       ASockAddr.sin_family:=ASocket.Family;
       ASockAddr.sin_port:=WordNtoBE(ASocket.ProtocolState.LocalPort);
       ASockAddr.sin_addr:=InAddrToNetwork(TIPState(ASocket.TransportState).LocalAddress);
       AAddrLength:=SizeOf(TSockAddr);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -1787,17 +1787,17 @@ begin
     AF_INET6:begin
       {Get Socket Address}
       SockAddr6:=PSockAddr6(@ASockAddr);
-      
+
       {Check size of SockAddr}
       NetworkSetLastError(WSAEFAULT);
       if AAddrLength < SizeOf(TSockAddr6) then Exit;
-      
+
       {Return the Peer Details}
       SockAddr6.sin6_family:=ASocket.Family;
       SockAddr6.sin6_port:=WordNtoBE(ASocket.ProtocolState.LocalPort);
       SockAddr6.sin6_addr:=TIP6State(ASocket.TransportState).LocalAddress;
       AAddrLength:=SizeOf(TSockAddr6);
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -1825,12 +1825,12 @@ function TUDPProtocol.GetSockOpt(ASocket:TProtocolSocket;ALevel,AOptName:Integer
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: GetSockOpt');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Level}
@@ -1874,12 +1874,12 @@ function TUDPProtocol.Listen(ASocket:TProtocolSocket;ABacklog:Integer):Integer;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: Listen');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Not supported}
@@ -1908,30 +1908,30 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: Recv');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
-   {Check for Connected} 
+   {Check for Connected}
    NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
-   
+
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantRecvMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
+
    {Wait for Data}
    StartTime:=GetTickCount64;
    while TUDPSocket(ASocket).RecvData.GetCount = 0 do
@@ -1944,7 +1944,7 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
+        end;
 
        {Check for Timeout}
        if GetTickCount64 >= (StartTime + ASocket.SocketOptions.RecvTimeout) then
@@ -1960,9 +1960,9 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
-      end;      
-      
+        end;
+      end;
+
      {Check for Closed}
      if ASocket.SocketState.Closed then
       begin
@@ -1970,7 +1970,7 @@ begin
        Exit;
       end;
     end;
-   
+
    {Check Size}
    NetworkSetLastError(ERROR_SUCCESS);
    Size:=TUDPSocket(ASocket).RecvData.GetNext;
@@ -1979,7 +1979,7 @@ begin
      NetworkSetLastError(WSAEMSGSIZE);
      Size:=ALength;
     end;
-   
+
    {Read Data}
    if TUDPSocket(ASocket).RecvData.ReadBuffer(ABuffer,Size,nil,nil,AFlags) then
     begin
@@ -2013,26 +2013,26 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: RecvFrom');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantRecvMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -2044,7 +2044,7 @@ begin
     AF_INET6:begin
       {Get Socket Address}
       SockAddr6:=PSockAddr6(@AFromAddr);
-      
+
       {Check size of FromAddr}
       NetworkSetLastError(WSAEFAULT);
       if AFromLength < SizeOf(TSockAddr6) then Exit;
@@ -2052,9 +2052,9 @@ begin
     else
      begin
       Exit;
-     end;     
+     end;
    end;
-   
+
    {Wait for Data}
    StartTime:=GetTickCount64;
    while TUDPSocket(ASocket).RecvData.GetCount = 0 do
@@ -2067,7 +2067,7 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
+        end;
 
        {Check for Timeout}
        if GetTickCount64 >= (StartTime + ASocket.SocketOptions.RecvTimeout) then
@@ -2083,9 +2083,9 @@ begin
         begin
          NetworkSetLastError(WSAECONNABORTED);
          Exit;
-        end; 
-      end;      
-     
+        end;
+      end;
+
      {Check for Closed}
      if ASocket.SocketState.Closed then
       begin
@@ -2093,7 +2093,7 @@ begin
        Exit;
       end;
     end;
-   
+
    {Check Size}
    NetworkSetLastError(ERROR_SUCCESS);
    Size:=TUDPSocket(ASocket).RecvData.GetNext;
@@ -2102,13 +2102,13 @@ begin
      NetworkSetLastError(WSAEMSGSIZE);
      Size:=ALength;
     end;
-    
+
    {Check Address Family}
    case ASocket.Family of
     AF_INET:begin
       {Get Address}
       AFromAddr.sin_family:=ASocket.Family;
-   
+
       {Read Data}
       if TUDPSocket(ASocket).RecvData.ReadBuffer(ABuffer,Size,@AFromAddr.sin_addr,@AFromAddr.sin_port,AFlags) then
        begin
@@ -2126,7 +2126,7 @@ begin
     AF_INET6:begin
       {Get Address}
       SockAddr6.sin6_family:=ASocket.Family;
-      
+
       {Read Data}
       if TUDPSocket(ASocket).RecvData.ReadBuffer(ABuffer,Size,@SockAddr6.sin6_addr,@SockAddr6.sin6_port,AFlags) then
        begin
@@ -2164,30 +2164,30 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: Send');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Connected}
    NetworkSetLastError(WSAENOTCONN);
    if not ASocket.SocketState.Connected then Exit;
-   
+
    {Check for Bound}
    NetworkSetLastError(WSAEINVAL);
    if not ASocket.SocketState.LocalAddress then Exit;
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantSendMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -2198,12 +2198,12 @@ begin
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
-      
+
       {Create the Fragment}
       Packet.Size:=ALength;
       Packet.Data:=@ABuffer;
       Packet.Next:=nil;
-      
+
       {Send the Packet}
       Result:=SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@TIPState(ASocket.TransportState).RemoteAddress,ASocket.ProtocolState.LocalPort,ASocket.ProtocolState.RemotePort,@Packet,ALength,AFlags);
      end;
@@ -2214,12 +2214,12 @@ begin
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
-      
+
       {Create the Fragment}
       Packet.Size:=ALength;
       Packet.Data:=@ABuffer;
       Packet.Next:=nil;
-      
+
       {Send the Packet}
       Result:=SendPacket(ASocket,@TIP6State(ASocket.TransportState).LocalAddress,@TIP6State(ASocket.TransportState).RemoteAddress,ASocket.ProtocolState.LocalPort,ASocket.ProtocolState.RemotePort,@Packet,ALength,AFlags);
      end;
@@ -2254,26 +2254,26 @@ var
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: SendTo');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check for Bound} {Moved Below}
    {NetworkSetLastError(WSAEINVAL);}
    {if not ASocket.SocketState.LocalAddress then Exit;}
-   
+
    {Check for Shutdown}
    NetworkSetLastError(WSAESHUTDOWN);
    if ASocket.SocketState.CantSendMore then Exit;
-   
+
    {Check for Flag MSG_OOB}
    NetworkSetLastError(WSAEOPNOTSUPP);
    if (AFlags and MSG_OOB) = MSG_OOB then Exit;
-   
+
    {Check Address Family}
    NetworkSetLastError(WSAEAFNOSUPPORT);
    case ASocket.Family of
@@ -2281,25 +2281,25 @@ begin
       {Check Address Family}
       NetworkSetLastError(WSAEAFNOSUPPORT);
       if ASocket.Family <> AToAddr.sin_family then Exit;
-    
+
       {Check size of ToAddr}
       NetworkSetLastError(WSAEFAULT);
       if AToLength < SizeOf(TSockAddr) then Exit;
-      
+
       {Get the RemoteAddress}
       InAddr:=InAddrToHost(AToAddr.sin_addr);
-      
+
       {Check for Default RemoteAddress}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if TIPTransport(ASocket.Transport).CompareDefault(InAddr) then Exit;
-      
+
       {Check for Broadcast RemoteAddress}
       NetworkSetLastError(WSAEACCES);
       if TIPTransport(ASocket.Transport).CompareBroadcast(InAddr) or TIPTransport(ASocket.Transport).CompareDirected(InAddr) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
-      
+
       {Check the Binding}
       if not(ASocket.SocketState.LocalAddress) or TIPTransport(ASocket.Transport).CompareDefault(TIPState(ASocket.TransportState).LocalAddress) then
        begin
@@ -2318,8 +2318,8 @@ begin
            begin
             NetworkSetLastError(WSAEADDRINUSE);
             if not OpenPort(ASocket,WordBEtoN(IPPORT_ANY)) then Exit;
-           end; 
-          
+           end;
+
           {Bind the Address}
           ASocket.SocketState.LocalAddress:=True;
           TIPState(ASocket.TransportState).LocalAddress:=TIPAddressEntry(Address).Address;
@@ -2330,43 +2330,43 @@ begin
         finally
          {Unlock Route}
          Route.ReaderUnlock;
-        end;      
-       end; 
-      
+        end;
+       end;
+
       {Create the Fragment}
       Packet.Size:=ALength;
       Packet.Data:=@ABuffer;
       Packet.Next:=nil;
-      
+
       {Send the Packet}
       Result:=SendPacket(ASocket,@TIPState(ASocket.TransportState).LocalAddress,@InAddr,ASocket.ProtocolState.LocalPort,WordBEtoN(AToAddr.sin_port),@Packet,ALength,AFlags);
      end;
     AF_INET6:begin
       {Get Socket Address}
       SockAddr6:=PSockAddr6(@AToAddr);
-      
+
       {Check Address Family}
       NetworkSetLastError(WSAEAFNOSUPPORT);
       if ASocket.Family <> SockAddr6.sin6_family then Exit;
-      
+
       {Check size of ToAddr}
       NetworkSetLastError(WSAEFAULT);
       if AToLength < SizeOf(TSockAddr6) then Exit;
-      
+
       {Get the RemoteAddress}
       In6Addr:=SockAddr6.sin6_addr;
-      
+
       {Check for Default RemoteAddress}
       NetworkSetLastError(WSAEDESTADDRREQ);
       if TIP6Transport(ASocket.Transport).CompareDefault(In6Addr) then Exit;
-      
+
       {Check for Broadcast RemoteAddress}
       NetworkSetLastError(WSAEACCES);
       if TIP6Transport(ASocket.Transport).CompareBroadcast(In6Addr) or TIP6Transport(ASocket.Transport).CompareDirected(In6Addr) then
        begin
         if not ASocket.SocketOptions.Broadcast then Exit;
        end;
-      
+
       {Check the Binding}
       if not(ASocket.SocketState.LocalAddress) or TIP6Transport(ASocket.Transport).CompareDefault(TIP6State(ASocket.TransportState).LocalAddress) then
        begin
@@ -2385,8 +2385,8 @@ begin
            begin
             NetworkSetLastError(WSAEADDRINUSE);
             if not OpenPort(ASocket,WordBEtoN(IPPORT_ANY)) then Exit;
-           end; 
-          
+           end;
+
           {Bind the Address}
           ASocket.SocketState.LocalAddress:=True;
           TIP6State(ASocket.TransportState).LocalAddress:=TIP6AddressEntry(Address).Address;
@@ -2397,14 +2397,14 @@ begin
         finally
          {Unlock Route}
          Route.ReaderUnlock;
-        end;      
-       end; 
-      
+        end;
+       end;
+
       {Create the Fragment}
       Packet.Size:=ALength;
       Packet.Data:=@ABuffer;
       Packet.Next:=nil;
-      
+
       {Send the Packet}
       Result:=SendPacket(ASocket,@TIP6State(ASocket.TransportState).LocalAddress,@In6Addr,ASocket.ProtocolState.LocalPort,WordBEtoN(SockAddr6.sin6_port),@Packet,ALength,AFlags);
      end;
@@ -2431,12 +2431,12 @@ function TUDPProtocol.SetSockOpt(ASocket:TProtocolSocket;ALevel,AOptName:Integer
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: SetSockOpt');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Level}
@@ -2447,14 +2447,14 @@ begin
       case AOptName of
        SO_RCVBUF:begin
          NetworkSetLastError(WSAEFAULT);
-         
+
          if AOptLength >= SizeOf(Integer) then
           begin
            TUDPSocket(ASocket).RecvData.Size:=PInteger(AOptValue)^;
           end;
         end;
       end;
-      
+
       {Pass the call to the socket}
       Result:=ASocket.SetOption(ALevel,AOptName,AOptValue,AOptLength);
      end;
@@ -2498,12 +2498,12 @@ function TUDPProtocol.Shutdown(ASocket:TProtocolSocket;AHow:Integer):Integer;
 begin
  {}
  Result:=SOCKET_ERROR;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: Shutdown');
  {$ENDIF}
- 
- {Check Socket} 
+
+ {Check Socket}
  if CheckSocket(ASocket,False,NETWORK_LOCK_NONE) then
   begin
    {Check Direction}
@@ -2511,10 +2511,10 @@ begin
     SHUTDOWN_RECV:begin
       {Shutdown Receive}
       ASocket.SocketState.CantRecvMore:=True;
-      
+
       {Signal the Event}
       ASocket.SignalChange;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -2522,10 +2522,10 @@ begin
     SHUTDOWN_SEND:begin
       {Shutdown Send}
       ASocket.SocketState.CantSendMore:=True;
-      
+
       {Signal the Event}
       ASocket.SignalChange;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -2534,10 +2534,10 @@ begin
       {Shutdown Both}
       ASocket.SocketState.CantRecvMore:=True;
       ASocket.SocketState.CantSendMore:=True;
-      
+
       {Signal the Event}
       ASocket.SignalChange;
-      
+
       {Return Result}
       NetworkSetLastError(ERROR_SUCCESS);
       Result:=NO_ERROR;
@@ -2569,48 +2569,48 @@ begin
  ReaderLock;
  try
   Result:=TProtocolSocket(INVALID_SOCKET);
-  
+
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: Socket');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  Family = ' + AddressFamilyToString(AFamily));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  Struct = ' + SocketTypeToString(AStruct));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
-  
+
   {Check Socket Type}
   NetworkSetLastError(WSAESOCKTNOSUPPORT);
   if AStruct <> SOCK_DGRAM then Exit;
-  
+
   {Check Address Family}
   NetworkSetLastError(WSAEAFNOSUPPORT);
-  if (AFamily = AF_UNSPEC) and (AProtocol <> IPPROTO_IP) then AFamily:=AF_INET; 
+  if (AFamily = AF_UNSPEC) and (AProtocol <> IPPROTO_IP) then AFamily:=AF_INET;
 
   {Check Protocol}
   NetworkSetLastError(WSAEPROTOTYPE);
   if (AProtocol <> IPPROTO_UDP) and (AProtocol <> IPPROTO_IP) then Exit;
-  
+
   {Get Transport}
   Transport:=TUDPProtocolTransport(GetTransportByFamily(AFamily,True,NETWORK_LOCK_READ));
   if Transport = nil then Exit;
-  
+
   {Create Socket}
   Result:=TUDPSocket.Create(Self,Transport.Transport);
-  
+
   {Unlock Transport}
   Transport.ReaderUnlock;
-  
+
   {Acquire Lock}
   FSockets.WriterLock;
   try
    {Add Socket}
    FSockets.Add(Result);
-  finally 
+  finally
    {Release Lock}
    FSockets.WriterUnlock;
-  end; 
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2626,15 +2626,15 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: AddTransport');
   {$ENDIF}
- 
+
   {Check Transport}
   if ATransport = nil then Exit;
- 
-  {Get Transport} 
+
+  {Get Transport}
   Transport:=TUDPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_READ));
   if Transport = nil then
    begin
@@ -2650,16 +2650,16 @@ begin
          Transport.Handle:=Handle;
          Transport.Protocol:=IPPROTO_UDP;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Add Proto Entry}
           TIPTransport(ATransport).AddProto(UDP_PROTOCOL_NAME,IPPROTO_UDP,False);
-         
+
           {Add Serv Entries}
           TIPTransport(ATransport).AddServ('ECHO',UDP_PROTOCOL_NAME,7,False);
           TIPTransport(ATransport).AddServ('DISCARD',UDP_PROTOCOL_NAME,9,False);
@@ -2678,15 +2678,15 @@ begin
           TIPTransport(ATransport).AddServ('NBNAME',UDP_PROTOCOL_NAME,137,False);
           TIPTransport(ATransport).AddServ('NBDATAGRAM',UDP_PROTOCOL_NAME,138,False);
           TIPTransport(ATransport).AddServ('SNMP',UDP_PROTOCOL_NAME,161,False);
-          
+
           {Return Result}
           Result:=True;
          finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end;  
+         end;
         end;
-        
+
        {Add ICMP Protocol}
        Handle:=TIPTransport(ATransport).AddProtocol(IPPROTO_ICMP,PacketHandler,nil);
        if Handle <> INVALID_HANDLE_VALUE then
@@ -2696,19 +2696,19 @@ begin
          Transport.Handle:=Handle;
          Transport.Protocol:=IPPROTO_ICMP;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Return Result}
           Result:=True;
          finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end;  
+         end;
         end;
       end;
      AF_INET6:begin
@@ -2721,16 +2721,16 @@ begin
          Transport.Handle:=Handle;
          Transport.Protocol:=IPPROTO_UDP;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Add Proto Entry}
           TIP6Transport(ATransport).AddProto(UDP_PROTOCOL_NAME,IPPROTO_UDP,False);
-          
+
           {Add Serv Entries}
           TIP6Transport(ATransport).AddServ('ECHO',UDP_PROTOCOL_NAME,7,False);
           TIP6Transport(ATransport).AddServ('DISCARD',UDP_PROTOCOL_NAME,9,False);
@@ -2749,15 +2749,15 @@ begin
           TIP6Transport(ATransport).AddServ('NBNAME',UDP_PROTOCOL_NAME,137,False);
           TIP6Transport(ATransport).AddServ('NBDATAGRAM',UDP_PROTOCOL_NAME,138,False);
           TIP6Transport(ATransport).AddServ('SNMP',UDP_PROTOCOL_NAME,161,False);
-         
+
           {Return Result}
           Result:=True;
          finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end;  
+         end;
         end;
-        
+
        {Add ICMP6 Protocol}
        Handle:=TIP6Transport(ATransport).AddProtocol(IPPROTO_ICMPV6,PacketHandler,nil);
        if Handle <> INVALID_HANDLE_VALUE then
@@ -2767,34 +2767,34 @@ begin
          Transport.Handle:=Handle;
          Transport.Protocol:=IPPROTO_ICMPV6;
          Transport.Transport:=ATransport;
-         
+
          {Acquire Lock}
          FTransports.WriterLock;
          try
           {Add Transport}
           FTransports.Add(Transport);
-         
+
           {Return Result}
           Result:=True;
          finally
           {Release Lock}
           FTransports.WriterUnlock;
-         end;  
+         end;
         end;
       end;
-    end; 
+    end;
    end
   else
    begin
     {Unlock Transport}
     Transport.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2809,14 +2809,14 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: RemoveTransport');
   {$ENDIF}
-  
+
   {Check Transport}
   if ATransport = nil then Exit;
- 
+
   {Check Address Family}
   case ATransport.Family of
    AF_INET:begin
@@ -2848,28 +2848,28 @@ begin
             TIPTransport(ATransport).RemoveServ('NBNAME',UDP_PROTOCOL_NAME);
             TIPTransport(ATransport).RemoveServ('NBDATAGRAM',UDP_PROTOCOL_NAME);
             TIPTransport(ATransport).RemoveServ('SNMP',UDP_PROTOCOL_NAME);
-            
+
             {Remove Proto Entry}
             TIPTransport(ATransport).RemoveProto(UDP_PROTOCOL_NAME);
-            
+
             {Acquire Lock}
             FTransports.WriterLock;
             try
              {Remove Transport}
              FTransports.Remove(Transport);
-            
+
              {Unlock Transport}
              Transport.WriterUnlock;
-       
+
              {Destroy Transport}
              Transport.Free;
-            
+
              {Return Result}
              Result:=True;
             finally
              {Release Lock}
              FTransports.WriterUnlock;
-            end;  
+            end;
            end;
          end;
         IPPROTO_ICMP:begin
@@ -2881,31 +2881,31 @@ begin
             try
              {Remove Transport}
              FTransports.Remove(Transport);
-            
+
              {Unlock Transport}
              Transport.WriterUnlock;
-       
+
              {Destroy Transport}
              Transport.Free;
-            
+
              {Return Result}
              Result:=True;
             finally
              {Release Lock}
              FTransports.WriterUnlock;
-            end;  
+            end;
            end;
          end;
         else
          begin
           {Unlock Transport}
           Transport.WriterUnlock;
-         end;         
+         end;
        end;
-    
+
        {Get Transport}
        Transport:=TUDPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
-      end; 
+      end;
     end;
    AF_INET6:begin
      {Get Transport}
@@ -2936,28 +2936,28 @@ begin
             TIP6Transport(ATransport).RemoveServ('NBNAME',UDP_PROTOCOL_NAME);
             TIP6Transport(ATransport).RemoveServ('NBDATAGRAM',UDP_PROTOCOL_NAME);
             TIP6Transport(ATransport).RemoveServ('SNMP',UDP_PROTOCOL_NAME);
-            
+
             {Remove Proto Entry}
             TIP6Transport(ATransport).RemoveProto(UDP_PROTOCOL_NAME);
-            
+
             {Acquire Lock}
             FTransports.WriterLock;
             try
              {Remove Transport}
              FTransports.Remove(Transport);
-            
+
              {Unlock Transport}
              Transport.WriterUnlock;
-            
+
              {Destroy Transport}
              Transport.Free;
-            
+
              {Return Result}
              Result:=True;
             finally
              {Release Lock}
              FTransports.WriterUnlock;
-            end;  
+            end;
            end;
          end;
         IPPROTO_ICMPV6:begin
@@ -2969,36 +2969,36 @@ begin
             try
              {Remove Transport}
              FTransports.Remove(Transport);
-            
+
              {Unlock Transport}
              Transport.WriterUnlock;
-            
+
              {Destroy Transport}
              Transport.Free;
-            
+
              {Return Result}
              Result:=True;
             finally
              {Release Lock}
              FTransports.WriterUnlock;
-            end;  
+            end;
            end;
          end;
         else
          begin
           {Unlock Transport}
           Transport.WriterUnlock;
-         end;         
+         end;
        end;
-   
+
        {Get Transport}
        Transport:=TUDPProtocolTransport(GetTransportByTransport(ATransport,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
-      end; 
+      end;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3022,14 +3022,14 @@ begin
  FSockets.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: FindSocket');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  Family = ' + AddressFamilyToString(AFamily));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  Struct = ' + SocketTypeToString(AStruct));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  Protocol = ' + ProtocolToString(AProtocol));
   {$ENDIF}
-  
+
   {Get Socket}
   Socket:=TUDPSocket(FSockets.First);
   while Socket <> nil do
@@ -3047,7 +3047,7 @@ begin
            begin
             {Lock Socket}
             if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-           
+
             {Return Result}
             Result:=Socket;
             Exit;
@@ -3060,7 +3060,7 @@ begin
            begin
             {Lock Socket}
             if ALock then if AState = NETWORK_LOCK_READ then Socket.ReaderLock else Socket.WriterLock;
-           
+
             {Return Result}
             Result:=Socket;
             Exit;
@@ -3068,13 +3068,13 @@ begin
          end;
        end;
      end;
-     
+
     {Get Next}
     Socket:=TUDPSocket(Socket.Next);
    end;
- finally 
+ finally
   FSockets.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3092,10 +3092,10 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: FlushSockets');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  All = ' + BoolToStr(All));
  {$ENDIF}
-  
+
  {Get Tick Count}
  CurrentTime:=GetTickCount64;
-  
+
  {Get Socket}
  Socket:=TUDPSocket(GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
  while Socket <> nil do
@@ -3103,7 +3103,7 @@ begin
    {Get Next}
    Current:=Socket;
    Socket:=TUDPSocket(GetSocketByNext(Current,True,False,NETWORK_LOCK_READ));
-    
+
    {Check Socket State}
    if (Current.SocketState.Closed) or (All) then
     begin
@@ -3115,26 +3115,26 @@ begin
         begin
          {Close Port}
          ClosePort(Current);
-        
+
          {Acquire Lock}
          FSockets.WriterLock;
 
          {Remove Socket}
          FSockets.Remove(Current);
-        
+
          {Release Lock}
          FSockets.WriterUnlock;
-        
+
          {Unlock Socket}
          Current.WriterUnlock;
-        
+
          {Free Socket}
          Current.Free;
          Current:=nil;
-        end; 
+        end;
       end;
     end;
-    
+
    {Unlock Socket}
    if Current <> nil then Current.ReaderUnlock;
   end;
@@ -3165,10 +3165,10 @@ begin
    begin
     {Add Transport}
     AddTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
+   end;
 
   {Register with IP6 Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
@@ -3176,16 +3176,16 @@ begin
    begin
     {Add Transport}
     AddTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
+   end;
 
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3211,15 +3211,15 @@ begin
   FlushSockets(True);
 
   {Deregister with IP Transport}
-  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ); 
+  Transport:=Manager.Transports.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
   if Transport <> nil then
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
+   end;
 
   {Deregister with IP6 Transport}
   Transport:=Manager.Transports.GetTransportByType(AF_INET6,PACKET_TYPE_IP6,True,NETWORK_LOCK_READ);
@@ -3227,16 +3227,16 @@ begin
    begin
     {Remove Transport}
     RemoveTransport(Transport);
-    
+
     {Unlock Transport}
     Transport.ReaderUnlock;
-   end; 
+   end;
 
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3247,7 +3247,7 @@ begin
  {}
  {Close old Sockets}
  FlushSockets(False);
- 
+
  {Return Result}
  Result:=True;
 end;
@@ -3259,7 +3259,7 @@ constructor TUDPSocket.Create(AProtocol:TNetworkProtocol;ATransport:TNetworkTran
 begin
  {}
  inherited Create(AProtocol,ATransport);
- 
+
  {Check Address Family}
  case Family of
   AF_INET:begin
@@ -3267,7 +3267,7 @@ begin
     FTransportState:=TIPState.Create;
     {Create IP Transport Options}
     FTransportOptions:=TIPOptions.Create;
-    
+
     {Set IP Defaults}
     TIPOptions(FTransportOptions).TTL:=TIPTransport(ATransport).DefaultTTL;
    end;
@@ -3276,7 +3276,7 @@ begin
     FTransportState:=TIP6State.Create;
     {Create IP6 Transport Options}
     FTransportOptions:=TIP6Options.Create;
-    
+
     {Set IP6 Defaults}
     TIP6Options(FTransportOptions).HopLimit:=TIP6Transport(ATransport).DefaultHopLimit;
    end;
@@ -3324,10 +3324,10 @@ begin
   FTransportOptions.Free;
   {Free Transport State}
   FTransportState.Free;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3339,27 +3339,27 @@ begin
  ReaderLock;
  try
   Result:=SOCKET_ERROR;
- 
+
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Socket: GetOption');
   {$ENDIF}
- 
+
   {Check Level}
   case ALevel of
    IPPROTO_UDP:begin
      NetworkSetLastError(WSAENOPROTOOPT);
-     
+
      {Check Option}
      case AOptName of
       UDP_NOCHECKSUM:begin
         NetworkSetLastError(WSAEFAULT);
-        
+
         if AOptLength >= SizeOf(Integer) then
          begin
           PInteger(AOptValue)^:=0;
           AOptLength:=SizeOf(Integer);
           if TUDPOptions(ProtocolOptions).NoChecksum then PInteger(AOptValue)^:=1;
-          
+
           {Return Result}
           NetworkSetLastError(ERROR_SUCCESS);
           Result:=NO_ERROR;
@@ -3372,9 +3372,9 @@ begin
      Result:=inherited GetOption(ALevel,AOptName,AOptValue,AOptLength);
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3386,25 +3386,25 @@ begin
  ReaderLock;
  try
   Result:=SOCKET_ERROR;
-  
+
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Socket: SetOption');
   {$ENDIF}
-  
+
   {Check Level}
   case ALevel of
    IPPROTO_UDP:begin
      NetworkSetLastError(WSAENOPROTOOPT);
-     
+
      {Check Option}
      case AOptName of
       UDP_NOCHECKSUM:begin
         NetworkSetLastError(WSAEFAULT);
-        
+
         if AOptLength >= SizeOf(Integer) then
          begin
           TUDPOptions(ProtocolOptions).NoChecksum:=(PInteger(AOptValue)^ <> 0);
-          
+
           {Return Result}
           NetworkSetLastError(ERROR_SUCCESS);
           Result:=NO_ERROR;
@@ -3417,9 +3417,9 @@ begin
      Result:=inherited SetOption(ALevel,AOptName,AOptValue,AOptLength);
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3430,17 +3430,17 @@ begin
  ReaderLock;
  try
   Result:=SOCKET_ERROR;
-  
+
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Socket: IoCtl');
   {$ENDIF}
-  
+
   {Check Commmand}
   NetworkSetLastError(WSAEINVAL);
   case ACommand of
    FIONREAD:begin
      AArgument:=RecvData.GetNext;
-     
+
      {Return Result}
      NetworkSetLastError(ERROR_SUCCESS);
      Result:=NO_ERROR;
@@ -3453,9 +3453,9 @@ begin
      Result:=NO_ERROR;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3470,23 +3470,23 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Socket: IsConnected');
   {$ENDIF}
-  
+
   {Check Local}
   if ALocalAddress = nil then Exit;
-  
+
   {Check Remote}
   if ARemoteAddress = nil then Exit;
-  
+
   {Check for Bound}
   if not SocketState.LocalAddress then Exit;
-  
+
   {Check for Connected}
   if not SocketState.Connected then Exit; {Could use RemoteAddress instead}
-  
+
   {Check Address Family}
   case Family of
    AF_INET:begin
@@ -3508,19 +3508,19 @@ begin
           if not TIPTransport(Transport).CompareAddress(TIPState(TransportState).LocalAddress,TIPRouteEntry(Route).Address) then Exit;
          finally
           Route.ReaderUnlock;
-         end; 
+         end;
         end;
       end;
-     
+
      {Check the Bound LocalPort}
      if ProtocolState.LocalPort <> ALocalPort then Exit;
-     
+
      {Check the Connected RemoteAddress}
      if not TIPTransport(Transport).CompareAddress(TIPState(TransportState).RemoteAddress,PInAddr(ARemoteAddress)^) then Exit;
-     
+
      {Check the Connected RemotePort}
      if ProtocolState.RemotePort <> ARemotePort then Exit;
-     
+
      {Return Result}
      Result:=True;
     end;
@@ -3543,26 +3543,26 @@ begin
           if not TIP6Transport(Transport).CompareAddress(TIP6State(TransportState).LocalAddress,TIP6RouteEntry(Route).Address) then Exit;
          finally
           Route.ReaderUnlock;
-         end; 
+         end;
         end;
       end;
-     
+
      {Check the Bound LocalPort}
      if ProtocolState.LocalPort <> ALocalPort then Exit;
-     
+
      {Check the Connected RemoteAddress}
      if not TIP6Transport(Transport).CompareAddress(TIP6State(TransportState).RemoteAddress,PIn6Addr(ARemoteAddress)^) then Exit;
-     
+
      {Check the Connected RemotePort}
      if ProtocolState.RemotePort <> ARemotePort then Exit;
-     
+
      {Return Result}
      Result:=True;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3577,23 +3577,23 @@ begin
  ReaderLock;
  try
   Result:=False;
- 
+
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Socket: IsListening');
   {$ENDIF}
- 
+
   {Check Local}
   if ALocalAddress = nil then Exit;
-  
+
   {Check Remote}
   {if ARemoteAddress = nil then Exit;} {Not Used}
- 
+
   {Check for Bound}
   if not SocketState.LocalAddress then Exit;
- 
+
   {Check for Connected}
   if SocketState.Connected then Exit; {Could use RemoteAddress instead}
- 
+
   {Check Address Family}
   case Family of
    AF_INET:begin
@@ -3611,20 +3611,20 @@ begin
          if not TIPTransport(Transport).CompareBroadcast(PInAddr(ALocalAddress)^) then
           begin
            {If not global Broadcast then check for Directed Broadcast}
-           Route:=TIPTransport(Transport).GetRouteByAddress(PInAddr(ALocalAddress)^,True,NETWORK_LOCK_READ); 
+           Route:=TIPTransport(Transport).GetRouteByAddress(PInAddr(ALocalAddress)^,True,NETWORK_LOCK_READ);
            if Route = nil then Exit;
            try
             if not TIPTransport(Transport).CompareAddress(TIPState(TransportState).LocalAddress,TIPRouteEntry(Route).Address) then Exit;
            finally
             Route.ReaderUnlock;
-           end; 
+           end;
           end;
         end;
       end;
-      
+
      {Check the Bound LocalPort}
      if ProtocolState.LocalPort <> ALocalPort then Exit;
-     
+
      {Return Result}
      Result:=True;
     end;
@@ -3643,27 +3643,27 @@ begin
          if not TIP6Transport(Transport).CompareBroadcast(PIn6Addr(ALocalAddress)^) then
           begin
            {If not global Broadcast then check for Directed Broadcast}
-           Route:=TIP6Transport(Transport).GetRouteByAddress(PIn6Addr(ALocalAddress)^,True,NETWORK_LOCK_READ); 
+           Route:=TIP6Transport(Transport).GetRouteByAddress(PIn6Addr(ALocalAddress)^,True,NETWORK_LOCK_READ);
            if Route = nil then Exit;
            try
             if not TIP6Transport(Transport).CompareAddress(TIP6State(TransportState).LocalAddress,TIP6RouteEntry(Route).Address) then Exit;
            finally
             Route.ReaderUnlock;
-           end; 
+           end;
           end;
         end;
       end;
-     
+
      {Check the Bound LocalPort}
      if ProtocolState.LocalPort <> ALocalPort then Exit;
-     
+
      {Return Result}
      Result:=True;
     end;
   end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3682,9 +3682,9 @@ constructor TUDPBuffer.Create(ASocket:TTransportSocket);
 begin
  {}
  inherited Create(ASocket);
- 
+
  FOffset:=SizeOf(TUDPDatagram); {UDP_DATAGRAM_SIZE}
- 
+
  {Check Address Family}
  case FSocket.Family of
   AF_INET:begin
@@ -3716,10 +3716,10 @@ begin
  AcquireLock;
  try
   FlushDatagrams;
- finally 
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+ finally
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3731,26 +3731,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: AddDatagram');
   {$ENDIF}
-  
+
   {Check Data Size}
   if ASize = 0 then Exit;
-  
+
   {Check Buffer Free}
   if LongWord(ASize) > FFree then Exit;
-  
+
   {Create a new Datagram}
   Datagram:=GetMem(FOffset + FLength);
   if Datagram = nil then Exit;
   Datagram.Size:=ASize;
   Datagram.RemotePort:=IPPORT_ANY;
   Datagram.Next:=nil;
-  
+
   {Add to List}
   if FLast = nil then
    begin
@@ -3770,12 +3770,12 @@ begin
     Inc(FUsed,ASize);
     Inc(FCount);
    end;
-   
-  {Return Result} 
+
+  {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3787,16 +3787,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: RemoveDatagram');
   {$ENDIF}
-  
+
   {Check for Datagrams}
   if FFirst = nil then Exit;
-  
+
   {Remove from List}
   if FFirst.Next <> nil then
    begin
@@ -3817,15 +3817,15 @@ begin
     Inc(FFree,Datagram.Size);
     Dec(FCount);
    end;
-   
+
   {Free the Datagram}
   FreeMem(Datagram,FOffset + FLength);
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3841,9 +3841,9 @@ begin
     {Remove Datagram}
     RemoveDatagram;
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3860,36 +3860,36 @@ begin
 
   {Check Size}
   if ASize = 0 then Exit;
-  
+
   {Get Size}
   ASize:=Max(ASize,UDP_BUFFER_SIZE);
-  
+
   {Clear any Datagrams}
   FlushDatagrams;
-  
+
   {Allocate the Memory}
   FBuffer.SetSize(ASize);
-  
+
   {Set the Buffer Values}
   FSize:=ASize;
   FStart:=FBuffer.Memory;
-  
+
   {End actually points to byte beyond last for simpler calculations}
   FEnd:=Pointer(PtrUInt(FStart) + FSize);
-  
+
   {Set the Data Values}
   FUsed:=0;
   FFree:=FSize;
   FRead:=FStart;
   FWrite:=FStart;
-  
+
   {Set the Datagram Values}
   FCount:=0;
   FFirst:=nil;
   FLast:=nil;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3898,17 +3898,17 @@ function TUDPBuffer.GetNext:Integer;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
  try
   {Check First}
   if FFirst = nil then Exit;
-  
+
   {Get First Size}
   Result:=FFirst.Size;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3933,15 +3933,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Buffer Size}
   if ASize = 0 then Exit;
-  
+
   {Check there is Data}
   if FFirst = nil then Exit;
-  
+
   {Get the Start and Size}
   ReadNext:=FRead;
   ReadSize:=FFirst.Size;
@@ -3949,11 +3949,11 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: ReadBuffer: FStart = ' + PtrToHex(FStart) + ' FEnd = ' + PtrToHex(FEnd));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: ReadBuffer: ReadNext = ' + IntToStr(PtrUInt(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
   {$ENDIF}
-  
+
   {Get the Return Size}
   BufferSize:=Min(ASize,ReadSize);
   ASize:=BufferSize;
-  
+
   {Since we Guarantee ReadNext to be at least 1 byte from the End of the Buffer, we can start reading}
   {Check for Single or Double Read}
   if (PtrUInt(ReadNext) + ReadSize) <= PtrUInt(FEnd) then
@@ -3971,7 +3971,7 @@ begin
      begin
       System.Move(ReadNext^,ABuffer,ReadSize);
      end;
-    
+
     Inc(PtrUInt(ReadNext),ReadSize);
     Dec(ReadSize,ReadSize);
    end
@@ -3989,20 +3989,20 @@ begin
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: ReadBuffer: Short First Read');
       {$ENDIF}
       System.Move(ReadNext^,ABuffer,BufferSize);
-      
+
       Dec(BufferSize,BufferSize);
      end
     else
      begin
       System.Move(ReadNext^,ABuffer,BlockSize);
-      
+
       Dec(BufferSize,BlockSize);
      end;
-    
+
     {Wrap to Start of Buffer}
     ReadNext:=FStart;
     Dec(ReadSize,BlockSize);
-    
+
     {Read the Second Block of the Data}
     if BufferSize > 0 then
      begin
@@ -4018,48 +4018,48 @@ begin
         System.Move(ReadNext^,Pointer(PtrUInt(@ABuffer) + BlockSize)^,ReadSize);
        end;
      end;
-    
+
     Inc(PtrUInt(ReadNext),ReadSize);
     Dec(ReadSize,ReadSize);
    end;
-  
+
   {Check for Wrap around}
   if PtrUInt(ReadNext) = PtrUInt(FEnd) then ReadNext:=FStart;
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: ReadBuffer: ReadNext = ' + IntToStr(PtrUInt(ReadNext)) + ' ReadSize = ' + IntToStr(ReadSize));
   {$ENDIF}
-  
+
   {Get the Remote Address}
   if ARemoteAddress <> nil then
    begin
     System.Move(Pointer(PtrUInt(FFirst) + FOffset)^,ARemoteAddress^,FLength);
    end;
-  
+
   {Get the Remote Port}
   if ARemotePort <> nil then
    begin
     ARemotePort^:=FFirst.RemotePort;
    end;
-  
+
   {Check for Peek Flag}
   if (AFlags and MSG_PEEK) = 0 then
    begin
     {Update the Next Read}
     FRead:=ReadNext;
-    
+
     {Remove the Datagram}
     RemoveDatagram;
    end;
-  
+
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: ReadBuffer: Free = ' + IntToStr(FFree) + ' Used = ' + IntToStr(FUsed) + ' Count = ' + IntToStr(FCount));
   {$ENDIF}
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4074,15 +4074,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Data Size}
   if ASize = 0 then Exit;
-  
+
   {Add the Datagram}
   if not AddDatagram(ASize) then Exit;
-  
+
   {Get the Start and Size}
   WriteNext:=FWrite;
   WriteSize:=ASize;
@@ -4090,14 +4090,14 @@ begin
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: WriteBuffer: FStart = ' + PtrToHex(FStart) + ' FEnd = ' + PtrToHex(FEnd));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: WriteBuffer: WriteNext = ' + IntToStr(PtrUInt(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
   {$ENDIF}
-  
+
   {Since we guarantee WriteNext to be at least 1 byte from the End of the Buffer, we can start writing}
   if (PtrUInt(WriteNext) + WriteSize) <= PtrUInt(FEnd) then
    begin
     {Single Write with no wrap around}
     {Write the Packet Data}
     System.Move(ABuffer,WriteNext^,WriteSize);
-    
+
     Inc(PtrUInt(WriteNext),WriteSize);
     Dec(WriteSize,WriteSize);
    end
@@ -4110,48 +4110,48 @@ begin
     {Write the First Block of the Packet Data}
     BlockSize:=(PtrUInt(FEnd) - PtrUInt(WriteNext));
     System.Move(ABuffer,WriteNext^,BlockSize);
-    
+
     {Wrap to Start of Buffer}
     WriteNext:=FStart;
     Dec(WriteSize,BlockSize);
-    
+
     {Write the Second Block of the Packet Data}
     System.Move(Pointer(PtrUInt(@ABuffer) + BlockSize)^,WriteNext^,WriteSize);
-    
+
     Inc(PtrUInt(WriteNext),WriteSize);
     Dec(WriteSize,WriteSize);
    end;
-  
+
   {Check for Wrap around}
   if PtrUInt(WriteNext) = PtrUInt(FEnd) then WriteNext:=FStart;
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: WriteBuffer: WriteNext = ' + IntToStr(PtrUInt(WriteNext)) + ' WriteSize = ' + IntToStr(WriteSize));
   {$ENDIF}
-  
+
   {Set the Remote Address}
   if ARemoteAddress <> nil then
    begin
     System.Move(ARemoteAddress^,Pointer(PtrUInt(FLast) + FOffset)^,FLength);
    end;
-  
+
   {Set the Remote Port}
   if ARemotePort <> nil then
    begin
     FLast.RemotePort:=ARemotePort^;
    end;
-  
+
   {Update the Next Write}
   FWrite:=WriteNext;
-  
+
   {$IFDEF UDP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP Buffer: WriteBuffer: Free = ' + IntToStr(FFree) + ' Used = ' + IntToStr(FUsed) + ' Count = ' + IntToStr(FCount));
   {$ENDIF}
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4161,7 +4161,7 @@ constructor TUDPOptions.Create;
 begin
  {}
  inherited Create;
- FOptions:=0; 
+ FOptions:=0;
 end;
 
 {==============================================================================}
@@ -4178,15 +4178,15 @@ procedure TUDPOptions.SetNoChecksum(ANoChecksum:Boolean);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  if ANoChecksum then
   FOptions:=FOptions or UDP_NOCHECKSUM
  else
   FOptions:=FOptions and not(UDP_NOCHECKSUM);
-  
+
  ReleaseLock;
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -4200,13 +4200,13 @@ begin
  if NetworkSettings.GetBoolean('DNS_CLIENT_ENABLED') then NetworkSettings.AddBoolean('UDP_PROTOCOL_ENABLED',True);
  if NetworkSettings.GetBoolean('DHCP_CONFIG_ENABLED') then NetworkSettings.AddBoolean('UDP_PROTOCOL_ENABLED',True);
  if NetworkSettings.GetBoolean('BOOTP_CONFIG_ENABLED') then NetworkSettings.AddBoolean('UDP_PROTOCOL_ENABLED',True);
- 
+
  {Create UDP Protocol}
- if NetworkSettings.GetBooleanDefault('UDP_PROTOCOL_ENABLED',UDP_PROTOCOL_ENABLED) then 
+ if NetworkSettings.GetBooleanDefault('UDP_PROTOCOL_ENABLED',UDP_PROTOCOL_ENABLED) then
   begin
    TUDPProtocol.Create(ProtocolManager,UDP_PROTOCOL_NAME);
-  end; 
- 
+  end;
+
  UDPInitialized:=True;
 end;
 
@@ -4228,20 +4228,20 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF UDP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP: CheckUDP');
  {$ENDIF}
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
     {Get Header}
     IP:=PIPHeader(ABuffer);        {GetIPHeaderLength}
-    
+
     {Get Header}
     UDP:=PUDPHeader(PtrUInt(IP) + GetUDPHeaderOffset(AF_INET,ABuffer));
-    
+
     {Check Header Length}
     Length:=GetUDPHeaderLength(AF_INET,ABuffer); {GetIPDataLength} //To Do //Same for ICMP/IGMP/TCP etc ?
     if Length >= UDP_HEADER_SIZE then
@@ -4250,14 +4250,14 @@ begin
       if UDP.Checksum > 0 then
        begin
         Length:=Length + GetUDPDataLength(AF_INET,ABuffer); {Not Needed if above}
-        
+
         {Get the Pseudo Header}
         Pseudo.SourceIP:=InAddrToNetwork(IP.SourceIP);
         Pseudo.DestIP:=InAddrToNetwork(IP.DestIP);
         Pseudo.Mbz:=0;
         Pseudo.Protocol:=IP.Protocol;
         Pseudo.Length:=WordNtoBE(Length);
-        
+
         {Validate the Checksum}
         {$IFDEF UDP_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'UDP:  Original Checksum   = ' + IntToHex(WordBEtoN(UDP.Checksum),4));
@@ -4278,12 +4278,12 @@ begin
   AF_INET6:begin
     {Get Header}
     IP6:=PIP6Header(ABuffer);        {GetIP6HeaderLength}
-    
+
     {Get Header}
     UDP:=PUDPHeader(PtrUInt(IP6) + GetUDPHeaderOffset(AF_INET6,ABuffer));
-    
+
     //To Do
-    
+
    end;
  end;
 end;
@@ -4295,7 +4295,7 @@ function GetUDPHeaderOffset(AFamily:Word;ABuffer:Pointer):Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
@@ -4303,9 +4303,9 @@ begin
     Result:=(PIPHeader(ABuffer).VersionLength and $0F) shl 2;
    end;
   AF_INET6:begin
-    
+
     //To Do
-    
+
    end;
  end;
 end;
@@ -4317,7 +4317,7 @@ function GetUDPHeaderLength(AFamily:Word;ABuffer:Pointer):Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
@@ -4325,9 +4325,9 @@ begin
     Result:=UDP_HEADER_SIZE;
    end;
   AF_INET6:begin
-    
+
     //To Do
-    
+
    end;
  end;
 end;
@@ -4339,7 +4339,7 @@ function GetUDPDataOffset(AFamily:Word;ABuffer:Pointer):Word;
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
@@ -4347,9 +4347,9 @@ begin
     Result:=((PIPHeader(ABuffer).VersionLength and $0F) shl 2) + UDP_HEADER_SIZE;
    end;
   AF_INET6:begin
-    
+
     //To Do
-    
+
    end;
  end;
 end;
@@ -4363,7 +4363,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
@@ -4373,9 +4373,9 @@ begin
     Result:=WordBEtoN(PUDPHeader(PtrUInt(ABuffer) + Offset).Length) - UDP_HEADER_SIZE;
    end;
   AF_INET6:begin
-    
+
     //To Do
-    
+
    end;
  end;
 end;
@@ -4390,27 +4390,27 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
     {Get Header}
     UDP:=PUDPHeader(PtrUInt(ABuffer) + AOffset);
-    
+
     {Save Checksum}
     Original:=UDP.Checksum;
     UDP.Checksum:=0;
-    
+
     {Calculate 1s Compliment Checksum on UDP Pseudo, Header and Data}
     Result:=GetChecksum2(APseudo,ABuffer,IP_PSEUDO_SIZE,AOffset,ALength);
-    
+
     {Restore Checksum}
     UDP.Checksum:=Original;
    end;
   AF_INET6:begin
-    
+
     //To Do //Pass APseudo6 ?
-    
+
    end;
  end;
 end;
@@ -4424,33 +4424,33 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Address Family}
  case AFamily of
   AF_INET:begin
     {Save Checksum}
     Original:=AHeader.Checksum;
     AHeader.Checksum:=0;
-    
+
     {Calculate 1s Compliment Checksum on UDP Pseudo, Header and Data}
     Result:=GetChecksum3(APseudo,AHeader,AData,IP_PSEUDO_SIZE,UDP_HEADER_SIZE,0,ALength);
     if Result = 0 then Result:=$FFFF; {Allow for all 1s case on Send}
-    
+
     {Restore Checksum}
     AHeader.Checksum:=Original;
    end;
   AF_INET6:begin
-    
+
     //To Do //Pass APseudo6 ?
-    
+
    end;
  end;
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {UDP Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -4458,12 +4458,12 @@ initialization
  UDPInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 end.
-  
+

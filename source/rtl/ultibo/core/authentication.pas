@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
- 
+
 Authentication
 ==============
 
@@ -50,10 +50,10 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils,Classes;
 {==============================================================================}
 const
  {Authentication specific constants}
- 
+
  {Authenticator Flag constants}
  AUTHENTICATOR_FLAG_NONE = $00000000;
- 
+
  //To Do
 
 {==============================================================================}
@@ -71,10 +71,10 @@ type
   destructor Destroy; override;
  private
   {Internal Variables}
-  FLock:TCriticalSectionHandle; 
- 
+  FLock:TCriticalSectionHandle;
+
   FFlags:LongWord;
-  
+
   {Internal Methods}
   procedure SetFlags(AFlags:LongWord);
  protected
@@ -86,19 +86,19 @@ type
  public
   {Public Properties}
   property Flags:LongWord read FFlags write SetFlags;
-  
+
   {Public Methods}
   function UsernamePrompt:String; virtual;
   function PasswordPrompt(const AUsername:String):String; virtual;
-  
+
   function CheckUsername(const AUsername:String):LongWord; virtual;
   function CheckPassword(const AUsername,APassword:String):LongWord; virtual;
  end;
- 
+
  TNullAuthenticator = class(TAuthenticator) {An authenticator module that accepts any username and password}
  private
   {Internal Variables}
-  
+
   {Internal Methods}
  protected
   {Internal Variables}
@@ -106,19 +106,19 @@ type
   {Internal Methods}
  public
   {Public Properties}
-  
+
   {Public Methods}
   function UsernamePrompt:String; override;
   function PasswordPrompt(const AUsername:String):String; override;
-  
+
   function CheckUsername(const AUsername:String):LongWord; override;
   function CheckPassword(const AUsername,APassword:String):LongWord; override;
  end;
- 
+
 {==============================================================================}
 {var}
  {Authentication specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure AuthInit;
@@ -146,20 +146,20 @@ begin
  {}
  inherited Create;
  FLock:=CriticalSectionCreate;
- 
+
  FFlags:=AUTHENTICATOR_FLAG_NONE;
 end;
 
 {==============================================================================}
 
-destructor TAuthenticator.Destroy; 
+destructor TAuthenticator.Destroy;
 begin
  {}
  AcquireLock;
  try
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -194,7 +194,7 @@ end;
 
 {==============================================================================}
 
-function TAuthenticator.UsernamePrompt:String; 
+function TAuthenticator.UsernamePrompt:String;
 begin
  {Virtual Base}
  Result:='Username:';
@@ -202,7 +202,7 @@ end;
 
 {==============================================================================}
 
-function TAuthenticator.PasswordPrompt(const AUsername:String):String; 
+function TAuthenticator.PasswordPrompt(const AUsername:String):String;
 begin
  {Virtual Base}
  Result:='Password:';
@@ -210,7 +210,7 @@ end;
 
 {==============================================================================}
 
-function TAuthenticator.CheckUsername(const AUsername:String):LongWord; 
+function TAuthenticator.CheckUsername(const AUsername:String):LongWord;
 begin
  {Virtual Base}
  Result:=ERROR_NOT_FOUND;
@@ -218,7 +218,7 @@ end;
 
 {==============================================================================}
 
-function TAuthenticator.CheckPassword(const AUsername,APassword:String):LongWord; 
+function TAuthenticator.CheckPassword(const AUsername,APassword:String):LongWord;
 begin
  {Virtual Base}
  Result:=ERROR_OPERATION_FAILED;
@@ -227,7 +227,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {TNullAuthenticator}
-function TNullAuthenticator.UsernamePrompt:String; 
+function TNullAuthenticator.UsernamePrompt:String;
 begin
  {}
  Result:='Username:';
@@ -235,7 +235,7 @@ end;
 
 {==============================================================================}
 
-function TNullAuthenticator.PasswordPrompt(const AUsername:String):String; 
+function TNullAuthenticator.PasswordPrompt(const AUsername:String):String;
 begin
  {}
  Result:='Password:';
@@ -243,32 +243,32 @@ end;
 
 {==============================================================================}
 
-function TNullAuthenticator.CheckUsername(const AUsername:String):LongWord; 
+function TNullAuthenticator.CheckUsername(const AUsername:String):LongWord;
 begin
  {}
  Result:=ERROR_NOT_FOUND;
- 
+
  {Check Username}
  if Length(AUsername) = 0 then Exit;
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}
 
-function TNullAuthenticator.CheckPassword(const AUsername,APassword:String):LongWord; 
+function TNullAuthenticator.CheckPassword(const AUsername,APassword:String):LongWord;
 begin
  {}
  Result:=ERROR_NOT_FOUND;
- 
+
  {Check Username}
  if Length(AUsername) = 0 then Exit;
 
  Result:=ERROR_OPERATION_FAILED;
- 
+
  {Check Password}
  if Length(APassword) = 0 then Exit;
- 
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -280,9 +280,9 @@ begin
  {}
  {Check Initialized}
  if AuthInitialized then Exit;
- 
+
  //To Do
- 
+
  AuthInitialized:=True;
 end;
 
@@ -298,7 +298,7 @@ initialization
  AuthInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

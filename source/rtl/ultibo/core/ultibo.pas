@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -88,7 +88,7 @@ unit Ultibo;
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,Locale,Timezone,Unicode,Security,SysUtils;
- 
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -106,21 +106,21 @@ const
 const
  {Thread Constants}
  CREATE_SUSPENDED = $00000004;
- 
+
 const
  {Message Constants}
  PM_NOREMOVE       = $0000;
  PM_REMOVE         = $0001;
  PM_NOYIELD        = $0002;
- 
+
 const
  {Timezone Constants}
  TIME_ZONE_ID_UNKNOWN  = Timezone.TIME_ZONE_ID_UNKNOWN;
  TIME_ZONE_ID_STANDARD = Timezone.TIME_ZONE_ID_STANDARD;
  TIME_ZONE_ID_DAYLIGHT = Timezone.TIME_ZONE_ID_DAYLIGHT;
  TIME_ZONE_ID_INVALID  = Timezone.TIME_ZONE_ID_INVALID;
- 
-const 
+
+const
  {Shutdown/Restart Constants}
  EWX_LOGOFF       = $00000000;
  EWX_SHUTDOWN     = $00000001;
@@ -138,12 +138,12 @@ const
  DRIVE_REMOTE      = 4;
  DRIVE_CDROM       = 5;
  DRIVE_RAMDISK     = 6;
- 
+
 const
- {Symbolic Link Constants} 
+ {Symbolic Link Constants}
  SYMBOLIC_LINK_FLAG_FILE      = $00000000; {The link target is a file}
  SYMBOLIC_LINK_FLAG_DIRECTORY = $00000001; {The link target is a directory}
- 
+
 const
  {Local Memory Constants}
  LMEM_FIXED          = $0000;
@@ -161,7 +161,7 @@ const
 
  NONZEROLHND = (LMEM_MOVEABLE);
  NONZEROLPTR = (LMEM_FIXED);
- 
+
 const
  {Global Memory Constants}
  GMEM_FIXED          = $0000;
@@ -181,7 +181,7 @@ const
 
  GHND = (GMEM_MOVEABLE or GMEM_ZEROINIT);
  GPTR = (GMEM_FIXED or GMEM_ZEROINIT);
- 
+
 const
  {Virtual Page Constants}
  PAGE_NOACCESS          = $01;
@@ -195,7 +195,7 @@ const
  PAGE_GUARD             = $100;
  PAGE_NOCACHE           = $200;
  PAGE_WRITECOMBINE      = $400;
- 
+
  {Virtual Memory Constants}
  MEM_COMMIT             = $1000;
  MEM_RESERVE            = $2000;
@@ -232,7 +232,7 @@ const
  PROCESSOR_ARCHITECTURE_AMD64   = 9;
 
  PROCESSOR_ARCHITECTURE_UNKNOWN = $FFFF;
- 
+
  {Processor Type Constants}
  PROCESSOR_INTEL_386     = 386;
  PROCESSOR_INTEL_486     = 486;
@@ -241,12 +241,12 @@ const
  PROCESSOR_ARM_6         = 60999;
  PROCESSOR_ARM_7         = 70999;
  PROCESSOR_ARM_8         = 80999;
- 
+
 const
  {Version Info Constants}
  VER_PLATFORM_ULTIBO     = 10011;
- 
-const 
+
+const
  {File Attribute Constants}
  FILE_ATTRIBUTE_READONLY            = $00000001;
  FILE_ATTRIBUTE_HIDDEN              = $00000002;
@@ -262,7 +262,7 @@ const
  FILE_ATTRIBUTE_OFFLINE             = $00001000;
  FILE_ATTRIBUTE_NOT_CONTENT_INDEXED = $00002000;
  FILE_ATTRIBUTE_ENCRYPTED           = $00004000;
- 
+
 const
  {Volume Info Constants}
  FILE_CASE_SENSITIVE_SEARCH         = $00000001;
@@ -279,7 +279,7 @@ const
  FILE_SUPPORTS_ENCRYPTION           = $00020000;
  FILE_NAMED_STREAMS                 = $00040000;
  FILE_READ_ONLY_VOLUME              = $00080000;
- 
+
 const
  {Dos Device Constants}
  DDD_RAW_TARGET_PATH       = $00000001;
@@ -287,12 +287,12 @@ const
  DDD_EXACT_MATCH_ON_REMOVE = $00000004;
  DDD_NO_BROADCAST_SYSTEM   = $00000008;
  DDD_LUID_BROADCAST_DRIVE  = $00000010;
- 
+
 const
  {Final Path Flag Constants}
  FILE_NAME_NORMALIZED = $00000000; {Return the normalized file name. This is the default}
  FILE_NAME_OPENED     = $00000008; {Return the opened file name (not normalized) (Not Supported by Ultibo)}
- 
+
  VOLUME_NAME_DOS      = $00000000; {Return the path with the drive letter. This is the default}
  VOLUME_NAME_GUID     = $00000001; {Return the path with a volume GUID path instead of the drive name (Ultibo returns the volume path, not GUID path)}
  VOLUME_NAME_NONE     = $00000004; {Return the path with no drive information (Not Supported by Ultibo)}
@@ -311,7 +311,7 @@ type
  UCHAR = GlobalTypes.UCHAR;
  USHORT = GlobalTypes.USHORT;
  ULONG = GlobalTypes.ULONG;
- 
+
  {Pointer types}
  PVOID = GlobalTypes.PVOID;
  LPVOID = GlobalTypes.LPVOID;
@@ -323,11 +323,11 @@ type
  INT_PTR = GlobalTypes.INT_PTR;
  UINT_PTR = GlobalTypes.UINT_PTR;
  LONG_PTR = GlobalTypes.LONG_PTR;
- 
+
  ULONG_PTR = GlobalTypes.ULONG_PTR;
  DWORD_PTR = GlobalTypes.DWORD_PTR;
  PDWORD_PTR = GlobalTypes.PDWORD_PTR;
- 
+
  {64bit types}
  LONGLONG = GlobalTypes.LONGLONG;
  ULONGLONG = GlobalTypes.ULONGLONG;
@@ -340,22 +340,22 @@ type
  QUAD = _QUAD;                 // number.  Use DOUBLE if you want an FP number.
  TQuad = _QUAD;
  UQUAD = QUAD;
- 
+
  {Locale and Language Ids}
  LCID = Locale.LCID;
  PLCID = Locale.PLCID;
  LANGID = Locale.LANGID;
  PLANGID = Locale.PLANGID;
- 
+
  {Language Group ID}
- LGRPID = Locale.LGRPID;  
+ LGRPID = Locale.LGRPID;
  {Locale type constant}
  LCTYPE = Locale.LCTYPE;
  {Calendar type constant}
  CALTYPE = Locale.CALTYPE;
  {Calendar ID}
  CALID = Locale.CALID;
- 
+
 type
  {Large Integer types}
  LPLARGE_INTEGER = ^LARGE_INTEGER;
@@ -384,7 +384,7 @@ type
  TULargeInteger = ULARGE_INTEGER;
  PULargeInteger = LPULARGE_INTEGER;
  PULARGE_INTEGER = ^ULARGE_INTEGER;
- 
+
 type
  {Version Info types}
  LPOSVERSIONINFOA = ^OSVERSIONINFOA;
@@ -412,12 +412,12 @@ type
  OSVERSIONINFOW = _OSVERSIONINFOW;
  TOsVersionInfoW = OSVERSIONINFOW;
  POsVersionInfoW = LPOSVERSIONINFOW;
- 
+
  OSVERSIONINFO = OSVERSIONINFOA;
  POSVERSIONINFO = POSVERSIONINFOA;
  LPOSVERSIONINFO = LPOSVERSIONINFOA;
  TOSVersionInfo = TOSVersionInfoA;
- 
+
 type
  {System Info types}
  LPSYSTEM_INFO = ^SYSTEM_INFO;
@@ -437,7 +437,7 @@ type
  SYSTEM_INFO = _SYSTEM_INFO;
  TSystemInfo = SYSTEM_INFO;
  PSystemInfo = LPSYSTEM_INFO;
- 
+
 type
  {Computer Name types}
  _COMPUTER_NAME_FORMAT = (
@@ -452,7 +452,7 @@ type
    ComputerNameMax);
  COMPUTER_NAME_FORMAT = _COMPUTER_NAME_FORMAT;
  TComputerNameFormat = COMPUTER_NAME_FORMAT;
- 
+
 type
  {System Time types}
  LPSYSTEMTIME = SysUtils.LPSYSTEMTIME;
@@ -470,7 +470,7 @@ type
  SYSTEMTIME = SysUtils.SYSTEMTIME;
  TSystemTime = SysUtils.TSystemTime;
  PSystemTime = SysUtils.PSystemTime;
- 
+
 type
  {File Time types}
  LPFILETIME = ^FILETIME;
@@ -482,7 +482,7 @@ type
  FILETIME = _FILETIME;
  TFileTime = FILETIME;
  PFileTime = LPFILETIME;
- 
+
 type
  {File Search types}
  PWIN32_FIND_DATAA = ^WIN32_FIND_DATAA;
@@ -527,7 +527,7 @@ type
  LPWIN32_FIND_DATA = LPWIN32_FIND_DATAA;
  {TWin32FindData = TWin32FindDataA;} {TWin32FindData is now defined in SysUtils}
  PWin32FindData = PWin32FindDataA;
-  
+
 type
  {Stream Search types}
  _STREAM_INFO_LEVELS = (FindStreamInfoStandard, FindStreamInfoMaxInfoLevel);
@@ -542,7 +542,7 @@ type
  PWIN32_FIND_STREAM_DATA = ^WIN32_FIND_STREAM_DATA;
  TWin32FindStreamData = WIN32_FIND_STREAM_DATA;
  PWin32FindStreamData = PWIN32_FIND_STREAM_DATA;
-  
+
 type
  {Timezone types}
  PTIME_ZONE_INFORMATION = Timezone.PTIME_ZONE_INFORMATION;
@@ -551,7 +551,7 @@ type
  LPTIME_ZONE_INFORMATION = Timezone.LPTIME_ZONE_INFORMATION;
  TTimeZoneInformation = Timezone.TTimeZoneInformation;
  PTimeZoneInformation = Timezone.PTimeZoneInformation;
- 
+
 type
  {Memory Status types}
  LPMEMORYSTATUS = ^MEMORYSTATUS;
@@ -568,7 +568,7 @@ type
  MEMORYSTATUS = _MEMORYSTATUS;
  TMemoryStatus = MEMORYSTATUS;
  PMemoryStatus = LPMEMORYSTATUS;
- 
+
  LPMEMORYSTATUSEX = ^MEMORYSTATUSEX;
  _MEMORYSTATUSEX = record
    dwLength:DWORD;
@@ -584,7 +584,7 @@ type
  MEMORYSTATUSEX = _MEMORYSTATUSEX;
  TMemoryStatusEx = MEMORYSTATUSEX;
  PMemoryStatusEx = LPMEMORYSTATUSEX;
- 
+
 type
  {Security Attributes types}
  PSECURITY_ATTRIBUTES = ^SECURITY_ATTRIBUTES;
@@ -597,7 +597,7 @@ type
  LPSECURITY_ATTRIBUTES = ^SECURITY_ATTRIBUTES;
  TSecurityAttributes = SECURITY_ATTRIBUTES;
  PSecurityAttributes = PSECURITY_ATTRIBUTES;
- 
+
 type
  {Thread Start types}
  PTHREAD_START_ROUTINE = function (lpThreadParameter:LPVOID):DWORD;
@@ -618,7 +618,7 @@ type
  LPCRECT = ^tagRect;
  TRect = RECT;
  PRect = LPRECT;
- 
+
  LPPOINT = ^POINT;
  tagPOINT = record
   x:LONG;
@@ -628,7 +628,7 @@ type
  POINT = tagPOINT;
  TPoint = POINT;
  PPoint = LPPOINT;
- 
+
 type
  {Message types}
  LPMSG = ^MSG;
@@ -644,7 +644,7 @@ type
  NPMSG = ^MSG;
  TMsg = MSG;
  PMsg = LPMSG;
- 
+
 type
  {List types}
  PLIST_ENTRY = ^LIST_ENTRY;
@@ -656,7 +656,7 @@ type
  TListEntry = LIST_ENTRY;
  PListEntry = PLIST_ENTRY;
  PRLIST_ENTRY = ^LIST_ENTRY;
- 
+
 type
  {Critical Section types}
  PRTL_CRITICAL_SECTION_DEBUG = ^RTL_CRITICAL_SECTION_DEBUG;
@@ -672,7 +672,7 @@ type
  RTL_CRITICAL_SECTION_DEBUG = _RTL_CRITICAL_SECTION_DEBUG;
  TRtlCriticalSectionDebug = RTL_CRITICAL_SECTION_DEBUG;
  PRtlCriticalSectionDebug = PRTL_CRITICAL_SECTION_DEBUG;
- 
+
  PRTL_CRITICAL_SECTION = ^RTL_CRITICAL_SECTION;
  _RTL_CRITICAL_SECTION = record
    DebugInfo:PRTL_CRITICAL_SECTION_DEBUG;
@@ -689,13 +689,13 @@ type
  RTL_CRITICAL_SECTION = _RTL_CRITICAL_SECTION;
  TRtlCriticalSection = RTL_CRITICAL_SECTION;
  PRtlCriticalSection = PRTL_CRITICAL_SECTION;
- 
+
  CRITICAL_SECTION = RTL_CRITICAL_SECTION;
  PCRITICAL_SECTION = PRTL_CRITICAL_SECTION;
  LPCRITICAL_SECTION = PRTL_CRITICAL_SECTION;
  TCriticalSection = CRITICAL_SECTION;
  PCriticalSection = PCRITICAL_SECTION;
- 
+
 type
  {Condition Variable types}
  PRTL_CONDITION_VARIABLE = ^RTL_CONDITION_VARIABLE;
@@ -705,10 +705,10 @@ type
  RTL_CONDITION_VARIABLE = _RTL_CONDITION_VARIABLE;
  TRtlConditionVariable = RTL_CONDITION_VARIABLE;
  PRtlConditionVariable = PRTL_CONDITION_VARIABLE;
- 
+
  CONDITION_VARIABLE = RTL_CONDITION_VARIABLE;
  PCONDITION_VARIABLE = PRTL_CONDITION_VARIABLE;
- 
+
 type
  {Counter types}
  PIO_COUNTERS = ^IO_COUNTERS;
@@ -723,9 +723,9 @@ type
  IO_COUNTERS = _IO_COUNTERS;
  TIoCounters = IO_COUNTERS;
  PIoCounters = PIO_COUNTERS;
- 
+
 type
- {Code Page types} 
+ {Code Page types}
  LPCPINFO = Locale.LPCPINFO;
  _cpinfo = Locale._cpinfo;
  CPINFO = Locale.CPINFO;
@@ -748,7 +748,7 @@ type
  LPCPINFOEX = Locale.LPCPINFOEX;
  TCpInfoEx = Locale.TCpInfoEx;
  PCpInfoEx = Locale.PCpInfoEx;
- 
+
 type
  {Memory Information Types}
  PMEMORY_BASIC_INFORMATION = ^MEMORY_BASIC_INFORMATION;
@@ -764,7 +764,7 @@ type
  MEMORY_BASIC_INFORMATION = _MEMORY_BASIC_INFORMATION;
  TMemoryBasicInformation = MEMORY_BASIC_INFORMATION;
  PMemoryBasicInformation = PMEMORY_BASIC_INFORMATION;
- 
+
 type
  {RGB Color Types}
  FXPT16DOT16 = Longint;
@@ -772,7 +772,7 @@ type
 
  FXPT2DOT30 = Longint;
  LPFXPT2DOT30 = ^FXPT2DOT30;
- 
+
  PCieXyz = ^TCieXyz;
  tagCIEXYZ = record
    ciexyzX: FXPT2DOT30;
@@ -792,7 +792,7 @@ type
  CIEXYZTRIPLE = tagCIEXYZTRIPLE;
  LPCIEXYZTRIPLE = ^CIEXYZTRIPLE;
  TCieXyzTriple = CIEXYZTRIPLE;
- 
+
 type
  {Bitmap Types}
  PBitmap = ^TBitmap;
@@ -809,7 +809,7 @@ type
  LPBITMAP = ^BITMAP;
  NPBITMAP = ^BITMAP;
  TBitmap = BITMAP;
- 
+
  PRgbTriple = ^TRgbTriple;
  tagRGBTRIPLE = packed record
    rgbtBlue: BYTE;
@@ -818,7 +818,7 @@ type
  end;
  RGBTRIPLE = tagRGBTRIPLE;
  TRgbTriple = RGBTRIPLE;
- 
+
  PRgbQuad = ^TRgbQuad;
  tagRGBQUAD = record
    rgbBlue: BYTE;
@@ -829,7 +829,7 @@ type
  RGBQUAD = tagRGBQUAD;
  LPRGBQUAD = ^RGBQUAD;
  TRgbQuad = RGBQUAD;
- 
+
 type
  {Bitmap Header Types}
  PBitmapCoreHeader = ^TBitmapCoreHeader;
@@ -917,7 +917,7 @@ type
  end;
  LPBITMAPV5HEADER = ^BITMAPV5HEADER;
  TBitmapV5Header = BITMAPV5HEADER;
- 
+
 type
  {Bitmap Info Types}
  PBitmapInfo = ^TBitmapInfo;
@@ -937,7 +937,7 @@ type
  BITMAPCOREINFO = tagBITMAPCOREINFO;
  LPBITMAPCOREINFO = ^BITMAPCOREINFO;
  TBitmapCoreInfo = BITMAPCOREINFO;
- 
+
  PBitmapFileHeader = ^TBitmapFileHeader;
  tagBITMAPFILEHEADER = packed record
    bfType: WORD;
@@ -949,7 +949,7 @@ type
  BITMAPFILEHEADER = tagBITMAPFILEHEADER;
  LPBITMAPFILEHEADER = ^BITMAPFILEHEADER;
  TBitmapFileHeader = BITMAPFILEHEADER;
- 
+
 type
  {File Information Types}
  PBY_HANDLE_FILE_INFORMATION = ^BY_HANDLE_FILE_INFORMATION;
@@ -969,18 +969,18 @@ type
  LPBY_HANDLE_FILE_INFORMATION = ^BY_HANDLE_FILE_INFORMATION;
  TByHandleFileInformation = BY_HANDLE_FILE_INFORMATION;
  PByHandleFileInformation = PBY_HANDLE_FILE_INFORMATION;
- 
+
 {==============================================================================}
 {Compatibility variables}
 var
  CONDITION_VARIABLE_INIT:CONDITION_VARIABLE = (Ptr:nil);
- 
+
 {==============================================================================}
 {Ultibo constants}
 const
  TIME_NULL_TIME:TFileTime = (dwLowDateTime:$00000000;dwHighDateTime:$00000000);
- 
-const 
+
+const
  {Drive constants}
  DEFAULT_DRIVE = 0; {0 is Current Drive}
  INVALID_DRIVE = 0; {Where Current is not appropriate}
@@ -995,7 +995,7 @@ const
  DRIVE_ROOTS:array[DEFAULT_DRIVE..NON_DRIVE] of String = (
   '','A:','B:','C:','D:','E:','F:','G:','H:','I:','J:','K:','L:','M:',
   'N:','O:','P:','Q:','R:','S:','T:','U:','V:','W:','X:','Y:','Z:','\\');
-  
+
  DRIVE_MASKS:array[MIN_DRIVE..MAX_DRIVE] of LongWord = (
   $00000001,$00000002,$00000004,$00000008,
   $00000010,$00000020,$00000040,$00000080,
@@ -1011,7 +1011,7 @@ const
 
 const
  {Path and File constants}
- MAX_FAT_PATH = 64;  
+ MAX_FAT_PATH = 64;
  MAX_FAT_FILE = 12;
  MAX_VFAT_PATH = 260;
  MAX_VFAT_FILE = 255;
@@ -1024,7 +1024,7 @@ const
  UNIX_PATH_CHAR = '/';  {Path separator}
  UNIX_NAME_CHAR = ':';  {Stream separator}
  UNIX_FILE_CHAR = '.';  {Extension separator}
- 
+
  {Invalid Filename Chars etc}
  INVALID_FILENAME_CHARS:set of Char = ['\','/','*','?','"','<','>','|',':'];
  SHORT_FILENAME_SUBST_CHARS:set of Char = ['+','=',',','[',']',';'];
@@ -1038,17 +1038,17 @@ const
  MACRO_FILENAME_CHAR:Char = '%';
  WILDCARD_FILENAME_CHAR:Char = '*';
  INVALID_FILENAME_CHARS_EX:set of Char = ['\','/','?','"','<','>','|',':'];
- 
+
 {==============================================================================}
 {Ultibo types}
 type
  TUnixTime = time_t;
- 
+
 type
  TDriveType = (dtUNKNOWN,dtINVALID,dtFIXED,dtFLOPPY,dtREMOVABLE,dtNETWORK,dtSUBSTITUTED,dtRAMDRIVE,dtCDROM);
 
  TFileSysType = (fsUNKNOWN,fsINVALID,fsFAT12,fsFAT16,fsFAT32,fsEXFAT,fsHPFS,fsNTFS,fsNTFS5,fsNTFS51,fsCDFS,fsUDF,fsEXT2,fsEXT3,fsEXT4);
- 
+
 type
  {Drive types}
  TDriveData = record
@@ -1062,7 +1062,7 @@ type
   VolumeName:String[32];
   VolumeSerial:LongWord;
  end;
- 
+
 type
  {Drive Functions (Compatibility)}
  TUltiboGetDriveTypeA = function(const ARootPath:String):LongWord;
@@ -1071,7 +1071,7 @@ type
  TUltiboDefineDosDeviceA = function(const ADeviceName,ATargetPath:String;AFlags:LongWord):Boolean;
  TUltiboQueryDosDeviceA = function(const ARootPath:String):String;
  TUltiboSetVolumeLabelA = function(const AVolume:String;const ALabel:String):Boolean;
- TUltiboGetVolumeInformationA = function(const ARootPath:String;var AVolumeName:String;var VolumeSerialNumber,AMaximumComponentLength,AFileSystemFlags:LongWord;var SystemName:String):Boolean; 
+ TUltiboGetVolumeInformationA = function(const ARootPath:String;var AVolumeName:String;var VolumeSerialNumber,AMaximumComponentLength,AFileSystemFlags:LongWord;var SystemName:String):Boolean;
  TUltiboGetDiskFreeSpaceA = function(const ARootPath:String;var ASectorsPerCluster,ABytesPerSector,ANumberOfFreeClusters,ATotalNumberOfClusters:LongWord):Boolean;
  TUltiboGetDiskFreeSpaceExA = function(const APathName:String;var AFreeBytesAvailableToCaller,ATotalNumberOfBytes,ATotalNumberOfFreeBytes:QWord):Boolean;
 
@@ -1090,12 +1090,12 @@ type
  TUltiboGetDriveFreeSpaceEx = function(ADrive:Byte):Int64;
  TUltiboGetDriveTotalSpace = function(ADrive:Byte):LongWord;
  TUltiboGetDriveTotalSpaceEx = function(ADrive:Byte):Int64;
- 
- TUltiboGetDriveInformation = function(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean;    
- 
+
+ TUltiboGetDriveInformation = function(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean;
+
  TUltiboGetCurrentDrive = function:Byte;
  TUltiboSetCurrentDrive = function(const ADrive:String):Boolean;
- 
+
  {File Functions (Compatibility)}
  TUltiboAreFileApisANSI = function:Boolean;
  TUltiboSetFileApisToOEM = function:Boolean;
@@ -1137,7 +1137,7 @@ type
  TUltiboGetLongPathNameA = function(const AShortPath:String):String;
  TUltiboGetShortPathNameA = function(const ALongPath:String):String;
  TUltiboGetFullPathNameA = function(const AFileName:String):String;
- 
+
 {==============================================================================}
 {Ultibo variables}
 var
@@ -1151,7 +1151,7 @@ var
  UltiboGetVolumeInformationAHandler:TUltiboGetVolumeInformationA;
  UltiboGetDiskFreeSpaceAHandler:TUltiboGetDiskFreeSpaceA;
  UltiboGetDiskFreeSpaceExAHandler:TUltiboGetDiskFreeSpaceExA;
- 
+
  {Drive Functions (Ultibo)}
  UltiboGetDriveTypeHandler:TUltiboGetDriveType;
  UltiboGetDriveDataHandler:TUltiboGetDriveData;
@@ -1167,12 +1167,12 @@ var
  UltiboGetDriveFreeSpaceExHandler:TUltiboGetDriveFreeSpaceEx;
  UltiboGetDriveTotalSpaceHandler:TUltiboGetDriveTotalSpace;
  UltiboGetDriveTotalSpaceExHandler:TUltiboGetDriveTotalSpaceEx;
- 
+
  UltiboGetDriveInformationHandler:TUltiboGetDriveInformation;
- 
+
  UltiboGetCurrentDriveHandler:TUltiboGetCurrentDrive;
  UltiboSetCurrentDriveHandler:TUltiboSetCurrentDrive;
- 
+
  {File Functions (Compatibility)}
  UltiboAreFileApisANSIHandler:TUltiboAreFileApisANSI;
  UltiboSetFileApisToOEMHandler:TUltiboSetFileApisToOEM;
@@ -1214,11 +1214,11 @@ var
  UltiboGetLongPathNameAHandler:TUltiboGetLongPathNameA;
  UltiboGetShortPathNameAHandler:TUltiboGetShortPathNameA;
  UltiboGetFullPathNameAHandler:TUltiboGetFullPathNameA;
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure UltiboInit;
- 
+
 {==============================================================================}
 {General Functions (Compatibility)}
 function GetVersion:DWORD;
@@ -1341,7 +1341,7 @@ function ConvertDateTime(ADateTime:TDateTime;AOffset:Integer;ALocal:Boolean):TDa
 {==============================================================================}
 {Drive Functions (Compatibility)}
 function GetDiskType(const lpRootPathName:LPCSTR):UINT; inline; {GetDriveType - Already defined below}
-function GetDriveTypeA(const lpRootPathName:LPCSTR):UINT; 
+function GetDriveTypeA(const lpRootPathName:LPCSTR):UINT;
 function GetDriveTypeW(const lpRootPathName:LPCWSTR):UINT;
 
 function GetLogicalDrives:DWORD;
@@ -1351,19 +1351,19 @@ function GetLogicalDriveStringsA(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD;
 function GetLogicalDriveStringsW(nBufferLength:DWORD;lpBuffer:LPWSTR):DWORD;
 
 function DefineDosDevice(dwFlags:DWORD;const lpDeviceName,lpTargetPath:LPCSTR):BOOL;  inline;
-function DefineDosDeviceA(dwFlags:DWORD;const lpDeviceName,lpTargetPath:LPCSTR):BOOL; 
-function DefineDosDeviceW(dwFlags:DWORD;const lpDeviceName,lpTargetPath:LPCWSTR):BOOL; 
+function DefineDosDeviceA(dwFlags:DWORD;const lpDeviceName,lpTargetPath:LPCSTR):BOOL;
+function DefineDosDeviceW(dwFlags:DWORD;const lpDeviceName,lpTargetPath:LPCWSTR):BOOL;
 
 function QueryDosDevice(const lpDeviceName:LPCSTR;lpTargetPath:LPSTR;ucchMax:DWORD):DWORD; inline;
 function QueryDosDeviceA(const lpDeviceName:LPCSTR;lpTargetPath:LPSTR;ucchMax:DWORD):DWORD;
 function QueryDosDeviceW(const lpDeviceName:LPCWSTR;lpTargetPath:LPWSTR;ucchMax:DWORD):DWORD;
 
 function SetVolumeLabel(const lpRootPathName,lpVolumeName:LPCSTR):BOOL;  inline;
-function SetVolumeLabelA(const lpRootPathName,lpVolumeName:LPCSTR):BOOL; 
+function SetVolumeLabelA(const lpRootPathName,lpVolumeName:LPCSTR):BOOL;
 function SetVolumeLabelW(const lpRootPathName,lpVolumeName:LPCWSTR):BOOL;
 
 function GetVolumeInformation(const lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; inline;
-function GetVolumeInformationA(const lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; 
+function GetVolumeInformationA(const lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL;
 function GetVolumeInformationW(const lpRootPathName:LPCWSTR;lpVolumeNameBuffer:LPWSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPWSTR;nFileSystemNameSize:DWORD):BOOL;
 
 function GetDiskFreeSpace(const lpRootPathName:LPCSTR;var lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters:DWORD):BOOL; inline;
@@ -1392,7 +1392,7 @@ function GetDriveFreeSpaceEx(ADrive:Byte):Int64;
 function GetDriveTotalSpace(ADrive:Byte):LongWord;
 function GetDriveTotalSpaceEx(ADrive:Byte):Int64;
 
-function GetDriveInformation(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean;    
+function GetDriveInformation(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean;
 
 function GetCurrentDrive:Byte;
 function SetCurrentDrive(const ADrive:String):Boolean;
@@ -1431,10 +1431,10 @@ function FindNextFile(hFindFile:HANDLE;var lpFindFileData:WIN32_FIND_DATAA):BOOL
 function FindNextFileA(hFindFile:HANDLE;var lpFindFileData:WIN32_FIND_DATAA):BOOL;
 function FindNextFileW(hFindFile:HANDLE;var lpFindFileData:WIN32_FIND_DATAW):BOOL;
 
-function FindCloseFile(hFindFile:HANDLE):BOOL; 
+function FindCloseFile(hFindFile:HANDLE):BOOL;
 
 function GetFileSize(hFile:HANDLE;lpFileSizeHigh:LPDWORD):DWORD;
-function GetFileSizeEx(hFile:HANDLE;var lpFileSize:LARGE_INTEGER):BOOL; 
+function GetFileSizeEx(hFile:HANDLE;var lpFileSize:LARGE_INTEGER):BOOL;
 
 function GetFileTime(hFile:HANDLE;lpCreationTime,lpLastAccessTime,lpLastWriteTime:PFILETIME):BOOL;
 function SetFileTime(hFile:HANDLE;lpCreationTime,lpLastAccessTime,lpLastWriteTime:PFILETIME):BOOL;
@@ -1486,7 +1486,7 @@ function RemoveDirectoryW(const lpPathName:LPCWSTR):BOOL;
 
 function SetCurrentDirectory(const lpPathName:LPCSTR):BOOL; inline;
 function SetCurrentDirectoryA(const lpPathName:LPCSTR):BOOL;
-function SetCurrentDirectoryW(const lpPathName:LPCWSTR):BOOL; 
+function SetCurrentDirectoryW(const lpPathName:LPCWSTR):BOOL;
 
 function GetCurrentDirectory(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD; inline;
 function GetCurrentDirectoryA(nBufferLength:DWORD;lpBuffer:LPSTR):DWORD;
@@ -1497,7 +1497,7 @@ function GetLongPathNameA(const lpszShortPath:LPCSTR;lpszLongPath:LPSTR;cchBuffe
 function GetLongPathNameW(const lpszShortPath:LPCWSTR;lpszLongPath:LPWSTR;cchBuffer:DWORD):DWORD;
 
 function GetShortPathName(const lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD;  inline;
-function GetShortPathNameA(const lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD; 
+function GetShortPathNameA(const lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD;
 function GetShortPathNameW(const lpszLongPath:LPCWSTR;lpszShortPath:LPWSTR;cchBuffer:DWORD):DWORD;
 
 function GetFullPathName(const lpFileName:LPCSTR;nBufferLength:DWORD;lpBuffer:LPSTR;var lpFilePart:LPSTR):DWORD; inline;
@@ -1583,11 +1583,11 @@ function Max64(const A,B:Int64):Int64; inline; //To Do //The FPC Math unit has M
 
 function Or64(const Value1,Value2:Int64):Int64; inline; //To Do //Can the inbuilt and/or/not/xor handle Int64 ?  //Check, confirm and remove
 function And64(const Value1,Value2:Int64):Int64; inline; //To Do //Can the inbuilt and/or/not/xor handle Int64 ?  //Check, confirm and remove
-function Xor64(const Value1,Value2:Int64):Int64; inline; //To Do //Can the inbuilt and/or/not/xor handle Int64 ?  //Check, confirm and remove 
+function Xor64(const Value1,Value2:Int64):Int64; inline; //To Do //Can the inbuilt and/or/not/xor handle Int64 ?  //Check, confirm and remove
 function Not64(const Value:Int64):Int64; inline; //To Do //Can the inbuilt and/or/not/xor handle Int64 ?  //Check, confirm and remove
 
-function Rol32(Value:LongWord;Count:Byte):LongWord; inline; //To Do //Is there an inbuilt Rol/Ror in the RTL that can handle both 32 and 64 ? //Check, confirm and remove 
-function Ror32(Value:LongWord;Count:Byte):LongWord; inline; //To Do //Is there an inbuilt Rol/Ror in the RTL that can handle both 32 and 64 ? //Check, confirm and remove 
+function Rol32(Value:LongWord;Count:Byte):LongWord; inline; //To Do //Is there an inbuilt Rol/Ror in the RTL that can handle both 32 and 64 ? //Check, confirm and remove
+function Ror32(Value:LongWord;Count:Byte):LongWord; inline; //To Do //Is there an inbuilt Rol/Ror in the RTL that can handle both 32 and 64 ? //Check, confirm and remove
 
 function WordSwap(AValue:Word):Word; inline; //To Do //Check which of the RTL functions to replace with, confirm and remove
 function LongSwap(AValue:LongWord):LongWord; inline; //To Do //Check which of the RTL functions to replace with, confirm and remove
@@ -1595,7 +1595,7 @@ function Int64Swap(const AValue:Int64):Int64; inline; //To Do //Check which of t
 function BufferSwap(ABuffer:Pointer;ASize:LongWord):Boolean;
 
 {==============================================================================}
-{Hash Functions (Ultibo)} 
+{Hash Functions (Ultibo)}
 function GenerateNameHash(const Name:String;Size:Integer):LongWord;
 function GeneratePasswordHash(const Password:String):LongWord; deprecated;
 function GenerateStringHash(const Value:String;CaseSensitive:Boolean):LongWord;
@@ -1610,12 +1610,12 @@ function GetUserDefaultLCID:LCID; inline;
 //GetLocaleInfo //To Do
 //SetLocaleInfo //To Do
 
-function GetThreadLocale:LCID; 
-function SetThreadLocale(LocaleID:LCID):BOOL; 
+function GetThreadLocale:LCID;
+function SetThreadLocale(LocaleID:LCID):BOOL;
 
 {==============================================================================}
 {Locale Functions (Ultibo)}
-function SetSystemDefaultLCID(LocaleID:LCID):BOOL; inline; 
+function SetSystemDefaultLCID(LocaleID:LCID):BOOL; inline;
 
 function WideCharToString(const ABuffer:PWideChar):String;
 function WideCharLenToString(const ABuffer:PWideChar;ALength:Integer):String;
@@ -1623,22 +1623,22 @@ function StringToWideChar(const AString:String;ABuffer:PWideChar;ASize:Integer):
 
 {==============================================================================}
 {Code Page Functions (Compatibility)}
-function IsValidCodePage(CodePage:UINT):BOOL; inline; 
+function IsValidCodePage(CodePage:UINT):BOOL; inline;
 
 function GetACP:UINT; inline;
-function GetOEMCP:UINT; inline; 
+function GetOEMCP:UINT; inline;
 
-function GetConsoleCP:UINT; inline; 
+function GetConsoleCP:UINT; inline;
 function SetConsoleCP(wCodePageID:UINT):BOOL; inline;
 
-function GetConsoleOutputCP:UINT; inline; 
+function GetConsoleOutputCP:UINT; inline;
 function SetConsoleOutputCP(wCodePageID:UINT):BOOL; inline;
 
 function GetCPInfo(CodePage:UINT;var lpCPInfo:TCPInfo):BOOL; inline;
 
-function GetCPInfoEx(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL; inline; 
-function GetCPInfoExA(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL; inline; 
-function GetCPInfoExW(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXW):BOOL; inline; 
+function GetCPInfoEx(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL; inline;
+function GetCPInfoExA(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL; inline;
+function GetCPInfoExW(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXW):BOOL; inline;
 
 {==============================================================================}
 {Code Page Functions (Ultibo)}
@@ -1652,8 +1652,8 @@ function WideCharToMultiByte(CodePage:UINT;dwFlags:DWORD;lpWideCharStr:LPCWSTR;c
 
 function CompareString(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCSTR;cchCount1:Integer;lpString2:LPCSTR;cchCount2:Integer):Integer; inline;
 function CompareStringA(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCSTR;cchCount1:Integer;lpString2:LPCSTR;cchCount2:Integer):Integer; inline;
-function CompareStringW(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCWSTR;cchCount1:Integer;lpString2:LPCWSTR;cchCount2:Integer):Integer; inline; 
-  
+function CompareStringW(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCWSTR;cchCount1:Integer;lpString2:LPCWSTR;cchCount2:Integer):Integer; inline;
+
 function CharUpper(lpsz:LPSTR):LPSTR; inline;
 function CharUpperA(lpsz:LPSTR):LPSTR; inline;
 function CharUpperW(lpsz:LPWSTR):LPWSTR; inline;
@@ -1675,12 +1675,12 @@ function AnsiToOemBuff(lpszSrc:LPCSTR;lpszDst:LPSTR;cchDstLength:DWORD):BOOL; in
 function OemToAnsi(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline;
 function OemToAnsiBuff(lpszSrc:LPCSTR;lpszDst:LPSTR;cchDstLength:DWORD):BOOL; inline;
 
-function CharToOem(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline; 
-function CharToOemA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline; 
-function CharToOemW(lpszSrc:LPCWSTR;lpszDst:LPSTR):BOOL; inline; 
+function CharToOem(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline;
+function CharToOemA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline;
+function CharToOemW(lpszSrc:LPCWSTR;lpszDst:LPSTR):BOOL; inline;
 
-function OemToChar(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline; 
-function OemToCharA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline; 
+function OemToChar(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline;
+function OemToCharA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline;
 function OemToCharW(lpszSrc:LPCSTR;lpszDst:LPWSTR):BOOL; inline;
 
 function CharToOemBuff(lpszSrc:LPCSTR;lpszDst:LPSTR;cchDstLength:DWORD):BOOL; inline;
@@ -1710,7 +1710,7 @@ function OemToCharBuffW(lpszSrc:LPCSTR;lpszDst:LPWSTR;cchDstLength:DWORD):BOOL; 
 
 {==============================================================================}
 {Handle Functions (Compatibility)}
-function CloseHandle(hObject:HANDLE):BOOL; 
+function CloseHandle(hObject:HANDLE):BOOL;
 function DuplicateHandle(hSourceProcessHandle:HANDLE;hSourceHandle:HANDLE;hTargetProcessHandle:HANDLE;lpTargetHandle:LPHANDLE;dwDesiredAccess:DWORD;bInheritHandle:BOOL;dwOptions:DWORD):BOOL;
 
 function GetHandleInformation(hObject:HANDLE;var lpdwFlags:DWORD):BOOL;
@@ -1756,12 +1756,12 @@ function VirtualFree(lpAddress:LPVOID;dwSize:SIZE_T;dwFreeType:DWORD):BOOL;
 function VirtualQuery(lpAddress:LPCVOID;var lpBuffer:MEMORY_BASIC_INFORMATION;dwLength:DWORD):DWORD;
 
 function VirtualLock(lpAddress:LPVOID;dwSize:SIZE_T):BOOL;
-function VirtualUnlock(lpAddress:LPVOID;dwSize:SIZE_T):BOOL; 
+function VirtualUnlock(lpAddress:LPVOID;dwSize:SIZE_T):BOOL;
 
 function FlushInstructionCache(hProcess:HANDLE;lpBaseAddress:LPCVOID;dwSize:DWORD):BOOL;
 
 function GetNumaHighestNodeNumber(var HighestNodeNumber:ULONG):BOOL;
-function GetNumaProcessorNode(const Processor:Byte;var NodeNumber:Byte):BOOL; 
+function GetNumaProcessorNode(const Processor:Byte;var NodeNumber:Byte):BOOL;
 
 {==============================================================================}
 {Tls Functions (Compatibility)}
@@ -1813,14 +1813,14 @@ function BeginThreadEx(ThreadFunction:TThreadFunc;Parameter:Pointer;var ThreadId
 
 {==============================================================================}
 {Message Functions (Compatibility)}
-function WaitMessage:BOOL; 
+function WaitMessage:BOOL;
 
 function GetMessage(lpMsg:LPMSG;hThread:HANDLE;wMsgFilterMin,wMsgFilterMax:UINT):BOOL;
 function PeekMessage(var lpMsg:MSG;hThread:HANDLE;wMsgFilterMin,wMsgFilterMax,wRemoveMsg:UINT):BOOL;
 
-function PostMessage(hThread:HANDLE;Msg:UINT;wParam:WPARAM;lParam:LPARAM):BOOL; 
-function SendMessage(hThread:HANDLE;Msg:UINT;wParam:WPARAM;lParam:LPARAM):LRESULT; 
-function SendMessageTimeout(hThread:HANDLE;Msg:UINT;wParam:WPARAM;lParam:LPARAM;fuFlags,uTimeout:UINT;var lpdwResult:DWORD_PTR):LRESULT; 
+function PostMessage(hThread:HANDLE;Msg:UINT;wParam:WPARAM;lParam:LPARAM):BOOL;
+function SendMessage(hThread:HANDLE;Msg:UINT;wParam:WPARAM;lParam:LPARAM):LRESULT;
+function SendMessageTimeout(hThread:HANDLE;Msg:UINT;wParam:WPARAM;lParam:LPARAM;fuFlags,uTimeout:UINT;var lpdwResult:DWORD_PTR):LRESULT;
 
 {==============================================================================}
 {Notification Functions (Compatibility)}
@@ -1879,14 +1879,14 @@ procedure DeleteCriticalSection(var lpCriticalSection:CRITICAL_SECTION);
 
 {==============================================================================}
 {Condition Variable Functions (Compatibility)}
-procedure InitializeConditionVariable(var ConditionVariable:CONDITION_VARIABLE); 
+procedure InitializeConditionVariable(var ConditionVariable:CONDITION_VARIABLE);
 
-procedure WakeConditionVariable(var ConditionVariable:CONDITION_VARIABLE); 
-procedure WakeAllConditionVariable(var ConditionVariable:CONDITION_VARIABLE); 
+procedure WakeConditionVariable(var ConditionVariable:CONDITION_VARIABLE);
+procedure WakeAllConditionVariable(var ConditionVariable:CONDITION_VARIABLE);
 
-function SleepConditionVariableCS(var ConditionVariable:CONDITION_VARIABLE; var CriticalSection:CRITICAL_SECTION;dwMilliseconds:DWORD):BOOL; 
+function SleepConditionVariableCS(var ConditionVariable:CONDITION_VARIABLE; var CriticalSection:CRITICAL_SECTION;dwMilliseconds:DWORD):BOOL;
 
-procedure DeleteConditionVariable(var ConditionVariable:CONDITION_VARIABLE); 
+procedure DeleteConditionVariable(var ConditionVariable:CONDITION_VARIABLE);
 
 {==============================================================================}
 {Event Functions (Compatibility)}
@@ -1903,7 +1903,7 @@ function ResetEvent(hEvent:HANDLE):BOOL;
 function PulseEvent(hEvent:HANDLE):BOOL;
 
 {==============================================================================}
-{Process Functions (Compatibility)} 
+{Process Functions (Compatibility)}
 function GetProcessAffinityMask(hProcess:HANDLE;var lpProcessAffinityMask,lpSystemAffinityMask:DWORD_PTR):BOOL;
 function SetProcessAffinityMask(hProcess:HANDLE;dwProcessAffinityMask:DWORD_PTR):BOOL;
 
@@ -1919,13 +1919,13 @@ procedure FatalExit(ExitCode:Integer);
 function TerminateProcess(hProcess:HANDLE;uExitCode:UINT):BOOL;
 
 {==============================================================================}
-{Debug Functions (Compatibility)} 
+{Debug Functions (Compatibility)}
 procedure OutputDebugString(const lpOutputString:LPCSTR); inline;
 procedure OutputDebugStringA(const lpOutputString:LPCSTR);
 procedure OutputDebugStringW(const lpOutputString:LPCWSTR);
 
 {==============================================================================}
-{Library Functions (Compatibility)} 
+{Library Functions (Compatibility)}
 function lstrcmp(lpString1,lpString2:LPCSTR):Integer; inline;
 function lstrcmpA(lpString1,lpString2:LPCSTR):Integer;
 function lstrcmpW(lpString1,lpString2:LPCWSTR):Integer;
@@ -1935,7 +1935,7 @@ function lstrcmpiA(lpString1,lpString2:LPCSTR):Integer;
 function lstrcmpiW(lpString1,lpString2:LPCWSTR):Integer;
 
 function lstrcpy(lpString1:LPSTR;lpString2:LPCSTR):LPSTR;  inline;
-function lstrcpyA(lpString1:LPSTR;lpString2:LPCSTR):LPSTR; 
+function lstrcpyA(lpString1:LPSTR;lpString2:LPCSTR):LPSTR;
 function lstrcpyW(lpString1:LPWSTR;lpString2:LPCWSTR):LPWSTR;
 
 function lstrcpyn(lpString1:LPSTR;lpString2:LPCSTR;iMaxLength:Integer):LPSTR; inline;
@@ -1969,7 +1969,7 @@ begin
  {}
  {Setup System Handlers}
   {Nothing}
- 
+
  {Setup SysUtils Handlers}
  SysUtilsFileTimeToSystemTimeHandler:=FileTimeToSystemTime;
  SysUtilsFileTimeToLocalFileTimeHandler:=FileTimeToLocalFileTime;
@@ -1998,17 +1998,17 @@ function GetVersionExA(lpVersionInformation:LPOSVERSIONINFOA):BOOL;
 begin
  {}
  Result:=False;
- 
+
  if lpVersionInformation = nil then Exit;
  if lpVersionInformation.dwOSVersionInfoSize < SizeOf(TOsVersionInfoA) then Exit;
- 
+
  {Get Version Information}
  lpVersionInformation.dwMajorVersion:=ULTIBO_RELEASE_VERSION_MAJOR;
  lpVersionInformation.dwMinorVersion:=ULTIBO_RELEASE_VERSION_MINOR;
  lpVersionInformation.dwBuildNumber:=ULTIBO_RELEASE_VERSION_REVISION;
  lpVersionInformation.dwPlatformId:=VER_PLATFORM_ULTIBO;
  StrLCopy(lpVersionInformation.szCSDVersion,ULTIBO_RELEASE_NAME,128);
- 
+
  Result:=True;
 end;
 
@@ -2018,10 +2018,10 @@ function GetVersionExW(lpVersionInformation:LPOSVERSIONINFOW):BOOL;
 begin
  {}
  Result:=False;
- 
+
  if lpVersionInformation = nil then Exit;
  if lpVersionInformation.dwOSVersionInfoSize < SizeOf(TOsVersionInfoW) then Exit;
- 
+
  {Get Version Information}
  lpVersionInformation.dwMajorVersion:=ULTIBO_RELEASE_VERSION_MAJOR;
  lpVersionInformation.dwMinorVersion:=ULTIBO_RELEASE_VERSION_MINOR;
@@ -2040,7 +2040,7 @@ var
 begin
  {}
  FillChar(lpSystemInfo,SizeOf(SYSTEM_INFO),0);
- 
+
  {Get System Info}
  lpSystemInfo.wProcessorArchitecture:=0;
  lpSystemInfo.wReserved:=0;
@@ -2056,10 +2056,10 @@ begin
  lpSystemInfo.dwAllocationGranularity:=Platform.MemoryGetPageSize;
  lpSystemInfo.wProcessorLevel:=0;
  lpSystemInfo.wProcessorRevision:=Platform.CPUGetRevision;
- 
+
  {Get CPU Type}
  CPUType:=Platform.CPUGetType;
- 
+
  {Get wProcessorArchitecture / dwProcessorType}
  case CPUType of
   CPU_TYPE_ARMV6:begin
@@ -2109,26 +2109,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpBuffer = nil then
   begin
    if nSize <> 0 then Exit;
-  
+
    {Get Host Name}
    Value:=Platform.HostGetName;
    nSize:=Length(Value);
   end
  else
-  begin 
+  begin
    if nSize = 0 then Exit;
- 
+
    {Get Host Name}
    Value:=Platform.HostGetName;
    StrLCopy(lpBuffer,PChar(Value),nSize);
    nSize:=Length(Value);
-  end; 
- 
- Result:=True; 
+  end;
+
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -2139,19 +2139,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpBuffer = nil then
   begin
    if nSize <> 0 then Exit;
-  
+
    {Get Host Name}
    Value:=Platform.HostGetName;
    nSize:=Length(Value);
-   
-   Result:=True; 
+
+   Result:=True;
   end
  else
-  begin 
+  begin
    if nSize = 0 then Exit;
 
    {Get Host Name}
@@ -2159,10 +2159,10 @@ begin
    if StringToWideChar(Value,lpBuffer,nSize shl 1) then {Buffer length in chars, Multiply by SizeOf(WideChar)} //To Do //Use default StringToWideChar from System ? //Watch for difference in size parameter (Bytes/Chars)
     begin
      nSize:=Length(Value);
-   
-     Result:=True; 
-    end; 
-  end;  
+
+     Result:=True;
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -2179,9 +2179,9 @@ function SetComputerNameA(const lpComputerName:LPCSTR):BOOL;
 begin
  {}
  Result:=False;
- 
+
  if lpComputerName = nil then Exit;
- 
+
  {Set Host Name}
  Result:=Platform.HostSetName(String(lpComputerName));
 end;
@@ -2194,11 +2194,11 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpComputerName = nil then Exit;
- 
+
  ComputerName:=WideCharToString(lpComputerName);
- 
+
  {Set Host Name}
  Result:=Platform.HostSetName(ComputerName);
 end;
@@ -2221,15 +2221,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpBuffer = nil then
   begin
    if nSize <> 0 then Exit;
-  
+
    {Get Host Name/Domain}
    Name:=Platform.HostGetName;
    Domain:=Platform.HostGetDomain;
-  
+
    {Check Name Type}
    case NameType of
     ComputerNameNetBIOS,ComputerNamePhysicalNetBIOS,ComputerNameDnsHostname,ComputerNamePhysicalDnsHostname:begin
@@ -2243,18 +2243,18 @@ begin
       if Length(Domain) > 0 then Value:=Value + '.' + Domain;
       nSize:=Length(Value);
      end;
-   end;  
-   
-   Result:=True; 
+   end;
+
+   Result:=True;
   end
  else
   begin
    if nSize = 0 then Exit;
-   
+
    {Get Host Name/Domain}
    Name:=Platform.HostGetName;
    Domain:=Platform.HostGetDomain;
-   
+
    {Check Name Type}
    case NameType of
     ComputerNameNetBIOS,ComputerNamePhysicalNetBIOS,ComputerNameDnsHostname,ComputerNamePhysicalDnsHostname:begin
@@ -2271,10 +2271,10 @@ begin
       StrLCopy(lpBuffer,PChar(Value),nSize);
       nSize:=Length(Value);
      end;
-   end; 
+   end;
 
-   Result:=True;    
-  end;  
+   Result:=True;
+  end;
 end;
 
 {==============================================================================}
@@ -2287,18 +2287,18 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpBuffer = nil then Exit;
  if nSize = 0 then Exit;
- 
+
  if lpBuffer = nil then
   begin
    if nSize <> 0 then Exit;
-  
+
    {Get Host Name/Domain}
    Name:=Platform.HostGetName;
    Domain:=Platform.HostGetDomain;
-  
+
    {Check Name Type}
    case NameType of
     ComputerNameNetBIOS,ComputerNamePhysicalNetBIOS,ComputerNameDnsHostname,ComputerNamePhysicalDnsHostname:begin
@@ -2312,35 +2312,35 @@ begin
       if Length(Domain) > 0 then Value:=Value + '.' + Domain;
       nSize:=Length(Value);
      end;
-   end;  
-   
-   Result:=True; 
+   end;
+
+   Result:=True;
   end
  else
   begin
    if nSize = 0 then Exit;
-   
+
    {Get Host Name/Domain}
    Name:=Platform.HostGetName;
    Domain:=Platform.HostGetDomain;
-   
+
    {Check Name Type}
    case NameType of
     ComputerNameNetBIOS,ComputerNamePhysicalNetBIOS,ComputerNameDnsHostname,ComputerNamePhysicalDnsHostname:begin
       if StringToWideChar(Name,lpBuffer,nSize shl 1) then {Buffer length in chars, Multiply by SizeOf(WideChar)} //To Do //Use default StringToWideChar from System ? //Watch for difference in size parameter (Bytes/Chars)
        begin
         nSize:=Length(Name);
-        
-        Result:=True;    
-       end; 
+
+        Result:=True;
+       end;
      end;
     ComputerNameDnsDomain,ComputerNamePhysicalDnsDomain:begin
       if StringToWideChar(Domain,lpBuffer,nSize shl 1) then {Buffer length in chars, Multiply by SizeOf(WideChar)} //To Do //Use default StringToWideChar from System ? //Watch for difference in size parameter (Bytes/Chars)
        begin
         nSize:=Length(Domain);
 
-        Result:=True;    
-       end; 
+        Result:=True;
+       end;
      end;
     ComputerNameDnsFullyQualified,ComputerNamePhysicalDnsFullyQualified:begin
       Value:=Name;
@@ -2348,12 +2348,12 @@ begin
       if StringToWideChar(Value,lpBuffer,nSize shl 1) then {Buffer length in chars, Multiply by SizeOf(WideChar)} //To Do //Use default StringToWideChar from System ? //Watch for difference in size parameter (Bytes/Chars)
        begin
         nSize:=Length(Value);
-        
-        Result:=True;    
-       end; 
+
+        Result:=True;
+       end;
      end;
-   end; 
-  end;  
+   end;
+  end;
 end;
 
 {==============================================================================}
@@ -2374,9 +2374,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpBuffer = nil then Exit;
- 
+
  {Check Name Type}
  case NameType of
   ComputerNameNetBIOS,ComputerNamePhysicalNetBIOS,ComputerNameDnsHostname,ComputerNamePhysicalDnsHostname:begin
@@ -2395,12 +2395,12 @@ begin
     begin
      Domain:=Copy(Name,PosIdx + 1,Length(Name));
      Name:=Copy(Name,1,PosIdx);
-    
+
      Result:=Platform.HostSetName(Name);
      if Result then Result:=Platform.HostSetDomain(Domain);
     end;
   end;
- end;  
+ end;
 end;
 
 {==============================================================================}
@@ -2414,11 +2414,11 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpBuffer = nil then Exit;
- 
+
  Buffer:=WideCharToString(lpBuffer);
- 
+
  {Check Name Type}
  case NameType of
   ComputerNameNetBIOS,ComputerNamePhysicalNetBIOS,ComputerNameDnsHostname,ComputerNamePhysicalDnsHostname:begin
@@ -2437,12 +2437,12 @@ begin
     begin
      Domain:=Copy(Name,PosIdx + 1,Length(Name));
      Name:=Copy(Name,1,PosIdx);
-    
+
      Result:=Platform.HostSetName(Name);
      if Result then Result:=Platform.HostSetDomain(Domain);
     end;
   end;
- end;  
+ end;
 end;
 
 {==============================================================================}
@@ -2459,7 +2459,7 @@ function ExitUltiboEx(uFlags:UINT;dwReserved:DWORD):BOOL;
 begin
  {}
  Result:=False;
- 
+
  if (uFlags and (EWX_SHUTDOWN or EWX_POWEROFF)) <> 0 then
   begin
    {Shutdown}
@@ -2469,7 +2469,7 @@ begin
   begin
    {Restart}
    Result:=(SystemRestart(0) = ERROR_SUCCESS);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2513,7 +2513,7 @@ begin
  else
   begin
    Result:=ClockGetTotal;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2528,7 +2528,7 @@ begin
  else
   begin
    Result:=ClockGetTotal;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2564,7 +2564,7 @@ begin
  if SystemTimeToFileTime(lpSystemTime,FileTime) then
   begin
    ClockSetTime(Int64(FileTime),True);
-   
+
    Result:=True;
   end;
 end;
@@ -2598,10 +2598,10 @@ begin
    if LocalFileTimeToFileTime(LocalFileTime,FileTime) then
     begin
      ClockSetTime(Int64(FileTime),True);
-     
+
      Result:=True;
     end;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2690,13 +2690,13 @@ var
 begin
  {}
  Result:=TIME_ZONE_ID_INVALID;
- 
+
  FillChar(lpTimeZoneInformation,SizeOf(TIME_ZONE_INFORMATION),0);
 
  {Get Default Timezone}
  Timezone:=TimezoneGetDefault;
  if Timezone = nil then Exit;
- 
+
  {Get Timezone Information}
  lpTimeZoneInformation.Bias:=Timezone.Bias;
  StringToWideChar(Timezone.StandardName,@lpTimeZoneInformation.StandardName,32 shl 1); {Multiply by SizeOf(WideChar)}
@@ -2705,7 +2705,7 @@ begin
  StringToWideChar(Timezone.DaylightName,@lpTimeZoneInformation.DaylightName,32 shl 1); {Multiply by SizeOf(WideChar)}
  lpTimeZoneInformation.DaylightDate:=Timezone.DaylightStart;
  lpTimeZoneInformation.DaylightBias:=Timezone.DaylightBias;
- 
+
  {Get Timezone State}
  Result:=TimezoneGetState(Timezone);
 end;
@@ -2718,11 +2718,11 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Get Default Timezone}
  Timezone:=TimezoneGetDefault;
  if Timezone = nil then Exit;
- 
+
  {Set Timezone Information}
  Timezone.Bias:=lpTimeZoneInformation.Bias;
  Timezone.StandardName:=WideCharToString(@lpTimeZoneInformation.StandardName);
@@ -2731,7 +2731,7 @@ begin
  Timezone.DaylightName:=WideCharToString(@lpTimeZoneInformation.DaylightName);
  Timezone.DaylightStart:=lpTimeZoneInformation.DaylightDate;
  Timezone.DaylightBias:=lpTimeZoneInformation.DaylightBias;
- 
+
  Result:=True;
 end;
 
@@ -2747,17 +2747,17 @@ begin
  Result:=False;
  try
   Int64(lpFileTime):=0;
- 
+
   {Convert to DateTime}
   DateTime:=ComposeDateTime(EncodeDate(lpSystemTime.wYear,lpSystemTime.wMonth,lpSystemTime.wDay),EncodeTime(lpSystemTime.wHour,lpSystemTime.wMinute,lpSystemTime.wSecond,lpSystemTime.wMilliseconds));
-  
+
   {Convert to FileTime}
   lpFileTime:=DateTimeToSystemFileTime(DateTime); {No Conversion}
-  
+
   Result:=True;
  except
   {EncodeDate and EncodeTime can raise Exceptions}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2772,9 +2772,9 @@ begin
  {}
  Result:=False;
  FillChar(lpSystemTime,SizeOf(SYSTEMTIME),0);
- 
+
  if Int64(lpFileTime) < TIME_TICKS_TO_1899 then Exit;
- 
+
  {Convert to DateTime}
  DateTime:=SystemFileTimeToDateTime(lpFileTime); {No Conversion}
 
@@ -2782,7 +2782,7 @@ begin
  DecodeDate(DateTime,lpSystemTime.wYear,lpSystemTime.wMonth,lpSystemTime.wDay);
  DecodeTime(DateTime,lpSystemTime.wHour,lpSystemTime.wMinute,lpSystemTime.wSecond,lpSystemTime.wMilliseconds);
  lpSystemTime.wDayOfWeek:=DayOfWeek(DateTime) - 1;
- 
+
  Result:=True;
 end;
 
@@ -2832,12 +2832,12 @@ begin
  if Int64(lpFileTime1) = Int64(lpFileTime2) then
   begin
    Result:=0;
-  end 
+  end
  else if Int64(lpFileTime1) < Int64(lpFileTime2) then
   begin
    Result:=-1;
   end
- else if Int64(lpFileTime1) > Int64(lpFileTime2) then 
+ else if Int64(lpFileTime1) > Int64(lpFileTime2) then
   begin
    Result:=1;
   end;
@@ -2858,20 +2858,20 @@ begin
 
  lpFatDate:=(PASCAL_TIME_DOS_TIME_START shr 16);
  lpFatTime:=0;
-  
+
  {Check FileTime}
  if Int64(lpFileTime) < TIME_TICKS_TO_1980 then Exit;
- 
+
  {Convert to DateTime}
  DateTime:=LocalFileTimeToDateTime(lpFileTime); {No Conversion}
- 
+
  {Convert to FileDate}
  FileDate:=DateTimeToFileDate(DateTime);
-  
+
  {Get DOS date and time}
  lpFatDate:=FileDate shr 16;
  lpFatTime:=FileDate and $FFFF;
-  
+
  Result:=True;
 end;
 
@@ -2889,21 +2889,21 @@ begin
  Result:=False;
  try
   Int64(lpFileTime):=TIME_TICKS_TO_1980;
-  
+
   {Get File Date}
   FileDate:=(wFatDate shl 16) or wFatTime;
   if FileDate < PASCAL_TIME_DOS_TIME_START then Exit;
 
-  {Convert to DateTime}  
+  {Convert to DateTime}
   DateTime:=FileDateToDateTime(FileDate);
-  
+
   {Convert to FileTime}
   lpFileTime:=DateTimeToLocalFileTime(DateTime); {No Conversion}
-  
+
   Result:=True;
  except
   {FileDateToDateTime can raise Exceptions}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2914,7 +2914,7 @@ function QueryPerformanceCounter(var lpPerformanceCount: LARGE_INTEGER): BOOL;
 begin
  {}
  Result:=True;
- 
+
  lpPerformanceCount.QuadPart:=ClockGetTotal;
 end;
 
@@ -2928,7 +2928,7 @@ function QueryPerformanceFrequency(var lpFrequency: LARGE_INTEGER): BOOL;
 begin
  {}
  Result:=True;
- 
+
  lpFrequency.QuadPart:=CLOCK_FREQUENCY;
 end;
 
@@ -2978,11 +2978,11 @@ var
 begin
  {}
  Result:='';
- 
+
  {Get Timezone}
  Timezone:=TimezoneGetDefault;
  if Timezone = nil then Exit;
- 
+
  {Get Name}
  Result:=TimezoneGetName(Timezone);
 end;
@@ -3000,9 +3000,9 @@ begin
  {Find Timezone}
  Timezone:=TimezoneFind(AName);
  if Timezone = nil then Exit;
- 
+
  {Set Timezone}
- Result:=(TimezoneSetDefault(Timezone) = ERROR_SUCCESS); 
+ Result:=(TimezoneSetDefault(Timezone) = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
@@ -3015,9 +3015,9 @@ var
 begin
  {}
  Result:=0;
- 
+
  FillChar(TimeZoneInformation,SizeOf(TTimeZoneInformation),0);
- 
+
  ResultCode:=GetTimeZoneInformation(TimeZoneInformation);
  if ResultCode <> TIME_ZONE_ID_INVALID then
   begin
@@ -3033,7 +3033,7 @@ begin
     end;
   end;
 end;
- 
+
 {==============================================================================}
 
 function GetTimezoneStandardOffset:LongInt;
@@ -3043,9 +3043,9 @@ var
 begin
  {}
  Result:=0;
- 
+
  FillChar(TimeZoneInformation,SizeOf(TTimeZoneInformation),0);
- 
+
  if GetTimeZoneInformation(TimeZoneInformation) <> TIME_ZONE_ID_INVALID then
   begin
    Result:=TimeZoneInformation.Bias;
@@ -3061,11 +3061,11 @@ var
 begin
  {}
  FillChar(TimeZoneInformation,SizeOf(TTimeZoneInformation),0);
- 
+
  if GetTimeZoneInformation(TimeZoneInformation) <> TIME_ZONE_ID_INVALID then
   begin
    TimeZoneInformation.Bias:=AOffset;
-   
+
    SetTimeZoneInformation(TimeZoneInformation);
   end;
 end;
@@ -3079,9 +3079,9 @@ var
 begin
  {}
  Result:=0;
- 
+
  FillChar(TimeZoneInformation,SizeOf(TTimeZoneInformation),0);
- 
+
  if GetTimeZoneInformation(TimeZoneInformation) <> TIME_ZONE_ID_INVALID then
   begin
    Result:=TimeZoneInformation.DaylightBias;
@@ -3097,11 +3097,11 @@ var
 begin
  {}
  FillChar(TimeZoneInformation,SizeOf(TTimeZoneInformation),0);
- 
+
  if GetTimeZoneInformation(TimeZoneInformation) <> TIME_ZONE_ID_INVALID then
   begin
    TimeZoneInformation.DaylightBias:=AOffset;
-   
+
    SetTimeZoneInformation(TimeZoneInformation);
   end;
 end;
@@ -3115,12 +3115,12 @@ var
 begin
  {}
  Result:='';
- 
+
  {Get Timezone}
  Timezone:=TimezoneGetDefault;
  if Timezone = nil then Exit;
 
- {Get Standard Start} 
+ {Get Standard Start}
  Result:=TimezoneStartToDescription(TimezoneGetStandardStart(Timezone));
 end;
 
@@ -3133,12 +3133,12 @@ var
 begin
  {}
  Result:='';
- 
+
  {Get Timezone}
  Timezone:=TimezoneGetDefault;
  if Timezone = nil then Exit;
 
- {Get Daylight Start} 
+ {Get Daylight Start}
  Result:=TimezoneStartToDescription(TimezoneGetDaylightStart(Timezone));
 end;
 
@@ -3151,12 +3151,12 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Get Timezone}
  Timezone:=TimezoneGetDefault;
  if Timezone = nil then Exit;
 
- {Get Standard Date} 
+ {Get Standard Date}
  Result:=TimezoneGetStandardDate(Timezone,True);
 end;
 
@@ -3169,12 +3169,12 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Get Timezone}
  Timezone:=TimezoneGetDefault;
  if Timezone = nil then Exit;
 
- {Get Daylight Date} 
+ {Get Daylight Date}
  Result:=TimezoneGetDaylightDate(Timezone,True);
 end;
 
@@ -3189,11 +3189,11 @@ var
 begin
  {}
  Result:=0;
- 
+
  if FileTimeToLocalFileTime(AFileTime,LocalFileTime) then
   begin
    if Int64(LocalFileTime) < TIME_TICKS_TO_1899 then Exit;
-   
+
    Result:=((Int64(LocalFileTime) - TIME_TICKS_TO_1899) div TIME_TICKS_PER_DAY) + (((Int64(LocalFileTime) - TIME_TICKS_TO_1899) mod TIME_TICKS_PER_DAY) / TIME_TICKS_PER_DAY);
   end;
 end;
@@ -3211,7 +3211,7 @@ begin
 
  {Modified to restrict resolution to 1 millisecond}
  Int64(LocalFileTime):=((Trunc(ADateTime) * TIME_TICKS_PER_DAY) + TIME_TICKS_TO_1899) + ((Round(Frac(ADateTime) * PASCAL_TIME_MILLISECONDS_PER_DAY) * TIME_TICKS_PER_MILLISECOND));
- 
+
  LocalFileTimeToFileTime(LocalFileTime,Result);
 end;
 
@@ -3224,9 +3224,9 @@ function LocalFileTimeToDateTime(const AFileTime:TFileTime):TDateTime;
 begin
  {}
  Result:=0;
- 
+
  if Int64(AFileTime) < TIME_TICKS_TO_1899 then Exit;
- 
+
  Result:=((Int64(AFileTime) - TIME_TICKS_TO_1899) div TIME_TICKS_PER_DAY) + (((Int64(AFileTime) - TIME_TICKS_TO_1899) mod TIME_TICKS_PER_DAY) / TIME_TICKS_PER_DAY);
 end;
 
@@ -3253,9 +3253,9 @@ function SystemFileTimeToDateTime(const AFileTime:TFileTime):TDateTime;
 begin
  {}
  Result:=0;
- 
+
  if Int64(AFileTime) < TIME_TICKS_TO_1899 then Exit;
- 
+
  Result:=((Int64(AFileTime) - TIME_TICKS_TO_1899) div TIME_TICKS_PER_DAY) + (((Int64(AFileTime) - TIME_TICKS_TO_1899) mod TIME_TICKS_PER_DAY) / TIME_TICKS_PER_DAY);
 end;
 
@@ -3282,9 +3282,9 @@ function FileTimeToUnixTime(const AFileTime:TFileTime):TUnixTime;
 begin
  {}
  Result:=0;
- 
+
  if Int64(AFileTime) < TIME_TICKS_TO_1970 then Exit;
- 
+
  Result:=(Int64(AFileTime) - TIME_TICKS_TO_1970) div TIME_TICKS_PER_SECOND;
 end;
 
@@ -3318,9 +3318,9 @@ function DateTimeToUnixTime(ADateTime:TDateTime):TUnixTime;
 begin
  {}
  Result:=0;
- 
+
  if Trunc(ADateTime) < UNIX_TIME_DAYS_TO_1970 then Exit;
- 
+
  Result:=(Trunc(ADateTime - UNIX_TIME_DAYS_TO_1970) * UNIX_TIME_SECONDS_PER_DAY) + (Round(Frac(ADateTime) * UNIX_TIME_SECONDS_PER_DAY));
 end;
 
@@ -3335,13 +3335,13 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check FileTime}
  if Int64(AFileTime) < TIME_TICKS_TO_1980 then Exit; {Note: Could be wrong if within TIMEZONE_TIME_OFFSET of TIME_TICKS_TO_1980}
-  
+
  {Convert to DateTime}
  DateTime:=FileTimeToDateTime(AFileTime); {Converted to Local}
-  
+
  {Convert to FileDate}
  Result:=DateTimeToFileDate(DateTime);
 end;
@@ -3360,10 +3360,10 @@ begin
  try
   {Check FileDate}
   if AFileDate < PASCAL_TIME_DOS_TIME_START then Exit;
-  
+
   {Convert to DateTime}
   DateTime:=FileDateToDateTime(AFileDate);
-  
+
   {Convert to FileTime}
   Result:=DateTimeToFileTime(DateTime); {Converted to UTC}
  except
@@ -3381,14 +3381,14 @@ var
 begin
  {}
  Result:=AFileTime;
- 
+
  if TIMEZONE_TIME_ADJUST = 0 then Exit;
- 
+
  if Int64(Result) = 0 then Exit; {Account for zero time}
- 
+
  Offset:=TIMEZONE_TIME_ADJUST;
  Offset:=Offset * TIME_TICKS_PER_MINUTE;
- 
+
  Int64(Result):=Int64(AFileTime) - (Offset);
 end;
 
@@ -3402,14 +3402,14 @@ var
 begin
  {}
  Result:=AFileTime;
- 
+
  if TIMEZONE_TIME_ADJUST = 0 then Exit;
- 
+
  if Int64(Result) = 0 then Exit; {Account for zero time}
- 
+
  Offset:=TIMEZONE_TIME_ADJUST;
  Offset:=Offset * TIME_TICKS_PER_MINUTE;
- 
+
  Int64(Result):=Int64(AFileTime) + (Offset);
 end;
 
@@ -3451,13 +3451,13 @@ var
 begin
  {}
  Result:=AFileTime;
- 
+
  if AOffset = 0 then Exit;
  if Int64(Result) = 0 then Exit; {Account for zero time}
- 
+
  Offset:=AOffset;
  Offset:=Offset * TIME_TICKS_PER_MINUTE;
- 
+
  if ALocal then
   Int64(Result):=Int64(AFileTime) + (Offset)
  else
@@ -3475,13 +3475,13 @@ var
 begin
  {}
  Result:=ADateTime;
- 
+
  if AOffset = 0 then Exit;
  if Result = 0 then Exit; {Account for zero time}
- 
+
  Offset:=AOffset;
  Offset:=Offset * PASCAL_MINUTE_OFFSET;
- 
+
  if ALocal then
   Result:=ADateTime + Offset
  else
@@ -3499,7 +3499,7 @@ end;
 
 {==============================================================================}
 
-function GetDriveTypeA(const lpRootPathName:LPCSTR):UINT; 
+function GetDriveTypeA(const lpRootPathName:LPCSTR):UINT;
 begin
  {}
  if Assigned(UltiboGetDriveTypeAHandler) then
@@ -3509,7 +3509,7 @@ begin
  else
   begin
    Result:=DRIVE_UNKNOWN;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3522,13 +3522,13 @@ begin
  if Assigned(UltiboGetDriveTypeAHandler) then
   begin
    RootPath:=WideCharToString(lpRootPathName);
-   
+
    Result:=UltiboGetDriveTypeAHandler(RootPath);
   end
  else
   begin
    Result:=DRIVE_UNKNOWN;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3543,7 +3543,7 @@ begin
  else
   begin
    Result:=0;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3565,16 +3565,16 @@ begin
   begin
    Result:=0;
    if lpBuffer = nil then Exit;
-   
+
    Value:=UltiboGetLogicalDriveStringsAHandler;
    StrLCopy(lpBuffer,PChar(Value),nBufferLength);
-   
+
    Result:=Length(Value);
   end
  else
   begin
    Result:=0;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3594,12 +3594,12 @@ begin
    if StringToWideChar(Value,lpBuffer,nBufferLength shl 1) then {Buffer length in chars, Multiply by SizeOf(WideChar)} //To Do //Use default StringToWideChar from System ? //Watch for difference in size parameter (Bytes/Chars)
     begin
      Result:=Length(Value);
-    end; 
+    end;
   end
  else
   begin
    Result:=0;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3612,7 +3612,7 @@ end;
 
 {==============================================================================}
 
-function DefineDosDeviceA(dwFlags:DWORD;const lpDeviceName,lpTargetPath:LPCSTR):BOOL; 
+function DefineDosDeviceA(dwFlags:DWORD;const lpDeviceName,lpTargetPath:LPCSTR):BOOL;
 begin
  {}
  if Assigned(UltiboDefineDosDeviceAHandler) then
@@ -3622,12 +3622,12 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
-function DefineDosDeviceW(dwFlags:DWORD;const lpDeviceName,lpTargetPath:LPCWSTR):BOOL; 
+function DefineDosDeviceW(dwFlags:DWORD;const lpDeviceName,lpTargetPath:LPCWSTR):BOOL;
 var
  DeviceName:String;
  TargetPath:String;
@@ -3637,13 +3637,13 @@ begin
   begin
    DeviceName:=WideCharToString(lpDeviceName);
    TargetPath:=WideCharToString(lpTargetPath);
-   
+
    Result:=UltiboDefineDosDeviceAHandler(DeviceName,TargetPath,dwFlags);
   end
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3668,13 +3668,13 @@ begin
 
    Value:=UltiboQueryDosDeviceAHandler(String(lpDeviceName));
    StrLCopy(lpTargetPath,PChar(Value),ucchMax);
-   
+
    Result:=Length(Value);
   end
  else
   begin
    Result:=0;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3691,17 +3691,17 @@ begin
    if lpTargetPath = nil then Exit;
 
    DeviceName:=WideCharToString(lpDeviceName);
-   
+
    Value:=UltiboQueryDosDeviceAHandler(DeviceName);
    if StringToWideChar(Value,lpTargetPath,ucchMax shl 1) then {Buffer length in chars, Multiply by SizeOf(WideChar)} //To Do //Use default StringToWideChar from System ? //Watch for difference in size parameter (Bytes/Chars)
     begin
      Result:=Length(Value);
-    end; 
+    end;
   end
  else
   begin
    Result:=0;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3714,7 +3714,7 @@ end;
 
 {==============================================================================}
 
-function SetVolumeLabelA(const lpRootPathName,lpVolumeName:LPCSTR):BOOL; 
+function SetVolumeLabelA(const lpRootPathName,lpVolumeName:LPCSTR):BOOL;
 begin
  {}
  if Assigned(UltiboSetVolumeLabelAHandler) then
@@ -3724,7 +3724,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3739,13 +3739,13 @@ begin
   begin
    RootPath:=WideCharToString(lpRootPathName);
    VolumeName:=WideCharToString(lpVolumeName);
-   
+
    Result:=UltiboSetVolumeLabelAHandler(RootPath,VolumeName);
   end
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3758,7 +3758,7 @@ end;
 
 {==============================================================================}
 
-function GetVolumeInformationA(const lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL; 
+function GetVolumeInformationA(const lpRootPathName:LPCSTR;lpVolumeNameBuffer:LPSTR;nVolumeNameSize:DWORD;lpVolumeSerialNumber:LPDWORD;var lpMaximumComponentLength,lpFileSystemFlags:DWORD;lpFileSystemNameBuffer:LPSTR;nFileSystemNameSize:DWORD):BOOL;
 var
  VolumeName:String;
  SystemName:String;
@@ -3769,10 +3769,10 @@ begin
    Result:=False;
    if lpVolumeNameBuffer = nil then Exit;
    if lpFileSystemNameBuffer = nil then Exit;
-   
+
    VolumeName:='';
    SystemName:='';
-   
+
    Result:=UltiboGetVolumeInformationAHandler(String(lpRootPathName),VolumeName,lpVolumeSerialNumber^,lpMaximumComponentLength,lpFileSystemFlags,SystemName);
    if Result then
     begin
@@ -3783,7 +3783,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3804,7 +3804,7 @@ begin
    RootPath:=WideCharToString(lpRootPathName);
    VolumeName:='';
    SystemName:='';
-   
+
    Result:=UltiboGetVolumeInformationAHandler(RootPath,VolumeName,lpVolumeSerialNumber^,lpMaximumComponentLength,lpFileSystemFlags,SystemName);
    if Result then
     begin
@@ -3815,7 +3815,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3838,7 +3838,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3851,13 +3851,13 @@ begin
  if Assigned(UltiboGetDiskFreeSpaceAHandler) then
   begin
    RootPath:=WideCharToString(lpRootPathName);
-   
+
    Result:=UltiboGetDiskFreeSpaceAHandler(RootPath,lpSectorsPerCluster,lpBytesPerSector,lpNumberOfFreeClusters,lpTotalNumberOfClusters);
   end
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3886,7 +3886,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3900,7 +3900,7 @@ begin
  if Assigned(UltiboGetDiskFreeSpaceExAHandler) then
   begin
    DirectoryName:=WideCharToString(lpDirectoryName);
-   
+
    Result:=UltiboGetDiskFreeSpaceExAHandler(DirectoryName,QWord(lpFreeBytesAvailableToCaller),QWord(lpTotalNumberOfBytes),TotalNumberOfFreeBytes);
    if Result and (lpTotalNumberOfFreeBytes <> nil) then
     begin
@@ -3910,7 +3910,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3920,7 +3920,7 @@ function GetPathDrive(const APath:String):Byte;
 begin
  {}
  Result:=DEFAULT_DRIVE;
- 
+
  if Length(APath) > 1 then
   begin
    {Check for Drive Letter}
@@ -3932,14 +3932,14 @@ begin
        Exit;
       end;
     end;
-   
+
    {Check for Unc Path}
    if (APath[1] = '\') and (APath[2] = '\') then
     begin
      Result:=NON_DRIVE;
      Exit;
     end;
-   
+
    {Default to Current Directory}
    Result:=DEFAULT_DRIVE;
   end;
@@ -3957,8 +3957,8 @@ begin
  else
   begin
    Result:=dtINVALID;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -3972,8 +3972,8 @@ begin
  else
   begin
    FillChar(Result,SizeOf(TDriveData),0);
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -3987,8 +3987,8 @@ begin
  else
   begin
    Result:=0;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -4002,8 +4002,8 @@ begin
  else
   begin
    Result:='';
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -4017,8 +4017,8 @@ begin
  else
   begin
    Result:=False;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -4032,8 +4032,8 @@ begin
  else
   begin
    Result:=0;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -4047,8 +4047,8 @@ begin
  else
   begin
    Result:=False;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -4062,8 +4062,8 @@ begin
  else
   begin
    Result:=False;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -4077,8 +4077,8 @@ begin
  else
   begin
    Result:=0;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -4092,8 +4092,8 @@ begin
  else
   begin
    Result:='';
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -4107,8 +4107,8 @@ begin
  else
   begin
    Result:=0;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -4122,8 +4122,8 @@ begin
  else
   begin
    Result:=0;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -4137,8 +4137,8 @@ begin
  else
   begin
    Result:=0;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -4152,12 +4152,12 @@ begin
  else
   begin
    Result:=0;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
-function GetDriveInformation(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean;    
+function GetDriveInformation(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean;
 begin
  {}
  if Assigned(UltiboGetDriveInformationHandler) then
@@ -4167,8 +4167,8 @@ begin
  else
   begin
    Result:=False;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -4182,8 +4182,8 @@ begin
  else
   begin
    Result:=0;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 
@@ -4197,8 +4197,8 @@ begin
  else
   begin
    Result:=False;
-  end; 
-end; 
+  end;
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -4213,7 +4213,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4259,7 +4259,7 @@ begin
  else
   begin
    Result:=HANDLE(INVALID_HANDLE_VALUE);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4273,13 +4273,13 @@ begin
  if Assigned(UltiboCreateFileAHandler) then
   begin
    FileName:=WideCharToString(lpFileName);
-   
+
    Result:=UltiboCreateFileAHandler(FileName,dwDesiredAccess,dwShareMode,dwCreationDisposition,dwFlagsAndAttributes);
   end
  else
   begin
    Result:=HANDLE(INVALID_HANDLE_VALUE);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4302,7 +4302,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4315,13 +4315,13 @@ begin
  if Assigned(UltiboSetFileAttributesAHandler) then
   begin
    FileName:=WideCharToString(lpFileName);
-   
+
    Result:=UltiboSetFileAttributesAHandler(FileName,dwFileAttributes);
   end
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4344,7 +4344,7 @@ begin
  else
   begin
    Result:=INVALID_FILE_ATTRIBUTES;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4357,13 +4357,13 @@ begin
  if Assigned(UltiboGetFileAttributesAHandler) then
   begin
    FileName:=WideCharToString(lpFileName);
-   
+
    Result:=UltiboGetFileAttributesAHandler(FileName);
   end
  else
   begin
    Result:=INVALID_FILE_ATTRIBUTES;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4386,7 +4386,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4399,13 +4399,13 @@ begin
  if Assigned(UltiboDeleteFileAHandler) then
   begin
    FileName:=WideCharToString(lpFileName);
-   
+
    Result:=UltiboDeleteFileAHandler(FileName);
   end
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4428,7 +4428,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4436,20 +4436,20 @@ end;
 function MoveFileW(const lpExistingFileName,lpNewFileName:LPCWSTR):BOOL;
 var
  NewFileName:String;
- ExistingFileName:String; 
+ ExistingFileName:String;
 begin
  {}
  if Assigned(UltiboMoveFileAHandler) then
   begin
    NewFileName:=WideCharToString(lpNewFileName);
    ExistingFileName:=WideCharToString(lpExistingFileName);
-   
+
    Result:=UltiboMoveFileAHandler(ExistingFileName,NewFileName);
   end
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4472,7 +4472,7 @@ begin
  else
   begin
    Result:=HANDLE(INVALID_HANDLE_VALUE);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4486,7 +4486,7 @@ begin
  if Assigned(UltiboFindFirstFileAHandler) then
   begin
    FileName:=WideCharToString(lpFileName);
- 
+
    Result:=UltiboFindFirstFileAHandler(FileName,FindFileData);
    if Result <> HANDLE(INVALID_HANDLE_VALUE) then
     begin
@@ -4505,7 +4505,7 @@ begin
  else
   begin
    Result:=HANDLE(INVALID_HANDLE_VALUE);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4528,7 +4528,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4558,12 +4558,12 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
-function FindCloseFile(hFindFile:HANDLE):BOOL; 
+function FindCloseFile(hFindFile:HANDLE):BOOL;
 begin
  {}
  if Assigned(UltiboFindCloseFileHandler) then
@@ -4573,7 +4573,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4588,12 +4588,12 @@ begin
  else
   begin
    Result:=INVALID_FILE_SIZE;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
-function GetFileSizeEx(hFile:HANDLE;var lpFileSize:LARGE_INTEGER):BOOL; 
+function GetFileSizeEx(hFile:HANDLE;var lpFileSize:LARGE_INTEGER):BOOL;
 begin
  {}
  if Assigned(UltiboGetFileSizeExHandler) then
@@ -4602,12 +4602,12 @@ begin
    if lpFileSize.QuadPart <> -1 then
     begin
      Result:=True;
-    end; 
+    end;
   end
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4622,7 +4622,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4637,7 +4637,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4658,7 +4658,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4679,7 +4679,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4694,7 +4694,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4709,7 +4709,7 @@ begin
  else
   begin
    Result:=INVALID_SET_FILE_POINTER;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4724,7 +4724,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4739,7 +4739,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4762,7 +4762,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4777,13 +4777,13 @@ begin
   begin
    NewFileName:=WideCharToString(lpNewFileName);
    ExistingFileName:=WideCharToString(lpExistingFileName);
-   
+
    Result:=UltiboCopyFileAHandler(ExistingFileName,NewFileName,bFailIfExists);
   end
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4806,7 +4806,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4819,13 +4819,13 @@ begin
  if Assigned(UltiboSetFileShortNameAHandler) then
   begin
    ShortName:=WideCharToString(lpShortName);
-   
+
    Result:=UltiboSetFileShortNameAHandler(hFile,ShortName);
   end
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4849,7 +4849,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4865,13 +4865,13 @@ begin
   begin
    FileName:=WideCharToString(lpFileName);
    ExistingFileName:=WideCharToString(lpExistingFileName);
-   
+
    Result:=UltiboCreateHardLinkAHandler(FileName,ExistingFileName);
   end
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4894,7 +4894,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4909,13 +4909,13 @@ begin
   begin
    TargetFileName:=WideCharToString(lpTargetFileName);
    SymlinkFileName:=WideCharToString(lpSymlinkFileName);
-   
+
    Result:=UltiboCreateSymbolicLinkAHandler(SymlinkFileName,TargetFileName,(dwFlags = SYMBOLIC_LINK_FLAG_DIRECTORY));
   end
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4930,7 +4930,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4967,7 +4967,7 @@ begin
    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
 
    Result:=0;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4989,14 +4989,14 @@ begin
    if StringToWideChar(Value,lpszFilePath,cchFilePath shl 1) then {Buffer length in chars, Multiply by SizeOf(WideChar)} //To Do //Use default StringToWideChar from System ? //Watch for difference in size parameter (Bytes/Chars)
     begin
      Result:=Length(Value);
-    end; 
+    end;
   end
  else
   begin
    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
 
    Result:=0;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -5024,7 +5024,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5038,13 +5038,13 @@ begin
  if Assigned(UltiboCreateDirectoryAHandler) then
   begin
    PathName:=WideCharToString(lpPathName);
-   
+
    Result:=UltiboCreateDirectoryAHandler(PathName);
   end
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5067,7 +5067,7 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5080,13 +5080,13 @@ begin
  if Assigned(UltiboRemoveDirectoryAHandler) then
   begin
    PathName:=WideCharToString(lpPathName);
-   
+
    Result:=UltiboRemoveDirectoryAHandler(PathName);
   end
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5109,12 +5109,12 @@ begin
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
-function SetCurrentDirectoryW(const lpPathName:LPCWSTR):BOOL; 
+function SetCurrentDirectoryW(const lpPathName:LPCWSTR):BOOL;
 var
  PathName:String;
 begin
@@ -5122,13 +5122,13 @@ begin
  if Assigned(UltiboSetCurrentDirectoryAHandler) then
   begin
    PathName:=WideCharToString(lpPathName);
-   
+
    Result:=UltiboSetCurrentDirectoryAHandler(PathName);
   end
  else
   begin
    Result:=False;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5150,16 +5150,16 @@ begin
   begin
    Result:=0;
    if lpBuffer = nil then Exit;
-   
+
    Value:=UltiboGetCurrentDirectoryAHandler;
    StrLCopy(lpBuffer,PChar(Value),nBufferLength);
-   
+
    Result:=Length(Value);
   end
  else
   begin
    Result:=0;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5173,17 +5173,17 @@ begin
   begin
    Result:=0;
    if lpBuffer = nil then Exit;
-   
+
    Value:=UltiboGetCurrentDirectoryAHandler;
    if StringToWideChar(Value,lpBuffer,nBufferLength shl 1) then {Buffer length in chars, Multiply by SizeOf(WideChar)} //To Do //Use default StringToWideChar from System ? //Watch for difference in size parameter (Bytes/Chars)
     begin
      Result:=Length(Value);
-    end; 
+    end;
   end
  else
   begin
    Result:=0;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5208,13 +5208,13 @@ begin
 
    Value:=UltiboGetLongPathNameAHandler(String(lpszShortPath));
    StrLCopy(lpszLongPath,PChar(Value),cchBuffer);
-   
+
    Result:=Length(Value);
   end
  else
   begin
    Result:=0;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5231,17 +5231,17 @@ begin
    if lpszLongPath = nil then Exit;
 
    ShortPath:=WideCharToString(lpszShortPath);
-   
+
    Value:=UltiboGetLongPathNameAHandler(ShortPath);
    if StringToWideChar(Value,lpszLongPath,cchBuffer shl 1) then {Buffer length in chars, Multiply by SizeOf(WideChar)} //To Do //Use default StringToWideChar from System ? //Watch for difference in size parameter (Bytes/Chars)
     begin
      Result:=Length(Value);
-    end; 
+    end;
   end
  else
   begin
    Result:=0;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5254,7 +5254,7 @@ end;
 
 {==============================================================================}
 
-function GetShortPathNameA(const lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD; 
+function GetShortPathNameA(const lpszLongPath:LPCSTR;lpszShortPath:LPSTR;cchBuffer:DWORD):DWORD;
 var
  Value:String;
 begin
@@ -5266,13 +5266,13 @@ begin
 
    Value:=UltiboGetShortPathNameAHandler(String(lpszLongPath));
    StrLCopy(lpszShortPath,PChar(Value),cchBuffer);
-   
+
    Result:=Length(Value);
   end
  else
   begin
    Result:=0;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5289,17 +5289,17 @@ begin
    if lpszShortPath = nil then Exit;
 
    LongPath:=WideCharToString(lpszLongPath);
-   
+
    Value:=UltiboGetShortPathNameAHandler(LongPath);
    if StringToWideChar(Value,lpszShortPath,cchBuffer shl 1) then {Buffer length in chars, Multiply by SizeOf(WideChar)} //To Do //Use default StringToWideChar from System ? //Watch for difference in size parameter (Bytes/Chars)
     begin
      Result:=Length(Value);
-    end; 
+    end;
   end
  else
   begin
    Result:=0;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5325,13 +5325,13 @@ begin
 
    Value:=UltiboGetFullPathNameAHandler(String(lpFileName));
    StrLCopy(lpBuffer,PChar(Value),nBufferLength);
-   
+
    Result:=Length(Value);
   end
  else
   begin
    Result:=0;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5349,17 +5349,17 @@ begin
    if lpBuffer = nil then Exit;
 
    FileName:=WideCharToString(lpFileName);
-   
+
    Value:=UltiboGetFullPathNameAHandler(FileName);
    if StringToWideChar(Value,lpBuffer,nBufferLength shl 1) then {Buffer length in chars, Multiply by SizeOf(WideChar)} //To Do //Use default StringToWideChar from System ? //Watch for difference in size parameter (Bytes/Chars)
     begin
      Result:=Length(Value);
-    end; 
+    end;
   end
  else
   begin
    Result:=0;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5413,16 +5413,16 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if cmdline <> nil then
   begin
    Size:=StrLen(cmdline) + 1;
-   
+
    Result:=StrAlloc(Size);
    if Result <> nil then
     begin
      StrLCopy(Result,cmdline,StrLen(cmdline));
-    end; 
+    end;
   end;
 end;
 
@@ -5435,16 +5435,16 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if cmdline <> nil then
   begin
    Size:=StrLen(cmdline) + 1;
-   
+
    Result:=WideStrAlloc(Size);
    if Result <> nil then
     begin
      StringToWideChar(cmdline,Result,Size shl 1); {Multiply by SizeOf(WideChar)} //To Do //Use default StringToWideChar from System ? //Watch for difference in size parameter (Bytes/Chars)
-    end; 
+    end;
   end;
 end;
 
@@ -5468,7 +5468,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if ParamCount > 0 then
   begin
    if Trim(AParam) <> '' then
@@ -5510,12 +5510,12 @@ var
 begin
  {}
  Result:='';
- 
+
  ParamIndex:=GetParamIndex(AParam);
  if ParamIndex <> -1 then
   begin
    WorkBuffer:=Trim(ParamStr(ParamIndex));
-   
+
    Result:=Copy(WorkBuffer,Length(AParam) + 3,Length(WorkBuffer));
   end;
 end;
@@ -5548,7 +5548,7 @@ begin
 
  Size:=1 * SizeOf(AnsiChar);
  Offset:=0;
- 
+
  {Calculate Size}
  for Index:=1 to Count do
   begin
@@ -5559,7 +5559,7 @@ begin
  {Allocate Environment}
  Result:=AllocMem(Size);
  if Result = nil then Exit;
- 
+
  {Copy Environment}
  for Index:=1 to Count do
   begin
@@ -5567,8 +5567,8 @@ begin
    StrLCopy(PAnsiChar(Result + Offset),PAnsiChar(AnsiString(Buffer)),Length(Buffer));
    Inc(Offset,(Length(Buffer) + 1) * SizeOf(AnsiChar));
   end;
-  
- {Add Final Null} 
+
+ {Add Final Null}
  PByte(Result + Offset)^:=0;
 end;
 
@@ -5610,8 +5610,8 @@ begin
    StringToWideChar(Buffer,PWideChar(Result + Offset),(Length(Buffer) + 1) shl 1); {Buffer length in chars, Multiply by SizeOf(WideChar)}
    Inc(Offset,(Length(Buffer) + 1) * SizeOf(WideChar));
   end;
-  
- {Add Final Null} 
+
+ {Add Final Null}
  PWord(Result + Offset)^:=0;
 end;
 
@@ -5629,12 +5629,12 @@ function FreeEnvironmentStringsA(pstr:LPSTR):BOOL;
 begin
  {}
  Result:=False;
- 
+
  if pstr = nil then Exit;
- 
+
  {Free Environment}
  FreeMem(pstr);
- 
+
  Result:=True;
 end;
 
@@ -5644,12 +5644,12 @@ function FreeEnvironmentStringsW(pstr:LPWSTR):BOOL;
 begin
  {}
  Result:=False;
- 
+
  if pstr = nil then Exit;
- 
+
  {Free Environment}
  FreeMem(pstr);
- 
+
  Result:=True;
 end;
 
@@ -5669,21 +5669,21 @@ var
 begin
  {}
  Result:=0;
- 
+
  if lpBuffer = nil then
   begin
    if nSize <> 0 then Exit;
-   
+
    Value:=EnvironmentGet(String(lpName));
    if Length(Value) <> 0 then
     begin
      Result:=Length(Value);
-    end; 
+    end;
   end
  else
-  begin 
+  begin
    if nSize = 0 then Exit;
- 
+
    Value:=EnvironmentGet(String(lpName));
    if Length(Value) <> 0 then
     begin
@@ -5691,10 +5691,10 @@ begin
       begin
        StrLCopy(lpBuffer,PChar(Value),nSize);
       end;
-      
+
      Result:=Length(Value);
-    end; 
-  end;  
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -5706,25 +5706,25 @@ var
 begin
  {}
  Result:=0;
- 
+
  if lpBuffer = nil then
   begin
    if nSize <> 0 then Exit;
-   
+
    Name:=WideCharToString(lpName);
-   
+
    Value:=EnvironmentGet(Name);
    if Length(Value) <> 0 then
     begin
      Result:=Length(Value);
-    end; 
+    end;
   end
  else
-  begin 
+  begin
    if nSize = 0 then Exit;
- 
+
    Name:=WideCharToString(lpName);
-   
+
    Value:=EnvironmentGet(Name);
    if Length(Value) <> 0 then
     begin
@@ -5738,9 +5738,9 @@ begin
      else
       begin
        Result:=Length(Value);
-      end; 
-    end; 
-  end;  
+      end;
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -5796,7 +5796,7 @@ function ExpandEnvironmentStringsA(const lpSrc:LPCSTR;lpDst:LPSTR;nSize:DWORD):D
 begin
  {Not Supported}
  Result:=0;
- 
+
  SetLastError(ERROR_NOT_SUPPORTED);
 end;
 
@@ -5806,7 +5806,7 @@ function ExpandEnvironmentStringsW(const lpSrc:LPCWSTR;lpDst:LPWSTR;nSize:DWORD)
 begin
  {Not Supported}
  Result:=0;
- 
+
  SetLastError(ERROR_NOT_SUPPORTED);
 end;
 
@@ -5885,7 +5885,7 @@ begin
   begin
    Result:=SysUtils.GUIDToString(Value);
    Exit;
-  end; 
+  end;
  {$ENDIF}
 
  {Set Length and Format}
@@ -6008,7 +6008,7 @@ var
 begin
  {}
  FillChar(Value,SizeOf(TGUID),0);
- 
+
  {$IFDEF ULTIBO_USE_SYSUTILS_GUID}
  Result:=SysUtils.IsEqualGUID(GUID,Value);
  {$ELSE}
@@ -6037,12 +6037,12 @@ var
 begin
  {}
  Result:='';
- 
+
  StringSid:=nil;
  if Security.ConvertSidToStringSid(ASID,StringSid) then
   begin
    Result:=StringSid;
-   
+
    FreeMem(StringSid);
   end;
 end;
@@ -6056,17 +6056,17 @@ var
 begin
  {}
  Result:=nil;
- 
+
  Sid:=nil;
  if Security.ConvertStringSidToSid(PChar(Value),Sid) then
   begin
    SidSize:=Security.GetLengthSid(Sid);
-   
+
    Result:=GetMem(SidSize);
    if Result = nil then Exit;
-   
+
    System.Move(Sid^,Result^,SidSize);
-   
+
    FreeMem(Sid);
   end;
 end;
@@ -6212,20 +6212,20 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {Set Count}
  Count:=0;
  Offset:=0;
  while Count < (ASize - 1) do
   begin
    Word(Pointer(PtrUInt(ABuffer) + Offset)^):=SwapEndian(Word(Pointer(PtrUInt(ABuffer) + Offset)^));
-   
+
    Inc(Count,2);  {SizeOf(Word)}
    Inc(Offset,2); {SizeOf(Word)}
   end;
-  
+
  Result:=True;
 end;
 
@@ -6241,7 +6241,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if Length(Name) > 0 then
   begin
    for Count:=1 to Length(Name) do
@@ -6278,9 +6278,9 @@ var
 begin
  {}
  Result:=0;
- 
+
  if CaseSensitive then WorkBuffer:=Value else WorkBuffer:=Uppercase(Value);
- 
+
  if Length(WorkBuffer) > 0 then
   begin
    for Count:=1 to Length(WorkBuffer) do
@@ -6317,7 +6317,7 @@ end;
 
 {==============================================================================}
 
-function GetThreadLocale:LCID; 
+function GetThreadLocale:LCID;
 begin
  {}
  Result:=Threads.ThreadGetLocale(Threads.ThreadGetCurrent)
@@ -6325,7 +6325,7 @@ end;
 
 {==============================================================================}
 
-function SetThreadLocale(LocaleID:LCID):BOOL; 
+function SetThreadLocale(LocaleID:LCID):BOOL;
 begin
  {}
  Result:=(Threads.ThreadSetLocale(Threads.ThreadGetCurrent,LocaleID) = ERROR_SUCCESS);
@@ -6334,7 +6334,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Locale Functions (Ultibo)}
-function SetSystemDefaultLCID(LocaleID:LCID):BOOL; inline; 
+function SetSystemDefaultLCID(LocaleID:LCID):BOOL; inline;
 begin
  {}
  Result:=Locale.SetSystemDefaultLCID(LocaleID);
@@ -6350,7 +6350,7 @@ var
 begin
  {}
  Result:='';
- 
+
  if ABuffer = nil then Exit;
 
  {Get Length}
@@ -6359,7 +6359,7 @@ begin
   begin
    {Allocate String}
    SetString(Result,nil,Size - 1); {Returned size includes null terminator because length was not specified}
-   
+
    {Convert String}
    Unicode.WideCharToMultiByte(CP_ACP,0,PWideChar(ABuffer),-1,PChar(Result),Size,nil,nil);
   end;
@@ -6376,7 +6376,7 @@ var
 begin
  {}
  Result:='';
- 
+
  if ABuffer = nil then Exit;
 
  {Check Length}
@@ -6388,7 +6388,7 @@ begin
     begin
      {Allocate String}
      SetString(Result,nil,Size); {Returned size does not include null terminator because length was specified}
-     
+
      {Convert String}
      Unicode.WideCharToMultiByte(CP_ACP,0,PWideChar(ABuffer),ALength,PChar(Result),Size,nil,nil);
     end;
@@ -6406,7 +6406,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
 
  {Fill Buffer}
@@ -6420,18 +6420,18 @@ begin
     begin
      {Set Length}
      PWord(PtrUInt(ABuffer) + LongWord((Size - 1) shl 1))^:=0; {Set null on end} {Returned size includes null terminator because length was specified}
-     
+
      Result:=True;
     end;
   end;
-  
+
  Result:=True;
 end;
-   
+
 {==============================================================================}
 {==============================================================================}
 {Code Page Functions (Compatibility)}
-function IsValidCodePage(CodePage:UINT):BOOL; inline; 
+function IsValidCodePage(CodePage:UINT):BOOL; inline;
 begin
  {}
  Result:=Locale.IsValidCodePage(CodePage);
@@ -6447,7 +6447,7 @@ end;
 
 {==============================================================================}
 
-function GetOEMCP:UINT; inline; 
+function GetOEMCP:UINT; inline;
 begin
  {}
  Result:=Locale.GetOEMCP;
@@ -6455,7 +6455,7 @@ end;
 
 {==============================================================================}
 
-function GetConsoleCP:UINT; inline; 
+function GetConsoleCP:UINT; inline;
 begin
  {}
  Result:=Locale.GetConsoleCP;
@@ -6471,7 +6471,7 @@ end;
 
 {==============================================================================}
 
-function GetConsoleOutputCP:UINT; inline; 
+function GetConsoleOutputCP:UINT; inline;
 begin
  {}
  Result:=Locale.GetConsoleOutputCP;
@@ -6495,7 +6495,7 @@ end;
 
 {==============================================================================}
 
-function GetCPInfoEx(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL; inline; 
+function GetCPInfoEx(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL; inline;
 begin
  {}
  Result:=Locale.GetCPInfoEx(CodePage,dwFlags,lpCPInfoEx);
@@ -6503,7 +6503,7 @@ end;
 
 {==============================================================================}
 
-function GetCPInfoExA(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL; inline; 
+function GetCPInfoExA(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL; inline;
 begin
  {}
  Result:=Locale.GetCPInfoExA(CodePage,dwFlags,lpCPInfoEx);
@@ -6511,7 +6511,7 @@ end;
 
 {==============================================================================}
 
-function GetCPInfoExW(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXW):BOOL; inline; 
+function GetCPInfoExW(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXW):BOOL; inline;
 begin
  {}
  Result:=Locale.GetCPInfoExW(CodePage,dwFlags,lpCPInfoEx);
@@ -6569,7 +6569,7 @@ end;
 
 {==============================================================================}
 
-function CompareStringW(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCWSTR;cchCount1:Integer;lpString2:LPCWSTR;cchCount2:Integer):Integer; inline; 
+function CompareStringW(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCWSTR;cchCount1:Integer;lpString2:LPCWSTR;cchCount2:Integer):Integer; inline;
 begin
  {}
  Result:=Unicode.CompareStringW(Locale,dwCmpFlags,lpString1,cchCount1,lpString2,cchCount2);
@@ -6600,7 +6600,7 @@ begin
 end;
 
 {==============================================================================}
-  
+
 function CharUpperBuff(lpsz:LPSTR;cchLength:DWORD):DWORD; inline;
 begin
  {}
@@ -6705,7 +6705,7 @@ end;
 
 {==============================================================================}
 
-function CharToOem(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline; 
+function CharToOem(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline;
 begin
  {}
  Result:=Unicode.CharToOem(lpszSrc,lpszDst);
@@ -6713,7 +6713,7 @@ end;
 
 {==============================================================================}
 
-function CharToOemA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline; 
+function CharToOemA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline;
 begin
  {}
  Result:=Unicode.CharToOemA(lpszSrc,lpszDst);
@@ -6721,7 +6721,7 @@ end;
 
 {==============================================================================}
 
-function CharToOemW(lpszSrc:LPCWSTR;lpszDst:LPSTR):BOOL; inline; 
+function CharToOemW(lpszSrc:LPCWSTR;lpszDst:LPSTR):BOOL; inline;
 begin
  {}
  Result:=Unicode.CharToOemW(lpszSrc,lpszDst);
@@ -6729,7 +6729,7 @@ end;
 
 {==============================================================================}
 
-function OemToChar(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline; 
+function OemToChar(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline;
 begin
  {}
  Result:=Unicode.OemToChar(lpszSrc,lpszDst);
@@ -6737,7 +6737,7 @@ end;
 
 {==============================================================================}
 
-function OemToCharA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline; 
+function OemToCharA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline;
 begin
  {}
  Result:=Unicode.OemToCharA(lpszSrc,lpszDst);
@@ -6802,7 +6802,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Handle Functions (Compatibility)}
-function CloseHandle(hObject:HANDLE):BOOL; 
+function CloseHandle(hObject:HANDLE):BOOL;
 var
  HandleEntry:PHandleEntry;
 begin
@@ -6811,11 +6811,11 @@ begin
 
  {Check Handle}
  if hObject = HANDLE(INVALID_HANDLE_VALUE) then Exit;
- 
+
  {Get Handle}
  HandleEntry:=PHandleEntry(hObject);
  if HandleEntry = nil then Exit;
- 
+
  {Check Handle Type}
  case HandleEntry.Signature of
   SPIN_SIGNATURE:Result:=(Threads.SpinDestroy(hObject) = ERROR_SUCCESS);
@@ -6841,7 +6841,7 @@ begin
     end;
   end;
  end;
- 
+
  //To Do //Create a Handle list in Platform with reference count
 end;
 
@@ -6851,14 +6851,14 @@ function DuplicateHandle(hSourceProcessHandle:HANDLE;hSourceHandle:HANDLE;hTarge
 begin
  {}
  Result:=False;
- 
+
  if lpTargetHandle = nil then Exit;
- 
+
  {Copy Handle}
  lpTargetHandle^:=hSourceHandle;
- 
+
  Result:=True;
- 
+
  //To Do //Create a Handle list in Platform with reference count
 end;
 
@@ -6868,7 +6868,7 @@ function GetHandleInformation(hObject:HANDLE;var lpdwFlags:DWORD):BOOL;
 begin
  {}
  Result:=False;
- 
+
  //To Do //Create a Handle list in Platform with reference count
 end;
 
@@ -6878,7 +6878,7 @@ function SetHandleInformation(hObject:HANDLE;dwMask:DWORD;dwFlags:DWORD):BOOL;
 begin
  {}
  Result:=False;
- 
+
  //To Do //Create a Handle list in Platform with reference count
 end;
 
@@ -6922,7 +6922,7 @@ function GlobalAlloc(uFlags:UINT;dwBytes:SIZE_T):HGLOBAL;
 begin
  {}
  Result:=HGLOBAL(nil);
- 
+
  {Check Flags}
  if (uFlags and GMEM_ZEROINIT) = 0 then
   begin
@@ -6933,7 +6933,7 @@ begin
   begin
    {Alloc Mem}
    Result:=HGLOBAL(AllocMem(dwBytes));
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6942,7 +6942,7 @@ function GlobalReAlloc(hMem:HGLOBAL;dwBytes:SIZE_T;uFlags:UINT):HGLOBAL;
 begin
  {}
  Result:=HGLOBAL(nil);
- 
+
  {Check Flags}
  if (uFlags and GMEM_MODIFY) <> 0 then
   begin
@@ -6953,7 +6953,7 @@ begin
   begin
    {ReAlloc Mem}
    Result:=HGLOBAL(ReAllocMem(Pointer(hMem),dwBytes));
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6962,7 +6962,7 @@ function GlobalFree(hMem:HGLOBAL):HGLOBAL;
 begin
  {}
  Result:=hMem;
- 
+
  if FreeMem(Pointer(hMem)) > 0 then
   begin
    Result:=HGLOBAL(nil);
@@ -6985,12 +6985,12 @@ var
 begin
  {}
  Result:=GMEM_INVALID_HANDLE;
- 
+
  Flags:=MemFlags(Pointer(hMem));
  if Flags <> HEAP_FLAG_INVALID then
   begin
    Result:=GMEM_FIXED;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -7026,13 +7026,13 @@ var
 begin
  {}
  FillChar(lpBuffer,SizeOf(MEMORYSTATUS),0);
- 
+
  {Get Heap Status}
  FPCStatus:=GetFPCHeapStatus;
- 
+
  {Get Memory Load}
  MemoryLoad:=(FPCStatus.CurrHeapFree / FPCStatus.CurrHeapSize) * 100;
- 
+
  {Get Global Status}
  lpBuffer.dwLength:=SizeOf(MEMORYSTATUS);
  lpBuffer.dwMemoryLoad:=Trunc(MemoryLoad);
@@ -7056,17 +7056,17 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpBuffer.dwLength <> SizeOf(MEMORYSTATUSEX) then Exit;
- 
+
  FillChar(lpBuffer,SizeOf(MEMORYSTATUSEX),0);
- 
+
  {Get Heap Status}
  FPCStatus:=GetFPCHeapStatus;
- 
+
  {Get Memory Load}
  MemoryLoad:=(FPCStatus.CurrHeapFree / FPCStatus.CurrHeapSize) * 100;
- 
+
  {Get Global Status}
  lpBuffer.dwLength:=SizeOf(MEMORYSTATUSEX);
  lpBuffer.dwMemoryLoad:=Trunc(MemoryLoad);
@@ -7077,7 +7077,7 @@ begin
  lpBuffer.ullTotalVirtual:=FPCStatus.CurrHeapSize;
  lpBuffer.ullAvailVirtual:=FPCStatus.CurrHeapFree;
  lpBuffer.ullAvailExtendedVirtual:=0;
- 
+
  Result:=True;
 end;
 
@@ -7088,7 +7088,7 @@ function LocalAlloc(uFlags:UINT;uBytes:SIZE_T):HLOCAL;
 begin
  {}
  Result:=HLOCAL(nil);
- 
+
  {Check Flags}
  if (uFlags and LMEM_ZEROINIT) = 0 then
   begin
@@ -7099,7 +7099,7 @@ begin
   begin
    {Alloc Mem}
    Result:=HLOCAL(AllocMem(uBytes));
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -7108,7 +7108,7 @@ function LocalReAlloc(hMem:HLOCAL;uBytes:SIZE_T;uFlags:UINT):HLOCAL;
 begin
  {}
  Result:=HLOCAL(nil);
- 
+
  {Check Flags}
  if (uFlags and LMEM_MODIFY) <> 0 then
   begin
@@ -7119,7 +7119,7 @@ begin
   begin
    {ReAlloc Mem}
    Result:=HLOCAL(ReAllocMem(Pointer(hMem),uBytes));
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -7128,7 +7128,7 @@ function LocalFree(hMem:HLOCAL):HLOCAL;
 begin
  {}
  Result:=hMem;
- 
+
  if FreeMem(Pointer(hMem)) > 0 then
   begin
    Result:=HLOCAL(nil);
@@ -7151,12 +7151,12 @@ var
 begin
  {}
  Result:=LMEM_INVALID_HANDLE;
- 
+
  Flags:=MemFlags(Pointer(hMem));
  if Flags <> HEAP_FLAG_INVALID then
   begin
    Result:=LMEM_FIXED;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -7194,7 +7194,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Allocation Type}
  if (flAllocationType and (MEM_COMMIT or MEM_RESERVE)) <> 0 then
   begin
@@ -7203,7 +7203,7 @@ begin
     begin
      {Align Size}
      Size:=Align(dwSize,Platform.MemoryGetPageSize);
-   
+
      {Get Aligned Mem}
      Result:=GetAlignedMem(Size,Platform.MemoryGetPageSize);
     end
@@ -7211,7 +7211,7 @@ begin
     begin
      {Align Size}
      Size:=Align(dwSize,Platform.MemoryGetLargePageSize);
-     
+
      {Get Aligned Mem}
      Result:=GetAlignedMem(Size,Platform.MemoryGetLargePageSize);
     end;
@@ -7224,20 +7224,20 @@ function VirtualFree(lpAddress:LPVOID;dwSize:SIZE_T;dwFreeType:DWORD):BOOL;
 begin
  {}
  Result:=False;
- 
+
  {Check Free Type}
  if (dwFreeType and MEM_DECOMMIT) <> 0 then
   begin
    {Check Mem}
    if MemFlags(lpAddress) = HEAP_FLAG_INVALID then Exit;
-   
+
    Result:=True;
   end
- else if (dwFreeType and MEM_RELEASE) <> 0 then 
+ else if (dwFreeType and MEM_RELEASE) <> 0 then
   begin
    {Free Mem}
    if FreeMem(lpAddress) = 0 then Exit;
-   
+
    Result:=True;
   end;
 end;
@@ -7248,15 +7248,15 @@ function VirtualQuery(lpAddress:LPCVOID;var lpBuffer:MEMORY_BASIC_INFORMATION;dw
 begin
  {}
  Result:=0;
- 
+
  {Check Mem}
  if MemFlags(lpAddress) = HEAP_FLAG_INVALID then Exit;
 
- {Check Length} 
+ {Check Length}
  if dwLength <> SizeOf(MEMORY_BASIC_INFORMATION) then Exit;
- 
+
  FillChar(lpBuffer,SizeOf(MEMORY_BASIC_INFORMATION),0);
- 
+
  {Get Memory Information}
  lpBuffer.BaseAddress:=lpAddress;
  lpBuffer.AllocationBase:=lpAddress;
@@ -7275,7 +7275,7 @@ function VirtualLock(lpAddress:LPVOID;dwSize:SIZE_T):BOOL;
 begin
  {}
  Result:=False;
- 
+
  {Check Mem}
  if MemFlags(lpAddress) = HEAP_FLAG_INVALID then Exit;
 
@@ -7284,11 +7284,11 @@ end;
 
 {==============================================================================}
 
-function VirtualUnlock(lpAddress:LPVOID;dwSize:SIZE_T):BOOL; 
+function VirtualUnlock(lpAddress:LPVOID;dwSize:SIZE_T):BOOL;
 begin
  {}
  Result:=False;
- 
+
  {Check Mem}
  if MemFlags(lpAddress) = HEAP_FLAG_INVALID then Exit;
 
@@ -7301,7 +7301,7 @@ function FlushInstructionCache(hProcess:HANDLE;lpBaseAddress:LPCVOID;dwSize:DWOR
 begin
  {}
  Result:=False;
- 
+
  if lpBaseAddress = nil then
   begin
    Platform.InvalidateInstructionCache;
@@ -7309,8 +7309,8 @@ begin
  else
   begin
    Platform.InvalidateInstructionCacheRange(PtrUInt(lpBaseAddress),dwSize);
-  end;  
-  
+  end;
+
  Result:=True;
 end;
 
@@ -7325,7 +7325,7 @@ end;
 
 {==============================================================================}
 
-function GetNumaProcessorNode(const Processor:Byte;var NodeNumber:Byte):BOOL; 
+function GetNumaProcessorNode(const Processor:Byte;var NodeNumber:Byte):BOOL;
 begin
  {Not implemented, compatibility only}
  NodeNumber:=0;
@@ -7351,7 +7351,7 @@ begin
  {}
  Flags:=THREAD_TLS_FLAG_NONE;
  if bFree then Flags:=THREAD_TLS_FLAG_FREE;
- 
+
  Result:=ThreadAllocTlsIndexEx(Flags);
 end;
 
@@ -7385,7 +7385,7 @@ end;
 function SwitchToThread:BOOL; inline;
 begin
  {}
- Result:=(Threads.ThreadYield = ERROR_SUCCESS); 
+ Result:=(Threads.ThreadYield = ERROR_SUCCESS);
 end;
 
 {==============================================================================}
@@ -7473,7 +7473,7 @@ function GetThreadTimes(hThread:HANDLE;var lpCreationTime,lpExitTime,lpKernelTim
 begin
  {}
  Int64(lpUserTime):=0;
- 
+
  Result:=(Threads.ThreadGetTimes(hThread,Int64(lpCreationTime),Int64(lpExitTime),Int64(lpKernelTime)) = ERROR_SUCCESS);
 end;
 
@@ -7483,7 +7483,7 @@ function CreateThread(lpThreadAttributes:LPSECURITY_ATTRIBUTES;dwStackSize:DWORD
 begin
  {}
  Result:=0;
- 
+
  //To Do //Use BeginThread so that FPC initialization is done
 end;
 
@@ -7493,8 +7493,8 @@ function OpenThread(dwDesiredAccess:DWORD;bInheritHandle:BOOL;dwThreadId:DWORD):
 begin
  {}
  Result:=0;
- 
- //To Do 
+
+ //To Do
 end;
 
 {==============================================================================}
@@ -7520,7 +7520,7 @@ begin
  {}
  //To Do //Should this be SysKillThread (or KillThread) so that FPC completion is done ?
          //SysKillThread just calls ThreadTerminate anyway
- 
+
  Result:=(Threads.ThreadTerminate(hThread,dwExitCode) = ERROR_SUCCESS);
 end;
 
@@ -7557,14 +7557,14 @@ var
 begin
  {}
  Result:=WAIT_FAILED;
- 
+
  {Check Handle}
  if hHandle = HANDLE(INVALID_HANDLE_VALUE) then Exit;
- 
+
  {Get Handle}
  HandleEntry:=PHandleEntry(hHandle);
  if HandleEntry = nil then Exit;
- 
+
  {Check Handle Type}
  case HandleEntry.Signature of
   MUTEX_SIGNATURE:Result:=Threads.MutexLock(hHandle); {Cannot wait with Timeout for Mutex}
@@ -7572,7 +7572,7 @@ begin
   SEMAPHORE_SIGNATURE:Result:=Threads.SemaphoreWaitEx(hHandle,dwMilliseconds);
   THREAD_SIGNATURE:Result:=Threads.ThreadWaitTerminate(hHandle,dwMilliseconds);
   EVENT_SIGNATURE:Result:=Threads.EventWaitEx(hHandle,dwMilliseconds);
- end; 
+ end;
 
  //To Do //Create a Handle list in Platform with reference count
 end;
@@ -7584,7 +7584,7 @@ function WaitForMultipleObjectsEx(nCount:DWORD;lpHandles:PHANDLE;bWaitAll:BOOL;d
 begin
  {}
  Result:=0;
- 
+
  //To Do //Create a Handle list in Platform with reference count
  //See also: RegisterWaitForSingleObject/UnregisterWait/UnregisterWaitEx
 end;
@@ -7601,7 +7601,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Message Functions (Compatibility)}
-function WaitMessage:BOOL; 
+function WaitMessage:BOOL;
 begin
  {}
  Result:=(Threads.ThreadWaitMessage = ERROR_SUCCESS);
@@ -7645,7 +7645,7 @@ end;
 
 {==============================================================================}
 
-function PostMessage(hThread:HANDLE;Msg:UINT;wParam:WPARAM;lParam:LPARAM):BOOL; 
+function PostMessage(hThread:HANDLE;Msg:UINT;wParam:WPARAM;lParam:LPARAM):BOOL;
 var
  Message:TMessage;
 begin
@@ -7655,13 +7655,13 @@ begin
  Message.lParam:=lParam;
  Message.Time:=0;
  Result:=(Threads.ThreadSendMessage(hThread,Message) = ERROR_SUCCESS);
- 
+
  //To Do //Need a ThreadPostMessage/Ex ?
 end;
 
 {==============================================================================}
 
-function SendMessage(hThread:HANDLE;Msg:UINT;wParam:WPARAM;lParam:LPARAM):LRESULT; 
+function SendMessage(hThread:HANDLE;Msg:UINT;wParam:WPARAM;lParam:LPARAM):LRESULT;
 var
  Message:TMessage;
 begin
@@ -7671,13 +7671,13 @@ begin
  Message.lParam:=lParam;
  Message.Time:=0;
  Result:=Threads.ThreadSendMessage(hThread,Message);
- 
- //To Do //Need a ThreadSendMessageEx with Wait parameter which waits for a response to the message 
+
+ //To Do //Need a ThreadSendMessageEx with Wait parameter which waits for a response to the message
 end;
 
 {==============================================================================}
 
-function SendMessageTimeout(hThread:HANDLE;Msg:UINT;wParam:WPARAM;lParam:LPARAM;fuFlags,uTimeout:UINT;var lpdwResult:DWORD_PTR):LRESULT; 
+function SendMessageTimeout(hThread:HANDLE;Msg:UINT;wParam:WPARAM;lParam:LPARAM;fuFlags,uTimeout:UINT;var lpdwResult:DWORD_PTR):LRESULT;
 var
  Message:TMessage;
 begin
@@ -7687,14 +7687,14 @@ begin
  Message.lParam:=lParam;
  Message.Time:=0;
  Result:=Threads.ThreadSendMessage(hThread,Message);
- 
- //To Do //Need a ThreadSendMessageEx with Wait and Timeout parameters which waits for a response to the message 
+
+ //To Do //Need a ThreadSendMessageEx with Wait and Timeout parameters which waits for a response to the message
 end;
 
 {==============================================================================}
 {==============================================================================}
 {Notification Functions (Compatibility)}
-//To Do 
+//To Do
 
 {==============================================================================}
 {==============================================================================}
@@ -7770,7 +7770,7 @@ function CreateMutexA(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL
 begin
  {}
  Result:=Threads.MutexCreateEx(bInitialOwner,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_NONE);
- 
+
  //To Do //lpName to allow Open
          //Use new HandleFind/HandleOpen functions in Platform
 end;
@@ -7781,7 +7781,7 @@ function CreateMutexW(lpMutexAttributes:LPSECURITY_ATTRIBUTES;bInitialOwner:BOOL
 begin
  {}
  Result:=Threads.MutexCreateEx(bInitialOwner,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_NONE);
- 
+
  //To Do //lpName to allow Open
          //Use new HandleFind/HandleOpen functions in Platform
 end;
@@ -7800,8 +7800,8 @@ function OpenMutexA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCST
 begin
  {}
  Result:=0;
- 
- //To Do 
+
+ //To Do
          //Use new HandleFind/HandleOpen functions in Platform
 end;
 
@@ -7811,8 +7811,8 @@ function OpenMutexW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCWS
 begin
  {}
  Result:=0;
- 
- //To Do 
+
+ //To Do
          //Use new HandleFind/HandleOpen functions in Platform
 end;
 
@@ -7839,7 +7839,7 @@ function CreateSemaphoreA(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCo
 begin
  {}
  Result:=Threads.SemaphoreCreateEx(lInitialCount,lMaximumCount,SEMAPHORE_FLAG_NONE);
- 
+
  //To Do //lpName to allow Open
          //Use new HandleFind/HandleOpen functions in Platform
 end;
@@ -7850,7 +7850,7 @@ function CreateSemaphoreW(lpSemaphoreAttributes:LPSECURITY_ATTRIBUTES;lInitialCo
 begin
  {}
  Result:=Threads.SemaphoreCreateEx(lInitialCount,lMaximumCount,SEMAPHORE_FLAG_NONE);
- 
+
  //To Do //lpName to allow Open
          //Use new HandleFind/HandleOpen functions in Platform
 end;
@@ -7869,8 +7869,8 @@ function OpenSemaphoreA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:L
 begin
  {}
  Result:=0;
- 
- //To Do 
+
+ //To Do
          //Use new HandleFind/HandleOpen functions in Platform
 end;
 
@@ -7880,8 +7880,8 @@ function OpenSemaphoreW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:L
 begin
  {}
  Result:=0;
- 
- //To Do 
+
+ //To Do
          //Use new HandleFind/HandleOpen functions in Platform
 end;
 
@@ -7967,7 +7967,7 @@ end;
 
 {==============================================================================}
 
-procedure WakeConditionVariable(var ConditionVariable:CONDITION_VARIABLE); 
+procedure WakeConditionVariable(var ConditionVariable:CONDITION_VARIABLE);
 {Wake a single thread waiting on the specified condition variable}
 {ConditionVariable: The condition variable to wake}
 begin
@@ -7976,13 +7976,13 @@ begin
   begin
    InitializeConditionVariable(ConditionVariable);
   end;
-  
+
  Threads.ConditionWake(THandle(ConditionVariable.Ptr));
 end;
 
 {==============================================================================}
 
-procedure WakeAllConditionVariable(var ConditionVariable:CONDITION_VARIABLE); 
+procedure WakeAllConditionVariable(var ConditionVariable:CONDITION_VARIABLE);
 {Wake all threads waiting on the specified condition variable}
 {ConditionVariable: The condition variable to wake}
 begin
@@ -7991,13 +7991,13 @@ begin
   begin
    InitializeConditionVariable(ConditionVariable);
   end;
-  
+
  Threads.ConditionWakeAll(THandle(ConditionVariable.Ptr));
 end;
 
 {==============================================================================}
 
-function SleepConditionVariableCS(var ConditionVariable:CONDITION_VARIABLE; var CriticalSection:CRITICAL_SECTION;dwMilliseconds:DWORD):BOOL; 
+function SleepConditionVariableCS(var ConditionVariable:CONDITION_VARIABLE; var CriticalSection:CRITICAL_SECTION;dwMilliseconds:DWORD):BOOL;
 {Sleeps on the specified condition variable and releases the specified critical section as an atomic operation}
 {ConditionVariable: The condition variable to sleep on}
 {CriticalSection: The critical section object to release (This critical section must be entered exactly once by the caller at the time SleepConditionVariableCS is called)}
@@ -8011,10 +8011,10 @@ begin
 
  Result:=(Threads.ConditionWaitCriticalSection(THandle(ConditionVariable.Ptr),CriticalSection.LockSemaphore,dwMilliseconds) = ERROR_SUCCESS);
 end;
-  
+
 {==============================================================================}
 
-procedure DeleteConditionVariable(var ConditionVariable:CONDITION_VARIABLE); 
+procedure DeleteConditionVariable(var ConditionVariable:CONDITION_VARIABLE);
 {Destroy a condition variable}
 {ConditionVariable: The condition variable to destroy}
 
@@ -8042,7 +8042,7 @@ function CreateEventA(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInit
 begin
  {}
  Result:=Threads.EventCreate(bManualReset,bInitialState);
- 
+
  //To Do //lpName to allow OpenEvent
          //Use new HandleFind/HandleOpen functions in Platform
 end;
@@ -8053,7 +8053,7 @@ function CreateEventW(lpEventAttributes:LPSECURITY_ATTRIBUTES;bManualReset,bInit
 begin
  {}
  Result:=Threads.EventCreate(bManualReset,bInitialState);
- 
+
  //To Do //lpName to allow OpenEvent
          //Use new HandleFind/HandleOpen functions in Platform
 end;
@@ -8072,8 +8072,8 @@ function OpenEventA(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCST
 begin
  {}
  Result:=0;
- 
- //To Do 
+
+ //To Do
          //Use new HandleFind/HandleOpen functions in Platform
 end;
 
@@ -8083,8 +8083,8 @@ function OpenEventW(dwDesiredAccess:DWORD;bInheritHandle:BOOL;const lpName:LPCWS
 begin
  {}
  Result:=0;
- 
- //To Do 
+
+ //To Do
          //Use new HandleFind/HandleOpen functions in Platform
 end;
 
@@ -8114,13 +8114,13 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{Process Functions (Compatibility)} 
+{Process Functions (Compatibility)}
 function GetProcessAffinityMask(hProcess:HANDLE;var lpProcessAffinityMask,lpSystemAffinityMask:DWORD_PTR):BOOL;
 {Note: Ultibo has no concept of a Process so this function is mapped to Threads instead}
 begin
  {}
  Result:=False;
- 
+
  {Get Affinity}
  lpSystemAffinityMask:=Platform.CPUGetMask;
  lpProcessAffinityMask:=Threads.ThreadGetAffinity(hProcess);
@@ -8137,7 +8137,7 @@ function SetProcessAffinityMask(hProcess:HANDLE;dwProcessAffinityMask:DWORD_PTR)
 begin
  {}
  Result:=False;
- 
+
  if Threads.ThreadSetAffinity(hProcess,dwProcessAffinityMask) <> LongWord(INVALID_HANDLE_VALUE) then
   begin
    Result:=True;
@@ -8151,7 +8151,7 @@ function GetProcessTimes(hProcess:HANDLE;var lpCreationTime,lpExitTime,lpKernelT
 begin
  {}
  Int64(lpUserTime):=0;
- 
+
  Result:=(Threads.ThreadGetTimes(hProcess,Int64(lpCreationTime),Int64(lpExitTime),Int64(lpKernelTime)) = ERROR_SUCCESS);
 end;
 
@@ -8162,8 +8162,8 @@ function GetProcessIoCounters(hProcess:HANDLE;var lpIoCounters:IO_COUNTERS):BOOL
 begin
  {}
  Result:=False;
- 
- //To Do 
+
+ //To Do
 end;
 
 {==============================================================================}
@@ -8214,7 +8214,7 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{Debug Functions (Compatibility)} 
+{Debug Functions (Compatibility)}
 procedure OutputDebugString(const lpOutputString:LPCSTR); inline;
 begin
  {}
@@ -8237,13 +8237,13 @@ var
 begin
  {}
  Value:=WideCharToString(lpOutputString);
- 
+
  LoggingOutput(Value);
 end;
 
 {==============================================================================}
 {==============================================================================}
-{Library Functions (Compatibility)} 
+{Library Functions (Compatibility)}
 function lstrcmp(lpString1,lpString2:LPCSTR):Integer; inline;
 begin
  {}
@@ -8300,7 +8300,7 @@ end;
 
 {==============================================================================}
 
-function lstrcpyA(lpString1:LPSTR;lpString2:LPCSTR):LPSTR; 
+function lstrcpyA(lpString1:LPSTR;lpString2:LPCSTR):LPSTR;
 begin
  {}
  Result:=StrCopy(lpString1,lpString2);
@@ -8393,7 +8393,7 @@ initialization
  UltiboInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

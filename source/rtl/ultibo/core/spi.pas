@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -34,7 +34,7 @@ SPI Devices
 
  SPI (Serial Peripheral Interface) is a synchronous serial bus for communication with peripheral
  components.
- 
+
  The SPI protocol is not defined by any actual standard but some pseudo standards exist with all
  of the available devices. SPI is a master-slave protocol where the master asserts the chip select
  line (CS) to select the slave device before sending data one byte at a time.
@@ -42,23 +42,23 @@ SPI Devices
  For every byte written to the bus by the master the selected slave returns a byte as well so for
  every write there is an equivalent read. SPI can also operate in either 4 wire (standard) or 3 wire
  (bidirectional) modes.
- 
+
  Due to the lack of formal standards and the range of devices that exist various options are provided
  to allow setting clock phase and polarity as well chip select polarity.
- 
+
  For the purpose of this interface a device is the SPI controller attached to the local system
  and may be either a master or a slave. Since the protocol does not include any form of enumeration
  or identification the interface does not attempt to represent the devices connected to the bus,
  any driver written to communicate with a connected SPI device should know (or allow configuration
  of) the chip select for the for the device and the specific message format required for that device.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit SPI; 
+unit SPI;
 
 interface
 
@@ -73,31 +73,31 @@ const
  {SPI specific constants}
  SPI_NAME_PREFIX = 'SPI';            {Name prefix for SPI Devices}
  SPISLAVE_NAME_PREFIX = 'SPISlave';  {Name prefix for SPI Slave Devices}
- 
+
  {SPI Device Types}
  SPI_TYPE_NONE      = 0;
  SPI_TYPE_MASTER    = 1;
  SPI_TYPE_SLAVE     = 2;
- 
+
  SPI_TYPE_MAX       = 2;
-  
+
  {SPI Type Names}
  SPI_TYPE_NAMES:array[SPI_TYPE_NONE..SPI_TYPE_MAX] of String = (
   'SPI_TYPE_NONE',
   'SPI_TYPE_MASTER',
   'SPI_TYPE_SLAVE');
- 
+
  {SPI Device States}
  SPI_STATE_DISABLED = 0;
  SPI_STATE_ENABLED  = 1;
- 
+
  SPI_STATE_MAX      = 1;
- 
+
  {SPI State Names}
  SPI_STATE_NAMES:array[SPI_STATE_DISABLED..SPI_STATE_MAX] of String = (
   'SPI_STATE_DISABLED',
   'SPI_STATE_ENABLED');
- 
+
  {SPI Device Flags}
  SPI_FLAG_NONE          = $00000000;
  SPI_FLAG_SLAVE         = $00000001; {Device is a slave not a master}
@@ -109,13 +109,13 @@ const
  SPI_FLAG_CSPOL         = $00000040; {Device supports Chip Select Polarity setting}
  SPI_FLAG_NO_CS         = $00000080; {Device supports Chip Select None (CS handled externally)}
  SPI_FLAG_DMA           = $00000100; {Device supports DMA transfers}
- 
+
  {SPI Transfer Flags}
  SPI_TRANSFER_NONE  = $00000000;
  SPI_TRANSFER_DMA   = $00000001; {Use DMA for transfer (Write/Read) (If supported) (Note: Buffers must be DMA compatible)}
  SPI_TRANSFER_PIO   = $00000002; {Use PIO (Polling) for transfer (Write/Read)}
  SPI_TRANSFER_DELAY = $00000004; {Add a delay after each byte written (Write/Read) (Note: Only available with PIO transfer unless provided directly by hardware)}
- 
+
  {SPI logging}
  SPI_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {SPI debugging messages}
  SPI_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {SPI informational messages, such as a device being attached or detached}
@@ -123,12 +123,12 @@ const
  SPI_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {SPI error messages}
  SPI_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No SPI messages}
 
-var 
+var
  SPI_DEFAULT_LOG_LEVEL:LongWord = SPI_LOG_LEVEL_DEBUG; {Minimum level for SPI messages.  Only messages with level greater than or equal to this will be printed}
- 
-var 
+
+var
  {SPI logging}
- SPI_LOG_ENABLED:Boolean; 
+ SPI_LOG_ENABLED:Boolean;
 
 {==============================================================================}
 type
@@ -149,7 +149,7 @@ type
   SelectPolarity:LongWord; {Default chip select polarity (eg SPI_CS_POLARITY_LOW)}
   ByteDelay:LongWord;      {Delay between bytes written (Microseconds)}
  end;
- 
+
  {SPI Chip Select}
  PSPIChipSelect = ^TSPIChipSelect;
  TSPIChipSelect = record
@@ -162,26 +162,26 @@ type
   SelectPolarity:LongWord; {The chip select polarity for this chip select (eg SPI_CS_POLARITY_LOW)}
   ByteDelay:LongWord;      {Delay between bytes written for this chip select (Microseconds)}
  end;
- 
+
  {SPI Device}
  PSPIDevice = ^TSPIDevice;
- 
+
  {SPI Enumeration Callback}
  TSPIEnumerate = function(SPI:PSPIDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {SPI Notification Callback}
  TSPINotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {SPI Device Methods}
  TSPIDeviceStart = function(SPI:PSPIDevice;Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSPIDeviceStop = function(SPI:PSPIDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TSPIDeviceRead = function(SPI:PSPIDevice;ChipSelect:Word;Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSPIDeviceWrite = function(SPI:PSPIDevice;ChipSelect:Word;Source:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSPIDeviceWriteRead = function(SPI:PSPIDevice;ChipSelect:Word;Source,Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
  TSPIDeviceGetMode = function(SPI:PSPIDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSPIDeviceSetMode = function(SPI:PSPIDevice;Mode:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TSPIDeviceGetClockRate = function(SPI:PSPIDevice;ChipSelect:Word):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSPIDeviceSetClockRate = function(SPI:PSPIDevice;ChipSelect:Word;ClockRate:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
@@ -190,19 +190,19 @@ type
 
  TSPIDeviceGetClockPolarity = function(SPI:PSPIDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSPIDeviceSetClockPolarity = function(SPI:PSPIDevice;ClockPolarity:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TSPIDeviceGetSelectPolarity = function(SPI:PSPIDevice;ChipSelect:Word):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSPIDeviceSetSelectPolarity = function(SPI:PSPIDevice;ChipSelect:Word;SelectPolarity:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
- TSPIDeviceGetByteDelay = function(SPI:PSPIDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF} 
+
+ TSPIDeviceGetByteDelay = function(SPI:PSPIDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TSPIDeviceSetByteDelay = function(SPI:PSPIDevice;Delay:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
 
  TSPIDeviceGetProperties = function(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TSPIDevice = record
   {Device Properties}
   Device:TDevice;                                      {The Device entry for this SPI}
-  {SPI Properties}                                     
+  {SPI Properties}
   SPIId:LongWord;                                      {Unique Id of this SPI in the SPI table}
   SPIState:LongWord;                                   {SPI state (eg SPI_STATE_ENABLED)}
   SPIMode:LongWord;                                    {SPI mode (eg SPI_MODE_4WIRE)}
@@ -238,11 +238,11 @@ type
   ByteDelay:LongWord;                                  {Delay between bytes written (Microseconds)}
   Properties:TSPIProperties;                           {Device properties}
   ChipSelects:array[0..SPI_CS_MAX] of TSPIChipSelect;  {Chip selects}
-  {Internal Properties}                                                                             
+  {Internal Properties}
   Prev:PSPIDevice;                                     {Previous entry in SPI table}
   Next:PSPIDevice;                                     {Next entry in SPI table}
- end; 
- 
+ end;
+
 {==============================================================================}
 {var}
  {SPI specific variables}
@@ -250,19 +250,19 @@ type
 {==============================================================================}
 {Initialization Functions}
 procedure SPIInit;
- 
+
 {==============================================================================}
 {SPI Functions}
 function SPIDeviceStart(SPI:PSPIDevice;Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord;
 function SPIDeviceStop(SPI:PSPIDevice):LongWord;
- 
+
 function SPIDeviceRead(SPI:PSPIDevice;ChipSelect:Word;Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 function SPIDeviceWrite(SPI:PSPIDevice;ChipSelect:Word;Source:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 function SPIDeviceWriteRead(SPI:PSPIDevice;ChipSelect:Word;Source,Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 
 function SPIDeviceGetMode(SPI:PSPIDevice):LongWord;
 function SPIDeviceSetMode(SPI:PSPIDevice;Mode:LongWord):LongWord;
- 
+
 function SPIDeviceGetClockRate(SPI:PSPIDevice;ChipSelect:Word):LongWord;
 function SPIDeviceSetClockRate(SPI:PSPIDevice;ChipSelect:Word;ClockRate:LongWord):LongWord;
 
@@ -271,16 +271,16 @@ function SPIDeviceSetClockPhase(SPI:PSPIDevice;ClockPhase:LongWord):LongWord;
 
 function SPIDeviceGetClockPolarity(SPI:PSPIDevice):LongWord;
 function SPIDeviceSetClockPolarity(SPI:PSPIDevice;ClockPolarity:LongWord):LongWord;
- 
+
 function SPIDeviceGetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word):LongWord;
 function SPIDeviceSetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word;SelectPolarity:LongWord):LongWord;
- 
+
 function SPIDeviceGetByteDelay(SPI:PSPIDevice):LongWord;
 function SPIDeviceSetByteDelay(SPI:PSPIDevice;Delay:LongWord):LongWord;
- 
+
 function SPIDeviceProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord; inline;
 function SPIDeviceGetProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord;
-  
+
 function SPIDeviceCreate:PSPIDevice;
 function SPIDeviceCreateEx(Size:LongWord):PSPIDevice;
 function SPIDeviceDestroy(SPI:PSPIDevice):LongWord;
@@ -292,23 +292,23 @@ function SPIDeviceFind(SPIId:LongWord):PSPIDevice;
 function SPIDeviceFindByName(const Name:String):PSPIDevice; inline;
 function SPIDeviceFindByDescription(const Description:String):PSPIDevice; inline;
 function SPIDeviceEnumerate(Callback:TSPIEnumerate;Data:Pointer):LongWord;
- 
+
 function SPIDeviceNotification(SPI:PSPIDevice;Callback:TSPINotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
 
 {==============================================================================}
 {RTL SPI Functions}
-function SysSPIAvailable:Boolean; 
- 
-function SysSPIStart(Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord; 
-function SysSPIStop:LongWord; 
- 
+function SysSPIAvailable:Boolean;
+
+function SysSPIStart(Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord;
+function SysSPIStop:LongWord;
+
 function SysSPIRead(ChipSelect:Word;Dest:Pointer;Size:LongWord;var Count:LongWord):LongWord;
 function SysSPIWrite(ChipSelect:Word;Source:Pointer;Size:LongWord;var Count:LongWord):LongWord;
 function SysSPIWriteRead(ChipSelect:Word;Source,Dest:Pointer;Size:LongWord;var Count:LongWord):LongWord;
- 
+
 function SysSPIGetMode:LongWord;
 function SysSPISetMode(Mode:LongWord):LongWord;
- 
+
 function SysSPIGetClockRate(ChipSelect:Word):LongWord;
 function SysSPISetClockRate(ChipSelect:Word;ClockRate:LongWord):LongWord;
 
@@ -317,7 +317,7 @@ function SysSPISetClockPhase(ClockPhase:LongWord):LongWord;
 
 function SysSPIGetClockPolarity:LongWord;
 function SysSPISetClockPolarity(ClockPolarity:LongWord):LongWord;
- 
+
 function SysSPIGetSelectPolarity(ChipSelect:Word):LongWord;
 function SysSPISetSelectPolarity(ChipSelect:Word;SelectPolarity:LongWord):LongWord;
 
@@ -325,7 +325,7 @@ function SysSPISetSelectPolarity(ChipSelect:Word;SelectPolarity:LongWord):LongWo
 {SPI Helper Functions}
 function SPIGetCount:LongWord;
 function SPIDeviceGetDefault:PSPIDevice;
-function SPIDeviceSetDefault(SPI:PSPIDevice):LongWord; 
+function SPIDeviceSetDefault(SPI:PSPIDevice):LongWord;
 
 function SPIDeviceCheck(SPI:PSPIDevice):PSPIDevice;
 
@@ -338,7 +338,7 @@ procedure SPILogWarn(SPI:PSPIDevice;const AText:String); inline;
 procedure SPILogError(SPI:PSPIDevice;const AText:String); inline;
 procedure SPILogDebug(SPI:PSPIDevice;const AText:String); inline;
 
-function SPIChipSelectToString(ChipSelect:Word):String; 
+function SPIChipSelectToString(ChipSelect:Word):String;
 function SPIModeToString(Mode:LongWord):String;
 function SPIClockPhaseToString(Phase:LongWord):String;
 function SPIClockPolarityToString(Polarity:LongWord):String;
@@ -372,20 +372,20 @@ begin
  {}
  {Check Initialized}
  if SPIInitialized then Exit;
- 
+
  {Initialize Logging}
- SPI_LOG_ENABLED:=(SPI_DEFAULT_LOG_LEVEL <> SPI_LOG_LEVEL_NONE); 
- 
+ SPI_LOG_ENABLED:=(SPI_DEFAULT_LOG_LEVEL <> SPI_LOG_LEVEL_NONE);
+
  {Initialize SPI Table}
  SPIDeviceTable:=nil;
- SPIDeviceTableLock:=CriticalSectionCreate; 
+ SPIDeviceTableLock:=CriticalSectionCreate;
  SPIDeviceTableCount:=0;
  if SPIDeviceTableLock = INVALID_HANDLE_VALUE then
   begin
    if SPI_LOG_ENABLED then SPILogError(nil,'Failed to create SPI table lock');
   end;
  SPIDeviceDefault:=nil;
- 
+
  {Register Platform SPI Handlers}
  SPIAvailableHandler:=SysSPIAvailable;
  SPIStartHandler:=SysSPIStart;
@@ -403,10 +403,10 @@ begin
  SPISetClockPolarityHandler:=SysSPISetClockPolarity;
  SPIGetSelectPolarityHandler:=SysSPIGetSelectPolarity;
  SPISetSelectPolarityHandler:=SysSPISetSelectPolarity;
- 
+
  SPIInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {SPI Functions}
@@ -421,19 +421,19 @@ function SPIDeviceStart(SPI:PSPIDevice;Mode,ClockRate,ClockPhase,ClockPolarity:L
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Start (Mode=' + SPIModeToString(Mode) + ' ClockRate=' + IntToStr(ClockRate) + ' ClockPhase=' + SPIClockPhaseToString(ClockPhase) + ' ClockPolarity=' + SPIClockPolarityToString(ClockPolarity) + ')');
  {$ENDIF}
- 
+
  {Check Disabled}
  Result:=ERROR_SUCCESS;
  if SPI.SPIState <> SPI_STATE_DISABLED then Exit;
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -448,22 +448,22 @@ begin
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
      end;
-     
+
     {Enable Device}
     SPI.SPIState:=SPI_STATE_ENABLED;
-    
+
     {Notify Enable}
     NotifierNotify(@SPI.Device,DEVICE_NOTIFICATION_ENABLE);
-    
+
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(SPI.Lock);
-   end; 
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -475,19 +475,19 @@ function SPIDeviceStop(SPI:PSPIDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Stop');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_SUCCESS;
  if SPI.SPIState <> SPI_STATE_ENABLED then Exit;
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -501,27 +501,27 @@ begin
      begin
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
-     end;    
-  
+     end;
+
     {Disable Device}
     SPI.SPIState:=SPI_STATE_DISABLED;
-    
+
     {Notify Disable}
     NotifierNotify(@SPI.Device,DEVICE_NOTIFICATION_DISABLE);
-    
+
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(SPI.Lock);
-   end; 
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
- 
+
 function SPIDeviceRead(SPI:PSPIDevice;ChipSelect:Word;Dest:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 {Read data from the specified SPI device}
 {Because SPI writes and then reads for each byte, dummy data will be written for each byte to be read}
@@ -537,22 +537,22 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Dest = nil then Exit;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Read (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if SPI.SPIState <> SPI_STATE_ENABLED then Exit;
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(SPI.DeviceRead) then
@@ -571,15 +571,15 @@ begin
      else
       begin
        Result:=ERROR_INVALID_PARAMETER;
-      end;    
-    end;    
-    
+      end;
+    end;
+
    MutexUnlock(SPI.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -599,22 +599,22 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Source = nil then Exit;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Write (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if SPI.SPIState <> SPI_STATE_ENABLED then Exit;
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(SPI.DeviceWrite) then
@@ -633,15 +633,15 @@ begin
      else
       begin
        Result:=ERROR_INVALID_PARAMETER;
-      end;    
-    end;    
-    
+      end;
+    end;
+
    MutexUnlock(SPI.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -662,22 +662,22 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffers}
  if (Source = nil) and (Dest = nil) then Exit;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Write Read (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if SPI.SPIState <> SPI_STATE_ENABLED then Exit;
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(SPI.DeviceWriteRead) then
@@ -688,14 +688,14 @@ begin
    else
     begin
      Result:=ERROR_INVALID_PARAMETER;
-    end;    
-    
+    end;
+
    MutexUnlock(SPI.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -707,18 +707,18 @@ function SPIDeviceGetMode(SPI:PSPIDevice):LongWord;
 begin
  {}
  Result:=SPI_MODE_UNKNOWN;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Get Mode');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(SPI.DeviceGetMode) then
@@ -730,8 +730,8 @@ begin
     begin
      {Get Mode}
      Result:=SPI.SPIMode;
-    end;  
-    
+    end;
+
    MutexUnlock(SPI.Lock);
   end;
 end;
@@ -746,19 +746,19 @@ function SPIDeviceSetMode(SPI:PSPIDevice;Mode:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Set Mode (Mode=' + SPIModeToString(Mode) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -771,16 +771,16 @@ begin
      begin
       {Check Mode}
       if Mode = SPI_MODE_UNKNOWN then Exit;
-      
+
       {Set Mode}
       SPI.SPIMode:=Mode;
       SPI.Properties.Mode:=Mode;
-      
+
       Result:=ERROR_SUCCESS;
-     end;  
-   finally  
+     end;
+   finally
     MutexUnlock(SPI.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -789,7 +789,7 @@ begin
 end;
 
 {==============================================================================}
- 
+
 function SPIDeviceGetClockRate(SPI:PSPIDevice;ChipSelect:Word):LongWord;
 {Get the clock rate of the specified SPI device}
 {SPI: The SPI device to get clock rate from}
@@ -798,18 +798,18 @@ function SPIDeviceGetClockRate(SPI:PSPIDevice;ChipSelect:Word):LongWord;
 begin
  {}
  Result:=0;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Get Clock Rate (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -822,7 +822,7 @@ begin
      begin
       {Check Chip Select}
       if (ChipSelect <> SPI_CS_NONE) and (ChipSelect > SPI_CS_MAX) then Exit;
-      
+
       if ChipSelect = SPI_CS_NONE then
        begin
         {Get Default Clock Rate}
@@ -833,10 +833,10 @@ begin
         {Get Chip Select Clock Rate}
         Result:=SPI.ChipSelects[ChipSelect].ClockRate;
        end;
-     end;  
-   finally  
+     end;
+   finally
     MutexUnlock(SPI.Lock);
-   end; 
+   end;
   end;
 end;
 
@@ -851,19 +851,19 @@ function SPIDeviceSetClockRate(SPI:PSPIDevice;ChipSelect:Word;ClockRate:LongWord
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Set Clock Rate (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ' ClockRate=' + IntToStr(ClockRate) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -876,27 +876,27 @@ begin
      begin
       {Check Chip Select}
       if (ChipSelect <> SPI_CS_NONE) and (ChipSelect > SPI_CS_MAX) then Exit;
-      
+
       if ChipSelect = SPI_CS_NONE then
        begin
         {Check Clock Rate}
         if ClockRate = 0 then Exit;
-        
+
         {Set Default Clock Rate}
         SPI.ClockRate:=ClockRate;
         SPI.Properties.ClockRate:=ClockRate;
-       end 
+       end
       else
        begin
         {Set Chip Select Clock Rate}
         SPI.ChipSelects[ChipSelect].ClockRate:=ClockRate;
-       end;       
-      
+       end;
+
       Result:=ERROR_SUCCESS;
-     end;  
-   finally  
+     end;
+   finally
     MutexUnlock(SPI.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -913,18 +913,18 @@ function SPIDeviceGetClockPhase(SPI:PSPIDevice):LongWord;
 begin
  {}
  Result:=SPI_CLOCK_PHASE_UNKNOWN;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Get Clock Phase');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(SPI.DeviceGetClockPhase) then
@@ -936,8 +936,8 @@ begin
     begin
      {Get Clock Phase}
      Result:=SPI.ClockPhase;
-    end;  
-    
+    end;
+
    MutexUnlock(SPI.Lock);
   end;
 end;
@@ -952,19 +952,19 @@ function SPIDeviceSetClockPhase(SPI:PSPIDevice;ClockPhase:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Set Clock Phase (ClockPhase=' + SPIClockPhaseToString(ClockPhase) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -977,16 +977,16 @@ begin
      begin
       {Check Clock Phase}
       if ClockPhase = SPI_CLOCK_PHASE_UNKNOWN then Exit;
-      
+
       {Set Clock Phase}
       SPI.ClockPhase:=ClockPhase;
       SPI.Properties.ClockPhase:=ClockPhase;
-      
+
       Result:=ERROR_SUCCESS;
-     end;  
-   finally  
+     end;
+   finally
     MutexUnlock(SPI.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1003,18 +1003,18 @@ function SPIDeviceGetClockPolarity(SPI:PSPIDevice):LongWord;
 begin
  {}
  Result:=SPI_CLOCK_POLARITY_UNKNOWN;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Get Clock Polarity');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(SPI.DeviceGetClockPolarity) then
@@ -1026,8 +1026,8 @@ begin
     begin
      {Get Clock Polarity}
      Result:=SPI.ClockPolarity;
-    end;  
-    
+    end;
+
    MutexUnlock(SPI.Lock);
   end;
 end;
@@ -1042,19 +1042,19 @@ function SPIDeviceSetClockPolarity(SPI:PSPIDevice;ClockPolarity:LongWord):LongWo
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Set Clock Polarity (ClockPolarity=' + SPIClockPolarityToString(ClockPolarity) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -1067,16 +1067,16 @@ begin
      begin
       {Check Clock Polarity}
       if ClockPolarity = SPI_CLOCK_POLARITY_UNKNOWN then Exit;
-      
+
       {Set Clock Polarity}
       SPI.ClockPolarity:=ClockPolarity;
       SPI.Properties.ClockPolarity:=ClockPolarity;
-      
+
       Result:=ERROR_SUCCESS;
-     end;  
-   finally  
+     end;
+   finally
     MutexUnlock(SPI.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1085,7 +1085,7 @@ begin
 end;
 
 {==============================================================================}
- 
+
 function SPIDeviceGetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word):LongWord;
 {Get the chip select polarity of the specified SPI device}
 {SPI: The SPI device to get chip select polarity from}
@@ -1094,18 +1094,18 @@ function SPIDeviceGetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word):LongWord;
 begin
  {}
  Result:=SPI_CS_POLARITY_UNKNOWN;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Get Select Polarity (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -1118,7 +1118,7 @@ begin
      begin
       {Check Chip Select}
       if (ChipSelect <> SPI_CS_NONE) and (ChipSelect > SPI_CS_MAX) then Exit;
-      
+
       if ChipSelect = SPI_CS_NONE then
        begin
         {Get Default Select Polarity}
@@ -1129,10 +1129,10 @@ begin
         {Get Chip Select Polarity}
         Result:=SPI.ChipSelects[ChipSelect].SelectPolarity;
        end;
-     end;  
-   finally  
+     end;
+   finally
     MutexUnlock(SPI.Lock);
-   end; 
+   end;
   end;
 end;
 
@@ -1147,19 +1147,19 @@ function SPIDeviceSetSelectPolarity(SPI:PSPIDevice;ChipSelect:Word;SelectPolarit
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Set Select Polarity (ChipSelect=' + SPIChipSelectToString(ChipSelect) + ' SelectPolarity=' + SPISelectPolarityToString(SelectPolarity) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -1172,27 +1172,27 @@ begin
      begin
       {Check Chip Select}
       if (ChipSelect <> SPI_CS_NONE) and (ChipSelect > SPI_CS_MAX) then Exit;
-      
+
       {Check Select Polarity}
       if SelectPolarity = SPI_CS_POLARITY_UNKNOWN then Exit;
-      
+
       if ChipSelect = SPI_CS_NONE then
        begin
         {Set Default Select Polarity}
         SPI.SelectPolarity:=SelectPolarity;
         SPI.Properties.SelectPolarity:=SelectPolarity;
-       end 
+       end
       else
        begin
         {Set Chip Select Polarity}
         SPI.ChipSelects[ChipSelect].SelectPolarity:=SelectPolarity;
-       end;       
-      
+       end;
+
       Result:=ERROR_SUCCESS;
-     end;  
-   finally  
+     end;
+   finally
     MutexUnlock(SPI.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1222,7 +1222,7 @@ begin
 end;
 
 {==============================================================================}
- 
+
 function SPIDeviceProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWord; inline;
 {Get the properties for the specified SPI device}
 {SPI: The SPI device to get properties from}
@@ -1245,22 +1245,22 @@ function SPIDeviceGetProperties(SPI:PSPIDevice;Properties:PSPIProperties):LongWo
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Properties}
  if Properties = nil then Exit;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
- if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF SPI_DEBUG}
  if SPI_LOG_ENABLED then SPILogDebug(SPI,'SPI Device Get Properties');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if SPI.SPIState <> SPI_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(SPI.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(SPI.DeviceGetProperties) then
@@ -1272,17 +1272,17 @@ begin
     begin
      {Get Properties}
      System.Move(SPI.Properties,Properties^,SizeOf(TSPIProperties));
-       
+
      {Return Result}
      Result:=ERROR_SUCCESS;
-    end;  
-    
+    end;
+
    MutexUnlock(SPI.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -1306,16 +1306,16 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TSPIDevice) then Exit;
- 
+
  {Create SPI}
  Result:=PSPIDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=SPI_TYPE_NONE;
  Result.Device.DeviceFlags:=SPI_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -1360,7 +1360,7 @@ begin
    Result.ChipSelects[Count].SelectPolarity:=SPI_CS_POLARITY_UNKNOWN;
    Result.ChipSelects[Count].ByteDelay:=0;
   end;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -1381,25 +1381,25 @@ function SPIDeviceDestroy(SPI:PSPIDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
  if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check SPI}
  Result:=ERROR_IN_USE;
  if SPIDeviceCheck(SPI) = SPI then Exit;
 
  {Check State}
  if SPI.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Lock}
  if SPI.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(SPI.Lock);
   end;
- 
- {Destroy SPI} 
+
+ {Destroy SPI}
  Result:=DeviceDestroy(@SPI.Device);
 end;
 
@@ -1414,24 +1414,24 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
  if SPI.SPIId <> DEVICE_ID_ANY then Exit;
  if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Interfaces}
  if not(Assigned(SPI.DeviceStart)) then Exit;
  if not(Assigned(SPI.DeviceStop)) then Exit;
  if not(Assigned(SPI.DeviceWriteRead)) then Exit;
- 
+
  {Check SPI}
  Result:=ERROR_ALREADY_EXISTS;
  if SPIDeviceCheck(SPI) = SPI then Exit;
- 
+
  {Check State}
  if SPI.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert SPI}
  if CriticalSectionLock(SPIDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1443,19 +1443,19 @@ begin
       Inc(SPIId);
      end;
     SPI.SPIId:=SPIId;
-    
+
     {Update Device}
-    SPI.Device.DeviceName:=SPI_NAME_PREFIX + IntToStr(SPI.SPIId); 
+    SPI.Device.DeviceName:=SPI_NAME_PREFIX + IntToStr(SPI.SPIId);
     SPI.Device.DeviceClass:=DEVICE_CLASS_SPI;
-    
+
     {Register Device}
     Result:=DeviceRegister(@SPI.Device);
     if Result <> ERROR_SUCCESS then
      begin
       SPI.SPIId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link SPI}
     if SPIDeviceTable = nil then
      begin
@@ -1467,16 +1467,16 @@ begin
       SPIDeviceTable.Prev:=SPI;
       SPIDeviceTable:=SPI;
      end;
- 
+
     {Increment Count}
     Inc(SPIDeviceTableCount);
-    
+
     {Check Default}
     if SPIDeviceDefault = nil then
      begin
       SPIDeviceDefault:=SPI;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1486,7 +1486,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1501,19 +1501,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
  if SPI.SPIId = DEVICE_ID_ANY then Exit;
  if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check SPI}
  Result:=ERROR_NOT_FOUND;
  if SPIDeviceCheck(SPI) <> SPI then Exit;
- 
+
  {Check State}
  if SPI.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove SPI}
  if CriticalSectionLock(SPIDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1521,7 +1521,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@SPI.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink SPI}
     Prev:=SPI.Prev;
     Next:=SPI.Next;
@@ -1531,7 +1531,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -1539,21 +1539,21 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(SPIDeviceTableCount);
- 
+
     {Check Default}
     if SPIDeviceDefault = SPI then
      begin
       SPIDeviceDefault:=SPIDeviceTable;
      end;
- 
+
     {Update SPI}
     SPI.SPIId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1563,7 +1563,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1577,10 +1577,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if SPIId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(SPIDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1599,7 +1599,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       SPI:=SPI.Next;
      end;
@@ -1631,7 +1631,7 @@ begin
  {}
  Result:=PSPIDevice(DeviceFindByDescription(Description));
 end;
-       
+
 {==============================================================================}
 
 function SPIDeviceEnumerate(Callback:TSPIEnumerate;Data:Pointer):LongWord;
@@ -1644,10 +1644,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(SPIDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1661,11 +1661,11 @@ begin
        begin
         if Callback(SPI,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       SPI:=SPI.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1676,7 +1676,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1691,25 +1691,25 @@ function SPIDeviceNotification(SPI:PSPIDevice;Callback:TSPINotification;Data:Poi
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check SPI}
  if SPI = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_SPI,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check SPI}
    if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@SPI.Device,DEVICE_CLASS_SPI,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
 {==============================================================================}
 {RTL SPI Functions}
-function SysSPIAvailable:Boolean; 
+function SysSPIAvailable:Boolean;
 {Check if an SPI device is available}
 begin
  {}
@@ -1717,8 +1717,8 @@ begin
 end;
 
 {==============================================================================}
- 
-function SysSPIStart(Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord; 
+
+function SysSPIStart(Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord;
 {Start the default SPI device ready for writing and reading}
 {Mode: The device mode to set (eg SPI_MODE_4WIRE)}
 {ClockRate: The clock rate to set for the device}
@@ -1728,28 +1728,28 @@ function SysSPIStart(Mode,ClockRate,ClockPhase,ClockPolarity:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if SPIDeviceDefault = nil then Exit;
- 
+
  Result:=SPIDeviceStart(SPIDeviceDefault,Mode,ClockRate,ClockPhase,ClockPolarity);
 end;
 
 {==============================================================================}
 
-function SysSPIStop:LongWord; 
+function SysSPIStop:LongWord;
 {Stop the default SPI device and terminate writing and reading}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if SPIDeviceDefault = nil then Exit;
- 
+
  Result:=SPIDeviceStop(SPIDeviceDefault);
 end;
 
 {==============================================================================}
- 
+
 function SysSPIRead(ChipSelect:Word;Dest:Pointer;Size:LongWord;var Count:LongWord):LongWord;
 {Read data from the default SPI device}
 {Because SPI writes and then reads for each byte, dummy data will be written for each byte to be read}
@@ -1763,9 +1763,9 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if SPIDeviceDefault = nil then Exit;
- 
+
  Result:=SPIDeviceRead(SPIDeviceDefault,ChipSelect,Dest,Size,SPI_TRANSFER_NONE,Count);
 end;
 
@@ -1784,9 +1784,9 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if SPIDeviceDefault = nil then Exit;
- 
+
  Result:=SPIDeviceWrite(SPIDeviceDefault,ChipSelect,Source,Size,SPI_TRANSFER_NONE,Count);
 end;
 
@@ -1806,23 +1806,23 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if SPIDeviceDefault = nil then Exit;
- 
+
  Result:=SPIDeviceWriteRead(SPIDeviceDefault,ChipSelect,Source,Dest,Size,SPI_TRANSFER_NONE,Count);
 end;
 
 {==============================================================================}
- 
+
 function SysSPIGetMode:LongWord;
 {Get the device mode of the default SPI device}
 {Return: The device mode or SPI_MODE_UNKNOWN on failure}
 begin
  {}
  Result:=SPI_MODE_UNKNOWN;
- 
+
  if SPIDeviceDefault = nil then Exit;
- 
+
  Result:=SPIDeviceGetMode(SPIDeviceDefault);
 end;
 
@@ -1835,14 +1835,14 @@ function SysSPISetMode(Mode:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if SPIDeviceDefault = nil then Exit;
- 
+
  Result:=SPIDeviceSetMode(SPIDeviceDefault,Mode);
 end;
 
 {==============================================================================}
- 
+
 function SysSPIGetClockRate(ChipSelect:Word):LongWord;
 {Get the clock rate of the default SPI device}
 {ChipSelect: The chip select number to get clock rate from (SPI_CS_NONE for default)}
@@ -1850,9 +1850,9 @@ function SysSPIGetClockRate(ChipSelect:Word):LongWord;
 begin
  {}
  Result:=0;
- 
+
  if SPIDeviceDefault = nil then Exit;
- 
+
  Result:=SPIDeviceGetClockRate(SPIDeviceDefault,ChipSelect);
 end;
 
@@ -1866,9 +1866,9 @@ function SysSPISetClockRate(ChipSelect:Word;ClockRate:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if SPIDeviceDefault = nil then Exit;
- 
+
  Result:=SPIDeviceSetClockRate(SPIDeviceDefault,ChipSelect,ClockRate);
 end;
 
@@ -1880,9 +1880,9 @@ function SysSPIGetClockPhase:LongWord;
 begin
  {}
  Result:=SPI_CLOCK_PHASE_UNKNOWN;
- 
+
  if SPIDeviceDefault = nil then Exit;
- 
+
  Result:=SPIDeviceGetClockPhase(SPIDeviceDefault);
 end;
 
@@ -1895,9 +1895,9 @@ function SysSPISetClockPhase(ClockPhase:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if SPIDeviceDefault = nil then Exit;
- 
+
  Result:=SPIDeviceSetClockPhase(SPIDeviceDefault,ClockPhase);
 end;
 
@@ -1909,9 +1909,9 @@ function SysSPIGetClockPolarity:LongWord;
 begin
  {}
  Result:=SPI_CLOCK_POLARITY_UNKNOWN;
- 
+
  if SPIDeviceDefault = nil then Exit;
- 
+
  Result:=SPIDeviceGetClockPolarity(SPIDeviceDefault);
 end;
 
@@ -1924,14 +1924,14 @@ function SysSPISetClockPolarity(ClockPolarity:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if SPIDeviceDefault = nil then Exit;
- 
+
  Result:=SPIDeviceSetClockPolarity(SPIDeviceDefault,ClockPolarity);
 end;
 
 {==============================================================================}
- 
+
 function SysSPIGetSelectPolarity(ChipSelect:Word):LongWord;
 {Get the chip select polarity of the default SPI device}
 {ChipSelect: The chip select number to get polarity from (SPI_CS_NONE for default)}
@@ -1939,9 +1939,9 @@ function SysSPIGetSelectPolarity(ChipSelect:Word):LongWord;
 begin
  {}
  Result:=SPI_CS_POLARITY_UNKNOWN;
- 
+
  if SPIDeviceDefault = nil then Exit;
- 
+
  Result:=SPIDeviceGetSelectPolarity(SPIDeviceDefault,ChipSelect);
 end;
 
@@ -1955,12 +1955,12 @@ function SysSPISetSelectPolarity(ChipSelect:Word;SelectPolarity:LongWord):LongWo
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if SPIDeviceDefault = nil then Exit;
- 
+
  Result:=SPIDeviceSetSelectPolarity(SPIDeviceDefault,ChipSelect,SelectPolarity);
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {SPI Helper Functions}
@@ -1982,26 +1982,26 @@ end;
 
 {==============================================================================}
 
-function SPIDeviceSetDefault(SPI:PSPIDevice):LongWord; 
+function SPIDeviceSetDefault(SPI:PSPIDevice):LongWord;
 {Set the current default SPI device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
  if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(SPIDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check SPI}
     if SPIDeviceCheck(SPI) <> SPI then Exit;
-    
+
     {Set SPI Default}
     SPIDeviceDefault:=SPI;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -2024,11 +2024,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check SPI}
  if SPI = nil then Exit;
  if SPI.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(SPIDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -2043,7 +2043,7 @@ begin
         Result:=SPI;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -2061,7 +2061,7 @@ function SPITypeToString(SPIType:LongWord):String;
 begin
  {}
  Result:='SPI_TYPE_UNKNOWN';
- 
+
  if SPIType <= SPI_TYPE_MAX then
   begin
    Result:=SPI_TYPE_NAMES[SPIType];
@@ -2075,7 +2075,7 @@ function SPIStateToString(SPIState:LongWord):String;
 begin
  {}
  Result:='SPI_STATE_UNKNOWN';
- 
+
  if SPIState <= SPI_STATE_MAX then
   begin
    Result:=SPI_STATE_NAMES[SPIState];
@@ -2091,7 +2091,7 @@ begin
  {}
  {Check Level}
  if Level < SPI_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = SPI_LOG_LEVEL_DEBUG then
@@ -2106,17 +2106,17 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'SPI: ';
- 
+
  {Check SPI}
  if SPI <> nil then
   begin
    WorkBuffer:=WorkBuffer + SPI_NAME_PREFIX + IntToStr(SPI.SPIId) + ': ';
   end;
 
- {Output Logging}  
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_SPI,LogLevelToLoggingSeverity(Level),'SPI',WorkBuffer + AText);
 end;
 
@@ -2154,13 +2154,13 @@ end;
 
 {==============================================================================}
 
-function SPIChipSelectToString(ChipSelect:Word):String; 
+function SPIChipSelectToString(ChipSelect:Word):String;
 begin
  {}
  Result:='SPI_CS_UNKNOWN';
- 
+
  if ChipSelect > SPI_CS_MAX then Exit;
- 
+
  Result:='SPI_CS_' + IntToStr(ChipSelect);
 end;
 
@@ -2170,7 +2170,7 @@ function SPIModeToString(Mode:LongWord):String;
 begin
  {}
  Result:='SPI_MODE_UNKNOWN';
- 
+
  case Mode of
   SPI_MODE_4WIRE:Result:='SPI_MODE_4WIRE';
   SPI_MODE_3WIRE:Result:='SPI_MODE_3WIRE';
@@ -2184,7 +2184,7 @@ function SPIClockPhaseToString(Phase:LongWord):String;
 begin
  {}
  Result:='SPI_CLOCK_PHASE_UNKNOWN';
- 
+
  case Phase of
   SPI_CLOCK_PHASE_LOW:Result:='SPI_CLOCK_PHASE_LOW';
   SPI_CLOCK_PHASE_HIGH:Result:='SPI_CLOCK_PHASE_HIGH';
@@ -2197,7 +2197,7 @@ function SPIClockPolarityToString(Polarity:LongWord):String;
 begin
  {}
  Result:='SPI_CLOCK_POLARITY_UNKNOWN';
- 
+
  case Polarity of
   SPI_CLOCK_POLARITY_LOW:Result:='SPI_CLOCK_POLARITY_LOW';
   SPI_CLOCK_POLARITY_HIGH:Result:='SPI_CLOCK_POLARITY_HIGH';
@@ -2210,7 +2210,7 @@ function SPISelectPolarityToString(Polarity:LongWord):String;
 begin
  {}
  Result:='SPI_CS_POLARITY_UNKNOWN';
- 
+
  case Polarity of
   SPI_CS_POLARITY_LOW:Result:='SPI_CS_POLARITY_LOW';
   SPI_CS_POLARITY_HIGH:Result:='SPI_CS_POLARITY_HIGH';
@@ -2224,7 +2224,7 @@ initialization
  SPIInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

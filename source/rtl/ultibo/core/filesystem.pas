@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -61,7 +61,7 @@ Filesystems
         D: = \Volume4   (Alternate Name = \HarddiskVolume2)
         E: = \Volume5   (Alternate Name = \HarddiskVolume3)
 
-       
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -82,13 +82,13 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,L
         //This could leave open the possibility of another thread moving to that entry in between time (need a WriterLock somewhere ?)
         //UpdateEnumHandles can be handled by moving into WriterLock block
         //UpdateFindHandles, wrapper usage with FEntries WriterLock to protect ?
-                        
+
         //Really applies to CheckFileHandles as well, another thread could open in between
         //Wrapper usage with FEntries WriterLock to protect ?
-                        
+
         //ReleaseFindHandles/ReleaseFileHandles/ReleaseRawHandles/ReleaseEnumHandles are ok as they are after the remove
         //DismountFileHandles/DismountFindHandles are ok as they invalid or close the handle before remove
-                      
+
 //To Do //Complete Ansi/Unicode implementation (Both versions for each function)
 
 //To Do //Universal 64bit sectors etc
@@ -111,7 +111,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,L
 //Unlock
 
 //Writer ?
- 
+
 //Reader
 
 //) = Uppercase(  //Use WorkBuffer
@@ -123,12 +123,12 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,L
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-  
+
 {==============================================================================}
 const
  {FileSystem specific constants}
  FILESYS_LOGGING_DESCRIPTION = 'Filesystem Logging';
- 
+
  FILESYS_STORAGE_TIMER_INTERVAL = 100; {Timer interval for device additions or insertions}
 
  {FileSystem Lock States}
@@ -136,19 +136,19 @@ const
  FILESYS_LOCK_READ  = 1;
  FILESYS_LOCK_WRITE = 2;
  FILESYS_LOCK_AUTO  = 3; {Not intended for use in all situations, use with extreme caution}
- 
+
  {FileSystem Cache}
  FILESYS_CACHE_THREAD_NAME    = 'Filesystem Cache';      {Thread name for Filesystem cache threads}
  FILESYS_CACHE_THREAD_PRIORITY = THREAD_PRIORITY_HIGHER; {Thread priority for Filesystem cache threads}
- 
+
  FILESYS_CACHE_TIMER_INTERVAL = 50;                      {50ms timer interval for Filesystem cache}
  FILESYS_CACHE_FLUSH_TIMEOUT = 3000;                     {Filesystem cache flush timeout 3 seconds}
  FILESYS_CACHE_DISCARD_TIMEOUT = 180000;                 {Filesystem cache discard timeout 3 minutes}
- 
+
  {Entry Timer}
  FILESYS_ENTRY_TIMER_INTERVAL = 1000;                    {1000ms timer interval for Filesystem entries}
  FILESYS_ENTRY_DELETE_TIMEOUT = 30000;                   {Filesystem entry delete timeout 30 seconds}
- 
+
  {Cache Timer}
  CACHE_TIMER_KEY_NONE = TIMER_KEY_NONE;
  CACHE_TIMER_KEY_MAX = TIMER_KEY_MAX;
@@ -158,7 +158,7 @@ const
  ENTRY_TIMER_KEY_NONE = TIMER_KEY_NONE;
  ENTRY_TIMER_KEY_MAX = TIMER_KEY_MAX;
  ENTRY_TIMER_KEY_MIN = TIMER_KEY_MIN;
- 
+
 const
  {Partition, Device, Volume constants}
  MIN_FLOPPY_DEVICE = $00;
@@ -180,7 +180,7 @@ const
  MIN_PARTITION = 0;
  MAX_PARTITION = 3;
  MAX_EXTENDED = 1;   {Only 2 partitions in second level}
- 
+
  MIN_FLOPPY_DRIVE = MIN_DRIVE;
  MAX_FLOPPY_DRIVE = MIN_DRIVE + 1;
 
@@ -190,7 +190,7 @@ const
  MIN_SECTOR_SIZE = 512;
  MAX_SECTOR_SIZE = 4096;
  ISO_SECTOR_SIZE = 2048;
- 
+
  VOLUME_PREFIX = '\Volume';         {eg \Volume1}
  EXTENDED_PREFIX = '\Extended';     {eg \Extended1}
  PARTITION_PREFIX = '\Partition';   {eg \Partition1}
@@ -204,11 +204,11 @@ const
  VOLUME_PATH_PREFIX = '\\?';         {eg \\?\Volume1\Home}
  DEVICE_PATH_PREFIX = '\\.';         {eg \\.\Harddisk0\Partition1\Home}
  REPARSE_PATH_PREFIX = '\??\';
- 
+
  BOOT_RECORD_SIGNATURE = $AA55;
  PARTITION_RECORD_SIGNATURE = $AA55;
  BOOT_SECTOR_SIGNATURE = $AA55;
- 
+
 const
  {Find Flags}
  FIND_FLAG_NONE       = $00000000;
@@ -222,7 +222,7 @@ const
  {File Mode constants}
  fmOpenMask = $000F;
  fmShareMask = $00F0;
- 
+
 const
  {File Attribute constants}
  faDot          = $01000000;
@@ -254,13 +254,13 @@ const
  faMftIndexView = $20000000; {Used by both the StandardInformation and FileName attributes}
 
  {Note: NTFS does not store the faVolumeID or faDirectory attributes}
- 
+
  {Additional File Attribute constants}
  faNone         = $00000000;
  faStandard     = (faReadOnly or faHidden or faSysFile or faArchive);
  faLongName     = (faReadOnly or faHidden or faSysFile or faVolumeID);
  faLongMask     = (faReadOnly or faHidden or faSysFile or faVolumeID or faDirectory or faArchive);
- 
+
 const
  {Volume Attribute constants}
  vaNone              = $00000000;
@@ -285,13 +285,13 @@ const
  vaVirtualVolume     = $02000000; {Used to indicate Volume is Virtual or on a Virtual Device}
  vaFolderEncryption  = $04000000; {Used to indicate support for Folder Encryption (New files in folder are automatically encrypted)}
  vaFolderCompression = $08000000; {Used to indicate support for Folder Compression (New files in folder are automatically compressed)}
- 
+
 const
  {Device Attribute constants}
  daNone       = $00000000;
  daWriteable  = $00000001;
  daVirtual    = $00000002;
- 
+
 const
  {Image Attribute constants}
  iaNone       = $00000000;
@@ -312,7 +312,7 @@ const
  iaReadable   = $00010000; {All}
  iaWriteable  = $00020000; {All}
  iaEraseable  = $00040000; {All}
- 
+
 const
  {Catalog Attribute constants}
  caNone        = $00000000;
@@ -323,11 +323,11 @@ const
  caFloppy144M  = $00000010; {1.44M}
  caFloppy288M  = $00000020; {2.88M}
  caHardDisk    = $00000040; {Hard Disk}
- 
+
 const
  {Misc constants}
  NAME_HASH_SIZE = 8;  {Used for Internal Name Hash Generation only}
- 
+
 const
  {Partition Ids} {See http://www.win.tue.nl/~aeb/partitions/partition_types-1.html}
  MAX_PARTITION_ID = 255;
@@ -845,21 +845,21 @@ const
   'Linux RAID',
   'LANstep',
   'Xenix BBT');
- 
+
  {Device descriptions}
  FILESYS_ATA_DEVICE_DESCRIPTION = 'ATA Storage Device';
  FILESYS_ATAPI_DEVICE_DESCRIPTION = 'ATAPI Storage Device';
  FILESYS_SCSI_DEVICE_DESCRIPTION = 'SCSI Storage Device';
  FILESYS_USB_DEVICE_DESCRIPTION = 'USB Storage Device';
  FILESYS_MMC_DEVICE_DESCRIPTION = 'MMC/SD Storage Device';
- 
+
  {Controller descriptions}
  FILESYS_ATA_CONTROLLER_DESCRIPTION = 'ATA Storage Controller';
  FILESYS_ATAPI_CONTROLLER_DESCRIPTION = 'ATAPI Storage Controller';
  FILESYS_SCSI_CONTROLLER_DESCRIPTION = 'SCSI Storage Controller';
  FILESYS_USB_CONTROLLER_DESCRIPTION = 'USB Storage Controller';
  FILESYS_MMC_CONTROLLER_DESCRIPTION = 'MMC/SD Storage Controller';
- 
+
  {FileSystem logging}
  FILESYS_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {FileSystem debugging messages}
  FILESYS_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {FileSystem informational messages, such as a filesystem being mounted or dismounted}
@@ -867,13 +867,13 @@ const
  FILESYS_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {FileSystem error messages}
  FILESYS_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No FileSystem messages}
 
-var 
+var
  FILESYS_DEFAULT_LOG_LEVEL:LongWord = FILESYS_LOG_LEVEL_DEBUG; {Minimum level for FileSystem messages.  Only messages with level greater than or equal to this will be printed}
- 
-var 
+
+var
  {FileSystem logging}
- FILESYS_LOG_ENABLED:Boolean; 
- 
+ FILESYS_LOG_ENABLED:Boolean;
+
 {==============================================================================}
 type
  {FileSystem specific types}
@@ -882,8 +882,8 @@ type
   Timer:TTimerHandle;
   Device:PStorageDevice;
  end;
- 
-type 
+
+type
  {Cache Timer}
  PCacheTimerItem = ^TCacheTimerItem;
  TCacheTimerItem = record
@@ -892,7 +892,7 @@ type
   Prev:PCacheTimerItem;      {Previous item in timer list}
   Next:PCacheTimerItem;      {Next item in timer list}
  end;
- 
+
 type
  {Entry Timer}
  PEntryTimerItem = ^TEntryTimerItem;
@@ -902,14 +902,14 @@ type
   Prev:PEntryTimerItem;      {Previous item in timer list}
   Next:PEntryTimerItem;      {Next item in timer list}
  end;
- 
+
 type //To do //These should be constants to allow for future expansion
  TMediaType = (mtUNKNOWN,mtINVALID,mtFLOPPY,mtFIXED,mtREMOVABLE,mtCDROM,mtDVD,mtOTHER);
 
  TFloppyType = (ftUNKNOWN,ftINVALID,ft360K,ft12M,ft720K,ft144M,ft288M,ftATAPI);
 
  TImageType = (itUNKNOWN,itINVALID,itMEMORY,itFILE,itDEVICE,itISO,itBOCHS,itVMWARE,itVPC,itVBOX);
- 
+
 type //To do //These should be constants to allow for future expansion
  {Cache types}
  TCacheState = (csCLEAN,csDIRTY);
@@ -921,7 +921,7 @@ type //To do //These should be constants to allow for future expansion
  TCachePageState = (psUNKNOWN,psEMPTY,psCLEAN,psDIRTY);
 
  TCachePageContent = (pcUNKNOWN,pcDATA,pcDIRECTORY,pcENTRY,pcSYSTEM);
- 
+
 type
  {Cache Statistics}
  PCacheStatistics = ^TCacheStatistics;
@@ -969,12 +969,12 @@ type
   FindHandle: THandle;
   FindData: TWin32FindData;
  end;} {TSearchRec is always defined in SysUtils}
- 
+
  {$IFNDEF FPC_LEGACY}
  TSymLinkRec = SysUtils.TRawbyteSymLinkRec;
  {TSymLinkRec is always defined in SysUtils}
  {$ENDIF}
- 
+
 type
  {Search types}
  TFileSearchRec = record
@@ -998,7 +998,7 @@ type
   Context:LongWord;
   Verbose:Boolean;
  end;
- 
+
  TVolumeSearchRec = record
   Name:array[0..MAX_PATH - 1] of Char;
   Attributes:LongWord;
@@ -1011,7 +1011,7 @@ type
   Context:LongWord;
   Verbose:Boolean;
  end;
- 
+
  TDriveSearchRec = record
   Name:array[0..MAX_PATH - 1] of Char;
   Attributes:LongWord;
@@ -1024,7 +1024,7 @@ type
   Context:LongWord;
   Verbose:Boolean;
  end;
- 
+
  TImageSearchRec = record
   Name:array[0..MAX_PATH - 1] of Char;
   ImageNo:Integer;
@@ -1042,7 +1042,7 @@ type
   Context:LongWord;
   Verbose:Boolean;
  end;
- 
+
  TCatalogSearchRec = record
   Name:array[0..MAX_PATH - 1] of Char;
   Path:array[0..MAX_PATH - 1] of Char;
@@ -1055,7 +1055,7 @@ type
   FindHandle:THandle;
   Context:LongWord;
  end;
- 
+
  TMountSearchRec = record
   Name:array[0..MAX_PATH - 1] of Char;
   FindHandle:THandle;
@@ -1073,16 +1073,16 @@ type
   Context:Pointer;
   FindData:TWin32FindStreamData;
  end;
- 
+
  TLinkSearchRec = record
   Name:array[0..MAX_PATH - 1] of Char;
   FindHandle:THandle;
   Context:Pointer;
  end;
- 
+
 type
  {FAT12/FAT16 BIOS Parameter Block}
- TBiosPB = packed record   
+ TBiosPB = packed record
   BytesPerSector:Word;     {512,1024,2048,4096 - Usually 512}
   SectorsPerCluster:Byte;  {1,2,4,8,16,32,64,128}
   ReservedSectors:Word;    {FAT12/16 - Usually 1, FAT32 - Usually 32}
@@ -1098,10 +1098,10 @@ type
                            {Only valid on Partitioned media}
   TotalSectors32:LongWord; {Total Sectors on the drive or 0 if TotalSectors16 used}
  end;
- 
+
 type
  {FAT32 BIOS Parameter Block}
- TExtBiosPB = packed record      
+ TExtBiosPB = packed record
   BytesPerSector:Word;           {512,1024,2048,4096 - Usually 512}
   SectorsPerCluster:Byte;        {1,2,4,8,16,32,64,128}
   ReservedSectors:Word;          {FAT12/16 - Usually 1, FAT32 - Usually 32}
@@ -1130,10 +1130,10 @@ type
   BackupBootSector:Word;         {Usually 6}
   Reserved:array[0..11] of Byte; {Always 0}
  end;
- 
+
 type
  {NTFS BIOS Parameter Block}
- TNtfsBiosPB = packed record     
+ TNtfsBiosPB = packed record
   BytesPerSector:Word;           {512,1024,2048,4096 - Usually 512}
   SectorsPerCluster:Byte;        {1,2,4,8,16,32,64,128 - Usually 8}
   ReservedSectors:Word;          {Must always be 0 on NTFS} {Win2K Volume Manager ?}
@@ -1154,9 +1154,9 @@ type
   VolumeSerial:Int64;            {Volume Serial Number}
   Checksum:LongWord;             {Checksum} {Not Used}
  end;
- 
+
 type
- {Partition types} 
+ {Partition types}
  TPartitionEntry = packed record
   BootIndicator:Byte;    {80 for active partition}
   StartHead:Byte;        {Either Bits 0-3 only or Bits 0-7 depending on BIOS}
@@ -1182,7 +1182,7 @@ type
   PartitionTable:TPartitionTable;
   Signature:Word;     {Magic Number $AA55}
  end;
- 
+
  TExtMasterBootCode = array[0..439] of Byte;
 
  PExtMasterBootRecord = ^TExtMasterBootRecord;
@@ -1200,15 +1200,15 @@ type
   PartitionTable:TPartitionTable;  {Only first 2 ever used}
   Signature:Word;     {Magic Number $AA55}
  end;
- 
+
 type
- {Sector types} 
+ {Sector types}
  PDiskSector = ^TDiskSector;
  TDiskSector = array[0..511] of Byte;
 
  TBootSectorJump = array[0..2] of Byte;
  TBootSectorCode = array[0..447] of Byte;
- 
+
  PBootSector = ^TBootSector;
  TBootSector = packed record       {FAT12/FAT16 Boot Sector}
   BootJump:TBootSectorJump;        {JMP - EBh,??h,90h or E9h,??h,??h}
@@ -1258,7 +1258,7 @@ type
  TExtfsBootSector = packed record    {EXTFS Boot Sector}
    //To Do //Lookup in sources
  end;
- 
+
 {==============================================================================}
 type
  {FileSystem specific classes}
@@ -1293,7 +1293,7 @@ type
   private
    {Internal Variables}
    FLock:TSynchronizerHandle;
-   
+
    {$IFDEF FILESYS_INCREMENTAL_CACHE}
    FCache:TIncrementalCache;
    {$ELSE}
@@ -1317,13 +1317,13 @@ type
 
    FCurrentIndex:LongWord;   {TLS Index for storing current drive}
    FCurrentDrive:TDiskDrive; {Current drive when global current directory is enabled}
-  
+
    FAllowFloppy:Boolean;     {Allow Scanning of Floppy Devices}
    FAllowDrives:Boolean;     {Allow Disk Drives to represent Volumes by drive letter}
    FOemConvert:Boolean;      {Convert OEM character strings to ANSI}
 
    FEntryTimer:TEntryTimer;
-   
+
    FDefaultRecognizer:TRecognizer;
 
    {Private Methods}
@@ -1332,10 +1332,10 @@ type
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
 
-   function GetCurrent:TDiskDrive; 
-   function SetCurrent(ACurrent:TDiskDrive):Boolean; 
-   
-   function FindMatchingFile(ADrive:TDiskDrive;AVolume:TDiskVolume;var ASearchRec:TSearchRec):Integer; 
+   function GetCurrent:TDiskDrive;
+   function SetCurrent(ACurrent:TDiskDrive):Boolean;
+
+   function FindMatchingFile(ADrive:TDiskDrive;AVolume:TDiskVolume;var ASearchRec:TSearchRec):Integer;
   public
    {Public Variables}
    {$IFDEF FILESYS_INCREMENTAL_CACHE}
@@ -1349,24 +1349,24 @@ type
    property OemConvert:Boolean read FOemConvert write FOemConvert;
 
    {Public Methods}
-   
+
    {Cache Methods}
    function OpenCache(ACacheSize,ACacheKeys,APageSize:LongWord;ACacheMode:TCacheMode):Boolean;
    function CloseCache:Boolean;
    function FlushCache(AAll:Boolean):Boolean;
    function DiscardCache(AAll:Boolean):Boolean;
    function GetCacheStatistics(var AStatistics:TCacheStatistics):Boolean;
-   
+
    {Catalog Methods}
    function GetCatalogByNo(const APath:String;ACatalogNo:LongWord;ALock:Boolean;AState:LongWord):TDiskCatalog;
    function GetCatalogByName(const APath,AName:String;ALock:Boolean;AState:LongWord):TDiskCatalog;
    function GetCatalogByNext(const APath:String;APrevious:TDiskCatalog;ALock,AUnlock:Boolean;AState:LongWord):TDiskCatalog;
-   
+
    {Image Methods}
    function AddImage(AImage:TDiskImage):Boolean;
    function RemoveImage(AImage:TDiskImage):Boolean;
    function CheckImage(AImage:TDiskImage;ALock:Boolean;AState:LongWord):Boolean;
-   
+
    function GetImageByNo(AImageNo:Integer;ALock:Boolean;AState:LongWord):TDiskImage;
    function GetImageByName(const AName:String;ALock:Boolean;AState:LongWord):TDiskImage;
    function GetImageByDevice(ADevice:TDiskDevice;ALock:Boolean;AState:LongWord):TDiskImage;
@@ -1381,7 +1381,7 @@ type
    function AddDrive(ADrive:TDiskDrive):Boolean;
    function RemoveDrive(ADrive:TDiskDrive):Boolean;
    function CheckDrive(ADrive:TDiskDrive;ALock:Boolean;AState:LongWord):Boolean;
-   
+
    function GetDriveByNo(ADriveNo:Integer;ALock:Boolean;AState:LongWord):TDiskDrive;
    function GetDriveByName(const AName:String;ALock:Boolean;AState:LongWord):TDiskDrive;
    function GetDriveByParent(const AParent:String;ALock:Boolean;AState:LongWord):TDiskDrive;
@@ -1408,7 +1408,7 @@ type
    function GetVolumeByPartition(APartition:TDiskPartition;ALock:Boolean;AState:LongWord):TDiskVolume;
    function GetVolumesByPartition(APartition:TDiskPartition;ALock:Boolean;AState:LongWord):TList; //To Do //Should this be something better than a TList ?
    function GetVolumeByNext(APrevious:TDiskVolume;ALock,AUnlock:Boolean;AState:LongWord):TDiskVolume;
-   
+
    function GetNextVolumeNo:Integer;
    function GetMaxVolumeNo:Integer;
 
@@ -1416,7 +1416,7 @@ type
    function AddDevice(ADevice:TDiskDevice):Boolean;
    function RemoveDevice(ADevice:TDiskDevice):Boolean;
    function CheckDevice(ADevice:TDiskDevice;ALock:Boolean;AState:LongWord):Boolean;
-   
+
    function GetDeviceByNo(ADeviceNo:Integer;ALock:Boolean;AState:LongWord):TDiskDevice;
    function GetDeviceByName(const AName:String;ALock:Boolean;AState:LongWord):TDiskDevice;
    function GetDeviceByImage(AImage:TDiskImage;ALock:Boolean;AState:LongWord):TDiskDevice;
@@ -1425,7 +1425,7 @@ type
    function GetDevicesByController(AController:TDiskController;ALock:Boolean;AState:LongWord):TList; //To Do //Should this be something better than a TList ?
    function GetDeviceByIdentifier(AController:TDiskController;const AIdentifier:String;ALock:Boolean;AState:LongWord):TDiskDevice;
    function GetDeviceByNext(APrevious:TDiskDevice;ALock,AUnlock:Boolean;AState:LongWord):TDiskDevice;
-   
+
    function GetNextDeviceNo(AMediaType:TMediaType):Integer;
    function GetMaxDeviceNo(AMediaType:TMediaType):Integer;
 
@@ -1443,7 +1443,7 @@ type
    function GetPartitionByPartition(APartition:TDiskPartition;ALock:Boolean;AState:LongWord):TDiskPartition;
    function GetPartitionsByPartition(APartition:TDiskPartition;ALock:Boolean;AState:LongWord):TList; //To Do //Should this be something better than a TList ?
    function GetPartitionByNext(APrevious:TDiskPartition;ALock,AUnlock:Boolean;AState:LongWord):TDiskPartition;
-   
+
    function GetNextPartitionNo(ADevice:TDiskDevice;AExtended:Boolean):Integer;
    function GetMaxPartitionNo(ADevice:TDiskDevice;AExtended:Boolean):Integer;
 
@@ -1451,11 +1451,11 @@ type
    function AddController(AController:TDiskController):Boolean;
    function RemoveController(AController:TDiskController):Boolean;
    function CheckController(AController:TDiskController;ALock:Boolean;AState:LongWord):Boolean;
-   
+
    function GetControllerByNo(AControllerNo:Integer;ALock:Boolean;AState:LongWord):TDiskController;
    function GetControllerByName(const AName:String;ALock:Boolean;AState:LongWord):TDiskController;
    function GetControllerByNext(APrevious:TDiskController;ALock,AUnlock:Boolean;AState:LongWord):TDiskController;
-   
+
    function GetNextControllerNo:Integer;
    function GetMaxControllerNo:Integer;
 
@@ -1467,7 +1467,7 @@ type
    function GetRecognizerByImage(AImage:TDiskImage;ALock:Boolean;AState:LongWord):TRecognizer;
    function GetRecognizerByVolume(AVolume:TDiskVolume;ALock:Boolean;AState:LongWord):TRecognizer;
    function GetRecognizerByPartition(APartition:TDiskPartition;ALock:Boolean;AState:LongWord):TRecognizer;
-   function GetRecognizerByPartitionId(APartitionId:Byte;ALock:Boolean;AState:LongWord):TRecognizer;       
+   function GetRecognizerByPartitionId(APartitionId:Byte;ALock:Boolean;AState:LongWord):TRecognizer;
    function GetRecognizerByBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64;ALock:Boolean;AState:LongWord):TRecognizer;
    function GetRecognizerByNext(APrevious:TRecognizer;ALock,AUnlock:Boolean;AState:LongWord):TRecognizer;
 
@@ -1501,14 +1501,14 @@ type
    function OpenRawHandle(ADevice:TDiskDevice;APartition:TDiskPartition;AVolume:TDiskVolume;ADrive:TDiskDrive;AMode:Integer;ALock:Boolean;AState:LongWord):TRawHandle;
    function CloseRawHandle(AHandle:TRawHandle):Boolean;
    function GetRawHandleByNext(APrevious:TRawHandle;ALock,AUnlock:Boolean;AState:LongWord):TRawHandle;
-   
+
    function ReleaseRawHandles(ADevice:TDiskDevice;APartition:TDiskPartition;AVolume:TDiskVolume;ADrive:TDiskDrive):Boolean;
 
    {Enum Handle Methods}
    function OpenEnumHandle(AFileSystem:TFileSystem;ALock:Boolean;AState:LongWord):TEnumHandle;
    function CloseEnumHandle(AHandle:TEnumHandle):Boolean;
    function GetEnumHandleByNext(APrevious:TEnumHandle;ALock,AUnlock:Boolean;AState:LongWord):TEnumHandle;
-   
+
    function UpdateEnumHandles(ADevice:TDiskDevice;APartition:TDiskPartition;ADrive:TDiskDrive;AVolume:TDiskVolume;AImage:TDiskImage;ACatalog:TDiskCatalog):Boolean;
    function ReleaseEnumHandles(AFileSystem:TFileSystem):Boolean;
 
@@ -1517,7 +1517,7 @@ type
    function CloseFileHandle(AHandle:TFileHandle;AAll:Boolean):Boolean;
    function ReopenFileHandle(AHandle:TFileHandle):Boolean;
    function GetFileHandleByNext(APrevious:TFileHandle;ALock,AUnlock:Boolean;AState:LongWord):TFileHandle;
-   
+
    function CheckFileHandles(AEntry:TDiskEntry):Boolean;
    function ReleaseFileHandles(AVolume:TDiskVolume;ADrive:TDiskDrive):Boolean;
    function DismountFileHandles(AVolume:TDiskVolume;ADrive:TDiskDrive):Boolean;
@@ -1526,7 +1526,7 @@ type
    function OpenFindHandle(AVolume:TDiskVolume;ADrive:TDiskDrive;AParent:TDiskEntry;const AMask:String;AAttr,AFlags:LongWord;ALock:Boolean;AState:LongWord):TFindHandle;
    function CloseFindHandle(AHandle:TFindHandle):Boolean;
    function GetFindHandleByNext(APrevious:TFindHandle;ALock,AUnlock:Boolean;AState:LongWord):TFindHandle;
-   
+
    function UpdateFindHandles(AEntry:TDiskEntry):Boolean;
    function ReleaseFindHandles(AVolume:TDiskVolume;ADrive:TDiskDrive):Boolean;
    function DismountFindHandles(AVolume:TDiskVolume;ADrive:TDiskDrive):Boolean;
@@ -1542,7 +1542,7 @@ type
 
    function InsertDevice(const AName:String):Boolean;
    function EjectDevice(const AName:String):Boolean;
-   
+
    function OpenDevice(const AName:String;AMode:Integer):THandle;
    procedure CloseDevice(AHandle:THandle);
    function ReadDevice(AHandle:THandle;var ABuffer;ACount:Integer):Integer;
@@ -1641,12 +1641,12 @@ type
    procedure FindCatalogClose(var ASearchRec:TCatalogSearchRec);
 
    {Entry Timer Methods}
-   function CheckTimer:Boolean; 
+   function CheckTimer:Boolean;
    function ProcessTimer:Boolean;
-   
+
    function ScheduleEntry(AEntry:TDiskEntry;ATimeout:LongWord):Boolean;
-   function UnscheduleEntry(AEntry:TDiskEntry):Boolean; 
-   
+   function UnscheduleEntry(AEntry:TDiskEntry):Boolean;
+
    {Delphi / FreePascal RTL Methods}
     {System Methods}
    function GetPathDrive(const APath:String):Byte;
@@ -1667,7 +1667,7 @@ type
    function GetDriveTotalSpaceEx(ADrive:Byte):Int64;
 
    function GetDriveInformation(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean;
-   
+
    function GetCurrentDrive:Byte;
    function SetCurrentDrive(const ADrive:String):Boolean;
 
@@ -1725,8 +1725,8 @@ type
 
     {Search Methods}
    function FindFirst(const APath:String;AAttr:Integer;var ASearchRec:TSearchRec):Integer;
-   function FindNext(var ASearchRec:TSearchRec):Integer;                                  
-   procedure FindClose(var ASearchRec:TSearchRec);                                        
+   function FindNext(var ASearchRec:TSearchRec):Integer;
+   procedure FindClose(var ASearchRec:TSearchRec);
 
    function FindFirstStream(const AFileName:String;var ASearchRec:TStreamSearchRec):Integer;
    function FindNextStream(var ASearchRec:TStreamSearchRec):Integer;
@@ -1759,7 +1759,7 @@ type
 
    function SetFileShortName(const AFileName,AShortName:String):Boolean;
    function SetFileShortNameEx(AHandle:THandle;const AShortName:String):Boolean;
-   
+
    function GetFileSecurity(const AFileName:String;ADescriptor:Pointer;var ASize:LongWord):Boolean;
    function SetFileSecurity(const AFileName:String;ADescriptor:Pointer):Boolean;
 
@@ -1791,7 +1791,7 @@ type
    function FileAgeEx(const AFileName:String):TFileTime;
 
    function FileGetAttrEx(AHandle:THandle):Integer;
-   
+
    function FileGetDateEx(AHandle:THandle):TFileTime;
    function FileSetDateEx(AHandle:THandle;AAge:TFileTime):Integer;
 
@@ -1813,10 +1813,10 @@ type
    function GetDiskFreeSpaceEx(const APathName:String;var AFreeBytesAvailableToCaller,ATotalNumberOfBytes,ATotalNumberOfFreeBytes:QWord):Boolean;
    function GetLogicalDrives:LongWord;
    function GetLogicalDriveStrings:String;
-   function GetVolumeInformation(const ARootPath:String;var AVolumeName:String;var AVolumeSerialNumber,AMaximumComponentLength,AFileSystemFlags:LongWord;var ASystemName:String):Boolean; 
+   function GetVolumeInformation(const ARootPath:String;var AVolumeName:String;var AVolumeSerialNumber,AMaximumComponentLength,AFileSystemFlags:LongWord;var ASystemName:String):Boolean;
    function QueryDosDevice(const ARootPath:String):String;
    {function SetVolumeLabel} {Already Defined}
-   
+
     {File Methods}
    function AreFileApisANSI:Boolean;
    function CloseFile(AHandle:THandle):Boolean; {Equivalent to Win32 CloseHandle}
@@ -1864,14 +1864,14 @@ type
 
     {Handle Methods}
    function DuplicateHandle(AHandle:THandle):THandle;
-   
+
     {Directory Methods}
    function CreateDirectory(const APathName:String):Boolean;
    //function CreateDirectoryEx //To Do
    function GetCurrentDirectory:String;
    function RemoveDirectory(const APathName:String):Boolean;
    function SetCurrentDirectory(const APathName:String):Boolean;
-   
+
     {Stream Methods}
    {function FindFirstStream}    {Already Defined}
    {function FindNextStream}     {Already Defined}
@@ -1905,10 +1905,10 @@ type
    {Misc Methods}
    function GetDeviceFromRaw(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskDevice;
    function GetDeviceFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskDevice;
-   
+
    function GetPartitionFromRaw(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskPartition;
    function GetPartitionFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskPartition;
-   
+
    function GetVolumeFromPath(const APath:String;ALock:Boolean;AState:LongWord):TDiskVolume;
    function GetVolumeFromRaw(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskVolume;
    function GetVolumeFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskVolume;
@@ -1922,14 +1922,14 @@ type
    function GetDriveFromFind(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskDrive;
 
    function GetImageFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskImage;
-   
+
    function GetCatalogFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskCatalog;
-   
+
    function GetFileSystemFromPath(const APath:String;ALock:Boolean;AState:LongWord):TFileSystem;
    function GetFileSystemFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TFileSystem;
    function GetFileSystemFromFile(AHandle:THandle;ALock:Boolean;AState:LongWord):TFileSystem;
    function GetFileSystemFromFind(AHandle:THandle;ALock:Boolean;AState:LongWord):TFileSystem;
-   
+
    function GetRawFromHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TRawHandle;
    function GetEnumFromHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TEnumHandle;
    function GetFileFromHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TFileHandle;
@@ -1941,7 +1941,7 @@ type
    destructor Destroy; override;
   private
    {Internal Variables}
-   FLock:TSynchronizerHandle; 
+   FLock:TSynchronizerHandle;
   public
    {Public Methods}
    procedure ClearList;
@@ -1959,7 +1959,7 @@ type
    destructor Destroy; override;
   private
    {Internal Variables}
-   FLock:TSynchronizerHandle; 
+   FLock:TSynchronizerHandle;
   public
    {Public Methods}
    procedure ClearList;
@@ -1971,13 +1971,13 @@ type
    function WriterUnlock:Boolean;
    function WriterConvert:Boolean;
  end;
- 
+
  TFileSysTree = class(TLinkedObjTree)
    constructor Create;
    destructor Destroy; override;
   private
    {Internal Variables}
-   FLock:TSynchronizerHandle; 
+   FLock:TSynchronizerHandle;
   public
    {Public Methods}
    procedure ClearList;
@@ -1989,7 +1989,7 @@ type
    function WriterUnlock:Boolean;
    function WriterConvert:Boolean;
  end;
- 
+
  TDiskDrive = class(TListObject)
    constructor Create(ADriver:TFileSysDriver;AVolume:TDiskVolume;ADriveNo:Integer);
    destructor Destroy; override;
@@ -1999,12 +1999,12 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
    FVolume:TDiskVolume;
-   
+
    {Protected Variables}
    FDriveNo:Integer;
 
@@ -2098,9 +2098,9 @@ type
    function DriveInit:Boolean; virtual;
 
    {Drive Methods}
-   
+
  end;
- 
+
  TRawHandle = class(TListObject)
    constructor Create;
    destructor Destroy; override;
@@ -2121,7 +2121,7 @@ type
    Position:Int64;
 
    Handle:THandle;
-   
+
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
@@ -2142,7 +2142,7 @@ type
    FileSystem:TFileSystem;
 
    Handle:THandle;
-   
+
    CurrentDevice:TDiskDevice;
    CurrentPartition:TDiskPartition;
    CurrentDrive:TDiskDrive;
@@ -2184,7 +2184,7 @@ type
 
    ParentEntry:TDiskEntry;
    HandleEntry:TDiskEntry;
-   
+
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
@@ -2214,7 +2214,7 @@ type
 
    ParentEntry:TDiskEntry;
    CurrentEntry:TDiskEntry;
-   
+
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
@@ -2223,7 +2223,7 @@ type
    function WriterUnlock:Boolean;
    function WriterConvert:Boolean;
  end;
- 
+
  TDiskController = class(TListObject)
    constructor Create(ADriver:TFileSysDriver);
    destructor Destroy; override;
@@ -2233,11 +2233,11 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
-   
+
    {Protected Variables}
    FControllerNo:Integer;  {\Controller0, \Controller1 etc - See Notes}
    FDescription:String;    {Description of Controller - eg "Standard ATA Controller"}
@@ -2293,11 +2293,11 @@ type
 
    function VendorId(ADevice:TDiskDevice):Word; virtual;
    function DeviceId(ADevice:TDiskDevice):Word; virtual;
-   
+
    function Manufacturer(ADevice:TDiskDevice):String; virtual;
    function Product(ADevice:TDiskDevice):String; virtual;
    function SerialNumber(ADevice:TDiskDevice):String; virtual;
-   
+
    function HostBus(ADevice:TDiskDevice):String; virtual;
    function BusNumber(ADevice:TDiskDevice):Word; virtual;
    function DeviceNumber(ADevice:TDiskDevice):Word; virtual;
@@ -2343,7 +2343,7 @@ type
    function SectorCount(ADevice:TDiskDevice):Int64; virtual;
    function SectorShiftCount(ADevice:TDiskDevice):Word; virtual;
  end;
- 
+
  TDiskDevice = class(TListObject)
    constructor Create(ADriver:TFileSysDriver;AController:TDiskController;AImage:TDiskImage;AStorage:PStorageDevice;ADeviceNo:Integer;const AIdentifier:String);
    destructor Destroy; override;
@@ -2353,14 +2353,14 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
    FController:TDiskController;
    FImage:TDiskImage;
    FStorage:PStorageDevice;
-   
+
    {Protected Variables}
    FDeviceNo:Integer;       {00h, 01h, 80h, 81h etc - See Notes}
    FIdentifier:String;      {Controller Specific Identifier}
@@ -2368,11 +2368,11 @@ type
 
    FVendorId:Word;          {PCI or USB Vendor Id}
    FDeviceId:Word;          {PCI or USB Device Id}
-   
+
    FManufacturer:String;    {Device Manufacturer name}
    FProduct:String;         {Device Product name}
    FSerialNumber:String;    {Device Serial Number}
-   
+
    FHostBus:String;         {PCI, ISA etc}
    FBusNumber:Word;         {PCI Bus No}
    FDeviceNumber:Word;      {PCI Device No}
@@ -2427,17 +2427,17 @@ type
    function ReleaseLock:Boolean;
 
    function GetName:String;
-   
+
    function GetIdentifier:String;
    function GetInformation:String;
-   
+
    function GetManufacturer:String;
    function GetProduct:String;
    function GetSerialNumber:String;
-   
+
    function GetHostBus:String;
    function GetInterfaceType:String;
-   
+
    function GetFreeSectors:Int64;        {Unused Sectors on Device}
    function GetAvailableSectors:Int64;   {Largest block of Unused Sectors}
 
@@ -2454,18 +2454,18 @@ type
    property Controller:TDiskController read FController;
    property Image:TDiskImage read FImage;
    property Storage:PStorageDevice read FStorage;
-   
+
    property DeviceNo:Integer read FDeviceNo;
    property Identifier:String read GetIdentifier;
    property Information:String read GetInformation;
 
    property VendorId:Word read FVendorId;
    property DeviceId:Word read FDeviceId;
-   
+
    property Manufacturer:String read GetManufacturer;
    property Product:String read GetProduct;
    property SerialNumber:String read GetSerialNumber;
-   
+
    property HostBus:String read GetHostBus;
    property BusNumber:Word read FBusNumber;
    property DeviceNumber:Word read FDeviceNumber;
@@ -2525,7 +2525,7 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
-   
+
    function DeviceInit:Boolean; virtual;
 
    function LocatePartitions:Boolean; virtual;
@@ -2554,7 +2554,7 @@ type
    {Device Methods}
    function InsertDevice:Boolean; virtual;
    function EjectDevice:Boolean; virtual;
-   
+
    function OpenDevice(AMode:Integer):THandle; virtual;
    procedure CloseDevice(AHandle:THandle); virtual;
    function ReadDevice(AHandle:THandle;var ABuffer;ACount:Integer):Integer; virtual;
@@ -2562,7 +2562,7 @@ type
    function EraseDevice(AHandle:THandle;ACount:Integer):Integer; virtual;
    function SeekDevice(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64; virtual;
  end;
- 
+
  TDiskPartition = class(TListObject)
    constructor Create(ADriver:TFileSysDriver;ADevice:TDiskDevice;APartition:TDiskPartition;APartitionNo:Integer);
    destructor Destroy; override;
@@ -2572,13 +2572,13 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
    FDevice:TDiskDevice;
    FPartition:TDiskPartition;
-   
+
    {Protected Variables}
    FPartitionNo:Integer;    {\Partition1, \Partition2 etc - See Notes}
 
@@ -2679,7 +2679,7 @@ type
 
    function CreateVolume:TDiskVolume; virtual;
    function DeleteVolume(AVolume:TDiskVolume):Boolean; virtual;
-   
+
    {Partition Methods}
    function OpenPartition(AMode:Integer):THandle; virtual;
    procedure ClosePartition(AHandle:THandle); virtual;
@@ -2687,7 +2687,7 @@ type
    function WritePartition(AHandle:THandle;const ABuffer;ACount:Integer):Integer; virtual;
    function SeekPartition(AHandle:THandle;const AOffset:Int64;AOrigin:Integer):Int64; virtual;
  end;
- 
+
  TDiskVolume = class(TListObject)
    constructor Create(ADriver:TFileSysDriver;ADevice:TDiskDevice;APartition:TDiskPartition;AVolumeNo:Integer);
    destructor Destroy; override;
@@ -2697,13 +2697,13 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
    FDevice:TDiskDevice;
    FPartition:TDiskPartition;
-   
+
    {Protected Variables}
    FVolumeNo:Integer;        {\Volume1 , \Volume2, etc - See Notes}
    FSegmentNo:Integer;       {Segment0, Segment1 etc - for Multiple Segment volumes (eg Netware)}
@@ -2815,14 +2815,14 @@ type
    {Internal Variables}
    FLock:TSynchronizerHandle;
    FLocalLock:TMutexHandle;
-   
+
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
    FController:TDiskController;
-   
+
    {Protected Variables}
    FName:String;
    FImageNo:Integer;
@@ -2852,7 +2852,7 @@ type
    {Protected Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    function GetReady:Boolean; virtual;
    function GetReadable:Boolean; virtual;
    function GetWriteable:Boolean; virtual;
@@ -2908,12 +2908,12 @@ type
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
-   function ReaderConvert:Boolean; 
+   function ReaderConvert:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
    function WriterConvert:Boolean;
    function WriterOwner:Boolean;
-   
+
    function ImageInit:Boolean; virtual;
 
    function LockMedia:Boolean; virtual;
@@ -2947,7 +2947,7 @@ type
    function DeleteSnapshot:Boolean; virtual;
    function MergeSnapshot:Boolean; virtual;
  end;
- 
+
  TDiskPartitioner = class;
  TDiskFormatter = class;
  TDiskDefragger = class;
@@ -2965,7 +2965,7 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
@@ -3009,7 +3009,7 @@ type
    property Resizer:TDiskResizer read FResizer write FResizer;
    property Copier:TDiskCopier read FCopier write FCopier;
    property Imager:TDiskImager read FImager write FImager;
-   
+
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
@@ -3026,7 +3026,7 @@ type
    function RecognizeVolume(AVolume:TDiskVolume):Boolean; virtual;
    function MountVolume(AVolume:TDiskVolume;ADrive:TDiskDrive):Boolean; virtual;
    function DismountVolume(AVolume:TDiskVolume):Boolean; virtual;
-   
+
    {Image Methods}
    function RecognizeImage(AImage:TDiskImage):Boolean; virtual;
    function MountImage(AImage:TDiskImage):Boolean; virtual;
@@ -3044,7 +3044,7 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
@@ -3062,7 +3062,7 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
-   
+
    function LocateDrives:Boolean; virtual;
 
    {Redirector Methods}
@@ -3071,7 +3071,7 @@ type
    function AttachPath(const APath:String;ADrive:TDiskDrive):Boolean; virtual;
    function DetachDrive(ADrive:TDiskDrive):Boolean; virtual;
  end;
- 
+
  TDiskPartitioner = class(TObject)
    constructor Create(ADriver:TFileSysDriver;ARecognizer:TRecognizer);
    destructor Destroy; override;
@@ -3081,7 +3081,7 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
@@ -3120,13 +3120,13 @@ type
   public
    {Public Variables}
    property InitChar:Byte read FInitChar write FInitChar;
-   
+
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
-   
+
    {Partition Methods}
    function AcceptPartition(ADevice:TDiskDevice;APartition,AParent:TDiskPartition;APartitionId:Byte):Boolean; virtual;
 
@@ -3135,7 +3135,7 @@ type
    function ModifyPartition(APartition:TDiskPartition;APartitionId:Byte;AOverride:Boolean):Boolean; virtual;
    function ActivatePartition(APartition:TDiskPartition;AActive:Boolean):Boolean; virtual;
  end;
- 
+
  TDiskFormatter = class(TObject)
    constructor Create(ADriver:TFileSysDriver;ARecognizer:TRecognizer);
    destructor Destroy; override;
@@ -3145,18 +3145,18 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
    FRecognizer:TRecognizer;
-   
+
    {Protected Variables}
 
    {Protected Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    function FillSectors(AVolume:TDiskVolume;ADrive:TDiskDrive;ASector,ACount:LongWord;AValue:Byte):Boolean;
    function ReadSectors(AVolume:TDiskVolume;ADrive:TDiskDrive;ASector,ACount:LongWord;var ABuffer):Boolean;
    function WriteSectors(AVolume:TDiskVolume;ADrive:TDiskDrive;ASector,ACount:LongWord;const ABuffer):Boolean;
@@ -3168,13 +3168,13 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
-   
+
    {Volume Methods}
    function AcceptVolume(AVolume:TDiskVolume;AFloppyType:TFloppyType;AFileSysType:TFileSysType):Boolean; virtual;
 
    function FormatVolume(AVolume:TDiskVolume;AFloppyType:TFloppyType;AFileSysType:TFileSysType):Boolean; virtual;
  end;
- 
+
  TDiskDefragger = class(TObject)
    constructor Create(ADriver:TFileSysDriver;ARecognizer:TRecognizer);
    destructor Destroy; override;
@@ -3184,14 +3184,14 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
    FRecognizer:TRecognizer;
-   
+
    {Protected Variables}
-   
+
    {Protected Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
@@ -3203,7 +3203,7 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
-   
+
    {Volume Methods}
    function AcceptVolume(AVolume:TDiskVolume):Boolean; virtual;
 
@@ -3219,14 +3219,14 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
    FRecognizer:TRecognizer;
-   
+
    {Protected Variables}
-   
+
    {Protected Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
@@ -3238,7 +3238,7 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
-   
+
    {Volume Methods}
    function AcceptVolume(AVolume:TDiskVolume;AFileSysType:TFileSysType):Boolean; virtual;
 
@@ -3259,14 +3259,14 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
    FRecognizer:TRecognizer;
-   
+
    {Protected Variables}
-   
+
    {Protected Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
@@ -3278,7 +3278,7 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
-   
+
    {Volume Methods}
    function AcceptVolume(AVolume:TDiskVolume):Boolean; virtual;
 
@@ -3294,14 +3294,14 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
    FRecognizer:TRecognizer;
-   
+
    {Protected Variables}
-   
+
    {Protected Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
@@ -3313,7 +3313,7 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
-   
+
    {Volume Methods}
    function AcceptVolume(AVolume:TDiskVolume;const AStart,ASize:Int64):Boolean; virtual;
 
@@ -3342,14 +3342,14 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
    FRecognizer:TRecognizer;
-   
+
    {Protected Variables}
-   
+
    {Protected Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
@@ -3361,7 +3361,7 @@ type
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
-   
+
    {Volume Methods}
    function AcceptVolume(AVolume,ADest:TDiskVolume):Boolean; virtual;
 
@@ -3382,14 +3382,14 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
    FRecognizer:TRecognizer;
-   
+
    {Protected Variables}
-   
+
    {Protected Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
@@ -3415,7 +3415,7 @@ type
    function DeleteSnapshot(AImage:TDiskImage):Boolean; virtual;
    function MergeSnapshot(AImage:TDiskImage):Boolean; virtual;
  end;
- 
+
  TDiskTable = class;
  TDiskBlock = class;
  TDiskReparse = class;
@@ -3429,13 +3429,13 @@ type
    FLocalLock:TMutexHandle;
 
    {Private Methods}
-   
+
   protected
    {Parent Objects}
    FDriver:TFileSysDriver;
    FVolume:TDiskVolume;
    FDrive:TDiskDrive;
-   
+
    {Protected Variables}
    FPathChar:String;     {Path separator character}
    FNameChar:String;     {Name separator character}
@@ -3464,16 +3464,16 @@ type
    FSectorCount:LongWord;    //To Do //Int64 - Limits FileSystem to 2TB (if 512 byte sectors) (Ok for FAT, not good for NTFS etc)
 
    FRoot:TDiskEntry;
-   
+
    FCurrentIndex:LongWord;   {TLS Index for storing current directory}
    FCurrentEntry:TDiskEntry; {Current directory when global current directory is enabled}
-   
+
    FChunks:TFileSysList;
    FTables:TFileSysList;
    FBlocks:TFileSysList;
    FEntries:TFileSysTree;
    FCatalogs:TFileSysList;
-   FAcls:TFileSysList;     
+   FAcls:TFileSysList;
 
    FChunkLocal:TMutexHandle;   {Local Lock shared by all DiskChunk objects}
    FTableLocal:TMutexHandle;   {Local Lock shared by all DiskTable objects}
@@ -3483,7 +3483,7 @@ type
    FSecurityLocal:TMutexHandle;{Local Lock shared by all DiskSecurity objects}
    FAclLocal:TMutexHandle;     {Local Lock shared by all DiskAcl objects}
    FAceLocal:TMutexHandle;     {Local Lock shared by all DiskAce objects}
-   
+
    FMarkDirty:Boolean;        {Mark the volume as dirty when dismounting (Either by request or due to error)}
    FMarkClean:Boolean;        {Mark the volume as clean when dismounting (Only by request)}
    FMarkError:Boolean;        {Error was encounted on volume, mark as dirty when dismounting}
@@ -3523,10 +3523,10 @@ type
    {Protected Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    function SectorLock:Boolean;
    function SectorUnlock:Boolean;
-   
+
    procedure SetDrive(ADrive:TDiskDrive); virtual;
    procedure SetVolume(AVolume:TDiskVolume); virtual;
 
@@ -3539,7 +3539,7 @@ type
    function GetSystemName:String; virtual;
    function GetVolumeName:String; virtual;
    function GetVolumeGUID:String; virtual;
-   
+
    function LoadPathChar:String; virtual;
    function LoadNameChar:String; virtual;
    function LoadFileChar:String; virtual;
@@ -3568,7 +3568,7 @@ type
 
    function GetCurrent:TDiskEntry; virtual;
    function SetCurrent(ACurrent:TDiskEntry):Boolean; virtual;
-   
+
    function FillSectors(ASector,ACount:LongWord;AValue:Byte):Boolean;
 
    function ReadSectors(ASector,ACount:LongWord;var ABuffer):Boolean;
@@ -3588,7 +3588,7 @@ type
    {Note: LoadCatalog can be implemented if needed but is not defined here}
 
    function UnloadEntries(AParent:TDiskEntry):Boolean; virtual;
-   
+
    function AddEntry(AParent:TDiskEntry;const AName:String;AAttributes:LongWord;AReference:Boolean):TDiskEntry; virtual;
    function AddEntryEx(AParent:TDiskEntry;const AName,AAltName:String;AAttributes:LongWord;AReference:Boolean):TDiskEntry; virtual;
    function RemoveEntry(AParent,AEntry:TDiskEntry):Boolean; virtual;
@@ -3599,11 +3599,11 @@ type
    function AddCatalog(AEntry:TDiskEntry;AMediaType:TMediaType;AFloppyType:TFloppyType;AAttributes:LongWord;ASectorSize:Word;const ASectorCount:Int64):TDiskCatalog; virtual;
    function RemoveCatalog(ACatalog:TDiskCatalog):Boolean; virtual;
    function CheckCatalog(ACatalog:TDiskCatalog;ALock:Boolean;AState:LongWord):Boolean; virtual;
-   
+
    function GetCatalogByNo(ACatalogNo:LongWord;ALock:Boolean;AState:LongWord):TDiskCatalog; virtual;
    function GetCatalogByName(const AName:String;ALock:Boolean;AState:LongWord):TDiskCatalog; virtual;
    function GetCatalogByNext(APrevious:TDiskCatalog;ALock,AUnlock:Boolean;AState:LongWord):TDiskCatalog; virtual;
-   
+
    function GetNextCatalogNo:LongWord; virtual;
    function GetMaxCatalogNo:LongWord; virtual;
 
@@ -3710,7 +3710,7 @@ type
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
    function WriterConvert:Boolean;
-   
+
    function FileSystemInit:Boolean; virtual;
 
    function MountFileSystem:Boolean; virtual;
@@ -3737,7 +3737,7 @@ type
    function GetDriveTotalSpaceEx:Int64; virtual;
 
    function GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; virtual;
-   
+
     {File Functions}
    function FileOpen(const FileName:String;Mode:Integer):THandle; virtual;
    function FileCreate(const FileName:String;Mode:Integer = fmOpenReadWrite or fmShareExclusive):THandle; virtual;
@@ -3768,7 +3768,7 @@ type
    function CreateDir(const DirName:String):Boolean; virtual;
    function RemoveDir(const DirName:String):Boolean; virtual;
    function GetCurrentDir:String; virtual;
-   function SetCurrentDir(const DirName:String):Boolean; virtual; 
+   function SetCurrentDir(const DirName:String):Boolean; virtual;
 
     {Search Functions}
    //function FindOne(const Path:String;var SearchRec:TFileSearchRec):Integer; virtual; //To Do ?
@@ -3806,7 +3806,7 @@ type
 
    function SetFileShortName(const FileName,ShortName:String):Boolean; virtual;
    function SetFileShortNameEx(Handle:THandle;const ShortName:String):Boolean; virtual;
-   
+
    function GetFileSecurity(const FileName:String;Descriptor:Pointer;var Size:LongWord):Boolean; virtual;
    function SetFileSecurity(const FileName:String;Descriptor:Pointer):Boolean; virtual;
 
@@ -3821,7 +3821,7 @@ type
    function CreateDirEx(const DirName,ShortName:String):Boolean; virtual;
 
    function FileGetAttrEx(Handle:THandle):Integer; virtual;
-   
+
    function FileGetDateEx(Handle:THandle):TFileTime; virtual;
    function FileSetDateEx(Handle:THandle;Age:TFileTime):Integer; virtual;
    function GetFileTime(Handle:THandle;CreateTime,AccessTime,ModifyTime:PFileTime):Boolean; virtual;
@@ -3832,20 +3832,20 @@ type
    function CloseFile(Handle:THandle):Boolean; virtual; {Equivalent to Win32 CloseHandle}
     //To Do //Get/SetNamedSecurityInfo etc
  end;
- 
+
  //To Do //for Multi segment volumes such as NWFS/NSS
  TDiskChunk = class(TListObject) {A disk chunk for multi segment Volumes such as NWFS/NSS}
    constructor Create(ALocalLock:TMutexHandle);
    destructor Destroy; override;
   private
    {Internal Variables}
-   
+
    //FPartition:TDiskPartition;  //To Do
    //FStartSector:Int64;
    //FSectorCount:Int64;
-   
+
    {Private Methods}
-   
+
   protected
    {Protected Variables}
    FLocalLock:TMutexHandle;
@@ -3856,19 +3856,19 @@ type
   public
    {Public Variables}
  end;
- 
+
  //To Do //for Multi session devices such as CDROM/DVD //Should these be part of TFileSystem or TDiskController ?
  //TDiskSession = class(TListObject)
- 
+
  TDiskTable = class(TListObject) {A disk table such as a FAT or MFT table}
    constructor Create(ALocalLock:TMutexHandle);
    destructor Destroy; override;
   private
    {Internal Variables}
    FTableNo:LongWord;
-   
+
    {Private Methods}
-   
+
   protected
    {Protected Variables}
    FLocalLock:TMutexHandle;
@@ -3880,16 +3880,16 @@ type
    {Public Variables}
    property TableNo:LongWord read FTableNo write FTableNo;
  end;
- 
+
  TDiskBlock = class(TListObject) {A disk block such as a FAT entry}
    constructor Create(ALocalLock:TMutexHandle);
    destructor Destroy; override;
   private
    {Internal Variables}
    FBlockNo:LongWord;
-   
+
    {Private Methods}
-   
+
   protected
    {Protected Variables}
    FLocalLock:TMutexHandle;
@@ -3901,16 +3901,16 @@ type
    {Public Variables}
    property BlockNo:LongWord read FBlockNo write FBlockNo;
  end;
- 
+
  TDiskEntry = class(TTreeObject) {A disk entry such as a File, Folder, Stream or Label}
    constructor Create(ALocalLock:TMutexHandle);
    destructor Destroy; override;
   private
    {Internal Variables}
    FName:String;
-   FHash:LongWord; 
+   FHash:LongWord;
    FAltName:String;
-   FAltHash:LongWord; 
+   FAltHash:LongWord;
 
    FSize:Int64;
    FAttributes:LongWord;
@@ -3923,8 +3923,8 @@ type
    FEntriesLoaded:Boolean;
 
    FReferenceCount:LongWord;
-   
-   FRecent:TDiskEntry; 
+
+   FRecent:TDiskEntry;
 
    {Private Methods}
    function GetName:String;
@@ -3941,9 +3941,9 @@ type
   public
    {Public Variables}
    property Name:String read GetName write SetName;
-   property Hash:LongWord read FHash; 
+   property Hash:LongWord read FHash;
    property AltName:String read GetAltName write SetAltName;
-   property AltHash:LongWord read FAltHash; 
+   property AltHash:LongWord read FAltHash;
 
    property Size:Int64 read FSize write FSize;
    property Attributes:LongWord read FAttributes write FAttributes;
@@ -3956,19 +3956,19 @@ type
    property EntriesLoaded:Boolean read FEntriesLoaded write FEntriesLoaded;
 
    property ReferenceCount:LongWord read FReferenceCount;
-   
+
    property Recent:TDiskEntry read FRecent write FRecent;
-   
+
    {Public Methods}
    function AddReference:Boolean; virtual;
    function RemoveReference:Boolean; virtual;
-   
+
    function FindFirstName(AHandle:TFindHandle;AReference:Boolean):TDiskEntry; virtual;
    function FindPrevName(AHandle:TFindHandle;AReference:Boolean):TDiskEntry; virtual;
    function FindNextName(AHandle:TFindHandle;AReference:Boolean):TDiskEntry; virtual;
    function FindLastName(AHandle:TFindHandle;AReference:Boolean):TDiskEntry; virtual;
  end;
- 
+
  TDiskCatalog = class(TListObject) {A disk catalog such as a bootable section}
    constructor Create(ALocalLock:TMutexHandle);
    destructor Destroy; override;
@@ -3976,14 +3976,14 @@ type
    {Internal Variables}
 
    {Private Methods}
-   
+
   protected
    {Protected Variables}
    FLock:TSynchronizerHandle;
    FLocalLock:TMutexHandle;
-   
+
    FName:String;
-   FHash:LongWord; 
+   FHash:LongWord;
    FPath:String;
    FCatalogNo:LongWord;
 
@@ -3996,7 +3996,7 @@ type
    {Protected Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    function GetName:String; virtual;
    procedure SetName(const AName:String); virtual;
    function GetPath:String; virtual;
@@ -4014,7 +4014,7 @@ type
   public
    {Public Variables}
    property Name:String read GetName write SetName;
-   property Hash:LongWord read FHash; 
+   property Hash:LongWord read FHash;
    property Path:String read GetPath write SetPath;
    property CatalogNo:LongWord read FCatalogNo write FCatalogNo;
 
@@ -4023,14 +4023,14 @@ type
    property Attributes:LongWord read GetAttributes write SetAttributes;
    property SectorSize:Word read GetSectorSize write SetSectorSize;
    property SectorCount:Int64 read GetSectorCount write SetSectorCount;
-   
+
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
  end;
- 
+
  TDiskReparse = class(TObject)
    constructor Create(ALocalLock:TMutexHandle);
    destructor Destroy; override;
@@ -4038,7 +4038,7 @@ type
    {Internal Variables}
 
    {Private Methods}
-   
+
   protected
    {Protected Variables}
    FLocalLock:TMutexHandle;
@@ -4046,7 +4046,7 @@ type
    {Protected Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    function GetTarget:String; virtual;
    procedure SetTarget(const ATarget:String); virtual;
   public
@@ -4055,7 +4055,7 @@ type
 
    {Public Methods}
  end;
- 
+
  TDiskSecurity = class(TObject)    {A disk security descriptor}
    constructor Create(ALocalLock:TMutexHandle);
    constructor CreateFromSecurity(ALocalLock:TMutexHandle;ASecurity:TDiskSecurity); virtual;
@@ -4065,9 +4065,9 @@ type
    {Internal Variables}
    //FAcls:TFileSysList; //To Do
    //FAclLock:TMutexHandle;
-   
+
    {Private Methods}
-   
+
   protected
    {Protected Variables}
    FLocalLock:TMutexHandle;
@@ -4094,7 +4094,7 @@ type
    function CopyToDescriptorEx(ADescriptor:Pointer;ASize:LongWord;ALocal:Boolean):Boolean; virtual;
    function CopyFromDescriptor(ADescriptor:Pointer;ASize:LongWord):Boolean; virtual;
  end;
- 
+
  //To Do //for Get/SetFileSecurity Get/SetNamedSecurityInfo
  TDiskAcl = class(TListObject)     {A security descriptor access control list}
    constructor Create(ALocalLock:TMutexHandle);
@@ -4103,7 +4103,7 @@ type
    {Internal Variables}
    //FAces:TFileSysList; //To Do
    //FAceLock:TMutexHandle;
-   
+
   protected
    {Protected Variables}
    FLocalLock:TMutexHandle;
@@ -4114,14 +4114,14 @@ type
   public
    {Public Variables}
  end;
- 
+
  //To Do //for Get/SetFileSecurity Get/SetNamedSecurityInfo
  TDiskAce = class(TListObject)    {A security descriptor access control entry}
    constructor Create(ALocalLock:TMutexHandle);
    destructor Destroy; override;
   private
    {Internal Variables}
-   
+
   protected
    {Protected Variables}
    FLocalLock:TMutexHandle;
@@ -4132,7 +4132,7 @@ type
   public
    {Public Variables}
  end;
- 
+
  TCacheTimer = class;
  TCacheThread = class;
  TCache = class(TObject)          {A simple block cache with Read Only / Read Write modes and Free/Clean/Dirty page tracking} {No longer used}
@@ -4155,7 +4155,7 @@ type
 
    FReadCached:Int64;
    FReadDirect:Int64;
-   
+
    FWriteBack:Int64;
    FWriteThrough:Int64;
    FWriteDirect:Int64;
@@ -4181,11 +4181,11 @@ type
 
    FTimer:TCacheTimer;
    FThread:TCacheThread;
-   
+
    {Private Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    function AddPage(APage:TCachePage):Boolean;
    function RemovePage(APage:TCachePage):Boolean;
    function AddEmpty(APage:TCachePage):Boolean;
@@ -4207,9 +4207,9 @@ type
    function UnlinkClean(APage:TCachePage):Boolean;
    function LinkDirty(APage:TCachePage):Boolean;
    function UnlinkDirty(APage:TCachePage):Boolean;
-   
+
    function PrepareDeviceWrite(ADevice:TDiskDevice;APage:TCachePage;ASector,ACount:LongWord):Boolean;
-   
+
    function CalculateDevicePage(ADevice:TDiskDevice;ASector:LongWord;var ACount:LongWord):Boolean;
   public
    {Public Properties}
@@ -4222,7 +4222,7 @@ type
 
    property ReadCached:Int64 read FReadCached;
    property ReadDirect:Int64 read FReadDirect;
-   
+
    property WriteBack:Int64 read FWriteBack;
    property WriteThrough:Int64 read FWriteThrough;
    property WriteDirect:Int64 read FWriteDirect;
@@ -4244,7 +4244,7 @@ type
    function DeviceRead(ADevice:TDiskDevice;ASector,ACount:LongWord;var ABuffer):Boolean;
    function DeviceWrite(ADevice:TDiskDevice;ASector,ACount:LongWord;const ABuffer):Boolean;
    function DeviceErase(ADevice:TDiskDevice;ASector,ACount:LongWord):Boolean;
-   
+
    function GetDevicePage(ADevice:TDiskDevice;ASector:LongWord):TCachePage; virtual;
    function GetEmptyPage:TCachePage;
 
@@ -4259,12 +4259,12 @@ type
    function FlushPageEx(APage:TCachePage):Boolean;
    function FlushCache(AFirst,AAll:Boolean):Boolean;
 
-   {Timer/Thread Methods}   
+   {Timer/Thread Methods}
    function CheckTimer:Boolean;
    function ProcessTimer:Boolean;
-   
+
    function SchedulePage(APage:TCachePage;ATimeout:LongWord):Boolean;
-   function UnschedulePage(APage:TCachePage):Boolean; 
+   function UnschedulePage(APage:TCachePage):Boolean;
  end;
 
  TCacheEx = class(TCache)         {A modified version of TCache which tracks the last used page for faster repeat access} {No longer used}
@@ -4282,7 +4282,7 @@ type
 
  THashCacheTimer = class;
  THashCacheThread = class;
- THashCache = class(TObject)      {A block cache with hash keys for faster page lookup} 
+ THashCache = class(TObject)      {A block cache with hash keys for faster page lookup}
    constructor Create(ADriver:TFileSysDriver);
    destructor Destroy; override;
   private
@@ -4309,7 +4309,7 @@ type
 
    FReadCached:Int64;
    FReadDirect:Int64;
-   
+
    FWriteBack:Int64;
    FWriteThrough:Int64;
    FWriteDirect:Int64;
@@ -4335,7 +4335,7 @@ type
 
    FTimer:THashCacheTimer;
    FThread:THashCacheThread;
-   
+
    {Private Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
@@ -4370,9 +4370,9 @@ type
    function UnlinkClean(APage:TCachePage):Boolean;
    function LinkDirty(APage:TCachePage):Boolean;
    function UnlinkDirty(APage:TCachePage):Boolean;
-   
+
    function PrepareDeviceWrite(ADevice:TDiskDevice;APage:TCachePage;ASector,ACount:LongWord):Boolean;
-   
+
    function CalculateDevicePage(ADevice:TDiskDevice;ASector:LongWord;var ACount:LongWord):Boolean;
   public
    {Public Properties}
@@ -4387,7 +4387,7 @@ type
 
    property ReadCached:Int64 read FReadCached;
    property ReadDirect:Int64 read FReadDirect;
-   
+
    property WriteBack:Int64 read FWriteBack;
    property WriteThrough:Int64 read FWriteThrough;
    property WriteDirect:Int64 read FWriteDirect;
@@ -4423,13 +4423,13 @@ type
    function FlushPage(APage:TCachePage):Boolean;
    function FlushPageEx(APage:TCachePage):Boolean;
    function FlushCache(AFirst,AAll:Boolean):Boolean;
-   
-   {Timer/Thread Methods}   
+
+   {Timer/Thread Methods}
    function CheckTimer:Boolean;
    function ProcessTimer:Boolean;
-   
+
    function SchedulePage(APage:TCachePage;ATimeout:LongWord):Boolean;
-   function UnschedulePage(APage:TCachePage):Boolean; 
+   function UnschedulePage(APage:TCachePage):Boolean;
  end;
 
  TIncrementalCacheTimer = class;
@@ -4461,7 +4461,7 @@ type
 
    FReadCached:Int64;
    FReadDirect:Int64;
-   
+
    FWriteBack:Int64;
    FWriteThrough:Int64;
    FWriteDirect:Int64;
@@ -4526,7 +4526,7 @@ type
    function PrepareDeviceRead(ADevice:TDiskDevice;APage:TCachePage;ASector,ACount:LongWord):Boolean;
    function PrepareDeviceWrite(ADevice:TDiskDevice;APage:TCachePage;ASector,ACount:LongWord):Boolean;
    function CompleteDeviceWrite(ADevice:TDiskDevice;APage:TCachePage;ASector,ACount:LongWord):Boolean;
-   
+
    function CalculateDevicePage(ADevice:TDiskDevice;ASector:LongWord;var ACount:LongWord):Boolean;
   public
    {Public Properties}
@@ -4541,7 +4541,7 @@ type
 
    property ReadCached:Int64 read FReadCached;
    property ReadDirect:Int64 read FReadDirect;
-   
+
    property WriteBack:Int64 read FWriteBack;
    property WriteThrough:Int64 read FWriteThrough;
    property WriteDirect:Int64 read FWriteDirect;
@@ -4577,15 +4577,15 @@ type
    function FlushPage(APage:TCachePage):Boolean;
    function FlushPageEx(APage:TCachePage):Boolean;
    function FlushCache(AFirst,AAll:Boolean):Boolean;
-   
-   {Timer/Thread Methods}   
+
+   {Timer/Thread Methods}
    function CheckTimer:Boolean;
    function ProcessTimer:Boolean;
-   
+
    function SchedulePage(APage:TCachePage;ATimeout:LongWord):Boolean;
-   function UnschedulePage(APage:TCachePage):Boolean; 
+   function UnschedulePage(APage:TCachePage):Boolean;
  end;
- 
+
  TCachePage = class(TObject)
    constructor Create;
    destructor Destroy; override;
@@ -4605,7 +4605,7 @@ type
 
    FPrevPage:TCachePage;     {Previous page in Page list}
    FNextPage:TCachePage;     {Next page in Page list}
-   
+
    FPrevLink:TCachePage;     {Previous page in Empty/Clean/Dirty list}
    FNextLink:TCachePage;     {Next page in Empty/Clean/Dirty list}
   public
@@ -4624,7 +4624,7 @@ type
 
    property PrevPage:TCachePage read FPrevPage write FPrevPage;
    property NextPage:TCachePage read FNextPage write FNextPage;
-   
+
    property PrevLink:TCachePage read FPrevLink write FPrevLink;
    property NextLink:TCachePage read FNextLink write FNextLink;
  end;
@@ -4662,49 +4662,49 @@ type
    function ReadData:Pointer;
    function DirtyData:Pointer;
  end;
- 
+
  TCacheTimer = class(TObject)
    constructor Create(ACache:TCache);
    destructor Destroy; override;
   protected
    {Internal Variables}
    FCache:TCache;
-   
+
    FLock:TMutexHandle;
    FInterval:LongWord;
    FCheckTimer:TTimerHandle;
    FProcessSemaphore:TSemaphoreHandle;
-   
+
    FCount:LongWord;
    FMaxCount:LongWord;
-   
+
    FFirst:PCacheTimerItem;
    FLast:PCacheTimerItem;
-   
+
    {Internal Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    function Dequeue(AMax:Integer):TCachePage;
-   
+
    function FirstKey:Integer;
    function InsertKey(APage:TCachePage;AKey:Integer):Boolean;
    function DeleteKey(APage:TCachePage):Boolean;
    function DecrementKey:Integer;
-  public   
+  public
    {Public Properties}
    property Count:LongWord read FCount;
    property MaxCount:LongWord read FMaxCount;
-   
+
    {Public Methods}
    function StartTimer(AInterval:LongWord):Boolean;
    function StopTimer:Boolean;
-   
+
    function CheckTimer:Boolean;
    function ProcessTimer:Boolean;
-   
+
    function SchedulePage(APage:TCachePage;ATimeout:LongWord):Boolean;
-   function UnschedulePage(APage:TCachePage):Boolean; 
+   function UnschedulePage(APage:TCachePage):Boolean;
  end;
 
  THashCacheTimer = class(TObject)
@@ -4713,42 +4713,42 @@ type
   protected
    {Internal Variables}
    FCache:THashCache;
-   
+
    FLock:TMutexHandle;
    FInterval:LongWord;
    FCheckTimer:TTimerHandle;
    FProcessSemaphore:TSemaphoreHandle;
-   
+
    FCount:LongWord;
    FMaxCount:LongWord;
-   
+
    FFirst:PCacheTimerItem;
    FLast:PCacheTimerItem;
-   
+
    {Internal Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    function Dequeue(AMax:Integer):TCachePage;
-   
+
    function FirstKey:Integer;
    function InsertKey(APage:TCachePage;AKey:Integer):Boolean;
    function DeleteKey(APage:TCachePage):Boolean;
    function DecrementKey:Integer;
-  public   
+  public
    {Public Properties}
    property Count:LongWord read FCount;
    property MaxCount:LongWord read FMaxCount;
-   
+
    {Public Methods}
    function StartTimer(AInterval:LongWord):Boolean;
    function StopTimer:Boolean;
-   
+
    function CheckTimer:Boolean;
    function ProcessTimer:Boolean;
-   
+
    function SchedulePage(APage:TCachePage;ATimeout:LongWord):Boolean;
-   function UnschedulePage(APage:TCachePage):Boolean; 
+   function UnschedulePage(APage:TCachePage):Boolean;
  end;
 
  TIncrementalCacheTimer = class(TObject)
@@ -4757,70 +4757,70 @@ type
   protected
    {Internal Variables}
    FCache:TIncrementalCache;
-   
+
    FLock:TMutexHandle;
    FInterval:LongWord;
    FCheckTimer:TTimerHandle;
    FProcessSemaphore:TSemaphoreHandle;
-   
+
    FCount:LongWord;
    FMaxCount:LongWord;
-   
+
    FFirst:PCacheTimerItem;
    FLast:PCacheTimerItem;
-   
+
    {Internal Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    function Dequeue(AMax:Integer):TCachePage;
-   
+
    function FirstKey:Integer;
    function InsertKey(APage:TCachePage;AKey:Integer):Boolean;
    function DeleteKey(APage:TCachePage):Boolean;
    function DecrementKey:Integer;
-  public   
+  public
    {Public Properties}
    property Count:LongWord read FCount;
    property MaxCount:LongWord read FMaxCount;
-   
+
    {Public Methods}
    function StartTimer(AInterval:LongWord):Boolean;
    function StopTimer:Boolean;
-   
+
    function CheckTimer:Boolean;
    function ProcessTimer:Boolean;
-   
+
    function SchedulePage(APage:TCachePage;ATimeout:LongWord):Boolean;
-   function UnschedulePage(APage:TCachePage):Boolean; 
+   function UnschedulePage(APage:TCachePage):Boolean;
  end;
- 
+
  TCacheThread = class(TThread)
    constructor Create(ACache:TCache);
    destructor Destroy; override;
   protected
    {Internal Variables}
    FCache:TCache;
-   
+
    {Internal Methods}
    procedure Execute; override;
   public
    {Public Methods}
-   
+
  end;
- 
+
  THashCacheThread = class(TThread)
    constructor Create(ACache:THashCache);
    destructor Destroy; override;
   protected
    {Internal Variables}
    FCache:THashCache;
-   
+
    {Internal Methods}
    procedure Execute; override;
   public
    {Public Methods}
-   
+
  end;
 
  TIncrementalCacheThread = class(TThread)
@@ -4829,58 +4829,58 @@ type
   protected
    {Internal Variables}
    FCache:TIncrementalCache;
-   
+
    {Internal Methods}
    procedure Execute; override;
   public
    {Public Methods}
-   
+
  end;
- 
+
  TEntryTimer = class(TObject)
    constructor Create(ADriver:TFileSysDriver);
    destructor Destroy; override;
   protected
    {Internal Variables}
    FDriver:TFileSysDriver;
-   
+
    FLock:TMutexHandle;
    FInterval:LongWord;
    FCheckTimer:TTimerHandle;
    FProcessTimer:TTimerHandle;
-   
+
    FCount:LongWord;
    FMaxCount:LongWord;
-   
+
    FFirst:PEntryTimerItem;
    FLast:PEntryTimerItem;
-   
+
    {Internal Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    function Dequeue:TDiskEntry;
-   
+
    function FirstKey:Integer;
    function InsertKey(AEntry:TDiskEntry;AKey:Integer):Boolean;
    function DeleteKey(AEntry:TDiskEntry):Boolean;
    function DecrementKey:Integer;
-  public   
+  public
    {Public Properties}
    property Count:LongWord read FCount;
    property MaxCount:LongWord read FMaxCount;
-   
+
    {Public Methods}
    function StartTimer(AInterval:LongWord):Boolean;
    function StopTimer:Boolean;
-   
+
    function CheckTimer:Boolean;
    function ProcessTimer:Boolean;
-   
+
    function ScheduleEntry(AEntry:TDiskEntry;ATimeout:LongWord):Boolean;
-   function UnscheduleEntry(AEntry:TDiskEntry):Boolean; 
+   function UnscheduleEntry(AEntry:TDiskEntry):Boolean;
  end;
- 
+
  TDefaultRecognizer = class(TRecognizer)
    constructor Create(ADriver:TFileSysDriver);
   private
@@ -4914,7 +4914,7 @@ type
    function AcceptPartition(ADevice:TDiskDevice;APartition,AParent:TDiskPartition;APartitionId:Byte):Boolean; override;
  end;
 
- TExtDiskController = class(TDiskController) 
+ TExtDiskController = class(TDiskController)
   protected
    {Protected Methods}
    function GetCylinders(ADevice:TDiskDevice):LongWord;
@@ -4922,8 +4922,8 @@ type
    function GetSectors(ADevice:TDiskDevice):LongWord;
    function GetLogicalShiftCount(ADevice:TDiskDevice):Word;
  end;
- 
- TATADiskController = class(TDiskController) 
+
+ TATADiskController = class(TDiskController)
    constructor Create(ADriver:TFileSysDriver);
   private
    {Internal Variables}
@@ -4939,8 +4939,8 @@ type
 
    //To do
  end;
-   
- TATAPIDiskController = class(TDiskController) 
+
+ TATAPIDiskController = class(TDiskController)
    constructor Create(ADriver:TFileSysDriver);
   private
    {Internal Variables}
@@ -4956,8 +4956,8 @@ type
 
    //To do
  end;
- 
- TSCSIDiskController = class(TDiskController) 
+
+ TSCSIDiskController = class(TDiskController)
    constructor Create(ADriver:TFileSysDriver);
   private
    {Internal Variables}
@@ -4973,7 +4973,7 @@ type
 
    //To do
  end;
- 
+
  TUSBDiskController = class(TExtDiskController)
    constructor Create(ADriver:TFileSysDriver);
   private
@@ -5006,13 +5006,13 @@ type
 
    function VendorId(ADevice:TDiskDevice):Word; override;
    function DeviceId(ADevice:TDiskDevice):Word; override;
-   
+
    function Manufacturer(ADevice:TDiskDevice):String; override;
    function Product(ADevice:TDiskDevice):String; override;
    function SerialNumber(ADevice:TDiskDevice):String; override;
-   
+
    function LogicalUnitNo(ADevice:TDiskDevice):LongWord; override;
-   
+
    function LBA(ADevice:TDiskDevice):Boolean; override;
 
    function MediaType(ADevice:TDiskDevice):TMediaType; override;
@@ -5037,8 +5037,8 @@ type
    function SectorSize(ADevice:TDiskDevice):Word; override;
    function SectorCount(ADevice:TDiskDevice):Int64; override;
  end;
- 
- TMMCDiskController = class(TExtDiskController) 
+
+ TMMCDiskController = class(TExtDiskController)
    constructor Create(ADriver:TFileSysDriver);
   private
    {Internal Variables}
@@ -5071,13 +5071,13 @@ type
 
    function VendorId(ADevice:TDiskDevice):Word; override;
    function DeviceId(ADevice:TDiskDevice):Word; override;
-   
+
    function Manufacturer(ADevice:TDiskDevice):String; override;
    function Product(ADevice:TDiskDevice):String; override;
    function SerialNumber(ADevice:TDiskDevice):String; override;
-   
+
    function LogicalUnitNo(ADevice:TDiskDevice):LongWord; override;
-   
+
    function LBA(ADevice:TDiskDevice):Boolean; override;
 
    function MediaType(ADevice:TDiskDevice):TMediaType; override;
@@ -5099,11 +5099,11 @@ type
    function LogicalCylinders(ADevice:TDiskDevice):LongWord; override;
    function LogicalHeads(ADevice:TDiskDevice):LongWord; override;
    function LogicalSectors(ADevice:TDiskDevice):LongWord; override;
-   
+
    function SectorSize(ADevice:TDiskDevice):Word; override;
    function SectorCount(ADevice:TDiskDevice):Int64; override;
  end;
- 
+
 {==============================================================================}
 type
  {FileSystem advanced classes}
@@ -5122,7 +5122,7 @@ type
    function Seek(Offset:LongInt;Origin:Word):LongInt; override;
    property Handle:THandle read FHandle;
  end;
- 
+
  TFSFileStream = class(TFSHandleStream)
    constructor Create(const FileName:String;Mode:Word);
    destructor Destroy; override;
@@ -5131,7 +5131,7 @@ type
   public
    {}
  end;
- 
+
  TFSHandleStreamEx = class(TStreamEx)
    constructor Create(AHandle:THandle);
   private
@@ -5163,14 +5163,14 @@ type
 type
  {FileSystem Logging specific types}
  PFileSysLogging = ^TFileSysLogging;
- 
+
  {FileSystem Logging}
  TFileSysLogging = record
   {Logging Properties}
   Logging:TLoggingDevice;
   {FileSystem Properties}
  end;
- 
+
 {==============================================================================}
 var
  {FileSystem specific variables}
@@ -5277,7 +5277,7 @@ function FSFileGetDateEx(AHandle:THandle):TFileTime; inline;
 function FSFileSetDateEx(AHandle:THandle;AAge:TFileTime):Integer; inline;
 
 function FSGetFileTime(AHandle:THandle;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean; inline;
-function FSSetFileTime(AHandle:THandle;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean; inline; 
+function FSSetFileTime(AHandle:THandle;ACreateTime,AAccessTime,AWriteTime:PFileTime):Boolean; inline;
 
 function FSFindFirstEx(const APath:String;var ASearchRec:TFileSearchRec):Integer; inline;
 function FSFindNextEx(var ASearchRec:TFileSearchRec):Integer; inline;
@@ -5480,17 +5480,17 @@ var
  FileSysLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  FileSysStartupCount:LongWord;
  FileSysStartupError:LongWord;
- 
+
  FileSysATAController:TATADiskController;
  FileSysATAPIController:TATAPIDiskController;
  FileSysSCSIController:TSCSIDiskController;
  FileSysUSBController:TUSBDiskController;
  FileSysMMCController:TMMCDiskController;
- 
+
  FileSysTextIOInputHandle:THandle = INVALID_HANDLE_VALUE;
  FileSysTextIOOutputHandle:THandle = INVALID_HANDLE_VALUE;
- 
-var 
+
+var
  {Partitioning Variables}
  MasterBootCode:TMasterBootCode = (
   $FA,$FC,$31,$C0,$8E,$D8,$BD,$00,$7C,$E8,$2F,$00,$49,$6E,$73,$65,
@@ -5522,7 +5522,7 @@ var
   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,
   $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {TFileSysDriver}
@@ -5531,7 +5531,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- 
+
  {Create Cache, Lists and Buffers}
  {$IFDEF FILESYS_INCREMENTAL_CACHE}
  FCache:=TIncrementalCache.Create(Self);
@@ -5556,7 +5556,7 @@ begin
 
  FCurrentIndex:=TlsAlloc;
  FCurrentDrive:=nil;
- 
+
  {Set Defaults}
  FAllowFloppy:=True;
  FAllowDrives:=True;
@@ -5564,7 +5564,7 @@ begin
 
  FEntryTimer:=TEntryTimer.Create(Self);
  FEntryTimer.StartTimer(FILESYS_ENTRY_TIMER_INTERVAL);
- 
+
  FDefaultRecognizer:=TDefaultRecognizer.Create(Self);
 end;
 
@@ -5576,10 +5576,10 @@ begin
  WriterLock;
  try
   FDefaultRecognizer.Free;
-  
+
   FEntryTimer.StopTimer;
   FEntryTimer.Free;
-  
+
   TlsFree(FCurrentIndex);
 
   FFindHandles.Free;
@@ -5599,7 +5599,7 @@ begin
   FImages.Free;
   FCache.Free;
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -5639,7 +5639,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetCurrent:TDiskDrive; 
+function TFileSysDriver.GetCurrent:TDiskDrive;
 begin
  {}
  if FILESYS_GLOBAL_CURRENTDIR then
@@ -5647,26 +5647,26 @@ begin
    Result:=FCurrentDrive;
   end
  else
-  begin 
+  begin
    Result:=TlsGetValue(FCurrentIndex);
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
-function TFileSysDriver.SetCurrent(ACurrent:TDiskDrive):Boolean; 
+function TFileSysDriver.SetCurrent(ACurrent:TDiskDrive):Boolean;
 begin
  {}
  if FILESYS_GLOBAL_CURRENTDIR then
   begin
    FCurrentDrive:=ACurrent;
-   
+
    Result:=(FCurrentDrive <> nil);
   end
  else
   begin
    Result:=TlsSetValue(FCurrentIndex,ACurrent)
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5675,17 +5675,17 @@ function TFileSysDriver.OpenCache(ACacheSize,ACacheKeys,APageSize:LongWord;ACach
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {Check Cache}
   if FCache = nil then Exit;
-  
+
   {Open Cache}
   Result:=FCache.OpenCache(ACacheSize,ACacheKeys,APageSize,ACacheMode);
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5694,17 +5694,17 @@ function TFileSysDriver.CloseCache:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {Check Cache}
   if FCache = nil then Exit;
-  
+
   {Close Cache}
   Result:=FCache.CloseCache;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5713,17 +5713,17 @@ function TFileSysDriver.FlushCache(AAll:Boolean):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {Check Cache}
   if FCache = nil then Exit;
-  
+
   {Flush Cache}
   Result:=FCache.FlushCache(False,AAll);
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5732,17 +5732,17 @@ function TFileSysDriver.DiscardCache(AAll:Boolean):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {Check Cache}
   if FCache = nil then Exit;
-  
+
   {Discard Cache}
   Result:=FCache.DiscardCache(False,AAll);
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5753,10 +5753,10 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Setup Statistics}
  FillChar(AStatistics,SizeOf(TCacheStatistics),0);
- 
+
  if not ReaderLock then Exit;
  try
   {Check Cache}
@@ -5778,7 +5778,7 @@ begin
     AStatistics.ReadDirect:=FCache.ReadDirect;
     AStatistics.WriteBack:=FCache.WriteBack;
     AStatistics.WriteThrough:=FCache.WriteThrough;
-    AStatistics.WriteDirect:=FCache.WriteDirect;  
+    AStatistics.WriteDirect:=FCache.WriteDirect;
     {Hit / Miss}
     AStatistics.HitCount:=FCache.HitCount;
     AStatistics.MissCount:=FCache.MissCount;
@@ -5798,17 +5798,17 @@ begin
     if Page <> nil then AStatistics.OldestDirty:=GetTickCount64 - Page.WriteTime;
     Page:=FCache.FLastDirty;
     if Page <> nil then AStatistics.NewestDirty:=GetTickCount64 - Page.WriteTime;
-   
+
     FCache.ReleaseLock;
-    
+
     {Return Result}
     Result:=True;
-   end; 
+   end;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function TFileSysDriver.GetCatalogByNo(const APath:String;ACatalogNo:LongWord;ALock:Boolean;AState:LongWord):TDiskCatalog;
@@ -5817,21 +5817,21 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not ReaderLock then Exit;
  try
   if ACatalogNo = 0 then Exit;
- 
+
   FileSystem:=GetFileSystemFromPath(APath,True,FILESYS_LOCK_READ);
   if FileSystem = nil then Exit;
- 
+
   Result:=FileSystem.GetCatalogByNo(ACatalogNo,ALock,AState);
 
   {Unlock FileSystem}
   FileSystem.ReaderUnlock;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5842,21 +5842,21 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not ReaderLock then Exit;
  try
   if Trim(AName) = '' then Exit;
-  
+
   FileSystem:=GetFileSystemFromPath(APath,True,FILESYS_LOCK_READ);
   if FileSystem = nil then Exit;
-  
+
   Result:=FileSystem.GetCatalogByName(AName,ALock,AState);
 
   {Unlock FileSystem}
   FileSystem.ReaderUnlock;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5867,19 +5867,19 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not ReaderLock then Exit;
  try
   FileSystem:=GetFileSystemFromPath(APath,True,FILESYS_LOCK_READ);
   if FileSystem = nil then Exit;
-  
+
   Result:=FileSystem.GetCatalogByNext(APrevious,ALock,AUnlock,AState);
 
   {Unlock FileSystem}
   FileSystem.ReaderUnlock;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5888,11 +5888,11 @@ function TFileSysDriver.AddImage(AImage:TDiskImage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if AImage = nil then Exit;
-  
+
   {Acquire Lock}
   FImages.WriterLock;
 
@@ -5903,7 +5903,7 @@ begin
   FImages.WriterUnlock;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5918,10 +5918,10 @@ begin
  if not ReaderLock then Exit;
  try
   if AImage = nil then Exit;
-  
+
   {Update Enum Handles}
   UpdateEnumHandles(nil,nil,nil,nil,AImage,nil); //To Do //Move within WriterLock, see notes ?
-  
+
   {Acquire Lock}
   FImages.WriterLock;
   try
@@ -5931,19 +5931,19 @@ begin
   finally
    {Release Lock}
    FImages.WriterUnlock;
-  end; 
-  
+  end;
+
   {Remove any Device using the Image}
   Device:=GetDeviceByImage(AImage,True,FILESYS_LOCK_WRITE);
   while Device <> nil do
    begin
     Device.Free;
-    
+
     Device:=GetDeviceByImage(AImage,True,FILESYS_LOCK_WRITE);
    end;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5958,34 +5958,34 @@ begin
  if not FImages.ReaderLock then Exit;
  try
   if AImage = nil then Exit;
-  
+
   Image:=TDiskImage(FImages.First);
   while Image <> nil do
    begin
     if Image = AImage then
      begin
-      {Lock Image} 
-      if ALock then 
+      {Lock Image}
+      if ALock then
        begin
         if AState = FILESYS_LOCK_AUTO then
          begin
           if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
          end
         else
-         begin        
+         begin
           if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
-         end; 
-       end; 
-      
+         end;
+       end;
+
       Result:=True;
       Exit;
      end;
-     
+
     Image:=TDiskImage(Image.Next);
    end;
  finally
   FImages.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6001,34 +6001,34 @@ begin
  if not FImages.ReaderLock then Exit;
  try
   if AImageNo = 0 then Exit;
-  
+
   Image:=TDiskImage(FImages.First);
   while Image <> nil do
    begin
     if Image.ImageNo = AImageNo then
      begin
-      {Lock Image} 
-      if ALock then 
+      {Lock Image}
+      if ALock then
        begin
         if AState = FILESYS_LOCK_AUTO then
          begin
           if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
          end
         else
-         begin        
+         begin
           if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
-         end; 
-       end; 
-      
+         end;
+       end;
+
       Result:=Image;
       Exit;
      end;
-     
+
     Image:=TDiskImage(Image.Next);
    end;
  finally
   FImages.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6043,34 +6043,34 @@ begin
  if not FImages.ReaderLock then Exit;
  try
   if Trim(AName) = '' then Exit;
-  
+
   Image:=TDiskImage(FImages.First);
   while Image <> nil do
    begin
     if Uppercase(Image.Name) = Uppercase(AName) then
      begin
-      {Lock Image} 
-      if ALock then 
+      {Lock Image}
+      if ALock then
        begin
         if AState = FILESYS_LOCK_AUTO then
          begin
           if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
          end
         else
-         begin        
+         begin
           if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
-         end; 
-       end; 
-     
+         end;
+       end;
+
       Result:=Image;
       Exit;
      end;
-     
+
     Image:=TDiskImage(Image.Next);
    end;
  finally
   FImages.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6085,34 +6085,34 @@ begin
  if not FImages.ReaderLock then Exit;
  try
   if ADevice = nil then Exit;
-  
+
   Image:=TDiskImage(FImages.First);
   while Image <> nil do
    begin
     if Image.Device = ADevice then
      begin
-      {Lock Image} 
-      if ALock then 
+      {Lock Image}
+      if ALock then
        begin
         if AState = FILESYS_LOCK_AUTO then
          begin
           if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
          end
         else
-         begin        
+         begin
           if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
-         end; 
-       end; 
-      
+         end;
+       end;
+
       Result:=Image;
       Exit;
      end;
-     
+
     Image:=TDiskImage(Image.Next);
    end;
  finally
   FImages.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6128,34 +6128,34 @@ begin
  if not FImages.ReaderLock then Exit;
  try
   if AController = nil then Exit;
-  
+
   Image:=TDiskImage(FImages.First);
   while Image <> nil do
    begin
     if Image.Controller = AController then
      begin
-      {Lock Image} 
-      if ALock then 
+      {Lock Image}
+      if ALock then
        begin
         if AState = FILESYS_LOCK_AUTO then
          begin
           if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
          end
         else
-         begin        
+         begin
           if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
-         end; 
-       end; 
-      
+         end;
+       end;
+
       Result:=Image;
       Exit;
      end;
-     
+
     Image:=TDiskImage(Image.Next);
    end;
  finally
   FImages.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6171,33 +6171,33 @@ begin
  if not FImages.ReaderLock then Exit;
  try
   if AController = nil then Exit;
-  
+
   Image:=TDiskImage(FImages.First);
   while Image <> nil do
    begin
     if Image.Controller = AController then
      begin
-      {Lock Image} 
-      if ALock then 
+      {Lock Image}
+      if ALock then
        begin
         if AState = FILESYS_LOCK_AUTO then
          begin
           if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
          end
         else
-         begin        
+         begin
           if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
-         end; 
-       end; 
-      
+         end;
+       end;
+
       Result.Add(Image);
      end;
-     
+
     Image:=TDiskImage(Image.Next);
    end;
  finally
   FImages.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6208,7 +6208,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FImages.ReaderLock then Exit;
  try
   {Check Previous}
@@ -6219,18 +6219,18 @@ begin
     if Image <> nil then
      begin
       {Lock Image}
-      if ALock then 
+      if ALock then
        begin
         if AState = FILESYS_LOCK_AUTO then
          begin
           if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
          end
         else
-         begin        
+         begin
           if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
-         end; 
-       end; 
-      
+         end;
+       end;
+
       {Return Result}
       Result:=Image;
      end;
@@ -6242,38 +6242,38 @@ begin
     if Image <> nil then
      begin
       {Lock Image}
-      if ALock then 
+      if ALock then
        begin
         if AState = FILESYS_LOCK_AUTO then
          begin
           if not(Image.WriterOwner) then Image.ReaderLock else Image.WriterLock;
          end
         else
-         begin        
+         begin
           if AState = FILESYS_LOCK_READ then Image.ReaderLock else Image.WriterLock;
-         end; 
-       end; 
-      
+         end;
+       end;
+
       {Return Result}
       Result:=Image;
      end;
 
     {Unlock Previous}
-    if AUnlock then 
+    if AUnlock then
      begin
       if AState = FILESYS_LOCK_AUTO then
        begin
         if not(APrevious.WriterOwner) then APrevious.ReaderUnlock else APrevious.WriterUnlock;
        end
       else
-       begin        
+       begin
         if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-       end; 
-     end; 
-   end;   
+       end;
+     end;
+   end;
  finally
   FImages.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6282,7 +6282,7 @@ function TFileSysDriver.GetNextImageNo:Integer;
 begin
  {}
  Result:=1;
- 
+
  while GetImageByNo(Result,False,FILESYS_LOCK_NONE) <> nil do {Do not lock}
   begin
    Inc(Result);
@@ -6297,7 +6297,7 @@ var
 begin
  {}
  Result:=1;
- 
+
  if not FImages.ReaderLock then Exit;
  try
   Image:=TDiskImage(FImages.First);
@@ -6307,12 +6307,12 @@ begin
      begin
       Result:=Image.ImageNo;
      end;
-     
+
     Image:=TDiskImage(Image.Next);
    end;
  finally
   FImages.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6325,7 +6325,7 @@ begin
  if not ReaderLock then Exit;
  try
   if ADrive = nil then Exit;
- 
+
   {Acquire Lock}
   FDrives.WriterLock;
 
@@ -6336,7 +6336,7 @@ begin
   FDrives.WriterUnlock;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6345,7 +6345,7 @@ function TFileSysDriver.RemoveDrive(ADrive:TDiskDrive):Boolean;
 {Note: When dismounting a Drive without dismounting the volume and filesystem
        DeleteDrive will have unbound the drive from the filesystem and called
        DismountFindHandles and DismountFileHandles}
-{Note: Caller must hold the drive writer lock}       
+{Note: Caller must hold the drive writer lock}
 var
  FileSystem:TFileSystem;
 begin
@@ -6355,10 +6355,10 @@ begin
  if not ReaderLock then Exit;
  try
   if ADrive = nil then Exit;
-  
+
   {Update Enum Handles}
   UpdateEnumHandles(nil,nil,ADrive,nil,nil,nil); //To Do //Move within WriterLock, see notes ?
-  
+
   {Acquire Lock}
   FDrives.WriterLock;
   try
@@ -6368,17 +6368,17 @@ begin
   finally
    {Release Lock}
    FDrives.WriterUnlock;
-  end; 
-  
+  end;
+
   {Release any Find Handles on the Drive}
   ReleaseFindHandles(nil,ADrive);
-  
+
   {Release any File Handles on the Drive}
   ReleaseFileHandles(nil,ADrive);
-  
+
   {Release any Raw Handles on the Drive}
   ReleaseRawHandles(nil,nil,nil,ADrive);
-  
+
   {Remove any FileSystem using the Drive}
   FileSystem:=GetFileSystemByDrive(ADrive,True,FILESYS_LOCK_WRITE);
   while FileSystem <> nil do
@@ -6386,12 +6386,12 @@ begin
     {Note: The FileSystem will automatically unbind from the volume/drive when Destroyed}
     FileSystem.DismountFileSystem;
     FileSystem.Free;
-    
+
     FileSystem:=GetFileSystemByDrive(ADrive,True,FILESYS_LOCK_WRITE);
    end;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6406,24 +6406,24 @@ begin
  if not FDrives.ReaderLock then Exit;
  try
   if ADrive = nil then Exit;
-  
+
   Drive:=TDiskDrive(FDrives.First);
   while Drive <> nil do
    begin
     if Drive = ADrive then
      begin
-      {Lock Drive} 
+      {Lock Drive}
       if ALock then if AState = FILESYS_LOCK_READ then Drive.ReaderLock else Drive.WriterLock;
-      
+
       Result:=True;
       Exit;
      end;
-     
+
     Drive:=TDiskDrive(Drive.Next);
    end;
  finally
   FDrives.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6440,24 +6440,24 @@ begin
  try
   if ADriveNo < MIN_DRIVE then Exit;
   if ADriveNo > NON_DRIVE then Exit;
-  
+
   Drive:=TDiskDrive(FDrives.First);
   while Drive <> nil do
    begin
     if Drive.DriveNo = ADriveNo then
      begin
-      {Lock Drive} 
+      {Lock Drive}
       if ALock then if AState = FILESYS_LOCK_READ then Drive.ReaderLock else Drive.WriterLock;
-     
+
       Result:=Drive;
       Exit;
      end;
-     
+
     Drive:=TDiskDrive(Drive.Next);
    end;
  finally
   FDrives.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6468,28 +6468,28 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FDrives.ReaderLock then Exit;
  try
   if Trim(AName) = '' then Exit;
-  
+
   Drive:=TDiskDrive(FDrives.First);
   while Drive <> nil do
    begin
     if Uppercase(Drive.Name) = Uppercase(AName) then
      begin
-      {Lock Drive} 
+      {Lock Drive}
       if ALock then if AState = FILESYS_LOCK_READ then Drive.ReaderLock else Drive.WriterLock;
 
       Result:=Drive;
       Exit;
      end;
-     
+
     Drive:=TDiskDrive(Drive.Next);
    end;
  finally
   FDrives.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6504,24 +6504,24 @@ begin
  if not FDrives.ReaderLock then Exit;
  try
   if Trim(AParent) = '' then Exit;
-  
+
   Drive:=TDiskDrive(FDrives.First);
   while Drive <> nil do
    begin
     if Uppercase(Drive.Parent) = Uppercase(AParent) then
      begin
-      {Lock Drive} 
+      {Lock Drive}
       if ALock then if AState = FILESYS_LOCK_READ then Drive.ReaderLock else Drive.WriterLock;
 
       Result:=Drive;
       Exit;
      end;
-     
+
     Drive:=TDiskDrive(Drive.Next);
    end;
  finally
   FDrives.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6532,28 +6532,28 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FDrives.ReaderLock then Exit;
  try
   if AVolume = nil then Exit;
-  
+
   Drive:=TDiskDrive(FDrives.First);
   while Drive <> nil do
    begin
     if Drive.Volume = AVolume then
      begin
-      {Lock Drive} 
+      {Lock Drive}
       if ALock then if AState = FILESYS_LOCK_READ then Drive.ReaderLock else Drive.WriterLock;
 
       Result:=Drive;
       Exit;
      end;
-     
+
     Drive:=TDiskDrive(Drive.Next);
    end;
  finally
   FDrives.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6569,7 +6569,7 @@ begin
  if not FDrives.ReaderLock then Exit;
  try
   if ADevice = nil then Exit;
-  
+
   Drive:=TDiskDrive(FDrives.First);
   while Drive <> nil do
    begin
@@ -6577,19 +6577,19 @@ begin
      begin
       if Drive.Volume.Device = ADevice then
        begin
-        {Lock Drive} 
+        {Lock Drive}
         if ALock then if AState = FILESYS_LOCK_READ then Drive.ReaderLock else Drive.WriterLock;
 
         Result:=Drive;
         Exit;
        end;
      end;
-     
+
     Drive:=TDiskDrive(Drive.Next);
    end;
  finally
   FDrives.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6605,7 +6605,7 @@ begin
  if not FDrives.ReaderLock then Exit;
  try
   if ADevice = nil then Exit;
-  
+
   Drive:=TDiskDrive(FDrives.First);
   while Drive <> nil do
    begin
@@ -6613,18 +6613,18 @@ begin
      begin
       if Drive.Volume.Device = ADevice then
        begin
-        {Lock Drive} 
+        {Lock Drive}
         if ALock then if AState = FILESYS_LOCK_READ then Drive.ReaderLock else Drive.WriterLock;
-        
+
         Result.Add(Drive);
        end;
      end;
-     
+
     Drive:=TDiskDrive(Drive.Next);
    end;
  finally
   FDrives.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6640,7 +6640,7 @@ begin
  if not FDrives.ReaderLock then Exit;
  try
   if APartition = nil then Exit;
-  
+
   Drive:=TDiskDrive(FDrives.First);
   while Drive <> nil do
    begin
@@ -6648,19 +6648,19 @@ begin
      begin
       if Drive.Volume.Partition = APartition then
        begin
-        {Lock Drive} 
+        {Lock Drive}
         if ALock then if AState = FILESYS_LOCK_READ then Drive.ReaderLock else Drive.WriterLock;
-        
+
         Result:=Drive;
         Exit;
        end;
      end;
-     
+
     Drive:=TDiskDrive(Drive.Next);
    end;
  finally
   FDrives.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6676,7 +6676,7 @@ begin
  if not FDrives.ReaderLock then Exit;
  try
   if APartition = nil then Exit;
-  
+
   Drive:=TDiskDrive(FDrives.First);
   while Drive <> nil do
    begin
@@ -6684,18 +6684,18 @@ begin
      begin
       if Drive.Volume.Partition = APartition then
        begin
-        {Lock Drive} 
+        {Lock Drive}
         if ALock then if AState = FILESYS_LOCK_READ then Drive.ReaderLock else Drive.WriterLock;
-        
+
         Result.Add(Drive);
        end;
      end;
-     
+
     Drive:=TDiskDrive(Drive.Next);
    end;
  finally
   FDrives.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6706,7 +6706,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FDrives.ReaderLock then Exit;
  try
   {Check Previous}
@@ -6718,7 +6718,7 @@ begin
      begin
       {Lock Drive}
       if ALock then if AState = FILESYS_LOCK_READ then Drive.ReaderLock else Drive.WriterLock;
-      
+
       {Return Result}
       Result:=Drive;
      end;
@@ -6731,17 +6731,17 @@ begin
      begin
       {Lock Drive}
       if ALock then if AState = FILESYS_LOCK_READ then Drive.ReaderLock else Drive.WriterLock;
-      
+
       {Return Result}
       Result:=Drive;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
+   end;
  finally
   FDrives.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6752,7 +6752,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  case AMediaType of
   mtFIXED,mtREMOVABLE,mtCDROM,mtDVD,mtOTHER:begin
     {Fixed Device}
@@ -6775,7 +6775,7 @@ begin
         Exit;
        end;
      end;
-     
+
     {If not found use Fixed Device Nos}
     for Count:=MIN_FIXED_DRIVE to MAX_FIXED_DRIVE do
      begin
@@ -6797,14 +6797,14 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not FDrives.ReaderLock then Exit;
  try
   case AMediaType of
    mtFIXED,mtREMOVABLE,mtCDROM,mtDVD,mtOTHER:begin
      {Fixed Device}
      Result:=MIN_FIXED_DRIVE;
-     
+
      Drive:=TDiskDrive(FDrives.First);
      while Drive <> nil do
       begin
@@ -6816,14 +6816,14 @@ begin
            end;
          end;
         end;
-        
+
        Drive:=TDiskDrive(Drive.Next);
       end;
     end;
    mtFLOPPY:begin
      {Floppy Device}
      Result:=MIN_FLOPPY_DRIVE;
-     
+
      Drive:=TDiskDrive(FDrives.First);
      while Drive <> nil do
       begin
@@ -6835,14 +6835,14 @@ begin
            end;
          end;
         end;
-        
+
        Drive:=TDiskDrive(Drive.Next);
       end;
     end;
   end;
  finally
   FDrives.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6855,7 +6855,7 @@ begin
  if not ReaderLock then Exit;
  try
   if AVolume = nil then Exit;
-  
+
   {Acquire Lock}
   FVolumes.WriterLock;
 
@@ -6866,13 +6866,13 @@ begin
   FVolumes.WriterUnlock;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
 function TFileSysDriver.RemoveVolume(AVolume:TDiskVolume):Boolean;
-{Note: Caller must hold the volume writer lock}       
+{Note: Caller must hold the volume writer lock}
 var
  Drive:TDiskDrive;
  FileSystem:TFileSystem;
@@ -6883,10 +6883,10 @@ begin
  if not ReaderLock then Exit;
  try
   if AVolume = nil then Exit;
-  
+
   {Update Enum Handles}
   UpdateEnumHandles(nil,nil,nil,AVolume,nil,nil); //To Do //Move within WriterLock, see notes ?
-  
+
   {Acquire Lock}
   FVolumes.WriterLock;
   try
@@ -6896,17 +6896,17 @@ begin
   finally
    {Release Lock}
    FVolumes.WriterUnlock;
-  end; 
-  
+  end;
+
   {Release any Find Handles on the Volume}
   ReleaseFindHandles(AVolume,nil);
-  
+
   {Release any File Handles on the Volume}
   ReleaseFileHandles(AVolume,nil);
-  
+
   {Release any Raw Handles on the Volume}
   ReleaseRawHandles(nil,nil,AVolume,nil);
-  
+
   {Remove any FileSystem using the Volume}
   FileSystem:=GetFileSystemByVolume(AVolume,True,FILESYS_LOCK_WRITE);
   while FileSystem <> nil do
@@ -6914,21 +6914,21 @@ begin
     {Note: The FileSystem will automatically unbind from any volume/drive when Destroyed}
     FileSystem.DismountFileSystem;
     FileSystem.Free;
-    
+
     FileSystem:=GetFileSystemByVolume(AVolume,True,FILESYS_LOCK_WRITE);
    end;
-  
+
   {Remove any Drive using the Volume}
   Drive:=GetDriveByVolume(AVolume,True,FILESYS_LOCK_WRITE);
   while Drive <> nil do
    begin
     Drive.Free;
-    
+
     Drive:=GetDriveByVolume(AVolume,True,FILESYS_LOCK_WRITE);
    end;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6943,24 +6943,24 @@ begin
  if not FVolumes.ReaderLock then Exit;
  try
   if AVolume = nil then Exit;
-  
+
   Volume:=TDiskVolume(FVolumes.First);
   while Volume <> nil do
    begin
     if Volume = AVolume then
      begin
-      {Lock Volume} 
+      {Lock Volume}
       if ALock then if AState = FILESYS_LOCK_READ then Volume.ReaderLock else Volume.WriterLock;
-      
+
       Result:=True;
       Exit;
      end;
-     
+
     Volume:=TDiskVolume(Volume.Next);
    end;
  finally
   FVolumes.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -6976,24 +6976,24 @@ begin
  if not FVolumes.ReaderLock then Exit;
  try
   if AVolumeNo = 0 then Exit;
-  
+
   Volume:=TDiskVolume(FVolumes.First);
   while Volume <> nil do
    begin
     if Volume.VolumeNo = AVolumeNo then
      begin
-      {Lock Volume} 
+      {Lock Volume}
       if ALock then if AState = FILESYS_LOCK_READ then Volume.ReaderLock else Volume.WriterLock;
 
       Result:=Volume;
       Exit;
      end;
-     
+
     Volume:=TDiskVolume(Volume.Next);
    end;
  finally
   FVolumes.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7008,24 +7008,24 @@ begin
  if not FVolumes.ReaderLock then Exit;
  try
   if Trim(AName) = '' then Exit;
-  
+
   Volume:=TDiskVolume(FVolumes.First);
   while Volume <> nil do
    begin
     if Uppercase(Volume.Name) = Uppercase(AName) then
      begin
-      {Lock Volume} 
+      {Lock Volume}
       if ALock then if AState = FILESYS_LOCK_READ then Volume.ReaderLock else Volume.WriterLock;
 
       Result:=Volume;
       Exit;
      end;
-     
+
     Volume:=TDiskVolume(Volume.Next);
    end;
  finally
   FVolumes.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7040,24 +7040,24 @@ begin
  if not FVolumes.ReaderLock then Exit;
  try
   if Trim(AParent) = '' then Exit;
-  
+
   Volume:=TDiskVolume(FVolumes.First);
   while Volume <> nil do
    begin
     if Uppercase(Volume.Parent) = Uppercase(AParent) then
      begin
-      {Lock Volume} 
+      {Lock Volume}
       if ALock then if AState = FILESYS_LOCK_READ then Volume.ReaderLock else Volume.WriterLock;
 
       Result:=Volume;
       Exit;
      end;
-     
+
     Volume:=TDiskVolume(Volume.Next);
    end;
  finally
   FVolumes.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7073,24 +7073,24 @@ begin
  if not FVolumes.ReaderLock then Exit;
  try
   if ADevice = nil then Exit;
-  
+
   Volume:=TDiskVolume(FVolumes.First);
   while Volume <> nil do
    begin
     if Volume.Device = ADevice then
      begin
-      {Lock Volume} 
+      {Lock Volume}
       if ALock then if AState = FILESYS_LOCK_READ then Volume.ReaderLock else Volume.WriterLock;
 
       Result:=Volume;
       Exit;
      end;
-     
+
     Volume:=TDiskVolume(Volume.Next);
    end;
  finally
   FVolumes.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7106,23 +7106,23 @@ begin
  if not FVolumes.ReaderLock then Exit;
  try
   if ADevice = nil then Exit;
-  
+
   Volume:=TDiskVolume(FVolumes.First);
   while Volume <> nil do
    begin
     if Volume.Device = ADevice then
      begin
-      {Lock Volume} 
+      {Lock Volume}
       if ALock then if AState = FILESYS_LOCK_READ then Volume.ReaderLock else Volume.WriterLock;
 
       Result.Add(Volume);
      end;
-     
+
     Volume:=TDiskVolume(Volume.Next);
    end;
  finally
   FVolumes.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7138,24 +7138,24 @@ begin
  if not FVolumes.ReaderLock then Exit;
  try
   if APartition = nil then Exit;
-  
+
   Volume:=TDiskVolume(FVolumes.First);
   while Volume <> nil do
    begin
     if Volume.Partition = APartition then
      begin
-      {Lock Volume} 
+      {Lock Volume}
       if ALock then if AState = FILESYS_LOCK_READ then Volume.ReaderLock else Volume.WriterLock;
 
       Result:=Volume;
       Exit;
      end;
-     
+
     Volume:=TDiskVolume(Volume.Next);
    end;
  finally
   FVolumes.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7171,23 +7171,23 @@ begin
  if not FVolumes.ReaderLock then Exit;
  try
   if APartition = nil then Exit;
-  
+
   Volume:=TDiskVolume(FVolumes.First);
   while Volume <> nil do
    begin
     if Volume.Partition = APartition then
      begin
-      {Lock Volume} 
+      {Lock Volume}
       if ALock then if AState = FILESYS_LOCK_READ then Volume.ReaderLock else Volume.WriterLock;
 
       Result.Add(Volume);
      end;
-     
+
     Volume:=TDiskVolume(Volume.Next);
    end;
  finally
   FVolumes.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7198,7 +7198,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FVolumes.ReaderLock then Exit;
  try
   {Check Previous}
@@ -7210,7 +7210,7 @@ begin
      begin
       {Lock Volume}
       if ALock then if AState = FILESYS_LOCK_READ then Volume.ReaderLock else Volume.WriterLock;
-      
+
       {Return Result}
       Result:=Volume;
      end;
@@ -7223,17 +7223,17 @@ begin
      begin
       {Lock Volume}
       if ALock then if AState = FILESYS_LOCK_READ then Volume.ReaderLock else Volume.WriterLock;
-      
+
       {Return Result}
       Result:=Volume;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
+   end;
  finally
   FVolumes.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7242,7 +7242,7 @@ function TFileSysDriver.GetNextVolumeNo:Integer;
 begin
  {}
  Result:=1;
- 
+
  while GetVolumeByNo(Result,False,FILESYS_LOCK_NONE) <> nil do {Do not lock}
   begin
    Inc(Result);
@@ -7267,12 +7267,12 @@ begin
      begin
       Result:=Volume.VolumeNo;
      end;
-     
+
     Volume:=TDiskVolume(Volume.Next);
    end;
  finally
   FVolumes.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7285,7 +7285,7 @@ begin
  if not ReaderLock then Exit;
  try
   if ADevice = nil then Exit;
-  
+
   {Acquire Lock}
   FDevices.WriterLock;
 
@@ -7296,7 +7296,7 @@ begin
   FDevices.WriterUnlock;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7312,10 +7312,10 @@ begin
  if not ReaderLock then Exit;
  try
   if ADevice = nil then Exit;
-  
+
   {Update Enum Handles}
   UpdateEnumHandles(ADevice,nil,nil,nil,nil,nil); //To Do //Move within WriterLock, see notes ?
-  
+
   {Acquire Lock}
   FDevices.WriterLock;
   try
@@ -7325,34 +7325,34 @@ begin
   finally
    {Release Lock}
    FDevices.WriterUnlock;
-  end; 
-  
+  end;
+
   {Release any Raw Handles on the Device}
   ReleaseRawHandles(ADevice,nil,nil,nil);
-  
+
   {Release any CachePages on the Device}
   FCache.ReleaseDevicePages(ADevice);
-  
+
   {Remove any Volume on the Device}
   Volume:=GetVolumeByDevice(ADevice,True,FILESYS_LOCK_WRITE);
   while Volume <> nil do
    begin
     Volume.Free;
-    
+
     Volume:=GetVolumeByDevice(ADevice,True,FILESYS_LOCK_WRITE);
    end;
-  
+
   {Remove any Partition on the Device}
   Partition:=GetPartitionByDevice(ADevice,True,FILESYS_LOCK_WRITE);
   while Partition <> nil do
    begin
     Partition.Free;
-    
+
     Partition:=GetPartitionByDevice(ADevice,True,FILESYS_LOCK_WRITE);
    end;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7367,24 +7367,24 @@ begin
  if not FDevices.ReaderLock then Exit;
  try
   if ADevice = nil then Exit;
-  
+
   Device:=TDiskDevice(FDevices.First);
   while Device <> nil do
    begin
     if Device = ADevice then
      begin
-      {Lock Device} 
+      {Lock Device}
       if ALock then if AState = FILESYS_LOCK_READ then Device.ReaderLock else Device.WriterLock;
-      
+
       Result:=True;
       Exit;
      end;
-     
+
     Device:=TDiskDevice(Device.Next);
    end;
  finally
   FDevices.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7400,24 +7400,24 @@ begin
  if not FDevices.ReaderLock then Exit;
  try
   if ADeviceNo = -1 then Exit;
-  
+
   Device:=TDiskDevice(FDevices.First);
   while Device <> nil do
    begin
     if Device.DeviceNo = ADeviceNo then
      begin
-      {Lock Device} 
+      {Lock Device}
       if ALock then if AState = FILESYS_LOCK_READ then Device.ReaderLock else Device.WriterLock;
 
       Result:=Device;
       Exit;
      end;
-     
+
     Device:=TDiskDevice(Device.Next);
    end;
  finally
   FDevices.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7432,24 +7432,24 @@ begin
  if not FDevices.ReaderLock then Exit;
  try
   if Trim(AName) = '' then Exit;
-  
+
   Device:=TDiskDevice(FDevices.First);
   while Device <> nil do
    begin
     if Uppercase(Device.Name) = Uppercase(AName) then
      begin
-      {Lock Device} 
+      {Lock Device}
       if ALock then if AState = FILESYS_LOCK_READ then Device.ReaderLock else Device.WriterLock;
 
       Result:=Device;
       Exit;
      end;
-     
+
     Device:=TDiskDevice(Device.Next);
    end;
  finally
   FDevices.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7464,24 +7464,24 @@ begin
  if not FDevices.ReaderLock then Exit;
  try
   if AImage = nil then Exit;
-  
+
   Device:=TDiskDevice(FDevices.First);
   while Device <> nil do
    begin
     if Device.Image = AImage then
      begin
-      {Lock Device} 
+      {Lock Device}
       if ALock then if AState = FILESYS_LOCK_READ then Device.ReaderLock else Device.WriterLock;
 
       Result:=Device;
       Exit;
      end;
-     
+
     Device:=TDiskDevice(Device.Next);
    end;
  finally
   FDevices.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7492,28 +7492,28 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FDevices.ReaderLock then Exit;
  try
   if AStorage = nil then Exit;
- 
+
   Device:=TDiskDevice(FDevices.First);
   while Device <> nil do
    begin
     if Device.Storage = AStorage then
      begin
-      {Lock Device} 
+      {Lock Device}
       if ALock then if AState = FILESYS_LOCK_READ then Device.ReaderLock else Device.WriterLock;
 
       Result:=Device;
       Exit;
      end;
-    
+
     Device:=TDiskDevice(Device.Next);
    end;
  finally
   FDevices.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7525,28 +7525,28 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FDevices.ReaderLock then Exit;
  try
   if AController = nil then Exit;
- 
+
   Device:=TDiskDevice(FDevices.First);
   while Device <> nil do
    begin
     if Device.Controller = AController then
      begin
-      {Lock Device} 
+      {Lock Device}
       if ALock then if AState = FILESYS_LOCK_READ then Device.ReaderLock else Device.WriterLock;
 
       Result:=Device;
       Exit;
      end;
-    
+
     Device:=TDiskDevice(Device.Next);
    end;
  finally
   FDevices.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7558,27 +7558,27 @@ var
 begin
  {}
  Result:=TList.Create;
- 
+
  if not FDevices.ReaderLock then Exit;
  try
   if AController = nil then Exit;
- 
+
   Device:=TDiskDevice(FDevices.First);
   while Device <> nil do
    begin
     if Device.Controller = AController then
      begin
-      {Lock Device} 
+      {Lock Device}
       if ALock then if AState = FILESYS_LOCK_READ then Device.ReaderLock else Device.WriterLock;
 
       Result.Add(Device);
      end;
-    
+
     Device:=TDiskDevice(Device.Next);
    end;
  finally
   FDevices.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7594,7 +7594,7 @@ begin
  if not FDevices.ReaderLock then Exit;
  try
   if AController = nil then Exit;
-  
+
   Device:=TDiskDevice(FDevices.First);
   while Device <> nil do
    begin
@@ -7602,19 +7602,19 @@ begin
      begin
       if Device.Identifier = AIdentifier then
        begin
-        {Lock Device} 
+        {Lock Device}
         if ALock then if AState = FILESYS_LOCK_READ then Device.ReaderLock else Device.WriterLock;
 
         Result:=Device;
         Exit;
        end;
      end;
-     
+
     Device:=TDiskDevice(Device.Next);
    end;
  finally
   FDevices.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7625,7 +7625,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FDevices.ReaderLock then Exit;
  try
   {Check Previous}
@@ -7637,7 +7637,7 @@ begin
      begin
       {Lock Device}
       if ALock then if AState = FILESYS_LOCK_READ then Device.ReaderLock else Device.WriterLock;
-      
+
       {Return Result}
       Result:=Device;
      end;
@@ -7650,17 +7650,17 @@ begin
      begin
       {Lock Device}
       if ALock then if AState = FILESYS_LOCK_READ then Device.ReaderLock else Device.WriterLock;
-      
+
       {Return Result}
       Result:=Device;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
+   end;
  finally
   FDevices.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7671,7 +7671,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  case AMediaType of
   mtFLOPPY:begin
     for Count:=MIN_FLOPPY_DEVICE to MAX_FLOPPY_DEVICE do
@@ -7724,13 +7724,13 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not FDevices.ReaderLock then Exit;
  try
   case AMediaType of
    mtFLOPPY:begin
      Result:=MIN_FLOPPY_DEVICE;
-     
+
      Device:=TDiskDevice(FDevices.First);
      while Device <> nil do
       begin
@@ -7741,13 +7741,13 @@ begin
            Result:=Device.DeviceNo;
           end;
         end;
-        
+
        Device:=TDiskDevice(Device.Next);
       end;
     end;
    mtFIXED,mtREMOVABLE:begin
      Result:=MIN_FIXED_DEVICE;
-     
+
      Device:=TDiskDevice(FDevices.First);
      while Device <> nil do
       begin
@@ -7758,13 +7758,13 @@ begin
            Result:=Device.DeviceNo;
           end;
         end;
-        
+
        Device:=TDiskDevice(Device.Next);
       end;
     end;
    mtCDROM,mtDVD:begin
      Result:=MIN_CDROM_DEVICE;
-     
+
      Device:=TDiskDevice(FDevices.First);
      while Device <> nil do
       begin
@@ -7775,13 +7775,13 @@ begin
            Result:=Device.DeviceNo;
           end;
         end;
-        
+
        Device:=TDiskDevice(Device.Next);
       end;
     end;
    mtOTHER:begin
      Result:=MIN_OTHER_DEVICE;
-     
+
      Device:=TDiskDevice(FDevices.First);
      while Device <> nil do
       begin
@@ -7792,14 +7792,14 @@ begin
            Result:=Device.DeviceNo;
           end;
         end;
-        
+
        Device:=TDiskDevice(Device.Next);
       end;
     end;
   end;
  finally
   FDevices.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7823,7 +7823,7 @@ begin
   FPartitions.WriterUnlock;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7839,10 +7839,10 @@ begin
  if not ReaderLock then Exit;
  try
   if APartition = nil then Exit;
-  
+
   {Update Enum Handles}
   UpdateEnumHandles(nil,APartition,nil,nil,nil,nil); //To Do //Move within WriterLock, see notes ?
-  
+
   {Acquire Lock}
   FPartitions.WriterLock;
   try
@@ -7852,31 +7852,31 @@ begin
   finally
    {Release Lock}
    FPartitions.WriterUnlock;
-  end; 
-  
+  end;
+
   {Release any Raw Handles on the Partition}
   ReleaseRawHandles(nil,APartition,nil,nil);
-  
+
   {Remove any Volume on the Partition}
   Volume:=GetVolumeByPartition(APartition,True,FILESYS_LOCK_WRITE);
   while Volume <> nil do
    begin
     Volume.Free;
-    
+
     Volume:=GetVolumeByPartition(APartition,True,FILESYS_LOCK_WRITE);
    end;
-   
+
   {Remove any Partition on the Partition}
   Partition:=GetPartitionByPartition(APartition,True,FILESYS_LOCK_WRITE);
   while Partition <> nil do
    begin
     Partition.Free;
-    
+
     Partition:=GetPartitionByPartition(APartition,True,FILESYS_LOCK_WRITE);
    end;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7891,24 +7891,24 @@ begin
  if not FPartitions.ReaderLock then Exit;
  try
   if APartition = nil then Exit;
-  
+
   Partition:=TDiskPartition(FPartitions.First);
   while Partition <> nil do
    begin
     if Partition = APartition then
      begin
-      {Lock Partition} 
+      {Lock Partition}
       if ALock then if AState = FILESYS_LOCK_READ then Partition.ReaderLock else Partition.WriterLock;
-      
+
       Result:=True;
       Exit;
      end;
-     
+
     Partition:=TDiskPartition(Partition.Next);
    end;
  finally
   FPartitions.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7925,24 +7925,24 @@ begin
  try
   if ADevice = nil then Exit;
   if APartitionNo = 0 then Exit;
-  
+
   Partition:=TDiskPartition(FPartitions.First);
   while Partition <> nil do
    begin
     if (Partition.Device = ADevice) and (Partition.PartitionNo = APartitionNo) and (Partition.Extended = AExtended) then
      begin
-      {Lock Partition} 
+      {Lock Partition}
       if ALock then if AState = FILESYS_LOCK_READ then Partition.ReaderLock else Partition.WriterLock;
 
       Result:=Partition;
       Exit;
      end;
-     
+
     Partition:=TDiskPartition(Partition.Next);
    end;
  finally
   FPartitions.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7958,24 +7958,24 @@ begin
  try
   if ADevice = nil then Exit;
   if Trim(AName) = '' then Exit;
-  
+
   Partition:=TDiskPartition(FPartitions.First);
   while Partition <> nil do
    begin
     if (Partition.Device = ADevice) and (Uppercase(Partition.Name) = Uppercase(AName)) then
      begin
-      {Lock Partition} 
+      {Lock Partition}
       if ALock then if AState = FILESYS_LOCK_READ then Partition.ReaderLock else Partition.WriterLock;
 
       Result:=Partition;
       Exit;
      end;
-     
+
     Partition:=TDiskPartition(Partition.Next);
    end;
  finally
   FPartitions.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -7990,24 +7990,24 @@ begin
  if not FPartitions.ReaderLock then Exit;
  try
   if Trim(APath) = '' then Exit;
-  
+
   Partition:=TDiskPartition(FPartitions.First);
   while Partition <> nil do
    begin
     if Uppercase(Partition.Path) = Uppercase(APath) then
      begin
-      {Lock Partition} 
+      {Lock Partition}
       if ALock then if AState = FILESYS_LOCK_READ then Partition.ReaderLock else Partition.WriterLock;
 
       Result:=Partition;
       Exit;
      end;
-     
+
     Partition:=TDiskPartition(Partition.Next);
    end;
  finally
   FPartitions.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8024,24 +8024,24 @@ begin
   if ADevice = nil then Exit;
   if AEntryNo < MIN_PARTITION then Exit;
   if AEntryNo > MAX_PARTITION then Exit;
-  
+
   Partition:=TDiskPartition(FPartitions.First);
   while Partition <> nil do
    begin
     if (Partition.Device = ADevice) and (Partition.Partition = APartition) and (Partition.EntryNo = AEntryNo) then
      begin
-      {Lock Partition} 
+      {Lock Partition}
       if ALock then if AState = FILESYS_LOCK_READ then Partition.ReaderLock else Partition.WriterLock;
 
       Result:=Partition;
       Exit;
      end;
-     
+
     Partition:=TDiskPartition(Partition.Next);
    end;
  finally
   FPartitions.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8057,24 +8057,24 @@ begin
  if not FPartitions.ReaderLock then Exit;
  try
   if ADevice = nil then Exit;
-  
+
   Partition:=TDiskPartition(FPartitions.First);
   while Partition <> nil do
    begin
     if Partition.Device = ADevice then
      begin
-      {Lock Partition} 
+      {Lock Partition}
       if ALock then if AState = FILESYS_LOCK_READ then Partition.ReaderLock else Partition.WriterLock;
 
       Result:=Partition;
       Exit;
      end;
-     
+
     Partition:=TDiskPartition(Partition.Next);
    end;
  finally
   FPartitions.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8090,23 +8090,23 @@ begin
  if not FPartitions.ReaderLock then Exit;
  try
   if ADevice = nil then Exit;
-  
+
   Partition:=TDiskPartition(FPartitions.First);
   while Partition <> nil do
    begin
     if Partition.Device = ADevice then
      begin
-      {Lock Partition} 
+      {Lock Partition}
       if ALock then if AState = FILESYS_LOCK_READ then Partition.ReaderLock else Partition.WriterLock;
 
       Result.Add(Partition);
      end;
-     
+
     Partition:=TDiskPartition(Partition.Next);
    end;
  finally
   FPartitions.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8122,24 +8122,24 @@ begin
  if not FPartitions.ReaderLock then Exit;
  try
   if APartition = nil then Exit;
-  
+
   Partition:=TDiskPartition(FPartitions.First);
   while Partition <> nil do
    begin
     if (Partition.Partition = APartition) or (Partition.Root = APartition) then
      begin
-      {Lock Partition} 
+      {Lock Partition}
       if ALock then if AState = FILESYS_LOCK_READ then Partition.ReaderLock else Partition.WriterLock;
 
       Result:=Partition;
       Exit;
      end;
-     
+
     Partition:=TDiskPartition(Partition.Next);
    end;
  finally
   FPartitions.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8155,23 +8155,23 @@ begin
  if not FPartitions.ReaderLock then Exit;
  try
   if APartition = nil then Exit;
-  
+
   Partition:=TDiskPartition(FPartitions.First);
   while Partition <> nil do
    begin
     if (Partition.Partition = APartition) or (Partition.Root = APartition) then
      begin
-      {Lock Partition} 
+      {Lock Partition}
       if ALock then if AState = FILESYS_LOCK_READ then Partition.ReaderLock else Partition.WriterLock;
 
       Result.Add(Partition);
      end;
-     
+
     Partition:=TDiskPartition(Partition.Next);
    end;
  finally
   FPartitions.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8182,7 +8182,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FPartitions.ReaderLock then Exit;
  try
   {Check Previous}
@@ -8194,7 +8194,7 @@ begin
      begin
       {Lock Partition}
       if ALock then if AState = FILESYS_LOCK_READ then Partition.ReaderLock else Partition.WriterLock;
-      
+
       {Return Result}
       Result:=Partition;
      end;
@@ -8207,17 +8207,17 @@ begin
      begin
       {Lock Partition}
       if ALock then if AState = FILESYS_LOCK_READ then Partition.ReaderLock else Partition.WriterLock;
-      
+
       {Return Result}
       Result:=Partition;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
+   end;
  finally
   FPartitions.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8230,7 +8230,7 @@ begin
  if ADevice = nil then Exit;
 
  Result:=1;
- 
+
  while GetPartitionByNo(ADevice,Result,AExtended,False,FILESYS_LOCK_NONE) <> nil do {Do not lock}
   begin
    Inc(Result);
@@ -8249,9 +8249,9 @@ begin
  if not FPartitions.ReaderLock then Exit;
  try
   if ADevice = nil then Exit;
-  
+
   Result:=1;
-  
+
   Partition:=TDiskPartition(FPartitions.First);
   while Partition <> nil do
    begin
@@ -8262,12 +8262,12 @@ begin
         Result:=Partition.PartitionNo;
        end;
      end;
-     
+
     Partition:=TDiskPartition(Partition.Next);
    end;
  finally
   FPartitions.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8276,11 +8276,11 @@ function TFileSysDriver.AddController(AController:TDiskController):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if AController = nil then Exit;
- 
+
   {Acquire Lock}
   FControllers.WriterLock;
 
@@ -8291,7 +8291,7 @@ begin
   FControllers.WriterUnlock;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8302,11 +8302,11 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if AController = nil then Exit;
- 
+
   {Acquire Lock}
   FControllers.WriterLock;
   try
@@ -8315,19 +8315,19 @@ begin
   finally
    {Release Lock}
    FControllers.WriterUnlock;
-  end; 
- 
+  end;
+
   {Remove any Device on the Controller}
   Device:=GetDeviceByController(AController,True,FILESYS_LOCK_WRITE);
   while Device <> nil do
    begin
     Device.Free;
-   
+
     Device:=GetDeviceByController(AController,True,FILESYS_LOCK_WRITE);
    end;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8342,24 +8342,24 @@ begin
  if not FControllers.ReaderLock then Exit;
  try
   if AController = nil then Exit;
-  
+
   Controller:=TDiskController(FControllers.First);
   while Controller <> nil do
    begin
     if Controller = AController then
      begin
-      {Lock Controller} 
+      {Lock Controller}
       if ALock then if AState = FILESYS_LOCK_READ then Controller.ReaderLock else Controller.WriterLock;
-      
+
       Result:=True;
       Exit;
      end;
-     
+
     Controller:=TDiskController(Controller.Next);
    end;
  finally
   FControllers.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8375,24 +8375,24 @@ begin
  if not FControllers.ReaderLock then Exit;
  try
   if AControllerNo = -1 then Exit;
-  
+
   Controller:=TDiskController(FControllers.First);
   while Controller <> nil do
    begin
     if Controller.ControllerNo = AControllerNo then
      begin
-      {Lock Controller} 
+      {Lock Controller}
       if ALock then if AState = FILESYS_LOCK_READ then Controller.ReaderLock else Controller.WriterLock;
 
       Result:=Controller;
       Exit;
      end;
-     
+
     Controller:=TDiskController(Controller.Next);
    end;
  finally
   FControllers.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8407,24 +8407,24 @@ begin
  if not FControllers.ReaderLock then Exit;
  try
   if Trim(AName) = '' then Exit;
-  
+
   Controller:=TDiskController(FControllers.First);
   while Controller <> nil do
    begin
     if Uppercase(Controller.Name) = Uppercase(AName) then
      begin
-      {Lock Controller} 
+      {Lock Controller}
       if ALock then if AState = FILESYS_LOCK_READ then Controller.ReaderLock else Controller.WriterLock;
 
       Result:=Controller;
       Exit;
      end;
-     
+
     Controller:=TDiskController(Controller.Next);
    end;
  finally
   FControllers.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8435,7 +8435,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FControllers.ReaderLock then Exit;
  try
   {Check Previous}
@@ -8447,7 +8447,7 @@ begin
      begin
       {Lock Controller}
       if ALock then if AState = FILESYS_LOCK_READ then Controller.ReaderLock else Controller.WriterLock;
-      
+
       {Return Result}
       Result:=Controller;
      end;
@@ -8460,17 +8460,17 @@ begin
      begin
       {Lock Controller}
       if ALock then if AState = FILESYS_LOCK_READ then Controller.ReaderLock else Controller.WriterLock;
-      
+
       {Return Result}
       Result:=Controller;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
+   end;
  finally
   FControllers.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8479,7 +8479,7 @@ function TFileSysDriver.GetNextControllerNo:Integer;
 begin
  {}
  Result:=0;
- 
+
  while GetControllerByNo(Result,False,FILESYS_LOCK_NONE) <> nil do {Do not lock}
   begin
    Inc(Result);
@@ -8508,7 +8508,7 @@ begin
    end;
  finally
   FControllers.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8521,7 +8521,7 @@ begin
  if not ReaderLock then Exit;
  try
   if ARecognizer = nil then Exit;
-  
+
   {Acquire Lock}
   FRecognizers.WriterLock;
 
@@ -8532,7 +8532,7 @@ begin
   FRecognizers.WriterUnlock;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8545,7 +8545,7 @@ begin
  if not ReaderLock then Exit;
  try
   if ARecognizer = nil then Exit;
-  
+
   {Acquire Lock}
   FRecognizers.WriterLock;
 
@@ -8556,7 +8556,7 @@ begin
   FRecognizers.WriterUnlock;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8577,18 +8577,18 @@ begin
    begin
     if Recognizer = ARecognizer then
      begin
-      {Lock Recognizer} 
+      {Lock Recognizer}
       if ALock then if AState = FILESYS_LOCK_READ then Recognizer.ReaderLock else Recognizer.WriterLock;
-      
+
       Result:=True;
       Exit;
      end;
-     
+
     Recognizer:=TRecognizer(Recognizer.Next);
    end;
  finally
   FRecognizers.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8609,18 +8609,18 @@ begin
    begin
     if Recognizer.RecognizeImage(AImage) then
      begin
-      {Lock Recognizer} 
+      {Lock Recognizer}
       if ALock then if AState = FILESYS_LOCK_READ then Recognizer.ReaderLock else Recognizer.WriterLock;
 
       Result:=Recognizer;
       Exit;
      end;
-     
+
     Recognizer:=TRecognizer(Recognizer.Next);
    end;
  finally
   FRecognizers.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8642,18 +8642,18 @@ begin
    begin
     if Recognizer.RecognizeVolume(AVolume) then
      begin
-      {Lock Recognizer} 
+      {Lock Recognizer}
       if ALock then if AState = FILESYS_LOCK_READ then Recognizer.ReaderLock else Recognizer.WriterLock;
 
       Result:=Recognizer;
       Exit;
      end;
-     
+
     Recognizer:=TRecognizer(Recognizer.Next);
    end;
  finally
   FRecognizers.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8675,23 +8675,23 @@ begin
    begin
     if Recognizer.RecognizePartition(APartition) then
      begin
-      {Lock Recognizer} 
+      {Lock Recognizer}
       if ALock then if AState = FILESYS_LOCK_READ then Recognizer.ReaderLock else Recognizer.WriterLock;
 
       Result:=Recognizer;
       Exit;
      end;
-     
+
     Recognizer:=TRecognizer(Recognizer.Next);
    end;
  finally
   FRecognizers.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetRecognizerByPartitionId(APartitionId:Byte;ALock:Boolean;AState:LongWord):TRecognizer;       
+function TFileSysDriver.GetRecognizerByPartitionId(APartitionId:Byte;ALock:Boolean;AState:LongWord):TRecognizer;
 var
  Recognizer:TRecognizer;
 begin
@@ -8707,18 +8707,18 @@ begin
    begin
     if Recognizer.RecognizePartitionId(APartitionId) then
      begin
-      {Lock Recognizer} 
+      {Lock Recognizer}
       if ALock then if AState = FILESYS_LOCK_READ then Recognizer.ReaderLock else Recognizer.WriterLock;
 
       Result:=Recognizer;
       Exit;
      end;
-     
+
     Recognizer:=TRecognizer(Recognizer.Next);
    end;
  finally
   FRecognizers.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8740,18 +8740,18 @@ begin
    begin
     if Recognizer.RecognizeBootSector(ABootSector,AStartSector,ASectorCount) then
      begin
-      {Lock Recognizer} 
+      {Lock Recognizer}
       if ALock then if AState = FILESYS_LOCK_READ then Recognizer.ReaderLock else Recognizer.WriterLock;
 
       Result:=Recognizer;
       Exit;
      end;
-     
+
     Recognizer:=TRecognizer(Recognizer.Next);
    end;
  finally
   FRecognizers.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8762,7 +8762,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FRecognizers.ReaderLock then Exit;
  try
   {Check Previous}
@@ -8774,7 +8774,7 @@ begin
      begin
       {Lock Recognizer}
       if ALock then if AState = FILESYS_LOCK_READ then Recognizer.ReaderLock else Recognizer.WriterLock;
-      
+
       {Return Result}
       Result:=Recognizer;
      end;
@@ -8787,17 +8787,17 @@ begin
      begin
       {Lock Recognizer}
       if ALock then if AState = FILESYS_LOCK_READ then Recognizer.ReaderLock else Recognizer.WriterLock;
-      
+
       {Return Result}
       Result:=Recognizer;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
+   end;
  finally
   FRecognizers.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8810,7 +8810,7 @@ begin
  if not ReaderLock then Exit;
  try
   if ARedirector = nil then Exit;
-  
+
   {Acquire Lock}
   FRedirectors.WriterLock;
 
@@ -8821,7 +8821,7 @@ begin
   FRedirectors.WriterUnlock;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8834,7 +8834,7 @@ begin
  if not ReaderLock then Exit;
  try
   if ARedirector = nil then Exit;
-  
+
   {Acquire Lock}
   FRedirectors.WriterLock;
 
@@ -8845,7 +8845,7 @@ begin
   FRedirectors.WriterUnlock;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8866,18 +8866,18 @@ begin
    begin
     if Redirector = ARedirector then
      begin
-      {Lock Redirector} 
+      {Lock Redirector}
       if ALock then if AState = FILESYS_LOCK_READ then Redirector.ReaderLock else Redirector.WriterLock;
-      
+
       Result:=True;
       Exit;
      end;
-     
+
     Redirector:=TRedirector(Redirector.Next);
    end;
  finally
   FRedirectors.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8898,18 +8898,18 @@ begin
    begin
     if Redirector.RedirectPath(APath) then
      begin
-      {Lock Redirector} 
+      {Lock Redirector}
       if ALock then if AState = FILESYS_LOCK_READ then Redirector.ReaderLock else Redirector.WriterLock;
 
       Result:=Redirector;
       Exit;
      end;
-     
+
     Redirector:=TRedirector(Redirector.Next);
    end;
  finally
   FRedirectors.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8930,18 +8930,18 @@ begin
    begin
     if Redirector.RedirectDrive(ADrive) then
      begin
-      {Lock Redirector} 
+      {Lock Redirector}
       if ALock then if AState = FILESYS_LOCK_READ then Redirector.ReaderLock else Redirector.WriterLock;
 
       Result:=Redirector;
       Exit;
      end;
-     
+
     Redirector:=TRedirector(Redirector.Next);
    end;
  finally
   FRedirectors.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -8952,7 +8952,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FRedirectors.ReaderLock then Exit;
  try
   {Check Previous}
@@ -8964,7 +8964,7 @@ begin
      begin
       {Lock Redirector}
       if ALock then if AState = FILESYS_LOCK_READ then Redirector.ReaderLock else Redirector.WriterLock;
-      
+
       {Return Result}
       Result:=Redirector;
      end;
@@ -8977,17 +8977,17 @@ begin
      begin
       {Lock Redirector}
       if ALock then if AState = FILESYS_LOCK_READ then Redirector.ReaderLock else Redirector.WriterLock;
-      
+
       {Return Result}
       Result:=Redirector;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
+   end;
  finally
   FRedirectors.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -9000,7 +9000,7 @@ begin
  if not ReaderLock then Exit;
  try
   if AFileSystem = nil then Exit;
-  
+
   {Acquire Lock}
   FFileSystems.WriterLock;
 
@@ -9011,7 +9011,7 @@ begin
   FFileSystems.WriterUnlock;
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -9024,7 +9024,7 @@ begin
  if not ReaderLock then Exit;
  try
   if AFileSystem = nil then Exit;
-  
+
   {Acquire Lock}
   FFileSystems.WriterLock;
   try
@@ -9034,15 +9034,15 @@ begin
   finally
    {Release Lock}
    FFileSystems.WriterUnlock;
-  end; 
-  
+  end;
+
   {Release any Enum Handles on the FileSystem}
   ReleaseEnumHandles(AFileSystem);
-  
+
   {Note: The FileSystem will automatically unbind from any volume/drive when Destroyed}
  finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -9057,24 +9057,24 @@ begin
  if not FFileSystems.ReaderLock then Exit;
  try
   if AFileSystem = nil then Exit;
-  
+
   FileSystem:=TFileSystem(FFileSystems.First);
   while FileSystem <> nil do
    begin
     if FileSystem = AFileSystem then
      begin
-      {Lock FileSystem} 
+      {Lock FileSystem}
       if ALock then if AState = FILESYS_LOCK_READ then FileSystem.ReaderLock else FileSystem.WriterLock;
-      
+
       Result:=True;
       Exit;
      end;
-     
+
     FileSystem:=TFileSystem(FileSystem.Next);
    end;
  finally
   FFileSystems.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -9089,24 +9089,24 @@ begin
  if not FFileSystems.ReaderLock then Exit;
  try
   if ADrive = nil then Exit;
-  
+
   FileSystem:=TFileSystem(FFileSystems.First);
   while FileSystem <> nil do
    begin
     if FileSystem.Drive = ADrive then
      begin
-      {Lock FileSystem} 
+      {Lock FileSystem}
       if ALock then if AState = FILESYS_LOCK_READ then FileSystem.ReaderLock else FileSystem.WriterLock;
 
       Result:=FileSystem;
       Exit;
      end;
-     
+
     FileSystem:=TFileSystem(FileSystem.Next);
    end;
  finally
   FFileSystems.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -9121,24 +9121,24 @@ begin
  if not FFileSystems.ReaderLock then Exit;
  try
   if AVolume = nil then Exit;
-  
+
   FileSystem:=TFileSystem(FFileSystems.First);
   while FileSystem <> nil do
    begin
     if FileSystem.Volume = AVolume then
      begin
-      {Lock FileSystem} 
+      {Lock FileSystem}
       if ALock then if AState = FILESYS_LOCK_READ then FileSystem.ReaderLock else FileSystem.WriterLock;
 
       Result:=FileSystem;
       Exit;
      end;
-     
+
     FileSystem:=TFileSystem(FileSystem.Next);
    end;
  finally
   FFileSystems.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -9153,24 +9153,24 @@ begin
  if not FFileSystems.ReaderLock then Exit;
  try
   if Length(AName) = 0 then Exit;
-  
+
   FileSystem:=TFileSystem(FFileSystems.First);
   while FileSystem <> nil do
    begin
     if Uppercase(Trim(FileSystem.RootName)) = Uppercase(Trim(AName)) then
      begin
-      {Lock FileSystem} 
+      {Lock FileSystem}
       if ALock then if AState = FILESYS_LOCK_READ then FileSystem.ReaderLock else FileSystem.WriterLock;
 
       Result:=FileSystem;
       Exit;
      end;
-     
+
     FileSystem:=TFileSystem(FileSystem.Next);
    end;
  finally
   FFileSystems.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -9185,24 +9185,24 @@ begin
  if not FFileSystems.ReaderLock then Exit;
  try
   if Length(APath) = 0 then Exit;
-  
+
   FileSystem:=TFileSystem(FFileSystems.First);
   while FileSystem <> nil do
    begin
     if Uppercase(Trim(FileSystem.RootPath)) = Uppercase(Trim(APath)) then
      begin
-      {Lock FileSystem} 
+      {Lock FileSystem}
       if ALock then if AState = FILESYS_LOCK_READ then FileSystem.ReaderLock else FileSystem.WriterLock;
 
       Result:=FileSystem;
       Exit;
      end;
-     
+
     FileSystem:=TFileSystem(FileSystem.Next);
    end;
  finally
   FFileSystems.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -9213,7 +9213,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FFileSystems.ReaderLock then Exit;
  try
   {Check Previous}
@@ -9225,7 +9225,7 @@ begin
      begin
       {Lock FileSystem}
       if ALock then if AState = FILESYS_LOCK_READ then FileSystem.ReaderLock else FileSystem.WriterLock;
-      
+
       {Return Result}
       Result:=FileSystem;
      end;
@@ -9238,17 +9238,17 @@ begin
      begin
       {Lock FileSystem}
       if ALock then if AState = FILESYS_LOCK_READ then FileSystem.ReaderLock else FileSystem.WriterLock;
-      
+
       {Return Result}
       Result:=FileSystem;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
+   end;
  finally
   FFileSystems.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -9259,7 +9259,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -9267,18 +9267,18 @@ begin
   {$ENDIF}
 
   {Scan each Controller for Devices}
-  Controller:=GetControllerByNext(nil,True,False,FILESYS_LOCK_READ); 
+  Controller:=GetControllerByNext(nil,True,False,FILESYS_LOCK_READ);
   while Controller <> nil do
    begin
     Controller.LocateDevices;
-    
-    Controller:=GetControllerByNext(Controller,True,True,FILESYS_LOCK_READ); 
+
+    Controller:=GetControllerByNext(Controller,True,True,FILESYS_LOCK_READ);
    end;
-   
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -9297,18 +9297,18 @@ begin
   {$ENDIF}
 
   {Scan each Device for Partitions}
-  Device:=GetDeviceByNext(nil,True,False,FILESYS_LOCK_WRITE); 
+  Device:=GetDeviceByNext(nil,True,False,FILESYS_LOCK_WRITE);
   while Device <> nil do
    begin
     Device.LocatePartitions;
-    
+
     Device:=GetDeviceByNext(Device,True,True,FILESYS_LOCK_WRITE);
    end;
-   
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -9322,7 +9322,7 @@ var
 begin
  {}
  Result:=False;
-    
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -9344,13 +9344,13 @@ begin
            Device.LocateVolumes;
           end;
         end;
-       
+
         {Unlock Device}
         Device.WriterUnlock;
        end;
      end;
    end;
-   
+
   {Scan for Fixed Devices (Active or First Primary Partitions)}
   for DeviceCount:=MIN_FIXED_DEVICE to GetMaxDeviceNo(mtFIXED) do {GetMaxDeviceNo(mtFIXED) includes mtREMOVABLE}
    begin
@@ -9383,7 +9383,7 @@ begin
              end;
             end;
           end;
-          
+
          {Check for Volume}
          if GetVolumeByDevice(Device,False,FILESYS_LOCK_NONE) = nil then {Do not lock}
           begin
@@ -9408,18 +9408,18 @@ begin
                finally
                 {Unlock Partition}
                 Partition.WriterUnlock;
-               end;               
+               end;
               end;
             end;
           end;
         end;
       end;
-     
+
       {Unlock Device}
       Device.WriterUnlock;
      end;
    end;
-     
+
   {Scan for Fixed Devices (Extended Partitions)}
   for DeviceCount:=MIN_FIXED_DEVICE to GetMaxDeviceNo(mtFIXED) do {GetMaxDeviceNo(mtFIXED) includes mtREMOVABLE}
    begin
@@ -9449,20 +9449,20 @@ begin
                  Partition.LocateVolumes;
                 end;
               end;
-              
+
              {Unlock Partition}
              Partition.WriterUnlock;
             end;
           end;
         end;
       end;
-     
-     
+
+
       {Unlock Device}
       Device.WriterUnlock;
      end;
    end;
-     
+
   {Scan for Fixed Devices (Primary Partitions)}
   for DeviceCount:=MIN_FIXED_DEVICE to GetMaxDeviceNo(mtFIXED) do {GetMaxDeviceNo(mtFIXED) includes mtREMOVABLE}
    begin
@@ -9492,19 +9492,19 @@ begin
                  Partition.LocateVolumes;
                 end;
               end;
-              
+
              {Unlock Partition}
              Partition.WriterUnlock;
             end;
           end;
         end;
       end;
-     
+
       {Unlock Device}
       Device.WriterUnlock;
      end;
    end;
-  
+
   {Scan for Removable Devices}
   for DeviceCount:=MIN_FIXED_DEVICE to GetMaxDeviceNo(mtREMOVABLE) do {GetMaxDeviceNo(mtREMOVABLE) includes mtFIXED}
    begin
@@ -9517,12 +9517,12 @@ begin
          Device.LocateVolumes;
         end;
       end;
-     
+
       {Unlock Device}
       Device.WriterUnlock;
      end;
    end;
-    
+
   {Scan for CDROM and DVD Devices}
   for DeviceCount:=MIN_CDROM_DEVICE to GetMaxDeviceNo(mtCDROM) do {GetMaxDeviceNo(mtCDROM) includes mtDVD}
    begin
@@ -9535,12 +9535,12 @@ begin
          Device.LocateVolumes;
         end;
       end;
-     
+
       {Unlock Device}
       Device.WriterUnlock;
      end;
    end;
-    
+
   {Scan for Other Devices}
   for DeviceCount:=MIN_OTHER_DEVICE to GetMaxDeviceNo(mtOTHER) do
    begin
@@ -9553,20 +9553,20 @@ begin
          Device.LocateVolumes;
         end;
       end;
-     
+
       {Unlock Device}
       Device.WriterUnlock;
      end;
    end;
-    
+
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.LocateVolumes completed');
   {$ENDIF}
-    
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -9612,15 +9612,15 @@ begin
               {$IFDEF FILESYS_DEBUG}
               if FILESYS_LOG_ENABLED then FileSysLogDebug(' Creating Drive ' + DRIVE_NAMES[DriveCount] + ' on Volume ' + Volume.Name);
               {$ENDIF}
-              
+
               {Create Drive}
               Drive:=TDiskDrive.Create(Self,Volume,DriveCount);
               Drive.DriveInit;
-              
+
               {$IFDEF FILESYS_DEBUG}
               if FILESYS_LOG_ENABLED then FileSysLogDebug(' Mounting Volume ' + Volume.Name);
               {$ENDIF}
-              
+
               {Mount Volume}
               Recognizer.MountVolume(Volume,Drive);
              end
@@ -9629,39 +9629,39 @@ begin
               {$IFDEF FILESYS_DEBUG}
               if FILESYS_LOG_ENABLED then FileSysLogDebug(' Mounting Volume ' + Volume.Name);
               {$ENDIF}
-              
+
               {Mount Volume}
               Recognizer.MountVolume(Volume,nil);
              end;
            end;
-           
+
           {Unlock Recognizer}
           Recognizer.ReaderUnlock;
          end;
        end;
-       
+
       {Unlock Volume}
       Volume.WriterUnlock;
      end;
    end;
-       
+
   {Scan each Redirector for Drives}
-  Redirector:=GetRedirectorByNext(nil,True,False,FILESYS_LOCK_READ); 
+  Redirector:=GetRedirectorByNext(nil,True,False,FILESYS_LOCK_READ);
   while Redirector <> nil do
    begin
     Redirector.LocateDrives;
-    
-    Redirector:=GetRedirectorByNext(Redirector,True,True,FILESYS_LOCK_READ); 
+
+    Redirector:=GetRedirectorByNext(Redirector,True,True,FILESYS_LOCK_READ);
    end;
 
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.LocateDrives completed');
   {$ENDIF}
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -9683,12 +9683,12 @@ begin
  try
   {Check Supplied Params}
   if (ADevice = nil) and (APartition = nil) and (AVolume = nil) and (ADrive = nil) then Exit;
-  
+
   {Check Open Mode}
   if AMode = fmCreate then Exit; {Cannot Create on a Device/Partition/Volume/Drive}
   OpenMode:=AMode and fmOpenMask;
   ShareMode:=AMode and fmShareMask;
-  
+
   if not FRawHandles.ReaderLock then Exit;
   try
    {Check for Existing Handles}
@@ -9696,7 +9696,7 @@ begin
    while NextHandle <> nil do
     begin
      CurrentHandle:=nil;
-    
+
      if (ADevice <> nil) and (NextHandle.Device = ADevice) then
       begin
        CurrentHandle:=NextHandle;
@@ -9713,13 +9713,13 @@ begin
       begin
        CurrentHandle:=NextHandle;
       end;
-     
+
      if CurrentHandle <> nil then
       begin
        {Check for Share Exclusive}
        if ShareMode = fmShareCompat then Exit;   {Compat is same as Exclusive}
        if ShareMode = fmShareExclusive then Exit;
-       
+
        {Check requested Open Mode}
        case OpenMode of
         fmOpenRead:begin
@@ -9742,7 +9742,7 @@ begin
           if CurrentHandle.ShareMode = fmShareDenyWrite then Exit;
          end;
        end;
-      
+
        {Check requested Share Mode}
        case ShareMode of
         fmShareDenyWrite:begin
@@ -9757,13 +9757,13 @@ begin
          end;
         end;
       end;
-    
-     NextHandle:=TRawHandle(NextHandle.Next); 
+
+     NextHandle:=TRawHandle(NextHandle.Next);
     end;
   finally
    FRawHandles.ReaderUnlock;
-  end;   
-  
+  end;
+
   {Create new Handle}
   Result:=TRawHandle.Create;
   Result.Device:=ADevice;
@@ -9772,23 +9772,23 @@ begin
   Result.Drive:=ADrive;
   Result.OpenMode:=OpenMode;
   Result.ShareMode:=ShareMode;
-  
+
   {Lock Handle}
   if ALock then if AState = FILESYS_LOCK_READ then Result.ReaderLock else Result.WriterLock;
-  
+
   {Acquire Lock}
   FRawHandles.WriterLock;
-  
+
   {Add the Handle}
   FRawHandles.Add(Result);
-  
+
   {Release Lock}
   FRawHandles.WriterUnlock;
-  
+
   {Size and Position are set by the caller}
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -9803,22 +9803,22 @@ begin
  if not ReaderLock then Exit;
  try
   if AHandle = nil then Exit;
-  
+
   {Acquire Lock}
   FRawHandles.WriterLock;
 
   {Remove and Free Handle}
   FRawHandles.Remove(AHandle);
-  
+
   {Release Lock}
   FRawHandles.WriterUnlock;
-  
+
   AHandle.Free;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -9829,7 +9829,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FRawHandles.ReaderLock then Exit;
  try
   {Check Previous}
@@ -9841,7 +9841,7 @@ begin
      begin
       {Lock Handle}
       if ALock then if AState = FILESYS_LOCK_READ then Handle.ReaderLock else Handle.WriterLock;
-      
+
       {Return Result}
       Result:=Handle;
      end;
@@ -9854,17 +9854,17 @@ begin
      begin
       {Lock Handle}
       if ALock then if AState = FILESYS_LOCK_READ then Handle.ReaderLock else Handle.WriterLock;
-      
+
       {Return Result}
       Result:=Handle;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
+   end;
  finally
   FRawHandles.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -9884,20 +9884,20 @@ begin
  try
   {Check Supplied Params}
   if (ADevice = nil) and (APartition = nil) and (AVolume = nil) and (ADrive = nil) then Exit;
-  
+
   {Check each Handle}
   NextHandle:=GetRawHandleByNext(nil,True,False,FILESYS_LOCK_READ);
   while NextHandle <> nil do
    begin
     CurrentHandle:=NextHandle;
     NextHandle:=GetRawHandleByNext(CurrentHandle,True,False,FILESYS_LOCK_READ);
-    
+
     {Close Handle if on Device/Partition/Volume/Drive}
     if (ADevice <> nil) and (CurrentHandle.Device = ADevice) then
      begin
       {Convert Handle}
       CurrentHandle.ReaderConvert;
-      
+
       {Close Handle}
       CloseRawHandle(CurrentHandle);
       CurrentHandle:=nil;
@@ -9906,7 +9906,7 @@ begin
      begin
       {Convert Handle}
       CurrentHandle.ReaderConvert;
-      
+
       {Close Handle}
       CloseRawHandle(CurrentHandle);
       CurrentHandle:=nil;
@@ -9915,7 +9915,7 @@ begin
      begin
       {Convert Handle}
       CurrentHandle.ReaderConvert;
-      
+
       {Close Handle}
       CloseRawHandle(CurrentHandle);
       CurrentHandle:=nil;
@@ -9924,20 +9924,20 @@ begin
      begin
       {Convert Handle}
       CurrentHandle.ReaderConvert;
-      
+
       {Close Handle}
       CloseRawHandle(CurrentHandle);
       CurrentHandle:=nil;
      end;
-     
+
     {Unlock Handle}
     if CurrentHandle <> nil then CurrentHandle.ReaderUnlock;
    end;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -9953,27 +9953,27 @@ begin
  try
   {Check Supplied Params}
   {if AFileSystem = nil then Exit;} {FileSystem may be nil}
-  
+
   {Create new Handle}
   Result:=TEnumHandle.Create;
   Result.FileSystem:=AFileSystem;
-  
+
   {Lock Handle}
   if ALock then if AState = FILESYS_LOCK_READ then Result.ReaderLock else Result.WriterLock;
-  
+
   {Acquire Lock}
   FEnumHandles.WriterLock;
-  
+
   {Add the Handle}
   FEnumHandles.Add(Result);
-  
+
   {Release Lock}
   FEnumHandles.WriterUnlock;
-  
+
   {Current is set by the caller}
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -9988,10 +9988,10 @@ begin
  if not ReaderLock then Exit;
  try
   if AHandle = nil then Exit;
-  
+
   {Acquire Lock}
   FEnumHandles.WriterLock;
-  
+
   {Remove and Free Handle}
   FEnumHandles.Remove(AHandle);
 
@@ -9999,11 +9999,11 @@ begin
   FEnumHandles.WriterUnlock;
 
   AHandle.Free;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -10014,7 +10014,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FEnumHandles.ReaderLock then Exit;
  try
   {Check Previous}
@@ -10026,7 +10026,7 @@ begin
      begin
       {Lock Handle}
       if ALock then if AState = FILESYS_LOCK_READ then Handle.ReaderLock else Handle.WriterLock;
-      
+
       {Return Result}
       Result:=Handle;
      end;
@@ -10039,17 +10039,17 @@ begin
      begin
       {Lock Handle}
       if ALock then if AState = FILESYS_LOCK_READ then Handle.ReaderLock else Handle.WriterLock;
-      
+
       {Return Result}
       Result:=Handle;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
+   end;
  finally
   FEnumHandles.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -10068,7 +10068,7 @@ begin
  try
   {Check Supplied Params}
   if (ADevice = nil) and (APartition = nil) and (ADrive = nil) and (AVolume = nil) and (AImage = nil) and (ACatalog = nil) then Exit;
-  
+
   {Check each Handle}
   EnumHandle:=GetEnumHandleByNext(nil,True,False,FILESYS_LOCK_READ);
   while EnumHandle <> nil do
@@ -10078,10 +10078,10 @@ begin
      begin
       {Convert Handle}
       EnumHandle.ReaderConvert;
-      
+
       {Update Handle}
       EnumHandle.CurrentDevice:=TDiskDevice(ADevice.Prev); //To Do //Lock //GetByPrev ? //Protect by caller Writerlock on list ?
-      
+
       {Convert Handle}
       EnumHandle.WriterConvert;
      end
@@ -10089,10 +10089,10 @@ begin
      begin
       {Convert Handle}
       EnumHandle.ReaderConvert;
-      
+
       {Update Handle}
       EnumHandle.CurrentPartition:=TDiskPartition(APartition.Prev); //To Do //Lock //GetByPrev ? //Protect by caller Writerlock on list ?
-      
+
       {Convert Handle}
       EnumHandle.WriterConvert;
      end
@@ -10100,10 +10100,10 @@ begin
      begin
       {Convert Handle}
       EnumHandle.ReaderConvert;
-      
+
       {Update Handle}
       EnumHandle.CurrentDrive:=TDiskDrive(ADrive.Prev); //To Do //Lock //GetByPrev ? //Protect by caller Writerlock on list ?
-      
+
       {Convert Handle}
       EnumHandle.WriterConvert;
      end
@@ -10111,10 +10111,10 @@ begin
      begin
       {Convert Handle}
       EnumHandle.ReaderConvert;
-      
+
       {Update Handle}
       EnumHandle.CurrentVolume:=TDiskVolume(AVolume.Prev); //To Do //Lock //GetByPrev ? //Protect by caller Writerlock on list ?
-      
+
       {Convert Handle}
       EnumHandle.WriterConvert;
      end
@@ -10122,10 +10122,10 @@ begin
      begin
       {Convert Handle}
       EnumHandle.ReaderConvert;
-      
+
       {Update Handle}
       EnumHandle.CurrentImage:=TDiskImage(AImage.Prev); //To Do //Lock //GetByPrev ? //Protect by caller Writerlock on list ?
-      
+
       {Convert Handle}
       EnumHandle.WriterConvert;
      end
@@ -10133,21 +10133,21 @@ begin
      begin
       {Convert Handle}
       EnumHandle.ReaderConvert;
-      
+
       {Update Handle}
       EnumHandle.CurrentCatalog:=TDiskCatalog(ACatalog.Prev); //To Do //Lock //GetByPrev ? //Protect by caller Writerlock on list ?
-      
+
       {Convert Handle}
       EnumHandle.WriterConvert;
      end;
-    
+
     EnumHandle:=GetEnumHandleByNext(EnumHandle,True,True,FILESYS_LOCK_READ);
    end;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -10166,20 +10166,20 @@ begin
  try
   {Check Supplied Params}
   if AFileSystem = nil then Exit;
-  
+
   {Check each Handle}
   NextHandle:=GetEnumHandleByNext(nil,True,False,FILESYS_LOCK_READ);
   while NextHandle <> nil do
    begin
     CurrentHandle:=NextHandle;
     NextHandle:=GetEnumHandleByNext(CurrentHandle,True,False,FILESYS_LOCK_READ);
-    
+
     {Close Handle if on FileSystem}
     if CurrentHandle.FileSystem = AFileSystem then
      begin
       {Convert Handle}
       CurrentHandle.ReaderConvert;
-      
+
       {Close Handle}
       CloseEnumHandle(CurrentHandle);
      end
@@ -10187,13 +10187,13 @@ begin
      begin
       {Unlock Handle}
       CurrentHandle.ReaderUnlock;
-     end;     
+     end;
    end;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -10217,20 +10217,20 @@ begin
   if AEntry = nil then Exit;
   if AParent = nil then Exit; {Cannot open Root}
   if (AVolume = nil) and (ADrive = nil) then Exit;
-  
+
   {Check Open Mode}
   if AMode = fmCreate then Exit; {FileCreate must call with OpenReadWrite / ShareExclusive}
   OpenMode:=AMode and fmOpenMask;
   ShareMode:=AMode and fmShareMask;
-  
+
   if not FFileHandles.ReaderLock then Exit;
   try
    {Check for Existing Handles}
-   NextHandle:=TFileHandle(FFileHandles.First); 
+   NextHandle:=TFileHandle(FFileHandles.First);
    while NextHandle <> nil do
     begin
      CurrentHandle:=nil;
-    
+
      if (AVolume <> nil) and (NextHandle.Volume = AVolume) then
       begin
        if NextHandle.HandleEntry = AEntry then
@@ -10245,13 +10245,13 @@ begin
          CurrentHandle:=NextHandle;
         end;
       end;
-      
+
      if CurrentHandle <> nil then
       begin
        {Check for Share Exclusive}
        if ShareMode = fmShareCompat then Exit;   {Compat is same as Exclusive}
        if ShareMode = fmShareExclusive then Exit;
-       
+
        {Check requested Open Mode}
        case OpenMode of
         fmOpenRead:begin
@@ -10274,7 +10274,7 @@ begin
           if CurrentHandle.ShareMode = fmShareDenyWrite then Exit;
          end;
        end;
-       
+
        {Check requested Share Mode}
        case ShareMode of
         fmShareDenyWrite:begin
@@ -10289,13 +10289,13 @@ begin
          end;
        end;
       end;
-    
-     NextHandle:=TFileHandle(NextHandle.Next); 
+
+     NextHandle:=TFileHandle(NextHandle.Next);
     end;
   finally
    FFileHandles.ReaderUnlock;
-  end;   
-  
+  end;
+
   {Create new Handle}
   Result:=TFileHandle.Create;
   Result.Volume:=AVolume;
@@ -10305,21 +10305,21 @@ begin
   Result.ShareMode:=ShareMode;
   Result.HandleEntry:=AEntry;
   Result.ParentEntry:=AParent;
-  
+
   {Lock Handle}
   if ALock then if AState = FILESYS_LOCK_READ then Result.ReaderLock else Result.WriterLock;
-  
+
   {Acquire Lock}
   FFileHandles.WriterLock;
-  
+
   {Add the Handle}
   FFileHandles.Add(Result);
-  
+
   {Release Lock}
   FFileHandles.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -10334,7 +10334,7 @@ begin
  if not ReaderLock then Exit;
  try
   if AHandle = nil then Exit;
-  
+
   {Check Count}
   if not(AAll) and (AHandle.Count > 1) then
    begin
@@ -10359,9 +10359,9 @@ begin
    end;
 
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -10379,11 +10379,11 @@ begin
 
   {Increment Count}
   Inc(AHandle.Count);
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -10394,7 +10394,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FFileHandles.ReaderLock then Exit;
  try
   {Check Previous}
@@ -10406,7 +10406,7 @@ begin
      begin
       {Lock Handle}
       if ALock then if AState = FILESYS_LOCK_READ then Handle.ReaderLock else Handle.WriterLock;
-      
+
       {Return Result}
       Result:=Handle;
      end;
@@ -10419,17 +10419,17 @@ begin
      begin
       {Lock Handle}
       if ALock then if AState = FILESYS_LOCK_READ then Handle.ReaderLock else Handle.WriterLock;
-      
+
       {Return Result}
       Result:=Handle;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
+   end;
  finally
   FFileHandles.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -10448,7 +10448,7 @@ begin
  try
   {Check Supplied Params}
   if AEntry = nil then Exit;
-  
+
   if not FFileHandles.ReaderLock then Exit;
   try
    {Check each Handle}
@@ -10460,17 +10460,17 @@ begin
       begin
        Exit;
       end;
-     
-     FileHandle:=TFileHandle(FileHandle.Next); 
+
+     FileHandle:=TFileHandle(FileHandle.Next);
     end;
   finally
    FFileHandles.ReaderUnlock;
-  end;   
-   
+  end;
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -10490,20 +10490,20 @@ begin
  try
   {Check Supplied Params}
   if (AVolume = nil) and (ADrive = nil) then Exit;
-  
+
   {Check each Handle}
   NextHandle:=GetFileHandleByNext(nil,True,False,FILESYS_LOCK_READ);
   while NextHandle <> nil do
    begin
     CurrentHandle:=NextHandle;
-    NextHandle:=GetFileHandleByNext(CurrentHandle,True,False,FILESYS_LOCK_READ); 
-    
+    NextHandle:=GetFileHandleByNext(CurrentHandle,True,False,FILESYS_LOCK_READ);
+
     {Close Handle if on Volume/Drive}
     if (AVolume <> nil) and (CurrentHandle.Volume = AVolume) then
      begin
       {Convert Handle}
       CurrentHandle.ReaderConvert;
-      
+
       {Close Handle}
       CloseFileHandle(CurrentHandle,True);
       CurrentHandle:=nil;
@@ -10512,20 +10512,20 @@ begin
      begin
       {Convert Handle}
       CurrentHandle.ReaderConvert;
-      
+
       {Close Handle}
       CloseFileHandle(CurrentHandle,True);
       CurrentHandle:=nil;
      end;
-     
+
     {Unlock Handle}
     if CurrentHandle <> nil then CurrentHandle.ReaderUnlock;
    end;
-   
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -10540,19 +10540,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {Check Supplied Params}
   if (AVolume = nil) and (ADrive = nil) then Exit;
-  
+
   {Check each Handle}
-  NextHandle:=GetFileHandleByNext(nil,True,False,FILESYS_LOCK_READ); 
+  NextHandle:=GetFileHandleByNext(nil,True,False,FILESYS_LOCK_READ);
   while NextHandle <> nil do
     begin
     CurrentHandle:=NextHandle;
     NextHandle:=GetFileHandleByNext(CurrentHandle,True,False,FILESYS_LOCK_READ);
-    
+
     {Update or Close Handle if on Volume/Drive}
     if (AVolume <> nil) and (CurrentHandle.Volume = AVolume) then
      begin
@@ -10560,10 +10560,10 @@ begin
        begin
         {Convert Handle}
         CurrentHandle.ReaderConvert;
-        
+
         {Update Handle}
         CurrentHandle.Volume:=nil;
-        
+
         {Convert Handle}
         CurrentHandle.WriterConvert;
        end
@@ -10571,7 +10571,7 @@ begin
        begin
         {Convert Handle}
         CurrentHandle.ReaderConvert;
-        
+
         {Close Handle}
         CloseFileHandle(CurrentHandle,True);
         CurrentHandle:=nil;
@@ -10583,10 +10583,10 @@ begin
        begin
         {Convert Handle}
         CurrentHandle.ReaderConvert;
-        
+
         {Update Handle}
         CurrentHandle.Drive:=nil;
-        
+
         {Convert Handle}
         CurrentHandle.WriterConvert;
        end
@@ -10594,21 +10594,21 @@ begin
        begin
         {Convert Handle}
         CurrentHandle.ReaderConvert;
-        
+
         {Close Handle}
         CloseFileHandle(CurrentHandle,True);
         CurrentHandle:=nil;
        end;
      end;
-     
+
     {Unlock Handle}
     if CurrentHandle <> nil then CurrentHandle.ReaderUnlock;
    end;
-   
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -10627,7 +10627,7 @@ begin
   if TrimRight(AMask) = '' then Exit;
   if (AAttr and faMatchMask) = faNone then Exit;
   if (AVolume = nil) and (ADrive = nil) then Exit;
-  
+
   {Create new Handle}
   Result:=TFindHandle.Create;
   Result.Volume:=AVolume;
@@ -10636,23 +10636,23 @@ begin
   Result.Attr:=AAttr;
   Result.Flags:=AFlags;
   Result.ParentEntry:=AParent;
-  
+
   {Lock Handle}
   if ALock then if AState = FILESYS_LOCK_READ then Result.ReaderLock else Result.WriterLock;
-  
+
   {Acquire Lock}
   FFindHandles.WriterLock;
-  
+
   {Add the Handle}
   FFindHandles.Add(Result);
-  
+
   {Release Lock}
   FFindHandles.WriterUnlock;
-  
+
   {Current is set by the caller}
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -10667,10 +10667,10 @@ begin
  if not ReaderLock then Exit;
  try
   if AHandle = nil then Exit;
-  
+
   {Acquire Lock}
   FFindHandles.WriterLock;
-  
+
   {Remove and Free Handle}
   FFindHandles.Remove(AHandle);
 
@@ -10678,11 +10678,11 @@ begin
   FFindHandles.WriterUnlock;
 
   AHandle.Free;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -10693,7 +10693,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FFindHandles.ReaderLock then Exit;
  try
   {Check Previous}
@@ -10705,7 +10705,7 @@ begin
      begin
       {Lock Handle}
       if ALock then if AState = FILESYS_LOCK_READ then Handle.ReaderLock else Handle.WriterLock;
-      
+
       {Return Result}
       Result:=Handle;
      end;
@@ -10718,17 +10718,17 @@ begin
      begin
       {Lock Handle}
       if ALock then if AState = FILESYS_LOCK_READ then Handle.ReaderLock else Handle.WriterLock;
-      
+
       {Return Result}
       Result:=Handle;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
+   end;
  finally
   FFindHandles.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -10747,7 +10747,7 @@ begin
  try
   {Check Supplied Params}
   if AEntry = nil then Exit;
-  
+
   {Check each Handle}
   FindHandle:=GetFindHandleByNext(nil,True,False,FILESYS_LOCK_READ);
   while FindHandle <> nil do
@@ -10757,14 +10757,14 @@ begin
      begin
       {Convert Handle}
       FindHandle.ReaderConvert;
-      
+
       {Update Handle}
       FindHandle.ParentEntry:=nil;
 
       {Convert Handle}
       FindHandle.WriterConvert;
      end;
-     
+
     {Check Current}
     if FindHandle.CurrentEntry = AEntry then
      begin
@@ -10789,18 +10789,18 @@ begin
         {Update Handle}
         FindHandle.CurrentEntry:=TDiskEntry(AEntry.Prev); //To Do //Lock //Protect by caller Writerlock on list ?
        end;
-       
+
       {Convert Handle}
       FindHandle.WriterConvert;
      end;
-     
+
     FindHandle:=GetFindHandleByNext(FindHandle,True,True,FILESYS_LOCK_READ);
    end;
-   
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -10820,20 +10820,20 @@ begin
  try
   {Check Supplied Params}
   if (AVolume = nil) and (ADrive = nil) then Exit;
-  
+
   {Check each Handle}
   NextHandle:=GetFindHandleByNext(nil,True,False,FILESYS_LOCK_READ);
   while NextHandle <> nil do
    begin
     CurrentHandle:=NextHandle;
     NextHandle:=GetFindHandleByNext(CurrentHandle,True,False,FILESYS_LOCK_READ);
-    
+
     {Close Handle if on Volume/Drive}
     if (AVolume <> nil) and (CurrentHandle.Volume = AVolume) then
      begin
       {Convert Handle}
       CurrentHandle.ReaderConvert;
-      
+
       {Close Handle}
       CloseFindHandle(CurrentHandle);
       CurrentHandle:=nil;
@@ -10842,20 +10842,20 @@ begin
      begin
       {Convert Handle}
       CurrentHandle.ReaderConvert;
-      
+
       {Close Handle}
       CloseFindHandle(CurrentHandle);
       CurrentHandle:=nil;
      end;
-     
+
     {Unlock Handle}
     if CurrentHandle <> nil then CurrentHandle.ReaderUnlock;
    end;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -10875,14 +10875,14 @@ begin
  try
   {Check Supplied Params}
   if (AVolume = nil) and (ADrive = nil) then Exit;
-  
+
   {Check each Handle}
   NextHandle:=GetFindHandleByNext(nil,True,False,FILESYS_LOCK_READ);
   while NextHandle <> nil do
    begin
     CurrentHandle:=NextHandle;
-    NextHandle:=GetFindHandleByNext(CurrentHandle,True,False,FILESYS_LOCK_READ); 
-    
+    NextHandle:=GetFindHandleByNext(CurrentHandle,True,False,FILESYS_LOCK_READ);
+
     {Update or Close Handle if on Volume/Drive}
     if (AVolume <> nil) and (CurrentHandle.Volume = AVolume) then
      begin
@@ -10890,10 +10890,10 @@ begin
        begin
         {Convert Handle}
         CurrentHandle.ReaderConvert;
-      
+
         {Update Handle}
         CurrentHandle.Volume:=nil;
-        
+
         {Convert Handle}
         CurrentHandle.WriterConvert;
        end
@@ -10901,7 +10901,7 @@ begin
        begin
         {Convert Handle}
         CurrentHandle.ReaderConvert;
-      
+
         {Close Handle}
         CloseFindHandle(CurrentHandle);
         CurrentHandle:=nil;
@@ -10913,10 +10913,10 @@ begin
        begin
         {Convert Handle}
         CurrentHandle.ReaderConvert;
-      
+
         {Update Handle}
         CurrentHandle.Drive:=nil;
-        
+
         {Convert Handle}
         CurrentHandle.WriterConvert;
        end
@@ -10924,21 +10924,21 @@ begin
        begin
         {Convert Handle}
         CurrentHandle.ReaderConvert;
-      
+
         {Close Handle}
         CloseFindHandle(CurrentHandle);
         CurrentHandle:=nil;
        end;
      end;
-     
+
     {Unlock Handle}
     if CurrentHandle <> nil then CurrentHandle.ReaderUnlock;
    end;
-   
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -10958,18 +10958,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Device}
   Device:=GetDeviceByName(AName,True,FILESYS_LOCK_READ);
   if Device = nil then Exit;
-  
+
   Result:=Device.LockMedia;
 
   {Unlock Device}
   Device.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -10989,18 +10989,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Device}
   Device:=GetDeviceByName(AName,True,FILESYS_LOCK_READ);
   if Device = nil then Exit;
-  
+
   Result:=Device.UnlockMedia;
 
   {Unlock Device}
   Device.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11020,18 +11020,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Device}
   Device:=GetDeviceByName(AName,True,FILESYS_LOCK_READ);
   if Device = nil then Exit;
-  
+
   Result:=Device.EjectMedia;
 
   {Unlock Device}
   Device.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11051,18 +11051,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Device}
   Device:=GetDeviceByName(AName,True,FILESYS_LOCK_READ);
   if Device = nil then Exit;
-  
+
   Result:=Device.MediaReady;
 
   {Unlock Device}
   Device.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11082,18 +11082,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Device}
   Device:=GetDeviceByName(AName,True,FILESYS_LOCK_READ);
   if Device = nil then Exit;
-  
+
   Result:=Device.MediaChanged;
 
   {Unlock Device}
   Device.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11113,18 +11113,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Device}
   Device:=GetDeviceByName(AName,True,FILESYS_LOCK_READ);
   if Device = nil then Exit;
-  
+
   Result:=Device.MediaLocked;
 
   {Unlock Device}
   Device.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11144,18 +11144,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Device}
   Device:=GetDeviceByName(AName,True,FILESYS_LOCK_WRITE);
   if Device = nil then Exit;
-  
+
   Result:=Device.InsertDevice;
 
   {Unlock Device}
   Device.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11175,18 +11175,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Device}
   Device:=GetDeviceByName(AName,True,FILESYS_LOCK_WRITE);
   if Device = nil then Exit;
-  
+
   Result:=Device.EjectDevice;
 
   {Unlock Device}
   Device.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11206,21 +11206,21 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Check the Mode}
   if AMode = fmCreate then Exit; {Cannot Create a Device}
-  
+
   {Get the Device}
   Device:=GetDeviceByName(AName,True,FILESYS_LOCK_READ);
   if Device = nil then Exit;
-  
+
   Result:=Device.OpenDevice(AMode);
 
   {Unlock Device}
   Device.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11240,14 +11240,14 @@ begin
   {Get the Device}
   Device:=GetDeviceFromRaw(AHandle,True,FILESYS_LOCK_READ);
   if Device = nil then Exit;
-  
+
   Device.CloseDevice(AHandle);
-  
+
   {Unlock Device}
   Device.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11268,18 +11268,18 @@ begin
   {$ENDIF}
 
   if ACount < 1 then Exit;
-  
+
   {Get the Device}
   Device:=GetDeviceFromRaw(AHandle,True,FILESYS_LOCK_READ);
   if Device = nil then Exit;
-  
+
   Result:=Device.ReadDevice(AHandle,ABuffer,ACount);
 
   {Unlock Device}
   Device.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11300,18 +11300,18 @@ begin
   {$ENDIF}
 
   if ACount < 1 then Exit;
-  
+
   {Get the Device}
   Device:=GetDeviceFromRaw(AHandle,True,FILESYS_LOCK_READ);
   if Device = nil then Exit;
-  
+
   Result:=Device.WriteDevice(AHandle,ABuffer,ACount);
 
   {Unlock Device}
   Device.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11323,7 +11323,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -11332,18 +11332,18 @@ begin
   {$ENDIF}
 
   if ACount < 1 then Exit;
- 
+
   {Get the Device}
   Device:=GetDeviceFromRaw(AHandle,True,FILESYS_LOCK_READ);
   if Device = nil then Exit;
- 
+
   Result:=Device.EraseDevice(AHandle,ACount);
 
   {Unlock Device}
   Device.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11367,14 +11367,14 @@ begin
   {Get the Device}
   Device:=GetDeviceFromRaw(AHandle,True,FILESYS_LOCK_READ);
   if Device = nil then Exit;
-  
+
   Result:=Device.SeekDevice(AHandle,AOffset,AOrigin);
 
   {Unlock Device}
   Device.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11395,35 +11395,35 @@ begin
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindFirstDevice');
   {$ENDIF}
-  
+
   {Find First Device}
-  Current:=GetDeviceByNext(nil,True,False,FILESYS_LOCK_READ); 
+  Current:=GetDeviceByNext(nil,True,False,FILESYS_LOCK_READ);
   if Current = nil then Exit;
   try
    {Open Handle}
    Handle:=OpenEnumHandle(nil,True,FILESYS_LOCK_WRITE);
    if Handle = nil then Exit;
-  
+
    {Set the Handle properties}
    Handle.CurrentDevice:=Current;
-  
+
    {Return Device}
    ASearchRec.FindHandle:=Handle.Handle;
    StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
    ASearchRec.MediaType:=Current.MediaType;
    ASearchRec.FloppyType:=Current.FloppyType;
-  
-   Result:=0;  
-   
+
+   Result:=0;
+
    {Unlock Handle}
    Handle.WriterUnlock;
-  finally 
+  finally
    {Unlock Device}
    Current.ReaderUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11442,38 +11442,38 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextDevice');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
-  
+
   {Get the Handle}
   Handle:=GetEnumFromHandle(ASearchRec.FindHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
   try
    {Check Device}
    if not CheckDevice(Handle.CurrentDevice,True,FILESYS_LOCK_READ) then Exit;
-  
+
    {Find Next Device}
-   Current:=GetDeviceByNext(Handle.CurrentDevice,True,True,FILESYS_LOCK_READ); 
+   Current:=GetDeviceByNext(Handle.CurrentDevice,True,True,FILESYS_LOCK_READ);
    if Current = nil then Exit;
-  
+
    {Update Handle}
    Handle.CurrentDevice:=Current;
-  
+
    {Return Device}
    ASearchRec.FindHandle:=Handle.Handle;
    StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
    ASearchRec.MediaType:=Current.MediaType;
    ASearchRec.FloppyType:=Current.FloppyType;
-  
+
    {Unlock Device}
    Current.ReaderUnlock;
-  
+
    Result:=0;
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11490,18 +11490,18 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindDeviceClose');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
-  
+
   {Get the Handle}
   Handle:=GetEnumFromHandle(ASearchRec.FindHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
-  
+
   {Close the Handle} {Do not unlock}
   CloseEnumHandle(Handle);
-  
+
   ASearchRec.FindHandle:=INVALID_HANDLE_VALUE;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11523,25 +11523,25 @@ begin
   {$ENDIF}
 
   if TrimRight(ADevice) = '' then Exit;
-  
+
   {Get the Device}
   Device:=GetDeviceByName(ADevice,True,FILESYS_LOCK_WRITE);
   if Device = nil then Exit;
-  
+
   {Get the Parent}
   Parent:=GetPartitionByName(Device,AParent,True,FILESYS_LOCK_WRITE);
   {if Parent = nil then Exit;} {Parent may be nil}
-  
+
   Result:=Device.CreatePartition(Parent,APartitionId,ACount,AActive);
-  
+
   {Unlock Parent}
   if Parent <> nil then Parent.WriterUnlock;
-  
+
   {Unlock Device}
   Device.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11562,7 +11562,7 @@ begin
   {$ENDIF}
 
   if TrimRight(APath) = '' then Exit;
-  
+
   {Get the Partition}
   Partition:=GetPartitionByPath(APath,True,FILESYS_LOCK_WRITE);
   if Partition = nil then Exit;
@@ -11571,20 +11571,20 @@ begin
    if CheckDevice(Partition.Device,True,FILESYS_LOCK_WRITE) then
     begin
      Device:=Partition.Device;
-  
+
      {Delete Partition}
      Result:=Device.DeletePartition(Partition);
-     
+
      {Unlock Device}
      Device.WriterUnlock;
-    end; 
+    end;
   finally
    {Unlock Partition}
    if not Result then Partition.WriterUnlock;
-  end;  
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11605,7 +11605,7 @@ begin
   {$ENDIF}
 
   if TrimRight(APath) = '' then Exit;
-  
+
   {Get the Partition}
   Partition:=GetPartitionByPath(APath,True,FILESYS_LOCK_WRITE);
   if Partition = nil then Exit;
@@ -11614,20 +11614,20 @@ begin
    if CheckDevice(Partition.Device,True,FILESYS_LOCK_READ) then
     begin
      Device:=Partition.Device;
-  
+
      {Modify Partition}
      Result:=Device.ModifyPartition(Partition,APartitionId);
-     
+
      {Unlock Device}
      Device.ReaderUnlock;
-    end; 
+    end;
   finally
    {Unlock Partition}
    Partition.WriterUnlock;
-  end;  
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11648,7 +11648,7 @@ begin
   {$ENDIF}
 
   if TrimRight(APath) = '' then Exit;
-  
+
   {Get the Partition}
   Partition:=GetPartitionByPath(APath,True,FILESYS_LOCK_WRITE);
   if Partition = nil then Exit;
@@ -11657,20 +11657,20 @@ begin
    if CheckDevice(Partition.Device,True,FILESYS_LOCK_READ) then
     begin
      Device:=Partition.Device;
-  
+
      {Activate Partition}
      Result:=Device.ActivatePartition(Partition,AActive);
-     
+
      {Unlock Device}
      Device.ReaderUnlock;
-    end; 
+    end;
   finally
    {Unlock Partition}
    Partition.WriterUnlock;
-  end;  
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11691,7 +11691,7 @@ begin
   {$ENDIF}
 
   if TrimRight(APath) = '' then Exit;
-  
+
   {Get the Partition}
   Partition:=GetPartitionByPath(APath,True,FILESYS_LOCK_WRITE);
   if Partition = nil then Exit;
@@ -11700,20 +11700,20 @@ begin
    if CheckDevice(Partition.Device,True,FILESYS_LOCK_READ) then
     begin
      Device:=Partition.Device;
-  
+
      {Shrink Partition}
      Result:=Device.ShrinkPartition(Partition,AStart,ASize);
-     
+
      {Unlock Device}
      Device.ReaderUnlock;
-    end; 
+    end;
   finally
    {Unlock Partition}
    Partition.WriterUnlock;
-  end;  
-finally  
+  end;
+finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11734,7 +11734,7 @@ begin
   {$ENDIF}
 
   if TrimRight(APath) = '' then Exit;
-  
+
   {Get the Partition}
   Partition:=GetPartitionByPath(APath,True,FILESYS_LOCK_WRITE);
   if Partition = nil then Exit;
@@ -11743,20 +11743,20 @@ begin
    if CheckDevice(Partition.Device,True,FILESYS_LOCK_READ) then
     begin
      Device:=Partition.Device;
-  
+
      {Expand Partition}
      Result:=Partition.Device.ExpandPartition(Partition,AStart,ASize);
-     
+
      {Unlock Device}
      Device.ReaderUnlock;
-    end; 
+    end;
   finally
    {Unlock Partition}
    Partition.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11776,21 +11776,21 @@ begin
   {$ENDIF}
 
   if TrimRight(APath) = '' then Exit;
-  
+
   {Check the Mode}
   if AMode = fmCreate then Exit; {Cannot Create a Partition}
-  
+
   {Get the Partition}
   Partition:=GetPartitionByPath(APath,True,FILESYS_LOCK_READ);
   if Partition = nil then Exit;
-  
+
   Result:=Partition.OpenPartition(AMode);
-  
+
   {Unlock Partition}
   Partition.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11810,14 +11810,14 @@ begin
   {Get the Partition}
   Partition:=GetPartitionFromRaw(AHandle,True,FILESYS_LOCK_READ);
   if Partition = nil then Exit;
-  
+
   Partition.ClosePartition(AHandle);
-  
+
   {Unlock Partition}
   Partition.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11838,18 +11838,18 @@ begin
   {$ENDIF}
 
   if ACount < 1 then Exit;
-  
+
   {Get the Partition}
   Partition:=GetPartitionFromRaw(AHandle,True,FILESYS_LOCK_READ);
   if Partition = nil then Exit;
-  
+
   Result:=Partition.ReadPartition(AHandle,ABuffer,ACount);
 
   {Unlock Partition}
   Partition.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11870,18 +11870,18 @@ begin
   {$ENDIF}
 
   if ACount < 1 then Exit;
-  
+
   {Get the Partition}
   Partition:=GetPartitionFromRaw(AHandle,True,FILESYS_LOCK_READ);
   if Partition = nil then Exit;
-  
+
   Result:=Partition.WritePartition(AHandle,ABuffer,ACount);
 
   {Unlock Partition}
   Partition.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11905,14 +11905,14 @@ begin
   {Get the Partition}
   Partition:=GetPartitionFromRaw(AHandle,True,FILESYS_LOCK_READ);
   if Partition = nil then Exit;
-  
+
   Result:=Partition.SeekPartition(AHandle,AOffset,AOrigin);
 
   {Unlock Partition}
   Partition.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11935,7 +11935,7 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindFirstPartition');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Device = ' + ADevice);
   {$ENDIF}
-  
+
   {Get the Device}
   Device:=GetDeviceByName(ADevice,True,FILESYS_LOCK_READ);
   if Device = nil then Exit;
@@ -11945,7 +11945,7 @@ begin
    while Current <> nil do
     begin
      if Current.Device = Device then Break;
-    
+
      Current:=GetPartitionByNext(Current,True,True,FILESYS_LOCK_READ);
     end;
    if Current = nil then Exit;
@@ -11953,16 +11953,16 @@ begin
     {Open Handle}
     Handle:=OpenEnumHandle(nil,True,FILESYS_LOCK_WRITE);
     if Handle = nil then Exit;
-  
+
     {Set the Handle properties}
     Handle.CurrentPartition:=Current;
-  
+
     {Return Partition}
     ASearchRec.FindHandle:=Handle.Handle;
     StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
-  
+
     Result:=0;
-    
+
     {Unlock Handle}
     Handle.WriterUnlock;
    finally
@@ -11973,9 +11973,9 @@ begin
    {Unlock Device}
    Device.ReaderUnlock;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11995,58 +11995,58 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextPartition');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
-  
+
   {Get the Handle}
   Handle:=GetEnumFromHandle(ASearchRec.FindHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
   try
    {Check Partition}
    if not CheckPartition(Handle.CurrentPartition,True,FILESYS_LOCK_READ) then Exit;
-  
+
    {Check Device}
    if not CheckDevice(Handle.CurrentPartition.Device,True,FILESYS_LOCK_READ) then
     begin
      {Unlock Partition}
      Handle.CurrentPartition.ReaderUnlock;
      Exit;
-    end; 
-  
+    end;
+
    {Get the Device}
    Device:=Handle.CurrentPartition.Device;
-  
+
    {Find Next Partition}
    Current:=GetPartitionByNext(Handle.CurrentPartition,True,True,FILESYS_LOCK_READ);
    while Current <> nil do
     begin
      if Current.Device = Device then Break;
-    
+
      Current:=GetPartitionByNext(Current,True,True,FILESYS_LOCK_READ);
     end;
-   
+
    {Unlock Device}
    Device.ReaderUnlock;
-  
+
    {Check the Partition}
    if Current = nil then Exit;
-  
+
    {Update Handle}
    Handle.CurrentPartition:=Current;
-  
+
    {Return Partition}
    ASearchRec.FindHandle:=Handle.Handle;
    StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
-  
+
    {Unlock Partition}
    Current.ReaderUnlock;
- 
+
    Result:=0;
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12063,18 +12063,18 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindPartitionClose');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
-  
+
   {Get the Handle}
   Handle:=GetEnumFromHandle(ASearchRec.FindHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
-  
+
   {Close the Handle} {Do not unlock}
   CloseEnumHandle(Handle);
-  
+
   ASearchRec.FindHandle:=INVALID_HANDLE_VALUE;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12096,7 +12096,7 @@ begin
   {$ENDIF}
 
   if TrimRight(AParent) = '' then Exit;
-  
+
   {Get the Parent}
   Device:=GetDeviceByName(AParent,True,FILESYS_LOCK_READ);
   if Device <> nil then
@@ -12104,26 +12104,26 @@ begin
     try
      {Check for Partition}
      if GetPartitionByDevice(Device,False,FILESYS_LOCK_NONE) <> nil then Exit; {Do not lock}
-    
+
      {Check for Volume}
      if GetVolumeByDevice(Device,False,FILESYS_LOCK_NONE) <> nil then Exit; {Do not lock}
-    
+
      {Check for Drive}
      if ADriveNo <> INVALID_DRIVE then if GetDriveByNo(ADriveNo,False,FILESYS_LOCK_NONE) <> nil then Exit; {Do not lock}
-    
+
      {Create the Volume}
      Volume:=Device.CreateVolume;
      if Volume = nil then Exit;
      Volume.VolumeInit;
-    
+
      {Mount the Volume}
      if not Volume.MountVolume(ADriveNo) then Exit;
-    
+
      Result:=True;
     finally
      {Unlock Device}
      Device.ReaderUnlock;
-    end;    
+    end;
    end
   else
    begin
@@ -12133,28 +12133,28 @@ begin
       try
        {Check for Volume}
        if GetVolumeByPartition(Partition,False,FILESYS_LOCK_NONE) <> nil then Exit; {Do not lock}
-      
+
        {Check for Drive}
        if ADriveNo <> INVALID_DRIVE then if GetDriveByNo(ADriveNo,False,FILESYS_LOCK_NONE) <> nil then Exit; {Do not lock}
-      
+
        {Create the Volume}
        Volume:=Partition.CreateVolume;
        if Volume = nil then Exit;
        Volume.VolumeInit;
-      
+
        {Mount the Volume}
        if not Volume.MountVolume(ADriveNo) then Exit;
-      
+
        Result:=True;
       finally
        {Unlock Partition}
        Partition.ReaderUnlock;
-      end;      
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12176,16 +12176,16 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Volume}
   Volume:=GetVolumeByName(AName,True,FILESYS_LOCK_WRITE);
   if Volume = nil then Exit;
-  
+
   {Get the Device}
   if CheckDevice(Volume.Device,True,FILESYS_LOCK_READ) then
    begin
     Device:=Volume.Device;
-    
+
     if Volume.Partition = nil then
      begin
       {Delete the Volume} {Note: The Volume will automatically dismount and destroy any filesystems/drives when destroyed}
@@ -12197,24 +12197,24 @@ begin
       if CheckPartition(Volume.Partition,True,FILESYS_LOCK_READ) then
        begin
         Partition:=Volume.Partition;
-      
+
         {Delete the Volume} {Note: The Volume will automatically dismount and destroy any filesystems/drives when destroyed}
         Result:=Partition.DeleteVolume(Volume);
-      
+
         {Unlock Partition}
         Partition.ReaderUnlock;
        end;
      end;
-     
-    {Unlock Device} 
+
+    {Unlock Device}
     Device.ReaderUnlock;
    end;
-    
+
   {Unlock Volume}
   if not Result then Volume.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12234,18 +12234,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Volume}
   Volume:=GetVolumeByName(AName,True,FILESYS_LOCK_WRITE);
   if Volume = nil then Exit;
-  
+
   Result:=Volume.MountVolume(ADriveNo);
-  
+
   {Unlock Volume}
   Volume.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12265,18 +12265,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Volume}
   Volume:=GetVolumeByName(AName,True,FILESYS_LOCK_WRITE);
   if Volume = nil then Exit;
-  
+
   Result:=Volume.DismountVolume;
-  
+
   {Unlock Volume}
   Volume.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12296,18 +12296,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Volume}
   Volume:=GetVolumeByName(AName,True,FILESYS_LOCK_WRITE);
   if Volume = nil then Exit;
-  
+
   Result:=Volume.FormatVolume(AFloppyType,AFileSysType);
-  
+
   {Unlock Volume}
   Volume.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12327,18 +12327,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Volume}
   Volume:=GetVolumeByName(AName,True,FILESYS_LOCK_WRITE);
   if Volume = nil then Exit;
-  
+
   Result:=Volume.DefragmentVolume;
-  
+
   {Unlock Volume}
   Volume.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12358,18 +12358,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Volume}
   Volume:=GetVolumeByName(AName,True,FILESYS_LOCK_WRITE);
   if Volume = nil then Exit;
-  
+
   Result:=Volume.ConvertVolume(AFileSysType);
-  
+
   {Unlock Volume}
   Volume.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12389,18 +12389,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Volume}
   Volume:=GetVolumeByName(AName,True,FILESYS_LOCK_WRITE);
   if Volume = nil then Exit;
-  
+
   Result:=Volume.RepairVolume;
-  
+
   {Unlock Volume}
   Volume.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12421,7 +12421,7 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Volume}
   Volume:=GetVolumeByName(AName,True,FILESYS_LOCK_WRITE);
   if Volume = nil then Exit;
@@ -12429,18 +12429,18 @@ begin
    {Get the Dest}
    Dest:=GetVolumeByName(ADest,True,FILESYS_LOCK_WRITE);
    if Dest = nil then Exit;
-   
+
    Result:=Volume.CopyVolume(Dest);
-  
+
    {Unlock Dest}
    Dest.WriterUnlock;
   finally
    {Unlock Volume}
    Volume.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12460,18 +12460,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Volume}
   Volume:=GetVolumeByName(AName,True,FILESYS_LOCK_WRITE);
   if Volume = nil then Exit;
-  
+
   Result:=Volume.ShrinkVolume(AStart,ASize);
-  
+
   {Unlock Volume}
   Volume.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12491,18 +12491,18 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Volume}
   Volume:=GetVolumeByName(AName,True,FILESYS_LOCK_WRITE);
   if Volume = nil then Exit;
-  
+
   Result:=Volume.ExpandVolume(AStart,ASize);
-  
+
   {Unlock Volume}
   Volume.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12522,21 +12522,21 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Check the Mode}
   if AMode = fmCreate then Exit; {Cannot Create a Volume}
-  
+
   {Get the Volume}
   Volume:=GetVolumeByName(AName,True,FILESYS_LOCK_READ);
   if Volume = nil then Exit;
-  
+
   Result:=Volume.OpenVolume(AMode);
 
   {Unlock Volume}
   Volume.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12556,14 +12556,14 @@ begin
   {Get the Volume}
   Volume:=GetVolumeFromRaw(AHandle,True,FILESYS_LOCK_READ);
   if Volume = nil then Exit;
-  
+
   Volume.CloseVolume(AHandle);
 
   {Unlock Volume}
   Volume.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12584,18 +12584,18 @@ begin
   {$ENDIF}
 
   if ACount < 1 then Exit;
-  
+
   {Get the Volume}
   Volume:=GetVolumeFromRaw(AHandle,True,FILESYS_LOCK_READ);
   if Volume = nil then Exit;
-  
+
   Result:=Volume.ReadVolume(AHandle,ABuffer,ACount);
 
   {Unlock Volume}
   Volume.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12616,18 +12616,18 @@ begin
   {$ENDIF}
 
   if ACount < 1 then Exit;
- 
+
   {Get the Volume}
   Volume:=GetVolumeFromRaw(AHandle,True,FILESYS_LOCK_READ);
   if Volume = nil then Exit;
-  
+
   Result:=Volume.WriteVolume(AHandle,ABuffer,ACount);
-  
+
   {Unlock Volume}
   Volume.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12651,14 +12651,14 @@ begin
   {Get the Volume}
   Volume:=GetVolumeFromRaw(AHandle,True,FILESYS_LOCK_READ);
   if Volume = nil then Exit;
-  
+
   Result:=Volume.SeekVolume(AHandle,AOffset,AOrigin);
-  
+
   {Unlock Volume}
   Volume.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12679,18 +12679,18 @@ begin
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindFirstVolume');
   {$ENDIF}
-  
+
   {Find First Volume}
-  Current:=GetVolumeByNext(nil,True,False,FILESYS_LOCK_READ); 
+  Current:=GetVolumeByNext(nil,True,False,FILESYS_LOCK_READ);
   if Current = nil then Exit;
   try
    {Open Handle}
    Handle:=OpenEnumHandle(nil,True,FILESYS_LOCK_WRITE);
    if Handle = nil then Exit;
-  
+
    {Set the Handle properties}
    Handle.CurrentVolume:=Current;
-  
+
    {Return Volume}
    ASearchRec.FindHandle:=Handle.Handle;
    StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
@@ -12700,18 +12700,18 @@ begin
    ASearchRec.VolumeSerial:=Current.VolumeSerial;
    ASearchRec.DriveType:=Current.DriveType;
    ASearchRec.FileSysType:=Current.FileSysType;
-  
+
    Result:=0;
-   
+
    {Unlock Handle}
    Handle.WriterUnlock;
-  finally 
+  finally
    {Unlock Volume}
    Current.ReaderUnlock;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12730,21 +12730,21 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextVolume');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
-  
+
   {Get the Handle}
   Handle:=GetEnumFromHandle(ASearchRec.FindHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
   try
    {Check Volume}
    if not CheckVolume(Handle.CurrentVolume,True,FILESYS_LOCK_READ) then Exit;
-  
+
    {Find Next Volume}
    Current:=GetVolumeByNext(Handle.CurrentVolume,True,True,FILESYS_LOCK_READ);
    if Current = nil then Exit;
-  
+
    {Update Handle}
    Handle.CurrentVolume:=Current;
-  
+
    {Return Volume}
    ASearchRec.FindHandle:=Handle.Handle;
    StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
@@ -12754,18 +12754,18 @@ begin
    ASearchRec.VolumeSerial:=Current.VolumeSerial;
    ASearchRec.DriveType:=Current.DriveType;
    ASearchRec.FileSysType:=Current.FileSysType;
-  
+
    {Unlock Volume}
    Current.ReaderUnlock;
-  
+
    Result:=0;
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12782,18 +12782,18 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindVolumeClose');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
-  
+
   {Get the Handle}
   Handle:=GetEnumFromHandle(ASearchRec.FindHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
-  
+
   {Close the Handle} {Do not unlock}
   CloseEnumHandle(Handle);
-  
+
   ASearchRec.FindHandle:=INVALID_HANDLE_VALUE;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12818,10 +12818,10 @@ begin
 
   if TrimRight(AName) = '' then Exit;
   if TrimRight(AParent) = '' then Exit;
-  
+
   {Check for Drive}
   if GetDriveByName(AName,False,FILESYS_LOCK_NONE) <> nil then Exit; {Do not lock}
-  
+
   {Get the Parent}
   Device:=GetDeviceByName(AParent,True,FILESYS_LOCK_READ);
   if Device <> nil then
@@ -12830,10 +12830,10 @@ begin
      {$IFDEF FILESYS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CreateDrive Device = ' + Device.Name);
      {$ENDIF}
-    
+
      {Check for Partition}
      if GetPartitionByDevice(Device,False,FILESYS_LOCK_NONE) <> nil then Exit; {Do not lock}
-    
+
      {Get the Volume}
      Volume:=GetVolumeByDevice(Device,True,FILESYS_LOCK_WRITE);
      if Volume = nil then Exit;
@@ -12841,31 +12841,31 @@ begin
       {$IFDEF FILESYS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CreateDrive Volume = ' + Volume.Name);
       {$ENDIF}
-    
+
       {Check for Drive}
       if GetDriveByVolume(Volume,False,FILESYS_LOCK_NONE) <> nil then Exit; {Do not lock}
-    
+
       {Create the Drive}
       Drive:=Volume.CreateDrive(GetPathDrive(AName));
       if Drive = nil then Exit;
       Drive.DriveInit;
-    
+
       {$IFDEF FILESYS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CreateDrive Drive = ' + Drive.Name);
       {$ENDIF}
-    
+
       {Bind to FileSystem}
       if Volume.FileSystem <> nil then Volume.FileSystem.Drive:=Drive;
-    
+
       Result:=True;
      finally
       {Unlock Volume}
       Volume.WriterUnlock;
-     end;    
+     end;
     finally
      {Unlock Device}
      Device.ReaderUnlock;
-    end;    
+    end;
    end
   else
    begin
@@ -12876,7 +12876,7 @@ begin
        {$IFDEF FILESYS_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CreateDrive Partition = ' + Partition.Path);
        {$ENDIF}
-      
+
        {Get the Volume}
        Volume:=GetVolumeByPartition(Partition,True,FILESYS_LOCK_WRITE);
        if Volume = nil then Exit;
@@ -12884,36 +12884,36 @@ begin
         {$IFDEF FILESYS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CreateDrive Volume = ' + Volume.Name);
         {$ENDIF}
-      
+
         {Check for Drive}
         if GetDriveByVolume(Volume,False,FILESYS_LOCK_NONE) <> nil then Exit; {Do not lock}
-      
+
         {Create the Drive}
         Drive:=Volume.CreateDrive(GetPathDrive(AName));
         if Drive = nil then Exit;
         Drive.DriveInit;
-      
+
         {$IFDEF FILESYS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CreateDrive Drive = ' + Drive.Name);
         {$ENDIF}
-      
+
         {Bind to FileSystem}
         if Volume.FileSystem <> nil then Volume.FileSystem.Drive:=Drive;
-       
+
         Result:=True;
        finally
         {Unlock Volume}
         Volume.WriterUnlock;
-       end;      
+       end;
       finally
        {Unlock Partition}
        Partition.ReaderUnlock;
-      end;      
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12934,37 +12934,37 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Drive}
   Drive:=GetDriveByName(AName,True,FILESYS_LOCK_WRITE);
   if Drive = nil then Exit;
-  
+
   {Get the Volume}
   if CheckVolume(Drive.Volume,True,FILESYS_LOCK_WRITE) then
    begin
     Volume:=Drive.Volume;
-   
+
     {Dismount Find Handles}
     DismountFindHandles(nil,Drive);
-  
+
     {Dismount File Handles}
     DismountFileHandles(nil,Drive);
-  
+
     {Unbind from FileSystem}
     if Drive.FileSystem <> nil then Drive.FileSystem.Drive:=nil;
-  
+
     {Delete the Drive}
     Result:=Volume.DeleteDrive(Drive);
-    
+
     {Unlock Volume}
     Volume.WriterUnlock;
-   end; 
+   end;
 
   {Unlock Drive}
   if not Result then Drive.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -12985,29 +12985,29 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Get the Drive}
   Drive:=GetDriveByName(AName,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
-  
+
   {Get the Volume}
   Volume:=Drive.Volume;
-  
+
   {Unlock Drive}
   Drive.ReaderUnlock;
-  
+
   {Get the Volume}
   if CheckVolume(Volume,True,FILESYS_LOCK_WRITE) then
    begin
     {Format Volume}
     Result:=Volume.FormatVolume(AFloppyType,AFileSysType);
-  
+
     {Unlock Volume}
     Volume.WriterUnlock;
-   end; 
- finally  
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13028,10 +13028,10 @@ begin
   {$ENDIF}
 
   if TrimRight(AName) = '' then Exit;
-  
+
   {Check the Mode}
   if AMode = fmCreate then Exit; {Cannot Create on a Drive}
-  
+
   {Get the Drive}
   Drive:=GetDriveByName(AName,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
@@ -13043,16 +13043,16 @@ begin
 
     {Open Volume}
     Result:=Volume.OpenVolume(AMode);
-     
+
     {Unlock Volume}
     Volume.ReaderUnlock;
-   end; 
+   end;
 
   {Unlock Drive}
   Drive.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13075,12 +13075,12 @@ begin
 
   {Close Volume}
   Volume.CloseVolume(AHandle);
-    
+
   {Unlock Volume}
   Volume.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13101,7 +13101,7 @@ begin
   {$ENDIF}
 
   if ACount < 1 then Exit;
-  
+
   {Check the Volume}
   Volume:=GetVolumeFromRaw(AHandle,True,FILESYS_LOCK_READ);
   if Volume = nil then Exit;
@@ -13111,9 +13111,9 @@ begin
 
   {Unlock Volume}
   Volume.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13134,7 +13134,7 @@ begin
   {$ENDIF}
 
   if ACount < 1 then Exit;
-  
+
   {Check the Volume}
   Volume:=GetVolumeFromRaw(AHandle,True,FILESYS_LOCK_READ);
   if Volume = nil then Exit;
@@ -13144,9 +13144,9 @@ begin
 
   {Unlock Volume}
   Volume.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13176,9 +13176,9 @@ begin
 
   {Unlock Volume}
   Volume.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13199,7 +13199,7 @@ begin
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindFirstDrive');
   {$ENDIF}
-  
+
   {Find First Drive}
   Current:=GetDriveByNext(nil,True,False,FILESYS_LOCK_READ);
   if Current = nil then Exit;
@@ -13207,10 +13207,10 @@ begin
    {Open Handle}
    Handle:=OpenEnumHandle(nil,True,FILESYS_LOCK_WRITE);
    if Handle = nil then Exit;
-  
+
    {Set the Handle properties}
    Handle.CurrentDrive:=Current;
-  
+
    {Return Drive}
    ASearchRec.FindHandle:=Handle.Handle;
    StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
@@ -13220,18 +13220,18 @@ begin
    ASearchRec.VolumeSerial:=Current.VolumeSerial;
    ASearchRec.DriveType:=Current.DriveType;
    ASearchRec.FileSysType:=Current.FileSysType;
-   
+
    Result:=0;
-   
+
    {Unlock Handle}
    Handle.WriterUnlock;
-  finally 
+  finally
    {Unlock Drive}
    Current.ReaderUnlock;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13250,21 +13250,21 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextDrive');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
-  
+
   {Get the Handle}
   Handle:=GetEnumFromHandle(ASearchRec.FindHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
   try
    {Check Drive}
    if not CheckDrive(Handle.CurrentDrive,True,FILESYS_LOCK_READ) then Exit;
-  
+
    {Find Next Drive}
    Current:=GetDriveByNext(Handle.CurrentDrive,True,True,FILESYS_LOCK_READ);
    if Current = nil then Exit;
-  
+
    {Update Handle}
    Handle.CurrentDrive:=Current;
-  
+
    {Return Drive}
    ASearchRec.FindHandle:=Handle.Handle;
    StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
@@ -13274,18 +13274,18 @@ begin
    ASearchRec.VolumeSerial:=Current.VolumeSerial;
    ASearchRec.DriveType:=Current.DriveType;
    ASearchRec.FileSysType:=Current.FileSysType;
-  
+
    {Unlock Drive}
    Current.ReaderUnlock;
-  
+
    Result:=0;
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13302,18 +13302,18 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindDriveClose');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
-  
+
   {Get the Handle}
   Handle:=GetEnumFromHandle(ASearchRec.FindHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
-  
+
   {Close the Handle} {Do not unlock}
   CloseEnumHandle(Handle);
-  
+
   ASearchRec.FindHandle:=INVALID_HANDLE_VALUE;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13333,18 +13333,18 @@ begin
   {$ENDIF}
 
   if AImageNo = 0 then Exit;
-  
+
   {Get the Image}
   Image:=GetImageByNo(AImageNo,True,FILESYS_LOCK_WRITE);
   if Image = nil then Exit;
-  
+
   Result:=Image.MountImage;
-  
+
   {Unlock Image}
   Image.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13364,18 +13364,18 @@ begin
   {$ENDIF}
 
   if AImageNo = 0 then Exit;
-  
+
   {Get the Image}
   Image:=GetImageByNo(AImageNo,True,FILESYS_LOCK_WRITE);
   if Image = nil then Exit;
-  
+
   Result:=Image.DismountImage;
-  
+
   {Unlock Image}
   Image.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13395,18 +13395,18 @@ begin
   {$ENDIF}
 
   if AImageNo = 0 then Exit;
-  
+
   {Get the Image}
   Image:=GetImageByNo(AImageNo,True,FILESYS_LOCK_WRITE);
   if Image = nil then Exit;
-  
+
   Result:=Image.InsertImage;
 
   {Unlock Image}
   Image.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13426,18 +13426,18 @@ begin
   {$ENDIF}
 
   if AImageNo = 0 then Exit;
-  
+
   {Get the Image}
   Image:=GetImageByNo(AImageNo,True,FILESYS_LOCK_WRITE);
   if Image = nil then Exit;
-  
+
   Result:=Image.EjectImage;
 
   {Unlock Image}
   Image.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13457,18 +13457,18 @@ begin
   {$ENDIF}
 
   if AImageNo = 0 then Exit;
-  
+
   {Get the Image}
   Image:=GetImageByNo(AImageNo,True,FILESYS_LOCK_WRITE);
   if Image = nil then Exit;
-  
+
   Result:=Image.ConvertImage(AImageType);
 
   {Unlock Image}
   Image.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13489,7 +13489,7 @@ begin
   {$ENDIF}
 
   if AImageNo = 0 then Exit;
-  
+
   {Get the Image}
   Image:=GetImageByNo(AImageNo,True,FILESYS_LOCK_WRITE);
   if Image = nil then Exit;
@@ -13497,18 +13497,18 @@ begin
    {Get the Dest}
    Dest:=GetImageByNo(ADestNo,True,FILESYS_LOCK_WRITE);
    if Dest = nil then Exit;
-   
-   Result:=Image.CopyImage(Dest); 
-   
+
+   Result:=Image.CopyImage(Dest);
+
    {Unlock Dest}
    Dest.WriterUnlock;
   finally
    {Unlock Image}
    Image.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13528,18 +13528,18 @@ begin
   {$ENDIF}
 
   if AImageNo = 0 then Exit;
-  
+
   {Get the Image}
   Image:=GetImageByNo(AImageNo,True,FILESYS_LOCK_WRITE);
   if Image = nil then Exit;
-  
+
   Result:=Image.ShrinkImage(ASize);
-  
+
   {Unlock Image}
   Image.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13559,18 +13559,18 @@ begin
   {$ENDIF}
 
   if AImageNo = 0 then Exit;
-  
+
   {Get the Image}
   Image:=GetImageByNo(AImageNo,True,FILESYS_LOCK_WRITE);
   if Image = nil then Exit;
-  
+
   Result:=Image.ExpandImage(ASize);
-  
+
   {Unlock Image}
   Image.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13582,7 +13582,7 @@ var
 begin
  {}
  Result:=0; {Return is an ImageNo}
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -13604,22 +13604,22 @@ begin
         begin
          {Create Image}
          Result:=Recognizer.Imager.CreateImage(Image,AName,AImageType,AMediaType,AFloppyType,AAttributes,ASectorSize,ASectorCount,ACylinders,AHeads,ASectors,APartitionId);
-        
+
          {Unlock Recognizer}
          Recognizer.ReaderUnlock;
          Exit;
         end;
       end;
-      
+
      Recognizer:=GetRecognizerByNext(Recognizer,True,True,FILESYS_LOCK_READ);
     end;
   finally
    {Unlock Image}
    if Image <> nil then Image.WriterUnlock;
-  end;  
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13631,7 +13631,7 @@ var
 begin
  {}
  Result:=0; {Return is an ImageNo}
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -13644,7 +13644,7 @@ begin
   {if Image = nil then Exit;} {Image may be nil}
   try
    {Get the Recognizer}
-   Recognizer:=GetRecognizerByNext(nil,True,False,FILESYS_LOCK_READ); 
+   Recognizer:=GetRecognizerByNext(nil,True,False,FILESYS_LOCK_READ);
    while Recognizer <> nil do
     begin
      if Recognizer.Imager <> nil then
@@ -13653,22 +13653,22 @@ begin
         begin
          {Open Image}
          Result:=Recognizer.Imager.OpenImage(Image,AName,AImageType,AMediaType,AFloppyType,AAttributes,ASectorSize,ASectorCount,ACylinders,AHeads,ASectors,APartitionId);
-         
+
          {Unlock Recognizer}
          Recognizer.ReaderUnlock;
          Exit;
         end;
       end;
-     
+
      Recognizer:=GetRecognizerByNext(Recognizer,True,True,FILESYS_LOCK_READ);
     end;
   finally
    {Unlock Image}
    if Image <> nil then Image.WriterUnlock;
-  end;  
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13689,7 +13689,7 @@ begin
   {$ENDIF}
 
   if AImageNo = 0 then Exit;
- 
+
   {Get the Image}
   Image:=GetImageByNo(AImageNo,True,FILESYS_LOCK_WRITE);
   if Image = nil then Exit;
@@ -13699,27 +13699,27 @@ begin
    if Recognizer = nil then Exit;
    try
     if Recognizer.Imager = nil then Exit;
-  
+
     Recognizer.Imager.CloseImage(Image);
- 
+
     {Unlock Image}
     {Image.WriterUnlock;} {Can destroy Synchronizer while holding lock}
- 
+
     {Destroy the Image}
     Image.Free;
-  
+
     Result:=True;
    finally
     {Unlock Recognizer}
     Recognizer.ReaderUnlock;
-   end;   
+   end;
   finally
    {Unlock Image}
    if not Result then Image.WriterUnlock;
-  end;  
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13740,7 +13740,7 @@ begin
   {$ENDIF}
 
   if AImageNo = 0 then Exit;
-  
+
   {Get the Image}
   Image:=GetImageByNo(AImageNo,True,FILESYS_LOCK_WRITE);
   if Image = nil then Exit;
@@ -13750,19 +13750,19 @@ begin
    if Recognizer = nil then Exit;
    try
     if Recognizer.Imager = nil then Exit;
-  
+
     Result:=Recognizer.Imager.CreateSnapshot(Image);
    finally
     {Unlock Recognizer}
     Recognizer.ReaderUnlock;
-   end;   
+   end;
   finally
    {Unlock Image}
    Image.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13783,7 +13783,7 @@ begin
   {$ENDIF}
 
   if AImageNo = 0 then Exit;
-  
+
   {Get the Image}
   Image:=GetImageByNo(AImageNo,True,FILESYS_LOCK_WRITE);
   if Image = nil then Exit;
@@ -13793,19 +13793,19 @@ begin
    if Recognizer = nil then Exit;
    try
     if Recognizer.Imager = nil then Exit;
-  
+
     Result:=Recognizer.Imager.DeleteSnapshot(Image);
    finally
     {Unlock Recognizer}
     Recognizer.ReaderUnlock;
-   end;   
+   end;
   finally
    {Unlock Image}
    Image.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13826,7 +13826,7 @@ begin
   {$ENDIF}
 
   if AImageNo = 0 then Exit;
-  
+
   {Get the Image}
   Image:=GetImageByNo(AImageNo,True,FILESYS_LOCK_WRITE);
   if Image = nil then Exit;
@@ -13836,19 +13836,19 @@ begin
    if Recognizer = nil then Exit;
    try
     if Recognizer.Imager = nil then Exit;
-  
+
     Result:=Recognizer.Imager.MergeSnapshot(Image);
    finally
     {Unlock Recognizer}
     Recognizer.ReaderUnlock;
-   end;   
+   end;
   finally
    {Unlock Image}
    Image.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13869,18 +13869,18 @@ begin
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindFirstImage');
   {$ENDIF}
-  
+
   {Find First Image}
-  Current:=GetImageByNext(nil,True,False,FILESYS_LOCK_READ); 
+  Current:=GetImageByNext(nil,True,False,FILESYS_LOCK_READ);
   if Current = nil then Exit;
   try
    {Open Handle}
    Handle:=OpenEnumHandle(nil,True,FILESYS_LOCK_WRITE);
    if Handle = nil then Exit;
-  
+
    {Set the Handle properties}
    Handle.CurrentImage:=Current;
-  
+
    {Return Image}
    ASearchRec.FindHandle:=Handle.Handle;
    StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
@@ -13895,18 +13895,18 @@ begin
    ASearchRec.Heads:=Current.Heads;
    ASearchRec.Sectors:=Current.Sectors;
    ASearchRec.PartitionId:=Current.PartitionId;
- 
+
    Result:=0;
-   
+
    {Unlock Handle}
    Handle.WriterUnlock;
-  finally 
+  finally
    {Unlock Image}
    Current.ReaderUnlock;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13925,21 +13925,21 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextImage');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
-  
+
   {Get the Handle}
   Handle:=GetEnumFromHandle(ASearchRec.FindHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
   try
    {Check Image}
    if not CheckImage(Handle.CurrentImage,True,FILESYS_LOCK_READ) then Exit;
-   
+
    {Find Next Image}
    Current:=GetImageByNext(Handle.CurrentImage,True,True,FILESYS_LOCK_READ);
    if Current = nil then Exit;
-  
+
    {Update Handle}
    Handle.CurrentImage:=Current;
-  
+
    {Return Image}
    ASearchRec.FindHandle:=Handle.Handle;
    StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
@@ -13954,18 +13954,18 @@ begin
    ASearchRec.Heads:=Current.Heads;
    ASearchRec.Sectors:=Current.Sectors;
    ASearchRec.PartitionId:=Current.PartitionId;
-  
+
    {Unlock Image}
    Current.ReaderUnlock;
-  
+
    Result:=0;
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -13982,18 +13982,18 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindImageClose');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
- 
+
   {Get the Handle}
   Handle:=GetEnumFromHandle(ASearchRec.FindHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
-  
+
   {Close the Handle} {Do not unlock}
   CloseEnumHandle(Handle);
-  
+
   ASearchRec.FindHandle:=INVALID_HANDLE_VALUE;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14012,17 +14012,17 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Path = ' + APath);
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Name = ' + AName);
   {$ENDIF}
-  
+
   FileSystem:=GetFileSystemFromPath(APath,True,FILESYS_LOCK_READ);
   if FileSystem = nil then Exit;
-  
+
   Result:=FileSystem.CreateCatalog(AName,AMediaType,AFloppyType,AAttributes,ASectorSize,ASectorCount);
-  
+
   {Unlock FileSystem}
   FileSystem.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14033,27 +14033,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if ACatalogNo = 0 then Exit;
-  
+
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.DeleteCatalog');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Path = ' + APath);
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                CatalogNo = ' + IntToStr(ACatalogNo));
   {$ENDIF}
-  
+
   FileSystem:=GetFileSystemFromPath(APath,True,FILESYS_LOCK_READ);
   if FileSystem = nil then Exit;
-  
+
   Result:=FileSystem.DeleteCatalog(ACatalogNo);
 
   {Unlock FileSystem}
   FileSystem.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14071,17 +14071,17 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindFirstCatalog');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Path = ' + APath);
   {$ENDIF}
-  
+
   FileSystem:=GetFileSystemFromPath(APath,True,FILESYS_LOCK_READ);
   if FileSystem = nil then Exit;
-  
+
   Result:=FileSystem.FindFirstCatalog(ASearchRec);
 
   {Unlock FileSystem}
   FileSystem.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14099,18 +14099,18 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextCatalog');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
-  
-  {Get the FileSystem}  
-  FileSystem:=GetFileSystemFromEnum(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+
+  {Get the FileSystem}
+  FileSystem:=GetFileSystemFromEnum(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
   if FileSystem = nil then Exit;
-  
+
   Result:=FileSystem.FindNextCatalog(ASearchRec);
-  
+
   {Unlock FileSystem}
   FileSystem.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14126,37 +14126,37 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindCatalogClose');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
-  
+
   {Get the FileSystem}
-  FileSystem:=GetFileSystemFromEnum(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+  FileSystem:=GetFileSystemFromEnum(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
   if FileSystem = nil then Exit;
-  
+
   FileSystem.FindCatalogClose(ASearchRec);
- 
+
   {Unlock FileSystem}
   FileSystem.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TFileSysDriver.CheckTimer:Boolean; 
+function TFileSysDriver.CheckTimer:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {Check Timer}
   if FEntryTimer = nil then Exit;
- 
+
   {Check Timer}
   Result:=FEntryTimer.CheckTimer;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14165,17 +14165,17 @@ function TFileSysDriver.ProcessTimer:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {Check Timer}
   if FEntryTimer = nil then Exit;
- 
+
   {Process Timer}
   Result:=FEntryTimer.ProcessTimer;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14184,42 +14184,42 @@ function TFileSysDriver.ScheduleEntry(AEntry:TDiskEntry;ATimeout:LongWord):Boole
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {Check Timer}
   if FEntryTimer = nil then Exit;
-  
+
   {Check Entry}
   {if AEntry = nil then Exit;} {Do not check}
-  
+
   {Schedule Entry}
   Result:=FEntryTimer.ScheduleEntry(AEntry,ATimeout);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TFileSysDriver.UnscheduleEntry(AEntry:TDiskEntry):Boolean; 
+function TFileSysDriver.UnscheduleEntry(AEntry:TDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {Check Timer}
   if FEntryTimer = nil then Exit;
-  
+
   {Check Entry}
   {if AEntry = nil then Exit;} {Do not check}
-  
+
   {Unschedule Entry}
   Result:=FEntryTimer.UnscheduleEntry(AEntry);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14246,15 +14246,15 @@ begin
     Result:=Ultibo.GetPathDrive(APath);
    end
   else
-   begin  
+   begin
     Result:=Drive.DriveNo;
-    
+
     {Unlock Drive}
     Drive.ReaderUnlock;
-   end; 
- finally  
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14266,7 +14266,7 @@ var
 begin
  {}
  Result:=dtINVALID;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14276,17 +14276,17 @@ begin
 
   if ADrive > NON_DRIVE then Exit;
   if ADrive = DEFAULT_DRIVE then ADrive:=GetCurrentDrive;
-  
+
   Drive:=GetDriveByNo(ADrive,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
- 
+
   Result:=Drive.DriveType;
-  
+
   {Unlock Drive}
   Drive.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14298,7 +14298,7 @@ var
 begin
  {}
  FillChar(Result,SizeOf(TDriveData),0);
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14308,10 +14308,10 @@ begin
 
   if ADrive > NON_DRIVE then Exit;
   if ADrive = DEFAULT_DRIVE then ADrive:=GetCurrentDrive;
-  
+
   Drive:=GetDriveByNo(ADrive,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
- 
+
   Result.Drive:=Drive.DriveNo;
   Result.DriveType:=Drive.DriveType;
   Result.FileSysType:=Drive.FileSysType;
@@ -14321,12 +14321,12 @@ begin
   Result.SystemName:=Drive.SystemName;
   Result.VolumeName:=Drive.VolumeName;
   Result.VolumeSerial:=Drive.VolumeSerial;
-  
+
   {Unlock Drive}
   Drive.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14338,7 +14338,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14348,17 +14348,17 @@ begin
 
   if ADrive > NON_DRIVE then Exit;
   if ADrive = DEFAULT_DRIVE then ADrive:=GetCurrentDrive;
-  
+
   Drive:=GetDriveByNo(ADrive,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
- 
+
   Result:=Drive.Attributes;
 
   {Unlock Drive}
   Drive.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14370,7 +14370,7 @@ var
 begin
  {}
  Result:='';
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14380,20 +14380,20 @@ begin
 
   if ADrive > MAX_DRIVE then Exit;
   if ADrive = DEFAULT_DRIVE then ADrive:=GetCurrentDrive;
-  
+
   Drive:=GetDriveByNo(ADrive,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
-  try 
+  try
    if Drive.FileSystem = nil then Exit;
- 
+
    Result:=Drive.FileSystem.GetDriveLabel;
   finally
    {Unlock Drive}
    Drive.ReaderUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14405,7 +14405,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14416,20 +14416,20 @@ begin
 
   if ADrive > MAX_DRIVE then Exit;
   if ADrive = DEFAULT_DRIVE then ADrive:=GetCurrentDrive;
-  
+
   Drive:=GetDriveByNo(ADrive,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
   try
    if Drive.FileSystem = nil then Exit;
- 
+
    Result:=Drive.FileSystem.SetDriveLabel(ALabel);
   finally
    {Unlock Drive}
    Drive.ReaderUnlock;
-  end;  
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14441,7 +14441,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14451,20 +14451,20 @@ begin
 
   if ADrive > MAX_DRIVE then Exit;
   if ADrive = DEFAULT_DRIVE then ADrive:=GetCurrentDrive;
-  
+
   Drive:=GetDriveByNo(ADrive,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
   try
    if Drive.FileSystem = nil then Exit;
- 
+
    Result:=Drive.FileSystem.GetDriveSerial;
   finally
    {Unlock Drive}
    Drive.ReaderUnlock;
-  end;  
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14476,7 +14476,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14487,20 +14487,20 @@ begin
 
   if ADrive > MAX_DRIVE then Exit;
   if ADrive = DEFAULT_DRIVE then ADrive:=GetCurrentDrive;
-  
+
   Drive:=GetDriveByNo(ADrive,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
   try
    if Drive.FileSystem = nil then Exit;
- 
+
    Result:=Drive.FileSystem.SetDriveSerial(ASerial);
   finally
    {Unlock Drive}
    Drive.ReaderUnlock;
-  end;  
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14512,16 +14512,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.IsDriveValid');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Drive = ' + IntToStr(ADrive));
   {$ENDIF}
- 
+
   if ADrive > NON_DRIVE then Exit;
- 
+
   if ADrive = DEFAULT_DRIVE then
    begin
     Drive:=GetDriveByNo(GetCurrentDrive,True,FILESYS_LOCK_READ);
@@ -14532,17 +14532,17 @@ begin
     Drive:=GetDriveByNo(ADrive,True,FILESYS_LOCK_READ);
     if Drive = nil then Exit;
    end;
-  
+
   if (Drive.DriveType <> dtUNKNOWN) and (Drive.DriveType <> dtINVALID) then
    begin
     Result:=True;
    end;
-   
+
   {Unlock Drive}
   Drive.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14554,7 +14554,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14568,9 +14568,9 @@ begin
       Result:=(Result or DRIVE_MASKS[Count]);
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14583,7 +14583,7 @@ var
 begin
  {}
  Result:=TStringList.Create;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14598,9 +14598,9 @@ begin
       Result.Add(DRIVE_NAMES[Count]);
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14613,7 +14613,7 @@ var
 begin
  {}
  Result:='';
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14629,13 +14629,13 @@ begin
        begin
         Result:=Result + ',';
        end;
-       
+
       Result:=Result + DRIVE_NAMES[Count];
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14647,7 +14647,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14657,20 +14657,20 @@ begin
 
   if ADrive > MAX_DRIVE then Exit;
   if ADrive = DEFAULT_DRIVE then ADrive:=GetCurrentDrive;
-  
+
   Drive:=GetDriveByNo(ADrive,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
   try
    if Drive.FileSystem = nil then Exit;
-   
+
    Result:=Drive.FileSystem.GetDriveFreeSpace;
   finally
    {Unlock Drive}
    Drive.ReaderUnlock;
-  end;  
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14682,7 +14682,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14692,20 +14692,20 @@ begin
 
   if ADrive > MAX_DRIVE then Exit;
   if ADrive = DEFAULT_DRIVE then ADrive:=GetCurrentDrive;
-  
+
   Drive:=GetDriveByNo(ADrive,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
   try
    if Drive.FileSystem = nil then Exit;
- 
+
    Result:=Drive.FileSystem.GetDriveFreeSpaceEx;
   finally
    {Unlock Drive}
    Drive.ReaderUnlock;
-  end;  
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14717,7 +14717,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14727,20 +14727,20 @@ begin
 
   if ADrive > MAX_DRIVE then Exit;
   if ADrive = DEFAULT_DRIVE then ADrive:=GetCurrentDrive;
-  
+
   Drive:=GetDriveByNo(ADrive,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
   try
    if Drive.FileSystem = nil then Exit;
- 
+
    Result:=Drive.FileSystem.GetDriveTotalSpace;
   finally
    {Unlock Drive}
    Drive.ReaderUnlock;
-  end;  
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14752,7 +14752,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14762,20 +14762,20 @@ begin
 
   if ADrive > MAX_DRIVE then Exit;
   if ADrive = DEFAULT_DRIVE then ADrive:=GetCurrentDrive;
-  
+
   Drive:=GetDriveByNo(ADrive,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
   try
    if Drive.FileSystem = nil then Exit;
- 
+
    Result:=Drive.FileSystem.GetDriveTotalSpaceEx;
   finally
    {Unlock Drive}
    Drive.ReaderUnlock;
-  end;  
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14787,7 +14787,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14795,17 +14795,17 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Path = ' + APath);
   {$ENDIF}
 
-  Volume:=GetVolumeFromPath(APath,True,FILESYS_LOCK_READ);  
+  Volume:=GetVolumeFromPath(APath,True,FILESYS_LOCK_READ);
   if Volume <> nil then
    begin
     try
      if Volume.FileSystem = nil then Exit;
-     
+
      Result:=Volume.FileSystem.GetDriveInformation(AClusterSize,ATotalClusterCount,AFreeClusterCount);
     finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
@@ -14813,16 +14813,16 @@ begin
     if Drive = nil then Exit;
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Result:=Drive.FileSystem.GetDriveInformation(AClusterSize,ATotalClusterCount,AFreeClusterCount);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14834,7 +14834,7 @@ var
 begin
  {}
  Result:=INVALID_DRIVE;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14853,12 +14853,12 @@ begin
       Drive:=GetDriveByNext(nil,True,False,FILESYS_LOCK_READ);
       if Drive = nil then Exit;
      end;
-    
+
     {Set Current}
     SetCurrent(Drive);
    end
   else
-   begin  
+   begin
     if not CheckDrive(Drive,True,FILESYS_LOCK_READ) then
      begin
       {Get Default}
@@ -14869,23 +14869,23 @@ begin
         Drive:=GetDriveByNext(nil,True,False,FILESYS_LOCK_READ);
         if Drive = nil then Exit;
        end;
-      
+
       {Set Current}
       SetCurrent(Drive);
      end;
-   end; 
- 
+   end;
+
   Result:=Drive.DriveNo;
-  
+
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetCurrentDrive Result = ' + IntToStr(Result));
   {$ENDIF}
 
   {Unlock Drive}
   Drive.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14898,7 +14898,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14909,17 +14909,17 @@ begin
   DriveNo:=GetPathDrive(ADrive);
   if DriveNo < MIN_DRIVE then Exit;
   if DriveNo > MAX_DRIVE then Exit;
- 
+
   Drive:=GetDriveByNo(DriveNo,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
-  
+
   Result:=SetCurrent(Drive);
-  
+
   {Unlock Drive}
   Drive.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14931,7 +14931,7 @@ var
 begin
  {}
  Result:='';
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14939,11 +14939,11 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Path = ' + APath);
   {$ENDIF}
 
-  Volume:=GetVolumeFromPath(APath,True,FILESYS_LOCK_READ);  
+  Volume:=GetVolumeFromPath(APath,True,FILESYS_LOCK_READ);
   if Volume <> nil then
    begin
     Result:=Volume.Name;
-    
+
     {Unlock Volume}
     Volume.ReaderUnlock;
    end
@@ -14951,15 +14951,15 @@ begin
    begin
     Drive:=GetDriveFromPath(APath,True,FILESYS_LOCK_READ);
     if Drive = nil then Exit;
-   
+
     Result:=Drive.Name;
-    
+
     {Unlock Drive}
     Drive.ReaderUnlock;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -14971,7 +14971,7 @@ var
 begin
  {}
  Result:=dtINVALID;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -14983,7 +14983,7 @@ begin
   if Volume <> nil then
    begin
     Result:=Volume.DriveType;
-    
+
     {Unlock Volume}
     Volume.ReaderUnlock;
    end
@@ -14991,15 +14991,15 @@ begin
    begin
     Drive:=GetDriveByName(AVolume,True,FILESYS_LOCK_READ);
     if Drive = nil then Exit;
-   
+
     Result:=Drive.DriveType;
-    
+
     {Unlock Drive}
     Drive.ReaderUnlock;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15011,7 +15011,7 @@ var
 begin
  {}
  FillChar(Result,SizeOf(TDriveData),0);
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -15031,7 +15031,7 @@ begin
     Result.SystemName:=Volume.SystemName;
     Result.VolumeName:=Volume.VolumeName;
     Result.VolumeSerial:=Volume.VolumeSerial;
-    
+
     {Unlock Volume}
     Volume.ReaderUnlock;
    end
@@ -15039,7 +15039,7 @@ begin
    begin
     Drive:=GetDriveByName(AVolume,True,FILESYS_LOCK_READ);
     if Drive = nil then Exit;
-   
+
     Result.Drive:=Drive.DriveNo;
     Result.DriveType:=Drive.DriveType;
     Result.FileSysType:=Drive.FileSysType;
@@ -15049,13 +15049,13 @@ begin
     Result.SystemName:=Drive.SystemName;
     Result.VolumeName:=Drive.VolumeName;
     Result.VolumeSerial:=Drive.VolumeSerial;
-    
+
     {Unlock Drive}
     Drive.ReaderUnlock;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15067,7 +15067,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -15079,7 +15079,7 @@ begin
   if Volume <> nil then
    begin
     Result:=Volume.Attributes;
-    
+
     {Unlock Volume}
     Volume.ReaderUnlock;
    end
@@ -15087,15 +15087,15 @@ begin
    begin
     Drive:=GetDriveByName(AVolume,True,FILESYS_LOCK_READ);
     if Drive = nil then Exit;
-   
+
     Result:=Drive.Attributes;
 
     {Unlock Drive}
     Drive.ReaderUnlock;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15107,7 +15107,7 @@ var
 begin
  {}
  Result:='';
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -15120,12 +15120,12 @@ begin
    begin
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.GetDriveLabel;
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
@@ -15133,16 +15133,16 @@ begin
     if Drive = nil then Exit;
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.GetDriveLabel;
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end;    
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15154,22 +15154,22 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   //Continuing Debug
-  
+
   Volume:=GetVolumeByName(AVolume,True,FILESYS_LOCK_READ);
   if Volume <> nil then
    begin
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.SetDriveLabel(ALabel);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
@@ -15177,16 +15177,16 @@ begin
     if Drive = nil then Exit;
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.SetDriveLabel(ALabel);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end;    
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15198,7 +15198,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   Volume:=GetVolumeByName(AVolume,True,FILESYS_LOCK_READ);
@@ -15206,12 +15206,12 @@ begin
    begin
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.GetDriveSerial;
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
@@ -15219,16 +15219,16 @@ begin
     if Drive = nil then Exit;
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.GetDriveSerial;
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end;    
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15240,7 +15240,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   Volume:=GetVolumeByName(AVolume,True,FILESYS_LOCK_READ);
@@ -15248,12 +15248,12 @@ begin
    begin
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.SetDriveSerial(ASerial);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
@@ -15261,16 +15261,16 @@ begin
     if Drive = nil then Exit;
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.SetDriveSerial(ASerial);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end;    
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15282,7 +15282,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   Volume:=GetVolumeByName(AVolume,True,FILESYS_LOCK_READ);
@@ -15292,7 +15292,7 @@ begin
      begin
       Result:=True;
      end;
-     
+
     {Unlock Volume}
     Volume.ReaderUnlock;
    end
@@ -15300,18 +15300,18 @@ begin
    begin
     Drive:=GetDriveByName(AVolume,True,FILESYS_LOCK_READ);
     if Drive = nil then Exit;
-   
+
     if (Drive.DriveType <> dtUNKNOWN) and (Drive.DriveType <> dtINVALID) then
      begin
       Result:=True;
      end;
-     
+
     {Unlock Drive}
     Drive.ReaderUnlock;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15322,22 +15322,22 @@ var
 begin
  {}
  Result:=TStringList.Create;
- 
+
  if not ReaderLock then Exit;
  try
-  Volume:=GetVolumeByNext(nil,True,False,FILESYS_LOCK_READ); 
+  Volume:=GetVolumeByNext(nil,True,False,FILESYS_LOCK_READ);
   while Volume <> nil do
    begin
     if (Volume.DriveType <> dtUNKNOWN) and (Volume.DriveType <> dtINVALID) then
      begin
       Result.Add(Volume.Name);
      end;
-     
-    Volume:=GetVolumeByNext(Volume,True,True,FILESYS_LOCK_READ); 
+
+    Volume:=GetVolumeByNext(Volume,True,True,FILESYS_LOCK_READ);
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15349,7 +15349,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   Volume:=GetVolumeByName(AVolume,True,FILESYS_LOCK_READ);
@@ -15357,12 +15357,12 @@ begin
    begin
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.GetDriveFreeSpace;
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
@@ -15370,16 +15370,16 @@ begin
     if Drive = nil then Exit;
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.GetDriveFreeSpace;
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end;    
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15391,7 +15391,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   Volume:=GetVolumeByName(AVolume,True,FILESYS_LOCK_READ);
@@ -15399,12 +15399,12 @@ begin
    begin
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.GetDriveFreeSpaceEx;
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
@@ -15412,16 +15412,16 @@ begin
     if Drive = nil then Exit;
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.GetDriveFreeSpaceEx;
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end;    
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15433,7 +15433,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   Volume:=GetVolumeByName(AVolume,True,FILESYS_LOCK_READ);
@@ -15441,12 +15441,12 @@ begin
    begin
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.GetDriveTotalSpace;
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
@@ -15454,16 +15454,16 @@ begin
     if Drive = nil then Exit;
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.GetDriveTotalSpace;
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end;    
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15475,7 +15475,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   Volume:=GetVolumeByName(AVolume,True,FILESYS_LOCK_READ);
@@ -15483,12 +15483,12 @@ begin
    begin
     try
      if Volume.FileSystem = nil then Exit;
-    
+
      Result:=Volume.FileSystem.GetDriveTotalSpaceEx;
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
@@ -15496,16 +15496,16 @@ begin
     if Drive = nil then Exit;
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.GetDriveTotalSpaceEx;
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end;    
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15517,41 +15517,41 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileOpen FileName = ' + AFileName + ' Mode = ' + IntToHex(AMode,4));
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
-    Volume:=GetVolumeFromPath(AFileName,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromPath(AFileName,True,FILESYS_LOCK_READ);
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.FileOpen(AFileName,AMode);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Result:=Drive.FileSystem.FileOpen(AFileName,AMode);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15563,13 +15563,13 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileCreate FileName = ' + AFileName + ' Mode = ' + IntToHex(AMode,4));
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -15577,27 +15577,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.FileCreate(AFileName,AMode);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FileCreate(AFileName,AMode);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15609,13 +15609,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.DeleteFile FileName = ' + AFileName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -15623,27 +15623,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.DeleteFile(AFileName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Result:=Drive.FileSystem.DeleteFile(AFileName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15659,37 +15659,37 @@ begin
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileClose Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Drive.FileSystem.FileClose(AHandle);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Volume.FileSystem.FileClose(AHandle);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15708,7 +15708,7 @@ begin
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.RenameFile OldName = ' + AOldName + ' NewName = ' + ANewName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AOldName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -15716,27 +15716,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-    
+
      Result:=Volume.FileSystem.RenameFile(AOldName,ANewName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Result:=Drive.FileSystem.RenameFile(AOldName,ANewName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15756,43 +15756,43 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileFlush Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Result:=Drive.FileSystem.FileFlush(AHandle);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.FileFlush(AHandle);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15804,43 +15804,43 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileTruncate Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FileTruncate(AHandle);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.FileTruncate(AHandle);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15851,7 +15851,7 @@ begin
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SetEndOfFile Handle = ' + HandleToHex(AHandle));
  {$ENDIF}
- 
+
  Result:=FileTruncate(AHandle);
 end;
 
@@ -15863,7 +15863,7 @@ begin
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.EndOfFile Handle = ' + HandleToHex(AHandle));
  {$ENDIF}
- 
+
  Result:=FilePosEx(AHandle) >= FileSizeEx(AHandle);
 end;
 
@@ -15892,23 +15892,23 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileAge FileName = ' + AFileName);
   {$ENDIF}
- 
+
   Code:=FindFirstEx(AFileName,SearchRec);
   if Code = 0 then
    begin
     Result:=Ultibo.FileTimeToFileDate(SearchRec.FindData.ftLastWriteTime); {Dos Date Time Format}
    end;
-  
+
   FindCloseEx(SearchRec);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15921,7 +15921,7 @@ begin
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileExists FileName = ' + AFileName);
  {$ENDIF}
- 
+
  {Result:=FileAge(AFileName) <> -1;} {Modified to Allow Streams}
  Code:=FileGetAttr(AFileName);
  Result:=(Code <> -1) and ((faDirectory and Code) = 0);
@@ -15936,13 +15936,13 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileGetAttr FileName = ' + AFileName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -15950,27 +15950,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-    
+
      Result:=Volume.FileSystem.FileGetAttr(AFileName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FileGetAttr(AFileName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -15982,43 +15982,43 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileGetDate Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FileGetDate(AHandle);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.FileGetDate(AHandle);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16030,13 +16030,13 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileSetAttr FileName = ' + AFileName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -16044,27 +16044,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.FileSetAttr(AFileName,AAttr);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FileSetAttr(AFileName,AAttr);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16076,43 +16076,43 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileSetDate Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FileSetDate(AHandle,AAge);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.FileSetDate(AHandle,AAge);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16124,43 +16124,43 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileRead Handle = ' + HandleToHex(AHandle) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FileRead(AHandle,ABuffer,ACount);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.FileRead(AHandle,ABuffer,ACount);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16172,43 +16172,43 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileWrite Handle = ' + HandleToHex(AHandle) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FileWrite(AHandle,ABuffer,ACount);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.FileWrite(AHandle,ABuffer,ACount);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16220,13 +16220,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CreateDir DirName = ' + ADirName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(ADirName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -16234,27 +16234,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.CreateDir(ADirName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.CreateDir(ADirName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16266,13 +16266,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.RemoveDir DirName = ' + ADirName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(ADirName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -16280,27 +16280,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.RemoveDir(ADirName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.RemoveDir(ADirName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16311,7 +16311,7 @@ begin
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.RenameDir OldName = ' + AOldName + ' NewName = ' + ANewName);
  {$ENDIF}
- 
+
  Result:=RenameFile(AOldName,ANewName);
 end;
 
@@ -16324,20 +16324,20 @@ var
 begin
  {}
  Result:='';
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetCurrentDir');
   {$ENDIF}
- 
+
   Drive:=GetDriveByNo(GetCurrentDrive,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
   try
    if Drive.FileSystem = nil then Exit;
- 
+
    Result:=Drive.FileSystem.GetCurrentDir;
-   
+
    {$IFDEF FILESYS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetCurrentDir Result = ' + Result);
    {$ENDIF}
@@ -16345,9 +16345,9 @@ begin
    {Unlock Drive}
    Drive.ReaderUnlock;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16359,22 +16359,22 @@ var
 begin
  {}
  Result:='';
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetCurrentDirEx Drive=' + DRIVE_NAMES[ADrive]);
   {$ENDIF}
-  
+
   if ADrive = DEFAULT_DRIVE then ADrive:=GetCurrentDrive;
-  
+
   Drive:=GetDriveByNo(ADrive,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
   try
    if Drive.FileSystem = nil then Exit;
- 
+
    Result:=Drive.FileSystem.GetCurrentDir;
-   
+
    {$IFDEF FILESYS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetCurrentDirEx Result = ' + Result);
    {$ENDIF}
@@ -16382,9 +16382,9 @@ begin
    {Unlock Drive}
    Drive.ReaderUnlock;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16396,13 +16396,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SetCurrentDir DirName = ' + ADirName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(ADirName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -16410,29 +16410,29 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.SetCurrentDir(ADirName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Result:=Drive.FileSystem.SetCurrentDir(ADirName);
-    
+
      if Result then SetCurrent(Drive);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16446,7 +16446,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -16454,25 +16454,25 @@ begin
   {$ENDIF}
 
   if ADrive = DEFAULT_DRIVE then ADrive:=GetCurrentDrive;
-  
+
   Drive:=GetDriveByNo(ADrive,True,FILESYS_LOCK_READ);
   if Drive = nil then Exit;
   try
    if Drive.FileSystem = nil then Exit;
-   
+
    {Check Path}
    if GetDriveFromPath(ADirName,False,FILESYS_LOCK_NONE) <> Drive then Exit;
-   
+
    Result:=Drive.FileSystem.SetCurrentDir(ADirName);
   finally
    {Unlock Drive}
    Drive.ReaderUnlock;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function TFileSysDriver.DirectoryExists(const ADirName:String):Boolean;
@@ -16483,7 +16483,7 @@ begin
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.DirectoryExists DirName = ' + ADirName);
  {$ENDIF}
- 
+
  Code:=FileGetAttr(ADirName);
  Result:=(Code <> -1) and ((faDirectory and Code) <> 0);
 end;
@@ -16496,15 +16496,15 @@ begin
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.ForceDirectories DirName = ' + ADirName);
  {$ENDIF}
- 
+
  if Length(ADirName) = 0 then Exit;
- 
+
  if (AnsiLastChar(ADirName) <> nil) and (AnsiLastChar(ADirName)^ = '\') then Delete(ADirName,Length(ADirName),1); //To Do //Need to fix use of non portable '\'
- 
+
  if (Length(ADirName) < 3) or DirectoryExists(ADirName) or (ExtractFilePath(ADirName) = ADirName) then Exit; {Avoid 'xyz:\' problem}
- 
+
  ForceDirectories(ExtractFilePath(ADirName)); //To Do //Need to fix use of non portable ExtractFilePath
- 
+
  CreateDir(ADirName);
 end;
 
@@ -16519,9 +16519,9 @@ begin
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.DeleteTree DirName = ' + ADirName);
  {$ENDIF}
- 
+
  if Trim(ADirName) = '' then Exit;
- 
+
  if UltiboUtils.IsRootDirectory(ADirName) then Exit;  //To Do //Need to fix use of non portable IsRoot
                                                               //Use the GetPathType etc functions and GetPathRoot etc //Need to build these into UltiboUtils ?
 
@@ -16564,11 +16564,11 @@ var
 begin
  {}
  Result:=-1;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindMatchingFile Handle = ' + HandleToHex(ASearchRec.FindHandle));
  {$ENDIF}
- 
+
  if (ADrive <> nil) or (AVolume <> nil) then
   begin
    while (ASearchRec.FindData.dwFileAttributes and ASearchRec.ExcludeAttr) <> 0 do
@@ -16576,17 +16576,17 @@ begin
      if ADrive <> nil then
       begin
        if ADrive.FileSystem = nil then Exit;
-       
+
        FileSearchRec.FindHandle:=ASearchRec.FindHandle;
-       
+
        Result:=ADrive.FileSystem.FindNextEx(FileSearchRec);
       end
      else
       begin
        if AVolume.FileSystem = nil then Exit;
-       
+
        FileSearchRec.FindHandle:=ASearchRec.FindHandle;
-       
+
        Result:=AVolume.FileSystem.FindNextEx(FileSearchRec);
       end;
      if Result = 0 then
@@ -16598,7 +16598,7 @@ begin
        Exit;
       end;
     end;
-    
+
    {Update the SearchRec from the FindData record}
    Ultibo.FileTimeToLocalFileTime(ASearchRec.FindData.ftLastWriteTime,LocalFileTime);
    Ultibo.FileTimeToDosDateTime(LocalFileTime,LongRec(DosDateTime).Hi,LongRec(DosDateTime).Lo);
@@ -16607,7 +16607,7 @@ begin
    TULargeInteger(ASearchRec.Size).LowPart:=ASearchRec.FindData.nFileSizeLow;
    ASearchRec.Attr:=ASearchRec.FindData.dwFileAttributes;
    ASearchRec.Name:=ASearchRec.FindData.cFileName;
-   
+
    Result:=0;
   end;
 end;
@@ -16631,13 +16631,13 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindFirst Path = ' + APath);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(APath,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -16645,43 +16645,43 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      if Volume.FileSystem.FindFirstEx(APath,FileSearchRec) = 0 then
       begin
        ASearchRec.ExcludeAttr:=not AAttr and faSpecial;
        ASearchRec.FindHandle:=FileSearchRec.FindHandle;
        ASearchRec.FindData:=FileSearchRec.FindData;
-      
+
        Result:=FindMatchingFile(nil,Volume,ASearchRec);
        if Result <> 0 then FindClose(ASearchRec);
       end;
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      if Drive.FileSystem.FindFirstEx(APath,FileSearchRec) = 0 then
       begin
        ASearchRec.ExcludeAttr:=not AAttr and faSpecial;
        ASearchRec.FindHandle:=FileSearchRec.FindHandle;
        ASearchRec.FindData:=FileSearchRec.FindData;
-      
+
        Result:=FindMatchingFile(Drive,nil,ASearchRec);
        if Result <> 0 then FindClose(ASearchRec);
       end;
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16694,55 +16694,55 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNext Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      FileSearchRec.FindHandle:=ASearchRec.FindHandle;
      if Drive.FileSystem.FindNextEx(FileSearchRec) = 0 then
       begin
        ASearchRec.FindData:=FileSearchRec.FindData;
-     
+
        Result:=FindMatchingFile(Drive,nil,ASearchRec);
       end;
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        FileSearchRec.FindHandle:=ASearchRec.FindHandle;
        if Volume.FileSystem.FindNextEx(FileSearchRec) = 0 then
         begin
          ASearchRec.FindData:=FileSearchRec.FindData;
-       
+
          Result:=FindMatchingFile(nil,Volume,ASearchRec);
         end;
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16759,41 +16759,41 @@ begin
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindClose Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      FileSearchRec.FindHandle:=ASearchRec.FindHandle;
-   
+
      Drive.FileSystem.FindCloseEx(FileSearchRec);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-      
+
        FileSearchRec.FindHandle:=ASearchRec.FindHandle;
-     
+
        Volume.FileSystem.FindCloseEx(FileSearchRec);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16805,13 +16805,13 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindFirstStream FileName = ' + AFileName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -16819,27 +16819,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.FindFirstStream(AFileName,ASearchRec);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FindFirstStream(AFileName,ASearchRec);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16851,43 +16851,43 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextStream Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FindNextStream(ASearchRec);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.FindNextStream(ASearchRec);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16903,37 +16903,37 @@ begin
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindStreamClose Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
-  
-  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Drive.FileSystem.FindStreamClose(ASearchRec);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Volume.FileSystem.FindStreamClose(ASearchRec);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16945,13 +16945,13 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindFirstFileName FileName = ' + AFileName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -16959,27 +16959,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.FindFirstFileName(AFileName,ASearchRec);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FindFirstFileName(AFileName,ASearchRec);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -16991,43 +16991,43 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextFileName Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FindNextFileName(ASearchRec);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.FindNextFileName(ASearchRec);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17043,37 +17043,37 @@ begin
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindFileNameClose Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Drive.FileSystem.FindFileNameClose(ASearchRec);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Volume.FileSystem.FindFileNameClose(ASearchRec);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17085,13 +17085,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CreateHardLink LinkName = ' + ALinkName + ' FileName = ' + AFileName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(ALinkName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -17099,27 +17099,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.CreateHardLink(ALinkName,AFileName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.CreateHardLink(ALinkName,AFileName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17131,13 +17131,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.DeleteHardLink LinkName = ' + ALinkName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(ALinkName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -17145,27 +17145,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-    
+
      Result:=Volume.FileSystem.DeleteHardLink(ALinkName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Result:=Drive.FileSystem.DeleteHardLink(ALinkName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17181,7 +17181,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   Drive:=GetDriveFromPath(APathName,True,FILESYS_LOCK_READ);
@@ -17220,19 +17220,19 @@ begin
       if SearchRec.FindData.dwReserved0 = FileSystem.MountPointTag then
        begin
         Target:=FileSystem.GetMountPointTarget(APathName);
-       
+
         Result:=(Copy(Target,2,1) <> ':'); {Target is a Volume path (eg \??\Volume(2345)) not a Folder path}
        end;
      end;
    end;
-  
+
   FileSystem.FindCloseEx(SearchRec);
 
   {Unlock FileSystem}
   FileSystem.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17244,13 +17244,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CreateMountPoint PathName = ' + APathName + ' VolumeName = ' + AVolumeName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(APathName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -17258,27 +17258,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-    
+
      Result:=Volume.FileSystem.CreateMountPoint(APathName,AVolumeName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Result:=Drive.FileSystem.CreateMountPoint(APathName,AVolumeName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17290,13 +17290,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.DeleteMountPoint PathName = ' + APathName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(APathName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -17304,27 +17304,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.DeleteMountPoint(APathName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.DeleteMountPoint(APathName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17340,7 +17340,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   Drive:=GetDriveFromPath(APathName,True,FILESYS_LOCK_READ);
@@ -17379,19 +17379,19 @@ begin
       if SearchRec.FindData.dwReserved0 = FileSystem.MountPointTag then
        begin
         Target:=FileSystem.GetJunctionPointTarget(APathName);
-       
+
         Result:=(Copy(Target,2,1) = ':'); {Target is a Folder path (eg C:\Home) not a Volume path}
        end;
      end;
    end;
-  
+
   FileSystem.FindCloseEx(SearchRec);
 
   {Unlock FileSystem}
   FileSystem.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17403,13 +17403,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CreateJunctionPoint PathName = ' + APathName + ' FolderName = ' + AFolderName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(APathName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -17417,27 +17417,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.CreateJunctionPoint(APathName,AFolderName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.CreateJunctionPoint(APathName,AFolderName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17449,13 +17449,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.DeleteJunctionPoint PathName = ' + APathName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(APathName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -17463,27 +17463,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.DeleteJunctionPoint(APathName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.DeleteJunctionPoint(APathName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17498,7 +17498,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   Drive:=GetDriveFromPath(ALinkName,True,FILESYS_LOCK_READ);
@@ -17540,14 +17540,14 @@ begin
        end;
      end;
    end;
-  
+
   FileSystem.FindCloseEx(SearchRec);
 
   {Unlock FileSystem}
   FileSystem.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17559,13 +17559,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CreateSymbolicLink LinkName = ' + ALinkName + ' TargetName = ' + ATargetName + ' Directory = ' + BoolToStr(ADirectory));
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(ALinkName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -17573,27 +17573,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.CreateSymbolicLink(ALinkName,ATargetName,ADirectory);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.CreateSymbolicLink(ALinkName,ATargetName,ADirectory);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17605,13 +17605,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CreateSymbolicLinkEx LinkName = ' + ALinkName + ' ShortName = ' + AShortName + ' TargetName = ' + ATargetName + ' Directory = ' + BoolToStr(ADirectory));
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(ALinkName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -17619,27 +17619,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.CreateSymbolicLinkEx(ALinkName,AShortName,ATargetName,ADirectory);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.CreateSymbolicLinkEx(ALinkName,AShortName,ATargetName,ADirectory);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17651,13 +17651,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.DeleteSymbolicLink LinkName = ' + ALinkName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(ALinkName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -17665,27 +17665,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.DeleteSymbolicLink(ALinkName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.DeleteSymbolicLink(ALinkName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17697,13 +17697,13 @@ var
 begin
  {}
  Result:='';
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetMountPointTarget PathName = ' + APathName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(APathName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -17711,27 +17711,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.GetMountPointTarget(APathName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.GetMountPointTarget(APathName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17743,13 +17743,13 @@ var
 begin
  {}
  Result:='';
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetJunctionPointTarget PathName = ' + APathName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(APathName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -17757,27 +17757,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.GetJunctionPointTarget(APathName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.GetJunctionPointTarget(APathName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17789,13 +17789,13 @@ var
 begin
  {}
  Result:='';
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetSymbolicLinkTarget LinkName = ' + ALinkName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(ALinkName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -17803,27 +17803,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.GetSymbolicLinkTarget(ALinkName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.GetSymbolicLinkTarget(ALinkName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17836,13 +17836,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SetFileShortName FileName = ' + AFileName + ' ShortName = ' + AShortName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -17850,27 +17850,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.SetFileShortName(AFileName,AShortName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.SetFileShortName(AFileName,AShortName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17883,45 +17883,45 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SetFileShortNameEx Handle = ' + HandleToHex(AHandle) + ' ShortName = ' + AShortName);
   {$ENDIF}
 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-  
+
      Result:=Drive.FileSystem.SetFileShortNameEx(AHandle,AShortName);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-  
+
        Result:=Volume.FileSystem.SetFileShortNameEx(AHandle,AShortName);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function TFileSysDriver.GetFileSecurity(const AFileName:String;ADescriptor:Pointer;var ASize:LongWord):Boolean;
@@ -17931,13 +17931,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetFileSecurity FileName = ' + AFileName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -17945,27 +17945,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.GetFileSecurity(AFileName,ADescriptor,ASize);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.GetFileSecurity(AFileName,ADescriptor,ASize);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -17977,13 +17977,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SetFileSecurity FileName = ' + AFileName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -17991,27 +17991,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.SetFileSecurity(AFileName,ADescriptor);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Result:=Drive.FileSystem.SetFileSecurity(AFileName,ADescriptor);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18022,18 +18022,18 @@ var
  Buffer:Pointer;
  BlockSize:Integer;
  BytesRemain:Int64;
- DestHandle:THandle; 
+ DestHandle:THandle;
  SourceHandle:THandle;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileCopy Source = ' + ASourceFile + ' Dest = ' + ADestFile);
   {$ENDIF}
- 
+
   BlockSize:=262144;
 
   {Check for Source File}
@@ -18041,7 +18041,7 @@ begin
    begin
     Exit;
    end;
-   
+
   {Check for Destination File}
   Exists:=False;
   if FileExists(ADestFile) then
@@ -18050,7 +18050,7 @@ begin
     if AFailIfExists then Exit;
     FileSetAttr(ADestFile,faArchive);
    end;
-   
+
   {Open Source and Destination Files}
   SourceHandle:=FileOpen(ASourceFile,fmOpenRead or fmShareDenyNone);
   if SourceHandle = INVALID_HANDLE_VALUE then Exit;
@@ -18077,22 +18077,22 @@ begin
      SetEndOfFile(DestHandle);
      FileSeekEx(DestHandle,0,soFromBeginning);
      if FileSizeEx(DestHandle) <> BytesRemain then Exit; {Modified for 64bit}
-     
+
      {Copy the File}
      while BytesRemain > 0 do
       begin
-       if BytesRemain >= BlockSize then 
+       if BytesRemain >= BlockSize then
         begin
-         if FileRead(SourceHandle,Buffer^,BlockSize) <> BlockSize then Exit; 
-         if FileWrite(DestHandle,Buffer^,BlockSize) <> BlockSize then Exit; 
-         
+         if FileRead(SourceHandle,Buffer^,BlockSize) <> BlockSize then Exit;
+         if FileWrite(DestHandle,Buffer^,BlockSize) <> BlockSize then Exit;
+
          Dec(BytesRemain,BlockSize);
         end
        else
         begin
          if FileRead(SourceHandle,Buffer^,Int64Rec(BytesRemain).Lo) <> Int64Rec(BytesRemain).Lo then Exit; {Modified for 64bit}
          if FileWrite(DestHandle,Buffer^,Int64Rec(BytesRemain).Lo) <> Int64Rec(BytesRemain).Lo then Exit; {Modified for 64bit}
-         
+
          BytesRemain:=0;
         end;
 
@@ -18102,10 +18102,10 @@ begin
     finally
      FreeMem(Buffer);
     end;
-    
+
     {Set the Destination DateTime}
     FileSetDate(DestHandle,FileGetDate(SourceHandle));
-     
+
     Result:=True;
    finally
     FileClose(DestHandle);
@@ -18118,9 +18118,9 @@ begin
     {Set the Destination Attributes}
     FileSetAttr(ADestFile,FileGetAttr(ASourceFile));
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18136,21 +18136,21 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileCopyEx Source = ' + ASourceFile + ' Dest = ' + ADestFile);
   {$ENDIF}
- 
+
   BlockSize:=262144;
-  
+
   {Check for Source File}
   if not FileExists(ASourceFile) then
    begin
     Exit;
    end;
-   
+
   {Check for Destination File}
   Exists:=False;
   if FileExists(ADestFile) then
@@ -18159,7 +18159,7 @@ begin
     if AFailIfExists then Exit;
     FileSetAttr(ADestFile,faArchive);
    end;
-   
+
   {Open Source and Destination Files}
   SourceHandle:=FileOpen(ASourceFile,fmOpenRead or fmShareDenyNone);
   if SourceHandle = INVALID_HANDLE_VALUE then Exit;
@@ -18180,28 +18180,28 @@ begin
     try
      {Get the Size}
      BytesRemain:=FileSizeEx(SourceHandle); {Modified for 64bit}
-    
+
      {Set the Size}
      FileSeekEx(DestHandle,BytesRemain,soFromBeginning);
      SetEndOfFile(DestHandle);
      FileSeekEx(DestHandle,0,soFromBeginning);
      if FileSizeEx(DestHandle) <> BytesRemain then Exit; {Modified for 64bit}
-     
+
      {Copy the File}
      while BytesRemain > 0 do
       begin
        if BytesRemain >= BlockSize then
         begin
-         if FileRead(SourceHandle,Buffer^,BlockSize) <> BlockSize then Exit; 
-         if FileWrite(DestHandle,Buffer^,BlockSize) <> BlockSize then Exit; 
-         
+         if FileRead(SourceHandle,Buffer^,BlockSize) <> BlockSize then Exit;
+         if FileWrite(DestHandle,Buffer^,BlockSize) <> BlockSize then Exit;
+
          Dec(BytesRemain,BlockSize);
         end
        else
         begin
          if FileRead(SourceHandle,Buffer^,Int64Rec(BytesRemain).Lo) <> Int64Rec(BytesRemain).Lo then Exit; {Modified for 64bit}
          if FileWrite(DestHandle,Buffer^,Int64Rec(BytesRemain).Lo) <> Int64Rec(BytesRemain).Lo then Exit; {Modified for 64bit}
-         
+
          BytesRemain:=0;
         end;
 
@@ -18211,7 +18211,7 @@ begin
     finally
      FreeMem(Buffer);
     end;
-    
+
     {Set the Destination DateTime}
     if AUseSourceDate then
      begin
@@ -18221,7 +18221,7 @@ begin
      begin
       FileSetDate(DestHandle,ADestDate);
      end;
-     
+
     Result:=True;
    finally
     FileClose(DestHandle);
@@ -18241,9 +18241,9 @@ begin
       FileSetAttr(ADestFile,ADestAttr);
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18252,15 +18252,15 @@ function TFileSysDriver.FileMove(const ASourceFile,ADestFile:String;AFailIfExist
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileMove Source = ' + ASourceFile + ' Dest = ' + ADestFile);
  {$ENDIF}
- 
+
  if not FileCopy(ASourceFile,ADestFile,AFailIfExists) then Exit;
- 
+
  if not DeleteFile(ASourceFile) then Exit;
- 
+
  Result:=True;
 end;
 
@@ -18270,15 +18270,15 @@ function TFileSysDriver.FileMoveEx(const ASourceFile,ADestFile:String;AFailIfExi
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileMoveEx Source = ' + ASourceFile + ' Dest = ' + ADestFile);
  {$ENDIF}
- 
+
  if not FileCopyEx(ASourceFile,ADestFile,AFailIfExists,AUseSourceDate,ADestDate,AUseSourceAttr,ADestAttr) then Exit;
- 
+
  if not DeleteFile(ASourceFile) then Exit;
- 
+
  Result:=True;
 end;
 
@@ -18291,13 +18291,13 @@ var
 begin
  {}
  Result:=AFileName;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetPathName FileName = ' + AFileName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -18305,27 +18305,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.GetPathName(AFileName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.GetPathName(AFileName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18337,13 +18337,13 @@ var
 begin
  {}
  Result:=AFileName;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetShortName FileName = ' + AFileName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -18351,27 +18351,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-    
+
      Result:=Volume.FileSystem.GetShortName(AFileName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Result:=Drive.FileSystem.GetShortName(AFileName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18383,13 +18383,13 @@ var
 begin
  {}
  Result:=AFileName;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetLongName FileName = ' + AFileName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -18397,27 +18397,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-    
+
      Result:=Volume.FileSystem.GetLongName(AFileName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.GetLongName(AFileName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18429,13 +18429,13 @@ var
 begin
  {}
  Result:=AFileName;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetTrueName FileName = ' + AFileName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -18443,27 +18443,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.GetTrueName(AFileName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Result:=Drive.FileSystem.GetTrueName(AFileName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18475,7 +18475,7 @@ var
 begin
  {}
  Result:=AFilePath;
- 
+
  Drive:=GetDriveFromPath(AFilePath,True,FILESYS_LOCK_READ);
  if Drive = nil then
   begin
@@ -18483,25 +18483,25 @@ begin
    if Volume = nil then Exit;
    try
     if Volume.FileSystem = nil then Exit;
-   
+
     if ALeading then Result:=AddLeadingChar(Result,Volume.FileSystem.PathChar);
     if ATrailing then Result:=AddTrailingChar(Result,Volume.FileSystem.PathChar);
-   finally 
+   finally
     {Unlock Volume}
     Volume.ReaderUnlock;
-   end; 
+   end;
   end
  else
   begin
    try
     if Drive.FileSystem = nil then Exit;
-   
+
     if ALeading then Result:=AddLeadingChar(Result,Drive.FileSystem.PathChar);
     if ATrailing then Result:=AddTrailingChar(Result,Drive.FileSystem.PathChar);
-   finally 
+   finally
     {Unlock Drive}
     Drive.ReaderUnlock;
-   end; 
+   end;
   end;
 end;
 
@@ -18514,7 +18514,7 @@ var
 begin
  {}
  Result:=AFilePath;
- 
+
  Drive:=GetDriveFromPath(AFilePath,True,FILESYS_LOCK_READ);
  if Drive = nil then
   begin
@@ -18522,25 +18522,25 @@ begin
    if Volume = nil then Exit;
    try
     if Volume.FileSystem = nil then Exit;
-   
+
     if ALeading then Result:=StripLeadingChar(Result,Volume.FileSystem.PathChar);
     if ATrailing then Result:=StripTrailingChar(Result,Volume.FileSystem.PathChar);
-   finally 
+   finally
     {Unlock Volume}
     Volume.ReaderUnlock;
-   end; 
+   end;
   end
  else
   begin
    try
     if Drive.FileSystem = nil then Exit;
-   
+
     if ALeading then Result:=StripLeadingChar(Result,Drive.FileSystem.PathChar);
     if ATrailing then Result:=StripTrailingChar(Result,Drive.FileSystem.PathChar);
-   finally 
+   finally
     {Unlock Drive}
     Drive.ReaderUnlock;
-   end; 
+   end;
   end;
 end;
 
@@ -18554,13 +18554,13 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileCreateEx FileName = ' + AFileName + ' ShortName = ' + AShortName + ' Mode = ' + IntToHex(AMode,4));
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(AFileName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -18568,27 +18568,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.FileCreateEx(AFileName,AShortName,AMode);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FileCreateEx(AFileName,AShortName,AMode);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18601,13 +18601,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CreateDirEx DirName = ' + ADirName + ' ShortName = ' + AShortName);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(ADirName,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -18615,27 +18615,27 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.CreateDirEx(ADirName,AShortName);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.CreateDirEx(ADirName,AShortName);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18647,43 +18647,43 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileSeekEx Handle = ' + HandleToHex(AHandle) + ' Offset = ' + IntToStr(AOffset));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FileSeekEx(AHandle,AOffset,AOrigin);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.FileSeekEx(AHandle,AOffset,AOrigin);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18694,7 +18694,7 @@ begin
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.EndOfFileEx Handle = ' + HandleToHex(AHandle));
  {$ENDIF}
- 
+
  Result:=FilePosEx(AHandle) >= FileSizeEx(AHandle);
 end;
 
@@ -18707,43 +18707,43 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FilePosEx Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
-  
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Result:=Drive.FileSystem.FilePosEx(AHandle);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.FilePosEx(AHandle);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18756,7 +18756,7 @@ begin
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileSizeEx Handle = ' + HandleToHex(AHandle));
  {$ENDIF}
- 
+
  Current:=FilePosEx(AHandle);
  Result:=FileSeekEx(AHandle,0,soFromEnd);
  FileSeekEx(AHandle,Current,soFromBeginning);
@@ -18771,23 +18771,23 @@ var
 begin
  {}
  Int64(Result):=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileAgeEx FileName = ' + AFileName);
   {$ENDIF}
-  
+
   Code:=FindFirstEx(AFileName,SearchRec);
   if Code = 0 then
    begin
     Result:=SearchRec.FindData.ftLastWriteTime; {64 Bit FileTime Format}
    end;
- 
+
   FindCloseEx(SearchRec);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18799,43 +18799,43 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileGetAttrEx Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FileGetAttrEx(AHandle);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.FileGetAttrEx(AHandle);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18847,43 +18847,43 @@ var
 begin
  {}
  Int64(Result):=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileGetDateEx Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FileGetDateEx(AHandle);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.FileGetDateEx(AHandle);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18895,43 +18895,43 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FileSetDateEx Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FileSetDateEx(AHandle,AAge);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.FileSetDateEx(AHandle,AAge);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18943,43 +18943,43 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetFileTime Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Result:=Drive.FileSystem.GetFileTime(AHandle,ACreateTime,AAccessTime,AWriteTime);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.GetFileTime(AHandle,ACreateTime,AAccessTime,AWriteTime);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -18991,43 +18991,43 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.SetFileTime Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.SetFileTime(AHandle,ACreateTime,AAccessTime,AWriteTime);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.SetFileTime(AHandle,ACreateTime,AAccessTime,AWriteTime);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19039,13 +19039,13 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindFirstEx Path = ' + APath);
   {$ENDIF}
- 
+
   Drive:=GetDriveFromPath(APath,True,FILESYS_LOCK_READ);
   if Drive = nil then
    begin
@@ -19055,14 +19055,14 @@ begin
      {$IFDEF FILESYS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindFirstEx Volume = ' + Volume.Name);
      {$ENDIF}
-    
+
      if Volume.FileSystem = nil then Exit;
-   
+
      Result:=Volume.FileSystem.FindFirstEx(APath,ASearchRec);
-    finally 
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
@@ -19070,18 +19070,18 @@ begin
      {$IFDEF FILESYS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindFirstEx Drive = ' + Drive.Name);
      {$ENDIF}
-    
+
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FindFirstEx(APath,ASearchRec);
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19093,43 +19093,43 @@ var
 begin
  {}
  Result:=-1;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindNextEx Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Result:=Drive.FileSystem.FindNextEx(ASearchRec);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.FindNextEx(ASearchRec);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19145,37 +19145,37 @@ begin
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindCloseEx Handle = ' + HandleToHex(ASearchRec.FindHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      Drive.FileSystem.FindCloseEx(ASearchRec);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFind(ASearchRec.FindHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Volume.FileSystem.FindCloseEx(ASearchRec);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19184,7 +19184,7 @@ function TFileSysDriver.DefineDosDevice(const ADeviceName,ATargetPath:String;AFl
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -19192,7 +19192,7 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                DeviceName = ' + ADeviceName);
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                TargetPath = ' + ATargetPath);
   {$ENDIF}
-  
+
   if (AFlags and DDD_REMOVE_DEFINITION) = 0 then
    begin
     {Add Device}
@@ -19202,10 +19202,10 @@ begin
    begin
     {Remove Device}
     Result:=DeleteDrive(ADeviceName);
-   end;   
- finally  
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19217,15 +19217,15 @@ var
 begin
  {}
  Result:=DRIVE_UNKNOWN;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetDiskType');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                RootPath = ' + ARootPath);
   {$ENDIF}
- 
-  Volume:=GetVolumeFromPath(ARootPath,True,FILESYS_LOCK_READ);  
+
+  Volume:=GetVolumeFromPath(ARootPath,True,FILESYS_LOCK_READ);
   if Volume <> nil then
    begin
     {Check Drive Type}
@@ -19245,7 +19245,7 @@ begin
    begin
     Drive:=GetDriveFromPath(ARootPath,True,FILESYS_LOCK_READ);
     if Drive = nil then Exit;
- 
+
     {Check Drive Type}
     case Drive.DriveType of
      dtFIXED:Result:=DRIVE_FIXED;
@@ -19255,13 +19255,13 @@ begin
      dtRAMDRIVE:Result:=DRIVE_RAMDISK;
      dtCDROM:Result:=DRIVE_CDROM;
     end;
-    
+
     {Unlock Drive}
     Drive.ReaderUnlock;
-   end; 
- finally  
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19270,44 +19270,44 @@ function TFileSysDriver.GetDiskFreeSpace(const ARootPath:String;var ASectorsPerC
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
- 
+
  ClusterSize:LongWord;
  FreeClusterCount:Int64;
  TotalClusterCount:Int64;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetDiskFreeSpace');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                RootPath = ' + ARootPath);
   {$ENDIF}
- 
-  Volume:=GetVolumeFromPath(ARootPath,True,FILESYS_LOCK_READ);  
+
+  Volume:=GetVolumeFromPath(ARootPath,True,FILESYS_LOCK_READ);
   if Volume <> nil then
    begin
     try
      if Volume.FileSystem = nil then Exit;
-     
+
      {Get Drive Information}
      if Volume.FileSystem.GetDriveInformation(ClusterSize,TotalClusterCount,FreeClusterCount) then
       begin
        if Volume.FileSystem.SectorSize = 0 then Exit;
-       
+
        {Get Values}
        ASectorsPerCluster:=ClusterSize div Volume.FileSystem.SectorSize;
        ABytesPerSector:=Volume.FileSystem.SectorSize;
        ANumberOfFreeClusters:=FreeClusterCount;
-       ATotalNumberOfClusters:=TotalClusterCount; 
-   
+       ATotalNumberOfClusters:=TotalClusterCount;
+
        Result:=True;
-      end; 
-    finally   
+      end;
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
@@ -19315,28 +19315,28 @@ begin
     if Drive = nil then Exit;
     try
      if Drive.FileSystem = nil then Exit;
-     
+
      {Get Drive Information}
      if Drive.FileSystem.GetDriveInformation(ClusterSize,TotalClusterCount,FreeClusterCount) then
       begin
        if Drive.FileSystem.SectorSize = 0 then Exit;
-       
+
        {Get Values}
        ASectorsPerCluster:=ClusterSize div Drive.FileSystem.SectorSize;
        ABytesPerSector:=Drive.FileSystem.SectorSize;
        ANumberOfFreeClusters:=FreeClusterCount;
-       ATotalNumberOfClusters:=TotalClusterCount; 
-   
+       ATotalNumberOfClusters:=TotalClusterCount;
+
        Result:=True;
-      end; 
+      end;
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
-   end; 
- finally  
+    end;
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19348,30 +19348,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetDiskFreeSpaceEx');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                PathName = ' + APathName);
   {$ENDIF}
- 
-  Volume:=GetVolumeFromPath(APathName,True,FILESYS_LOCK_READ);  
+
+  Volume:=GetVolumeFromPath(APathName,True,FILESYS_LOCK_READ);
   if Volume <> nil then
    begin
     try
      if Volume.FileSystem = nil then Exit;
-     
+
      {Get Values}
      AFreeBytesAvailableToCaller:=Volume.FileSystem.GetDriveFreeSpaceEx;
      ATotalNumberOfBytes:=Volume.FileSystem.GetDriveTotalSpaceEx;
      ATotalNumberOfFreeBytes:=AFreeBytesAvailableToCaller;
-   
+
      Result:=True;
-    finally   
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
@@ -19384,16 +19384,16 @@ begin
      AFreeBytesAvailableToCaller:=Drive.FileSystem.GetDriveFreeSpaceEx;
      ATotalNumberOfBytes:=Drive.FileSystem.GetDriveTotalSpaceEx;
      ATotalNumberOfFreeBytes:=AFreeBytesAvailableToCaller;
-     
+
      Result:=True;
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
-   end; 
- finally  
+    end;
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19414,39 +19414,39 @@ end;
 
 {==============================================================================}
 
-function TFileSysDriver.GetVolumeInformation(const ARootPath:String;var AVolumeName:String;var AVolumeSerialNumber,AMaximumComponentLength,AFileSystemFlags:LongWord;var ASystemName:String):Boolean; 
+function TFileSysDriver.GetVolumeInformation(const ARootPath:String;var AVolumeName:String;var AVolumeSerialNumber,AMaximumComponentLength,AFileSystemFlags:LongWord;var ASystemName:String):Boolean;
 var
  Drive:TDiskDrive;
  Volume:TDiskVolume;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetVolumeInformation');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                RootPath = ' + ARootPath);
   {$ENDIF}
- 
-  Volume:=GetVolumeFromPath(ARootPath,True,FILESYS_LOCK_READ);  
+
+  Volume:=GetVolumeFromPath(ARootPath,True,FILESYS_LOCK_READ);
   if Volume <> nil then
    begin
     try
      if Volume.FileSystem = nil then Exit;
-     
+
      {Get Values}
      AVolumeName:=Volume.VolumeName;
      AVolumeSerialNumber:=Volume.VolumeSerial;
      AMaximumComponentLength:=Volume.MaxPath;
      AFileSystemFlags:=Volume.Attributes;
      ASystemName:=Volume.SystemName;
-   
+
      Result:=True;
-    finally   
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
@@ -19461,16 +19461,16 @@ begin
      AMaximumComponentLength:=Drive.MaxPath;
      AFileSystemFlags:=Drive.Attributes;
      ASystemName:=Drive.SystemName;
-     
+
      Result:=True;
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
-   end; 
- finally  
+    end;
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19482,19 +19482,19 @@ var
 begin
  {}
  Result:='';
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.QueryDosDevice');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                RootPath = ' + ARootPath);
   {$ENDIF}
-  
-  Volume:=GetVolumeFromPath(ARootPath,True,FILESYS_LOCK_READ);  
+
+  Volume:=GetVolumeFromPath(ARootPath,True,FILESYS_LOCK_READ);
   if Volume <> nil then
    begin
     Result:=Volume.Parent;
-    
+
     {Unlock Volume}
     Volume.ReaderUnlock;
    end
@@ -19502,15 +19502,15 @@ begin
    begin
     Drive:=GetDriveFromPath(ARootPath,True,FILESYS_LOCK_READ);
     if Drive = nil then Exit;
-    
+
     Result:=Drive.Parent;
 
     {Unlock Drive}
     Drive.ReaderUnlock;
-   end; 
- finally  
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19519,17 +19519,17 @@ function TFileSysDriver.AreFileApisANSI:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.AreFileApisANSI');
   {$ENDIF}
-  
+
   Result:=FAT_OEM_CONVERT;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19541,44 +19541,44 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CloseFile');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
-  
-  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFile(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-    
+
      Result:=Drive.FileSystem.CloseFile(AHandle);
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFile(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        Result:=Volume.FileSystem.CloseFile(AHandle);
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19598,19 +19598,19 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.CreateFile');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                FileName = ' + AFileName);
   {$ENDIF}
-  
+
   {Get Open Mode}
   if (AAccessMode and GENERIC_ALL) = GENERIC_ALL then
    begin
     OpenMode:=fmOpenReadWrite;
-    
+
     {$IFDEF FILESYS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                OpenMode = fmOpenReadWrite');
     {$ENDIF}
@@ -19618,15 +19618,15 @@ begin
   else if (AAccessMode and (GENERIC_READ or GENERIC_WRITE)) = (GENERIC_READ or GENERIC_WRITE) then
    begin
     OpenMode:=fmOpenReadWrite;
-    
+
     {$IFDEF FILESYS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                OpenMode = fmOpenReadWrite');
     {$ENDIF}
    end
-  else if (AAccessMode and GENERIC_WRITE) = GENERIC_WRITE then 
+  else if (AAccessMode and GENERIC_WRITE) = GENERIC_WRITE then
    begin
     OpenMode:=fmOpenWrite;
-    
+
     {$IFDEF FILESYS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                OpenMode = fmOpenWrite');
     {$ENDIF}
@@ -19634,12 +19634,12 @@ begin
   else
    begin
     OpenMode:=fmOpenRead;
-    
+
     {$IFDEF FILESYS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                OpenMode = fmOpenRead');
     {$ENDIF}
-   end;   
-  
+   end;
+
   {Get Share Mode (FILE_SHARE_DELETE not supported)}
   if (AShareMode and (FILE_SHARE_READ or FILE_SHARE_WRITE)) = (FILE_SHARE_READ or FILE_SHARE_WRITE) then
    begin
@@ -19649,7 +19649,7 @@ begin
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                ShareMode = fmShareDenyNone');
     {$ENDIF}
    end
-  else if (AShareMode and FILE_SHARE_WRITE) = FILE_SHARE_WRITE then 
+  else if (AShareMode and FILE_SHARE_WRITE) = FILE_SHARE_WRITE then
    begin
     ShareMode:=fmShareDenyRead;
 
@@ -19657,7 +19657,7 @@ begin
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                ShareMode = fmShareDenyRead');
     {$ENDIF}
    end
-  else if (AShareMode and FILE_SHARE_READ) = FILE_SHARE_READ then 
+  else if (AShareMode and FILE_SHARE_READ) = FILE_SHARE_READ then
    begin
     ShareMode:=fmShareDenyWrite;
 
@@ -19668,21 +19668,21 @@ begin
   else
    begin
     ShareMode:=fmShareExclusive;
-    
+
     {$IFDEF FILESYS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                ShareMode = fmShareExclusive');
     {$ENDIF}
    end;
-  
+
   {Check Flags}
   case ACreateFlags of
    CREATE_NEW:begin
      {Check Directory}
      if DirectoryExists(AFileName) then Exit;
-     
+
      {Check Exists}
      if FileExists(AFileName) then Exit;
-     
+
      {Create File}
      Result:=FileCreate(AFileName,OpenMode or ShareMode);
     end;
@@ -19692,22 +19692,22 @@ begin
       begin
        {Open File}
        Result:=FileOpen(AFileName,OpenMode or ShareMode);
-       
+
        {Truncate File}
        if Result <> INVALID_HANDLE_VALUE then
         begin
          FileSeekEx(Result,0,soFromBeginning);
          FileTruncate(Result);
-        end; 
+        end;
       end
      else
       begin
        {Check Directory}
        if DirectoryExists(AFileName) then Exit;
-       
+
        {Create File}
        Result:=FileCreate(AFileName,OpenMode or ShareMode);
-      end;     
+      end;
     end;
    OPEN_EXISTING:begin
      {Open File}
@@ -19724,33 +19724,33 @@ begin
       begin
        {Check Directory}
        if DirectoryExists(AFileName) then Exit;
-       
+
        {Create File}
        Result:=FileCreate(AFileName,OpenMode or ShareMode);
-      end;     
+      end;
     end;
    TRUNCATE_EXISTING:begin
      {Check Directory}
      if DirectoryExists(AFileName) then Exit;
-     
+
      {Check Exists}
      if FileExists(AFileName) then
       begin
        {Open File}
        Result:=FileOpen(AFileName,OpenMode or ShareMode);
-     
+
        {Truncate File}
        if Result <> INVALID_HANDLE_VALUE then
         begin
          FileSeekEx(Result,0,soFromBeginning);
          FileTruncate(Result);
-        end; 
+        end;
       end;
     end;
-  end;  
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19763,52 +19763,52 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.FindCloseFile');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
- 
-  Drive:=GetDriveFromFind(AHandle,True,FILESYS_LOCK_READ);  
+
+  Drive:=GetDriveFromFind(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
- 
+
      FileSearchRec.FindHandle:=AHandle;
-   
+
      Drive.FileSystem.FindCloseEx(FileSearchRec);
-     
+
      Result:=True;
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFind(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFind(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-      
+
        FileSearchRec.FindHandle:=AHandle;
-     
+
        Volume.FileSystem.FindCloseEx(FileSearchRec);
-       
+
        Result:=True;
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
-finally  
+finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19821,7 +19821,7 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -19836,7 +19836,7 @@ begin
     if Volume = nil then Exit;
     try
      if Volume.FileSystem = nil then Exit;
-   
+
      if Volume.FileSystem.FindFirstEx(AFileName,FileSearchRec) = 0 then
       begin
        Result:=FileSearchRec.FindHandle;
@@ -19845,17 +19845,17 @@ begin
      else
       begin
        SetLastError(ERROR_FILE_NOT_FOUND);
-      end;      
-    finally 
+      end;
+    finally
      {Unlock Volume}
      Volume.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      if Drive.FileSystem.FindFirstEx(AFileName,FileSearchRec) = 0 then
       begin
        Result:=FileSearchRec.FindHandle;
@@ -19865,14 +19865,14 @@ begin
       begin
        SetLastError(ERROR_FILE_NOT_FOUND);
       end;
-    finally 
+    finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19885,7 +19885,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -19893,12 +19893,12 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
-  Drive:=GetDriveFromFind(AHandle,True,FILESYS_LOCK_READ);  
+  Drive:=GetDriveFromFind(AHandle,True,FILESYS_LOCK_READ);
   if Drive <> nil then
    begin
     try
      if Drive.FileSystem = nil then Exit;
-   
+
      FileSearchRec.FindHandle:=AHandle;
      if Drive.FileSystem.FindNextEx(FileSearchRec) = 0 then
       begin
@@ -19908,20 +19908,20 @@ begin
      else
       begin
        SetLastError(ERROR_NO_MORE_FILES);
-      end;      
+      end;
     finally
      {Unlock Drive}
      Drive.ReaderUnlock;
-    end; 
+    end;
    end
   else
    begin
-    Volume:=GetVolumeFromFind(AHandle,True,FILESYS_LOCK_READ);  
+    Volume:=GetVolumeFromFind(AHandle,True,FILESYS_LOCK_READ);
     if Volume <> nil then
      begin
       try
        if Volume.FileSystem = nil then Exit;
-     
+
        FileSearchRec.FindHandle:=AHandle;
        if Volume.FileSystem.FindNextEx(FileSearchRec) = 0 then
         begin
@@ -19935,12 +19935,12 @@ begin
       finally
        {Unlock Volume}
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -19976,17 +19976,17 @@ begin
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSysDriver.GetFileInformationByHandle Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
- 
+
   {Get the Handle}
   FileHandle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_READ);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
    if FileHandle.OpenMode = fmOpenWrite then Exit;
-   
+
    {Check the Handle}
    if FileHandle.HandleEntry = nil then Exit;
-   
+
    {Get Information}
    AFileInformation.ftCreationTime:=FileHandle.HandleEntry.CreateTime;
    AFileInformation.ftLastAccessTime:=FileHandle.HandleEntry.AccessTime;
@@ -19996,7 +19996,7 @@ begin
    AFileInformation.nNumberOfLinks:=1; //To Do //API
    AFileInformation.nFileIndexHigh:=0; //To Do //API
    AFileInformation.nFileIndexLow:=PtrUInt(FileHandle.HandleEntry);
-  
+
    {Check Drive}
    if FileHandle.Drive <> nil then
     begin
@@ -20014,7 +20014,7 @@ begin
      FileHandle.Drive.ReaderUnlock;
     end
    {Check Volume}
-   else if FileHandle.Volume <> nil then  
+   else if FileHandle.Volume <> nil then
     begin
      {Lock Volume}
      if not CheckVolume(FileHandle.Volume,True,FILESYS_LOCK_READ) then Exit;
@@ -20055,7 +20055,7 @@ var
 begin
  {}
  Value:=FileSizeEx(AHandle);
- 
+
  Result:=Int64Rec(Value).Lo;
  AFileSizeHigh:=Int64Rec(Value).Hi;
 end;
@@ -20092,7 +20092,7 @@ var
 begin
  {}
  ABytesRead:=0;
- 
+
  Count:=FileRead(AHandle,ABuffer,ABytesToRead);
  Result:=(Count <> -1);
  if Result then
@@ -20107,7 +20107,7 @@ function TFileSysDriver.SetFileApisToANSI:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -20115,11 +20115,11 @@ begin
   {$ENDIF}
 
   FAT_OEM_CONVERT:=True;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20128,7 +20128,7 @@ function TFileSysDriver.SetFileApisToOEM:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -20136,11 +20136,11 @@ begin
   {$ENDIF}
 
   FAT_OEM_CONVERT:=False;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20159,10 +20159,10 @@ var
 begin
  {}
  Result:=INVALID_SET_FILE_POINTER;
- 
+
  Int64Rec(Value).Lo:=ADistanceToMove;
  Int64Rec(Value).Hi:=ADistanceToMoveHigh;
- 
+
  Value:=FileSeekEx(AHandle,Value,AMoveMethod);
  if Value <> -1 then
   begin
@@ -20177,7 +20177,7 @@ function TFileSysDriver.SetFilePointerEx(AHandle:THandle;const ADistanceToMove:I
 begin
  {}
  ANewFilePointer:=FileSeekEx(AHandle,ADistanceToMove,AMoveMethod);
- 
+
  Result:=(ANewFilePointer <> -1);
 end;
 
@@ -20189,13 +20189,13 @@ var
 begin
  {}
  ABytesWritten:=0;
- 
+
  Count:=FileWrite(AHandle,ABuffer,ABytesToWrite);
  Result:=(Count <> -1);
  if Result then
   begin
    ABytesWritten:=Count;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -20239,7 +20239,7 @@ begin
      {Lock FileSystem}
      FileSystem:=FileHandle.Drive.FileSystem;
      if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
-     
+
      {Unlock Drive}
      FileHandle.Drive.ReaderUnlock;
     end
@@ -20248,7 +20248,7 @@ begin
     begin
      {Lock Volume}
      if not CheckVolume(FileHandle.Volume,True,FILESYS_LOCK_READ) then Exit;
-     
+
      {Lock FileSystem}
      FileSystem:=FileHandle.Volume.FileSystem;
      if not CheckFileSystem(FileSystem,True,FILESYS_LOCK_READ) then FileSystem:=nil;
@@ -20264,7 +20264,7 @@ begin
      {Return the path with the device path instead of the drive letter}
      Result:=FileSystem.GetEntryName(FileHandle.HandleEntry,False,False,True);
     end
-   else if (AFlags and VOLUME_NAME_GUID) <> 0 then 
+   else if (AFlags and VOLUME_NAME_GUID) <> 0 then
     begin
      {Return the path with the volume path instead of the drive letter}
      Result:=FileSystem.GetEntryName(FileHandle.HandleEntry,False,True,False);
@@ -20314,10 +20314,10 @@ begin
   finally
    {Unlock Handle}
    FileHandle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20360,20 +20360,20 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetRawFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
  try
   {Get the Device}
   Result:=Handle.Device;
-  
+
   {Check Device}
   if not CheckDevice(Result,ALock,AState) then Result:=nil;
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20384,7 +20384,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetEnumFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
@@ -20397,7 +20397,7 @@ begin
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20408,7 +20408,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetRawFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
@@ -20421,7 +20421,7 @@ begin
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20432,7 +20432,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetEnumFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
@@ -20445,7 +20445,7 @@ begin
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20460,7 +20460,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if Length(APath) > 1 then
   begin
    {Check for Drive Path}
@@ -20472,7 +20472,7 @@ begin
        Exit; {Return nil}
       end;
     end;
-    
+
    {Check for Volume Path}
    if Copy(APath,1,Length(VOLUME_PATH_PREFIX)) = VOLUME_PATH_PREFIX then {\\?}
     begin
@@ -20481,12 +20481,12 @@ begin
       begin
        {Get Remainder}
        WorkBuffer:=Copy(APath,Length(VOLUME_PATH_PREFIX) + Length(VOLUME_PREFIX) + 1,Length(APath));
-       
+
        {Check Slash}
        SlashPos:=Pos(FAT_PATH_CHAR,WorkBuffer);
        if SlashPos = 0 then SlashPos:=Pos(UNIX_PATH_CHAR,WorkBuffer);
        if SlashPos <> 0 then WorkBuffer:=Copy(WorkBuffer,1,SlashPos - 1);
-       
+
        {Get Volume}
        Result:=GetVolumeByName(VOLUME_PREFIX + WorkBuffer,ALock,AState); {Previously VOLUME_PATH_PREFIX + VOLUME_PREFIX + WorkBuffer}
        if Result = nil then
@@ -20502,12 +20502,12 @@ begin
 
            {Unlock FileSystem}
            FileSystem.ReaderUnlock;
-          end; 
+          end;
         end;
        Exit;
       end;
     end;
-   
+
    {Check for Device Path}
    if Copy(APath,1,Length(DEVICE_PATH_PREFIX)) = DEVICE_PATH_PREFIX then {\\.}
     begin
@@ -20516,40 +20516,40 @@ begin
       begin
        {Get Remainder}
        WorkBuffer:=Copy(APath,Length(DEVICE_PATH_PREFIX) + Length(FIXED_DEVICE_PREFIX) + 1,Length(APath));
-       
+
        {Check Slash}
        SlashPos:=Pos(FAT_PATH_CHAR,WorkBuffer);
        if SlashPos = 0 then SlashPos:=Pos(UNIX_PATH_CHAR,WorkBuffer);
        if SlashPos <> 0 then WorkBuffer:=Copy(WorkBuffer,1,SlashPos - 1);
-       
+
        {Get Device}
        Device:=GetDeviceByName(FIXED_DEVICE_PREFIX + WorkBuffer,True,FILESYS_LOCK_READ); {Previously DEVICE_PATH_PREFIX + FIXED_DEVICE_PREFIX + WorkBuffer}
        if Device <> nil then
         begin
          {Get Remainder}
          WorkBuffer:=Copy(APath,Length(DEVICE_PATH_PREFIX) + Length(FIXED_DEVICE_PREFIX) + Length(WorkBuffer) + 1,Length(APath));
-         
+
          {Check for Partition}
          if Uppercase(Copy(WorkBuffer,1,Length(PARTITION_PREFIX))) = Uppercase(PARTITION_PREFIX) then {\Partition}
           begin
            {Get Remainder}
            WorkBuffer:=Copy(WorkBuffer,Length(PARTITION_PREFIX) + 1,Length(WorkBuffer));
-           
+
            {Check Slash}
            SlashPos:=Pos(FAT_PATH_CHAR,WorkBuffer);
            if SlashPos = 0 then SlashPos:=Pos(UNIX_PATH_CHAR,WorkBuffer);
            if SlashPos <> 0 then WorkBuffer:=Copy(WorkBuffer,1,SlashPos - 1);
-           
+
            {Get Partition}
            Partition:=GetPartitionByName(Device,PARTITION_PREFIX + WorkBuffer,True,FILESYS_LOCK_READ);
            if Partition <> nil then
             begin
              {Get Volume}
              Result:=GetVolumeByPartition(Partition,ALock,AState);
-             
+
              {Unlock Partition}
              Partition.ReaderUnlock;
-            end; 
+            end;
            if Result = nil then
             begin
              {Get FileSystem}
@@ -20563,7 +20563,7 @@ begin
 
                {Unlock FileSystem}
                FileSystem.ReaderUnlock;
-              end; 
+              end;
             end;
           end
          else
@@ -20583,10 +20583,10 @@ begin
 
                {Unlock FileSystem}
                FileSystem.ReaderUnlock;
-              end; 
+              end;
             end;
           end;
-          
+
          {Unlock Device}
          Device.ReaderUnlock;
         end;
@@ -20596,22 +20596,22 @@ begin
       begin
        {Get Remainder}
        WorkBuffer:=Copy(APath,Length(DEVICE_PATH_PREFIX) + Length(CDROM_DEVICE_PREFIX) + 1,Length(APath));
-       
+
        {Check Slash}
        SlashPos:=Pos(FAT_PATH_CHAR,WorkBuffer);
        if SlashPos = 0 then SlashPos:=Pos(UNIX_PATH_CHAR,WorkBuffer);
        if SlashPos <> 0 then WorkBuffer:=Copy(WorkBuffer,1,SlashPos - 1);
-       
+
        {Get Device}
        Device:=GetDeviceByName(CDROM_DEVICE_PREFIX + WorkBuffer,True,FILESYS_LOCK_READ); {Previously DEVICE_PATH_PREFIX + CDROM_DEVICE_PREFIX + WorkBuffer}
        if Device <> nil then
         begin
          {Get Volume}
          Result:=GetVolumeByDevice(Device,ALock,AState);
-        
+
          {Unlock Device}
          Device.ReaderUnlock;
-        end;        
+        end;
        if Result = nil then
         begin
          {Get FileSystem}
@@ -20625,7 +20625,7 @@ begin
 
            {Unlock FileSystem}
            FileSystem.ReaderUnlock;
-          end; 
+          end;
         end;
        Exit;
       end
@@ -20633,22 +20633,22 @@ begin
       begin
        {Get Remainder}
        WorkBuffer:=Copy(APath,Length(DEVICE_PATH_PREFIX) + Length(FLOPPY_DEVICE_PREFIX) + 1,Length(APath));
-       
+
        {Check Slash}
        SlashPos:=Pos(FAT_PATH_CHAR,WorkBuffer);
        if SlashPos = 0 then SlashPos:=Pos(UNIX_PATH_CHAR,WorkBuffer);
        if SlashPos <> 0 then WorkBuffer:=Copy(WorkBuffer,1,SlashPos - 1);
-       
+
        {Get Device}
        Device:=GetDeviceByName(FLOPPY_DEVICE_PREFIX + WorkBuffer,True,FILESYS_LOCK_READ); {Previously DEVICE_PATH_PREFIX + FLOPPY_DEVICE_PREFIX + WorkBuffer}
        if Device <> nil then
         begin
          {Get Volume}
          Result:=GetVolumeByDevice(Device,ALock,AState);
-        
+
          {Unlock Device}
          Device.ReaderUnlock;
-        end;        
+        end;
        if Result = nil then
         begin
          {Get FileSystem}
@@ -20662,7 +20662,7 @@ begin
 
            {Unlock FileSystem}
            FileSystem.ReaderUnlock;
-          end; 
+          end;
         end;
        Exit;
       end
@@ -20670,19 +20670,19 @@ begin
       begin
        {Get Remainder}
        WorkBuffer:=Copy(APath,Length(DEVICE_PATH_PREFIX) + Length(OTHER_DEVICE_PREFIX) + 1,Length(APath));
-       
+
        {Check Slash}
        SlashPos:=Pos(FAT_PATH_CHAR,WorkBuffer);
        if SlashPos = 0 then SlashPos:=Pos(UNIX_PATH_CHAR,WorkBuffer);
        if SlashPos <> 0 then WorkBuffer:=Copy(WorkBuffer,1,SlashPos - 1);
-       
+
        {Get Device}
        Device:=GetDeviceByName(OTHER_DEVICE_PREFIX + WorkBuffer,True,FILESYS_LOCK_READ); {Previously DEVICE_PATH_PREFIX + OTHER_DEVICE_PREFIX + WorkBuffer}
        if Device <> nil then
         begin
          {Get Volume}
          Result:=GetVolumeByDevice(Device,ALock,AState);
-         
+
          {Unlock Device}
          Device.ReaderUnlock;
         end;
@@ -20699,12 +20699,12 @@ begin
 
            {Unlock FileSystem}
            FileSystem.ReaderUnlock;
-          end; 
+          end;
         end;
        Exit;
       end;
     end;
-    
+
    {Check for Unc Path}
    if (APath[1] = FAT_PATH_CHAR) and (APath[2] = FAT_PATH_CHAR) then {\\}
     begin
@@ -20721,7 +20721,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetRawFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
@@ -20734,7 +20734,7 @@ begin
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20745,7 +20745,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetEnumFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
@@ -20758,7 +20758,7 @@ begin
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20769,7 +20769,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
@@ -20782,7 +20782,7 @@ begin
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20793,7 +20793,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetFindFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
@@ -20806,7 +20806,7 @@ begin
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20815,7 +20815,7 @@ function TFileSysDriver.GetDriveFromPath(const APath:String;ALock:Boolean;AState
 begin
  {}
  Result:=nil;
- 
+
  if Length(APath) > 1 then {Previously - Length(APath) > 0}
   begin
    {Check for Drive Path}
@@ -20829,7 +20829,7 @@ begin
        Exit;
       end;
     end;
-   
+
    {Check for Volume Path}
    if Copy(APath,1,Length(VOLUME_PATH_PREFIX)) = VOLUME_PATH_PREFIX then {\\?}
     begin
@@ -20839,7 +20839,7 @@ begin
        Exit; {Return nil}
       end;
     end;
-   
+
    {Check for Device Path}
    if Copy(APath,1,Length(DEVICE_PATH_PREFIX)) = DEVICE_PATH_PREFIX then {\\.}
     begin
@@ -20857,7 +20857,7 @@ begin
        Exit; {Return nil}
       end;
     end;
-   
+
    {Check for Unc Path}
    if (APath[1] = FAT_PATH_CHAR) and (APath[2] = FAT_PATH_CHAR) then {\\}
     begin
@@ -20865,7 +20865,7 @@ begin
      Result:=GetDriveByNo(NON_DRIVE,ALock,AState);
      Exit;
     end;
-    
+
    {Default to Current Drive}
    Result:=GetDriveByNo(GetCurrentDrive,ALock,AState);
   end
@@ -20873,7 +20873,7 @@ begin
   begin
    {Default to Current Drive}
    Result:=GetDriveByNo(GetCurrentDrive,ALock,AState);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -20884,11 +20884,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetRawFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
- try 
+ try
   {Get the Drive}
   Result:=Handle.Drive;
 
@@ -20897,7 +20897,7 @@ begin
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20908,11 +20908,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetEnumFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
- try 
+ try
   {Get the Drive}
   Result:=Handle.CurrentDrive;
 
@@ -20921,7 +20921,7 @@ begin
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20932,11 +20932,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
- try 
+ try
   {Get the Drive}
   Result:=Handle.Drive;
 
@@ -20945,7 +20945,7 @@ begin
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20956,11 +20956,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetFindFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
- try 
+ try
   {Get the Drive}
   Result:=Handle.Drive;
 
@@ -20969,7 +20969,7 @@ begin
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -20980,11 +20980,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetEnumFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
- try 
+ try
   {Get the Image}
   Result:=Handle.CurrentImage;
 
@@ -20993,9 +20993,9 @@ begin
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
-   
+
 {==============================================================================}
 
 function TFileSysDriver.GetCatalogFromEnum(AHandle:THandle;ALock:Boolean;AState:LongWord):TDiskCatalog;
@@ -21005,27 +21005,27 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetEnumFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
- try 
+ try
   {Get the FileSystem}
-  FileSystem:=GetFileSystemFromEnum(AHandle,True,FILESYS_LOCK_READ);  
+  FileSystem:=GetFileSystemFromEnum(AHandle,True,FILESYS_LOCK_READ);
   if FileSystem = nil then Exit;
-  
+
   {Get the Catalog}
   Result:=Handle.CurrentCatalog;
 
   {Check Catalog}
   if not FileSystem.CheckCatalog(Result,ALock,AState) then Result:=nil;
-  
+
   {Unlock FileSystem}
   FileSystem.ReaderUnlock;
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21037,7 +21037,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Drive}
  Drive:=GetDriveFromPath(APath,True,FILESYS_LOCK_READ);
  if Drive = nil then
@@ -21049,13 +21049,13 @@ begin
     {Get the FileSystem}
     Result:=Volume.FileSystem;
     if Result = nil then Exit;
-    
+
     {Lock FileSystem}
     if ALock then if AState = FILESYS_LOCK_READ then Result.ReaderLock else Result.WriterLock;
-   finally 
+   finally
     {Unlock Volume}
     Volume.ReaderUnlock;
-   end; 
+   end;
   end
  else
   begin
@@ -21063,13 +21063,13 @@ begin
     {Get the FileSystem}
     Result:=Drive.FileSystem;
     if Result = nil then Exit;
-    
+
     {Lock FileSystem}
     if ALock then if AState = FILESYS_LOCK_READ then Result.ReaderLock else Result.WriterLock;
-   finally 
+   finally
     {Unlock Drive}
     Drive.ReaderUnlock;
-   end; 
+   end;
   end;
 end;
 
@@ -21081,20 +21081,20 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetEnumFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
  try
   {Get the FileSystem}
   Result:=Handle.FileSystem;
-  
+
   {Check FileSystem}
   if not CheckFileSystem(Result,ALock,AState) then Result:=nil;
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21105,7 +21105,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetFileFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
@@ -21114,10 +21114,10 @@ begin
    begin
     {Lock Volume}
     if not CheckVolume(Handle.Volume,True,FILESYS_LOCK_READ) then Exit;
-   
+
     {Get the FileSystem}
     Result:=Handle.Volume.FileSystem;
-    
+
     {Check FileSystem}
     if not CheckFileSystem(Result,ALock,AState) then Result:=nil;
 
@@ -21128,7 +21128,7 @@ begin
    begin
     {Lock Drive}
     if not CheckDrive(Handle.Drive,True,FILESYS_LOCK_READ) then Exit;
-    
+
     {Get the FileSystem}
     Result:=Handle.Drive.FileSystem;
 
@@ -21141,7 +21141,7 @@ begin
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21152,11 +21152,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get the Handle}
  Handle:=GetFindFromHandle(AHandle,True,FILESYS_LOCK_READ);
  if Handle = nil then Exit;
- try 
+ try
   if Handle.Drive = nil then
    begin
     {Lock Volume}
@@ -21188,7 +21188,7 @@ begin
  finally
   {Unlock Handle}
   Handle.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21199,29 +21199,29 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FRawHandles.ReaderLock then Exit;
  try
   if AHandle = -1 then Exit;
- 
+
   {Find Matching Handle}
-  Handle:=TRawHandle(FRawHandles.Last); {Search Backwards} 
+  Handle:=TRawHandle(FRawHandles.Last); {Search Backwards}
   while Handle <> nil do
    begin
     if Handle.Handle = AHandle then
      begin
-      {Lock Handle} 
+      {Lock Handle}
       if ALock then if AState = FILESYS_LOCK_READ then Handle.ReaderLock else Handle.WriterLock;
-      
+
       Result:=Handle;
       Exit;
      end;
-    
+
     Handle:=TRawHandle(Handle.Prev);
    end;
  finally
   FRawHandles.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -21232,29 +21232,29 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FEnumHandles.ReaderLock then Exit;
  try
   if AHandle = -1 then Exit;
- 
+
   {Find Matching Handle}
-  Handle:=TEnumHandle(FEnumHandles.Last); {Search Backwards} 
+  Handle:=TEnumHandle(FEnumHandles.Last); {Search Backwards}
   while Handle <> nil do
    begin
     if Handle.Handle = AHandle then
      begin
-      {Lock Handle} 
+      {Lock Handle}
       if ALock then if AState = FILESYS_LOCK_READ then Handle.ReaderLock else Handle.WriterLock;
-      
+
       Result:=Handle;
       Exit;
      end;
-    
+
     Handle:=TEnumHandle(Handle.Prev);
    end;
  finally
   FEnumHandles.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -21265,29 +21265,29 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FFileHandles.ReaderLock then Exit;
  try
   if AHandle = -1 then Exit;
- 
+
   {Find Matching Handle}
   Handle:=TFileHandle(FFileHandles.Last); {Search Backwards}
   while Handle <> nil do
    begin
     if Handle.Handle = AHandle then
      begin
-      {Lock Handle} 
+      {Lock Handle}
       if ALock then if AState = FILESYS_LOCK_READ then Handle.ReaderLock else Handle.WriterLock;
-      
+
       Result:=Handle;
       Exit;
      end;
-    
-    Handle:=TFileHandle(Handle.Prev); 
+
+    Handle:=TFileHandle(Handle.Prev);
    end;
  finally
   FFileHandles.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -21298,29 +21298,29 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FFindHandles.ReaderLock then Exit;
  try
   if AHandle = -1 then Exit;
- 
+
   {Find Matching Handle}
   Handle:=TFindHandle(FFindHandles.Last); {Search Backwards}
   while Handle <> nil do
    begin
     if Handle.Handle = AHandle then
      begin
-      {Lock Handle} 
+      {Lock Handle}
       if ALock then if AState = FILESYS_LOCK_READ then Handle.ReaderLock else Handle.WriterLock;
-      
+
       Result:=Handle;
       Exit;
      end;
-    
+
     Handle:=TFindHandle(Handle.Prev);
    end;
  finally
   FFindHandles.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -21365,11 +21365,11 @@ begin
     {Get Next}
     Current:=Next;
     Next:=Current.Next;
-    
+
     {Free Object}
     Current.Free;
    end;
-  
+
   {Reset Defaults}
   Clear;
  finally
@@ -21395,7 +21395,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysList.ReaderConvert:Boolean; 
+function TFileSysList.ReaderConvert:Boolean;
 {Convert a Reader lock to a Writer lock}
 begin
  {}
@@ -21469,11 +21469,11 @@ begin
     {Get Next}
     Current:=Next;
     Next:=Current.Next;
-    
+
     {Free Object}
     Current.Free;
    end;
-  
+
   {Reset Defaults}
   Clear;
  finally
@@ -21499,7 +21499,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysListEx.ReaderConvert:Boolean; 
+function TFileSysListEx.ReaderConvert:Boolean;
 {Convert a Reader lock to a Writer lock}
 begin
  {}
@@ -21573,14 +21573,14 @@ begin
     {Get Next}
     Current:=Next;
     Next:=TTreeObject(Current.Next);
-    
+
     {Clear Children}
     ClearListItems(Current);
-    
+
     {Free Object}
     Current.Free;
    end;
-   
+
   {Reset Defaults}
   Clear;
  finally
@@ -21606,7 +21606,7 @@ end;
 
 {==============================================================================}
 
-function TFileSysTree.ReaderConvert:Boolean; 
+function TFileSysTree.ReaderConvert:Boolean;
 {Convert a Reader lock to a Writer lock}
 begin
  {}
@@ -21651,7 +21651,7 @@ begin
  FDriver:=ADriver;
  if FDriver <> nil then FDriver.AddDrive(Self);
  FVolume:=AVolume;
- 
+
  FDriveNo:=ADriveNo;
 
  FDriveType:=dtUNKNOWN;
@@ -21683,10 +21683,10 @@ begin
   FFileSystem:=nil;
   if FDriver <> nil then FDriver.RemoveDrive(Self);
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -21720,11 +21720,11 @@ begin
   if FDriver = nil then Exit;
   if FDriveNo < MIN_DRIVE then Exit;
   if FDriveNo > NON_DRIVE then Exit;
-  
+
   Result:=DRIVE_NAMES[FDriveNo];
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21739,11 +21739,11 @@ begin
   if FDriver = nil then Exit;
   if FDriveNo < MIN_DRIVE then Exit;
   if FDriveNo > NON_DRIVE then Exit;
-  
+
   Result:=DRIVE_ROOTS[FDriveNo];
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21759,11 +21759,11 @@ begin
   if FVolume = nil then Exit;
   if FDriveNo < MIN_DRIVE then Exit;
   if FDriveNo > MAX_DRIVE then Exit;
-  
+
   Result:=FVolume.Parent;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21780,9 +21780,9 @@ begin
   if FFileSystem = nil then Exit;
 
   Result:=FFileSystem.MaxFile;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21797,11 +21797,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FFileSystem = nil then Exit;
-  
+
   Result:=FFileSystem.MaxPath;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21816,11 +21816,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FFileSystem = nil then Exit;
-  
+
   Result:=FFileSystem.Attributes;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21835,11 +21835,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FFileSystem = nil then Exit;
-  
+
   Result:=FFileSystem.SystemName;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21854,11 +21854,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FFileSystem = nil then Exit;
-  
+
   Result:=FFileSystem.VolumeName;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21873,11 +21873,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FFileSystem = nil then Exit;
-  
+
   Result:=FFileSystem.VolumeGUID;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21892,11 +21892,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FFileSystem = nil then Exit;
-  
+
   Result:=FFileSystem.VolumeSerial;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21910,7 +21910,7 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   if FVolume <> nil then
     begin
     Result:=FVolume.DriveType;
@@ -21919,9 +21919,9 @@ begin
    begin
     Result:=FDriveType;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21936,11 +21936,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FFileSystem = nil then Exit;
-  
+
   Result:=FFileSystem.FileSysType;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21955,16 +21955,16 @@ begin
   try
    if FDriver = nil then Exit;
    if FFileSystem = AFileSystem then Exit;
-  
+
    FFileSystem:=AFileSystem;
-  finally  
+  finally
    ReleaseLock;
-  end; 
+  end;
 
   DriveInit;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -21978,7 +21978,7 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   if FVolume <> nil then
    begin
     Result:=FVolume.Removable;
@@ -21987,9 +21987,9 @@ begin
    begin
     Result:=FRemovable;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -22003,7 +22003,7 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   if FVolume <> nil then
    begin
     Result:=FVolume.Recognizable;
@@ -22012,9 +22012,9 @@ begin
    begin
     Result:=FRecognizable;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -22028,7 +22028,7 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   if FVolume <> nil then
    begin
     Result:=FVolume.Recognized;
@@ -22037,9 +22037,9 @@ begin
    begin
     Result:=FRecognized;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -22053,7 +22053,7 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   if FFileSystem <> nil then
    begin
     Result:=FFileSystem.SectorSize;
@@ -22067,11 +22067,11 @@ begin
     else
      begin
       Result:=FSectorSize;
-     end;     
+     end;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -22101,9 +22101,9 @@ begin
       Result:=FStartSector;
      end;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -22117,7 +22117,7 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   if FFileSystem <> nil then
    begin
     Result:=FFileSystem.SectorCount;
@@ -22131,11 +22131,11 @@ begin
     else
      begin
       Result:=FSectorCount;
-     end;     
+     end;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -22157,11 +22157,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FVolume = nil then Exit;
-  
+
   Result:=FVolume.Device;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -22175,11 +22175,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FVolume = nil then Exit;
-  
+
   Result:=FVolume.Partition;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -22228,18 +22228,18 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('            Name = ' + Name);
   if FILESYS_LOG_ENABLED then FileSysLogDebug('            DriveNo = ' + IntToStr(DriveNo));
   {$ENDIF}
- 
+
   if FDriver = nil then Exit;
   if FVolume = nil then Exit;
   if FDriveNo < MIN_DRIVE then Exit;
   if FDriveNo > MAX_DRIVE then Exit;
 
   FDriveType:=dtUNKNOWN;
-  
+
   Result:=True;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -22250,7 +22250,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- 
+
  Device:=nil;
  Partition:=nil;
  Volume:=nil;
@@ -22296,7 +22296,7 @@ end;
 
 {==============================================================================}
 
-function TRawHandle.ReaderConvert:Boolean; 
+function TRawHandle.ReaderConvert:Boolean;
 {Convert a Reader lock to a Writer lock}
 begin
  {}
@@ -22336,7 +22336,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- 
+
  FileSystem:=nil;
 
  Handle:=THandle(Self);
@@ -22381,7 +22381,7 @@ end;
 
 {==============================================================================}
 
-function TEnumHandle.ReaderConvert:Boolean; 
+function TEnumHandle.ReaderConvert:Boolean;
 {Convert a Reader lock to a Writer lock}
 begin
  {}
@@ -22421,7 +22421,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- 
+
  Volume:=nil;
  Drive:=nil;
 
@@ -22429,7 +22429,7 @@ begin
  ShareMode:=fmShareCompat;
 
  Position:=0;
- 
+
  Handle:=THandle(Self);
  Count:=1;
 
@@ -22472,7 +22472,7 @@ end;
 
 {==============================================================================}
 
-function TFileHandle.ReaderConvert:Boolean; 
+function TFileHandle.ReaderConvert:Boolean;
 {Convert a Reader lock to a Writer lock}
 begin
  {}
@@ -22512,7 +22512,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- 
+
  Volume:=nil;
  Drive:=nil;
 
@@ -22558,7 +22558,7 @@ end;
 
 {==============================================================================}
 
-function TFindHandle.ReaderConvert:Boolean; 
+function TFindHandle.ReaderConvert:Boolean;
 {Convert a Reader lock to a Writer lock}
 begin
  {}
@@ -22599,10 +22599,10 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FLocalLock:=MutexCreate;
- 
+
  FDriver:=ADriver;
  if FDriver <> nil then FDriver.AddController(Self);
- 
+
  FControllerNo:=-1;
  if FDriver <> nil then FControllerNo:=FDriver.GetNextControllerNo;
  FDescription:='';
@@ -22617,13 +22617,13 @@ begin
  try
   FDescription:='';
   FControllerNo:=-1;
-  
+
   if FDriver <> nil then FDriver.RemoveController(Self);
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -22656,11 +22656,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FControllerNo = -1 then Exit;
-  
+
   Result:=CONTROLLER_PREFIX + IntToStr(FControllerNo);
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -22677,7 +22677,7 @@ begin
 
  ReleaseLock;
 end;
- 
+
 {==============================================================================}
 
 function TDiskController.GetFixedDiskCount:Integer;
@@ -22700,12 +22700,12 @@ function TDiskController.LCHStoLBA(ADevice:TDiskDevice;Cylinder,Head,Sector:Word
 begin
  {}
  Result:=False;
- 
+
  if ADevice = nil then Exit;
- 
+
  {No need to cast to LongWord for result}
  LBA:=((Cylinder * ADevice.LogicalHeads + Head) * ADevice.LogicalSectors) + Sector - 1;
- 
+
  Result:=True;
 end;
 
@@ -22715,12 +22715,12 @@ function TDiskController.PCHStoLBA(ADevice:TDiskDevice;Cylinder,Head,Sector:Long
 begin
  {}
  Result:=False;
- 
+
  if ADevice = nil then Exit;
- 
+
  {No need to cast to LongWord for result}
  LBA:=((Cylinder * ADevice.PhysicalHeads + Head) * ADevice.PhysicalSectors) + Sector - 1;
- 
+
  Result:=True;
 end;
 
@@ -22732,14 +22732,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskController.LBAtoLCHS');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                 LBA = ' + IntToStr(LBA));
  {$ENDIF}
- 
+
  if ADevice = nil then Exit;
- 
+
  Cylinder:=LBA div (ADevice.LogicalHeads * ADevice.LogicalSectors);
  WorkLong:=LBA mod (ADevice.LogicalHeads * ADevice.LogicalSectors);
  Head:=WorkLong div ADevice.LogicalSectors;
@@ -22756,19 +22756,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskController.LBAtoPCHS');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                 LBA = ' + IntToStr(LBA));
  {$ENDIF}
- 
+
  if ADevice = nil then Exit;
- 
+
  Cylinder:=LBA div (ADevice.PhysicalHeads * ADevice.PhysicalSectors);
  WorkLong:=LBA mod (ADevice.PhysicalHeads * ADevice.PhysicalSectors);
  Head:=WorkLong div ADevice.PhysicalSectors;
  Sector:=WorkLong mod ADevice.PhysicalSectors + 1;
- 
+
  Result:=True;
 end;
 
@@ -22778,12 +22778,12 @@ function TDiskController.LCHStoPCHS(ADevice:TDiskDevice;LCylinder,LHead,LSector:
 begin
  {}
  Result:=False;
- 
+
  if ADevice = nil then Exit;
- 
+
  //To Do //???
  //See HowItWorks CHS for algorithms
- 
+
  Result:=True;
 end;
 
@@ -22793,9 +22793,9 @@ function TDiskController.PCHStoLCHS(ADevice:TDiskDevice;PCylinder,PHead,PSector:
 begin
  {}
  Result:=False;
- 
+
  if ADevice = nil then Exit;
- 
+
  //To Do //???
  //See HowItWorks CHS for algorithms
  //Basically this:
@@ -22838,7 +22838,7 @@ end;
 
 {==============================================================================}
 
-function TDiskController.ReaderConvert:Boolean; 
+function TDiskController.ReaderConvert:Boolean;
 {Convert a Reader lock to a Writer lock}
 begin
  {}
@@ -22976,7 +22976,7 @@ end;
 
 {==============================================================================}
 
-function TDiskController.VendorId(ADevice:TDiskDevice):Word; 
+function TDiskController.VendorId(ADevice:TDiskDevice):Word;
 begin
  {Virtual Base Method - No Function}
  Result:=0;
@@ -22984,7 +22984,7 @@ end;
 
 {==============================================================================}
 
-function TDiskController.DeviceId(ADevice:TDiskDevice):Word; 
+function TDiskController.DeviceId(ADevice:TDiskDevice):Word;
 begin
  {Virtual Base Method - No Function}
  Result:=0;
@@ -22992,7 +22992,7 @@ end;
 
 {==============================================================================}
 
-function TDiskController.Manufacturer(ADevice:TDiskDevice):String; 
+function TDiskController.Manufacturer(ADevice:TDiskDevice):String;
 begin
  {Virtual Base Method - No Function}
  Result:='';
@@ -23000,7 +23000,7 @@ end;
 
 {==============================================================================}
 
-function TDiskController.Product(ADevice:TDiskDevice):String; 
+function TDiskController.Product(ADevice:TDiskDevice):String;
 begin
  {Virtual Base Method - No Function}
  Result:='';
@@ -23008,7 +23008,7 @@ end;
 
 {==============================================================================}
 
-function TDiskController.SerialNumber(ADevice:TDiskDevice):String; 
+function TDiskController.SerialNumber(ADevice:TDiskDevice):String;
 begin
  {Virtual Base Method - No Function}
  Result:='';
@@ -23192,7 +23192,7 @@ end;
 
 {==============================================================================}
 
-function TDiskController.Ejectable(ADevice:TDiskDevice):Boolean; 
+function TDiskController.Ejectable(ADevice:TDiskDevice):Boolean;
 begin
  {Virtual Base Method - No Function}
  Result:=False;
@@ -23309,10 +23309,10 @@ function TDiskController.SectorShiftCount(ADevice:TDiskDevice):Word;
 begin
  {Base Implementation}
  Result:=0;
- 
+
  if ADevice = nil then Exit;
  if ADevice.SectorSize = 0 then Exit;
- 
+
  while (ADevice.SectorSize shr Result) > 1 do
   begin
    Inc(Result);
@@ -23335,7 +23335,7 @@ begin
  FImage:=AImage;
  {if FImage <> nil then FImage.Device:=Self;} {Done by DeviceInit}
  FStorage:=AStorage;
- 
+
  FDeviceNo:=ADeviceNo;
  FIdentifier:=AIdentifier;
 end;
@@ -23348,17 +23348,17 @@ begin
  WriterLock;
  try
   FDeviceNo:=-1;
-  
+
   if FImage <> nil then FImage.Device:=nil;
   FStorage:=nil;
   FImage:=nil;
   FController:=nil;
   if FDriver <> nil then FDriver.RemoveDevice(Self);
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -23391,7 +23391,7 @@ begin
  try
   if FDriver = nil then Exit;
   if FDeviceNo = -1 then Exit;
-  
+
   if FDeviceNo < MIN_FIXED_DEVICE then
    begin
     {Floppy Device}
@@ -23412,9 +23412,9 @@ begin
       end;
     end;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -23539,10 +23539,10 @@ begin
   if FController = nil then Exit;
   if FDeviceNo = -1 then Exit;
   if FSectorCount = 0 then Exit;
-  
+
   {If not a "Fixed Disk" or "Removable Disk" then nothing Free}
   if (FMediaType <> mtFIXED) and (FMediaType <> mtREMOVABLE) then Exit;
-  
+
   {Check Partition}
   if FDriver.GetPartitionByDevice(Self,False,FILESYS_LOCK_NONE) = nil then {Do not lock}
    begin
@@ -23558,17 +23558,17 @@ begin
          Result:=FSectorCount - Volume.SectorCount;
          Exit;
         end;
-      finally  
+      finally
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
-  
-  {Get Sector Count}  
+
+  {Get Sector Count}
   Result:=(FSectorCount - 1); {Minus one to allow for Master Boot}
-   
-  {Check each Partition}                              
-  Partition:=FDriver.GetPartitionByNext(nil,True,False,FILESYS_LOCK_READ); 
+
+  {Check each Partition}
+  Partition:=FDriver.GetPartitionByNext(nil,True,False,FILESYS_LOCK_READ);
   while Partition <> nil do
    begin
     {Subtract the amount used by each first level Partition}
@@ -23576,12 +23576,12 @@ begin
      begin
       Result:=Result - Partition.SectorCount;
      end;
-       
+
     Partition:=FDriver.GetPartitionByNext(Partition,True,True,FILESYS_LOCK_READ);
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -23594,9 +23594,9 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not GetAvailableBlock(FreeStart,FreeCount) then Exit;
- 
+
  Result:=FreeCount;
 end;
 
@@ -23625,7 +23625,7 @@ begin
 
   {If not a "Fixed Disk" or "Removable Disk" then nothing Available}
   if (FMediaType <> mtFIXED) and (FMediaType <> mtREMOVABLE) then Exit;
-  
+
   {Check Partition}
   if FDriver.GetPartitionByDevice(Self,False,FILESYS_LOCK_NONE) = nil then {Do not lock}
    begin
@@ -23636,21 +23636,21 @@ begin
       try
        {Check File System Type}
        if Volume.FileSysType <> fsUNKNOWN then Exit;
-      finally  
+      finally
        Volume.ReaderUnlock;
-      end; 
+      end;
      end;
    end;
-  
+
   {Get the Minimum Block}
   MinimumCount:=(FPhysicalSectors * FPhysicalHeads);
   if (MinimumCount = 0) or (FPhysicalCylinders > 1024) then MinimumCount:=(FLogicalSectors * FLogicalHeads);
-  
+
   {Get Start Block}
   AStart:=1;                {Start at one to allow for Master Boot}
   ACount:=(FSectorCount - 1);  {Minus one to allow for Master Boot}
   EntryCount:=0;
-  
+
   {Get Partitions}
   Partitions:=FDriver.GetPartitionsByDevice(Self,True,FILESYS_LOCK_READ);
   try
@@ -23663,12 +23663,12 @@ begin
      if Partitions.Items[Count] <> nil then
       begin
        Partition:=TDiskPartition(Partitions.Items[Count]); {Locked by GetPartitionsByDevice}
-       
+
        {Check for first level}
        if (Partition.Device = Self) and (Partition.Partition = nil) then
         begin
          Inc(EntryCount);
-         
+
          {Check for maximum partitions already}
          if EntryCount > MAX_PARTITION then Exit;
 
@@ -23708,7 +23708,7 @@ begin
         end;
       end;
     end;
-    
+
    if ACount > MinimumCount then Result:=True;
   finally
    {Unlock each Partition}
@@ -23717,18 +23717,18 @@ begin
      if Partitions.Items[Count] <> nil then
       begin
        Partition:=TDiskPartition(Partitions.Items[Count]); {Locked by GetPartitionsByDevice}
-   
+
        {Unlock Partition}
        Partition.ReaderUnlock;
-      end; 
+      end;
     end;
-   
+
    {Free Partitions}
    Partitions.Free;
   end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -23750,28 +23750,28 @@ begin
 
   {If not a "Fixed Disk" or "Removable Disk" then no Signature}
   if (FMediaType <> mtFIXED) and (FMediaType <> mtREMOVABLE) then Exit;
-  
+
   {If not partitioned then no Signature}
   if FDriver.GetPartitionByDevice(Self,False,FILESYS_LOCK_NONE) = nil then Exit; {Do not lock}
-  
+
   {Allocate Boot Record}
   BootRecord:=GetMem(FSectorSize);
   if BootRecord = nil then Exit;
   try
    {Read Boot Record}
    if not FDriver.Cache.DeviceRead(Self,0,1,BootRecord^) then Exit;
-   
+
    {Check Boot Record}
    if BootRecord.Signature <> BOOT_RECORD_SIGNATURE then Exit;
-   
+
    {Get Disk Signature}
    Result:=BootRecord.DiskSignature;
   finally
    FreeMem(BootRecord);
   end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -23791,31 +23791,31 @@ begin
 
   {If not a "Fixed Disk" or "Removable Disk" then no Signature}
   if (FMediaType <> mtFIXED) and (FMediaType <> mtREMOVABLE) then Exit;
-  
+
   {If not partitioned then no Signature}
   if FDriver.GetPartitionByDevice(Self,False,FILESYS_LOCK_NONE) = nil then Exit; {Do not lock}
-  
+
   {Allocate Boot Record}
   BootRecord:=GetMem(FSectorSize);
   if BootRecord = nil then Exit;
   try
    {Read Boot Record}
    if not FDriver.Cache.DeviceRead(Self,0,1,BootRecord^) then Exit;
-   
+
    {Check Boot Record}
    if BootRecord.Signature <> BOOT_RECORD_SIGNATURE then Exit;
-   
+
    {Set Disk Signature}
    BootRecord.DiskSignature:=ADiskSignature;
-   
+
    {Write Boot Record}
    if not FDriver.Cache.DeviceWrite(Self,0,1,BootRecord^) then Exit;
   finally
    FreeMem(BootRecord);
   end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -23886,17 +23886,17 @@ begin
   FWriteable:=FController.Writeable(Self);
   FEraseable:=FController.Eraseable(Self);
   FRemovable:=FController.Removable(Self);
-  FChangeLine:=FController.ChangeLine(Self); 
+  FChangeLine:=FController.ChangeLine(Self);
 
   FInformation:=FController.Information(Self);
- 
+
   FVendorId:=FController.VendorId(Self);
   FDeviceId:=FController.DeviceId(Self);
- 
+
   FManufacturer:=FController.Manufacturer(Self);
   FProduct:=FController.Product(Self);
   FSerialNumber:=FController.SerialNumber(Self);
-  
+
   FHostBus:=FController.HostBus(Self);
   FBusNumber:=FController.BusNumber(Self);
   FDeviceNumber:=FController.DeviceNumber(Self);
@@ -23927,11 +23927,11 @@ begin
   FSectorSize:=FController.SectorSize(Self);
   FSectorCount:=FController.SectorCount(Self);
   FSectorShiftCount:=FController.SectorShiftCount(Self);
- 
+
   Result:=True;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -23945,7 +23945,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -23966,7 +23966,7 @@ begin
    mtFIXED:begin
      {"Fixed Disk" Device}
      if FSectorSize = 0 then Exit;
-     
+
      {Allocate Boot Record}
      BootRecord:=GetMem(FSectorSize);
      if BootRecord = nil then Exit;
@@ -23974,10 +23974,10 @@ begin
       {Check Media and Read Boot Record}
       if not FController.MediaReady(Self) then Exit; {was MediaReady}
       if not FDriver.Cache.DeviceRead(Self,0,1,BootRecord^) then Exit;
-      
+
       {Check Boot Record}
       if BootRecord.Signature <> BOOT_RECORD_SIGNATURE then Exit;
-      
+
       {Scan Partition Table}
       for Count:=MIN_PARTITION to MAX_PARTITION do
        begin
@@ -23992,13 +23992,13 @@ begin
             Partition:=TDiskPartition.Create(FDriver,Self,nil,FDriver.GetNextPartitionNo(Self,False));
             Partition.EntryNo:=Count;
             Partition.PartitionInit;
-            
+
             {Get the Recognizer for this Partition}
             FDriver.GetRecognizerByPartition(Partition,False,FILESYS_LOCK_NONE); {Do not lock}
            end;
          end;
        end;
-      
+
       {Check for Extended Partitions}
       for Count:=MIN_PARTITION to MAX_PARTITION do
        begin
@@ -24006,12 +24006,12 @@ begin
         if Partition <> nil then
          begin
           Partition.LocatePartitions;
-          
+
           {Unlock Partition}
           Partition.WriterUnlock;
          end;
        end;
-      
+
       Result:=True;
      finally
       FreeMem(BootRecord);
@@ -24028,13 +24028,13 @@ begin
       {Check Media and Read Boot Record}
       if not FController.MediaReady(Self) then Exit; {was MediaReady}
       if not FDriver.Cache.DeviceRead(Self,0,1,BootRecord^) then Exit;
-      
+
       {Check Boot Sector}
       if FDriver.GetRecognizerByBootSector(PBootSector(BootRecord),0,FSectorCount,False,FILESYS_LOCK_NONE) = nil then
        begin
         {Check Boot Record}
         if BootRecord.Signature <> BOOT_RECORD_SIGNATURE then Exit;
-        
+
         {Scan Partition Table}
         for Count:=MIN_PARTITION to MAX_PARTITION do
          begin
@@ -24049,13 +24049,13 @@ begin
               Partition:=TDiskPartition.Create(FDriver,Self,nil,FDriver.GetNextPartitionNo(Self,False));
               Partition.EntryNo:=Count;
               Partition.PartitionInit;
-              
+
               {Get the Recognizer for this Partition}
               FDriver.GetRecognizerByPartition(Partition,False,FILESYS_LOCK_NONE); {Do not lock}
              end;
            end;
          end;
-        
+
         {Check for Extended Partitions}
         for Count:=MIN_PARTITION to MAX_PARTITION do
          begin
@@ -24063,27 +24063,27 @@ begin
           if Partition <> nil then
            begin
             Partition.LocatePartitions;
-            
+
             {Unlock Partition}
             Partition.WriterUnlock;
            end;
          end;
-       end;  
-      
+       end;
+
       Result:=True;
      finally
       FreeMem(BootRecord);
      end;
-    end;   
+    end;
    else
     begin
      {"Floppy Disk" Device (including CDROM, DVD, Other)}
      Result:=True;
     end;
   end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24123,9 +24123,9 @@ begin
         begin
          Volume:=TDiskVolume.Create(FDriver,Self,nil,FDriver.GetNextVolumeNo);
          Volume.VolumeInit;
-        end; 
+        end;
       end;
-     
+
      Result:=True;
     end;
    mtREMOVABLE:begin
@@ -24142,24 +24142,24 @@ begin
           begin
            Volume:=TDiskVolume.Create(FDriver,Self,nil,FDriver.GetNextVolumeNo);
            Volume.VolumeInit;
-          end; 
+          end;
         end;
-     
+
        Result:=True;
       end
      else
-      begin     
+      begin
        Result:=True;
-      end; 
+      end;
     end;
    mtFIXED:begin
      {"Fixed Disk" Device}
      Result:=True;
     end;
   end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24168,7 +24168,7 @@ function TDiskDevice.CreateVolume:TDiskVolume;
 begin
  {Base Implementation}
  Result:=nil;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -24176,11 +24176,11 @@ begin
   {$ENDIF}
 
   if FDriver = nil then Exit;
- 
+
   Result:=TDiskVolume.Create(FDriver,Self,nil,FDriver.GetNextVolumeNo);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24190,7 +24190,7 @@ function TDiskDevice.DeleteVolume(AVolume:TDiskVolume):Boolean;
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -24198,13 +24198,13 @@ begin
   {$ENDIF}
 
   if AVolume = nil then Exit;
- 
+
   AVolume.Free;
- 
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24216,7 +24216,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -24239,18 +24239,18 @@ begin
        begin
         {Create Partition}
         Result:=Recognizer.Partitioner.CreatePartition(Self,AParent,APartitionId,ACount,AActive);
-        
+
         {Unlock Recognizer}
         Recognizer.ReaderUnlock;
         Exit;
        end;
      end;
-     
-    Recognizer:=FDriver.GetRecognizerByNext(Recognizer,True,True,FILESYS_LOCK_READ); 
+
+    Recognizer:=FDriver.GetRecognizerByNext(Recognizer,True,True,FILESYS_LOCK_READ);
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24273,7 +24273,7 @@ begin
   if FController = nil then Exit;
   if FDeviceNo = -1 then Exit;
   if APartition = nil then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByPartition(APartition,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -24281,20 +24281,20 @@ begin
     try
      {Check for Partitioner}
      if Recognizer.Partitioner = nil then Exit;
-    
+
      {Check Accepted} {Pass Unused for Id}
      if not Recognizer.Partitioner.AcceptPartition(Self,APartition,APartition.Partition,pidUnused) then Exit;
-    
+
      {Delete Partition}
      Result:=Recognizer.Partitioner.DeletePartition(APartition);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24317,7 +24317,7 @@ begin
   if FController = nil then Exit;
   if FDeviceNo = -1 then Exit;
   if APartition = nil then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByPartition(APartition,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -24325,20 +24325,20 @@ begin
     try
      {Check for Partitioner}
      if Recognizer.Partitioner = nil then Exit;
-    
+
      {Check Accepted} {Pass new Id for Id}
      if not Recognizer.Partitioner.AcceptPartition(Self,APartition,APartition.Partition,APartitionId) then Exit;
-    
+
      {Modify Partition}
      Result:=Recognizer.Partitioner.ModifyPartition(APartition,APartitionId,False);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24361,7 +24361,7 @@ begin
   if FController = nil then Exit;
   if FDeviceNo = -1 then Exit;
   if APartition = nil then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByPartition(APartition,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -24369,20 +24369,20 @@ begin
     try
      {Check for Partitioner}
      if Recognizer.Partitioner = nil then Exit;
-    
+
      {Check Accepted} {Pass current Id for Id}
      if not Recognizer.Partitioner.AcceptPartition(Self,APartition,APartition.Partition,APartition.PartitionId) then Exit;
-    
+
      {Activate Partition}
      Result:=Recognizer.Partitioner.ActivatePartition(APartition,AActive);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24406,7 +24406,7 @@ begin
   if FController = nil then Exit;
   if FDeviceNo = -1 then Exit;
   if APartition = nil then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByPartition(APartition,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -24414,20 +24414,20 @@ begin
     try
      {Check for Resizer}
      if Recognizer.Resizer = nil then Exit;
-    
+
      {Check Accepted}
      if not Recognizer.Resizer.AcceptPartition(APartition,AStart,ASize) then Exit;
-    
+
      {Shrink Partition}
      Result:=Recognizer.Resizer.ShrinkPartition(APartition,AStart,ASize);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24451,7 +24451,7 @@ begin
   if FController = nil then Exit;
   if FDeviceNo = -1 then Exit;
   if APartition = nil then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByPartition(APartition,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -24459,20 +24459,20 @@ begin
     try
      {Check for Resizer}
      if Recognizer.Resizer = nil then Exit;
-    
+
      {Check Accepted}
      if not Recognizer.Resizer.AcceptPartition(APartition,AStart,ASize) then Exit;
-    
+
      {Expand Partition}
      Result:=Recognizer.Resizer.ExpandPartition(APartition,AStart,ASize);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24481,7 +24481,7 @@ function TDiskDevice.Reset:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -24490,11 +24490,11 @@ begin
 
   if FDriver = nil then Exit;
   if FController = nil then Exit;
-  
+
   Result:=FController.Reset(Self);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24507,17 +24507,17 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.LockMedia (Name=' + Name + ')'); 
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.LockMedia (Name=' + Name + ')');
   {$ENDIF}
 
   if FDriver = nil then Exit;
   if FController = nil then Exit;
-  
+
   Result:=FController.LockMedia(Self);
   if Result then FLocked:=FController.Locked(Self);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24530,17 +24530,17 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.UnlockMedia (Name=' + Name + ')'); 
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.UnlockMedia (Name=' + Name + ')');
   {$ENDIF}
 
   if FDriver = nil then Exit;
   if FController = nil then Exit;
-  
+
   Result:=FController.UnlockMedia(Self);
   if Result then FLocked:=FController.Locked(Self);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24553,16 +24553,16 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.EjectMedia (Name=' + Name + ')'); 
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.EjectMedia (Name=' + Name + ')');
   {$ENDIF}
 
   if FDriver = nil then Exit;
   if FController = nil then Exit;
-  
+
   Result:=FController.EjectMedia(Self);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24575,18 +24575,18 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.MediaReady (Name=' + Name + ')'); 
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.MediaReady (Name=' + Name + ')');
   {$ENDIF}
 
   if FDriver = nil then Exit;
   if FController = nil then Exit;
-  
+
   FReady:=FController.MediaReady(Self);
-  
+
   Result:=FReady;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24599,16 +24599,16 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.MediaChanged (Name=' + Name + ')'); 
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.MediaChanged (Name=' + Name + ')');
   {$ENDIF}
 
   if FDriver = nil then Exit;
   if FController = nil then Exit;
-  
+
   Result:=FController.MediaChanged(Self);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24621,23 +24621,23 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.MediaLocked (Name=' + Name + ')'); 
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.MediaLocked (Name=' + Name + ')');
   {$ENDIF}
 
   if FDriver = nil then Exit;
   if FController = nil then Exit;
-  
+
   FLocked:=FController.MediaLocked(Self);
-  
+
   Result:=FLocked;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TDiskDevice.InsertDevice:Boolean; 
+function TDiskDevice.InsertDevice:Boolean;
 begin
  {}
  Result:=False;
@@ -24645,30 +24645,30 @@ begin
  if not WriterLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.InsertDevice (Name=' + Name + ')'); 
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.InsertDevice (Name=' + Name + ')');
   {$ENDIF}
 
   if FDriver = nil then Exit;
 
   {Init Device}
   DeviceInit;
-  
+
   {Locate Partitions}
   LocatePartitions;
-  
+
   {Locate Volumes and Drives}
   FDriver.LocateVolumes;
   FDriver.LocateDrives;
 
-  Result:=True;  
- finally  
+  Result:=True;
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
-function TDiskDevice.EjectDevice:Boolean; 
+function TDiskDevice.EjectDevice:Boolean;
 var
  Volume:TDiskVolume;
  Partition:TDiskPartition;
@@ -24679,7 +24679,7 @@ begin
  if not WriterLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.EjectDevice (Name=' + Name + ')'); 
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.EjectDevice (Name=' + Name + ')');
   {$ENDIF}
 
   if FDriver = nil then Exit;
@@ -24689,34 +24689,34 @@ begin
 
   {Release any CachePages on the Device}
   FDriver.Cache.ReleaseDevicePages(Self);
-  
+
   {Init Device}
   DeviceInit;
-  
+
   {Remove any Volume on the Device}
   Volume:=FDriver.GetVolumeByDevice(Self,True,FILESYS_LOCK_WRITE);
   while Volume <> nil do
    begin
     Volume.Free;
-    
+
     Volume:=FDriver.GetVolumeByDevice(Self,True,FILESYS_LOCK_WRITE);
    end;
-  
+
   {Remove any Partition on the Device}
   Partition:=FDriver.GetPartitionByDevice(Self,True,FILESYS_LOCK_WRITE);
   while Partition <> nil do
    begin
     Partition.Free;
-    
+
     Partition:=FDriver.GetPartitionByDevice(Self,True,FILESYS_LOCK_WRITE);
    end;
-  
-  Result:=True;  
- finally  
+
+  Result:=True;
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function TDiskDevice.OpenDevice(AMode:Integer):THandle;
@@ -24729,28 +24729,28 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.OpenDevice (Name=' + Name + ')'); 
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.OpenDevice (Name=' + Name + ')');
   {$ENDIF}
 
   if FDriver = nil then Exit;
   if SectorSize = 0 then Exit;
-  
+
   {Open the Handle}
   Handle:=FDriver.OpenRawHandle(Self,nil,nil,nil,AMode,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
-  
+
   {Set the Handle properties}
   Handle.Size:=(SectorCount * SectorSize);  //To Do //shl SectorShiftCount
   Handle.Position:=0;
-  
+
   {Return the Handle}
   Result:=Handle.Handle;
 
   {Unlock Handle}
   Handle.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24763,21 +24763,21 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.CloseDevice (Name=' + Name + ')'); 
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.CloseDevice (Name=' + Name + ')');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if FDriver = nil then Exit;
-  
+
   {Get the Handle}
   Handle:=FDriver.GetRawFromHandle(AHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
-  
+
   {Close the Handle} {Do not unlock}
   FDriver.CloseRawHandle(Handle);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24795,28 +24795,28 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.ReadDevice (Name=' + Name + ')'); 
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.ReadDevice (Name=' + Name + ')');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if FDriver = nil then Exit;
   if SectorSize = 0 then Exit;
-  
+
   {Get the Handle}
   Handle:=FDriver.GetRawFromHandle(AHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
   try
    {Check the Mode}
    if Handle.OpenMode = fmOpenWrite then Exit;
-  
+
    {Check for Sector Multiple}
    if (ACount mod SectorSize) <> 0 then Exit;
-  
+
    {Determine how many Sectors to Read and Starting Sector}
    Start:=Handle.Position div SectorSize;              //To Do //shr SectorShiftCount
    Count:=LongWord(ACount) div SectorSize;             //To Do //shr SectorShiftCount
    if (Start + Count) > SectorCount then Exit;
-  
+
    {Read to Buffer}
    if FDriver.Cache.DeviceRead(Self,Start,Count,ABuffer) then
     begin
@@ -24826,10 +24826,10 @@ begin
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24847,28 +24847,28 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.WriteDevice (Name=' + Name + ')'); 
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.WriteDevice (Name=' + Name + ')');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if FDriver = nil then Exit;
   if SectorSize = 0 then Exit;
-  
+
   {Get the Handle}
   Handle:=FDriver.GetRawFromHandle(AHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
   try
    {Check the Mode}
    if Handle.OpenMode = fmOpenRead then Exit;
-  
+
    {Check for Sector Multiple}
    if (ACount mod SectorSize) <> 0 then Exit;
-  
+
    {Determine how many Sectors to Write and Starting Sector}
    Start:=Handle.Position div SectorSize;             //To Do //shr SectorShiftCount
    Count:=LongWord(ACount) div SectorSize;            //To Do //shr SectorShiftCount
    if (Start + Count) > SectorCount then Exit;
-  
+
    {Write from Buffer}
    if FDriver.Cache.DeviceWrite(Self,Start,Count,ABuffer) then
     begin
@@ -24878,15 +24878,15 @@ begin
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TDiskDevice.EraseDevice(AHandle:THandle;ACount:Integer):Integer; 
+function TDiskDevice.EraseDevice(AHandle:THandle;ACount:Integer):Integer;
 {Note: Raw Erases must be in Sector sized multiples}
 var
  Start:Int64;
@@ -24895,32 +24895,32 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.EraseDevice (Name=' + Name + ')'); 
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.EraseDevice (Name=' + Name + ')');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if FDriver = nil then Exit;
   if SectorSize = 0 then Exit;
- 
+
   {Get the Handle}
   Handle:=FDriver.GetRawFromHandle(AHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
   try
    {Check the Mode}
    if Handle.OpenMode = fmOpenRead then Exit;
- 
+
    {Check for Sector Multiple}
    if (ACount mod SectorSize) <> 0 then Exit;
- 
+
    {Determine how many Sectors to Write and Starting Sector}
    Start:=Handle.Position div SectorSize;             //To Do //shr SectorShiftCount
    Count:=LongWord(ACount) div SectorSize;            //To Do //shr SectorShiftCount
    if (Start + Count) > SectorCount then Exit;
- 
+
    {Erase Device}
    if FDriver.Cache.DeviceErase(Self,Start,Count) then
     begin
@@ -24930,10 +24930,10 @@ begin
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -24950,20 +24950,20 @@ begin
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
-  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.SeekDevice (Name=' + Name + ')'); 
+  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskDevice.SeekDevice (Name=' + Name + ')');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('             Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
 
   if FDriver = nil then Exit;
   if SectorSize = 0 then Exit;
-  
+
   {Get the Handle}
   Handle:=FDriver.GetRawFromHandle(AHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
   try
    {Check for Sector Multiple}
    if (AOffset mod SectorSize) <> 0 then Exit;
-  
+
    {Move Pointer}
    case AOrigin of
     soFromBeginning:begin
@@ -24971,7 +24971,7 @@ begin
       if AOffset < 0 then Exit;
       if AOffset > Handle.Size then Exit;
       Handle.Position:=AOffset;
-      
+
       Result:=Handle.Position;
      end;
     soFromCurrent:begin
@@ -24979,7 +24979,7 @@ begin
       if (Handle.Position + AOffset) < 0 then Exit;
       if (Handle.Position + AOffset) > Handle.Size then Exit;
       Handle.Position:=(Handle.Position + AOffset);
-      
+
       Result:=Handle.Position;
      end;
     soFromEnd:begin
@@ -24987,17 +24987,17 @@ begin
       if (Handle.Size + AOffset) < 0 then Exit;
       if (Handle.Size + AOffset) > Handle.Size then Exit;
       Handle.Position:=(Handle.Size + AOffset);
-      
+
       Result:=Handle.Position;
      end;
    end;
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25009,12 +25009,12 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FLocalLock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
- 
+
  FDriver:=ADriver;
  if FDriver <> nil then FDriver.AddPartition(Self);
  FDevice:=ADevice;
  FPartition:=APartition;
- 
+
  FPartitionNo:=APartitionNo;
  FEntryNo:=-1;
 
@@ -25029,15 +25029,15 @@ begin
  WriterLock;
  try
   FPartitionNo:=0;
-  
+
   FDevice:=nil;
   FPartition:=nil;
   if FDriver <> nil then FDriver.RemovePartition(Self);
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -25070,7 +25070,7 @@ begin
  try
   if FDriver = nil then Exit;
   if FPartitionNo = 0 then Exit;
-  
+
   if FExtended then
    begin
     Result:=EXTENDED_PREFIX + IntToStr(FPartitionNo);
@@ -25079,9 +25079,9 @@ begin
    begin
     Result:=PARTITION_PREFIX + IntToStr(FPartitionNo);
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25096,7 +25096,7 @@ begin
   if FDriver = nil then Exit;
   if FDevice = nil then Exit;
   if FPartitionNo = 0 then Exit;
-  
+
   if FExtended then
    begin
     Result:=FDevice.Name + EXTENDED_PREFIX + IntToStr(FPartitionNo);
@@ -25105,9 +25105,9 @@ begin
    begin
     Result:=FDevice.Name + PARTITION_PREFIX + IntToStr(FPartitionNo);
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25122,7 +25122,7 @@ begin
   if FDriver = nil then Exit;
   if FDevice = nil then Exit;
   if FPartitionNo = 0 then Exit;
-  
+
   if FPartition <> nil then
    begin
     Result:=FDevice.Name + FPartition.Name;
@@ -25131,9 +25131,9 @@ begin
    begin
     Result:=FDevice.Name;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25150,11 +25150,11 @@ begin
   if FDevice = nil then Exit;
   if FExtended then Exit;
   if FPartition = nil then Exit;
-  
+
   Result:=True;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25171,11 +25171,11 @@ begin
   if FDevice = nil then Exit;
   if FExtended then Exit;
   if FPartition <> nil then Exit;
-  
+
   Result:=True;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25191,13 +25191,13 @@ begin
   if FDriver = nil then Exit;
   if FDevice = nil then Exit;
   if not(AExtended) or (FExtended) then Exit;
-  
+
   FPartitionNo:=FDriver.GetNextPartitionNo(FDevice,AExtended);
   FExtended:=AExtended; {Must be after GetNextPartitionNo}
   FStartSector:=GetParentStart + FSectorOffset;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25218,16 +25218,16 @@ begin
   if FEntryNo > MAX_PARTITION then Exit;
   if FDevice.Controller = nil then Exit;
   if FSectorCount = 0 then Exit;
-  
+
   {If not Extended then nothing Free}
   if not FExtended then Exit;
-  
+
   {If not first level then nothing Free}
   if FPartition <> nil then Exit;
-  
-  {Get Sector Count}  
+
+  {Get Sector Count}
   Result:=(FSectorCount - 1); {Minus one to allow for Partition Record}
-  
+
   {Check each Partition}
   Partition:=FDriver.GetPartitionByNext(nil,True,False,FILESYS_LOCK_READ);
   while Partition <> nil do
@@ -25237,12 +25237,12 @@ begin
      begin
       Result:=Result - Partition.SectorCount;
      end;
-     
+
     Partition:=FDriver.GetPartitionByNext(Partition,True,True,FILESYS_LOCK_READ);
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25255,9 +25255,9 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not GetAvailableBlock(FreeStart,FreeCount) then Exit;
- 
+
  Result:=FreeCount;
 end;
 
@@ -25287,40 +25287,40 @@ begin
 
   {If not Extended then nothing Available}
   if not FExtended then Exit;
-  
+
   {If not first level then nothing Available}
   if FPartition <> nil then Exit;
-  
+
   {Get the Minimum Block}
   MinimumCount:=(FDevice.PhysicalSectors * FDevice.PhysicalHeads);
   if (MinimumCount = 0) or (FDevice.PhysicalCylinders > 1024) then MinimumCount:=(FDevice.LogicalSectors * FDevice.LogicalHeads);
-  
+
   {Get Start Block}
   AStart:=FStartSector + 1;     {Plus one to allow for Partition Record}
   ACount:=(FSectorCount - 1);  {Minus one to allow for Partition Record}
   {EntryCount:=0;}
-  
+
   {Get Partitions}
   Partitions:=FDriver.GetPartitionsByPartition(Self,True,FILESYS_LOCK_READ);
   try
    {Sort by Start}
    Partitions.Sort(ComparePartitions);
-   
+
    {Check each Partition}
    for Count:=0 to Partitions.Count - 1 do
     begin
      if Partitions.Items[Count] <> nil then
       begin
        Partition:=TDiskPartition(Partitions.Items[Count]); {Locked by GetPartitionsByPartition}
-       
+
        {Check for extended or direct child}
        if (Partition.Partition = Self) or ((Partition.Extended) and (Partition.Root = Self)) then
         begin
          {Inc(EntryCount);}
-         
+
          {Check for maximum partitions already (Only 2 on Extended)}
          {if EntryCount > MAX_EXTENDED then Exit;} {Dont check can be many more than 2 child partitions}
-         
+
          {Check Partition for overlap with Free}
          if (AStart >= Partition.StartSector) and ((AStart + ACount) <= (Partition.StartSector + Partition.SectorCount)) then
           begin
@@ -25357,7 +25357,7 @@ begin
         end;
       end;
     end;
-    
+
    if ACount > MinimumCount then Result:=True;
   finally
    {Unlock each Partition}
@@ -25366,18 +25366,18 @@ begin
      if Partitions.Items[Count] <> nil then
       begin
        Partition:=TDiskPartition(Partitions.Items[Count]); {Locked by GetPartitionsByPartition}
-  
+
        {Unlock Partition}
        Partition.ReaderUnlock;
       end;
     end;
-    
-   {Free Partitions}  
+
+   {Free Partitions}
    Partitions.Free;
   end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25396,12 +25396,12 @@ begin
   while Parent <> nil do
    begin
     Result:=Parent;
-    
+
     Parent:=Parent.Partition; //To Do //Lock //Use FDriver.CheckPartition(Lock) ?
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25416,7 +25416,7 @@ begin
  if not AcquireLock then Exit;
  try
   Parent:=FPartition; //To Do //Lock //Use FDriver.CheckPartition(Lock) ?
-  
+
   if FExtended then
    begin
     {Extended Partitions Start at Root.StartSector + SectorOffset}
@@ -25424,7 +25424,7 @@ begin
     while Parent <> nil do
      begin
       Result:=Parent.StartSector;
-      
+
       Parent:=Parent.Partition; //To Do //Lock //Use FDriver.CheckPartition(Lock) ?
      end;
    end
@@ -25437,9 +25437,9 @@ begin
       Result:=Parent.StartSector;
      end;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25460,7 +25460,7 @@ end;
 
 {==============================================================================}
 
-function TDiskPartition.ReaderConvert:Boolean; 
+function TDiskPartition.ReaderConvert:Boolean;
 {Convert a Reader lock to a Writer lock}
 begin
  {}
@@ -25525,9 +25525,9 @@ begin
     try
      {Get the Partition Record from the parent Partition}
      if not FDriver.Cache.DeviceRead(FDevice,FPartition.StartSector,1,PartitionRecord^) then Exit;
-     
+
      PartitionEntry:=PartitionRecord.PartitionTable.PartitionEntry[FEntryNo];
-     
+
      {Fill the Fields for the Partition}
      FPartitionId:=PartitionEntry.TypeIndicator;
      FBeginHead:=PartitionEntry.StartHead;
@@ -25548,7 +25548,7 @@ begin
       be recalculated}
      FStartSector:=GetParentStart + FSectorOffset;
      FSectorCount:=PartitionEntry.SectorCount;
-     
+
      Result:=True;
     finally
      FreeMem(PartitionRecord);
@@ -25562,9 +25562,9 @@ begin
     try
      {Get the Partition Record from the Device}
      if not FDriver.Cache.DeviceRead(FDevice,0,1,PartitionRecord^) then Exit;
-    
+
      PartitionEntry:=PartitionRecord.PartitionTable.PartitionEntry[FEntryNo];
-     
+
      {Fill the Fields for the Partition}
      FPartitionId:=PartitionEntry.TypeIndicator;
      FBeginHead:=PartitionEntry.StartHead;
@@ -25581,15 +25581,15 @@ begin
 
      FStartSector:=FSectorOffset;
      FSectorCount:=PartitionEntry.SectorCount;
-     
+
      Result:=True;
     finally
      FreeMem(PartitionRecord);
     end;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25603,7 +25603,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -25626,10 +25626,10 @@ begin
      {Check Media and Read Partition Record}
      if not FDevice.Controller.MediaReady(FDevice) then Exit; {was Device.MediaReady}
      if not FDriver.Cache.DeviceRead(FDevice,FStartSector,1,PartitionRecord^) then Exit;
-     
+
      {Check Partition Record}
      if PartitionRecord.Signature <> PARTITION_RECORD_SIGNATURE then Exit;
-     
+
      {Scan Partition Table}
      for Count:=MIN_PARTITION to MAX_PARTITION do {Should be MAX_EXTENDED}
       begin
@@ -25644,13 +25644,13 @@ begin
            Partition:=TDiskPartition.Create(FDriver,FDevice,Self,FDriver.GetNextPartitionNo(FDevice,False));
            Partition.EntryNo:=Count;
            Partition.PartitionInit;
-           
+
            {Get the Recognizer for this Partition}
            FDriver.GetRecognizerByPartition(Partition,False,FILESYS_LOCK_NONE); {Do not lock}
           end;
         end;
       end;
-     
+
      {Check for Extended Partitions}
      for Count:=MIN_PARTITION to MAX_PARTITION do {Should be MAX_EXTENDED}
       begin
@@ -25658,12 +25658,12 @@ begin
        if Partition <> nil then
         begin
          Partition.LocatePartitions;
-         
+
          {Unlock Partition}
          Partition.WriterUnlock;
         end;
       end;
-      
+
      Result:=True;
     finally
      FreeMem(PartitionRecord);
@@ -25673,9 +25673,9 @@ begin
    begin
     Result:=True;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25711,16 +25711,16 @@ begin
       Volume:=TDiskVolume.Create(FDriver,FDevice,Self,FDriver.GetNextVolumeNo);
       Volume.VolumeInit;
      end;
-     
+
     Result:=True;
    end
   else
    begin
     Result:=True;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25738,11 +25738,11 @@ begin
 
   if FDriver = nil then Exit;
   if FDevice = nil then Exit;
- 
+
   Result:=TDiskVolume.Create(FDriver,FDevice,Self,FDriver.GetNextVolumeNo);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25760,13 +25760,13 @@ begin
   {$ENDIF}
 
   if AVolume = nil then Exit;
-  
+
   AVolume.Free;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25788,24 +25788,24 @@ begin
   if Device = nil then Exit;
   if FDriver = nil then Exit;
   if Device.SectorSize = 0 then Exit;
-  
+
   {Open the Handle}
   Handle:=FDriver.OpenRawHandle(nil,Self,nil,nil,AMode,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
-  
+
   {Set the Handle properties}
   Count:=SectorCount; {Temporary until SectorCount is Int64}
   Handle.Size:=(Count * Device.SectorSize);   //To Do //shl Device.SectorShiftCount
   Handle.Position:=0;
-  
+
   {Return the Handle}
   Result:=Handle.Handle;
 
   {Unlock Handle}
   Handle.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25822,16 +25822,16 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Handle = ' + HandleToHex(AHandle));
   {$ENDIF}
   if FDriver = nil then Exit;
-  
+
   {Get the Handle}
   Handle:=FDriver.GetRawFromHandle(AHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
-  
+
   {Close the Handle} {Do not unlock}
   FDriver.CloseRawHandle(Handle);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25856,22 +25856,22 @@ begin
   if Device = nil then Exit;
   if FDriver = nil then Exit;
   if Device.SectorSize = 0 then Exit;
-  
+
   {Get the Handle}
   Handle:=FDriver.GetRawFromHandle(AHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
   try
    {Check the Mode}
    if Handle.OpenMode = fmOpenWrite then Exit;
-  
+
    {Check for Sector Multiple}
    if (ACount mod Device.SectorSize) <> 0 then Exit;
-  
+
    {Determine how many Sectors to Read and Starting Sector}
    Start:=Handle.Position div Device.SectorSize;                               //To Do //shr Device.SectorShiftCount
    Count:=LongWord(ACount) div Device.SectorSize;                              //To Do //shr Device.SectorShiftCount
    if (StartSector + Start + Count) > Device.SectorCount then Exit;
-  
+
    {Read to Buffer}
    if FDriver.Cache.DeviceRead(Device,StartSector + Start,Count,ABuffer) then
     begin
@@ -25881,10 +25881,10 @@ begin
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25909,22 +25909,22 @@ begin
   if Device = nil then Exit;
   if FDriver = nil then Exit;
   if Device.SectorSize = 0 then Exit;
-  
+
   {Get the Handle}
   Handle:=FDriver.GetRawFromHandle(AHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
   try
    {Check the Mode}
    if Handle.OpenMode = fmOpenRead then Exit;
-  
+
    {Check for Sector Multiple}
    if (ACount mod Device.SectorSize) <> 0 then Exit;
-  
+
    {Determine how many Sectors to Write and Starting Sector}
    Start:=Handle.Position div Device.SectorSize;                                    //To Do //shr Device.SectorShiftCount
    Count:=LongWord(ACount) div Device.SectorSize;                                   //To Do //shr Device.SectorShiftCount
    if (StartSector + Start + Count) > Device.SectorCount then Exit;
-  
+
    {Write from Buffer}
    if FDriver.Cache.DeviceWrite(Device,StartSector + Start,Count,ABuffer) then
     begin
@@ -25934,10 +25934,10 @@ begin
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -25961,14 +25961,14 @@ begin
   if Device = nil then Exit;
   if FDriver = nil then Exit;
   if Device.SectorSize = 0 then Exit;
-  
+
   {Get the Handle}
   Handle:=FDriver.GetRawFromHandle(AHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
   try
    {Check for Sector Multiple}
    if (AOffset mod Device.SectorSize) <> 0 then Exit;
-  
+
    {Move Pointer}
    case AOrigin of
     soFromBeginning:begin
@@ -25976,7 +25976,7 @@ begin
       if AOffset < 0 then Exit;
       if AOffset > Handle.Size then Exit;
       Handle.Position:=AOffset;
-      
+
       Result:=Handle.Position;
      end;
     soFromCurrent:begin
@@ -25984,7 +25984,7 @@ begin
       if (Handle.Position + AOffset) < 0 then Exit;
       if (Handle.Position + AOffset) > Handle.Size then Exit;
       Handle.Position:=(Handle.Position + AOffset);
-      
+
       Result:=Handle.Position;
      end;
     soFromEnd:begin
@@ -25992,17 +25992,17 @@ begin
       if (Handle.Size + AOffset) < 0 then Exit;
       if (Handle.Size + AOffset) > Handle.Size then Exit;
       Handle.Position:=(Handle.Size + AOffset);
-      
+
       Result:=Handle.Position;
      end;
    end;
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26019,7 +26019,7 @@ begin
  if FDriver <> nil then FDriver.AddVolume(Self);
  FDevice:=ADevice;
  FPartition:=APartition;
- 
+
  FVolumeNo:=AVolumeNo;
  FSegmentNo:=0;
 
@@ -26045,7 +26045,7 @@ begin
  WriterLock;
  try
   FVolumeNo:=0;
-  
+
   FDevice:=nil;
   FPartition:=nil;
 
@@ -26054,10 +26054,10 @@ begin
   FFileSystem:=nil;
   if FDriver <> nil then FDriver.RemoveVolume(Self);
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -26085,16 +26085,16 @@ function TDiskVolume.GetName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
   if FVolumeNo = 0 then Exit;
- 
+
   Result:=VOLUME_PREFIX + IntToStr(FVolumeNo);
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26103,13 +26103,13 @@ function TDiskVolume.GetParent:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
   if FDevice = nil then Exit;
   if FVolumeNo = 0 then Exit;
- 
+
   if FPartition <> nil then
    begin
     Result:=FDevice.Name + FPartition.Name;
@@ -26118,9 +26118,9 @@ begin
    begin
     Result:=FDevice.Name;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26135,11 +26135,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FFileSystem = nil then Exit;
-  
+
   Result:=FFileSystem.MaxFile;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26154,11 +26154,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FFileSystem = nil then Exit;
-  
+
   Result:=FFileSystem.MaxPath;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26173,11 +26173,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FFileSystem = nil then Exit;
-  
+
   Result:=FFileSystem.Attributes;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26192,11 +26192,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FFileSystem = nil then Exit;
-  
+
   Result:=FFileSystem.SystemName;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26211,11 +26211,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FFileSystem = nil then Exit;
-  
+
   Result:=FFileSystem.VolumeName;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26230,11 +26230,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FFileSystem = nil then Exit;
-  
+
   Result:=FFileSystem.VolumeGUID;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26244,16 +26244,16 @@ function TDiskVolume.GetVolumeSerial:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
   if FFileSystem = nil then Exit;
-  
+
   Result:=FFileSystem.VolumeSerial;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26268,11 +26268,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FFileSystem = nil then Exit;
-  
+
   Result:=FFileSystem.FileSysType;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26287,16 +26287,16 @@ begin
   try
    if FDriver = nil then Exit;
    if FFileSystem = AFileSystem then Exit;
-  
+
    FFileSystem:=AFileSystem;
-  finally  
+  finally
    ReleaseLock;
-  end; 
-  
+  end;
+
   VolumeInit;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26310,7 +26310,7 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   if FFileSystem <> nil then
    begin
     Result:=FFileSystem.SectorSize;
@@ -26319,9 +26319,9 @@ begin
    begin
     Result:=FSectorSize;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26335,7 +26335,7 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   if FFileSystem <> nil then
    begin
     Result:=FFileSystem.StartSector;
@@ -26344,9 +26344,9 @@ begin
    begin
     Result:=FStartSector;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26360,7 +26360,7 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   if FFileSystem <> nil then
    begin
     Result:=FFileSystem.SectorCount;
@@ -26369,9 +26369,9 @@ begin
    begin
     Result:=FSectorCount;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26388,7 +26388,7 @@ function TDiskVolume.MediaTypeToDriveType(AMediaType:TMediaType):TDriveType;
 begin
  {}
  Result:=dtUNKNOWN;
- 
+
  case AMediaType of
   mtFLOPPY:Result:=dtFLOPPY;
   mtFIXED:Result:=dtFIXED;
@@ -26460,7 +26460,7 @@ begin
     {Setup Start Sector and Count from Partition}
     FStartSector:=FPartition.StartSector;
     FSectorCount:=FPartition.SectorCount;
-    
+
     Result:=True;
    end
   else
@@ -26468,12 +26468,12 @@ begin
     {Setup Start Sector and Count from Device}
     FStartSector:=0;
     FSectorCount:=FDevice.SectorCount;
-    
+
     Result:=True;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26493,11 +26493,11 @@ begin
   if FDriver = nil then Exit;
   if ADriveNo < MIN_DRIVE then Exit;
   if ADriveNo > MAX_DRIVE then Exit;
-  
+
   Result:=TDiskDrive.Create(FDriver,Self,ADriveNo);
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26507,7 +26507,7 @@ function TDiskVolume.DeleteDrive(ADrive:TDiskDrive):Boolean;
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -26515,13 +26515,13 @@ begin
   {$ENDIF}
 
   if ADrive = nil then Exit;
-  
+
   ADrive.Free;
-  
+
   Result:=True;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26533,7 +26533,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -26544,10 +26544,10 @@ begin
   if FDriver = nil then Exit;
   if FDevice = nil then Exit;
   if FVolumeNo = 0 then Exit;
-  
+
   {Check for already Mounted}
   if FFileSystem <> nil then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByVolume(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -26556,14 +26556,14 @@ begin
      begin
       if ADriveNo < MIN_DRIVE then Exit;
       if ADriveNo > MAX_DRIVE then Exit;
-      
+
       {Check for Drive already used}
       if FDriver.GetDriveByNo(ADriveNo,False,FILESYS_LOCK_NONE) <> nil then Exit; {Do not lock}
-      
+
       {Create Drive}
       Drive:=TDiskDrive.Create(FDriver,Self,ADriveNo);
       Drive.DriveInit;
-      
+
       {Mount Volume}
       Result:=Recognizer.MountVolume(Self,Drive);
      end
@@ -26572,13 +26572,13 @@ begin
       {Mount Volume}
       Result:=Recognizer.MountVolume(Self,nil);
      end;
-   
+
     {Unlock Recognizer}
     Recognizer.ReaderUnlock;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26599,10 +26599,10 @@ begin
   if FDriver = nil then Exit;
   if FDevice = nil then Exit;
   if FVolumeNo = 0 then Exit;
-  
+
   {Check for not Mounted}
   if FFileSystem = nil then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByVolume(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -26613,9 +26613,9 @@ begin
     {Unlock Recognizer}
     Recognizer.ReaderUnlock;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26637,7 +26637,7 @@ begin
   if FDriver = nil then Exit;
   if FDevice = nil then Exit;
   if FVolumeNo = 0 then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByVolume(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -26646,17 +26646,17 @@ begin
      {Check for Formatter}
      if Recognizer.Formatter = nil then Exit;
      if not Recognizer.Formatter.AcceptVolume(Self,AFloppyType,AFileSysType) then Exit;
-    
+
      {Format Volume}
      Result:=Recognizer.Formatter.FormatVolume(Self,AFloppyType,AFileSysType);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26678,7 +26678,7 @@ begin
   if FDriver = nil then Exit;
   if FDevice = nil then Exit;
   if FVolumeNo = 0 then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByVolume(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -26687,17 +26687,17 @@ begin
      {Check for Defragger}
      if Recognizer.Defragger = nil then Exit;
      if not Recognizer.Defragger.AcceptVolume(Self) then Exit;
-    
+
      {Defragment Volume}
      Result:=Recognizer.Defragger.DefragmentVolume(Self);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26719,7 +26719,7 @@ begin
   if FDriver = nil then Exit;
   if FDevice = nil then Exit;
   if FVolumeNo = 0 then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByVolume(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -26728,17 +26728,17 @@ begin
      {Check for Converter}
      if Recognizer.Converter = nil then Exit;
      if not Recognizer.Converter.AcceptVolume(Self,AFileSysType) then Exit;
-    
+
      {Converter Volume}
      Result:=Recognizer.Converter.ConvertVolume(Self,AFileSysType);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26760,7 +26760,7 @@ begin
   if FDriver = nil then Exit;
   if FDevice = nil then Exit;
   if FVolumeNo = 0 then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByVolume(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -26769,17 +26769,17 @@ begin
      {Check for Repairer}
      if Recognizer.Repairer = nil then Exit;
      if not Recognizer.Repairer.AcceptVolume(Self) then Exit;
-    
+
      {Repair Volume}
      Result:=Recognizer.Repairer.RepairVolume(Self);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26802,7 +26802,7 @@ begin
   if FDriver = nil then Exit;
   if FDevice = nil then Exit;
   if FVolumeNo = 0 then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByVolume(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -26811,17 +26811,17 @@ begin
      {Check for Copier}
      if Recognizer.Copier = nil then Exit;
      if not Recognizer.Copier.AcceptVolume(Self,ADest) then Exit;
-    
+
      {Copy Volume}
      Result:=Recognizer.Copier.CopyVolume(Self,ADest);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26843,7 +26843,7 @@ begin
   if FDriver = nil then Exit;
   if FDevice = nil then Exit;
   if FVolumeNo = 0 then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByVolume(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -26852,17 +26852,17 @@ begin
      {Check for Resizer}
      if Recognizer.Resizer = nil then Exit;
      if not Recognizer.Resizer.AcceptVolume(Self,AStart,ASize) then Exit;
-    
+
      {Shrink Volume}
      Result:=Recognizer.Resizer.ShrinkVolume(Self,AStart,ASize);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26884,7 +26884,7 @@ begin
   if FDriver = nil then Exit;
   if FDevice = nil then Exit;
   if FVolumeNo = 0 then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByVolume(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -26893,17 +26893,17 @@ begin
      {Check for Resizer}
      if Recognizer.Resizer = nil then Exit;
      if not Recognizer.Resizer.AcceptVolume(Self,AStart,ASize) then Exit;
-    
+
      {Expand Volume}
      Result:=Recognizer.Resizer.ExpandVolume(Self,AStart,ASize);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26925,24 +26925,24 @@ begin
   if Device = nil then Exit;
   if FDriver = nil then Exit;
   if Device.SectorSize = 0 then Exit;
-  
+
   {Open the Handle}
   Handle:=FDriver.OpenRawHandle(nil,nil,Self,nil,AMode,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
-  
+
   {Set the Handle properties}
   Count:=SectorCount; {Temporary until SectorCount is Int64}
   Handle.Size:=(Count * Device.SectorSize); //To Do //shl Device.SectorShiftCount
   Handle.Position:=0;
-  
+
   {Return the Handle}
   Result:=Handle.Handle;
 
   {Unlock Handle}
   Handle.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26964,12 +26964,12 @@ begin
   {Get the Handle}
   Handle:=FDriver.GetRawFromHandle(AHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
-  
+
   {Close the Handle} {Do not unlock}
   FDriver.CloseRawHandle(Handle);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -26994,22 +26994,22 @@ begin
   if Device = nil then Exit;
   if FDriver = nil then Exit;
   if Device.SectorSize = 0 then Exit;
-  
+
   {Get the Handle}
   Handle:=FDriver.GetRawFromHandle(AHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
   try
    {Check the Mode}
    if Handle.OpenMode = fmOpenWrite then Exit;
-  
+
    {Check for Sector Multiple}
    if (ACount mod Device.SectorSize) <> 0 then Exit;
-  
+
    {Determine how many Sectors to Read and Starting Sector}
    Start:=Handle.Position div Device.SectorSize;                                 //To Do //shr Device.SectorShiftCount
    Count:=LongWord(ACount) div Device.SectorSize;                                //To Do //shr Device.SectorShiftCount
    if (StartSector + Start + Count) > Device.SectorCount then Exit;
-  
+
    {Read to Buffer}
    if FDriver.Cache.DeviceRead(Device,StartSector + Start,Count,ABuffer) then
     begin
@@ -27019,10 +27019,10 @@ begin
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27047,14 +27047,14 @@ begin
   if Device = nil then Exit;
   if FDriver = nil then Exit;
   if Device.SectorSize = 0 then Exit;
-  
+
   {Get the Handle}
   Handle:=FDriver.GetRawFromHandle(AHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
   try
    {Check the Mode}
    if Handle.OpenMode = fmOpenRead then Exit;
-  
+
    {Check for Sector Multiple}
    if (ACount mod Device.SectorSize) <> 0 then Exit;
 
@@ -27072,10 +27072,10 @@ begin
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27099,14 +27099,14 @@ begin
   if Device = nil then Exit;
   if FDriver = nil then Exit;
   if Device.SectorSize = 0 then Exit;
-  
+
   {Get the Handle}
   Handle:=FDriver.GetRawFromHandle(AHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
   try
    {Check for Sector Multiple}
    if (AOffset mod Device.SectorSize) <> 0 then Exit;
-  
+
    {Move Pointer}
    case AOrigin of
     soFromBeginning:begin
@@ -27114,7 +27114,7 @@ begin
       if AOffset < 0 then Exit;
       if AOffset > Handle.Size then Exit;
       Handle.Position:=AOffset;
-      
+
       Result:=Handle.Position;
      end;
     soFromCurrent:begin
@@ -27122,7 +27122,7 @@ begin
       if (Handle.Position + AOffset) < 0 then Exit;
       if (Handle.Position + AOffset) > Handle.Size then Exit;
       Handle.Position:=(Handle.Position + AOffset);
-      
+
       Result:=Handle.Position;
      end;
     soFromEnd:begin
@@ -27130,17 +27130,17 @@ begin
       if (Handle.Size + AOffset) < 0 then Exit;
       if (Handle.Size + AOffset) > Handle.Size then Exit;
       Handle.Position:=(Handle.Size + AOffset);
-      
+
       Result:=Handle.Position;
      end;
    end;
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27152,11 +27152,11 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FLocalLock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
- 
+
  FDriver:=ADriver;
  if FDriver <> nil then FDriver.AddImage(Self);
  FController:=AController;
- 
+
  FName:=AName;
  UniqueString(FName);
  FImageNo:=AImageNo;
@@ -27192,14 +27192,14 @@ begin
  WriterLock;
  try
   FDevice:=nil;
-  
+
   FController:=nil;
   if FDriver <> nil then FDriver.RemoveImage(Self);
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -27283,18 +27283,18 @@ function TDiskImage.GetLogicalShiftCount:Word;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
  try
   if FCylinders = 0 then Exit;
- 
+
   while (FCylinders shr Result) > 1024 do
    begin
     Inc(Result);
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27319,18 +27319,18 @@ function TDiskImage.GetSectorShiftCount:Word;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
  try
   if FSectorSize = 0 then Exit;
- 
+
   while (FSectorSize shr Result) > 1 do
    begin
     Inc(Result);
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27343,16 +27343,16 @@ end;
 
 {==============================================================================}
 
-function TDiskImage.GetName:String; 
+function TDiskImage.GetName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FName;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -27364,12 +27364,12 @@ begin
  if not AcquireLock then Exit;
  try
   if GetReady then Exit;
- 
+
   FName:=AName;
   UniqueString(FName);
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27386,12 +27386,12 @@ begin
 
   if FDriver = nil then Exit;
   if FDevice = ADevice then Exit;
- 
+
   FDevice:=ADevice;
   if FDevice <> nil then FDevice.DeviceInit;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27412,7 +27412,7 @@ end;
 
 {==============================================================================}
 
-function TDiskImage.ReaderConvert:Boolean; 
+function TDiskImage.ReaderConvert:Boolean;
 {Convert a Reader lock to a Writer lock}
 begin
  {}
@@ -27459,7 +27459,7 @@ function TDiskImage.ImageInit:Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -27487,7 +27487,7 @@ begin
 
     FPartitionId:=pidUnused;
     FFileSysType:=fsUNKNOWN;
-    
+
     Result:=True;
    end
   else
@@ -27499,7 +27499,7 @@ begin
     {FImageType:=itUNKNOWN;} {Do not Reset}
     {FMediaType:=mtUNKNOWN;} {Do not Reset}
     {FFloppyType:=ftUNKNOWN;}{Do not Reset}
- 
+
     FSectorSize:=GetSectorSize;
     FSectorCount:=GetSectorCount;
     FSectorShiftCount:=GetSectorShiftCount;
@@ -27511,12 +27511,12 @@ begin
 
     FPartitionId:=GetPartitionId;
     FFileSysType:=fsUNKNOWN;
-    
+
     Result:=True;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27525,11 +27525,11 @@ function TDiskImage.LockMedia:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FLocked then Exit;
- 
+
  FLocked:=True;
- 
+
  Result:=True;
 end;
 
@@ -27539,11 +27539,11 @@ function TDiskImage.UnlockMedia:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not FLocked then Exit;
- 
+
  FLocked:=False;
- 
+
  Result:=True;
 end;
 
@@ -27612,12 +27612,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FImageNo = 0 then Exit;
- 
+
   {Check for already Mounted}
   if FDevice = nil then
    begin
@@ -27627,7 +27627,7 @@ begin
      begin
       {Mount Image}
       Result:=Recognizer.MountImage(Self);
-      
+
       {Unlock Recognizer}
       Recognizer.ReaderUnlock;
      end;
@@ -27635,10 +27635,10 @@ begin
   else
    begin
     Result:=True;
-   end; 
- finally  
+   end;
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27654,10 +27654,10 @@ begin
  try
   if FDriver = nil then Exit;
   if FImageNo = 0 then Exit;
-  
+
   {Check for not Mounted}
   if FDevice = nil then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByImage(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -27668,9 +27668,9 @@ begin
     {Unlock Recognizer}
     Recognizer.ReaderUnlock;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27686,10 +27686,10 @@ begin
  try
   if FDriver = nil then Exit;
   if FImageNo = 0 then Exit;
-  
+
   {Check for not Mounted}
   if FDevice = nil then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByImage(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -27700,9 +27700,9 @@ begin
     {Unlock Recognizer}
     Recognizer.ReaderUnlock;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27718,10 +27718,10 @@ begin
  try
   if FDriver = nil then Exit;
   if FImageNo = 0 then Exit;
-  
+
   {Check for not Mounted}
   if FDevice = nil then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByImage(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -27732,9 +27732,9 @@ begin
     {Unlock Recognizer}
     Recognizer.ReaderUnlock;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27751,7 +27751,7 @@ begin
  try
   if FDriver = nil then Exit;
   if FImageNo = 0 then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByImage(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -27760,17 +27760,17 @@ begin
      {Check for Converter}
      if Recognizer.Converter = nil then Exit;
      if not Recognizer.Converter.AcceptImage(Self,AImageType) then Exit;
-    
+
      {Convert Image}
      Result:=Recognizer.Converter.ConvertImage(Self,AImageType);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27788,7 +27788,7 @@ begin
  try
   if FDriver = nil then Exit;
   if FImageNo = 0 then Exit;
-  
+
   {Get the Recognizer}
   Recognizer:=FDriver.GetRecognizerByImage(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
@@ -27797,17 +27797,17 @@ begin
      {Check for Copier}
      if Recognizer.Copier = nil then Exit;
      if not Recognizer.Copier.AcceptImage(Self,ADest) then Exit;
-    
+
      {Convert Image}
      Result:=Recognizer.Copier.CopyImage(Self,ADest);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27824,26 +27824,26 @@ begin
  try
   if FDriver = nil then Exit;
   if FImageNo = 0 then Exit;
-  
+
   {Get the Recognizer}
-  Recognizer:=FDriver.GetRecognizerByImage(Self,True,FILESYS_LOCK_READ); 
+  Recognizer:=FDriver.GetRecognizerByImage(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
    begin
     try
      {Check for Resizer}
      if Recognizer.Resizer = nil then Exit;
      if not Recognizer.Resizer.AcceptImage(Self,ASize) then Exit;
-    
+
      {Shrink Image}
      Result:=Recognizer.Resizer.ShrinkImage(Self,ASize);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27855,31 +27855,31 @@ begin
  {}
  //To Do //Event callback
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FImageNo = 0 then Exit;
-  
+
   {Get the Recognizer}
-  Recognizer:=FDriver.GetRecognizerByImage(Self,True,FILESYS_LOCK_READ); 
+  Recognizer:=FDriver.GetRecognizerByImage(Self,True,FILESYS_LOCK_READ);
   if Recognizer <> nil then
    begin
     try
      {Check for Resizer}
      if Recognizer.Resizer = nil then Exit;
      if not Recognizer.Resizer.AcceptImage(Self,ASize) then Exit;
-    
+
      {Expand Image}
      Result:=Recognizer.Resizer.ExpandImage(Self,ASize);
     finally
      {Unlock Recognizer}
      Recognizer.ReaderUnlock;
-    end;   
+    end;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -27954,7 +27954,7 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FLocalLock:=MutexCreate;
- 
+
  FAllowDrive:=True;
  FAllowDefault:=False;
  FDirtyCheck:=True;
@@ -27988,10 +27988,10 @@ begin
   if FImager <> nil then FImager.Free;
   if FDriver <> nil then FDriver.RemoveRecognizer(Self);
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -28039,7 +28039,7 @@ end;
 
 {==============================================================================}
 
-function TRecognizer.ReaderConvert:Boolean; 
+function TRecognizer.ReaderConvert:Boolean;
 {Convert a Reader lock to a Writer lock}
 begin
  {}
@@ -28073,7 +28073,7 @@ end;
 
 {==============================================================================}
 
-function TRecognizer.RecognizePartitionId(APartitionId:Byte):Boolean; 
+function TRecognizer.RecognizePartitionId(APartitionId:Byte):Boolean;
 begin
  {Virtual Base Method - No Function}
  Result:=False;
@@ -28081,7 +28081,7 @@ end;
 
 {==============================================================================}
 
-function TRecognizer.RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; 
+function TRecognizer.RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean;
 begin
  {Virtual Base Method - No Function}
  Result:=False;
@@ -28134,7 +28134,7 @@ begin
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TRecognizer.DismountVolume - Volume = ' + AVolume.Name);
   {$ENDIF}
-  
+
   {Remove any FileSystem using the Volume}
   FileSystem:=FDriver.GetFileSystemByVolume(AVolume,True,FILESYS_LOCK_WRITE);
   while FileSystem <> nil do
@@ -28142,23 +28142,23 @@ begin
     {Note: The FileSystem will automatically unbind from any volume/drive when Destroyed}
     FileSystem.DismountFileSystem;
     FileSystem.Free;
-    
+
     FileSystem:=FDriver.GetFileSystemByVolume(AVolume,True,FILESYS_LOCK_WRITE);
    end;
-  
+
   {Remove any Drive using the Volume}
   Drive:=FDriver.GetDriveByVolume(AVolume,True,FILESYS_LOCK_WRITE);
   while Drive <> nil do
    begin
     Drive.Free;
-    
+
     Drive:=FDriver.GetDriveByVolume(AVolume,True,FILESYS_LOCK_WRITE);
    end;
-   
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -28204,15 +28204,15 @@ begin
   while Device <> nil do
    begin
     Device.Free;
-    
+
     Device:=FDriver.GetDeviceByImage(AImage,True,FILESYS_LOCK_WRITE);
    end;
-   
+
   {Close the Image}
   Result:=FImager.CloseImage(AImage);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -28246,7 +28246,7 @@ begin
 
   {Check Ready}
   if not AImage.Ready then Exit;
- 
+
   {Get the Device}
   Device:=FDriver.GetDeviceByImage(AImage,True,FILESYS_LOCK_WRITE);
   if Device = nil then Exit;
@@ -28269,7 +28269,7 @@ begin
    if Volume = nil then Exit;
    try
     Volume.VolumeInit;
-   
+
     {Get the FileSystem}
     FileSystem:=FDriver.GetFileSystemByVolume(Volume,True,FILESYS_LOCK_WRITE);
     if FileSystem = nil then Exit;
@@ -28284,20 +28284,20 @@ begin
 
       {Unlock Drive}
       Drive.WriterUnlock;
-     end; 
+     end;
 
     Result:=True;
-   finally 
+   finally
     {Unlock Volume}
     Volume.WriterUnlock;
-   end; 
+   end;
   finally
    {Unlock Device}
    Device.WriterUnlock;
-  end;  
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -28323,10 +28323,10 @@ begin
  try
   if FDriver <> nil then FDriver.RemoveRedirector(Self);
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -28437,14 +28437,14 @@ begin
     {Note: The FileSystem will automatically unbind from the volume/drive when Destroyed}
     FileSystem.DismountFileSystem;
     FileSystem.Free;
-    
+
     FileSystem:=FDriver.GetFileSystemByDrive(ADrive,True,FILESYS_LOCK_WRITE);
    end;
- 
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -28456,10 +28456,10 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FLocalLock:=MutexCreate;
- 
+
  FDriver:=ADriver;
  FRecognizer:=ARecognizer;
- 
+
  FInitChar:=0;
 end;
 
@@ -28472,10 +28472,10 @@ begin
  try
   FRecognizer:=nil;
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -28529,17 +28529,17 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.GetLogicalChild');
  {$ENDIF}
- 
+
  if ADevice = nil then Exit;
  if APartition = nil then Exit;
 
  {Check Partition}
  if not APartition.Extended then Exit;
- 
+
  {Get Child}
  for Count:=MIN_PARTITION to MAX_EXTENDED do {Only 2 on Extended}
   begin
@@ -28549,7 +28549,7 @@ begin
      {Check for Logical}
      if Partition.Logical then
       begin
-       {Lock Partition} 
+       {Lock Partition}
        if ALock then
         begin
          {Convert Partition}
@@ -28559,8 +28559,8 @@ begin
         begin
          {Unlock Partition}
          Partition.ReaderUnlock;
-        end;        
-       
+        end;
+
        Result:=Partition;
        Exit;
       end
@@ -28568,7 +28568,7 @@ begin
       begin
        {Unlock Partition}
        Partition.ReaderUnlock;
-      end;      
+      end;
     end;
   end;
 end;
@@ -28586,17 +28586,17 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.GetExtendedSibling');
  {$ENDIF}
- 
+
  if ADevice = nil then Exit;
  if AParent = nil then Exit;
 
  {Check Parent}
  if not AParent.Extended then Exit;
- 
+
  {Get Sibling}
  for Count:=MIN_PARTITION to MAX_EXTENDED do {Only 2 on Extended}
   begin
@@ -28606,7 +28606,7 @@ begin
      {Check for Extended}
      if Partition.Extended then
       begin
-       {Lock Partition} 
+       {Lock Partition}
        if ALock then
         begin
          {Convert Partition}
@@ -28616,8 +28616,8 @@ begin
         begin
          {Unlock Partition}
          Partition.ReaderUnlock;
-        end;        
-       
+        end;
+
        Result:=Partition;
        Exit;
       end
@@ -28625,7 +28625,7 @@ begin
       begin
        {Unlock Partition}
        Partition.ReaderUnlock;
-      end;      
+      end;
     end;
   end;
 end;
@@ -28644,40 +28644,40 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.GetExtendedParent');
  {$ENDIF}
- 
+
  if ADevice = nil then Exit;
  if AParent = nil then Exit;
 
  {Check Parent}
  if not AParent.Extended then Exit;
- 
+
  {Default to Parent}
  Result:=AParent;
- 
+
  {Set Default}
  Current:=nil;
- 
+
  {Get Partitions}
  Partitions:=FDriver.GetPartitionsByPartition(AParent,True,FILESYS_LOCK_READ);
  try
   {Sort by Start}
   Partitions.Sort(ComparePartitions);
-  
+
   {Check each Partition} {in Reverse Order}
   for Count:=Partitions.Count - 1 downto 0 do
    begin
     if Partitions.Items[Count] <> nil then
      begin
       Partition:=TDiskPartition(Partitions.Items[Count]); {Locked by GetPartitionsByPartition}
-      
+
       {Check for Extended}
       if (Partition.Extended) and (Partition.StartSector <= AStart) then
        begin
-        {Lock Partition} 
+        {Lock Partition}
         if ALock then
          begin
           {Convert Partition}
@@ -28687,11 +28687,11 @@ begin
          begin
           {Unlock Partition}
           Partition.ReaderUnlock;
-         end;        
-        
+         end;
+
         {Save Result}
         Current:=Partition;
-        
+
         Result:=Partition;
         Exit;
        end;
@@ -28704,13 +28704,13 @@ begin
     if Partitions.Items[Count] <> nil then
      begin
       Partition:=TDiskPartition(Partitions.Items[Count]); {Locked by GetPartitionsByPartition}
- 
+
       {Unlock Partition}
       if Partition <> Current then Partition.ReaderUnlock;
      end;
    end;
 
-  {Free Partitions}   
+  {Free Partitions}
   Partitions.Free;
  end;
 end;
@@ -28731,13 +28731,13 @@ var
 begin
  {Base Implementation}
  Result:=False;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.GetEndCHS');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Start = ' + IntToStr(AStart));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  if ACount = 0 then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
@@ -28753,10 +28753,10 @@ begin
    Sectors:=ADevice.LogicalSectors;
    Cylinders:=ADevice.LogicalCylinders;
    if (Heads = 0) or (Sectors = 0) or (Cylinders = 0) then Exit;
-   
+
    {Check Alignment}
    if ((AStart + ACount) mod Sectors) <> 0 then Exit; {Not minus one}
-   
+
    {Get End LCHS}
    Result:=ADevice.Controller.LBAtoLCHS(ADevice,AStart + ACount - 1,ACylinder,AHead,ASector);
   end
@@ -28765,13 +28765,13 @@ begin
    {Use Physical Values}
    {Check Alignment}
    if ((AStart + ACount) mod Sectors) <> 0 then Exit;
-   
+
    {Get End PCHS}
    if not ADevice.Controller.LBAtoPCHS(ADevice,AStart + ACount - 1,Cylinder,Head,Sector) then Exit;
    AHead:=Head;
    ASector:=Sector;
    ACylinder:=Cylinder;
-   
+
    Result:=True;
   end;
 end;
@@ -28792,13 +28792,13 @@ var
 begin
  {Base Implementation}
  Result:=False;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.GetStartCHS');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Start = ' + IntToStr(AStart));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  if ACount = 0 then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
@@ -28814,10 +28814,10 @@ begin
    Sectors:=ADevice.LogicalSectors;
    Cylinders:=ADevice.LogicalCylinders;
    if (Heads = 0) or (Sectors = 0) or (Cylinders = 0) then Exit;
-   
+
    {Check Alignment}
    if (AStart mod Sectors) <> 0 then Exit;
-   
+
    {Get Start LCHS}
    Result:=ADevice.Controller.LBAtoLCHS(ADevice,AStart,ACylinder,AHead,ASector);
   end
@@ -28826,13 +28826,13 @@ begin
    {Use Physical Values}
    {Check Alignment}
    if (AStart mod Sectors) <> 0 then Exit;
-   
+
    {Get Start PCHS}
    if not ADevice.Controller.LBAtoPCHS(ADevice,AStart,Cylinder,Head,Sector) then Exit;
    AHead:=Head;
    ASector:=Sector;
    ACylinder:=Cylinder;
-   
+
    Result:=True;
   end;
 end;
@@ -28852,13 +28852,13 @@ var
 begin
  {Base Implementation}
  Result:=0;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.GetSectorCount');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Start = ' + IntToStr(AStart));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  if ACount = 0 then Exit;
  if ADevice = nil then Exit;
 
@@ -28872,20 +28872,20 @@ begin
    Sectors:=ADevice.LogicalSectors;
    if (Heads = 0) or (Sectors = 0) then Exit;
   end;
- 
+
  {Check Count}
  if ACount < (Heads * Sectors) then Exit;
- 
+
  {Get Count}
  Count:=AStart + ACount;
- 
+
  {Align Count to Head}
  if (Count mod Sectors) <> 0 then
   begin
    {Move back}
    Count:=Count - (Count mod Sectors);
   end;
- 
+
  {Align Count to Cylinder}
  WorkInt:=(Count div Sectors);
  if (WorkInt mod Heads) <> 0 then
@@ -28893,10 +28893,10 @@ begin
    {Move back}
    Count:=Count - ((WorkInt mod Heads) * Sectors);
   end;
- 
+
  {Return Count}
  Result:=Count - AStart;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Result = ' + IntToStr(Result));
  {$ENDIF}
@@ -28917,13 +28917,13 @@ var
 begin
  {Base Implementation}
  Result:=0;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.GetStartSector');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Start = ' + IntToStr(AStart));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  if ACount = 0 then Exit;
  if ADevice = nil then Exit;
 
@@ -28937,23 +28937,23 @@ begin
    Sectors:=ADevice.LogicalSectors;
    if (Heads = 0) or (Sectors = 0) then Exit;
   end;
- 
+
  {Check Count}
  if ACount < (Heads * Sectors) then Exit;
- 
+
  {Get Start}
  Start:=AStart;
- 
+
  {Align Start to Head}
  if (Start mod Sectors) <> 0 then
   begin
    {Adjust Count}
    ACount:=ACount - (Sectors - (Start mod Sectors));
-   
+
    {Move forward}
    Start:=Start + (Sectors - (Start mod Sectors));
   end;
- 
+
  {Allow for First/Extended/Logical}
  if ((Start >= (Heads * Sectors)) or (AExtended)) and not(ALogical) then
   begin
@@ -28963,15 +28963,15 @@ begin
     begin
      {Adjust Count}
      ACount:=ACount - ((Heads - (WorkInt mod Heads)) * Sectors);
-     
+
      {Move forward}
      Start:=Start + ((Heads - (WorkInt mod Heads)) * Sectors);
     end;
   end;
- 
+
  {Return Start}
  Result:=Start;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Result = ' + IntToStr(Result));
  {$ENDIF}
@@ -28987,12 +28987,12 @@ function TDiskPartitioner.GetSectorOffset(ADevice:TDiskDevice;AParent:TDiskParti
 begin
  {Base Implementation}
  Result:=0;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.GetSectorOffset');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Start = ' + IntToStr(AStart));
  {$ENDIF}
- 
+
  if ADevice = nil then Exit;
 
  if AParent = nil then
@@ -29018,7 +29018,7 @@ begin
      Result:=AStart - AParent.StartSector;
     end;
   end;
-  
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Result = ' + IntToStr(Result));
  {$ENDIF}
@@ -29043,17 +29043,17 @@ function TDiskPartitioner.InitPartition(ADevice:TDiskDevice;AParent:TDiskPartiti
 begin
  {Base Implementation} {Will be overridden by most Partitioners}
  Result:=False;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.InitPartition');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Start = ' + IntToStr(AStart));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Count = ' + IntToStr(ACount));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  PartitionId = ' + PartitionIdToString(APartitionId));
  {$ENDIF}
- 
+
  if ACount = 0 then Exit;
  if ADevice = nil then Exit;
- 
+
  Result:=FillSectors(ADevice,nil,AStart,1,FInitChar);
 end;
 
@@ -29066,11 +29066,11 @@ function TDiskPartitioner.CreatePartitionRecord(ADevice:TDiskDevice;ARecord:PPar
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.CreatePartitionRecord');
  {$ENDIF}
- 
+
  if ARecord = nil then Exit;
 
  {Check Signature}
@@ -29079,13 +29079,13 @@ begin
    {Check Device}
    if ADevice = nil then Exit;
    if ADevice.SectorSize = 0 then Exit;
-   
+
    {Initialize Partition Record (or Master Boot Record)}
    FillChar(ARecord^,ADevice.SectorSize,0);
    PMasterBootRecord(ARecord).BootCode:=MasterBootCode;
    ARecord.Signature:=PARTITION_RECORD_SIGNATURE;
   end;
- 
+
  Result:=True;
 end;
 
@@ -29101,7 +29101,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.CreatePartitionEntry');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Start = ' + IntToStr(AStart));
@@ -29109,7 +29109,7 @@ begin
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Offset = ' + IntToStr(AOffset));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  PartitionId = ' + PartitionIdToString(APartitionId));
  {$ENDIF}
- 
+
  if ADevice = nil then Exit;
 
  {Create Entry}
@@ -29119,21 +29119,21 @@ begin
  AEntry.TypeIndicator:=APartitionId;
  AEntry.SectorOffset:=AOffset;
  AEntry.SectorCount:=ACount;
- 
+
  {Set Start CHS}
  if not GetStartCHS(ADevice,AStart,ACount,Cylinder,Head,Sector) then Exit;
  AEntry.StartHead:=Head;
  AEntry.StartCylinder:=(Cylinder and $FF);
  AEntry.StartSector:=(Cylinder and $300) shr 2;
  AEntry.StartSector:=AEntry.StartSector + (Sector and $3F);
- 
+
  {Set End CHS}
  if not GetEndCHS(ADevice,AStart,ACount,Cylinder,Head,Sector) then Exit;
  AEntry.EndHead:=Head;
  AEntry.EndCylinder:=(Cylinder and $FF);
  AEntry.EndSector:=(Cylinder and $300) shr 2;
  AEntry.EndSector:=AEntry.EndSector + (Sector and $3F);
- 
+
  Result:=True;
 end;
 
@@ -29148,14 +29148,14 @@ var
 begin
  {Base Implementation}
  Result:=False;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.FillSectors');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Sector = ' + IntToStr(ASector));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Count = ' + IntToStr(ACount));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Value = ' + IntToStr(AValue));
  {$ENDIF}
- 
+
  if ADevice = nil then Exit;
  if ADevice.SectorSize = 0 then Exit;
 
@@ -29168,20 +29168,20 @@ begin
    begin
     {Read Sector} {Dont need to read first}
     {if not ReadSectors(ADevice,APartition,ASector,1,Buffer^) then Exit;}
-    
+
     {Fill Sector}
     FillChar(Buffer^,ADevice.SectorSize,AValue);
-    
+
     {Write Sector}
     if not WriteSectors(ADevice,APartition,ASector,1,Buffer^) then Exit;
-    
+
     Inc(ASector);
     Dec(ACount);
 
     {Yield}
     Sleep(0);
    end;
-  
+
   Result:=True;
  finally
   FreeMem(Buffer);
@@ -29197,17 +29197,17 @@ function TDiskPartitioner.ReadSectors(ADevice:TDiskDevice;APartition:TDiskPartit
 begin
  {Base Implementation}
  Result:=False;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.ReadSectors');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Sector = ' + IntToStr(ASector));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  if FDriver = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.SectorCount = 0 then Exit;
- 
+
  if APartition = nil then
   begin
    {Device Read}
@@ -29218,7 +29218,7 @@ begin
    {Partition Read}
    if APartition.SectorCount = 0 then Exit;
    if APartition.Device <> ADevice then Exit;
-   
+
    Result:=FDriver.Cache.DeviceRead(ADevice,APartition.StartSector + ASector,ACount,ABuffer);
   end;
 end;
@@ -29232,17 +29232,17 @@ function TDiskPartitioner.WriteSectors(ADevice:TDiskDevice;APartition:TDiskParti
 begin
  {Base Implementation}
  Result:=False;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TDiskPartitioner.WriteSectors');
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Sector = ' + IntToStr(ASector));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                  Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  if FDriver = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.SectorCount = 0 then Exit;
- 
+
  if APartition = nil then
   begin
    {Device Write}
@@ -29253,7 +29253,7 @@ begin
    {Partition Write}
    if APartition.SectorCount = 0 then Exit;
    if APartition.Device <> ADevice then Exit;
-   
+
    Result:=FDriver.Cache.DeviceWrite(ADevice,APartition.StartSector + ASector,ACount,ABuffer);
   end;
 end;
@@ -29324,7 +29324,7 @@ var
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -29338,7 +29338,7 @@ begin
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                 Device = ' + ADevice.Name);
   {$ENDIF}
-  
+
   {Check Accepted} {Pass null for Partition}
   if not AcceptPartition(ADevice,nil,AParent,APartitionId) then Exit;
 
@@ -29368,23 +29368,23 @@ begin
           begin
            {Unlock Volume}
            Volume.WriterUnlock;
-           
+
            {Error, should have failed AcceptPartition}
            Exit;
-          end;          
-        end;    
+          end;
+        end;
       end;
 
      {Read Partition Record}
      if not ReadSectors(ADevice,nil,0,1,PartitionRecord^) then Exit;
-     
+
      {Check Partition Record}
      if not CreatePartitionRecord(ADevice,PartitionRecord) then Exit;
-     
+
      {Get Start and Count}
      if not ADevice.GetAvailableBlock(LargeStart,LargeCount) then Exit;
      if (LargeStart > $FFFFFFFF) or (LargeCount < ACount) then Exit;
-     
+
      {Adjust Start and Count}
      Start:=LargeStart;
      Count:=ACount;
@@ -29392,11 +29392,11 @@ begin
      if Start = 0 then Exit;
      Count:=GetSectorCount(ADevice,Start,Count);
      if Count = 0 then Exit;
-     
+
      {Get Offset}
      Offset:=GetSectorOffset(ADevice,nil,False,Start);
      if Offset = 0 then Exit;
-     
+
      {Get Entry No}
      EntryNo:=0;
      while FDriver.GetPartitionByEntryNo(ADevice,nil,EntryNo,False,FILESYS_LOCK_NONE) <> nil do {Do not lock}
@@ -29404,26 +29404,26 @@ begin
        Inc(EntryNo);
        if EntryNo > MAX_PARTITION then Exit;
       end;
-     
+
      {Get PartitionId}
      PartitionId:=GetPartitionId(ADevice,nil,Start,Count,APartitionId);
      if PartitionId = pidUnused then Exit;
-     
+
      {Get Active}
      AActive:=(AActive) and not(CheckExtended(ADevice,nil,PartitionId));
-     
+
      {Create Entry}
      if not CreatePartitionEntry(ADevice,Start,Count,Offset,PartitionId,AActive,PartitionEntry) then Exit;
-     
+
      {Set Entry}
      PartitionRecord.PartitionTable.PartitionEntry[EntryNo]:=PartitionEntry;
-     
+
      {Initialize Partition}
      if not InitPartition(ADevice,nil,Start,Count,PartitionId) then Exit;
-     
+
      {Write Partition Record}
      if not WriteSectors(ADevice,nil,0,1,PartitionRecord^) then Exit;
-     
+
      {Locate Partitions, Volumes and Drives}
      ADevice.LocatePartitions; {Device only}
      FDriver.LocateVolumes;
@@ -29434,16 +29434,16 @@ begin
      {$IFDEF FILESYS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('                 Parent = ' + AParent.Name);
      {$ENDIF}
-    
+
      {Note: Accept forces Parent to be Root extended and Id to be non extended}
      if AParent.EntryNo = -1 then Exit;
-     
+
      {Second Level}
      {Get Start and Count}
      if not AParent.GetAvailableBlock(Start,Count) then Exit;
      if Count < ACount then Exit;
      Count:=ACount;
-     
+
      {Get Actual Parent}
      Parent:=GetExtendedParent(ADevice,AParent,Start,True,FILESYS_LOCK_WRITE);
      if Parent = nil then Exit;
@@ -29452,7 +29452,7 @@ begin
      {$IFDEF FILESYS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('                 Parent = ' + Parent.Name);
      {$ENDIF}
-     
+
      {Get Sibling} {of Actual Parent}
      Sibling:=GetExtendedSibling(ADevice,Parent,True,FILESYS_LOCK_WRITE);
      try
@@ -29461,25 +29461,25 @@ begin
        begin
         {Read Partition Record} {of Actual Parent}
         if not ReadSectors(ADevice,Parent,0,1,PartitionRecord^) then Exit;
-        
+
         {Check Partition Record}
         if not CreatePartitionRecord(ADevice,PartitionRecord) then Exit;
-       
+
         {Adjust Start and Count}
         Start:=GetStartSector(ADevice,True,False,Start,Count);
         if Start = 0 then Exit;
         Count:=GetSectorCount(ADevice,Start,Count);
         if Count = 0 then Exit;
-       
+
         {Get Offset}
         Offset:=GetSectorOffset(ADevice,Parent,True,Start);
         if Offset = 0 then Exit;
-       
+
         {Check Sibling}
         if Sibling = nil then
          begin
           SiblingNo:=-1;
-         
+
           {Get Entry No}
           EntryNo:=1; {Extended always goes in EntryNo 1}
           if FDriver.GetPartitionByEntryNo(ADevice,Parent,EntryNo,False,FILESYS_LOCK_NONE) <> nil then Exit; {Do not lock}
@@ -29489,64 +29489,64 @@ begin
           {$IFDEF FILESYS_DEBUG}
           if FILESYS_LOG_ENABLED then FileSysLogDebug('                 Sibling = ' + Sibling.Name);
           {$ENDIF}
-          
+
           if Sibling.EntryNo = -1 then Exit;
-          
+
           {Get Entry No}
           EntryNo:=Sibling.EntryNo;  {Reuse the Sibling EntryNo}
-         
+
           {Get Sibling Entry}
           SiblingEntry:=PartitionRecord.PartitionTable.PartitionEntry[Sibling.EntryNo];
-         
+
           {Unlink Sibling}
           SiblingNo:=Sibling.EntryNo;
           Sibling.EntryNo:=-1;
          end;
-        
+
         {Get PartitionId} {for Extended Partition}
         PartitionId:=GetPartitionId(ADevice,Parent,Start,Count,pidExtended);
         if PartitionId = pidUnused then Exit;
-       
+
         {Create Entry}
         if not CreatePartitionEntry(ADevice,Start,Count,Offset,PartitionId,False,PartitionEntry) then Exit;
-        
+
         {Set Entry}
         PartitionRecord.PartitionTable.PartitionEntry[EntryNo]:=PartitionEntry;
-       
+
         {Initialize Partition}
         if not InitPartition(ADevice,Parent,Start,Count,PartitionId) then Exit;
-       
+
         {Write Partition Record} {of Actual Parent}
         if not WriteSectors(ADevice,Parent,0,1,PartitionRecord^) then Exit;
-       
+
         {Locate Partitions} {on Actual Parent}
         Parent.LocatePartitions;
-       
+
         {Get Created Parent}
         Parent:=FDriver.GetPartitionByEntryNo(ADevice,Parent,EntryNo,True,FILESYS_LOCK_WRITE);
         if Parent = nil then Exit;
         //To Do //Critical //Unlock  //Created instead of Parent?
-        
+
         {Get Start and Count}
         Start:=Parent.StartSector + 1;
         Count:=Parent.SectorCount - 1;
-       
+
         {Check Sibling}
         if Sibling <> nil then
          begin
           {Read Partition Record} {of Created Parent}
           if not ReadSectors(ADevice,Parent,0,1,PartitionRecord^) then Exit;
-         
+
           {Check Partition Record}
           if not CreatePartitionRecord(ADevice,PartitionRecord) then Exit;
-         
+
           {Relink Sibling}
           Sibling.EntryNo:=SiblingNo;
-          
+
           {Set Sibling Entry}
           PartitionRecord.PartitionTable.PartitionEntry[Sibling.EntryNo]:=SiblingEntry;
           Sibling.FPartition:=Parent;
-         
+
           {Write Partition Record} {of Created Parent}
           if not WriteSectors(ADevice,Parent,0,1,PartitionRecord^) then Exit;
          end;
@@ -29555,24 +29555,24 @@ begin
       {Unlock Sibling}
       if Sibling <> nil then Sibling.WriterUnlock;
      end;
-     
+
      {Create Logical}
      {Read Partition Record} {of Actual Parent}
      if not ReadSectors(ADevice,Parent,0,1,PartitionRecord^) then Exit;
-     
+
      {Check Partition Record}
      if not CreatePartitionRecord(ADevice,PartitionRecord) then Exit;
-     
+
      {Adjust Start and Count}
      Start:=GetStartSector(ADevice,False,True,Start,Count);
      if Start = 0 then Exit;
      Count:=GetSectorCount(ADevice,Start,Count);
      if Count = 0 then Exit;
-     
+
      {Get Offset}
      Offset:=GetSectorOffset(ADevice,Parent,False,Start);
      if Offset = 0 then Exit;
-     
+
      {Get Entry No}
      EntryNo:=0;
      while FDriver.GetPartitionByEntryNo(ADevice,Parent,EntryNo,False,FILESYS_LOCK_NONE) <> nil do {Do not lock}
@@ -29580,36 +29580,36 @@ begin
        Inc(EntryNo);
        if EntryNo > MAX_EXTENDED then Exit; {Only 2 on Extended}
       end;
-     
+
      {Get PartitionId}
      PartitionId:=GetPartitionId(ADevice,Parent,Start,Count,APartitionId);
      if PartitionId = pidUnused then Exit;
-     
+
      {Create Entry}
      if not CreatePartitionEntry(ADevice,Start,Count,Offset,PartitionId,False,PartitionEntry) then Exit;
-     
+
      {Set Entry}
      PartitionRecord.PartitionTable.PartitionEntry[EntryNo]:=PartitionEntry;
-     
+
      {Initialize Partition}
      if not InitPartition(ADevice,Parent,Start,Count,PartitionId) then Exit;
-     
+
      {Write Partition Record} {of Actual Parent}
      if not WriteSectors(ADevice,Parent,0,1,PartitionRecord^) then Exit;
-     
+
      {Locate Partitions, Volumes and Drives}
      Parent.LocatePartitions; {Parent only}
      FDriver.LocateVolumes;
      FDriver.LocateDrives;
     end;
-   
+
    Result:=True;
   finally
    FreeMem(PartitionRecord);
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -29629,7 +29629,7 @@ var
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -29644,11 +29644,11 @@ begin
   Volume:=FDriver.GetVolumeByPartition(APartition,True,FILESYS_LOCK_WRITE);
   if Volume <> nil then
    begin
-    Volume.DismountVolume; 
-   
+    Volume.DismountVolume;
+
     {Unlock Volume}
     Volume.WriterUnlock;
-   end;   
+   end;
 
   {Allocate Buffer}
   if APartition.Device = nil then Exit;
@@ -29662,28 +29662,28 @@ begin
      {First Level}
      {Read Partition Record}
      if not ReadSectors(APartition.Device,nil,0,1,PartitionRecord^) then Exit;
-     
+
      {Check Signature}
      if PartitionRecord.Signature <> PARTITION_RECORD_SIGNATURE then Exit;
-     
+
      {Get Entry}
      PartitionEntry:=PartitionRecord.PartitionTable.PartitionEntry[APartition.EntryNo];
-     
+
      {Clear Entry}
      FillChar(PartitionEntry,SizeOf(TPartitionEntry),0);
-     
+
      {Set Entry}
      PartitionRecord.PartitionTable.PartitionEntry[APartition.EntryNo]:=PartitionEntry;
-     
+
      {Write Partition Record}
      if not WriteSectors(APartition.Device,nil,0,1,PartitionRecord^) then Exit;
-     
+
      {Get Device}
      Device:=APartition.Device;
-     
+
      {Delete Partition}
      APartition.Free;
-     
+
      {Check Partitions}
      if FDriver.GetPartitionByDevice(Device,False,FILESYS_LOCK_NONE) = nil then {Do not lock}
       begin
@@ -29695,21 +29695,21 @@ begin
    else
     begin
      if APartition.Partition.EntryNo = -1 then Exit;
-     
+
      {Second Level}
      {Get Root and Parent}
      Root:=APartition.Root; //To Do //Lock //Use CheckPartition ?
      Parent:=APartition.Partition; //To Do //Lock //Use CheckPartition ?
-     
+
      {Read Partition Record}
      if not ReadSectors(APartition.Device,Parent,0,1,PartitionRecord^) then Exit;
-     
+
      {Check Signature}
      if PartitionRecord.Signature <> PARTITION_RECORD_SIGNATURE then Exit;
-     
+
      {Get Entry}
      PartitionEntry:=PartitionRecord.PartitionTable.PartitionEntry[APartition.EntryNo];
-     
+
      {Check Extended}
      if APartition.Extended then
       begin
@@ -29725,13 +29725,13 @@ begin
            {Delete Partition}
            {Clear Entry}
            FillChar(PartitionEntry,SizeOf(TPartitionEntry),0);
-           
+
            {Set Entry}
            PartitionRecord.PartitionTable.PartitionEntry[APartition.EntryNo]:=PartitionEntry;
-           
+
            {Write Partition Record}
            if not WriteSectors(APartition.Device,Parent,0,1,PartitionRecord^) then Exit;
-           
+
            {Delete Partition}
            APartition.Free;
           end
@@ -29739,33 +29739,33 @@ begin
           begin
            try
             if Sibling.EntryNo = -1 then Exit;
-           
+
             {Move Sibling}
             {Read Partition Record} {from Partition not Parent}
             if not ReadSectors(APartition.Device,APartition,0,1,PartitionRecord^) then Exit;
-           
+
             {Check Signature}
             if PartitionRecord.Signature <> PARTITION_RECORD_SIGNATURE then Exit;
-            
+
             {Get Sibling Entry}
             PartitionEntry:=PartitionRecord.PartitionTable.PartitionEntry[Sibling.EntryNo];
-            
+
             {Read Partition Record} {from Parent}
             if not ReadSectors(APartition.Device,Parent,0,1,PartitionRecord^) then Exit;
-           
+
             {Set Sibling Entry}
             PartitionRecord.PartitionTable.PartitionEntry[APartition.EntryNo]:=PartitionEntry;
             Sibling.FPartition:=Parent;
-           
+
             {Write Partition Record}
             if not WriteSectors(APartition.Device,Parent,0,1,PartitionRecord^) then Exit;
-           
+
             {Delete Partition}
             APartition.Free;
            finally
             {Unlock Sibling}
             Sibling.WriterUnlock;
-           end;           
+           end;
           end;
         end
        else
@@ -29779,28 +29779,28 @@ begin
        {Delete Logical}
        {Clear Entry}
        FillChar(PartitionEntry,SizeOf(TPartitionEntry),0);
-       
+
        {Set Entry}
        PartitionRecord.PartitionTable.PartitionEntry[APartition.EntryNo]:=PartitionEntry;
-       
+
        {Write Partition Record}
        if not WriteSectors(APartition.Device,Parent,0,1,PartitionRecord^) then Exit;
-       
+
        {Delete Partition}
        APartition.Free;
-       
+
        {Delete Parent if not Root}
        if Parent <> Root then if not DeletePartition(Parent) then Exit; //To Do //Lock //see above
       end;
     end;
-   
+
    Result:=True;
   finally
    FreeMem(PartitionRecord);
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -29838,9 +29838,9 @@ begin
 
     {Unlock Volume}
     Volume.WriterUnlock;
-   end; 
+   end;
 
-  {Allocate Buffer} 
+  {Allocate Buffer}
   if APartition.Device = nil then Exit;
   if APartition.Device.SectorSize = 0 then Exit;
   PartitionRecord:=GetMem(APartition.Device.SectorSize);
@@ -29848,18 +29848,18 @@ begin
   try
    {Read Partition Record}
    if not ReadSectors(APartition.Device,APartition.Partition,0,1,PartitionRecord^) then Exit;
-   
+
    {Check Signature}
    if PartitionRecord.Signature <> PARTITION_RECORD_SIGNATURE then Exit;
-   
+
    {Get Entry}
    PartitionEntry:=PartitionRecord.PartitionTable.PartitionEntry[APartition.EntryNo];
-   
+
    {Get PartitionId}
    PartitionId:=GetPartitionId(APartition.Device,APartition.Partition,APartition.StartSector,APartition.SectorCount,APartitionId);
    if AOverride then PartitionId:=APartitionId;
    if PartitionId = pidUnused then Exit;
-   
+
    {Check PartitionId}
    if PartitionEntry.TypeIndicator <> PartitionId then
     begin
@@ -29867,22 +29867,22 @@ begin
      PartitionEntry.TypeIndicator:=PartitionId;
      PartitionRecord.PartitionTable.PartitionEntry[APartition.EntryNo]:=PartitionEntry;
      APartition.FPartitionId:=PartitionId;
-     
+
      {Write Partition Record}
      if not WriteSectors(APartition.Device,APartition.Partition,0,1,PartitionRecord^) then Exit;
     end;
-  
+
    {Locate Volumes and Drives}
    if not AOverride then FDriver.LocateVolumes;
    if not AOverride then FDriver.LocateDrives;
-   
+
    Result:=True;
   finally
    FreeMem(PartitionRecord);
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -29918,13 +29918,13 @@ begin
   try
    {Read Partition Record}
    if not ReadSectors(APartition.Device,APartition.Partition,0,1,PartitionRecord^) then Exit;
-   
+
    {Check Signature}
    if PartitionRecord.Signature <> PARTITION_RECORD_SIGNATURE then Exit;
-   
+
    {Get Entry}
    PartitionEntry:=PartitionRecord.PartitionTable.PartitionEntry[APartition.EntryNo];
-   
+
    {Check Active}
    if ((PartitionEntry.BootIndicator and $80) = $80) <> AActive then
     begin
@@ -29934,9 +29934,9 @@ begin
        {Set Active}
        PartitionEntry.BootIndicator:=(PartitionEntry.BootIndicator or $80);
        PartitionRecord.PartitionTable.PartitionEntry[APartition.EntryNo]:=PartitionEntry;
-       
+
        APartition.FActive:=True;
-       
+
        {Get Siblings}
        Sibling:=FDriver.GetPartitionByNext(nil,True,False,FILESYS_LOCK_READ); //To Do //If we have a WriterLock on the passed partition this will deadlock ?
        while Sibling <> nil do
@@ -29946,14 +29946,14 @@ begin
           begin
            {Get Entry}
            PartitionEntry:=PartitionRecord.PartitionTable.PartitionEntry[Sibling.EntryNo];
-           
+
            {Remove Active}
            PartitionEntry.BootIndicator:=(PartitionEntry.BootIndicator and not($80));
            PartitionRecord.PartitionTable.PartitionEntry[Sibling.EntryNo]:=PartitionEntry;
-           
+
            Sibling.FActive:=False;
           end;
-          
+
          Sibling:=FDriver.GetPartitionByNext(Sibling,True,True,FILESYS_LOCK_READ); //To Do //If we have a WriterLock on the passed partition this will deadlock ?
         end;
       end
@@ -29962,21 +29962,21 @@ begin
        {Set Inactive}
        PartitionEntry.BootIndicator:=$00;
        PartitionRecord.PartitionTable.PartitionEntry[APartition.EntryNo]:=PartitionEntry;
-       
+
        APartition.FActive:=False;
       end;
-     
+
      {Write Partition Record}
      if not WriteSectors(APartition.Device,APartition.Partition,0,1,PartitionRecord^) then Exit;
     end;
-   
+
    Result:=True;
   finally
    FreeMem(PartitionRecord);
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -29988,7 +29988,7 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FLocalLock:=MutexCreate;
- 
+
  FDriver:=ADriver;
  FRecognizer:=ARecognizer;
 end;
@@ -30002,10 +30002,10 @@ begin
  try
   FRecognizer:=nil;
   FDriver:=nil;
- 
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -30038,7 +30038,7 @@ var
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if AVolume = nil then Exit;
 
  {Get Sector Size}
@@ -30054,20 +30054,20 @@ begin
    begin
     {Read Sector} {Dont need to read first}
     {if not ReadSectors(AVolume,ADrive,ASector,1,Buffer^) then Exit;}
-    
+
     {Fill Sector}
     FillChar(Buffer^,SectorSize,AValue);
-    
+
     {Write Sector}
     if not WriteSectors(AVolume,ADrive,ASector,1,Buffer^) then Exit;
-    
+
     Inc(ASector);
     Dec(ACount);
 
     {Yield}
     Sleep(0);
    end;
-   
+
   Result:=True;
  finally
   FreeMem(Buffer);
@@ -30183,10 +30183,10 @@ begin
  try
   FRecognizer:=nil;
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -30281,10 +30281,10 @@ begin
  try
   FRecognizer:=nil;
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -30381,7 +30381,7 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FLocalLock:=MutexCreate;
- 
+
  FDriver:=ADriver;
  FRecognizer:=ARecognizer;
 end;
@@ -30395,10 +30395,10 @@ begin
  try
   FRecognizer:=nil;
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -30479,7 +30479,7 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FLocalLock:=MutexCreate;
- 
+
  FDriver:=ADriver;
  FRecognizer:=ARecognizer;
 end;
@@ -30493,10 +30493,10 @@ begin
  try
   FRecognizer:=nil;
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -30654,10 +30654,10 @@ begin
  try
   FRecognizer:=nil;
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -30756,7 +30756,7 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FLocalLock:=MutexCreate;
- 
+
  FDriver:=ADriver;
  FRecognizer:=ARecognizer;
 end;
@@ -30770,10 +30770,10 @@ begin
  try
   FRecognizer:=nil;
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -30900,7 +30900,7 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FLocalLock:=MutexCreate;
- 
+
  FDriver:=ADriver;
  if FDriver <> nil then FDriver.AddFileSystem(Self);
  FVolume:=AVolume;
@@ -30932,10 +30932,10 @@ begin
  FSectorCount:=0;
 
  FRoot:=nil;
- 
+
  FCurrentIndex:=TlsAlloc;
  FCurrentEntry:=nil;
- 
+
  FChunks:=TFileSysList.Create;
  FTables:=TFileSysList.Create;
  FBlocks:=TFileSysList.Create;
@@ -30951,7 +30951,7 @@ begin
  FSecurityLocal:=MutexCreate;
  FAclLocal:=MutexCreate;
  FAceLocal:=MutexCreate;
- 
+
  FMarkDirty:=False;
  FMarkClean:=False;
  FMarkError:=False;
@@ -31001,14 +31001,14 @@ begin
   if FSectorBuffer <> nil then FreeMem(FSectorBuffer);
   FSectorBuffer:=nil;
   MutexDestroy(FSectorLock);
-  
+
   FAcls.Free;
   FCatalogs.Free;
   FEntries.Free;
   FBlocks.Free;
   FTables.Free;
   FChunks.Free;
-  
+
   MutexDestroy(FAceLocal);
   MutexDestroy(FAclLocal);
   MutexDestroy(FSecurityLocal);
@@ -31017,21 +31017,21 @@ begin
   MutexDestroy(FBlockLocal);
   MutexDestroy(FTableLocal);
   MutexDestroy(FChunkLocal);
-  
+
   TlsFree(FCurrentIndex);
-  
+
   FRoot:=nil;
-  
+
   if FDrive <> nil then FDrive.FileSystem:=nil;
   FDrive:=nil;
   if FVolume <> nil then FVolume.FileSystem:=nil;
   FVolume:=nil;
   if FDriver <> nil then FDriver.RemoveFileSystem(Self);
   FDriver:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -31078,24 +31078,24 @@ begin
  try
   if FDriver = nil then Exit;
   if FDrive = ADrive then Exit;
-  
+
   {Check Drive}
   if FDrive = nil then
    begin
     {Bind}
     if ADrive = nil then Exit;
-    
+
     {Set Drive}
     FDrive:=ADrive;
-    
+
     {Setup Defaults}
     FRootChar:=LoadRootChar;
     FRootName:=LoadRootName(False);
     FRootPath:=LoadRootPath;
-    
+
     {Bind to Drive}
     FDrive.FileSystem:=Self;
-    
+
     {Check Root}
     if FRoot <> nil then
      begin
@@ -31108,18 +31108,18 @@ begin
    begin
     {Unbind}
     if ADrive <> nil then Exit;
-    
+
     {Unbind from Drive}
     FDrive.FileSystem:=nil;
-    
+
     {Set Drive}
     FDrive:=nil;
-    
+
     {Setup Defaults}
     FRootChar:=LoadRootChar;
     FRootName:=LoadRootName(False);
     FRootPath:=LoadRootPath;
-    
+
     {Check Root}
     if FRoot <> nil then
      begin
@@ -31128,9 +31128,9 @@ begin
       FRoot.AltName:=FRootPath;
      end;
    end;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -31141,14 +31141,14 @@ begin
  if not WriterLock then Exit;
  try
   {Nothing}
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TFileSystem.GetPathChar:String; 
+function TFileSystem.GetPathChar:String;
 begin
  {}
  Result:='';
@@ -31163,7 +31163,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.GetNameChar:String; 
+function TFileSystem.GetNameChar:String;
 begin
  {}
  Result:='';
@@ -31178,7 +31178,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.GetFileChar:String; 
+function TFileSystem.GetFileChar:String;
 begin
  {}
  Result:='';
@@ -31193,7 +31193,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.GetRootChar:String; 
+function TFileSystem.GetRootChar:String;
 begin
  {}
  Result:='';
@@ -31208,7 +31208,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.GetRootName:String; 
+function TFileSystem.GetRootName:String;
 begin
  {}
  Result:='';
@@ -31223,7 +31223,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.GetRootPath:String; 
+function TFileSystem.GetRootPath:String;
 begin
  {}
  Result:='';
@@ -31238,7 +31238,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.GetSystemName:String; 
+function TFileSystem.GetSystemName:String;
 begin
  {}
  Result:='';
@@ -31253,7 +31253,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.GetVolumeName:String; 
+function TFileSystem.GetVolumeName:String;
 begin
  {}
  Result:='';
@@ -31268,7 +31268,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.GetVolumeGUID:String; 
+function TFileSystem.GetVolumeGUID:String;
 begin
  {}
  Result:='';
@@ -31319,14 +31319,14 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   if FDrive <> nil then
    begin
     Result:=FDrive.Root;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -31340,7 +31340,7 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   if AVolumeName and (FVolume <> nil) then
    begin
     Result:=VOLUME_PATH_PREFIX + FVolume.Name;
@@ -31354,13 +31354,13 @@ begin
     else
      begin
       if FVolume = nil then Exit;
-    
+
       Result:=VOLUME_PATH_PREFIX + FVolume.Name;
      end;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -31374,7 +31374,7 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   if FVolume <> nil then
    begin
     Result:=DEVICE_PATH_PREFIX + FVolume.Parent;
@@ -31382,12 +31382,12 @@ begin
   else
    begin
     if FDrive = nil then Exit;
-    
+
     Result:=FDrive.Name;
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -31551,11 +31551,11 @@ begin
  try
   if FDriver = nil then Exit;
   if FVolume = nil then Exit;
-  
+
   Result:=FVolume.SectorSize;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -31572,9 +31572,9 @@ begin
   if FVolume = nil then Exit;
 
   Result:=FVolume.StartSector;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -31595,14 +31595,14 @@ begin
   if FVolume = nil then Exit;
 
   Result:=FVolume.SectorCount;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TFileSystem.GetCurrent:TDiskEntry; 
+function TFileSystem.GetCurrent:TDiskEntry;
 begin
  {}
  if FILESYS_GLOBAL_CURRENTDIR then
@@ -31611,22 +31611,22 @@ begin
    if Result = nil then
     begin
      FCurrentEntry:=FRoot;
-     
+
      Result:=FCurrentEntry;
      if Result <> nil then Result.AddReference;
     end;
   end
  else
-  begin 
+  begin
    Result:=TlsGetValue(FCurrentIndex);
    if Result = nil then
     begin
      if not TlsSetValue(FCurrentIndex,FRoot) then Exit;
-     
+
      Result:=TlsGetValue(FCurrentIndex);
      if Result <> nil then Result.AddReference;
     end;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -31637,13 +31637,13 @@ begin
  if FILESYS_GLOBAL_CURRENTDIR then
   begin
    FCurrentEntry:=ACurrent;
-   
+
    Result:=(FCurrentEntry <> nil);
   end
  else
-  begin 
+  begin
    Result:=TlsSetValue(FCurrentIndex,ACurrent)
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -31654,7 +31654,7 @@ function TFileSystem.FillSectors(ASector,ACount:LongWord;AValue:Byte):Boolean;
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if not SectorLock then Exit;
  try
   if FSectorBuffer = nil then Exit;
@@ -31664,24 +31664,24 @@ begin
    begin
     {Read Sector} {Dont need to read first}
     {if not ReadSectors(ASector,1,FSectorBuffer^) then Exit;}
-   
+
     {Fill Sector}
     FillChar(FSectorBuffer^,FSectorSize,AValue);
-   
+
     {Write Sector}
     if not WriteSectors(ASector,1,FSectorBuffer^) then Exit;
-   
+
     Inc(ASector);
     Dec(ACount);
 
     {Yield}
     Sleep(0);
    end;
-  
+
   Result:=True;
  finally
   SectorUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -31693,13 +31693,13 @@ function TFileSystem.ReadSectors(ASector,ACount:LongWord;var ABuffer):Boolean;
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if FSectorCount = 0 then Exit;
- 
+
  if FVolume = nil then Exit;
  if FVolume.Device = nil then Exit;
-   
+
  Result:=FDriver.Cache.DeviceRead(FVolume.Device,FStartSector + ASector,ACount,ABuffer);
 end;
 
@@ -31712,13 +31712,13 @@ function TFileSystem.WriteSectors(ASector,ACount:LongWord;const ABuffer):Boolean
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if FSectorCount = 0 then Exit;
- 
+
  if FVolume = nil then Exit;
  if FVolume.Device = nil then Exit;
-   
+
  Result:=FDriver.Cache.DeviceWrite(FVolume.Device,FStartSector + ASector,ACount,ABuffer);
 end;
 
@@ -31803,7 +31803,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.UnloadEntries(AParent:TDiskEntry):Boolean; 
+function TFileSystem.UnloadEntries(AParent:TDiskEntry):Boolean;
 {Note: Parent must be supplied}
 {Note: Descendant method must use WriterLock on Entries}
 begin
@@ -31901,7 +31901,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.CheckCatalog(ACatalog:TDiskCatalog;ALock:Boolean;AState:LongWord):Boolean; 
+function TFileSystem.CheckCatalog(ACatalog:TDiskCatalog;ALock:Boolean;AState:LongWord):Boolean;
 var
  Catalog:TDiskCatalog;
 begin
@@ -31911,24 +31911,24 @@ begin
  if not FCatalogs.ReaderLock then Exit;
  try
   if ACatalog = nil then Exit;
-  
+
   Catalog:=TDiskCatalog(FCatalogs.First);
   while Catalog <> nil do
    begin
     if Catalog = ACatalog then
      begin
-      {Lock Catalog} 
+      {Lock Catalog}
       if ALock then if AState = FILESYS_LOCK_READ then Catalog.ReaderLock else Catalog.WriterLock;
-      
+
       Result:=True;
       Exit;
      end;
-     
+
     Catalog:=TDiskCatalog(Catalog.Next);
    end;
  finally
   FCatalogs.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -31940,10 +31940,10 @@ var
 begin
  {Base Implementation}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
  if ACatalogNo = 0 then Exit;
- 
+
  {Load Catalogs}
  if LoadCatalogs then
   begin
@@ -31955,18 +31955,18 @@ begin
      begin
       if Next.CatalogNo = ACatalogNo then
        begin
-        {Lock Catalog} 
+        {Lock Catalog}
         if ALock then if AState = FILESYS_LOCK_READ then Next.ReaderLock else Next.WriterLock;
-      
+
         Result:=Next;
         Exit;
        end;
-      
+
       Next:=TDiskCatalog(Next.Next);
      end;
    finally
     FCatalogs.ReaderUnlock;
-   end;   
+   end;
   end;
 end;
 
@@ -31978,10 +31978,10 @@ var
 begin
  {Base Implementation}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
  if Trim(AName) = '' then Exit;
- 
+
  {Load Catalogs}
  if LoadCatalogs then
   begin
@@ -31993,30 +31993,30 @@ begin
      begin
       if Uppercase(Next.Name) = Uppercase(AName) then
        begin
-        {Lock Catalog} 
+        {Lock Catalog}
         if ALock then if AState = FILESYS_LOCK_READ then Next.ReaderLock else Next.WriterLock;
-        
+
         Result:=Next;
         Exit;
        end;
-       
+
       Next:=TDiskCatalog(Next.Next);
      end;
    finally
     FCatalogs.ReaderUnlock;
-   end;   
+   end;
   end;
 end;
 
 {==============================================================================}
 
-function TFileSystem.GetCatalogByNext(APrevious:TDiskCatalog;ALock,AUnlock:Boolean;AState:LongWord):TDiskCatalog; 
+function TFileSystem.GetCatalogByNext(APrevious:TDiskCatalog;ALock,AUnlock:Boolean;AState:LongWord):TDiskCatalog;
 var
  Catalog:TDiskCatalog;
 begin
  {}
  Result:=nil;
- 
+
  if not FCatalogs.ReaderLock then Exit;
  try
   {Check Previous}
@@ -32028,7 +32028,7 @@ begin
      begin
       {Lock Catalog}
       if ALock then if AState = FILESYS_LOCK_READ then Catalog.ReaderLock else Catalog.WriterLock;
-      
+
       {Return Result}
       Result:=Catalog;
      end;
@@ -32041,17 +32041,17 @@ begin
      begin
       {Lock Catalog}
       if ALock then if AState = FILESYS_LOCK_READ then Catalog.ReaderLock else Catalog.WriterLock;
-      
+
       {Return Result}
       Result:=Catalog;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = FILESYS_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
+   end;
  finally
   FCatalogs.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -32060,7 +32060,7 @@ function TFileSystem.GetNextCatalogNo:LongWord;
 begin
  {Base Implementation}
  Result:=1;
- 
+
  while GetCatalogByNo(Result,False,FILESYS_LOCK_NONE) <> nil do {Do not lock}
   begin
    Inc(Result);
@@ -32085,12 +32085,12 @@ begin
      begin
       Result:=Catalog.CatalogNo;
      end;
-     
+
     Catalog:=TDiskCatalog(Catalog.Next);
    end;
  finally
   FCatalogs.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -32243,7 +32243,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.SetSecurity(AParent,AEntry:TDiskEntry;ASecurity:TDiskSecurity):Boolean; 
+function TFileSystem.SetSecurity(AParent,AEntry:TDiskEntry;ASecurity:TDiskSecurity):Boolean;
 {Note: Descendant method must use WriterLock on Entries}
 begin
  {Virtual Base Method - No Function}
@@ -32273,7 +32273,7 @@ begin
  if not FTables.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   {Check Tables}
   Next:=TDiskTable(FTables.First);
   while Next <> nil do
@@ -32287,7 +32287,7 @@ begin
    end;
  finally
   FTables.ReaderUnlock;
- end; 
+ end;
 
  {Load Table}
  if LoadTable(ATableNo) then
@@ -32299,7 +32299,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.GetTableEx(ATableNo:LongWord;AWrite:Boolean):TDiskTable; 
+function TFileSystem.GetTableEx(ATableNo:LongWord;AWrite:Boolean):TDiskTable;
 {Note: TableNo is zero based} {Descendants may override if required}
 {Write: Use the writer lock on the blocks instead of the reader lock if True}
 var
@@ -32313,12 +32313,12 @@ begin
    if not FTables.WriterLock then Exit;
   end
  else
-  begin   
+  begin
    if not FTables.ReaderLock then Exit;
-  end; 
+  end;
  try
   if FDriver = nil then Exit;
-  
+
   {Check Tables}
   Next:=TDiskTable(FTables.First);
   while Next <> nil do
@@ -32339,7 +32339,7 @@ begin
    begin
     FTables.ReaderUnlock;
    end;
- end; 
+ end;
 
  {Load Table}
  if LoadTable(ATableNo) then
@@ -32362,7 +32362,7 @@ begin
  if not FBlocks.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   {Check Blocks}
   Next:=TDiskBlock(FBlocks.First);
   while Next <> nil do
@@ -32376,7 +32376,7 @@ begin
    end;
  finally
   FBlocks.ReaderUnlock;
- end; 
+ end;
 
  {Load Block}
  if LoadBlock(ABlockNo) then
@@ -32388,7 +32388,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.GetBlockEx(ABlockNo:LongWord;AWrite:Boolean):TDiskBlock; 
+function TFileSystem.GetBlockEx(ABlockNo:LongWord;AWrite:Boolean):TDiskBlock;
 {Note: BlockNo is zero based} {Descendants may override if required}
 {Write: Use the writer lock on the blocks instead of the reader lock if True}
 var
@@ -32402,12 +32402,12 @@ begin
    if not FBlocks.WriterLock then Exit;
   end
  else
-  begin   
+  begin
    if not FBlocks.ReaderLock then Exit;
-  end; 
+  end;
  try
   if FDriver = nil then Exit;
-  
+
   {Check Blocks}
   Next:=TDiskBlock(FBlocks.First);
   while Next <> nil do
@@ -32428,7 +32428,7 @@ begin
    begin
     FBlocks.ReaderUnlock;
    end;
- end; 
+ end;
 
  {Load Block}
  if LoadBlock(ABlockNo) then
@@ -32444,7 +32444,7 @@ function TFileSystem.GetEntry(AParent:TDiskEntry;const AName:String;AAttributes:
 {Note: If Parent is not supplied Root is assumed}
 {Attributes is the match attributes to be checked}
 var
- Hash:LongWord; 
+ Hash:LongWord;
  Next:TDiskEntry;
  Start:TDiskEntry;
  Parent:TDiskEntry;
@@ -32452,20 +32452,20 @@ var
 begin
  {Base Implementation}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
- 
+
  {Get Parent}
  Parent:=AParent;
  if AParent = nil then Parent:=FRoot;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSystem.GetEntry Name = ' + AName + ' Parent = ' + Parent.Name);
  {$ENDIF}
- 
+
  {Get Name}
  WorkBuffer:=Uppercase(AName);
- 
+
  {Load Entries}
  if LoadEntries(Parent) then
   begin
@@ -32475,10 +32475,10 @@ begin
      begin
       Result:=Parent;
      end
-    else 
+    else
      begin
-      Hash:=GenerateNameHash(AName,NAME_HASH_SIZE); 
-  
+      Hash:=GenerateNameHash(AName,NAME_HASH_SIZE);
+
       Start:=Parent.Recent;
       if (Start <> nil) and (Start.Parent <> Parent) then Start:=nil; {Safety check for entry move}
       Next:=Start; {Parent.Recent;} {Start at Previous not Next} {Only read Recent once in case of change}
@@ -32501,14 +32501,14 @@ begin
               else if (Next.Attributes and faDotDot) = faDotDot then
                begin
                 if Next.Parent = nil then Exit;
-                
+
                 Result:=TDiskEntry(Next.Parent.Parent);
                 Exit;
                end
               else
                begin
                 Parent.Recent:=Next;
-                
+
                 Result:=Next;
                 Exit;
                end;
@@ -32527,43 +32527,43 @@ begin
               else if (Next.Attributes and faDotDot) = faDotDot then
                begin
                 if Next.Parent = nil then Exit;
-               
+
                 Result:=TDiskEntry(Next.Parent.Parent);
                 Exit;
                end
               else
                begin
                 Parent.Recent:=Next;
-                
+
                 Result:=Next;
                 Exit;
                end;
              end;
            end;
          end;
-        
+
         Next:=TDiskEntry(Next.Next);
-        
+
         if (Start <> nil) and (Next = nil) then Next:=TDiskEntry(Parent.FirstChild); {Start again from First}
         if (Start <> nil) and (Next = Start) then Break; {Break if returned to Start}
        end;
      end;
    finally
     FEntries.ReaderUnlock;
-   end; 
+   end;
   end;
 end;
 
 {==============================================================================}
 
-function TFileSystem.GetEntryEx(AParent:TDiskEntry;const AName:String;AAttributes:LongWord;AAdd,ARemove,AWrite:Boolean):TDiskEntry; 
+function TFileSystem.GetEntryEx(AParent:TDiskEntry;const AName:String;AAttributes:LongWord;AAdd,ARemove,AWrite:Boolean):TDiskEntry;
 {Note: If Parent is not supplied Root is assumed}
 {Attributes is the match attributes to be checked}
 {Add: Add a reference on the returned entry if True}
 {Remove: Remove a reference from the parent entry if True (If supplied)}
 {Write: Use the writer lock on the entries instead of the reader lock if True}
 var
- Hash:LongWord; 
+ Hash:LongWord;
  Next:TDiskEntry;
  Start:TDiskEntry;
  Parent:TDiskEntry;
@@ -32571,20 +32571,20 @@ var
 begin
  {Base Implementation}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
- 
+
  {Get Parent}
  Parent:=AParent;
  if AParent = nil then Parent:=FRoot;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSystem.GetEntryEx Name = ' + AName + ' Parent = ' + Parent.Name);
  {$ENDIF}
- 
+
  {Get Name}
  WorkBuffer:=Uppercase(AName);
- 
+
  {Load Entries}
  if LoadEntries(Parent) then
   begin
@@ -32593,9 +32593,9 @@ begin
      if not FEntries.WriterLock then Exit;
     end
    else
-    begin   
+    begin
      if not FEntries.ReaderLock then Exit;
-    end; 
+    end;
    try
     try
      if (Length(AName) = 0) and (Parent = FRoot) then {Special case for root}
@@ -32603,10 +32603,10 @@ begin
        Result:=Parent;
        if AAdd then Result.AddReference;
       end
-     else 
+     else
       begin
-       Hash:=GenerateNameHash(AName,NAME_HASH_SIZE); 
-  
+       Hash:=GenerateNameHash(AName,NAME_HASH_SIZE);
+
        Start:=Parent.Recent;
        if (Start <> nil) and (Start.Parent <> Parent) then Start:=nil; {Safety check for entry move}
        Next:=Start; {Parent.Recent;} {Start at Previous not Next} {Only read Recent once in case of change}
@@ -32630,7 +32630,7 @@ begin
                else if (Next.Attributes and faDotDot) = faDotDot then
                 begin
                  if Next.Parent = nil then Exit;
-                 
+
                  Result:=TDiskEntry(Next.Parent.Parent);
                  if AAdd and (Result <> nil) then Result.AddReference;
                  Exit;
@@ -32638,7 +32638,7 @@ begin
                else
                 begin
                  Parent.Recent:=Next;
-                 
+
                  Result:=Next;
                  if AAdd then Result.AddReference;
                  Exit;
@@ -32659,7 +32659,7 @@ begin
                else if (Next.Attributes and faDotDot) = faDotDot then
                 begin
                  if Next.Parent = nil then Exit;
-                
+
                  Result:=TDiskEntry(Next.Parent.Parent);
                  if AAdd and (Result <> nil) then Result.AddReference;
                  Exit;
@@ -32667,7 +32667,7 @@ begin
                else
                 begin
                  Parent.Recent:=Next;
-                 
+
                  Result:=Next;
                  if AAdd then Result.AddReference;
                  Exit;
@@ -32675,9 +32675,9 @@ begin
               end;
             end;
           end;
-         
+
          Next:=TDiskEntry(Next.Next);
-         
+
          if (Start <> nil) and (Next = nil) then Next:=TDiskEntry(Parent.FirstChild); {Start again from First}
          if (Start <> nil) and (Next = Start) then Break; {Break if returned to Start}
         end;
@@ -32694,10 +32694,10 @@ begin
      begin
       FEntries.ReaderUnlock;
      end;
-   end; 
+   end;
   end;
 end;
- 
+
 {==============================================================================}
 
 function TFileSystem.GetCatalog(ACatalogNo:LongWord):TDiskCatalog;
@@ -32725,18 +32725,18 @@ begin
         Result:=Next;
         Exit;
        end;
-       
+
       Next:=TDiskCatalog(Next.Next);
      end;
    finally
     FCatalogs.ReaderUnlock;
-   end;   
+   end;
   end;
 end;
 
 {==============================================================================}
 
-function TFileSystem.GetCatalogEx(ACatalogNo:LongWord;AWrite:Boolean):TDiskCatalog; 
+function TFileSystem.GetCatalogEx(ACatalogNo:LongWord;AWrite:Boolean):TDiskCatalog;
 {Note: CatalogNo is one based}
 var
  Next:TDiskCatalog;
@@ -32755,9 +32755,9 @@ begin
      if not FCatalogs.WriterLock then Exit;
     end
    else
-    begin   
+    begin
      if not FCatalogs.ReaderLock then Exit;
-    end; 
+    end;
    try
     {Check Catalogs}
     Next:=TDiskCatalog(FCatalogs.First);
@@ -32768,7 +32768,7 @@ begin
         Result:=Next;
         Exit;
        end;
-       
+
       Next:=TDiskCatalog(Next.Next);
      end;
    finally
@@ -32780,7 +32780,7 @@ begin
      begin
       FCatalogs.ReaderUnlock;
      end;
-   end;   
+   end;
   end;
 end;
 
@@ -32811,13 +32811,13 @@ var
 begin
  {Base Implementation}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
- 
+
  {Get Parent}
  Parent:=AParent;
  if AParent = nil then Parent:=FRoot;
- 
+
  {Load Entries}
  if LoadEntries(Parent) then
   begin
@@ -32826,7 +32826,7 @@ begin
     {Get Next}
     Next:=nil;
     if APrevious = nil then Next:=TDiskEntry(Parent.FirstChild);
-    if APrevious <> nil then Next:=TDiskEntry(APrevious.Next); {Start at Next not Previous} 
+    if APrevious <> nil then Next:=TDiskEntry(APrevious.Next); {Start at Next not Previous}
     while Next <> nil do
      begin
       {Check Attributes (All entries will have only one match attribute)}
@@ -32852,18 +32852,18 @@ begin
            end;
          end;
        end;
-      
+
       Next:=TDiskEntry(Next.Next);
      end;
    finally
     FEntries.ReaderUnlock;
-   end; 
+   end;
   end;
 end;
 
 {==============================================================================}
 
-function TFileSystem.MatchEntryEx(AParent,APrevious:TDiskEntry;const AName:String;AAttributes:LongWord;AAny,AAdd,ARemove,AWrite:Boolean):TDiskEntry; 
+function TFileSystem.MatchEntryEx(AParent,APrevious:TDiskEntry;const AName:String;AAttributes:LongWord;AAny,AAdd,ARemove,AWrite:Boolean):TDiskEntry;
 {Note: If Parent is not supplied Root is assumed}
 {Attributes is the match attributes to be checked}
 {Add: Add a reference on the returned entry if True}
@@ -32875,13 +32875,13 @@ var
 begin
  {Base Implementation}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
- 
+
  {Get Parent}
  Parent:=AParent;
  if AParent = nil then Parent:=FRoot;
- 
+
  {Load Entries}
  if LoadEntries(Parent) then
   begin
@@ -32890,15 +32890,15 @@ begin
      if not FEntries.WriterLock then Exit;
     end
    else
-    begin   
+    begin
      if not FEntries.ReaderLock then Exit;
-    end; 
+    end;
    try
     try
      {Get Next}
      Next:=nil;
      if APrevious = nil then Next:=TDiskEntry(Parent.FirstChild);
-     if APrevious <> nil then Next:=TDiskEntry(APrevious.Next); {Start at Next not Previous} 
+     if APrevious <> nil then Next:=TDiskEntry(APrevious.Next); {Start at Next not Previous}
      while Next <> nil do
       begin
        {Check Attributes (All entries will have only one match attribute)}
@@ -32927,7 +32927,7 @@ begin
             end;
           end;
         end;
-      
+
        Next:=TDiskEntry(Next.Next);
       end;
     finally
@@ -32942,7 +32942,7 @@ begin
      begin
       FEntries.ReaderUnlock;
      end;
-   end; 
+   end;
   end;
 end;
 
@@ -32957,13 +32957,13 @@ var
 begin
  {}
  Result:='';
- 
+
  if FDriver = nil then Exit;
  if AEntry = nil then Exit;
- 
+
  {Get Path Char}
  WorkChar:=GetPathChar;
- 
+
  if not FEntries.ReaderLock then Exit;
  try
   {Check Type}
@@ -33004,20 +33004,20 @@ begin
            Result:=AddTrailingChar(Parent.Name,WorkChar) + Result;
           end;
         end;
-        
+
        Parent:=TDiskEntry(Parent.Parent);
       end;
     end;
    faStream:begin
      {Stream}
      Parent:=TDiskEntry(AEntry.Parent);
-     
+
      Result:=GetEntryName(Parent,AAltName,AVolumePath,ADevicePath);
     end;
   end;
  finally
   FEntries.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -33027,10 +33027,10 @@ function TFileSystem.GetEntryName(AEntry:TDiskEntry;AAltName,AVolumePath,ADevice
 begin
  {}
  Result:='';
- 
+
  if FDriver = nil then Exit;
  if AEntry = nil then Exit;
- 
+
  if not FEntries.ReaderLock then Exit;
  try
   {Check Type}
@@ -33074,12 +33074,12 @@ begin
      Result:=AEntry.Name;
     end;
   end;
- 
+
   {Get Entry Path}
   Result:=GetEntryPath(AEntry,AAltName,AVolumePath,ADevicePath) + Result;
  finally
   FEntries.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -33095,7 +33095,7 @@ var
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if FRoot = nil then Exit;
  if Length(APath) = 0 then Exit;
@@ -33104,13 +33104,13 @@ begin
  {$IFDEF FILESYS_DEBUG}
  {if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSystem.SplitPath Path = ' + APath);}
  {$ENDIF}
- 
+
  {Get Root Char}
  WorkRoot:=GetRootChar;
- 
+
  {Get Path Char}
  WorkPath:=GetPathChar;
- 
+
  {Check for Relative}
  ARelative:=True;
  WorkBuffer:=APath;
@@ -33138,7 +33138,7 @@ begin
    ARelative:=False;
    {No need to Delete due to StripLeadingChar below}
   end;
- 
+
  {Get Folders}
  AFolders.Clear;
  WorkBuffer:=StripLeadingChar(StripTrailingChar(WorkBuffer,WorkPath),WorkPath);
@@ -33149,18 +33149,18 @@ begin
     begin
      AFolders.Add(Copy(WorkBuffer,1,PosIdx - 1));
      Delete(WorkBuffer,1,PosIdx);
-     
+
      PosIdx:=Pos(WorkPath,WorkBuffer);
     end;
   end;
-  
+
  {Get Name}
  AName:='';
  if Length(WorkBuffer) <> 0 then
   begin
    AName:=WorkBuffer;
   end;
-  
+
  Result:=True;
 end;
 
@@ -33175,7 +33175,7 @@ var
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if Length(AName) = 0 then Exit;
  if not FDataStreams then Exit;
@@ -33186,10 +33186,10 @@ begin
   begin
    {Get File}
    AFile:=Copy(AName,1,PosIdx - 1);
-   
+
    {Get Stream} {Include the Separator}
    AStream:=Copy(AName,PosIdx,Length(AName));
-   
+
    Result:=True;
   end;
 end;
@@ -33204,7 +33204,7 @@ var
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if Length(AFile) = 0 then Exit;
 
@@ -33214,7 +33214,7 @@ begin
   begin
    {Get Name}
    AName:=Copy(AFile,1,PosIdx - 1);
-   
+
    {Get Ext} {Remove the Separator}
    AExt:=Copy(AFile,PosIdx + 1,Length(AFile));
   end
@@ -33222,11 +33222,11 @@ begin
   begin
    {Get Name}
    AName:=AFile;
-   
+
    {Get Ext}
    AExt:='';
   end;
-  
+
  Result:=True;
 end;
 
@@ -33242,27 +33242,27 @@ var
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if Length(AStream) = 0 then Exit;
 
  {Get Name Char}
  WorkChar:=GetNameChar;
- 
+
  {Check Separator}
  WorkBuffer:=AStream;
  if WorkBuffer[1] = WorkChar then
   begin
    Delete(WorkBuffer,1,1);
   end;
-  
+
  {Check Separator}
  PosIdx:=Pos(WorkChar,WorkBuffer);
  if PosIdx <> 0 then
   begin
    {Get Name}
    AName:=Copy(WorkBuffer,1,PosIdx - 1);
-   
+
    {Get Type} {Remove the Separator}
    AType:=Copy(WorkBuffer,PosIdx + 1,Length(WorkBuffer));
   end
@@ -33270,11 +33270,11 @@ begin
   begin
    {Get Name}
    AName:=WorkBuffer;
-   
+
    {Get Type}
    AType:='';
   end;
-  
+
  Result:=True;
 end;
 
@@ -33289,7 +33289,7 @@ var
 begin
  {Base Implementation}
  Result:='';
- 
+
  if FDriver = nil then Exit;
  if FRoot = nil then Exit;
  if AFolders = nil then Exit;
@@ -33297,11 +33297,11 @@ begin
 
  {Get Path Char}
  WorkChar:=GetPathChar;
- 
+
  {Get Root}
  Result:=StripTrailingChar(FRoot.Name,WorkChar);
  if ARelative then Result:=StripTrailingChar(GetCurrentDir,WorkChar);
- 
+
  {Get Folders}
  Folder:=TStringObject(AFolders.First);
  while Folder <> nil do
@@ -33309,7 +33309,7 @@ begin
    Result:=Result + WorkChar + Folder.Value;
    Folder:=TStringObject(Folder.Next);
   end;
- 
+
  {Get Name}
  if Length(AName) <> 0 then
   begin
@@ -33326,7 +33326,7 @@ var
 begin
  {Base Implementation}
  Result:='';
- 
+
  if FDriver = nil then Exit;
  if Length(AFile) = 0 then Exit;
  {if Length(AStream) = 0 then Exit;} {Stream may be blank}
@@ -33336,7 +33336,7 @@ begin
   begin
    {Get Name Char}
    WorkChar:=GetNameChar;
-   
+
    if AStream[1] = WorkChar then
     begin
      Result:=Result + AStream;
@@ -33355,7 +33355,7 @@ function TFileSystem.BuildFile(const AName,AExt:String):String;
 begin
  {Base Implementation}
  Result:='';
- 
+
  if FDriver = nil then Exit;
  if Length(AName) = 0 then Exit;
  {if Length(AExt) = 0 then Exit;} {Ext may be blank}
@@ -33374,7 +33374,7 @@ function TFileSystem.BuildStream(const AName,AType:String):String;
 begin
  {Base Implementation}
  Result:='';
- 
+
  if FDriver = nil then Exit;
  if Length(AName) = 0 then Exit;
  {if Length(AType) = 0 then Exit;} {Type may be blank}
@@ -33396,16 +33396,16 @@ function TFileSystem.CheckName(const AName:String):Boolean;
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
- 
+
  {Check for Length}
  if Length(AName) = 0 then Exit;
  if Length(AName) > FMaxFile then Exit;
- 
+
  {Check for PathChar}
  if Pos(AName,GetPathChar) <> 0 then Exit;
- 
+
  Result:=True;
 end;
 
@@ -33417,11 +33417,11 @@ function TFileSystem.CompareName(const AName,AMatch:String;AWildcard:Boolean):Bo
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if Length(AName) = 0 then Exit;
  if Length(AMatch) = 0 then Exit;
- 
+
  {Check Wildcard}
  if not AWildcard then
   begin
@@ -33451,16 +33451,16 @@ function TFileSystem.CheckAltName(const AAltName:String):Boolean;
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
- 
+
  {Check for Length}
  if Length(AAltName) = 0 then Exit;
  if Length(AAltName) > FMaxAltFile then Exit;
- 
+
  {Check for PathChar}
  if Pos(AAltName,GetPathChar) <> 0 then Exit;
- 
+
  Result:=True;
 end;
 
@@ -33494,7 +33494,7 @@ function TFileSystem.GetDescriptorFromSecurity(ASecurity:TDiskSecurity;ADescript
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ASecurity = nil then Exit;
  {if ADescriptor = nil then Exit;} {Descriptor may be nil on first call to get Size}
@@ -33508,7 +33508,7 @@ begin
  else
   begin
    if ADescriptor = nil then Exit;
-   
+
    {Get Descriptor}
    Result:=ASecurity.CopyToDescriptorEx(ADescriptor,ASize,False); {Return in API Format}
   end;
@@ -33532,7 +33532,7 @@ end;
 
 {==============================================================================}
 
-function TFileSystem.ReaderConvert:Boolean; 
+function TFileSystem.ReaderConvert:Boolean;
 {Convert a Reader lock to a Writer lock}
 begin
  {}
@@ -33621,7 +33621,7 @@ begin
 
   {Load Catalogs}
   if not LoadCatalogs then Exit;
-  
+
   {Split the Path}
   Folders:=TLinkedStringList.Create;
   try
@@ -33631,27 +33631,27 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
-     
+
      {Split the Name}
      if SplitName(Name,ParentName,StreamName) then
       begin
        {Get File or Folder}
        Parent:=GetEntryEx(Parent,ParentName,faDirectory or faFile,True,True,False);
        if Parent = nil then Exit;
-       
+
        {Get Stream}
        Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
        if Current = nil then
@@ -33668,7 +33668,7 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end
      else
       begin
@@ -33679,13 +33679,13 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end;
-      
+
      {Add Catalog}
      Catalog:=AddCatalog(Current,AMediaType,AFloppyType,AAttributes,ASectorSize,ASectorCount);
      if Catalog <> nil then Result:=Catalog.CatalogNo;
-     
+
      {Remove Reference}
      Current.RemoveReference;
      Parent.RemoveReference;
@@ -33693,9 +33693,9 @@ begin
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -33713,16 +33713,16 @@ begin
 
   {Load Catalogs}
   if not LoadCatalogs then Exit;
-  
+
   {Get Catalog}
   Catalog:=GetCatalog(ACatalogNo);
   if Catalog = nil then Exit;
-  
+
   {Remove Catalog}
   Result:=RemoveCatalog(Catalog);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -33738,23 +33738,23 @@ begin
  if not ReaderLock then Exit;
  try
   ASearchRec.FindHandle:=INVALID_HANDLE_VALUE;
-  
+
   if FDriver = nil then Exit;
 
   {Load Catalogs}
   if not LoadCatalogs then Exit;
-  
+
   {Find First Catalog}
-  Current:=GetCatalogByNext(nil,True,False,FILESYS_LOCK_READ); 
+  Current:=GetCatalogByNext(nil,True,False,FILESYS_LOCK_READ);
   if Current = nil then Exit;
   try
    {Open Handle}
    Handle:=FDriver.OpenEnumHandle(Self,True,FILESYS_LOCK_WRITE);
    if Handle = nil then Exit;
-  
+
    {Set the Handle properties}
    Handle.CurrentCatalog:=Current;
-  
+
    {Return Catalog}
    ASearchRec.FindHandle:=Handle.Handle;
    StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
@@ -33765,18 +33765,18 @@ begin
    ASearchRec.Attributes:=Current.Attributes;
    ASearchRec.SectorSize:=Current.SectorSize;
    ASearchRec.SectorCount:=Current.SectorCount;
-  
+
    Result:=0;
-   
+
    {Unlock Handle}
    Handle.WriterUnlock;
   finally
    {Unlock Catalog}
    Current.ReaderUnlock;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -33799,14 +33799,14 @@ begin
   try
    {Check Catalog}
    if not CheckCatalog(Handle.CurrentCatalog,True,FILESYS_LOCK_READ) then Exit;
-  
+
    {Find Next Catalog}
    Current:=GetCatalogByNext(Handle.CurrentCatalog,True,True,FILESYS_LOCK_READ);
    if Current = nil then Exit;
-  
+
    {Update Handle}
    Handle.CurrentCatalog:=Current;
-  
+
    {Return Catalog}
    ASearchRec.FindHandle:=Handle.Handle;
    StrLCopy(ASearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
@@ -33817,18 +33817,18 @@ begin
    ASearchRec.Attributes:=Current.Attributes;
    ASearchRec.SectorSize:=Current.SectorSize;
    ASearchRec.SectorCount:=Current.SectorCount;
-   
+
    {Unlock Catalog}
    Current.ReaderUnlock;
-   
+
    Result:=0;
   finally
    {Unlock Handle}
    Handle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -33846,14 +33846,14 @@ begin
   {Get the Handle}
   Handle:=FDriver.GetEnumFromHandle(ASearchRec.FindHandle,True,FILESYS_LOCK_WRITE);
   if Handle = nil then Exit;
-  
+
   {Close the Handle} {Do not unlock}
   FDriver.CloseEnumHandle(Handle);
-  
+
   ASearchRec.FindHandle:=INVALID_HANDLE_VALUE;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -33897,7 +33897,7 @@ var
 begin
  {Base Implementation}
  WorkInt:=GetDriveFreeSpaceEx;
- 
+
  Result:=TULargeInteger(WorkInt).LowPart;
  if TULargeInteger(WorkInt).HighPart > 0 then Result:=LongWord(-1);
 end;
@@ -33919,7 +33919,7 @@ var
 begin
  {Base Implementation}
  WorkInt:=GetDriveTotalSpaceEx;
- 
+
  Result:=TULargeInteger(WorkInt).LowPart;
  if TULargeInteger(WorkInt).HighPart > 0 then Result:=LongWord(-1);
 end;
@@ -33931,24 +33931,24 @@ function TFileSystem.GetDriveTotalSpaceEx:Int64;
 begin
  {Base Implementation}
  Result:=0;
- 
+
  if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
- 
+
   Result:=FSectorCount;
   Result:=(Result * FSectorSize);
- 
+
   {Modified to ensure Int64 mutliply}
   {Result:=(FSectorCount * FSectorSize);}
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TFileSystem.GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; 
+function TFileSystem.GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean;
 begin
  {Virtual Base Method - No Function}
  Result:=False;
@@ -33982,7 +33982,7 @@ begin
 
   {Check Open Mode}
   if Mode = fmCreate then Exit;
-  
+
   {Split the Path}
   Folders:=TLinkedStringList.Create;
   try
@@ -33992,27 +33992,27 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
-     
+
      {Split the Name}
      if SplitName(Name,ParentName,StreamName) then
       begin
        {Get File or Folder}
        Parent:=GetEntryEx(Parent,ParentName,faDirectory or faFile,True,True,False);
        if Parent = nil then Exit;
-       
+
        {Get Stream}
        Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
        if Current = nil then
@@ -34029,7 +34029,7 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end
      else
       begin
@@ -34040,44 +34040,44 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end;
      try
       {Check Attributes}
       if (Mode and fmOpenMask) <> fmOpenRead then if (Current.Attributes and faReadOnly) <> faNone then Exit;
-     
+
       {Open Handle}
       FileHandle:=FDriver.OpenFileHandle(FVolume,FDrive,Parent,Current,Mode,True,FILESYS_LOCK_WRITE);
       if FileHandle = nil then Exit;
-     
+
       {Check Update}
       if FILESYS_UPDATE_ACCESSTIME then
        begin
         {Set Time}
         Current.AccessTime:=Ultibo.DateTimeToFileTime(Now); {Converted to UTC}
-       
+
         {Update Entry} {Dont check return}
         {SetEntry(Parent,Current);} {Modified 13/10/2009 (Update if opened for read only)}
         if FileHandle.OpenMode = fmOpenRead then SetEntry(Parent,Current);
-       end; 
-     
+       end;
+
       {Return the Handle}
       Result:=FileHandle.Handle;
-     
+
       {Unlock Handle}
       FileHandle.WriterUnlock;
      finally
       {Remove Reference}
       Current.RemoveReference;
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -34114,27 +34114,27 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
-     
+
      {Split the Name}
      if SplitName(Name,ParentName,StreamName) then
       begin
        {Get File or Folder}
        Parent:=GetEntryEx(Parent,ParentName,faDirectory or faFile,True,True,False);
        if Parent = nil then Exit;
-       
+
        {Get Stream}
        Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
        if Current = nil then
@@ -34145,7 +34145,7 @@ begin
            {Get Stream}
            Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
           end;
-        end;  
+        end;
        if Current = nil then
         begin
          {Check Name}
@@ -34154,10 +34154,10 @@ begin
            {Remove Reference}
            Parent.RemoveReference;
            Exit;
-          end; 
-         
+          end;
+
          {Add Stream}
-         Current:=AddEntry(Parent,StreamName,faStream,True); 
+         Current:=AddEntry(Parent,StreamName,faStream,True);
          if Current = nil then
           begin
            {Remove Reference}
@@ -34178,8 +34178,8 @@ begin
            {Remove Reference}
            Parent.RemoveReference;
            Exit;
-          end; 
-         
+          end;
+
          {Add File}
          Current:=AddEntry(Parent,Name,faFile,True);
          if Current = nil then
@@ -34187,8 +34187,8 @@ begin
            {Remove Reference}
            Parent.RemoveReference;
            Exit;
-          end; 
-         
+          end;
+
          {Check Encryption}
          if (FFolderEncryption) and ((Parent.Attributes and faEncrypted) = faEncrypted) then
           begin
@@ -34200,9 +34200,9 @@ begin
              Current.RemoveReference;
              Parent.RemoveReference;
              Exit;
-            end; 
+            end;
           end;
-         
+
          {Check Compression}
          if (FFolderCompression) and ((Parent.Attributes and faCompressed) = faCompressed) then
           begin
@@ -34214,38 +34214,38 @@ begin
              Current.RemoveReference;
              Parent.RemoveReference;
              Exit;
-            end; 
+            end;
           end;
-        end; 
+        end;
       end;
      try
       {Open Handle}
       FileHandle:=FDriver.OpenFileHandle(FVolume,FDrive,Parent,Current,Mode,True,FILESYS_LOCK_WRITE);
       if FileHandle = nil then Exit;
-     
+
       {Set the Size} {In case of existing file}
       if Current.Size <> 0 then if not SizeEntry(FileHandle.ParentEntry,FileHandle.HandleEntry,0) then Exit;
-     
+
       {Set Attributes} {Entry will be updated by FileClose}
       Current.Attributes:=(Current.Attributes or faArchive);
-     
+
       {Return the Handle}
       Result:=FileHandle.Handle;
-   
+
       {Unlock Handle}
       FileHandle.WriterUnlock;
      finally
       {Remove Reference}
       Current.RemoveReference;
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -34281,27 +34281,27 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-    
+
      {Add Reference}
-     Parent.AddReference; 
-    
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
-    
+
      {Split the Name}
      if SplitName(Name,ParentName,StreamName) then
       begin
        {Get File or Folder}
        Parent:=GetEntryEx(Parent,ParentName,faDirectory or faFile,True,True,False);
        if Parent = nil then Exit;
-      
+
        {Get Stream}
        Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
        if Current = nil then
@@ -34318,7 +34318,7 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end
      else
       begin
@@ -34329,8 +34329,8 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
-      
+        end;
+
        {Load Entries}
        if not LoadEntries(Current) then
         begin
@@ -34338,8 +34338,8 @@ begin
          Current.RemoveReference;
          Parent.RemoveReference;
          Exit;
-        end; 
-      
+        end;
+
        {Check Entries}
        if not FEntries.ReaderLock then
         begin
@@ -34347,7 +34347,7 @@ begin
          Current.RemoveReference;
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
        try
         Next:=TDiskEntry(Current.FirstChild);
         while Next <> nil do
@@ -34359,24 +34359,24 @@ begin
             Current.RemoveReference;
             Parent.RemoveReference;
             Exit;
-           end; 
-          
+           end;
+
           //To Do //Should we do CheckFileHandles/UpdateFindHandles on each of these ? //Probably on Streams Yes - See also RemoveDir/DeleteHardlink
                                                                                        //How to protect ? (see notes)
-        
+
           Next:=TDiskEntry(Next.Next);
          end;
        finally
         FEntries.ReaderUnlock;
-       end; 
+       end;
       end;
      try
       {Check Handles}
       if not FDriver.CheckFileHandles(Current) then Exit;
-    
+
       {Update Handles}
       if not FDriver.UpdateFindHandles(Current) then Exit;
-    
+
       {Remove Entry}
       Result:=RemoveEntry(Parent,Current);
       if Result and (Parent.Recent = Current) then Parent.Recent:=nil;
@@ -34384,14 +34384,14 @@ begin
       {Remove Reference}
       Current.RemoveReference;
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -34409,15 +34409,15 @@ begin
   {Get the Handle}
   FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
- 
+
   {Update Entry} {Dont check return}
   if FileHandle.OpenMode <> fmOpenRead then SetEntry(FileHandle.ParentEntry,FileHandle.HandleEntry);
 
   {Close the Handle} {Do not unlock}
   FDriver.CloseFileHandle(FileHandle,False);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -34442,7 +34442,7 @@ var
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -34456,22 +34456,22 @@ begin
      Source:=FRoot;
      if Relative then Source:=GetCurrent;
      if Source = nil then Exit;
-     
+
      MoveOnly:=False;
-     
+
      {Add Reference}
-     Source.AddReference; 
-     
+     Source.AddReference;
+
      {Get Source Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Source:=GetEntryEx(Source,Folder.Value,faDirectory,True,True,False);
        if Source = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
-    
+
      {Split the Dest Path}
      if SplitPath(NewName,Relative,Folders,DestName) then
       begin
@@ -34483,11 +34483,11 @@ begin
          {Remove Reference}
          Source.RemoveReference;
          Exit;
-        end; 
-      
+        end;
+
        {Add Reference}
-       Dest.AddReference; 
-       
+       Dest.AddReference;
+
        {Get Dest Folders}
        Folder:=TStringObject(Folders.First);
        while Folder <> nil do
@@ -34498,11 +34498,11 @@ begin
            {Remove Reference}
            Source.RemoveReference;
            Exit;
-          end; 
-         
+          end;
+
          Folder:=TStringObject(Folder.Next);
         end;
-       
+
        {Split the Source Name}
        if SplitName(SourceName,ParentName,StreamName) then
         begin
@@ -34513,8 +34513,8 @@ begin
            {Remove Reference}
            Dest.RemoveReference;
            Exit;
-          end; 
-         
+          end;
+
          {Get Source Stream}
          Current:=GetEntryEx(Source,StreamName,faStream,True,False,False);
          if Current = nil then
@@ -34532,8 +34532,8 @@ begin
            Dest.RemoveReference;
            Source.RemoveReference;
            Exit;
-          end; 
-         
+          end;
+
          {Split the Dest Name}
          if not SplitName(DestName,ParentName,StreamName) then
           begin
@@ -34542,8 +34542,8 @@ begin
            Dest.RemoveReference;
            Source.RemoveReference;
            Exit;
-          end; 
-         
+          end;
+
          {Get Dest File or Folder}
          Dest:=GetEntryEx(Dest,ParentName,faDirectory or faFile,True,True,False);
          if Dest = nil then
@@ -34552,57 +34552,57 @@ begin
            Current.RemoveReference;
            Source.RemoveReference;
            Exit;
-          end; 
+          end;
          try
           {Split the Dest Stream}
           SplitStream(StreamName,StreamName,StreamType);
-          
+
           {Check Dest Name}
           if not CheckName(StreamName) then Exit;
-          
+
           {Check Source Handles}
           if not FDriver.CheckFileHandles(Current) then Exit;
-          
+
           {Check for Move}
           if Source <> Dest then
            begin
             {Check Dest Stream}
             if GetEntry(Dest,StreamName,faStream) <> nil then Exit;
-            
+
             {Check Source Stream} {Allow for Current}
             if GetEntry(Source,StreamName,faStream) = Current then MoveOnly:=True;
-            
+
             {Update Source Handles}
             if not FDriver.UpdateFindHandles(Current) then Exit;
-            
+
             {Move Source Stream}
             Result:=MoveEntry(Source,Dest,Current);
-            if Result and (Source.Recent = Current) then Source.Recent:=nil; 
-            if not Result then Exit; 
-             
+            if Result and (Source.Recent = Current) then Source.Recent:=nil;
+            if not Result then Exit;
+
             {Check Rename}
             if not MoveOnly then
              begin
-              {Rename Dest Stream} 
+              {Rename Dest Stream}
               Result:=RenameEntry(Dest,Current,StreamName);
-              if Result and (Dest.Recent = Current) then Dest.Recent:=nil; 
-             end; 
+              if Result and (Dest.Recent = Current) then Dest.Recent:=nil;
+             end;
            end
           else
            begin
             {Check Source Stream}
             if GetEntry(Source,StreamName,faStream) <> nil then Exit;
-             
+
             {Rename Source Stream}
             Result:=RenameEntry(Source,Current,StreamName);
-            if Result and (Source.Recent = Current) then Source.Recent:=nil; 
+            if Result and (Source.Recent = Current) then Source.Recent:=nil;
            end;
          finally
           {Remove Reference}
           Current.RemoveReference;
           Dest.RemoveReference;
           Source.RemoveReference;
-         end;         
+         end;
         end
        else
         begin
@@ -34615,73 +34615,73 @@ begin
            Source.RemoveReference;
            Exit;
           end;
-         try 
+         try
           {Split the Dest Name}
           if SplitName(DestName,ParentName,StreamName) then Exit;
-          
+
           {Check Dest Name}
           if not CheckName(DestName) then Exit;
-          
+
           {Check Source Handles}
           if not FDriver.CheckFileHandles(Current) then Exit;
-          
+
           {Check for Move}
           if Source <> Dest then
            begin
             {Check Dest File or Folder}
             if GetEntry(Dest,DestName,faDirectory or faFile) <> nil then Exit;
-             
+
             {Check Source File or Folder} {Allow for Current}
             if GetEntry(Source,DestName,faDirectory or faFile) = Current then MoveOnly:=True;
-             
+
             {Load Entries} {For Folder move update DotDot}
             if not LoadEntries(Current) then Exit;
-            
+
             {Update Source Handles}
             if not FDriver.UpdateFindHandles(Current) then Exit;
-            
+
             {Move Source File or Folder}
             Result:=MoveEntry(Source,Dest,Current);
-            if Result and (Source.Recent = Current) then Source.Recent:=nil; 
+            if Result and (Source.Recent = Current) then Source.Recent:=nil;
             if not Result then Exit;
-            
+
             {Check Rename}
             if not MoveOnly then
              begin
-              {Rename Dest File or Folder} 
+              {Rename Dest File or Folder}
               Result:=RenameEntry(Dest,Current,DestName);
-              if Result and (Dest.Recent = Current) then Dest.Recent:=nil; 
-             end; 
+              if Result and (Dest.Recent = Current) then Dest.Recent:=nil;
+             end;
            end
           else
            begin
             {Check Source File or Folder}
             if GetEntry(Source,DestName,faDirectory or faFile) <> nil then Exit;
-             
+
             {Rename Source File or Folder}
             Result:=RenameEntry(Source,Current,DestName);
-            if Result and (Source.Recent = Current) then Source.Recent:=nil; 
+            if Result and (Source.Recent = Current) then Source.Recent:=nil;
            end;
          finally
           {Remove Reference}
           Current.RemoveReference;
           Dest.RemoveReference;
           Source.RemoveReference;
-         end;         
+         end;
         end;
       end
      else
       begin
        {Remove Reference}
        Source.RemoveReference;
-      end;      
+      end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -34714,7 +34714,7 @@ begin
   try
    {Check the Handle}
    if FileHandle.HandleEntry = nil then Exit;
- 
+
    {Move Pointer}
    case Origin of
     soFromBeginning:begin
@@ -34722,7 +34722,7 @@ begin
       if Offset < 0 then Exit;
       if Offset > FileHandle.HandleEntry.Size then if FileHandle.OpenMode = fmOpenRead then Exit;
       FileHandle.Position:=Offset;
-      
+
       Result:=FileHandle.Position;
      end;
     soFromCurrent:begin
@@ -34730,7 +34730,7 @@ begin
       if (FileHandle.Position + Offset) < 0 then Exit;
       if (FileHandle.Position + Offset) > FileHandle.HandleEntry.Size then if FileHandle.OpenMode = fmOpenRead then Exit;
       FileHandle.Position:=(FileHandle.Position + Offset);
-      
+
       Result:=FileHandle.Position;
      end;
     soFromEnd:begin
@@ -34738,17 +34738,17 @@ begin
       if (FileHandle.HandleEntry.Size + Offset) < 0 then Exit;
       if (FileHandle.HandleEntry.Size + Offset) > FileHandle.HandleEntry.Size then if FileHandle.OpenMode = fmOpenRead then Exit;
       FileHandle.Position:=(FileHandle.HandleEntry.Size + Offset);
-      
+
       Result:=FileHandle.Position;
      end;
    end;
   finally
    {Unlock Handle}
    FileHandle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -34761,7 +34761,7 @@ var
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -34769,15 +34769,15 @@ begin
   {Get the Handle}
   FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
- 
+
   {Flush the Cache}
   Result:=FDriver.Cache.FlushCache(False,True);
 
   {Unlock Handle}
   FileHandle.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -34798,15 +34798,15 @@ begin
   {Get the Handle}
   FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
- 
+
   {Set the Size at Current Position}
   Result:=(FileSetSizeEx(Handle,FileHandle.Position) = 0);
- 
+
   {Unlock Handle}
   FileHandle.WriterUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -34835,15 +34835,15 @@ begin
   {Get the Handle}
   FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_READ);
   if FileHandle = nil then Exit;
- 
+
   {Get the Position}
   Result:=FileHandle.Position;
- 
+
   {Unlock Handle}
   FileHandle.ReaderUnlock;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -34878,27 +34878,27 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
-     
+
      {Split the Name}
      if SplitName(Name,ParentName,StreamName) then
       begin
        {Get File or Folder}
        Parent:=GetEntryEx(Parent,ParentName,faDirectory or faFile,True,True,False);
        if Parent = nil then Exit;
-       
+
        {Get Stream}
        Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
        if Current = nil then
@@ -34915,7 +34915,7 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end
      else
       begin
@@ -34926,9 +34926,9 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end;
-     
+
      {Get Attributes} {Hide internal Attributes}
      Result:=(Current.Attributes and FMaskAttributes); {faFindMask}
 
@@ -34939,9 +34939,9 @@ begin
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -34958,10 +34958,10 @@ begin
 
  {Get File Time}
  if not GetFileTime(Handle,nil,nil,@FileTime) then Exit;
- 
+
  {Get Local Time}
  if not Ultibo.FileTimeToLocalFileTime(FileTime,LocalTime) then Exit;
- 
+
  {Convert Time}
  Ultibo.FileTimeToDosDateTime(LocalTime,LongRec(Result).Hi,LongRec(Result).Lo);
 end;
@@ -34995,19 +34995,19 @@ begin
   try
    {Check the Mode}
    if FileHandle.OpenMode = fmOpenWrite then Exit;
- 
+
    {Check the Handle}
    if FileHandle.HandleEntry = nil then Exit;
- 
+
    {Get the Size}
    Result:=FileHandle.HandleEntry.Size;
   finally
    {Unlock Handle}
    FileHandle.ReaderUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -35043,27 +35043,27 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
-     
+
      {Split the Name}
      if SplitName(Name,ParentName,StreamName) then
       begin
        {Get File or Folder}
        Parent:=GetEntryEx(Parent,ParentName,faDirectory or faFile,True,True,False);
        if Parent = nil then Exit;
-       
+
        {Get Stream}
        Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
        if Current = nil then
@@ -35087,20 +35087,20 @@ begin
       {Set Attributes} {Preserve internal Attributes}
       Current.Attributes:=(Current.Attributes and (faFlagMask or faMatchMask)) or (LongWord(Attr) and FMaxAttributes); {faFindMask}
       if not SetEntry(Parent,Current) then Exit;
-     
+
       Result:=0;
      finally
       {Remove Reference}
       Current.RemoveReference;
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -35117,13 +35117,13 @@ begin
 
  {Convert Time}
  if not Ultibo.DosDateTimeToFileTime(LongRec(Age).Hi,LongRec(Age).Lo,LocalTime) then Exit;
- 
+
  {Get UTC Time}
  if not Ultibo.LocalFileTimeToFileTime(LocalTime,FileTime) then Exit;
- 
+
  {Set File Time}
  if not SetFileTime(Handle,nil,nil,@FileTime) then Exit;
- 
+
  Result:=0;
 end;
 
@@ -35152,29 +35152,29 @@ begin
 
   {Check the Size}
   if Size < 0 then Exit;
- 
+
   {Get the Handle}
   FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
    if FileHandle.OpenMode = fmOpenRead then Exit;
- 
+
    {Check the Handle}
    if FileHandle.HandleEntry = nil then Exit;
- 
+
    {Set the Size}
    if not SizeEntry(FileHandle.ParentEntry,FileHandle.HandleEntry,Size) then Exit;
    {FileHandle.HandleEntry.Size:=Size;} {Done by File System}
- 
+
    Result:=0;
   finally
    {Unlock Handle}
    FileHandle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -35192,39 +35192,39 @@ begin
  if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
- 
+
   {Check Count (Negative byte read fails)}
   if Count < 0 then Exit;
-  
+
   {Get the Handle}
   FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
    if FileHandle.OpenMode = fmOpenWrite then Exit;
-  
+
    {Check the Handle}
    if FileHandle.HandleEntry = nil then Exit;
-  
+
    {Return Success}
    Result:=0;
-   
+
    {Check the Count (Zero byte read successful)}
    if Count < 1 then Exit;
-  
+
    {Check Size}
    if (FileHandle.Position + Count) > FileHandle.HandleEntry.Size then
     begin
      {Check Position}
      if FileHandle.Position > FileHandle.HandleEntry.Size then Exit;
-     
+
      {Adjust Size}
      Count:=FileHandle.HandleEntry.Size - FileHandle.Position;
-     
+
      {Check the Count (Zero byte read successful)}
      if Count < 1 then Exit;
     end;
-    
+
    {Read Data}
    Result:=ReadEntry(FileHandle.ParentEntry,FileHandle.HandleEntry,Buffer,FileHandle.Position,Count,FileHandle.DataOffset,FileHandle.DataValue);
    if Result = Count then
@@ -35236,14 +35236,14 @@ begin
     begin
      {Return Error}
      Result:=-1;
-    end;    
+    end;
   finally
    {Unlock Handle}
    FileHandle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -35265,17 +35265,17 @@ begin
 
   {Check Count (Negative byte write fails)}
   if Count < 0 then Exit;
- 
+
   {Get the Handle}
   FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
    if FileHandle.OpenMode = fmOpenRead then Exit;
- 
+
    {Check Handle}
    if FileHandle.HandleEntry = nil then Exit;
-  
+
    {Check Size}
    if (FileHandle.Position + Count) > FileHandle.HandleEntry.Size then
     begin
@@ -35283,13 +35283,13 @@ begin
      if not SizeEntry(FileHandle.ParentEntry,FileHandle.HandleEntry,FileHandle.Position + Count) then Exit;
      {FileHandle.HandleEntry.Size:=FileHandle.Position + Count;} {Done by File System}
     end;
-  
+
    {Return Success}
    Result:=0;
-  
+
    {Check the Count (Zero byte write successful, does not truncate the file)}
    if Count < 1 then Exit;
-  
+
    {Write Data}
    Result:=WriteEntry(FileHandle.ParentEntry,FileHandle.HandleEntry,Buffer,FileHandle.Position,Count,FileHandle.DataOffset,FileHandle.DataValue);
    if Result = Count then
@@ -35299,7 +35299,7 @@ begin
      if Int64(FileTime) < Int64(FMinFileTime) then Int64(FileTime):=Int64(FMinFileTime);
      FileHandle.HandleEntry.WriteTime:=FileTime;
      FileHandle.HandleEntry.Attributes:=(FileHandle.HandleEntry.Attributes or faArchive);
-    
+
      {Set Position}
      FileHandle.Position:=FileHandle.Position + Count;
     end
@@ -35311,10 +35311,10 @@ begin
   finally
    {Unlock Handle}
    FileHandle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -35340,7 +35340,7 @@ begin
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSystem.CreateDir DirName = ' + DirName);
   {$ENDIF}
-  
+
   {Split the Path}
   Folders:=TLinkedStringList.Create;
   try
@@ -35349,37 +35349,37 @@ begin
      {$IFDEF FILESYS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSystem.CreateDir Name = ' + Name);
      {$ENDIF}
-     
+
      {Get Parent}
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
       {$IFDEF FILESYS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSystem.CreateDir Parent = ' + Parent.Name);
       {$ENDIF}
-     
+
       {Check File or Folder}
       if GetEntry(Parent,Name,faDirectory or faFile) <> nil then Exit;
-     
+
       {Check Name}
       if not CheckName(Name) then Exit;
-     
+
       {Add Folder}
-      Current:=AddEntry(Parent,Name,faDirectory,True); 
+      Current:=AddEntry(Parent,Name,faDirectory,True);
       if Current = nil then Exit;
       try
        {Check Encryption}
@@ -35389,7 +35389,7 @@ begin
          Current.Attributes:=(Current.Attributes or faEncrypted);
          if not SetEntry(Parent,Current) then Exit;
         end;
-     
+
        {Check Compression}
        if (FFolderCompression) and ((Parent.Attributes and faCompressed) = faCompressed) then
         begin
@@ -35397,23 +35397,23 @@ begin
          Current.Attributes:=(Current.Attributes or faCompressed);
          if not SetEntry(Parent,Current) then Exit;
         end;
-     
+
        Result:=True;
       finally
        {Remove Reference}
        Current.RemoveReference;
-      end;      
+      end;
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -35446,17 +35446,17 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
@@ -35466,7 +35466,7 @@ begin
       try
        {Load Entries}
        if not LoadEntries(Current) then Exit;
-     
+
        {Check Entries}
        if not FEntries.ReaderLock then Exit;
        try
@@ -35476,37 +35476,37 @@ begin
           {Allow delete if only Dot, DotDot or Streams remain}
           if (Next.Attributes and (faDot or faDotDot or faStream)) = faNone then Exit;
           //To Do //Should we do CheckFileHandles/UpdateFindHandles on each of these ? //Probably on Streams Yes - See also DeleteFile/DeleteHardlink
-       
+
           Next:=TDiskEntry(Next.Next);
          end;
        finally
         FEntries.ReaderUnlock;
-       end; 
-      
+       end;
+
        {Check Handles}
        if not FDriver.CheckFileHandles(Current) then Exit;
-     
+
        {Update Handles}
        if not FDriver.UpdateFindHandles(Current) then Exit;
-      
+
        {Remove Folder}
        Result:=RemoveEntry(Parent,Current);
        if Result and (Parent.Recent = Current) then Parent.Recent:=nil;
       finally
        {Remove Reference}
        Current.RemoveReference;
-      end;      
+      end;
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -35518,18 +35518,18 @@ var
 begin
  {Base Implementation}
  Result:='';
- 
+
  if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   Current:=GetCurrent;
   if Current = nil then Exit;
- 
+
   Result:=GetEntryName(Current,False,False,False);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -35562,31 +35562,31 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
       {Get Folder}
       Current:=GetEntryEx(Parent,Name,faDirectory,True,False,False);
       if Current = nil then Exit;
-       
+
       {Remove Reference}
       Previous:=GetCurrent;
       if Previous <> nil then Previous.RemoveReference;
-     
+
       {Set Current}
       Result:=SetCurrent(Current);
-      
+
       {Do not remove reference on current}
      finally
       {Remove Reference}
@@ -35596,9 +35596,9 @@ begin
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -35636,30 +35636,30 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
      Parent.AddReference;
-     
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
-       Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False); 
+       Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
-     
+
      {Split the Name}
      if SplitName(Name,ParentName,StreamName) then
       begin
        {Get File or Folder}
-       Parent:=GetEntryEx(Parent,ParentName,faDirectory or faFile,True,True,False); 
+       Parent:=GetEntryEx(Parent,ParentName,faDirectory or faFile,True,True,False);
        if Parent = nil then Exit;
-       
+
        {Find First Stream}
        Any:=(StreamName = FIND_WILDCARD_STREAM);
-       Current:=MatchEntryEx(Parent,nil,StreamName,faStream,Any,True,False,False); 
+       Current:=MatchEntryEx(Parent,nil,StreamName,faStream,Any,True,False,False);
        if Current = nil then
         begin
          {Split the Stream}
@@ -35676,7 +35676,7 @@ begin
          Parent.RemoveReference;
          Exit;
         end;
-       
+
        {Open Handle}
        FindHandle:=FDriver.OpenFindHandle(FVolume,FDrive,Parent,StreamName,faStream,FIND_FLAG_NONE,True,FILESYS_LOCK_WRITE);
        if FindHandle = nil then
@@ -35685,7 +35685,7 @@ begin
          Current.RemoveReference;
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end
      else
       begin
@@ -35698,7 +35698,7 @@ begin
          Parent.RemoveReference;
          Exit;
         end;
-       
+
        {Open Handle}
        FindHandle:=FDriver.OpenFindHandle(FVolume,FDrive,Parent,Name,faDirectory or faFile,FIND_FLAG_NONE,True,FILESYS_LOCK_WRITE);
        if FindHandle = nil then
@@ -35707,13 +35707,13 @@ begin
          Current.RemoveReference;
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end;
-     
+
      {Set the Handle properties}
      FindHandle.Any:=Any;
      FindHandle.CurrentEntry:=Current;
-     
+
      {Return Entry}
      SearchRec.FindHandle:=FindHandle.Handle;
      SearchRec.FindData.dwFileAttributes:=(Current.Attributes and FMaskAttributes); {faFindMask}
@@ -35725,9 +35725,9 @@ begin
      SearchRec.FindData.dwReserved0:=Current.ReparseTag;
      StrLCopy(SearchRec.FindData.cFileName,PChar(Current.Name),MAX_PATH - 1);
      StrLCopy(SearchRec.FindData.cAlternateFileName,PChar(Current.AltName),13);
-     
+
      Result:=0;
-     
+
      {Unlock Handle}
      FindHandle.WriterUnlock;
 
@@ -35738,9 +35738,9 @@ begin
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -35765,14 +35765,14 @@ begin
   try
    {Check Parent}
    if FindHandle.ParentEntry = nil then Exit;
-  
+
    {Find Next Entry}
    Current:=MatchEntryEx(FindHandle.ParentEntry,FindHandle.CurrentEntry,FindHandle.Mask,FindHandle.Attr,FindHandle.Any,True,False,False);
    if Current = nil then Exit;
-  
+
    {Update Handle}
    FindHandle.CurrentEntry:=Current;
-  
+
    {Return Entry}
    SearchRec.FindHandle:=FindHandle.Handle;
    SearchRec.FindData.dwFileAttributes:=(Current.Attributes and FMaskAttributes); {faFindMask}
@@ -35784,18 +35784,18 @@ begin
    SearchRec.FindData.dwReserved0:=Current.ReparseTag;
    StrLCopy(SearchRec.FindData.cFileName,PChar(Current.Name),MAX_PATH - 1);
    StrLCopy(SearchRec.FindData.cAlternateFileName,PChar(Current.AltName),13);
-  
+
    Result:=0;
-   
+
    {Remove Reference}
    Current.RemoveReference;
   finally
    {Unlock Handle}
    FindHandle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -35813,14 +35813,14 @@ begin
   {Get the Handle}
   FindHandle:=FDriver.GetFindFromHandle(SearchRec.FindHandle,True,FILESYS_LOCK_WRITE);
   if FindHandle = nil then Exit;
- 
+
   {Close the Handle} {Do not unlock}
   FDriver.CloseFindHandle(FindHandle);
- 
+
   SearchRec.FindHandle:=INVALID_HANDLE_VALUE;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -35857,27 +35857,27 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
      Parent.AddReference;
-     
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
-     
+
      {Split the Name}
      if SplitName(Name,ParentName,StreamName) then Exit;
-     
+
      {Get File or Folder} {Allow for Root}
      if Length(Name) <> 0 then Parent:=GetEntryEx(Parent,Name,faDirectory or faFile,True,True,False);
      if Parent = nil then Exit;
-     
+
      {Find First Stream}
      Current:=MatchEntryEx(Parent,nil,'*',faStream,True,True,False,False);
      if Current = nil then
@@ -35885,7 +35885,7 @@ begin
        {Remove Reference}
        Parent.RemoveReference;
        Exit;
-      end; 
+      end;
 
      {Open Handle}
      FindHandle:=FDriver.OpenFindHandle(FVolume,FDrive,Parent,'*',faStream,FIND_FLAG_NONE,True,FILESYS_LOCK_WRITE);
@@ -35895,34 +35895,34 @@ begin
        Current.RemoveReference;
        Parent.RemoveReference;
        Exit;
-      end; 
+      end;
      try
       {Set the Handle properties}
       FindHandle.Any:=True;
       FindHandle.CurrentEntry:=Current;
-     
+
       {Return Entry}
       SearchRec.FindHandle:=FindHandle.Handle;
       Int64(SearchRec.FindData.StreamSize):=Current.Size;
       if not Ultibo.StringToWideChar(Current.Name,PWideChar(@SearchRec.FindData.cStreamName),(MAX_PATH + 36) shl 1) then Exit; {Multiply by SizeOf(WideChar)}
       //To Do //Use default StringToWideChar from System ? //Watch for difference in size parameter (Bytes/Chars)
-    
+
       Result:=0;
-    
+
       {Unlock Handle}
       FindHandle.WriterUnlock;
      finally
       {Remove Reference}
       Current.RemoveReference;
       Parent.RemoveReference;
-     end; 
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -35948,32 +35948,32 @@ begin
   try
    {Check Parent}
    if FindHandle.ParentEntry = nil then Exit;
-  
+
    {Find Next Stream}
    Current:=MatchEntryEx(FindHandle.ParentEntry,FindHandle.CurrentEntry,FindHandle.Mask,FindHandle.Attr,FindHandle.Any,True,False,False);
    if Current = nil then Exit;
    try
     {Update Handle}
     FindHandle.CurrentEntry:=Current;
-  
+
     {Return Entry}
     SearchRec.FindHandle:=FindHandle.Handle;
     Int64(SearchRec.FindData.StreamSize):=Current.Size;
     if not Ultibo.StringToWideChar(Current.Name,PWideChar(@SearchRec.FindData.cStreamName),(MAX_PATH + 36) shl 1) then Exit; {Multiply by SizeOf(WideChar)}
     //To Do //Use default StringToWideChar from System ? //Watch for difference in size parameter (Bytes/Chars)
-  
+
     Result:=0;
    finally
     {Remove Reference}
     Current.RemoveReference;
-   end; 
+   end;
   finally
    {Unlock Handle}
    FindHandle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -35991,14 +35991,14 @@ begin
   {Get the Handle}
   FindHandle:=FDriver.GetFindFromHandle(SearchRec.FindHandle,True,FILESYS_LOCK_WRITE);
   if FindHandle = nil then Exit;
- 
+
   {Close the Handle} {Do not unlock}
   FDriver.CloseFindHandle(FindHandle);
- 
+
   SearchRec.FindHandle:=INVALID_HANDLE_VALUE;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -36034,23 +36034,23 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
      Parent.AddReference;
-     
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
-     
+
      {Split the Name}
      if SplitName(Name,ParentName,StreamName) then Exit;
-     
+
      {Get File or Folder}
      Parent:=GetEntryEx(Parent,Name,faDirectory or faFile,True,True,False);
      if Parent = nil then Exit;
@@ -36058,36 +36058,36 @@ begin
       {Open Handle}
       FindHandle:=FDriver.OpenFindHandle(FVolume,FDrive,Parent,'*',faDirectory or faFile,FIND_FLAG_FILE_NAMES,True,FILESYS_LOCK_WRITE);
       if FindHandle = nil then Exit;
-     
+
       {Find First File Name}
       Current:=Parent.FindFirstName(FindHandle,True);
       if Current = nil then Exit;
-     
+
       {Set the Handle properties}
       FindHandle.CurrentEntry:=Current;
-     
+
       {Return Entry}
       SearchRec.FindHandle:=FindHandle.Handle;
       StrLCopy(SearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
-    
+
       Result:=0;
-    
+
       {Unlock Handle}
       FindHandle.WriterUnlock;
-      
+
       {Remove Reference}
       Current.RemoveReference;
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -36112,29 +36112,29 @@ begin
   try
    {Check Parent}
    if FindHandle.ParentEntry = nil then Exit;
-  
+
    {Find Next File Name}
    Current:=FindHandle.ParentEntry.FindNextName(FindHandle,True);
    if Current = nil then Exit;
-  
+
    {Update Handle}
    FindHandle.CurrentEntry:=Current;
-  
+
    {Return Entry}
    SearchRec.FindHandle:=FindHandle.Handle;
    StrLCopy(SearchRec.Name,PChar(Current.Name),MAX_PATH - 1);
-  
+
    Result:=0;
-   
+
    {Remove Reference}
    Current.RemoveReference;
   finally
    {Unlock Handle}
    FindHandle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -36152,14 +36152,14 @@ begin
   {Get the Handle}
   FindHandle:=FDriver.GetFindFromHandle(SearchRec.FindHandle,True,FILESYS_LOCK_WRITE);
   if FindHandle = nil then Exit;
- 
+
   {Close the Handle} {Do not unlock}
   FDriver.CloseFindHandle(FindHandle);
- 
+
   SearchRec.FindHandle:=INVALID_HANDLE_VALUE;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -36196,17 +36196,17 @@ begin
      Source:=FRoot;
      if Relative then Source:=GetCurrent;
      if Source = nil then Exit;
-     
+
      {Add Reference}
-     Source.AddReference; 
-     
+     Source.AddReference;
+
      {Get Source Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Source:=GetEntryEx(Source,Folder.Value,faDirectory,True,True,False);
        if Source = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
@@ -36217,61 +36217,61 @@ begin
         Target:=FRoot;
         if Relative then Target:=GetCurrent;
         if Target = nil then Exit;
-       
+
         {Add Reference}
-        Target.AddReference; 
-       
+        Target.AddReference;
+
         {Get Target Folders}
         Folder:=TStringObject(Folders.First);
         while Folder <> nil do
          begin
           Target:=GetEntryEx(Target,Folder.Value,faDirectory,True,True,False);
           if Target = nil then Exit;
-         
+
           Folder:=TStringObject(Folder.Next);
          end;
         try
          {Split the Source Name}
          if SplitName(SourceName,ParentName,StreamName) then Exit;
-       
+
          {Check Source File or Folder}
          if GetEntry(Source,SourceName,faDirectory or faFile) <> nil then Exit;
-        
+
          {Split the Target Name}
          if SplitName(TargetName,ParentName,StreamName) then Exit;
-        
+
          {Get Target File}
          Entry:=GetEntryEx(Target,TargetName,faFile,True,False,False); {Target must be a File}
          if Entry = nil then Exit;
          try
           {Check Source Name}
           if not CheckLinkName(SourceName) then Exit;
-         
+
           {Add Hardlink}
           Current:=AddHardlink(Entry,Source,SourceName,False);
           if Current = nil then Exit;
-       
+
           Result:=True;
          finally
           {Remove Reference}
           Entry.RemoveReference;
-         end;         
+         end;
         finally
          {Remove Reference}
          Target.RemoveReference;
-        end;        
+        end;
        end;
      finally
       {Remove Reference}
       Source.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -36306,30 +36306,30 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
       {Split the Name}
       if SplitName(Name,ParentName,StreamName) then Exit;
-     
+
       {Get File}
       Current:=GetEntryEx(Parent,Name,faFile,True,False,False); {Link must be a File}
       if Current = nil then Exit;
       try
        {Load Entries}
        if not LoadEntries(Current) then Exit;
-      
+
        {Check Entries}
        if not FEntries.ReaderLock then Exit;
        try
@@ -36337,37 +36337,37 @@ begin
         while Next <> nil do
          begin
           //To Do //Should we do CheckFileHandles/UpdateFindHandles on each of these ? //Probably on Streams Yes - See also DeleteFile/RemoveDir
-       
+
           Next:=TDiskEntry(Next.Next);
          end;
        finally
         FEntries.ReaderUnlock;
-       end; 
-     
+       end;
+
        {Check Handles}
        if not FDriver.CheckFileHandles(Current) then Exit;
-     
+
        {Update Handles}
        if not FDriver.UpdateFindHandles(Current) then Exit;
-     
+
        {Remove Hardlink}
        Result:=RemoveHardlink(Parent,Current);
        if Result and (Parent.Recent = Current) then Parent.Recent:=nil;
       finally
        {Remove Reference}
        Current.RemoveReference;
-      end;      
+      end;
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -36401,43 +36401,43 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
       {Split the Name}
       if SplitName(Name,ParentName,StreamName) then Exit;
-     
+
       {Get File or Folder}
       Current:=GetEntryEx(Parent,Name,faDirectory,True,False,False); {Path must be a Folder}
       if Current = nil then Exit;
-     
+
       {Add Mount Point}
       Result:=AddMountPoint(Current,VolumeName);
-     
+
       {Remove Reference}
       Current.RemoveReference;
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -36471,46 +36471,46 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
       {Split the Name}
       if SplitName(Name,ParentName,StreamName) then Exit;
-     
+
       {Get File or Folder}
       Current:=GetEntryEx(Parent,Name,faDirectory,True,False,False); {Path must be a Folder}
       if Current = nil then Exit;
-     
+
       //To Do //CheckFileHandles/UpdateFindHandles ?
-      
+
       {Remove Mount Point}
       Result:=RemoveMountPoint(Current);
       if Result and (Parent.Recent = Current) then Parent.Recent:=nil;
-     
+
       {Remove Reference}
       Current.RemoveReference;
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -36544,43 +36544,43 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
       {Split the Name}
       if SplitName(Name,ParentName,StreamName) then Exit;
-     
+
       {Get File or Folder}
       Current:=GetEntryEx(Parent,Name,faDirectory,True,False,False); {Path must be a Folder}
       if Current = nil then Exit;
-      
+
       {Add Junction Point}
       Result:=AddJunctionPoint(Current,FolderName);
-      
+
       {Remove Reference}
       Current.RemoveReference;
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -36614,46 +36614,46 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
       {Split the Name}
       if SplitName(Name,ParentName,StreamName) then Exit;
-     
+
       {Get File or Folder}
       Current:=GetEntryEx(Parent,Name,faDirectory,True,False,False); {Path must be a Folder}
       if Current = nil then Exit;
-     
+
       //To Do //CheckFileHandles/UpdateFindHandles ?
-      
+
       {Remove Junction Point}
       Result:=RemoveJunctionPoint(Current);
       if Result and (Parent.Recent = Current) then Parent.Recent:=nil;
-      
+
       {Remove Reference}
       Current.RemoveReference;
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -36687,45 +36687,45 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
       {Split the Name}
       if SplitName(Name,ParentName,StreamName) then Exit;
-     
+
       {Get File or Folder}
       if GetEntry(Parent,Name,faDirectory or faFile) <> nil then Exit;
-     
+
       {Check Name}
       if not CheckName(Name) then Exit;
-     
+
       {Add Symbolic Link}
       Current:=AddSymbolicLink(Parent,Name,TargetName,Directory,False);
       if Current = nil then Exit;
-     
+
       Result:=True;
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -36759,48 +36759,48 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
       {Split the Name}
       if SplitName(Name,ParentName,StreamName) then Exit;
-     
+
       {Get File or Folder}
       if GetEntry(Parent,Name,faDirectory or faFile) <> nil then Exit;
-     
+
       {Check Name}
       if not CheckName(Name) then Exit;
-     
+
       {Check AltName} {Allow Blank}
       if (Length(ShortName) <> 0) and not(CheckAltName(ShortName)) then Exit;
-     
+
       {Add Symbolic Link}
       Current:=AddSymbolicLinkEx(Parent,Name,ShortName,TargetName,Directory,False);
       if Current = nil then Exit;
-     
+
       Result:=True;
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -36834,46 +36834,46 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
       {Split the Name}
       if SplitName(Name,ParentName,StreamName) then Exit;
-     
+
       {Get File or Folder}
       Current:=GetEntryEx(Parent,Name,faDirectory or faFile,True,False,False);
       if Current = nil then Exit;
-     
+
       //To Do //CheckFileHandles/UpdateFindHandles ?
-      
+
       {Remove Symbolic Link}
       Result:=RemoveSymbolicLink(Parent,Current);
       if Result and (Parent.Recent = Current) then Parent.Recent:=nil;
-     
+
       {Remove Reference}
       Current.RemoveReference;
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -36907,23 +36907,23 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
       {Split the Name}
       if SplitName(Name,ParentName,StreamName) then Exit;
-     
+
       {Get File or Folder}
       Current:=GetEntryEx(Parent,Name,faDirectory or faFile,True,False,False);
       if Current = nil then Exit;
@@ -36931,7 +36931,7 @@ begin
        {Get Reparse}
        Reparse:=GetReparse(Current);
        if Reparse = nil then Exit;
-     
+
        {Get Target}
        Result:=Reparse.Target;
       finally
@@ -36941,14 +36941,14 @@ begin
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -36998,33 +36998,33 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
       {Split the Name}
       if SplitName(Name,ParentName,StreamName) then Exit;
-     
+
       {Get File or Folder}
       Current:=GetEntryEx(Parent,Name,faDirectory or faFile,True,False,False);
       if Current = nil then Exit;
       try
        {Check AltName} {Allow Blank (Delete AltName)}
        if (Length(ShortName) <> 0) and not(CheckAltName(ShortName)) then Exit;
-     
+
        {Check Handles}
        if not FDriver.CheckFileHandles(Current) then Exit;
-     
+
        {Rename File or Folder}
        Result:=RenameEntryEx(Parent,Current,ShortName);
        if Result and (Parent.Recent = Current) then Parent.Recent:=nil;
@@ -37035,14 +37035,14 @@ begin
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -37061,7 +37061,7 @@ begin
 
   {Check AltName} {Allow Blank (Delete AltName)}
   if (Length(ShortName) <> 0) and not(CheckAltName(ShortName)) then Exit;
-  
+
   {Get the Handle}
   FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
@@ -37079,12 +37079,12 @@ begin
   finally
    {Unlock Handle}
    FileHandle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function TFileSystem.GetFileSecurity(const FileName:String;Descriptor:Pointer;var Size:LongWord):Boolean;
@@ -37117,23 +37117,23 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
       {Split the Name}
       if SplitName(Name,ParentName,StreamName) then Exit;
-     
+
       {Get File or Folder}
       Current:=GetEntryEx(Parent,Name,faDirectory or faFile,True,False,False);
       if Current = nil then Exit;
@@ -37141,10 +37141,10 @@ begin
        {Get Security}
        Security:=GetSecurity(Current);
        if Security = nil then Exit;
-     
+
        {Get Descriptor}
        if not GetDescriptorFromSecurity(Security,Descriptor,Size) then Exit;
-     
+
        Result:=True;
       finally
        {Remove Reference}
@@ -37153,14 +37153,14 @@ begin
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -37195,23 +37195,23 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
       {Split the Name}
       if SplitName(Name,ParentName,StreamName) then Exit;
-     
+
       {Get File or Folder}
       Current:=GetEntryEx(Parent,Name,faDirectory or faFile,True,False,False);
       if Current = nil then Exit;
@@ -37222,7 +37222,7 @@ begin
        try
         {Set Security}
         if not SetSecurity(Parent,Current,Security) then Exit;
-      
+
         Result:=True;
        finally
         if not Result then Security.Free; {If SetSecurity returns true then it must either retain or free the security object}
@@ -37234,14 +37234,14 @@ begin
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -37277,27 +37277,27 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
-     
+
      {Split the Name}
      if SplitName(Name,ParentName,StreamName) then
       begin
        {Get File or Folder}
        Parent:=GetEntryEx(Parent,ParentName,faDirectory or faFile,True,True,False);
        if Parent = nil then Exit;
-       
+
        {Get Stream}
        Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
        if Current = nil then
@@ -37314,7 +37314,7 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end
      else
       begin
@@ -37325,9 +37325,9 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end;
-     
+
      {Get Parent Name}
      Result:=GetEntryName(Parent,False,False,False);
 
@@ -37338,9 +37338,9 @@ begin
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -37376,27 +37376,27 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
-     
+
      {Split the Name}
      if SplitName(Name,ParentName,StreamName) then
       begin
        {Get File or Folder}
        Parent:=GetEntryEx(Parent,ParentName,faDirectory or faFile,True,True,False);
        if Parent = nil then Exit;
-       
+
        {Get Stream}
        Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
        if Current = nil then
@@ -37413,7 +37413,7 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end
      else
       begin
@@ -37424,12 +37424,12 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end;
-     
+
      {Get Entry Short Name}
      Result:=GetEntryName(Current,True,False,False);
-     
+
      {Remove Reference}
      Current.RemoveReference;
      Parent.RemoveReference;
@@ -37437,9 +37437,9 @@ begin
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -37475,27 +37475,27 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
-     
+
      {Split the Name}
      if SplitName(Name,ParentName,StreamName) then
       begin
        {Get File or Folder}
        Parent:=GetEntryEx(Parent,ParentName,faDirectory or faFile,True,True,False);
        if Parent = nil then Exit;
-       
+
        {Get Stream}
        Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
        if Current = nil then
@@ -37512,7 +37512,7 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end
      else
       begin
@@ -37523,9 +37523,9 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end;
-     
+
      {Get Entry Long Name}
      Result:=GetEntryName(Current,False,False,False);
 
@@ -37536,9 +37536,9 @@ begin
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -37575,27 +37575,27 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
-     
+
      {Split the Name}
      if SplitName(Name,ParentName,StreamName) then
       begin
        {Get File or Folder}
        Parent:=GetEntryEx(Parent,ParentName,faDirectory or faFile,True,True,False);
        if Parent = nil then Exit;
-       
+
        {Get Stream}
        Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
        if Current = nil then
@@ -37612,7 +37612,7 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end
      else
       begin
@@ -37623,12 +37623,12 @@ begin
          {Remove Reference}
          Parent.RemoveReference;
          Exit;
-        end; 
+        end;
       end;
-     
+
      {Get Entry Short Name}
      Result:=GetEntryName(Current,True,False,False);
-     
+
      {Remove Reference}
      Current.RemoveReference;
      Parent.RemoveReference;
@@ -37636,9 +37636,9 @@ begin
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -37676,27 +37676,27 @@ begin
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
-     
+
      {Split the Name}
      if SplitName(Name,ParentName,StreamName) then
       begin
        {Get File or Folder}
        Parent:=GetEntryEx(Parent,ParentName,faDirectory or faFile,True,True,False);
        if Parent = nil then Exit;
-       
+
        {Get Stream}
        Current:=GetEntryEx(Parent,StreamName,faStream,True,False,False);
        if Current = nil then
@@ -37716,8 +37716,8 @@ begin
            {Remove Reference}
            Parent.RemoveReference;
            Exit;
-          end; 
-         
+          end;
+
          {Add Stream}
          Current:=AddEntry(Parent,StreamName,faStream,True); {Not AddEntryEx}
          if Current = nil then
@@ -37725,7 +37725,7 @@ begin
            {Remove Reference}
            Parent.RemoveReference;
            Exit;
-          end; 
+          end;
         end;
       end
      else
@@ -37740,16 +37740,16 @@ begin
            {Remove Reference}
            Parent.RemoveReference;
            Exit;
-          end; 
-         
+          end;
+
          {Check AltName} {Allow Blank}
          if (Length(ShortName) <> 0) and not(CheckAltName(ShortName)) then
           begin
            {Remove Reference}
            Parent.RemoveReference;
            Exit;
-          end; 
-         
+          end;
+
          {Add File}
          Current:=AddEntryEx(Parent,Name,ShortName,faFile,True);
          if Current = nil then
@@ -37757,8 +37757,8 @@ begin
            {Remove Reference}
            Parent.RemoveReference;
            Exit;
-          end; 
-         
+          end;
+
          {Check Encryption}
          if (FFolderEncryption) and ((Parent.Attributes and faEncrypted) = faEncrypted) then
           begin
@@ -37770,9 +37770,9 @@ begin
              Current.RemoveReference;
              Parent.RemoveReference;
              Exit;
-            end; 
+            end;
           end;
-         
+
          {Check Compression}
          if (FFolderCompression) and ((Parent.Attributes and faCompressed) = faCompressed) then
           begin
@@ -37784,7 +37784,7 @@ begin
              Current.RemoveReference;
              Parent.RemoveReference;
              Exit;
-            end; 
+            end;
           end;
         end;
       end;
@@ -37792,30 +37792,30 @@ begin
       {Open Handle}
       FileHandle:=FDriver.OpenFileHandle(FVolume,FDrive,Parent,Current,Mode,True,FILESYS_LOCK_WRITE);
       if FileHandle = nil then Exit;
-     
+
       {Set the Size} {In case of existing file}
       if Current.Size <> 0 then if not SizeEntry(FileHandle.ParentEntry,FileHandle.HandleEntry,0) then Exit;
-    
+
       {Set Attributes} {Entry will be updated by FileClose}
       Current.Attributes:=(Current.Attributes or faArchive);
-    
+
       {Return the Handle}
       Result:=FileHandle.Handle;
-    
+
       {Unlock Handle}
       FileHandle.WriterUnlock;
      finally
       {Remove Reference}
       Current.RemoveReference;
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -37841,7 +37841,7 @@ begin
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSystem.CreateDirEx DirName = ' + DirName + ' ShortName = ' + ShortName);
   {$ENDIF}
-  
+
   {Split the Path}
   Folders:=TLinkedStringList.Create;
   try
@@ -37850,38 +37850,38 @@ begin
      {$IFDEF FILESYS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSystem.CreateDirEx Name = ' + Name);
      {$ENDIF}
-     
+
      {Get Parent}
      Parent:=FRoot;
      if Relative then Parent:=GetCurrent;
      if Parent = nil then Exit;
-     
+
      {Add Reference}
-     Parent.AddReference; 
-     
+     Parent.AddReference;
+
      {Get Folders}
      Folder:=TStringObject(Folders.First);
      while Folder <> nil do
       begin
        Parent:=GetEntryEx(Parent,Folder.Value,faDirectory,True,True,False);
        if Parent = nil then Exit;
-       
+
        Folder:=TStringObject(Folder.Next);
       end;
      try
       {$IFDEF FILESYS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TFileSystem.CreateDirEx Parent = ' + Parent.Name);
       {$ENDIF}
-     
+
       {Check File or Folder}
       if GetEntry(Parent,Name,faDirectory or faFile) <> nil then Exit;
-     
+
       {Check Name}
       if not CheckName(Name) then Exit;
-     
+
       {Check AltName} {Allow Blank}
       if (Length(ShortName) <> 0) and not(CheckAltName(ShortName)) then Exit;
-     
+
       {Add Folder}
       Current:=AddEntryEx(Parent,Name,ShortName,faDirectory,True);
       if Current = nil then Exit;
@@ -37893,7 +37893,7 @@ begin
          Current.Attributes:=(Current.Attributes or faEncrypted);
          if not SetEntry(Parent,Current) then Exit;
         end;
-     
+
        {Check Compression}
        if (FFolderCompression) and ((Parent.Attributes and faCompressed) = faCompressed) then
         begin
@@ -37901,28 +37901,28 @@ begin
          Current.Attributes:=(Current.Attributes or faCompressed);
          if not SetEntry(Parent,Current) then Exit;
         end;
-     
+
        Result:=True;
       finally
        {Remove Reference}
        Current.RemoveReference;
-      end;      
+      end;
      finally
       {Remove Reference}
       Parent.RemoveReference;
-     end;     
+     end;
     end;
   finally
    Folders.Free;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TFileSystem.FileGetAttrEx(Handle:THandle):Integer; 
+function TFileSystem.FileGetAttrEx(Handle:THandle):Integer;
 {Get the Attributes of an existing entry with an open Handle}
 var
  FileHandle:TFileHandle;
@@ -37933,28 +37933,28 @@ begin
  if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
- 
+
   {Get the Handle}
   FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_READ);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
    if FileHandle.OpenMode = fmOpenWrite then Exit;
- 
+
    {Check the Handle}
    if FileHandle.HandleEntry = nil then Exit;
- 
+
    {Get Attributes} {Hide internal Attributes}
    Result:=(FileHandle.HandleEntry.Attributes and FMaskAttributes); {faFindMask}
   finally
    {Unlock Handle}
    FileHandle.ReaderUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
 function TFileSystem.FileGetDateEx(Handle:THandle):TFileTime;
@@ -38004,30 +38004,30 @@ begin
 
   {Check Params}
   if (CreateTime = nil) and (AccessTime = nil) and (ModifyTime = nil) then Exit;
- 
+
   {Get the Handle}
   FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_READ);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
    if FileHandle.OpenMode = fmOpenWrite then Exit;
- 
+
    {Check the Handle}
    if FileHandle.HandleEntry = nil then Exit;
- 
+
    {Get the Time}
    if CreateTime <> nil then CreateTime^:=FileHandle.HandleEntry.CreateTime;
    if AccessTime <> nil then AccessTime^:=FileHandle.HandleEntry.AccessTime;
    if ModifyTime <> nil then ModifyTime^:=FileHandle.HandleEntry.WriteTime;
- 
+
    Result:=True;
   finally
    {Unlock Handle}
    FileHandle.ReaderUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -38047,30 +38047,30 @@ begin
 
   {Check Params}
   if (CreateTime = nil) and (AccessTime = nil) and (ModifyTime = nil) then Exit;
- 
+
   {Get the Handle}
   FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
   try
    {Check the Mode}
    if FileHandle.OpenMode = fmOpenRead then Exit;
-  
+
    {Check the Handle}
    if FileHandle.HandleEntry = nil then Exit;
-  
+
    {Set the Time}
    if CreateTime <> nil then FileHandle.HandleEntry.CreateTime:=CreateTime^;
    if AccessTime <> nil then FileHandle.HandleEntry.AccessTime:=AccessTime^;
    if ModifyTime <> nil then FileHandle.HandleEntry.WriteTime:=ModifyTime^;
-  
+
    Result:=SetEntry(FileHandle.ParentEntry,FileHandle.HandleEntry);
   finally
    {Unlock Handle}
    FileHandle.WriterUnlock;
-  end; 
- finally  
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -38082,7 +38082,7 @@ var
 begin
  {Base Implementation}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -38090,17 +38090,17 @@ begin
   {Get the Handle}
   FileHandle:=FDriver.GetFileFromHandle(Handle,True,FILESYS_LOCK_WRITE);
   if FileHandle = nil then Exit;
- 
+
   {Update Entry} {Dont check return}
   if FileHandle.OpenMode <> fmOpenRead then SetEntry(FileHandle.ParentEntry,FileHandle.HandleEntry);
 
   {Close the Handle} {Do not unlock}
   FDriver.CloseFileHandle(FileHandle,False);
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -38115,7 +38115,7 @@ end;
 
 {==============================================================================}
 
-destructor TDiskChunk.Destroy; 
+destructor TDiskChunk.Destroy;
 begin
  {}
  FLocalLock:=INVALID_HANDLE_VALUE;
@@ -38150,7 +38150,7 @@ end;
 
 {==============================================================================}
 
-destructor TDiskTable.Destroy; 
+destructor TDiskTable.Destroy;
 begin
  {}
  FLocalLock:=INVALID_HANDLE_VALUE;
@@ -38185,7 +38185,7 @@ end;
 
 {==============================================================================}
 
-destructor TDiskBlock.Destroy; 
+destructor TDiskBlock.Destroy;
 begin
  {}
  FLocalLock:=INVALID_HANDLE_VALUE;
@@ -38216,17 +38216,17 @@ begin
  {}
  inherited Create;
  FLocalLock:=ALocalLock;
- 
+
  FRecent:=nil;
 end;
 
 {==============================================================================}
 
-destructor TDiskEntry.Destroy; 
+destructor TDiskEntry.Destroy;
 begin
  {}
  FRecent:=nil;
- 
+
  FLocalLock:=INVALID_HANDLE_VALUE;
  inherited Destroy;
 end;
@@ -38237,12 +38237,12 @@ function TDiskEntry.GetName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FName;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -38255,8 +38255,8 @@ begin
 
  FName:=AName;
  UniqueString(FName);
- FHash:=GenerateNameHash(FName,NAME_HASH_SIZE); 
- 
+ FHash:=GenerateNameHash(FName,NAME_HASH_SIZE);
+
  ReleaseLock;
 end;
 
@@ -38266,12 +38266,12 @@ function TDiskEntry.GetAltName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FAltName;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -38284,8 +38284,8 @@ begin
 
  FAltName:=AAltName;
  UniqueString(FAltName);
- FAltHash:=GenerateNameHash(FAltName,NAME_HASH_SIZE); 
- 
+ FAltHash:=GenerateNameHash(FAltName,NAME_HASH_SIZE);
+
  ReleaseLock;
 end;
 
@@ -38311,31 +38311,31 @@ function TDiskEntry.AddReference:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
 
  Inc(FReferenceCount);
 
  Result:=True;
- 
+
  ReleaseLock;
 end;
- 
+
 {==============================================================================}
 
 function TDiskEntry.RemoveReference:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
 
  if FReferenceCount < 1 then Exit;
- 
+
  Dec(FReferenceCount);
 
  Result:=True;
- 
+
  ReleaseLock;
 end;
 
@@ -38391,7 +38391,7 @@ begin
  try
   FLocalLock:=INVALID_HANDLE_VALUE;
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -38419,12 +38419,12 @@ function TDiskCatalog.GetName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FName;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -38434,11 +38434,11 @@ procedure TDiskCatalog.SetName(const AName:String);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FName:=AName;
  UniqueString(FName);
- FHash:=GenerateNameHash(FName,NAME_HASH_SIZE); 
- 
+ FHash:=GenerateNameHash(FName,NAME_HASH_SIZE);
+
  ReleaseLock;
 end;
 
@@ -38448,12 +38448,12 @@ function TDiskCatalog.GetPath:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FPath;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -38466,7 +38466,7 @@ begin
 
  FPath:=APath;
  UniqueString(FPath);
- 
+
  ReleaseLock;
 end;
 
@@ -38594,7 +38594,7 @@ end;
 
 {==============================================================================}
 
-destructor TDiskReparse.Destroy; 
+destructor TDiskReparse.Destroy;
 begin
  {}
  FLocalLock:=INVALID_HANDLE_VALUE;
@@ -38660,7 +38660,7 @@ end;
 
 {==============================================================================}
 
-destructor TDiskSecurity.Destroy; 
+destructor TDiskSecurity.Destroy;
 begin
  {}
  FLocalLock:=INVALID_HANDLE_VALUE;
@@ -38783,7 +38783,7 @@ end;
 
 {==============================================================================}
 
-destructor TDiskAcl.Destroy; 
+destructor TDiskAcl.Destroy;
 begin
  {}
  FLocalLock:=INVALID_HANDLE_VALUE;
@@ -38818,7 +38818,7 @@ end;
 
 {==============================================================================}
 
-destructor TDiskAce.Destroy; 
+destructor TDiskAce.Destroy;
 begin
  {}
  FLocalLock:=INVALID_HANDLE_VALUE;
@@ -38857,7 +38857,7 @@ begin
  FCacheSize:=0;
  FCacheMode:=cmNONE;
  FCacheState:=csCLEAN;
- FCacheTimeout:=FILESYS_CACHE_FLUSH_TIMEOUT; 
+ FCacheTimeout:=FILESYS_CACHE_FLUSH_TIMEOUT;
 
  FReadCached:=0;
  FReadDirect:=0;
@@ -38912,7 +38912,7 @@ begin
   FDriver:=nil;
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -38940,7 +38940,7 @@ function TCache.AddPage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -38948,10 +38948,10 @@ begin
 
   if not LinkPage(APage) then Exit;
   APage.PageState:=psUNKNOWN;
-  
+
   if not LinkEmpty(APage) then Exit;
   APage.PageState:=psEMPTY;
-  
+
   Result:=True;
  finally
   ReleaseLock;
@@ -38965,7 +38965,7 @@ function TCache.RemovePage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -38974,38 +38974,38 @@ begin
   case APage.PageState of
    psUNKNOWN:begin
      APage.PageState:=psUNKNOWN;
-     
+
      if not UnlinkPage(APage) then Exit;
      APage.Free;
-     
+
      Result:=True;
     end;
    psEMPTY:begin
      if not UnlinkEmpty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not UnlinkPage(APage) then Exit;
      APage.Free;
-     
+
      Result:=True;
     end;
    psCLEAN:begin
      if not UnlinkClean(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not UnlinkPage(APage) then Exit;
-     
+
      APage.Free;
-     
+
      Result:=True;
     end;
    psDIRTY:begin
      if not UnlinkDirty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not UnlinkPage(APage) then Exit;
      APage.Free;
-     
+
      Result:=True;
     end;
   end;
@@ -39021,7 +39021,7 @@ function TCache.AddEmpty(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -39031,7 +39031,7 @@ begin
    psUNKNOWN:begin
      if not LinkEmpty(APage) then Exit;
      APage.PageState:=psEMPTY;
-     
+
      Result:=True;
     end;
    psEMPTY:begin
@@ -39040,19 +39040,19 @@ begin
    psCLEAN:begin
      if not UnlinkClean(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkEmpty(APage) then Exit;
      APage.PageState:=psEMPTY;
-     
+
      Result:=True;
     end;
    psDIRTY:begin
      if not UnlinkDirty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkEmpty(APage) then Exit;
      APage.PageState:=psEMPTY;
-     
+
      Result:=True;
     end;
   end;
@@ -39068,7 +39068,7 @@ function TCache.AddClean(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -39078,16 +39078,16 @@ begin
    psUNKNOWN:begin
      if not LinkClean(APage) then Exit;
      APage.PageState:=psCLEAN;
-     
+
      Result:=True;
     end;
    psEMPTY:begin
      if not UnlinkEmpty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkClean(APage) then Exit;
      APage.PageState:=psCLEAN;
-     
+
      Result:=True;
     end;
    psCLEAN:begin
@@ -39096,10 +39096,10 @@ begin
    psDIRTY:begin
      if not UnlinkDirty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkClean(APage) then Exit;
      APage.PageState:=psCLEAN;
-     
+
      Result:=True;
     end;
   end;
@@ -39115,7 +39115,7 @@ function TCache.AddDirty(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -39125,25 +39125,25 @@ begin
    psUNKNOWN:begin
      if not LinkDirty(APage) then Exit;
      APage.PageState:=psDIRTY;
-     
+
      Result:=SchedulePage(APage,FCacheTimeout);
     end;
    psEMPTY:begin
      if not UnlinkEmpty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkDirty(APage) then Exit;
      APage.PageState:=psDIRTY;
-     
+
      Result:=SchedulePage(APage,FCacheTimeout);
     end;
    psCLEAN:begin
      if not UnlinkClean(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkDirty(APage) then Exit;
      APage.PageState:=psDIRTY;
-     
+
      Result:=SchedulePage(APage,FCacheTimeout);
     end;
    psDIRTY:begin
@@ -39162,7 +39162,7 @@ function TCache.AddUnknown(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -39175,19 +39175,19 @@ begin
    psEMPTY:begin
      if not UnlinkEmpty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      Result:=True;
     end;
    psCLEAN:begin
      if not UnlinkClean(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      Result:=True;
     end;
    psDIRTY:begin
      if not UnlinkDirty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      Result:=True;
     end;
   end;
@@ -39203,7 +39203,7 @@ function TCache.UpdateClean(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -39213,10 +39213,10 @@ begin
    psCLEAN:begin
      if not UnlinkClean(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkClean(APage) then Exit;
      APage.PageState:=psCLEAN;
-     
+
      Result:=True;
     end;
    psDIRTY:begin
@@ -39235,7 +39235,7 @@ function TCache.UpdateDirty(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -39248,10 +39248,10 @@ begin
    psDIRTY:begin
      if not UnlinkDirty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkDirty(APage) then Exit;
      APage.PageState:=psDIRTY;
-     
+
      Result:=True;
     end;
   end;
@@ -39268,8 +39268,8 @@ function TCache.RoundPageSize(APageSize:LongWord):LongWord;
 {Note: Caller must hold the lock}
 begin
  {}
- Result:=MIN_SECTOR_SIZE; 
- 
+ Result:=MIN_SECTOR_SIZE;
+
  {Round up to next power of 2 of Minimum Sector Size}
  while Result < APageSize do
   begin
@@ -39286,9 +39286,9 @@ function TCache.RoundCacheSize(ACacheSize,APageSize:LongWord):LongWord;
 begin
  {}
  Result:=0;
- 
+
  if APageSize = 0 then Exit;
- 
+
  {Round up to next multiple of Page Size}
  Result:=APageSize;
  while Result < ACacheSize do
@@ -39308,7 +39308,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -39329,7 +39329,7 @@ begin
    APage.NextPage:=nil;
    FLastPage:=APage;
   end;
-  
+
  Result:=True;
 end;
 
@@ -39344,7 +39344,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -39383,10 +39383,10 @@ begin
      FLastPage:=nil;
     end;
   end;
-  
+
  APage.PrevPage:=nil;
  APage.NextPage:=nil;
- 
+
  Result:=True;
 end;
 
@@ -39422,7 +39422,7 @@ begin
    APage.NextLink:=nil;
    FLastEmpty:=APage;
   end;
-  
+
  Result:=True;
 end;
 
@@ -39437,7 +39437,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -39476,10 +39476,10 @@ begin
      FLastEmpty:=nil;
     end;
   end;
- 
+
  APage.PrevLink:=nil;
  APage.NextLink:=nil;
- 
+
  Result:=True;
 end;
 
@@ -39494,7 +39494,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -39515,7 +39515,7 @@ begin
    APage.NextLink:=nil;
    FLastClean:=APage;
   end;
-  
+
  Result:=True;
 end;
 
@@ -39530,7 +39530,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -39569,10 +39569,10 @@ begin
      FLastClean:=nil;
     end;
   end;
-  
+
  APage.PrevLink:=nil;
  APage.NextLink:=nil;
- 
+
  Result:=True;
 end;
 
@@ -39587,7 +39587,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -39608,7 +39608,7 @@ begin
    APage.NextLink:=nil;
    FLastDirty:=APage;
   end;
-  
+
  Result:=True;
 end;
 
@@ -39623,7 +39623,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -39662,10 +39662,10 @@ begin
      FLastDirty:=nil;
     end;
   end;
-  
+
  APage.PrevLink:=nil;
  APage.NextLink:=nil;
- 
+
  Result:=True;
 end;
 
@@ -39684,17 +39684,17 @@ var
 begin
  {}
  Result:=False;
-  
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
-  
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.PrepareDeviceWrite: Page.Sector = ' + IntToStr(APage.Sector) + ' Page.Count = ' + IntToStr(APage.Count));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.PrepareDeviceWrite: Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
-  
+
  {Check Count}
  if ACount = APage.Count then
   begin
@@ -39710,28 +39710,28 @@ begin
      {$IFDEF CACHE_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.PrepareDeviceWrite: Caching Start Sectors (Sector = ' + IntToStr(APage.Sector) + ' Count = ' + IntToStr(ASector - APage.Sector) + ')');
      {$ENDIF}
-     
+
      {Cache starting sectors}
      if not ADevice.Controller.Read(ADevice,APage.Sector,ASector - APage.Sector,APage.Data^) then Exit;
-    end;    
-    
-   {Check Sector + Count} 
+    end;
+
+   {Check Sector + Count}
    if (ASector + ACount) < (APage.Sector + APage.Count) then
     begin
      {Write ends before end of page}
      {$IFDEF CACHE_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.PrepareDeviceWrite: Caching End Sectors (Sector = ' + IntToStr(ASector + ACount) + ' Count = ' + IntToStr((APage.Sector + APage.Count) - (ASector + ACount)) + ')');
      {$ENDIF}
-     
+
      {Cache ending sectors}
      Count:=(APage.Sector + APage.Count) - (ASector + ACount);
      Offset:=(ASector + ACount) - APage.Sector;
-     
+
      if not ADevice.Controller.Read(ADevice,ASector + ACount,Count,Pointer(APage.Data + (Offset shl ADevice.SectorShiftCount))^) then Exit;
     end;
-   
+
    Result:=True;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -39750,16 +39750,16 @@ begin
 
  if FDriver = nil then Exit;
  if ADevice = nil then Exit;
- 
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.CalculateDevicePage: Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Check for Sector Size bigger than Page Size}
  if ADevice.SectorSize = 0 then Exit;
  if ADevice.SectorSize > FPageSize then Exit;
  if ASector >= ADevice.SectorCount then Exit;
- 
+
  {Calculate Sector Count and Start Sector}
  SectorCount:=FPageSize div ADevice.SectorSize;
  if SectorCount = 0 then Exit;
@@ -39768,23 +39768,23 @@ begin
   begin
    SectorCount:=(ADevice.SectorCount - SectorStart);
   end;
- 
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.CalculateDevicePage: SectorCount = ' + IntToStr(SectorCount) + ' SectorStart = ' + IntToStr(SectorStart));
  {$ENDIF}
- 
+
  {Check Start Sector}
  if ASector > SectorStart then
   begin
    Dec(ACount,ASector - SectorStart);
   end;
-  
- {Check Sector Count} 
+
+ {Check Sector Count}
  if (ASector + ACount) > (SectorStart + SectorCount) then
   begin
    Dec(ACount,(ASector + ACount) - (SectorStart + SectorCount));
   end;
- 
+
  Result:=True;
 end;
 
@@ -39808,17 +39808,17 @@ begin
   if FDriver = nil then Exit;
   if ACacheSize = 0 then Exit;
   if APageSize = 0 then Exit;
-  
+
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.OpenCache: CacheSize = ' + IntToStr(ACacheSize) + ' PageSize = ' + IntToStr(APageSize));
   {$ENDIF}
-  
+
   {Check for already Open}
   if FCacheSize > 0 then Exit;
-  
+
   {Check for silly Sizes}
   if APageSize > ACacheSize then Exit;
-  
+
   {Normalize the Sizes}
   PageSize:=RoundPageSize(APageSize);
   CacheSize:=RoundCacheSize(ACacheSize,PageSize);
@@ -39826,18 +39826,18 @@ begin
   if CacheSize = 0 then Exit;
   if PageSize > CacheSize then Exit;
   PageCount:=CacheSize div PageSize;
-  
+
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.OpenCache: CacheSize = ' + IntToStr(CacheSize) + ' PageSize = ' + IntToStr(PageSize) + ' PageCount = ' + IntToStr(PageCount));
   {$ENDIF}
-  
+
   {Check for Caching Enabled}
   if ACacheMode <> cmNONE then
    begin
     {Allocate the Memory}
     FBuffer:=GetAlignedMem(CacheSize,PageSize);
     if FBuffer = nil then Exit;
-    
+
     {Allocate the Pages}
     PageOffset:=0;
     for Count:=0 to PageCount - 1 do
@@ -39848,27 +39848,27 @@ begin
       Inc(PageOffset,PageSize);
      end;
    end;
-  
+
   {Set the Sizes}
   FPageSize:=PageSize;
   FPageCount:=PageCount;
   FCacheSize:=CacheSize;
   FCacheMode:=ACacheMode;
   FCacheState:=csCLEAN;
-  
+
   {Create Timer}
   FTimer:=TCacheTimer.Create(Self);
-  
+
   {Start Timer}
   FTimer.StartTimer(FILESYS_CACHE_TIMER_INTERVAL);
-  
+
   {Create Thread}
   FThread:=TCacheThread.Create(Self);
   {FThread.FreeOnTerminate:=True;} {Freed by CloseCache}
-  
+
   {Start Thread}
-  FThread.Start; 
-  
+  FThread.Start;
+
   Result:=True;
  finally
   ReleaseLock;
@@ -39889,61 +39889,61 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.CloseCache');
   {$ENDIF}
-  
+
   {Check for already Closed}
   if FCacheSize = 0 then Exit;
-  
+
   {Terminate Thread}
   FThread.Terminate;
-  
+
   {Stop Timer}
   FTimer.StopTimer;
 
   {Wait For Thread}
   FThread.WaitFor;
-  
+
   {Destroy Timer}
   FTimer.Free;
   FTimer:=nil;
- 
+
   {Destroy Thread}
   FThread.Free;
   FThread:=nil;
-  
+
   {Flush the Pages}
   NextPage:=FFirstDirty;
   while NextPage <> nil do
    begin
     CurrentPage:=NextPage;
     NextPage:=NextPage.NextLink;
-    
+
     FlushPage(CurrentPage);
    end;
-  
+
   {Free the Pages}
   NextPage:=FFirstPage;
   while NextPage <> nil do
    begin
     CurrentPage:=NextPage;
     NextPage:=NextPage.NextPage;
-    
+
     RemovePage(CurrentPage);
    end;
-   
+
   {Free the Memory}
   FreeMem(FBuffer);
-  
+
   {Set the Sizes}
   FPageSize:=0;
   FPageCount:=0;
   FCacheSize:=0;
   FCacheMode:=cmNONE;
   FCacheState:=csCLEAN;
-  
+
   Result:=True;
  finally
   ReleaseLock;
@@ -39963,15 +39963,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
- 
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.DeviceRead: Device = ' + ADevice.Name + ' Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Get Buffer}
  Buffer:=@ABuffer;
  while ACount > 0 do
@@ -39982,61 +39982,61 @@ begin
      begin
       {Read Cached}
       Inc(FReadCached);
-      
+
       {Get Page}
       Page:=GetDevicePage(ADevice,ASector);
       if Page <> nil then
        begin
         {Found in Cache}
         Inc(FHitCount);
-        
+
         {Get Count}
         OffsetCount:=ASector - Page.Sector;           {Offset from Page Sector to Read Sector}
         ReadCount:=Page.Count - OffsetCount;          {Number of Sectors to Read from Page}
         if ReadCount > ACount then ReadCount:=ACount;
-        
+
         {Read from Page to Buffer}
         System.Move(Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
-        
+
         {Update Page}
         Page.PageTime:=GetTickCount64;
         if not UpdateClean(Page) then Exit; {Does nothing if Dirty}
-        
+
         {Update Count}
         Dec(ACount,ReadCount);
-        
+
         {Update Buffer and Sector}
         if ACount > 0 then
          begin
           Inc(Buffer,ReadCount shl ADevice.SectorShiftCount);
           Inc(ASector,ReadCount);
-         end; 
-        
+         end;
+
         Result:=True;
        end
       else
        begin
         {Not Found in Cache}
         Inc(FMissCount);
-        
+
         {Allocate a Page}
         Page:=AllocDevicePage(ADevice,ASector,False);
         if Page <> nil then
          begin
           {Allocate Succeeded}
           Inc(FSuccessCount);
-          
+
           {Get Count}
           OffsetCount:=ASector - Page.Sector;           {Offset from Page Sector to Read Sector}
           ReadCount:=Page.Count - OffsetCount;          {Number of Sectors to Read from Page}
-          if ReadCount > ACount then ReadCount:=ACount; 
-          
+          if ReadCount > ACount then ReadCount:=ACount;
+
           {Read from Device to Page}
           if not ADevice.Controller.Read(ADevice,Page.Sector,Page.Count,Page.Data^) then Exit;
-          
+
           {Read from Page to Buffer}
           System.Move(Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
-          
+
           {PageTime updated by AllocDevicePage}
          end
         else
@@ -40047,21 +40047,21 @@ begin
           {Get Count}
           ReadCount:=ACount;
           if not CalculateDevicePage(ADevice,ASector,ReadCount) then Exit;
-          
+
           {Direct Read}
           if not ADevice.Controller.Read(ADevice,ASector,ReadCount,Buffer^) then Exit;
          end;
-         
+
         {Update Count}
         Dec(ACount,ReadCount);
-        
+
         {Update Buffer and Sector}
         if ACount > 0 then
          begin
           Inc(Buffer,ReadCount shl ADevice.SectorShiftCount);
           Inc(ASector,ReadCount);
-         end; 
-        
+         end;
+
         Result:=True;
        end;
      end
@@ -40069,17 +40069,17 @@ begin
      begin
       {No Cache}
       Inc(FReadDirect);
-      
+
       {Direct Read}
       Result:=ADevice.Controller.Read(ADevice,ASector,ACount,Buffer^);
-      
+
       {Update Count}
       Dec(ACount,ACount);
      end;
    finally
     ReleaseLock;
    end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -40095,15 +40095,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
- 
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.DeviceWrite: Device = ' + ADevice.Name + ' Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Get Buffer}
  Buffer:=@ABuffer;
  while ACount > 0 do
@@ -40116,71 +40116,71 @@ begin
        begin
         {Write Back Cached}
         Inc(FWriteBack);
-        
+
         {Get Page}
         Page:=GetDevicePage(ADevice,ASector);
         if Page <> nil then
          begin
           {Found in Cache}
           Inc(FHitCount);
-          
+
           {Get Count}
           OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Write Sector}
           WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
           if WriteCount > ACount then WriteCount:=ACount;
-          
+
           {Write to Page from Buffer}
           System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
-          
+
           {Update Page}
           Page.PageTime:=GetTickCount64;
           if Page.PageState <> psDIRTY then Page.WriteTime:=GetTickCount64;
           if not AddDirty(Page) then Exit;
-          
+
           {Update State}
           FCacheState:=csDIRTY;
-          
+
           {Update Count}
           Dec(ACount,WriteCount);
-          
+
           {Update Buffer and Sector}
           if ACount > 0 then
            begin
             Inc(Buffer,WriteCount shl ADevice.SectorShiftCount);
             Inc(ASector,WriteCount);
-           end; 
-           
+           end;
+
           Result:=True;
          end
         else
          begin
           {Not Found in Cache}
           Inc(FMissCount);
-          
+
           {Allocate a Page}
           Page:=AllocDevicePage(ADevice,ASector,True);
           if Page <> nil then
            begin
             {Allocate Succeeded}
             Inc(FSuccessCount);
-            
+
             {Get Count}
             OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Write Sector}
             WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
             if WriteCount > ACount then WriteCount:=ACount;
-            
+
             {Check for less than Page}
             if WriteCount < Page.Count then
              begin
               {Prepare Page for Write}
               if not PrepareDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
              end;
-            
+
             {Write to Page from Buffer}
             System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
-            
+
             {PageTime and WriteTime updated by AllocDevicePage}
-            
+
             {Update State}
             FCacheState:=csDIRTY;
            end
@@ -40188,25 +40188,25 @@ begin
            begin
             {Allocate Failed}
             Inc(FFailCount);
-    
+
             {Get Count}
             WriteCount:=ACount;
             if not CalculateDevicePage(ADevice,ASector,WriteCount) then Exit;
-    
+
             {Direct Write}
             if not ADevice.Controller.Write(ADevice,ASector,WriteCount,Buffer^) then Exit;
            end;
-           
+
           {Update Count}
           Dec(ACount,WriteCount);
-          
+
           {Update Buffer and Sector}
           if ACount > 0 then
            begin
             Inc(Buffer,WriteCount shl ADevice.SectorShiftCount);
             Inc(ASector,WriteCount);
-           end; 
-          
+           end;
+
           Result:=True;
          end;
        end
@@ -40214,96 +40214,96 @@ begin
        begin
         {Write Through Cached (ReadOnly Cache or Removable Device)}
         Inc(FWriteThrough);
-        
+
         {Get Page}
         Page:=GetDevicePage(ADevice,ASector);
         if Page <> nil then
          begin
           {Found in Cache}
           Inc(FHitCount);
-          
+
           {Get Count}
           OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Write Sector}
           WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
           if WriteCount > ACount then WriteCount:=ACount;
-          
+
           {Write to Page from Buffer}
           System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
-          
+
           {Write from Page to Device}
           if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
-          
+
           {Update Page}
           Page.PageTime:=GetTickCount64;
           if not UpdateClean(Page) then Exit; {Read Only Page is always Clean}
-          
+
           {Update Count}
           Dec(ACount,WriteCount);
-          
+
           {Update Buffer and Sector}
           if ACount > 0 then
            begin
             Inc(Buffer,WriteCount shl ADevice.SectorShiftCount);
             Inc(ASector,WriteCount);
-           end; 
-          
+           end;
+
           Result:=True;
          end
         else
          begin
           {Not Found in Cache}
           Inc(FMissCount);
-          
+
           {Allocate a Page}
           Page:=AllocDevicePage(ADevice,ASector,False); {Allocate Clean}
           if Page <> nil then
            begin
             {Allocate Succeeded}
             Inc(FSuccessCount);
-            
+
             {Get Count}
             OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Write Sector}
             WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
             if WriteCount > ACount then WriteCount:=ACount;
-            
+
             {Check for less than Page}
             if WriteCount < Page.Count then
              begin
               {Prepare Page for Write}
               if not PrepareDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
              end;
-            
+
             {Write to Page from Buffer}
             System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
-            
+
             {Write from Page to Device}
             if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
-  
+
             {PageTime updated by AllocDevicePage}
            end
           else
            begin
             {Allocate Failed}
             Inc(FFailCount);
-        
+
             {Get Count}
             WriteCount:=ACount;
             if not CalculateDevicePage(ADevice,ASector,WriteCount) then Exit;
-        
+
             {Direct Write}
             if not ADevice.Controller.Write(ADevice,ASector,WriteCount,Buffer^) then Exit;
            end;
-           
+
           {Update Count}
           Dec(ACount,WriteCount);
-          
+
           {Update Buffer and Sector}
           if ACount > 0 then
            begin
             Inc(Buffer,WriteCount shl ADevice.SectorShiftCount);
             Inc(ASector,WriteCount);
-           end; 
-          
+           end;
+
           Result:=True;
          end;
        end;
@@ -40312,17 +40312,17 @@ begin
      begin
       {No Cache}
       Inc(FWriteDirect);
-      
+
       {Direct Write}
       Result:=ADevice.Controller.Write(ADevice,ASector,ACount,Buffer^);
-      
+
       {Update Count}
       Dec(ACount,ACount);
      end;
    finally
     ReleaseLock;
    end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -40336,15 +40336,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
- 
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.DeviceErase: Device = ' + ADevice.Name + ' Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Check Count}
  while ACount > 0 do
   begin
@@ -40361,29 +40361,29 @@ begin
         OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Erase Sector}
         EraseCount:=Page.Count - OffsetCount;           {Number of Sectors to Erase from Page}
         if EraseCount > ACount then EraseCount:=ACount;
-        
+
         {Check for Dirty}
         if Page.PageState = psDIRTY then
          begin
           {Flush Page}
           if not FlushPage(Page) then Exit;
          end;
-         
+
         {Discard Page}
         if not DiscardPage(Page) then Exit;
-        
+
         {Erase from Device}
         if not ADevice.Controller.Erase(ADevice,ASector,EraseCount) then Exit;
-        
+
         {Update Count}
         Dec(ACount,EraseCount);
-    
+
         {Update Sector}
         if ACount > 0 then
          begin
           Inc(ASector,EraseCount);
-         end; 
-    
+         end;
+
         Result:=True;
        end
       else
@@ -40392,19 +40392,19 @@ begin
         {Get Count}
         EraseCount:=ACount;
         if not CalculateDevicePage(ADevice,ASector,EraseCount) then Exit;
-        
+
         {Erase from Device}
         if not ADevice.Controller.Erase(ADevice,ASector,EraseCount) then Exit;
-        
+
         {Update Count}
         Dec(ACount,EraseCount);
-    
+
         {Update Sector}
         if ACount > 0 then
          begin
           Inc(ASector,EraseCount);
-         end; 
-    
+         end;
+
         Result:=True;
        end;
      end
@@ -40413,14 +40413,14 @@ begin
       {Not Cached}
       {Direct Erase}
       Result:=ADevice.Controller.Erase(ADevice,ASector,ACount);
-      
+
       {Update Count}
       Dec(ACount,ACount);
      end;
    finally
     ReleaseLock;
    end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -40432,12 +40432,12 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
-  
+
   {Check Clean Pages}
   {Page:=FFirstClean;} {Search backwards}
   Page:=FLastClean;
@@ -40453,11 +40453,11 @@ begin
         Exit;
        end;
      end;
-     
+
     {Page:=Page.NextLink;}
     Page:=Page.PrevLink; {Search backwards}
    end;
-  
+
   {Check Dirty Pages}
   {Page:=FFirstDirty;} {Search backwards}
   Page:=FLastDirty;
@@ -40473,7 +40473,7 @@ begin
         Exit;
        end;
      end;
-     
+
     {Page:=Page.NextLink;} {Search backwards}
     Page:=Page.PrevLink;
    end;
@@ -40489,18 +40489,18 @@ function TCache.GetEmptyPage:TCachePage;
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   {Get First Empty Page}
   Result:=FFirstEmpty;
   if Result <> nil then Exit;
-  
+
   {If no Empty then Discard Oldest}
   if not DiscardCache(True,False) then Exit;
-  
+
   {Get First Empty Page}
   Result:=FFirstEmpty;
  finally
@@ -40519,17 +40519,17 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
-  
+
   {Check for Sector Size bigger than Page Size}
   if ADevice.SectorSize = 0 then Exit;
   if ADevice.SectorSize > FPageSize then Exit;
   if ASector >= ADevice.SectorCount then Exit;
-  
+
   {Calculate Sector Count and Start Sector}
   SectorCount:=FPageSize div ADevice.SectorSize;
   if SectorCount = 0 then Exit;
@@ -40538,7 +40538,7 @@ begin
    begin
     SectorCount:=(ADevice.SectorCount - SectorStart);
    end;
-  
+
   {Get Empty Page}
   Page:=GetEmptyPage;
   if Page = nil then
@@ -40562,7 +40562,7 @@ begin
         Page.PageTime:=GetTickCount64;
         Page.WriteTime:=GetTickCount64;
         Page.PageType:=ptDEVICE;
-        
+
         Result:=Page;
        end;
      end
@@ -40575,7 +40575,7 @@ begin
         Page.Count:=SectorCount;
         Page.PageTime:=GetTickCount64;
         Page.PageType:=ptDEVICE;
-        
+
         Result:=Page;
        end;
      end;
@@ -40592,35 +40592,35 @@ function TCache.DiscardPage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
   if APage = nil then Exit;
-  
+
   {Check for Clean}
   if APage.PageState = psCLEAN then
    begin
     if not AddEmpty(APage) then Exit;
-    
+
     Inc(FDiscardCount);
-    
+
     APage.Device:=nil;
     APage.Sector:=0;
     APage.Count:=0;
     APage.PageTime:=0;
     APage.WriteTime:=0;
     APage.PageType:=ptNONE;
-    
+
     Result:=True;
    end
   else
    begin
     {Return a Non Clean Page to Unknown}
     if not AddUnknown(APage) then Exit;
-    
+
     Inc(FUnknownCount);
-    
+
     Result:=True;
    end;
  finally
@@ -40639,14 +40639,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   {Get Counter}
   CurrentTime:=GetTickCount64;
-  
+
   {Check Clean Pages}
   NextPage:=FFirstClean;
   while NextPage <> nil do
@@ -40663,7 +40663,7 @@ begin
       Break; {No more pages old enough to Discard}
      end;
    end;
-   
+
   Result:=True;
  finally
   ReleaseLock;
@@ -40680,38 +40680,38 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
-  
+
   {Flush Dirty Pages}
   NextPage:=FFirstDirty;
   while NextPage <> nil do
    begin
     CurrentPage:=NextPage;
     NextPage:=NextPage.NextLink;
-    
+
     if (CurrentPage.PageType = ptDEVICE) and (CurrentPage.Device = ADevice) then
      begin
       FlushPage(CurrentPage);
      end;
    end;
-  
+
   {Discard Clean Pages}
   NextPage:=FFirstClean;
   while NextPage <> nil do
    begin
     CurrentPage:=NextPage;
     NextPage:=NextPage.NextLink;
-    
+
     if (CurrentPage.PageType = ptDEVICE) and (CurrentPage.Device = ADevice) then
      begin
       DiscardPage(CurrentPage);
      end;
    end;
-   
+
   Result:=True;
  finally
   ReleaseLock;
@@ -40725,15 +40725,15 @@ function TCache.FlushPage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
   if APage = nil then Exit;
-  
+
   {Unschedule Page}
   UnschedulePage(APage);
-  
+
   {Check for Dirty}
   if APage.PageState = psDIRTY then
    begin
@@ -40746,7 +40746,7 @@ begin
          if not AddClean(APage) then Exit;
          Inc(FFlushCount);
          APage.WriteTime:=0;
-         
+
          Result:=True;
         end;
        ptDEVICE:begin
@@ -40754,12 +40754,12 @@ begin
          if APage.Device = nil then Exit;
          if APage.Device.Controller = nil then Exit;
          if not APage.Device.Controller.Write(APage.Device,APage.Sector,APage.Count,APage.Data^) then Exit;
-         
+
          {Return to Clean}
          if not AddClean(APage) then Exit;
          Inc(FFlushCount);
          APage.WriteTime:=0;
-         
+
          Result:=True;
         end;
       end;
@@ -40770,7 +40770,7 @@ begin
       if not AddClean(APage) then Exit;
       Inc(FFlushCount);
       APage.WriteTime:=0;
-      
+
       Result:=True;
      end;
    end
@@ -40780,7 +40780,7 @@ begin
     if not AddUnknown(APage) then Exit;
     Inc(FUnknownCount);
     APage.WriteTime:=0;
-    
+
     Result:=True;
    end;
 
@@ -40806,12 +40806,12 @@ begin
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.FlushPageEx (Page=' + PtrToHex(APage) + ' FirstDirty=' + PtrToHex(FFirstDirty) + ')');
  {$ENDIF}
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
   if APage = nil then Exit;
- 
+
   {Check Page}
   Page:=FFirstDirty;
   if APage <> Page then
@@ -40823,8 +40823,8 @@ begin
       {Get Next}
       Page:=Page.NextLink;
      end;
-   end;  
-  
+   end;
+
   {Check Page}
   if (APage = Page) and ((APage.WriteTime + FCacheTimeout) <= GetTickCount64) then
    begin
@@ -40840,7 +40840,7 @@ begin
            if not AddClean(APage) then Exit;
            Inc(FFlushCount);
            APage.WriteTime:=0;
-           
+
            Result:=True;
           end;
          ptDEVICE:begin
@@ -40848,12 +40848,12 @@ begin
            if APage.Device = nil then Exit;
            if APage.Device.Controller = nil then Exit;
            if not APage.Device.Controller.Write(APage.Device,APage.Sector,APage.Count,APage.Data^) then Exit;
-           
+
            {Return to Clean}
            if not AddClean(APage) then Exit;
            Inc(FFlushCount);
            APage.WriteTime:=0;
-           
+
            Result:=True;
           end;
         end;
@@ -40864,7 +40864,7 @@ begin
         if not AddClean(APage) then Exit;
         Inc(FFlushCount);
         APage.WriteTime:=0;
-        
+
         Result:=True;
        end;
      end
@@ -40874,13 +40874,13 @@ begin
       if not AddUnknown(APage) then Exit;
       Inc(FUnknownCount);
       APage.WriteTime:=0;
-      
+
       Result:=True;
      end;
-    
+
     {Update Cache State}
     if FFirstDirty = nil then FCacheState:=csCLEAN;
-  {$IFDEF CACHE_DEBUG}    
+  {$IFDEF CACHE_DEBUG}
    end
   else
    begin
@@ -40890,10 +40890,10 @@ begin
      end
     else
      begin
-      if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.FlushPageEx - Not Ready Page (Page=' + PtrToHex(APage) + ' WriteTime=' + IntToStr(APage.WriteTime) + ' TickCount=' + IntToStr(GetTickCount64) + ')'); 
+      if FILESYS_LOG_ENABLED then FileSysLogDebug('TCache.FlushPageEx - Not Ready Page (Page=' + PtrToHex(APage) + ' WriteTime=' + IntToStr(APage.WriteTime) + ' TickCount=' + IntToStr(GetTickCount64) + ')');
      end;
-  {$ENDIF}   
-   end;   
+  {$ENDIF}
+   end;
  finally
   ReleaseLock;
  end;
@@ -40910,28 +40910,28 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   {Check Cache State}
   if FCacheState = csDIRTY then
    begin
     {Get Counter}
     CurrentTime:=GetTickCount64;
-    
+
     {Check Dirty Pages}
     NextPage:=FFirstDirty;
     while NextPage <> nil do
      begin
       CurrentPage:=NextPage;
       NextPage:=NextPage.NextLink;
-      
+
       if (AFirst) or (AAll) or ((CurrentPage.WriteTime + FCacheTimeout) < CurrentTime) then
        begin
         FlushPage(CurrentPage);
-        
+
         if AFirst then Break; {Flush only the First Page}
        end
       else
@@ -40939,11 +40939,11 @@ begin
         Break; {No more pages old enough to Flush}
        end;
      end;
-     
+
     {Update Cache State}
     if FFirstDirty = nil then FCacheState:=csCLEAN;
    end;
-   
+
   Result:=True;
  finally
   ReleaseLock;
@@ -40951,12 +40951,12 @@ begin
 end;
 
 {==============================================================================}
-   
+
 function TCache.CheckTimer:Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
 
@@ -40970,7 +40970,7 @@ function TCache.ProcessTimer:Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
 
@@ -40979,35 +40979,35 @@ begin
 end;
 
 {==============================================================================}
-   
+
 function TCache.SchedulePage(APage:TCachePage;ATimeout:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
- 
+
  {Check Page}
  {if APage = nil then Exit;} {Do not check}
- 
+
  {Schedule Page}
  Result:=FTimer.SchedulePage(APage,ATimeout);
 end;
 
 {==============================================================================}
 
-function TCache.UnschedulePage(APage:TCachePage):Boolean; 
+function TCache.UnschedulePage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
- 
+
  {Check Page}
  {if APage = nil then Exit;} {Do not check}
- 
+
  {Unschedule Page}
  Result:=FTimer.UnschedulePage(APage);
 end;
@@ -41040,12 +41040,12 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
-  
+
   {Check Last Page}
   Page:=FLastUsed;
   if Page <> nil then
@@ -41065,10 +41065,10 @@ begin
        end;
      end;
    end;
-   
+
   {Call Inherited}
   Result:=inherited GetDevicePage(ADevice,ASector);
-  
+
   {Update Last}
   FLastUsed:=Result;
  finally
@@ -41082,12 +41082,12 @@ function TCacheEx.AllocDevicePage(ADevice:TDiskDevice;ASector:LongWord;AWrite:Bo
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {Call Inherited}
   Result:=inherited AllocDevicePage(ADevice,ASector,AWrite);
-  
+
   {Update Last}
   FLastUsed:=Result;
  finally
@@ -41118,8 +41118,8 @@ begin
  FCacheKeys:=0;
  FCacheMode:=cmNONE;
  FCacheState:=csCLEAN;
- FFlushTimeout:=FILESYS_CACHE_FLUSH_TIMEOUT;  
- FDiscardTimeout:=FILESYS_CACHE_DISCARD_TIMEOUT; 
+ FFlushTimeout:=FILESYS_CACHE_FLUSH_TIMEOUT;
+ FDiscardTimeout:=FILESYS_CACHE_DISCARD_TIMEOUT;
 
  FReadCached:=0;
  FReadDirect:=0;
@@ -41171,13 +41171,13 @@ begin
   FLastPage:=nil;
 
   FBuffer:=nil;
-  
+
   FKeyBuckets:=nil;
-  
+
   FDriver:=nil;
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -41205,7 +41205,7 @@ function THashCache.AddPage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -41213,10 +41213,10 @@ begin
 
   if not LinkPage(APage) then Exit;
   APage.PageState:=psUNKNOWN;
-  
+
   if not LinkEmpty(APage) then Exit;
   APage.PageState:=psEMPTY;
-  
+
   Result:=True;
  finally
   ReleaseLock;
@@ -41230,7 +41230,7 @@ function THashCache.RemovePage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -41239,41 +41239,41 @@ begin
   case APage.PageState of
    psUNKNOWN:begin
      APage.PageState:=psUNKNOWN;
-     
+
      if not UnlinkPage(APage) then Exit;
      APage.Free;
-     
+
      Result:=True;
     end;
    psEMPTY:begin
      if not UnlinkEmpty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not UnlinkPage(APage) then Exit;
      APage.Free;
-     
+
      Result:=True;
     end;
    psCLEAN:begin
      if not KeyUnlink(THashCachePage(APage)) then Exit;
-     
+
      if not UnlinkClean(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not UnlinkPage(APage) then Exit;
      APage.Free;
-     
+
      Result:=True;
     end;
    psDIRTY:begin
      if not KeyUnlink(THashCachePage(APage)) then Exit;
-     
+
      if not UnlinkDirty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not UnlinkPage(APage) then Exit;
      APage.Free;
-     
+
      Result:=True;
     end;
   end;
@@ -41289,7 +41289,7 @@ function THashCache.AddEmpty(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -41299,7 +41299,7 @@ begin
    psUNKNOWN:begin
      if not LinkEmpty(APage) then Exit;
      APage.PageState:=psEMPTY;
-     
+
      Result:=True;
     end;
    psEMPTY:begin
@@ -41307,24 +41307,24 @@ begin
     end;
    psCLEAN:begin
      if not KeyUnlink(THashCachePage(APage)) then Exit;
-     
+
      if not UnlinkClean(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkEmpty(APage) then Exit;
      APage.PageState:=psEMPTY;
-     
+
      Result:=True;
     end;
    psDIRTY:begin
      if not KeyUnlink(THashCachePage(APage)) then Exit;
-     
+
      if not UnlinkDirty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkEmpty(APage) then Exit;
      APage.PageState:=psEMPTY;
-     
+
      Result:=True;
     end;
   end;
@@ -41340,7 +41340,7 @@ function THashCache.AddClean(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -41350,20 +41350,20 @@ begin
    psUNKNOWN:begin
      if not LinkClean(APage) then Exit;
      APage.PageState:=psCLEAN;
-     
+
      if not KeyLink(THashCachePage(APage)) then Exit;
-     
+
      Result:=True;
     end;
    psEMPTY:begin
      if not UnlinkEmpty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkClean(APage) then Exit;
      APage.PageState:=psCLEAN;
-     
+
      if not KeyLink(THashCachePage(APage)) then Exit;
-     
+
      Result:=True;
     end;
    psCLEAN:begin
@@ -41372,12 +41372,12 @@ begin
    psDIRTY:begin
      if not UnlinkDirty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkClean(APage) then Exit;
      APage.PageState:=psCLEAN;
-     
+
      {No need to KeyLink}
-     
+
      Result:=True;
     end;
   end;
@@ -41393,7 +41393,7 @@ function THashCache.AddDirty(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -41403,31 +41403,31 @@ begin
    psUNKNOWN:begin
      if not LinkDirty(APage) then Exit;
      APage.PageState:=psDIRTY;
-     
+
      if not KeyLink(THashCachePage(APage)) then Exit;
-     
+
      Result:=SchedulePage(APage,FFlushTimeout);
     end;
    psEMPTY:begin
      if not UnlinkEmpty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkDirty(APage) then Exit;
      APage.PageState:=psDIRTY;
-     
+
      if not KeyLink(THashCachePage(APage)) then Exit;
-     
+
      Result:=SchedulePage(APage,FFlushTimeout);
     end;
    psCLEAN:begin
      if not UnlinkClean(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkDirty(APage) then Exit;
      APage.PageState:=psDIRTY;
-     
+
      {No need to KeyLink}
-     
+
      Result:=SchedulePage(APage,FFlushTimeout);
     end;
    psDIRTY:begin
@@ -41446,7 +41446,7 @@ function THashCache.AddUnknown(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -41459,23 +41459,23 @@ begin
    psEMPTY:begin
      if not UnlinkEmpty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      Result:=True;
     end;
    psCLEAN:begin
      if not KeyUnlink(THashCachePage(APage)) then Exit;
-     
+
      if not UnlinkClean(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      Result:=True;
     end;
    psDIRTY:begin
      if not KeyUnlink(THashCachePage(APage)) then Exit;
-     
+
      if not UnlinkDirty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      Result:=True;
     end;
   end;
@@ -41491,7 +41491,7 @@ function THashCache.UpdateClean(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -41501,12 +41501,12 @@ begin
    psCLEAN:begin
      if not UnlinkClean(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkClean(APage) then Exit;
      APage.PageState:=psCLEAN;
-     
+
      {No need to KeyLink}
-     
+
      Result:=True;
     end;
    psDIRTY:begin
@@ -41525,7 +41525,7 @@ function THashCache.UpdateDirty(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -41538,12 +41538,12 @@ begin
    psDIRTY:begin
      if not UnlinkDirty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkDirty(APage) then Exit;
      APage.PageState:=psDIRTY;
-     
+
      {No need to KeyLink}
-     
+
      Result:=True;
     end;
   end;
@@ -41578,9 +41578,9 @@ function THashCache.RoundCacheSize(ACacheSize,APageSize:LongWord):LongWord;
 begin
  {}
  Result:=0;
- 
+
  if APageSize = 0 then Exit;
-  
+
  {Round up to next multiple of Page Size}
  Result:=APageSize;
  while Result < ACacheSize do
@@ -41598,9 +41598,9 @@ function THashCache.AdjustCacheKeys(ACacheKeys:LongWord):LongWord;
 begin
  {}
  Result:=0;
- 
+
  if ACacheKeys = 0 then Exit;
-  
+
  Result:=ACacheKeys;
  if Result < keyHashMinBits then Result:=keyHashMinBits;
  if Result > keyHashMaxBits then Result:=keyHashMaxBits;
@@ -41617,11 +41617,11 @@ var
 begin
  {}
  Result:=0;
- 
+
  if FPageSize = 0 then Exit;
  if ADevice = nil then Exit;
  if ADevice.SectorSize = 0 then Exit;
-  
+
  Result:=1;
  Value:=ADevice.SectorSize;
  while Value < FPageSize do
@@ -41644,10 +41644,10 @@ function THashCache.CalculatePageShift(ADevice:TDiskDevice):Word;
 begin
  {}
  Result:=0;
- 
+
  if ADevice = nil then Exit;
  if ADevice.PageCount = 0 then Exit;
-  
+
  while (ADevice.PageCount shr Result) > 1 do
   begin
    Inc(Result);
@@ -41663,10 +41663,10 @@ function THashCache.CalculatePageMask(ADevice:TDiskDevice):LongWord;
 begin
  {}
  Result:=$FFFFFFFF;
- 
+
  if ADevice = nil then Exit;
  if ADevice.PageCount = 0 then Exit;
-  
+
  Result:=((Result shr ADevice.PageShift) shl ADevice.PageShift);
 end;
 
@@ -41682,12 +41682,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  if APage = nil then Exit;
- 
+
  {Get Offset}
  Offset:=(APage.KeyHash and FKeyMask) shl FKeyShift;
- 
+
  {Get First Key}
  FirstKey:=THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
  if FirstKey = nil then
@@ -41705,7 +41705,7 @@ begin
    APage.KeyNext:=FirstKey;
    THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=APage;
   end;
-  
+
  Result:=True;
 end;
 
@@ -41721,9 +41721,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if APage = nil then Exit;
- 
+
  if APage.KeyPrev <> nil then
   begin
    {Not First Object}
@@ -41745,7 +41745,7 @@ begin
   begin
    {Get Offset}
    Offset:=(APage.KeyHash and FKeyMask) shl FKeyShift;
-   
+
    {Is First Object}
    if APage.KeyNext <> nil then
     begin
@@ -41760,10 +41760,10 @@ begin
      THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=nil;
     end;
   end;
-  
+
  APage.KeyPrev:=nil;
  APage.KeyNext:=nil;
- 
+
  Result:=True;
 end;
 
@@ -41776,12 +41776,12 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FKeyBuckets = nil then Exit;
- 
+
  {Get Offset}
  Offset:=(AKeyHash and FKeyMask) shl FKeyShift;
- 
+
  {Get First Key}
  Result:=THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
 end;
@@ -41797,7 +41797,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -41818,7 +41818,7 @@ begin
    APage.NextPage:=nil;
    FLastPage:=APage;
   end;
-  
+
  Result:=True;
 end;
 
@@ -41833,7 +41833,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -41872,10 +41872,10 @@ begin
      FLastPage:=nil;
     end;
   end;
- 
+
  APage.PrevPage:=nil;
  APage.NextPage:=nil;
- 
+
  Result:=True;
 end;
 
@@ -41890,7 +41890,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -41911,7 +41911,7 @@ begin
    APage.NextLink:=nil;
    FLastEmpty:=APage;
   end;
-  
+
  Result:=True;
 end;
 
@@ -41926,7 +41926,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -41965,10 +41965,10 @@ begin
      FLastEmpty:=nil;
     end;
   end;
-  
+
  APage.PrevLink:=nil;
  APage.NextLink:=nil;
- 
+
  Result:=True;
 end;
 
@@ -41983,7 +41983,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -42004,7 +42004,7 @@ begin
    APage.NextLink:=nil;
    FLastClean:=APage;
   end;
-  
+
  Result:=True;
 end;
 
@@ -42019,7 +42019,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -42058,10 +42058,10 @@ begin
      FLastClean:=nil;
     end;
   end;
-  
+
  APage.PrevLink:=nil;
  APage.NextLink:=nil;
- 
+
  Result:=True;
 end;
 
@@ -42076,7 +42076,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -42097,7 +42097,7 @@ begin
    APage.NextLink:=nil;
    FLastDirty:=APage;
   end;
-  
+
  Result:=True;
 end;
 
@@ -42112,7 +42112,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -42151,10 +42151,10 @@ begin
      FLastDirty:=nil;
     end;
   end;
-  
+
  APage.PrevLink:=nil;
  APage.NextLink:=nil;
- 
+
  Result:=True;
 end;
 
@@ -42173,17 +42173,17 @@ var
 begin
  {}
  Result:=False;
-  
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
-  
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.PrepareDeviceWrite: Page.Sector = ' + IntToStr(APage.Sector) + ' Page.Count = ' + IntToStr(APage.Count));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.PrepareDeviceWrite: Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
-  
+
  {Check Count}
  if ACount = APage.Count then
   begin
@@ -42199,28 +42199,28 @@ begin
      {$IFDEF CACHE_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.PrepareDeviceWrite: Caching Start Sectors (Sector = ' + IntToStr(APage.Sector) + ' Count = ' + IntToStr(ASector - APage.Sector) + ')');
      {$ENDIF}
-     
+
      {Cache starting sectors}
      if not ADevice.Controller.Read(ADevice,APage.Sector,ASector - APage.Sector,APage.Data^) then Exit;
-    end;    
-    
-   {Check Sector + Count} 
+    end;
+
+   {Check Sector + Count}
    if (ASector + ACount) < (APage.Sector + APage.Count) then
     begin
      {Write ends before end of page}
      {$IFDEF CACHE_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.PrepareDeviceWrite: Caching End Sectors (Sector = ' + IntToStr(ASector + ACount) + ' Count = ' + IntToStr((APage.Sector + APage.Count) - (ASector + ACount)) + ')');
      {$ENDIF}
-     
+
      {Cache ending sectors}
      Count:=(APage.Sector + APage.Count) - (ASector + ACount);
      Offset:=(ASector + ACount) - APage.Sector;
-     
+
      if not ADevice.Controller.Read(ADevice,ASector + ACount,Count,Pointer(APage.Data + (Offset shl ADevice.SectorShiftCount))^) then Exit;
     end;
-   
+
    Result:=True;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -42243,12 +42243,12 @@ begin
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.CalculateDevicePage: Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Check for Sector Size bigger than Page Size}
  if ADevice.SectorSize = 0 then Exit;
  if ADevice.SectorSize > FPageSize then Exit;
  if ASector >= ADevice.SectorCount then Exit;
- 
+
  {Calculate Page Count / Shift / Mask}
  if ADevice.PageCount = 0 then
   begin
@@ -42256,7 +42256,7 @@ begin
    if ADevice.PageCount = 0 then Exit;
    ADevice.PageShift:=CalculatePageShift(ADevice);
    ADevice.PageMask:=CalculatePageMask(ADevice);
-   
+
    {$IFDEF CACHE_DEBUG}
    if FILESYS_LOG_ENABLED then
     begin
@@ -42267,7 +42267,7 @@ begin
     end;
    {$ENDIF}
   end;
-  
+
  {Calculate Sector Count and Start Sector}
  SectorCount:=ADevice.PageCount;
  SectorStart:=(ASector and ADevice.PageMask);
@@ -42275,23 +42275,23 @@ begin
   begin
    SectorCount:=(ADevice.SectorCount - SectorStart);
   end;
-  
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.CalculateDevicePage: SectorCount = ' + IntToStr(SectorCount) + ' SectorStart = ' + IntToStr(SectorStart));
  {$ENDIF}
- 
+
  {Check Start Sector}
  if ASector > SectorStart then
   begin
    Dec(ACount,ASector - SectorStart);
   end;
-  
- {Check Sector Count} 
+
+ {Check Sector Count}
  if (ASector + ACount) > (SectorStart + SectorCount) then
   begin
    Dec(ACount,(ASector + ACount) - (SectorStart + SectorCount));
   end;
- 
+
  Result:=True;
 end;
 
@@ -42317,17 +42317,17 @@ begin
   if ACacheSize = 0 then Exit;
   if ACacheKeys = 0 then Exit;
   if APageSize = 0 then Exit;
- 
+
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.OpenCache: CacheSize = ' + IntToStr(ACacheSize) + ' CacheKeys = ' + IntToStr(ACacheKeys) + ' PageSize = ' + IntToStr(APageSize));
   {$ENDIF}
-  
+
   {Check for already Open}
   if FCacheSize > 0 then Exit;
-  
+
   {Check for silly Sizes}
   if APageSize > ACacheSize then Exit;
-  
+
   {Normalize the Sizes}
   PageSize:=RoundPageSize(APageSize);
   CacheSize:=RoundCacheSize(ACacheSize,PageSize);
@@ -42337,11 +42337,11 @@ begin
   if CacheKeys = 0 then Exit;
   if PageSize > CacheSize then Exit;
   PageCount:=CacheSize div PageSize;
-  
+
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.OpenCache: CacheSize = ' + IntToStr(CacheSize) + ' CacheKeys = ' + IntToStr(CacheKeys) + ' PageSize = ' + IntToStr(PageSize) + ' PageCount = ' + IntToStr(PageCount));
   {$ENDIF}
-  
+
   {Check for Caching Enabled}
   if ACacheMode <> cmNONE then
    begin
@@ -42349,11 +42349,11 @@ begin
     FKeyBits:=CacheKeys;
     FKeyMask:=keyHashMasks[FKeyBits];
     FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl FKeyShift); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
-    
+
     {Allocate the Memory}
     FBuffer:=GetAlignedMem(CacheSize,PageSize);
     if FBuffer = nil then Exit;
-    
+
     {Allocate the Pages}
     PageOffset:=0;
     for Count:=0 to PageCount - 1 do
@@ -42364,7 +42364,7 @@ begin
       Inc(PageOffset,PageSize);
      end;
    end;
-   
+
   {Set the Sizes}
   FPageSize:=PageSize;
   FPageCount:=PageCount;
@@ -42372,20 +42372,20 @@ begin
   FCacheKeys:=CacheKeys;
   FCacheMode:=ACacheMode;
   FCacheState:=csCLEAN;
-  
+
   {Create Timer}
   FTimer:=THashCacheTimer.Create(Self);
-  
+
   {Start Timer}
   FTimer.StartTimer(FILESYS_CACHE_TIMER_INTERVAL);
 
   {Create Thread}
   FThread:=THashCacheThread.Create(Self);
   {FThread.FreeOnTerminate:=True;} {Freed by CloseCache}
-  
+
   {Start Thread}
-  FThread.Start; 
-  
+  FThread.Start;
+
   Result:=True;
  finally
   ReleaseLock;
@@ -42406,62 +42406,62 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.CloseCache');
   {$ENDIF}
-  
+
   {Check for already Closed}
   if FCacheSize = 0 then Exit;
-  
+
   {Terminate Thread}
   FThread.Terminate;
-  
+
   {Stop Timer}
   FTimer.StopTimer;
 
   {Wait For Thread}
   FThread.WaitFor;
-  
+
   {Destroy Timer}
   FTimer.Free;
   FTimer:=nil;
- 
+
   {Destroy Thread}
   FThread.Free;
   FThread:=nil;
-  
+
   {Flush the Pages}
   NextPage:=FFirstDirty;
   while NextPage <> nil do
    begin
     CurrentPage:=NextPage;
     NextPage:=NextPage.NextLink;
-    
+
     FlushPage(CurrentPage);
    end;
-  
+
   {Free the Pages}
   NextPage:=FFirstPage;
   while NextPage <> nil do
    begin
     CurrentPage:=NextPage;
     NextPage:=NextPage.NextPage;
-    
+
     RemovePage(CurrentPage);
    end;
-  
+
   {Free the Memory}
   FreeMem(FBuffer);
   FBuffer:=nil;
-  
+
   {Free the Buckets}
   ZeroMemory(FKeyBuckets,(keyHashMasks[FKeyBits] + 1) shl FKeyShift); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
   FreeMem(FKeyBuckets);
   FKeyBuckets:=nil;
   FKeyBits:=0;
   FKeyMask:=0;
-  
+
   {Set the Sizes}
   FPageSize:=0;
   FPageCount:=0;
@@ -42469,7 +42469,7 @@ begin
   FCacheKeys:=0;
   FCacheMode:=cmNONE;
   FCacheState:=csCLEAN;
-  
+
   Result:=True;
  finally
   ReleaseLock;
@@ -42489,15 +42489,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
- 
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.DeviceRead: Device = ' + ADevice.Name + ' Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Get Buffer}
  Buffer:=@ABuffer;
  while ACount > 0 do
@@ -42508,61 +42508,61 @@ begin
      begin
       {Read Cached}
       Inc(FReadCached);
-      
+
       {Get Page}
       Page:=GetDevicePage(ADevice,ASector);
       if Page <> nil then
        begin
         {Found in Cache}
         Inc(FHitCount);
-        
+
         {Get Count}
         OffsetCount:=ASector - Page.Sector;           {Offset from Page Sector to Read Sector}
         ReadCount:=Page.Count - OffsetCount;          {Number of Sectors to Read from Page}
         if ReadCount > ACount then ReadCount:=ACount;
-        
+
         {Read from Page to Buffer}
         System.Move(Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
-        
+
         {Update Page}
         Page.PageTime:=GetTickCount64;
         if not UpdateClean(Page) then Exit; {Does nothing if Dirty}
-        
+
         {Update Count}
         Dec(ACount,ReadCount);
-        
+
         {Update Buffer and Sector}
         if ACount > 0 then
          begin
           Inc(Buffer,ReadCount shl ADevice.SectorShiftCount);
           Inc(ASector,ReadCount);
-         end; 
-        
+         end;
+
         Result:=True;
        end
       else
        begin
         {Not Found in Cache}
         Inc(FMissCount);
-        
+
         {Allocate a Page}
         Page:=AllocDevicePage(ADevice,ASector,False);
         if Page <> nil then
          begin
           {Allocate Succeeded}
           Inc(FSuccessCount);
-          
+
           {Get Count}
           OffsetCount:=ASector - Page.Sector;           {Offset from Page Sector to Read Sector}
           ReadCount:=Page.Count - OffsetCount;          {Number of Sectors to Read from Page}
-          if ReadCount > ACount then ReadCount:=ACount; 
-          
+          if ReadCount > ACount then ReadCount:=ACount;
+
           {Read from Device to Page}
           if not ADevice.Controller.Read(ADevice,Page.Sector,Page.Count,Page.Data^) then Exit;
-          
+
           {Read from Page to Buffer}
           System.Move(Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
-          
+
           {PageTime updated by AllocDevicePage}
          end
         else
@@ -42573,21 +42573,21 @@ begin
           {Get Count}
           ReadCount:=ACount;
           if not CalculateDevicePage(ADevice,ASector,ReadCount) then Exit;
-          
+
           {Direct Read}
           if not ADevice.Controller.Read(ADevice,ASector,ReadCount,Buffer^) then Exit;
          end;
-         
+
         {Update Count}
         Dec(ACount,ReadCount);
-        
+
         {Update Buffer and Sector}
         if ACount > 0 then
          begin
           Inc(Buffer,ReadCount shl ADevice.SectorShiftCount);
           Inc(ASector,ReadCount);
-         end; 
-        
+         end;
+
         Result:=True;
        end;
      end
@@ -42595,17 +42595,17 @@ begin
      begin
       {No Cache}
       Inc(FReadDirect);
-      
+
       {Direct Read}
       Result:=ADevice.Controller.Read(ADevice,ASector,ACount,Buffer^);
-      
+
       {Update Count}
       Dec(ACount,ACount);
      end;
    finally
     ReleaseLock;
    end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -42625,11 +42625,11 @@ begin
  if FDriver = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
- 
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.DeviceWrite: Device = ' + ADevice.Name + ' Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Get Buffer}
  Buffer:=@ABuffer;
  while ACount > 0 do
@@ -42642,71 +42642,71 @@ begin
        begin
         {Write Back Cached}
         Inc(FWriteBack);
-        
+
         {Get Page}
         Page:=GetDevicePage(ADevice,ASector);
         if Page <> nil then
          begin
           {Found in Cache}
           Inc(FHitCount);
-          
+
           {Get Count}
           OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Write Sector}
           WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
           if WriteCount > ACount then WriteCount:=ACount;
-          
+
           {Write to Page from Buffer}
           System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
-          
+
           {Update Page}
           Page.PageTime:=GetTickCount64;
           if Page.PageState <> psDIRTY then Page.WriteTime:=GetTickCount64;
           if not AddDirty(Page) then Exit;
-          
+
           {Update State}
           FCacheState:=csDIRTY;
-          
+
           {Update Count}
           Dec(ACount,WriteCount);
-          
+
           {Update Buffer and Sector}
           if ACount > 0 then
            begin
             Inc(Buffer,WriteCount shl ADevice.SectorShiftCount);
             Inc(ASector,WriteCount);
-           end; 
-           
+           end;
+
           Result:=True;
          end
         else
          begin
           {Not Found in Cache}
           Inc(FMissCount);
-          
+
           {Allocate a Page}
           Page:=AllocDevicePage(ADevice,ASector,True);
           if Page <> nil then
            begin
             {Allocate Succeeded}
             Inc(FSuccessCount);
-            
+
             {Get Count}
             OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Write Sector}
             WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
             if WriteCount > ACount then WriteCount:=ACount;
-            
+
             {Check for less than Page}
             if WriteCount < Page.Count then
              begin
               {Prepare Page for Write}
               if not PrepareDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
              end;
-            
+
             {Write to Page from Buffer}
             System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
-            
+
             {PageTime and WriteTime updated by AllocDevicePage}
-            
+
             {Update State}
             FCacheState:=csDIRTY;
            end
@@ -42714,25 +42714,25 @@ begin
            begin
             {Allocate Failed}
             Inc(FFailCount);
-    
+
             {Get Count}
             WriteCount:=ACount;
             if not CalculateDevicePage(ADevice,ASector,WriteCount) then Exit;
-    
+
             {Direct Write}
             if not ADevice.Controller.Write(ADevice,ASector,WriteCount,Buffer^) then Exit;
            end;
-           
+
           {Update Count}
           Dec(ACount,WriteCount);
-          
+
           {Update Buffer and Sector}
           if ACount > 0 then
            begin
             Inc(Buffer,WriteCount shl ADevice.SectorShiftCount);
             Inc(ASector,WriteCount);
-           end; 
-          
+           end;
+
           Result:=True;
          end;
        end
@@ -42740,96 +42740,96 @@ begin
        begin
         {Write Through Cached (ReadOnly Cache or Removable Device)}
         Inc(FWriteThrough);
-        
+
         {Get Page}
         Page:=GetDevicePage(ADevice,ASector);
         if Page <> nil then
          begin
           {Found in Cache}
           Inc(FHitCount);
-          
+
           {Get Count}
           OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Write Sector}
           WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
           if WriteCount > ACount then WriteCount:=ACount;
-          
+
           {Write to Page from Buffer}
           System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
-          
+
           {Write from Page to Device}
           if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
-          
+
           {Update Page}
           Page.PageTime:=GetTickCount64;
           if not UpdateClean(Page) then Exit; {Read Only Page is always Clean}
-          
+
           {Update Count}
           Dec(ACount,WriteCount);
-          
+
           {Update Buffer and Sector}
           if ACount > 0 then
            begin
             Inc(Buffer,WriteCount shl ADevice.SectorShiftCount);
             Inc(ASector,WriteCount);
-           end; 
-          
+           end;
+
           Result:=True;
          end
         else
          begin
           {Not Found in Cache}
           Inc(FMissCount);
-          
+
           {Allocate a Page}
           Page:=AllocDevicePage(ADevice,ASector,False); {Allocate Clean}
           if Page <> nil then
            begin
             {Allocate Succeeded}
             Inc(FSuccessCount);
-            
+
             {Get Count}
             OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Write Sector}
             WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
             if WriteCount > ACount then WriteCount:=ACount;
-            
+
             {Check for less than Page}
             if WriteCount < Page.Count then
              begin
               {Prepare Page for Write}
               if not PrepareDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
              end;
-            
+
             {Write to Page from Buffer}
             System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
-            
+
             {Write from Page to Device}
             if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
-  
+
             {PageTime updated by AllocDevicePage}
            end
           else
            begin
             {Allocate Failed}
             Inc(FFailCount);
-        
+
             {Get Count}
             WriteCount:=ACount;
             if not CalculateDevicePage(ADevice,ASector,WriteCount) then Exit;
-        
+
             {Direct Write}
             if not ADevice.Controller.Write(ADevice,ASector,WriteCount,Buffer^) then Exit;
            end;
-           
+
           {Update Count}
           Dec(ACount,WriteCount);
-          
+
           {Update Buffer and Sector}
           if ACount > 0 then
            begin
             Inc(Buffer,WriteCount shl ADevice.SectorShiftCount);
             Inc(ASector,WriteCount);
-           end; 
-          
+           end;
+
           Result:=True;
          end;
        end;
@@ -42838,17 +42838,17 @@ begin
      begin
       {No Cache}
       Inc(FWriteDirect);
-      
+
       {Direct Write}
       Result:=ADevice.Controller.Write(ADevice,ASector,ACount,Buffer^);
-      
+
       {Update Count}
       Dec(ACount,ACount);
      end;
    finally
     ReleaseLock;
    end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -42862,15 +42862,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
- 
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.DeviceErase: Device = ' + ADevice.Name + ' Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Check Count}
  while ACount > 0 do
   begin
@@ -42887,29 +42887,29 @@ begin
         OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Erase Sector}
         EraseCount:=Page.Count - OffsetCount;           {Number of Sectors to Erase from Page}
         if EraseCount > ACount then EraseCount:=ACount;
-        
+
         {Check for Dirty}
         if Page.PageState = psDIRTY then
          begin
           {Flush Page}
           if not FlushPage(Page) then Exit;
          end;
-         
+
         {Discard Page}
         if not DiscardPage(Page) then Exit;
-        
+
         {Erase from Device}
         if not ADevice.Controller.Erase(ADevice,ASector,EraseCount) then Exit;
-        
+
         {Update Count}
         Dec(ACount,EraseCount);
-    
+
         {Update Sector}
         if ACount > 0 then
          begin
           Inc(ASector,EraseCount);
-         end; 
-    
+         end;
+
         Result:=True;
        end
       else
@@ -42918,19 +42918,19 @@ begin
         {Get Count}
         EraseCount:=ACount;
         if not CalculateDevicePage(ADevice,ASector,EraseCount) then Exit;
-        
+
         {Erase from Device}
         if not ADevice.Controller.Erase(ADevice,ASector,EraseCount) then Exit;
-        
+
         {Update Count}
         Dec(ACount,EraseCount);
-    
+
         {Update Sector}
         if ACount > 0 then
          begin
           Inc(ASector,EraseCount);
-         end; 
-    
+         end;
+
         Result:=True;
        end;
      end
@@ -42939,14 +42939,14 @@ begin
       {Not Cached}
       {Direct Erase}
       Result:=ADevice.Controller.Erase(ADevice,ASector,ACount);
-      
+
       {Update Count}
       Dec(ACount,ACount);
      end;
    finally
     ReleaseLock;
    end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -42960,25 +42960,25 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.GetDevicePage: Sector = ' + IntToStr(ASector));
   {$ENDIF}
-  
+
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
   if ADevice.PageCount = 0 then Exit;
-  
+
   {Get Hash}
   SectorStart:=(ASector and ADevice.PageMask);
   KeyHash:=(SectorStart shr ADevice.PageShift);
-  
+
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.GetDevicePage: SectorStart = ' + IntToStr(SectorStart) + ' KeyHash = ' + IntToStr(KeyHash));
   {$ENDIF}
-  
+
   {Check Pages}
   Page:=KeyFirst(KeyHash);
   while Page <> nil do
@@ -42992,12 +42992,12 @@ begin
         {$IFDEF CACHE_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.GetDevicePage: Page.Sector = ' + IntToStr(Page.Sector) + ' Page.Count = ' + IntToStr(Page.Count));
         {$ENDIF}
-        
+
         Result:=Page;
         Exit;
        end;
      end;
-     
+
     Page:=THashCachePage(Page).KeyNext;
    end;
  finally
@@ -43012,18 +43012,18 @@ function THashCache.GetEmptyPage:TCachePage;
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   {Get First Empty Page}
   Result:=FFirstEmpty;
   if Result <> nil then Exit;
-  
+
   {If no Empty then Discard Oldest}
   if not DiscardCache(True,False) then Exit;
-  
+
   {Get First Empty Page}
   Result:=FFirstEmpty;
  finally
@@ -43042,21 +43042,21 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.AllocDevicePage: Sector = ' + IntToStr(ASector));
   {$ENDIF}
-  
+
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
-  
+
   {Check for Sector Size bigger than Page Size}
   if ADevice.SectorSize = 0 then Exit;
   if ADevice.SectorSize > FPageSize then Exit;
   if ASector >= ADevice.SectorCount then Exit;
-  
+
   {Calculate Page Count / Shift / Mask}
   if ADevice.PageCount = 0 then
    begin
@@ -43064,7 +43064,7 @@ begin
     if ADevice.PageCount = 0 then Exit;
     ADevice.PageShift:=CalculatePageShift(ADevice);
     ADevice.PageMask:=CalculatePageMask(ADevice);
-    
+
     {$IFDEF CACHE_DEBUG}
     if FILESYS_LOG_ENABLED then
      begin
@@ -43075,7 +43075,7 @@ begin
      end;
     {$ENDIF}
    end;
-   
+
   {Calculate Sector Count and Start Sector}
   SectorCount:=ADevice.PageCount;
   SectorStart:=(ASector and ADevice.PageMask);
@@ -43083,7 +43083,7 @@ begin
    begin
     SectorCount:=(ADevice.SectorCount - SectorStart);
    end;
-   
+
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.AllocDevicePage: SectorCount = ' + IntToStr(SectorCount) + ' SectorStart = ' + IntToStr(SectorStart));
   {$ENDIF}
@@ -43102,11 +43102,11 @@ begin
   if Page <> nil then
    begin
     THashCachePage(Page).KeyHash:=(SectorStart shr ADevice.PageShift);
-    
+
     {$IFDEF CACHE_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.AllocDevicePage: KeyHash = ' + IntToStr(THashCachePage(Page).KeyHash));
     {$ENDIF}
-    
+
     if AWrite then
      begin
       if AddDirty(Page) then
@@ -43117,7 +43117,7 @@ begin
         Page.PageTime:=GetTickCount64;
         Page.WriteTime:=GetTickCount64;
         Page.PageType:=ptDEVICE;
-        
+
         Result:=Page;
        end;
      end
@@ -43130,7 +43130,7 @@ begin
         Page.Count:=SectorCount;
         Page.PageTime:=GetTickCount64;
         Page.PageType:=ptDEVICE;
-        
+
         Result:=Page;
        end;
      end;
@@ -43147,12 +43147,12 @@ function THashCache.DiscardPage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
   if APage = nil then Exit;
-  
+
   {Check for Clean}
   if APage.PageState = psCLEAN then
    begin
@@ -43166,7 +43166,7 @@ begin
     APage.PageTime:=0;
     APage.WriteTime:=0;
     APage.PageType:=ptNONE;
-    
+
     Result:=True;
    end
   else
@@ -43175,7 +43175,7 @@ begin
     if not AddUnknown(APage) then Exit;
 
     Inc(FUnknownCount);
-    
+
     Result:=True;
    end;
  finally
@@ -43194,14 +43194,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   {Get Counter}
   CurrentTime:=GetTickCount64;
-  
+
   {Check Clean Pages}
   NextPage:=FFirstClean;
   while NextPage <> nil do
@@ -43218,7 +43218,7 @@ begin
       Break; {No more pages old enough to Discard}
      end;
    end;
-   
+
   Result:=True;
  finally
   ReleaseLock;
@@ -43235,7 +43235,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -43247,26 +43247,26 @@ begin
    begin
     CurrentPage:=NextPage;
     NextPage:=NextPage.NextLink;
-    
+
     if (CurrentPage.PageType = ptDEVICE) and (CurrentPage.Device = ADevice) then
      begin
       FlushPage(CurrentPage);
      end;
    end;
-   
+
   {Discard Clean Pages}
   NextPage:=FFirstClean;
   while NextPage <> nil do
    begin
     CurrentPage:=NextPage;
     NextPage:=NextPage.NextLink;
-    
+
     if (CurrentPage.PageType = ptDEVICE) and (CurrentPage.Device = ADevice) then
      begin
       DiscardPage(CurrentPage);
      end;
    end;
-   
+
   Result:=True;
  finally
   ReleaseLock;
@@ -43280,7 +43280,7 @@ function THashCache.FlushPage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -43288,7 +43288,7 @@ begin
 
   {Unschedule Page}
   UnschedulePage(APage);
-  
+
   {Check for Dirty}
   if APage.PageState = psDIRTY then
    begin
@@ -43301,7 +43301,7 @@ begin
          if not AddClean(APage) then Exit;
          Inc(FFlushCount);
          APage.WriteTime:=0;
-         
+
          Result:=True;
         end;
        ptDEVICE:begin
@@ -43309,12 +43309,12 @@ begin
          if APage.Device = nil then Exit;
          if APage.Device.Controller = nil then Exit;
          if not APage.Device.Controller.Write(APage.Device,APage.Sector,APage.Count,APage.Data^) then Exit;
-         
+
          {Return to Clean}
          if not AddClean(APage) then Exit;
          Inc(FFlushCount);
          APage.WriteTime:=0;
-         
+
          Result:=True;
         end;
       end;
@@ -43325,7 +43325,7 @@ begin
       if not AddClean(APage) then Exit;
       Inc(FFlushCount);
       APage.WriteTime:=0;
-      
+
       Result:=True;
      end;
    end
@@ -43335,7 +43335,7 @@ begin
     if not AddUnknown(APage) then Exit;
     Inc(FUnknownCount);
     APage.WriteTime:=0;
-    
+
     Result:=True;
    end;
 
@@ -43361,12 +43361,12 @@ begin
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.FlushPageEx (Page=' + PtrToHex(APage) + ' FirstDirty=' + PtrToHex(FFirstDirty) + ')');
  {$ENDIF}
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
   if APage = nil then Exit;
- 
+
   {Check Page}
   Page:=FFirstDirty;
   if APage <> Page then
@@ -43378,8 +43378,8 @@ begin
       {Get Next}
       Page:=Page.NextLink;
      end;
-   end;  
-   
+   end;
+
   {Check Page}
   if (APage = Page) and ((APage.WriteTime + FFlushTimeout) <= GetTickCount64) then
    begin
@@ -43395,7 +43395,7 @@ begin
            if not AddClean(APage) then Exit;
            Inc(FFlushCount);
            APage.WriteTime:=0;
-           
+
            Result:=True;
           end;
          ptDEVICE:begin
@@ -43403,12 +43403,12 @@ begin
            if APage.Device = nil then Exit;
            if APage.Device.Controller = nil then Exit;
            if not APage.Device.Controller.Write(APage.Device,APage.Sector,APage.Count,APage.Data^) then Exit;
-           
+
            {Return to Clean}
            if not AddClean(APage) then Exit;
            Inc(FFlushCount);
            APage.WriteTime:=0;
-           
+
            Result:=True;
           end;
         end;
@@ -43419,7 +43419,7 @@ begin
         if not AddClean(APage) then Exit;
         Inc(FFlushCount);
         APage.WriteTime:=0;
-        
+
         Result:=True;
        end;
      end
@@ -43429,10 +43429,10 @@ begin
       if not AddUnknown(APage) then Exit;
       Inc(FUnknownCount);
       APage.WriteTime:=0;
-      
+
       Result:=True;
      end;
-   
+
     {Update Cache State}
     if FFirstDirty = nil then FCacheState:=csCLEAN;
   {$IFDEF CACHE_DEBUG}
@@ -43445,7 +43445,7 @@ begin
      end
     else
      begin
-      if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.FlushPageEx - Not Ready Page (Page=' + PtrToHex(APage) + ' WriteTime=' + IntToStr(APage.WriteTime) + ' TickCount=' + IntToStr(GetTickCount64) + ')'); 
+      if FILESYS_LOG_ENABLED then FileSysLogDebug('THashCache.FlushPageEx - Not Ready Page (Page=' + PtrToHex(APage) + ' WriteTime=' + IntToStr(APage.WriteTime) + ' TickCount=' + IntToStr(GetTickCount64) + ')');
      end;
   {$ENDIF}
    end;
@@ -43465,28 +43465,28 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   {Check Cache State}
   if FCacheState = csDIRTY then
    begin
     {Get Counter}
     CurrentTime:=GetTickCount64;
-    
+
     {Check Dirty Pages}
     NextPage:=FFirstDirty;
     while NextPage <> nil do
      begin
       CurrentPage:=NextPage;
       NextPage:=NextPage.NextLink;
-      
+
       if (AFirst) or (AAll) or ((CurrentPage.WriteTime + FFlushTimeout) < CurrentTime) then
        begin
         FlushPage(CurrentPage);
-        
+
         if AFirst then Break; {Flush only the First Page}
        end
       else
@@ -43494,11 +43494,11 @@ begin
         Break; {No more pages old enough to Flush}
        end;
      end;
-     
+
     {Update Cache State}
     if FFirstDirty = nil then FCacheState:=csCLEAN;
    end;
-   
+
   Result:=True;
  finally
   ReleaseLock;
@@ -43506,12 +43506,12 @@ begin
 end;
 
 {==============================================================================}
-   
+
 function THashCache.CheckTimer:Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
 
@@ -43525,7 +43525,7 @@ function THashCache.ProcessTimer:Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
 
@@ -43534,35 +43534,35 @@ begin
 end;
 
 {==============================================================================}
-   
+
 function THashCache.SchedulePage(APage:TCachePage;ATimeout:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
- 
+
  {Check Page}
  {if APage = nil then Exit;} {Do not check}
- 
+
  {Schedule Page}
  Result:=FTimer.SchedulePage(APage,ATimeout);
 end;
 
 {==============================================================================}
 
-function THashCache.UnschedulePage(APage:TCachePage):Boolean; 
+function THashCache.UnschedulePage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
- 
+
  {Check Page}
  {if APage = nil then Exit;} {Do not check}
- 
+
  {Unschedule Page}
  Result:=FTimer.UnschedulePage(APage);
 end;
@@ -43590,8 +43590,8 @@ begin
  FCacheKeys:=0;
  FCacheMode:=cmNONE;
  FCacheState:=csCLEAN;
- FFlushTimeout:=FILESYS_CACHE_FLUSH_TIMEOUT;  
- FDiscardTimeout:=FILESYS_CACHE_DISCARD_TIMEOUT; 
+ FFlushTimeout:=FILESYS_CACHE_FLUSH_TIMEOUT;
+ FDiscardTimeout:=FILESYS_CACHE_DISCARD_TIMEOUT;
 
  FReadCached:=0;
  FReadDirect:=0;
@@ -43643,13 +43643,13 @@ begin
   FLastPage:=nil;
 
   FBuffer:=nil;
-  
+
   FKeyBuckets:=nil;
-  
+
   FDriver:=nil;
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -43677,7 +43677,7 @@ function TIncrementalCache.AddPage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -43685,10 +43685,10 @@ begin
 
   if not LinkPage(APage) then Exit;
   APage.PageState:=psUNKNOWN;
-  
+
   if not LinkEmpty(APage) then Exit;
   APage.PageState:=psEMPTY;
-  
+
   Result:=True;
  finally
   ReleaseLock;
@@ -43702,7 +43702,7 @@ function TIncrementalCache.RemovePage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -43711,41 +43711,41 @@ begin
   case APage.PageState of
    psUNKNOWN:begin
      APage.PageState:=psUNKNOWN;
-     
+
      if not UnlinkPage(APage) then Exit;
      APage.Free;
-     
+
      Result:=True;
     end;
    psEMPTY:begin
      if not UnlinkEmpty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not UnlinkPage(APage) then Exit;
      APage.Free;
-     
+
      Result:=True;
     end;
    psCLEAN:begin
      if not KeyUnlink(THashCachePage(APage)) then Exit;
-     
+
      if not UnlinkClean(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not UnlinkPage(APage) then Exit;
      APage.Free;
-     
+
      Result:=True;
     end;
    psDIRTY:begin
      if not KeyUnlink(THashCachePage(APage)) then Exit;
-     
+
      if not UnlinkDirty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not UnlinkPage(APage) then Exit;
      APage.Free;
-     
+
      Result:=True;
     end;
   end;
@@ -43761,7 +43761,7 @@ function TIncrementalCache.AddEmpty(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -43771,7 +43771,7 @@ begin
    psUNKNOWN:begin
      if not LinkEmpty(APage) then Exit;
      APage.PageState:=psEMPTY;
-     
+
      Result:=True;
     end;
    psEMPTY:begin
@@ -43779,24 +43779,24 @@ begin
     end;
    psCLEAN:begin
      if not KeyUnlink(THashCachePage(APage)) then Exit;
-     
+
      if not UnlinkClean(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkEmpty(APage) then Exit;
      APage.PageState:=psEMPTY;
-     
+
      Result:=True;
     end;
    psDIRTY:begin
      if not KeyUnlink(THashCachePage(APage)) then Exit;
-     
+
      if not UnlinkDirty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkEmpty(APage) then Exit;
      APage.PageState:=psEMPTY;
-     
+
      Result:=True;
     end;
   end;
@@ -43812,7 +43812,7 @@ function TIncrementalCache.AddClean(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -43822,20 +43822,20 @@ begin
    psUNKNOWN:begin
      if not LinkClean(APage) then Exit;
      APage.PageState:=psCLEAN;
-     
+
      if not KeyLink(THashCachePage(APage)) then Exit;
-     
+
      Result:=True;
     end;
    psEMPTY:begin
      if not UnlinkEmpty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkClean(APage) then Exit;
      APage.PageState:=psCLEAN;
-     
+
      if not KeyLink(THashCachePage(APage)) then Exit;
-     
+
      Result:=True;
     end;
    psCLEAN:begin
@@ -43844,12 +43844,12 @@ begin
    psDIRTY:begin
      if not UnlinkDirty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkClean(APage) then Exit;
      APage.PageState:=psCLEAN;
-     
+
      {No need to KeyLink}
-     
+
      Result:=True;
     end;
   end;
@@ -43865,7 +43865,7 @@ function TIncrementalCache.AddDirty(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -43875,31 +43875,31 @@ begin
    psUNKNOWN:begin
      if not LinkDirty(APage) then Exit;
      APage.PageState:=psDIRTY;
-     
+
      if not KeyLink(THashCachePage(APage)) then Exit;
-     
+
      Result:=SchedulePage(APage,FFlushTimeout);
     end;
    psEMPTY:begin
      if not UnlinkEmpty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkDirty(APage) then Exit;
      APage.PageState:=psDIRTY;
-     
+
      if not KeyLink(THashCachePage(APage)) then Exit;
-     
+
      Result:=SchedulePage(APage,FFlushTimeout);
     end;
    psCLEAN:begin
      if not UnlinkClean(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkDirty(APage) then Exit;
      APage.PageState:=psDIRTY;
-     
+
      {No need to KeyLink}
-     
+
      Result:=SchedulePage(APage,FFlushTimeout);
     end;
    psDIRTY:begin
@@ -43918,7 +43918,7 @@ function TIncrementalCache.AddUnknown(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -43931,23 +43931,23 @@ begin
    psEMPTY:begin
      if not UnlinkEmpty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      Result:=True;
     end;
    psCLEAN:begin
      if not KeyUnlink(THashCachePage(APage)) then Exit;
-     
+
      if not UnlinkClean(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      Result:=True;
     end;
    psDIRTY:begin
      if not KeyUnlink(THashCachePage(APage)) then Exit;
-     
+
      if not UnlinkDirty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      Result:=True;
     end;
   end;
@@ -43963,7 +43963,7 @@ function TIncrementalCache.UpdateClean(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -43973,12 +43973,12 @@ begin
    psCLEAN:begin
      if not UnlinkClean(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkClean(APage) then Exit;
      APage.PageState:=psCLEAN;
-     
+
      {No need to KeyLink}
-     
+
      Result:=True;
     end;
    psDIRTY:begin
@@ -43997,7 +43997,7 @@ function TIncrementalCache.UpdateDirty(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -44010,12 +44010,12 @@ begin
    psDIRTY:begin
      if not UnlinkDirty(APage) then Exit;
      APage.PageState:=psUNKNOWN;
-     
+
      if not LinkDirty(APage) then Exit;
      APage.PageState:=psDIRTY;
-     
+
      {No need to KeyLink}
-     
+
      Result:=True;
     end;
   end;
@@ -44050,9 +44050,9 @@ function TIncrementalCache.RoundCacheSize(ACacheSize,APageSize:LongWord):LongWor
 begin
  {}
  Result:=0;
- 
+
  if APageSize = 0 then Exit;
-  
+
  {Round up to next multiple of Page Size}
  Result:=APageSize;
  while Result < ACacheSize do
@@ -44070,9 +44070,9 @@ function TIncrementalCache.AdjustCacheKeys(ACacheKeys:LongWord):LongWord;
 begin
  {}
  Result:=0;
- 
+
  if ACacheKeys = 0 then Exit;
-  
+
  Result:=ACacheKeys;
  if Result < keyHashMinBits then Result:=keyHashMinBits;
  if Result > keyHashMaxBits then Result:=keyHashMaxBits;
@@ -44089,11 +44089,11 @@ var
 begin
  {}
  Result:=0;
- 
+
  if FPageSize = 0 then Exit;
  if ADevice = nil then Exit;
  if ADevice.SectorSize = 0 then Exit;
-  
+
  Result:=1;
  Value:=ADevice.SectorSize;
  while Value < FPageSize do
@@ -44116,10 +44116,10 @@ function TIncrementalCache.CalculatePageShift(ADevice:TDiskDevice):Word;
 begin
  {}
  Result:=0;
- 
+
  if ADevice = nil then Exit;
  if ADevice.PageCount = 0 then Exit;
-  
+
  while (ADevice.PageCount shr Result) > 1 do
   begin
    Inc(Result);
@@ -44135,10 +44135,10 @@ function TIncrementalCache.CalculatePageMask(ADevice:TDiskDevice):LongWord;
 begin
  {}
  Result:=$FFFFFFFF;
- 
+
  if ADevice = nil then Exit;
  if ADevice.PageCount = 0 then Exit;
-  
+
  Result:=((Result shr ADevice.PageShift) shl ADevice.PageShift);
 end;
 
@@ -44154,12 +44154,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  if APage = nil then Exit;
- 
+
  {Get Offset}
  Offset:=(APage.KeyHash and FKeyMask) shl FKeyShift;
- 
+
  {Get First Key}
  FirstKey:=THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
  if FirstKey = nil then
@@ -44177,7 +44177,7 @@ begin
    APage.KeyNext:=FirstKey;
    THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=APage;
   end;
-  
+
  Result:=True;
 end;
 
@@ -44193,9 +44193,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if APage = nil then Exit;
- 
+
  if APage.KeyPrev <> nil then
   begin
    {Not First Object}
@@ -44217,7 +44217,7 @@ begin
   begin
    {Get Offset}
    Offset:=(APage.KeyHash and FKeyMask) shl FKeyShift;
-   
+
    {Is First Object}
    if APage.KeyNext <> nil then
     begin
@@ -44232,10 +44232,10 @@ begin
      THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^):=nil;
     end;
   end;
-  
+
  APage.KeyPrev:=nil;
  APage.KeyNext:=nil;
- 
+
  Result:=True;
 end;
 
@@ -44248,12 +44248,12 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FKeyBuckets = nil then Exit;
- 
+
  {Get Offset}
  Offset:=(AKeyHash and FKeyMask) shl FKeyShift;
- 
+
  {Get First Key}
  Result:=THashCachePage(Pointer(PtrUInt(FKeyBuckets) + Offset)^);
 end;
@@ -44269,7 +44269,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -44290,7 +44290,7 @@ begin
    APage.NextPage:=nil;
    FLastPage:=APage;
   end;
-  
+
  Result:=True;
 end;
 
@@ -44305,7 +44305,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -44344,10 +44344,10 @@ begin
      FLastPage:=nil;
     end;
   end;
- 
+
  APage.PrevPage:=nil;
  APage.NextPage:=nil;
- 
+
  Result:=True;
 end;
 
@@ -44362,7 +44362,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -44383,7 +44383,7 @@ begin
    APage.NextLink:=nil;
    FLastEmpty:=APage;
   end;
-  
+
  Result:=True;
 end;
 
@@ -44398,7 +44398,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -44437,10 +44437,10 @@ begin
      FLastEmpty:=nil;
     end;
   end;
-  
+
  APage.PrevLink:=nil;
  APage.NextLink:=nil;
- 
+
  Result:=True;
 end;
 
@@ -44455,7 +44455,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -44476,7 +44476,7 @@ begin
    APage.NextLink:=nil;
    FLastClean:=APage;
   end;
-  
+
  Result:=True;
 end;
 
@@ -44491,7 +44491,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -44530,10 +44530,10 @@ begin
      FLastClean:=nil;
     end;
   end;
-  
+
  APage.PrevLink:=nil;
  APage.NextLink:=nil;
- 
+
  Result:=True;
 end;
 
@@ -44548,7 +44548,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -44569,7 +44569,7 @@ begin
    APage.NextLink:=nil;
    FLastDirty:=APage;
   end;
-  
+
  Result:=True;
 end;
 
@@ -44584,7 +44584,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
 
@@ -44623,10 +44623,10 @@ begin
      FLastDirty:=nil;
     end;
   end;
-  
+
  APage.PrevLink:=nil;
  APage.NextLink:=nil;
- 
+
  Result:=True;
 end;
 
@@ -44785,7 +44785,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
  if ADevice = nil then Exit;
@@ -44795,14 +44795,14 @@ begin
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.PrepareDeviceWrite: Page.Sector = ' + IntToStr(APage.Sector) + ' Page.Count = ' + IntToStr(APage.Count));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.PrepareDeviceWrite: Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Get Page}
  Page:=TIncrementalCachePage(APage);
- 
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.PrepareDeviceWrite: Page.ReadSector = ' + IntToStr(Page.ReadSector) + ' Page.ReadCount = ' + IntToStr(Page.ReadCount));
  {$ENDIF}
- 
+
  {Check Page}
  if Page.ReadCount = Page.Count then
   begin
@@ -44856,7 +44856,7 @@ begin
 
          {Read from Device to Page}
          if not ADevice.Controller.Read(ADevice,GapFirst,GapCount,Pointer(PtrUInt(Page.Data) + ((GapFirst - Page.Sector) shl ADevice.SectorShiftCount))^) then Exit;
-        end; 
+        end;
       end;
 
      {Check After}
@@ -44877,7 +44877,7 @@ begin
 
          {Read from Device to Page}
          if not ADevice.Controller.Read(ADevice,GapFirst,GapCount,Pointer(PtrUInt(Page.Data) + ((GapFirst - Page.Sector) shl ADevice.SectorShiftCount))^) then Exit;
-        end; 
+        end;
       end;
 
      Result:=True;
@@ -44904,7 +44904,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if APage = nil then Exit;
  if ADevice = nil then Exit;
@@ -44914,14 +44914,14 @@ begin
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.CompleteDeviceWrite: Page.Sector = ' + IntToStr(APage.Sector) + ' Page.Count = ' + IntToStr(APage.Count));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.CompleteDeviceWrite: Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Get Page}
  Page:=TIncrementalCachePage(APage);
- 
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.CompleteDeviceWrite: Page.DirtySector = ' + IntToStr(Page.DirtySector) + ' Page.DirtyCount = ' + IntToStr(Page.DirtyCount));
  {$ENDIF}
- 
+
  {Check Page}
  if Page.DirtyCount = Page.Count then
   begin
@@ -44933,7 +44933,7 @@ begin
    {Clean Page}
    Page.DirtySector:=ASector;
    Page.DirtyCount:=ACount;
-     
+
    Result:=True;
   end
  else
@@ -44979,7 +44979,7 @@ begin
 
      Result:=True;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -45002,12 +45002,12 @@ begin
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.CalculateDevicePage: Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Check for Sector Size bigger than Page Size}
  if ADevice.SectorSize = 0 then Exit;
  if ADevice.SectorSize > FPageSize then Exit;
  if ASector >= ADevice.SectorCount then Exit;
- 
+
  {Calculate Page Count / Shift / Mask}
  if ADevice.PageCount = 0 then
   begin
@@ -45015,7 +45015,7 @@ begin
    if ADevice.PageCount = 0 then Exit;
    ADevice.PageShift:=CalculatePageShift(ADevice);
    ADevice.PageMask:=CalculatePageMask(ADevice);
-   
+
    {$IFDEF CACHE_DEBUG}
    if FILESYS_LOG_ENABLED then
     begin
@@ -45026,7 +45026,7 @@ begin
     end;
    {$ENDIF}
   end;
-  
+
  {Calculate Sector Count and Start Sector}
  SectorCount:=ADevice.PageCount;
  SectorStart:=(ASector and ADevice.PageMask);
@@ -45034,23 +45034,23 @@ begin
   begin
    SectorCount:=(ADevice.SectorCount - SectorStart);
   end;
-  
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.CalculateDevicePage: SectorCount = ' + IntToStr(SectorCount) + ' SectorStart = ' + IntToStr(SectorStart));
  {$ENDIF}
- 
+
  {Check Start Sector}
  if ASector > SectorStart then
   begin
    Dec(ACount,ASector - SectorStart);
   end;
-  
- {Check Sector Count} 
+
+ {Check Sector Count}
  if (ASector + ACount) > (SectorStart + SectorCount) then
   begin
    Dec(ACount,(ASector + ACount) - (SectorStart + SectorCount));
   end;
- 
+
  Result:=True;
 end;
 
@@ -45076,17 +45076,17 @@ begin
   if ACacheSize = 0 then Exit;
   if ACacheKeys = 0 then Exit;
   if APageSize = 0 then Exit;
- 
+
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.OpenCache: CacheSize = ' + IntToStr(ACacheSize) + ' CacheKeys = ' + IntToStr(ACacheKeys) + ' PageSize = ' + IntToStr(APageSize));
   {$ENDIF}
-  
+
   {Check for already Open}
   if FCacheSize > 0 then Exit;
-  
+
   {Check for silly Sizes}
   if APageSize > ACacheSize then Exit;
-  
+
   {Normalize the Sizes}
   PageSize:=RoundPageSize(APageSize);
   CacheSize:=RoundCacheSize(ACacheSize,PageSize);
@@ -45096,11 +45096,11 @@ begin
   if CacheKeys = 0 then Exit;
   if PageSize > CacheSize then Exit;
   PageCount:=CacheSize div PageSize;
-  
+
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.OpenCache: CacheSize = ' + IntToStr(CacheSize) + ' CacheKeys = ' + IntToStr(CacheKeys) + ' PageSize = ' + IntToStr(PageSize) + ' PageCount = ' + IntToStr(PageCount));
   {$ENDIF}
-  
+
   {Check for Caching Enabled}
   if ACacheMode <> cmNONE then
    begin
@@ -45108,11 +45108,11 @@ begin
     FKeyBits:=CacheKeys;
     FKeyMask:=keyHashMasks[FKeyBits];
     FKeyBuckets:=AllocMem((keyHashMasks[FKeyBits] + 1) shl FKeyShift); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
-    
+
     {Allocate the Memory}
     FBuffer:=GetAlignedMem(CacheSize,PageSize);
     if FBuffer = nil then Exit;
-    
+
     {Allocate the Pages}
     PageOffset:=0;
     for Count:=0 to PageCount - 1 do
@@ -45123,7 +45123,7 @@ begin
       Inc(PageOffset,PageSize);
      end;
    end;
-   
+
   {Set the Sizes}
   FPageSize:=PageSize;
   FPageCount:=PageCount;
@@ -45131,20 +45131,20 @@ begin
   FCacheKeys:=CacheKeys;
   FCacheMode:=ACacheMode;
   FCacheState:=csCLEAN;
-  
+
   {Create Timer}
   FTimer:=TIncrementalCacheTimer.Create(Self);
-  
+
   {Start Timer}
   FTimer.StartTimer(FILESYS_CACHE_TIMER_INTERVAL);
 
   {Create Thread}
   FThread:=TIncrementalCacheThread.Create(Self);
   {FThread.FreeOnTerminate:=True;} {Freed by CloseCache}
-  
+
   {Start Thread}
-  FThread.Start; 
-  
+  FThread.Start;
+
   Result:=True;
  finally
   ReleaseLock;
@@ -45165,62 +45165,62 @@ begin
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.CloseCache');
   {$ENDIF}
-  
+
   {Check for already Closed}
   if FCacheSize = 0 then Exit;
-  
+
   {Terminate Thread}
   FThread.Terminate;
-  
+
   {Stop Timer}
   FTimer.StopTimer;
 
   {Wait For Thread}
   FThread.WaitFor;
-  
+
   {Destroy Timer}
   FTimer.Free;
   FTimer:=nil;
- 
+
   {Destroy Thread}
   FThread.Free;
   FThread:=nil;
-  
+
   {Flush the Pages}
   NextPage:=FFirstDirty;
   while NextPage <> nil do
    begin
     CurrentPage:=NextPage;
     NextPage:=NextPage.NextLink;
-    
+
     FlushPage(CurrentPage);
    end;
-  
+
   {Free the Pages}
   NextPage:=FFirstPage;
   while NextPage <> nil do
    begin
     CurrentPage:=NextPage;
     NextPage:=NextPage.NextPage;
-    
+
     RemovePage(CurrentPage);
    end;
-  
+
   {Free the Memory}
   FreeMem(FBuffer);
   FBuffer:=nil;
-  
+
   {Free the Buckets}
   ZeroMemory(FKeyBuckets,(keyHashMasks[FKeyBits] + 1) shl FKeyShift); {Multiply bucket count (Mask + 1) by SizeOf(Pointer)}
   FreeMem(FKeyBuckets);
   FKeyBuckets:=nil;
   FKeyBits:=0;
   FKeyMask:=0;
-  
+
   {Set the Sizes}
   FPageSize:=0;
   FPageCount:=0;
@@ -45228,7 +45228,7 @@ begin
   FCacheKeys:=0;
   FCacheMode:=cmNONE;
   FCacheState:=csCLEAN;
-  
+
   Result:=True;
  finally
   ReleaseLock;
@@ -45248,15 +45248,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
- 
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.DeviceRead: Device = ' + ADevice.Name + ' Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Get Buffer}
  Buffer:=@ABuffer;
  while ACount > 0 do
@@ -45267,64 +45267,64 @@ begin
      begin
       {Read Cached}
       Inc(FReadCached);
-      
+
       {Get Page}
       Page:=GetDevicePage(ADevice,ASector);
       if Page <> nil then
        begin
         {Found in Cache}
         Inc(FHitCount);
-        
+
         {Get Count}
         OffsetCount:=ASector - Page.Sector;           {Offset from Page Sector to Read Sector}
         ReadCount:=Page.Count - OffsetCount;          {Number of Sectors to Read from Page}
         if ReadCount > ACount then ReadCount:=ACount;
-        
+
         {Prepare Page for Read}
         if not PrepareDeviceRead(ADevice,Page,ASector,ReadCount) then Exit;
-        
+
         {Read from Page to Buffer}
         System.Move(Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
-        
+
         {Update Page}
         Page.PageTime:=GetTickCount64;
         if not UpdateClean(Page) then Exit; {Does nothing if Dirty}
-        
+
         {Update Count}
         Dec(ACount,ReadCount);
-        
+
         {Update Buffer and Sector}
         if ACount > 0 then
          begin
           Inc(Buffer,ReadCount shl ADevice.SectorShiftCount);
           Inc(ASector,ReadCount);
-         end; 
-        
+         end;
+
         Result:=True;
        end
       else
        begin
         {Not Found in Cache}
         Inc(FMissCount);
-        
+
         {Allocate a Page}
         Page:=AllocDevicePage(ADevice,ASector,False);
         if Page <> nil then
          begin
           {Allocate Succeeded}
           Inc(FSuccessCount);
-          
+
           {Get Count}
           OffsetCount:=ASector - Page.Sector;           {Offset from Page Sector to Read Sector}
           ReadCount:=Page.Count - OffsetCount;          {Number of Sectors to Read from Page}
-          if ReadCount > ACount then ReadCount:=ACount; 
-          
+          if ReadCount > ACount then ReadCount:=ACount;
+
           {Prepare Page for Read}
           if not PrepareDeviceRead(ADevice,Page,ASector,ReadCount) then Exit;
-          
+
           {Read from Page to Buffer}
           System.Move(Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,Buffer^,ReadCount shl ADevice.SectorShiftCount);
-          
+
           {PageTime updated by AllocDevicePage}
          end
         else
@@ -45335,21 +45335,21 @@ begin
           {Get Count}
           ReadCount:=ACount;
           if not CalculateDevicePage(ADevice,ASector,ReadCount) then Exit;
-          
+
           {Direct Read}
           if not ADevice.Controller.Read(ADevice,ASector,ReadCount,Buffer^) then Exit;
          end;
-         
+
         {Update Count}
         Dec(ACount,ReadCount);
-        
+
         {Update Buffer and Sector}
         if ACount > 0 then
          begin
           Inc(Buffer,ReadCount shl ADevice.SectorShiftCount);
           Inc(ASector,ReadCount);
-         end; 
-        
+         end;
+
         Result:=True;
        end;
      end
@@ -45357,17 +45357,17 @@ begin
      begin
       {No Cache}
       Inc(FReadDirect);
-      
+
       {Direct Read}
       Result:=ADevice.Controller.Read(ADevice,ASector,ACount,Buffer^);
-      
+
       {Update Count}
       Dec(ACount,ACount);
      end;
    finally
     ReleaseLock;
    end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -45387,11 +45387,11 @@ begin
  if FDriver = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
- 
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.DeviceWrite: Device = ' + ADevice.Name + ' Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Get Buffer}
  Buffer:=@ABuffer;
  while ACount > 0 do
@@ -45404,76 +45404,76 @@ begin
        begin
         {Write Back Cached}
         Inc(FWriteBack);
-        
+
         {Get Page}
         Page:=GetDevicePage(ADevice,ASector);
         if Page <> nil then
          begin
           {Found in Cache}
           Inc(FHitCount);
-          
+
           {Get Count}
           OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Write Sector}
           WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
           if WriteCount > ACount then WriteCount:=ACount;
-          
+
           {Prepare Page for Write}
           if not PrepareDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
-          
+
           {Write to Page from Buffer}
           System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
-          
+
           {Complete Write for Page}
           if not CompleteDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
-          
+
           {Update Page}
           Page.PageTime:=GetTickCount64;
           if Page.PageState <> psDIRTY then Page.WriteTime:=GetTickCount64;
           if not AddDirty(Page) then Exit;
-          
+
           {Update State}
           FCacheState:=csDIRTY;
-          
+
           {Update Count}
           Dec(ACount,WriteCount);
-          
+
           {Update Buffer and Sector}
           if ACount > 0 then
            begin
             Inc(Buffer,WriteCount shl ADevice.SectorShiftCount);
             Inc(ASector,WriteCount);
-           end; 
-           
+           end;
+
           Result:=True;
          end
         else
          begin
           {Not Found in Cache}
           Inc(FMissCount);
-          
+
           {Allocate a Page}
           Page:=AllocDevicePage(ADevice,ASector,True);
           if Page <> nil then
            begin
             {Allocate Succeeded}
             Inc(FSuccessCount);
-            
+
             {Get Count}
             OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Write Sector}
             WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
             if WriteCount > ACount then WriteCount:=ACount;
-            
+
             {Prepare Page for Write}
             if not PrepareDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
-            
+
             {Write to Page from Buffer}
             System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
-            
+
             {Complete Write for Page}
             if not CompleteDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
-            
+
             {PageTime and WriteTime updated by AllocDevicePage}
-            
+
             {Update State}
             FCacheState:=csDIRTY;
            end
@@ -45481,25 +45481,25 @@ begin
            begin
             {Allocate Failed}
             Inc(FFailCount);
-    
+
             {Get Count}
             WriteCount:=ACount;
             if not CalculateDevicePage(ADevice,ASector,WriteCount) then Exit;
-    
+
             {Direct Write}
             if not ADevice.Controller.Write(ADevice,ASector,WriteCount,Buffer^) then Exit;
            end;
-           
+
           {Update Count}
           Dec(ACount,WriteCount);
-          
+
           {Update Buffer and Sector}
           if ACount > 0 then
            begin
             Inc(Buffer,WriteCount shl ADevice.SectorShiftCount);
             Inc(ASector,WriteCount);
-           end; 
-          
+           end;
+
           Result:=True;
          end;
        end
@@ -45507,95 +45507,95 @@ begin
        begin
         {Write Through Cached (ReadOnly Cache or Removable Device)}
         Inc(FWriteThrough);
-        
+
         {Get Page}
         Page:=GetDevicePage(ADevice,ASector);
         if Page <> nil then
          begin
           {Found in Cache}
           Inc(FHitCount);
-          
+
           {Get Count}
           OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Write Sector}
           WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
           if WriteCount > ACount then WriteCount:=ACount;
-          
+
           {Prepare Page for Write}
           if not PrepareDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
-          
+
           {Write to Page from Buffer}
           System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
-          
+
           {Write from Page to Device}
           if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
-          
+
           {Update Page}
           Page.PageTime:=GetTickCount64;
           if not UpdateClean(Page) then Exit; {Read Only Page is always Clean}
-          
+
           {Update Count}
           Dec(ACount,WriteCount);
-          
+
           {Update Buffer and Sector}
           if ACount > 0 then
            begin
             Inc(Buffer,WriteCount shl ADevice.SectorShiftCount);
             Inc(ASector,WriteCount);
-           end; 
-          
+           end;
+
           Result:=True;
          end
         else
          begin
           {Not Found in Cache}
           Inc(FMissCount);
-          
+
           {Allocate a Page}
           Page:=AllocDevicePage(ADevice,ASector,False); {Allocate Clean}
           if Page <> nil then
            begin
             {Allocate Succeeded}
             Inc(FSuccessCount);
-            
+
             {Get Count}
             OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Write Sector}
             WriteCount:=Page.Count - OffsetCount;           {Number of Sectors to Write to Page}
             if WriteCount > ACount then WriteCount:=ACount;
-            
+
             {Prepare Page for Write}
             if not PrepareDeviceWrite(ADevice,Page,ASector,WriteCount) then Exit;
-            
+
             {Write to Page from Buffer}
             System.Move(Buffer^,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^,WriteCount shl ADevice.SectorShiftCount);
-            
+
             {Write from Page to Device}
             if not ADevice.Controller.Write(ADevice,(Page.Sector + OffsetCount),WriteCount,Pointer(PtrUInt(Page.Data) + (OffsetCount shl ADevice.SectorShiftCount))^) then Exit;
-  
+
             {PageTime updated by AllocDevicePage}
            end
           else
            begin
             {Allocate Failed}
             Inc(FFailCount);
-        
+
             {Get Count}
             WriteCount:=ACount;
             if not CalculateDevicePage(ADevice,ASector,WriteCount) then Exit;
-        
+
             {Direct Write}
             if not ADevice.Controller.Write(ADevice,ASector,WriteCount,Buffer^) then Exit;
            end;
-           
+
           {Update Count}
           Dec(ACount,WriteCount);
-          
+
           {Update Buffer and Sector}
           if ACount > 0 then
            begin
             Inc(Buffer,WriteCount shl ADevice.SectorShiftCount);
             Inc(ASector,WriteCount);
-           end; 
-          
+           end;
+
           Result:=True;
          end;
        end;
@@ -45604,17 +45604,17 @@ begin
      begin
       {No Cache}
       Inc(FWriteDirect);
-      
+
       {Direct Write}
       Result:=ADevice.Controller.Write(ADevice,ASector,ACount,Buffer^);
-      
+
       {Update Count}
       Dec(ACount,ACount);
      end;
    finally
     ReleaseLock;
    end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -45628,15 +45628,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ADevice = nil then Exit;
  if ADevice.Controller = nil then Exit;
- 
+
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.DeviceErase: Device = ' + ADevice.Name + ' Sector = ' + IntToStr(ASector) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Check Count}
  while ACount > 0 do
   begin
@@ -45653,29 +45653,29 @@ begin
         OffsetCount:=ASector - Page.Sector;             {Offset from Page Sector to Erase Sector}
         EraseCount:=Page.Count - OffsetCount;           {Number of Sectors to Erase from Page}
         if EraseCount > ACount then EraseCount:=ACount;
-        
+
         {Check for Dirty}
         if Page.PageState = psDIRTY then
          begin
           {Flush Page}
           if not FlushPage(Page) then Exit;
          end;
-         
+
         {Discard Page}
         if not DiscardPage(Page) then Exit;
-        
+
         {Erase from Device}
         if not ADevice.Controller.Erase(ADevice,ASector,EraseCount) then Exit;
-        
+
         {Update Count}
         Dec(ACount,EraseCount);
-    
+
         {Update Sector}
         if ACount > 0 then
          begin
           Inc(ASector,EraseCount);
-         end; 
-    
+         end;
+
         Result:=True;
        end
       else
@@ -45684,19 +45684,19 @@ begin
         {Get Count}
         EraseCount:=ACount;
         if not CalculateDevicePage(ADevice,ASector,EraseCount) then Exit;
-        
+
         {Erase from Device}
         if not ADevice.Controller.Erase(ADevice,ASector,EraseCount) then Exit;
-        
+
         {Update Count}
         Dec(ACount,EraseCount);
-    
+
         {Update Sector}
         if ACount > 0 then
          begin
           Inc(ASector,EraseCount);
-         end; 
-    
+         end;
+
         Result:=True;
        end;
      end
@@ -45705,14 +45705,14 @@ begin
       {Not Cached}
       {Direct Erase}
       Result:=ADevice.Controller.Erase(ADevice,ASector,ACount);
-      
+
       {Update Count}
       Dec(ACount,ACount);
      end;
    finally
     ReleaseLock;
    end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -45726,25 +45726,25 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.GetDevicePage: Sector = ' + IntToStr(ASector));
   {$ENDIF}
-  
+
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
   if ADevice.PageCount = 0 then Exit;
-  
+
   {Get Hash}
   SectorStart:=(ASector and ADevice.PageMask);
   KeyHash:=(SectorStart shr ADevice.PageShift);
-  
+
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.GetDevicePage: SectorStart = ' + IntToStr(SectorStart) + ' KeyHash = ' + IntToStr(KeyHash));
   {$ENDIF}
-  
+
   {Check Pages}
   Page:=KeyFirst(KeyHash);
   while Page <> nil do
@@ -45758,12 +45758,12 @@ begin
         {$IFDEF CACHE_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.GetDevicePage: Page.Sector = ' + IntToStr(Page.Sector) + ' Page.Count = ' + IntToStr(Page.Count));
         {$ENDIF}
-        
+
         Result:=Page;
         Exit;
        end;
      end;
-     
+
     Page:=THashCachePage(Page).KeyNext;
    end;
  finally
@@ -45778,18 +45778,18 @@ function TIncrementalCache.GetEmptyPage:TCachePage;
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   {Get First Empty Page}
   Result:=FFirstEmpty;
   if Result <> nil then Exit;
-  
+
   {If no Empty then Discard Oldest}
   if not DiscardCache(True,False) then Exit;
-  
+
   {Get First Empty Page}
   Result:=FFirstEmpty;
  finally
@@ -45808,21 +45808,21 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.AllocDevicePage: Sector = ' + IntToStr(ASector));
   {$ENDIF}
-  
+
   if FDriver = nil then Exit;
   if ADevice = nil then Exit;
-  
+
   {Check for Sector Size bigger than Page Size}
   if ADevice.SectorSize = 0 then Exit;
   if ADevice.SectorSize > FPageSize then Exit;
   if ASector >= ADevice.SectorCount then Exit;
-  
+
   {Calculate Page Count / Shift / Mask}
   if ADevice.PageCount = 0 then
    begin
@@ -45830,7 +45830,7 @@ begin
     if ADevice.PageCount = 0 then Exit;
     ADevice.PageShift:=CalculatePageShift(ADevice);
     ADevice.PageMask:=CalculatePageMask(ADevice);
-    
+
     {$IFDEF CACHE_DEBUG}
     if FILESYS_LOG_ENABLED then
      begin
@@ -45841,7 +45841,7 @@ begin
      end;
     {$ENDIF}
    end;
-   
+
   {Calculate Sector Count and Start Sector}
   SectorCount:=ADevice.PageCount;
   SectorStart:=(ASector and ADevice.PageMask);
@@ -45849,7 +45849,7 @@ begin
    begin
     SectorCount:=(ADevice.SectorCount - SectorStart);
    end;
-   
+
   {$IFDEF CACHE_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.AllocDevicePage: SectorCount = ' + IntToStr(SectorCount) + ' SectorStart = ' + IntToStr(SectorStart));
   {$ENDIF}
@@ -45868,11 +45868,11 @@ begin
   if Page <> nil then
    begin
     THashCachePage(Page).KeyHash:=(SectorStart shr ADevice.PageShift);
-    
+
     {$IFDEF CACHE_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.AllocDevicePage: KeyHash = ' + IntToStr(THashCachePage(Page).KeyHash));
     {$ENDIF}
-    
+
     if AWrite then
      begin
       if AddDirty(Page) then
@@ -45887,7 +45887,7 @@ begin
         TIncrementalCachePage(Page).ReadCount:=0;
         TIncrementalCachePage(Page).DirtySector:=0;
         TIncrementalCachePage(Page).DirtyCount:=0;
-        
+
         Result:=Page;
        end;
      end
@@ -45904,7 +45904,7 @@ begin
         TIncrementalCachePage(Page).ReadCount:=0;
         TIncrementalCachePage(Page).DirtySector:=0;
         TIncrementalCachePage(Page).DirtyCount:=0;
-        
+
         Result:=Page;
        end;
      end;
@@ -45921,12 +45921,12 @@ function TIncrementalCache.DiscardPage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
   if APage = nil then Exit;
-  
+
   {Check for Clean}
   if APage.PageState = psCLEAN then
    begin
@@ -45944,7 +45944,7 @@ begin
     TIncrementalCachePage(APage).ReadCount:=0;
     TIncrementalCachePage(APage).DirtySector:=0;
     TIncrementalCachePage(APage).DirtyCount:=0;
-    
+
     Result:=True;
    end
   else
@@ -45953,7 +45953,7 @@ begin
     if not AddUnknown(APage) then Exit;
 
     Inc(FUnknownCount);
-    
+
     Result:=True;
    end;
  finally
@@ -45972,14 +45972,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   {Get Counter}
   CurrentTime:=GetTickCount64;
-  
+
   {Check Clean Pages}
   NextPage:=FFirstClean;
   while NextPage <> nil do
@@ -45996,7 +45996,7 @@ begin
       Break; {No more pages old enough to Discard}
      end;
    end;
-   
+
   Result:=True;
  finally
   ReleaseLock;
@@ -46013,7 +46013,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -46025,26 +46025,26 @@ begin
    begin
     CurrentPage:=NextPage;
     NextPage:=NextPage.NextLink;
-    
+
     if (CurrentPage.PageType = ptDEVICE) and (CurrentPage.Device = ADevice) then
      begin
       FlushPage(CurrentPage);
      end;
    end;
-   
+
   {Discard Clean Pages}
   NextPage:=FFirstClean;
   while NextPage <> nil do
    begin
     CurrentPage:=NextPage;
     NextPage:=NextPage.NextLink;
-    
+
     if (CurrentPage.PageType = ptDEVICE) and (CurrentPage.Device = ADevice) then
      begin
       DiscardPage(CurrentPage);
      end;
    end;
-   
+
   Result:=True;
  finally
   ReleaseLock;
@@ -46058,7 +46058,7 @@ function TIncrementalCache.FlushPage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -46066,7 +46066,7 @@ begin
 
   {Unschedule Page}
   UnschedulePage(APage);
-  
+
   {Check for Dirty}
   if APage.PageState = psDIRTY then
    begin
@@ -46081,7 +46081,7 @@ begin
          APage.WriteTime:=0;
          TIncrementalCachePage(APage).DirtySector:=0;
          TIncrementalCachePage(APage).DirtyCount:=0;
-         
+
          Result:=True;
         end;
        ptDEVICE:begin
@@ -46089,14 +46089,14 @@ begin
          if APage.Device = nil then Exit;
          if APage.Device.Controller = nil then Exit;
          if not APage.Device.Controller.Write(APage.Device,TIncrementalCachePage(APage).DirtySector,TIncrementalCachePage(APage).DirtyCount,TIncrementalCachePage(APage).DirtyData^) then Exit;
-         
+
          {Return to Clean}
          if not AddClean(APage) then Exit;
          Inc(FFlushCount);
          APage.WriteTime:=0;
          TIncrementalCachePage(APage).DirtySector:=0;
          TIncrementalCachePage(APage).DirtyCount:=0;
-         
+
          Result:=True;
         end;
       end;
@@ -46109,7 +46109,7 @@ begin
       APage.WriteTime:=0;
       TIncrementalCachePage(APage).DirtySector:=0;
       TIncrementalCachePage(APage).DirtyCount:=0;
-      
+
       Result:=True;
      end;
    end
@@ -46121,7 +46121,7 @@ begin
     APage.WriteTime:=0;
     TIncrementalCachePage(APage).DirtySector:=0;
     TIncrementalCachePage(APage).DirtyCount:=0;
-    
+
     Result:=True;
    end;
 
@@ -46147,12 +46147,12 @@ begin
  {$IFDEF CACHE_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.FlushPageEx (Page=' + PtrToHex(APage) + ' FirstDirty=' + PtrToHex(FFirstDirty) + ')');
  {$ENDIF}
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
   if APage = nil then Exit;
- 
+
   {Check Page}
   Page:=FFirstDirty;
   if APage <> Page then
@@ -46164,8 +46164,8 @@ begin
       {Get Next}
       Page:=Page.NextLink;
      end;
-   end;  
-   
+   end;
+
   {Check Page}
   if (APage = Page) and ((APage.WriteTime + FFlushTimeout) <= GetTickCount64) then
    begin
@@ -46183,7 +46183,7 @@ begin
            APage.WriteTime:=0;
            TIncrementalCachePage(APage).DirtySector:=0;
            TIncrementalCachePage(APage).DirtyCount:=0;
-           
+
            Result:=True;
           end;
          ptDEVICE:begin
@@ -46191,14 +46191,14 @@ begin
            if APage.Device = nil then Exit;
            if APage.Device.Controller = nil then Exit;
            if not APage.Device.Controller.Write(APage.Device,TIncrementalCachePage(APage).DirtySector,TIncrementalCachePage(APage).DirtyCount,TIncrementalCachePage(APage).DirtyData^) then Exit;
-           
+
            {Return to Clean}
            if not AddClean(APage) then Exit;
            Inc(FFlushCount);
            APage.WriteTime:=0;
            TIncrementalCachePage(APage).DirtySector:=0;
            TIncrementalCachePage(APage).DirtyCount:=0;
-           
+
            Result:=True;
           end;
         end;
@@ -46211,7 +46211,7 @@ begin
         APage.WriteTime:=0;
         TIncrementalCachePage(APage).DirtySector:=0;
         TIncrementalCachePage(APage).DirtyCount:=0;
-        
+
         Result:=True;
        end;
      end
@@ -46223,10 +46223,10 @@ begin
       APage.WriteTime:=0;
       TIncrementalCachePage(APage).DirtySector:=0;
       TIncrementalCachePage(APage).DirtyCount:=0;
-      
+
       Result:=True;
      end;
-   
+
     {Update Cache State}
     if FFirstDirty = nil then FCacheState:=csCLEAN;
   {$IFDEF CACHE_DEBUG}
@@ -46239,7 +46239,7 @@ begin
      end
     else
      begin
-      if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.FlushPageEx - Not Ready Page (Page=' + PtrToHex(APage) + ' WriteTime=' + IntToStr(APage.WriteTime) + ' TickCount=' + IntToStr(GetTickCount64) + ')'); 
+      if FILESYS_LOG_ENABLED then FileSysLogDebug('TIncrementalCache.FlushPageEx - Not Ready Page (Page=' + PtrToHex(APage) + ' WriteTime=' + IntToStr(APage.WriteTime) + ' TickCount=' + IntToStr(GetTickCount64) + ')');
      end;
   {$ENDIF}
    end;
@@ -46259,28 +46259,28 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if FDriver = nil then Exit;
-  
+
   {Check Cache State}
   if FCacheState = csDIRTY then
    begin
     {Get Counter}
     CurrentTime:=GetTickCount64;
-    
+
     {Check Dirty Pages}
     NextPage:=FFirstDirty;
     while NextPage <> nil do
      begin
       CurrentPage:=NextPage;
       NextPage:=NextPage.NextLink;
-      
+
       if (AFirst) or (AAll) or ((CurrentPage.WriteTime + FFlushTimeout) < CurrentTime) then
        begin
         FlushPage(CurrentPage);
-        
+
         if AFirst then Break; {Flush only the First Page}
        end
       else
@@ -46288,11 +46288,11 @@ begin
         Break; {No more pages old enough to Flush}
        end;
      end;
-     
+
     {Update Cache State}
     if FFirstDirty = nil then FCacheState:=csCLEAN;
    end;
-   
+
   Result:=True;
  finally
   ReleaseLock;
@@ -46300,12 +46300,12 @@ begin
 end;
 
 {==============================================================================}
-   
+
 function TIncrementalCache.CheckTimer:Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
 
@@ -46319,7 +46319,7 @@ function TIncrementalCache.ProcessTimer:Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
 
@@ -46328,35 +46328,35 @@ begin
 end;
 
 {==============================================================================}
-   
+
 function TIncrementalCache.SchedulePage(APage:TCachePage;ATimeout:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
- 
+
  {Check Page}
  {if APage = nil then Exit;} {Do not check}
- 
+
  {Schedule Page}
  Result:=FTimer.SchedulePage(APage,ATimeout);
 end;
 
 {==============================================================================}
 
-function TIncrementalCache.UnschedulePage(APage:TCachePage):Boolean; 
+function TIncrementalCache.UnschedulePage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Timer}
  if FTimer = nil then Exit;
- 
+
  {Check Page}
  {if APage = nil then Exit;} {Do not check}
- 
+
  {Unschedule Page}
  Result:=FTimer.UnschedulePage(APage);
 end;
@@ -46382,7 +46382,7 @@ begin
 
  FPrevPage:=nil;
  FNextPage:=nil;
- 
+
  FPrevLink:=nil;
  FNextLink:=nil;
 end;
@@ -46394,7 +46394,7 @@ begin
  {}
  FPrevLink:=nil;
  FNextLink:=nil;
- 
+
  FPrevPage:=nil;
  FNextPage:=nil;
 
@@ -46408,7 +46408,7 @@ end;
 {==============================================================================}
 {THashCachePage}
  {Nothing}
- 
+
 {==============================================================================}
 {==============================================================================}
 {TIncrementalCachePage}
@@ -46416,11 +46416,11 @@ function TIncrementalCachePage.ReadData:Pointer;
 begin
  {}
  Result:=nil;
- 
+
  if Device = nil then Exit;
- 
+
  if FReadCount = 0 then Exit;
- 
+
  Result:=Pointer(PtrUInt(Data) + ((FReadSector - Sector) shl Device.SectorShiftCount));
 end;
 
@@ -46432,9 +46432,9 @@ begin
  Result:=nil;
 
  if Device = nil then Exit;
- 
+
  if FDirtyCount = 0 then Exit;
- 
+
  Result:=Pointer(PtrUInt(Data) + ((FDirtySector - Sector) shl Device.SectorShiftCount));
 end;
 
@@ -46446,22 +46446,22 @@ begin
  {}
  inherited Create;
  FCache:=ACache;
- 
+
  FLock:=MutexCreate;
  FInterval:=0;
  FCheckTimer:=INVALID_HANDLE_VALUE;
  FProcessSemaphore:=INVALID_HANDLE_VALUE;
- 
+
  FCount:=0;
  FMaxCount:=0;
- 
+
  FFirst:=nil;
  FLast:=nil;
 end;
 
 {==============================================================================}
 
-destructor TCacheTimer.Destroy; 
+destructor TCacheTimer.Destroy;
 begin
  {}
  AcquireLock;
@@ -46470,14 +46470,14 @@ begin
   FProcessSemaphore:=INVALID_HANDLE_VALUE;
   if FCheckTimer <> INVALID_HANDLE_VALUE then TimerDestroy(FCheckTimer);
   FCheckTimer:=INVALID_HANDLE_VALUE;
-  
+
   FFirst:=nil;
   FLast:=nil;
   inherited Destroy;
- finally 
-  ReleaseLock; {Cannot destroy Mutex while holding lock} 
+ finally
+  ReleaseLock; {Cannot destroy Mutex while holding lock}
   MutexDestroy(FLock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -46519,7 +46519,7 @@ begin
      begin
       {Remove First}
       FFirst:=Item.Next;
-      
+
       {Check Next}
       if Item.Next = nil then
        begin
@@ -46529,27 +46529,27 @@ begin
        begin
         Item.Next.Prev:=nil;
        end;
-      
+
       {Check First}
       if FFirst <> nil then
        begin
         {Update Key}
         Inc(FFirst.Key,Item.Key);
        end;
-      
+
       {Decrement Count}
       Dec(FCount);
-      
+
       {Return Result}
       Result:=TCachePage(Item.Page);
-      
+
       {Release Item}
       FreeMem(Item);
      end;
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -46562,7 +46562,7 @@ var
 begin
  {}
  Result:=CACHE_TIMER_KEY_NONE;
- 
+
  if not AcquireLock then Exit;
  try
   {Get Item (First)}
@@ -46574,7 +46574,7 @@ begin
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -46592,7 +46592,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Key}
  if AKey = CACHE_TIMER_KEY_NONE then Exit;
 
@@ -46601,7 +46601,7 @@ begin
   {Get Item}
   Item:=GetMem(SizeOf(TCacheTimerItem));
   if Item = nil then Exit;
-  
+
   {Find Position}
   Offset:=0;
   Prev:=nil;
@@ -46612,24 +46612,24 @@ begin
     if AKey < (Offset + Next.Key) then
      begin
       Dec(Next.Key,(AKey - Offset));
-      Break; 
+      Break;
      end;
-    Inc(Offset,Next.Key);  
+    Inc(Offset,Next.Key);
     Prev:=Next;
-    Next:=Next.Next; 
+    Next:=Next.Next;
    end;
-  
+
   {Insert Item}
   Item.Key:=(AKey - Offset);
   Item.Page:=APage;
   Item.Prev:=Prev;
   Item.Next:=Next;
-  
+
   {Check Prev}
   if Prev = nil then
    begin
     FFirst:=Item;
-    
+
     {Check Next}
     if Next = nil then
      begin
@@ -46638,12 +46638,12 @@ begin
     else
      begin
       Next.Prev:=Item;
-     end;      
+     end;
    end
   else
    begin
     Prev.Next:=Item;
-    
+
     {Check Next}
     if Next = nil then
      begin
@@ -46652,18 +46652,18 @@ begin
     else
      begin
       Next.Prev:=Item;
-     end;      
+     end;
    end;
-  
+
   {Increment Count}
   Inc(FCount);
   if FCount > FMaxCount then FMaxCount:=FCount;
-  
-  {Return Result} 
-  Result:=True;       
+
+  {Return Result}
+  Result:=True;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -46690,10 +46690,10 @@ begin
      begin
       Break;
      end;
-     
+
     Item:=Item.Next;
    end;
-   
+
   {Check Item}
   if Item <> nil then
    begin
@@ -46705,7 +46705,7 @@ begin
     if Prev = nil then
      begin
       FFirst:=Next;
-      
+
       {Check Next}
       if Next = nil then
        begin
@@ -46714,12 +46714,12 @@ begin
       else
        begin
         Next.Prev:=nil;
-       end;    
+       end;
      end
     else
      begin
       Prev.Next:=Next;
-      
+
       {Check Next}
       if Next = nil then
        begin
@@ -46729,27 +46729,27 @@ begin
        begin
         Next.Prev:=Prev;
        end;
-     end;  
-     
+     end;
+
     {Check Next}
     if Next <> nil then
      begin
       {Update Key}
       Inc(Next.Key,Item.Key);
      end;
-     
+
     {Decrement Count}
     Dec(FCount);
-     
+
     {Release Item}
     FreeMem(Item);
-    
-    {Return Result} 
-    Result:=True;       
-   end; 
+
+    {Return Result}
+    Result:=True;
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -46762,7 +46762,7 @@ var
 begin
  {}
  Result:=CACHE_TIMER_KEY_NONE;
- 
+
  if not AcquireLock then Exit;
  try
   {Get Item (First)}
@@ -46774,13 +46774,13 @@ begin
      begin
       Dec(Item.Key,FInterval);
      end;
-         
+
     {Return Result}
     Result:=Item.Key;
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -46789,26 +46789,26 @@ function TCacheTimer.StartTimer(AInterval:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Cache}
   if FCache = nil then Exit;
-  
+
   {Check Interval}
   if AInterval < 1 then Exit;
-  
+
   {Check Timer/Semaphore}
   if FCheckTimer <> INVALID_HANDLE_VALUE then Exit;
   if FProcessSemaphore <> INVALID_HANDLE_VALUE then Exit;
-  
+
   {Set Interval}
   FInterval:=AInterval;
-  
+
   {Create Process Semaphore}
   FProcessSemaphore:=SemaphoreCreate(0);
   if FProcessSemaphore = INVALID_HANDLE_VALUE then Exit;
-  
+
   {Create Check Timer}
   FCheckTimer:=TimerCreateEx(FInterval,TIMER_STATE_ENABLED,TIMER_FLAG_RESCHEDULE or TIMER_FLAG_WORKER,TTimerEvent(CacheCheckTimer),FCache); {Rescheduled Automatically}
   if FCheckTimer = INVALID_HANDLE_VALUE then
@@ -46816,15 +46816,15 @@ begin
     {Destroy Process Semaphore}
     SemaphoreDestroy(FProcessSemaphore);
     FProcessSemaphore:=INVALID_HANDLE_VALUE;
-    
+
     Exit;
-   end; 
- 
+   end;
+
   {Return Result}
   Result:=True;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -46833,13 +46833,13 @@ function TCacheTimer.StopTimer:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Timer/Semaphore}
   if FCheckTimer = INVALID_HANDLE_VALUE then Exit;
   if FProcessSemaphore = INVALID_HANDLE_VALUE then Exit;
-  
+
   {Destroy Check Timer}
   if TimerDestroy(FCheckTimer) <> ERROR_SUCCESS then Exit;
   FCheckTimer:=INVALID_HANDLE_VALUE;
@@ -46847,15 +46847,15 @@ begin
   {Destroy Process Semaphore}
   if SemaphoreDestroy(FProcessSemaphore) <> ERROR_SUCCESS then Exit;
   FProcessSemaphore:=INVALID_HANDLE_VALUE;
-  
+
   {Reset Interval}
   FInterval:=0;
-  
+
   {Return Result}
   Result:=True;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -46884,7 +46884,7 @@ begin
 
  {Check Cache}
  if FCache = nil then Exit;
-   
+
  {Wait Semaphore}
  if SemaphoreWait(FProcessSemaphore) = ERROR_SUCCESS then
   begin
@@ -46895,10 +46895,10 @@ begin
      {Flush Page}
      Result:=FCache.FlushPageEx(Page);
      if not Result then Exit;
-     
+
      {Yield}
      Sleep(0);
-     
+
      {Dequeue Page}
      Page:=Dequeue(0);
     end;
@@ -46911,11 +46911,11 @@ function TCacheTimer.SchedulePage(APage:TCachePage;ATimeout:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Page}
  {if APage = nil then Exit;} {Do not check}
 
- {Check Timeout} 
+ {Check Timeout}
  if ATimeout < 1 then ATimeout:=FInterval;
 
  {Insert Key}
@@ -46924,17 +46924,17 @@ end;
 
 {==============================================================================}
 
-function TCacheTimer.UnschedulePage(APage:TCachePage):Boolean; 
+function TCacheTimer.UnschedulePage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Page}
  {if APage = nil then Exit;} {Do not check}
 
  {Delete Key}
  Result:=DeleteKey(APage);
-end; 
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -46944,22 +46944,22 @@ begin
  {}
  inherited Create;
  FCache:=ACache;
- 
+
  FLock:=MutexCreate;
  FInterval:=0;
  FCheckTimer:=INVALID_HANDLE_VALUE;
  FProcessSemaphore:=INVALID_HANDLE_VALUE;
- 
+
  FCount:=0;
  FMaxCount:=0;
- 
+
  FFirst:=nil;
  FLast:=nil;
 end;
 
 {==============================================================================}
 
-destructor THashCacheTimer.Destroy; 
+destructor THashCacheTimer.Destroy;
 begin
  {}
  AcquireLock;
@@ -46968,14 +46968,14 @@ begin
   FProcessSemaphore:=INVALID_HANDLE_VALUE;
   if FCheckTimer <> INVALID_HANDLE_VALUE then TimerDestroy(FCheckTimer);
   FCheckTimer:=INVALID_HANDLE_VALUE;
-  
+
   FFirst:=nil;
   FLast:=nil;
   inherited Destroy;
- finally 
-  ReleaseLock; {Cannot destroy Mutex while holding lock} 
+ finally
+  ReleaseLock; {Cannot destroy Mutex while holding lock}
   MutexDestroy(FLock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47017,7 +47017,7 @@ begin
      begin
       {Remove First}
       FFirst:=Item.Next;
-      
+
       {Check Next}
       if Item.Next = nil then
        begin
@@ -47027,27 +47027,27 @@ begin
        begin
         Item.Next.Prev:=nil;
        end;
-      
+
       {Check First}
       if FFirst <> nil then
        begin
         {Update Key}
         Inc(FFirst.Key,Item.Key);
        end;
-      
+
       {Decrement Count}
       Dec(FCount);
-      
+
       {Return Result}
       Result:=TCachePage(Item.Page);
-      
+
       {Release Item}
       FreeMem(Item);
      end;
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47060,7 +47060,7 @@ var
 begin
  {}
  Result:=CACHE_TIMER_KEY_NONE;
- 
+
  if not AcquireLock then Exit;
  try
   {Get Item (First)}
@@ -47072,7 +47072,7 @@ begin
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47090,7 +47090,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Key}
  if AKey = CACHE_TIMER_KEY_NONE then Exit;
 
@@ -47099,7 +47099,7 @@ begin
   {Get Item}
   Item:=GetMem(SizeOf(TCacheTimerItem));
   if Item = nil then Exit;
-  
+
   {Find Position}
   Offset:=0;
   Prev:=nil;
@@ -47110,24 +47110,24 @@ begin
     if AKey < (Offset + Next.Key) then
      begin
       Dec(Next.Key,(AKey - Offset));
-      Break; 
+      Break;
      end;
-    Inc(Offset,Next.Key);  
+    Inc(Offset,Next.Key);
     Prev:=Next;
-    Next:=Next.Next; 
+    Next:=Next.Next;
    end;
-  
+
   {Insert Item}
   Item.Key:=(AKey - Offset);
   Item.Page:=APage;
   Item.Prev:=Prev;
   Item.Next:=Next;
-  
+
   {Check Prev}
   if Prev = nil then
    begin
     FFirst:=Item;
-    
+
     {Check Next}
     if Next = nil then
      begin
@@ -47136,12 +47136,12 @@ begin
     else
      begin
       Next.Prev:=Item;
-     end;      
+     end;
    end
   else
    begin
     Prev.Next:=Item;
-    
+
     {Check Next}
     if Next = nil then
      begin
@@ -47150,18 +47150,18 @@ begin
     else
      begin
       Next.Prev:=Item;
-     end;      
+     end;
    end;
-  
+
   {Increment Count}
   Inc(FCount);
   if FCount > FMaxCount then FMaxCount:=FCount;
-  
-  {Return Result} 
-  Result:=True;       
+
+  {Return Result}
+  Result:=True;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47188,10 +47188,10 @@ begin
      begin
       Break;
      end;
-     
+
     Item:=Item.Next;
    end;
-   
+
   {Check Item}
   if Item <> nil then
    begin
@@ -47203,7 +47203,7 @@ begin
     if Prev = nil then
      begin
       FFirst:=Next;
-      
+
       {Check Next}
       if Next = nil then
        begin
@@ -47212,12 +47212,12 @@ begin
       else
        begin
         Next.Prev:=nil;
-       end;    
+       end;
      end
     else
      begin
       Prev.Next:=Next;
-      
+
       {Check Next}
       if Next = nil then
        begin
@@ -47227,27 +47227,27 @@ begin
        begin
         Next.Prev:=Prev;
        end;
-     end;  
-     
+     end;
+
     {Check Next}
     if Next <> nil then
      begin
       {Update Key}
       Inc(Next.Key,Item.Key);
      end;
-     
+
     {Decrement Count}
     Dec(FCount);
-    
+
     {Release Item}
     FreeMem(Item);
-    
-    {Return Result} 
-    Result:=True;       
-   end; 
+
+    {Return Result}
+    Result:=True;
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47260,7 +47260,7 @@ var
 begin
  {}
  Result:=CACHE_TIMER_KEY_NONE;
- 
+
  if not AcquireLock then Exit;
  try
   {Get Item (First)}
@@ -47272,13 +47272,13 @@ begin
      begin
       Dec(Item.Key,FInterval);
      end;
-         
+
     {Return Result}
     Result:=Item.Key;
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47287,26 +47287,26 @@ function THashCacheTimer.StartTimer(AInterval:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Cache}
   if FCache = nil then Exit;
-  
+
   {Check Interval}
   if AInterval < 1 then Exit;
-  
+
   {Check Timer/Semaphore}
   if FCheckTimer <> INVALID_HANDLE_VALUE then Exit;
   if FProcessSemaphore <> INVALID_HANDLE_VALUE then Exit;
-  
+
   {Set Interval}
   FInterval:=AInterval;
-  
+
   {Create Process Semaphore}
   FProcessSemaphore:=SemaphoreCreate(0);
   if FProcessSemaphore = INVALID_HANDLE_VALUE then Exit;
-  
+
   {Create Check Timer}
   FCheckTimer:=TimerCreateEx(FInterval,TIMER_STATE_ENABLED,TIMER_FLAG_RESCHEDULE or TIMER_FLAG_WORKER,TTimerEvent(CacheCheckTimer),FCache); {Rescheduled Automatically}
   if FCheckTimer = INVALID_HANDLE_VALUE then
@@ -47314,15 +47314,15 @@ begin
     {Destroy Process Semaphore}
     SemaphoreDestroy(FProcessSemaphore);
     FProcessSemaphore:=INVALID_HANDLE_VALUE;
-    
+
     Exit;
-   end; 
- 
+   end;
+
   {Return Result}
   Result:=True;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47331,13 +47331,13 @@ function THashCacheTimer.StopTimer:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Timer/Semaphore}
   if FCheckTimer = INVALID_HANDLE_VALUE then Exit;
   if FProcessSemaphore = INVALID_HANDLE_VALUE then Exit;
-  
+
   {Destroy Check Timer}
   if TimerDestroy(FCheckTimer) <> ERROR_SUCCESS then Exit;
   FCheckTimer:=INVALID_HANDLE_VALUE;
@@ -47345,15 +47345,15 @@ begin
   {Destroy Process Semaphore}
   if SemaphoreDestroy(FProcessSemaphore) <> ERROR_SUCCESS then Exit;
   FProcessSemaphore:=INVALID_HANDLE_VALUE;
-  
+
   {Reset Interval}
   FInterval:=0;
-  
+
   {Return Result}
   Result:=True;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47382,7 +47382,7 @@ begin
 
  {Check Cache}
  if FCache = nil then Exit;
- 
+
  {Wait Semaphore}
  if SemaphoreWait(FProcessSemaphore) = ERROR_SUCCESS then
   begin
@@ -47393,10 +47393,10 @@ begin
      {Flush Page}
      Result:=FCache.FlushPageEx(Page);
      if not Result then Exit;
-     
+
      {Yield}
      Sleep(0);
-     
+
      {Dequeue Page}
      Page:=Dequeue(0);
     end;
@@ -47409,11 +47409,11 @@ function THashCacheTimer.SchedulePage(APage:TCachePage;ATimeout:LongWord):Boolea
 begin
  {}
  Result:=False;
- 
+
  {Check Page}
  {if APage = nil then Exit;} {Do not check}
 
- {Check Timeout} 
+ {Check Timeout}
  if ATimeout < 1 then ATimeout:=FInterval;
 
  {Insert Key}
@@ -47422,17 +47422,17 @@ end;
 
 {==============================================================================}
 
-function THashCacheTimer.UnschedulePage(APage:TCachePage):Boolean; 
+function THashCacheTimer.UnschedulePage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Page}
  {if APage = nil then Exit;} {Do not check}
 
  {Delete Key}
  Result:=DeleteKey(APage);
-end; 
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -47442,22 +47442,22 @@ begin
  {}
  inherited Create;
  FCache:=ACache;
- 
+
  FLock:=MutexCreate;
  FInterval:=0;
  FCheckTimer:=INVALID_HANDLE_VALUE;
  FProcessSemaphore:=INVALID_HANDLE_VALUE;
- 
+
  FCount:=0;
  FMaxCount:=0;
- 
+
  FFirst:=nil;
  FLast:=nil;
 end;
 
 {==============================================================================}
 
-destructor TIncrementalCacheTimer.Destroy; 
+destructor TIncrementalCacheTimer.Destroy;
 begin
  {}
  AcquireLock;
@@ -47466,14 +47466,14 @@ begin
   FProcessSemaphore:=INVALID_HANDLE_VALUE;
   if FCheckTimer <> INVALID_HANDLE_VALUE then TimerDestroy(FCheckTimer);
   FCheckTimer:=INVALID_HANDLE_VALUE;
-  
+
   FFirst:=nil;
   FLast:=nil;
   inherited Destroy;
- finally 
-  ReleaseLock; {Cannot destroy Mutex while holding lock} 
+ finally
+  ReleaseLock; {Cannot destroy Mutex while holding lock}
   MutexDestroy(FLock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47515,7 +47515,7 @@ begin
      begin
       {Remove First}
       FFirst:=Item.Next;
-     
+
       {Check Next}
       if Item.Next = nil then
        begin
@@ -47525,27 +47525,27 @@ begin
        begin
         Item.Next.Prev:=nil;
        end;
-      
+
       {Check First}
       if FFirst <> nil then
        begin
         {Update Key}
         Inc(FFirst.Key,Item.Key);
        end;
-      
+
       {Decrement Count}
       Dec(FCount);
-      
+
       {Return Result}
       Result:=TCachePage(Item.Page);
-      
+
       {Release Item}
       FreeMem(Item);
      end;
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47558,7 +47558,7 @@ var
 begin
  {}
  Result:=CACHE_TIMER_KEY_NONE;
- 
+
  if not AcquireLock then Exit;
  try
   {Get Item (First)}
@@ -47570,7 +47570,7 @@ begin
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47588,7 +47588,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Key}
  if AKey = CACHE_TIMER_KEY_NONE then Exit;
 
@@ -47597,7 +47597,7 @@ begin
   {Get Item}
   Item:=GetMem(SizeOf(TCacheTimerItem));
   if Item = nil then Exit;
-  
+
   {Find Position}
   Offset:=0;
   Prev:=nil;
@@ -47608,24 +47608,24 @@ begin
     if AKey < (Offset + Next.Key) then
      begin
       Dec(Next.Key,(AKey - Offset));
-      Break; 
+      Break;
      end;
-    Inc(Offset,Next.Key);  
+    Inc(Offset,Next.Key);
     Prev:=Next;
-    Next:=Next.Next; 
+    Next:=Next.Next;
    end;
-  
+
   {Insert Item}
   Item.Key:=(AKey - Offset);
   Item.Page:=APage;
   Item.Prev:=Prev;
   Item.Next:=Next;
-  
+
   {Check Prev}
   if Prev = nil then
    begin
     FFirst:=Item;
-    
+
     {Check Next}
     if Next = nil then
      begin
@@ -47634,12 +47634,12 @@ begin
     else
      begin
       Next.Prev:=Item;
-     end;      
+     end;
    end
   else
    begin
     Prev.Next:=Item;
-    
+
     {Check Next}
     if Next = nil then
      begin
@@ -47648,18 +47648,18 @@ begin
     else
      begin
       Next.Prev:=Item;
-     end;      
+     end;
    end;
-  
+
   {Increment Count}
   Inc(FCount);
   if FCount > FMaxCount then FMaxCount:=FCount;
-  
-  {Return Result} 
-  Result:=True;       
+
+  {Return Result}
+  Result:=True;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47686,10 +47686,10 @@ begin
      begin
       Break;
      end;
-     
+
     Item:=Item.Next;
    end;
-   
+
   {Check Item}
   if Item <> nil then
    begin
@@ -47701,7 +47701,7 @@ begin
     if Prev = nil then
      begin
       FFirst:=Next;
-      
+
       {Check Next}
       if Next = nil then
        begin
@@ -47710,12 +47710,12 @@ begin
       else
        begin
         Next.Prev:=nil;
-       end;    
+       end;
      end
     else
      begin
       Prev.Next:=Next;
-      
+
       {Check Next}
       if Next = nil then
        begin
@@ -47725,27 +47725,27 @@ begin
        begin
         Next.Prev:=Prev;
        end;
-     end;  
-     
+     end;
+
     {Check Next}
     if Next <> nil then
      begin
       {Update Key}
       Inc(Next.Key,Item.Key);
      end;
-     
+
     {Decrement Count}
     Dec(FCount);
-     
+
     {Release Item}
     FreeMem(Item);
-    
-    {Return Result} 
-    Result:=True;       
-   end; 
+
+    {Return Result}
+    Result:=True;
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47758,7 +47758,7 @@ var
 begin
  {}
  Result:=CACHE_TIMER_KEY_NONE;
- 
+
  if not AcquireLock then Exit;
  try
   {Get Item (First)}
@@ -47770,13 +47770,13 @@ begin
      begin
       Dec(Item.Key,FInterval);
      end;
-         
+
     {Return Result}
     Result:=Item.Key;
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47785,26 +47785,26 @@ function TIncrementalCacheTimer.StartTimer(AInterval:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Cache}
   if FCache = nil then Exit;
-  
+
   {Check Interval}
   if AInterval < 1 then Exit;
-  
+
   {Check Timer/Semaphore}
   if FCheckTimer <> INVALID_HANDLE_VALUE then Exit;
   if FProcessSemaphore <> INVALID_HANDLE_VALUE then Exit;
-  
+
   {Set Interval}
   FInterval:=AInterval;
-  
+
   {Create Process Semaphore}
   FProcessSemaphore:=SemaphoreCreate(0);
   if FProcessSemaphore = INVALID_HANDLE_VALUE then Exit;
-  
+
   {Create Check Timer}
   FCheckTimer:=TimerCreateEx(FInterval,TIMER_STATE_ENABLED,TIMER_FLAG_RESCHEDULE or TIMER_FLAG_WORKER,TTimerEvent(CacheCheckTimer),FCache); {Rescheduled Automatically}
   if FCheckTimer = INVALID_HANDLE_VALUE then
@@ -47812,15 +47812,15 @@ begin
     {Destroy Process Semaphore}
     SemaphoreDestroy(FProcessSemaphore);
     FProcessSemaphore:=INVALID_HANDLE_VALUE;
-    
+
     Exit;
-   end; 
- 
+   end;
+
   {Return Result}
   Result:=True;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47829,13 +47829,13 @@ function TIncrementalCacheTimer.StopTimer:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Timer/Semaphore}
   if FCheckTimer = INVALID_HANDLE_VALUE then Exit;
   if FProcessSemaphore = INVALID_HANDLE_VALUE then Exit;
-  
+
   {Destroy Check Timer}
   if TimerDestroy(FCheckTimer) <> ERROR_SUCCESS then Exit;
   FCheckTimer:=INVALID_HANDLE_VALUE;
@@ -47843,15 +47843,15 @@ begin
   {Destroy Process Semaphore}
   if SemaphoreDestroy(FProcessSemaphore) <> ERROR_SUCCESS then Exit;
   FProcessSemaphore:=INVALID_HANDLE_VALUE;
-  
+
   {Reset Interval}
   FInterval:=0;
-  
+
   {Return Result}
   Result:=True;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -47880,7 +47880,7 @@ begin
 
  {Check Cache}
  if FCache = nil then Exit;
-   
+
  {Wait Semaphore}
  if SemaphoreWait(FProcessSemaphore) = ERROR_SUCCESS then
   begin
@@ -47891,10 +47891,10 @@ begin
      {Flush Page}
      Result:=FCache.FlushPageEx(Page);
      if not Result then Exit;
-     
+
      {Yield}
      Sleep(0);
-     
+
      {Dequeue Page}
      Page:=Dequeue(0);
     end;
@@ -47907,11 +47907,11 @@ function TIncrementalCacheTimer.SchedulePage(APage:TCachePage;ATimeout:LongWord)
 begin
  {}
  Result:=False;
- 
+
  {Check Page}
  {if APage = nil then Exit;} {Do not check}
 
- {Check Timeout} 
+ {Check Timeout}
  if ATimeout < 1 then ATimeout:=FInterval;
 
  {Insert Key}
@@ -47920,17 +47920,17 @@ end;
 
 {==============================================================================}
 
-function TIncrementalCacheTimer.UnschedulePage(APage:TCachePage):Boolean; 
+function TIncrementalCacheTimer.UnschedulePage(APage:TCachePage):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Page}
  {if APage = nil then Exit;} {Do not check}
 
  {Delete Key}
  Result:=DeleteKey(APage);
-end; 
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -47959,7 +47959,7 @@ begin
  try
   {Set Name}
   ThreadSetName(GetCurrentThreadID,FILESYS_CACHE_THREAD_NAME);
-  
+
   {Set Priority}
   ThreadSetPriority(GetCurrentThreadID,FILESYS_CACHE_THREAD_PRIORITY);
 
@@ -47976,7 +47976,7 @@ begin
    begin
     if FILESYS_LOG_ENABLED then FileSysLogError('CacheThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -48009,7 +48009,7 @@ begin
 
   {Set Priority}
   ThreadSetPriority(GetCurrentThreadID,FILESYS_CACHE_THREAD_PRIORITY);
-  
+
   while not Terminated do
    begin
     if FCache <> nil then
@@ -48023,7 +48023,7 @@ begin
    begin
     if FILESYS_LOG_ENABLED then FileSysLogError('CacheThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -48032,7 +48032,7 @@ end;
 constructor TIncrementalCacheThread.Create(ACache:TIncrementalCache);
 begin
  {}
- inherited Create(True,THREAD_STACK_DEFAULT_SIZE); 
+ inherited Create(True,THREAD_STACK_DEFAULT_SIZE);
  FCache:=ACache;
 end;
 
@@ -48070,7 +48070,7 @@ begin
    begin
     if FILESYS_LOG_ENABLED then FileSysLogError('CacheThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -48081,22 +48081,22 @@ begin
  {}
  inherited Create;
  FDriver:=ADriver;
- 
+
  FLock:=MutexCreate;
  FInterval:=0;
  FCheckTimer:=INVALID_HANDLE_VALUE;
  FProcessTimer:=INVALID_HANDLE_VALUE;
- 
+
  FCount:=0;
  FMaxCount:=0;
- 
+
  FFirst:=nil;
  FLast:=nil;
 end;
 
 {==============================================================================}
 
-destructor TEntryTimer.Destroy; 
+destructor TEntryTimer.Destroy;
 begin
  {}
  AcquireLock;
@@ -48105,14 +48105,14 @@ begin
   FProcessTimer:=INVALID_HANDLE_VALUE;
   if FCheckTimer <> INVALID_HANDLE_VALUE then TimerDestroy(FCheckTimer);
   FCheckTimer:=INVALID_HANDLE_VALUE;
-  
+
   FFirst:=nil;
   FLast:=nil;
   inherited Destroy;
- finally 
-  ReleaseLock; {Cannot destroy Mutex while holding lock} 
+ finally
+  ReleaseLock; {Cannot destroy Mutex while holding lock}
   MutexDestroy(FLock);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -48150,7 +48150,7 @@ begin
    begin
     {Remove First}
     FFirst:=Item.Next;
-   
+
     {Check Next}
     if Item.Next = nil then
      begin
@@ -48160,26 +48160,26 @@ begin
      begin
       Item.Next.Prev:=nil;
      end;
-    
+
     {Check First}
     if FFirst <> nil then
      begin
       {Update Key}
       Inc(FFirst.Key,Item.Key);
      end;
-      
+
     {Decrement Count}
     Dec(FCount);
-    
+
     {Return Result}
     Result:=TDiskEntry(Item.Entry);
-    
+
     {Release Item}
     FreeMem(Item);
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -48192,7 +48192,7 @@ var
 begin
  {}
  Result:=ENTRY_TIMER_KEY_NONE;
- 
+
  if not AcquireLock then Exit;
  try
   {Get Item (First)}
@@ -48204,7 +48204,7 @@ begin
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -48222,7 +48222,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Key}
  if AKey = ENTRY_TIMER_KEY_NONE then Exit;
 
@@ -48231,7 +48231,7 @@ begin
   {Get Item}
   Item:=GetMem(SizeOf(TEntryTimerItem));
   if Item = nil then Exit;
-  
+
   {Find Position}
   Offset:=0;
   Prev:=nil;
@@ -48242,24 +48242,24 @@ begin
     if AKey < (Offset + Next.Key) then
      begin
       Dec(Next.Key,(AKey - Offset));
-      Break; 
+      Break;
      end;
-    Inc(Offset,Next.Key);  
+    Inc(Offset,Next.Key);
     Prev:=Next;
-    Next:=Next.Next; 
+    Next:=Next.Next;
    end;
-  
+
   {Insert Item}
   Item.Key:=(AKey - Offset);
   Item.Entry:=AEntry;
   Item.Prev:=Prev;
   Item.Next:=Next;
-  
+
   {Check Prev}
   if Prev = nil then
    begin
     FFirst:=Item;
-    
+
     {Check Next}
     if Next = nil then
      begin
@@ -48268,12 +48268,12 @@ begin
     else
      begin
       Next.Prev:=Item;
-     end;      
+     end;
    end
   else
    begin
     Prev.Next:=Item;
-    
+
     {Check Next}
     if Next = nil then
      begin
@@ -48282,18 +48282,18 @@ begin
     else
      begin
       Next.Prev:=Item;
-     end;      
+     end;
    end;
-  
+
   {Increment Count}
   Inc(FCount);
   if FCount > FMaxCount then FMaxCount:=FCount;
-  
-  {Return Result} 
-  Result:=True;       
+
+  {Return Result}
+  Result:=True;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -48320,10 +48320,10 @@ begin
      begin
       Break;
      end;
-     
+
     Item:=Item.Next;
    end;
-   
+
   {Check Item}
   if Item <> nil then
    begin
@@ -48335,7 +48335,7 @@ begin
     if Prev = nil then
      begin
       FFirst:=Next;
-      
+
       {Check Next}
       if Next = nil then
        begin
@@ -48344,12 +48344,12 @@ begin
       else
        begin
         Next.Prev:=nil;
-       end;    
+       end;
      end
     else
      begin
       Prev.Next:=Next;
-      
+
       {Check Next}
       if Next = nil then
        begin
@@ -48359,27 +48359,27 @@ begin
        begin
         Next.Prev:=Prev;
        end;
-     end;  
-     
+     end;
+
     {Check Next}
     if Next <> nil then
      begin
       {Update Key}
       Inc(Next.Key,Item.Key);
      end;
-     
+
     {Decrement Count}
     Dec(FCount);
-     
+
     {Release Item}
     FreeMem(Item);
-    
-    {Return Result} 
-    Result:=True;       
-   end; 
+
+    {Return Result}
+    Result:=True;
+   end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -48392,7 +48392,7 @@ var
 begin
  {}
  Result:=ENTRY_TIMER_KEY_NONE;
- 
+
  if not AcquireLock then Exit;
  try
   {Get Item (First)}
@@ -48404,13 +48404,13 @@ begin
      begin
       Dec(Item.Key,FInterval);
      end;
-         
+
     {Return Result}
     Result:=Item.Key;
    end;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -48419,26 +48419,26 @@ function TEntryTimer.StartTimer(AInterval:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Driver}
   if FDriver = nil then Exit;
-  
+
   {Check Interval}
   if AInterval < 1 then Exit;
-  
+
   {Check Timers}
   if FCheckTimer <> INVALID_HANDLE_VALUE then Exit;
   if FProcessTimer <> INVALID_HANDLE_VALUE then Exit;
-  
+
   {Set Interval}
   FInterval:=AInterval;
-  
+
   {Create Check Timer}
   FCheckTimer:=TimerCreateEx(FInterval,TIMER_STATE_ENABLED,TIMER_FLAG_RESCHEDULE or TIMER_FLAG_WORKER,TTimerEvent(EntryCheckTimer),FDriver); {Rescheduled Automatically}
   if FCheckTimer = INVALID_HANDLE_VALUE then Exit;
-  
+
   {Create Process Timer}
   FProcessTimer:=TimerCreateEx(FInterval,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(EntryProcessTimer),FDriver); {Rescheduled by Timer Event}
   if FProcessTimer = INVALID_HANDLE_VALUE then
@@ -48446,15 +48446,15 @@ begin
     {Destroy Check Timer}
     TimerDestroy(FCheckTimer);
     FCheckTimer:=INVALID_HANDLE_VALUE;
-    
+
     Exit;
-   end; 
- 
+   end;
+
   {Return Result}
   Result:=True;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -48463,13 +48463,13 @@ function TEntryTimer.StopTimer:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   {Check Timers}
   if FCheckTimer = INVALID_HANDLE_VALUE then Exit;
   if FProcessTimer = INVALID_HANDLE_VALUE then Exit;
-  
+
   {Destroy Check Timer}
   if TimerDestroy(FCheckTimer) <> ERROR_SUCCESS then Exit;
   FCheckTimer:=INVALID_HANDLE_VALUE;
@@ -48477,15 +48477,15 @@ begin
   {Destroy Process Timer}
   if TimerDestroy(FProcessTimer) <> ERROR_SUCCESS then Exit;
   FProcessTimer:=INVALID_HANDLE_VALUE;
-  
+
   {Reset Interval}
   FInterval:=0;
-  
+
   {Return Result}
   Result:=True;
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -48517,42 +48517,42 @@ begin
  try
   {Check Driver}
   if FDriver = nil then Exit;
-   
+
   {Setup Result}
   Result:=True;
-     
+
   {Get First Key}
-  while FirstKey <= 0 do 
+  while FirstKey <= 0 do
    begin
     {Dequeue Entry}
     Entry:=Dequeue;
     if Entry <> nil then
-     begin    
+     begin
       {Check Entry}
       if Entry.ReferenceCount < 1 then
        begin
         {$IFDEF FILESYS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('EntryTimer: Destroying Entry (Name=' + Entry.Name + ')');
         {$ENDIF}
-        
+
         {Destroy Entry}
         Entry.Free;
        end
       else
-       begin    
+       begin
         {$IFDEF FILESYS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('EntryTimer: Rescheduling Entry (Name=' + Entry.Name + ' ReferenceCount=' + IntToStr(Entry.ReferenceCount) + ')');
         {$ENDIF}
 
         {Insert Key}
         Result:=InsertKey(Entry,FILESYS_ENTRY_DELETE_TIMEOUT);
-       end; 
-     end;  
+       end;
+     end;
    end;
- finally 
+ finally
   {Enable Timer}
   TimerEnable(FProcessTimer);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -48561,11 +48561,11 @@ function TEntryTimer.ScheduleEntry(AEntry:TDiskEntry;ATimeout:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Entry}
  {if AEntry = nil then Exit;} {Do not check}
 
- {Check Timeout} 
+ {Check Timeout}
  if ATimeout < 1 then ATimeout:=FInterval;
 
  {Insert Key}
@@ -48574,17 +48574,17 @@ end;
 
 {==============================================================================}
 
-function TEntryTimer.UnscheduleEntry(AEntry:TDiskEntry):Boolean; 
+function TEntryTimer.UnscheduleEntry(AEntry:TDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Entry}
  {if AEntry = nil then Exit;} {Do not check}
 
  {Delete Key}
  Result:=DeleteKey(AEntry);
-end; 
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -48876,9 +48876,9 @@ begin
      Result:=True;
     end;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -48910,10 +48910,10 @@ begin
    begin
     {Accept Create Partition}
     if ADevice = nil then Exit;
-    
+
     {Check Device}
     if (ADevice.MediaType <> mtFIXED) and (ADevice.MediaType <> mtREMOVABLE) then Exit;
-    
+
     {Check Partition and Volume}
     if FDriver.GetPartitionByDevice(ADevice,False,FILESYS_LOCK_NONE) = nil then {Do not lock}
      begin
@@ -48923,15 +48923,15 @@ begin
         try
          {Check File System Type}
          if Volume.FileSysType <> fsUNKNOWN then Exit;
-        finally  
+        finally
          Volume.ReaderUnlock;
-        end; 
+        end;
        end;
-     end; 
-    
+     end;
+
     {Check Parent}
     if AParent <> nil then Exit;
-    
+
     {Check Type}
     case APartitionId of
      pidXENIXROOT,
@@ -49186,7 +49186,7 @@ begin
       {Accept Delete Partition}
       {Check Children}
       if (AParent = nil) and (FDriver.GetPartitionByPartition(APartition,False,FILESYS_LOCK_NONE) <> nil) then Exit; {Do not lock}
-      
+
       Result:=True;
      end
     else if APartitionId <> APartition.PartitionId then
@@ -49194,7 +49194,7 @@ begin
       {Accept Modify Partition}
       {Check Extended}
       if APartition.Extended then Exit;
-      
+
       {Nothing}
      end
     else if APartitionId = APartition.PartitionId then
@@ -49202,13 +49202,13 @@ begin
       {Accept Activate Partition}
       {Check Primary}
       if not APartition.Primary then Exit;
-      
+
       {Nothing}
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -49225,7 +49225,7 @@ var
 begin
  {}
  Result:=0;
-  
+
  if not ReaderLock then Exit;
  try
   {Check Device}
@@ -49236,15 +49236,15 @@ begin
 
   {Check Block Count}
   if ADevice.Storage.BlockCount = 0 then Exit;
-  
+
   {Check Heads}
   Heads:=GetHeads(ADevice);
   if Heads = 0 then Exit;
-  
+
   {Check Sectors}
   Sectors:=GetSectors(ADevice);
   if Sectors = 0 then Exit;
-  
+
   {Check Media Type}
   Media:=MediaType(ADevice);
   case Media of
@@ -49283,9 +49283,9 @@ begin
       end;
     end;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -49300,7 +49300,7 @@ var
 begin
  {}
  Result:=0;
-  
+
  if not ReaderLock then Exit;
  try
   {Check Device}
@@ -49308,14 +49308,14 @@ begin
 
   {Check Storage}
   if ADevice.Storage = nil then Exit;
-  
+
   {Check Block Count}
   if ADevice.Storage.BlockCount = 0 then Exit;
-  
+
   {Check Sectors}
   Sectors:=GetSectors(ADevice);
   if Sectors = 0 then Exit;
-  
+
   {Check Media Type}
   Media:=MediaType(ADevice);
   case Media of
@@ -49355,7 +49355,7 @@ begin
          Result:=255; {Default to 255 Heads}
         end
        else
-        begin       
+        begin
          Value:=ADevice.Storage.BlockCount div Sectors;
          if (Value mod 255 = 0) then
           begin
@@ -49385,9 +49385,9 @@ begin
       end;
     end;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -49401,7 +49401,7 @@ var
 begin
  {}
  Result:=0;
-  
+
  if not ReaderLock then Exit;
  try
   {Check Device}
@@ -49409,10 +49409,10 @@ begin
 
   {Check Storage}
   if ADevice.Storage = nil then Exit;
-  
+
   {Check Block Count}
   if ADevice.Storage.BlockCount = 0 then Exit;
-  
+
   {Check Media Type}
   Media:=MediaType(ADevice);
   case Media of
@@ -49452,7 +49452,7 @@ begin
          Result:=63; {Default to 63 Sectors}
         end
        else
-        begin       
+        begin
          Value:=ADevice.Storage.BlockCount;
          if (Value mod 63 = 0) then
           begin
@@ -49466,13 +49466,13 @@ begin
           begin
            Result:=17; {Assume 17 Sectors}
           end;
-        end;  
+        end;
       end;
     end;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -49484,7 +49484,7 @@ var
 begin
  {}
  Result:=0;
-  
+
  if not ReaderLock then Exit;
  try
   {Check Device}
@@ -49493,14 +49493,14 @@ begin
   {Check Cylinders}
   Cylinders:=GetCylinders(ADevice);
   if Cylinders = 0 then Exit;
-  
+
   while (Cylinders shr Result) > 1024 do
    begin
     Inc(Result);
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -49515,11 +49515,11 @@ end;
 
 {==============================================================================}
 
-function TATADiskController.ControllerInit:Boolean; 
+function TATADiskController.ControllerInit:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -49528,17 +49528,17 @@ begin
   {$ENDIF}
 
   if FDriver = nil then Exit;
- 
+
   {Nothing}
   Result:=True;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TATADiskController.LocateDevices:Boolean; 
+function TATADiskController.LocateDevices:Boolean;
 begin
  {}
  Result:=False;
@@ -49554,10 +49554,10 @@ begin
 
   {Nothing (ATA devices are added and removed by notification}
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
-end; 
+ end;
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -49571,11 +49571,11 @@ end;
 
 {==============================================================================}
 
-function TATAPIDiskController.ControllerInit:Boolean; 
+function TATAPIDiskController.ControllerInit:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -49584,17 +49584,17 @@ begin
   {$ENDIF}
 
   if FDriver = nil then Exit;
- 
+
   {Nothing}
   Result:=True;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TATAPIDiskController.LocateDevices:Boolean; 
+function TATAPIDiskController.LocateDevices:Boolean;
 begin
  {}
  Result:=False;
@@ -49610,10 +49610,10 @@ begin
 
   {Nothing (ATAPI devices are added and removed by notification}
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
-end; 
+ end;
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -49627,11 +49627,11 @@ end;
 
 {==============================================================================}
 
-function TSCSIDiskController.ControllerInit:Boolean; 
+function TSCSIDiskController.ControllerInit:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -49640,17 +49640,17 @@ begin
   {$ENDIF}
 
   if FDriver = nil then Exit;
- 
+
   {Nothing}
   Result:=True;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TSCSIDiskController.LocateDevices:Boolean; 
+function TSCSIDiskController.LocateDevices:Boolean;
 begin
  {}
  Result:=False;
@@ -49666,10 +49666,10 @@ begin
 
   {Nothing (SCSI devices are added and removed by notification}
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
-end; 
+ end;
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -49683,11 +49683,11 @@ end;
 
 {==============================================================================}
 
-function TUSBDiskController.ControllerInit:Boolean; 
+function TUSBDiskController.ControllerInit:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
@@ -49696,17 +49696,17 @@ begin
   {$ENDIF}
 
   if FDriver = nil then Exit;
- 
+
   {Nothing}
   Result:=True;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.LocateDevices:Boolean; 
+function TUSBDiskController.LocateDevices:Boolean;
 begin
  {}
  Result:=False;
@@ -49722,14 +49722,14 @@ begin
 
   {Nothing (USB devices are added and removed by notification}
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
-end; 
+ end;
+end;
 
 {==============================================================================}
 
-function TUSBDiskController.Read(ADevice:TDiskDevice;ASector:LongWord;ACount:Word;var ABuffer):Boolean; 
+function TUSBDiskController.Read(ADevice:TDiskDevice;ASector:LongWord;ACount:Word;var ABuffer):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -49743,25 +49743,25 @@ begin
   {Check Device}
   if ADevice = nil then Exit;
 
-  {Check Count} 
+  {Check Count}
   if ACount = 0 then Exit;
 
   {Check Readable}
   if not ADevice.Readable then Exit;
- 
+
   {Check Storage}
   if ADevice.Storage = nil then Exit;
- 
+
   {Read Storage}
   Result:=(StorageDeviceRead(ADevice.Storage,ASector,ACount,@ABuffer) = ERROR_SUCCESS);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
-function TUSBDiskController.Write(ADevice:TDiskDevice;ASector:LongWord;ACount:Word;const ABuffer):Boolean; 
+function TUSBDiskController.Write(ADevice:TDiskDevice;ASector:LongWord;ACount:Word;const ABuffer):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -49775,25 +49775,25 @@ begin
   {Check Device}
   if ADevice = nil then Exit;
 
-  {Check Count} 
+  {Check Count}
   if ACount = 0 then Exit;
 
   {Check Writeable}
   if not ADevice.Writeable then Exit;
- 
+
   {Check Storage}
   if ADevice.Storage = nil then Exit;
- 
+
   {Write Storage}
   Result:=(StorageDeviceWrite(ADevice.Storage,ASector,ACount,@ABuffer) = ERROR_SUCCESS);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.Reset(ADevice:TDiskDevice):Boolean; 
+function TUSBDiskController.Reset(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -49811,17 +49811,17 @@ begin
 
   {Check Storage}
   if ADevice.Storage = nil then Exit;
- 
+
   {Reset Storage}
   Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_RESET,Argument,Argument) = ERROR_SUCCESS);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.LockMedia(ADevice:TDiskDevice):Boolean; 
+function TUSBDiskController.LockMedia(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -49843,14 +49843,14 @@ begin
   {Lock Media}
   Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_LOCK,Argument,Argument) = ERROR_SUCCESS);
   if Result then ADevice.FLocked:=Locked(ADevice);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.UnlockMedia(ADevice:TDiskDevice):Boolean; 
+function TUSBDiskController.UnlockMedia(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -49872,14 +49872,14 @@ begin
   {Unlock Media}
   Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_UNLOCK,Argument,Argument) = ERROR_SUCCESS);
   if Result then ADevice.FLocked:=Locked(ADevice);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.EjectMedia(ADevice:TDiskDevice):Boolean; 
+function TUSBDiskController.EjectMedia(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -49900,14 +49900,14 @@ begin
 
   {Eject Media}
   Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_EJECT,Argument,Argument) = ERROR_SUCCESS);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.MediaReady(ADevice:TDiskDevice):Boolean; 
+function TUSBDiskController.MediaReady(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -49928,14 +49928,14 @@ begin
 
   {Check Ready}
   Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_TEST_READY,Argument,Argument) = ERROR_SUCCESS);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.MediaChanged(ADevice:TDiskDevice):Boolean; 
+function TUSBDiskController.MediaChanged(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -49956,14 +49956,14 @@ begin
 
   {Check Changed}
   Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_TEST_CHANGED,Argument,Argument) = ERROR_SUCCESS);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.MediaLocked(ADevice:TDiskDevice):Boolean; 
+function TUSBDiskController.MediaLocked(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -49984,14 +49984,14 @@ begin
 
   {Check Locked}
   Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_TEST_LOCKED,Argument,Argument) = ERROR_SUCCESS);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.Information(ADevice:TDiskDevice):String; 
+function TUSBDiskController.Information(ADevice:TDiskDevice):String;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50009,15 +50009,15 @@ begin
   if ADevice.Storage = nil then Exit;
 
   {Return Result}
-  Result:=FILESYS_USB_DEVICE_DESCRIPTION; 
- finally  
+  Result:=FILESYS_USB_DEVICE_DESCRIPTION;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.VendorId(ADevice:TDiskDevice):Word; 
+function TUSBDiskController.VendorId(ADevice:TDiskDevice):Word;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -50041,14 +50041,14 @@ begin
    begin
     Result:=Argument;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.DeviceId(ADevice:TDiskDevice):Word; 
+function TUSBDiskController.DeviceId(ADevice:TDiskDevice):Word;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -50072,14 +50072,14 @@ begin
    begin
     Result:=Argument;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
-   
-function TUSBDiskController.Manufacturer(ADevice:TDiskDevice):String; 
+
+function TUSBDiskController.Manufacturer(ADevice:TDiskDevice):String;
 {Note: Caller must hold the device lock}
 var
  Len:LongWord;
@@ -50107,16 +50107,16 @@ begin
      begin
       SetLength(Result,Len);
       StrLCopy(PChar(Result),PChar(Argument),Len);
-     end; 
+     end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.Product(ADevice:TDiskDevice):String; 
+function TUSBDiskController.Product(ADevice:TDiskDevice):String;
 {Note: Caller must hold the device lock}
 var
  Len:LongWord;
@@ -50144,16 +50144,16 @@ begin
      begin
       SetLength(Result,Len);
       StrLCopy(PChar(Result),PChar(Argument),Len);
-     end; 
+     end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.SerialNumber(ADevice:TDiskDevice):String; 
+function TUSBDiskController.SerialNumber(ADevice:TDiskDevice):String;
 {Note: Caller must hold the device lock}
 var
  Len:LongWord;
@@ -50181,16 +50181,16 @@ begin
      begin
       SetLength(Result,Len);
       StrLCopy(PChar(Result),PChar(Argument),Len);
-     end; 
+     end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
-   
-function TUSBDiskController.LogicalUnitNo(ADevice:TDiskDevice):LongWord; 
+
+function TUSBDiskController.LogicalUnitNo(ADevice:TDiskDevice):LongWord;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50209,14 +50209,14 @@ begin
 
   {Return Result}
   Result:=ADevice.Storage.TargetLUN;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
-   
-function TUSBDiskController.LBA(ADevice:TDiskDevice):Boolean; 
+
+function TUSBDiskController.LBA(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50235,14 +50235,14 @@ begin
 
   {Nothing (Always support LBA)}
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.MediaType(ADevice:TDiskDevice):TMediaType; 
+function TUSBDiskController.MediaType(ADevice:TDiskDevice):TMediaType;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50267,14 +50267,14 @@ begin
    STORAGE_TYPE_OPTICAL,STORAGE_TYPE_TAPE:Result:=mtOTHER;
    STORAGE_TYPE_REMOVABLE:Result:=mtREMOVABLE;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.FloppyType(ADevice:TDiskDevice):TFloppyType; 
+function TUSBDiskController.FloppyType(ADevice:TDiskDevice):TFloppyType;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50303,15 +50303,15 @@ begin
     else
      Result:=ftATAPI;
     end;
-   end; 
- finally  
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.Ready(ADevice:TDiskDevice):Boolean; 
+function TUSBDiskController.Ready(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50330,14 +50330,14 @@ begin
 
   {Get Ready}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_NOT_READY) = 0);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.Locked(ADevice:TDiskDevice):Boolean; 
+function TUSBDiskController.Locked(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50356,14 +50356,14 @@ begin
 
   {Get Locked}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_LOCKED) = STORAGE_FLAG_LOCKED);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.Lockable(ADevice:TDiskDevice):Boolean; 
+function TUSBDiskController.Lockable(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50382,14 +50382,14 @@ begin
 
   {Get Lockable}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_LOCKABLE) = STORAGE_FLAG_LOCKABLE);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.Ejectable(ADevice:TDiskDevice):Boolean; 
+function TUSBDiskController.Ejectable(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50408,14 +50408,14 @@ begin
 
   {Get Ejectable}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_EJECTABLE) = STORAGE_FLAG_EJECTABLE);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.Readable(ADevice:TDiskDevice):Boolean; 
+function TUSBDiskController.Readable(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50434,14 +50434,14 @@ begin
 
   {Get Readable}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_WRITE_ONLY) = 0);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.Writeable(ADevice:TDiskDevice):Boolean; 
+function TUSBDiskController.Writeable(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50460,14 +50460,14 @@ begin
 
   {Get Writeable}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_READ_ONLY) = 0);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.Removable(ADevice:TDiskDevice):Boolean; 
+function TUSBDiskController.Removable(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50486,14 +50486,14 @@ begin
 
   {Get Removable}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_REMOVABLE) <> 0);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.ChangeLine(ADevice:TDiskDevice):Boolean; 
+function TUSBDiskController.ChangeLine(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50512,14 +50512,14 @@ begin
 
   {Get Change Line}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_CHANGABLE) = STORAGE_FLAG_CHANGABLE);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.PhysicalCylinders(ADevice:TDiskDevice):LongWord; 
+function TUSBDiskController.PhysicalCylinders(ADevice:TDiskDevice):LongWord;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50538,14 +50538,14 @@ begin
 
   {Get Physical Cylinders}
   Result:=GetCylinders(ADevice);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.PhysicalHeads(ADevice:TDiskDevice):LongWord; 
+function TUSBDiskController.PhysicalHeads(ADevice:TDiskDevice):LongWord;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50564,14 +50564,14 @@ begin
 
   {Get Physical Heads}
   Result:=GetHeads(ADevice);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.PhysicalSectors(ADevice:TDiskDevice):LongWord; 
+function TUSBDiskController.PhysicalSectors(ADevice:TDiskDevice):LongWord;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50590,14 +50590,14 @@ begin
 
   {Get Physical Sectors}
   Result:=GetSectors(ADevice);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.LogicalCylinders(ADevice:TDiskDevice):LongWord; 
+function TUSBDiskController.LogicalCylinders(ADevice:TDiskDevice):LongWord;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50616,9 +50616,9 @@ begin
 
   {Get Logical Cylinders}
   Result:=((GetCylinders(ADevice) shr GetLogicalShiftCount(ADevice)) and $FFFFFFFE); {Round to even multiple}
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -50642,14 +50642,14 @@ begin
 
   {Get Logical Heads}
   Result:=(GetHeads(ADevice) shl GetLogicalShiftCount(ADevice));
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.LogicalSectors(ADevice:TDiskDevice):LongWord; 
+function TUSBDiskController.LogicalSectors(ADevice:TDiskDevice):LongWord;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50668,14 +50668,14 @@ begin
 
   {Get Logical Sectors}
   Result:=GetSectors(ADevice);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.SectorSize(ADevice:TDiskDevice):Word; 
+function TUSBDiskController.SectorSize(ADevice:TDiskDevice):Word;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50694,14 +50694,14 @@ begin
 
   {Get Sector Size}
   Result:=ADevice.Storage.BlockSize;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TUSBDiskController.SectorCount(ADevice:TDiskDevice):Int64; 
+function TUSBDiskController.SectorCount(ADevice:TDiskDevice):Int64;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50720,9 +50720,9 @@ begin
 
   {Get Sector Count}
   Result:=ADevice.Storage.BlockCount;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -50737,30 +50737,30 @@ end;
 
 {==============================================================================}
 
-function TMMCDiskController.ControllerInit:Boolean; 
+function TMMCDiskController.ControllerInit:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   {$IFDEF FILESYS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TMMCDiskController.ControllerInit');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                    Name = ' + Name);
   {$ENDIF}
-  
+
   if FDriver = nil then Exit;
- 
+
   {Nothing}
   Result:=True;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.LocateDevices:Boolean; 
+function TMMCDiskController.LocateDevices:Boolean;
 begin
  {}
  Result:=False;
@@ -50776,14 +50776,14 @@ begin
 
   {Nothing (MMC devices are added and removed by notification}
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
-end; 
+ end;
+end;
 
 {==============================================================================}
 
-function TMMCDiskController.Read(ADevice:TDiskDevice;ASector:LongWord;ACount:Word;var ABuffer):Boolean; 
+function TMMCDiskController.Read(ADevice:TDiskDevice;ASector:LongWord;ACount:Word;var ABuffer):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50797,25 +50797,25 @@ begin
   {Check Device}
   if ADevice = nil then Exit;
 
-  {Check Count} 
+  {Check Count}
   if ACount = 0 then Exit;
 
   {Check Readable}
   if not ADevice.Readable then Exit;
- 
+
   {Check Storage}
   if ADevice.Storage = nil then Exit;
- 
+
   {Read Storage}
   Result:=(StorageDeviceRead(ADevice.Storage,ASector,ACount,@ABuffer) = ERROR_SUCCESS);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
-function TMMCDiskController.Write(ADevice:TDiskDevice;ASector:LongWord;ACount:Word;const ABuffer):Boolean; 
+function TMMCDiskController.Write(ADevice:TDiskDevice;ASector:LongWord;ACount:Word;const ABuffer):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50829,25 +50829,25 @@ begin
   {Check Device}
   if ADevice = nil then Exit;
 
-  {Check Count} 
+  {Check Count}
   if ACount = 0 then Exit;
 
   {Check Writeable}
   if not ADevice.Writeable then Exit;
- 
+
   {Check Storage}
   if ADevice.Storage = nil then Exit;
- 
+
   {Write Storage}
   Result:=(StorageDeviceWrite(ADevice.Storage,ASector,ACount,@ABuffer) = ERROR_SUCCESS);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.Erase(ADevice:TDiskDevice;ASector:LongWord;ACount:Word):Boolean; 
+function TMMCDiskController.Erase(ADevice:TDiskDevice;ASector:LongWord;ACount:Word):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -50861,25 +50861,25 @@ begin
   {Check Device}
   if ADevice = nil then Exit;
 
-  {Check Count} 
+  {Check Count}
   if ACount = 0 then Exit;
 
   {Check Writeable}
   if not ADevice.Writeable then Exit;
- 
+
   {Check Storage}
   if ADevice.Storage = nil then Exit;
- 
+
   {Erase Storage}
   Result:=(StorageDeviceErase(ADevice.Storage,ASector,ACount) = ERROR_SUCCESS);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.Reset(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.Reset(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -50897,17 +50897,17 @@ begin
 
   {Check Storage}
   if ADevice.Storage = nil then Exit;
- 
+
   {Reset Storage}
   Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_RESET,Argument,Argument) = ERROR_SUCCESS);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.LockMedia(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.LockMedia(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -50929,14 +50929,14 @@ begin
   {Lock Media}
   Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_LOCK,Argument,Argument) = ERROR_SUCCESS);
   if Result then ADevice.FLocked:=Locked(ADevice);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.UnlockMedia(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.UnlockMedia(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -50958,14 +50958,14 @@ begin
   {Unlock Media}
   Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_UNLOCK,Argument,Argument) = ERROR_SUCCESS);
   if Result then ADevice.FLocked:=Locked(ADevice);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.EjectMedia(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.EjectMedia(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -50986,14 +50986,14 @@ begin
 
   {Eject Media}
   Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_EJECT,Argument,Argument) = ERROR_SUCCESS);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.MediaReady(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.MediaReady(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -51014,14 +51014,14 @@ begin
 
   {Check Ready}
   Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_TEST_READY,Argument,Argument) = ERROR_SUCCESS);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.MediaChanged(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.MediaChanged(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -51042,14 +51042,14 @@ begin
 
   {Check Changed}
   Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_TEST_CHANGED,Argument,Argument) = ERROR_SUCCESS);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.MediaLocked(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.MediaLocked(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -51070,14 +51070,14 @@ begin
 
   {Check Locked}
   Result:=(StorageDeviceControl(ADevice.Storage,STORAGE_CONTROL_TEST_LOCKED,Argument,Argument) = ERROR_SUCCESS);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.Information(ADevice:TDiskDevice):String; 
+function TMMCDiskController.Information(ADevice:TDiskDevice):String;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51095,15 +51095,15 @@ begin
   if ADevice.Storage = nil then Exit;
 
   {Return Result}
-  Result:=FILESYS_MMC_DEVICE_DESCRIPTION; 
- finally  
+  Result:=FILESYS_MMC_DEVICE_DESCRIPTION;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.VendorId(ADevice:TDiskDevice):Word; 
+function TMMCDiskController.VendorId(ADevice:TDiskDevice):Word;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -51127,14 +51127,14 @@ begin
    begin
     Result:=Argument;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.DeviceId(ADevice:TDiskDevice):Word; 
+function TMMCDiskController.DeviceId(ADevice:TDiskDevice):Word;
 {Note: Caller must hold the device lock}
 var
  Argument:PtrUInt;
@@ -51158,14 +51158,14 @@ begin
    begin
     Result:=Argument;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
-   
-function TMMCDiskController.Manufacturer(ADevice:TDiskDevice):String; 
+
+function TMMCDiskController.Manufacturer(ADevice:TDiskDevice):String;
 {Note: Caller must hold the device lock}
 var
  Len:LongWord;
@@ -51193,16 +51193,16 @@ begin
      begin
       SetLength(Result,Len);
       StrLCopy(PChar(Result),PChar(Argument),Len);
-     end; 
+     end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.Product(ADevice:TDiskDevice):String; 
+function TMMCDiskController.Product(ADevice:TDiskDevice):String;
 {Note: Caller must hold the device lock}
 var
  Len:LongWord;
@@ -51230,16 +51230,16 @@ begin
      begin
       SetLength(Result,Len);
       StrLCopy(PChar(Result),PChar(Argument),Len);
-     end; 
+     end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.SerialNumber(ADevice:TDiskDevice):String; 
+function TMMCDiskController.SerialNumber(ADevice:TDiskDevice):String;
 {Note: Caller must hold the device lock}
 var
  Len:LongWord;
@@ -51267,16 +51267,16 @@ begin
      begin
       SetLength(Result,Len);
       StrLCopy(PChar(Result),PChar(Argument),Len);
-     end; 
+     end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
-   
-function TMMCDiskController.LogicalUnitNo(ADevice:TDiskDevice):LongWord; 
+
+function TMMCDiskController.LogicalUnitNo(ADevice:TDiskDevice):LongWord;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51295,14 +51295,14 @@ begin
 
   {Return Result}
   Result:=ADevice.Storage.TargetLUN;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
-   
-function TMMCDiskController.LBA(ADevice:TDiskDevice):Boolean; 
+
+function TMMCDiskController.LBA(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51321,14 +51321,14 @@ begin
 
   {Nothing (Always support LBA)}
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.MediaType(ADevice:TDiskDevice):TMediaType; 
+function TMMCDiskController.MediaType(ADevice:TDiskDevice):TMediaType;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51353,14 +51353,14 @@ begin
    STORAGE_TYPE_OPTICAL,STORAGE_TYPE_TAPE:Result:=mtOTHER;
    STORAGE_TYPE_REMOVABLE:Result:=mtREMOVABLE;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.FloppyType(ADevice:TDiskDevice):TFloppyType; 
+function TMMCDiskController.FloppyType(ADevice:TDiskDevice):TFloppyType;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51389,15 +51389,15 @@ begin
     else
      Result:=ftATAPI;
     end;
-   end; 
- finally  
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.Ready(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.Ready(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51416,14 +51416,14 @@ begin
 
   {Get Ready}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_NOT_READY) = 0);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.Locked(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.Locked(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51442,14 +51442,14 @@ begin
 
   {Get Locked}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_LOCKED) = STORAGE_FLAG_LOCKED);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.Lockable(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.Lockable(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51468,14 +51468,14 @@ begin
 
   {Get Lockable}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_LOCKABLE) = STORAGE_FLAG_LOCKABLE);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.Ejectable(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.Ejectable(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51494,14 +51494,14 @@ begin
 
   {Get Ejectable}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_EJECTABLE) = STORAGE_FLAG_EJECTABLE);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.Readable(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.Readable(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51520,14 +51520,14 @@ begin
 
   {Get Readable}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_WRITE_ONLY) = 0);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.Writeable(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.Writeable(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51546,14 +51546,14 @@ begin
 
   {Get Writeable}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_READ_ONLY) = 0);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.Eraseable(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.Eraseable(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51572,14 +51572,14 @@ begin
 
   {Get Writeable}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_ERASEABLE) = STORAGE_FLAG_ERASEABLE);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.Removable(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.Removable(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51598,14 +51598,14 @@ begin
 
   {Get Removable}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_REMOVABLE) <> 0);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.ChangeLine(ADevice:TDiskDevice):Boolean; 
+function TMMCDiskController.ChangeLine(ADevice:TDiskDevice):Boolean;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51624,14 +51624,14 @@ begin
 
   {Get Change Line}
   Result:=((ADevice.Storage.Device.DeviceFlags and STORAGE_FLAG_CHANGABLE) = STORAGE_FLAG_CHANGABLE);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.PhysicalCylinders(ADevice:TDiskDevice):LongWord; 
+function TMMCDiskController.PhysicalCylinders(ADevice:TDiskDevice):LongWord;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51650,14 +51650,14 @@ begin
 
   {Get Physical Cylinders}
   Result:=GetCylinders(ADevice);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.PhysicalHeads(ADevice:TDiskDevice):LongWord; 
+function TMMCDiskController.PhysicalHeads(ADevice:TDiskDevice):LongWord;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51676,14 +51676,14 @@ begin
 
   {Get Physical Heads}
   Result:=GetHeads(ADevice);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.PhysicalSectors(ADevice:TDiskDevice):LongWord; 
+function TMMCDiskController.PhysicalSectors(ADevice:TDiskDevice):LongWord;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51702,14 +51702,14 @@ begin
 
   {Get Physical Sectors}
   Result:=GetSectors(ADevice);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.LogicalCylinders(ADevice:TDiskDevice):LongWord; 
+function TMMCDiskController.LogicalCylinders(ADevice:TDiskDevice):LongWord;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51728,14 +51728,14 @@ begin
 
   {Get Logical Cylinders}
   Result:=((GetCylinders(ADevice) shr GetLogicalShiftCount(ADevice)) and $FFFFFFFE); {Round to even multiple}
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.LogicalHeads(ADevice:TDiskDevice):LongWord; 
+function TMMCDiskController.LogicalHeads(ADevice:TDiskDevice):LongWord;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51754,14 +51754,14 @@ begin
 
   {Get Logical Heads}
   Result:=(GetHeads(ADevice) shl GetLogicalShiftCount(ADevice));
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.LogicalSectors(ADevice:TDiskDevice):LongWord; 
+function TMMCDiskController.LogicalSectors(ADevice:TDiskDevice):LongWord;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51780,14 +51780,14 @@ begin
 
   {Get Logical Sectors}
   Result:=GetSectors(ADevice);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.SectorSize(ADevice:TDiskDevice):Word; 
+function TMMCDiskController.SectorSize(ADevice:TDiskDevice):Word;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51806,14 +51806,14 @@ begin
 
   {Get Sector Size}
   Result:=ADevice.Storage.BlockSize;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TMMCDiskController.SectorCount(ADevice:TDiskDevice):Int64; 
+function TMMCDiskController.SectorCount(ADevice:TDiskDevice):Int64;
 {Note: Caller must hold the device lock}
 begin
  {}
@@ -51832,9 +51832,9 @@ begin
 
   {Get Sector Count}
   Result:=ADevice.Storage.BlockCount;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -51923,7 +51923,7 @@ end;
 procedure TFSHandleStreamEx.SetSize(NewSize:LongInt);
 begin
  {}
- Seek(NewSize,soFromBeginning); 
+ Seek(NewSize,soFromBeginning);
  FSFileTruncate(FHandle);
 end;
 
@@ -51933,7 +51933,7 @@ procedure TFSHandleStreamEx.SetSizeEx(const NewSize:Int64);
 begin
  {}
  SeekEx(NewSize,soFromBeginning);
- FSFileTruncate(FHandle); 
+ FSFileTruncate(FHandle);
 end;
 
 {=============================================================================}
@@ -52011,24 +52011,24 @@ begin
  {}
  {Check Initialized}
  if FileSysInitialized then Exit;
- 
+
  {Initialize Logging}
- FILESYS_LOG_ENABLED:=(FILESYS_DEFAULT_LOG_LEVEL <> FILESYS_LOG_LEVEL_NONE); 
- 
+ FILESYS_LOG_ENABLED:=(FILESYS_DEFAULT_LOG_LEVEL <> FILESYS_LOG_LEVEL_NONE);
+
  {Create Lock}
  FileSysLock:=CriticalSectionCreate;
  if FileSysLock = INVALID_HANDLE_VALUE then
   begin
    if FILESYS_LOG_ENABLED then FileSysLogError('Failed to create filesystem lock');
   end;
- 
+
  {Set Startup Defaults}
  FileSysStartupCount:=0;
  FileSysStartupError:=ERROR_NOT_READY;
- 
+
  {Create FileSys Driver}
  FileSysDriver:=TFileSysDriver.Create;
- 
+
  {Check ATA Enabled}
  if FILESYS_ATA_ENABLED then
   begin
@@ -52044,7 +52044,7 @@ begin
    FileSysATAPIController:=TATAPIDiskController.Create(FileSysDriver);
    FileSysATAPIController.ControllerInit;
   end;
-  
+
  {Check SCSI Enabled}
  if FILESYS_SCSI_ENABLED then
   begin
@@ -52068,13 +52068,13 @@ begin
    FileSysMMCController:=TMMCDiskController.Create(FileSysDriver);
    FileSysMMCController.ControllerInit;
   end;
-  
+
  {Setup Platform Handlers}
  {Text IO}
  {TextIOReadCharHandler:=SysTextIOReadChar;}       {Only registered when calling FileSysRedirectInput}
  {TextIOWriteCharHandler:=SysTextIOWriteChar;}     {Only registered when calling FileSysRedirectOutput}
  {TextIOWriteBufferHandler:=SysTextIOWriteBuffer;} {Only registered when calling FileSysRedirectOutput}
-  
+
  {Setup System Handlers}
  {File Functions}
  SysDoCloseHandler:=SystemDoClose;
@@ -52093,7 +52093,7 @@ begin
  SysDoRmDirHandler:=SystemDoRmDir;
  SysDoChDirHandler:=SystemDoChDir;
  SysDoGetDirHandler:=SystemDoGetDir;
- 
+
  {Setup Dos Handlers}
  {Disk Functions}
  DosDiskFreeHandler:=DosDiskFree;
@@ -52109,7 +52109,7 @@ begin
  DosSetFAttrHandler:=DosSetFAttr;
  DosGetShortNameHandler:=DosGetShortName;
  DosGetLongNameHandler:=DosGetLongName;
- 
+
  {Setup SysUtils Handlers}
  {File Functions}
  SysUtilsFileOpenHandler:=SysUtilsFileOpen;
@@ -52131,7 +52131,7 @@ begin
  SysUtilsFileReadHandler:=SysUtilsFileRead;
  SysUtilsFileWriteHandler:=SysUtilsFileWrite;
  SysUtilsFileSeekExHandler:=SysUtilsFileSeekEx;
- 
+
  SysUtilsInternalFindFirstHandler:=SysUtilsInternalFindFirst;
  SysUtilsInternalFindNextHandler:=SysUtilsInternalFindNext;
  SysUtilsInternalFindCloseHandler:=SysUtilsInternalFindClose;
@@ -52139,7 +52139,7 @@ begin
  SysUtilsDiskFreeHandler:=SysUtilsDiskFree;
  SysUtilsDiskSizeHandler:=SysUtilsDiskSize;
  SysUtilsDirectoryExistsHandler:=SysUtilsDirectoryExists;
- 
+
  {Setup Ultibo Handlers}
  {Drive Functions (Compatibility)}
  UltiboGetDriveTypeAHandler:=FSGetDiskType;
@@ -52208,43 +52208,43 @@ begin
  UltiboGetLongPathNameAHandler:=FSGetLongPathName;
  UltiboGetShortPathNameAHandler:=FSGetShortPathName;
  UltiboGetFullPathNameAHandler:=FSGetFullPathName;
- 
+
  {Check Environment Variables (FileSystem)}
  //To Do
- 
+
  {Check Environment Variables (Cache)}
  {FILESYS_CACHE_SIZE}
  WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_CACHE_SIZE'),0);
  if WorkInt > 0 then FILESYS_CACHE_SIZE:=WorkInt;
- 
+
  {FILESYS_CACHE_PAGE}
  WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_CACHE_PAGE'),0);
  if WorkInt > 0 then FILESYS_CACHE_PAGE:=WorkInt;
- 
+
  {FILESYS_CACHE_KEYS}
  WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_CACHE_KEYS'),0);
  if WorkInt > 0 then FILESYS_CACHE_KEYS:=WorkInt;
- 
+
  {FILESYS_CACHE_MODE}
  //To Do
- 
+
  {Check Environment Variables (Logging)}
  {FILESYS_REGISTER_LOGGING}
  WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_REGISTER_LOGGING'),0);
  if WorkInt <> 0 then FILESYS_REGISTER_LOGGING:=True;
- 
+
  {FILESYS_LOGGING_DEFAULT}
  WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_DEFAULT'),0);
  if WorkInt <> 0 then FILESYS_LOGGING_DEFAULT:=True;
- 
+
  {FILESYS_LOGGING_FILE}
  WorkBuffer:=EnvironmentGet('FILESYS_LOGGING_FILE');
  if Length(WorkBuffer) <> 0 then FILESYS_LOGGING_FILE:=WorkBuffer;
- 
+
  {FILESYS_LOGGING_MAXSIZE}
  WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_MAXSIZE'),0);
  if WorkInt > 0 then FILESYS_LOGGING_MAXSIZE:=WorkInt;
- 
+
  {FILESYS_LOGGING_MAXCOPIES}
  WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_MAXCOPIES'),0);
  if WorkInt > 0 then FILESYS_LOGGING_MAXCOPIES:=WorkInt;
@@ -52261,7 +52261,7 @@ begin
     begin
      {Update Logging}
      {Device}
-     Logging.Logging.Device.DeviceBus:=DEVICE_BUS_NONE; 
+     Logging.Logging.Device.DeviceBus:=DEVICE_BUS_NONE;
      Logging.Logging.Device.DeviceType:=LOGGING_TYPE_FILE;
      Logging.Logging.Device.DeviceFlags:=LOGGING_FLAG_NONE;
      Logging.Logging.Device.DeviceData:=nil;
@@ -52274,7 +52274,7 @@ begin
      Logging.Logging.DeviceSetTarget:=FileSysLoggingSetTarget;
      Logging.Logging.Target:=FILESYS_LOGGING_FILE;
      {FileSystem}
-     
+
      {Register Logging}
      Status:=LoggingDeviceRegister(@Logging.Logging);
      if Status = ERROR_SUCCESS then
@@ -52292,7 +52292,7 @@ begin
          LoggingDeviceDestroy(@Logging.Logging);
         end;
       end
-     else 
+     else
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to register new filesystem logging device: ' + ErrorToString(Status));
 
@@ -52300,12 +52300,12 @@ begin
        LoggingDeviceDestroy(@Logging.Logging);
       end;
     end
-   else 
+   else
     begin
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'Logging: Failed to create new filesystem logging device');
     end;
   end;
- 
+
  FileSysInitialized:=True;
 end;
 
@@ -52318,7 +52318,7 @@ begin
 
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(FileSysLock) = ERROR_SUCCESS then
   begin
@@ -52329,31 +52329,31 @@ begin
       {$IFDEF FILESYS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('FileSys: Additional start call');
       {$ENDIF}
-      
+
       {Increment Count}
       Inc(FileSysStartupCount);
- 
+
       {Return Result}
-      Result:=FileSysStartupError; 
+      Result:=FileSysStartupError;
      end
     else
      begin
       {$IFDEF FILESYS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('FileSys: Initial start call');
       {$ENDIF}
- 
+
       {Increment Count}
       Inc(FileSysStartupCount);
- 
+
       {Initialize Components}
       Result:=ERROR_OPERATION_FAILED;
       FileSysStartupError:=ERROR_OPERATION_FAILED;
- 
+
       {Setup Driver Options}
       FileSysDriver.AllowFloppy:=FILESYS_FLOPPY_ENABLED;
       FileSysDriver.AllowDrives:=FILESYS_DRIVES_ENABLED;
       FileSysDriver.OemConvert:=FILESYS_OEM_CONVERT;
-      
+
       {Setup FAT Options}
       FAT_CASE_FLAGS:=FILESYS_CASE_FLAGS;
       FAT_LONG_NAMES:=FILESYS_LONG_NAMES;
@@ -52362,40 +52362,40 @@ begin
       FAT_DIRTY_CHECK:=FILESYS_DIRTY_CHECK;
       FAT_QUICK_CHECK:=FILESYS_QUICK_CHECK;
        {See also specific FAT options in GlobalConfig unit}
-      
+
       {Setup NTFS Options}
        {See also specific NTFS options in GlobalConfig unit}
 
       {Setup EXTFS Options}
        {See also specific EXTFS options in GlobalConfig unit}
-       
+
       {Setup CDFS Options}
       CDFS_LONG_NAMES:=FILESYS_LONG_NAMES;
        {See also specific CDFS options in GlobalConfig unit}
-      
-      {Register Notification} 
+
+      {Register Notification}
       StorageDeviceNotification(nil,FileSysStorageDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_EJECTING or DEVICE_NOTIFICATION_EJECT or DEVICE_NOTIFICATION_INSERT,NOTIFIER_FLAG_NONE);
-      
+
       {Enumerate Storage}
       StorageDeviceEnumerate(FileSysStorageDeviceEnum,nil);
-      
+
       {Start Cache}
       FileSysDriver.Cache.OpenCache(FILESYS_CACHE_SIZE,FILESYS_CACHE_KEYS,FILESYS_CACHE_PAGE,cmREADWRITE); //To Do //FILESYS_CACHE_MODE
-      
+
       {Locate Devices, Partitions, Volumes, Drives}
       FileSysDriver.LocateDevices;
       FileSysDriver.LocatePartitions;
       FileSysDriver.LocateVolumes;
       FileSysDriver.LocateDrives;
-      
+
       {Register Shutdown}
       //To Do
-      
+
       {$IFDEF FILESYS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('FileSys: Start completed');
       {$ENDIF}
- 
-      {Return Result} 
+
+      {Return Result}
       Result:=ERROR_SUCCESS;
       FileSysStartupError:=ERROR_SUCCESS;
      end;
@@ -52419,7 +52419,7 @@ begin
 
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(FileSysLock) = ERROR_SUCCESS then
   begin
@@ -52427,40 +52427,40 @@ begin
     {Check Started}
     Result:=ERROR_OPERATION_FAILED;
     if FileSysStartupCount = 0 then Exit;
-    
+
     {Decrement Count}
     Dec(FileSysStartupCount);
     Result:=ERROR_SUCCESS;
     if FileSysStartupCount > 0 then Exit;
-    
+
     {$IFDEF FILESYS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('FileSys: Final stop call');
     {$ENDIF}
- 
+
     {Shutdown and Cleanup}
     Result:=ERROR_OPERATION_FAILED;
 
     {Deregister Notification}
     StorageDeviceNotification(nil,FileSysStorageDeviceNotify,nil,DEVICE_NOTIFICATION_NONE,NOTIFIER_FLAG_NONE);
-    
+
     {Deregister Shutdown}
     //To Do
- 
+
     {Shutdown Drives, Volumes, Partitions, Devices}
     //FileSysDriver.ShutdownDrives;
     //FileSysDriver.ShutdownVolumes;
     //FileSysDriver.ShutdownPartitions;
     //FileSysDriver.ShutdownDevices;
     //To Do
- 
+
     {Close Cache}
     FileSysDriver.Cache.CloseCache;
- 
+
     {$IFDEF FILESYS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('FileSys: Stop completed');
     {$ENDIF}
 
-    {Return Result} 
+    {Return Result}
     Result:=ERROR_SUCCESS;
     FileSysStartupError:=ERROR_NOT_READY;
    finally
@@ -52493,7 +52493,7 @@ begin
   begin
    ThreadSleep(0);
   end;
- 
+
  {Start FileSys}
  FileSysStart;
 end;
@@ -52507,7 +52507,7 @@ function FSGetPathDrive(const APath:String):Byte; inline;
 begin
  {}
  Result:=DEFAULT_DRIVE;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52522,10 +52522,10 @@ function FSGetDriveType(ADrive:Byte):TDriveType; inline;
 begin
  {}
  Result:=dtINVALID;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Get Drive Type}
  Result:=FileSysDriver.GetDriveType(ADrive);
 end;
@@ -52537,7 +52537,7 @@ function FSGetDriveData(ADrive:Byte):TDriveData; inline;
 begin
  {}
  FillChar(Result,SizeOf(TDriveData),0);
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52552,7 +52552,7 @@ function FSGetDriveAttr(ADrive:Byte):LongWord; inline;
 begin
  {}
  Result:=0;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52567,10 +52567,10 @@ function FSGetDriveLabel(ADrive:Byte):String; inline;
 begin
  {}
  Result:='';
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Get Drive Label}
  Result:=FileSysDriver.GetDriveLabel(ADrive);
 end;
@@ -52582,10 +52582,10 @@ function FSSetDriveLabel(ADrive:Byte;const ALabel:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Set Drive Label}
  Result:=FileSysDriver.SetDriveLabel(ADrive,ALabel);
 end;
@@ -52597,10 +52597,10 @@ function FSGetDriveSerial(ADrive:Byte):LongWord; inline;
 begin
  {}
  Result:=0;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Get Drive Serial}
  Result:=FileSysDriver.GetDriveSerial(ADrive);
 end;
@@ -52612,10 +52612,10 @@ function FSSetDriveSerial(ADrive:Byte;ASerial:LongWord):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Set Drive Serial}
  Result:=FileSysDriver.SetDriveSerial(ADrive,ASerial);
 end;
@@ -52627,7 +52627,7 @@ function FSIsDriveValid(ADrive:Byte):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52642,7 +52642,7 @@ function FSGetValidDrives:LongWord; inline;
 begin
  {}
  Result:=0;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52657,7 +52657,7 @@ function FSGetValidDriveNames:TStringList; inline;
 begin
  {}
  Result:=TStringList.Create;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52672,7 +52672,7 @@ function FSGetValidDriveStrings:String; inline;
 begin
  {}
  Result:='';
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52687,7 +52687,7 @@ function FSGetDriveFreeSpace(ADrive:Byte):LongWord; inline;
 begin
  {}
  Result:=0;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52702,7 +52702,7 @@ function FSGetDriveFreeSpaceEx(ADrive:Byte):Int64; inline;
 begin
  {}
  Result:=0;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52717,7 +52717,7 @@ function FSGetDriveTotalSpace(ADrive:Byte):LongWord; inline;
 begin
  {}
  Result:=0;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52742,7 +52742,7 @@ end;
 
 {==============================================================================}
 
-function FSGetDriveInformation(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; inline;   
+function FSGetDriveInformation(const APath:String;var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; inline;
 begin
  {}
  Result:=False;
@@ -52761,7 +52761,7 @@ function FSGetCurrentDrive:Byte; inline;
 begin
  {}
  Result:=0;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52776,7 +52776,7 @@ function FSSetCurrentDrive(const ADrive:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52790,7 +52790,7 @@ function FSFileOpen(const AFileName:String;AMode:Integer):THandle; inline;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52804,7 +52804,7 @@ function FSFileCreate(const AFileName:String):THandle; inline;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52818,7 +52818,7 @@ function FSDeleteFile(const AFileName:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52844,7 +52844,7 @@ function FSRenameFile(const AOldName,ANewName:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52858,7 +52858,7 @@ function FSFileSeek(AHandle:THandle;AOffset,AOrigin:LongInt):LongInt; inline;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52872,7 +52872,7 @@ function FSFileFlush(AHandle:THandle):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52886,7 +52886,7 @@ function FSFileTruncate(AHandle:THandle):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52900,7 +52900,7 @@ function FSSetEndOfFile(AHandle:THandle):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52914,7 +52914,7 @@ function FSEndOfFile(AHandle:THandle):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52928,7 +52928,7 @@ function FSFilePos(AHandle:THandle):LongInt; inline;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52942,7 +52942,7 @@ function FSFileSize(AHandle:THandle):LongInt; inline;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52956,7 +52956,7 @@ function FSFileAge(const AFileName:String):Integer; inline;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52970,7 +52970,7 @@ function FSFileExists(const AFileName:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52984,7 +52984,7 @@ function FSFileGetAttr(const AFileName:String):Integer; inline;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -52998,7 +52998,7 @@ function FSFileGetDate(AHandle:THandle):Integer; inline;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53012,7 +53012,7 @@ function FSFileSetAttr(const AFileName:String;AAttr:Integer):Integer; inline;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53026,7 +53026,7 @@ function FSFileSetDate(AHandle:THandle;AAge:Integer):Integer; inline;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53040,7 +53040,7 @@ function FSFileRead(AHandle:THandle;var ABuffer;ACount:LongInt):LongInt; inline;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53054,7 +53054,7 @@ function FSFileWrite(AHandle:THandle;const ABuffer;ACount:LongInt):LongInt; inli
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53068,7 +53068,7 @@ function FSCreateDir(const ADirName:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53082,7 +53082,7 @@ function FSRemoveDir(const ADirName:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53096,7 +53096,7 @@ function FSRenameDir(const AOldName,ANewName:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53111,7 +53111,7 @@ function FSGetCurrentDir:String; inline;
 begin
  {}
  Result:='';
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53125,7 +53125,7 @@ function FSSetCurrentDir(const ADirName:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53139,7 +53139,7 @@ function FSDirectoryExists(const ADirName:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53177,7 +53177,7 @@ function FSFindFirst(const APath:String;AAttr:Integer;var ASearchRec:TSearchRec)
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53191,7 +53191,7 @@ function FSFindNext(var ASearchRec:TSearchRec):Integer; inline;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53217,7 +53217,7 @@ function FSFileCopy(const ASourceFile,ADestFile:String;AFailIfExists:Boolean):Bo
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53231,7 +53231,7 @@ function FSFileCopyEx(const ASourceFile,ADestFile:String;AFailIfExists:Boolean;A
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53245,7 +53245,7 @@ function FSGetShortName(const AFileName:String):String; inline;
 begin
  {}
  Result:=AFileName;
-  
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53259,7 +53259,7 @@ function FSGetLongName(const AFileName:String):String; inline;
 begin
  {}
  Result:=AFileName;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53273,7 +53273,7 @@ function FSGetTrueName(const AFileName:String):String; inline;
 begin
  {}
  Result:=AFileName;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53315,7 +53315,7 @@ function FSFileSeekEx(AHandle:THandle;const AOffset:Int64;AOrigin:LongInt):Int64
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53329,7 +53329,7 @@ function FSEndOfFileEx(AHandle:THandle):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53343,7 +53343,7 @@ function FSFilePosEx(AHandle:THandle):Int64; inline;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53357,7 +53357,7 @@ function FSFileSizeEx(AHandle:THandle):Int64; inline;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53371,7 +53371,7 @@ function FSFileAgeEx(const AFileName:String):TFileTime; inline;
 begin
  {}
  Int64(Result):=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53385,7 +53385,7 @@ function FSFileGetAttrEx(AHandle:THandle):Integer; inline;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53413,7 +53413,7 @@ function FSFileSetDateEx(AHandle:THandle;AAge:TFileTime):Integer; inline;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53427,7 +53427,7 @@ function FSGetFileTime(AHandle:THandle;ACreateTime,AAccessTime,AWriteTime:PFileT
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53441,7 +53441,7 @@ function FSSetFileTime(AHandle:THandle;ACreateTime,AAccessTime,AWriteTime:PFileT
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53455,7 +53455,7 @@ function FSFindFirstEx(const APath:String;var ASearchRec:TFileSearchRec):Integer
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53469,7 +53469,7 @@ function FSFindNextEx(var ASearchRec:TFileSearchRec):Integer; inline;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53497,7 +53497,7 @@ function FSDefineDosDevice(const ADeviceName,ATargetPath:String;AFlags:LongWord)
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53511,7 +53511,7 @@ function FSGetDiskType(const ARootPath:String):LongWord; inline; {Equivalent to 
 begin
  {}
  Result:=DRIVE_UNKNOWN;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53525,7 +53525,7 @@ function FSGetDiskFreeSpace(const ARootPath:String;var ASectorsPerCluster,ABytes
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53539,7 +53539,7 @@ function FSGetDiskFreeSpaceEx(const APathName:String;var AFreeBytesAvailableToCa
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53553,7 +53553,7 @@ function FSGetLogicalDrives:LongWord; inline;
 begin
  {}
  Result:=0;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53567,7 +53567,7 @@ function FSGetLogicalDriveStrings:String; inline;
 begin
  {}
  Result:='';
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53581,7 +53581,7 @@ function FSGetVolumeInformation(const ARootPath:String;var AVolumeName:String;va
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53595,7 +53595,7 @@ function FSQueryDosDevice(const ARootPath:String):String; inline;
 begin
  {}
  Result:='';
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53609,7 +53609,7 @@ function FSSetVolumeLabel(const AVolume:String;const ALabel:String):Boolean; inl
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53623,7 +53623,7 @@ function FSAreFileApisANSI:Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53637,7 +53637,7 @@ function FSCloseFile(AHandle:THandle):Boolean; inline; {Equivalent to Win32 Clos
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53651,7 +53651,7 @@ function FSCopyFile(const AExistingName,ANewName:String;AFailIfExists:Boolean):B
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53665,7 +53665,7 @@ function FSCreateFile(const AFileName:String;AAccessMode,AShareMode,ACreateFlags
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53679,7 +53679,7 @@ function FSFindCloseFile(AHandle:THandle):Boolean; inline; {Equivalent to Win32 
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53693,7 +53693,7 @@ function FSFindFirstFile(const AFileName:String;var AFindData:TWin32FindData):TH
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53707,7 +53707,7 @@ function FSFindNextFile(AHandle:THandle;var AFindData:TWin32FindData):Boolean; i
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53721,7 +53721,7 @@ function FSFlushFileBuffers(AHandle:THandle):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53735,7 +53735,7 @@ function FSGetFileAttributes(const AFileName:String):LongWord; inline;
 begin
  {}
  Result:=INVALID_FILE_ATTRIBUTES;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53749,7 +53749,7 @@ function FSGetFileInformationByHandle(AHandle:THandle;var AFileInformation:TByHa
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53763,7 +53763,7 @@ function FSGetFileSize(AHandle:THandle;var AFileSizeHigh:LongWord):LongWord; inl
 begin
  {}
  Result:=INVALID_FILE_SIZE;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53777,7 +53777,7 @@ function FSGetFullPathName(const AFileName:String):String; inline;
 begin
  {}
  Result:='';
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53791,7 +53791,7 @@ function FSGetShortPathName(const ALongPath:String):String; inline;
 begin
  {}
  Result:='';
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53805,7 +53805,7 @@ function FSMoveFile(const AExistingName,ANewName:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53819,7 +53819,7 @@ function FSReadFile(AHandle:THandle;var ABuffer;ABytesToRead:LongWord;var ABytes
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53833,7 +53833,7 @@ function FSSetFileApisToANSI:Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53847,7 +53847,7 @@ function FSSetFileApisToOEM:Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53861,7 +53861,7 @@ function FSSetFileAttributes(const AFileName:String;AFileAttributes:LongWord):Bo
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53875,7 +53875,7 @@ function FSSetFilePointer(AHandle:THandle;ADistanceToMove:LongInt;var ADistanceT
 begin
  {}
  Result:=INVALID_SET_FILE_POINTER;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53889,7 +53889,7 @@ function FSSetFilePointerEx(AHandle:THandle;const ADistanceToMove:Int64;var ANew
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53903,7 +53903,7 @@ function FSWriteFile(AHandle:THandle;const ABuffer;ABytesToWrite:LongWord;var AB
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53917,7 +53917,7 @@ function FSGetLongPathName(const AShortPath:String):String; inline;
 begin
  {}
  Result:='';
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53931,7 +53931,7 @@ function FSGetFinalPathNameByHandle(AHandle:THandle;AFlags:LongWord):String; inl
 begin
  {}
  Result:='';
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53945,7 +53945,7 @@ function FSSetFileShortName(const AFileName,AShortName:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53959,7 +53959,7 @@ function FSSetFileShortNameEx(AHandle:THandle;const AShortName:String):Boolean; 
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53973,7 +53973,7 @@ function FSCreateHardLink(const ALinkName,AFileName:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -53987,7 +53987,7 @@ function FSCreateSymbolicLink(const ALinkName,ATargetName:String;ADirectory:Bool
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54008,14 +54008,14 @@ begin
  {Duplicate Handle}
  Result:=FileSysDriver.DuplicateHandle(AHandle);
 end;
- 
+
 {==============================================================================}
 {Directory Functions}
 function FSCreateDirectory(const APathName:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54029,7 +54029,7 @@ function FSGetCurrentDirectory:String; inline;
 begin
  {}
  Result:='';
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54043,7 +54043,7 @@ function FSRemoveDirectory(const APathName:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54057,7 +54057,7 @@ function FSSetCurrentDirectory(const APathName:String):Boolean; inline;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54111,7 +54111,7 @@ begin
   begin
    InOutRes:=103;
    Exit;
-  end; 
+  end;
 
  {Close File}
  FileSysDriver.FileClose(Handle);
@@ -54127,8 +54127,8 @@ begin
   begin
    InOutRes:=2;
    Exit;
-  end; 
- 
+  end;
+
  {Delete File}
  if not FileSysDriver.DeleteFile(Name) then
   begin
@@ -54146,7 +54146,7 @@ begin
   begin
    InOutRes:=2;
    Exit;
-  end; 
+  end;
 
  {Rename File}
  if not FileSysDriver.RenameFile(Name1,Name2) then
@@ -54161,13 +54161,13 @@ function SystemDoWrite(Handle:THandle;Address:Pointer;Len:LongInt):LongInt;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then
   begin
    InOutRes:=6;
    Exit;
-  end; 
+  end;
 
  {Write File}
  Result:=FileSysDriver.FileWrite(Handle,Address^,Len);
@@ -54183,13 +54183,13 @@ function SystemDoRead(Handle:THandle;Address:Pointer;Len:LongInt):LongInt;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then
   begin
    InOutRes:=6;
    Exit;
-  end; 
+  end;
 
  {Read File}
  Result:=FileSysDriver.FileRead(Handle,Address^,Len);
@@ -54205,13 +54205,13 @@ function SystemDoFilePos(Handle:THandle):LongInt;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then
   begin
    InOutRes:=6;
    Exit;
-  end; 
+  end;
 
  {File Pos}
  Result:=FileSysDriver.FilePosEx(Handle);
@@ -54231,7 +54231,7 @@ begin
   begin
    InOutRes:=6;
    Exit;
-  end; 
+  end;
 
  {Seek File}
  if FileSysDriver.FileSeekEx(Handle,Pos,soFromBeginning) = -1 then
@@ -54246,13 +54246,13 @@ function SystemDoSeekEnd(Handle:THandle):LongInt;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then
   begin
    InOutRes:=6;
    Exit;
-  end; 
+  end;
 
  {Seek File}
  Result:=FileSysDriver.FileSeekEx(Handle,0,soFromEnd);
@@ -54268,13 +54268,13 @@ function SystemDoFileSize(Handle:THandle):LongInt;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then
   begin
    InOutRes:=6;
    Exit;
-  end; 
+  end;
 
  {File Size}
  Result:=FileSysDriver.FileSizeEx(Handle);
@@ -54294,7 +54294,7 @@ begin
   begin
    InOutRes:=6;
    Exit;
-  end; 
+  end;
 
  {Seek File}
  if FileSysDriver.FileSeekEx(Handle,Pos,soFromBeginning) = -1 then
@@ -54302,7 +54302,7 @@ begin
    InOutRes:=6;
    Exit;
   end;
- 
+
  {Truncate File}
  if not FileSysDriver.FileTruncate(Handle) then
   begin
@@ -54322,7 +54322,7 @@ begin
  {}
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Close if Open}
  if ((Flags and $10000) = 0) then
   begin
@@ -54330,7 +54330,7 @@ begin
     fmInput,fmOutput,fmInOut:begin
       {Close File}
       FileSysDriver.FileClose(FileRec(F).Handle);
-     end; 
+     end;
     fmClosed:begin
       {Nothing}
      end;
@@ -54342,36 +54342,36 @@ begin
      end;
    end;
   end;
- 
+
  {Reset handle}
  FileRec(F).Handle:=UnusedHandle;
-  
+
  {Convert Flags to FileRec Mode}
  case (Flags and $03) of
   fmOpenRead:FileRec(f).Mode:=fmInput;
   fmOpenWrite:FileRec(f).Mode:=fmOutput;
   fmOpenReadWrite:FileRec(f).Mode:=fmInOut;
  end;
-  
+
  {Check Name}
  if Name[0] = #0 then
   begin
    case FileRec(F).Mode of
     fmInput:begin
       FileRec(F).Handle:=StdInputHandle;
-     end; 
+     end;
     fmInOut,fmOutput:begin
       FileRec(F).Handle:=StdOutputHandle;
-     end; 
+     end;
     fmAppend:begin
       FileRec(F).Handle:=StdOutputHandle;
       FileRec(F).Mode:=fmOutput;
      end;
    end;
-    
+
    Exit;
   end;
-  
+
  {Check for Create}
  if (Flags and $1000) <> 0 then
   begin
@@ -54380,13 +54380,13 @@ begin
     begin
      {Open File}
      FileRec(F).Handle:=FileSysDriver.FileOpen(Name,Flags and $000000FF);
-     
+
      {Check Handle}
      if (FileRec(F).Handle <> INVALID_HANDLE_VALUE) and (FileRec(F).Handle <> UnusedHandle) then
       begin
        {Seek File}
        FileSysDriver.FileSeekEx(FileRec(F).Handle,0,soFromBeginning);
-       
+
        {Truncate File}
        if not FileSysDriver.FileTruncate(FileRec(F).Handle) then
         begin
@@ -54394,19 +54394,19 @@ begin
          FileSysDriver.FileClose(FileRec(F).Handle);
          FileRec(F).Handle:=UnusedHandle;
         end;
-      end;  
+      end;
     end
    else
-    begin   
+    begin
      {Create File}
      FileRec(F).Handle:=FileSysDriver.FileCreate(Name);
-    end; 
+    end;
   end
  else
   begin
    {Open File}
    FileRec(F).Handle:=FileSysDriver.FileOpen(Name,Flags and $000000FF);
-   
+
    {Check Append}
    if ((Flags and $100) <> 0) and (FileRec(F).Handle <> INVALID_HANDLE_VALUE) and (FileRec(F).Handle <> UnusedHandle) then
     begin
@@ -54415,7 +54415,7 @@ begin
      FileRec(F).Mode:=fmOutput;
     end;
   end;
-  
+
  {Check Handle}
  if (FileRec(F).Handle = INVALID_HANDLE_VALUE) or (FileRec(F).Handle = UnusedHandle) then
   begin
@@ -54434,7 +54434,7 @@ begin
   begin
    InOutRes:=3;
    Exit;
-  end; 
+  end;
 
  {Create Dir}
  if not FileSysDriver.CreateDir(Dir) then
@@ -54453,8 +54453,8 @@ begin
   begin
    InOutRes:=3;
    Exit;
-  end; 
- 
+  end;
+
  {Remove Dir}
  if not FileSysDriver.RemoveDir(Dir) then
   begin
@@ -54472,7 +54472,7 @@ begin
   begin
    InOutRes:=3;
    Exit;
-  end; 
+  end;
 
  {Set Current Dir}
  if not FileSysDriver.SetCurrentDir(Dir) then
@@ -54491,7 +54491,7 @@ begin
   begin
    InOutRes:=3;
    Exit;
-  end; 
+  end;
 
  {Get Current Dir}
  Dir:=FileSysDriver.GetCurrentDirEx(Drive);
@@ -54504,7 +54504,7 @@ function DosDiskFree(Drive:Byte):Int64;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54519,7 +54519,7 @@ function DosDiskSize(Drive:Byte):Int64;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54537,15 +54537,15 @@ var
 begin
  {}
  Result:=18; {Dos Error 18 (Not Found)}
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  while (f.FindData.dwFileAttributes and f.ExcludeAttr) <> 0 do
   begin
    {Get Handle}
    FileSearchRec.FindHandle:=f.FindHandle;
-  
+
    {Find Next}
    if FileSysDriver.FindNextEx(FileSearchRec) = 0 then
     begin
@@ -54555,16 +54555,16 @@ begin
    else
     begin
      Exit;
-    end;    
+    end;
   end;
- 
+
  {Update the SearchRec from the FindData record}
  Ultibo.FileTimeToLocalFileTime(SysUtils.FILETIME(f.FindData.ftLastWriteTime),LocalFileTime);
  Ultibo.FileTimeToDosDateTime(LocalFileTime,LongRec(f.Time).Hi,LongRec(f.Time).Lo);
  f.Size:=f.FindData.nFileSizeLow;
  f.Attr:=f.FindData.dwFileAttributes;
  f.Name:=StrPas(@f.FindData.cFileName);
- 
+
  Result:=0;
 end;
 
@@ -54585,10 +54585,10 @@ var
 begin
  {}
  Result:=18; {Dos Error 18 (Not Found)}
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Find First}
  if FileSysDriver.FindFirstEx(Path,FileSearchRec) = 0 then
   begin
@@ -54596,11 +54596,11 @@ begin
    f.ExcludeAttr:=not(Attr) and faSpecial;
    f.FindHandle:=FileSearchRec.FindHandle;
    SysUtils.TWin32FindDataA(f.FindData):=FileSearchRec.FindData;
-   
+
    {Find Matching}
    Result:=DosFindMatchingFile(f);
    if Result <> 0 then DosFindClose(f);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -54611,19 +54611,19 @@ var
 begin
  {}
  Result:=18; {Dos Error 18 (Not Found)}
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Get Handle}
  FileSearchRec.FindHandle:=f.FindHandle;
- 
+
  {Find Next}
  if FileSysDriver.FindNextEx(FileSearchRec) = 0 then
   begin
    {Save SearchRec}
    SysUtils.TWin32FindDataA(f.FindData):=FileSearchRec.FindData;
-   
+
    {Find Matching}
    Result:=DosFindMatchingFile(f);
   end;
@@ -54638,10 +54638,10 @@ begin
  {}
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Get Handle}
  FileSearchRec.FindHandle:=f.FindHandle;
- 
+
  {Find Close}
  FileSysDriver.FindCloseEx(FileSearchRec);
 end;
@@ -54656,19 +54656,19 @@ begin
  {}
  Time:=0;
  Result:=18; {Dos Error 18 (Not Found)}
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Get File Time}
  if not FileSysDriver.GetFileTime(FileRec(f).Handle,nil,nil,@WriteTime) then Exit;
- 
+
  {Convert to Local Time}
  if not Ultibo.FileTimeToLocalFileTime(WriteTime,LocalTime) then Exit;
- 
+
  {Convert to DOS Date and Time}
  if not Ultibo.FileTimeToDosDateTime(LocalTime,LongRec(Time).Hi,LongRec(Time).Lo) then Exit;
- 
+
  Result:=0;
 end;
 
@@ -54681,19 +54681,19 @@ var
 begin
  {}
  Result:=18; {Dos Error 18 (Not Found)}
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Convert to File Time}
  if not Ultibo.DosDateTimeToFileTime(LongRec(Time).Hi,LongRec(Time).Lo,LocalTime) then Exit;
- 
+
  {Convert to System Time}
  if not Ultibo.LocalFileTimeToFileTime(LocalTime,WriteTime) then Exit;
- 
+
  {Set File Time}
  if not FileSysDriver.SetFileTime(FileRec(f).Handle,nil,nil,@WriteTime) then Exit;
- 
+
  Result:=0;
 end;
 
@@ -54706,20 +54706,20 @@ var
 begin
  {}
  Result:=18; {Dos Error 18 (Not Found)}
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Get Name}
  Name:=ToSingleByteFileSystemEncodedFileName(FileRec(f).Name);
- 
+
  {Get File Attributes}
  Attributes:=FileGetAttr(Name);
  if Attributes = -1 then Exit;
- 
+
  {Return Attributes}
  Attr:=Attributes and $FFFF;
- 
+
  Result:=0;
 end;
 
@@ -54731,16 +54731,16 @@ var
 begin
  {}
  Result:=18; {Dos Error 18 (Not Found)}
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Get Name}
  Name:=ToSingleByteFileSystemEncodedFileName(FileRec(f).Name);
- 
+
  {Set File Attributes}
  if FileSetAttr(Name,Attr) = -1 then Exit;
- 
+
  Result:=0;
 end;
 
@@ -54752,14 +54752,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Get Short Name}
  Name:=FileSysDriver.GetShortName(p);
  p:=Name;
- 
+
  Result:=True;
 end;
 
@@ -54771,14 +54771,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Get Long Name}
  Name:=FileSysDriver.GetLongName(p);
  p:=Name;
- 
+
  Result:=True;
 end;
 
@@ -54788,7 +54788,7 @@ function SysUtilsFileOpen(const FileName:RawByteString;Mode:Integer):THandle;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54802,7 +54802,7 @@ function SysUtilsFileCreate(const FileName:RawByteString;ShareMode:Integer):THan
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54816,7 +54816,7 @@ function SysUtilsDeleteFile(const FileName:RawByteString):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54842,7 +54842,7 @@ function SysUtilsRenameFile(const OldName,NewName:RawByteString):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54856,7 +54856,7 @@ function SysUtilsFileSeek(Handle:THandle;Offset,Origin:LongInt):LongInt;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54870,13 +54870,13 @@ function SysUtilsFileTruncate(Handle:THandle;Size:Int64):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
  {Seek File}
  FileSysDriver.FileSeekEx(Handle,Size,soFromBeginning);
- 
+
  {Truncate File}
  Result:=FileSysDriver.FileTruncate(Handle);
 end;
@@ -54887,7 +54887,7 @@ function SysUtilsFileAge(const FileName:RawByteString):LongInt;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54911,7 +54911,7 @@ function SysUtilsFileExists(const FileName:RawByteString;FollowLink:Boolean):Boo
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54927,7 +54927,7 @@ function SysUtilsFileGetAttr(const FileName:RawByteString):LongInt;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54941,7 +54941,7 @@ function SysUtilsFileGetDate(Handle:THandle):LongInt;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54955,7 +54955,7 @@ function SysUtilsFileSetAttr(const FileName:RawByteString;Attr:LongInt):LongInt;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54969,7 +54969,7 @@ function SysUtilsFileSetDate(Handle:THandle;Age:LongInt):LongInt;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54983,7 +54983,7 @@ function SysUtilsFileRead(Handle:THandle;out Buffer;Count:LongInt):LongInt;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -54997,7 +54997,7 @@ function SysUtilsFileWrite(Handle:THandle;const Buffer;Count:LongInt):LongInt;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -55011,7 +55011,7 @@ function SysUtilsFileSeekEx(Handle:THandle;Offset:Int64;Origin:LongInt):Int64;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -55025,10 +55025,10 @@ function SysUtilsInternalFindFirst(const Path:RawByteString;Attr:LongInt;out Sea
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Find First}
  Result:=FileSysDriver.FindFirst(Path,Attr,SearchRec);
  if Result = 0 then Name:=SearchRec.FindData.cFileName;
@@ -55040,7 +55040,7 @@ function SysUtilsInternalFindNext(var SearchRec:TSearchRec;var Name:RawByteStrin
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -55056,7 +55056,7 @@ begin
  {}
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Find Close File}
  FileSysDriver.FindCloseFile(Handle);
 end;
@@ -55068,7 +55068,7 @@ function SysUtilsDiskFree(Drive:Byte):Int64;
 begin
  {}
  Result:=-1;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -55097,7 +55097,7 @@ function SysUtilsDirectoryExists(const Directory:RawByteString;FollowLink:Boolea
 begin
  {}
  Result:=False;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
 
@@ -55116,25 +55116,25 @@ function FileSysLoggingStart(Logging:PLoggingDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
     if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
     {Check Target (Do not fail device start)}
-    if Length(Logging.Target) <> 0 then 
+    if Length(Logging.Target) <> 0 then
      begin
       {Check Handle}
       if Logging.Handle = INVALID_HANDLE_VALUE then
        begin
         Result:=ERROR_OPERATION_FAILED;
-        
+
         {Check File}
         if FSFileExists(Logging.Target) then
          begin
@@ -55168,20 +55168,20 @@ begin
            begin
             {Close File}
             FSFileClose(Logging.Handle);
-            
+
             {Open File}
             Logging.Handle:=FSFileOpen(Logging.Target,fmOpenReadWrite or fmShareDenyNone);
             {if Logging.Handle = INVALID_HANDLE_VALUE then Exit;} {Do not fail device start}
-           end; 
-         end;     
-       end;  
+           end;
+         end;
+       end;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -55197,12 +55197,12 @@ function FileSysLoggingStop(Logging:PLoggingDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
@@ -55214,13 +55214,13 @@ begin
       {Close File}
       FSFileClose(Logging.Handle);
       Logging.Handle:=INVALID_HANDLE_VALUE;
-     end; 
-    
+     end;
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -55239,12 +55239,12 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
@@ -55252,9 +55252,9 @@ begin
 
     {Check Target}
     if Length(Logging.Target) = 0 then Exit;
-    
+
     Result:=ERROR_OPERATION_FAILED;
-    
+
     {Check Handle}
     if Logging.Handle = INVALID_HANDLE_VALUE then
      begin
@@ -55283,20 +55283,20 @@ begin
         {Create File}
         Logging.Handle:=FSFileCreate(Logging.Target);
         if Logging.Handle = INVALID_HANDLE_VALUE then Exit;
-        
+
         {Close File}
         FSFileClose(Logging.Handle);
-        
+
         {Open File}
         Logging.Handle:=FSFileOpen(Logging.Target,fmOpenReadWrite or fmShareDenyNone);
         if Logging.Handle = INVALID_HANDLE_VALUE then Exit;
-       end;     
+       end;
      end;
 
     {Write File}
     WorkBuffer:=Data + Chr(13) + Chr(10);
     if FSFileWrite(Logging.Handle,PChar(WorkBuffer)^,Length(WorkBuffer)) <> Length(WorkBuffer) then Exit;
-    
+
     {Check Size}
     if FILESYS_LOGGING_MAXSIZE > 0 then
      begin
@@ -55318,7 +55318,7 @@ begin
             FSFileSetAttr(WorkBuffer,faArchive);
             if not FSDeleteFile(WorkBuffer) then Exit;
            end;
-           
+
           {Check Copies}
           if FILESYS_LOGGING_MAXCOPIES > 1 then
            begin
@@ -55333,25 +55333,25 @@ begin
                end;
              end;
            end;
-           
+
           {Close File}
           FSFileClose(Logging.Handle);
           Logging.Handle:=INVALID_HANDLE_VALUE;
-          
+
           {Rename File}
           if not FSRenameFile(Logging.Target,Logging.Target + IntToStr(1)) then Exit;
          end;
-       end; 
-     end; 
-    
+       end;
+     end;
+
     {Update Statistics}
     Inc(Logging.OutputCount);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -55367,12 +55367,12 @@ function FileSysLoggingSetTarget(Logging:PLoggingDevice;const Target:String):Lon
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Logging}
  if Logging = nil then Exit;
- if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Logging.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
- if MutexLock(Logging.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Logging.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Logging}
@@ -55388,13 +55388,13 @@ begin
         FSFileClose(Logging.Handle);
         Logging.Handle:=INVALID_HANDLE_VALUE;
        end;
-      
+
       {Set Target}
       Logging.Target:=Target;
       UniqueString(Logging.Target);
-      
+
       Result:=ERROR_OPERATION_FAILED;
-      
+
       {Check File}
       if FSFileExists(Logging.Target) then
        begin
@@ -55428,19 +55428,19 @@ begin
          begin
           {Close File}
           FSFileClose(Logging.Handle);
-          
+
           {Open File}
           Logging.Handle:=FSFileOpen(Logging.Target,fmOpenReadWrite or fmShareDenyNone);
           {if Logging.Handle = INVALID_HANDLE_VALUE then Exit;} {Do not fail set target}
-         end; 
-       end;     
+         end;
+       end;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Logging.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -55461,21 +55461,21 @@ function FileSysRedirectInput(Handle:THandle):Boolean;
 begin
  {}
  Result:=True;
- 
+
  if Handle = INVALID_HANDLE_VALUE then
   begin
    {Stop Redirection}
    TextIOReadCharHandler:=nil;
-   
+
    FileSysTextIOInputHandle:=INVALID_HANDLE_VALUE;
   end
  else
   begin
    {Start Redirection}
    TextIOReadCharHandler:=SysTextIOReadChar;
-  
+
    FileSysTextIOInputHandle:=Handle;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -55490,13 +55490,13 @@ function FileSysRedirectOutput(Handle:THandle):Boolean;
 begin
  {}
  Result:=True;
- 
+
  if Handle = INVALID_HANDLE_VALUE then
   begin
    {Stop Redirection}
    TextIOWriteCharHandler:=nil;
    TextIOWriteBufferHandler:=nil;
-   
+
    FileSysTextIOOutputHandle:=INVALID_HANDLE_VALUE;
   end
  else
@@ -55504,9 +55504,9 @@ begin
    {Start Redirection}
    TextIOWriteCharHandler:=SysTextIOWriteChar;
    TextIOWriteBufferHandler:=SysTextIOWriteBuffer;
-  
+
    FileSysTextIOOutputHandle:=Handle;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -55515,10 +55515,10 @@ function FileSysStorageGetMediaType(Storage:PStorageDevice):TMediaType;
 begin
  {}
  Result:=mtUNKNOWN;
- 
+
  {Check Storage}
  if Storage = nil then Exit;
- 
+
  {Check Storage Type}
  case Storage.Device.DeviceType of
   STORAGE_TYPE_HDD:Result:=mtFIXED;
@@ -55535,27 +55535,27 @@ function FileSysStorageGetController(Storage:PStorageDevice):TDiskController;
 begin
  {}
  Result:=nil;
- 
+
  {Check Storage}
  if Storage = nil then Exit;
- 
+
  {Check Device Bus}
  case Storage.Device.DeviceBus of
   DEVICE_BUS_IDE,DEVICE_BUS_ATA,DEVICE_BUS_SATA:begin
     if FILESYS_ATA_ENABLED then Result:=FileSysATAController;
-   end; 
+   end;
   DEVICE_BUS_ATAPI:begin
     if FILESYS_ATAPI_ENABLED then Result:=FileSysATAPIController;
-   end; 
+   end;
   DEVICE_BUS_SCSI:begin
     if FILESYS_SCSI_ENABLED then Result:=FileSysSCSIController;
-   end; 
+   end;
   DEVICE_BUS_USB:begin
     if FILESYS_USB_ENABLED then Result:=FileSysUSBController;
-   end; 
+   end;
   DEVICE_BUS_MMC,DEVICE_BUS_SD:begin
     if FILESYS_MMC_ENABLED then Result:=FileSysMMCController;
-   end; 
+   end;
  end;
 end;
 
@@ -55571,15 +55571,15 @@ begin
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('FileSys: Storage device add');
  {$ENDIF}
- 
+
  {Check Event}
  if Event = nil then Exit;
  if Event.Device = nil then Exit;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('FileSys:  Device = ' + DeviceGetName(@Event.Device.Device));
  {$ENDIF}
- 
+
  {Destroy Timer}
  if Event.Timer <> INVALID_HANDLE_VALUE then
   begin
@@ -55611,30 +55611,30 @@ begin
            begin
             {Create Device}
             DiskDevice:=TDiskDevice.Create(FileSysDriver,DiskController,nil,Event.Device,FileSysDriver.GetNextDeviceNo(MediaType),DeviceGetName(@Event.Device.Device));
-            
+
             {Init Device}
             DiskDevice.DeviceInit;
-            
+
             {Locate Partitions}
             DiskDevice.LocatePartitions;
-            
+
             {Locate Volumes and Drives}
             FileSysDriver.LocateVolumes;
             FileSysDriver.LocateDrives;
            end;
          end;
        end;
-     end;  
+     end;
    finally
     {Release the Lock}
     CriticalSectionUnlock(FileSysLock);
    end;
   end;
-  
+
  {Destroy Event}
- FreeMem(Event); 
+ FreeMem(Event);
 end;
- 
+
 {==============================================================================}
 
 procedure FileSysStorageDeviceInsert(Event:PStorageDeviceEvent);
@@ -55649,11 +55649,11 @@ begin
  {Check Event}
  if Event = nil then Exit;
  if Event.Device = nil then Exit;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('FileSys:  Device = ' + DeviceGetName(@Event.Device.Device));
  {$ENDIF}
- 
+
  {Destroy Timer}
  if Event.Timer <> INVALID_HANDLE_VALUE then
   begin
@@ -55677,19 +55677,19 @@ begin
        begin
         {Insert Device}
         DiskDevice.InsertDevice;
-        
+
         {Unlock Device}
         DiskDevice.WriterUnlock;
-       end; 
-     end;  
+       end;
+     end;
    finally
     {Release the Lock}
     CriticalSectionUnlock(FileSysLock);
    end;
   end;
-  
+
  {Destroy Event}
- FreeMem(Event); 
+ FreeMem(Event);
 end;
 
 {==============================================================================}
@@ -55700,21 +55700,21 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('FileSys: Storage device remove');
  {$ENDIF}
- 
+
  {Check Storage}
  if Storage = nil then Exit;
 
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('FileSys:  Device = ' + DeviceGetName(@Storage.Device));
  {$ENDIF}
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(FileSysLock) = ERROR_SUCCESS then
   begin
@@ -55728,41 +55728,41 @@ begin
        begin
         {Destroy Device}
         DiskDevice.Free;
-       end; 
-     end;  
-     
+       end;
+     end;
+
     {Return Result}
-    Result:=ERROR_SUCCESS;    
+    Result:=ERROR_SUCCESS;
    finally
     {Release the Lock}
     CriticalSectionUnlock(FileSysLock);
    end;
   end;
 end;
-      
+
 {==============================================================================}
-      
+
 function FileSysStorageDeviceEject(Storage:PStorageDevice):LongWord;
 var
  DiskDevice:TDiskDevice;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('FileSys: Storage device eject');
  {$ENDIF}
- 
+
  {Check Storage}
  if Storage = nil then Exit;
 
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('FileSys:  Device = ' + DeviceGetName(@Storage.Device));
  {$ENDIF}
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(FileSysLock) = ERROR_SUCCESS then
   begin
@@ -55776,21 +55776,21 @@ begin
        begin
         {Eject Device}
         DiskDevice.EjectDevice;
-        
+
         {Unlock Device}
         DiskDevice.WriterUnlock;
-       end; 
-     end;  
-     
+       end;
+     end;
+
     {Return Result}
-    Result:=ERROR_SUCCESS;    
+    Result:=ERROR_SUCCESS;
    finally
     {Release the Lock}
     CriticalSectionUnlock(FileSysLock);
    end;
   end;
 end;
-      
+
 {==============================================================================}
 
 function FileSysStorageDeviceEnum(Storage:PStorageDevice;Data:Pointer):LongWord;
@@ -55801,21 +55801,21 @@ var
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('FileSys: Storage device enumeration');
  {$ENDIF}
 
  {Check Storage}
  if Storage = nil then Exit;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('FileSys:  Device = ' + DeviceGetName(@Storage.Device));
  {$ENDIF}
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(FileSysLock) = ERROR_SUCCESS then
   begin
@@ -55837,20 +55837,20 @@ begin
            begin
             {Create Device}
             DiskDevice:=TDiskDevice.Create(FileSysDriver,DiskController,nil,Storage,FileSysDriver.GetNextDeviceNo(MediaType),DeviceGetName(@Storage.Device));
-            
+
             {Init Device}
             DiskDevice.DeviceInit;
            end;
          end;
        end;
-     end;  
+     end;
    finally
     {Release the Lock}
     CriticalSectionUnlock(FileSysLock);
    end;
   end;
 end;
-      
+
 {==============================================================================}
 
 function FileSysStorageDeviceNotify(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
@@ -55860,17 +55860,17 @@ var
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {$IFDEF FILESYS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('FileSys: Storage device notification (Notification=' + NotificationToString(Notification) + ')');
  {$ENDIF}
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Check Notification}
  if (Notification and DEVICE_NOTIFICATION_REGISTER) <> 0 then
   begin
@@ -55888,11 +55888,11 @@ begin
           {Create Event}
           Event:=AllocMem(SizeOf(TStorageDeviceEvent));
           if Event = nil then Exit;
-          
+
           {Setup Event}
           Event.Timer:=INVALID_HANDLE_VALUE;
           Event.Device:=PStorageDevice(Device);
-          
+
           {Create Timer}
           Event.Timer:=TimerCreateEx(FILESYS_STORAGE_TIMER_INTERVAL,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(FileSysStorageDeviceAdd),Event);
           if Event.Timer = INVALID_HANDLE_VALUE then
@@ -55924,11 +55924,11 @@ begin
           {Create Event}
           Event:=AllocMem(SizeOf(TStorageDeviceEvent));
           if Event = nil then Exit;
-          
+
           {Setup Event}
           Event.Timer:=INVALID_HANDLE_VALUE;
           Event.Device:=PStorageDevice(Device);
-          
+
           {Create Timer}
           Event.Timer:=TimerCreateEx(FILESYS_STORAGE_TIMER_INTERVAL,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(FileSysStorageDeviceInsert),Event);
           if Event.Timer = INVALID_HANDLE_VALUE then
@@ -55959,7 +55959,7 @@ begin
          begin
           {Eject Device}
           FileSysStorageDeviceEject(PStorageDevice(Device));
-         end; 
+         end;
        end;
      finally
       {Release the Lock}
@@ -55982,7 +55982,7 @@ begin
          begin
           {Remove Device}
           FileSysStorageDeviceRemove(PStorageDevice(Device));
-         end; 
+         end;
        end;
      finally
       {Release the Lock}
@@ -55991,7 +55991,7 @@ begin
     end;
   end;
 end;
-        
+
 {==============================================================================}
 
 function ComparePartitions(APartition1,APartition2:Pointer):Integer;
@@ -55999,10 +55999,10 @@ function ComparePartitions(APartition1,APartition2:Pointer):Integer;
 begin
  {}
  Result:=0;
- 
+
  if APartition1 = nil then Exit;
  if APartition2 = nil then Exit;
- 
+
  {Compare Sector Offset}
  if TDiskPartition(APartition1).StartSector < TDiskPartition(APartition2).StartSector then
   begin
@@ -56023,7 +56023,7 @@ begin
  {}
  {Check Level}
  if Level < FILESYS_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = FILESYS_LOG_LEVEL_DEBUG then
@@ -56038,11 +56038,11 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
-  
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'FileSys: ';
 
- {Output Logging} 
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_FILESYSTEM,LogLevelToLoggingSeverity(Level),'FileSys',WorkBuffer + AText);
 end;
 
@@ -56085,10 +56085,10 @@ begin
  {}
  {Check Data}
  if Data = nil then Exit;
- 
+
  {Check Cache}
  if Data <> FileSysDriver.Cache then Exit;
- 
+
  {Check Timer}
  FileSysDriver.Cache.CheckTimer;
 end;
@@ -56100,10 +56100,10 @@ begin
  {}
  {Check Data}
  if Data = nil then Exit;
- 
+
  {Check Driver}
  if Data <> FileSysDriver then Exit;
- 
+
  {Check Timer}
  FileSysDriver.CheckTimer;
 end;
@@ -56115,10 +56115,10 @@ begin
  {}
  {Check Data}
  if Data = nil then Exit;
-  
+
  {Check Driver}
  if Data <> FileSysDriver then Exit;
-  
+
  {Process Timer}
  FileSysDriver.ProcessTimer;
 end;
@@ -56129,7 +56129,7 @@ function MediaTypeToString(AType:TMediaType):String;
 begin
  {}
  Result:='mtUNKNOWN';
- 
+
  {Check Type}
  case AType of
   mtINVALID:Result:='mtINVALID';
@@ -56148,7 +56148,7 @@ function FloppyTypeToString(AType:TFloppyType):String;
 begin
  {}
  Result:='ftUNKNOWN';
- 
+
  {Check Type}
  case AType of
   ftINVALID:Result:='ftINVALID';
@@ -56167,7 +56167,7 @@ function ImageTypeToString(AType:TImageType):String;
 begin
  {}
  Result:='itUNKNOWN';
- 
+
  {Check Type}
  case AType of
   itINVALID:Result:='itINVALID';
@@ -56188,7 +56188,7 @@ function DriveTypeToString(AType:TDriveType):String;
 begin
  {}
  Result:='dtUNKNOWN';
- 
+
  {Check Type}
  case AType of
   dtINVALID:Result:='dtINVALID';
@@ -56208,7 +56208,7 @@ function FileSysTypeToString(AType:TFileSysType):String;
 begin
  {}
  Result:='fsUNKNOWN';
- 
+
  {Check Type}
  case AType of
   fsINVALID:Result:='fsINVALID';
@@ -56234,9 +56234,9 @@ function StringToFileSysType(const AFileSysType:String):TFileSysType;
 begin
  {}
  Result:=fsUNKNOWN;
- 
+
  if Trim(AFileSysType) = '' then Exit;
- 
+
  if Uppercase(Trim(AFileSysType)) = 'FAT' then
   begin
    Result:=fsFAT32; {Default to FAT32}
@@ -56317,9 +56317,9 @@ function StringToPartitionId(const APartitionId:String):Byte;
 begin
  {}
  Result:=pidUnused;
- 
+
  if Trim(APartitionId) = '' then Exit;
- 
+
  if Uppercase(Trim(APartitionId)) = 'FAT' then
   begin
    Result:=pidFAT32; {Default to FAT32}
@@ -56372,7 +56372,7 @@ function CacheModeToString(ACacheMode:TCacheMode):String;
 begin
  {}
  Result:='NONE';
- 
+
  case ACacheMode of
   cmNONE:Result:='NONE';
   cmREADONLY:Result:='READONLY';
@@ -56386,7 +56386,7 @@ function CacheStateToString(ACacheState:TCacheState):String;
 begin
  {}
  Result:='CLEAN';
- 
+
  case ACacheState of
   csCLEAN:Result:='CLEAN';
   csDIRTY:Result:='DIRTY';
@@ -56419,10 +56419,10 @@ initialization
      {Schedule Worker}
      WorkerSchedule(FILESYS_STARTDELAY,TWorkerTask(FileSysAsyncStart),nil,nil); {Delay start to allow device initialization}
     end;
-  end; 
+  end;
 
 {==============================================================================}
- 
+
 finalization
  FileSysStop;
 

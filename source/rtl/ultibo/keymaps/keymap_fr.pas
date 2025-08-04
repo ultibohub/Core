@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -32,8 +32,8 @@ References
  AZERTY keyboard - https://en.wikipedia.org/wiki/AZERTY
 
  Franch keyboard layout - https://www.microsoft.com/resources/msdn/goglobal/keyboards/kbdfr.html
- 
- 
+
+
 French Keymap (FR)
 ==================
 
@@ -53,7 +53,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Keymap,SysUtils;
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {Keymap_FR specific constants}
@@ -69,19 +69,19 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Keymap,SysUtils;
 {==============================================================================}
 {Initialization Functions}
 procedure Keymap_FRInit;
- 
+
 {==============================================================================}
 {==============================================================================}
 
 implementation
- 
+
 {==============================================================================}
 {==============================================================================}
 var
  {Keymap_FR specific variables}
  Keymap_FRInitialized:Boolean;
- 
-var 
+
+var
  {Keymap FR - French}
  KEYMAP_FR_HEADER:TKeymapHeader = (
   Mode:KEYMAP_MODE_NONE;
@@ -91,7 +91,7 @@ var
   Name:('FR');
   Description:('French')
   );
- 
+
  KEYMAP_FR_DATA:TKeymapData = (
         {Scan Code mappings:                 Normal                         Shift                          AltGr                          Shift+AltGr  }
   Data:({SCAN_CODE_NONE                   } (KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE),
@@ -185,7 +185,7 @@ var
         {SCAN_CODE_KEYPAD_ENTER           } (KEY_CODE_ENTER,                KEY_CODE_ENTER,                KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_1               } (KEY_CODE_END,                  KEY_CODE_1,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_2               } (KEY_CODE_DOWN_ARROW,           KEY_CODE_2,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
-        {SCAN_CODE_KEYPAD_3               } (KEY_CODE_PAGEDN,               KEY_CODE_3,                    KEY_CODE_NONE,                 KEY_CODE_NONE),             
+        {SCAN_CODE_KEYPAD_3               } (KEY_CODE_PAGEDN,               KEY_CODE_3,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_4               } (KEY_CODE_LEFT_ARROW,           KEY_CODE_4,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_5               } (KEY_CODE_CENTER,               KEY_CODE_5,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_6               } (KEY_CODE_RIGHT_ARROW,          KEY_CODE_6,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
@@ -351,7 +351,7 @@ var
                                             (KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE),
                                             (KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE))
   );
- 
+
  KEYMAP_FR_CAPSKEYS:TKeymapCapskeys = (
   Count:8;
   Keys:((First:SCAN_CODE_A;             Last:SCAN_CODE_Z),
@@ -405,7 +405,7 @@ var
         (First:SCAN_CODE_NONE;          Last:SCAN_CODE_NONE),
         (First:SCAN_CODE_NONE;          Last:SCAN_CODE_NONE))
   );
-       
+
  KEYMAP_FR_DEADKEYS:TKeymapDeadkeys = (
   Count:4;
   Keys:((Key:SCAN_CODE_LEFT_SQUARE; {Circumflex Accent (Normal)}
@@ -430,9 +430,9 @@ var
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE))
-        ),                                        
+        ),
         (Key:SCAN_CODE_LEFT_SQUARE; {Diaeresis (Shift)}
-         Index:KEYMAP_INDEX_SHIFT;               
+         Index:KEYMAP_INDEX_SHIFT;
          Resolves:((Key:SCAN_CODE_Q;              Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_DIAERESIS_A),
                    (Key:SCAN_CODE_Q;              Index:KEYMAP_INDEX_SHIFT;               Code:KEY_CODE_CAPITAL_DIAERESIS_A),
                    (Key:SCAN_CODE_E;              Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_DIAERESIS_E),
@@ -453,9 +453,9 @@ var
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE))
-        ),                                        
-        (Key:SCAN_CODE_2; {Tilde (AltGr)}                      
-         Index:KEYMAP_INDEX_ALTGR;               
+        ),
+        (Key:SCAN_CODE_2; {Tilde (AltGr)}
+         Index:KEYMAP_INDEX_ALTGR;
          Resolves:((Key:SCAN_CODE_Q;              Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_TILDE_A),
                    (Key:SCAN_CODE_Q;              Index:KEYMAP_INDEX_SHIFT;               Code:KEY_CODE_CAPITAL_TILDE_A),
                    (Key:SCAN_CODE_N;              Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_TILDE_N),
@@ -476,9 +476,9 @@ var
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE))
-        ),                                        
-        (Key:SCAN_CODE_7; {Grave Accent (AltGr)}                      
-         Index:KEYMAP_INDEX_ALTGR;               
+        ),
+        (Key:SCAN_CODE_7; {Grave Accent (AltGr)}
+         Index:KEYMAP_INDEX_ALTGR;
          Resolves:((Key:SCAN_CODE_Q;              Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_GRAVE_A),
                    (Key:SCAN_CODE_Q;              Index:KEYMAP_INDEX_SHIFT;               Code:KEY_CODE_CAPITAL_GRAVE_A),
                    (Key:SCAN_CODE_E;              Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_GRAVE_E),
@@ -499,9 +499,9 @@ var
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE))
-        ),                                        
-        (Key:SCAN_CODE_NONE; {Unused}                      
-         Index:KEYMAP_INDEX_NORMAL;               
+        ),
+        (Key:SCAN_CODE_NONE; {Unused}
+         Index:KEYMAP_INDEX_NORMAL;
          Resolves:((Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
@@ -524,7 +524,7 @@ var
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE))
         ))
   );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -542,17 +542,17 @@ begin
   begin
    if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to load keymap FR');
   end;
-  
+
  {Check Environment Variables}
  if (Uppercase(EnvironmentGet('KEYMAP_DEFAULT')) = 'FR') or (Uppercase(KEYMAP_DEFAULT) = 'FR') then
   begin
    {Update Default}
    KEYMAP_DEFAULT:='FR';
-   
+
    {Set Default}
    KeymapSetDefault(KeymapHandle);
-  end;  
-  
+  end;
+
  Keymap_FRInitialized:=True;
 end;
 
@@ -561,9 +561,9 @@ end;
 
 initialization
  Keymap_FRInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -571,4 +571,4 @@ finalization
 {==============================================================================}
 
 end.
-         
+

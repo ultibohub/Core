@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -48,7 +48,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {CP852OEM specific constants}
@@ -64,13 +64,13 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Initialization Functions}
 procedure CP852OEMInit;
- 
+
 {==============================================================================}
 {CP852OEM Functions}
- 
+
 {==============================================================================}
 {CP852OEM Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -124,7 +124,7 @@ var
   $00AD,$02DD,$02DB,$02C7,$02D8,$00A7,$00F7,$00B8,
   $00B0,$00A8,$02D9,$0171,$0158,$0159,$25A0,$00A0)
  );
- 
+
  CP852TO1250:TTransTable = (
   TransID:1250;
   Values:(
@@ -145,7 +145,7 @@ var
   $D3,$DF,$D4,$D1,$F1,$F2,$8A,$9A,$C0,$DA,$E0,$DB,$FD,$DD,$FE,$B4,
   $AD,$BD,$B2,$A1,$A2,$A7,$F7,$B8,$B0,$A8,$FF,$FB,$D8,$F8,$A6,$A0)
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -175,9 +175,9 @@ end;
 
 initialization
  CP852OEMInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

@@ -17,24 +17,24 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
- 
- 
+
+
 References
 ==========
 
  General
- 
+
   https://en.wikipedia.org/wiki/Address_Resolution_Protocol
-  
+
 Address Resolution Protocol
 ===========================
 
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -50,13 +50,13 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Threads,SysUtils,Classes,Ne
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-  
+
 {==============================================================================}
 const
  {ARP specific constants}
  ARP_TRANSPORT_NAME = 'ARP';
  RARP_TRANSPORT_NAME = 'RARP';
- 
+
  {ARP and RARP Constants}
  MIN_ARP_PACKET = 46;  {Not Counting Adapter Header}
  MAX_ARP_PACKET = 46;  {Not Counting Adapter Header}
@@ -67,7 +67,7 @@ const
  RARP_TIMEOUT = 4000;  {We wait for 4 seconds for a RARP reply}
  RARP_RETRIES = 4;     {We try the request 4 times}
 
- ARP_HEADER_SIZE  = 46;  {SizeOf(TARPHeader);} 
+ ARP_HEADER_SIZE  = 46;  {SizeOf(TARPHeader);}
  RARP_HEADER_SIZE = 46;  {SizeOf(TRARPHeader);}
 
  {ARP and RARP Messages}
@@ -97,7 +97,7 @@ type
 
  PRARPHeader = ^TRARPHeader;
  TRARPHeader = TARPHeader;    {46 Bytes}
- 
+
 {==============================================================================}
 type
  {ARP specific classes}
@@ -108,9 +108,9 @@ type
    UseCount:Integer;
   public
    {Status Variables}
-   
+
  end;
- 
+
  TARPAddressEntry = class;
  TARPTransport = class(TNetworkTransport)
    constructor Create(AManager:TTransportManager;const AName:String);
@@ -120,7 +120,7 @@ type
    FAddresses:TNetworkList;
    FAddressAdd:TEventHandle;
    FAddressRemove:TEventHandle;
-   
+
    {Status Variables}
 
    {Internal Methods}
@@ -135,7 +135,7 @@ type
    {Inherited Methods}
 
    {Internal Methods}
-   
+
   public
    {Public Methods}
    function AddAdapter(AAdapter:TNetworkAdapter;AConfigType:Word;AAddress,ANetmask,AGateway,AServer:Pointer):Boolean; override;
@@ -147,7 +147,7 @@ type
 
    function BindTransport(AAdapter:TNetworkAdapter):Boolean; override;
    function UnbindTransport(AAdapter:TNetworkAdapter):Boolean; override;
-   
+
    {ARP Methods}
    function GetAddressByAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TARPAddressEntry;
    function GetAddressByHardware(const AHardware:THardwareAddress;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TARPAddressEntry;
@@ -155,10 +155,10 @@ type
    function AddAddress(const AAddress:TInAddr;const AHardware:THardwareAddress;AAdapter:TNetworkAdapter;AType:Word;ALock:Boolean;AState:LongWord):TARPAddressEntry;
    function RemoveAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter):Boolean;
    procedure FlushAddresses(All:Boolean);
-   
+
    function LoadAddress(AAdapter:TNetworkAdapter;const AAddress:TInAddr;const AHardware:THardwareAddress;AType:Word):Boolean;
    function UnloadAddress(AAdapter:TNetworkAdapter;const AAddress:TInAddr):Boolean;
-   
+
    function ResolveAddress(AAdapter:TNetworkAdapter;const ASource,AAddress:TInAddr;var AHardware:THardwareAddress):Boolean;
    function ResolveHardware(AAdapter:TNetworkAdapter;const ASource:TInAddr;const AHardware:THardwareAddress;var AAddress:TInAddr):Boolean;
 
@@ -176,7 +176,7 @@ type
    FAddress:TInAddr;
    FProtocolType:Word;
    FHardware:THardwareAddress;
-   
+
    {Internal Methods}
    procedure SetAddress(const AAddress:TInAddr);
    procedure SetProtocolType(AProtocolType:Word);
@@ -195,7 +195,7 @@ type
    UseCount:Integer;
   public
    {Status Variables}
-   
+
  end;
 
  TRARPAddressEntry = class;
@@ -219,7 +219,7 @@ type
    {Inherited Methods}
 
    {Internal Methods}
-   
+
   public
    {Public Methods}
    function AddAdapter(AAdapter:TNetworkAdapter;AConfigType:Word;AAddress,ANetmask,AGateway,AServer:Pointer):Boolean; override;
@@ -231,18 +231,18 @@ type
 
    function BindTransport(AAdapter:TNetworkAdapter):Boolean; override;
    function UnbindTransport(AAdapter:TNetworkAdapter):Boolean; override;
-   
+
    {RARP Methods}
-   function GetAddressByAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TRARPAddressEntry; 
+   function GetAddressByAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TRARPAddressEntry;
    function GetAddressByHardware(const AHardware:THardwareAddress;AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TRARPAddressEntry;
    function GetAddressByNext(APrevious:TRARPAddressEntry;ALock,AUnlock:Boolean;AState:LongWord):TRARPAddressEntry;
    function AddAddress(const AAddress:TInAddr;const AHardware:THardwareAddress;AAdapter:TNetworkAdapter;AType:Word;ALock:Boolean;AState:LongWord):TRARPAddressEntry;
    function RemoveAddress(const AAddress:TInAddr;AAdapter:TNetworkAdapter):Boolean;
    procedure FlushAddresses(All:Boolean);
-   
+
    function LoadAddress(AAdapter:TNetworkAdapter;const AAddress:TInAddr;const AHardware:THardwareAddress;AType:Word):Boolean;
    function UnloadAddress(AAdapter:TNetworkAdapter;const AAddress:TInAddr):Boolean;
-   
+
    function ResolveHardware(AAdapter:TNetworkAdapter;var AAddress:TInAddr):Boolean;
 
    function CompareDefault(const AAddress:TInAddr):Boolean;
@@ -256,7 +256,7 @@ type
    FAddress:TInAddr;
    FProtocolType:Word;
    FHardware:THardwareAddress;
-   
+
    {Internal Methods}
    procedure SetAddress(const AAddress:TInAddr);
    procedure SetProtocolType(AProtocolType:Word);
@@ -267,11 +267,11 @@ type
    property ProtocolType:Word read FProtocolType write SetProtocolType;
    property Hardware:THardwareAddress read FHardware write SetHardware;
  end;
- 
+
 {==============================================================================}
 {var}
  {ARP specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure ARPInit;
@@ -333,7 +333,7 @@ begin
  finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -354,12 +354,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: PacketHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Adapter}
  Adapter:=TARPTransportAdapter(GetAdapterByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Adapter = nil then Exit;
@@ -367,7 +367,7 @@ begin
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  PacketType = ' + PacketTypeToString(Adapter.PacketType));
   {$ENDIF}
- 
+
   {Check Packet Type}
   case Adapter.PacketType of
    PACKET_TYPE_ARP:begin
@@ -376,16 +376,16 @@ begin
       begin
        {Get Header}
        ARP:=PARPHeader(APacket);
-       
+
        {Set the Addresses to Host order}
        ARP.TargetIP:=InAddrToHost(ARP.TargetIP);
        ARP.SourceIP:=InAddrToHost(ARP.SourceIP);
-       
+
        {Check Opcode}
-       case WordBEtoN(ARP.Opcode) of 
+       case WordBEtoN(ARP.Opcode) of
         ARP_REQUEST:begin
           {Check Protocol Type}
-          case WordBEtoN(ARP.ProtocolType) of 
+          case WordBEtoN(ARP.ProtocolType) of
            PACKET_TYPE_IP:begin
              {Get Local Address}
              Local:=GetAddressByAddress(ARP.TargetIP,Adapter.Adapter,True,NETWORK_LOCK_READ);
@@ -396,7 +396,7 @@ begin
                 begin
                  {Get Remote Address}
                  Remote:=GetAddressByAddress(ARP.SourceIP,Adapter.Adapter,True,NETWORK_LOCK_READ);
-                 if Remote = nil then 
+                 if Remote = nil then
                   begin
                    {Add Remote Address}
                    Remote:=AddAddress(ARP.SourceIP,ARP.SourceHardware,Adapter.Adapter,ADDRESS_TYPE_DYNAMIC,True,NETWORK_LOCK_READ);
@@ -405,14 +405,14 @@ begin
                   begin
                    {Update Remote Address}
                    Remote.Hardware:=ARP.SourceHardware;
-                   
+
                    {Update timeout on the Remote}
                    if Remote.AddressType = ADDRESS_TYPE_DYNAMIC then
                     begin
                      Remote.AddressTime:=GetTickCount64;
                     end;
                   end;
-                  
+
                  {Check Remote Address}
                  if Remote <> nil then
                   begin
@@ -422,7 +422,7 @@ begin
                      {Send ARP Reply}
                      Result:=SendARPReply(Adapter,Local,Remote);
                    end;
-                  
+
                    {Unlock Remote}
                    Remote.ReaderUnlock;
                   end;
@@ -447,7 +447,7 @@ begin
                 begin
                  {Get Remote Address}
                  Remote:=GetAddressByAddress(ARP.SourceIP,Adapter.Adapter,True,NETWORK_LOCK_READ);
-                 if Remote = nil then 
+                 if Remote = nil then
                   begin
                    {Add Remote Address}
                    AddAddress(ARP.SourceIP,ARP.SourceHardware,Adapter.Adapter,ADDRESS_TYPE_DYNAMIC,False,NETWORK_LOCK_NONE);
@@ -462,11 +462,11 @@ begin
                     begin
                      Remote.AddressTime:=GetTickCount64;
                     end;
-                   
+
                    {Unlock Remote}
                    Remote.ReaderUnlock;
                   end;
-                
+
                  {Return Result}
                  Result:=True;
                 end;
@@ -490,7 +490,7 @@ begin
                 begin
                  {Get Remote Address}
                  Remote:=GetAddressByAddress(ARP.SourceIP,Adapter.Adapter,True,NETWORK_LOCK_READ);
-                 if Remote = nil then 
+                 if Remote = nil then
                   begin
                    {Add Remote Address}
                    Remote:=AddAddress(ARP.SourceIP,ARP.SourceHardware,Adapter.Adapter,ADDRESS_TYPE_DYNAMIC,True,NETWORK_LOCK_READ);
@@ -506,7 +506,7 @@ begin
                      Remote.AddressTime:=GetTickCount64;
                     end;
                   end;
-                  
+
                  {Check Remote Address}
                  if Remote <> nil then
                   begin
@@ -516,7 +516,7 @@ begin
                      {Send INARP Reply}
                      Result:=SendINARPReply(Adapter,Local,Remote);
                     end;
-                    
+
                    {Unlock Remote}
                    Remote.ReaderUnlock;
                   end;
@@ -530,7 +530,7 @@ begin
          end;
         INARP_REPLY:begin
           {Check Protocol Type}
-          case WordBEtoN(ARP.ProtocolType) of 
+          case WordBEtoN(ARP.ProtocolType) of
            PACKET_TYPE_IP:begin
              {Get Local Address}
              Local:=GetAddressByAddress(ARP.TargetIP,Adapter.Adapter,True,NETWORK_LOCK_READ);
@@ -541,7 +541,7 @@ begin
                 begin
                  {Get Remote Address}
                  Remote:=GetAddressByAddress(ARP.SourceIP,Adapter.Adapter,True,NETWORK_LOCK_READ);
-                 if Remote = nil then 
+                 if Remote = nil then
                   begin
                    {Add Remote Address}
                    AddAddress(ARP.SourceIP,ARP.SourceHardware,Adapter.Adapter,ADDRESS_TYPE_DYNAMIC,False,NETWORK_LOCK_NONE);
@@ -556,15 +556,15 @@ begin
                     begin
                      Remote.AddressTime:=GetTickCount64;
                     end;
-                    
+
                    {Unlock Remote}
                    Remote.ReaderUnlock;
                   end;
-                  
+
                  {Return Result}
                  Result:=True;
                 end;
-                
+
                {Unlock Local}
                Local.ReaderUnlock;
               end;
@@ -575,9 +575,9 @@ begin
       end;
     end;
   end;
- finally 
+ finally
   Adapter.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -595,36 +595,36 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: SendARPRequest');
  {$ENDIF}
-  
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Check Source}
  if ASource = nil then Exit;
 
  {Create ARP Request}
- ARP.HardwareType:=WordNtoBE(AAdapter.Adapter.MediaType); 
- ARP.ProtocolType:=WordNtoBE(PACKET_TYPE_IP); 
+ ARP.HardwareType:=WordNtoBE(AAdapter.Adapter.MediaType);
+ ARP.ProtocolType:=WordNtoBE(PACKET_TYPE_IP);
  ARP.HardwareLength:=SizeOf(THardwareAddress);
  ARP.ProtocolLength:=SizeOf(TInAddr);
- ARP.Opcode:=WordNtoBE(ARP_REQUEST); 
+ ARP.Opcode:=WordNtoBE(ARP_REQUEST);
  ARP.SourceHardware:=ASource.Hardware;
  ARP.SourceIP:=InAddrToNetwork(ASource.Address);
  ARP.TargetHardware:=HARDWARE_DEFAULT;
  ARP.TargetIP:=InAddrToNetwork(ATarget);
-  
+
  {Create Packet}
  Packet.Size:=ARP_HEADER_SIZE;
  Packet.Data:=@ARP;
  Packet.Next:=nil;
-  
+
  {Send Packet}
  Result:=AAdapter.Adapter.SendPacket(AAdapter.Handle,@AAdapter.Broadcast,@Packet,ARP_HEADER_SIZE);
- 
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: SendARPRequest Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -645,20 +645,20 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: SendARPReply');
  {$ENDIF}
-  
+
  {Check Adapter}
  if AAdapter = nil then Exit;
- 
+
  {Check Source}
  if ASource = nil then Exit;
-  
+
  {Check Target}
  if ATarget = nil then Exit;
-  
+
  {Create ARP Reply}
  ARP.HardwareType:=WordNtoBE(AAdapter.Adapter.MediaType);
  ARP.ProtocolType:=WordNtoBE(PACKET_TYPE_IP);
@@ -669,15 +669,15 @@ begin
  ARP.SourceIP:=InAddrToNetwork(ASource.Address);
  ARP.TargetHardware:=ATarget.Hardware;
  ARP.TargetIP:=InAddrToNetwork(ATarget.Address);
-  
+
  {Create Packet}
  Packet.Size:=ARP_HEADER_SIZE;
  Packet.Data:=@ARP;
  Packet.Next:=nil;
-  
+
  {Send Packet}
  Result:=AAdapter.Adapter.SendPacket(AAdapter.Handle,@ATarget.Hardware,@Packet,ARP_HEADER_SIZE);
- 
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: SendARPReply Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -698,36 +698,36 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: SendINARPRequest');
  {$ENDIF}
-  
+
  {Check Adapter}
  if AAdapter = nil then Exit;
 
  {Check Source}
  if ASource = nil then Exit;
-  
+
  {Create INARP Request}
  ARP.HardwareType:=WordNtoBE(AAdapter.Adapter.MediaType);
- ARP.ProtocolType:=WordNtoBE(PACKET_TYPE_IP); 
+ ARP.ProtocolType:=WordNtoBE(PACKET_TYPE_IP);
  ARP.HardwareLength:=SizeOf(THardwareAddress);
  ARP.ProtocolLength:=SizeOf(TInAddr);
- ARP.Opcode:=WordNtoBE(INARP_REQUEST); 
+ ARP.Opcode:=WordNtoBE(INARP_REQUEST);
  ARP.SourceHardware:=ASource.Hardware;
  ARP.SourceIP:=InAddrToNetwork(ASource.Address);
  ARP.TargetHardware:=ATarget;
  ARP.TargetIP:=InAddrToNetwork(IP_DEFAULT_ADDRESS);
-  
+
  {Create Packet}
  Packet.Size:=ARP_HEADER_SIZE;
  Packet.Data:=@ARP;
  Packet.Next:=nil;
-  
+
  {Send Packet}
  Result:=AAdapter.Adapter.SendPacket(AAdapter.Handle,@ATarget,@Packet,ARP_HEADER_SIZE);
- 
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: SendINARPRequest Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -748,39 +748,39 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: SendINARPReply');
  {$ENDIF}
-  
+
  {Check Adapter}
  if AAdapter = nil then Exit;
-  
+
  {Check Source}
  if ASource = nil then Exit;
-  
+
  {Check Target}
  if ATarget = nil then Exit;
-  
+
  {Create INARP Reply}
  ARP.HardwareType:=WordNtoBE(AAdapter.Adapter.MediaType);
  ARP.ProtocolType:=WordNtoBE(PACKET_TYPE_IP);
  ARP.HardwareLength:=SizeOf(THardwareAddress);
  ARP.ProtocolLength:=SizeOf(TInAddr);
- ARP.Opcode:=WordNtoBE(INARP_REPLY); 
+ ARP.Opcode:=WordNtoBE(INARP_REPLY);
  ARP.SourceHardware:=ASource.Hardware;
  ARP.SourceIP:=InAddrToNetwork(ASource.Address);
  ARP.TargetHardware:=ATarget.Hardware;
  ARP.TargetIP:=InAddrToNetwork(ATarget.Address);
-  
+
  {Create Packet}
  Packet.Size:=ARP_HEADER_SIZE;
  Packet.Data:=@ARP;
  Packet.Next:=nil;
-  
+
  {Send Packet}
  Result:=AAdapter.Adapter.SendPacket(AAdapter.Handle,@ATarget.Hardware,@Packet,ARP_HEADER_SIZE);
- 
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: SendINARPReply Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -804,18 +804,18 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: AddAdapter');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Config = ' + ConfigTypeToString(AConfigType));
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
 
   {Check State}
   if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
- 
+
   {Get Adapter}
   Adapter:=TARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to use count}
   if Adapter = nil then
@@ -837,38 +837,38 @@ begin
       Adapter.ConfigType:=CONFIG_TYPE_AUTO;
       Adapter.Configured:=True;
       Adapter.Configuring:=False;
-      
+
       {Acquire Lock}
       FAdapters.WriterLock;
       try
        {Add Adapter}
        FAdapters.Add(Adapter);
-      
+
        {Add Broadcast Address}
        AddAddress(IP_BROADCAST_ADDRESS,Adapter.Broadcast,Adapter.Adapter,ADDRESS_TYPE_BROADCAST,False,NETWORK_LOCK_NONE);
-      
+
        {Return Result}
        Result:=True;
       finally
        {Release Lock}
        FAdapters.WriterUnlock;
-      end;  
+      end;
      end;
    end
   else
    begin
     {Increment Count}
     Inc(Adapter.UseCount);
-    
+
     {Unlock Adapter}
     Adapter.WriterUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -883,29 +883,29 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: RemoveAdapter');
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {Get Adapter}
   Adapter:=TARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to use count}
   if Adapter = nil then Exit;
-  
+
   {Check Count}
   if Adapter.UseCount = 0 then
    begin
     {Unlock Adapter}
     Adapter.WriterUnlock;
     Exit;
-   end; 
-  
+   end;
+
   {Decrement Count}
   Dec(Adapter.UseCount);
-  
+
   if Adapter.UseCount < 1 then
    begin
     {Remove ARP Type}
@@ -913,38 +913,38 @@ begin
      begin
       {Remove Broadcast Address}
       RemoveAddress(IP_BROADCAST_ADDRESS,AAdapter);
-     
+
       {Acquire Lock}
       FAdapters.WriterLock;
       try
        {Remove Adapter}
        FAdapters.Remove(Adapter);
-      
+
        {Unlock Adapter}
        Adapter.WriterUnlock;
-      
+
        {Destroy Adapter}
        Adapter.Free;
-       
+
        {Return Result}
        Result:=True;
       finally
        {Release Lock}
        FAdapters.WriterUnlock;
-      end;  
+      end;
      end;
    end
   else
    begin
     {Unlock Adapter}
     Adapter.WriterUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -956,19 +956,19 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: StartTransport');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -983,14 +983,14 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: StopTransport');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Get Adapter}
   Adapter:=TARPTransportAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
   while Adapter <> nil do
@@ -998,19 +998,19 @@ begin
     {Get Next}
     Current:=Adapter;
     Adapter:=TARPTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
-    
-    {Remove Adapter} 
+
+    {Remove Adapter}
     RemoveAdapter(Adapter.Adapter);
    end;
-  
+
   {Remove all Addresses}
   FlushAddresses(True);
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1021,14 +1021,14 @@ begin
  {}
  {Remove old Addresses}
  FlushAddresses(False);
-  
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TARPTransport.BindTransport(AAdapter:TNetworkAdapter):Boolean; 
+function TARPTransport.BindTransport(AAdapter:TNetworkAdapter):Boolean;
 {Bind this transport to an adapter if appropriate}
 {Adapter: The adapter to bind to}
 
@@ -1038,14 +1038,14 @@ begin
  ReaderLock;
  try
   Result:=False;
- 
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: BindTransport');
   {$ENDIF}
- 
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Adapter = ' + AAdapter.Name);
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:   State = ' + AdapterStateToString(AAdapter.State));
@@ -1057,15 +1057,15 @@ begin
   {Check State}
   if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
 
-  Result:=True; 
- finally 
+  Result:=True;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TARPTransport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean; 
+function TARPTransport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean;
 {Unbind this transport from an adapter if appropriate}
 {Adapter: The adapter to unbind from}
 
@@ -1074,23 +1074,23 @@ begin
  {}
  ReaderLock;
  try
-  Result:=False; 
- 
+  Result:=False;
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: UnbindTransport');
   {$ENDIF}
- 
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Adapter = ' + AAdapter.Name);
   {$ENDIF}
 
-  Result:=True; 
- finally 
+  Result:=True;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1107,20 +1107,20 @@ begin
  FAddresses.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: GetAddressByAddress');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {Get Address}
   Address:=TARPAddressEntry(FAddresses.First);
   while Address <> nil do
    begin
-    {$IFDEF ARP_DEBUG} 
+    {$IFDEF ARP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Compare = ' + InAddrToString(InAddrToNetwork(Address.Address)));
     {$ENDIF}
     {Check Adatper}
@@ -1131,19 +1131,19 @@ begin
        begin
         {Lock Address}
         if ALock then if AState = NETWORK_LOCK_READ then Address.ReaderLock else Address.WriterLock;
-        
+
         {Return Result}
         Result:=Address;
         Exit;
        end;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Address:=TARPAddressEntry(Address.Next);
    end;
- finally 
+ finally
   FAddresses.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1160,15 +1160,15 @@ begin
  FAddresses.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: GetAddressByHardware');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Hardware = ' + HardwareAddressToString(AHardware));
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {Get Address}
   Address:=TARPAddressEntry(FAddresses.First);
   while Address <> nil do
@@ -1182,21 +1182,21 @@ begin
       {Check Hardware}
       if Address.Adapter.CompareAddress(Address.Hardware,AHardware) then
        begin
-        {Lock Address} 
+        {Lock Address}
         if ALock then if AState = NETWORK_LOCK_READ then Address.ReaderLock else Address.WriterLock;
-        
+
         {Return Result}
         Result:=Address;
         Exit;
        end;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Address:=TARPAddressEntry(Address.Next);
    end;
- finally 
+ finally
   FAddresses.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1209,7 +1209,7 @@ begin
  FAddresses.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -1219,7 +1219,7 @@ begin
      begin
       {Lock Address}
       if ALock then if AState = NETWORK_LOCK_READ then Address.ReaderLock else Address.WriterLock;
-      
+
       {Return Result}
       Result:=Address;
      end;
@@ -1232,17 +1232,17 @@ begin
      begin
       {Lock Address}
       if ALock then if AState = NETWORK_LOCK_READ then Address.ReaderLock else Address.WriterLock;
-      
+
       {Return Result}
       Result:=Address;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   FAddresses.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1257,53 +1257,53 @@ function TARPTransport.AddAddress(const AAddress:TInAddr;const AHardware:THardwa
 begin
  {}
  Result:=nil;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: AddAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Hardware = ' + HardwareAddressToString(AHardware));
  {$ENDIF}
-  
+
  {Check Adapter}
  if AAdapter = nil then Exit;
-  
+
  {Create Address}
  Result:=TARPAddressEntry.Create;
  Result.Address:=AAddress;
  Result.Hardware:=AHardware;
  Result.Adapter:=AAdapter;
  Result.AddressType:=AType;
-  
- {Acquire Lock} 
+
+ {Acquire Lock}
  FAddresses.WriterLock; {Acquire as Writer}
  try
   {Add Address}
   if FAddresses.Add(Result) then
    begin
     {Convert Lock}
-    FAddresses.WriterConvert; 
+    FAddresses.WriterConvert;
 
     {Signal Event}
     EventPulse(FAddressAdd);
-    
+
     {Reset Event (Manual Reset)}
     {EventReset(FAddressAdd);} {Not required, reset by EventPulse}
 
     {Lock Address}
     if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
    end
-  else 
+  else
    begin
     {Convert Lock}
-    FAddresses.WriterConvert; 
+    FAddresses.WriterConvert;
 
     {Free Address}
     Result.Free;
     Result:=nil;
    end;
- finally 
+ finally
   FAddresses.ReaderUnlock; {Converted to Reader}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1319,15 +1319,15 @@ begin
  FAddresses.ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: RemoveAddress');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {Get Address}
   Address:=TARPAddressEntry(FAddresses.First);
   while Address <> nil do
@@ -1340,39 +1340,39 @@ begin
        begin
         {Lock Address}
         Address.WriterLock;
-        
+
         {Convert Lock}
         if FAddresses.ReaderConvert then
          begin
           {Remove Address}
           Result:=FAddresses.Remove(Address);
-        
+
           {Convert Lock}
-          FAddresses.WriterConvert; 
-        
+          FAddresses.WriterConvert;
+
           {Signal Event}
           EventPulse(FAddressRemove);
- 
+
           {Reset Event (Manual Reset)}
           {EventReset(FAddressRemove);} {Not required, reset by EventPulse}
-        
+
           {Unlock Address}
           Address.WriterUnlock;
-        
+
           {Free Address}
           Address.Free;
          end;
-         
+
         Exit;
        end;
      end;
-    
+
     {Get Next}
     Address:=TARPAddressEntry(Address.Next);
    end;
- finally 
+ finally
   FAddresses.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1390,10 +1390,10 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: FlushAddresses');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  All = ' + BoolToStr(All));
  {$ENDIF}
- 
+
  {Get Tick Count}
  CurrentTime:=GetTickCount64;
- 
+
  {Get Address}
  Address:=TARPAddressEntry(GetAddressByNext(nil,True,False,NETWORK_LOCK_READ));
  while Address <> nil do
@@ -1401,7 +1401,7 @@ begin
    {Get Next}
    Current:=Address;
    Address:=TARPAddressEntry(GetAddressByNext(Current,True,False,NETWORK_LOCK_READ));
-   
+
    {Check Address Type}
    if (Current.AddressType = ADDRESS_TYPE_DYNAMIC) or (All) then
     begin
@@ -1417,25 +1417,25 @@ begin
            {$IFDEF ARP_DEBUG}
            if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Flush = ' + InAddrToString(InAddrToNetwork(Current.Address)) + ' / ' + HardwareAddressToString(Current.Hardware));
            {$ENDIF}
-           
+
            {Acquire Lock}
            FAddresses.WriterLock;
-           
+
            {Remove Address}
            FAddresses.Remove(Current);
-           
+
            {Release Lock}
            FAddresses.WriterUnlock;
-           
+
            {Signal Event}
            EventPulse(FAddressRemove);
-           
+
            {Reset Event (Manual Reset)}
            {EventReset(FAddressRemove);} {Not required, reset by EventPulse}
-           
+
            {Unlock Address}
            Current.WriterUnlock;
-           
+
            {Free the Address}
            Current.Free;
            Current:=nil;
@@ -1444,11 +1444,11 @@ begin
           begin
            {Convert Address}
            Current.WriterConvert;
-          end; 
-        end; 
+          end;
+        end;
       end;
     end;
-    
+
    {Unlock Address}
    if Current <> nil then Current.ReaderUnlock;
   end;
@@ -1467,7 +1467,7 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: LoadAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
@@ -1483,16 +1483,16 @@ begin
  {Get Adapter}
  Adapter:=TARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
  if Adapter = nil then Exit;
- try  
+ try
   {Check Address}
   if GetAddressByAddress(AAddress,AAdapter,False,NETWORK_LOCK_NONE) = nil then
    begin
     {Add Address}
     Result:=(AddAddress(AAddress,AHardware,AAdapter,AType,False,NETWORK_LOCK_NONE) <> nil); {Do not lock}
    end;
- finally 
+ finally
   Adapter.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1506,7 +1506,7 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: UnloadAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
@@ -1517,20 +1517,20 @@ begin
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Adapter = ' + AAdapter.Name);
  {$ENDIF}
- 
+
  {Get Adapter}
  Adapter:=TARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
  if Adapter = nil then Exit;
- try  
+ try
   {Check Address}
   if GetAddressByAddress(AAddress,AAdapter,False,NETWORK_LOCK_NONE) <> nil then
    begin
     {Remove Address}
     Result:=RemoveAddress(AAddress,AAdapter);
    end;
- finally 
+ finally
   Adapter.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1550,11 +1550,11 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: ResolveAddress');
  {$ENDIF}
-  
+
  {Check Adapter}
  if AAdapter = nil then Exit;
  {$IFDEF ARP_DEBUG}
@@ -1564,15 +1564,15 @@ begin
  {Get Adapter}
  Adapter:=TARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
  if Adapter = nil then Exit;
- try  
+ try
   {Get Source}
   Source:=GetAddressByAddress(ASource,AAdapter,True,NETWORK_LOCK_READ);
   if Source = nil then Exit;
   try
    {$IFDEF ARP_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Source = ' + InAddrToString(InAddrToNetwork(Source.Address)) + ' / ' + HardwareAddressToString(Source.Hardware)); 
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Source = ' + InAddrToString(InAddrToNetwork(Source.Address)) + ' / ' + HardwareAddressToString(Source.Hardware));
    {$ENDIF}
-  
+
    {Get Target}
    Target:=GetAddressByAddress(AAddress,AAdapter,True,NETWORK_LOCK_READ);
    if Target = nil then
@@ -1580,7 +1580,7 @@ begin
      {$IFDEF ARP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Target not in cache');
      {$ENDIF}
-     
+
      {Send an ARP Request}
      Retries:=ARP_RETRIES;
      while Retries > 0 do
@@ -1592,8 +1592,8 @@ begin
           begin
            if NETWORK_LOG_ENABLED then NetworkLogWarn(nil,'ARP:  Wait requested on adapter thread');
            Exit;
-          end; 
-         
+          end;
+
          {Wait for the Reply}
          StartTime:=GetTickCount64;
          while (StartTime + ARP_TIMEOUT) > GetTickCount64 do
@@ -1607,21 +1607,21 @@ begin
                {$IFDEF ARP_DEBUG}
                if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Target = ' + InAddrToString(InAddrToNetwork(Target.Address)) + ' / ' + HardwareAddressToString(Target.Hardware));
                {$ENDIF}
-             
+
                {Get Hardware}
                AHardware:=Target.Hardware;
-             
+
                {Unlock Target}
                Target.ReaderUnlock;
-             
+
                {Return Result}
                Result:=True;
                Exit;
               end;
-            end;  
+            end;
           end;
         end;
-      
+
        Dec(Retries);
       end;
     end
@@ -1630,28 +1630,28 @@ begin
      {$IFDEF ARP_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Target = ' + InAddrToString(InAddrToNetwork(Target.Address)) + ' / ' + HardwareAddressToString(Target.Hardware));
      {$ENDIF}
-    
+
      {Update timeout on the Address}
      if Target.AddressType = ADDRESS_TYPE_DYNAMIC then
       begin
        Target.AddressTime:=GetTickCount64;
       end;
-     
+
      {Get Hardware}
      AHardware:=Target.Hardware;
-    
+
      {Unlock Target}
      Target.ReaderUnlock;
-    
+
      {Return Result}
      Result:=True;
     end;
   finally
    Source.ReaderUnlock;
-  end;  
- finally 
+  end;
+ finally
   Adapter.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1671,29 +1671,29 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: ResolveHardware');
  {$ENDIF}
-  
+
  {Check Adapter}
  if AAdapter = nil then Exit;
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Adapter = ' + AAdapter.Name);
  {$ENDIF}
-  
+
  {Get Adapter}
  Adapter:=TARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
  if Adapter = nil then Exit;
- try  
+ try
   {Get Source}
   Source:=GetAddressByAddress(ASource,AAdapter,True,NETWORK_LOCK_READ);
   if Source = nil then Exit;
   try
    {$IFDEF ARP_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Source = ' + InAddrToString(InAddrToNetwork(Source.Address)) + ' / ' + HardwareAddressToString(Source.Hardware)); 
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Source = ' + InAddrToString(InAddrToNetwork(Source.Address)) + ' / ' + HardwareAddressToString(Source.Hardware));
    {$ENDIF}
-  
+
    {Get Target}
    Target:=GetAddressByHardware(AHardware,AAdapter,True,NETWORK_LOCK_READ);
    if Target = nil then
@@ -1713,7 +1713,7 @@ begin
           begin
            if NETWORK_LOG_ENABLED then NetworkLogWarn(nil,'ARP:  Wait requested on adapter thread');
            Exit;
-          end; 
+          end;
 
          {Wait for the Reply}
          StartTime:=GetTickCount64;
@@ -1731,18 +1731,18 @@ begin
 
                {Get Address}
                AAddress:=Target.Address;
-            
+
                {Unlock Target}
                Target.ReaderUnlock;
-             
+
                {Return Result}
                Result:=True;
                Exit;
               end;
-            end;  
+            end;
           end;
         end;
-      
+
        Dec(Retries);
       end;
     end
@@ -1757,22 +1757,22 @@ begin
       begin
        Target.AddressTime:=GetTickCount64;
       end;
-      
+
      {Get Address}
      AAddress:=Target.Address;
-    
+
      {Unlock Target}
      Target.ReaderUnlock;
-    
+
      {Return Result}
      Result:=True;
     end;
   finally
    Source.ReaderUnlock;
-  end;  
- finally 
+  end;
+ finally
   Adapter.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1792,29 +1792,29 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: ConfirmAddress');
  {$ENDIF}
-  
+
  {Check Adapter}
  if AAdapter = nil then Exit;
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Adapter = ' + AAdapter.Name);
  {$ENDIF}
-  
+
  {Get Adapter}
  Adapter:=TARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
  if Adapter = nil then Exit;
- try  
+ try
   {Get Source}
   Source:=GetAddressByAddress(ASource,AAdapter,True,NETWORK_LOCK_READ);
   if Source = nil then Exit;
   try
    {$IFDEF ARP_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Source = ' + InAddrToString(InAddrToNetwork(Source.Address)) + ' / ' + HardwareAddressToString(Source.Hardware)); 
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Source = ' + InAddrToString(InAddrToNetwork(Source.Address)) + ' / ' + HardwareAddressToString(Source.Hardware));
    {$ENDIF}
-  
+
    {Get Target}
    Target:=GetAddressByAddress(AAddress,AAdapter,True,NETWORK_LOCK_READ);
    if Target = nil then
@@ -1831,7 +1831,7 @@ begin
         begin
          if NETWORK_LOG_ENABLED then NetworkLogWarn(nil,'ARP:  Wait requested on adapter thread');
          Exit;
-        end; 
+        end;
 
        {Wait for the Reply}
        StartTime:=GetTickCount64;
@@ -1842,10 +1842,10 @@ begin
            {Get Target}
            Target:=GetAddressByAddress(AAddress,AAdapter,False,NETWORK_LOCK_NONE);
            if Target <> nil then Exit;
-          end; 
+          end;
         end;
       end;
-    
+
      {Return Result}
      Result:=True;
     end;
@@ -1854,10 +1854,10 @@ begin
            //Note: for DHCP the Server will most likely already check this address by ARP
   finally
    Source.ReaderUnlock;
-  end;  
- finally 
+  end;
+ finally
   Adapter.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1873,46 +1873,46 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: AdvertiseAddress');
  {$ENDIF}
-  
+
  if AAdapter = nil then Exit;
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Adapter = ' + AAdapter.Name);
  {$ENDIF}
-  
+
  {Get Adapter}
  Adapter:=TARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
  if Adapter = nil then Exit;
- try  
+ try
   {Get Source}
   Source:=GetAddressByAddress(ASource,AAdapter,True,NETWORK_LOCK_READ);
   if Source = nil then Exit;
   try
    {$IFDEF ARP_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Source = ' + InAddrToString(InAddrToNetwork(Source.Address)) + ' / ' + HardwareAddressToString(Source.Hardware)); 
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP:  Source = ' + InAddrToString(InAddrToNetwork(Source.Address)) + ' / ' + HardwareAddressToString(Source.Hardware));
    {$ENDIF}
-  
+
    {Get Target}
    Target:=GetAddressByAddress(IP_BROADCAST_ADDRESS,AAdapter,True,NETWORK_LOCK_READ);
    if Target = nil then Exit;
-   
+
    {Send an ARP Reply (Gratutitous)}
    Result:=SendARPReply(Adapter,Source,Target);
 
    {Unlock Target}
    Target.ReaderUnlock;
-   
+
    //To Do //Need to add use of this to Config - DHCP/BOOTP/RARP/STATIC etc
            //Note: No one seems to listen to this when we send it anyway ? (tried with DHCP)
   finally
    Source.ReaderUnlock;
-  end;  
- finally 
+  end;
+ finally
   Adapter.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1942,7 +1942,7 @@ begin
  inherited Create;
  FFamily:=AF_INET;
  FLength:=SizeOf(TInAddr);
- 
+
  FAddress.S_addr:=INADDR_ANY;
  FProtocolType:=PACKET_TYPE_IP;
  FillChar(FHardware,SizeOf(THardwareAddress),0);
@@ -2022,7 +2022,7 @@ begin
  finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2043,11 +2043,11 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: PacketHandler - Size = ' + IntToStr(ASize));
  {$ENDIF}
-  
+
  {Get Adapter}
  Adapter:=TRARPTransportAdapter(GetAdapterByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Adapter = nil then Exit;
@@ -2060,11 +2060,11 @@ begin
       begin
        {Get Header}
        RARP:=PRARPHeader(APacket);
-       
+
        {Set the Addresses to Host order}
        RARP.TargetIP:=InAddrToHost(RARP.TargetIP);
        RARP.SourceIP:=InAddrToHost(RARP.SourceIP);
-       
+
        {Check Opcode}
        case WordBEtoN(RARP.Opcode) of
         RARP_REQUEST:begin
@@ -2088,7 +2088,7 @@ begin
                      {Send RARP Reply}
                      Result:=SendRARPReply(Adapter,Local,Remote);
                     end;
-                    
+
                    {Unlock Local}
                    Local.ReaderUnlock;
                   end;
@@ -2118,11 +2118,11 @@ begin
                 begin
                  {Update Local Address}
                  Local.Address:=RARP.TargetIP;
-                 
+
                  {Unlock Local}
                  Local.ReaderUnlock;
                 end;
-               
+
                {Return Result}
                Result:=True;
               end;
@@ -2133,9 +2133,9 @@ begin
       end;
     end;
   end;
- finally 
+ finally
   Adapter.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2151,14 +2151,14 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: SendRARPRequest');
  {$ENDIF}
-  
+
  {Check Adapter}
  if AAdapter = nil then Exit;
-  
+
  {Create RARP Request}
  RARP.HardwareType:=WordNtoBE(AAdapter.Adapter.MediaType);
  RARP.ProtocolType:=WordNtoBE(PACKET_TYPE_IP);
@@ -2169,15 +2169,15 @@ begin
  RARP.SourceIP:=InAddrToNetwork(IP_DEFAULT_ADDRESS);
  RARP.TargetHardware:=AAdapter.Hardware;
  RARP.TargetIP:=InAddrToNetwork(IP_DEFAULT_ADDRESS);
-  
+
  {Create Packet}
  Packet.Size:=RARP_HEADER_SIZE;
  Packet.Data:=@RARP;
  Packet.Next:=nil;
-  
- {Send Packet}  
+
+ {Send Packet}
  Result:=AAdapter.Adapter.SendPacket(AAdapter.Handle,@AAdapter.Broadcast,@Packet,RARP_HEADER_SIZE);
- 
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: SendRARPRequest Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -2198,20 +2198,20 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: SendRARPReply');
  {$ENDIF}
-  
+
  {Check Adapter}
  if AAdapter = nil then Exit;
-  
+
  {Check Source}
  if ASource = nil then Exit;
-  
+
  {Check Target}
  if ATarget = nil then Exit;
-  
+
  {Create RARP Reply}
  RARP.HardwareType:=WordNtoBE(AAdapter.Adapter.MediaType);
  RARP.ProtocolType:=WordNtoBE(PACKET_TYPE_IP);
@@ -2222,15 +2222,15 @@ begin
  RARP.SourceIP:=InAddrToNetwork(ASource.Address);
  RARP.TargetHardware:=ATarget.Hardware;
  RARP.TargetIP:=InAddrToNetwork(ATarget.Address);
-  
+
  {Create Packet}
  Packet.Size:=RARP_HEADER_SIZE;
  Packet.Data:=@RARP;
  Packet.Next:=nil;
-  
+
  {Send Packet}
  Result:=AAdapter.Adapter.SendPacket(AAdapter.Handle,@ATarget.Hardware,@Packet,RARP_HEADER_SIZE);
- 
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: SendRARPReply Result = ' + BoolToStr(Result));
  {$ENDIF}
@@ -2254,17 +2254,17 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: AddAdapter');
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
 
   {Check State}
   if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
-  
+
   {Get Adapter}
   Adapter:=TRARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to use count}
   if Adapter = nil then
@@ -2286,35 +2286,35 @@ begin
       Adapter.ConfigType:=CONFIG_TYPE_AUTO;
       Adapter.Configured:=True;
       Adapter.Configuring:=False;
-      
+
       {Acquire Lock}
       FAdapters.WriterLock;
       try
        {Add Adapter}
        FAdapters.Add(Adapter);
-      
+
        {Return Result}
        Result:=True;
       finally
        {Release Lock}
        FAdapters.WriterUnlock;
-      end;  
+      end;
      end;
    end
   else
    begin
     {Increment Count}
     Inc(Adapter.UseCount);
-    
+
     {Unlock Adapter}
     Adapter.WriterUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2329,14 +2329,14 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: RemoveAdapter');
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {Get Adapter}
   Adapter:=TRARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to use count}
   if Adapter = nil then Exit;
@@ -2347,8 +2347,8 @@ begin
     {Unlock Adapter}
     Adapter.WriterUnlock;
     Exit;
-   end; 
-  
+   end;
+
   {Decrement Count}
   Dec(Adapter.UseCount);
 
@@ -2362,32 +2362,32 @@ begin
       try
        {Remove Adapter}
        FAdapters.Remove(Adapter);
-      
+
        {Unlock Adapter}
        Adapter.WriterUnlock;
-      
+
        {Destroy Adapter}
        Adapter.Free;
-      
+
        {Return Result}
        Result:=True;
       finally
        {Release Lock}
        FAdapters.WriterUnlock;
-      end;  
+      end;
      end;
    end
   else
    begin
     {Unlock Adapter}
     Adapter.WriterUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2399,19 +2399,19 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: StartTransport');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2426,14 +2426,14 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: StopTransport');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Get Adapter}
   Adapter:=TRARPTransportAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
   while Adapter <> nil do
@@ -2441,19 +2441,19 @@ begin
     {Get Next}
     Current:=Adapter;
     Adapter:=TRARPTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
-    
+
     {Remove Adapter}
     RemoveAdapter(Adapter.Adapter);
    end;
-   
+
   {Remove all Addresses}
   FlushAddresses(True);
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2464,14 +2464,14 @@ begin
  {}
  {Remove old Addresses}
  FlushAddresses(False);
-  
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TRARPTransport.BindTransport(AAdapter:TNetworkAdapter):Boolean; 
+function TRARPTransport.BindTransport(AAdapter:TNetworkAdapter):Boolean;
 {Bind this transport to an adapter if appropriate}
 {Adapter: The adapter to bind to}
 
@@ -2481,14 +2481,14 @@ begin
  ReaderLock;
  try
   Result:=False;
- 
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: BindTransport');
   {$ENDIF}
- 
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Adapter = ' + AAdapter.Name);
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:   State = ' + AdapterStateToString(AAdapter.State));
@@ -2499,16 +2499,16 @@ begin
 
   {Check State}
   if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
-  
-  Result:=True; 
- finally 
+
+  Result:=True;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TRARPTransport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean; 
+function TRARPTransport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean;
 {Unbind this transport from an adapter if appropriate}
 {Adapter: The adapter to unbind from}
 
@@ -2517,23 +2517,23 @@ begin
  {}
  ReaderLock;
  try
-  Result:=False; 
- 
+  Result:=False;
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: UnbindTransport');
   {$ENDIF}
- 
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Adapter = ' + AAdapter.Name);
   {$ENDIF}
 
-  Result:=True; 
- finally 
+  Result:=True;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2550,12 +2550,12 @@ begin
  FAddresses.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: GetAddressByAddress');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
 
@@ -2574,19 +2574,19 @@ begin
        begin
         {Lock Address}
         if ALock then if AState = NETWORK_LOCK_READ then Address.ReaderLock else Address.WriterLock;
-        
+
         {Return Result}
         Result:=Address;
         Exit;
        end;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Address:=TRARPAddressEntry(Address.Next);
    end;
- finally 
+ finally
   FAddresses.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2603,7 +2603,7 @@ begin
  FAddresses.ReaderLock;
  try
   Result:=nil;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: GetAddressByHardware');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Hardware = ' + HardwareAddressToString(AHardware));
@@ -2611,7 +2611,7 @@ begin
 
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {Get Address}
   Address:=TRARPAddressEntry(FAddresses.First);
   while Address <> nil do
@@ -2625,21 +2625,21 @@ begin
       {Check Hardware}
       if Address.Adapter.CompareAddress(Address.Hardware,AHardware) then
        begin
-        {Lock Address} 
+        {Lock Address}
         if ALock then if AState = NETWORK_LOCK_READ then Address.ReaderLock else Address.WriterLock;
-        
+
         {Return Result}
         Result:=Address;
         Exit;
        end;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Address:=TRARPAddressEntry(Address.Next);
    end;
- finally 
+ finally
   FAddresses.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2652,7 +2652,7 @@ begin
  FAddresses.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -2662,7 +2662,7 @@ begin
      begin
       {Lock Address}
       if ALock then if AState = NETWORK_LOCK_READ then Address.ReaderLock else Address.WriterLock;
-      
+
       {Return Result}
       Result:=Address;
      end;
@@ -2675,17 +2675,17 @@ begin
      begin
       {Lock Address}
       if ALock then if AState = NETWORK_LOCK_READ then Address.ReaderLock else Address.WriterLock;
-      
+
       {Return Result}
       Result:=Address;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   FAddresses.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2700,53 +2700,53 @@ function TRARPTransport.AddAddress(const AAddress:TInAddr;const AHardware:THardw
 begin
  {}
  Result:=nil;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: AddAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Hardware = ' + HardwareAddressToString(AHardware));
  {$ENDIF}
-  
+
  {Check Adapter}
  if AAdapter = nil then Exit;
-  
+
  {Create Address}
  Result:=TRARPAddressEntry.Create;
  Result.Address:=AAddress;
  Result.Hardware:=AHardware;
  Result.Adapter:=AAdapter;
  Result.AddressType:=AType;
-  
- {Acquire Lock} 
+
+ {Acquire Lock}
  FAddresses.WriterLock; {Acquire as Writer}
  try
   {Add Address}
   if FAddresses.Add(Result) then
    begin
     {Convert Lock}
-    FAddresses.WriterConvert; 
+    FAddresses.WriterConvert;
 
     {Signal Event}
     EventPulse(FAddressAdd);
-    
+
     {Reset Event (Manual Reset)}
     {EventReset(FAddressAdd);} {Not required, reset by EventPulse}
-    
+
     {Lock Address}
     if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
    end
-  else 
+  else
    begin
     {Convert Lock}
-    FAddresses.WriterConvert; 
+    FAddresses.WriterConvert;
 
     {Free Address}
     Result.Free;
     Result:=nil;
    end;
- finally 
+ finally
   FAddresses.ReaderUnlock; {Converted to Reader}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2762,15 +2762,15 @@ begin
  FAddresses.ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF ARP_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: RemoveAddress');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {Get Address}
   Address:=TRARPAddressEntry(FAddresses.First);
   while Address <> nil do
@@ -2783,7 +2783,7 @@ begin
        begin
         {Lock Address}
         Address.WriterLock;
-        
+
         {Convert Lock}
         if FAddresses.ReaderConvert then
          begin
@@ -2791,31 +2791,31 @@ begin
           Result:=FAddresses.Remove(Address);
 
           {Convert Lock}
-          FAddresses.WriterConvert; 
-        
+          FAddresses.WriterConvert;
+
           {Signal Event}
           EventPulse(FAddressRemove);
 
           {Reset Event (Manual Reset)}
           {EventReset(FAddressRemove);} {Not required, reset by EventPulse}
-        
+
           {Unlock Address}
           Address.WriterUnlock;
-        
+
           {Free Address}
           Address.Free;
          end;
-         
+
         Exit;
        end;
      end;
-    
+
     {Get Next}
     Address:=TRARPAddressEntry(Address.Next);
    end;
- finally 
+ finally
   FAddresses.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2836,7 +2836,7 @@ begin
 
  {Get Tick Count}
  CurrentTime:=GetTickCount64;
-  
+
  {Get Address}
  Address:=TRARPAddressEntry(GetAddressByNext(nil,True,False,NETWORK_LOCK_READ));
  while Address <> nil do
@@ -2860,25 +2860,25 @@ begin
            {$IFDEF ARP_DEBUG}
            if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Flush = ' + InAddrToString(InAddrToNetwork(Current.Address)) + ' / ' + HardwareAddressToString(Current.Hardware));
            {$ENDIF}
-           
+
            {Acquire Lock}
            FAddresses.WriterLock;
-           
+
            {Remove Address}
            FAddresses.Remove(Current);
-           
+
            {Release Lock}
            FAddresses.WriterUnlock;
-           
+
            {Signal Event}
            EventPulse(FAddressRemove);
-           
+
            {Reset Event (Manual Reset)}
            {EventReset(FAddressRemove);} {Not required, reset by EventPulse}
-           
+
            {Unlock Address}
            Current.WriterUnlock;
-           
+
            {Free the Address}
            Current.Free;
            Current:=nil;
@@ -2887,11 +2887,11 @@ begin
           begin
            {Convert Address}
            Current.WriterConvert;
-          end;          
-        end; 
+          end;
+        end;
       end;
     end;
-    
+
    {Unlock Address}
    if Current <> nil then Current.ReaderUnlock;
   end;
@@ -2910,7 +2910,7 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: LoadAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
@@ -2926,16 +2926,16 @@ begin
  {Get Adapter}
  Adapter:=TRARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
  if Adapter = nil then Exit;
- try  
+ try
   {Check Address}
   if GetAddressByAddress(AAddress,AAdapter,False,NETWORK_LOCK_NONE) = nil then
    begin
     {Add Address}
     Result:=(AddAddress(AAddress,AHardware,AAdapter,AType,False,NETWORK_LOCK_NONE) <> nil); {Do not lock}
    end;
- finally 
+ finally
   Adapter.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2949,7 +2949,7 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: UnloadAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Address = ' + InAddrToString(InAddrToNetwork(AAddress)));
@@ -2960,20 +2960,20 @@ begin
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Adapter = ' + AAdapter.Name);
  {$ENDIF}
- 
+
  {Get Adapter}
  Adapter:=TRARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
  if Adapter = nil then Exit;
- try  
+ try
   {Check Address}
   if GetAddressByAddress(AAddress,AAdapter,False,NETWORK_LOCK_NONE) <> nil then
    begin
     {Remove Address}
     Result:=RemoveAddress(AAddress,AAdapter);
    end;
- finally 
+ finally
   Adapter.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2996,13 +2996,13 @@ begin
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: ResolveHardware');
  {$ENDIF}
- 
+
  {Check Adapter}
  if AAdapter = nil then Exit;
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Adapter = ' + AAdapter.Name);
  {$ENDIF}
- 
+
  {Get Adapter}
  Adapter:=TRARPTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
  if Adapter = nil then Exit;
@@ -3014,7 +3014,7 @@ begin
     {$IFDEF ARP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Address not in cache');
     {$ENDIF}
-   
+
     {Send a RARP Request}
     Retries:=RARP_RETRIES;
     while Retries > 0 do
@@ -3037,18 +3037,18 @@ begin
 
               {Get Address}
               AAddress:=Address.Address;
-              
+
               {Unlock Address}
               Address.ReaderUnlock;
-              
+
               {Return Result}
               Result:=True;
               Exit;
              end;
-           end;  
+           end;
          end;
        end;
-       
+
       Dec(Retries);
      end;
    end
@@ -3057,19 +3057,19 @@ begin
     {$IFDEF ARP_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP:  Address = ' + InAddrToString(InAddrToNetwork(Address.Address)) + ' / ' + HardwareAddressToString(Address.Hardware));
     {$ENDIF}
-     
+
     {Get Address}
     AAddress:=Address.Address;
-    
+
     {Unlock Address}
     Address.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   Adapter.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3099,12 +3099,12 @@ begin
  inherited Create;
  FFamily:=AF_INET;
  FLength:=SizeOf(TInAddr);
- 
+
  FAddress.S_addr:=INADDR_ANY;
  FProtocolType:=PACKET_TYPE_IP;
  FillChar(FHardware,SizeOf(THardwareAddress),0);
 end;
- 
+
 {==============================================================================}
 
 procedure TRARPAddressEntry.SetAddress(const AAddress:TInAddr);
@@ -3140,7 +3140,7 @@ begin
 
  ReleaseLock;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -3153,23 +3153,23 @@ begin
  {Setup ARP Transport}
  if NetworkSettings.GetBoolean('IP_TRANSPORT_ENABLED') then NetworkSettings.AddBoolean('ARP_TRANSPORT_ENABLED',True);
  if NetworkSettings.GetBoolean('ARP_CONFIG_ENABLED') then NetworkSettings.AddBoolean('ARP_TRANSPORT_ENABLED',True);
- 
+
  {Setup RARP Transport}
  if NetworkSettings.GetBoolean('IP_TRANSPORT_ENABLED') then NetworkSettings.AddBoolean('RARP_TRANSPORT_ENABLED',True);
  if NetworkSettings.GetBoolean('RARP_CONFIG_ENABLED') then NetworkSettings.AddBoolean('RARP_TRANSPORT_ENABLED',True);
- 
+
  {Create ARP Transport}
- if NetworkSettings.GetBooleanDefault('ARP_TRANSPORT_ENABLED',ARP_TRANSPORT_ENABLED) then 
+ if NetworkSettings.GetBooleanDefault('ARP_TRANSPORT_ENABLED',ARP_TRANSPORT_ENABLED) then
   begin
    TARPTransport.Create(TransportManager,ARP_TRANSPORT_NAME);
-  end; 
+  end;
 
  {Create RARP Transport}
- if NetworkSettings.GetBooleanDefault('RARP_TRANSPORT_ENABLED',RARP_TRANSPORT_ENABLED) then 
+ if NetworkSettings.GetBooleanDefault('RARP_TRANSPORT_ENABLED',RARP_TRANSPORT_ENABLED) then
   begin
    TRARPTransport.Create(TransportManager,RARP_TRANSPORT_NAME);
-  end; 
- 
+  end;
+
  ARPInitialized:=True;
 end;
 
@@ -3182,23 +3182,23 @@ function CheckARP(ABuffer:Pointer):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP: CheckARP');
  {$ENDIF}
- 
+
  {Check Hardware Type}
  case WordBEtoN(PARPHeader(ABuffer).HardwareType) of
   MEDIA_TYPE_ETHERNET,MEDIA_TYPE_TOKENRING:begin
     {Check Hardware Length}
     if PARPHeader(ABuffer).HardwareLength <> SizeOf(THardwareAddress) then Exit;
-    
+
     {Check Protocol Type}
     case WordBEtoN(PARPHeader(ABuffer).ProtocolType) of
      PACKET_TYPE_IP:begin
        {Check Protocol Length}
        if PARPHeader(ABuffer).ProtocolLength <> SizeOf(TInAddr) then Exit;
-       
+
        {Return Result}
        Result:=True;
       end;
@@ -3215,23 +3215,23 @@ function CheckRARP(ABuffer:Pointer):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF ARP_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP: CheckRARP');
  {$ENDIF}
- 
+
  {Check Hardware Type}
  case WordBEtoN(PRARPHeader(ABuffer).HardwareType) of
   MEDIA_TYPE_ETHERNET,MEDIA_TYPE_TOKENRING:begin
     {Check Hardware Length}
     if PRARPHeader(ABuffer).HardwareLength <> SizeOf(THardwareAddress) then Exit;
-    
+
     {Check Protocol Type}
     case WordBEtoN(PRARPHeader(ABuffer).ProtocolType) of
      PACKET_TYPE_IP:begin
        {Check Protocol Length}
        if PRARPHeader(ABuffer).ProtocolLength <> SizeOf(TInAddr) then Exit;
-       
+
        {Return Result}
        Result:=True;
       end;
@@ -3243,7 +3243,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {ARP Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -3251,7 +3251,7 @@ initialization
  ARPInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -3259,4 +3259,4 @@ finalization
 {==============================================================================}
 
 end.
- 
+

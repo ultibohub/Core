@@ -17,19 +17,19 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
  <See NTFS.pas>
- 
+
 References
 ==========
 
  <See NTFS.pas>
- 
+
 NT Filesystem
 =============
 
@@ -38,7 +38,7 @@ NT Filesystem
  Notes: NTFS uses 64 bit cluster values in all cases
 
         All structures in NTFS are 8 byte aligned
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -51,7 +51,7 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,FileSystem,SysUtils,Classes,Unicode,Security,Ultibo,UltiboUtils,UltiboClasses,
      NTFSConst,NTFSTypes;
-    
+
 //To Do //Look for:
 
 //LongWord(Pointer()^) -> PLongWord()^
@@ -59,19 +59,19 @@ uses GlobalConfig,GlobalConst,GlobalTypes,FileSystem,SysUtils,Classes,Unicode,Se
 //Byte(Pointer()^) -> PByte()^
 
 //Lock
-     
+
 //WideString
   //Change to UnicodeString for FPC
-     
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-     
+
 {==============================================================================}
 var
  {NTFS specific variables}
  UpCase:PNTFSUpCaseData = nil; {A default $UpCase table}
-     
+
 {==============================================================================}
 {NTFS Support Functions}
 function NTFSInitUpCase:Boolean;
@@ -94,8 +94,8 @@ function NTFSGetTagShiftMask(AOffset:LongWord;var AMask,AShift:Word):Boolean;
 
 {==============================================================================}
 {NTFS Encryption Functions}
-//function NTFSEncryptBlock    //To Do 
-//function NTFSDecryptBlock    //To Do 
+//function NTFSEncryptBlock    //To Do
+//function NTFSDecryptBlock    //To Do
 
 {==============================================================================}
 {NTFS String Functions}
@@ -174,7 +174,7 @@ var
 begin
  {}
  //To Do //Lock
- 
+
  Result:=False;
  try
   if UpCase = nil then
@@ -182,11 +182,11 @@ begin
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSInitUpCase - Initializing Default Table');
     {$ENDIF}
-    
+
     {Allocate memory}
     UpCase:=GetMem(ntfsFileSizeUpCase);
     if UpCase = nil then Exit;
-    
+
     {Create default table}
     Count:=0;
     Offset:=0;
@@ -196,14 +196,14 @@ begin
       Inc(Count);
       Inc(Offset,2);
      end;
-    
+
     {Initialize default values}
     for Count:=0 to ntfsMaxUpcaseConvert do
      begin
       Offset:=(ntfsUpcaseConverts[Count].Count shl 1);
       PWord(PtrUInt(UpCase) + Offset)^:=ntfsUpcaseConverts[Count].Value;
      end;
-     
+
     Result:=True;
    end
   else
@@ -974,7 +974,7 @@ function NTFSTypeToString(AType:TNTFSType):String;
 begin
  {}
  Result:='ntNONE';
- 
+
  {Check Type}
  case AType of
   ntNTFS12:Result:='ntNTFS12';
@@ -1022,11 +1022,11 @@ begin
  try
   if ADescriptor = nil then Exit;
   if ASize < SECURITY_DESCRIPTOR_MIN_LENGTH then Exit;
-  
+
   {Check Revision}
   if PNTFSSecurityData(ADescriptor).Reserved1 <> 0 then Exit;
   if PNTFSSecurityData(ADescriptor).Revision <> SECURITY_DESCRIPTOR_REVISION1 then Exit;
-  
+
   {Check Control}
   if (PNTFSSecurityData(ADescriptor).Control and SE_SELF_RELATIVE) = SE_SELF_RELATIVE then
    begin
@@ -1038,7 +1038,7 @@ begin
       Hash:=LongWord(Pointer(PtrUInt(ADescriptor) + Count)^) + Rol32(Hash,3);
       Inc(Count,4);
      end;
-     
+
     Result:=Hash;
    end
   else
@@ -1057,7 +1057,7 @@ begin
          Hash:=LongWord(Pointer(PtrUInt(Descriptor) + Count)^) + Rol32(Hash,3);
          Inc(Count,4);
         end;
-       
+
        Result:=Hash;
       end;
     finally
@@ -1081,26 +1081,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ACreated <> nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultSid - Type = ' + IntToStr(AType) + ' Version = ' + IntToStr(AVersion));
  {$ENDIF}
- 
+
  {Check Type}
  DefaultSid:=nil;
  case AType of
   ntfsDefaultSid100:begin
     DefaultSid:=@ntfsDefaultSids[ntfsDefaultSid100];
-    
+
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultSid - ntfsDefaultSid100');
     {$ENDIF}
    end;
  end;
  if DefaultSid = nil then Exit;
- 
+
  {Create Sid}
  Sid:=AllocMem(SECURITY_MAX_SID_SIZE);
  if Sid = nil then Exit;
@@ -1108,17 +1108,17 @@ begin
   {$IFDEF NTFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultSid - Creating Sid');
   {$ENDIF}
-  
+
   SidSize:=SECURITY_MAX_SID_SIZE;
   if not Security.CreateWellKnownSid(DefaultSid.Sid,nil,Sid,SidSize) then
    begin
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultSid - CreateWellKnownSid returned ' + IntToHex(GetLastError,8));
     {$ENDIF}
-    
+
     Exit;
    end;
-  
+
   {Copy Sid}
   ACreated:=AllocMem(SidSize);
   if ACreated = nil then Exit;
@@ -1128,10 +1128,10 @@ begin
      {$IFDEF NTFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultSid - CopySid returned ' + IntToHex(GetLastError,8));
      {$ENDIF}
-     
+
      Exit;
     end;
-    
+
    Result:=True;
   finally
    if not Result then FreeMem(ACreated);
@@ -1171,68 +1171,68 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ACreated <> nil then Exit;
- 
+
  {$IFDEF NTFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - Type = ' + IntToStr(AType) + ' Version = ' + IntToStr(AVersion));
  {$ENDIF}
- 
+
  {Check Type}
  DefaultDescriptor:=nil;
  case AType of
   ntfsDefaultDescriptorVolume:begin  {Also ntfsDefaultDescriptor101}
     DefaultDescriptor:=@ntfsDefaultDescriptors[ntfsDefaultDescriptorVolume];
-    
+
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - VolumeDefaultDescriptor');
     {$ENDIF}
    end;
   ntfsDefaultDescriptorAttrDef:begin {Also ntfsDefaultDescriptorBoot,ntfsDefaultDescriptor100}
     DefaultDescriptor:=@ntfsDefaultDescriptors[ntfsDefaultDescriptorAttrDef];
-    
+
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - AttrDefDefaultDescriptor');
     {$ENDIF}
    end;
   ntfsDefaultDescriptorRoot:begin
     DefaultDescriptor:=@ntfsDefaultDescriptors[ntfsDefaultDescriptorRoot];
-    
+
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - RootDefaultDescriptor');
     {$ENDIF}
    end;
   ntfsDefaultDescriptor102:begin
     DefaultDescriptor:=@ntfsDefaultDescriptors[ntfsDefaultDescriptor102];
-    
+
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - DefaultDescriptor102');
     {$ENDIF}
    end;
   ntfsDefaultDescriptor103:begin
     DefaultDescriptor:=@ntfsDefaultDescriptors[ntfsDefaultDescriptor103];
-    
+
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - DefaultDescriptor103');
     {$ENDIF}
    end;
   ntfsDefaultDescriptorFile:begin
     DefaultDescriptor:=@ntfsDefaultDescriptors[ntfsDefaultDescriptorFile];
-    
+
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - DefaultDescriptorFile');
     {$ENDIF}
    end;
   ntfsDefaultDescriptorFolder:begin
     DefaultDescriptor:=@ntfsDefaultDescriptors[ntfsDefaultDescriptorFolder];
-    
+
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - DefaultDescriptorFolder');
     {$ENDIF}
    end;
  end;
  if DefaultDescriptor = nil then Exit;
- 
+
  {Create Descriptor}
  ACreated:=AllocMem(DefaultDescriptor.Size);
  if ACreated = nil then Exit;
@@ -1240,7 +1240,7 @@ begin
   {$IFDEF NTFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - Creating Descriptor');
   {$ENDIF}
-  
+
   Descriptor:=PSecurityDescriptorRelative(ACreated);
   Descriptor.Revision:=DefaultDescriptor.Revision;
   Descriptor.Control:=DefaultDescriptor.Control;
@@ -1248,14 +1248,14 @@ begin
   Descriptor.Group:=DefaultDescriptor.GroupOffset;
   Descriptor.Sacl:=DefaultDescriptor.SaclOffset;
   Descriptor.Dacl:=DefaultDescriptor.DaclOffset;
-  
+
   {Check Owner}
   if DefaultDescriptor.OwnerOffset <> 0 then
    begin
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - Creating Owner');
     {$ENDIF}
-    
+
     {Get Sid}
     Sid:=PSID(PtrUInt(Descriptor) + DefaultDescriptor.OwnerOffset);
     SidSize:=SECURITY_MAX_SID_SIZE;
@@ -1264,18 +1264,18 @@ begin
       {$IFDEF NTFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - CreateWellKnownSid returned ' + IntToHex(GetLastError,8));
       {$ENDIF}
-      
+
       Exit;
      end;
    end;
-   
+
   {Check Group}
   if DefaultDescriptor.GroupOffset <> 0 then
    begin
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - Creating Group');
     {$ENDIF}
-    
+
     {Get Sid}
     Sid:=PSID(PtrUInt(Descriptor) + DefaultDescriptor.GroupOffset);
     SidSize:=SECURITY_MAX_SID_SIZE;
@@ -1284,44 +1284,44 @@ begin
       {$IFDEF NTFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - CreateWellKnownSid returned ' + IntToHex(GetLastError,8));
       {$ENDIF}
-      
+
       Exit;
      end;
    end;
-   
+
   {Check Sacl}
   if DefaultDescriptor.SaclOffset <> 0 then
    begin
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - Creating SACL');
     {$ENDIF}
-    
+
     {Get Acl}
     Acl:=PACL(PtrUInt(Descriptor) + DefaultDescriptor.SaclOffset);
     Acl.AclRevision:=DefaultDescriptor.Sacl.AclRevision;
     Acl.AclSize:=DefaultDescriptor.Sacl.AclSize;
     Acl.AceCount:=DefaultDescriptor.Sacl.AceCount;
-    
+
     {Get Offset}
     Offset:=SizeOf(TACL);
-    
+
     {Check Aces}
     for Count:=0 to DefaultDescriptor.Sacl.AceCount - 1 do
      begin
       {$IFDEF NTFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - Creating SACL Ace ' + IntToStr(Count));
       {$ENDIF}
-      
+
       {Get Offset}
       if Count > 0 then Inc(Offset,DefaultDescriptor.Sacl.Aces[Count - 1].AceSize);
-      
+
       {Get Ace}
       Ace:=PAceHeader(PtrUInt(Acl) + Offset);
       Ace.AceType:=DefaultDescriptor.Sacl.Aces[Count].AceType;
       Ace.AceFlags:=DefaultDescriptor.Sacl.Aces[Count].AceFlags;
       Ace.AceSize:=DefaultDescriptor.Sacl.Aces[Count].AceSize;
       PAccessAllowedAce(Ace).Mask:=DefaultDescriptor.Sacl.Aces[Count].Mask;
-      
+
       {Get Sid}
       Sid:=PSID(PtrUInt(Ace) + SizeOf(TAceHeader) + SizeOf(ACCESS_MASK));
       SidSize:=SECURITY_MAX_SID_SIZE;
@@ -1330,45 +1330,45 @@ begin
         {$IFDEF NTFS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - CreateWellKnownSid returned ' + IntToHex(GetLastError,8));
         {$ENDIF}
-        
+
         Exit;
        end;
      end;
    end;
-   
+
   {Check Dacl}
   if DefaultDescriptor.DaclOffset <> 0 then
    begin
     {$IFDEF NTFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - Creating DACL');
     {$ENDIF}
-    
+
     {Get Acl}
     Acl:=PACL(PtrUInt(Descriptor) + DefaultDescriptor.DaclOffset);
     Acl.AclRevision:=DefaultDescriptor.Dacl.AclRevision;
     Acl.AclSize:=DefaultDescriptor.Dacl.AclSize;
     Acl.AceCount:=DefaultDescriptor.Dacl.AceCount;
-    
+
     {Get Offset}
     Offset:=SizeOf(TACL);
-    
+
     {Check Aces}
     for Count:=0 to DefaultDescriptor.Dacl.AceCount - 1 do
      begin
       {$IFDEF NTFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - Creating DACL Ace ' + IntToStr(Count));
       {$ENDIF}
-      
+
       {Get Offset}
       if Count > 0 then Inc(Offset,DefaultDescriptor.Dacl.Aces[Count - 1].AceSize);
-      
+
       {Get Ace}
       Ace:=PAceHeader(PtrUInt(Acl) + Offset);
       Ace.AceType:=DefaultDescriptor.Dacl.Aces[Count].AceType;
       Ace.AceFlags:=DefaultDescriptor.Dacl.Aces[Count].AceFlags;
       Ace.AceSize:=DefaultDescriptor.Dacl.Aces[Count].AceSize;
       PAccessAllowedAce(Ace).Mask:=DefaultDescriptor.Dacl.Aces[Count].Mask;
-      
+
       {Get Sid}
       Sid:=PSID(PtrUInt(Ace) + SizeOf(TAceHeader) + SizeOf(ACCESS_MASK));
       SidSize:=SECURITY_MAX_SID_SIZE;
@@ -1377,12 +1377,12 @@ begin
         {$IFDEF NTFS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('NTFSCreateDefaultDescriptor - CreateWellKnownSid returned ' + IntToHex(GetLastError,8));
         {$ENDIF}
-        
+
         Exit;
        end;
      end;
    end;
-   
+
   Result:=True;
  finally
   if not Result then FreeMem(ACreated);
@@ -1684,4 +1684,4 @@ finalization
 {==============================================================================}
 {==============================================================================}
 
-end. 
+end.

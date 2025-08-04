@@ -21,12 +21,12 @@ Boards
  Raspberry Pi 4 - Model B
  Raspberry Pi 400
  Raspberry Pi CM4
- 
+
 Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -37,36 +37,36 @@ Credits
   Linux - \drivers\char\broadcom\vc_sm\* - Copyright 2011-2012 Broadcom Corporation
 
   Linux - \drivers\char\broadcom\vc_mem.c - Copyright 2010 - 2011 Broadcom Corporation
-  
+
 References
 ==========
 
  VideoCore APIs - http://elinux.org/Raspberry_Pi_VideoCore_APIs
- 
+
  Raspberry Pi Userland - https://github.com/raspberrypi/userland
 
  VideoCore IV Documentation - https://docs.broadcom.com/docs/12358545
- 
+
  Windows 10 IoT Userland - https://github.com/ms-iot/userland
- 
+
  Windows 10 IoT VCHIQ - https://github.com/ms-iot/bsp/tree/master/drivers/misc/vchiq
- 
+
 VideoCore IV
 ============
- 
+
  The VideoCore IV (VC4) is the graphics processor (GPU) contained in the Broadcom BCM2835, 2836 and 2837
  SoC used in the Raspberry Pi A/B/A+/B+/CM/2B/3B/3A+/3B+/CM3/CM3+. The Broadcom BCM2838 SoC used in the
  Raspberry Pi 4B/400 uses a new VideoCore VI (VC6) graphics processor however some of the core functionality
  of this unit such as VCHIQ and DispmanX is still compatible and the functionality provided here for those
  subsystems still works.
- 
+
  The VC4 is made up of many subsystems that perform functions ranging from 2D and 3D graphics acceleration
  to hardware audio, video and image encoding and decoding as well as display and camera interfaces.
 
  This unit provides common definitions, imports and support routines needed to enable all of the VC4 functionality
- for use in Ultibo. In addition to the functionality provided by this unit there are a number of drivers 
+ for use in Ultibo. In addition to the functionality provided by this unit there are a number of drivers
  that implement specific parts of the control and communication such as VCHIQ, VCSM and VCCMA.
- 
+
  The majority of the interface between the ARM CPU and the VC4 GPU is contained with the userland libraries
  which are maintained by both Broadcom and Raspberry Pi. These have been ported to Ultibo and are provided
  as a series of static libraries that are included as required in order to expose the appropriate parts
@@ -75,25 +75,25 @@ VideoCore IV
  There is currently no intention to directly port these libraries to Pascal as they represent a vast and
  actively changing codebase, a direct port would offer no advantages and would require more maintenance
  than the current form.
-  
+
  Building the Userland libraries:
- 
+
   Flags: __DYNAMIC_REENT__
          __LARGE64_FILES
          _REENT_BACKWARD_BINARY_COMPAT
          _POSIX_THREADS
- 
-  Options: 
- 
+
+  Options:
+
    Raspberry Pi
-   
+
     -mabi=aapcs
     -marm
     -march=armv6
     -mcpu=arm1176jzf-s
     -mfpu=vfp
     -mfloat-abi=hard
-   
+
    Raspberry Pi2/3/4 and QEMU VersatilePB (32-bit)
 
     -mabi=aapcs
@@ -101,18 +101,18 @@ VideoCore IV
     -march=armv7-a
     -mfpu=vfpv3-d16
     -mfloat-abi=hard
-   
+
    Raspberry Pi3/4 and QEMU VersatilePB (64-bit)
-   
+
     -mabi=lp64 (Note: Supported only by later versions of GCC)
     -march=armv8-a
- 
+
   Build:
- 
+
    Download Userland from https://github.com/ultibohub/userland
-  
+
    Unpack to folder $HOME/userland
-   
+
    (or git clone https://github.com/ultibohub/userland.git)
 
    Build with GCC arm-none-eabi 13.3.rel1
@@ -124,43 +124,43 @@ VideoCore IV
 
    Extracted to folder $HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf
 
-  Build ARMv6: 
-   
+  Build ARMv6:
+
    cd
-  
+
    cd userland
-  
+
    export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
-   
+
    ./buildme.armv6-ultibo
-   
-  Build ARMv7: 
+
+  Build ARMv7:
 
    cd
-  
+
    cd userland
-  
+
    export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH
-   
+
    ./buildme.armv7-ultibo
-  
-  Build ARMv8: 
+
+  Build ARMv8:
 
    cd
-  
+
    cd userland
-  
+
    export PATH=$HOME/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf/bin:$PATH
-   
+
    ./buildme.armv8-ultibo
-  
+
  Notes:
- 
+
   Building for 64-bit is not currently fully implemented and is not expected to work.
-  
+
   This is not an Ultibo limitation but applies to the original Linux version of the
   libraries as well.
-  
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -180,7 +180,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Syscalls,
 {==============================================================================}
 {const}
  {VC4 specific constants}
- 
+
 const
  {VC4 core libraries}
  libvcos = 'vcos';
@@ -188,23 +188,23 @@ const
  libvchiq_arm = 'vchiq_arm';
  libvcsm = 'vcsm';
  libbcm_host = 'bcm_host';
- 
+
  {VC4 Kronos libraries}
  libEGL = 'EGL';
  libGLESv2 = 'GLESv2';
  libOpenVG = 'OpenVG';
  libWFC = 'WFC';
- 
+
  libbrcmEGL = 'brcmEGL';
- libbrcmGLESv2 = 'brcmGLESv2'; 
+ libbrcmGLESv2 = 'brcmGLESv2';
  libkhrn_client = 'khrn_client';
- 
+
  libbrcmjpeg = 'brcmjpeg';
  libbrcmOpenVG = 'brcmOpenVG';
  libbrcmWFC = 'brcmWFC';
- 
+
  libopenmaxil = 'openmaxil';
- 
+
  {VC4 MMAL (Multimedia Abstraction Layer) libraries}
  libmmal = 'mmal';
  libmmal_components = 'mmal_components';
@@ -213,10 +213,10 @@ const
  libmmal_omx = 'mmal_omx';
  libmmal_omxutil = 'mmal_omxutil';
  libmmal_vc_client = 'mmal_vc_client';
- 
+
  {VC4 Container (Reader/Writer) libraries}
  libcontainers = 'containers';
- 
+
  libreader_asf = 'reader_asf';
  libreader_avi = 'reader_avi';
  libreader_binary = 'reader_binary';
@@ -242,13 +242,13 @@ const
  libwriter_mp4 = 'writer_mp4';
  libwriter_raw_video = 'writer_raw_video';
  libwriter_simple = 'writer_simple';
- 
+
  {VC4 Client libraries}
  libilclient = 'ilclient';
  libvgfont = 'vgfont';
-  
+
  libvcilcs = 'vcilcs';
-  
+
 {==============================================================================}
 {Note: The order of these is extremely important}
 
@@ -263,7 +263,7 @@ const
 {$linklib libmmal}
 {$linklib libmmal_components}
 {$linklib libmmal_core}
-{$linklib libmmal_util} 
+{$linklib libmmal_util}
 {$linklib libmmal_omx}
 {$linklib libmmal_omxutil}
 
@@ -278,7 +278,7 @@ const
 {$linklib libreader_mkv}
 {$linklib libreader_mp4}
 {$linklib libreader_mpga}
-{$linklib libreader_ps} 
+{$linklib libreader_ps}
 {$linklib libreader_qsynth}
 {$linklib libreader_raw_video}
 {$linklib libreader_rcv}
@@ -301,18 +301,18 @@ const
 {$linklib libGLESv2}
 {$linklib libOpenVG}
 {$linklib libWFC}
- 
+
 {$linklib libbrcmEGL}
 {$linklib libbrcmGLESv2}
 {$linklib libkhrn_client}
- 
+
 {$linklib libbrcmjpeg}
 {$linklib libbrcmOpenVG}
 {$linklib libbrcmWFC}
- 
+
 {$linklib libopenmaxil}
 
-{VC4 core libraries} 
+{VC4 core libraries}
 {$linklib libbcm_host}
 {$linklib libvchostif}
 {$linklib libvchiq_arm}
@@ -325,14 +325,14 @@ const
 {==============================================================================}
 {type}
  {VC4 specific types}
- 
+
 {==============================================================================}
 var
  {VC4 specific variables}
  VC4_FILESYS_START:LongBool = False; {If True then start the VC File Service}
- {Note: According to several reports the vcfiled service is no longer supported. 
+ {Note: According to several reports the vcfiled service is no longer supported.
   It is disabled here by default as it appears to conflict with MMAL and OpenMAX}
- 
+
 {==============================================================================}
 {VC4 VCOS Types (From interface\vcos_types.h)}
 {$PACKRECORDS C}
@@ -351,7 +351,7 @@ type
   VCOS_ENXIO,
   VCOS_EINTR
  );
- 
+
 {$PACKRECORDS DEFAULT}
 {==============================================================================}
 {VC4 VC Display Types (From interface\vctypes\vc_display_types.h)}
@@ -366,13 +366,13 @@ type
 
 {For backward compatibility}
 const
- DISPLAY_INPUT_FORMAT_INVALID = VCOS_DISPLAY_INPUT_FORMAT_INVALID;    
- DISPLAY_INPUT_FORMAT_RGB888 = VCOS_DISPLAY_INPUT_FORMAT_RGB888;    
- DISPLAY_INPUT_FORMAT_RGB565 = VCOS_DISPLAY_INPUT_FORMAT_RGB565;    
-  
+ DISPLAY_INPUT_FORMAT_INVALID = VCOS_DISPLAY_INPUT_FORMAT_INVALID;
+ DISPLAY_INPUT_FORMAT_RGB888 = VCOS_DISPLAY_INPUT_FORMAT_RGB888;
+ DISPLAY_INPUT_FORMAT_RGB565 = VCOS_DISPLAY_INPUT_FORMAT_RGB565;
+
 type
  DISPLAY_INPUT_FORMAT_T = VCOS_DISPLAY_INPUT_FORMAT_T;
- 
+
  {Enum determining how image data for 3D displays has to be supplied}
  DISPLAY_3D_FORMAT_T = (
   DISPLAY_3D_UNSUPPORTED = 0, {Default}
@@ -384,7 +384,7 @@ type
   DISPLAY_3D_FRAME_SEQUENTIAL, {Output left on even frames and right on odd frames (typically 120Hz)}
   DISPLAY_3D_FORMAT_MAX
  );
-  
+
  {Enums of display types}
  DISPLAY_INTERFACE_T = (
   DISPLAY_INTERFACE_MIN,
@@ -402,7 +402,7 @@ type
   DISPLAY_DITHER_RGB565 = 2,
   DISPLAY_DITHER_RGB555 = 3,
   DISPLAY_DITHER_MAX);
-  
+
  {Info struct}
  PDISPLAY_INFO_T = ^DISPLAY_INFO_T;
  DISPLAY_INFO_T = record
@@ -419,7 +419,7 @@ type
   dsi_video_mode : uint32_t;             {Set for DSI displays which use video mode}
   hvs_channel : uint32_t;                {Select HVS channel (usually 0)}
  end;
- 
+
 {$PACKRECORDS DEFAULT}
 {==============================================================================}
 {VC4 VC Image Types (From interface\vctypes\vc_image_types.h)}
@@ -439,7 +439,7 @@ type
  {Types of image supported}
  VC_IMAGE_TYPE_T = (
   VC_IMAGE_MIN = 0,      {Bounds for error checking}
-  
+
   VC_IMAGE_RGB565 = 1,
   VC_IMAGE_1BPP,
   VC_IMAGE_YUV420,
@@ -479,40 +479,40 @@ type
   VC_IMAGE_TF_A8,         {VCIII T-format 8-bit alpha}
   VC_IMAGE_TF_SHORT,      {VCIII T-format 16-bit generic sample}
   VC_IMAGE_TF_1BPP,       {VCIII T-format 1bpp black/white}
-  VC_IMAGE_OPENGL,        
+  VC_IMAGE_OPENGL,
   VC_IMAGE_YUV444I,       {VCIII-B0 HVS YUV 4:4:4 interleaved samples}
   VC_IMAGE_YUV422PLANAR,  {Y, U, & V planes separately (VC_IMAGE_YUV422 has them interleaved on a per line basis)}
   VC_IMAGE_ARGB8888,      {32bpp with 8bit alpha at MS byte, with R, G, B (LS byte)}
   VC_IMAGE_XRGB8888,      {32bpp with 8bit unused at MS byte, with R, G, B (LS byte)}
-  
+
   VC_IMAGE_YUV422YUYV,    {Interleaved 8 bit samples of Y, U, Y, V}
   VC_IMAGE_YUV422YVYU,    {Interleaved 8 bit samples of Y, V, Y, U}
   VC_IMAGE_YUV422UYVY,    {Interleaved 8 bit samples of U, Y, V, Y}
   VC_IMAGE_YUV422VYUY,    {Interleaved 8 bit samples of V, Y, U, Y}
-  
+
   VC_IMAGE_RGBX32,        {32bpp like RGBA32 but with unused alpha}
   VC_IMAGE_RGBX8888,      {32bpp, corresponding to RGBA with unused alpha}
   VC_IMAGE_BGRX8888,      {32bpp, corresponding to BGRA with unused alpha}
-  
+
   VC_IMAGE_YUV420SP,      {Y as a plane, then UV byte interleaved in plane with with same pitch, half height}
-  
+
   VC_IMAGE_YUV444PLANAR,  {Y, U, & V planes separately 4:4:4}
-  
+
   VC_IMAGE_TF_U8,         {T-format 8-bit U - same as TF_Y8 buf from U plane}
   VC_IMAGE_TF_V8,         {T-format 8-bit U - same as TF_Y8 buf from V plane}
-  
+
   VC_IMAGE_YUV420_16,     {YUV4:2:0 planar, 16bit values}
   VC_IMAGE_YUV_UV_16,     {YUV4:2:0 codec format, 16bit values}
-  
+
   VC_IMAGE_MAX,           {Bounds for error checking}
   VC_IMAGE_FORCE_ENUM_16BIT = $ffff
  );
- 
+
   {Image transformations (flips and 90 degree rotations). These are made out of 3 primitives (transpose is done first). These must match the DISPMAN and Media Player definitions}
 const
- TRANSFORM_HFLIP = 1 shl 0;    
- TRANSFORM_VFLIP = 1 shl 1;    
- TRANSFORM_TRANSPOSE = 1 shl 2;    
+ TRANSFORM_HFLIP = 1 shl 0;
+ TRANSFORM_VFLIP = 1 shl 1;
+ TRANSFORM_TRANSPOSE = 1 shl 2;
 
 type
  VC_IMAGE_TRANSFORM_T = (
@@ -525,7 +525,7 @@ type
   VC_IMAGE_ROT90 = TRANSFORM_TRANSPOSE or TRANSFORM_VFLIP,
   VC_IMAGE_MIRROR_ROT270 = (TRANSFORM_TRANSPOSE or TRANSFORM_HFLIP) or TRANSFORM_VFLIP
  );
- 
+
  {Defined to be identical to register bits }
  VC_IMAGE_BAYER_ORDER_T = (
   VC_IMAGE_BAYER_RGGB = 0,
@@ -533,7 +533,7 @@ type
   VC_IMAGE_BAYER_BGGR = 2,
   VC_IMAGE_BAYER_GRBG = 3
  );
- 
+
  {Defined to be identical to register bits }
  VC_IMAGE_BAYER_FORMAT_T = (
   VC_IMAGE_BAYER_RAW6 = 0,
@@ -563,7 +563,7 @@ const
  VC_IMAGE_YUVINFO_UNSPECIFIED = 0;            {Unknown or unset - defaults to BT601 interstitial}
  {Colour-space conversions data [4 bits]}
  {Note that colour conversions for SMPTE 170M are identical to BT.601}
- VC_IMAGE_YUVINFO_CSC_ITUR_BT601 = 1;         {ITU-R BT.601-5 [SDTV] (compatible with VideoCore-II)}  
+ VC_IMAGE_YUVINFO_CSC_ITUR_BT601 = 1;         {ITU-R BT.601-5 [SDTV] (compatible with VideoCore-II)}
  VC_IMAGE_YUVINFO_CSC_ITUR_BT709 = 2;         {ITU-R BT.709-3 [HDTV]}
  VC_IMAGE_YUVINFO_CSC_JPEG_JFIF = 3;          {JPEG JFIF}
  VC_IMAGE_YUVINFO_CSC_FCC = 4;                {Title 47 Code of Federal Regulations (2003) 73.682 (a) (20)}
@@ -573,10 +573,10 @@ const
  VC_IMAGE_YUVINFO_CSC_JPEG_JFIF_Y16_255 = 8;  {JPEG JFIF, but with 16..255 luma}
  VC_IMAGE_YUVINFO_CSC_CUSTOM = 15;            {Custom colour matrix follows header}
  VC_IMAGE_YUVINFO_CSC_SMPTE_170M = VC_IMAGE_YUVINFO_CSC_ITUR_BT601;
- {Co-sited flags, assumed interstitial if not co-sited [2 bits]} 
+ {Co-sited flags, assumed interstitial if not co-sited [2 bits]}
  VC_IMAGE_YUVINFO_H_COSITED = 256;
  VC_IMAGE_YUVINFO_V_COSITED = 512;
-  
+
  VC_IMAGE_YUVINFO_TOP_BOTTOM = 1024;
  VC_IMAGE_YUVINFO_DECIMATED = 2048;
  VC_IMAGE_YUVINFO_PACKED = 4096;
@@ -586,17 +586,17 @@ const
  VC_IMAGE_YUVINFO_FORCE_ENUM_16BIT = $ffff;
 
 const
- VC_IMAGE_YUV_UV_STRIPE_WIDTH_LOG2 = 7;    
- VC_IMAGE_YUV_UV_STRIPE_WIDTH = 1 shl VC_IMAGE_YUV_UV_STRIPE_WIDTH_LOG2;    
- VC_IMAGE_YUV_UV32_STRIPE_WIDTH_LOG2 = 5;    
- VC_IMAGE_YUV_UV32_STRIPE_WIDTH = 1 shl VC_IMAGE_YUV_UV32_STRIPE_WIDTH_LOG2;    
- 
+ VC_IMAGE_YUV_UV_STRIPE_WIDTH_LOG2 = 7;
+ VC_IMAGE_YUV_UV_STRIPE_WIDTH = 1 shl VC_IMAGE_YUV_UV_STRIPE_WIDTH_LOG2;
+ VC_IMAGE_YUV_UV32_STRIPE_WIDTH_LOG2 = 5;
+ VC_IMAGE_YUV_UV32_STRIPE_WIDTH = 1 shl VC_IMAGE_YUV_UV32_STRIPE_WIDTH_LOG2;
+
  {64 pixel wide stripes, 128 byte wide as 16bits/component}
- VC_IMAGE_YUV_UV_16_STRIPE_WIDTH_LOG2 = 6;    
- VC_IMAGE_YUV_UV_16_STRIPE_WIDTH = 1 shl VC_IMAGE_YUV_UV_16_STRIPE_WIDTH_LOG2;    
- VC_IMAGE_YUV_UV_16_STRIPE_STRIDE_LOG2 = 7;    
- VC_IMAGE_YUV_UV_16_STRIPE_STRIDE = 1 shl VC_IMAGE_YUV_UV_16_STRIPE_STRIDE_LOG2;    
-      
+ VC_IMAGE_YUV_UV_16_STRIPE_WIDTH_LOG2 = 6;
+ VC_IMAGE_YUV_UV_16_STRIPE_WIDTH = 1 shl VC_IMAGE_YUV_UV_16_STRIPE_WIDTH_LOG2;
+ VC_IMAGE_YUV_UV_16_STRIPE_STRIDE_LOG2 = 7;
+ VC_IMAGE_YUV_UV_16_STRIPE_STRIDE = 1 shl VC_IMAGE_YUV_UV_16_STRIPE_STRIDE_LOG2;
+
  {The image structure.}
 type
  Pvc_image_extra_uv_s = ^vc_image_extra_uv_s;
@@ -607,7 +607,7 @@ type
  end;
  VC_IMAGE_EXTRA_UV_T = vc_image_extra_uv_s;
  PVC_IMAGE_EXTRA_UV_T = ^VC_IMAGE_EXTRA_UV_T;
-      
+
  Pvc_image_extra_rgba_s = ^vc_image_extra_rgba_s;
  vc_image_extra_rgba_s = record
   value: LongWord; {component_order   : 24 (diagnostic use only)}
@@ -618,7 +618,7 @@ type
  end;
  VC_IMAGE_EXTRA_RGBA_T = vc_image_extra_rgba_s;
  PVC_IMAGE_EXTRA_RGBA_T = ^VC_IMAGE_EXTRA_RGBA_T;
- 
+
  Pvc_image_extra_pal_s = ^vc_image_extra_pal_s;
  vc_image_extra_pal_s = record
   palette: Psmallint;
@@ -626,7 +626,7 @@ type
  end;
  VC_IMAGE_EXTRA_PAL_T = vc_image_extra_pal_s;
  PVC_IMAGE_EXTRA_PAL_T = ^VC_IMAGE_EXTRA_PAL_T;
- 
+
  {These fields are subject to change / being moved around}
  Pvc_image_extra_tf_s = ^vc_image_extra_tf_s;
  vc_image_extra_tf_s = record
@@ -646,7 +646,7 @@ type
  end;
  VC_IMAGE_EXTRA_BAYER_T = vc_image_extra_bayer_s;
  PVC_IMAGE_EXTRA_BAYER_T = ^VC_IMAGE_EXTRA_BAYER_T;
-      
+
  {The next block can be used with Visual C++ which treats enums as long ints}
  Pvc_image_extra_msbayer_s = ^vc_image_extra_msbayer_s;
  vc_image_extra_msbayer_s = record
@@ -658,7 +658,7 @@ type
  end;
  VC_IMAGE_EXTRA_MSBAYER_T = vc_image_extra_msbayer_s;
  PVC_IMAGE_EXTRA_MSBAYER_T = ^VC_IMAGE_EXTRA_MSBAYER_T;
-      
+
  {NB this will be copied to image.size in parmalloc()}
  Pvc_image_extra_codec_s = ^vc_image_extra_codec_s;
  vc_image_extra_codec_s = record
@@ -667,7 +667,7 @@ type
  end;
  VC_IMAGE_EXTRA_CODEC_T = vc_image_extra_codec_s;
  PVC_IMAGE_EXTRA_CODEC_T = ^VC_IMAGE_EXTRA_CODEC_T;
-      
+
 const
  VC_IMAGE_OPENGL_RGBA32 = $14011908;    {GL_UNSIGNED_BYTE GL_RGBA}
  VC_IMAGE_OPENGL_RGB24 = $14011907;    {GL_UNSIGNED_BYTE GL_RGB}
@@ -688,7 +688,7 @@ const
  VC_IMAGE_OPENGL_PALETTE8_RGB565 = $8B97;    {GL_PALETTE8_R5_G6_B5_OES}
  VC_IMAGE_OPENGL_PALETTE8_RGBA16 = $8B98;    {GL_PALETTE8_RGBA4_OES}
  VC_IMAGE_OPENGL_PALETTE8_RGB5551 = $8B99;    {GL_PALETTE8_RGB5_A1_OES}
-     
+
 type
  Pvc_image_extra_opengl_s = ^vc_image_extra_opengl_s;
  vc_image_extra_opengl_s = record
@@ -710,7 +710,7 @@ type
    6 : ( codec : VC_IMAGE_EXTRA_CODEC_T );
    7 : ( opengl : VC_IMAGE_EXTRA_OPENGL_T );
  end;
-     
+
  {Structure containing various colour meta-data for each format}
 type
  PVC_IMAGE_INFO_T = ^VC_IMAGE_INFO_T;
@@ -719,7 +719,7 @@ type
    1 : ( yuv : word );               {Information pertinent to all YUV implementations}
    2 : ( info : word );              {Dummy, force size to min 16 bits}
  end;
- 
+
  {Image handle object, which must be locked before image data becomes accessible.
   A handle to an image where the image data does not have a guaranteed storage location.  A call to vc_image_lock() must be made to convert
   this into a VC_IMAGE_BUF_T, which guarantees that image data can be accessed safely.
@@ -748,17 +748,17 @@ type
   channel_index : uint8_t;                 {Index of the channel this header represents while it is being linked}
   _dummy : array[0..2] of uint8_t;         {Pad struct to 64 bytes}
  end;
- 
+
 {$PACKRECORDS DEFAULT}
 {==============================================================================}
 {VC4 VCHI Mem Handle (From interface\vchi\vchi_mh.h)}
 {$PACKRECORDS C}
 type
  VCHI_MEM_HANDLE_T = int32_t;
- 
-const 
+
+const
  VCHI_MEM_HANDLE_INVALID = 0;
- 
+
 {$PACKRECORDS DEFAULT}
 {==============================================================================}
 {VC4 VCHI Connection Types (From interface\vchi\connections\connection.h)}
@@ -771,7 +771,7 @@ type
  end;
 
  //To Do //Continuing
- 
+
 {$PACKRECORDS DEFAULT}
 {==============================================================================}
 {VC4 VCHI Types (From interface\vchi\vchi.h)}
@@ -812,13 +812,13 @@ type
   VCHIQ_SUCCESS = 0,
   VCHIQ_RETRY   = 1
  );
- 
+
  PPVCHIQ_INSTANCE_T = ^PVCHIQ_INSTANCE_T;
  PVCHIQ_INSTANCE_T = ^VCHIQ_INSTANCE_T;
  VCHIQ_INSTANCE_T = record
   {Opaque structure}
  end;
- 
+
 //To Do //Continuing
 
 {$PACKRECORDS DEFAULT}
@@ -835,7 +835,7 @@ type
 type
  PDISPMANX_ELEMENT_HANDLE_T = ^DISPMANX_ELEMENT_HANDLE_T;
  DISPMANX_ELEMENT_HANDLE_T = uint32_t;
- 
+
 {$PACKRECORDS DEFAULT}
 {==============================================================================}
 {VC4 EGL Platform Types (From EGL\eglplatform.h)}
@@ -902,19 +902,19 @@ procedure VCFilesysDeinit; cdecl; external libvchostif name 'vc_filesys_stop';
 {==============================================================================}
 {VC4 VCHI Interface Functions (From \opt\vc\include\interface\vchi\*)}
 {Note: These import the C functions from the Userland libraries, not the functions from the VC4VCHIQ driver unit}
-function VCHIInitialise(instance: PPVCHI_INSTANCE_T): int32_t; cdecl; external libvchiq_arm name 'vchi_initialise'; 
-function VCHIConnect(connections: PPVCHI_CONNECTION_T; num_connections: uint32_t; instance: PVCHI_INSTANCE_T): int32_t; cdecl; external libvchiq_arm name 'vchi_connect'; 
-function VCHICreateConnection(function_table: PVCHI_CONNECTION_API_T; low_level: PVCHI_MESSAGE_DRIVER_T): PVCHI_CONNECTION_T; cdecl; external libvchiq_arm name 'vchi_create_connection'; 
+function VCHIInitialise(instance: PPVCHI_INSTANCE_T): int32_t; cdecl; external libvchiq_arm name 'vchi_initialise';
+function VCHIConnect(connections: PPVCHI_CONNECTION_T; num_connections: uint32_t; instance: PVCHI_INSTANCE_T): int32_t; cdecl; external libvchiq_arm name 'vchi_connect';
+function VCHICreateConnection(function_table: PVCHI_CONNECTION_API_T; low_level: PVCHI_MESSAGE_DRIVER_T): PVCHI_CONNECTION_T; cdecl; external libvchiq_arm name 'vchi_create_connection';
 
-function VCHISingleGetFuncTable: PVCHI_CONNECTION_API_T; cdecl; external libvchiq_arm name 'single_get_func_table'; 
-function VCHIMPHIMessageDriverFuncTable: PVCHI_MESSAGE_DRIVER_T; cdecl; external libvchiq_arm name 'vchi_mphi_message_driver_func_table'; 
+function VCHISingleGetFuncTable: PVCHI_CONNECTION_API_T; cdecl; external libvchiq_arm name 'single_get_func_table';
+function VCHIMPHIMessageDriverFuncTable: PVCHI_MESSAGE_DRIVER_T; cdecl; external libvchiq_arm name 'vchi_mphi_message_driver_func_table';
 
 //To Do //More
 
 {==============================================================================}
 {VC4 VCHIQ_ARM Interface Functions (From \opt\vc\include\interface\vchiq_arm\*)}
 {Note: These import the C functions from the Userland libraries, not the functions from the VC4VCHIQ driver unit}
-function VCHIQInitialise(Instance: PPVCHIQ_INSTANCE_T): VCHIQ_STATUS_T; cdecl; external libvchiq_arm name 'vchiq_initialise'; 
+function VCHIQInitialise(Instance: PPVCHIQ_INSTANCE_T): VCHIQ_STATUS_T; cdecl; external libvchiq_arm name 'vchiq_initialise';
 
 //To Do //More
 
@@ -1011,11 +1011,11 @@ procedure vc4_unmapmem(addr: Pointer; size: cunsigned); cdecl; public name 'vc4_
 function vc4_execute_code(file_desc: int; code, r0, r1, r2, r3, r4, r5: cunsigned): cunsigned; cdecl; public name 'vc4_execute_code';
 function vc4_execute_qpu(file_desc: int; num_qpus, control, noflush, timeout: cunsigned): cunsigned; cdecl; public name 'vc4_execute_qpu';
 function vc4_qpu_enable(file_desc: int; enable: cunsigned): cunsigned; cdecl; public name 'vc4_qpu_enable';
-        
+
 //procedure vc4_clean_cache_range(); cdecl; public name 'vc4_clean_cache_range'; //To do
 //procedure vc4_invalidate_cache_range(); cdecl; public name 'vc4_invalidate_cache_range'; //To do
 //procedure vc4_clean_invalidate_cache_range(); cdecl; public name 'vc4_invalidate_cache_range'; //To do
-        
+
 {==============================================================================}
 {VC4 VCOS Helper Functions}
 function vc4_vcos_get_ticks_per_second: uint32_t; cdecl; public name 'vc4_vcos_get_ticks_per_second';
@@ -1065,9 +1065,9 @@ const
  VC4_MBOX_TAG_END = BCM2835_MBOX_TAG_END;
  VC4_MBOX_TAG_EXECUTE_QPU = BCM2835_MBOX_TAG_EXECUTE_QPU;
  VC4_MBOX_TAG_ENABLE_QPU = BCM2835_MBOX_TAG_ENABLE_QPU;
- 
+
  VC4_MBOX_TAG_VCHIQ_INIT = BCM2835_MBOX_TAG_VCHIQ_INIT;
- 
+
  VC4_MAILBOX_0 = BCM2835_MAILBOX_0;
  VC4_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC = BCM2835_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC;
  {$ELSE}
@@ -1076,9 +1076,9 @@ const
  VC4_MBOX_TAG_END = BCM2837_MBOX_TAG_END;
  VC4_MBOX_TAG_EXECUTE_QPU = BCM2837_MBOX_TAG_EXECUTE_QPU;
  VC4_MBOX_TAG_ENABLE_QPU = BCM2837_MBOX_TAG_ENABLE_QPU;
- 
+
  VC4_MBOX_TAG_VCHIQ_INIT = BCM2837_MBOX_TAG_VCHIQ_INIT;
- 
+
  VC4_MAILBOX_0 = BCM2837_MAILBOX_0;
  VC4_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC = BCM2837_MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC;
  {$ENDIF}
@@ -1089,31 +1089,31 @@ type
  {$IFDEF CPUARMV6}
  TVC4MailboxHeader = TBCM2835MailboxHeader;
  PVC4MailboxHeader = PBCM2835MailboxHeader;
- 
+
  TVC4MailboxFooter = TBCM2835MailboxFooter;
  PVC4MailboxFooter = PBCM2835MailboxFooter;
- 
+
  TVC4MailboxTagHeader = TBCM2835MailboxTagHeader;
  PVC4MailboxTagHeader = PBCM2835MailboxTagHeader;
- 
+
  TVC4MailboxTagExecuteQPU = TBCM2835MailboxTagExecuteQPU;
  PVC4MailboxTagExecuteQPU = PBCM2835MailboxTagExecuteQPU;
- 
+
  TVC4MailboxTagEnableQPU = TBCM2835MailboxTagEnableQPU;
  PVC4MailboxTagEnableQPU = PBCM2835MailboxTagEnableQPU;
  {$ELSE}
  TVC4MailboxHeader = TBCM2837MailboxHeader;
  PVC4MailboxHeader = PBCM2837MailboxHeader;
- 
+
  TVC4MailboxFooter = TBCM2837MailboxFooter;
  PVC4MailboxFooter = PBCM2837MailboxFooter;
- 
+
  TVC4MailboxTagHeader = TBCM2837MailboxTagHeader;
  PVC4MailboxTagHeader = PBCM2837MailboxTagHeader;
- 
+
  TVC4MailboxTagExecuteQPU = TBCM2837MailboxTagExecuteQPU;
  PVC4MailboxTagExecuteQPU = PBCM2837MailboxTagExecuteQPU;
- 
+
  TVC4MailboxTagEnableQPU = TBCM2837MailboxTagEnableQPU;
  PVC4MailboxTagEnableQPU = PBCM2837MailboxTagEnableQPU;
  {$ENDIF}
@@ -1122,15 +1122,15 @@ type
 var
  {VC4 specific variables}
  VC4Initialized:Boolean;
- 
+
  VC4Lock:TMutexHandle = INVALID_HANDLE_VALUE;
  VC4StartupCount:LongWord;
  VC4StartupError:LongWord;
- 
+
  VCFilesysInitialized:Boolean;
  VCFilesysInstance:PVCHI_INSTANCE_T;
  VCFilesysConnection:PVCHI_CONNECTION_T;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -1142,7 +1142,7 @@ begin
  {}
  {Check Initialized}
  if VC4Initialized then Exit;
- 
+
  {Create Lock}
  VC4Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if VC4Lock = INVALID_HANDLE_VALUE then
@@ -1153,7 +1153,7 @@ begin
  {Set Startup Defaults}
  VC4StartupCount:=0;
  VC4StartupError:=ERROR_NOT_READY;
- 
+
  VC4Initialized:=True;
 end;
 
@@ -1165,12 +1165,12 @@ function VC4Start:LongWord;
 
 {Note: May be called multiple times, each call to VC4Start must have a matching call to VC4Stop}
 var
- //VCSM:PVCSMDevice; //To Do 
+ //VCSM:PVCSMDevice; //To Do
  VCHIQ:PVCHIQDevice;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Acquire the Lock}
  if MutexLock(VC4Lock) = ERROR_SUCCESS then
   begin
@@ -1181,48 +1181,48 @@ begin
       {$IFDEF VC4_DEBUG}
       if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: Additional start call');
       {$ENDIF}
- 
+
       {Increment Count}
       Inc(VC4StartupCount);
- 
+
       {Return Result}
-      Result:=VC4StartupError; 
+      Result:=VC4StartupError;
      end
     else
      begin
       {$IFDEF VC4_DEBUG}
       if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: Initial start call');
       {$ENDIF}
- 
+
       {Increment Count}
       Inc(VC4StartupCount);
- 
+
       {Initialize Components}
       Result:=ERROR_OPERATION_FAILED;
       VC4StartupError:=ERROR_OPERATION_FAILED;
- 
+
       {Find VCHIQ}
       VCHIQ:=PVCHIQDevice(DeviceFindByDescription(VCHIQ_DESCRIPTION));
       if VCHIQ = nil then Exit;
-      
+
       {Start VCHIQ}
       if VCHIQDeviceStart(VCHIQ) <> ERROR_SUCCESS then Exit;
-      
+
       {Find VCSM}
-      //VCSM:=PVCSMDevice(DeviceFindByDescription(VCSM_DESCRIPTION)); //To Do 
+      //VCSM:=PVCSMDevice(DeviceFindByDescription(VCSM_DESCRIPTION)); //To Do
       //if VCSM = nil then Exit;
-      
+
       {Start VCSM}
-      //if VCSMDeviceStart(VCSM) <> ERROR_SUCCESS then Exit; //To Do 
-      
+      //if VCSMDeviceStart(VCSM) <> ERROR_SUCCESS then Exit; //To Do
+
       {Start VCFilesys (Using a worker thread)}
-      WorkerSchedule(500,TWorkerTask(VCFilesysAsyncStart),nil,nil); 
-      
+      WorkerSchedule(500,TWorkerTask(VCFilesysAsyncStart),nil,nil);
+
       {$IFDEF VC4_DEBUG}
       if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: Start completed');
       {$ENDIF}
- 
-      {Return Result} 
+
+      {Return Result}
       Result:=ERROR_SUCCESS;
       VC4StartupError:=ERROR_SUCCESS;
      end;
@@ -1245,12 +1245,12 @@ function VC4Stop:LongWord;
 
 {Note: May be called multiple times, each call to VC4Stop must have a matching call to VC4Start}
 var
- //VCSM:PVCSMDevice; //To Do 
+ //VCSM:PVCSMDevice; //To Do
  VCHIQ:PVCHIQDevice;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Acquire the Lock}
  if MutexLock(VC4Lock) = ERROR_SUCCESS then
   begin
@@ -1258,37 +1258,37 @@ begin
     {Check Started}
     Result:=ERROR_OPERATION_FAILED;
     if VC4StartupCount = 0 then Exit;
-    
+
     {Decrement Count}
     Dec(VC4StartupCount);
     Result:=ERROR_SUCCESS;
     if VC4StartupCount > 0 then Exit;
-    
+
     {$IFDEF VC4_DEBUG}
     if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: Final stop call');
     {$ENDIF}
-    
+
     {Shutdown and Cleanup}
     Result:=ERROR_OPERATION_FAILED;
- 
+
     {Stop VCFilesys}
     if VCFilesysStop <> ERROR_SUCCESS then Exit;
- 
+
     {Find VCHIQ}
     VCHIQ:=PVCHIQDevice(DeviceFindByDescription(VCHIQ_DESCRIPTION));
     if VCHIQ = nil then Exit;
- 
+
     {Stop VCHIQ}
     if VCHIQDeviceStop(VCHIQ) <> ERROR_SUCCESS then Exit;
-      
+
     {Find VCSM}
-    //VCSM:=PVCSMDevice(DeviceFindByDescription(VCSM_DESCRIPTION)); //To Do 
+    //VCSM:=PVCSMDevice(DeviceFindByDescription(VCSM_DESCRIPTION)); //To Do
     //if VCSM = nil then Exit;
-      
+
     {Stop VCSM}
-    //if VCSMDeviceStop(VCSM) <> ERROR_SUCCESS then Exit; //To Do 
-    
-    {Return Result} 
+    //if VCSMDeviceStop(VCSM) <> ERROR_SUCCESS then Exit; //To Do
+
+    {Return Result}
     Result:=ERROR_SUCCESS;
     VC4StartupError:=ERROR_NOT_READY;
    finally
@@ -1451,25 +1451,25 @@ var
 begin
  {Dummy only}
  Result:=-1;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_mbox_open');
  {$ENDIF}
- 
+
  {Create Handle}
  Entry:=HandleCreateEx('',HANDLE_FLAG_NONE,THandle(-1),HANDLE_TYPE_DEVICE);
- if Entry = nil then 
+ if Entry = nil then
   begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
- 
+
  {Return Handle}
  Result:=Entry^.Handle;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_mbox_open (Result=' + IntToHex(Result,8) + ')');
  {$ENDIF}
@@ -1490,7 +1490,7 @@ begin
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_mbox_close (file_desc=' + IntToStr(file_desc) + ')');
  {$ENDIF}
- 
+
  {Get Handle}
  Entry:=HandleGet(file_desc);
  if Entry = nil then
@@ -1498,10 +1498,10 @@ begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
- 
+
  {Destroy Handle}
  ResultCode:=HandleDestroy(file_desc);
  if (ResultCode <> ERROR_SUCCESS) and (ResultCode <> ERROR_IN_USE) then
@@ -1523,7 +1523,7 @@ begin
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_mem_alloc (file_desc=' + IntToStr(file_desc) + ' size=' + IntToStr(size) + ' align=' + IntToStr(align) + ' flags=' + IntToHex(flags,8) + ')');
  {$ENDIF}
- 
+
  if Assigned(GPUMemoryAllocateHandler) then
   begin
    Result:=GPUMemoryAllocateHandler(size,align,flags);
@@ -1532,7 +1532,7 @@ begin
   begin
    Result:=LongWord(INVALID_HANDLE_VALUE);
   end;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_mem_alloc (Result=' + IntToHex(Result,8) + ')');
  {$ENDIF}
@@ -1549,7 +1549,7 @@ begin
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_mem_free (file_desc=' + IntToStr(file_desc) + ' handle=' + IntToHex(handle,8) + ')');
  {$ENDIF}
- 
+
  if Assigned(GPUMemoryReleaseHandler) then
   begin
    Result:=GPUMemoryReleaseHandler(handle);
@@ -1558,7 +1558,7 @@ begin
   begin
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_mem_free (Result=' + IntToHex(Result,8) + ')');
  {$ENDIF}
@@ -1575,7 +1575,7 @@ begin
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_mem_lock (file_desc=' + IntToStr(file_desc) + ' handle=' + IntToHex(handle,8) + ')');
  {$ENDIF}
- 
+
  if Assigned(GPUMemoryLockHandler) then
   begin
    Result:=GPUMemoryLockHandler(handle);
@@ -1584,7 +1584,7 @@ begin
   begin
    Result:=0;
   end;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_mem_lock (Result=' + IntToHex(Result,8) + ')');
  {$ENDIF}
@@ -1601,7 +1601,7 @@ begin
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_mem_unlock (file_desc=' + IntToStr(file_desc) + ' handle=' + IntToHex(handle,8) + ')');
  {$ENDIF}
- 
+
  if Assigned(GPUMemoryUnlockHandler) then
   begin
    Result:=GPUMemoryUnlockHandler(handle);
@@ -1610,7 +1610,7 @@ begin
   begin
    Result:=ERROR_CALL_NOT_IMPLEMENTED;
   end;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_mem_unlock (Result=' + IntToHex(Result,8) + ')');
  {$ENDIF}
@@ -1627,9 +1627,9 @@ begin
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_mapmem (base=' + IntToHex(base,8) + ' size=' + IntToStr(size) + ')');
  {$ENDIF}
- 
+
  Result:=Pointer(base);
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_mapmem (Result=' + IntToHex(PtrUInt(Result),8) + ')');
  {$ENDIF}
@@ -1659,7 +1659,7 @@ begin
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_execute_code (file_desc=' + IntToStr(file_desc) + ' code=' + IntToHex(code,8) + ' r0=' + IntToStr(r0) + ' r1=' + IntToStr(r1) + ' r2=' + IntToStr(r2) + ' r3=' + IntToStr(r3) + ' r4=' + IntToStr(r4) + ' r5=' + IntToStr(r5) + ')');
  {$ENDIF}
- 
+
  if Assigned(GPUExecuteCodeHandler) then
   begin
    Result:=GPUExecuteCodeHandler(Pointer(code),r0,r1,r2,r3,r4,r5);
@@ -1668,7 +1668,7 @@ begin
   begin
    Result:=0;
   end;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_execute_code (Result=' + IntToHex(Result,8) + ')');
  {$ENDIF}
@@ -1685,9 +1685,9 @@ begin
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_execute_qpu (file_desc=' + IntToStr(file_desc) + ' num_qpus=' + IntToStr(num_qpus) + ' control=' + IntToStr(control) + ' noflush=' + IntToStr(noflush) + ' timeout=' + IntToStr(timeout) + ')');
  {$ENDIF}
- 
+
  Result:=V3DQPUExecute(num_qpus,control,noflush,timeout);
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_execute_qpu (Result=' + IntToHex(Result,8) + ')');
  {$ENDIF}
@@ -1704,14 +1704,14 @@ begin
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_qpu_enable (file_desc=' + IntToStr(file_desc) + ' enable=' + IntToStr(enable) + ')');
  {$ENDIF}
- 
+
  Result:=V3DQPUEnable(enable);
-  
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_qpu_enable (Result=' + IntToHex(Result,8) + ')');
  {$ENDIF}
 end;
-        
+
 {==============================================================================}
 {==============================================================================}
 {VC4 VCOS Helper Functions}
@@ -1722,7 +1722,7 @@ function vc4_vcos_get_ticks_per_second: uint32_t; cdecl;
 begin
  {}
  Result:=SCHEDULER_INTERRUPTS_PER_SECOND;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_vcos_get_ticks_per_second (Result=' + IntToStr(Result) + ')');
  {$ENDIF}
@@ -1744,36 +1744,36 @@ begin
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: VCFilesysStart');
  {$ENDIF}
- 
+
  if VC4_FILESYS_START then
   begin
    if VCFilesysInitialized then Exit;
-   
+
    {Initialize VCOS}
    VCOSInit;
-   
+
    {Initialize VCHIQ}
    Status:=VCHIQInitialise(@VCHIQInstance);
    if Status <> VCHIQ_SUCCESS then Exit;
-   
+
    {Initialize VCHI}
    Success:=VCHIInitialise(@VCFilesysInstance);
    if Success <> 0 then Exit;
-   
+
    VCHIQInstance:=PVCHIQ_INSTANCE_T(VCFilesysInstance);
-   
+
    {Create VCHI Connection}
    VCFilesysConnection:=VCHICreateConnection(VCHISingleGetFuncTable,VCHIMPHIMessageDriverFuncTable);
-   
+
    {Connect VCHI}
    Success:=VCHIConnect(@VCFilesysConnection,1,VCFilesysInstance);
-   
+
    {Initialize File Service}
    Success:=VCVCHIFilesysInit(VCFilesysInstance,@VCFilesysConnection,1);
-  
+
    VCFilesysInitialized:=True;
-  end; 
- 
+  end;
+
  Result:=ERROR_SUCCESS;
 end;
 
@@ -1788,25 +1788,25 @@ begin
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: VCFilesysStop');
  {$ENDIF}
- 
+
  if VC4_FILESYS_START then
   begin
    if not VCFilesysInitialized then Exit;
- 
+
    {Deinitialize File Service}
    VCFilesysDeinit;
- 
+
    {Deinitialize VCOS}
    VCOSDeinit;
- 
+
    VCFilesysInitialized:=False;
-  end;  
- 
+  end;
+
  Result:=ERROR_SUCCESS;
 end;
- 
+
 {==============================================================================}
- 
+
 procedure VCFilesysAsyncStart(Data:Pointer);
 {Asynchronously start the VC File Service (Using a worker thread)}
 begin
@@ -1816,11 +1816,11 @@ begin
   begin
    ThreadSleep(0);
   end;
- 
+
  {Start VC File Service}
  VCFilesysStart;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {VC4 VCHIQ_ARM Helper Functions}
@@ -1837,11 +1837,11 @@ var
 begin
  {}
  Result:=-1;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_vchiq_open');
  {$ENDIF}
- 
+
  {Start VC4}
  Status:=VC4Start;
  if Status <> ERROR_SUCCESS then
@@ -1849,10 +1849,10 @@ begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
- 
+
  {Find VCHIQ}
  VCHIQ:=PVCHIQDevice(DeviceFindByDescription(VCHIQ_DESCRIPTION));
  if VCHIQ = nil then
@@ -1860,35 +1860,35 @@ begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
-   Exit;
-  end; 
- 
- {Open VCHIQ}
- Instance:=VCHIQDeviceOpen(VCHIQ);
- if Instance = nil then 
-  begin
-   {Return Error}
-   ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=EINVAL;
-   
-   Exit;
-  end; 
-  
- {Create Handle}
- Entry:=HandleCreateEx('',HANDLE_FLAG_DUPLICATE,THandle(Instance),HANDLE_TYPE_DEVICE);
- if Entry = nil then 
-  begin
-   {Return Error}
-   ptr:=__getreent;
-   if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
- 
+
+ {Open VCHIQ}
+ Instance:=VCHIQDeviceOpen(VCHIQ);
+ if Instance = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+
+   Exit;
+  end;
+
+ {Create Handle}
+ Entry:=HandleCreateEx('',HANDLE_FLAG_DUPLICATE,THandle(Instance),HANDLE_TYPE_DEVICE);
+ if Entry = nil then
+  begin
+   {Return Error}
+   ptr:=__getreent;
+   if ptr <> nil then ptr^._errno:=EINVAL;
+
+   Exit;
+  end;
+
  {Return Handle}
  Result:=Entry^.Handle;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_vchiq_open (Result=' + IntToHex(Result,8) + ')');
  {$ENDIF}
@@ -1908,7 +1908,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_vchiq_dup (device=' + IntToHex(device,8) + ')');
  {$ENDIF}
@@ -1920,10 +1920,10 @@ begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
- 
+
  {Start VC4}
  Status:=VC4Start;
  if Status <> ERROR_SUCCESS then
@@ -1931,25 +1931,25 @@ begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
- 
+
  //To Do //Instance //Open etc ?
- 
+
  {Duplicate Handle}
  Handle:=HandleDuplicate(Entry^.Handle);
- if Handle = INVALID_HANDLE_VALUE then 
+ if Handle = INVALID_HANDLE_VALUE then
   begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
-  
+
  {Return Result}
- Result:=Handle; 
+ Result:=Handle;
 end;
 
 {==============================================================================}
@@ -1967,7 +1967,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_vchiq_close (device=' + IntToHex(device,8) + ')');
  {$ENDIF}
@@ -1979,10 +1979,10 @@ begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
- 
+
  {Get Instance}
  Instance:=PVCHIQInstance(Entry^.Data);
  if Instance = nil then
@@ -1990,10 +1990,10 @@ begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
- 
+
  {Close VCHIQ}
  Status:=VCHIQDeviceClose(Instance.VCHIQ,Instance);
  if Status <> ERROR_SUCCESS then
@@ -2001,10 +2001,10 @@ begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
- 
+
  {Stop VC4}
  Status:=VC4Stop;
  if Status <> ERROR_SUCCESS then
@@ -2012,10 +2012,10 @@ begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
- 
+
  {Destroy Handle}
  ResultCode:=HandleDestroy(device);
  if (ResultCode = ERROR_SUCCESS) or (ResultCode = ERROR_IN_USE) then
@@ -2046,7 +2046,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_vchiq_ioctl (device=' + IntToHex(device,8) + ' ioctl_code=' + IntToHex(ioctl_code,8) + ' argument=' + IntToHex(argument,8) + ')');
  {$ENDIF}
@@ -2058,10 +2058,10 @@ begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
-  
+
  {Get Instance}
  Instance:=PVCHIQInstance(Entry^.Data);
  if Instance = nil then
@@ -2069,10 +2069,10 @@ begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
- 
+
  {Control VCHIQ}
  Status:=VCHIQDeviceControl(Instance.VCHIQ,Instance,ioctl_code,argument,Response);
  if Status <> ERROR_SUCCESS then
@@ -2097,7 +2097,7 @@ begin
        ptr^._errno:=EINVAL;
       end;
      end;
-     
+
      {Return Error}
      Result:=-ptr^._errno;
     end;
@@ -2106,7 +2106,7 @@ begin
            // ENOTTY ?
    Exit;
   end;
- 
+
  {Return Response}
  Result:=Response;
 end;
@@ -2121,16 +2121,16 @@ function vc4_vcsm_open: int; cdecl;
 var
  ptr:P_reent;
  Status:LongWord;
- //VCSM:PVCSMDevice; //To Do 
+ //VCSM:PVCSMDevice; //To Do
  Entry:PHandleEntry;
 begin
  {}
  Result:=-1;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_vcsm_open');
  {$ENDIF}
- 
+
  {Start VC4}
  Status:=VC4Start;
  if Status <> ERROR_SUCCESS then
@@ -2138,35 +2138,35 @@ begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
- 
+
  {Find VCSM}
- //VCSM:=PVCSMDevice(DeviceFindByDescription(VCSM_DESCRIPTION)); //To Do 
+ //VCSM:=PVCSMDevice(DeviceFindByDescription(VCSM_DESCRIPTION)); //To Do
  //if VCSM = nil then
  // begin
  //  {Return Error}
  //  ptr:=__getreent;
  //  if ptr <> nil then ptr^._errno:=EINVAL;
- //  
+ //
  //  Exit;
- // end; 
- 
+ // end;
+
  {Create Handle}
- //Entry:=HandleCreateEx('',HANDLE_FLAG_DUPLICATE,THandle(VCSM),HANDLE_TYPE_DEVICE); //To Do 
- //if Entry = nil then 
+ //Entry:=HandleCreateEx('',HANDLE_FLAG_DUPLICATE,THandle(VCSM),HANDLE_TYPE_DEVICE); //To Do
+ //if Entry = nil then
  // begin
  //  {Return Error}
  //  ptr:=__getreent;
  //  if ptr <> nil then ptr^._errno:=EINVAL;
- //  
+ //
  //  Exit;
  // end;
- 
+
  {Return Handle}
  //Result:=Entry^.Handle;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_vcsm_open (Result=' + IntToHex(Result,8) + ')');
  {$ENDIF}
@@ -2186,7 +2186,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_vcsm_close (device=' + IntToHex(device,8) + ')');
  {$ENDIF}
@@ -2198,10 +2198,10 @@ begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
- 
+
  {Stop VC4}
  Status:=VC4Stop;
  if Status <> ERROR_SUCCESS then
@@ -2209,10 +2209,10 @@ begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
- 
+
  {Destroy Handle}
  ResultCode:=HandleDestroy(device);
  if (ResultCode = ERROR_SUCCESS) or (ResultCode = ERROR_IN_USE) then
@@ -2242,7 +2242,7 @@ var
 begin
  {}
  Result:=-1;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_vcsm_ioctl (device=' + IntToHex(device,8) + ' ioctl_code=' + IntToHex(ioctl_code,8) + ' argument=' + IntToHex(argument,8) + ')');
  {$ENDIF}
@@ -2254,12 +2254,12 @@ begin
    {Return Error}
    ptr:=__getreent;
    if ptr <> nil then ptr^._errno:=EINVAL;
-   
+
    Exit;
   end;
- 
+
  {Call Device Control}
- //Status:=VCSMDeviceControl(PVCSMDevice(Entry^.Data),ioctl_code,argument,Response); //To Do 
+ //Status:=VCSMDeviceControl(PVCSMDevice(Entry^.Data),ioctl_code,argument,Response); //To Do
  //if Status <> ERROR_SUCCESS then
  // begin
  //  {Return Error}
@@ -2282,7 +2282,7 @@ begin
  //      ptr^._errno:=EINVAL;
  //     end;
  //    end;
- //    
+ //
  //    {Return Error}
  //    Result:=-ptr^._errno;
  //   end;
@@ -2291,7 +2291,7 @@ begin
  //          // ENOTTY ?
  //  Exit;
  // end;
- 
+
  //{Return Response}
  //Result:=Response;
 end;
@@ -2306,7 +2306,7 @@ function vc4_bcm_host_get_peripheral_address: cunsigned; cdecl;
 begin
  {}
  Result:=PeripheralGetBase;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_bcm_host_get_peripheral_address (Result=' + IntToHex(Result,8) + ')');
  {$ENDIF}
@@ -2321,7 +2321,7 @@ function vc4_bcm_host_get_peripheral_size: cunsigned; cdecl;
 begin
  {}
  Result:=PeripheralGetSize;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_bcm_host_get_peripheral_size (Result=' + IntToStr(Result) + ')');
  {$ENDIF}
@@ -2336,7 +2336,7 @@ function vc4_bcm_host_get_sdram_address: cunsigned; cdecl;
 begin
  {}
  Result:=BUS_ALIAS;
- 
+
  {$IFDEF VC4_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'VC4: vc4_bcm_host_get_sdram_address (Result=' + IntToHex(Result,8) + ')');
  {$ENDIF}
@@ -2349,7 +2349,7 @@ initialization
  VC4Init;
 
 {==============================================================================}
- 
+
 finalization
  VC4Stop;
 

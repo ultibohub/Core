@@ -17,35 +17,35 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
   Linux - \arch\arm\boot\dts\overlays\pitft28-resistive-overlay.dts
-  
+
 References
 ==========
 
  Adafruit PiTFT 2.8" LCD
 
   Raspberry Pi A/B
-  
+
    PiTFT - 320x240 2.8" TFT + Resistive Touchscreen (https://www.adafruit.com/product/1601)
-   
+
   Raspberry Pi A+/B+/Zero/2B/3B/4B
-  
+
    PiTFT Plus 320x240 2.8" TFT + Resistive Touchscreen (https://www.adafruit.com/products/2298)
- 
+
   Schematic
- 
+
    https://learn.adafruit.com/assets/25554
-   
+
  Adafruit PiTFT 3.2" LCD
-   
+
   Raspberry Pi A+/B+/Zero/2B/3B/4B
-  
+
    PiTFT Plus 320x240 3.2" TFT + Resistive Touchscreen (https://www.adafruit.com/product/2616)
 
  Adafruit PiTFT 2.8" LCD (Capacitive)
@@ -64,51 +64,51 @@ Adafruit PiTFT 2.8" LCD
  The Adafruit PiTFT 2.8" and PiTFT 3.2" LCD is a 320 x 240 pixel TFT with resistive touchscreen using
  an ILITEK ILI9340 driver and a STMicroelectronics STMPE610 resistive touchscreen controller. There is
  also a version available that includes a capacitive touchscreen using the Focaltech FT6236 controller.
- 
+
  This unit ties together the various components needed to make one of these boards work with Ultibo by
  finding the correct SPI or I2C device, creating the STMPE610 or FT6236 Touch device, creating the ILI9340
  Framebuffer device and registering all of it with the correct parameters for the Adafruit board.
 
  Details:
- 
-  ILI9340 
-  
+
+  ILI9340
+
    Width:   240
    Height:  320
-   
+
    SPI Mode: 0
    SPI Frequency: 32000000
    SPI Chip Select: SPI_CS_0
-   
+
    DC GPIO: GPIO_PIN_25 (Pull: GPIO_PULL_NONE)
    RST GPIO: GPIO_PIN_UNKNOWN
 
    Backlight GPIO: GPIO_PIN_2 (STMPE GPIO)
-   
+
   STMPE (Resistive touch)
-  
+
    Chip: STMPE_CHIP_610
-   
+
    SPI Mode: 0
    SPI Frequency: 500000
    SPI Chip Select: SPI_CS_1
-   
-   IRQ GPIO: GPIO_PIN_24 (Trigger: GPIO_TRIGGER_FALLING)(Pull: GPIO_PULL_UP)
-   
-  FT6236 (Capacitive touch)
-  
-   I2C Address: 0x38 
 
    IRQ GPIO: GPIO_PIN_24 (Trigger: GPIO_TRIGGER_FALLING)(Pull: GPIO_PULL_UP)
-  
+
+  FT6236 (Capacitive touch)
+
+   I2C Address: 0x38
+
+   IRQ GPIO: GPIO_PIN_24 (Trigger: GPIO_TRIGGER_FALLING)(Pull: GPIO_PULL_UP)
+
   Switches
-  
+
    SW1 GPIO: GPIO_PIN_22
-   
+
    SW2 GPIO: GPIO_PIN_27
-   
+
    SW3 GPIO: GPIO_PIN_17
-   
+
    SW4 GPIO: GPIO_PIN_23
 
 }
@@ -117,7 +117,7 @@ Adafruit PiTFT 2.8" LCD
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit PiTFT28; 
+unit PiTFT28;
 
 interface
 
@@ -133,16 +133,16 @@ const
  PITFT28_FRAMEBUFFER_DESCRIPTION = 'Adafruit PiTFT 2.8" LCD';  {Description of PiTFT28 device}
 
  PITFT28_SIGNATURE = $AF000028;
- 
+
  PITFT28_SCREEN_WIDTH  = 240;
  PITFT28_SCREEN_HEIGHT = 320;
- 
+
  {PiTFT28 GPIO constants}
  PITFT28_LCD_DC    = GPIO_PIN_25;
  PITFT28_TOUCH_IRQ = GPIO_PIN_24;
- 
+
  PITFT28_LCD_BL    = GPIO_PIN_2; {STMPE GPIO}
- 
+
 {==============================================================================}
 type
  {PiTFT28 specific types}
@@ -157,17 +157,17 @@ type
   Backlight:PGPIODevice;          {Backlight GPIO (STMPE) device for this display}
   Framebuffer:PFramebufferDevice; {Framebuffer (ILI9340) device for this display}
  end;
- 
+
 {==============================================================================}
 var
  {PiTFT28 specific variables}
  PITFT28_SPI_DEVICE:String = 'SPI0';
  PITFT28_LCD_CHIPSELECT:Word = SPI_CS_0;
  PITFT28_TOUCH_CHIPSELECT:Word = SPI_CS_1;
- 
+
  PITFT28_I2C_DEVICE:String = 'I2C0';
  PITFT28_TOUCH_ADDRESS:Word = $38;
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure PiTFT28Init;
@@ -182,7 +182,7 @@ function PiTFT28Stop(Handle:THandle):Boolean;{$IFDEF API_EXPORT_PITFT28} stdcall
 
 {==============================================================================}
 {PiTFT28 Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -193,9 +193,9 @@ implementation
 var
  {PiTFT28 specific variables}
  PiTFT28Initialized:Boolean;
- 
+
  PiTFT28Default:THandle = INVALID_HANDLE_VALUE;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -211,16 +211,16 @@ begin
  {}
  {Check Initialized}
  if PiTFT28Initialized then Exit;
- 
+
  {Check Environment Variables}
  {PITFT28_AUTOSTART}
  WorkBool:=StrToBoolDef(EnvironmentGet('PITFT28_AUTOSTART'),PITFT28_AUTOSTART);
  if WorkBool <> PITFT28_AUTOSTART then PITFT28_AUTOSTART:=WorkBool;
- 
+
  {PITFT28_CAPACITIVE_TOUCH}
  WorkBool:=StrToBoolDef(EnvironmentGet('PITFT28_CAPACITIVE_TOUCH'),PITFT28_CAPACITIVE_TOUCH);
  if WorkBool <> PITFT28_CAPACITIVE_TOUCH then PITFT28_CAPACITIVE_TOUCH:=WorkBool;
- 
+
  {PITFT28_SPI_DEVICE}
  WorkBuffer:=EnvironmentGet('PITFT28_SPI_DEVICE');
  if Length(WorkBuffer) <> 0 then PITFT28_SPI_DEVICE:=WorkBuffer;
@@ -228,7 +228,7 @@ begin
  {PITFT28_I2C_DEVICE}
  WorkBuffer:=EnvironmentGet('PITFT28_I2C_DEVICE');
  if Length(WorkBuffer) <> 0 then PITFT28_I2C_DEVICE:=WorkBuffer;
- 
+
  {PITFT28_LCD_CHIPSELECT}
  WorkInt:=StrToIntDef(EnvironmentGet('PITFT28_LCD_CHIPSELECT'),PITFT28_LCD_CHIPSELECT);
  if WorkInt <> PITFT28_LCD_CHIPSELECT then PITFT28_LCD_CHIPSELECT:=WorkInt;
@@ -241,7 +241,7 @@ begin
  WorkInt:=StrToIntDef(EnvironmentGet('PITFT28_TOUCH_ADDRESS'),PITFT28_TOUCH_ADDRESS);
  if WorkInt <> PITFT28_TOUCH_ADDRESS then PITFT28_TOUCH_ADDRESS:=WorkInt;
 
- {Start PiTFT28} 
+ {Start PiTFT28}
  if PITFT28_AUTOSTART then
   begin
    if PITFT28_CAPACITIVE_TOUCH then
@@ -251,9 +251,9 @@ begin
    else
     begin
      PiTFT28Default:=PiTFT28ResistiveStart(FRAMEBUFFER_ROTATION_0,PITFT28_SPI_DEVICE,PITFT28_LCD_CHIPSELECT,PITFT28_TOUCH_CHIPSELECT);
-    end; 
+    end;
   end;
- 
+
  PiTFT28Initialized:=True;
 end;
 
@@ -299,15 +299,15 @@ var
  DC:TGPIOInfo;
  RST:TGPIOInfo;
  IRQ:TGPIOInfo;
- 
+
  PiTFT28LCD:PPiTFT28LCD;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Rotation}
  if Rotation > FRAMEBUFFER_ROTATION_270 then Exit;
- 
+
  {Check Device}
  if Length(Device) = 0 then Exit;
 
@@ -316,7 +316,7 @@ begin
 
  {Check Touch Chip Select}
  if TouchSelect = SPI_CS_NONE then Exit;
- 
+
  {Check SPI Device}
  SPI:=SPIDeviceFindByName(Device);
  if SPI = nil then
@@ -324,18 +324,18 @@ begin
    SPI:=SPIDeviceFindByDescription(Device);
    if SPI = nil then Exit;
   end;
- 
+
  {Check GPIO Device}
  GPIO:=GPIODeviceGetDefault;
  if GPIO = nil then Exit;
- 
+
  {Setup Touch IRQ (Interrupt)}
  IRQ.GPIO:=GPIO;
  IRQ.Pin:=PITFT28_TOUCH_IRQ;
  IRQ.Func:=GPIO_FUNCTION_IN;
  IRQ.Pull:=GPIO_PULL_UP;
  IRQ.Trigger:=GPIO_TRIGGER_FALLING;
- 
+
  {Create Backlight (GPIO) Device}
  Backlight:=STMPE610GPIOCreate(nil,SPI,I2C_ADDRESS_INVALID,TouchSelect,nil); {IRQ not available for GPIO}
  if Backlight = nil then Exit;
@@ -346,21 +346,21 @@ begin
   try
    {Setup Display RST (Reset)}
    RST:=GPIO_INFO_UNKNOWN;
-   
+
    {Setup Display DC (Data/Command)}
    DC.GPIO:=GPIO;
    DC.Pin:=PITFT28_LCD_DC;
    DC.Func:=GPIO_FUNCTION_OUT;
    DC.Pull:=GPIO_PULL_NONE;
    DC.Trigger:=GPIO_TRIGGER_UNKNOWN;
-   
+
    {Setup Display BL (Backlight)}
    BL.GPIO:=Backlight;
    BL.Pin:=PITFT28_LCD_BL;
    BL.Func:=GPIO_FUNCTION_OUT;
    BL.Pull:=GPIO_PULL_NONE;
    BL.Trigger:=GPIO_TRIGGER_UNKNOWN;
-   
+
    {Create Framebuffer Device}
    Framebuffer:=ILI9340FramebufferCreate(SPI,DisplaySelect,PITFT28_FRAMEBUFFER_DESCRIPTION,Rotation,PITFT28_SCREEN_WIDTH,PITFT28_SCREEN_HEIGHT,@RST,@DC,@BL);
    if Framebuffer = nil then Exit;
@@ -368,7 +368,7 @@ begin
     {Create PiTFT28}
     PiTFT28LCD:=AllocMem(SizeOf(TPiTFT28LCD));
     if PiTFT28LCD = nil then Exit;
-    
+
     {Update PiTFT28}
     PiTFT28LCD.Signature:=PITFT28_SIGNATURE;
     PiTFT28LCD.Rotation:=Rotation;
@@ -377,10 +377,10 @@ begin
     PiTFT28LCD.Touch:=Touch;
     PiTFT28LCD.Backlight:=Backlight;
     PiTFT28LCD.Framebuffer:=Framebuffer;
-    
+
     {Return Result}
     Result:=THandle(PiTFT28LCD);
-    
+
     {Check Default}
     if PiTFT28Default = INVALID_HANDLE_VALUE then
      begin
@@ -505,7 +505,7 @@ begin
    PiTFT28LCD.Touch:=Touch;
    PiTFT28LCD.Backlight:=nil;
    PiTFT28LCD.Framebuffer:=Framebuffer;
-    
+
    {Return Result}
    Result:=THandle(PiTFT28LCD);
 
@@ -533,7 +533,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Handle:=PiTFT28Default;
  if Handle = INVALID_HANDLE_VALUE then Exit;
@@ -542,7 +542,7 @@ begin
  PiTFT28LCD:=PPiTFT28LCD(Handle);
  if PiTFT28LCD = nil then Exit;
  if PiTFT28LCD.Signature <> PITFT28_SIGNATURE then Exit;
- 
+
  {Check Framebuffer Device}
  if PiTFT28LCD.Framebuffer <> nil then
   begin
@@ -551,7 +551,7 @@ begin
     begin
      {Update PiTFT28}
      PiTFT28LCD.Framebuffer:=nil;
- 
+
      {Check Touch Device}
      if PiTFT28LCD.Touch <> nil then
       begin
@@ -599,7 +599,7 @@ begin
     end;
   end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {PiTFT28 Functions}
@@ -613,9 +613,9 @@ end;
 
 initialization
  PiTFT28Init;
- 
+
 {==============================================================================}
- 
+
 {finalization}
  {Nothing}
 

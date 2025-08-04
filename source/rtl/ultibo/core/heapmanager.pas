@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -37,38 +37,38 @@ Heap Manager
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit HeapManager; 
+unit HeapManager;
 
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes;
-                     
+
 //To Do //Look for:
 
 //Critical
-             
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-             
+
 {==============================================================================}
 const
  {Heap specific constants}
  {$IFDEF CPU64}
- HEAP_MIN_BLOCK     = 57;   {SizeOf(THeapBlock) + 1} 
+ HEAP_MIN_BLOCK     = 57;   {SizeOf(THeapBlock) + 1}
  {$ELSE CPU64}
- HEAP_MIN_BLOCK     = 33;   {SizeOf(THeapBlock) + 1} 
+ HEAP_MIN_BLOCK     = 33;   {SizeOf(THeapBlock) + 1}
  {$ENDIF CPU64}
  HEAP_MIN_ALIGN     = 64;   {SizeOf(THeapBlock) * 2} {Must be greater than or equal to HEAP_MIN_BLOCK, must be a power of 2}
- 
+
  {Heap Signature}
  HEAP_SIGNATURE      = $E84DF600;
  HEAP_SIGNATURE_MASK = $FFFFFF00;
- 
+
  {Heap Block States}
  HEAP_STATE_FREE = 0;
  HEAP_STATE_USED = 1;
- 
+
  HEAP_STATE_MASK = $000000FF;
  HEAP_STATE_ALL  = 2; {Only for use by GetHeapBlockCount/GetHeapBlockMin/GetHeapBlockMax}
 
@@ -84,12 +84,12 @@ const
  HEAP_FLAG_IRQ        = $00000080; {An IRQ allocatable memory block}
  HEAP_FLAG_FIQ        = $00000100; {An FIQ allocatable memory block}
  HEAP_FLAG_RECLAIM    = $00000200; {A reclaimable memory block (eg Disk Cache)(with a registered callback to reclaim as required for normal memory)}
- 
+
  HEAP_FLAG_CUSTOM     = $08000000; {A custom flag reserved for non standard uses}
- 
+
  HEAP_FLAG_ALL        = $FFFFFFFF; {Only for use by GetHeapBlockCount/GetHeapBlockMin/GetHeapBlockMax}
  HEAP_FLAG_INVALID    = $FFFFFFFF; {Return value from MemFlags/IRQ/FIQ on invalid}
- 
+
  {Heap Small Blocks}
  {$IFDEF CPU64}
  HEAP_SMALL_MIN   = 56; {SizeOf(THeapBlock)} {Minimum size of a small heap block}
@@ -99,15 +99,15 @@ const
  HEAP_SMALL_MAX   = SIZE_4K;                 {Maximum size of a small heap block}
  HEAP_SMALL_ALIGN = 4;  {SizeOf(LongWord);}  {Alignment for small heap blocks}
  HEAP_SMALL_SHIFT = 2;  {Size to Index conversion (Divide by 4)}
- 
+
  HEAP_SMALL_LOW  = (HEAP_SMALL_MIN div HEAP_SMALL_ALIGN); {8 (32-bit) / 14 (64-bit)}
  HEAP_SMALL_HIGH = (HEAP_SMALL_MAX div HEAP_SMALL_ALIGN); {1024}
- 
+
 {==============================================================================}
 type
  {Heap specific types}
  THeapCallback = function(Size:PtrUInt):LongWord;
- 
+
  PHeapBlock = ^THeapBlock;
  THeapBlock = record
   Size:PtrUInt;           {Size of the Heap Block (including the size of this structure)}
@@ -119,12 +119,12 @@ type
   PrevLink:PHeapBlock;    {Previous Free/Used Block in list}
   NextLink:PHeapBlock;    {Next Free/Used Block in list}
  end;
- 
+
  PSmallBlocks = ^TSmallBlocks;
  TSmallBlocks = array[HEAP_SMALL_LOW..HEAP_SMALL_HIGH] of PHeapBlock; {8..1024 (32-bit) / 14..1024 (64-bit)}
- 
+
  PHeapLock = ^THeapLock;
- THeapLock = record 
+ THeapLock = record
   Lock:THandle;
   IRQLock:THandle;
   FIQLock:THandle;
@@ -135,14 +135,14 @@ type
   AcquireFIQLock:function(Handle:THandle):LongWord;
   ReleaseFIQLock:function(Handle:THandle):LongWord;
  end;
- 
+
  {$IFDEF HEAP_STATISTICS}
  PHeapStatistics = ^THeapStatistics;
- THeapStatistics = record 
+ THeapStatistics = record
   {Get/Alloc/Realloc}
-  GetCount:LongWord;  
-  AllocCount:LongWord; 
-  ReallocCount:LongWord;  
+  GetCount:LongWord;
+  AllocCount:LongWord;
+  ReallocCount:LongWord;
   GetAlignedCount:LongWord;
   AllocAlignedCount:LongWord;
   ReallocAlignedCount:LongWord;
@@ -171,18 +171,18 @@ type
   AllocFIQCount:LongWord;
   ReallocFIQCount:LongWord;
   {Free}
-  FreeCount:LongWord;  
-  FreeIRQCount:LongWord;  
-  FreeFIQCount:LongWord;  
-  FreeSizeCount:LongWord; 
+  FreeCount:LongWord;
+  FreeIRQCount:LongWord;
+  FreeFIQCount:LongWord;
+  FreeSizeCount:LongWord;
   {Size}
-  SizeCount:LongWord;   
-  SizeIRQCount:LongWord;   
-  SizeFIQCount:LongWord;   
+  SizeCount:LongWord;
+  SizeIRQCount:LongWord;
+  SizeFIQCount:LongWord;
   {Flags}
-  FlagsCount:LongWord;   
-  FlagsIRQCount:LongWord;   
-  FlagsFIQCount:LongWord;   
+  FlagsCount:LongWord;
+  FlagsIRQCount:LongWord;
+  FlagsFIQCount:LongWord;
   {Register}
   RegisterCount:LongWord;
   {Reserve}
@@ -199,35 +199,35 @@ type
   RequestFIQCount:LongWord;
   {Get Internal}
   GetZeroCount:LongWord;
-  GetRemainCount:LongWord; 
-  GetInvalidCount:LongWord; 
-  GetUnavailableCount:LongWord; 
-  GetAddFailCount:LongWord; 
-  GetSplitFailCount:LongWord; 
-  GetRemoveFailCount:LongWord; 
+  GetRemainCount:LongWord;
+  GetInvalidCount:LongWord;
+  GetUnavailableCount:LongWord;
+  GetAddFailCount:LongWord;
+  GetSplitFailCount:LongWord;
+  GetRemoveFailCount:LongWord;
   {Realloc Internal}
   ReallocZeroCount:LongWord;
-  ReallocSmallerCount:LongWord; 
-  ReallocLargerCount:LongWord; 
-  ReallocReleaseCount:LongWord; 
-  ReallocReleaseBytes:LongWord; 
+  ReallocSmallerCount:LongWord;
+  ReallocLargerCount:LongWord;
+  ReallocReleaseCount:LongWord;
+  ReallocReleaseBytes:LongWord;
   ReallocAddFailCount:LongWord;
   ReallocSplitFailCount:LongWord;
   ReallocRemoveFailCount:LongWord;
   {GetAligned Internal}
   GetAlignedZeroCount:LongWord;
   GetAlignedRemainCount:LongWord;
-  GetAlignedInvalidCount:LongWord; 
+  GetAlignedInvalidCount:LongWord;
   GetAlignedUndersizeCount:LongWord;
-  GetAlignedUnavailableCount:LongWord; 
-  GetAlignedAddFailCount:LongWord; 
-  GetAlignedSplitFailCount:LongWord; 
-  GetAlignedRemoveFailCount:LongWord; 
+  GetAlignedUnavailableCount:LongWord;
+  GetAlignedAddFailCount:LongWord;
+  GetAlignedSplitFailCount:LongWord;
+  GetAlignedRemoveFailCount:LongWord;
   GetAlignedReleaseCount:LongWord;
   GetAlignedReleaseBytes:LongWord;
   {Free Internal}
   FreeInvalidCount:LongWord;
-  FreeAddFailCount:LongWord; 
+  FreeAddFailCount:LongWord;
   FreeMergeFailCount:LongWord;
   FreeRemoveFailCount:LongWord;
   {Size Internal}
@@ -265,9 +265,9 @@ type
   SmallUnavailableCount:LongWord;
  end;
  {$ENDIF}
- 
+
  PHeapSnapshot = ^THeapSnapshot;
- THeapSnapshot = record 
+ THeapSnapshot = record
   {Snapshot Properties}
   Address:PtrUInt;        {Address of the Heap Block}
   Size:PtrUInt;           {Size of the Heap Block (including the size of the THeapBlock structure)}
@@ -277,11 +277,11 @@ type
   {Internal Properties}
   Next:PHeapSnapshot;     {Next entry in Heap snapshot}
  end;
- 
+
 {==============================================================================}
 {var}
  {Heap specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure RegisterMemoryManager;
@@ -462,7 +462,7 @@ function RemoveFreeFIQBlock(Block:PHeapBlock):Boolean;
 {==============================================================================}
 {RTL Heap Manager Functions}
 function SysGetMem(Size:PtrUInt):Pointer; inline;
-  
+
 function SysFreeMem(Addr:Pointer):PtrUInt;
 function SysFreeMemSize(Addr:Pointer;Size:PtrUInt):PtrUInt;
 
@@ -470,12 +470,12 @@ function SysAllocMem(Size:PtrUInt):Pointer;
 function SysReAllocMem(var Addr:Pointer;Size:PtrUInt):Pointer; inline;
 
 function SysSizeMem(Addr:Pointer):PtrUInt;
-  
+
 procedure SysInitThread;
 procedure SysDoneThread;
 
 procedure SysRelocateHeap;
-  
+
 function SysGetHeapStatus:THeapStatus;
 function SysGetFPCHeapStatus:TFPCHeapStatus;
 
@@ -491,7 +491,7 @@ procedure AcquireHeapFIQLock; inline;
 procedure ReleaseHeapFIQLock; inline;
 
 procedure RegisterHeapLock(const Lock:THeapLock);
-  
+
 function HeapStateToString(State:LongWord):String;
 
 {==============================================================================}
@@ -505,13 +505,13 @@ const
   AllocMem:@SysAllocMem;
   ReAllocMem:@SysReAllocMem;
   MemSize:@SysSizeMem;
-  InitThread:@SysInitThread; 
-  DoneThread:@SysDoneThread; 
-  RelocateHeap:nil; // Nothing 
+  InitThread:@SysInitThread;
+  DoneThread:@SysDoneThread;
+  RelocateHeap:nil; // Nothing
   GetHeapStatus:@SysGetHeapStatus;
   GetFPCHeapStatus:@SysGetFPCHeapStatus;
  );
-     
+
 {==============================================================================}
 {==============================================================================}
 
@@ -522,28 +522,28 @@ implementation
 var
  {Heap specific variables}
  HeapInitialized:Boolean;
- 
+
  HeapBlocks:PHeapBlock = nil;
  FreeBlocks:PHeapBlock = nil;
  UsedBlocks:PHeapBlock = nil;
  SmallBlocks:TSmallBlocks;
- 
+
  IRQBlocks:PHeapBlock = nil;
  FreeIRQBlocks:PHeapBlock = nil;
  SmallIRQBlocks:TSmallBlocks;
- 
+
  FIQBlocks:PHeapBlock = nil;
  FreeFIQBlocks:PHeapBlock = nil;
  SmallFIQBlocks:TSmallBlocks;
- 
+
  HeapLock:THeapLock;
- 
+
  HeapStatus:THeapStatus;
  FPCHeapStatus:TFPCHeapStatus;
  {$IFDEF HEAP_STATISTICS}
  HeapStatistics:THeapStatistics;
  {$ENDIF}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -551,7 +551,7 @@ procedure RegisterMemoryManager;
 begin
  {}
  if HeapInitialized then Exit;
- 
+
  {Initialize Heap Lock}
  FillChar(HeapLock,SizeOf(THeapLock),0);
  HeapLock.Lock:=INVALID_HANDLE_VALUE;
@@ -563,26 +563,26 @@ begin
  HeapLock.ReleaseIRQLock:=nil;
  HeapLock.AcquireFIQLock:=nil;
  HeapLock.ReleaseFIQLock:=nil;
- 
+
  {Initialize Status and Statistics}
  FillChar(HeapStatus,SizeOf(THeapStatus),0);
  FillChar(FPCHeapStatus,SizeOf(TFPCHeapStatus),0);
  {$IFDEF HEAP_STATISTICS}
  FillChar(HeapStatistics,SizeOf(THeapStatistics),0);
  {$ENDIF}
- 
+
  {Register the RTL Memory Manager}
  SetMemoryManager(MyMemoryManager);
- 
+
  {Register the RTL Heap Block}
  RegisterHeapBlock(@RtlHeapAddr,RtlHeapSize);
- 
+
  //To Do //Should we set ReturnNilIfGrowHeapFails to True so that failed allocations do not generate a Runtime error ?
                        //Is it relevant to us at all ?
                        //See other notes in HeapManager.pas regarding memory manager etc
- 
+
  HeapInitialized:=True;
-end;     
+end;
 
 {==============================================================================}
 
@@ -597,7 +597,7 @@ begin
   {Update Heap Statistics}
   Inc(HeapStatistics.RegisterCount);
   {$ENDIF}
-  
+
   {Check Size}
   if Size < HEAP_MIN_BLOCK then
    begin
@@ -607,8 +607,8 @@ begin
     {$ENDIF}
     Exit;
    end;
-  
-  {Create Block} 
+
+  {Create Block}
   Block:=PHeapBlock(Address);
   Block^.Size:=Size;
   Block^.State:=HEAP_SIGNATURE + HEAP_STATE_FREE;
@@ -616,7 +616,7 @@ begin
   Block^.Affinity:=CPU_AFFINITY_NONE;
   Block^.PrevLink:=nil;
   Block^.NextLink:=nil;
-  
+
   {Get Block}
   if GetHeapBlock(Block) <> nil then
    begin
@@ -626,7 +626,7 @@ begin
     {$ENDIF}
     Exit;
    end;
-   
+
   {Add Block}
   if not AddHeapBlock(Block) then
    begin
@@ -646,20 +646,20 @@ begin
     {$ENDIF}
     Exit;
    end;
-   
+
   {Update Heap Status}
   Inc(HeapStatus.TotalAddrSpace,Size);
   Inc(HeapStatus.TotalUncommitted,Size);
   Inc(HeapStatus.TotalFree,Size);
   Inc(HeapStatus.Unused,Size);
- 
+
   {Update FPC Heap Status}
   Inc(FPCHeapStatus.CurrHeapSize,Size);
   Inc(FPCHeapStatus.CurrHeapFree,Size);
   if FPCHeapStatus.CurrHeapSize > FPCHeapStatus.MaxHeapSize then FPCHeapStatus.MaxHeapSize:=FPCHeapStatus.CurrHeapSize;
  finally
-  ReleaseHeapLock; 
- end;      
+  ReleaseHeapLock;
+ end;
 end;
 
 {==============================================================================}
@@ -669,9 +669,9 @@ function ReserveHeapBlock(Address:Pointer;Size:PtrUInt):Pointer;
 
  Address is the starting address for the reservation but the memory manager may
  reserve a block that starts prior to the supplied address for alignment purposes.
- 
- Size is the total size in byte to be reserved, the memory manager may increase 
- the amount reserved to cater for alignment or to prevent orphan blocks. 
+
+ Size is the total size in byte to be reserved, the memory manager may increase
+ the amount reserved to cater for alignment or to prevent orphan blocks.
  Size must be greater than 0.
 
  The return is a pointer to the actual reserved memory which may differ from the
@@ -680,14 +680,14 @@ function ReserveHeapBlock(Address:Pointer;Size:PtrUInt):Pointer;
 var
  Block:PHeapBlock;
  Split:PHeapBlock;
- 
+
  Offset:PtrUInt;
  BlockSize:PtrUInt;
  BlockAddress:Pointer;
 begin
  {}
  Result:=nil;
- 
+
  AcquireHeapLock;
  try
   {$IFDEF HEAP_STATISTICS}
@@ -707,7 +707,7 @@ begin
 
   {Determine Size}
   BlockSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
-  
+
   {Determine Address}
   BlockAddress:=Align(Address,HEAP_MIN_ALIGNMENT) - SizeOf(THeapBlock);
 
@@ -727,7 +727,7 @@ begin
         {$ENDIF}
         Exit;
        end;
-       
+
       {Find Start}
       Offset:=(PtrUInt(BlockAddress) - PtrUInt(Block));
       if Offset > 0 then
@@ -744,7 +744,7 @@ begin
             {$ENDIF}
             Exit;
            end;
-          
+
           {Add Free Block}
           if not AddFreeBlock(Block) then
            begin
@@ -754,7 +754,7 @@ begin
             {$ENDIF}
             Exit;
            end;
-          
+
           {Use Split Block}
           Block:=Split;
          end
@@ -762,8 +762,8 @@ begin
          begin
           Inc(BlockSize,Offset);
          end;
-       end; 
-      
+       end;
+
       {Find End}
       Offset:=(Block^.Size - BlockSize);
       if Offset > 0 then
@@ -780,7 +780,7 @@ begin
             {$ENDIF}
             Exit;
            end;
-          
+
           {Add Free Block}
           if not AddFreeBlock(Split) then
            begin
@@ -796,7 +796,7 @@ begin
           BlockSize:=Block^.Size;
          end;
        end;
-       
+
       {Add Used Block}
       if not AddUsedBlock(Block) then
        begin
@@ -806,16 +806,16 @@ begin
         {$ENDIF}
         Exit;
        end;
-       
+
       {Update Heap Status}
       {Free}
       Dec(HeapStatus.TotalUncommitted,BlockSize);
       Dec(HeapStatus.TotalFree,BlockSize);
       Dec(HeapStatus.Unused,BlockSize);
-      {Used}  
+      {Used}
       Inc(HeapStatus.TotalCommitted,BlockSize);
       Inc(HeapStatus.TotalAllocated,BlockSize);
-       
+
       {Update FPC Heap Status}
       {Free}
       Dec(FPCHeapStatus.CurrHeapFree,BlockSize);
@@ -823,7 +823,7 @@ begin
       Inc(FPCHeapStatus.CurrHeapUsed,BlockSize);
       {Max}
       if FPCHeapStatus.CurrHeapUsed > FPCHeapStatus.MaxHeapUsed then FPCHeapStatus.MaxHeapUsed:=FPCHeapStatus.CurrHeapUsed;
-      
+
       {Return Result}
       Result:=Pointer(PtrUInt(Block) + SizeOf(THeapBlock));
      end
@@ -833,7 +833,7 @@ begin
       {Update Heap Statistics}
       Inc(HeapStatistics.ReserveUnavailableCount);
       {$ENDIF}
-     end; 
+     end;
    end
   else
    begin
@@ -844,7 +844,7 @@ begin
    end;
  finally
   ReleaseHeapLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -853,16 +853,16 @@ function RequestHeapBlock(Hint:Pointer;Size:PtrUInt;Flags,Affinity:LongWord):Poi
 {Request registration a Heap Block with specified flags and affinity within an existing block.
 
  Hint provides the requested base address of the heap block but may be overridden
- by the memory manager if the block is already partially or fully allocated, pass nil 
+ by the memory manager if the block is already partially or fully allocated, pass nil
  if any heap block is suitable.
- 
+
  Size provides the requested size of the heap block. Size must be a power of 2
  and both Hint and the returned pointer must be aligned on a multiple of HEAP_REQUEST_ALIGNMENT.
 
  Flags provides the heap block flags such as shared, local, code, device, nocache etc.
- 
+
  Affinity provides the processor affinity mask, a mask of 0 indicates no specific processor.
- 
+
  The return is the heap block that has been registered or nil if the request failed.}
 {Note: To allocate this memory use GetMemEx / AllocMemEx etc}
 {Note: The return value points directly to the heap block, to access the memory referenced
@@ -871,7 +871,7 @@ var
  Offset:PtrUInt;
  Block:PHeapBlock;
  Split:PHeapBlock;
- 
+
  Mask:PtrUInt;
  Aligned:PtrUInt;
 begin
@@ -894,10 +894,10 @@ begin
     {$ENDIF}
     Exit;
    end;
-   
+
   {Check Affinity}
   {Done by Caller}
-  
+
   {Check Size}
   if Size < HEAP_MIN_BLOCK then
    begin
@@ -917,7 +917,7 @@ begin
     {$ENDIF}
     Exit;
    end;
-  
+
   {Check Alignment}
   if HEAP_REQUEST_ALIGNMENT = 0 then
    begin
@@ -927,9 +927,9 @@ begin
     {$ENDIF}
     Exit;
    end;
-   
+
   {Check Hint}
-  Mask:=(HEAP_REQUEST_ALIGNMENT - 1); 
+  Mask:=(HEAP_REQUEST_ALIGNMENT - 1);
   if (PtrUInt(Hint) and Mask) <> 0 then
    begin
     {$IFDEF HEAP_STATISTICS}
@@ -938,7 +938,7 @@ begin
     {$ENDIF}
     Exit;
    end;
-   
+
   {Check Hint}
   Block:=nil;
   if Hint <> nil then
@@ -965,7 +965,7 @@ begin
               {$ENDIF}
               Exit;
              end;
-             
+
             {Split Block}
             Split:=SplitHeapBlock(Block,Offset);
             if Split = nil then
@@ -976,7 +976,7 @@ begin
               {$ENDIF}
               Exit;
              end;
-            
+
             {Add Free Block}
             if not AddFreeBlock(Block) then
              begin
@@ -986,7 +986,7 @@ begin
               {$ENDIF}
               Exit;
              end;
-             
+
             {Add Free Block}
             if not AddFreeBlock(Split) then
              begin
@@ -996,17 +996,17 @@ begin
               {$ENDIF}
               Exit;
              end;
-             
+
             {Get Block}
-            Block:=Split;            
+            Block:=Split;
            end
           else
            begin
             {Find a Free Block}
             Block:=nil;
-           end;           
+           end;
          end;
-         
+
         {Find End}
         if Block <> nil then
          begin
@@ -1024,7 +1024,7 @@ begin
                 {$ENDIF}
                 Exit;
                end;
-               
+
               {Split Block}
               Split:=SplitHeapBlock(Block,Size);
               if Split = nil then
@@ -1035,7 +1035,7 @@ begin
                 {$ENDIF}
                 Exit;
                end;
-              
+
               {Add Free Block}
               if not AddFreeBlock(Block) then
                begin
@@ -1045,7 +1045,7 @@ begin
                 {$ENDIF}
                 Exit;
                end;
-             
+
               {Add Free Block}
               if not AddFreeBlock(Split) then
                begin
@@ -1060,48 +1060,48 @@ begin
              begin
               {Find a Free Block}
               Block:=nil;
-             end;           
+             end;
            end;
-        
+
           {Update Block}
           if Block <> nil then
            begin
             Block^.Flags:=Flags;
             Block^.Affinity:=Affinity;
-            
+
             {Return Result}
             Result:=Block;
-           end; 
-         end; 
+           end;
+         end;
        end
       else
        begin
         {Find a Free Block}
         Block:=nil;
-       end;       
+       end;
      end
     else
      begin
       {Find a Free Block}
       Block:=nil;
-     end;     
+     end;
    end;
-  
+
   {Check Block}
   if Block = nil then
-   begin  
+   begin
     {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
     if Hint <> nil then Inc(HeapStatistics.RequestUnavailableCount);
     {$ENDIF}
-    
+
     {Find Free (Also checks Flags and Affinity)}
     Block:=FindFreeBlock(Size);
     if Block <> nil then
      begin
       {Get Aligned}
-      Aligned:=Align(PtrUInt(Block),HEAP_REQUEST_ALIGNMENT); 
-      
+      Aligned:=Align(PtrUInt(Block),HEAP_REQUEST_ALIGNMENT);
+
       {Find Start}
       Offset:=(PtrUInt(Aligned) - PtrUInt(Block));
       if Offset > 0 then
@@ -1117,7 +1117,7 @@ begin
             {$ENDIF}
             Exit;
            end;
-      
+
           {Split Block}
           Split:=SplitHeapBlock(Block,Offset);
           if Split = nil then
@@ -1128,7 +1128,7 @@ begin
             {$ENDIF}
             Exit;
            end;
-            
+
           {Add Free Block}
           if not AddFreeBlock(Block) then
            begin
@@ -1138,7 +1138,7 @@ begin
             {$ENDIF}
             Exit;
            end;
-             
+
           {Add Free Block}
           if not AddFreeBlock(Split) then
            begin
@@ -1148,9 +1148,9 @@ begin
             {$ENDIF}
             Exit;
            end;
-          
+
           {Get Block}
-          Block:=Split;            
+          Block:=Split;
          end
         else
          begin
@@ -1159,9 +1159,9 @@ begin
           Inc(HeapStatistics.RequestUnavailableCount);
           {$ENDIF}
           Exit;
-         end;           
+         end;
        end;
-      
+
       {Find End}
       if Block <> nil then
        begin
@@ -1179,7 +1179,7 @@ begin
               {$ENDIF}
               Exit;
              end;
-             
+
             {Split Block}
             Split:=SplitHeapBlock(Block,Size);
             if Split = nil then
@@ -1190,7 +1190,7 @@ begin
               {$ENDIF}
               Exit;
              end;
-             
+
             {Add Free Block}
             if not AddFreeBlock(Block) then
              begin
@@ -1200,7 +1200,7 @@ begin
               {$ENDIF}
               Exit;
              end;
-             
+
             {Add Free Block}
             if not AddFreeBlock(Split) then
              begin
@@ -1218,19 +1218,19 @@ begin
             Inc(HeapStatistics.RequestUnavailableCount);
             {$ENDIF}
             Exit;
-           end;           
+           end;
          end;
-        
+
         {Update Block}
         if Block <> nil then
          begin
           Block^.Flags:=Flags;
           Block^.Affinity:=Affinity;
-            
+
           {Return Result}
           Result:=Block;
-         end; 
-       end; 
+         end;
+       end;
      end
     else
      begin
@@ -1238,43 +1238,43 @@ begin
       {Update Heap Statistics}
       Inc(HeapStatistics.RequestUnavailableCount);
       {$ENDIF}
-     end;     
-   end;   
+     end;
+   end;
  finally
-  ReleaseHeapLock; 
- end;      
+  ReleaseHeapLock;
+ end;
 end;
 
 {==============================================================================}
 
 function RequestSharedHeapBlock(Hint:Pointer;Size:PtrUInt):Pointer;
 {Request registration of a Shared Heap Block within an existing block.
- 
+
  Hint provides the requested base address of the shared heap block but may be overridden
- by the memory manager if the block is already partially or fully allocated, pass nil 
+ by the memory manager if the block is already partially or fully allocated, pass nil
  if any heap block is suitable.
- 
+
  Size provides the requested size of the heap block. Size must be a power of 2
  and both Hint and the returned pointer must be aligned on a multiple of HEAP_REQUEST_ALIGNMENT.
- 
+
  The return is the heap block that has been marked as shared or nil if the request failed.
  (The memory management unit should mark this region of memory as sharable)}
 {Note: To allocate shared memory use GetSharedMem / AllocSharedMem etc}
 {Note: The return value points directly to the heap block, to access the memory referenced
        by the heap block you must add SizeOf(THeapBlock) to this value}
 var
- Flags:LongWord;       
+ Flags:LongWord;
 begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.RequestSharedCount);
  {$ENDIF}
- 
+
  {Get Flags}
  Flags:=HEAP_FLAG_SHARED;
  //if HEAP_NORMAL_SHARED then Flags:=HEAP_FLAG_NORMAL; //To Do //Critical //Need to modify RequestHeapBlock //Should also do HEAP_NORMAL_DEVICE/HEAP_NORMAL_NOCACHE/HEAP_NORMAL_NONSHARED etc
- 
+
  {Request Heap Block}
  Result:=RequestHeapBlock(Hint,Size,Flags,CPU_AFFINITY_NONE);
 end;
@@ -1283,16 +1283,16 @@ end;
 
 function RequestLocalHeapBlock(Hint:Pointer;Size:PtrUInt;Affinity:LongWord):Pointer;
 {Request registration of a Local Heap Block within an existing block.
- 
+
  Hint provides a requested base address of the local heap block but may be overridden
- by the memory manager if the block is already partially or fully allocated, pass nil 
+ by the memory manager if the block is already partially or fully allocated, pass nil
  if any heap block is suitable.
- 
+
  Size provides the requested size of the heap block. Size must be a power of 2
  and both Hint and the returned pointer must be aligned on a multiple of HEAP_REQUEST_ALIGNMENT.
- 
+
  Affinity provides the processor affinity mask, a mask of 0 indicates no specific processor.
- 
+
  The return is the heap block that has been marked as local or nil if the request failed
  (The memory management unit should mark this region of memory as local or non global)}
 {Note: To allocate local memory use GetLocalMem / AllocLocalMem etc}
@@ -1304,7 +1304,7 @@ begin
  {Update Heap Statistics}
  Inc(HeapStatistics.RequestLocalCount);
  {$ENDIF}
- 
+
  {Check Affinity}
  if (Affinity = CPU_AFFINITY_ALL) or (Affinity = CPU_AFFINITY_NONE) or ((Affinity and not(CPU_MASK)) <> 0) then
   begin
@@ -1314,7 +1314,7 @@ begin
    {$ENDIF}
    Exit;
   end;
- 
+
  {Request Heap Block}
  Result:=RequestHeapBlock(Hint,Size,HEAP_FLAG_LOCAL,Affinity);
 end;
@@ -1323,16 +1323,16 @@ end;
 
 function RequestCodeHeapBlock(Hint:Pointer;Size:PtrUInt;Affinity:LongWord):Pointer;
 {Request registration of a Code Heap Block within an existing block.
- 
+
  Hint provides a requested base address of the code heap block but may be overridden
- by the memory manager if the block is already partially or fully allocated, pass nil 
+ by the memory manager if the block is already partially or fully allocated, pass nil
  if any heap block is suitable.
- 
+
  Size provides the requested size of the heap block. Size must be a power of 2
  and both Hint and the returned pointer must be aligned on a multiple of HEAP_REQUEST_ALIGNMENT.
- 
+
  Affinity provides the processor affinity mask, a mask of 0 indicates no specific processor.
- 
+
  The return is the heap block that has been marked as code or nil if the request failed
  (The memory management unit should mark this region of memory as executable)}
 {Note: To allocate code memory use GetCodeMem / AllocCodeMem etc}
@@ -1354,7 +1354,7 @@ begin
    {$ENDIF}
    Exit;
   end;
- 
+
  {Request Heap Block}
  Result:=RequestHeapBlock(Hint,Size,HEAP_FLAG_LOCAL,Affinity);
 end;
@@ -1363,14 +1363,14 @@ end;
 
 function RequestDeviceHeapBlock(Hint:Pointer;Size:PtrUInt):Pointer;
 {Request registration of a Device Heap Block within an existing block.
- 
+
  Hint provides the requested base address of the device heap block but may be overridden
- by the memory manager if the block is already partially or fully allocated, pass nil 
+ by the memory manager if the block is already partially or fully allocated, pass nil
  if any heap block is suitable.
- 
+
  Size provides the requested size of the heap block. Size must be a power of 2
  and both Hint and the returned pointer must be aligned on a multiple of HEAP_REQUEST_ALIGNMENT.
- 
+
  The return is the heap block that has been marked as device or nil if the request failed.
  (The memory management unit should mark this region of memory as sharable)}
 {Note: To allocate device memory use GetDeviceMem / AllocDeviceMem etc}
@@ -1382,7 +1382,7 @@ begin
  {Update Heap Statistics}
  Inc(HeapStatistics.RequestDeviceCount);
  {$ENDIF}
- 
+
  {Request Heap Block}
  Result:=RequestHeapBlock(Hint,Size,HEAP_FLAG_DEVICE,CPU_AFFINITY_NONE);
 end;
@@ -1391,14 +1391,14 @@ end;
 
 function RequestNoCacheHeapBlock(Hint:Pointer;Size:PtrUInt):Pointer;
 {Request registration of a Non Cached Heap Block within an existing block.
- 
+
  Hint provides the requested base address of the non cached heap block but may be overridden
- by the memory manager if the block is already partially or fully allocated, pass nil 
+ by the memory manager if the block is already partially or fully allocated, pass nil
  if any heap block is suitable.
- 
+
  Size provides the requested size of the heap block. Size must be a power of 2
  and both Hint and the returned pointer must be aligned on a multiple of HEAP_REQUEST_ALIGNMENT.
- 
+
  The return is the heap block that has been marked as non cached or nil if the request failed.
  (The memory management unit should mark this region of memory as sharable)}
 {Note: To allocate non cached memory use GetNoCacheMem / AllocNoCacheMem etc}
@@ -1410,7 +1410,7 @@ begin
  {Update Heap Statistics}
  Inc(HeapStatistics.RequestNoCacheCount);
  {$ENDIF}
- 
+
  {Request Heap Block}
  Result:=RequestHeapBlock(Hint,Size,HEAP_FLAG_NOCACHE,CPU_AFFINITY_NONE);
 end;
@@ -1419,14 +1419,14 @@ end;
 
 function RequestNonSharedHeapBlock(Hint:Pointer;Size:PtrUInt):Pointer;
 {Request registration of a Non Shared Heap Block within an existing block.
- 
+
  Hint provides the requested base address of the non shared heap block but may be overridden
- by the memory manager if the block is already partially or fully allocated, pass nil 
+ by the memory manager if the block is already partially or fully allocated, pass nil
  if any heap block is suitable.
- 
+
  Size provides the requested size of the heap block. Size must be a power of 2
  and both Hint and the returned pointer must be aligned on a multiple of HEAP_REQUEST_ALIGNMENT.
- 
+
  The return is the heap block that has been marked as non shared or nil if the request failed.
  (The memory management unit should mark this region of memory as sharable)}
 {Note: To allocate non shared memory use GetNonSharedMem / AllocNonSharedMem etc}
@@ -1438,7 +1438,7 @@ begin
  {Update Heap Statistics}
  Inc(HeapStatistics.RequestNonSharedCount);
  {$ENDIF}
- 
+
  {Request Heap Block}
  Result:=RequestHeapBlock(Hint,Size,HEAP_FLAG_NONSHARED,CPU_AFFINITY_NONE);
 end;
@@ -1447,22 +1447,22 @@ end;
 
 function RequestIRQHeapBlock(Hint:Pointer;Size:PtrUInt;Affinity:LongWord):Pointer;
 {Request registration of an IRQ Heap Block within an existing block.
- 
+
  Hint provides a requested base address of the IRQ heap block but may be overridden
- by the memory manager if the block is already partially or fully allocated, pass nil 
+ by the memory manager if the block is already partially or fully allocated, pass nil
  if any heap block is suitable.
- 
+
  Size provides the requested size of the heap block. Size must be a power of 2
  and both Hint and the returned pointer must be aligned on a multiple of HEAP_REQUEST_ALIGNMENT.
- 
+
  Affinity provides the processor affinity mask, a mask of 0 indicates no specific processor.
- 
+
  The return is the heap block that has been marked as IRQ or nil if the request failed}
 {Note: To allocate IRQ memory use GetIRQMem / AllocIRQMem etc}
 {Note: The return value points directly to the heap block, to access the memory referenced
        by the heap block you must add SizeOf(THeapBlock) to this value}
 var
- Block:PHeapBlock;       
+ Block:PHeapBlock;
 begin
  {}
  {$IFDEF HEAP_STATISTICS}
@@ -1479,16 +1479,16 @@ begin
    {$ENDIF}
    Exit;
   end;
- 
+
  {Request Heap Block}
  Result:=RequestHeapBlock(Hint,Size,HEAP_FLAG_IRQ,Affinity);
- 
+
  {Check Result}
  if Result <> nil then
   begin
    AcquireHeapIRQLock;
    try
-    {Create Block} 
+    {Create Block}
     Block:=PHeapBlock(PtrUInt(PtrUInt(Result) + SizeOf(THeapBlock)));
     Block^.Size:=Size - SizeOf(THeapBlock);
     Block^.State:=HEAP_SIGNATURE + HEAP_STATE_FREE;
@@ -1496,7 +1496,7 @@ begin
     Block^.Affinity:=Affinity;
     Block^.PrevLink:=nil;
     Block^.NextLink:=nil;
-   
+
     {Get Block}
     if GetIRQBlock(Block) <> nil then
      begin
@@ -1506,7 +1506,7 @@ begin
       {$ENDIF}
       Exit;
      end;
-   
+
     {Add Block}
     if not AddIRQBlock(Block) then
      begin
@@ -1516,7 +1516,7 @@ begin
       {$ENDIF}
       Exit;
      end;
-   
+
     {Add Free Block}
     if not AddFreeIRQBlock(Block) then
      begin
@@ -1526,16 +1526,16 @@ begin
       {$ENDIF}
       Exit;
      end;
-   
+
     {Update Heap Status}
     {Free}
     Dec(HeapStatus.TotalUncommitted,SizeOf(THeapBlock));
     Dec(HeapStatus.TotalFree,SizeOf(THeapBlock));
     Dec(HeapStatus.Unused,SizeOf(THeapBlock));
-    {Used}  
+    {Used}
     Inc(HeapStatus.TotalCommitted,SizeOf(THeapBlock));
     Inc(HeapStatus.TotalAllocated,SizeOf(THeapBlock));
-   
+
     {Update FPC Heap Status}
     {Free}
     Dec(FPCHeapStatus.CurrHeapFree,SizeOf(THeapBlock));
@@ -1543,32 +1543,32 @@ begin
     Inc(FPCHeapStatus.CurrHeapUsed,SizeOf(THeapBlock));
     {Max}
     if FPCHeapStatus.CurrHeapUsed > FPCHeapStatus.MaxHeapUsed then FPCHeapStatus.MaxHeapUsed:=FPCHeapStatus.CurrHeapUsed;
-   finally 
+   finally
     ReleaseHeapIRQLock;
    end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
 function RequestFIQHeapBlock(Hint:Pointer;Size:PtrUInt;Affinity:LongWord):Pointer;
 {Request registration of an FIQ Heap Block within an existing block.
- 
+
  Hint provides a requested base address of the FIQ heap block but may be overridden
- by the memory manager if the block is already partially or fully allocated, pass nil 
+ by the memory manager if the block is already partially or fully allocated, pass nil
  if any heap block is suitable.
- 
+
  Size provides the requested size of the heap block. Size must be a power of 2
  and both Hint and the returned pointer must be aligned on a multiple of HEAP_REQUEST_ALIGNMENT.
- 
+
  Affinity provides the processor affinity mask, a mask of 0 indicates no specific processor.
- 
+
  The return is the heap block that has been marked as FIQ or nil if the request failed}
 {Note: To allocate FIQ memory use GetFIQMem / AllocFIQMem etc}
 {Note: The return value points directly to the heap block, to access the memory referenced
        by the heap block you must add SizeOf(THeapBlock) to this value}
 var
- Block:PHeapBlock;       
+ Block:PHeapBlock;
 begin
  {}
  {$IFDEF HEAP_STATISTICS}
@@ -1585,7 +1585,7 @@ begin
    {$ENDIF}
    Exit;
   end;
- 
+
  {Request Heap Block}
  Result:=RequestHeapBlock(Hint,Size,HEAP_FLAG_FIQ,Affinity);
 
@@ -1594,7 +1594,7 @@ begin
   begin
    AcquireHeapFIQLock;
    try
-    {Create Block} 
+    {Create Block}
     Block:=PHeapBlock(PtrUInt(PtrUInt(Result) + SizeOf(THeapBlock)));
     Block^.Size:=Size - SizeOf(THeapBlock);
     Block^.State:=HEAP_SIGNATURE + HEAP_STATE_FREE;
@@ -1602,7 +1602,7 @@ begin
     Block^.Affinity:=Affinity;
     Block^.PrevLink:=nil;
     Block^.NextLink:=nil;
-   
+
     {Get Block}
     if GetFIQBlock(Block) <> nil then
      begin
@@ -1622,7 +1622,7 @@ begin
       {$ENDIF}
       Exit;
      end;
-   
+
     {Add Free Block}
     if not AddFreeFIQBlock(Block) then
      begin
@@ -1632,16 +1632,16 @@ begin
       {$ENDIF}
       Exit;
      end;
-   
+
     {Update Heap Status}
     {Free}
     Dec(HeapStatus.TotalUncommitted,SizeOf(THeapBlock));
     Dec(HeapStatus.TotalFree,SizeOf(THeapBlock));
     Dec(HeapStatus.Unused,SizeOf(THeapBlock));
-    {Used}  
+    {Used}
     Inc(HeapStatus.TotalCommitted,SizeOf(THeapBlock));
     Inc(HeapStatus.TotalAllocated,SizeOf(THeapBlock));
-   
+
     {Update FPC Heap Status}
     {Free}
     Dec(FPCHeapStatus.CurrHeapFree,SizeOf(THeapBlock));
@@ -1649,10 +1649,10 @@ begin
     Inc(FPCHeapStatus.CurrHeapUsed,SizeOf(THeapBlock));
     {Max}
     if FPCHeapStatus.CurrHeapUsed > FPCHeapStatus.MaxHeapUsed then FPCHeapStatus.MaxHeapUsed:=FPCHeapStatus.CurrHeapUsed;
-   finally 
+   finally
     ReleaseHeapFIQLock;
    end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1668,7 +1668,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  AcquireHeapLock;
  try
   {$IFDEF HEAP_STATISTICS}
@@ -1685,7 +1685,7 @@ begin
     {$ENDIF}
     Size:=4;
    end;
-   
+
   {Check Flags}
   if (Flags and (HEAP_FLAG_IRQ or HEAP_FLAG_FIQ)) <> 0 then
    begin
@@ -1695,10 +1695,10 @@ begin
     {$ENDIF}
     Exit;
    end;
-  
+
   {Determine Size}
   AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
- 
+
   {Get Free Block}
   Block:=GetFreeBlockEx(AllocSize,Flags,Affinity);
   if Block = nil then
@@ -1709,7 +1709,7 @@ begin
     {$ENDIF}
     Exit;
    end;
- 
+
   {Remove Free Block}
   if not RemoveFreeBlock(Block) then
    begin
@@ -1719,7 +1719,7 @@ begin
     {$ENDIF}
     Exit;
    end;
-    
+
   {Determine Remain Size}
   if (Block^.Size - AllocSize) >= HEAP_MIN_BLOCK then
    begin
@@ -1730,15 +1730,15 @@ begin
     AllocSize:=Block^.Size;
     RemainSize:=0;
    end;
-   
+
   {Check Remain Size}
-  if RemainSize > 0 then 
+  if RemainSize > 0 then
    begin
     {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
-    Inc(HeapStatistics.GetRemainCount); 
+    Inc(HeapStatistics.GetRemainCount);
     {$ENDIF}
-    
+
     {Split Block}
     Split:=SplitHeapBlock(Block,AllocSize);
     if Split = nil then
@@ -1748,8 +1748,8 @@ begin
       Inc(HeapStatistics.GetSplitFailCount);
       {$ENDIF}
       Exit;
-     end; 
-    
+     end;
+
     {Add Free Block}
     if not AddFreeBlock(Split) then
      begin
@@ -1759,7 +1759,7 @@ begin
       {$ENDIF}
       Exit;
      end;
-   end; 
+   end;
 
   {Add Used Block}
   if not AddUsedBlock(Block) then
@@ -1770,16 +1770,16 @@ begin
     {$ENDIF}
     Exit;
    end;
-  
+
   {Update Heap Status}
   {Free}
   Dec(HeapStatus.TotalUncommitted,AllocSize);
   Dec(HeapStatus.TotalFree,AllocSize);
   Dec(HeapStatus.Unused,AllocSize);
-  {Used}  
+  {Used}
   Inc(HeapStatus.TotalCommitted,AllocSize);
   Inc(HeapStatus.TotalAllocated,AllocSize);
-   
+
   {Update FPC Heap Status}
   {Free}
   Dec(FPCHeapStatus.CurrHeapFree,AllocSize);
@@ -1787,12 +1787,12 @@ begin
   Inc(FPCHeapStatus.CurrHeapUsed,AllocSize);
   {Max}
   if FPCHeapStatus.CurrHeapUsed > FPCHeapStatus.MaxHeapUsed then FPCHeapStatus.MaxHeapUsed:=FPCHeapStatus.CurrHeapUsed;
-     
+
   {Return Result}
   Result:=Pointer(PtrUInt(Block) + SizeOf(THeapBlock));
  finally
   ReleaseHeapLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2032,7 +2032,7 @@ begin
  {Update Heap Statistics}
  Inc(HeapStatistics.GetSharedCount);
  {$ENDIF}
- 
+
  {Get Memory}
  Result:=GetMemEx(Size,HEAP_FLAG_SHARED,CPU_AFFINITY_NONE);
 end;
@@ -2107,7 +2107,7 @@ function GetCodeAlignedMem(Size,Alignment:PtrUInt;Affinity:LongWord):Pointer;
 begin
  {}
  Result:=nil;
- 
+
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.GetCodeCount);
@@ -2127,7 +2127,7 @@ begin
  {Update Heap Statistics}
  Inc(HeapStatistics.GetDeviceCount);
  {$ENDIF}
- 
+
  {Get Memory}
  Result:=GetMemEx(Size,HEAP_FLAG_DEVICE,CPU_AFFINITY_NONE);
 end;
@@ -2158,7 +2158,7 @@ begin
  {Update Heap Statistics}
  Inc(HeapStatistics.GetNoCacheCount);
  {$ENDIF}
- 
+
  {Get Memory}
  Result:=GetMemEx(Size,HEAP_FLAG_NOCACHE,CPU_AFFINITY_NONE);
 end;
@@ -2189,7 +2189,7 @@ begin
  {Update Heap Statistics}
  Inc(HeapStatistics.GetNonSharedCount);
  {$ENDIF}
- 
+
  {Get Memory}
  Result:=GetMemEx(Size,HEAP_FLAG_NONSHARED,CPU_AFFINITY_NONE);
 end;
@@ -2223,7 +2223,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  AcquireHeapIRQLock;
  try
   {$IFDEF HEAP_STATISTICS}
@@ -2240,10 +2240,10 @@ begin
     {$ENDIF}
     Size:=4;
    end;
-  
+
   {Determine Size}
   AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
- 
+
   {Get Free Block}
   Block:=GetFreeIRQBlock(AllocSize,Affinity);
   if Block = nil then
@@ -2254,7 +2254,7 @@ begin
     {$ENDIF}
     Exit;
    end;
-  
+
   {Remove Free Block}
   if not RemoveFreeIRQBlock(Block) then
    begin
@@ -2264,7 +2264,7 @@ begin
     {$ENDIF}
     Exit;
    end;
-  
+
   {Determine Remain Size}
   if (Block^.Size - AllocSize) >= HEAP_MIN_BLOCK then
    begin
@@ -2275,15 +2275,15 @@ begin
     AllocSize:=Block^.Size;
     RemainSize:=0;
    end;
-  
+
   {Check Remain Size}
-  if RemainSize > 0 then 
+  if RemainSize > 0 then
    begin
     {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
-    Inc(HeapStatistics.GetRemainCount); 
+    Inc(HeapStatistics.GetRemainCount);
     {$ENDIF}
-    
+
     {Split Block}
     Split:=SplitIRQBlock(Block,AllocSize);
     if Split = nil then
@@ -2293,8 +2293,8 @@ begin
       Inc(HeapStatistics.GetSplitFailCount);
       {$ENDIF}
       Exit;
-     end; 
-    
+     end;
+
     {Add Free Block}
     if not AddFreeIRQBlock(Split) then
      begin
@@ -2304,17 +2304,17 @@ begin
       {$ENDIF}
       Exit;
      end;
-   end; 
-  
+   end;
+
   {Update Heap Status}
   {Free}
   Dec(HeapStatus.TotalUncommitted,AllocSize);
   Dec(HeapStatus.TotalFree,AllocSize);
   Dec(HeapStatus.Unused,AllocSize);
-  {Used}  
+  {Used}
   Inc(HeapStatus.TotalCommitted,AllocSize);
   Inc(HeapStatus.TotalAllocated,AllocSize);
-   
+
   {Update FPC Heap Status}
   {Free}
   Dec(FPCHeapStatus.CurrHeapFree,AllocSize);
@@ -2322,12 +2322,12 @@ begin
   Inc(FPCHeapStatus.CurrHeapUsed,AllocSize);
   {Max}
   if FPCHeapStatus.CurrHeapUsed > FPCHeapStatus.MaxHeapUsed then FPCHeapStatus.MaxHeapUsed:=FPCHeapStatus.CurrHeapUsed;
-     
+
   {Return Result}
   Result:=Pointer(PtrUInt(Block) + SizeOf(THeapBlock));
  finally
   ReleaseHeapIRQLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2540,7 +2540,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  AcquireHeapFIQLock;
  try
   {$IFDEF HEAP_STATISTICS}
@@ -2557,10 +2557,10 @@ begin
     {$ENDIF}
     Size:=4;
    end;
-  
+
   {Determine Size}
   AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
-  
+
   {Get Free Block}
   Block:=GetFreeFIQBlock(AllocSize,Affinity);
   if Block = nil then
@@ -2571,7 +2571,7 @@ begin
     {$ENDIF}
     Exit;
    end;
- 
+
   {Remove Free Block}
   if not RemoveFreeFIQBlock(Block) then
    begin
@@ -2581,7 +2581,7 @@ begin
     {$ENDIF}
     Exit;
    end;
-  
+
   {Determine Remain Size}
   if (Block^.Size - AllocSize) >= HEAP_MIN_BLOCK then
    begin
@@ -2592,15 +2592,15 @@ begin
     AllocSize:=Block^.Size;
     RemainSize:=0;
    end;
-  
+
   {Check Remain Size}
-  if RemainSize > 0 then 
+  if RemainSize > 0 then
    begin
     {$IFDEF HEAP_STATISTICS}
     {Update Heap Statistics}
-    Inc(HeapStatistics.GetRemainCount); 
+    Inc(HeapStatistics.GetRemainCount);
     {$ENDIF}
-    
+
     {Split Block}
     Split:=SplitFIQBlock(Block,AllocSize);
     if Split = nil then
@@ -2610,8 +2610,8 @@ begin
       Inc(HeapStatistics.GetSplitFailCount);
       {$ENDIF}
       Exit;
-     end; 
-    
+     end;
+
     {Add Free Block}
     if not AddFreeFIQBlock(Split) then
      begin
@@ -2621,17 +2621,17 @@ begin
       {$ENDIF}
       Exit;
      end;
-   end; 
-  
+   end;
+
   {Update Heap Status}
   {Free}
   Dec(HeapStatus.TotalUncommitted,AllocSize);
   Dec(HeapStatus.TotalFree,AllocSize);
   Dec(HeapStatus.Unused,AllocSize);
-  {Used}  
+  {Used}
   Inc(HeapStatus.TotalCommitted,AllocSize);
   Inc(HeapStatus.TotalAllocated,AllocSize);
-   
+
   {Update FPC Heap Status}
   {Free}
   Dec(FPCHeapStatus.CurrHeapFree,AllocSize);
@@ -2639,12 +2639,12 @@ begin
   Inc(FPCHeapStatus.CurrHeapUsed,AllocSize);
   {Max}
   if FPCHeapStatus.CurrHeapUsed > FPCHeapStatus.MaxHeapUsed then FPCHeapStatus.MaxHeapUsed:=FPCHeapStatus.CurrHeapUsed;
-     
+
   {Return Result}
   Result:=Pointer(PtrUInt(Block) + SizeOf(THeapBlock));
  finally
   ReleaseHeapFIQLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2855,20 +2855,20 @@ var
 begin
  {}
  Result:=0;
- 
+
  AcquireHeapIRQLock;
  try
   {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
-  Inc(HeapStatistics.FreeIRQCount); 
+  Inc(HeapStatistics.FreeIRQCount);
   {$ENDIF}
- 
+
   {Check Addr}
   if Addr = nil then Exit;
-  
+
   {Get Block}
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
- 
+
   {Check Block}
   if not CheckIRQBlock(Block) then
    begin
@@ -2878,10 +2878,10 @@ begin
     {$ENDIF}
     Exit;
    end;
- 
+
   {Get Size}
   BlockSize:=Block^.Size;
- 
+
   {Merge Block}
   Merge:=MergeIRQBlock(Block);
   if Merge = nil then
@@ -2892,7 +2892,7 @@ begin
     {$ENDIF}
     Exit;
    end;
-  
+
   {Add Free Block}
   if not AddFreeIRQBlock(Merge) then
    begin
@@ -2902,25 +2902,25 @@ begin
     {$ENDIF}
     Exit;
    end;
-  
+
   {Update Heap Status}
   {Free}
   Inc(HeapStatus.TotalUncommitted,BlockSize);
   Inc(HeapStatus.TotalFree,BlockSize);
   Inc(HeapStatus.Unused,BlockSize);
-  {Used}  
+  {Used}
   Dec(HeapStatus.TotalCommitted,BlockSize);
   Dec(HeapStatus.TotalAllocated,BlockSize);
-  
+
   {Update FPC Heap Status}
   {Free}
   Inc(FPCHeapStatus.CurrHeapFree,BlockSize);
   {Used}
   Dec(FPCHeapStatus.CurrHeapUsed,BlockSize);
-  
+
   {Return Result}
   Result:=BlockSize - SizeOf(THeapBlock);
- finally 
+ finally
   ReleaseHeapIRQLock;
  end;
 end;
@@ -2936,20 +2936,20 @@ var
 begin
  {}
  Result:=0;
- 
+
  AcquireHeapFIQLock;
  try
   {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
-  Inc(HeapStatistics.FreeFIQCount); 
+  Inc(HeapStatistics.FreeFIQCount);
   {$ENDIF}
- 
+
   {Check Addr}
   if Addr = nil then Exit;
-  
+
   {Get Block}
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
- 
+
   {Check Block}
   if not CheckFIQBlock(Block) then
    begin
@@ -2959,10 +2959,10 @@ begin
     {$ENDIF}
     Exit;
    end;
- 
+
   {Get Size}
   BlockSize:=Block^.Size;
-  
+
   {Merge Block}
   Merge:=MergeFIQBlock(Block);
   if Merge = nil then
@@ -2973,7 +2973,7 @@ begin
     {$ENDIF}
     Exit;
    end;
-  
+
   {Add Free Block}
   if not AddFreeFIQBlock(Merge) then
    begin
@@ -2983,25 +2983,25 @@ begin
     {$ENDIF}
     Exit;
    end;
-  
+
   {Update Heap Status}
   {Free}
   Inc(HeapStatus.TotalUncommitted,BlockSize);
   Inc(HeapStatus.TotalFree,BlockSize);
   Inc(HeapStatus.Unused,BlockSize);
-  {Used}  
+  {Used}
   Dec(HeapStatus.TotalCommitted,BlockSize);
   Dec(HeapStatus.TotalAllocated,BlockSize);
-  
+
   {Update FPC Heap Status}
   {Free}
   Inc(FPCHeapStatus.CurrHeapFree,BlockSize);
   {Used}
   Dec(FPCHeapStatus.CurrHeapUsed,BlockSize);
-  
+
   {Return Result}
   Result:=BlockSize - SizeOf(THeapBlock);
- finally 
+ finally
   ReleaseHeapFIQLock;
  end;
 end;
@@ -3014,16 +3014,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocCount); 
+ Inc(HeapStatistics.AllocCount);
  {$ENDIF}
- 
+
  {Get Memory}
  Result:=GetMemEx(Size,Flags,Affinity);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SysSizeMem(Result),0); 
-  end; 
+   FillChar(Result^,SysSizeMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3043,7 +3043,7 @@ begin
  {Update Heap Statistics}
  Inc(HeapStatistics.ReallocCount);
  {$ENDIF}
- 
+
  {Check Size}
  if Size = 0 then
   begin
@@ -3051,34 +3051,34 @@ begin
    {Update Heap Statistics}
    Inc(HeapStatistics.ReallocZeroCount);
    {$ENDIF}
-   
+
    {Free Memory}
    if Addr <> nil then
     begin
-     SysFreeMem(Addr);  
+     SysFreeMem(Addr);
      Addr:=nil;
-    end; 
-   
+    end;
+
    {Return Result}
    Result:=Addr;
   end
  else
-  begin 
+  begin
    {Get Size}
    CurrentSize:=SysSizeMem(Addr);
    if (CurrentSize > 0) and (CurrentSize >= Size) then
     begin
      {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
-     Inc(HeapStatistics.ReallocSmallerCount); 
+     Inc(HeapStatistics.ReallocSmallerCount);
      {$ENDIF}
-  
+
      {Determine Size}
      AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
-     
-     {Get Block} 
+
+     {Get Block}
      Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
-     
+
      {Check Size}
      if Block^.Size >= (AllocSize shl 1) then
       begin
@@ -3086,10 +3086,10 @@ begin
        try
         {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
-        Inc(HeapStatistics.ReallocReleaseCount); 
-        Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize); 
+        Inc(HeapStatistics.ReallocReleaseCount);
+        Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize);
         {$ENDIF}
-        
+
         {Remove Used Block}
         if not RemoveUsedBlock(Block) then
          begin
@@ -3099,7 +3099,7 @@ begin
           {$ENDIF}
           Exit;
          end;
-  
+
         {Split Block}
         Split:=SplitHeapBlock(Block,AllocSize);
         if Split = nil then
@@ -3110,7 +3110,7 @@ begin
           {$ENDIF}
           Exit;
          end;
-         
+
         {Add Free Block}
         if not AddFreeBlock(Split) then
          begin
@@ -3120,7 +3120,7 @@ begin
           {$ENDIF}
           Exit;
          end;
-         
+
         {Add Used Block}
         if not AddUsedBlock(Block) then
          begin
@@ -3130,58 +3130,58 @@ begin
           {$ENDIF}
           Exit;
          end;
-         
+
         {Update Heap Status}
         {Free}
         Inc(HeapStatus.TotalUncommitted,Split^.Size);
         Inc(HeapStatus.TotalFree,Split^.Size);
         Inc(HeapStatus.Unused,Split^.Size);
-        {Used}  
+        {Used}
         Dec(HeapStatus.TotalCommitted,Split^.Size);
         Dec(HeapStatus.TotalAllocated,Split^.Size);
-        
+
         {Update FPC Heap Status}
         {Free}
         Inc(FPCHeapStatus.CurrHeapFree,Split^.Size);
         {Used}
         Dec(FPCHeapStatus.CurrHeapUsed,Split^.Size);
        finally
-        ReleaseHeapLock; 
-       end;      
+        ReleaseHeapLock;
+       end;
       end;
-     
+
      {Return Result}
      Result:=Addr;
     end
    else
-    begin 
+    begin
      {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
-     Inc(HeapStatistics.ReallocLargerCount); 
+     Inc(HeapStatistics.ReallocLargerCount);
      {$ENDIF}
-  
+
      {Alloc Memory}
-     Result:=AllocMemEx(Size,Flags,Affinity); 
+     Result:=AllocMemEx(Size,Flags,Affinity);
      if Result <> nil then
       begin
        if Addr <> nil then
         begin
          {Get Size}
          NewSize:=SysSizeMem(Result);
-         {CurrentSize:=SysSizeMem(Addr);} {Done above} 
-         if CurrentSize > NewSize then CurrentSize:=NewSize; 
-  
+         {CurrentSize:=SysSizeMem(Addr);} {Done above}
+         if CurrentSize > NewSize then CurrentSize:=NewSize;
+
          {Copy Memory}
          System.Move(Addr^,Result^,CurrentSize);
         end;
       end;
-  
+
      {Free Memory}
-     if Addr <> nil then SysFreeMem(Addr);  
-  
+     if Addr <> nil then SysFreeMem(Addr);
+
      {Return Result}
      Addr:=Result;
-    end; 
+    end;
   end;
 end;
 
@@ -3205,16 +3205,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocAlignedCount); 
+ Inc(HeapStatistics.AllocAlignedCount);
  {$ENDIF}
- 
+
  {Get Aligned Memory}
  Result:=GetAlignedMemEx(Size,Alignment,Flags,Affinity);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SysSizeMem(Result),0); 
-  end; 
+   FillChar(Result^,SysSizeMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3254,34 +3254,34 @@ begin
    {Update Heap Statistics}
    Inc(HeapStatistics.ReallocZeroCount);
    {$ENDIF}
-   
+
    {Free Memory}
    if Addr <> nil then
     begin
-     SysFreeMem(Addr);  
+     SysFreeMem(Addr);
      Addr:=nil;
-    end; 
-   
+    end;
+
    {Return Result}
    Result:=Addr;
   end
  else
-  begin 
+  begin
    {Get Size}
    CurrentSize:=SysSizeMem(Addr);
    if (CurrentSize > 0) and (CurrentSize >= Size) then
     begin
      {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
-     Inc(HeapStatistics.ReallocSmallerCount); 
+     Inc(HeapStatistics.ReallocSmallerCount);
      {$ENDIF}
-  
+
      {Determine Size}
      AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
-     
-     {Get Block} 
+
+     {Get Block}
      Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
-     
+
      {Check Size}
      if Block^.Size >= (AllocSize shl 1) then
       begin
@@ -3289,10 +3289,10 @@ begin
        try
         {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
-        Inc(HeapStatistics.ReallocReleaseCount); 
+        Inc(HeapStatistics.ReallocReleaseCount);
         Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize);
         {$ENDIF}
-        
+
         {Remove Used Block}
         if not RemoveUsedBlock(Block) then
          begin
@@ -3302,7 +3302,7 @@ begin
           {$ENDIF}
           Exit;
          end;
-  
+
         {Split Block}
         Split:=SplitHeapBlock(Block,AllocSize);
         if Split = nil then
@@ -3313,7 +3313,7 @@ begin
           {$ENDIF}
           Exit;
          end;
-         
+
         {Add Free Block}
         if not AddFreeBlock(Split) then
          begin
@@ -3323,7 +3323,7 @@ begin
           {$ENDIF}
           Exit;
          end;
-         
+
         {Add Used Block}
         if not AddUsedBlock(Block) then
          begin
@@ -3333,59 +3333,59 @@ begin
           {$ENDIF}
           Exit;
          end;
-         
+
         {Update Heap Status}
         {Free}
         Inc(HeapStatus.TotalUncommitted,Split^.Size);
         Inc(HeapStatus.TotalFree,Split^.Size);
         Inc(HeapStatus.Unused,Split^.Size);
-        {Used}  
+        {Used}
         Dec(HeapStatus.TotalCommitted,Split^.Size);
         Dec(HeapStatus.TotalAllocated,Split^.Size);
-        
+
         {Update FPC Heap Status}
         {Free}
         Inc(FPCHeapStatus.CurrHeapFree,Split^.Size);
         {Used}
         Dec(FPCHeapStatus.CurrHeapUsed,Split^.Size);
        finally
-        ReleaseHeapLock; 
-       end;      
+        ReleaseHeapLock;
+       end;
       end;
-     
+
      {Return Result}
      Result:=Addr;
     end
    else
-    begin 
+    begin
      {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
-     Inc(HeapStatistics.ReallocLargerCount); 
+     Inc(HeapStatistics.ReallocLargerCount);
      {$ENDIF}
-  
+
      {Alloc Aligned Memory}
-     Result:=AllocAlignedMemEx(Size,Alignment,Flags,Affinity); 
+     Result:=AllocAlignedMemEx(Size,Alignment,Flags,Affinity);
      if Result <> nil then
       begin
        if Addr <> nil then
         begin
          {Get Size}
          NewSize:=SysSizeMem(Result);
-         {CurrentSize:=SysSizeMem(Addr);} {Done above} 
-         if CurrentSize > NewSize then CurrentSize:=NewSize; 
-  
+         {CurrentSize:=SysSizeMem(Addr);} {Done above}
+         if CurrentSize > NewSize then CurrentSize:=NewSize;
+
          {Copy Memory}
          System.Move(Addr^,Result^,CurrentSize);
         end;
       end;
-  
+
      {Free Memory}
-     if Addr <> nil then SysFreeMem(Addr);  
-  
+     if Addr <> nil then SysFreeMem(Addr);
+
      {Return Result}
      Addr:=Result;
     end;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -3396,16 +3396,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocSharedCount); 
+ Inc(HeapStatistics.AllocSharedCount);
  {$ENDIF}
- 
+
  {Get Shared Memory}
  Result:=GetSharedMem(Size);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SysSizeMem(Result),0); 
-  end; 
+   FillChar(Result^,SysSizeMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3417,16 +3417,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocSharedCount); 
+ Inc(HeapStatistics.AllocSharedCount);
  {$ENDIF}
- 
+
  {Get Shared Memory}
  Result:=GetSharedAlignedMem(Size,Alignment);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SysSizeMem(Result),0); 
-  end; 
+   FillChar(Result^,SysSizeMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3437,10 +3437,10 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.ReallocSharedCount); 
+ Inc(HeapStatistics.ReallocSharedCount);
  {$ENDIF}
 
- {Realloc Memory} 
+ {Realloc Memory}
  Result:=ReAllocMemEx(Addr,Size,HEAP_FLAG_SHARED,CPU_AFFINITY_NONE);
 end;
 
@@ -3453,10 +3453,10 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.ReallocSharedCount); 
+ Inc(HeapStatistics.ReallocSharedCount);
  {$ENDIF}
 
- {Realloc Memory} 
+ {Realloc Memory}
  Result:=ReAllocAlignedMemEx(Addr,Size,Alignment,HEAP_FLAG_SHARED,CPU_AFFINITY_NONE);
 end;
 
@@ -3468,16 +3468,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocLocalCount); 
+ Inc(HeapStatistics.AllocLocalCount);
  {$ENDIF}
- 
+
  {Get Local Memory}
  Result:=GetLocalMem(Size,Affinity);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SysSizeMem(Result),0); 
-  end; 
+   FillChar(Result^,SysSizeMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3489,16 +3489,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocLocalCount); 
+ Inc(HeapStatistics.AllocLocalCount);
  {$ENDIF}
- 
+
  {Get Local Memory}
  Result:=GetLocalAlignedMem(Size,Alignment,Affinity);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SysSizeMem(Result),0); 
-  end; 
+   FillChar(Result^,SysSizeMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3509,10 +3509,10 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.ReallocLocalCount); 
+ Inc(HeapStatistics.ReallocLocalCount);
  {$ENDIF}
 
- {Realloc Memory} 
+ {Realloc Memory}
  Result:=ReAllocMemEx(Addr,Size,HEAP_FLAG_LOCAL,Affinity);
 end;
 
@@ -3525,10 +3525,10 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.ReallocLocalCount); 
+ Inc(HeapStatistics.ReallocLocalCount);
  {$ENDIF}
 
- {Realloc Memory} 
+ {Realloc Memory}
  Result:=ReAllocAlignedMemEx(Addr,Size,Alignment,HEAP_FLAG_LOCAL,Affinity);
 end;
 
@@ -3540,16 +3540,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocCodeCount); 
+ Inc(HeapStatistics.AllocCodeCount);
  {$ENDIF}
- 
+
  {Get Code Memory}
  Result:=GetCodeMem(Size,Affinity);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SysSizeMem(Result),0); 
-  end; 
+   FillChar(Result^,SysSizeMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3561,16 +3561,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocCodeCount); 
+ Inc(HeapStatistics.AllocCodeCount);
  {$ENDIF}
- 
+
  {Get Code Memory}
  Result:=GetCodeAlignedMem(Size,Alignment,Affinity);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SysSizeMem(Result),0); 
-  end; 
+   FillChar(Result^,SysSizeMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3581,10 +3581,10 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.ReallocCodeCount); 
+ Inc(HeapStatistics.ReallocCodeCount);
  {$ENDIF}
 
- {Realloc Memory} 
+ {Realloc Memory}
  Result:=ReAllocMemEx(Addr,Size,HEAP_FLAG_CODE,Affinity);
 end;
 
@@ -3597,10 +3597,10 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.ReallocCodeCount); 
+ Inc(HeapStatistics.ReallocCodeCount);
  {$ENDIF}
 
- {Realloc Memory} 
+ {Realloc Memory}
  Result:=ReAllocAlignedMemEx(Addr,Size,Alignment,HEAP_FLAG_CODE,Affinity);
 end;
 
@@ -3612,16 +3612,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocDeviceCount); 
+ Inc(HeapStatistics.AllocDeviceCount);
  {$ENDIF}
- 
+
  {Get Device Memory}
  Result:=GetDeviceMem(Size);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SysSizeMem(Result),0); 
-  end; 
+   FillChar(Result^,SysSizeMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3633,16 +3633,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocDeviceCount); 
+ Inc(HeapStatistics.AllocDeviceCount);
  {$ENDIF}
- 
+
  {Get Device Memory}
  Result:=GetDeviceAlignedMem(Size,Alignment);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SysSizeMem(Result),0); 
-  end; 
+   FillChar(Result^,SysSizeMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3653,10 +3653,10 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.ReallocDeviceCount); 
+ Inc(HeapStatistics.ReallocDeviceCount);
  {$ENDIF}
 
- {Realloc Memory} 
+ {Realloc Memory}
  Result:=ReAllocMemEx(Addr,Size,HEAP_FLAG_DEVICE,CPU_AFFINITY_NONE);
 end;
 
@@ -3669,10 +3669,10 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.ReallocDeviceCount); 
+ Inc(HeapStatistics.ReallocDeviceCount);
  {$ENDIF}
 
- {Realloc Memory} 
+ {Realloc Memory}
  Result:=ReAllocAlignedMemEx(Addr,Size,Alignment,HEAP_FLAG_DEVICE,CPU_AFFINITY_NONE);
 end;
 
@@ -3684,16 +3684,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocNoCacheCount); 
+ Inc(HeapStatistics.AllocNoCacheCount);
  {$ENDIF}
- 
+
  {Get Non Cached Memory}
  Result:=GetNoCacheMem(Size);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SysSizeMem(Result),0); 
-  end; 
+   FillChar(Result^,SysSizeMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3705,16 +3705,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocNoCacheCount); 
+ Inc(HeapStatistics.AllocNoCacheCount);
  {$ENDIF}
- 
+
  {Get Non Cached Memory}
  Result:=GetNoCacheAlignedMem(Size,Alignment);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SysSizeMem(Result),0); 
-  end; 
+   FillChar(Result^,SysSizeMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3725,10 +3725,10 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.ReallocNoCacheCount); 
+ Inc(HeapStatistics.ReallocNoCacheCount);
  {$ENDIF}
 
- {Realloc Memory} 
+ {Realloc Memory}
  Result:=ReAllocMemEx(Addr,Size,HEAP_FLAG_NOCACHE,CPU_AFFINITY_NONE);
 end;
 
@@ -3741,10 +3741,10 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.ReallocNoCacheCount); 
+ Inc(HeapStatistics.ReallocNoCacheCount);
  {$ENDIF}
 
- {Realloc Memory} 
+ {Realloc Memory}
  Result:=ReAllocAlignedMemEx(Addr,Size,Alignment,HEAP_FLAG_NOCACHE,CPU_AFFINITY_NONE);
 end;
 
@@ -3756,16 +3756,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocNonSharedCount); 
+ Inc(HeapStatistics.AllocNonSharedCount);
  {$ENDIF}
- 
+
  {Get Non Shared Memory}
  Result:=GetNonSharedMem(Size);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SysSizeMem(Result),0); 
-  end; 
+   FillChar(Result^,SysSizeMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3777,16 +3777,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocNonSharedCount); 
+ Inc(HeapStatistics.AllocNonSharedCount);
  {$ENDIF}
- 
+
  {Get Non Shared Memory}
  Result:=GetNonSharedAlignedMem(Size,Alignment);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SysSizeMem(Result),0); 
-  end; 
+   FillChar(Result^,SysSizeMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3797,10 +3797,10 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.ReallocNonSharedCount); 
+ Inc(HeapStatistics.ReallocNonSharedCount);
  {$ENDIF}
 
- {Realloc Memory} 
+ {Realloc Memory}
  Result:=ReAllocMemEx(Addr,Size,HEAP_FLAG_NONSHARED,CPU_AFFINITY_NONE);
 end;
 
@@ -3813,10 +3813,10 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.ReallocNonSharedCount); 
+ Inc(HeapStatistics.ReallocNonSharedCount);
  {$ENDIF}
 
- {Realloc Memory} 
+ {Realloc Memory}
  Result:=ReAllocAlignedMemEx(Addr,Size,Alignment,HEAP_FLAG_NONSHARED,CPU_AFFINITY_NONE);
 end;
 
@@ -3829,16 +3829,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocIRQCount); 
+ Inc(HeapStatistics.AllocIRQCount);
  {$ENDIF}
- 
+
  {Get IRQ Memory}
  Result:=GetIRQMem(Size,Affinity);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SizeIRQMem(Result),0); 
-  end; 
+   FillChar(Result^,SizeIRQMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3851,16 +3851,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocIRQCount); 
+ Inc(HeapStatistics.AllocIRQCount);
  {$ENDIF}
- 
+
  {Get IRQ Memory}
  Result:=GetIRQAlignedMem(Size,Alignment,Affinity);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SizeIRQMem(Result),0); 
-  end; 
+   FillChar(Result^,SizeIRQMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -3889,34 +3889,34 @@ begin
    {Update Heap Statistics}
    Inc(HeapStatistics.ReallocZeroCount);
    {$ENDIF}
-   
+
    {Free Memory}
    if Addr <> nil then
     begin
-     FreeIRQMem(Addr);  
+     FreeIRQMem(Addr);
      Addr:=nil;
-    end; 
-   
+    end;
+
    {Return Result}
    Result:=Addr;
   end
  else
-  begin 
+  begin
    {Get Size}
    CurrentSize:=SizeIRQMem(Addr);
    if (CurrentSize > 0) and (CurrentSize >= Size) then
     begin
      {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
-     Inc(HeapStatistics.ReallocSmallerCount); 
+     Inc(HeapStatistics.ReallocSmallerCount);
      {$ENDIF}
-  
+
      {Determine Size}
      AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
-     
-     {Get Block} 
+
+     {Get Block}
      Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
-     
+
      {Check Size}
      if Block^.Size >= (AllocSize shl 1) then
       begin
@@ -3924,10 +3924,10 @@ begin
        try
         {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
-        Inc(HeapStatistics.ReallocReleaseCount); 
-        Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize); 
+        Inc(HeapStatistics.ReallocReleaseCount);
+        Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize);
         {$ENDIF}
-  
+
         {Split Block}
         Split:=SplitIRQBlock(Block,AllocSize);
         if Split = nil then
@@ -3938,7 +3938,7 @@ begin
           {$ENDIF}
           Exit;
          end;
-         
+
         {Add Free Block}
         if not AddFreeIRQBlock(Split) then
          begin
@@ -3948,58 +3948,58 @@ begin
           {$ENDIF}
           Exit;
          end;
-        
+
         {Update Heap Status}
         {Free}
         Inc(HeapStatus.TotalUncommitted,Split^.Size);
         Inc(HeapStatus.TotalFree,Split^.Size);
         Inc(HeapStatus.Unused,Split^.Size);
-        {Used}  
+        {Used}
         Dec(HeapStatus.TotalCommitted,Split^.Size);
         Dec(HeapStatus.TotalAllocated,Split^.Size);
-        
+
         {Update FPC Heap Status}
         {Free}
         Inc(FPCHeapStatus.CurrHeapFree,Split^.Size);
         {Used}
         Dec(FPCHeapStatus.CurrHeapUsed,Split^.Size);
        finally
-        ReleaseHeapIRQLock; 
-       end;      
+        ReleaseHeapIRQLock;
+       end;
       end;
-     
+
      {Return Result}
      Result:=Addr;
     end
    else
-    begin 
+    begin
      {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
-     Inc(HeapStatistics.ReallocLargerCount); 
+     Inc(HeapStatistics.ReallocLargerCount);
      {$ENDIF}
-  
+
      {Alloc Memory}
-     Result:=AllocIRQMem(Size,Affinity); 
+     Result:=AllocIRQMem(Size,Affinity);
      if Result <> nil then
       begin
        if Addr <> nil then
         begin
          {Get Size}
          NewSize:=SizeIRQMem(Result);
-         {CurrentSize:=SizeIRQMem(Addr);} {Done above} 
-         if CurrentSize > NewSize then CurrentSize:=NewSize; 
-  
+         {CurrentSize:=SizeIRQMem(Addr);} {Done above}
+         if CurrentSize > NewSize then CurrentSize:=NewSize;
+
          {Copy Memory}
          System.Move(Addr^,Result^,CurrentSize);
         end;
       end;
-  
+
      {Free Memory}
-     if Addr <> nil then FreeIRQMem(Addr);  
-  
+     if Addr <> nil then FreeIRQMem(Addr);
+
      {Return Result}
      Addr:=Result;
-    end; 
+    end;
   end;
 end;
 
@@ -4030,14 +4030,14 @@ begin
    {Update Heap Statistics}
    Inc(HeapStatistics.ReallocZeroCount);
    {$ENDIF}
-   
+
    {Free Memory}
    if Addr <> nil then
     begin
-     FreeIRQMem(Addr);  
+     FreeIRQMem(Addr);
      Addr:=nil;
-    end; 
-   
+    end;
+
    {Return Result}
    Result:=Addr;
   end
@@ -4049,15 +4049,15 @@ begin
     begin
      {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
-     Inc(HeapStatistics.ReallocSmallerCount); 
+     Inc(HeapStatistics.ReallocSmallerCount);
      {$ENDIF}
-  
+
      {Determine Size}
      AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
-     
-     {Get Block} 
+
+     {Get Block}
      Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
-     
+
      {Check Size}
      if Block^.Size >= (AllocSize shl 1) then
       begin
@@ -4065,10 +4065,10 @@ begin
        try
         {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
-        Inc(HeapStatistics.ReallocReleaseCount); 
+        Inc(HeapStatistics.ReallocReleaseCount);
         Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize);
         {$ENDIF}
-  
+
         {Split Block}
         Split:=SplitIRQBlock(Block,AllocSize);
         if Split = nil then
@@ -4079,7 +4079,7 @@ begin
           {$ENDIF}
           Exit;
          end;
-         
+
         {Add Free Block}
         if not AddFreeIRQBlock(Split) then
          begin
@@ -4089,58 +4089,58 @@ begin
           {$ENDIF}
           Exit;
          end;
-         
+
         {Update Heap Status}
         {Free}
         Inc(HeapStatus.TotalUncommitted,Split^.Size);
         Inc(HeapStatus.TotalFree,Split^.Size);
         Inc(HeapStatus.Unused,Split^.Size);
-        {Used}  
+        {Used}
         Dec(HeapStatus.TotalCommitted,Split^.Size);
         Dec(HeapStatus.TotalAllocated,Split^.Size);
-        
+
         {Update FPC Heap Status}
         {Free}
         Inc(FPCHeapStatus.CurrHeapFree,Split^.Size);
         {Used}
         Dec(FPCHeapStatus.CurrHeapUsed,Split^.Size);
        finally
-        ReleaseHeapIRQLock; 
-       end;      
+        ReleaseHeapIRQLock;
+       end;
       end;
-     
+
      {Return Result}
      Result:=Addr;
     end
    else
-    begin 
+    begin
      {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
-     Inc(HeapStatistics.ReallocLargerCount); 
+     Inc(HeapStatistics.ReallocLargerCount);
      {$ENDIF}
-  
+
      {Alloc Aligned Memory}
-     Result:=AllocIRQAlignedMem(Size,Alignment,Affinity); 
+     Result:=AllocIRQAlignedMem(Size,Alignment,Affinity);
      if Result <> nil then
       begin
        if Addr <> nil then
         begin
          {Get Size}
          NewSize:=SizeIRQMem(Result);
-         {CurrentSize:=SizeIRQMem(Addr);} {Done above} 
-         if CurrentSize > NewSize then CurrentSize:=NewSize; 
-  
+         {CurrentSize:=SizeIRQMem(Addr);} {Done above}
+         if CurrentSize > NewSize then CurrentSize:=NewSize;
+
          {Copy Memory}
          System.Move(Addr^,Result^,CurrentSize);
         end;
       end;
-  
+
      {Free Memory}
-     if Addr <> nil then FreeIRQMem(Addr);  
-  
+     if Addr <> nil then FreeIRQMem(Addr);
+
      {Return Result}
      Addr:=Result;
-    end; 
+    end;
   end;
 end;
 
@@ -4153,16 +4153,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocFIQCount); 
+ Inc(HeapStatistics.AllocFIQCount);
  {$ENDIF}
- 
+
  {Get FIQ Memory}
  Result:=GetFIQMem(Size,Affinity);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SizeFIQMem(Result),0); 
-  end; 
+   FillChar(Result^,SizeFIQMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -4175,16 +4175,16 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.AllocFIQCount); 
+ Inc(HeapStatistics.AllocFIQCount);
  {$ENDIF}
- 
+
  {Get FIQ Memory}
  Result:=GetFIQAlignedMem(Size,Alignment,Affinity);
  if Result <> nil then
   begin
    {Zero Memory}
-   FillChar(Result^,SizeFIQMem(Result),0); 
-  end; 
+   FillChar(Result^,SizeFIQMem(Result),0);
+  end;
 end;
 
 {==============================================================================}
@@ -4206,41 +4206,41 @@ begin
  Inc(HeapStatistics.ReallocFIQCount);
  {$ENDIF}
 
- {Check Size} 
+ {Check Size}
  if Size = 0 then
   begin
    {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.ReallocZeroCount);
    {$ENDIF}
-   
+
    {Free Memory}
    if Addr <> nil then
     begin
-     FreeFIQMem(Addr);  
+     FreeFIQMem(Addr);
      Addr:=nil;
-    end; 
-   
+    end;
+
    {Return Result}
    Result:=Addr;
   end
  else
-  begin 
+  begin
    {Get Size}
    CurrentSize:=SizeFIQMem(Addr);
    if (CurrentSize > 0) and (CurrentSize >= Size) then
     begin
      {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
-     Inc(HeapStatistics.ReallocSmallerCount); 
+     Inc(HeapStatistics.ReallocSmallerCount);
      {$ENDIF}
-  
+
      {Determine Size}
      AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
-     
-     {Get Block} 
+
+     {Get Block}
      Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
-     
+
      {Check Size}
      if Block^.Size >= (AllocSize shl 1) then
       begin
@@ -4248,10 +4248,10 @@ begin
        try
         {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
-        Inc(HeapStatistics.ReallocReleaseCount); 
-        Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize); 
+        Inc(HeapStatistics.ReallocReleaseCount);
+        Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize);
         {$ENDIF}
-  
+
         {Split Block}
         Split:=SplitFIQBlock(Block,AllocSize);
         if Split = nil then
@@ -4262,7 +4262,7 @@ begin
           {$ENDIF}
           Exit;
          end;
-         
+
         {Add Free Block}
         if not AddFreeFIQBlock(Split) then
          begin
@@ -4272,58 +4272,58 @@ begin
           {$ENDIF}
           Exit;
          end;
-         
+
         {Update Heap Status}
         {Free}
         Inc(HeapStatus.TotalUncommitted,Split^.Size);
         Inc(HeapStatus.TotalFree,Split^.Size);
         Inc(HeapStatus.Unused,Split^.Size);
-        {Used}  
+        {Used}
         Dec(HeapStatus.TotalCommitted,Split^.Size);
         Dec(HeapStatus.TotalAllocated,Split^.Size);
-        
+
         {Update FPC Heap Status}
         {Free}
         Inc(FPCHeapStatus.CurrHeapFree,Split^.Size);
         {Used}
         Dec(FPCHeapStatus.CurrHeapUsed,Split^.Size);
        finally
-        ReleaseHeapFIQLock; 
-       end;      
+        ReleaseHeapFIQLock;
+       end;
       end;
-     
+
      {Return Result}
      Result:=Addr;
     end
    else
-    begin 
+    begin
      {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
-     Inc(HeapStatistics.ReallocLargerCount); 
+     Inc(HeapStatistics.ReallocLargerCount);
      {$ENDIF}
-  
+
      {Alloc Memory}
-     Result:=AllocFIQMem(Size,Affinity); 
+     Result:=AllocFIQMem(Size,Affinity);
      if Result <> nil then
       begin
        if Addr <> nil then
         begin
          {Get Size}
          NewSize:=SizeFIQMem(Result);
-         {CurrentSize:=SizeFIQMem(Addr);} {Done above} 
-         if CurrentSize > NewSize then CurrentSize:=NewSize; 
-  
+         {CurrentSize:=SizeFIQMem(Addr);} {Done above}
+         if CurrentSize > NewSize then CurrentSize:=NewSize;
+
          {Copy Memory}
          System.Move(Addr^,Result^,CurrentSize);
         end;
       end;
-  
+
      {Free Memory}
-     if Addr <> nil then FreeFIQMem(Addr);  
-  
+     if Addr <> nil then FreeFIQMem(Addr);
+
      {Return Result}
      Addr:=Result;
-    end; 
+    end;
   end;
 end;
 
@@ -4347,21 +4347,21 @@ begin
  Inc(HeapStatistics.ReallocFIQCount);
  {$ENDIF}
 
- {Check Size} 
+ {Check Size}
  if Size = 0 then
   begin
    {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.ReallocZeroCount);
    {$ENDIF}
-   
+
    {Free Memory}
    if Addr <> nil then
     begin
-     FreeFIQMem(Addr);  
+     FreeFIQMem(Addr);
      Addr:=nil;
-    end; 
-   
+    end;
+
    {Return Result}
    Result:=Addr;
   end
@@ -4373,15 +4373,15 @@ begin
     begin
      {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
-     Inc(HeapStatistics.ReallocSmallerCount); 
+     Inc(HeapStatistics.ReallocSmallerCount);
      {$ENDIF}
-  
+
      {Determine Size}
      AllocSize:=Align(Size + SizeOf(THeapBlock),HEAP_MIN_ALIGNMENT);
-     
-     {Get Block} 
+
+     {Get Block}
      Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
-     
+
      {Check Size}
      if Block^.Size >= (AllocSize shl 1) then
       begin
@@ -4389,10 +4389,10 @@ begin
        try
         {$IFDEF HEAP_STATISTICS}
         {Update Heap Statistics}
-        Inc(HeapStatistics.ReallocReleaseCount); 
+        Inc(HeapStatistics.ReallocReleaseCount);
         Inc(HeapStatistics.ReallocReleaseBytes,Block^.Size - AllocSize);
         {$ENDIF}
-        
+
         {Split Block}
         Split:=SplitFIQBlock(Block,AllocSize);
         if Split = nil then
@@ -4403,7 +4403,7 @@ begin
           {$ENDIF}
           Exit;
          end;
-         
+
         {Add Free Block}
         if not AddFreeFIQBlock(Split) then
          begin
@@ -4413,58 +4413,58 @@ begin
           {$ENDIF}
           Exit;
          end;
-         
+
         {Update Heap Status}
         {Free}
         Inc(HeapStatus.TotalUncommitted,Split^.Size);
         Inc(HeapStatus.TotalFree,Split^.Size);
         Inc(HeapStatus.Unused,Split^.Size);
-        {Used}  
+        {Used}
         Dec(HeapStatus.TotalCommitted,Split^.Size);
         Dec(HeapStatus.TotalAllocated,Split^.Size);
-        
+
         {Update FPC Heap Status}
         {Free}
         Inc(FPCHeapStatus.CurrHeapFree,Split^.Size);
         {Used}
         Dec(FPCHeapStatus.CurrHeapUsed,Split^.Size);
        finally
-        ReleaseHeapFIQLock; 
-       end;      
+        ReleaseHeapFIQLock;
+       end;
       end;
-     
+
      {Return Result}
      Result:=Addr;
     end
    else
-    begin 
+    begin
      {$IFDEF HEAP_STATISTICS}
      {Update Heap Statistics}
-     Inc(HeapStatistics.ReallocLargerCount); 
+     Inc(HeapStatistics.ReallocLargerCount);
      {$ENDIF}
-  
+
      {Alloc Aligned Memory}
-     Result:=AllocFIQAlignedMem(Size,Alignment,Affinity); 
+     Result:=AllocFIQAlignedMem(Size,Alignment,Affinity);
      if Result <> nil then
       begin
        if Addr <> nil then
         begin
          {Get Size}
          NewSize:=SizeFIQMem(Result);
-         {CurrentSize:=SizeFIQMem(Addr);} {Done above} 
-         if CurrentSize > NewSize then CurrentSize:=NewSize; 
-  
+         {CurrentSize:=SizeFIQMem(Addr);} {Done above}
+         if CurrentSize > NewSize then CurrentSize:=NewSize;
+
          {Copy Memory}
          System.Move(Addr^,Result^,CurrentSize);
         end;
       end;
-  
+
      {Free Memory}
-     if Addr <> nil then FreeFIQMem(Addr);  
-  
+     if Addr <> nil then FreeFIQMem(Addr);
+
      {Return Result}
      Addr:=Result;
-    end; 
+    end;
   end;
 end;
 
@@ -4477,20 +4477,20 @@ var
 begin
  {}
  Result:=0;
- 
+
  AcquireHeapIRQLock;
  try
   {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
-  Inc(HeapStatistics.SizeIRQCount); 
+  Inc(HeapStatistics.SizeIRQCount);
   {$ENDIF}
- 
+
   {Check Addr}
   if Addr = nil then Exit;
- 
+
   {Get Block}
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
-  
+
   {Check Block}
   if not CheckIRQBlock(Block) then
    begin
@@ -4500,12 +4500,12 @@ begin
     {$ENDIF}
     Exit;
    end;
-   
+
   {Return Result}
   Result:=Block^.Size - SizeOf(THeapBlock);
  finally
   ReleaseHeapIRQLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4517,20 +4517,20 @@ var
 begin
  {}
  Result:=0;
- 
+
  AcquireHeapFIQLock;
  try
   {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
-  Inc(HeapStatistics.SizeFIQCount); 
+  Inc(HeapStatistics.SizeFIQCount);
   {$ENDIF}
- 
+
   {Check Addr}
   if Addr = nil then Exit;
- 
+
   {Get Block}
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
-  
+
   {Check Block}
   if not CheckFIQBlock(Block) then
    begin
@@ -4540,12 +4540,12 @@ begin
     {$ENDIF}
     Exit;
    end;
-   
+
   {Return Result}
   Result:=Block^.Size - SizeOf(THeapBlock);
  finally
   ReleaseHeapFIQLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4557,20 +4557,20 @@ var
 begin
  {}
  Result:=HEAP_FLAG_INVALID;
- 
+
  AcquireHeapLock;
  try
   {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
-  Inc(HeapStatistics.FlagsCount); 
+  Inc(HeapStatistics.FlagsCount);
   {$ENDIF}
- 
+
   {Check Addr}
   if Addr = nil then Exit;
- 
+
   {Get Block}
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
-  
+
   {Check Block}
   if not CheckUsedBlock(Block) then
    begin
@@ -4580,12 +4580,12 @@ begin
     {$ENDIF}
     Exit;
    end;
-   
+
   {Return Result}
   Result:=Block^.Flags;
  finally
   ReleaseHeapLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4597,20 +4597,20 @@ var
 begin
  {}
  Result:=HEAP_FLAG_INVALID;
- 
+
  AcquireHeapIRQLock;
  try
   {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
-  Inc(HeapStatistics.FlagsIRQCount); 
+  Inc(HeapStatistics.FlagsIRQCount);
   {$ENDIF}
- 
+
   {Check Addr}
   if Addr = nil then Exit;
- 
+
   {Get Block}
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
-  
+
   {Check Block}
   if not CheckIRQBlock(Block) then
    begin
@@ -4620,12 +4620,12 @@ begin
     {$ENDIF}
     Exit;
    end;
-   
+
   {Return Result}
   Result:=Block^.Flags;
  finally
   ReleaseHeapIRQLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4637,20 +4637,20 @@ var
 begin
  {}
  Result:=HEAP_FLAG_INVALID;
- 
+
  AcquireHeapFIQLock;
  try
   {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
-  Inc(HeapStatistics.FlagsFIQCount); 
+  Inc(HeapStatistics.FlagsFIQCount);
   {$ENDIF}
- 
+
   {Check Addr}
   if Addr = nil then Exit;
- 
+
   {Get Block}
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
-  
+
   {Check Block}
   if not CheckFIQBlock(Block) then
    begin
@@ -4660,29 +4660,29 @@ begin
     {$ENDIF}
     Exit;
    end;
-   
+
   {Return Result}
   Result:=Block^.Flags;
  finally
   ReleaseHeapFIQLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 {$IFDEF HEAP_STATISTICS}
-function GetHeapStatistics:THeapStatistics; 
+function GetHeapStatistics:THeapStatistics;
 {Return detailed statistics for the heap manager}
 begin
  {}
  FillChar(Result,SizeOf(THeapStatistics),0);
- 
+
  AcquireHeapLock;
  try
   {Copy Statistics}
   System.Move(HeapStatistics,Result,SizeOf(THeapStatistics));
  finally
   ReleaseHeapLock;
- end; 
+ end;
 end;
 {$ENDIF}
 {==============================================================================}
@@ -4699,12 +4699,12 @@ end;
 function GetHeapBlockCountEx(State,Flags,Affinity:LongWord):LongWord;
 {Get the number of current heap blocks based on state, flags and affinity}
 {Note: This uses the block list (not the Free/Used/Small lists) in order to account for all blocks}
-var 
+var
  Block:PHeapBlock;
 begin
  {}
  Result:=0;
- 
+
  AcquireHeapLock;
  try
   Block:=HeapBlocks;
@@ -4715,26 +4715,26 @@ begin
        if (Block^.State = HEAP_SIGNATURE + HEAP_STATE_FREE) and ((Flags = HEAP_FLAG_ALL) or ((Block^.Flags and Flags) = Flags)) and ((Affinity = CPU_AFFINITY_ALL) or ((Block^.Affinity and Affinity) = Affinity)) then
         begin
          Inc(Result);
-        end; 
+        end;
       end;
      HEAP_STATE_USED:begin
        if (Block^.State = HEAP_SIGNATURE + HEAP_STATE_USED) and ((Flags = HEAP_FLAG_ALL) or ((Block^.Flags and Flags) = Flags)) and ((Affinity = CPU_AFFINITY_ALL) or ((Block^.Affinity and Affinity) = Affinity)) then
         begin
          Inc(Result);
-        end; 
+        end;
       end;
      HEAP_STATE_ALL:begin
        if ((Flags = HEAP_FLAG_ALL) or ((Block^.Flags and Flags) = Flags)) and ((Affinity = CPU_AFFINITY_ALL) or ((Block^.Affinity and Affinity) = Affinity)) then
         begin
          Inc(Result);
-        end; 
+        end;
       end;
     end;
     Block:=Block^.Next;
    end;
  finally
   ReleaseHeapLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4751,12 +4751,12 @@ end;
 function GetHeapBlockMinEx(State,Flags,Affinity:LongWord):LongWord;
 {Get the minimum size of current heap blocks based on state, flags and affinity}
 {Note: This uses the block list (not the Free/Used/Small lists) in order to account for all blocks}
-var 
+var
  Block:PHeapBlock;
 begin
  {}
  Result:=$FFFFFFFF;
- 
+
  AcquireHeapLock;
  try
   Block:=HeapBlocks;
@@ -4767,26 +4767,26 @@ begin
        if (Block^.State = HEAP_SIGNATURE + HEAP_STATE_FREE) and ((Flags = HEAP_FLAG_ALL) or ((Block^.Flags and Flags) = Flags)) and ((Affinity = CPU_AFFINITY_ALL) or ((Block^.Affinity and Affinity) = Affinity)) then
         begin
          if Block^.Size < Result then Result:=Block^.Size;
-        end; 
+        end;
       end;
      HEAP_STATE_USED:begin
        if (Block^.State = HEAP_SIGNATURE + HEAP_STATE_USED) and ((Flags = HEAP_FLAG_ALL) or ((Block^.Flags and Flags) = Flags)) and ((Affinity = CPU_AFFINITY_ALL) or ((Block^.Affinity and Affinity) = Affinity)) then
         begin
          if Block^.Size < Result then Result:=Block^.Size;
-        end; 
+        end;
       end;
      HEAP_STATE_ALL:begin
        if ((Flags = HEAP_FLAG_ALL) or ((Block^.Flags and Flags) = Flags)) and ((Affinity = CPU_AFFINITY_ALL) or ((Block^.Affinity and Affinity) = Affinity)) then
         begin
          if Block^.Size < Result then Result:=Block^.Size;
-        end; 
+        end;
       end;
     end;
     Block:=Block^.Next;
    end;
  finally
   ReleaseHeapLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4803,12 +4803,12 @@ end;
 function GetHeapBlockMaxEx(State,Flags,Affinity:LongWord):LongWord;
 {Get the maximum size of current heap blocks based on state, flags and affinity}
 {Note: This uses the block list (not the Free/Used/Small lists) in order to account for all blocks}
-var 
+var
  Block:PHeapBlock;
 begin
  {}
  Result:=0;
- 
+
  AcquireHeapLock;
  try
   Block:=HeapBlocks;
@@ -4819,26 +4819,26 @@ begin
        if (Block^.State = HEAP_SIGNATURE + HEAP_STATE_FREE) and ((Flags = HEAP_FLAG_ALL) or ((Block^.Flags and Flags) = Flags)) and ((Affinity = CPU_AFFINITY_ALL) or ((Block^.Affinity and Affinity) = Affinity)) then
         begin
          if Block^.Size > Result then Result:=Block^.Size;
-        end; 
+        end;
       end;
      HEAP_STATE_USED:begin
        if (Block^.State = HEAP_SIGNATURE + HEAP_STATE_USED) and ((Flags = HEAP_FLAG_ALL) or ((Block^.Flags and Flags) = Flags)) and ((Affinity = CPU_AFFINITY_ALL) or ((Block^.Affinity and Affinity) = Affinity)) then
         begin
          if Block^.Size > Result then Result:=Block^.Size;
-        end; 
+        end;
       end;
      HEAP_STATE_ALL:begin
        if ((Flags = HEAP_FLAG_ALL) or ((Block^.Flags and Flags) = Flags)) and ((Affinity = CPU_AFFINITY_ALL) or ((Block^.Affinity and Affinity) = Affinity)) then
         begin
          if Block^.Size > Result then Result:=Block^.Size;
-        end; 
+        end;
       end;
     end;
     Block:=Block^.Next;
    end;
  finally
   ReleaseHeapLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4862,23 +4862,23 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get Total}
  Total:=GetHeapBlockCountEx(State,Flags,Affinity);
- 
+
  {Check Total}
  if Total = 0 then Exit;
 
  {Allocate Snapshot}
  Snapshot:=AllocMem(SizeOf(THeapSnapshot) * Total);
- 
+
  AcquireHeapLock;
  try
   {Setup Start}
   Count:=0;
   Current:=Snapshot;
   Previous:=nil;
-  
+
   {Get First Block}
   Block:=HeapBlocks;
   while (Block <> nil) do
@@ -4892,10 +4892,10 @@ begin
          {Add Block}
          Current.Address:=PtrUInt(Block);
          Current.Size:=Block^.Size;
-         Current.State:=(Block^.State and HEAP_STATE_MASK);  
-         Current.Flags:=Block^.Flags;  
+         Current.State:=(Block^.State and HEAP_STATE_MASK);
+         Current.Flags:=Block^.Flags;
          Current.Affinity:=Block^.Affinity;
-         
+
          {Add Next}
          if Previous <> nil then Previous.Next:=Current;
          Previous:=Current;
@@ -4904,7 +4904,7 @@ begin
          {Update Count}
          Inc(Count);
          if Count >= Total then Break;
-        end; 
+        end;
       end;
      HEAP_STATE_USED:begin
        {Check Flags and Affinity}
@@ -4913,10 +4913,10 @@ begin
          {Add Block}
          Current.Address:=PtrUInt(Block);
          Current.Size:=Block^.Size;
-         Current.State:=(Block^.State and not(HEAP_SIGNATURE));  
-         Current.Flags:=Block^.Flags;  
+         Current.State:=(Block^.State and not(HEAP_SIGNATURE));
+         Current.Flags:=Block^.Flags;
          Current.Affinity:=Block^.Affinity;
-         
+
          {Add Next}
          if Previous <> nil then Previous.Next:=Current;
          Previous:=Current;
@@ -4925,7 +4925,7 @@ begin
          {Update Count}
          Inc(Count);
          if Count >= Total then Break;
-        end; 
+        end;
       end;
      HEAP_STATE_ALL:begin
        {Check Flags and Affinity}
@@ -4934,31 +4934,31 @@ begin
          {Add Block}
          Current.Address:=PtrUInt(Block);
          Current.Size:=Block^.Size;
-         Current.State:=(Block^.State and not(HEAP_SIGNATURE));  
-         Current.Flags:=Block^.Flags;  
+         Current.State:=(Block^.State and not(HEAP_SIGNATURE));
+         Current.Flags:=Block^.Flags;
          Current.Affinity:=Block^.Affinity;
-         
+
          {Add Next}
          if Previous <> nil then Previous.Next:=Current;
          Previous:=Current;
          Current:=PHeapSnapshot(PtrUInt(Previous) + SizeOf(THeapSnapshot));
-         
+
          {Update Count}
          Inc(Count);
          if Count >= Total then Break;
-        end; 
+        end;
       end;
     end;
-    
+
     {Get Next Block}
     Block:=Block^.Next;
    end;
-   
+
   {Return Result}
   Result:=Snapshot;
  finally
   ReleaseHeapLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4967,13 +4967,13 @@ function DestroyHeapSnapshot(Snapshot:PHeapSnapshot):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Snapshot}
  if Snapshot = nil then Exit;
- 
+
  {Free Snapshot}
  FreeMem(Snapshot);
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -4990,10 +4990,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Address}
  if Address = nil then Exit;
- 
+
  Block:=HeapBlocks;
  while (Block <> nil) do
   begin
@@ -5017,10 +5017,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Address}
  if Address = nil then Exit;
- 
+
  Block:=HeapBlocks;
  while (Block <> nil) do
   begin
@@ -5030,7 +5030,7 @@ begin
       begin
        Result:=Block;
        Exit;
-      end; 
+      end;
     end;
    Block:=Block^.Next;
   end;
@@ -5047,10 +5047,10 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Block}
  if Block = nil then Exit;
- 
+
  {Find Next Block}
  Prev:=nil;
  Next:=HeapBlocks;
@@ -5059,7 +5059,7 @@ begin
    Prev:=Next;
    Next:=Next^.Next;
   end;
-  
+
  if Next <> nil then
   begin
    {Add before Next Block}
@@ -5093,10 +5093,10 @@ begin
      HeapBlocks:=Block;
      Block^.Prev:=nil;
     end;
-   Block^.Next:=nil; 
+   Block^.Next:=nil;
   end;
- 
- Result:=True; 
+
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -5113,13 +5113,13 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Block}
  if Block = nil then Exit;
- 
+
  {Check Size}
  if Size < HEAP_MIN_BLOCK then Exit;
- 
+
  {Create Block}
  Split:=PHeapBlock(PtrUInt(Block) + Size);
  Split^.Size:=Block^.Size - Size;
@@ -5128,10 +5128,10 @@ begin
  Split^.Affinity:=Block^.Affinity;
  Split^.PrevLink:=nil;
  Split^.NextLink:=nil;
- 
+
  {Update Size}
  Block^.Size:=Size;
- 
+
  {Link Split (After Block)}
  Split^.Prev:=Block;
  Split^.Next:=Block^.Next;
@@ -5145,12 +5145,12 @@ begin
 
  {Link Block (Before Split)}
  Block^.Next:=Split;
- 
+
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
  Inc(HeapStatistics.SplitCount);
  {$ENDIF}
- 
+
  {Return Result}
  Result:=Split;
 end;
@@ -5170,13 +5170,13 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Block}
  if Block = nil then Exit;
 
  {Get Merge}
  Merge:=Block;
- 
+
  {Get Previous}
  Prev:=Merge^.Prev;
  if Prev <> nil then
@@ -5205,17 +5205,17 @@ begin
             end;
            {Get Merge}
            Merge:=Prev;
-           
+
            {$IFDEF HEAP_STATISTICS}
            {Update Heap Statistics}
            Inc(HeapStatistics.MergePrevCount);
            {$ENDIF}
-          end; 
-        end; 
+          end;
+        end;
       end;
-    end;  
+    end;
   end;
- 
+
  {Get Next}
  Next:=Merge^.Next;
  if Next <> nil then
@@ -5242,7 +5242,7 @@ begin
             begin
              Next^.Prev:=Merge;
             end;
-            
+
            {$IFDEF HEAP_STATISTICS}
            {Update Heap Statistics}
            Inc(HeapStatistics.MergeNextCount);
@@ -5279,10 +5279,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size <= 0 then Exit;
- 
+
  {Check Size}
  if Size <= HEAP_SMALL_MAX then
   begin
@@ -5311,7 +5311,7 @@ begin
    Inc(HeapStatistics.SmallUnavailableCount);
    {$ENDIF}
   end;
- 
+
  {Large Block}
  Block:=FreeBlocks;
  while (Block <> nil) do
@@ -5345,10 +5345,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size <= 0 then Exit;
- 
+
  {Large Block (No check for Small)}
  Block:=FreeBlocks;
  while (Block <> nil) do
@@ -5363,12 +5363,12 @@ begin
      {Return Block}
      Result:=Block;
      Exit;
-    end;    
-    
-   {Get Next} 
+    end;
+
+   {Get Next}
    Block:=Block^.NextLink;
   end;
-end; 
+end;
 
 {==============================================================================}
 
@@ -5381,7 +5381,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Block}
  if Block = nil then Exit;
 
@@ -5391,7 +5391,7 @@ begin
    {Small Block}
    {Get Next}
    Next:=SmallBlocks[(Block^.Size shr HEAP_SMALL_SHIFT)];
-   
+
    {Check Next}
    if Next <> nil then
     begin
@@ -5407,15 +5407,15 @@ begin
      SmallBlocks[(Block^.Size shr HEAP_SMALL_SHIFT)]:=Block;
      Block^.PrevLink:=nil;
      Block^.NextLink:=nil;
-    end;  
-    
+    end;
+
    {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.AddSmallCount);
    {$ENDIF}
   end
  else
-  begin 
+  begin
    {Large Block}
    {Find Next Free}
    Prev:=nil;
@@ -5425,7 +5425,7 @@ begin
      Prev:=Next;
      Next:=Next^.NextLink;
     end;
-   
+
    {Check Next}
    if Next <> nil then
     begin
@@ -5460,19 +5460,19 @@ begin
        FreeBlocks:=Block;
        Block^.PrevLink:=nil;
       end;
-     Block^.NextLink:=nil; 
+     Block^.NextLink:=nil;
     end;
-    
+
    {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.AddLargeCount);
    {$ENDIF}
-  end;  
- 
+  end;
+
  {Mark as Free}
  Block^.State:=HEAP_SIGNATURE + HEAP_STATE_FREE;
- 
- Result:=True; 
+
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -5486,10 +5486,10 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Block}
  if Block = nil then Exit;
- 
+
  {Check Size}
  if Block^.Size <= HEAP_SMALL_MAX then
   begin
@@ -5497,7 +5497,7 @@ begin
    {Get Prev/Next}
    Prev:=Block^.PrevLink;
    Next:=Block^.NextLink;
-   
+
    {Check Next}
    if Next <> nil then
     begin
@@ -5511,11 +5511,11 @@ begin
       begin
        {Remove First Free}
        SmallBlocks[(Block^.Size shr HEAP_SMALL_SHIFT)]:=Next;
-      end;    
-     Next^.PrevLink:=Prev; 
+      end;
+     Next^.PrevLink:=Prev;
     end
    else
-    begin   
+    begin
      {Remove Last Free}
      if Prev <> nil then
       begin
@@ -5526,23 +5526,23 @@ begin
       begin
        {Remove First Free}
        SmallBlocks[(Block^.Size shr HEAP_SMALL_SHIFT)]:=nil;
-      end;    
-    end;  
+      end;
+    end;
    Block^.PrevLink:=nil;
    Block^.NextLink:=nil;
-   
+
    {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.RemoveSmallCount);
    {$ENDIF}
   end
  else
-  begin 
+  begin
    {Large Block}
    {Get Prev/Next}
    Prev:=Block^.PrevLink;
    Next:=Block^.NextLink;
-   
+
    {Check Next}
    if Next <> nil then
     begin
@@ -5556,11 +5556,11 @@ begin
       begin
        {Remove First Free}
        FreeBlocks:=Next;
-      end;    
-     Next^.PrevLink:=Prev; 
+      end;
+     Next^.PrevLink:=Prev;
     end
    else
-    begin   
+    begin
      {Remove Last Free}
      if Prev <> nil then
       begin
@@ -5571,21 +5571,21 @@ begin
       begin
        {Remove First Free}
        FreeBlocks:=nil;
-      end;    
-    end;  
+      end;
+    end;
    Block^.PrevLink:=nil;
    Block^.NextLink:=nil;
-   
+
    {$IFDEF HEAP_STATISTICS}
    {Update Heap Statistics}
    Inc(HeapStatistics.RemoveLargeCount);
    {$ENDIF}
   end;
-  
+
  {Mark as Used}
  Block^.State:=HEAP_SIGNATURE + HEAP_STATE_USED;
-   
- Result:=True; 
+
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -5599,10 +5599,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Address}
  if Address = nil then Exit;
- 
+
  Block:=UsedBlocks;
  while (Block <> nil) do
   begin
@@ -5626,22 +5626,22 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Address}
  if Address = nil then Exit;
 
  {Get Block}
  Block:=PHeapBlock(Address);
- 
+
  {Check State}
  if Block^.State <> HEAP_SIGNATURE + HEAP_STATE_USED then Exit;
- 
+
  {Check Flags}
  if (Block^.Flags and (HEAP_FLAG_IRQ or HEAP_FLAG_FIQ)) <> 0 then Exit;
- 
+
  Result:=True;
 end;
- 
+
 {==============================================================================}
 
 function AddUsedBlock(Block:PHeapBlock):Boolean;
@@ -5652,13 +5652,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Block}
  if Block = nil then Exit;
 
  {Get Next}
  Next:=UsedBlocks;
- 
+
  {Check Next}
  if Next <> nil then
   begin
@@ -5674,14 +5674,14 @@ begin
    UsedBlocks:=Block;
    Block^.PrevLink:=nil;
    Block^.NextLink:=nil;
-  end;  
- 
+  end;
+
  {Mark as Used}
  Block^.State:=HEAP_SIGNATURE + HEAP_STATE_USED;
- 
- Result:=True; 
+
+ Result:=True;
 end;
- 
+
 {==============================================================================}
 
 function RemoveUsedBlock(Block:PHeapBlock):Boolean;
@@ -5693,14 +5693,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Block}
  if Block = nil then Exit;
 
  {Get Prev/Next}
  Prev:=Block^.PrevLink;
  Next:=Block^.NextLink;
- 
+
  {Check Next}
  if Next <> nil then
   begin
@@ -5714,11 +5714,11 @@ begin
     begin
      {Remove First Used}
      UsedBlocks:=Next;
-    end;    
-   Next^.PrevLink:=Prev;  
+    end;
+   Next^.PrevLink:=Prev;
   end
  else
-  begin   
+  begin
    {Remove Last Used}
    if Prev <> nil then
     begin
@@ -5729,19 +5729,19 @@ begin
     begin
      {Remove First Used}
      UsedBlocks:=nil;
-    end;    
-  end;  
+    end;
+  end;
  Block^.PrevLink:=nil;
  Block^.NextLink:=nil;
 
  {Mark as Free}
  {Block^.State:=HEAP_SIGNATURE + HEAP_STATE_FREE;} {Do not mark on removal from Used, will be marked when added to Free}
-   
- Result:=True; 
+
+ Result:=True;
 end;
- 
+
 {==============================================================================}
- 
+
 function GetIRQBlock(Address:Pointer):PHeapBlock;
 {Get the IRQ Heap Block referenced by Address}
 {Address has already been normalized to include the IRQ Heap Block}
@@ -5751,10 +5751,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Address}
  if Address = nil then Exit;
- 
+
  Block:=IRQBlocks;
  while (Block <> nil) do
   begin
@@ -5778,19 +5778,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Address}
  if Address = nil then Exit;
 
  {Get Block}
  Block:=PHeapBlock(Address);
- 
+
  {Check State}
  if Block^.State <> HEAP_SIGNATURE + HEAP_STATE_USED then Exit;
- 
+
  {Check Flags}
  if (Block^.Flags and HEAP_FLAG_IRQ) = 0 then Exit;
- 
+
  Result:=True;
 end;
 
@@ -5805,10 +5805,10 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Block}
  if Block = nil then Exit;
- 
+
  {Find Next Block}
  Prev:=nil;
  Next:=IRQBlocks;
@@ -5817,7 +5817,7 @@ begin
    Prev:=Next;
    Next:=Next^.Next;
   end;
-  
+
  if Next <> nil then
   begin
    {Add before Next Block}
@@ -5851,9 +5851,9 @@ begin
      IRQBlocks:=Block;
      Block^.Prev:=nil;
     end;
-   Block^.Next:=nil; 
+   Block^.Next:=nil;
   end;
- Result:=True; 
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -5870,13 +5870,13 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Block}
  if Block = nil then Exit;
- 
+
  {Check Size}
  if Size < HEAP_MIN_BLOCK then Exit;
- 
+
  {Create Block}
  Split:=PHeapBlock(PtrUInt(Block) + Size);
  Split^.Size:=Block^.Size - Size;
@@ -5885,10 +5885,10 @@ begin
  Split^.Affinity:=Block^.Affinity;
  Split^.PrevLink:=nil;
  Split^.NextLink:=nil;
- 
+
  {Update Size}
  Block^.Size:=Size;
- 
+
  {Link Split (After Block)}
  Split^.Prev:=Block;
  Split^.Next:=Block^.Next;
@@ -5902,12 +5902,12 @@ begin
 
  {Link Block (Before Split)}
  Block^.Next:=Split;
- 
+
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.SplitCount);     
+ Inc(HeapStatistics.SplitCount);
  {$ENDIF}
- 
+
  {Return Result}
  Result:=Split;
 end;
@@ -5927,13 +5927,13 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Block}
  if Block = nil then Exit;
 
  {Get Merge}
  Merge:=Block;
- 
+
  {Get Previous}
  Prev:=Merge^.Prev;
  if Prev <> nil then
@@ -5962,17 +5962,17 @@ begin
             end;
            {Get Merge}
            Merge:=Prev;
-           
+
            {$IFDEF HEAP_STATISTICS}
            {Update Heap Statistics}
-           Inc(HeapStatistics.MergePrevCount);               
+           Inc(HeapStatistics.MergePrevCount);
            {$ENDIF}
-          end; 
-        end; 
+          end;
+        end;
       end;
-    end;  
+    end;
   end;
- 
+
  {Get Next}
  Next:=Merge^.Next;
  if Next <> nil then
@@ -5999,10 +5999,10 @@ begin
             begin
              Next^.Prev:=Merge;
             end;
-            
+
            {$IFDEF HEAP_STATISTICS}
            {Update Heap Statistics}
-           Inc(HeapStatistics.MergeNextCount);               
+           Inc(HeapStatistics.MergeNextCount);
            {$ENDIF}
           end;
         end;
@@ -6025,10 +6025,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size <= 0 then Exit;
- 
+
  Block:=FreeIRQBlocks;
  while (Block <> nil) do
   begin
@@ -6036,7 +6036,7 @@ begin
     begin
      Result:=Block;
      Exit;
-    end;    
+    end;
    Block:=Block^.NextLink;
   end;
 end;
@@ -6052,7 +6052,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Block}
  if Block = nil then Exit;
 
@@ -6064,7 +6064,7 @@ begin
    Prev:=Next;
    Next:=Next^.NextLink;
   end;
- 
+
  {Check Next}
  if Next <> nil then
   begin
@@ -6099,15 +6099,15 @@ begin
      FreeIRQBlocks:=Block;
      Block^.PrevLink:=nil;
     end;
-   Block^.NextLink:=nil; 
+   Block^.NextLink:=nil;
   end;
- 
+
  {Mark as Free}
  Block^.State:=HEAP_SIGNATURE + HEAP_STATE_FREE;
- 
- Result:=True; 
+
+ Result:=True;
 end;
- 
+
 {==============================================================================}
 
 function RemoveFreeIRQBlock(Block:PHeapBlock):Boolean;
@@ -6119,14 +6119,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Block}
  if Block = nil then Exit;
 
  {Get Prev/Next}
  Prev:=Block^.PrevLink;
  Next:=Block^.NextLink;
- 
+
  {Check Next}
  if Next <> nil then
   begin
@@ -6140,11 +6140,11 @@ begin
     begin
      {Remove First Free}
      FreeIRQBlocks:=Next;
-    end;    
-   Next^.PrevLink:=Prev; 
+    end;
+   Next^.PrevLink:=Prev;
   end
  else
-  begin   
+  begin
    {Remove Last Free}
    if Prev <> nil then
     begin
@@ -6155,15 +6155,15 @@ begin
     begin
      {Remove First Free}
      FreeIRQBlocks:=nil;
-    end;    
-  end;  
+    end;
+  end;
  Block^.PrevLink:=nil;
  Block^.NextLink:=nil;
 
  {Mark as Used}
  Block^.State:=HEAP_SIGNATURE + HEAP_STATE_USED;
-   
- Result:=True; 
+
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -6177,10 +6177,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Address}
  if Address = nil then Exit;
- 
+
  Block:=FIQBlocks;
  while (Block <> nil) do
   begin
@@ -6204,19 +6204,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Address}
  if Address = nil then Exit;
 
  {Get Block}
  Block:=PHeapBlock(Address);
- 
+
  {Check State}
  if Block^.State <> HEAP_SIGNATURE + HEAP_STATE_USED then Exit;
- 
+
  {Check Flags}
  if (Block^.Flags and HEAP_FLAG_FIQ) = 0 then Exit;
- 
+
  Result:=True;
 end;
 
@@ -6231,10 +6231,10 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Block}
  if Block = nil then Exit;
- 
+
  {Find Next Block}
  Prev:=nil;
  Next:=FIQBlocks;
@@ -6243,7 +6243,7 @@ begin
    Prev:=Next;
    Next:=Next^.Next;
   end;
-  
+
  if Next <> nil then
   begin
    {Add before Next Block}
@@ -6277,9 +6277,9 @@ begin
      FIQBlocks:=Block;
      Block^.Prev:=nil;
     end;
-   Block^.Next:=nil; 
+   Block^.Next:=nil;
   end;
- Result:=True; 
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -6296,13 +6296,13 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Block}
  if Block = nil then Exit;
- 
+
  {Check Size}
  if Size < HEAP_MIN_BLOCK then Exit;
- 
+
  {Create Block}
  Split:=PHeapBlock(PtrUInt(Block) + Size);
  Split^.Size:=Block^.Size - Size;
@@ -6311,10 +6311,10 @@ begin
  Split^.Affinity:=Block^.Affinity;
  Split^.PrevLink:=nil;
  Split^.NextLink:=nil;
- 
+
  {Update Size}
  Block^.Size:=Size;
- 
+
  {Link Split (After Block)}
  Split^.Prev:=Block;
  Split^.Next:=Block^.Next;
@@ -6328,12 +6328,12 @@ begin
 
  {Link Block (Before Split)}
  Block^.Next:=Split;
- 
+
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.SplitCount);     
+ Inc(HeapStatistics.SplitCount);
  {$ENDIF}
- 
+
  {Return Result}
  Result:=Split;
 end;
@@ -6353,13 +6353,13 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Block}
  if Block = nil then Exit;
 
  {Get Merge}
  Merge:=Block;
- 
+
  {Get Previous}
  Prev:=Merge^.Prev;
  if Prev <> nil then
@@ -6388,17 +6388,17 @@ begin
             end;
            {Get Merge}
            Merge:=Prev;
-           
+
            {$IFDEF HEAP_STATISTICS}
            {Update Heap Statistics}
-           Inc(HeapStatistics.MergePrevCount);               
+           Inc(HeapStatistics.MergePrevCount);
            {$ENDIF}
-          end; 
-        end; 
+          end;
+        end;
       end;
-    end;  
+    end;
   end;
- 
+
  {Get Next}
  Next:=Merge^.Next;
  if Next <> nil then
@@ -6425,10 +6425,10 @@ begin
             begin
              Next^.Prev:=Merge;
             end;
-            
+
            {$IFDEF HEAP_STATISTICS}
            {Update Heap Statistics}
-           Inc(HeapStatistics.MergeNextCount);               
+           Inc(HeapStatistics.MergeNextCount);
            {$ENDIF}
           end;
         end;
@@ -6451,10 +6451,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size <= 0 then Exit;
- 
+
  Block:=FreeFIQBlocks;
  while (Block <> nil) do
   begin
@@ -6462,7 +6462,7 @@ begin
     begin
      Result:=Block;
      Exit;
-    end;    
+    end;
    Block:=Block^.NextLink;
   end;
 end;
@@ -6478,7 +6478,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Block}
  if Block = nil then Exit;
 
@@ -6490,7 +6490,7 @@ begin
    Prev:=Next;
    Next:=Next^.NextLink;
   end;
- 
+
  {Check Next}
  if Next <> nil then
   begin
@@ -6525,13 +6525,13 @@ begin
      FreeFIQBlocks:=Block;
      Block^.PrevLink:=nil;
     end;
-   Block^.NextLink:=nil; 
+   Block^.NextLink:=nil;
   end;
- 
+
  {Mark as Free}
  Block^.State:=HEAP_SIGNATURE + HEAP_STATE_FREE;
- 
- Result:=True; 
+
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -6545,14 +6545,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Block}
  if Block = nil then Exit;
 
  {Get Prev/Next}
  Prev:=Block^.PrevLink;
  Next:=Block^.NextLink;
- 
+
  {Check Next}
  if Next <> nil then
   begin
@@ -6566,11 +6566,11 @@ begin
     begin
      {Remove First Free}
      FreeFIQBlocks:=Next;
-    end;    
-   Next^.PrevLink:=Prev; 
+    end;
+   Next^.PrevLink:=Prev;
   end
  else
-  begin   
+  begin
    {Remove Last Free}
    if Prev <> nil then
     begin
@@ -6581,15 +6581,15 @@ begin
     begin
      {Remove First Free}
      FreeFIQBlocks:=nil;
-    end;    
-  end;  
+    end;
+  end;
  Block^.PrevLink:=nil;
  Block^.NextLink:=nil;
 
  {Mark as Used}
  Block^.State:=HEAP_SIGNATURE + HEAP_STATE_USED;
-   
- Result:=True; 
+
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -6603,7 +6603,7 @@ begin
 end;
 
 {==============================================================================}
-  
+
 function SysFreeMem(Addr:Pointer):PtrUInt;
 {Free a block of memory}
 var
@@ -6612,18 +6612,18 @@ var
  BlockSize:PtrUInt;
 begin
  {}
- Result:=0; 
- 
+ Result:=0;
+
  AcquireHeapLock;
  try
   {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
-  Inc(HeapStatistics.FreeCount); 
+  Inc(HeapStatistics.FreeCount);
   {$ENDIF}
- 
+
   {Check Addr}
   if Addr = nil then Exit;
-  
+
   {Get Block}
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
 
@@ -6636,10 +6636,10 @@ begin
     {$ENDIF}
     Exit;
    end;
-  
+
   {Get Size}
   BlockSize:=Block^.Size;
-  
+
   {Remove Used Block}
   if not RemoveUsedBlock(Block) then
    begin
@@ -6648,8 +6648,8 @@ begin
     Inc(HeapStatistics.FreeRemoveFailCount);
     {$ENDIF}
     Exit;
-   end; 
-  
+   end;
+
   {Merge Block}
   Merge:=MergeHeapBlock(Block);
   if Merge = nil then
@@ -6660,7 +6660,7 @@ begin
     {$ENDIF}
     Exit;
    end;
-  
+
   {Add Free Block}
   if not AddFreeBlock(Merge) then
    begin
@@ -6670,31 +6670,31 @@ begin
     {$ENDIF}
     Exit;
    end;
-  
+
   {Update Heap Status}
   {Free}
   Inc(HeapStatus.TotalUncommitted,BlockSize);
   Inc(HeapStatus.TotalFree,BlockSize);
   Inc(HeapStatus.Unused,BlockSize);
-  {Used}  
+  {Used}
   Dec(HeapStatus.TotalCommitted,BlockSize);
   Dec(HeapStatus.TotalAllocated,BlockSize);
-  
+
   {Update FPC Heap Status}
   {Free}
   Inc(FPCHeapStatus.CurrHeapFree,BlockSize);
   {Used}
   Dec(FPCHeapStatus.CurrHeapUsed,BlockSize);
-  
+
   {Return Result}
   Result:=BlockSize - SizeOf(THeapBlock);
- finally 
+ finally
   ReleaseHeapLock;
  end;
 end;
 
 {==============================================================================}
-  
+
 function SysFreeMemSize(Addr:Pointer;Size:PtrUInt):PtrUInt;
 {Free a block of memory}
 {Note: Size is not currently used}
@@ -6702,15 +6702,15 @@ begin
  {}
  {$IFDEF HEAP_STATISTICS}
  {Update Heap Statistics}
- Inc(HeapStatistics.FreeSizeCount);  
+ Inc(HeapStatistics.FreeSizeCount);
  {$ENDIF}
- 
+
  {Return Result}
  Result:=SysFreeMem(Addr);
 end;
 
 {==============================================================================}
-  
+
 function SysAllocMem(Size:PtrUInt):Pointer;
 {Allocate and clear a block of normal memory}
 {Note: Not inlined to AllocMemEx to save extra call from memory manager}
@@ -6731,7 +6731,7 @@ begin
 end;
 
 {==============================================================================}
-  
+
 function SysReAllocMem(var Addr:Pointer;Size:PtrUInt):Pointer; inline;
 {Reallocate a block of normal memory}
 begin
@@ -6748,20 +6748,20 @@ var
 begin
  {}
  Result:=0;
- 
+
  AcquireHeapLock;
  try
   {$IFDEF HEAP_STATISTICS}
   {Update Heap Statistics}
-  Inc(HeapStatistics.SizeCount); 
+  Inc(HeapStatistics.SizeCount);
   {$ENDIF}
- 
+
   {Check Addr}
   if Addr = nil then Exit;
- 
+
   {Get Block}
   Block:=PHeapBlock(PtrUInt(PtrUInt(Addr) - SizeOf(THeapBlock)));
-  
+
   {Check Block}
   if not CheckUsedBlock(Block) then
    begin
@@ -6771,12 +6771,12 @@ begin
     {$ENDIF}
     Exit;
    end;
-   
+
   {Return Result}
   Result:=Block^.Size - SizeOf(THeapBlock);
  finally
   ReleaseHeapLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6813,14 +6813,14 @@ function SysGetHeapStatus:THeapStatus;
 begin
  {}
  FillChar(Result,SizeOf(THeapStatus),0);
- 
+
  AcquireHeapLock;
  try
   {Copy Status}
   System.Move(HeapStatus,Result,SizeOf(THeapStatus));
  finally
   ReleaseHeapLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6830,14 +6830,14 @@ function SysGetFPCHeapStatus:TFPCHeapStatus;
 begin
  {}
  FillChar(Result,SizeOf(TFPCHeapStatus),0);
- 
+
  AcquireHeapLock;
  try
   {Copy Status}
   System.Move(FPCHeapStatus,Result,SizeOf(TFPCHeapStatus));
  finally
   ReleaseHeapLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6921,8 +6921,8 @@ function HeapStateToString(State:LongWord):String;
 begin
  {}
  Result:='';
- 
- case State of 
+
+ case State of
   HEAP_STATE_FREE:Result:='HEAP_STATE_FREE';
   HEAP_STATE_USED:Result:='HEAP_STATE_USED';
  end;
@@ -6933,13 +6933,13 @@ end;
 
 initialization
  RegisterMemoryManager;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
-  
+
 {==============================================================================}
 {==============================================================================}
-  
+
 end.

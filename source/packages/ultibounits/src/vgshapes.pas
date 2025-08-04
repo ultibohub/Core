@@ -1,33 +1,33 @@
 {VGShapes Library:
- 
+
   Ported to FreePascal by Garry Wood <garry@softoz.com.au>
 
   From C source available at https://github.com/ajstarks/openvg
-  
+
   Multiple layer, app font and shared context support by Richard Metcalfe <richard@richmet.com>
-  
+
  Original Copyright:
-  
+
   Copyright (C) 2012 Anthony Starks
-  
-  Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
-  and associated documentation files (the "Software"), to deal in the Software without 
-  restriction, including without limitation the rights to use, copy, modify, merge, publish, 
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+  and associated documentation files (the "Software"), to deal in the Software without
+  restriction, including without limitation the rights to use, copy, modify, merge, publish,
   distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
   Software is furnished to do so, subject to the following conditions:
-  
+
   The above copyright notice and this permission notice shall be included in all copies or
   substantial portions of the Software.
-  
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
-  INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE 
-  AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
-  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+  INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE
+  AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-  
-  The images in this repository are Licensed under 
+
+  The images in this repository are Licensed under
   the Creative Commons Attribution 3.0 license as described in
-  http://creativecommons.org/licenses/by/3.0/us/  
+  http://creativecommons.org/licenses/by/3.0/us/
 
 }
 
@@ -38,9 +38,9 @@ unit VGShapes;
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
- 
+
 interface
- 
+
 {$IFDEF FPC_DOTTEDUNITS}
 uses
   Core.GlobalConst,
@@ -106,11 +106,11 @@ type
   Glyphs:array[0..VGSHAPES_MAXFONTPATH - 1] of VGPath;
   ReferenceCount:Integer;
  end;
- 
+
  {Color Information}
  PVGShapesColor = ^TVGShapesColor;
  TVGShapesColor = array[0..3] of VGfloat;
- 
+
 {==============================================================================}
 {Library Functions}
 {Initialization}
@@ -153,8 +153,8 @@ procedure VGShapesTranslate(x,y:VGfloat);
 procedure VGShapesRotate(r:VGfloat);
 procedure VGShapesShear(x,y:VGfloat);
 procedure VGShapesScale(x,y:VGfloat);
- 
-{Style} 
+
+{Style}
 procedure VGShapesSetFill(const color:TVGShapesColor);
 procedure VGShapesSetStroke(const color:TVGShapesColor);
 procedure VGShapesStrokeWidth(width:VGfloat;cap:VGCapStyle = VG_CAP_BUTT;join:VGJoinStyle = VG_JOIN_MITER);
@@ -341,7 +341,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  for Count:=0 to VGSHAPES_MAXLAYERS - 1 do
   begin
    if Layers[Count].Initialized then
@@ -349,8 +349,8 @@ begin
      if (DisplayId = VGSHAPES_NODISPLAY) or (DisplayId = Layers[Count].DisplayId) then
       begin
        Inc(Result);
-      end; 
-    end; 
+      end;
+    end;
   end;
 end;
 
@@ -363,7 +363,7 @@ var
 begin
  {}
  Result:=VGSHAPES_NOLAYER;
- 
+
  for Count:=0 to VGSHAPES_MAXLAYERS - 1 do
   begin
    if Layers[Count].Initialized then
@@ -372,7 +372,7 @@ begin
       begin
        Result:=Count;
        Exit;
-      end; 
+      end;
     end;
   end;
 end;
@@ -393,7 +393,7 @@ begin
  {}
  {Check State}
  if State = nil then Exit;
- 
+
  {Set source & destination rectangles so that the image is clipped if it goes off screen (else dispman won't show it properly)}
  if X < (1 - Integer(State.WindowWidth)) then {Too far off left}
   begin
@@ -426,8 +426,8 @@ begin
    dx:=State.ScreenWidth - 1;
    sx:=0;
    w:=1;
-  end;  
-  
+  end;
+
  if Y < (1 - Integer(State.WindowHeight)) then {Too far off top}
   begin
    Y:=1 - Integer(State.WindowHeight);
@@ -446,7 +446,7 @@ begin
    dy:=Y;
    sy:=0;
    h:=State.WindowHeight;
-  end  
+  end
  else if Y < State.ScreenHeight then {Part of bottom is off}
   begin
    dy:=Y;
@@ -459,12 +459,12 @@ begin
    dy:=State.ScreenHeight - 1;
    sy:=0;
    h:=1;
-  end;  
+  end;
 
  {Update Position}
  State.WindowX:=X;
  State.WindowY:=Y;
- 
+
  vc_dispmanx_rect_set(DestRect,dx,dy,w,h);
  vc_dispmanx_rect_set(SourceRect,sx shl 16,sy shl 16,w shl 16,h shl 16);
 end;
@@ -477,7 +477,7 @@ var
  First:LongInt;
  Offset:LongWord;
  Previous:PEGLState;
- 
+
  Config:EGLConfig;
  ConfigCount:EGLint;
  EGLResult:EGLBoolean;
@@ -490,10 +490,10 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check State}
  if State = nil then Exit;
- 
+
  {Setup Defaults}
  DispmanDisplay:=DISPMANX_NO_HANDLE;
  DispmanUpdate:=DISPMANX_NO_HANDLE;
@@ -501,12 +501,12 @@ begin
  State.Display:=EGL_NO_DISPLAY;
  State.Surface:=EGL_NO_SURFACE;
  State.Context:=EGL_NO_CONTEXT;
- 
+
  {Setup Alpha}
  State.Alpha.flags:=AlphaFlags;
  State.Alpha.opacity:=255;
  State.Alpha.mask:=0;
- 
+
  {Setup Attribute List}
  State.AttributeList[0]:=EGL_RED_SIZE;
  State.AttributeList[1]:=8;
@@ -528,12 +528,12 @@ begin
  State.AttributeList[Offset + 2]:=EGL_RENDERABLE_TYPE;
  State.AttributeList[Offset + 3]:=EGL_OPENVG_BIT;
  State.AttributeList[Offset + 4]:=EGL_NONE;
- 
+
  {Get Previous}
  Previous:=nil;
  First:=FirstLayer(DisplayId);
  if First <> VGSHAPES_NOLAYER then Previous:=Layers[First].State;
- 
+
  try
   {Check Previous}
   if Previous = nil then
@@ -541,11 +541,11 @@ begin
     {Get an EGL display connection}
     State.Display:=eglGetDisplay(EGL_DEFAULT_DISPLAY);
     if State.Display = EGL_NO_DISPLAY then Exit;
-  
+
     {Initialize the EGL display connection}
     EGLResult:=eglInitialize(State.Display,nil,nil);
     if EGLResult = EGL_FALSE then Exit;
-  
+
     {Bind OpenVG API}
     EGLResult:=eglBindAPI(EGL_OPENVG_API);
     if EGLResult = EGL_FALSE then Exit;
@@ -555,7 +555,7 @@ begin
     {Copy Display}
     State.Display:=Previous.Display;
    end;
-  
+
   {Get an appropriate EGL framebuffer configuration}
   EGLResult:=eglChooseConfig(State.Display,@State.AttributeList,@Config,1,@ConfigCount);
   if EGLResult = EGL_FALSE then Exit;
@@ -578,57 +578,57 @@ begin
     State.Context:=eglCreateContext(State.Display,Config,Layers[ShareContextWithLayer].State.Context,nil)
    end;
   if State.Context = EGL_NO_CONTEXT then Exit;
-  
+
   {Get the current screen parameters}
   if BCMHostGraphicsGetDisplaySize(DisplayId,State.ScreenWidth,State.ScreenHeight) < 0 then Exit;
   State.ScreenPitch:=4 * ((State.WindowWidth + 15) and not(15));
-  
+
   if (State.WindowWidth = 0) or (State.WindowWidth > State.ScreenWidth) then
    begin
     State.WindowWidth:=State.ScreenWidth;
    end;
-   
+
   if (State.WindowHeight = 0) or (State.WindowHeight > State.ScreenHeight) then
    begin
     State.WindowHeight:=State.ScreenHeight;
    end;
-  
+
   {Adjust position so that at least one pixel is on screen and set up the dispman rects}
   SetWindowParams(State,State.WindowX,State.WindowY,@SourceRect,@DestRect);
-  
+
   {Open Dispman Display}
   if Previous = nil then DispmanDisplay:=vc_dispmanx_display_open(DisplayId) else DispmanDisplay:=Previous.DisplayHandle;
   if DispmanDisplay = DISPMANX_NO_HANDLE then Exit;
-  
+
   {Start Dispman Update}
   DispmanUpdate:=vc_dispmanx_update_start(0);
   if DispmanUpdate = DISPMANX_NO_HANDLE then Exit;
-  
+
   {Add Dispman Element}
   DispmanElement:=vc_dispmanx_element_add(DispmanUpdate,DispmanDisplay,LayerId {Layer},@DestRect,0 {Source},@SourceRect,DISPMANX_PROTECTION_NONE,@State.Alpha,nil {Clamp},DISPMANX_NO_ROTATE {Transform});
   if DispmanElement = DISPMANX_NO_HANDLE then Exit;
-  
+
   State.DisplayHandle:=DispmanDisplay;
   State.Element:=DispmanElement;
   State.NativeWindow.Element:=DispmanElement;
   State.NativeWindow.Width:=State.WindowWidth;
   State.NativeWindow.Height:=State.WindowHeight;
-  
+
   {Submit Dispman Update}
   vc_dispmanx_update_submit_sync(DispmanUpdate);
- 
+
   {Create an EGL window surface}
   State.Surface:=eglCreateWindowSurface(State.Display,Config,@State.NativeWindow,nil);
   if State.Surface = EGL_NO_SURFACE then Exit;
-  
+
   {Preserve the buffers on swap}
   EGLResult:=eglSurfaceAttrib(State.Display,State.Surface,EGL_SWAP_BEHAVIOR,EGL_BUFFER_PRESERVED);
   if EGLResult = EGL_FALSE then Exit;
- 
+
   {Connect the context to the surface}
   EGLResult:=eglMakeCurrent(State.Display,State.Surface,State.Surface,State.Context);
   if EGLResult = EGL_FALSE then Exit;
-  
+
   Result:=True;
  finally
   if not Result then
@@ -645,8 +645,8 @@ begin
        begin
         {Terminate EGL}
         eglMakeCurrent(State.Display,EGL_NO_SURFACE,EGL_NO_SURFACE,EGL_NO_CONTEXT);
-       end; 
-      
+       end;
+
       {Check Element}
       if DispmanElement <> DISPMANX_NO_HANDLE then
        begin
@@ -656,15 +656,15 @@ begin
          begin
           {Remove Dispman Element}
           vc_dispmanx_element_remove(DispmanUpdate,DispmanElement);
-        
+
           {Submit Dispman Update}
           vc_dispmanx_update_submit_sync(DispmanUpdate);
-         end; 
-       end; 
-      
+         end;
+       end;
+
       {Destroy Surface}
       if State.Surface <> EGL_NO_SURFACE then eglDestroySurface(State.Display,State.Surface);
-      
+
       {Destroy Context}
       if State.Context <> EGL_NO_CONTEXT then eglDestroyContext(State.Display,State.Context);
 
@@ -673,18 +673,18 @@ begin
        begin
         {Close Dispman Display}
         if DispmanDisplay <> DISPMANX_NO_HANDLE then vc_dispmanx_display_close(DispmanDisplay);
-        
+
         {Terminate Display}
         eglTerminate(State.Display);
-       end;       
+       end;
      end;
    end;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-procedure DispmanXMoveWindow(State:PEGLState;X,Y:Integer); 
+procedure DispmanXMoveWindow(State:PEGLState;X,Y:Integer);
 {DispmanXMoveWindow repositions an OpenVG window to given coords. Negative coords are allowed up to 1 - width, 1 - height,
  Maximum ScreenWidth - 1, ScreenHeight - 1. i.e. at least one pixel must be on the screen}
 var
@@ -695,13 +695,13 @@ begin
  {}
  {Check State}
  if State = nil then Exit;
- 
+
  {Update Window}
  SetWindowParams(State,X,Y,@SourceRect,@DestRect);
- 
+
  {Start Update}
  DispmanUpdate:=vc_dispmanx_update_start(0);
- 
+
  {Change Element}
  vc_dispmanx_element_change_attributes(DispmanUpdate,State.Element,0,0,0,@DestRect,@SourceRect,0,DISPMANX_NO_ROTATE);
 
@@ -711,7 +711,7 @@ end;
 
 {==============================================================================}
 
-procedure DispmanXChangeWindowLayer(State:PEGLState;LayerId:LongInt); 
+procedure DispmanXChangeWindowLayer(State:PEGLState;LayerId:LongInt);
 {DispmanXChangeWindowLayer changes the layer id of the current window}
 var
  DispmanUpdate:DISPMANX_UPDATE_HANDLE_T;
@@ -722,17 +722,17 @@ begin
 
  {Start Update}
  DispmanUpdate:=vc_dispmanx_update_start(0);
- 
+
  {Change Element}
  vc_dispmanx_element_change_layer(DispmanUpdate,State.Element,LayerId);
- 
+
  {Submit Update}
  vc_dispmanx_update_submit_sync(DispmanUpdate);
 end;
 
 {==============================================================================}
 
-procedure DispmanXChangeWindowOpacity(State:PEGLState;Alpha:LongWord); 
+procedure DispmanXChangeWindowOpacity(State:PEGLState;Alpha:LongWord);
 {DispmanXChangeWindowOpacity changes the window's opacity 0 = transparent, 255 = opaque}
 var
  DispmanUpdate:DISPMANX_UPDATE_HANDLE_T;
@@ -740,7 +740,7 @@ begin
  {}
  {Check State}
  if State = nil then Exit;
- 
+
  {Check Alpha}
  if Alpha > 255 then Alpha:=255;
 
@@ -764,7 +764,7 @@ procedure VGShapesInitLayerId(layerid:LongInt);
 begin
  {}
  if Layers[Current].Initialized then Exit;
- 
+
  Layers[Current].LayerId:=layerid;
 end;
 
@@ -776,7 +776,7 @@ procedure VGShapesInitDisplayId(displayid:LongWord);
 begin
  {}
  if Layers[Current].Initialized then Exit;
- 
+
  Layers[Current].DisplayId:=displayid;
 end;
 
@@ -789,10 +789,10 @@ procedure VGShapesInitAlphaMaskSize(aphamasksize:LongInt);
 begin
  {}
  if Layers[Current].Initialized then Exit;
- 
+
  {Size must not be negative}
  if aphamasksize < 0 then Exit;
- 
+
  Layers[Current].AlphaMaskSize:=aphamasksize;
 end;
 
@@ -803,7 +803,7 @@ procedure VGShapesInitWindowSize(x,y:Integer;w,h:LongWord);
 begin
  {}
  if Layers[Current].Initialized then Exit;
- 
+
  Layers[Current].InitX:=x;
  Layers[Current].InitY:=y;
  Layers[Current].InitW:=w;
@@ -841,7 +841,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Setup Defaults}
  w:=-1;
  h:=-1;
@@ -850,7 +850,7 @@ begin
  if layer <> VGSHAPES_NOLAYER then
   begin
    if (layer < 0) or (layer >= VGSHAPES_MAXLAYERS) then Exit;
-   
+
    {Set Layer}
    VGShapesSetLayer(layer);
   end;
@@ -873,7 +873,7 @@ begin
  {Initialize Host}
  if First then BCMHostInit;
 
- {Check Initialized} 
+ {Check Initialized}
  if not Layers[Current].Initialized then
   begin
    {Allocate State}
@@ -895,8 +895,8 @@ begin
      Exit;
     end;
 
-   Layers[Current].Initialized:=True; 
-   
+   Layers[Current].Initialized:=True;
+
    {Note: Layer will be made current by eglInit}
 
    if First then
@@ -972,7 +972,7 @@ begin
     end;
 
    {Return Result}
-   Result:=True; 
+   Result:=True;
   end;
 
  {Return Window Size}
@@ -994,7 +994,7 @@ begin
 
  {Save Layer}
  Layer:=Current;
- 
+
  {Unload internal fonts (Unloaded and freed below)}
  Layers[Layer].SansTypeface:=nil;
  Layers[Layer].SerifTypeface:=nil;
@@ -1018,7 +1018,7 @@ begin
      begin
        Dec(Layers[Layer].AppFontList[Index].FontInfoP^.ReferenceCount);
      end;
-     
+
      {Release memory when no references remaining}
      if Layers[Layer].AppFontList[Index].FontInfoP^.ReferenceCount = 0 then
      begin
@@ -1068,7 +1068,7 @@ begin
   end
  else
   begin
-   {Terminate EGL}    
+   {Terminate EGL}
    eglMakeCurrent(Layers[Layer].State.Display,EGL_NO_SURFACE,EGL_NO_SURFACE,EGL_NO_CONTEXT);
   end;
 
@@ -1078,29 +1078,29 @@ begin
    {Start Dispman Update}
    DispmanUpdate:=vc_dispmanx_update_start(0);
    if DispmanUpdate = DISPMANX_NO_HANDLE then Exit;
-   
+
    {Remove Dispman Element}
    vc_dispmanx_element_remove(DispmanUpdate,Layers[Layer].State.Element);
-   
+
    {Submit Dispman Update}
    vc_dispmanx_update_submit_sync(DispmanUpdate);
-  end; 
+  end;
 
  {Destroy Surface}
  if Layers[Layer].State.Surface <> EGL_NO_SURFACE then eglDestroySurface(Layers[Layer].State.Display,Layers[Layer].State.Surface);
- 
+
  {Destroy Context}
  if Layers[Layer].State.Context <> EGL_NO_CONTEXT then eglDestroyContext(Layers[Layer].State.Display,Layers[Layer].State.Context);
- 
+
  {Check Layers}
  if CountLayers(Layers[Layer].DisplayId) = 0 then
   begin
    {Close Dispman Display}
    if Layers[Layer].State.DisplayHandle <> DISPMANX_NO_HANDLE then vc_dispmanx_display_close(Layers[Layer].State.DisplayHandle);
-   
+
    {Terminate Display}
    eglTerminate(Layers[Layer].State.Display);
-  end; 
+  end;
 
  {Free State}
  FreeMem(Layers[Layer].State);
@@ -1159,7 +1159,7 @@ begin
 
  {Check layer initialized}
  if not Layers[layer].Initialized then Exit;
- 
+
  Result:=Layers[layer].SharedContextWithLayer <> VGSHAPES_NOLAYER;
 end;
 
@@ -1188,25 +1188,25 @@ begin
  if InstructionCounts = nil then Exit;
  if adv = nil then Exit;
  if cmap = nil then Exit;
- 
+
  if ng > VGSHAPES_MAXFONTPATH then Exit;
- 
+
  for Count:=0 to ng - 1 do
   begin
    Point:=@Points[PointIndices[Count] * 2];
    Instruction:=@Instructions[InstructionIndices[Count]];
    InstructionCount:=InstructionCounts[Count];
-   
+
    {Create Path}
    Path:=vgCreatePath(VG_PATH_FORMAT_STANDARD,VG_PATH_DATATYPE_S_32,1.0 / 65536.0,0.0,0,0,VG_PATH_CAPABILITY_ALL);
    Result.Glyphs[Count]:=Path;
-   
+
    if InstructionCount <> 0 then
     begin
      vgAppendPathData(Path,InstructionCount,Instruction,Point);
     end;
   end;
- 
+
  Result.CharacterMap:=cmap;
  Result.GlyphAdvances:=adv;
  Result.Count:=ng;
@@ -1227,7 +1227,7 @@ begin
 
  {Check Glyphs}
  if glyphs = nil then Exit;
- 
+
  for Count:=0 to n - 1 do
   begin
    {Destroy Path}
@@ -1244,7 +1244,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Initialized}
  if not Layers[Current].Initialized then Exit;
 
@@ -1254,7 +1254,7 @@ begin
    {$IFDEF VGSHAPES_DEBUG}
    LogDebug('SansTypeface layer ' + Current.ToString + ' has shared context');
    {$ENDIF}
-  
+
    {Check font reference not already copied}
    if (Layers[Current].SansTypeFace = nil) then
     begin
@@ -1264,7 +1264,7 @@ begin
        {$IFDEF VGSHAPES_DEBUG}
        LogDebug('SansTypeface layer ' + Current.ToString + ', assiging shared font from layer ' + IntToStr(Layers[Current].SharedContextWithLayer));
        {$ENDIF}
-       
+
        Layers[Current].SansTypeface:=Layers[Layers[Current].SharedContextWithLayer].SansTypeface;
 
        {Update app font entry with font info pointer}
@@ -1275,7 +1275,7 @@ begin
            {$IFDEF VGSHAPES_DEBUG}
            LogDebug('SansTypeface updating app font list for layer ' + Current.ToString + ' font ' + VGSHAPES_FONTNAME_SANSSERIF + ', incrementing reference count of sans typeface at address ' + PtrToHex(Layers[Current].SansTypeface));
            {$ENDIF}
-          
+
            Layers[Current].AppFontList[Index].FontInfoP:=Layers[Current].SansTypeface;
            Inc(Layers[Current].SansTypeface.ReferenceCount);
            Break;
@@ -1301,7 +1301,7 @@ begin
      {$ENDIF}
     end;
   end;
- 
+
  {Check Sans Font}
  if Layers[Current].SansTypeface = nil then
   begin
@@ -1349,7 +1349,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Initialized}
  if not Layers[Current].Initialized then Exit;
 
@@ -1454,7 +1454,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Initialized}
  if not Layers[Current].Initialized then Exit;
 
@@ -1573,7 +1573,7 @@ begin
 
  {Check Initialized}
  if not Layers[Current].Initialized then Exit;
- 
+
  {Check existing font}
  Result:=VGShapesGetAppFontByName(appfontname,Current);
  if Result <> nil then Exit;
@@ -1591,7 +1591,7 @@ begin
 
   {Increment reference count}
   Inc(appFontInfoP^.ReferenceCount);
-   
+
   {$IFDEF VGSHAPES_DEBUG}
   LogDebug('LoadSharedAppFont reference count for ' + appfontname + ' is now ' + IntToStr(appFontInfoP^.ReferenceCount));
   {$ENDIF}
@@ -1629,7 +1629,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Set Defaults}
  appFontInfoP:=nil;
 
@@ -1644,7 +1644,7 @@ begin
  if (Layers[Current].SharedContextWithLayer <> VGSHAPES_NOLAYER) then
  begin
   appFontInfoP:=VGShapesLoadSharedAppFont(appfontname);
- end; 
+ end;
 
  if appFontInfoP = nil then
  begin
@@ -1709,7 +1709,7 @@ begin
      Found:=True;
      Break;
     end;
- 
+
    Inc(Index);
   end;
 
@@ -1723,9 +1723,9 @@ begin
       begin
        if Layers[Current].AppFontList[Index].FontInfoP = Layers[Current].SansTypeface then
         Layers[Current].SansTypeface:=nil
-       else if Layers[Current].AppFontList[Index].FontInfoP = Layers[Current].SerifTypeface then 
+       else if Layers[Current].AppFontList[Index].FontInfoP = Layers[Current].SerifTypeface then
         Layers[Current].SerifTypeface:=nil
-       else if Layers[Current].AppFontList[Index].FontInfoP = Layers[Current].MonoTypeface then 
+       else if Layers[Current].AppFontList[Index].FontInfoP = Layers[Current].MonoTypeface then
         Layers[Current].MonoTypeface:=nil;
       end;
 
@@ -1769,7 +1769,7 @@ begin
    if Index < Layers[Current].AppFontListCount - 1 then
     begin
      Move(Layers[Current].AppFontList[Index + 1],Layers[Current].AppFontList[Index],(Layers[Current].AppFontListCount - (Index + 1)) * SizeOf(TVGShapesAppFont));
-    end; 
+    end;
 
    {Reduce font count}
    Dec(Layers[Current].AppFontListCount);
@@ -1844,20 +1844,20 @@ begin
 
  {Setup Stride}
  Stride:=w * 4;
- 
+
  {Setup Format}
  ImageFormat:=VG_sABGR_8888;
- 
+
  {Create Image}
  Image:=vgCreateImage(ImageFormat,w,h,VG_IMAGE_QUALITY_BETTER);
  if Image = VG_INVALID_HANDLE then Exit;
- 
+
  {Copy Pixels to Image}
  vgImageSubData(Image,data,Stride,ImageFormat,0,0,w,h);
- 
+
  {Display Image}
  vgSetPixels(Trunc(x),Trunc(y),Image,0,0,w,h);
- 
+
  {Destroy Image}
  vgDestroyImage(Image);
 end;
@@ -1879,7 +1879,7 @@ begin
 
  {Display Image}
  vgSetPixels(Trunc(x),Trunc(y),Image,0,0,w,h);
- 
+
  {Destroy Image}
  vgDestroyImage(Image);
 end;
@@ -1891,22 +1891,22 @@ function VGShapesCreateImageFromJpeg(const filename:String):VGImage;
  source: https://github.com/ileben/ShivaVG/blob/master/examples/test_image.c}
 var
  FileStream:TFileStream;
- 
+
  jerr:jpeg_error_mgr;
  jdc:jpeg_decompress_struct;
- 
+
  Data:PVGubyte;
  DataStride:LongWord;
  DataBPP:LongWord;
- 
+
  Buffer:JSAMPARRAY;
  BufferStride:LongWord;
  BufferBPP:LongWord;
- 
+
  Image:VGImage;
  Width:LongWord;
  Height:LongWord;
- 
+
  X:LongWord;
  DataRow:PVGubyte;
  BufferRow:PVGubyte;
@@ -1915,10 +1915,10 @@ var
 begin
  {}
  Result:=VG_INVALID_HANDLE;
- 
+
  {Check Initialized}
  if not Layers[Current].Initialized then Exit;
- 
+
  {Check for endianness}
  EndianTest:=1;
  if PByte(@EndianTest)[0] = 1 then
@@ -1926,49 +1926,49 @@ begin
    ImageFormat:=VG_sABGR_8888;
   end
  else
-  begin 
+  begin
    ImageFormat:=VG_sRGBA_8888;
-  end; 
- 
+  end;
+
  {Check if the file exists}
  if not FileExists(Filename) then Exit;
- 
+
  {Try to open image file}
  FileStream:=TFileStream.Create(Filename,fmOpenRead or fmShareDenyNone);
  try
   {Setup default error handling}
   jdc.err:=jpeg_std_error(jerr);
   jpeg_create_decompress(@jdc);
-  
+
   {Set input file}
   jpeg_stdio_src(@jdc,@FileStream);
-    
+
   {Read header and start}
   jpeg_read_header(@jdc,True);
   jpeg_start_decompress(@jdc);
   Width:=jdc.output_width;
   Height:=jdc.output_height;
-  
+
   {Allocate buffer using jpeg allocator}
   BufferBPP:=jdc.output_components;
   BufferStride:=Width * BufferBPP;
   Buffer:=jdc.mem.alloc_sarray(@jdc,JPOOL_IMAGE,BufferStride,1);
-  
+
   {Allocate image data buffer}
   DataBPP:=4;
   DataStride:=Width * DataBPP;
   Data:=GetMem(DataStride * Height);
-  
+
   {Iterate until all scanlines processed}
   while jdc.output_scanline < Height do
    begin
     {Read scanline into buffer}
     jpeg_read_scanlines(@jdc,Buffer,1);
-    
+
     {Get Rows}
     DataRow:=Data + (Height - jdc.output_scanline) * DataStride;
     BufferRow:=PVGubyte(Buffer[0]);
-    
+
     {Expand to RGBA}
     X:=0;
     while X < Width do
@@ -1989,26 +1989,26 @@ begin
          DataRow[3]:=255;
         end;
       end;
-      
+
       {Update X}
       Inc(X);
-      
+
       {Update Rows}
       DataRow:=DataRow + DataBPP;
       BufferRow:=BufferRow + BufferBPP;
      end;
    end;
- 
+
   {Create VG image}
   Image:=vgCreateImage(ImageFormat,Width,Height,VG_IMAGE_QUALITY_BETTER);
   vgImageSubData(Image,Data,DataStride,ImageFormat,0,0,Width,Height);
-  
+
   {Destroy decompress}
   jpeg_destroy_decompress(@jdc);
-  
+
   {Free data}
   FreeMem(Data);
-  
+
   {Return Image}
   Result:=Image;
  finally
@@ -2065,7 +2065,7 @@ begin
 end;
 
 {==============================================================================}
-{Style} 
+{Style}
 procedure VGShapesSetFill(const color:TVGShapesColor);
 {SetFill sets the fill color}
 var
@@ -2078,13 +2078,13 @@ begin
  {Create Paint}
  fillPaint:=vgCreatePaint;
 
- {Set Parameters} 
+ {Set Parameters}
  vgSetParameteri(fillPaint,VG_PAINT_TYPE,VG_PAINT_TYPE_COLOR);
  vgSetParameterfv(fillPaint,VG_PAINT_COLOR,4,@color);
- 
+
  {Set Paint}
  vgSetPaint(fillPaint,VG_FILL_PATH);
- 
+
  {Destroy Paint}
  vgDestroyPaint(fillPaint);
 end;
@@ -2103,13 +2103,13 @@ begin
  {Create Paint}
  strokePaint:=vgCreatePaint;
 
- {Set Parameters} 
+ {Set Parameters}
  vgSetParameteri(strokePaint,VG_PAINT_TYPE,VG_PAINT_TYPE_COLOR);
  vgSetParameterfv(strokePaint,VG_PAINT_COLOR,4,@color);
- 
+
  {Set Paint}
  vgSetPaint(strokePaint,VG_STROKE_PATH);
- 
+
  {Destroy Paint}
  vgDestroyPaint(strokePaint);
 end;
@@ -2136,13 +2136,13 @@ begin
  {}
  {Check Red}
  if r > 255 then r:=0;
- 
+
  {Check Green}
  if g > 255 then g:=0;
- 
+
  {Check Blue}
  if b > 255 then b:=0;
- 
+
  {Check Alpha}
  if (a < 0.0) or (a > 1.0) then a:=1.0;
 
@@ -2201,7 +2201,7 @@ begin
  {Set Defaults}
  MultiMode:=VG_FALSE;
  SpreadMode:=VG_COLOR_RAMP_SPREAD_REPEAT;
- 
+
  {Set Parameters}
  vgSetParameteri(paint,VG_PAINT_COLOR_RAMP_SPREAD_MODE,SpreadMode);
  vgSetParameteri(paint,VG_PAINT_COLOR_RAMP_PREMULTIPLIED,MultiMode);
@@ -2226,17 +2226,17 @@ begin
  LinearCoordinates[1]:=y1;
  LinearCoordinates[2]:=x2;
  LinearCoordinates[3]:=y2;
- 
+
  {Create Paint}
  Paint:=vgCreatePaint;
- 
+
  {Set Parameters}
  vgSetParameteri(Paint,VG_PAINT_TYPE,VG_PAINT_TYPE_LINEAR_GRADIENT);
  vgSetParameterfv(Paint,VG_PAINT_LINEAR_GRADIENT,4,@LinearCoordinates);
- 
+
  {Set Stops}
  VGShapesSetStops(Paint,stops,ns);
- 
+
  {Destroy Paint}
  vgDestroyPaint(Paint);
 end;
@@ -2259,17 +2259,17 @@ begin
  RadialCoordinates[2]:=fx;
  RadialCoordinates[3]:=fy;
  RadialCoordinates[4]:=radius;
- 
+
  {Create Paint}
  Paint:=vgCreatePaint;
- 
+
  {Set Parameters}
  vgSetParameteri(Paint,VG_PAINT_TYPE,VG_PAINT_TYPE_RADIAL_GRADIENT);
  vgSetParameterfv(Paint,VG_PAINT_RADIAL_GRADIENT,5,@RadialCoordinates);
- 
+
  {Set Stops}
  VGShapesSetStops(Paint,stops,ns);
- 
+
  {Destroy Paint}
  vgDestroyPaint(Paint);
 end;
@@ -2290,7 +2290,7 @@ begin
  Coordinates[1]:=y;
  Coordinates[2]:=w;
  Coordinates[3]:=h;
- 
+
  {Set Scissor}
  vgSeti(VG_SCISSORING,VG_TRUE);
  vgSetiv(VG_SCISSOR_RECTS,4,@Coordinates);
@@ -2319,18 +2319,18 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check UTF8}
  if utf8 = nil then Exit;
- 
+
  {Get Next}
  Next:=utf8;
- 
+
  {Get Data Length}
  DataLength:=StrLen(utf8);
- 
+
  if (DataLength < 1) or (Next^ = #0) then Exit; {End of string}
- 
+
  if (Ord(utf8[0]) and $80) = 0 then {0xxxxxxx}
   begin
    codepoint:=Ord(utf8[0]);
@@ -2349,9 +2349,9 @@ begin
  else
   begin
    Exit; {No code points this high here}
-  end;  
- 
- {Return Next} 
+  end;
+
+ {Return Next}
  Result:=Next + SequenceLength;
 end;
 
@@ -2360,7 +2360,7 @@ end;
 procedure VGShapesText(x,y:VGfloat;const s:UTF8String;f:PVGShapesFontInfo;pointsize:Integer);
 {Text renders a string of text at a specified location, size, using the specified font glyphs derived
  from http://web.archive.org/web/20070808195131/http://developer.hybrid.fi/font2openvg/renderFont.cpp.txt}
-var 
+var
  Size:VGfloat;
  Next:PChar;
  NextX:VGfloat;
@@ -2375,16 +2375,16 @@ begin
 
  {Check Font}
  if f = nil then Exit;
- 
+
  {Setup Next}
  NextX:=x;
- 
+
  {Setup Size}
  Size:=pointsize;
- 
+
  {Get Matrix}
  vgGetMatrix(Matrix);
- 
+
  {Get Character}
  Next:=PChar(s);
  Next:=VGShapesNextUTF8Char(Next,Character);
@@ -2404,24 +2404,24 @@ begin
      CharMatrix[6]:=NextX;
      CharMatrix[7]:=y;
      CharMatrix[8]:=1.0;
- 
+
      {Load Matrix}
      vgLoadMatrix(Matrix);
-     
+
      {Multiply Matrix}
      vgMultMatrix(CharMatrix);
-     
+
      {Draw Path}
      vgDrawPath(f.Glyphs[Glyph],VG_FILL_PATH);
- 
+
      {Update Next}
      NextX:=NextX + (Size * f.GlyphAdvances[Glyph] / 65536.0);
     end;
-    
+
    {Get Next Character}
    Next:=VGShapesNextUTF8Char(Next,Character);
   end;
-  
+
  {Load Matrix}
  vgLoadMatrix(Matrix);
 end;
@@ -2436,7 +2436,7 @@ begin
  {}
  {Get Width}
  Width:=VGShapesTextWidth(s,f,pointsize);
- 
+
  {Draw Text}
  VGShapesText(x - (Width / 2.0),y,s,f,pointsize);
 end;
@@ -2451,7 +2451,7 @@ begin
  {}
  {Get Width}
  Width:=VGShapesTextWidth(s,f,pointsize);
- 
+
  {Draw Text}
  VGShapesText(x - Width,y,s,f,pointsize);
 end;
@@ -2475,7 +2475,7 @@ begin
  vgTranslate(x,y);
 
  {Rotate}
- vgRotate(angle); 
+ vgRotate(angle);
 
  {Get Width}
  Width:=VGShapesTextWidth(s,f,pointsize);
@@ -2495,7 +2495,7 @@ begin
   begin
    {Draw Text}
    VGShapesText(0,0,s,f,pointsize);
-  end;  
+  end;
 
  {Restore Matrix}
  vgLoadMatrix(Matrix);
@@ -2514,16 +2514,16 @@ var
 begin
  {}
  Result:=0;
- 
+
  {Check Font}
  if f = nil then Exit;
- 
+
  {Setup Width}
  Width:=0.0;
- 
+
  {Setup Size}
  Size:=pointsize;
- 
+
  {Get Character}
  Next:=PChar(s);
  Next:=VGShapesNextUTF8Char(Next,Character);
@@ -2534,13 +2534,13 @@ begin
    if Glyph <> -1 then
     begin
      {Update Width}
-     Width:=Width + (Size * f.GlyphAdvances[Glyph] / 65536.0); 
+     Width:=Width + (Size * f.GlyphAdvances[Glyph] / 65536.0);
     end;
-   
+
    {Get Next Character}
    Next:=VGShapesNextUTF8Char(Next,Character);
   end;
-  
+
  Result:=Width;
 end;
 
@@ -2551,7 +2551,7 @@ function VGShapesTextHeight(f:PVGShapesFontInfo;pointsize:Integer):VGfloat;
 begin
  {}
  Result:=0;
- 
+
  {Check Font}
  if f = nil then Exit;
 
@@ -2565,10 +2565,10 @@ function VGShapesTextDepth(f:PVGShapesFontInfo;pointsize:Integer):VGfloat;
 begin
  {}
  Result:=0;
- 
+
  {Check Font}
  if f = nil then Exit;
- 
+
  Result:=(-f.DescenderHeight * pointsize) / 65536;
 end;
 
@@ -2579,10 +2579,10 @@ function VGShapesNewPath:VGPath; inline;
 begin
  {}
  Result:=VG_INVALID_HANDLE;
- 
+
  {Check Initialized}
  if not Layers[Current].Initialized then Exit;
- 
+
  Result:=vgCreatePath(VG_PATH_FORMAT_STANDARD,VG_PATH_DATATYPE_F,1.0,0.0,0,0,VG_PATH_CAPABILITY_APPEND_TO); {Other capabilities not needed}
 end;
 
@@ -2597,13 +2597,13 @@ begin
  {Create Path}
  Path:=VGShapesNewPath;
  if Path = VG_INVALID_HANDLE then Exit;
- 
+
  {Append Path}
  vgAppendPathData(Path,2,segments,coords);
- 
+
  {Draw Path}
  vgDrawPath(Path,flags);
- 
+
  {Destroy Path}
  vgDestroyPath(Path);
 end;
@@ -2630,7 +2630,7 @@ begin
  Coordinates[5]:=py;
  Coordinates[6]:=ex;
  Coordinates[7]:=ey;
- 
+
  {Make Curve}
  VGShapesMakeCurve(@Segments,@Coordinates,VG_FILL_PATH or VG_STROKE_PATH);
 end;
@@ -2655,7 +2655,7 @@ begin
  Coordinates[3]:=cy;
  Coordinates[4]:=ex;
  Coordinates[5]:=ey;
- 
+
  {Make Curve}
  VGShapesMakeCurve(@Segments,@Coordinates,VG_FILL_PATH or VG_STROKE_PATH);
 end;
@@ -2672,12 +2672,12 @@ begin
    points^:=x^;
    Inc(points);
    Inc(x);
-   
+
    {Update Points Y}
    points^:=y^;
    Inc(points);
    Inc(y);
-   
+
    {Update n}
    Dec(n);
   end;
@@ -2694,20 +2694,20 @@ begin
  {}
  {Setup Points}
  SetLength(Points,n * 2);
- 
+
  {Create Path}
  Path:=VGShapesNewPath;
  if Path = VG_INVALID_HANDLE then Exit;
- 
+
  {Interleave Points}
  VGShapesInterleave(x,y,n,@Points[0]);
- 
+
  {Create Polygon}
  vguPolygon(Path,@Points[0],n,VG_FALSE);
- 
+
  {Draw Path}
  vgDrawPath(Path,flag);
- 
+
  {Destroy Path}
  vgDestroyPath(Path);
 end;
@@ -2741,13 +2741,13 @@ begin
  {Create Path}
  Path:=VGShapesNewPath;
  if Path = VG_INVALID_HANDLE then Exit;
- 
+
  {Create Rect}
  vguRect(Path,x,y,w,h);
- 
+
  {Draw Path}
  vgDrawPath(Path,VG_FILL_PATH or VG_STROKE_PATH);
- 
+
  {Destroy Path}
  vgDestroyPath(Path);
 end;
@@ -2763,13 +2763,13 @@ begin
  {Create Path}
  Path:=VGShapesNewPath;
  if Path = VG_INVALID_HANDLE then Exit;
- 
+
  {Create Line}
  vguLine(Path,x1,y1,x2,y2);
- 
+
  {Draw Path}
  vgDrawPath(Path,VG_STROKE_PATH);
- 
+
  {Destroy Path}
  vgDestroyPath(Path);
 end;
@@ -2785,13 +2785,13 @@ begin
  {Create Path}
  Path:=VGShapesNewPath;
  if Path = VG_INVALID_HANDLE then Exit;
- 
+
  {Create Round Rect}
  vguRoundRect(Path,x,y,w,h,rw,rh);
- 
+
  {Draw Path}
  vgDrawPath(Path,VG_FILL_PATH or VG_STROKE_PATH);
- 
+
  {Destroy Path}
  vgDestroyPath(Path);
 end;
@@ -2807,13 +2807,13 @@ begin
  {Create Path}
  Path:=VGShapesNewPath;
  if Path = VG_INVALID_HANDLE then Exit;
- 
+
  {Create Ellipse}
  vguEllipse(Path,x,y,w,h);
- 
+
  {Draw Path}
  vgDrawPath(Path,VG_FILL_PATH or VG_STROKE_PATH);
- 
+
  {Destroy Path}
  vgDestroyPath(Path);
 end;
@@ -2838,13 +2838,13 @@ begin
  {Create Path}
  Path:=VGShapesNewPath;
  if Path = VG_INVALID_HANDLE then Exit;
- 
+
  {Create Arc}
  vguArc(Path,x,y,w,h,sa,aext,VGU_ARC_OPEN);
- 
+
  {Draw Path}
  vgDrawPath(Path,VG_FILL_PATH or VG_STROKE_PATH);
- 
+
  {Destroy Path}
  vgDestroyPath(Path);
 end;
@@ -2862,13 +2862,13 @@ begin
 
  {Allocate Buffer}
  ScreenBuffer:=GetMem(w * h * 4);
- 
+
  {Read Pixels}
  vgReadPixels(ScreenBuffer,(w * 4),VG_sABGR_8888,0,0,w,h);
- 
+
  {Write to File}
  FileWrite(fp,ScreenBuffer^,w * h * 4);
- 
+
  {Free Buffer}
  FreeMem(ScreenBuffer);
 end;
@@ -2883,14 +2883,14 @@ begin
  {}
  {Check Initialized}
  if not Layers[Current].Initialized then Exit;
- 
+
  {Set Color}
  Color[0]:=1;
  Color[1]:=1;
  Color[2]:=1;
  if transparent then Color[3]:=0 else Color[3]:=1;
 
- {Clear} 
+ {Clear}
  vgSetfv(VG_CLEAR_COLOR,4,@Color);
  vgClear(0,0,width,height);
 
@@ -2899,7 +2899,7 @@ begin
  Color[1]:=0;
  Color[2]:=0;
  Color[3]:=1;
- 
+
  {Set Fill and Stroke}
  VGShapesSetFill(Color);
  VGShapesSetStroke(Color);
@@ -2915,19 +2915,19 @@ function VGShapesEnd:Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Initialized}
  if not Layers[Current].Initialized then Exit;
- 
+
  {Check Errors}
  if vgGetError <> VG_NO_ERROR then Exit;
- 
+
  {Swap Buffers}
  eglSwapBuffers(Layers[Current].State.Display,Layers[Current].State.Surface);
- 
+
  {Check Errors}
  if eglGetError <> EGL_SUCCESS then Exit;
- 
+
  Result:=True;
 end;
 
@@ -2940,13 +2940,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Initialized}
  if not Layers[Current].Initialized then Exit;
- 
+
  {Check Errors}
  if vgGetError <> VG_NO_ERROR then Exit;
- 
+
  if Length(filename) <> 0 then
   begin
    {Create File}
@@ -2955,18 +2955,18 @@ begin
     begin
      {Dump Screen}
      VGShapesDumpscreen(Layers[Current].State.ScreenWidth,Layers[Current].State.ScreenHeight,Handle);
-     
+
      {Close File}
      FileClose(Handle);
     end;
   end;
- 
+
  {Swap Buffers}
  eglSwapBuffers(Layers[Current].State.Display,Layers[Current].State.Surface);
- 
+
  {Check Errors}
  if eglGetError <> EGL_SUCCESS then Exit;
- 
+
  Result:=True;
 end;
 
@@ -2980,7 +2980,7 @@ begin
  {}
  {Check Initialized}
  if not Layers[Current].Initialized then Exit;
- 
+
  VGShapesRGB(r,g,b,Color);
  vgSetfv(VG_CLEAR_COLOR,4,@Color);
  vgClear(0,0,Layers[Current].State.WindowWidth,Layers[Current].State.WindowHeight);
@@ -2996,7 +2996,7 @@ begin
  {}
  {Check Initialized}
  if not Layers[Current].Initialized then Exit;
- 
+
  VGShapesRGBA(r,g,b,a,Color);
  vgSetfv(VG_CLEAR_COLOR,4,@Color);
  vgClear(0,0,Layers[Current].State.WindowWidth,Layers[Current].State.WindowHeight);
@@ -3010,7 +3010,7 @@ begin
  {}
  {Check Initialized}
  if not Layers[Current].Initialized then Exit;
- 
+
  vgClear(0,0,Layers[Current].State.WindowWidth,Layers[Current].State.WindowHeight);
 end;
 
@@ -3034,9 +3034,9 @@ begin
  {}
  {Check Initialized}
  if not Layers[Current].Initialized then Exit;
- 
+
  DispmanXChangeWindowLayer(Layers[Current].State,layerid);
- 
+
  Layers[Current].LayerId:=layerid;
 end;
 
@@ -3111,7 +3111,7 @@ begin
  Coordinates[3]:=cy;
  Coordinates[4]:=ex;
  Coordinates[5]:=ey;
- 
+
  {Make Curve}
  VGShapesMakeCurve(@Segments,@Coordinates,VG_STROKE_PATH);
 end;
@@ -3127,13 +3127,13 @@ begin
  {Create Path}
  Path:=VGShapesNewPath;
  if Path = VG_INVALID_HANDLE then Exit;
- 
+
  {Create Rect}
  vguRect(Path,x,y,w,h);
- 
+
  {Draw Path}
  vgDrawPath(Path,VG_STROKE_PATH);
- 
+
  {Destroy Path}
  vgDestroyPath(Path);
 end;
@@ -3149,13 +3149,13 @@ begin
  {Create Path}
  Path:=VGShapesNewPath;
  if Path = VG_INVALID_HANDLE then Exit;
- 
+
  {Create Round Rect}
  vguRoundRect(Path,x,y,w,h,rw,rh);
- 
+
  {Draw Path}
  vgDrawPath(Path,VG_STROKE_PATH);
- 
+
  {Destroy Path}
  vgDestroyPath(Path);
 end;
@@ -3171,13 +3171,13 @@ begin
  {Create Path}
  Path:=VGShapesNewPath;
  if Path = VG_INVALID_HANDLE then Exit;
- 
+
  {Create Ellipse}
  vguEllipse(Path,x,y,w,h);
- 
+
  {Draw Path}
  vgDrawPath(Path, VG_STROKE_PATH);
- 
+
  {Destroy Path}
  vgDestroyPath(Path);
 end;
@@ -3202,13 +3202,13 @@ begin
  {Create Path}
  Path:=VGShapesNewPath;
  if Path = VG_INVALID_HANDLE then Exit;
- 
+
  {Create Arc}
  vguArc(Path,x,y,w,h,sa,aext,VGU_ARC_OPEN);
- 
+
  {Draw Path}
  vgDrawPath(Path,VG_STROKE_PATH);
- 
+
  {Destroy Path}
  vgDestroyPath(Path);
 end;
@@ -3216,14 +3216,14 @@ end;
 {==============================================================================}
 {==============================================================================}
 
-initialization 
+initialization
  InitLayers;
- 
+
 {==============================================================================}
- 
+
 {finalization}
  {Nothing}
- 
+
 {==============================================================================}
 {==============================================================================}
 

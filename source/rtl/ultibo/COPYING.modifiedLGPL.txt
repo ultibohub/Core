@@ -2,7 +2,7 @@ This is the file COPYING.modifiedLGPL.txt, it applies to the Ultibo
 core components and libraries distributed by the Ultibo developers.
 
 The source code of the Ultibo core components and libraries
-are distributed under the GNU Lesser General Public License 
+are distributed under the GNU Lesser General Public License
 (see the file COPYING.LGPL.txt) with the following modification:
 
 As a special exception, the copyright holders of this library give you

@@ -11,43 +11,43 @@ Arch
 Boards
 ======
 
- QEMU - VersatilePB 
- 
+ QEMU - VersatilePB
+
 Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
   QEMU - \hw\arm\versatilepb.c - Copyright (c) 2005-2007 CodeSourcery
-  
+
   Linux - \drivers\clocksource\timer-sp804.c - Copyright (C) 1999 - 2003 ARM Limited
-  
+
   Linux - \drivers\irqchip\irq-vic.c - Copyright (C) 1999 - 2003 ARM Limited
-  
+
   Linux - \arch\arm\mach-versatile\include\mach\platform.h - Copyright (c) ARM Limited 2003
-  
+
 References
 ==========
 
  QEMU System ARM - http://wiki.qemu.org/download/qemu-doc.html#ARM-System-emulator
 
  RealView Versatile PB - http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0224i/index.html
- 
+
  SP804 Dual Timer - http://infocenter.arm.com/help/topic/com.arm.doc.ddi0271d/DDI0271.pdf
- 
+
  PL190 Vectored Interrupt Controller - http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0181e/index.html
- 
+
 ARM VersatilePB
 ===============
 
  From the QEMU source the memory map of the VersatilePB is shown as this:
- 
-  Memory map for Versatile/PB: 
+
+  Memory map for Versatile/PB:
   0x10000000 System registers
   0x10001000 PCI controller config registers
   0x10002000 Serial bus interface
@@ -61,20 +61,20 @@ ARM VersatilePB
   0x1000a000 Smart card 1
   0x1000b000 MMCI1
   0x10010000 Ethernet
-  0x10020000 USB 
-  0x10100000 SSMC 
+  0x10020000 USB
+  0x10100000 SSMC
   0x10110000 MPMC
   0x10120000 CLCD Controller
   0x10130000 DMA Controller
   0x10140000 Vectored interrupt controller
   0x101d0000 AHB Monitor Interface
-  0x101e0000 System Controller 
+  0x101e0000 System Controller
   0x101e1000 Watchdog Interface
-  0x101e2000 Timer 0/1 
+  0x101e2000 Timer 0/1
   0x101e3000 Timer 2/3
-  0x101e4000 GPIO port 0 
-  0x101e5000 GPIO port 1 
-  0x101e6000 GPIO port 2 
+  0x101e4000 GPIO port 0
+  0x101e5000 GPIO port 1
+  0x101e6000 GPIO port 2
   0x101e7000 GPIO port 3
   0x101e8000 RTC
   0x101f0000 Smart card 0
@@ -90,8 +90,8 @@ ARM VersatilePB
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit VersatilePB; 
-                               
+unit VersatilePB;
+
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes;
@@ -99,12 +99,12 @@ uses GlobalConfig,GlobalConst,GlobalTypes;
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
- 
+
 {==============================================================================}
 const
  {VersatilePB specific constants}
  VERSATILEPB_CPU_COUNT = 1;
- 
+
  {Physical memory addresses of VersatilePB peripherals (See: \hw\arm\versatilepb.c and http://infocenter.arm.com/help/topic/com.arm.doc.dui0224i/Bbajihec.html)}
  {See also: \arch\arm\mach-versatile\include\mach\platform.h}
  VERSATILEPB_PERIPHERALS_BASE = $10000000;
@@ -132,7 +132,7 @@ const
  VERSATILEPB_CLCD_REGS_BASE     = $10120000; {PL110 CLCD}
  VERSATILEPB_DMAC_REGS_BASE     = $10130000; {PL080 DMA controller}
  VERSATILEPB_VIC_REGS_BASE      = $10140000; {PL190 Vectored interrupt controller}
- 
+
  VERSATILEPB_AHBM_REGS_BASE     = $101D0000; {AHB monitor}
  VERSATILEPB_SYSCTRL_REGS_BASE  = $101E0000; {System controller}
  VERSATILEPB_WATCHDOG_REGS_BASE = $101E1000; {Watchdog}
@@ -151,7 +151,7 @@ const
  VERSATILEPB_UART1_REGS_BASE    = $101f2000; {PL011 UART1}
  VERSATILEPB_UART2_REGS_BASE    = $101f3000; {PL011 UART2}
  VERSATILEPB_SSP_REGS_BASE      = $101F4000; {Synchronous Serial Port}
- 
+
 const
  {IRQ lines of VersatilePB peripherals (See: \hw\arm\versatilepb.c and http://infocenter.arm.com/help/topic/com.arm.doc.dui0224i/Bbajihec.html)}
  {Interrupt Assignments (Primary)(See: \arch\arm\mach-versatile\include\mach\platform.h)}
@@ -200,7 +200,7 @@ const
  VERSATILEPB_IRQ_PCI2                    = VERSATILEPB_IRQ_VICSOURCE29;
  VERSATILEPB_IRQ_PCI3                    = VERSATILEPB_IRQ_VICSOURCE30;
  VERSATILEPB_IRQ_SICSOURCE               = VERSATILEPB_IRQ_VICSOURCE31;
- 
+
  {Interrupt Assignments (Secondary)(See: \arch\arm\mach-versatile\include\mach\platform.h)}
  VERSATILEPB_IRQ_SIC_SOFTINT             = 32; {SIC IRQ 0}  {Soft Interrupt}
  VERSATILEPB_IRQ_SIC_MMCI0B              = 33; {SIC IRQ 1}  {Multimedia Card 0B}
@@ -223,23 +223,23 @@ const
  VERSATILEPB_IRQ_SIC_PCI1                = 60; {SIC IRQ 28}
  VERSATILEPB_IRQ_SIC_PCI2                = 61; {SIC IRQ 29}
  VERSATILEPB_IRQ_SIC_PCI3                = 62; {SIC IRQ 30}
- 
+
  {Number of IRQs on the Vectored (Primary) Interrupt Controller (VIC)}
  VERSATILEPB_VIC_IRQ_COUNT = 32;
 
  {Number of IRQs on the Secondary Interrupt Controller (SIC)}
  VERSATILEPB_SIC_IRQ_COUNT = 32;
- 
+
  {Total number of IRQs available}
  VERSATILEPB_IRQ_COUNT = VERSATILEPB_VIC_IRQ_COUNT + VERSATILEPB_SIC_IRQ_COUNT; {64}
 
  {Total number of FIQs available}
  VERSATILEPB_FIQ_COUNT = 1;
- 
+
 const
  {Timer frequencies}
  VERSATILEPB_TIMER_FREQUENCY = 1000000; {Default frequency of the VersatilePB Timer when reference is set to TIMCLK (1MHz)}
- 
+
 const
  {System register offsets (See: \arch\arm\mach-versatile\include\mach\platform.h and http://infocenter.arm.com/help/topic/com.arm.doc.dui0224i/I1006122.html)}
  VERSATILEPB_SYS_ID               = VERSATILEPB_SYS_REGS_BASE + $00;
@@ -275,13 +275,13 @@ const
  VERSATILEPB_SYS_TEST_OSC2        = VERSATILEPB_SYS_REGS_BASE + $88;
  VERSATILEPB_SYS_TEST_OSC3        = VERSATILEPB_SYS_REGS_BASE + $8C;
  VERSATILEPB_SYS_TEST_OSC4        = VERSATILEPB_SYS_REGS_BASE + $90;
- 
+
  {System register bits (See: \arch\arm\mach-versatile\include\mach\platform.h and http://infocenter.arm.com/help/topic/com.arm.doc.dui0224i/I1006122.html)}
  VERSATILEPB_SYS_100HZ_FREQUENCY = 100;
- 
+
  VERSATILEPB_SYS_LOCK_LOCKED = (1 shl 16); {This bit indicates if the control registers are locks or unlocked}
  VERSATILEPB_SYS_LOCK_LOCKVAL = $A05F;     {Write this value to unlock the control registers, write any other to lock the registers}
- 
+
  VERSATILEPB_SYS_RESETCTL_RESET      = (1 shl 8);
  VERSATILEPB_SYS_RESETCTL_CONFIGCLR  = $01;
  VERSATILEPB_SYS_RESETCTL_CONFIGINIT = $02;
@@ -289,21 +289,21 @@ const
  VERSATILEPB_SYS_RESETCTL_PLLRESET   = $04;
  VERSATILEPB_SYS_RESETCTL_PORRESET   = $05;
  VERSATILEPB_SYS_RESETCTL_DOCRESET   = $06;
- 
+
  VERSATILEPB_SYS_MCI_CD0         = (1 shl 0); {Card detect 0}
  VERSATILEPB_SYS_MCI_CD1         = (1 shl 1); {Card detect 1}
  VERSATILEPB_SYS_MCI_WP0         = (1 shl 2); {Write protect 0}
  VERSATILEPB_SYS_MCI_WP1         = (1 shl 3); {Write protect 1}
- 
+
  VERSATILEPB_SYS_CLCD_MODE888    = 0; {LCD Mode [1:0], controls mapping of video memory to RGB signals 00 = 8:8:8}
  VERSATILEPB_SYS_CLCD_MODE5551   = 1; {                                                                01 = 5:5:5:1}
  VERSATILEPB_SYS_CLCD_MODE565BGR = 2; {                                                                10 = 5:6:5, red LSB}
  VERSATILEPB_SYS_CLCD_MODE565RGB = 3; {                                                                11 = 5:6:5, blue LSB}
- 
+
  VERSATILEPB_SYS_CLCD_MODEMASK   = 3;
 
  VERSATILEPB_SYS_24MHZ_FREQUENCY = 24000000;
- 
+
 const
  {System Control register bits (See: http://infocenter.arm.com/help/topic/com.arm.doc.dui0440b/CACIHEAD.html}
  VERSATILEPB_SYSCTRL_REFCLK = 0; {REFCLK is 32.768kHz}
@@ -313,7 +313,7 @@ const
  VERSATILEPB_SYSCTRL_TIMER1_ENSEL = 17; {Timer 1 enable / Timer Reference Select. If 0, the timing reference is REFCLK. If 1, the timing reference is TIMCLK}
  VERSATILEPB_SYSCTRL_TIMER2_ENSEL = 19; {Timer 2 enable / Timer Reference Select. If 0, the timing reference is REFCLK. If 1, the timing reference is TIMCLK}
  VERSATILEPB_SYSCTRL_TIMER3_ENSEL = 21; {Timer 3 enable / Timer Reference Select. If 0, the timing reference is REFCLK. If 1, the timing reference is TIMCLK}
- 
+
 const
  {SP804 Timer register offsets (See: http://infocenter.arm.com/help/topic/com.arm.doc.ddi0271d/DDI0271.pdf)}
  SP804_TIMER_LOAD            = $00; {Timer Load register}
@@ -323,7 +323,7 @@ const
  SP804_TIMER_RAW_INT         = $10; {Timer Raw Interrupt register}
  SP804_TIMER_MASKED_INT      = $14; {Timer Masked Interrupt register}
  SP804_TIMER_BACKGROUND_LOAD = $18; {Timer Background Load register}
- 
+
  {SP804 Timer register bits (See: http://infocenter.arm.com/help/topic/com.arm.doc.ddi0271d/DDI0271.pdf)}
  SP804_TIMER_CONTROL_ONESHOT       = (1 shl 0); {Selects one-shot or wrapping counter mode: (0 = wrapping mode (default) / 1 = one-shot mode)}
  SP804_TIMER_CONTROL_32BIT         = (1 shl 1); {Selects 16/32 bit counter operation: (0 = 16-bit counter (default) / 1 = 32-bit counter)}
@@ -333,7 +333,7 @@ const
  SP804_TIMER_CONTROL_INT_ENABLED   = (1 shl 5); {Interrupt Enable bit: (0 = Timer module Interrupt disabled / 1 = Timer module Interrupt enabled (default))}
  SP804_TIMER_CONTROL_PERIODIC      = (1 shl 6); {Mode bit: (0 = Timer module is in free-running mode (default) / 1 = Timer module is in periodic mode)}
  SP804_TIMER_CONTROL_TIMER_ENABLED = (1 shl 7); {Enable bit: (0 = Timer module disabled (default) / 1 = Timer module enabled)}
- 
+
  {PL190 Vectored Interrupt Controller register offsets (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0181e/index.html)}
  PL190_VIC_IRQSTATUS    = $00;  {IRQ Status Register}
  PL190_VIC_FIQSTATUS    = $04;  {FIQ Status Register}
@@ -348,29 +348,29 @@ const
  PL190_VIC_DEFVECTADDR  = $34;  {Default Vector Address Register (PL190 only)}
  PL190_VIC_VECTADDR0    = $100; {Vector Address Registers (0 to 15) (0..31 PL192)}
  PL190_VIC_VECTCNTL0    = $200; {Vector Control Registers (0 to 15) (0..31 PL192)}
- 
+
  {PL190 Vectored Interrupt Controller register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0181e/index.html)}
  PL190_VIC_VECTCNTL_ENABLE    = (1 shl 5);   {Enables vector interrupt (This bit is cleared on reset)}
  PL190_VIC_VECTCNTL_INTSOURCE = ($1F shl 0); {Selects interrupt source 0 to 31}
- 
+
 const
  {VersatilePB Secondary Interrupt Controller register offsets (See: http://infocenter.arm.com/help/topic/com.arm.doc.dui0224i/Cacdggia.html)}
  VERSATILEPB_SIC_STATUS     = $00; {Status of interrupt (after mask) (Read)}
  VERSATILEPB_SIC_RAWSTAT    = $04; {Status of interrupt (before mask) (Read)}
  VERSATILEPB_SIC_ENABLE     = $08; {Interrupt mask / Set bits HIGH to enable the corresponding interrupt signals (Read/Write)}
- VERSATILEPB_SIC_ENSET      = $08; 
+ VERSATILEPB_SIC_ENSET      = $08;
  VERSATILEPB_SIC_ENCLR      = $0C; {Set bits HIGH to mask the corresponding interrupt signals (Write)}
  VERSATILEPB_SIC_SOFTINTSET = $10; {Set software interrupt (Read/Write)}
  VERSATILEPB_SIC_SOFTINTCLR = $14; {Clear software interrupt (Write)}
  VERSATILEPB_SIC_PICENABLE  = $20; {Pass-through mask (allows interrupt to pass directly to the primary interrupt controller) / Set bits HIGH to set the corresponding interrupt pass-through mask bits (Read/Write)}
- VERSATILEPB_SIC_PICENSET   = $20;   
+ VERSATILEPB_SIC_PICENSET   = $20;
  VERSATILEPB_SIC_PICENCLR   = $24; {Set bits HIGH to clear the corresponding interrupt pass-through mask bits (Write)}
- 
+
  {VersatilePB Secondary Interrupt Controller register bits (See: http://infocenter.arm.com/help/topic/com.arm.doc.dui0224i/Cacdggia.html)}
  VERSATILEPB_SIC_PIC_MASK = $7FE00000; {Interrupts on secondary controller from 21 to 30 are routed directly to the VIC on the corresponding number on primary controller}
- 
+
 {==============================================================================}
-type 
+type
  {VersatilePB specific structures (See: http://infocenter.arm.com/help/topic/com.arm.doc.ddi0271d/DDI0271.pdf)}
  {Layout of the SP804 Timer registers}
  PSP804TimerRegisters = ^TSP804TimerRegisters;
@@ -383,13 +383,13 @@ type
   MaskedIRQ:LongWord;      {Timer Masked IRQ register}
   BackgroundLoad:LongWord; {Timer Background Load register}
  end;
- 
+
  {Layout of the PL190 Vectored Interrupt Controller registers (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0181e/index.html)}
  PPL190InterruptRegisters = ^TPL190InterruptRegisters;
  TPL190InterruptRegisters = record
   IRQSTATUS:LongWord;    {IRQ Status Register}
   FIQSTATUS:LongWord;    {FIQ Status Register}
-  RAWINTR:LongWord;      {Raw Interrupt Status Register} 
+  RAWINTR:LongWord;      {Raw Interrupt Status Register}
   INTSELECT:LongWord;    {Interrupt Select Register}
   INTENABLE:LongWord;    {Interrupt Enable Register}
   INTENCLEAR:LongWord;   {Interrupt Enable Clear Register}
@@ -402,7 +402,7 @@ type
   VECTADDR:LongWord;     {Vector Address Register}
   DEFVECTADDR:LongWord;  {Default Vector Address Register}
  end;
- 
+
  PPL190VectorAddressRegisters = ^TPL190VectorAddressRegisters;
  TPL190VectorAddressRegisters = record
   VECTADDR:array[0..15] of LongWord; {Vector Address Registers}
@@ -412,7 +412,7 @@ type
  TPL190VectorControlRegisters = record
   VECTCNTL:array[0..15] of LongWord; {Vector Control Registers}
  end;
- 
+
  {Layout of the VersatilePB Secondary Interrupt Controller registers (See: http://infocenter.arm.com/help/topic/com.arm.doc.dui0224i/Cacdggia.html)}
  PVersatilePBInterruptRegisters = ^TVersatilePBInterruptRegisters;
  TVersatilePBInterruptRegisters = record
@@ -427,7 +427,7 @@ type
   SIC_PICENSET:LongWord;   {Pass-through mask (allows interrupt to pass directly to the primary interrupt controller) / Set bits HIGH to set the corresponding interrupt pass-through mask bits (Read/Write)}
   SIC_PICENCLR:LongWord;   {Set bits HIGH to clear the corresponding interrupt pass-through mask bits (Write)}
  end;
-  
+
 {==============================================================================}
 {==============================================================================}
 
@@ -437,4 +437,4 @@ implementation
 {==============================================================================}
 
 end.
- 
+

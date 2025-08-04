@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -52,9 +52,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads;
 //const
  {MPEG specific constants}
 
-//To Do //A generic MPEG unit 
-                           
-              
+//To Do //A generic MPEG unit
+
+
 {==============================================================================}
 //type
  {MPEG specific types}
@@ -66,7 +66,7 @@ var
  MPEGInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure MPEGInit;
@@ -88,9 +88,9 @@ begin
  {}
  {Check Initialized}
  if MPEGInitialized then Exit;
- 
+
  //To Do
- 
+
  MPEGInitialized:=True;
 end;
 
@@ -106,7 +106,7 @@ initialization
  MPEGInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

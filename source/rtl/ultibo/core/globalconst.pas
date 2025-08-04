@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -38,7 +38,7 @@ Global Constants
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit GlobalConst; 
+unit GlobalConst;
 
 interface
 
@@ -56,15 +56,15 @@ const
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 6;
  ULTIBO_RELEASE_VERSION_REVISION = 091;
- 
+
  FPC_COMPILER_VERSION = {$I %FPCVERSION%}; {The version of FPC used to compile the RTL}
- 
+
 {==============================================================================}
 const
  {Universal error constants}
  ERROR_SUCCESS             = 0;    {Success}
  NO_ERROR                  = 0;    {Success}
- 
+
  ERROR_INVALID_FUNCTION    = 1;    {Invalid function}
  ERROR_FILE_NOT_FOUND      = 2;    {The file cannot be found}
  ERROR_PATH_NOT_FOUND      = 3;    {The path cannot be found}
@@ -72,7 +72,7 @@ const
  ERROR_ACCESS_DENIED       = 5;    {Access is denied}
  ERROR_INVALID_HANDLE      = 6;    {Invalid handle}
  ERROR_NOT_ENOUGH_MEMORY   = DWORD(8);  {Not enough storage is available to process this command}
- 
+
  ERROR_INVALID_ACCESS      = 12;   {Invalid access}
  ERROR_INVALID_DATA        = 13;   {The data is invalid}
  ERROR_OUTOFMEMORY         = 14;   {Not enough memory is available}
@@ -84,60 +84,60 @@ const
  ERROR_BAD_UNIT            = 20;   {Cannot find the device specified}
  ERROR_NOT_READY           = 21;   {The device is not ready}
  ERROR_BAD_COMMAND         = 22;   {The device does not recognise the command}
- 
+
  ERROR_WRITE_FAULT         = 29;   {The device cannot be written to}
  ERROR_READ_FAULT          = 30;   {The device cannot be read from}
  ERROR_GEN_FAILURE         = 31;   {The device has failed}
- 
+
  ERROR_NOT_SUPPORTED       = 50;   {The request is not supported}
- 
+
  ERROR_DEV_NOT_EXIST       = 55;   {The device does not exist}
- 
+
  ERROR_BAD_DEV_TYPE        = 66;   {Invalid device type}
- 
+
  ERROR_ALREADY_ASSIGNED    = 85;   {The device name is already in use}
  ERROR_INVALID_PASSWORD    = 86;   {Invalid pasword}
  ERROR_INVALID_PARAMETER   = 87;   {Invalid parameter}
-  
+
  ERROR_SEM_IS_SET          = 102;  {The semaphore is in use and cannot be closed}
  ERROR_OPEN_FAILED         = 110;  {The file or device could not be opened}
  ERROR_CALL_NOT_IMPLEMENTED = 120; {The function is not currently implemented}
  ERROR_INSUFFICIENT_BUFFER = 122;  {The buffer passed is too small for the requested data}
  ERROR_WAIT_NO_CHILDREN    = 128;  {There are no child processes to wait for}
- 
+
  ERROR_NOT_LOCKED          = 158;  {The entry is not locked}
- 
+
  ERROR_LOCK_FAILED         = 167;  {The lock operation failed}
- 
+
  ERROR_ALREADY_EXISTS      = 183;  {The file or object already exists}
- 
+
  ERROR_ENVVAR_NOT_FOUND    = 203;  {The environment variable could not be found}
- 
+
  ERROR_LOCKED              = 212;  {The entry is already locked}
 
  ERROR_MORE_DATA           = 234;  {More data is available than the provided buffer}
 
  ERROR_WAIT_TIMEOUT        = 258;  {The operation timed out}
  ERROR_NO_MORE_ITEMS       = 259;  {No more items available}
- 
+
  ERROR_NOT_OWNER           = 288;  {The current thread is not the owner}
- 
+
  ERROR_OPERATION_ABORTED   = DWORD(995); {The I/O operation has been aborted because of either a thread exit or an application request}
  ERROR_IO_INCOMPLETE       = DWORD(996); {Overlapped I/O event is not in a signaled state}
  ERROR_IO_PENDING          = DWORD(997); {Overlapped I/O operation is in progress}
- 
+
  ERROR_CAN_NOT_COMPLETE    = 1003; {Cannot complete the function}
- 
+
  ERROR_NOT_FOUND           = 1168; {The entry or device was not found}
- 
+
  ERROR_INVALID_ACL            = DWORD(1336);  {The access control list (ACL) structure is invalid}
  ERROR_INVALID_SID            = DWORD(1337);  {The security ID structure is invalid}
  ERROR_INVALID_SECURITY_DESCR = DWORD(1338);  {The security descriptor structure is invalid}
- 
+
  ERROR_TIMEOUT             = 1460; {The operation returned because the timeout expired}
- 
+
  ERROR_FUNCTION_FAILED     = 1627; {The function call failed}
- 
+
  {Errors below here have no compatibility equivalent}
  ERROR_NOT_VALID           = 1000001;    {The entry or device is not valid}
  ERROR_NOT_ASSIGNED        = 1000002;    {The device is not assigned}
@@ -155,9 +155,9 @@ const
  ERROR_CANCELLED           = 1000014;    {The entry or operation has been cancelled}
  ERROR_NOT_EXACT           = 1000015;    {The result of the operation is not exact}
  ERROR_ALREADY_OWNER       = 1000016;    {The current thread is already the owner}
- 
+
  ERROR_UNKNOWN             = $FFFFFFFF;
- 
+
 {==============================================================================}
 const
  {Universal value constants}
@@ -165,19 +165,19 @@ const
  INVALID_FILE_SIZE        = DWORD($FFFFFFFF);
  INVALID_SET_FILE_POINTER = DWORD(-1);
  INVALID_FILE_ATTRIBUTES  = DWORD(-1);
- 
+
  {File position constants}
  FILE_BEGIN   = 0;
  FILE_CURRENT = 1;
  FILE_END     = 2;
- 
+
  {File open/create constants}
  CREATE_NEW        = 1;
  CREATE_ALWAYS     = 2;
  OPEN_EXISTING     = 3;
  OPEN_ALWAYS       = 4;
  TRUNCATE_EXISTING = 5;
- 
+
  {File creation flag constants}
  FILE_FLAG_WRITE_THROUGH       = DWORD($80000000);
  FILE_FLAG_OVERLAPPED          = $40000000;
@@ -190,7 +190,7 @@ const
  FILE_FLAG_OPEN_REPARSE_POINT  = $00200000;
  FILE_FLAG_OPEN_NO_RECALL      = $00100000;
  FILE_FLAG_FIRST_PIPE_INSTANCE = $00080000;
- 
+
  {File attribute constants}
  FILE_ATTRIBUTE_READONLY            = $00000001;
  FILE_ATTRIBUTE_HIDDEN              = $00000002;
@@ -206,7 +206,7 @@ const
  FILE_ATTRIBUTE_OFFLINE             = $00001000;
  FILE_ATTRIBUTE_NOT_CONTENT_INDEXED = $00002000;
  FILE_ATTRIBUTE_ENCRYPTED           = $00004000;
- 
+
  {Filesystem attribute constants}
  FS_CASE_SENSITIVE_SEARCH           = $00000001;
  FS_CASE_PRESERVED_NAMES            = $00000002;
@@ -222,24 +222,24 @@ const
  FS_SUPPORTS_ENCRYPTION             = $00020000;
  FS_NAMED_STREAMS                   = $00040000;
  FS_READ_ONLY_VOLUME                = $00080000;
- 
- {File Access Constants} 
+
+ {File Access Constants}
  GENERIC_READ    = DWORD($80000000);
  GENERIC_WRITE   = $40000000;
  GENERIC_EXECUTE = $20000000;
  GENERIC_ALL     = $10000000;
- 
- {File Share Constants} 
+
+ {File Share Constants}
  FILE_SHARE_READ                    = $00000001;
  FILE_SHARE_WRITE                   = $00000002;
  FILE_SHARE_DELETE                  = $00000004;
- 
+
  {Timeout constants}
  INFINITE = LongWord(-1);
- 
+
  {TLS constants}
  TLS_OUT_OF_INDEXES = DWORD($FFFFFFFF);
- 
+
  {Wait constants}
  WAIT_OBJECT_0      = ERROR_SUCCESS + 0;
  WAIT_ABANDONED     = $00000080 + 0; {STATUS_ABANDONED_WAIT_0}
@@ -248,15 +248,15 @@ const
  WAIT_FAILED        = DWORD($FFFFFFFF);
 
  WAIT_IO_COMPLETION = $000000C0; {STATUS_USER_APC}
- 
+
  MAXIMUM_WAIT_OBJECTS  = 64;      {Maximum number of wait objects}
- 
+
  {Thread state constants}
  STILL_ACTIVE     = ERROR_NO_MORE_ITEMS;
- 
+
  {TimeZone constants}
  TIME_ZONE_ID_INVALID = DWORD($FFFFFFFF);
- 
+
 {==============================================================================}
 const
  {Universal key code constants}
@@ -376,7 +376,7 @@ const
  KEY_CODE_RIGHT_BRACE   = $007D; {125} {Curly Bracket}
  KEY_CODE_TILDE         = $007E; {126}
  {KEY_CODE_DELETE (See above)}
- 
+
  {Latin-1 Supplement Characters (0080-00FF) (Partial, add extras as required)}
  KEY_CODE_INVERTED_EXCLAMATION = $00A1;
  KEY_CODE_CENT                 = $00A2;
@@ -476,131 +476,131 @@ const
  {General Punctuation (2000-206F) (Partial, add extras as required)}
  KEY_CODE_LEFT_QUOTE          = $2018;
  KEY_CODE_RIGHT_QUOTE         = $2019;
- 
+
  {Currency Symbols (20A0-20CF) (Partial, add extras as required)}
  KEY_CODE_EURO                = $20AC;
- 
+
  {Private Area (E000-F8FF)}
  {Non Character Codes}
- KEY_CODE_CAPSLOCK            = $E000; 
- KEY_CODE_F1                  = $E001; 
- KEY_CODE_F2                  = $E002; 
- KEY_CODE_F3                  = $E003; 
- KEY_CODE_F4                  = $E004; 
- KEY_CODE_F5                  = $E005; 
- KEY_CODE_F6                  = $E006; 
- KEY_CODE_F7                  = $E007; 
- KEY_CODE_F8                  = $E008; 
- KEY_CODE_F9                  = $E009; 
- KEY_CODE_F10                 = $E00A; 
- KEY_CODE_F11                 = $E00B; 
- KEY_CODE_F12                 = $E00C; 
- KEY_CODE_PRINTSCREEN         = $E00D; 
- KEY_CODE_SCROLLLOCK          = $E00E; 
- KEY_CODE_PAUSE               = $E00F; 
- KEY_CODE_INSERT              = $E010; 
- KEY_CODE_HOME                = $E011; 
- KEY_CODE_PAGEUP              = $E012; 
- KEY_CODE_END                 = $E013; 
- KEY_CODE_PAGEDN              = $E014; 
- KEY_CODE_RIGHT_ARROW         = $E015; 
- KEY_CODE_LEFT_ARROW          = $E016; 
- KEY_CODE_DOWN_ARROW          = $E017; 
- KEY_CODE_UP_ARROW            = $E018; 
- KEY_CODE_NUMLOCK             = $E019; 
- KEY_CODE_APPLICATION         = $E01A; 
- KEY_CODE_POWER               = $E01B; 
- KEY_CODE_F13                 = $E01C; 
- KEY_CODE_F14                 = $E01D; 
- KEY_CODE_F15                 = $E01E; 
- KEY_CODE_F16                 = $E01F; 
- KEY_CODE_F17                 = $E020; 
- KEY_CODE_F18                 = $E021; 
- KEY_CODE_F19                 = $E022; 
- KEY_CODE_F20                 = $E023; 
- KEY_CODE_F21                 = $E024; 
- KEY_CODE_F22                 = $E025; 
- KEY_CODE_F23                 = $E026; 
- KEY_CODE_F24                 = $E027; 
- KEY_CODE_EXECUTE             = $E028; 
- KEY_CODE_HELP                = $E029; 
- KEY_CODE_MENU                = $E02A; 
- KEY_CODE_SELECT              = $E02B; 
- KEY_CODE_STOP                = $E02C; 
- KEY_CODE_AGAIN               = $E02D; 
- KEY_CODE_UNDO                = $E02E; 
- KEY_CODE_CUT                 = $E02F; 
- KEY_CODE_COPY                = $E030; 
- KEY_CODE_PASTE               = $E031; 
- KEY_CODE_FIND                = $E032; 
- KEY_CODE_MUTE                = $E033; 
- KEY_CODE_VOLUMEUP            = $E034; 
- KEY_CODE_VOLUMEDOWN          = $E035; 
- KEY_CODE_LOCKING_CAPSLOCK    = $E036; 
- KEY_CODE_LOCKING_NUMLOCK     = $E037; 
- KEY_CODE_LOCKING_SCROLLLOCK  = $E038; 
- KEY_CODE_INTERNATIONAL1      = $E039; 
- KEY_CODE_INTERNATIONAL2      = $E03A; 
- KEY_CODE_INTERNATIONAL3      = $E03B; 
- KEY_CODE_INTERNATIONAL4      = $E03C; 
- KEY_CODE_INTERNATIONAL5      = $E03D; 
- KEY_CODE_INTERNATIONAL6      = $E03E; 
- KEY_CODE_INTERNATIONAL7      = $E03F; 
- KEY_CODE_INTERNATIONAL8      = $E040; 
- KEY_CODE_INTERNATIONAL9      = $E041; 
- KEY_CODE_LANG1               = $E042; 
- KEY_CODE_LANG2               = $E043; 
- KEY_CODE_LANG3               = $E044; 
- KEY_CODE_LANG4               = $E045; 
- KEY_CODE_LANG5               = $E046; 
- KEY_CODE_LANG6               = $E047; 
- KEY_CODE_LANG7               = $E048; 
- KEY_CODE_LANG8               = $E049; 
- KEY_CODE_LANG9               = $E04A; 
- KEY_CODE_ALT_ERASE           = $E04B; 
- KEY_CODE_SYSREQ              = $E04C; 
- KEY_CODE_CANCEL              = $E04D; 
- KEY_CODE_CLEAR               = $E04E; 
- KEY_CODE_PRIOR               = $E04F; 
- KEY_CODE_RETURN              = $E050; 
- KEY_CODE_SEPARATOR           = $E051; 
- KEY_CODE_OUT                 = $E052; 
- KEY_CODE_OPER                = $E053; 
- KEY_CODE_CLEAR_AGAIN         = $E054; 
- KEY_CODE_CRSEL_PROPS         = $E055; 
- KEY_CODE_EXSEL               = $E056; 
- KEY_CODE_00                  = $E057; 
- KEY_CODE_000                 = $E058; 
- KEY_CODE_THOUSANDS_SEPARATOR = $E059; 
- KEY_CODE_DECIMAL_SEPARATOR   = $E05A; 
- KEY_CODE_CURRENCY_UNIT       = $E05B; 
- KEY_CODE_CURRENCY_SUBUNIT    = $E05C; 
- KEY_CODE_XOR                 = $E05D; 
- KEY_CODE_MEM_STORE           = $E05E; 
- KEY_CODE_MEM_RECALL          = $E05F; 
- KEY_CODE_MEM_CLEAR           = $E060; 
- KEY_CODE_MEM_ADD             = $E061; 
- KEY_CODE_MEM_SUBTRACT        = $E062; 
- KEY_CODE_MEM_MULTIPLY        = $E063; 
- KEY_CODE_MEM_DIVIDE          = $E064; 
- KEY_CODE_CLEAR_ENTRY         = $E065; 
- KEY_CODE_BINARY              = $E066; 
- KEY_CODE_OCTAL               = $E067; 
- KEY_CODE_DECIMAL             = $E068; 
- KEY_CODE_HEX                 = $E069; 
- KEY_CODE_CTRL                = $E06A; 
- KEY_CODE_SHIFT               = $E06B; 
- KEY_CODE_ALT                 = $E06C; 
- KEY_CODE_GUI                 = $E06D; 
- KEY_CODE_DOUBLE_AMPERSAND    = $E06E;  
- KEY_CODE_DOUBLE_PIPE         = $E06F;  
+ KEY_CODE_CAPSLOCK            = $E000;
+ KEY_CODE_F1                  = $E001;
+ KEY_CODE_F2                  = $E002;
+ KEY_CODE_F3                  = $E003;
+ KEY_CODE_F4                  = $E004;
+ KEY_CODE_F5                  = $E005;
+ KEY_CODE_F6                  = $E006;
+ KEY_CODE_F7                  = $E007;
+ KEY_CODE_F8                  = $E008;
+ KEY_CODE_F9                  = $E009;
+ KEY_CODE_F10                 = $E00A;
+ KEY_CODE_F11                 = $E00B;
+ KEY_CODE_F12                 = $E00C;
+ KEY_CODE_PRINTSCREEN         = $E00D;
+ KEY_CODE_SCROLLLOCK          = $E00E;
+ KEY_CODE_PAUSE               = $E00F;
+ KEY_CODE_INSERT              = $E010;
+ KEY_CODE_HOME                = $E011;
+ KEY_CODE_PAGEUP              = $E012;
+ KEY_CODE_END                 = $E013;
+ KEY_CODE_PAGEDN              = $E014;
+ KEY_CODE_RIGHT_ARROW         = $E015;
+ KEY_CODE_LEFT_ARROW          = $E016;
+ KEY_CODE_DOWN_ARROW          = $E017;
+ KEY_CODE_UP_ARROW            = $E018;
+ KEY_CODE_NUMLOCK             = $E019;
+ KEY_CODE_APPLICATION         = $E01A;
+ KEY_CODE_POWER               = $E01B;
+ KEY_CODE_F13                 = $E01C;
+ KEY_CODE_F14                 = $E01D;
+ KEY_CODE_F15                 = $E01E;
+ KEY_CODE_F16                 = $E01F;
+ KEY_CODE_F17                 = $E020;
+ KEY_CODE_F18                 = $E021;
+ KEY_CODE_F19                 = $E022;
+ KEY_CODE_F20                 = $E023;
+ KEY_CODE_F21                 = $E024;
+ KEY_CODE_F22                 = $E025;
+ KEY_CODE_F23                 = $E026;
+ KEY_CODE_F24                 = $E027;
+ KEY_CODE_EXECUTE             = $E028;
+ KEY_CODE_HELP                = $E029;
+ KEY_CODE_MENU                = $E02A;
+ KEY_CODE_SELECT              = $E02B;
+ KEY_CODE_STOP                = $E02C;
+ KEY_CODE_AGAIN               = $E02D;
+ KEY_CODE_UNDO                = $E02E;
+ KEY_CODE_CUT                 = $E02F;
+ KEY_CODE_COPY                = $E030;
+ KEY_CODE_PASTE               = $E031;
+ KEY_CODE_FIND                = $E032;
+ KEY_CODE_MUTE                = $E033;
+ KEY_CODE_VOLUMEUP            = $E034;
+ KEY_CODE_VOLUMEDOWN          = $E035;
+ KEY_CODE_LOCKING_CAPSLOCK    = $E036;
+ KEY_CODE_LOCKING_NUMLOCK     = $E037;
+ KEY_CODE_LOCKING_SCROLLLOCK  = $E038;
+ KEY_CODE_INTERNATIONAL1      = $E039;
+ KEY_CODE_INTERNATIONAL2      = $E03A;
+ KEY_CODE_INTERNATIONAL3      = $E03B;
+ KEY_CODE_INTERNATIONAL4      = $E03C;
+ KEY_CODE_INTERNATIONAL5      = $E03D;
+ KEY_CODE_INTERNATIONAL6      = $E03E;
+ KEY_CODE_INTERNATIONAL7      = $E03F;
+ KEY_CODE_INTERNATIONAL8      = $E040;
+ KEY_CODE_INTERNATIONAL9      = $E041;
+ KEY_CODE_LANG1               = $E042;
+ KEY_CODE_LANG2               = $E043;
+ KEY_CODE_LANG3               = $E044;
+ KEY_CODE_LANG4               = $E045;
+ KEY_CODE_LANG5               = $E046;
+ KEY_CODE_LANG6               = $E047;
+ KEY_CODE_LANG7               = $E048;
+ KEY_CODE_LANG8               = $E049;
+ KEY_CODE_LANG9               = $E04A;
+ KEY_CODE_ALT_ERASE           = $E04B;
+ KEY_CODE_SYSREQ              = $E04C;
+ KEY_CODE_CANCEL              = $E04D;
+ KEY_CODE_CLEAR               = $E04E;
+ KEY_CODE_PRIOR               = $E04F;
+ KEY_CODE_RETURN              = $E050;
+ KEY_CODE_SEPARATOR           = $E051;
+ KEY_CODE_OUT                 = $E052;
+ KEY_CODE_OPER                = $E053;
+ KEY_CODE_CLEAR_AGAIN         = $E054;
+ KEY_CODE_CRSEL_PROPS         = $E055;
+ KEY_CODE_EXSEL               = $E056;
+ KEY_CODE_00                  = $E057;
+ KEY_CODE_000                 = $E058;
+ KEY_CODE_THOUSANDS_SEPARATOR = $E059;
+ KEY_CODE_DECIMAL_SEPARATOR   = $E05A;
+ KEY_CODE_CURRENCY_UNIT       = $E05B;
+ KEY_CODE_CURRENCY_SUBUNIT    = $E05C;
+ KEY_CODE_XOR                 = $E05D;
+ KEY_CODE_MEM_STORE           = $E05E;
+ KEY_CODE_MEM_RECALL          = $E05F;
+ KEY_CODE_MEM_CLEAR           = $E060;
+ KEY_CODE_MEM_ADD             = $E061;
+ KEY_CODE_MEM_SUBTRACT        = $E062;
+ KEY_CODE_MEM_MULTIPLY        = $E063;
+ KEY_CODE_MEM_DIVIDE          = $E064;
+ KEY_CODE_CLEAR_ENTRY         = $E065;
+ KEY_CODE_BINARY              = $E066;
+ KEY_CODE_OCTAL               = $E067;
+ KEY_CODE_DECIMAL             = $E068;
+ KEY_CODE_HEX                 = $E069;
+ KEY_CODE_CTRL                = $E06A;
+ KEY_CODE_SHIFT               = $E06B;
+ KEY_CODE_ALT                 = $E06C;
+ KEY_CODE_GUI                 = $E06D;
+ KEY_CODE_DOUBLE_AMPERSAND    = $E06E;
+ KEY_CODE_DOUBLE_PIPE         = $E06F;
  KEY_CODE_CENTER              = $E070;
-  
+
  KEY_CODE_TRANSLATE_START     = $0080; {Key codes below this are direct characters in all code pages}
  KEY_CODE_PRIVATE_START       = $E000; {Key codes in this range are private area mappings for non character keys}
  KEY_CODE_PRIVATE_END         = $F8FF;
- 
-const 
+
+const
  {Universal scan code constants}
  {Keyboard scan codes are based on the USB HID Usages (See Section 10 of the Universal Serial Bus HID Usage Tables v1.12)}
  {These are the values reported in the ScanCode field of the TKeyboardData structure returned by the KeyboardRead function}
@@ -648,8 +648,8 @@ const
  SCAN_CODE_ENTER                   = 40;  {Keyboard Enter)}
  SCAN_CODE_ESCAPE                  = 41;  {Keyboard Escape}
  SCAN_CODE_BACKSPACE               = 42;  {Keyboard Backspace}
- SCAN_CODE_TAB                     = 43;  {Keyboard Tab}       
- SCAN_CODE_SPACE                   = 44;  {Keyboard Spacebar}  
+ SCAN_CODE_TAB                     = 43;  {Keyboard Tab}
+ SCAN_CODE_SPACE                   = 44;  {Keyboard Spacebar}
  SCAN_CODE_MINUS                   = 45;  {Keyboard - or _}
  SCAN_CODE_EQUALS                  = 46;  {Keyboard = or +}
  SCAN_CODE_LEFT_SQUARE             = 47;  {Keyboard [ or Left Brace}
@@ -689,14 +689,14 @@ const
  SCAN_CODE_DOWN_ARROW              = 81;  {Keyboard Down Arrow}
  SCAN_CODE_UP_ARROW                = 82;  {Keyboard Up Arrow}
  SCAN_CODE_NUMLOCK                 = 83;  {Keyboard Num Lock}
- SCAN_CODE_KEYPAD_SLASH            = 84;  {Keypad /}                 
- SCAN_CODE_KEYPAD_ASTERISK         = 85;  {Keypad *}                 
- SCAN_CODE_KEYPAD_MINUS            = 86;  {Keypad -}                 
- SCAN_CODE_KEYPAD_PLUS             = 87;  {Keypad +}                
- SCAN_CODE_KEYPAD_ENTER            = 88;  {Keypad Enter}             
- SCAN_CODE_KEYPAD_1                = 89;  {Keypad 1 and End}         
- SCAN_CODE_KEYPAD_2                = 90;  {Keypad 2 and Down Arrow}  
- SCAN_CODE_KEYPAD_3                = 91;  {Keypad 3 and PageDn}                       
+ SCAN_CODE_KEYPAD_SLASH            = 84;  {Keypad /}
+ SCAN_CODE_KEYPAD_ASTERISK         = 85;  {Keypad *}
+ SCAN_CODE_KEYPAD_MINUS            = 86;  {Keypad -}
+ SCAN_CODE_KEYPAD_PLUS             = 87;  {Keypad +}
+ SCAN_CODE_KEYPAD_ENTER            = 88;  {Keypad Enter}
+ SCAN_CODE_KEYPAD_1                = 89;  {Keypad 1 and End}
+ SCAN_CODE_KEYPAD_2                = 90;  {Keypad 2 and Down Arrow}
+ SCAN_CODE_KEYPAD_3                = 91;  {Keypad 3 and PageDn}
  SCAN_CODE_KEYPAD_4                = 92;  {Keypad 4 and Left Arrow}
  SCAN_CODE_KEYPAD_5                = 93;  {Keypad 5 and Center}
  SCAN_CODE_KEYPAD_6                = 94;  {Keypad 6 and Right Arrow}
@@ -828,7 +828,7 @@ const
  SCAN_CODE_RIGHT_GUI               = 231; {Keyboard Right GUI}
  {Codes 232 to 65535 Reserved}
  SCAN_CODE_RESERVED_255            = 255; {Reserved}
- 
+
  {Alternate names for above}
  SCAN_CODE_EXCLAMATION             = 30;  {Keyboard 1 or !}
  SCAN_CODE_AT                      = 31;  {Keyboard 2 or @}
@@ -840,7 +840,7 @@ const
  SCAN_CODE_ASTERISK                = 37;  {Keyboard 8 or *}
  SCAN_CODE_LEFT_BRACKET            = 38;  {Keyboard 9 or (}
  SCAN_CODE_RIGHT_BRACKET           = 39;  {Keyboard 0 or )}
- 
+
  SCAN_CODE_DASH                    = 45;  {Keyboard - or _}
  SCAN_CODE_UNDERSCORE              = 45;  {Keyboard - or _}
  SCAN_CODE_PLUS                    = 46;  {Keyboard = or +}
@@ -854,12 +854,12 @@ const
  SCAN_CODE_LESSTHAN                = 54;  {Keyboard , or <}
  SCAN_CODE_GREATERTHAN             = 55;  {Keyboard . or >}
  SCAN_CODE_QUESTION                = 56;  {Keyboard / or ?}
- 
+
  SCAN_CODE_ALTGR                   = SCAN_CODE_RIGHT_ALT; {Keyboard RightAlt}
- 
+
  SCAN_CODE_KEYPAD_FIRST            = SCAN_CODE_NUMLOCK;
  SCAN_CODE_KEYPAD_LAST             = SCAN_CODE_KEYPAD_PERIOD;
- 
+
 {==============================================================================}
 const
  {Universal color constants}
@@ -867,12 +867,12 @@ const
  COLOR_NONE      = $00000000;
  COLOR_BLACK     = $FF000000;
  COLOR_RED       = $FFFF0000;
- COLOR_ORANGE    = $FFFF8500; 
+ COLOR_ORANGE    = $FFFF8500;
  COLOR_LEAFGREEN = $FF009900;
  COLOR_GREEN     = $FF00FF00;
  COLOR_YELLOW    = $FFFFFF00;
  COLOR_DARKGREEN = $FF254117;
- COLOR_DARKGRAY  = $FF595959; 
+ COLOR_DARKGRAY  = $FF595959;
  COLOR_BROWN     = $FF6F4E37;
  COLOR_INDIGO    = $FF2E0854;
  COLOR_RASPBERRY = $FFE30B5C;
@@ -888,15 +888,15 @@ const
  COLOR_MAGENTA   = $FFFF00FF;
  COLOR_CYAN      = $FF00FFFF;
  COLOR_WHITE     = $FFFFFFFF;
- 
+
  {Ultibo release RGB colors}
  COLOR_ULTIBO_LETTUCE  = $FF000000; {Ultibo Version 0.0 (Lettuce)}
  COLOR_ULTIBO_POTATO   = $FF0000A0; {Ultibo Version 1.0 (Potato)}
  COLOR_ULTIBO_CUCUMBER = $FFFF8500; {Ultibo Version 1.x (Cucumber)}
  COLOR_ULTIBO_BEETROOT = $FF00BB00; {Ultibo Version 2.x (Beetroot)}
- 
+
  COLOR_ULTIBO = COLOR_ULTIBO_BEETROOT;
- 
+
  {Color format constants}
  {See: https://en.wikipedia.org/wiki/Color_depth and https://en.wikipedia.org/wiki/RGBA_color_space}
  COLOR_FORMAT_ARGB32  = 0;  {32 bits per pixel Alpha/Red/Green/Blue (ARGB8888)}
@@ -913,19 +913,19 @@ const
  COLOR_FORMAT_BGR16   = 11; {16 bits per pixel Blue/Green/Red (BGR565)}
  COLOR_FORMAT_RGB15   = 12; {15 bits per pixel Red/Green/Blue (RGB555)}
  COLOR_FORMAT_BGR15   = 13; {15 bits per pixel Blue/Green/Red (BGR555)}
- COLOR_FORMAT_RGB8    = 14; {8 bits per pixel Red/Green/Blue (RGB332)} 
- COLOR_FORMAT_BGR8    = 15; {8 bits per pixel Blue/Green/Red (BGR233)} 
+ COLOR_FORMAT_RGB8    = 14; {8 bits per pixel Red/Green/Blue (RGB332)}
+ COLOR_FORMAT_BGR8    = 15; {8 bits per pixel Blue/Green/Red (BGR233)}
  COLOR_FORMAT_GRAY16  = 16; {16 bits per pixel grayscale}
  COLOR_FORMAT_GRAY8   = 17; {8 bits per pixel grayscale}
  COLOR_FORMAT_INDEX16 = 18; {16 bits per pixel palette index}
  COLOR_FORMAT_INDEX8  = 19; {8 bits per pixel palette index}
- 
+
  COLOR_FORMAT_MAX     = 19;
- 
+
  COLOR_FORMAT_DEFAULT = COLOR_FORMAT_ARGB32; {The default color format (Used for the COLOR_* constants above)}
- 
- COLOR_FORMAT_UNKNOWN = LongWord(-1); 
- 
+
+ COLOR_FORMAT_UNKNOWN = LongWord(-1);
+
 {==============================================================================}
 const
  {Universal size constants (From /include/linux/sizes.h)}
@@ -965,7 +965,7 @@ const
 
  SIZE_1G    = $40000000;
  SIZE_2G    = $80000000;
- 
+
  SIZE_4G    = $100000000;
  SIZE_8G    = $200000000;
 
@@ -991,14 +991,14 @@ const
  MAX_WORD      = Word(-1);     {0xFFFF}
  MAX_LONG      = LongWord(-1); {0xFFFFFFFF}
  MAX_LONG_LONG = UInt64(-1);   {0xFFFFFFFFFFFFFFFF}
- 
+
 {==============================================================================}
 const
  {Universal time constants}
  MILLISECONDS_PER_SECOND = 1000;
  MICROSECONDS_PER_SECOND = 1000000;
  NANOSECONDS_PER_SECOND  = 1000000000;
- 
+
 const
  {Ultibo time constants (100 nanosecond ticks since 1/1/1601)}
  {Note: Nanoseconds is 10^9 so 100 nanosecond ticks is 10^7}
@@ -1013,40 +1013,40 @@ const
  TIME_TICKS_TO_1970 = 116444736000000000;   {Offset between 1/1/1601 (Ultibo) and 1/1/1970 (Unix/Linux)}
  TIME_TICKS_TO_1980 = 119600064000000000;   {Offset between 1/1/1601 (Ultibo) and 1/1/1980 (DOS)}
  TIME_TICKS_TO_2001 = 126227808000000000;   {Offset between 1/1/1601 (Ultibo) and 1/1/2001 (Clock is assumed not set if time is less than this)}
- 
+
  TIME_TICKS_PER_10MILLISECONDS = 100000;    {10^7 / 10^2}
- 
+
 const
  {Unix/Linux time constants (Seconds since 1/1/1970)}
  UNIX_TIME_MILLISECONDS_PER_DAY   =  86400000; {60*60*24*1000;}
  UNIX_TIME_SECONDS_PER_DAY        =  86400;    {60*60*24;}
  UNIX_TIME_DAYS_TO_1970           =  25569.0;  {Offset between 1899 (FreePascal) and 1970 (Unix/Linux)}
- 
+
 const
  {FreePascal time constants (TDateTime starts at 30/12/1899)}
  PASCAL_TIME_MILLISECONDS_PER_DAY   =  86400000; {60*60*24*1000;}
  PASCAL_TIME_SECONDS_PER_DAY        =  86400;    {60*60*24;}
  PASCAL_TIME_DOS_TIME_START         =  2162688;  {DOS date time value for start of DOS time (1/1/1980)}
 
- PASCAL_DAY_OFFSET = 1.0;                        {TDateTime value 1 day} 
+ PASCAL_DAY_OFFSET = 1.0;                        {TDateTime value 1 day}
  PASCAL_MINUTE_OFFSET = 0.000694444444444444;    {TDateTime value of 1 minute}
 
 {==============================================================================}
 const
- {System Call constants} 
+ {System Call constants}
  SYSTEM_CALL_UNDEFINED      = $00000000;
  SYSTEM_CALL_CONTEXT_SWITCH = $00000001;
- 
+
 {==============================================================================}
 const
- {Machine Type constants} 
+ {Machine Type constants}
  MACHINE_TYPE_UNKNOWN     = 0;
  MACHINE_TYPE_BCM2708     = 1;  {Broadcom BCM2708 (Raspberry Pi)}
  MACHINE_TYPE_BCM2709     = 2;  {Broadcom BCM2709 (Raspberry Pi 2)}
  MACHINE_TYPE_BCM2710     = 3;  {Broadcom BCM2710 (Raspberry Pi 3)}
  MACHINE_TYPE_VERSATILEPB = 4;  {ARM Versatile PB (QEMU)}
  MACHINE_TYPE_BCM2711     = 5;  {Broadcom BCM2711 (Raspberry Pi 4)}
- 
+
 {==============================================================================}
 const
  {Board Type constants}
@@ -1071,21 +1071,21 @@ const
  BOARD_TYPE_RPI400            = 32; {Raspberry Pi 400}
  BOARD_TYPE_RPI_COMPUTE4      = 33; {Raspberry Pi Compute Module 4}
  BOARD_TYPE_RPI_ZERO2_W       = 34; {Raspberry Pi Model Zero 2 W}
- 
+
 {==============================================================================}
-const 
+const
  {CPU Arch constants}
  CPU_ARCH_UNKNOWN   = 0;
  CPU_ARCH_ARM32     = 1; {ARM Arch 32 (ARMv6/ARMv7)(ARMv8 in 32bit mode)}
  CPU_ARCH_ARM64     = 2; {ARM Arch 64 (ARMv8}
- 
-const 
+
+const
  {CPU Type constants}
  CPU_TYPE_UNKNOWN   = 0;
  CPU_TYPE_ARMV6     = 1; {ARMv6 (ARM1176 etc)}
  CPU_TYPE_ARMV7     = 2; {ARMv7 (Cortex A5/A7/A8/A9/A15/A17 etc)}
  CPU_TYPE_ARMV8     = 3; {ARMv8 (Cortex A53/A57/A72 etc)}
- 
+
 const
  {CPU Model constants}
  CPU_MODEL_UNKNOWN     = 0;
@@ -1099,7 +1099,7 @@ const
  CPU_MODEL_CORTEX_A53  = 8;  {ARM Cortex-A53}
  CPU_MODEL_CORTEX_A57  = 9;  {ARM Cortex-A57}
  CPU_MODEL_CORTEX_A72  = 10; {ARM Cortex-A72}
- 
+
 const
  {CPU Description constants}
  CPU_DESCRIPTION_UNKNOWN      = 'Unknown';
@@ -1108,22 +1108,22 @@ const
  CPU_DESCRIPTION_CORTEX_A5_MP = 'ARM Cortex-A5 MPCore';
  CPU_DESCRIPTION_CORTEX_A7    = 'ARM Cortex-A7 MPCore';
  CPU_DESCRIPTION_CORTEX_A8    = 'ARM Cortex-A8';
- CPU_DESCRIPTION_CORTEX_A9    = 'ARM Cortex-A9'; 
- CPU_DESCRIPTION_CORTEX_A9_MP = 'ARM Cortex-A9 MPCore'; 
+ CPU_DESCRIPTION_CORTEX_A9    = 'ARM Cortex-A9';
+ CPU_DESCRIPTION_CORTEX_A9_MP = 'ARM Cortex-A9 MPCore';
  CPU_DESCRIPTION_CORTEX_A15   = 'ARM Cortex-A15 MPCore';
- CPU_DESCRIPTION_CORTEX_A17   = 'ARM Cortex-A17 MPCore'; 
- CPU_DESCRIPTION_CORTEX_A53   = 'ARM Cortex-A53 MPCore'; 
- CPU_DESCRIPTION_CORTEX_A57   = 'ARM Cortex-A57 MPCore'; 
- CPU_DESCRIPTION_CORTEX_A72   = 'ARM Cortex-A72 MPCore'; 
- 
-const 
+ CPU_DESCRIPTION_CORTEX_A17   = 'ARM Cortex-A17 MPCore';
+ CPU_DESCRIPTION_CORTEX_A53   = 'ARM Cortex-A53 MPCore';
+ CPU_DESCRIPTION_CORTEX_A57   = 'ARM Cortex-A57 MPCore';
+ CPU_DESCRIPTION_CORTEX_A72   = 'ARM Cortex-A72 MPCore';
+
+const
  {CPU State constants}
  CPU_STATE_NONE                      = (0 shl 0);
  CPU_STATE_MMU_ENABLED               = (1 shl 0);
  CPU_STATE_DATA_CACHE_ENABLED        = (1 shl 1);
  CPU_STATE_INSTRUCTION_CACHE_ENABLED = (1 shl 2);
  CPU_STATE_BRANCH_PREDICTION_ENABLED = (1 shl 3);
- 
+
 const
  {CPU Group constants}
  CPU_GROUP_0   = 0;
@@ -1158,11 +1158,11 @@ const
  CPU_GROUP_29  = 29;
  CPU_GROUP_30  = 30;
  CPU_GROUP_31  = 31;
- 
+
  CPU_GROUP_ALL = $FFFFFFFF;
- 
+
  CPU_GROUP_MAX = CPU_GROUP_31;
- 
+
 const
  {CPU ID constants}
  CPU_ID_0   = 0;
@@ -1197,11 +1197,11 @@ const
  CPU_ID_29  = 29;
  CPU_ID_30  = 30;
  CPU_ID_31  = 31;
- 
+
  CPU_ID_ALL = $FFFFFFFF;
- 
+
  CPU_ID_MAX = CPU_ID_31;
- 
+
 const
  {CPU Mask constants}
  CPU_MASK_0  = (1 shl CPU_ID_0);
@@ -1236,10 +1236,10 @@ const
  CPU_MASK_29 = (1 shl CPU_ID_29);
  CPU_MASK_30 = (1 shl CPU_ID_30);
  CPU_MASK_31 = (1 shl CPU_ID_31);
- 
+
  CPU_MASK_NONE = $00000000;
  CPU_MASK_ALL  = $FFFFFFFF;
- 
+
 const
  {CPU Affinity constants}
  CPU_AFFINITY_0  = (1 shl CPU_ID_0);
@@ -1274,10 +1274,10 @@ const
  CPU_AFFINITY_29 = (1 shl CPU_ID_29);
  CPU_AFFINITY_30 = (1 shl CPU_ID_30);
  CPU_AFFINITY_31 = (1 shl CPU_ID_31);
- 
+
  CPU_AFFINITY_NONE = $00000000;
  CPU_AFFINITY_ALL  = $FFFFFFFF;
- 
+
 {==============================================================================}
 const
  {FPU Type constants}
@@ -1286,8 +1286,8 @@ const
  FPU_TYPE_VFPV2    = 2;
  FPU_TYPE_VFPV3    = 3;
  FPU_TYPE_VFPV4    = 4;
- 
-const 
+
+const
  {FPU State constants}
  FPU_STATE_NONE    = (0 shl 0);
  FPU_STATE_ENABLED = (1 shl 0);
@@ -1296,18 +1296,18 @@ const
 const
  {GPU Type constants}
  GPU_TYPE_UNKNOWN  = 0;
- GPU_TYPE_VC4      = 1; {Broadcom VideoCore IV} 
+ GPU_TYPE_VC4      = 1; {Broadcom VideoCore IV}
  GPU_TYPE_MALI400  = 2; {ARM Mali 400}
  GPU_TYPE_MALI450  = 3; {ARM Mali 450}
  GPU_TYPE_GC880    = 4; {Vivante GC880}
  GPU_TYPE_GC2000   = 5; {Vivante GC2000}
- GPU_TYPE_VC6      = 6; {Broadcom VideoCore VI} 
- 
-const 
+ GPU_TYPE_VC6      = 6; {Broadcom VideoCore VI}
+
+const
  {GPU State constants}
  GPU_STATE_NONE    = (0 shl 0);
  GPU_STATE_ENABLED = (1 shl 0);
- 
+
 {==============================================================================}
 const
  {Cache Type constants}
@@ -1316,7 +1316,7 @@ const
  CACHE_TYPE_INSTRUCTION = 2; {Instruction Cache Only}
  CACHE_TYPE_SEPARATE    = 3; {Separate Data and Instruction Caches}
  CACHE_TYPE_UNIFIED     = 4; {Unified Data and Instruction Cache}
- 
+
 {==============================================================================}
 const
  {DMA Direction constants}
@@ -1325,7 +1325,7 @@ const
  DMA_DIR_MEM_TO_DEV = 2;
  DMA_DIR_DEV_TO_MEM = 3;
  DMA_DIR_DEV_TO_DEV = 4;
- 
+
  {DMA DREQ ID constants (Where applicable)}
  DMA_DREQ_ID_NONE          = 0;  {No peripheral gating (memory to memory transfer)}
  DMA_DREQ_ID_UART_TX       = 1;
@@ -1376,7 +1376,7 @@ const
  DMA_DREQ_ID_EMMC1         = DMA_DREQ_ID_SDHOST;
  DMA_DREQ_ID_EMMC2         = 35;
  DMA_DREQ_ID_SMI           = 36;
- 
+
 {==============================================================================}
 const
  {GPIO Pin constants}
@@ -1441,11 +1441,11 @@ const
  GPIO_PIN_58  =  58;
  GPIO_PIN_59  =  59;
  GPIO_PIN_60  =  60;
- 
+
  GPIO_PIN_MAX =  60;
- 
- GPIO_PIN_UNKNOWN = LongWord(-1); 
- 
+
+ GPIO_PIN_UNKNOWN = LongWord(-1);
+
 const
  {GPIO Function constants}
  GPIO_FUNCTION_IN    =  0;
@@ -1456,25 +1456,25 @@ const
  GPIO_FUNCTION_ALT3  =  5;
  GPIO_FUNCTION_ALT4  =  6;
  GPIO_FUNCTION_ALT5  =  7;
- 
+
  GPIO_FUNCTION_UNKNOWN = LongWord(-1); {Returned by GPIOFunctionGet on error (eg device does not support reading the function state)}
- 
+
 const
  {GPIO Level constants}
  GPIO_LEVEL_LOW  =  0;
  GPIO_LEVEL_HIGH =  1;
 
  GPIO_LEVEL_UNKNOWN = LongWord(-1); {Returned by GPIOInputGet/Wait on error (eg device does not exist)}
- 
+
 const
  {GPIO Pull constants}
  GPIO_PULL_NONE  =  0;
  GPIO_PULL_UP    =  1;
  GPIO_PULL_DOWN  =  2;
- 
+
  GPIO_PULL_UNKNOWN = LongWord(-1); {Returned by GPIOPullGet on error (eg device does not support reading the PullUp/Down state)}
- 
-const 
+
+const
  {GPIO Trigger constants}
  GPIO_TRIGGER_NONE          = 0;
  GPIO_TRIGGER_LOW           = 1;
@@ -1484,9 +1484,9 @@ const
  GPIO_TRIGGER_ASYNC_RISING  = 5;
  GPIO_TRIGGER_ASYNC_FALLING = 6;
  GPIO_TRIGGER_EDGE          = 7;
- 
+
  GPIO_TRIGGER_UNKNOWN       = LongWord(-1); {Passed to GPIO callback event when device does not support determining the trigger source}
- 
+
 {==============================================================================}
 const
  {Virtual GPIO Pin constants}
@@ -1498,22 +1498,22 @@ const
  VIRTUAL_GPIO_PIN_5  =  GPIO_PIN_5;
  VIRTUAL_GPIO_PIN_6  =  GPIO_PIN_6;
  VIRTUAL_GPIO_PIN_7  =  GPIO_PIN_7;
- 
+
 const
  {Virtual GPIO Function constants}
  VIRTUAL_GPIO_FUNCTION_IN  =  0;
  VIRTUAL_GPIO_FUNCTION_OUT =  1;
- 
+
 {==============================================================================}
 const
  {Serial Baud Rate constants}
  SERIAL_BAUD_RATE_DEFAULT = 0;
- 
+
  SERIAL_BAUD_RATE_STANDARD = 115200;  {If SERIAL_BAUD_RATE_DEFAULT is passed to SerialOpen then this is the baud rate to use}
  SERIAL_BAUD_RATE_FALLBACK = 9600;    {The fallback baud rate if SERIAL_BAUD_RATE_STANDARD is not supported by the device}
- 
+
  {Serial Data bit constants}
- SERIAL_DATA_8BIT = 8; 
+ SERIAL_DATA_8BIT = 8;
  SERIAL_DATA_7BIT = 7;
  SERIAL_DATA_6BIT = 6;
  SERIAL_DATA_5BIT = 5;
@@ -1522,19 +1522,19 @@ const
  SERIAL_STOP_1BIT  = 1;
  SERIAL_STOP_2BIT  = 2;
  SERIAL_STOP_1BIT5 = 3;  {1.5 Stop bits}
- 
+
  {Serial Parity constants}
  SERIAL_PARITY_NONE  = 0;
  SERIAL_PARITY_ODD   = 1;
  SERIAL_PARITY_EVEN  = 2;
  SERIAL_PARITY_MARK  = 3;
  SERIAL_PARITY_SPACE = 4;
-  
+
  {Serial Flow Control constants}
  SERIAL_FLOW_NONE    = 0;
  SERIAL_FLOW_RTS_CTS = 1;
  SERIAL_FLOW_DSR_DTR = 2;
- 
+
 {==============================================================================}
 const
  {I2C Address constants}
@@ -1544,14 +1544,14 @@ const
 const
  {SPI Protocol constants}
  //SPI_PROTOCOL_ //To Do //Continuing //4WIRE/3WIRE/LOSSI etc //SPI_MODE_* becomes 0/1/2/3 instead
- 
+
  {SPI Mode constants}
  SPI_MODE_4WIRE = 0;
  SPI_MODE_3WIRE = 1;
  SPI_MODE_LOSSI = 2;
- 
+
  SPI_MODE_UNKNOWN = LongWord(-1); {Returned by SPIGetMode on error (eg device does not exist)}
- 
+
  {SPI Chip Select constants}
  SPI_CS_0    = 0;
  SPI_CS_1    = 1;
@@ -1560,38 +1560,38 @@ const
  SPI_CS_4    = 4;
  SPI_CS_5    = 5;
  SPI_CS_6    = 6;
- SPI_CS_7    = 7;   
- SPI_CS_8    = 8;   
- SPI_CS_9    = 9;   
- SPI_CS_10   = 10;   
- SPI_CS_11   = 11;   
- SPI_CS_12   = 12;   
- SPI_CS_13   = 13;   
- SPI_CS_14   = 14;   
- SPI_CS_15   = 15;   
- 
+ SPI_CS_7    = 7;
+ SPI_CS_8    = 8;
+ SPI_CS_9    = 9;
+ SPI_CS_10   = 10;
+ SPI_CS_11   = 11;
+ SPI_CS_12   = 12;
+ SPI_CS_13   = 13;
+ SPI_CS_14   = 14;
+ SPI_CS_15   = 15;
+
  SPI_CS_MAX  = 15;
- 
+
  SPI_CS_NONE = Word(-1); {Special value for No Chip Select to allow external control of additional CS lines}
- 
+
  {SPI Clock Phase (CPHA) constants}
  SPI_CLOCK_PHASE_LOW  = 0; {Clock edge rising or falling for data input/output}
  SPI_CLOCK_PHASE_HIGH = 1; {See https://en.wikipedia.org/wiki/Serial_Peripheral_Interface_Bus for more information}
- 
+
  SPI_CLOCK_PHASE_UNKNOWN = LongWord(-1); {Returned by SPIGetClockPhase on error (eg device does not exist)}
- 
+
  {SPI Clock Polarity (CPOL) constants}
  SPI_CLOCK_POLARITY_LOW  = 0; {Clock is low when not transmitting}
  SPI_CLOCK_POLARITY_HIGH = 1; {Clock is high when not transmitting}
- 
+
  SPI_CLOCK_POLARITY_UNKNOWN = LongWord(-1); {Returned by SPIGetClockPolarity on error (eg device does not exist)}
- 
+
  {SPI Chip Select Polarity (CSPOL) constants}
  SPI_CS_POLARITY_LOW  = 0; {Chip select is active low (Default)}
  SPI_CS_POLARITY_HIGH = 1; {Chip select is active high}
- 
+
  SPI_CS_POLARITY_UNKNOWN = LongWord(-1); {Returned by SPIGetSelectPolarity on error (eg device does not exist)}
- 
+
 {==============================================================================}
 const
  {Power ID constants}
@@ -1642,7 +1642,7 @@ const
  {Power State constants}
  POWER_STATE_OFF   = 0;
  POWER_STATE_ON    = 1;
- 
+
 {==============================================================================}
 const
  {Clock ID constants}
@@ -1698,12 +1698,12 @@ const
  {Clock State constants}
  CLOCK_STATE_OFF   = 0;
  CLOCK_STATE_ON    = 1;
- 
+
 {==============================================================================}
 const
  {Turbo ID constants}
  TURBO_ID_SOC  = 0;
- 
+
 {==============================================================================}
 const
  {Voltage ID constants}
@@ -1711,7 +1711,7 @@ const
  VOLTAGE_ID_SDRAM_C  = 1;
  VOLTAGE_ID_SDRAM_P  = 2;
  VOLTAGE_ID_SDRAM_I  = 3;
- 
+
 {==============================================================================}
 const
  {Temperature ID constants}
@@ -1724,7 +1724,7 @@ const
  CONSOLE_DIRECTION_DOWN  = 1;  {Scroll Console Down}
  CONSOLE_DIRECTION_LEFT  = 2;  {Scroll Console Left}
  CONSOLE_DIRECTION_RIGHT = 3;  {Scroll Console Right}
- 
+
 const
  {Console Position constants}
  CONSOLE_POSITION_FULL        = 0;  {Console Window will appear in the full console}
@@ -1738,9 +1738,9 @@ const
  CONSOLE_POSITION_BOTTOMRIGHT = 8;  {Console Window will appear in the bottom right corner of the console}
 
  CONSOLE_POSITION_FULLSCREEN  = 9;  {Console Window will occupy the entire screen (Without any border or desktop)(If supported)}
- 
+
  CONSOLE_POSITION_UNKNOWN = LongWord(-1);
- 
+
 {==============================================================================}
 const
  {Framebuffer Depth constants}
@@ -1748,25 +1748,25 @@ const
  FRAMEBUFFER_DEPTH_16 = 16;
  FRAMEBUFFER_DEPTH_24 = 24;
  FRAMEBUFFER_DEPTH_32 = 32;
- 
+
 const
  {Framebuffer Pixel Order constants}
  FRAMEBUFFER_ORDER_BGR = 0;
  FRAMEBUFFER_ORDER_RGB = 1;
- 
+
 const
  {Framebuffer Alpha Mode constants}
  FRAMEBUFFER_MODE_ENABLED  = 0;  {Alpha channel enabled (0 = Fully opaque)}
  FRAMEBUFFER_MODE_REVERSED = 1;  {Alpha channel reversed (0 = Fully transparent)}
  FRAMEBUFFER_MODE_IGNORED  = 2;  {Alpha channel ignored}
- 
-const 
+
+const
  {Framebuffer Rotation constants}
  FRAMEBUFFER_ROTATION_0   = 0;   {No rotation}
  FRAMEBUFFER_ROTATION_90  = 1;   {90 degree rotation}
  FRAMEBUFFER_ROTATION_180 = 2;   {180 degree rotation}
  FRAMEBUFFER_ROTATION_270 = 3;   {270 degree rotation}
- 
+
 {==============================================================================}
 const
  {Log Level constants}
@@ -1775,12 +1775,12 @@ const
  LOG_LEVEL_WARN      = 3;  {Warning messages}
  LOG_LEVEL_ERROR     = 4;  {Error messages}
  LOG_LEVEL_NONE      = 5;  {No messages}
- 
+
 const
  {Logging Protocol constants}
  LOGGING_PROTOCOL_UDP = 0;
  LOGGING_PROTOCOL_TCP = 1;
- 
+
 const
  {Logging Facility constants}
  LOGGING_FACILITY_KERNEL     = 0;  {Core "kernel" log messages}
@@ -1826,20 +1826,20 @@ const
  LOGGING_FACILITY_BLUETOOTH  = 40; {Bluetooth log messages}
  LOGGING_FACILITY_JOYSTICK   = 41; {Joystick log messages}
  LOGGING_FACILITY_HID        = 42; {HID log messages}
- 
+
  LOGGING_FACILITY_USER       = 1000; {User log messages}
 
  LOGGING_FACILITY_INVALID    = $FFFFFFFF;
- 
+
 const
  {Logging Severity constants}
  LOGGING_SEVERITY_ERROR = 0;    {Error log messages}
  LOGGING_SEVERITY_WARN  = 1;    {Warning log messages}
  LOGGING_SEVERITY_INFO  = 2;    {Informational log messages}
  LOGGING_SEVERITY_DEBUG = 3;    {Debugging log messages}
- 
+
  LOGGING_SEVERITY_INVALID    = $FFFFFFFF;
- 
+
 {==============================================================================}
 const
  {Handle Type constants}
@@ -1869,9 +1869,9 @@ const
  HANDLE_TYPE_SOCKET       = 102;
  HANDLE_TYPE_DEVICE       = 103;
  HANDLE_TYPE_FIRMWARE     = 104;
- 
+
  HANDLE_TYPE_USER_BASE    = 1000; {Base value for user or application defined handle types}
- 
+
 {==============================================================================}
 const
  {Filesystem Cache Mode constants}

@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
- 
+
 
 Shell FileSystem
 ================
@@ -53,7 +53,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,FileSystem,Sy
 {==============================================================================}
 const
  {Shell FileSystem specific constants}
- 
+
  {Shell FileSystem Command constants}
  SHELL_FILESYS_COMMAND_FILESYSTEM = 'FILESYSTEM';
  SHELL_FILESYS_COMMAND_CONTROLLER = 'CONTROLLER';
@@ -61,9 +61,9 @@ const
  SHELL_FILESYS_COMMAND_PARTITION  = 'PARTITION';
  SHELL_FILESYS_COMMAND_VOLUME     = 'VOLUME';
  SHELL_FILESYS_COMMAND_DRIVE      = 'DRIVE';
- 
+
  SHELL_FILESYS_COMMAND_CACHE      = 'CACHE';
- 
+
  SHELL_FILESYS_COMMAND_DIR        = 'DIR';
  SHELL_FILESYS_COMMAND_CHDIR      = 'CD';
  SHELL_FILESYS_COMMAND_MKDIR      = 'MD';
@@ -82,7 +82,7 @@ const
 
  SHELL_FILESYS_COMMAND_DELTREE    = 'DELTREE';
  SHELL_FILESYS_COMMAND_XCOPY      = 'XCOPY';
- 
+
  {Shell FileSystem Alias constants}
  SHELL_FILESYS_ALIAS_LS       = 'LS';
  SHELL_FILESYS_ALIAS_CD       = 'CHDIR';
@@ -94,11 +94,11 @@ const
  SHELL_FILESYS_ALIAS_DELETE   = 'DELETE';
  SHELL_FILESYS_ALIAS_ERASE    = 'ERASE';
  SHELL_FILESYS_ALIAS_RENAME   = 'RENAME';
- 
+
  {Shell FileSystem Action constants}
  SHELL_FILESYS_ACTION_LIST       = 'LIST';
  SHELL_FILESYS_ACTION_SHOW       = 'SHOW';
- 
+
  SHELL_FILESYS_ACTION_LABEL      = 'LABEL';
  SHELL_FILESYS_ACTION_FILL       = 'FILL';
  SHELL_FILESYS_ACTION_SIGNATURE  = 'SIGNATURE';
@@ -107,7 +107,7 @@ const
  SHELL_FILESYS_ACTION_EJECT      = 'EJECT';
  SHELL_FILESYS_ACTION_LOCK       = 'LOCK';
  SHELL_FILESYS_ACTION_UNLOCK     = 'UNLOCK';
- 
+
  SHELL_FILESYS_ACTION_ADD        = 'ADD';
  SHELL_FILESYS_ACTION_DELETE     = 'DELETE';
  SHELL_FILESYS_ACTION_ACTIVATE   = 'ACTIVATE';
@@ -127,7 +127,7 @@ const
 
  SHELL_FILESYS_ACTION_START      = 'START';
  SHELL_FILESYS_ACTION_STOP       = 'STOP';
- 
+
  {Shell FileSystem Parameter constants}
  SHELL_FILESYS_PARAMETER_HELP        = '?';
  SHELL_FILESYS_PARAMETER_PAGE        = 'P';
@@ -144,14 +144,14 @@ const
  SHELL_FILESYS_PARAMETER_NOTARCHIVE  = '-A';
  SHELL_FILESYS_PARAMETER_NOTSYSTEM   = '-S';
  SHELL_FILESYS_PARAMETER_NOTHIDDEN   = '-H';
- 
+
  {Shell FileSystem Mask constants}
  SHELL_FILESYS_ALLFILES_MASK = '*.*';
- 
+
 {==============================================================================}
 {type}
  {Shell FileSystem specific types}
- 
+
 {==============================================================================}
 type
  {Shell FileSystem specific classes}
@@ -161,14 +161,14 @@ type
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -184,14 +184,14 @@ type
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -207,14 +207,14 @@ type
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -230,14 +230,14 @@ type
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -253,14 +253,14 @@ type
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -276,14 +276,14 @@ type
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -292,21 +292,21 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
- 
+
  TShellFileSysCache = class(TShellCommand)
  public
   {}
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -315,7 +315,7 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
- 
+
  TShellFileSysDir = class(TShellCommand)
  public
   {}
@@ -323,7 +323,7 @@ type
   destructor Destroy; override;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
   function DirSearch(AShell:TShell;ASession:TShellSession;const APath,AName:String;AShort,ASubdir:Boolean;var AFiles,AFolders,ABytes:Int64):Boolean;
   function DirOutput(AShell:TShell;ASession:TShellSession;const ASearchRec:TFileSearchRec;AShort:Boolean):Boolean;
@@ -331,7 +331,7 @@ type
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -348,14 +348,14 @@ type
   destructor Destroy; override;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -365,7 +365,7 @@ type
   function DoDefault(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings):Boolean; override;
   function DoExtended(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings):Boolean; override;
  end;
-  
+
  TShellFileSysMkdir = class(TShellCommand)
  public
   {}
@@ -373,14 +373,14 @@ type
   destructor Destroy; override;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -397,14 +397,14 @@ type
   destructor Destroy; override;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -413,21 +413,21 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
- 
+
  TShellFileSysType = class(TShellCommand)
  public
   {}
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -443,14 +443,14 @@ type
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -466,14 +466,14 @@ type
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -490,14 +490,14 @@ type
   destructor Destroy; override;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -514,14 +514,14 @@ type
   destructor Destroy; override;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -537,7 +537,7 @@ type
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
   function AttribSearch(AShell:TShell;ASession:TShellSession;const APath,AName:String;ASubdir:Boolean;AMask,AUnmask:LongWord):Boolean;
   function AttribOutput(AShell:TShell;ASession:TShellSession;const ASearchRec:TFileSearchRec):Boolean;
@@ -545,7 +545,7 @@ type
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -561,14 +561,14 @@ type
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -584,14 +584,14 @@ type
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -607,14 +607,14 @@ type
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -623,14 +623,14 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
- 
+
  TShellFileSysDeltree = class(TShellCommand)
  public
   {}
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
   //function DeltreeSearch(AShell:TShell;ASession:TShellSession;const APath,AName:String):Boolean;
   //function DeltreeOutput(AShell:TShell;ASession:TShellSession;const ASearchRec:TFileSearchRec):Boolean;
@@ -638,7 +638,7 @@ type
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -654,14 +654,14 @@ type
   constructor Create;
  private
   {Internal Variables}
- 
+
   {Internal Methods}
- 
+
  protected
   {Internal Variables}
 
   {Internal Methods}
-  
+
  public
   {Public Properties}
 
@@ -670,7 +670,7 @@ type
   function DoInfo(AShell:TShell;ASession:TShellSession):Boolean; override;
   function DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; override;
  end;
- 
+
 {==============================================================================}
 {var}
  {Shell FileSystem specific variables}
@@ -681,10 +681,10 @@ procedure ShellFileSysInit;
 
 {==============================================================================}
 {Shell FileSystem Functions}
- 
+
 {==============================================================================}
 {Shell FileSystem Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -695,7 +695,7 @@ implementation
 var
  {Shell FileSystem specific variables}
  ShellFileSysInitialized:Boolean;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TShellFileSysFileSystem}
@@ -710,59 +710,59 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysFileSystem.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysFileSystem.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'List or display currently available file systems');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,' ' + Name + ' LIST              (List all currently available file systems)');
  AShell.DoOutput(ASession,' ' + Name + ' SHOW <FILESYSTEM> (Display information for the specified file system)');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysFileSystem.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysFileSystem.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'List or display currently available file systems');
 end;
 
 {==============================================================================}
 
-function TShellFileSysFileSystem.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
-var 
+function TShellFileSysFileSystem.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
+var
  Parameter:String;
  WorkBuffer:String;
  Recognizer:TRecognizer;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Get Parameter}
  Parameter:=AShell.ParameterIndex(0,AParameters);
- 
+
  {Check Parameter}
  if (Length(Parameter) = 0) or (Uppercase(Parameter) = SHELL_FILESYS_ACTION_LIST) then
   begin
@@ -773,7 +773,7 @@ begin
    AShell.AddOutput(WorkBuffer,3,'Name');
    AShell.DoOutput(ASession,WorkBuffer);
    AShell.DoOutput(ASession,'');
-   
+
    {Check Driver}
    if FileSysDriver <> nil then
     begin
@@ -784,14 +784,14 @@ begin
        WorkBuffer:='';
        AShell.AddOutput(WorkBuffer,3,Recognizer.Name);
        AShell.DoOutput(ASession,WorkBuffer);
-       
+
        Recognizer:=FileSysDriver.GetRecognizerByNext(Recognizer,True,True,FILESYS_LOCK_READ);
       end;
-      
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-    end;  
-     
+    end;
+
    {Return Result}
    Result:=True;
   end
@@ -800,16 +800,16 @@ begin
    AShell.DoOutput(ASession,'File System Information');
    AShell.DoOutput(ASession,'-----------------------');
    AShell.DoOutput(ASession,'');
-  
+
    {Check Driver}
    if FileSysDriver <> nil then
     begin
      //To Do //GetRecognizerByName
-     
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-    end;  
-   
+    end;
+
    {Return Result}
    Result:=True;
   end
@@ -817,7 +817,7 @@ begin
   begin
    {Show Error}
    Result:=AShell.DoError(ASession);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -834,59 +834,59 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysController.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysController.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'List or display currently available disk controllers');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,' ' + Name + ' LIST              (List all currently available disk controllers)');
  AShell.DoOutput(ASession,' ' + Name + ' SHOW <CONTROLLER> (Display information for the specified disk controller)');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysController.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysController.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'List or display currently available disk controllers');
 end;
 
 {==============================================================================}
 
-function TShellFileSysController.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
-var 
+function TShellFileSysController.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
+var
  Parameter:String;
  WorkBuffer:String;
  Controller:TDiskController;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Get Parameter}
  Parameter:=AShell.ParameterIndex(0,AParameters);
- 
+
  {Check Parameter}
  if (Length(Parameter) = 0) or (Uppercase(Parameter) = SHELL_FILESYS_ACTION_LIST) then
   begin
@@ -898,7 +898,7 @@ begin
    AShell.AddOutput(WorkBuffer,20,'Description');
    AShell.DoOutput(ASession,WorkBuffer);
    AShell.DoOutput(ASession,'');
-   
+
    {Check Driver}
    if FileSysDriver <> nil then
     begin
@@ -910,14 +910,14 @@ begin
        AShell.AddOutput(WorkBuffer,3,Controller.Name);
        AShell.AddOutput(WorkBuffer,20,Controller.Description);
        AShell.DoOutput(ASession,WorkBuffer);
-       
+
        Controller:=FileSysDriver.GetControllerByNext(Controller,True,True,FILESYS_LOCK_READ);
       end;
-      
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-    end;  
-   
+    end;
+
    {Return Result}
    Result:=True;
   end
@@ -926,16 +926,16 @@ begin
    AShell.DoOutput(ASession,'Controller Information');
    AShell.DoOutput(ASession,'----------------------');
    AShell.DoOutput(ASession,'');
-  
+
    {Check Driver}
    if FileSysDriver <> nil then
     begin
      //To Do
-     
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-    end;  
-   
+    end;
+
    {Return Result}
    Result:=True;
   end
@@ -943,7 +943,7 @@ begin
   begin
    {Show Error}
    Result:=AShell.DoError(ASession);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -960,14 +960,14 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysDisk.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysDisk.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'List, display or modify currently available disk devices');
  AShell.DoOutput(ASession,'');
@@ -987,29 +987,29 @@ begin
  AShell.DoOutput(ASession,'    ' + Name + ' INITIALIZE \Harddisk0');
  AShell.DoOutput(ASession,'    ' + Name + ' EJECT \Cdrom0');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysDisk.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysDisk.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'List, display or modify currently available disk devices');
 end;
 
 {==============================================================================}
 
-function TShellFileSysDisk.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
-var 
+function TShellFileSysDisk.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
+var
  Name:String;
  Start:Int64;
  Count:LongWord;
@@ -1022,16 +1022,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Get Parameter}
  Parameter:=AShell.ParameterIndex(0,AParameters);
- 
+
  {Check Parameter}
  if (Length(Parameter) = 0) or (Uppercase(Parameter) = SHELL_FILESYS_ACTION_LIST) then
   begin
@@ -1044,7 +1044,7 @@ begin
    AShell.AddOutput(WorkBuffer,50,'Removable');
    AShell.DoOutput(ASession,WorkBuffer);
    AShell.DoOutput(ASession,'');
-   
+
    {Check Driver}
    if FileSysDriver <> nil then
     begin
@@ -1057,14 +1057,14 @@ begin
        AShell.AddOutput(WorkBuffer,20,MediaTypeToString(Device.MediaType));
        AShell.AddOutput(WorkBuffer,50,BooleanToString(Device.Removable));
        AShell.DoOutput(ASession,WorkBuffer);
-       
+
        Device:=FileSysDriver.GetDeviceByNext(Device,True,True,FILESYS_LOCK_READ);
       end;
-      
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-    end;  
-   
+    end;
+
    {Return Result}
    Result:=True;
   end
@@ -1119,23 +1119,23 @@ begin
          AShell.DoOutput(ASession,'');
          AShell.DoOutput(ASession,'  Free Sectors:      ' + IntToStr(Device.FreeSectors));
          AShell.DoOutput(ASession,'  Available Sectors: ' + IntToStr(Device.AvailableSectors));
-       
+
          Device.ReaderUnlock;
         end
        else
         begin
          AShell.DoOutput(ASession,'Disk ' + Name + ' not found');
-        end;        
+        end;
       end
      else
       begin
        AShell.DoOutput(ASession,'Disk name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-    
+
    {Return Result}
    Result:=True;
   end
@@ -1161,13 +1161,13 @@ begin
             try
              {Get Start}
              Start:=StrToIntDef(AShell.ParameterIndex(2,AParameters),0); {Default to Sector 0}
-             
+
              {Get Count}
              Count:=StrToIntDef(AShell.ParameterIndex(3,AParameters),1); {Default to 1 Sector}
-             
+
              {Fill Buffer}
              FillChar(Buffer^,Device.SectorSize,$BA);
-             
+
              {Write Sectors}
              FileSysDriver.SeekDevice(Handle,(Start * Device.SectorSize),soFromBeginning);
              while Count > 0 do
@@ -1191,20 +1191,20 @@ begin
          finally
           FreeMem(Buffer);
          end;
-         
+
          Device.ReaderUnlock;
         end
        else
         begin
          AShell.DoOutput(ASession,'Disk ' + Name + ' not found');
-        end;        
+        end;
       end
      else
       begin
        AShell.DoOutput(ASession,'Disk name not supplied');
-      end;      
+      end;
     end;
-  
+
    {Return Result}
    Result:=True;
   end
@@ -1227,7 +1227,7 @@ begin
           if DiskSignature = 0 then
            begin
             AShell.DoOutput(ASession,'Device ' + Device.Name + ' signature is ' + IntToHex(Device.DiskSignature,8));
-            
+
             (*{Prompt Signature} //To Do
             AShell.DoOutput(ASession,'Device signature (8 hex digits, ENTER for none)? ',2,False);
             DiskSignature:=StrToDiskSignature(AShell.DoInput(ASession,'',ConsoleWhereX,True,False));
@@ -1239,24 +1239,24 @@ begin
               if Uppercase(AShell.DoInput(ASession,'',ConsoleWhereX,True,False)) <> 'Y' then Exit;
              end;*)
            end;
-           
+
           {Set Signature}
           //Device.DiskSignature:=DiskSignature; //To Do
-         finally 
+         finally
           Device.ReaderUnlock;
-         end; 
+         end;
         end
        else
         begin
          AShell.DoOutput(ASession,'Disk ' + Name + ' not found');
-        end;        
+        end;
       end
      else
       begin
        AShell.DoOutput(ASession,'Disk name not supplied');
-      end;      
+      end;
     end;
-  
+
    {Return Result}
    Result:=True;
   end
@@ -1286,7 +1286,7 @@ begin
               begin
                {Zero Sector}
                ZeroMemory(Buffer,Device.SectorSize);
-               
+
                {Write Device}
                FileSysDriver.SeekDevice(Handle,0,soFromBeginning);
                if FileSysDriver.WriteDevice(Handle,Buffer^,Device.SectorSize) = Device.SectorSize then
@@ -1313,20 +1313,20 @@ begin
          finally
           FreeMem(Buffer);
          end;
-         
+
          Device.ReaderUnlock;
         end
        else
         begin
          AShell.DoOutput(ASession,'Disk ' + Name + ' not found');
-        end;        
+        end;
       end
      else
       begin
        AShell.DoOutput(ASession,'Disk name not supplied');
-      end;      
+      end;
     end;
-  
+
    {Return Result}
    Result:=True;
   end
@@ -1354,21 +1354,21 @@ begin
          else
           begin
            AShell.DoOutput(ASession,'Disk ' + Name + ' is not ejectable');
-          end;          
-  
+          end;
+
          Device.ReaderUnlock;
         end
        else
         begin
          AShell.DoOutput(ASession,'Disk ' + Name + ' not found');
-        end;        
+        end;
       end
      else
       begin
        AShell.DoOutput(ASession,'Disk name not supplied');
-      end;      
+      end;
     end;
-  
+
    {Return Result}
    Result:=True;
   end
@@ -1404,19 +1404,19 @@ begin
          else
           begin
            AShell.DoOutput(ASession,'Disk ' + Name + ' is not lockable');
-          end;          
-  
+          end;
+
          Device.ReaderUnlock;
         end
        else
         begin
          AShell.DoOutput(ASession,'Disk ' + Name + ' not found');
-        end;        
+        end;
       end
      else
       begin
        AShell.DoOutput(ASession,'Disk name not supplied');
-      end;      
+      end;
     end;
 
    {Return Result}
@@ -1454,21 +1454,21 @@ begin
          else
           begin
            AShell.DoOutput(ASession,'Disk ' + Name + ' is not lockable');
-          end;          
-  
+          end;
+
          Device.ReaderUnlock;
         end
        else
         begin
          AShell.DoOutput(ASession,'Disk ' + Name + ' not found');
-        end;        
+        end;
       end
      else
       begin
        AShell.DoOutput(ASession,'Disk name not supplied');
-      end;      
+      end;
     end;
-  
+
    {Return Result}
    Result:=True;
   end
@@ -1476,7 +1476,7 @@ begin
   begin
    {Show Error}
    Result:=AShell.DoError(ASession);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1493,14 +1493,14 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysPartition.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysPartition.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'List, display or modify currently available disk partitions');
  AShell.DoOutput(ASession,'');
@@ -1520,29 +1520,29 @@ begin
  AShell.DoOutput(ASession,'    ' + Name + ' ACTIVATE \Harddisk0\Partition1');
  AShell.DoOutput(ASession,'    ' + Name + ' DEACTIVATE \Harddisk0\Partition2');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysPartition.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysPartition.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'List, display or modify currently available disk partitions');
 end;
 
 {==============================================================================}
 
-function TShellFileSysPartition.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
-var 
+function TShellFileSysPartition.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
+var
  Name:String;
  Parameter:String;
  WorkBuffer:String;
@@ -1553,16 +1553,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Get Parameter}
  Parameter:=AShell.ParameterIndex(0,AParameters);
- 
+
  {Check Parameter}
  if (Length(Parameter) = 0) or (Uppercase(Parameter) = SHELL_FILESYS_ACTION_LIST) then
   begin
@@ -1588,14 +1588,14 @@ begin
        AShell.AddOutput(WorkBuffer,30,PartitionIdToString(Partition.PartitionId));
        AShell.AddOutput(WorkBuffer,60,BooleanToString(Partition.Active));
        AShell.DoOutput(ASession,WorkBuffer);
-       
+
        Partition:=FileSysDriver.GetPartitionByNext(Partition,True,True,FILESYS_LOCK_READ);
       end;
 
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-    end;  
-  
+    end;
+
    {Return Result}
    Result:=True;
   end
@@ -1634,7 +1634,7 @@ begin
          AShell.DoOutput(ASession,'');
          AShell.DoOutput(ASession,'  Free Sectors:      ' + IntToStr(Partition.FreeSectors));
          AShell.DoOutput(ASession,'  Available Sectors: ' + IntToStr(Partition.AvailableSectors));
-         
+
          Partition.ReaderUnlock;
         end
        else
@@ -1645,12 +1645,12 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Partition name not supplied');
-      end;      
+      end;
 
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-    
+
    {Return Result}
    Result:=True;
   end
@@ -1676,12 +1676,12 @@ begin
            if Device <> nil then
             begin
              if SectorCount = 0 then SectorCount:=Device.AvailableSectors;
-             
+
              if not Device.CreatePartition(nil,PartitionId,SectorCount,AShell.ParameterExists('ACTIVE',AParameters)) then
               begin
                AShell.DoOutput(ASession,'Partition could not be created');
               end;
-            
+
              Device.WriterUnlock;
             end
            else
@@ -1691,20 +1691,20 @@ begin
              if Partition <> nil then
               begin
                if SectorCount = 0 then SectorCount:=Partition.AvailableSectors;
-               
+
                {Get Device}
                if FileSysDriver.CheckDevice(Partition.Device,True,FILESYS_LOCK_WRITE) then
                 begin
                  Device:=Partition.Device;
-                 
+
                  if not Device.CreatePartition(Partition,PartitionId,SectorCount,AShell.ParameterExists('ACTIVE',AParameters)) then
                   begin
                    AShell.DoOutput(ASession,'Partition could not be created');
                   end;
-                 
+
                  Device.WriterUnlock;
-                end; 
-                
+                end;
+
                Partition.WriterUnlock;
               end
              else
@@ -1726,9 +1726,9 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Partition name not supplied');
-      end;      
+      end;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -1754,19 +1754,19 @@ begin
             begin
              AShell.DoOutput(ASession,'Partition ' + Name + ' could not be deleted');
             end;
-          
+
            Device.WriterUnlock;
           end
          else
           begin
            AShell.DoOutput(ASession,'Invalid device for partition ' + Name);
           end;
-        
+
          {Check Partition}
          if FileSysDriver.CheckPartition(Partition,False,FILESYS_LOCK_NONE) then
           begin
            Partition.WriterUnlock;
-          end; 
+          end;
         end
        else
         begin
@@ -1776,9 +1776,9 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Partition name not supplied');
-      end;      
+      end;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -1804,14 +1804,14 @@ begin
             begin
              AShell.DoOutput(ASession,'Partition ' + Name + ' could not be activated');
             end;
-            
+
            Device.ReaderUnlock;
           end
          else
           begin
            AShell.DoOutput(ASession,'Invalid device for partition ' + Name);
           end;
-        
+
          Partition.WriterUnlock;
         end
        else
@@ -1822,9 +1822,9 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Partition name not supplied');
-      end;      
+      end;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -1845,19 +1845,19 @@ begin
          if FileSysDriver.CheckDevice(Partition.Device,True,FILESYS_LOCK_READ) then
           begin
            Device:=Partition.Device;
-           
+
            if not Device.ActivatePartition(Partition,False) then
             begin
              AShell.DoOutput(ASession,'Partition ' + Name + ' could not be deactivated');
             end;
-            
+
            Device.ReaderUnlock;
           end
          else
           begin
            AShell.DoOutput(ASession,'Invalid device for partition ' + Name);
           end;
-        
+
          Partition.WriterUnlock;
         end
        else
@@ -1868,9 +1868,9 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Partition name not supplied');
-      end;      
+      end;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -1878,7 +1878,7 @@ begin
   begin
    {Show Error}
    Result:=AShell.DoError(ASession);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1895,14 +1895,14 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysVolume.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysVolume.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'List, display or modify currently available disk volumes');
  AShell.DoOutput(ASession,'');
@@ -1925,29 +1925,29 @@ begin
  AShell.DoOutput(ASession,'    ' + Name + ' MOUNT \Volume1 C:');
  AShell.DoOutput(ASession,'    ' + Name + ' DISMOUNT \Volume2');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysVolume.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysVolume.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'List, display or modify currently available disk volumes');
 end;
 
 {==============================================================================}
 
-function TShellFileSysVolume.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
-var 
+function TShellFileSysVolume.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
+var
  Name:String;
  Value:String;
  Drive:String;
@@ -1961,16 +1961,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Get Parameter}
  Parameter:=AShell.ParameterIndex(0,AParameters);
- 
+
  {Check Parameter}
  if (Length(Parameter) = 0) or (Uppercase(Parameter) = SHELL_FILESYS_ACTION_LIST) then
   begin
@@ -1983,7 +1983,7 @@ begin
    AShell.AddOutput(WorkBuffer,50,'Format');
    AShell.DoOutput(ASession,WorkBuffer);
    AShell.DoOutput(ASession,'');
-   
+
    {Check Driver}
    if FileSysDriver <> nil then
     begin
@@ -1996,14 +1996,14 @@ begin
        AShell.AddOutput(WorkBuffer,20,DriveTypeToString(Volume.DriveType));
        AShell.AddOutput(WorkBuffer,50,FileSysTypeToString(Volume.FileSysType));
        AShell.DoOutput(ASession,WorkBuffer);
-       
+
        Volume:=FileSysDriver.GetVolumeByNext(Volume,True,True,FILESYS_LOCK_READ);
       end;
-      
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-    end;  
-   
+    end;
+
    {Return Result}
    Result:=True;
   end
@@ -2059,8 +2059,8 @@ begin
            AShell.DoOutput(ASession,'   Mark Clean on Dismount: ' + BooleanToString(Volume.FileSystem.MarkClean));
            AShell.DoOutput(ASession,'   Mark Dirty on Dismount: ' + BooleanToString(Volume.FileSystem.MarkDirty));
           end;
-          
-         Volume.ReaderUnlock; 
+
+         Volume.ReaderUnlock;
         end
        else
         begin
@@ -2070,12 +2070,12 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Volume name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2105,7 +2105,7 @@ begin
              end;
             AShell.DoOutput(ASession,'Volume ' + Volume.Name + Value);
             AShell.DoOutput(ASession,'Volume Serial Number is ' + IntToHex(Volume.VolumeSerial,8));
-            
+
             (*{Prompt Label} //To Do
             AShell.DoOutput(ASession,'Volume label (11 characters, ENTER for none)? ',2,False);
             Value:=Uppercase(AShell.DoInput(ASession,'',ConsoleWhereX,True,False));
@@ -2117,12 +2117,12 @@ begin
               if Uppercase(AShell.DoInput(ASession,'',ConsoleWhereX,True,False)) <> 'Y' then Exit;
              end;*)
            end;
-           
+
           {Set Label}
           //Volume.FileSystem.SetDriveLabel(Value); //To Do
-         finally 
-          Volume.ReaderUnlock; 
-         end; 
+         finally
+          Volume.ReaderUnlock;
+         end;
         end
        else
         begin
@@ -2132,12 +2132,12 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Volume name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2162,15 +2162,15 @@ begin
            if FileSysDriver.CheckDevice(Volume.Device,True,FILESYS_LOCK_READ) then
             begin
              Device:=Volume.Device;
-             
+
              {Get FloppyType}
              FloppyType:=Device.FloppyType;
              if not Volume.FormatVolume(FloppyType,FileSysType) then
               begin
                AShell.DoOutput(ASession,'Volume could not be formatted');
               end;
-              
-             Device.ReaderUnlock; 
+
+             Device.ReaderUnlock;
             end
            else
             begin
@@ -2181,8 +2181,8 @@ begin
           begin
            AShell.DoOutput(ASession,'Invalid file system type or type not supplied');
           end;
-         
-         Volume.WriterUnlock; 
+
+         Volume.WriterUnlock;
         end
        else
         begin
@@ -2192,12 +2192,12 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Volume name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2216,8 +2216,8 @@ begin
         begin
          AShell.DoOutput(ASession,'Command not implemented');
          //To Do
-         
-         Volume.WriterUnlock; 
+
+         Volume.WriterUnlock;
         end
        else
         begin
@@ -2227,12 +2227,12 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Volume name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2251,8 +2251,8 @@ begin
         begin
          AShell.DoOutput(ASession,'Command not implemented');
          //To Do
-         
-         Volume.WriterUnlock; 
+
+         Volume.WriterUnlock;
         end
        else
         begin
@@ -2262,12 +2262,12 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Volume name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2290,8 +2290,8 @@ begin
            Volume.FileSystem.MarkDirty:=False;
            AShell.DoOutput(ASession,'Volume '  + Volume.Name + ' set to mark clean on dismount');
           end;
-          
-         Volume.WriterUnlock; 
+
+         Volume.WriterUnlock;
         end
        else
         begin
@@ -2301,12 +2301,12 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Volume name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2329,8 +2329,8 @@ begin
            Volume.FileSystem.MarkDirty:=True;
            AShell.DoOutput(ASession,'Volume '  + Volume.Name + ' set to mark dirty on dismount');
           end;
-          
-         Volume.WriterUnlock;  
+
+         Volume.WriterUnlock;
         end
        else
         begin
@@ -2340,12 +2340,12 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Volume name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2370,8 +2370,8 @@ begin
           begin
            AShell.DoOutput(ASession,'Volume could not be mounted');
           end;
-          
-         Volume.WriterUnlock;  
+
+         Volume.WriterUnlock;
         end
        else
         begin
@@ -2381,12 +2381,12 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Volume name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2407,24 +2407,24 @@ begin
           begin
            AShell.DoOutput(ASession,'Volume could not be dismounted');
           end;
-          
-         Volume.WriterUnlock;  
+
+         Volume.WriterUnlock;
         end
        else
         begin
          AShell.DoOutput(ASession,'Volume ' + Name + ' not found');
         end;
-       
+
       end
      else
       begin
        AShell.DoOutput(ASession,'Volume name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2432,7 +2432,7 @@ begin
   begin
    {Show Error}
    Result:=AShell.DoError(ASession);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2449,20 +2449,20 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysDrive.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysDrive.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'List, display or modify currently available disk drives');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,' ' + Name + ' LIST                 (List all currently available disk drives)');
  AShell.DoOutput(ASession,' ' + Name + ' SHOW <DRIVE>         (Display information for the specified disk drive)');
- AShell.DoOutput(ASession,'');                                
+ AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,' ' + Name + ' LABEL <DRIVE>        (Display or modify label for the specified disk drive)');
  AShell.DoOutput(ASession,' ' + Name + ' FORMAT <DRIVE>       (Format the specified disk drive)');
  AShell.DoOutput(ASession,' ' + Name + ' CLEAN <DRIVE>        (Mark the specified disk drive as clean on dismount)');
@@ -2477,29 +2477,29 @@ begin
  AShell.DoOutput(ASession,'    ' + Name + ' MOUNT C: \Harddisk0');
  AShell.DoOutput(ASession,'    ' + Name + ' DISMOUNT D:');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysDrive.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysDrive.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'List, display or modify currently available disk drives');
 end;
 
 {==============================================================================}
 
-function TShellFileSysDrive.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
-var 
+function TShellFileSysDrive.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
+var
  Name:String;
  Value:String;
  Device:String;
@@ -2512,16 +2512,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Get Parameter}
  Parameter:=AShell.ParameterIndex(0,AParameters);
- 
+
  {Check Parameter}
  if (Length(Parameter) = 0) or (Uppercase(Parameter) = SHELL_FILESYS_ACTION_LIST) then
   begin
@@ -2534,7 +2534,7 @@ begin
    AShell.AddOutput(WorkBuffer,50,'Format');
    AShell.DoOutput(ASession,WorkBuffer);
    AShell.DoOutput(ASession,'');
-   
+
    {Check Driver}
    if FileSysDriver <> nil then
     begin
@@ -2547,14 +2547,14 @@ begin
        AShell.AddOutput(WorkBuffer,20,DriveTypeToString(Drive.DriveType));
        AShell.AddOutput(WorkBuffer,50,FileSysTypeToString(Drive.FileSysType));
        AShell.DoOutput(ASession,WorkBuffer);
-       
+
        Drive:=FileSysDriver.GetDriveByNext(Drive,True,True,FILESYS_LOCK_READ);
       end;
-      
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-    end;  
-   
+    end;
+
    {Return Result}
    Result:=True;
   end
@@ -2610,7 +2610,7 @@ begin
            AShell.DoOutput(ASession,'   Mark Clean on Dismount: ' + BooleanToString(Drive.FileSystem.MarkClean));
            AShell.DoOutput(ASession,'   Mark Dirty on Dismount: ' + BooleanToString(Drive.FileSystem.MarkDirty));
           end;
-        
+
          Drive.ReaderUnlock;
         end
        else
@@ -2621,12 +2621,12 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Drive name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2656,7 +2656,7 @@ begin
              end;
             AShell.DoOutput(ASession,'Volume in drive ' + Drive.Name + Value);
             AShell.DoOutput(ASession,'Volume Serial Number is ' + IntToHex(Drive.VolumeSerial,8));
-            
+
             (*{Prompt Label} //To Do
             AShell.DoOutput(ASession,'Volume label (11 characters, ENTER for none)? ',2,False);
             Value:=Uppercase(AShell.DoInput(ASession,'',ConsoleWhereX,True,False));
@@ -2668,12 +2668,12 @@ begin
               if Uppercase(AShell.DoInput(ASession,'',ConsoleWhereX,True,False)) <> 'Y' then Exit;
              end;*)
            end;
-          
+
           {Set Label}
           //Drive.FileSystem.SetDriveLabel(Value); //To Do
-         finally 
+         finally
           Drive.ReaderUnlock;
-         end; 
+         end;
         end
        else
         begin
@@ -2683,12 +2683,12 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Drive name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2705,16 +2705,16 @@ begin
        if Drive <> nil then
         begin
          Volume:=Drive.Volume;
-         
-         Drive.ReaderUnlock; 
+
+         Drive.ReaderUnlock;
         end
        else
         begin
          Volume:=nil;
-         
+
          AShell.DoOutput(ASession,'Drive ' + Name + ' not found');
         end;
-       
+
        {Get Volume}
        if FileSysDriver.CheckVolume(Volume,True,FILESYS_LOCK_WRITE) then
         begin
@@ -2731,8 +2731,8 @@ begin
               begin
                AShell.DoOutput(ASession,'Drive could not be formatted');
               end;
-              
-             Volume.Device.ReaderUnlock; 
+
+             Volume.Device.ReaderUnlock;
             end
            else
             begin
@@ -2743,23 +2743,23 @@ begin
           begin
            AShell.DoOutput(ASession,'Invalid file system type or type not supplied');
           end;
-          
-         Volume.WriterUnlock; 
+
+         Volume.WriterUnlock;
         end
        else
         begin
          AShell.DoOutput(ASession,'Invalid volume for drive ' + Name);
-        end;        
+        end;
       end
      else
       begin
        AShell.DoOutput(ASession,'Drive name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2781,8 +2781,8 @@ begin
            Drive.FileSystem.MarkDirty:=False;
            AShell.DoOutput(ASession,'Drive '  + Drive.Name + ' set to mark clean on dismount');
           end;
-          
-         Drive.WriterUnlock; 
+
+         Drive.WriterUnlock;
         end
        else
         begin
@@ -2792,12 +2792,12 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Drive name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2819,8 +2819,8 @@ begin
            Drive.FileSystem.MarkDirty:=True;
            AShell.DoOutput(ASession,'Drive '  + Drive.Name + ' set to mark dirty on dismount');
           end;
-         
-         Drive.WriterUnlock; 
+
+         Drive.WriterUnlock;
         end
        else
         begin
@@ -2830,12 +2830,12 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Drive name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2859,8 +2859,8 @@ begin
             begin
              AShell.DoOutput(ASession,'Drive ' + Name + ' could not be mounted on disk ' + Device);
             end;
-           
-           Volume.WriterUnlock; 
+
+           Volume.WriterUnlock;
           end
          else
           begin
@@ -2875,12 +2875,12 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Drive name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2899,8 +2899,8 @@ begin
          if not FileSysDriver.DeleteDrive(Drive.Name) then
           begin
            AShell.DoOutput(ASession,'Drive ' + Name + ' could not be dismounted');
-           
-           Drive.WriterUnlock; 
+
+           Drive.WriterUnlock;
           end;
         end
        else
@@ -2911,12 +2911,12 @@ begin
      else
       begin
        AShell.DoOutput(ASession,'Drive name not supplied');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -2924,7 +2924,7 @@ begin
   begin
    {Show Error}
    Result:=AShell.DoError(ASession);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2941,14 +2941,14 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysCache.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysCache.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Display disk cache information');
  AShell.DoOutput(ASession,'');
@@ -2956,45 +2956,45 @@ begin
  AShell.DoOutput(ASession,' ' + Name + ' FLUSH   (Flush contents of disk cache)');
  AShell.DoOutput(ASession,' ' + Name + ' DISCARD (Discard contents of disk cache)');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysCache.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysCache.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Display disk cache information');
 end;
 
 {==============================================================================}
 
-function TShellFileSysCache.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
-var 
+function TShellFileSysCache.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
+var
  Parameter:String;
  WorkTime:TDateTime;
  Statistics:TCacheStatistics;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Get Parameter}
  Parameter:=AShell.ParameterIndex(0,AParameters);
- 
+
  {Check Parameter}
  if (Length(Parameter) = 0) or (Uppercase(Parameter) = SHELL_FILESYS_ACTION_STATS) then
   begin
@@ -3039,16 +3039,16 @@ begin
        AShell.DoOutput(ASession,'  Oldest Dirty Page: ' + SystemIntervalToString(WorkTime));
        WorkTime:=CachePageTimeToDateTime(Statistics.NewestDirty);
        AShell.DoOutput(ASession,'  Newest Dirty Page: ' + SystemIntervalToString(WorkTime));
-      end 
+      end
      else
       begin
        AShell.DoOutput(ASession,'Get cache statistics failed');
-      end;      
-      
+      end;
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-    
+
    {Return Result}
    Result:=True;
   end
@@ -3065,11 +3065,11 @@ begin
       begin
        AShell.DoOutput(ASession,'Cache flush failed');
       end;
-      
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -3086,11 +3086,11 @@ begin
       begin
        AShell.DoOutput(ASession,'Cache discard failed');
       end;
-      
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
     end;
-   
+
    {Return Result}
    Result:=True;
   end
@@ -3098,7 +3098,7 @@ begin
   begin
    {Show Error}
    Result:=AShell.DoError(ASession);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -3113,11 +3113,11 @@ begin
 
  Name:=SHELL_FILESYS_COMMAND_DIR;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
- 
+
  {Create Alias (LS)}
  Alias:=TShellAlias.Create;
  Alias.Name:=SHELL_FILESYS_ALIAS_LS;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
@@ -3127,28 +3127,28 @@ begin
 end;
 
 {==============================================================================}
- 
-destructor TShellFileSysDir.Destroy; 
+
+destructor TShellFileSysDir.Destroy;
 var
  Alias:TShellAlias;
 begin
  {}
  {Get Alias (DELETE)}
  Alias:=FindAlias(SHELL_FILESYS_ALIAS_LS);
- 
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
-  
+
  inherited Destroy;
 end;
-  
+
 {==============================================================================}
 
 function TShellFileSysDir.DirSearch(AShell:TShell;ASession:TShellSession;const APath,AName:String;AShort,ASubdir:Boolean;var AFiles,AFolders,ABytes:Int64):Boolean;
@@ -3162,27 +3162,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  FileSize:=0;
  FileCount:=0;
  FolderCount:=0;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Check Session}
  if ASession = nil then Exit;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Display Header}
  if not ASubdir then
   begin
    AShell.DoOutput(ASession,'  Directory of ' + APath);
    AShell.DoOutput(ASession,'');
   end;
- 
+
  {Find First}
  Code:=FileSysDriver.FindFirstEx(APath + AName,SearchRec);
  while Code = 0 do
@@ -3193,10 +3193,10 @@ begin
      AShell.DoOutput(ASession,'  Directory of ' + APath);
      AShell.DoOutput(ASession,'');
     end;
-    
+
    {Display Output}
    DirOutput(AShell,ASession,SearchRec,AShort);
-   
+
    {Check Folder}
    if (SearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
     begin
@@ -3210,14 +3210,14 @@ begin
      Inc(FolderCount);
      Inc(AFolders);
     end;
-    
+
    {Find Next}
    Code:=FileSysDriver.FindNextEx(SearchRec);
   end;
-  
+
  {Find Close}
  FileSysDriver.FindCloseEx(SearchRec);
- 
+
  {Check Subdir}
  if ASubdir then
   begin
@@ -3229,7 +3229,7 @@ begin
      AShell.DoOutput(ASession,WorkBuffer);
      AShell.DoOutput(ASession,'');
     end;
-    
+
    {Find First}
    Code:=FileSysDriver.FindFirstEx(APath + SHELL_FILESYS_ALLFILES_MASK,SearchRec);
    while Code = 0 do
@@ -3241,11 +3241,11 @@ begin
          if not DirSearch(AShell,ASession,AddTrailingSlash(APath + SearchRec.FindData.cFileName),AName,AShort,ASubdir,AFiles,AFolders,ABytes) then Break;
         end;
       end;
-      
+
      {Find Next}
      Code:=FileSysDriver.FindNextEx(SearchRec);
     end;
-    
+
    {Find Close}
    FileSysDriver.FindCloseEx(SearchRec);
   end
@@ -3255,12 +3255,12 @@ begin
    WorkBuffer:='';
    AShell.AddOutput(WorkBuffer,10,IntToStr(FileCount) + ' file(s) ' + IntToStr(FileSize) + ' bytes');
    AShell.DoOutput(ASession,WorkBuffer);
-   
+
    WorkBuffer:='';
    AShell.AddOutput(WorkBuffer,10,IntToStr(FolderCount) + ' dir(s)');
    AShell.DoOutput(ASession,WorkBuffer);
   end;
-  
+
  Result:=True;
 end;
 
@@ -3274,22 +3274,22 @@ var
 begin
  {}
  Result:=False;
- 
+
  WorkBuffer:='';
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Check Session}
  if ASession = nil then Exit;
 
- {Get Names} 
+ {Get Names}
  Name:=ASearchRec.FindData.cFileName;
  AltName:=ASearchRec.FindData.cAlternateFileName;
- 
+
  {Display Date and Time}
  AShell.AddOutput(WorkBuffer,1,FormatDateTime(ISO_DATE_FORMAT + ' ' + ISO_TIME_FORMAT,FileTimeToDateTime(ASearchRec.FindData.ftLastWriteTime)));
- 
+
  {Display Size}
  if (ASearchRec.FindData.dwFileAttributes and faDirectory) = faNone then
   begin
@@ -3299,13 +3299,13 @@ begin
   begin
    AShell.AddOutput(WorkBuffer,24,'<DIR>');
   end;
-  
+
  {Check Short}
  if AShort then
   begin
    {Display AltName}
    AShell.AddOutput(WorkBuffer,39,Uppercase(AltName));
-   
+
    {Display Name}
    AShell.AddOutput(WorkBuffer,55,Name);
   end
@@ -3314,23 +3314,23 @@ begin
    {Display Name}
    AShell.AddOutput(WorkBuffer,39,Name);
   end;
- 
+
  {Write Output}
  AShell.DoOutput(ASession,WorkBuffer);
- 
+
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysDir.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysDir.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Displays a list of files and subdirectories in a directory');
  AShell.DoOutput(ASession,'');
@@ -3339,33 +3339,33 @@ begin
  AShell.DoOutput(ASession,'  /S            Lists files and folders in all subfolders');
  AShell.DoOutput(ASession,'  /X            Displays the alternate file name for each file');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysDir.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysDir.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Displays a list of files and subdirectories in a directory');
 end;
 
 {==============================================================================}
 
-function TShellFileSysDir.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellFileSysDir.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Name:String;
  Path:String;
  WorkBuffer:String;
- 
+
  TotalBytes:Int64;
  TotalFiles:Int64;
  TotalFolders:Int64;
@@ -3377,13 +3377,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Help}
  if AShell.ParameterExists(SHELL_FILESYS_PARAMETER_HELP,AParameters) then
   begin
@@ -3399,11 +3399,11 @@ begin
      Name:=AShell.ParameterIndex(0,AParameters);
      if Name = '' then Name:=SHELL_FILESYS_ALLFILES_MASK;
      if (Name[1] = '/') or (Name[1] = '-') then Name:=SHELL_FILESYS_ALLFILES_MASK;
-     
+
      {Setup Path}
      Path:=AddTrailingSlash(ExtractFilePath(Name));
      if Path = '' then Path:=AddTrailingSlash(FileSysDriver.GetCurrentDir);
-     
+
      {Check Folder}
      Name:=ExtractFileName(Name);
      if FileSysDriver.DirectoryExists(Path + Name) then
@@ -3411,44 +3411,44 @@ begin
        Path:=AddTrailingSlash(Path + Name);
        Name:=SHELL_FILESYS_ALLFILES_MASK;
       end;
- 
+
      {Setup Paging}
      //CommandReset(AShell.ParameterExists(SHELL_FILESYS_PARAMETER_PAGE,AParameters)); //To Do
-     
+
      {Get Options}
      Short:=AShell.ParameterExists(SHELL_FILESYS_PARAMETER_SHORT,AParameters);
      Subdir:=AShell.ParameterExists(SHELL_FILESYS_PARAMETER_SUBDIR,AParameters);
      TotalBytes:=0;
      TotalFiles:=0;
      TotalFolders:=0;
-     
+
      {Perform Search}
      DirSearch(AShell,ASession,Path,Name,Short,Subdir,TotalFiles,TotalFolders,TotalBytes);
-     
+
      {Display Totals}
      if Subdir then
       begin
        WorkBuffer:='';
        AShell.AddOutput(WorkBuffer,10,'Total Files Listed:');
        AShell.DoOutput(ASession,WorkBuffer);
-       
+
        WorkBuffer:='';
        AShell.AddOutput(WorkBuffer,10,IntToStr(TotalFiles) + ' file(s) ' + IntToStr(TotalBytes) + ' bytes');
        AShell.DoOutput(ASession,WorkBuffer);
-       
+
        WorkBuffer:='';
        AShell.AddOutput(WorkBuffer,10,IntToStr(TotalFolders) + ' dir(s)');
        AShell.DoOutput(ASession,WorkBuffer);
       end;
      AShell.DoOutput(ASession,'');
- 
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
- 
+
      {Return Result}
      Result:=True;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3463,35 +3463,35 @@ begin
 
  Name:=SHELL_FILESYS_COMMAND_CHDIR;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP or SHELL_COMMAND_FLAG_DEFAULT or SHELL_COMMAND_FLAG_EXTENDED;
- 
+
  {Create Alias (CD)}
  Alias:=TShellAlias.Create;
  Alias.Name:=SHELL_FILESYS_ALIAS_CD;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
    {Destroy Alias}
    Alias.Free;
   end;
-  
+
  {Create Alias (CD\)}
  Alias:=TShellAlias.Create;
  Alias.Name:=SHELL_FILESYS_ALIAS_CDSLASH;
  Alias.Flags:=SHELL_ALIAS_FLAG_HIDDEN;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
    {Destroy Alias}
    Alias.Free;
   end;
-  
+
  {Create Alias (CD..)}
  Alias:=TShellAlias.Create;
  Alias.Name:=SHELL_FILESYS_ALIAS_CDDOTDOT;
  Alias.Flags:=SHELL_ALIAS_FLAG_HIDDEN;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
@@ -3501,64 +3501,64 @@ begin
 end;
 
 {==============================================================================}
- 
-destructor TShellFileSysChdir.Destroy; 
+
+destructor TShellFileSysChdir.Destroy;
 var
  Alias:TShellAlias;
 begin
  {}
  {Get Alias (CD)}
  Alias:=FindAlias(SHELL_FILESYS_ALIAS_CD);
- 
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
 
  {Get Alias (CD\)}
  Alias:=FindAlias(SHELL_FILESYS_ALIAS_CDSLASH);
- 
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
 
  {Get Alias (CD..)}
  Alias:=FindAlias(SHELL_FILESYS_ALIAS_CDDOTDOT);
- 
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
-  
+
  inherited Destroy;
 end;
 
 {==============================================================================}
 
-function TShellFileSysChdir.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysChdir.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Displays the name of or changes the current directory');
  AShell.DoOutput(ASession,'');
@@ -3570,41 +3570,41 @@ begin
  AShell.DoOutput(ASession,' Type ' + Name + ' drive: to display the current directory in the specified drive');
  AShell.DoOutput(ASession,' Type ' + Name + ' without parameters to display the current drive and directory');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysChdir.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysChdir.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Displays the name of or changes the current directory');
 end;
 
 {==============================================================================}
 
-function TShellFileSysChdir.DoDefault(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings):Boolean; 
+function TShellFileSysChdir.DoDefault(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings):Boolean;
 var
  Name:String;
  Drive:TDiskDrive;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Driver}
  if FileSysDriver <> nil then
   begin
@@ -3621,11 +3621,11 @@ begin
         begin
          {Update Prompt}
          ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-         
+
          {Return Result}
          Result:=True;
         end;
-      
+
        Drive.ReaderUnlock;
       end;
     end;
@@ -3634,20 +3634,20 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysChdir.DoExtended(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings):Boolean; 
+function TShellFileSysChdir.DoExtended(AShell:TShell;ASession:TShellSession;const AName:String;AParameters:TStrings):Boolean;
 var
  Name:String;
  Drive:TDiskDrive;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Name}
  if Uppercase(AName) = SHELL_FILESYS_ALIAS_CDSLASH then
   begin
@@ -3659,17 +3659,17 @@ begin
 
      {Set Current}
      FileSysDriver.SetCurrentDir(Name);
-       
+
      AShell.DoOutput(ASession,'');
-  
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-      
+
      {Return Result}
      Result:=True;
     end;
   end
- else if Uppercase(AName) = SHELL_FILESYS_ALIAS_CDDOTDOT then 
+ else if Uppercase(AName) = SHELL_FILESYS_ALIAS_CDDOTDOT then
   begin
    {Check Driver}
    if FileSysDriver <> nil then
@@ -3679,18 +3679,18 @@ begin
 
      {Set Current}
      FileSysDriver.SetCurrentDir(Name);
-       
+
      AShell.DoOutput(ASession,'');
-  
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-      
+
      {Return Result}
      Result:=True;
     end;
   end
  else
-  begin 
+  begin
    {Check Help}
    if AShell.ParameterExists(SHELL_FILESYS_PARAMETER_HELP,AParameters) then
     begin
@@ -3714,7 +3714,7 @@ begin
             begin
              {Get Current}
              AShell.DoOutput(ASession,FileSysDriver.GetCurrentDirEx(Drive.DriveNo));
-             
+
              Drive.ReaderUnlock;
             end
            else
@@ -3726,13 +3726,13 @@ begin
           begin
            {Check Name}
            if Name = '\' then Name:=DRIVE_NAMES[FileSysDriver.GetCurrentDrive];
-         
+
            {Set Current}
            if not FileSysDriver.SetCurrentDir(Name) then
             begin
              AShell.DoOutput(ASession,'Unable to find the specified directory');
             end;
-          end;  
+          end;
         end
        else
         begin
@@ -3740,14 +3740,14 @@ begin
          AShell.DoOutput(ASession,FileSysDriver.GetCurrentDir);
         end;
        AShell.DoOutput(ASession,'');
-  
+
        {Update Prompt}
        ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-       
+
        {Return Result}
        Result:=True;
       end;
-    end; 
+    end;
   end;
 end;
 
@@ -3763,11 +3763,11 @@ begin
 
  Name:=SHELL_FILESYS_COMMAND_MKDIR;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
- 
+
  {Create Alias}
  Alias:=TShellAlias.Create;
  Alias.Name:=SHELL_FILESYS_ALIAS_MD;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
@@ -3777,25 +3777,25 @@ begin
 end;
 
 {==============================================================================}
- 
-destructor TShellFileSysMkdir.Destroy; 
+
+destructor TShellFileSysMkdir.Destroy;
 var
  Alias:TShellAlias;
 begin
  {}
  {Get Alias}
  Alias:=FindAlias(SHELL_FILESYS_ALIAS_MD);
- 
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
-  
+
  inherited Destroy;
 end;
 
@@ -3805,37 +3805,37 @@ function TShellFileSysMkdir.DoHelp(AShell:TShell;ASession:TShellSession):Boolean
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Creates a directory');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,' ' + Name + ' [drive:]path [alternatename]');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysMkdir.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysMkdir.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Creates a directory');
 end;
 
 {==============================================================================}
 
-function TShellFileSysMkdir.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellFileSysMkdir.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Name:String;
  Path:String;
@@ -3843,13 +3843,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Help}
  if AShell.ParameterExists(SHELL_FILESYS_PARAMETER_HELP,AParameters) then
   begin
@@ -3868,14 +3868,14 @@ begin
        {Get Path}
        Path:=AddTrailingSlash(ExtractFilePath(Name));
        if Path = '' then Path:=AddTrailingSlash(FileSysDriver.GetCurrentDir);
-       
+
        {Get Name}
        Name:=ExtractFileName(Name);
-       
+
        {Get Short Name}
        ShortName:=AShell.ParameterIndex(1,AParameters);
        if (ShortName = '') or (ShortName[1] = '/') or (ShortName[1] = '-') then ShortName:='';
-    
+
        {Check Existing}
        if not FileSysDriver.DirectoryExists(Path + Name) then
         begin
@@ -3908,14 +3908,14 @@ begin
        AShell.DoOutput(ASession,'Required parameter missing');
       end;
      AShell.DoOutput(ASession,'');
- 
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-    
+
      {Return Result}
      Result:=True;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -3930,11 +3930,11 @@ begin
 
  Name:=SHELL_FILESYS_COMMAND_RMDIR;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
- 
+
  {Create Alias}
  Alias:=TShellAlias.Create;
  Alias.Name:=SHELL_FILESYS_ALIAS_RD;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
@@ -3944,38 +3944,38 @@ begin
 end;
 
 {==============================================================================}
- 
-destructor TShellFileSysRmdir.Destroy; 
+
+destructor TShellFileSysRmdir.Destroy;
 var
  Alias:TShellAlias;
 begin
  {}
  {Get Alias}
  Alias:=FindAlias(SHELL_FILESYS_ALIAS_RD);
- 
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
-  
+
  inherited Destroy;
 end;
 
 {==============================================================================}
 
-function TShellFileSysRmdir.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysRmdir.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Removes (deletes) a directory');
  AShell.DoOutput(ASession,'');
@@ -3983,28 +3983,28 @@ begin
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,'  /X            Deletes the alternate file name only');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysRmdir.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysRmdir.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Removes (deletes) a directory');
 end;
 
 {==============================================================================}
 
-function TShellFileSysRmdir.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellFileSysRmdir.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Name:String;
  Path:String;
@@ -4012,13 +4012,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Help}
  if AShell.ParameterExists(SHELL_FILESYS_PARAMETER_HELP,AParameters) then
   begin
@@ -4037,13 +4037,13 @@ begin
        {Get Path}
        Path:=AddTrailingSlash(ExtractFilePath(Name));
        if Path = '' then Path:=AddTrailingSlash(FileSysDriver.GetCurrentDir);
-       
+
        {Get Name}
        Name:=ExtractFileName(Name);
-       
+
        {Get Options}
        Short:=AShell.ParameterExists(SHELL_FILESYS_PARAMETER_SHORT,AParameters);
-       
+
        {Check Existing}
        if FileSysDriver.DirectoryExists(Path + Name) then
         begin
@@ -4074,14 +4074,14 @@ begin
        AShell.DoOutput(ASession,'Required parameter missing');
       end;
      AShell.DoOutput(ASession,'');
- 
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-     
+
      {Return Result}
      Result:=True;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4098,58 +4098,58 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysType.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysType.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Displays the contents of text files');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,' ' + Name + ' [drive:][path]filename');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysType.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysType.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Displays the contents of text files');
 end;
 
 {==============================================================================}
 
-function TShellFileSysType.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellFileSysType.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Name:String;
  Path:String;
- 
+
  Count:Integer;
  Lines:TStringList;
  FileStream:TFSFileStream;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Help}
  if AShell.ParameterExists(SHELL_FILESYS_PARAMETER_HELP,AParameters) then
   begin
@@ -4168,10 +4168,10 @@ begin
        {Get Path}
        Path:=AddTrailingSlash(ExtractFilePath(Name));
        if Path = '' then Path:=AddTrailingSlash(FileSysDriver.GetCurrentDir);
- 
+
        {Get Name}
        Name:=ExtractFileName(Name);
-       
+
        {Check Existing}
        if FileSysDriver.FileExists(Path + Name) then
         begin
@@ -4207,14 +4207,14 @@ begin
        AShell.DoOutput(ASession,'Required parameter missing');
       end;
      AShell.DoOutput(ASession,'');
- 
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-     
+
      {Return Result}
      Result:=True;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4231,14 +4231,14 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysCopy.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysCopy.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Copies one or more files to another location');
  AShell.DoOutput(ASession,'');
@@ -4250,35 +4250,35 @@ begin
  AShell.DoOutput(ASession,'                          the new file(s)');
  AShell.DoOutput(ASession,'  /O            Overwrite existing file(s)');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysCopy.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysCopy.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Copies one or more files to another location');
 end;
 
 {==============================================================================}
 
-function TShellFileSysCopy.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellFileSysCopy.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  DestName:String;
  DestPath:String;
  SourceName:String;
  SourcePath:String;
  WorkBuffer:String;
- 
+
  Code:Integer;
  TotalFiles:Int64;
  Wildcard:Boolean;
@@ -4287,13 +4287,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Help}
  if AShell.ParameterExists(SHELL_FILESYS_PARAMETER_HELP,AParameters) then
   begin
@@ -4313,17 +4313,17 @@ begin
        {Get Source Path}
        SourcePath:=AddTrailingSlash(ExtractFilePath(SourceName));
        if SourcePath = '' then SourcePath:=AddTrailingSlash(FileSysDriver.GetCurrentDir);
-       
+
        {Get Source Name}
        SourceName:=ExtractFileName(SourceName);
-    
+
        {Check Source Folder}
        if FileSysDriver.DirectoryExists(SourcePath + SourceName) then
         begin
          SourcePath:=AddTrailingSlash(SourcePath + SourceName);
          SourceName:=SHELL_FILESYS_ALLFILES_MASK;
         end;
-       
+
        {Get Dest Name}
        DestName:=AShell.ParameterIndex(1,AParameters);
        if DestName = '' then DestName:=SHELL_FILESYS_ALLFILES_MASK;
@@ -4332,22 +4332,22 @@ begin
          {Get Dest Path}
          DestPath:=AddTrailingSlash(ExtractFilePath(DestName));
          if DestPath = '' then DestPath:=AddTrailingSlash(FileSysDriver.GetCurrentDir);
-         
+
          {Get Dest Name}
          DestName:=ExtractFileName(DestName);
-    
+
          {Check Dest Folder}
          if FileSysDriver.DirectoryExists(DestPath + DestName) then
           begin
            DestPath:=AddTrailingSlash(DestPath + DestName);
            DestName:=SHELL_FILESYS_ALLFILES_MASK;
           end;
-    
+
          {Get Options}
          TotalFiles:=0;
          Wildcard:=False;
          Overwrite:=AShell.ParameterExists(SHELL_FILESYS_PARAMETER_OVERWRITE,AParameters);
-         
+
          {Check Source Wildcard}
          if (Pos('?',SourceName) <> 0) or (Pos('*',SourceName) <> 0) then
           begin
@@ -4361,8 +4361,8 @@ begin
             begin
              DestName:='';
             end;
-          end;          
-         
+          end;
+
          {Check Source and Dest Paths}
          if (Uppercase(SourcePath) <> Uppercase(DestPath)) or (not(Wildcard) and (Uppercase(SourceName) <> Uppercase(DestName))) then
           begin
@@ -4382,10 +4382,10 @@ begin
                     begin
                      {Update Total}
                      Inc(TotalFiles);
-                     
+
                      AShell.DoOutput(ASession,SourcePath + SearchRec.FindData.cFileName);
                     end
-                   else 
+                   else
                     begin
                      AShell.DoOutput(ASession,'Failed to copy file: ' + SearchRec.FindData.cFileName);
                     end;
@@ -4397,7 +4397,7 @@ begin
                     begin
                      DestName:=SearchRec.FindData.cFileName;
                     end;
-                   
+
                    {Check Source and Dest Names}
                    if Uppercase(SourcePath + SearchRec.FindData.cFileName) <> Uppercase(DestPath + DestName) then
                     begin
@@ -4406,10 +4406,10 @@ begin
                       begin
                        {Update Total}
                        Inc(TotalFiles);
-                       
+
                        AShell.DoOutput(ASession,SourcePath + SearchRec.FindData.cFileName);
                       end
-                     else 
+                     else
                       begin
                        AShell.DoOutput(ASession,'Failed to copy file: ' + SearchRec.FindData.cFileName);
                       end;
@@ -4418,13 +4418,13 @@ begin
                     begin
                      AShell.DoOutput(ASession,'File cannot be copied to itself');
                     end;
-                  end;                  
+                  end;
                 end;
-                
+
                {Find Next}
                Code:=FileSysDriver.FindNextEx(SearchRec);
               end;
-              
+
              {Find Close}
              FileSysDriver.FindCloseEx(SearchRec);
             end
@@ -4432,7 +4432,7 @@ begin
             begin
              AShell.DoOutput(ASession,'File not found');
             end;
-           
+
            {Add Footer}
            WorkBuffer:='';
            AShell.AddOutput(WorkBuffer,10,IntToStr(TotalFiles) + ' file(s) copied');
@@ -4453,14 +4453,14 @@ begin
        AShell.DoOutput(ASession,'Required parameter missing');
       end;
      AShell.DoOutput(ASession,'');
-     
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-     
+
      {Return Result}
      Result:=True;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4477,14 +4477,14 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysMove.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysMove.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Moves one or more files to another location');
  AShell.DoOutput(ASession,'');
@@ -4495,21 +4495,21 @@ begin
  AShell.DoOutput(ASession,'  [drive:][path]filename  Specifies the new location for the file(s)');
  AShell.DoOutput(ASession,'  /O            Overwrite existing file(s)');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysMove.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysMove.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Moves one or more files to another location');
 end;
@@ -4523,7 +4523,7 @@ var
  SourceName:String;
  SourcePath:String;
  WorkBuffer:String;
- 
+
  Code:Integer;
  TotalFiles:Int64;
  Wildcard:Boolean;
@@ -4532,13 +4532,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Help}
  if AShell.ParameterExists(SHELL_FILESYS_PARAMETER_HELP,AParameters) then
   begin
@@ -4558,17 +4558,17 @@ begin
        {Get Source Path}
        SourcePath:=AddTrailingSlash(ExtractFilePath(SourceName));
        if SourcePath = '' then SourcePath:=AddTrailingSlash(FileSysDriver.GetCurrentDir);
-       
+
        {Get Source Name}
        SourceName:=ExtractFileName(SourceName);
-    
+
        {Check Source Folder}
        if FileSysDriver.DirectoryExists(SourcePath + SourceName) then
         begin
          SourcePath:=AddTrailingSlash(SourcePath + SourceName);
          SourceName:=SHELL_FILESYS_ALLFILES_MASK;
         end;
-       
+
        {Get Dest Name}
        DestName:=AShell.ParameterIndex(1,AParameters);
        if DestName = '' then DestName:=SHELL_FILESYS_ALLFILES_MASK;
@@ -4577,22 +4577,22 @@ begin
          {Get Dest Path}
          DestPath:=AddTrailingSlash(ExtractFilePath(DestName));
          if DestPath = '' then DestPath:=AddTrailingSlash(FileSysDriver.GetCurrentDir);
-         
+
          {Get Dest Name}
          DestName:=ExtractFileName(DestName);
-    
+
          {Check Dest Folder}
          if FileSysDriver.DirectoryExists(DestPath + DestName) then
           begin
            DestPath:=AddTrailingSlash(DestPath + DestName);
            DestName:=SHELL_FILESYS_ALLFILES_MASK;
           end;
-    
+
          {Get Options}
          TotalFiles:=0;
          Wildcard:=False;
          Overwrite:=AShell.ParameterExists(SHELL_FILESYS_PARAMETER_OVERWRITE,AParameters);
-         
+
          {Check Source Wildcard}
          if (Pos('?',SourceName) <> 0) or (Pos('*',SourceName) <> 0) then
           begin
@@ -4606,8 +4606,8 @@ begin
             begin
              DestName:='';
             end;
-          end;          
-         
+          end;
+
          {Check Source and Dest Paths}
          if (Uppercase(SourcePath) <> Uppercase(DestPath)) or (not(Wildcard) and (Uppercase(SourceName) <> Uppercase(DestName))) then
           begin
@@ -4627,10 +4627,10 @@ begin
                     begin
                      {Update Total}
                      Inc(TotalFiles);
-                     
+
                      AShell.DoOutput(ASession,SourcePath + SearchRec.FindData.cFileName);
                     end
-                   else 
+                   else
                     begin
                      AShell.DoOutput(ASession,'Failed to move file: ' + SearchRec.FindData.cFileName);
                     end;
@@ -4642,7 +4642,7 @@ begin
                     begin
                      DestName:=SearchRec.FindData.cFileName;
                     end;
-                   
+
                    {Check Source and Dest Names}
                    if Uppercase(SourcePath + SearchRec.FindData.cFileName) <> Uppercase(DestPath + DestName) then
                     begin
@@ -4651,10 +4651,10 @@ begin
                       begin
                        {Update Total}
                        Inc(TotalFiles);
-                       
+
                        AShell.DoOutput(ASession,SourcePath + SearchRec.FindData.cFileName);
                       end
-                     else 
+                     else
                       begin
                        AShell.DoOutput(ASession,'Failed to move file: ' + SearchRec.FindData.cFileName);
                       end;
@@ -4663,13 +4663,13 @@ begin
                     begin
                      AShell.DoOutput(ASession,'File cannot be copied to itself');
                     end;
-                  end;                  
+                  end;
                 end;
-                
+
                {Find Next}
                Code:=FileSysDriver.FindNextEx(SearchRec);
               end;
-              
+
              {Find Close}
              FileSysDriver.FindCloseEx(SearchRec);
             end
@@ -4677,7 +4677,7 @@ begin
             begin
              AShell.DoOutput(ASession,'File not found');
             end;
-           
+
            {Add Footer}
            WorkBuffer:='';
            AShell.AddOutput(WorkBuffer,10,IntToStr(TotalFiles) + ' file(s) copied');
@@ -4698,14 +4698,14 @@ begin
        AShell.DoOutput(ASession,'Required parameter missing');
       end;
      AShell.DoOutput(ASession,'');
- 
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-     
+
      {Return Result}
      Result:=True;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4720,11 +4720,11 @@ begin
 
  Name:=SHELL_FILESYS_COMMAND_DEL;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
- 
+
  {Create Alias (DELETE)}
  Alias:=TShellAlias.Create;
  Alias.Name:=SHELL_FILESYS_ALIAS_DELETE;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
@@ -4735,18 +4735,18 @@ begin
  {Create Alias (ERASE)}
  Alias:=TShellAlias.Create;
  Alias.Name:=SHELL_FILESYS_ALIAS_ERASE;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
    {Destroy Alias}
    Alias.Free;
   end;
-  
+
  {Create Alias (RM)}
  Alias:=TShellAlias.Create;
  Alias.Name:=SHELL_FILESYS_ALIAS_RM;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
@@ -4756,64 +4756,64 @@ begin
 end;
 
 {==============================================================================}
- 
-destructor TShellFileSysDel.Destroy; 
+
+destructor TShellFileSysDel.Destroy;
 var
  Alias:TShellAlias;
 begin
  {}
  {Get Alias (DELETE)}
  Alias:=FindAlias(SHELL_FILESYS_ALIAS_DELETE);
- 
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
 
  {Get Alias (ERASE)}
  Alias:=FindAlias(SHELL_FILESYS_ALIAS_ERASE);
-  
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
 
  {Get Alias (RM)}
  Alias:=FindAlias(SHELL_FILESYS_ALIAS_RM);
-  
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
-  
+
  inherited Destroy;
 end;
 
 {==============================================================================}
 
-function TShellFileSysDel.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysDel.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Deletes one or more files');
  AShell.DoOutput(ASession,'');
@@ -4823,28 +4823,28 @@ begin
  AShell.DoOutput(ASession,'                          files by using wildcards');
  AShell.DoOutput(ASession,'  /X            Deletes the alternate file name only');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysDel.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysDel.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Deletes one or more files');
 end;
 
 {==============================================================================}
 
-function TShellFileSysDel.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellFileSysDel.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Name:String;
  Path:String;
@@ -4854,13 +4854,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Help}
  if AShell.ParameterExists(SHELL_FILESYS_PARAMETER_HELP,AParameters) then
   begin
@@ -4879,13 +4879,13 @@ begin
        {Get Path}
        Path:=AddTrailingSlash(ExtractFilePath(Name));
        if Path = '' then Path:=AddTrailingSlash(FileSysDriver.GetCurrentDir);
-       
+
        {Get Name}
        Name:=ExtractFileName(Name);
-       
+
        {Get Options}
        Short:=AShell.ParameterExists(SHELL_FILESYS_PARAMETER_SHORT,AParameters);
-       
+
        {Check Wildcard}
        if (Pos('?',Name) = 0) and (Pos('*',Name) = 0) then
         begin
@@ -4910,10 +4910,10 @@ begin
          else
           begin
            AShell.DoOutput(ASession,'File not found');
-          end;          
+          end;
         end
        else
-        begin       
+        begin
          {Search Files}
          Code:=FileSysDriver.FindFirstEx(Path + Name,SearchRec);
          if Code = 0 then
@@ -4937,10 +4937,10 @@ begin
                   end;
                 end;
               end;
-              
+
              Code:=FileSysDriver.FindNextEx(SearchRec);
             end;
-            
+
            FileSysDriver.FindCloseEx(SearchRec);
           end
          else
@@ -4954,14 +4954,14 @@ begin
        AShell.DoOutput(ASession,'Required parameter missing');
       end;
      AShell.DoOutput(ASession,'');
- 
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-     
+
      {Return Result}
      Result:=True;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4976,11 +4976,11 @@ begin
 
  Name:=SHELL_FILESYS_COMMAND_REN;
  Flags:=SHELL_COMMAND_FLAG_INFO or SHELL_COMMAND_FLAG_HELP;
- 
+
  {Create Alias}
  Alias:=TShellAlias.Create;
  Alias.Name:=SHELL_FILESYS_ALIAS_RENAME;
- 
+
  {Register Alias}
  if not RegisterAlias(Alias) then
   begin
@@ -4990,38 +4990,38 @@ begin
 end;
 
 {==============================================================================}
- 
-destructor TShellFileSysRen.Destroy; 
+
+destructor TShellFileSysRen.Destroy;
 var
  Alias:TShellAlias;
 begin
  {}
  {Get Alias}
  Alias:=FindAlias(SHELL_FILESYS_ALIAS_RENAME);
- 
+
  {Check Alias}
  if Alias <> nil then
   begin
    {Degister Alias}
    DeregisterAlias(Alias);
-   
+
    {Destroy Alias}
    Alias.Free;
   end;
-  
+
  inherited Destroy;
 end;
 
 {==============================================================================}
 
-function TShellFileSysRen.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysRen.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Renames a file/directory or files/directories');
  AShell.DoOutput(ASession,'');
@@ -5032,47 +5032,47 @@ begin
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,' Note that you cannot specify a new drive or path for your destination');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysRen.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysRen.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Renames a file/directory or files/directories');
 end;
 
 {==============================================================================}
 
-function TShellFileSysRen.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellFileSysRen.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Name:String;
  Path:String;
  NewName:String;
  ShortName:String;
- 
+
  Code:Integer;
  Short:Boolean;
  SearchRec:TFileSearchRec;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Help}
  if AShell.ParameterExists(SHELL_FILESYS_PARAMETER_HELP,AParameters) then
   begin
@@ -5091,15 +5091,15 @@ begin
        {Get Path}
        Path:=AddTrailingSlash(ExtractFilePath(Name));
        if Path = '' then Path:=AddTrailingSlash(FileSysDriver.GetCurrentDir);
-       
+
        {Get Name}
        Name:=ExtractFileName(Name);
-       
+
        {Get Options}
        Short:=AShell.ParameterExists(SHELL_FILESYS_PARAMETER_SHORT,AParameters);
-       
+
        //To Do //Wildcards //See DEL
-       
+
        if Short then
         begin
          {Get Short Name}
@@ -5138,14 +5138,14 @@ begin
        AShell.DoOutput(ASession,'Required parameter missing');
       end;
      AShell.DoOutput(ASession,'');
- 
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-     
+
      {Return Result}
      Result:=True;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5171,19 +5171,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Check Session}
  if ASession = nil then Exit;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Display Header}
  AShell.DoOutput(ASession,' ' + APath);
- 
+
  {Find First}
  Code:=FileSysDriver.FindFirstEx(APath + AName,SearchRec);
  while Code = 0 do
@@ -5204,7 +5204,7 @@ begin
          FileSysDriver.FileSetAttr(APath + AltName,LongWord(FileSysDriver.FileGetAttr(APath + AltName)) or AMask);
         end;
       end;
-      
+
      {Clear Attributes}
      if AUnmask <> faNone then
       begin
@@ -5219,21 +5219,21 @@ begin
          FileSysDriver.FileSetAttr(APath + AltName,LongWord(FileSysDriver.FileGetAttr(APath + AltName)) and not(AUnmask));
         end;
       end;
-      
+
      {Display Attributes}
      if (AMask = faNone) and (AUnmask = faNone) then
       begin
        AttribOutput(AShell,ASession,SearchRec);
       end;
     end;
-    
+
    {Find Next}
    Code:=FileSysDriver.FindNextEx(SearchRec);
   end;
-  
+
  {Find Close}
  FileSysDriver.FindCloseEx(SearchRec);
- 
+
  {Check Subdir}
  if ASubdir then
   begin
@@ -5248,17 +5248,17 @@ begin
          if not AttribSearch(AShell,ASession,AddTrailingSlash(APath + SearchRec.FindData.cFileName),AName,ASubdir,AMask,AUnmask) then Break;
         end;
       end;
-      
+
      {Find Next}
      Code:=FileSysDriver.FindNextEx(SearchRec);
     end;
-    
+
    {Find Close}
    FileSysDriver.FindCloseEx(SearchRec);
   end;
-  
+
  AShell.DoOutput(ASession,'');
- 
+
  Result:=True;
 end;
 
@@ -5272,18 +5272,18 @@ var
 begin
  {}
  Result:=False;
- 
+
  WorkBuffer:='';
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Check Session}
  if ASession = nil then Exit;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Display Attributes}
  if (ASearchRec.FindData.dwFileAttributes and faArchive) = faArchive then
   begin
@@ -5301,9 +5301,9 @@ begin
   begin
    AShell.AddOutput(WorkBuffer,6,'R');
   end;
- 
+
  //To Do Extended Attributes
- 
+
  {Display Name}
  Name:=ASearchRec.FindData.cFileName;
  AltName:=ASearchRec.FindData.cAlternateFileName;
@@ -5315,23 +5315,23 @@ begin
   begin
    AShell.AddOutput(WorkBuffer,12,Uppercase(AltName));
   end;
-  
+
  {Write Output}
  AShell.DoOutput(ASession,WorkBuffer);
-  
+
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysAttrib.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysAttrib.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Displays or changes file attributes');
  AShell.DoOutput(ASession,'');
@@ -5345,32 +5345,32 @@ begin
  AShell.DoOutput(ASession,'  H   Hidden file attribute');
  AShell.DoOutput(ASession,'  /S  Processes files in all subfolders in the specified path');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysAttrib.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysAttrib.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Displays or changes file attributes');
 end;
 
 {==============================================================================}
 
-function TShellFileSysAttrib.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellFileSysAttrib.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Name:String;
  Path:String;
- 
+
  Mask:LongWord;
  Unmask:LongWord;
 
@@ -5380,13 +5380,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Help}
  if AShell.ParameterExists(SHELL_FILESYS_PARAMETER_HELP,AParameters) then
   begin
@@ -5402,11 +5402,11 @@ begin
      Name:=AShell.ParameterIndex(0,AParameters);
      if Name = '' then Name:=SHELL_FILESYS_ALLFILES_MASK;
      if (Name[1] = '/') or (Name[1] = '-') or (Name[1] = '+') then Name:=SHELL_FILESYS_ALLFILES_MASK;
-     
+
      {Setup Path}
      Path:=AddTrailingSlash(ExtractFilePath(Name));
      if Path = '' then Path:=AddTrailingSlash(FileSysDriver.GetCurrentDir);
-     
+
      {Check Folder}
      Name:=ExtractFileName(Name);
      if FileSysDriver.DirectoryExists(Path + Name) then
@@ -5414,7 +5414,7 @@ begin
        Path:=AddTrailingSlash(Path + Name);
        Name:=SHELL_FILESYS_ALLFILES_MASK;
       end;
-     
+
      {Get Options}
      Subdir:=AShell.ParameterExists(SHELL_FILESYS_PARAMETER_SUBDIR,AParameters);
      Mask:=faNone;
@@ -5427,19 +5427,19 @@ begin
      if AShell.ParameterExistsEx(SHELL_FILESYS_PARAMETER_NOTARCHIVE,AParameters,False,False) then Unmask:=Unmask or faArchive;
      if AShell.ParameterExistsEx(SHELL_FILESYS_PARAMETER_NOTSYSTEM,AParameters,False,False) then Unmask:=Unmask or faSysFile;
      if AShell.ParameterExistsEx(SHELL_FILESYS_PARAMETER_NOTHIDDEN,AParameters,False,False) then Unmask:=Unmask or faHidden;
-     
+
      {Perform Search}
      AttribSearch(AShell,ASession,Path,Name,Subdir,Mask,Unmask);
-     
+
      AShell.DoOutput(ASession,'');
- 
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-    
+
      {Return Result}
      Result:=True;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5456,14 +5456,14 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysTouch.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysTouch.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Updates file create, modify or access times');
  AShell.DoOutput(ASession,'');
@@ -5475,44 +5475,44 @@ begin
  AShell.DoOutput(ASession,'  /M                      Update the modify time stamp');
  AShell.DoOutput(ASession,'  /A                      Update the access time stamp');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysTouch.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysTouch.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Updates file create, modify or access times');
 end;
 
 {==============================================================================}
 
-function TShellFileSysTouch.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellFileSysTouch.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Name:String;
  Path:String;
- 
+
  Code:Integer;
  SearchRec:TFileSearchRec;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Help}
  if AShell.ParameterExists(SHELL_FILESYS_PARAMETER_HELP,AParameters) then
   begin
@@ -5524,17 +5524,17 @@ begin
    {Check Driver}
    if FileSysDriver <> nil then
     begin
-    
+
      //To Do
      Result:= AShell.DoOutput(ASession,'Sorry, not implemented yet');
- 
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-     
+
      {Return Result}
      Result:=True;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5551,41 +5551,41 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysVol.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysVol.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Displays the disk volume label and serial number, if they exist');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,' ' + Name + ' [drive:]');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysVol.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysVol.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Displays the disk volume label and serial number, if they exist');
 end;
 
 {==============================================================================}
 
-function TShellFileSysVol.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellFileSysVol.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Name:String;
  Value:String;
@@ -5593,13 +5593,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Help}
  if AShell.ParameterExists(SHELL_FILESYS_PARAMETER_HELP,AParameters) then
   begin
@@ -5614,7 +5614,7 @@ begin
      {Get Name}
      Name:=AddTrailingSlash(AShell.ParameterIndex(0,AParameters));
      if Name = '' then Name:=DRIVE_NAMES[FileSysDriver.GetCurrentDrive];
-    
+
      {Get Drive}
      Drive:=FileSysDriver.GetDriveByName(Name,True,FILESYS_LOCK_READ);
      if Drive <> nil then
@@ -5627,7 +5627,7 @@ begin
         end;
        AShell.DoOutput(ASession,'Volume in drive ' + Drive.Name + Value);
        AShell.DoOutput(ASession,'Volume Serial Number is ' + IntToHex(Drive.VolumeSerial,8));
-      
+
        Drive.ReaderUnlock;
       end
      else
@@ -5635,14 +5635,14 @@ begin
        AShell.DoOutput(ASession,'Drive ' + Name + ' not found');
       end;
      AShell.DoOutput(ASession,'');
-     
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-     
+
      {Return Result}
      Result:=True;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5659,41 +5659,41 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysLabel.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysLabel.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Creates, changes, or deletes the volume label of a disk');
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,' ' + Name + ' [drive:][label]');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysLabel.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysLabel.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Creates, changes, or deletes the volume label of a disk');
 end;
 
 {==============================================================================}
 
-function TShellFileSysLabel.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellFileSysLabel.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Name:String;
  Value:String;
@@ -5701,13 +5701,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Help}
  if AShell.ParameterExists(SHELL_FILESYS_PARAMETER_HELP,AParameters) then
   begin
@@ -5722,7 +5722,7 @@ begin
      {Get Name}
      Name:=AddTrailingSlash(AShell.ParameterIndex(0,AParameters));
      if Name = '' then Name:=DRIVE_NAMES[FileSysDriver.GetCurrentDrive];
-     
+
      {Get Drive}
      Drive:=FileSysDriver.GetDriveByName(Name,True,FILESYS_LOCK_READ);
      if Drive <> nil then
@@ -5740,7 +5740,7 @@ begin
            end;
           AShell.DoOutput(ASession,'Volume in drive ' + Drive.Name + Value);
           AShell.DoOutput(ASession,'Volume Serial Number is ' + IntToHex(Drive.VolumeSerial,8));
-          
+
           (*{Prompt Label} //To Do
           AShell.DoOutput(ASession,'Volume label (11 characters, ENTER for none)? ',2,False);
           Value:=Uppercase(AShell.DoInput(ASession,'',ConsoleWhereX,True,False));
@@ -5752,26 +5752,26 @@ begin
             if Uppercase(AShell.DoInput(ASession,'',ConsoleWhereX,True,False)) <> 'Y' then Exit;
            end;*)
          end;
-         
+
         //{Set Label}
         //Drive.FileSystem.SetDriveLabel(Value); //To Do
        finally
         Drive.ReaderUnlock;
-       end; 
+       end;
       end
      else
       begin
        AShell.DoOutput(ASession,'Drive ' + Name + ' not found');
       end;
      AShell.DoOutput(ASession,'');
-     
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-     
+
      {Return Result}
      Result:=True;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5788,14 +5788,14 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysDeltree.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysDeltree.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Deletes a directory and all the subdirectories and files in it');
  AShell.DoOutput(ASession,'');
@@ -5804,44 +5804,44 @@ begin
  AShell.DoOutput(ASession,'');
  AShell.DoOutput(ASession,'  [drive:]path    Specifies the name of the directory you want to delete');
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysDeltree.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysDeltree.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Deletes a directory and all the subdirectories and files in it');
 end;
 
 {==============================================================================}
 
-function TShellFileSysDeltree.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellFileSysDeltree.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Name:String;
  Path:String;
- 
+
  Code:Integer;
  SearchRec:TFileSearchRec;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Help}
  if AShell.ParameterExists(SHELL_FILESYS_PARAMETER_HELP,AParameters) then
   begin
@@ -5853,17 +5853,17 @@ begin
    {Check Driver}
    if FileSysDriver <> nil then
     begin
-    
+
      //To Do
      Result:= AShell.DoOutput(ASession,'Sorry, not implemented yet');
-     
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-     
+
      {Return Result}
      Result:=True;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5880,57 +5880,57 @@ end;
 
 {==============================================================================}
 
-function TShellFileSysXcopy.DoHelp(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysXcopy.DoHelp(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Help}
  AShell.DoOutput(ASession,'Copies files and directory trees');
  AShell.DoOutput(ASession,'');
  //To Do
  AShell.DoOutput(ASession,'');
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TShellFileSysXcopy.DoInfo(AShell:TShell;ASession:TShellSession):Boolean; 
+function TShellFileSysXcopy.DoInfo(AShell:TShell;ASession:TShellSession):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
- 
+
  {Do Info}
  Result:=AShell.DoOutput(ASession,'Copies files and directory trees');
 end;
 
 {==============================================================================}
 
-function TShellFileSysXcopy.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean; 
+function TShellFileSysXcopy.DoCommand(AShell:TShell;ASession:TShellSession;AParameters:TStrings):Boolean;
 var
  Name:String;
  Path:String;
- 
+
  Code:Integer;
  SearchRec:TFileSearchRec;
 begin
  {}
  Result:=False;
- 
+
  {Check Shell}
  if AShell = nil then Exit;
 
  {Check Parameters}
  if AParameters = nil then Exit;
- 
+
  {Check Help}
  if AShell.ParameterExists(SHELL_FILESYS_PARAMETER_HELP,AParameters) then
   begin
@@ -5942,17 +5942,17 @@ begin
    {Check Driver}
    if FileSysDriver <> nil then
     begin
-     
+
      //To Do
      Result:= AShell.DoOutput(ASession,'Sorry, not implemented yet');
-     
+
      {Update Prompt}
      ASession.Prompt:=FileSysDriver.GetCurrentDir + SHELL_DEFAULT_PROMPT;
-     
+
      {Return Result}
      Result:=True;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -5963,7 +5963,7 @@ begin
  {}
  {Check Initialized}
  if ShellFileSysInitialized then Exit;
- 
+
  {Register FileSystem Commands}
  ShellRegisterCommand(TShellFileSysFileSystem.Create);
  ShellRegisterCommand(TShellFileSysController.Create);
@@ -5971,14 +5971,14 @@ begin
  ShellRegisterCommand(TShellFileSysPartition.Create);
  ShellRegisterCommand(TShellFileSysVolume.Create);
  ShellRegisterCommand(TShellFileSysDrive.Create);
- 
+
  ShellRegisterCommand(TShellFileSysCache.Create);
- 
+
  ShellRegisterCommand(TShellFileSysDir.Create);
  ShellRegisterCommand(TShellFileSysChdir.Create);
  ShellRegisterCommand(TShellFileSysMkdir.Create);
  ShellRegisterCommand(TShellFileSysRmdir.Create);
- 
+
  ShellRegisterCommand(TShellFileSysType.Create);
  ShellRegisterCommand(TShellFileSysCopy.Create);
  ShellRegisterCommand(TShellFileSysMove.Create);
@@ -5986,37 +5986,37 @@ begin
  ShellRegisterCommand(TShellFileSysRen.Create);
  ShellRegisterCommand(TShellFileSysAttrib.Create);
  ShellRegisterCommand(TShellFileSysTouch.Create);
- 
+
  ShellRegisterCommand(TShellFileSysVol.Create);
  ShellRegisterCommand(TShellFileSysLabel.Create);
- 
+
  ShellRegisterCommand(TShellFileSysDeltree.Create);
  ShellRegisterCommand(TShellFileSysXcopy.Create);
- 
+
  ShellFileSysInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Shell FileSystem Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Shell FileSystem Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 initialization
  ShellFileSysInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
 {==============================================================================}
 {==============================================================================}
- 
+
 end.
- 
+

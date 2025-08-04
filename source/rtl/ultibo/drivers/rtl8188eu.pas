@@ -17,32 +17,32 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
   Linux - \drivers\staging\rtl8188eu\* - Copyright(c) 2007 - 2012 Realtek Corporation.
-  
+
 References
 ==========
- 
-  
+
+
 Realtek 8188EU
 ==============
 
  The list of USB supported device IDs shown below for this driver is taken from the equivalent Linux driver
  but not all have been tested. In general if your device works with the 8188EU kernel module under Linux then
  it should also work with this driver.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit RTL8188EU; 
+unit RTL8188EU;
 
 interface
 
@@ -56,7 +56,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Network,W
 const
  {RTL8188EU specific constants}
  RTL8188EU_DRIVER_NAME = 'Realtek 8188EU USB Wireless Driver'; {Name of RTL8188EU driver}
- 
+
  RTL8188EU_DEVICE_ID_COUNT = 8; {Number of supported Device IDs}
 
  RTL8188EU_DEVICE_ID:array[0..RTL8188EU_DEVICE_ID_COUNT - 1] of TUSBDeviceId = (
@@ -71,15 +71,15 @@ const
   (idVendor:$2001;idProduct:$3310),                 {Dlink DWA-123 REV D1}
   (idVendor:$2001;idProduct:$3311),                 {DLink GO-USB-N150 REV B1}
   (idVendor:$0df6;idProduct:$0076));                {Sitecom N150 v2}
- 
+
 {==============================================================================}
 {type}
  {RTL8188EU specific types}
- 
+
 {==============================================================================}
 {var}
  {RTL8188EU specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure RTL8188EUInit;
@@ -100,7 +100,7 @@ function RTL8188EUDriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongW
 {==============================================================================}
 {RTL8188EU Helper Functions}
 function RTL8188EUCheckDevice(Device:PUSBDevice):LongWord;
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -110,8 +110,8 @@ implementation
 {==============================================================================}
 var
  {RTL8188EU specific variables}
- RTL8188EUInitialized:Boolean; 
- 
+ RTL8188EUInitialized:Boolean;
+
  RTL8188EUDriver:PUSBDriver;  {RTL8188EU Driver interface (Set by RTL8188EUInit)}
 
 {==============================================================================}
@@ -131,7 +131,7 @@ begin
   begin
    {Update RTL8188EU Wireless Driver}
    {Driver}
-   RTL8188EUDriver.Driver.DriverName:=RTL8188EU_DRIVER_NAME; 
+   RTL8188EUDriver.Driver.DriverName:=RTL8188EU_DRIVER_NAME;
    {USB}
    RTL8188EUDriver.DriverBind:=RTL8188EUDriverBind;
    RTL8188EUDriver.DriverUnbind:=RTL8188EUDriverUnbind;
@@ -141,7 +141,7 @@ begin
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(nil,'RTL8188EU: Failed to register RTL8188EU driver: ' + USBStatusToString(Status));
-     
+
      {Destroy Driver}
      USBDriverDestroy(RTL8188EUDriver);
     end;
@@ -150,7 +150,7 @@ begin
   begin
    if USB_LOG_ENABLED then USBLogError(nil,'RTL8188EU: Failed to create RTL8188EU driver');
   end;
- 
+
  RTL8188EUInitialized:=True;
 end;
 
@@ -175,7 +175,7 @@ begin
 
  //To Do
 end;
- 
+
 {==============================================================================}
 
 function RTL8188EUDeviceClose(Network:PNetworkDevice):LongWord;
@@ -193,18 +193,18 @@ begin
  {Get Device}
  Device:=PUSBDevice(Network.Device.DeviceData);
  if Device = nil then Exit;
- 
+
  {Check State}
  Result:=ERROR_NOT_OPEN;
  if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
- 
+
  {Set State to Closing}
  Result:=ERROR_OPERATION_FAILED;
  if NetworkDeviceSetState(Network,NETWORK_STATE_CLOSING) <> ERROR_SUCCESS then Exit;
 
  //To Do
 end;
- 
+
 {==============================================================================}
 
 function RTL8188EUDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
@@ -212,27 +212,27 @@ function RTL8188EUDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Setup Length}
  Length:=0;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
 
  {Check Size}
  if Size = 0 then Exit;
- 
+
  {Check State}
  Result:=ERROR_NOT_READY;
  if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
 
  //To Do
 end;
- 
+
 {==============================================================================}
 
 function RTL8188EUDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
@@ -240,20 +240,20 @@ function RTL8188EUDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWor
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Setup Length}
  Length:=0;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
 
  //To Do
 end;
- 
+
 {==============================================================================}
 
 function RTL8188EUDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
@@ -267,14 +267,14 @@ begin
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Get Device}
  Device:=PUSBDevice(Network.Device.DeviceData);
  if Device = nil then Exit;
 
  //To Do
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {RTL8188EU USB Functions}
@@ -293,7 +293,7 @@ begin
  {$IFDEF RTL8188EU_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'RTL8188EU: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
- 
+
  {Check Interface (Bind to device only)}
  if Interrface <> nil then
   begin
@@ -304,7 +304,7 @@ begin
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
+
  {Check RTL8188EU Device}
  if RTL8188EUCheckDevice(Device) <> USB_STATUS_SUCCESS then
   begin
@@ -328,11 +328,11 @@ begin
   end;
 
  //To Do
- 
+
  {Return Result}
  Result:=USB_STATUS_SUCCESS;
 end;
-  
+
 {==============================================================================}
 
 function RTL8188EUDriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
@@ -343,36 +343,36 @@ function RTL8188EUDriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongW
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
  {Check Interface}
  if Interrface <> nil then Exit;
- 
+
  {Check Driver}
  if Device.Driver <> RTL8188EUDriver then Exit;
- 
+
  {$IFDEF RTL8188EU_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'RTL8188EU: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
 
  //To Do
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {RTL8188EU Helper Functions}
 function RTL8188EUCheckDevice(Device:PUSBDevice):LongWord;
 {Check the Vendor and Device ID against the supported devices}
 {Device: USB device to check}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
  Count:Integer;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
@@ -394,14 +394,14 @@ end;
 
 initialization
  RTL8188EUInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
- 
+
 {==============================================================================}
 {==============================================================================}
 
 end.
- 
+

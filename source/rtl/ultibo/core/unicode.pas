@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -33,7 +33,7 @@ Unicode
 
  This unit implements the WideString and UnicodeString support for Ultibo
  including the WideStringManager/UnicodeStringManager interface for the RTL.
- 
+
  This unit provides compatible implementations of the following functions:
 
         CharLower            CharLowerBuff             CharNext
@@ -49,7 +49,7 @@ Unicode
         OemToCharBuff        WideCharToMultiByte       wsprintf
         wvsprintf            CompareStringW            AnsiToOem
         OemToAnsi
-        
+
         The following function are implemented by the FileSystem unit:
 
         AreFileApisANSI    (AreFileApisANSI is exposed in the Ultibo unit)
@@ -57,9 +57,9 @@ Unicode
         SetFileApisToOEM   (SetFileApisToOEM is exposed in the Ultibo unit)
 
         Most of the above are currently not implemented.
-        
+
  See also: https://msdn.microsoft.com/en-us/library/windows/desktop/dd319081%28v=vs.85%29.aspx
-        
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -87,11 +87,11 @@ type
  {String types}
  LPSTR = PAnsiChar;
  LPCSTR = PAnsiChar;
- 
+
  {Wide String types}
  LPWSTR = PWideChar;
  LPCWSTR = PWideChar;
- 
+
 {==============================================================================}
 {var}
  {Unicode specific variables}
@@ -106,13 +106,13 @@ function MultiByteToWideChar(CodePage:UINT;dwFlags:DWORD;lpMultiByteStr:LPCSTR;c
 function WideCharToMultiByte(CodePage:UINT;dwFlags:DWORD;lpWideCharStr:LPCWSTR;cchWideChar:Integer;lpMultiByteStr:LPSTR;cbMultiByte:Integer;lpDefaultChar:LPCSTR;lpUsedDefaultChar:LPBOOL):Integer;
 
 function CompareString(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCSTR;cchCount1:Integer;lpString2:LPCSTR;cchCount2:Integer):Integer; inline;
-function CompareStringA(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCSTR;cchCount1:Integer;lpString2:LPCSTR;cchCount2:Integer):Integer; 
-function CompareStringW(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCWSTR;cchCount1:Integer;lpString2:LPCWSTR;cchCount2:Integer):Integer; 
-  
+function CompareStringA(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCSTR;cchCount1:Integer;lpString2:LPCSTR;cchCount2:Integer):Integer;
+function CompareStringW(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCWSTR;cchCount1:Integer;lpString2:LPCWSTR;cchCount2:Integer):Integer;
+
 function CharUpper(lpsz:LPSTR):LPSTR; inline;
 function CharUpperA(lpsz:LPSTR):LPSTR;
 function CharUpperW(lpsz:LPWSTR):LPWSTR;
-  
+
 function CharUpperBuff(lpsz:LPSTR;cchLength:DWORD):DWORD; inline;
 function CharUpperBuffA(lpsz:LPSTR;cchLength:DWORD):DWORD;
 function CharUpperBuffW(lpsz:LPWSTR;cchLength:DWORD):DWORD;
@@ -131,11 +131,11 @@ function OemToAnsi(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline;
 function OemToAnsiBuff(lpszSrc:LPCSTR;lpszDst:LPSTR;cchDstLength:DWORD):BOOL; inline;
 
 function CharToOem(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline;
-function CharToOemA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; 
-function CharToOemW(lpszSrc:LPCWSTR;lpszDst:LPSTR):BOOL; 
+function CharToOemA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL;
+function CharToOemW(lpszSrc:LPCWSTR;lpszDst:LPSTR):BOOL;
 
-function OemToChar(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline; 
-function OemToCharA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; 
+function OemToChar(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; inline;
+function OemToCharA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL;
 function OemToCharW(lpszSrc:LPCSTR;lpszDst:LPWSTR):BOOL;
 
 function CharToOemBuff(lpszSrc:LPCSTR;lpszDst:LPSTR;cchDstLength:DWORD):BOOL; inline;
@@ -148,8 +148,8 @@ function OemToCharBuffW(lpszSrc:LPCSTR;lpszDst:LPWSTR;cchDstLength:DWORD):BOOL;
 
 {==============================================================================}
 {RTL Unicode Functions}
-function SysCodePageToWideChar(Ch:Char):WideChar; 
-function SysWideCharToCodePage(Ch:WideChar):Char; 
+function SysCodePageToWideChar(Ch:Char):WideChar;
+function SysWideCharToCodePage(Ch:WideChar):Char;
 
 {==============================================================================}
 {RTL Unicode String Manager Functions}
@@ -184,7 +184,7 @@ function SysStrUpperAnsiString(Str:PChar):PChar;
 
 {==============================================================================}
 {Unicode Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -195,7 +195,7 @@ implementation
 var
  {Unicode specific variables}
  UnicodeInitialized:Boolean;
- 
+
  UnicodeStringManager:TUnicodeStringManager;
 
 {==============================================================================}
@@ -206,10 +206,10 @@ begin
  {}
  {Check Initialized}
  if UnicodeInitialized then Exit;
- 
+
  {Get Unicode String Manager}
  GetUnicodeStringManager(UnicodeStringManager);
- 
+
  {Initialize Unicode String Manager}
  {WideString}
  UnicodeStringManager.Wide2AnsiMoveProc:=@SysWide2AnsiMove;
@@ -238,14 +238,14 @@ begin
  UnicodeStringManager.StrUpperAnsiStringProc:=@SysStrUpperAnsiString;
  {CodePage}
  UnicodeStringManager.GetStandardCodePageProc:=@SysGetStandardCodePage;
- 
+
  {Set Unicode String Manager}
  SetUnicodeStringManager(UnicodeStringManager);
- 
+
  {Setup Platform Unicode Handlers}
  CodePageToWideCharHandler:=SysCodePageToWideChar;
  WideCharToCodePageHandler:=SysWideCharToCodePage;
- 
+
  UnicodeInitialized:=True;
 end;
 
@@ -268,12 +268,12 @@ var
 begin
  {}
  Result:=0;
- 
+
  if lpMultiByteStr = nil then Exit;
 
  {Map Page}
  PageID:=MapPage(CodePage);
- 
+
  {Get Page}
  Page:=GetPage(PageID);
  if Page = nil then Exit;
@@ -284,23 +284,23 @@ begin
  if cchWideChar > 0 then
   begin
    if lpWideCharStr = nil then Exit;
-   
+
    {Convert String}
    Dest:=0;
    while (Count < cbMultiByte) or (cbMultiByte = -1) do
     begin
      {Get Value}
      Value:=Page.CodeTable.Values[PByte(PtrUInt(lpMultiByteStr) + Source)^];
-     
+
      {Set Value}
      PWord(PtrUInt(lpWideCharStr) + Dest)^:=Value;
-     
+
      {Update Count}
      Inc(Count,1);
-     
+
      {Check for zero}
      if PByte(PtrUInt(lpMultiByteStr) + Source)^ = 0 then Break;
-     
+
      {Update Offset}
      Inc(Dest,2);
      Inc(Source,1);
@@ -313,15 +313,15 @@ begin
     begin
      {Update Count}
      Inc(Count,1);
-     
+
      {Check for zero}
      if PByte(PtrUInt(lpMultiByteStr) + Source)^ = 0 then Break;
-     
+
      {Update Offset}
      Inc(Source,1);
     end;
   end;
-  
+
  Result:=Count;
 end;
 
@@ -343,12 +343,12 @@ var
 begin
  {}
  Result:=0;
- 
+
  if lpWideCharStr = nil then Exit;
 
  {Map Page}
  PageID:=MapPage(CodePage);
- 
+
  {Get Page}
  Page:=GetPage(PageID);
  if Page = nil then Exit;
@@ -359,23 +359,23 @@ begin
  if cbMultiByte > 0 then
   begin
    if lpMultiByteStr = nil then Exit;
-   
+
    {Convert String}
    Dest:=0;
    while (Count < cchWideChar) or (cchWideChar = -1) do
     begin
      {Get Value}
      Value:=Page.UnicodeTable.Values[PWord(PtrUInt(lpWideCharStr) + Source)^];
-     
+
      {Set Value}
      PByte(PtrUInt(lpMultiByteStr) + Dest)^:=Value;
-     
+
      {Update Count}
      Inc(Count,1);
-     
+
      {Check for zero}
      if PWord(PtrUInt(lpWideCharStr) + Source)^ = 0 then Break;
-     
+
      {Update Offset}
      Inc(Dest,1);
      Inc(Source,2);
@@ -388,15 +388,15 @@ begin
     begin
      {Update Count}
      Inc(Count,1);
-     
+
      {Check for zero}
      if PWord(PtrUInt(lpWideCharStr) + Source)^ = 0 then Break;
-     
+
      {Update Offset}
      Inc(Source,2);
     end;
   end;
-  
+
  Result:=Count;
 end;
 
@@ -410,10 +410,10 @@ end;
 
 {==============================================================================}
 
-function CompareStringA(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCSTR;cchCount1:Integer;lpString2:LPCSTR;cchCount2:Integer):Integer; 
+function CompareStringA(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCSTR;cchCount1:Integer;lpString2:LPCSTR;cchCount2:Integer):Integer;
 {ANSI compare of two strings for equivalence. If both strings are equal returns CSTR_EQUAL, if string 1 is less than string 2
  returns CSTR_LESS_THAN and if string 1 is greater than string 2 returns CSTR_GREATER_THAN, on error returns 0}
-{Note: Currently the Locale value is ignored and the ANSI code page is used for comparison} 
+{Note: Currently the Locale value is ignored and the ANSI code page is used for comparison}
 {Note: Currently only supports SBCS}
 
  function CompareStringALowercase(lpString:PByte):Byte; inline;
@@ -426,17 +426,17 @@ function CompareStringA(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCSTR;cchCount1:
   else
    begin
     Result:=lpString^;
-   end;   
+   end;
  end;
- 
+
 var
  Offset:LongWord;
 begin
  {}
  Result:=0;
- 
+
  //To Do //Correct implementation for ANSI with SortTable
- 
+
  {Check allocated}
  if (lpString1 = nil) or (lpString2 = nil) then
   begin
@@ -452,10 +452,10 @@ begin
     begin
      Result:=CSTR_EQUAL;
     end;
-    
+
    Exit;
   end;
- 
+
  if AnsiPage = nil then Exit;
 
  {Loop until end of string or offset equals count}
@@ -476,7 +476,7 @@ begin
         begin
          Result:=CSTR_LESS_THAN;
         end;
-       
+
        Exit;
       end;
     end
@@ -494,14 +494,14 @@ begin
             begin
              Result:=CSTR_GREATER_THAN;
             end
-           else if CompareStringALowercase(PByte(PtrUInt(lpString1) + Offset)) < CompareStringALowercase(PByte(PtrUInt(lpString2) + Offset)) then 
+           else if CompareStringALowercase(PByte(PtrUInt(lpString1) + Offset)) < CompareStringALowercase(PByte(PtrUInt(lpString2) + Offset)) then
             begin
              Result:=CSTR_LESS_THAN;
             end;
-           
+
            Exit;
           end;
-        end;  
+        end;
       end
      else
       begin
@@ -512,32 +512,32 @@ begin
           begin
            Result:=CSTR_GREATER_THAN;
           end
-         else if AnsiPage.LowerTable.Values[PByte(PtrUInt(lpString1) + Offset)^] < AnsiPage.LowerTable.Values[PByte(PtrUInt(lpString2) + Offset)^] then 
+         else if AnsiPage.LowerTable.Values[PByte(PtrUInt(lpString1) + Offset)^] < AnsiPage.LowerTable.Values[PByte(PtrUInt(lpString2) + Offset)^] then
           begin
            Result:=CSTR_LESS_THAN;
           end;
-         
-         Exit;
-        end; 
-      end;      
-    end;    
 
-   {Check end of string 1}    
+         Exit;
+        end;
+      end;
+    end;
+
+   {Check end of string 1}
    if (cchCount1 < 0) and (PByte(PtrUInt(lpString1) + Offset)^ = 0) then Exit; {Exit because both strings are at the null terminator (or else they would not be equal above)}
 
    {Check end of string 2}
    if (cchCount2 < 0) and (PByte(PtrUInt(lpString2) + Offset)^ = 0) then Exit; {Exit because both strings are at the null terminator (or else they would not be equal above)}
-   
-   {Update offset}   
+
+   {Update offset}
    Inc(Offset,1);
-   
+
    {Check offset of string 1}
    if (cchCount1 >= 0) and (Offset >= cchCount1) then Break;
-   
+
    {Check offset of string 2}
    if (cchCount2 >= 0) and (Offset >= cchCount2) then Break;
   end;
- 
+
  {Check length}
  if Result = CSTR_EQUAL then
   begin
@@ -558,10 +558,10 @@ end;
 
 {==============================================================================}
 
-function CompareStringW(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCWSTR;cchCount1:Integer;lpString2:LPCWSTR;cchCount2:Integer):Integer; 
+function CompareStringW(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCWSTR;cchCount1:Integer;lpString2:LPCWSTR;cchCount2:Integer):Integer;
 {Unicode compare of two strings for equivalence. If both strings are equal returns CSTR_EQUAL, if string 1 is less than string 2
  returns CSTR_LESS_THAN and if string 1 is greater than string 2 returns CSTR_GREATER_THAN, on error returns 0}
-{Note: Currently the Locale value is ignored} 
+{Note: Currently the Locale value is ignored}
 
  function CompareStringWLowercase(lpString:PWord):Word; inline;
  begin
@@ -573,7 +573,7 @@ function CompareStringW(Locale:LCID;dwCmpFlags:DWORD;lpString1:LPCWSTR;cchCount1
   else
    begin
     Result:=lpString^;
-   end;   
+   end;
  end;
 
 var
@@ -582,9 +582,9 @@ var
 begin
  {}
  Result:=0;
- 
+
  //To Do //Correct implementation for Unicode
- 
+
  {Check allocated}
  if (lpString1 = nil) or (lpString2 = nil) then
   begin
@@ -600,10 +600,10 @@ begin
     begin
      Result:=CSTR_EQUAL;
     end;
-    
+
    Exit;
   end;
- 
+
  {Loop until end of string or offset equals count}
  Result:=CSTR_EQUAL;
  Count:=0;
@@ -623,7 +623,7 @@ begin
         begin
          Result:=CSTR_LESS_THAN;
         end;
-       
+
        Exit;
       end;
     end
@@ -638,33 +638,33 @@ begin
           begin
            Result:=CSTR_GREATER_THAN;
           end
-         else if CompareStringWLowercase(PWord(PtrUInt(lpString1) + Offset)) < CompareStringWLowercase(PWord(PtrUInt(lpString2) + Offset)) then 
+         else if CompareStringWLowercase(PWord(PtrUInt(lpString1) + Offset)) < CompareStringWLowercase(PWord(PtrUInt(lpString2) + Offset)) then
           begin
            Result:=CSTR_LESS_THAN;
           end;
-         
+
          Exit;
         end;
-      end;  
-    end;    
-     
-   {Check end of string 1}    
+      end;
+    end;
+
+   {Check end of string 1}
    if (cchCount1 < 0) and (PWord(PtrUInt(lpString1) + Offset)^ = 0) then Exit; {Exit because both strings are at the null terminator (or else they would not be equal above)}
 
    {Check end of string 2}
    if (cchCount2 < 0) and (PWord(PtrUInt(lpString2) + Offset)^ = 0) then Exit; {Exit because both strings are at the null terminator (or else they would not be equal above)}
-     
-   {Update count}   
+
+   {Update count}
    Inc(Count,1);
    Inc(Offset,2);
-   
+
    {Check count of string 1}
    if (cchCount1 >= 0) and (Count >= cchCount1) then Break;
-   
+
    {Check count of string 2}
    if (cchCount2 >= 0) and (Count >= cchCount2) then Break;
   end;
-     
+
  {Check length}
  if Result = CSTR_EQUAL then
   begin
@@ -707,7 +707,7 @@ begin
 
  if lpsz = nil then Exit;
  if AnsiPage = nil then Exit;
- 
+
  {Check Uppercase Table}
  if AnsiPage.UpperTable = nil then
   begin
@@ -720,8 +720,8 @@ begin
       begin
        {Uppercase value}
        PByte(PtrUInt(lpsz) + Offset)^:=PByte(PtrUInt(lpsz) + Offset)^ - 32;
-      end; 
-   
+      end;
+
      {Check for zero}
      if PByte(PtrUInt(lpsz) + Offset)^ = 0 then Break;
      Inc(Offset,1);
@@ -735,7 +735,7 @@ begin
     begin
      {Uppercase value}
      PByte(PtrUInt(lpsz) + Offset)^:=AnsiPage.UpperTable.Values[PByte(PtrUInt(lpsz) + Offset)^];
-   
+
      {Check for zero}
      if PByte(PtrUInt(lpsz) + Offset)^ = 0 then Break;
      Inc(Offset,1);
@@ -755,9 +755,9 @@ var
 begin
  {}
  Result:=lpsz;
- 
+
  if lpsz = nil then Exit;
- 
+
  {ASCII Method} //To Do //Correct implementation for Unicode
  Offset:=0;
  while True do {Loop until string equals zero}
@@ -767,8 +767,8 @@ begin
     begin
      {Uppercase value}
      PWord(PtrUInt(lpsz) + Offset)^:=PWord(PtrUInt(lpsz) + Offset)^ - 32;
-    end; 
- 
+    end;
+
    {Check for zero}
    if PWord(PtrUInt(lpsz) + Offset)^ = 0 then Break;
    Inc(Offset,2);
@@ -784,7 +784,7 @@ begin
 end;
 
 {==============================================================================}
-  
+
 function CharUpperBuffA(lpsz:LPSTR;cchLength:DWORD):DWORD;
 {Lower to Upper case conversion in ANSI code page (Char)}
 {Note: Currently only supports SBCS}
@@ -794,10 +794,10 @@ var
 begin
  {}
  Result:=0;
- 
+
  if lpsz = nil then Exit;
  if AnsiPage = nil then Exit;
- 
+
  {Check Uppercase Table}
  if AnsiPage.UpperTable = nil then
   begin
@@ -811,12 +811,12 @@ begin
       begin
        {Uppercase value}
        PByte(PtrUInt(lpsz) + Offset)^:=PByte(PtrUInt(lpsz) + Offset)^ - 32;
-      end; 
-    
+      end;
+
      Inc(Count,1);
      Inc(Offset,1);
     end;
-   
+
    Result:=Count;
   end
  else
@@ -832,7 +832,7 @@ begin
      Inc(Count,1);
      Inc(Offset,1);
     end;
-   
+
    Result:=Count;
   end;
 end;
@@ -847,9 +847,9 @@ var
 begin
  {}
  Result:=0;
- 
+
  if lpsz = nil then Exit;
- 
+
  {ASCII Method} //To Do //Correct implementation for Unicode
  Count:=0;
  Offset:=0;
@@ -860,13 +860,13 @@ begin
     begin
      {Uppercase value}
      PWord(PtrUInt(lpsz) + Offset)^:=PWord(PtrUInt(lpsz) + Offset)^ - 32;
-    end; 
- 
+    end;
+
    Inc(Count,1);
    Inc(Offset,2);
-  end; 
- 
- Result:=Count; 
+  end;
+
+ Result:=Count;
 end;
 
 {==============================================================================}
@@ -890,7 +890,7 @@ var
 begin
  {}
  Result:=lpsz;
- 
+
  if lpsz = nil then Exit;
  if AnsiPage = nil then Exit;
 
@@ -906,8 +906,8 @@ begin
       begin
        {Lowercase value}
        PByte(PtrUInt(lpsz) + Offset)^:=PByte(PtrUInt(lpsz) + Offset)^ + 32;
-      end; 
-   
+      end;
+
      {Check for zero}
      if PByte(PtrUInt(lpsz) + Offset)^ = 0 then Break;
      Inc(Offset,1);
@@ -921,7 +921,7 @@ begin
     begin
      {Lowercase value}
      PByte(PtrUInt(lpsz) + Offset)^:=AnsiPage.LowerTable.Values[PByte(PtrUInt(lpsz) + Offset)^];
-   
+
      {Check for zero}
      if PByte(PtrUInt(lpsz) + Offset)^ = 0 then Break;
      Inc(Offset,1);
@@ -941,9 +941,9 @@ var
 begin
  {}
  Result:=lpsz;
- 
+
  if lpsz = nil then Exit;
- 
+
  {ASCII Method} //To Do //Correct implementation for Unicode
  Offset:=0;
  while True do {Loop until string equals zero}
@@ -953,8 +953,8 @@ begin
     begin
      {Lowercase value}
      PWord(PtrUInt(lpsz) + Offset)^:=PWord(PtrUInt(lpsz) + Offset)^ + 32;
-    end; 
- 
+    end;
+
    {Check for zero}
    if PWord(PtrUInt(lpsz) + Offset)^ = 0 then Break;
    Inc(Offset,2);
@@ -980,10 +980,10 @@ var
 begin
  {}
  Result:=0;
- 
+
  if lpsz = nil then Exit;
  if AnsiPage = nil then Exit;
- 
+
  {Check Lowercase Table}
  if AnsiPage.LowerTable = nil then
   begin
@@ -997,12 +997,12 @@ begin
       begin
        {Lowercase value}
        PByte(PtrUInt(lpsz) + Offset)^:=PByte(PtrUInt(lpsz) + Offset)^ + 32;
-      end; 
-    
+      end;
+
      Inc(Count,1);
      Inc(Offset,1);
     end;
-   
+
    Result:=Count;
   end
  else
@@ -1014,11 +1014,11 @@ begin
     begin
      {Lowercase value}
      PByte(PtrUInt(lpsz) + Offset)^:=AnsiPage.LowerTable.Values[PByte(PtrUInt(lpsz) + Offset)^];
-     
+
      Inc(Count,1);
      Inc(Offset,1);
     end;
-   
+
    Result:=Count;
   end;
 end;
@@ -1033,9 +1033,9 @@ var
 begin
  {}
  Result:=0;
- 
+
  if lpsz = nil then Exit;
- 
+
  {ASCII Method} //To Do //Correct implementation for Unicode
  Count:=0;
  Offset:=0;
@@ -1046,12 +1046,12 @@ begin
     begin
      {Lowercase value}
      PWord(PtrUInt(lpsz) + Offset)^:=PWord(PtrUInt(lpsz) + Offset)^ + 32;
-    end; 
-   
+    end;
+
    Inc(Count,1);
    Inc(Offset,2);
   end;
-  
+
  Result:=Count;
 end;
 
@@ -1097,7 +1097,7 @@ end;
 
 {==============================================================================}
 
-function CharToOemA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; 
+function CharToOemA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL;
 {ANSI to OEM conversion (Char to Char)}
 {Note: Currently only supports SBCS}
 var
@@ -1106,7 +1106,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpszSrc = nil then Exit;
  if lpszDst = nil then Exit;
  if AnsiPage = nil then Exit;
@@ -1117,10 +1117,10 @@ begin
   begin
    {Get Source}
    Value:=AnsiPage.TransTable.Values[PByte(PtrUInt(lpszSrc) + Offset)^];
-   
+
    {Set Dest}
    PByte(PtrUInt(lpszDst) + Offset)^:=Value;
-   
+
    {Check for zero}
    if PByte(PtrUInt(lpszSrc) + Offset)^ = 0 then Break;
    Inc(Offset,1);
@@ -1131,7 +1131,7 @@ end;
 
 {==============================================================================}
 
-function CharToOemW(lpszSrc:LPCWSTR;lpszDst:LPSTR):BOOL; 
+function CharToOemW(lpszSrc:LPCWSTR;lpszDst:LPSTR):BOOL;
 {Unicode to OEM conversion (WideChar to Char)}
 {Note: Currently only supports SBCS}
 var
@@ -1141,7 +1141,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpszSrc = nil then Exit;
  if lpszDst = nil then Exit;
  if OemPage = nil then Exit;
@@ -1152,16 +1152,16 @@ begin
   begin
    {Get Source}
    Value:=PWord(PtrUInt(lpszSrc) + Source)^;
-   
+
    {Set Dest}
    PByte(PtrUInt(lpszDst) + Dest)^:=OemPage.UnicodeTable.Values[Value];
-   
+
    {Check for zero}
    if PWord(PtrUInt(lpszSrc) + Source)^ = 0 then Break;
    Inc(Dest,1);
    Inc(Source,2);
   end;
-  
+
  Result:=True; {Always returns True}
 end;
 
@@ -1175,7 +1175,7 @@ end;
 
 {==============================================================================}
 
-function OemToCharA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL; 
+function OemToCharA(lpszSrc:LPCSTR;lpszDst:LPSTR):BOOL;
 {OEM to ANSI conversion (Char to Char)}
 {Note: Currently only supports SBCS}
 var
@@ -1184,7 +1184,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpszSrc = nil then Exit;
  if lpszDst = nil then Exit;
  if OemPage = nil then Exit;
@@ -1195,10 +1195,10 @@ begin
   begin
    {Get Source}
    Value:=OemPage.TransTable.Values[PByte(PtrUInt(lpszSrc) + Offset)^];
-   
+
    {Set Dest}
    PByte(PtrUInt(lpszDst) + Offset)^:=Value;
-   
+
    {Check for zero}
    if PByte(PtrUInt(lpszSrc) + Offset)^ = 0 then Break;
    Inc(Offset,1);
@@ -1219,7 +1219,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpszSrc = nil then Exit;
  if lpszDst = nil then Exit;
  if OemPage = nil then Exit;
@@ -1230,16 +1230,16 @@ begin
   begin
    {Get Source}
    Value:=OemPage.CodeTable.Values[PByte(PtrUInt(lpszSrc) + Source)^];
-   
+
    {Set Dest}
    PWord(PtrUInt(lpszDst) + Dest)^:=Value;
-   
+
    {Check for zero}
    if PByte(PtrUInt(lpszSrc) + Source)^ = 0 then Break;
    Inc(Dest,2);
    Inc(Source,1);
   end;
-  
+
  Result:=True; {Always returns True}
 end;
 
@@ -1262,7 +1262,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpszSrc = nil then Exit;
  if lpszDst = nil then Exit;
  if AnsiPage = nil then Exit;
@@ -1273,7 +1273,7 @@ begin
   begin
    {Get Source}
    Value:=AnsiPage.TransTable.Values[PByte(PtrUInt(lpszSrc) + Offset)^];
-   
+
    {Set Dest}
    PByte(PtrUInt(lpszDst) + Offset)^:=Value;
    Inc(Offset,1);
@@ -1295,7 +1295,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpszSrc = nil then Exit;
  if lpszDst = nil then Exit;
  if OemPage = nil then Exit;
@@ -1307,14 +1307,14 @@ begin
   begin
    {Get Source}
    Value:=PWord(PtrUInt(lpszSrc) + Source)^;
-   
+
    {Set Dest}
    PByte(PtrUInt(lpszDst) + Dest)^:=OemPage.UnicodeTable.Values[Value];
    Inc(Dest,1);
    Inc(Count,1);
    Inc(Source,2);
   end;
-  
+
  Result:=True; {Always returns True}
 end;
 
@@ -1337,7 +1337,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpszSrc = nil then Exit;
  if lpszDst = nil then Exit;
  if OemPage = nil then Exit;
@@ -1348,7 +1348,7 @@ begin
   begin
    {Get Source}
    Value:=OemPage.TransTable.Values[PByte(PtrUInt(lpszSrc) + Offset)^];
-   
+
    {Set Dest}
    PByte(PtrUInt(lpszDst) + Offset)^:=Value;
    Inc(Offset,1);
@@ -1370,7 +1370,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if lpszSrc = nil then Exit;
  if lpszDst = nil then Exit;
  if OemPage = nil then Exit;
@@ -1382,43 +1382,43 @@ begin
   begin
    {Get Source}
    Value:=OemPage.CodeTable.Values[PByte(PtrUInt(lpszSrc) + Source)^];
-   
+
    {Set Dest}
    PWord(PtrUInt(lpszDst) + Dest)^:=Value;
    Inc(Dest,2);
    Inc(Count,1);
    Inc(Source,1);
   end;
-  
+
  Result:=True; {Always returns True}
 end;
 
 {==============================================================================}
 {==============================================================================}
 {RTL Unicode Functions}
-function SysCodePageToWideChar(Ch:Char):WideChar; 
+function SysCodePageToWideChar(Ch:Char):WideChar;
 {ANSI to Unicode conversion (Char to WideChar)}
 {Note: Currently only supports SBCS}
 begin
  {}
  Result:=#0;
- 
+
  if AnsiPage = nil then Exit;
- 
+
  Result:=WideChar(AnsiPage.CodeTable.Values[Byte(Ch)]);
 end;
 
 {==============================================================================}
 
-function SysWideCharToCodePage(Ch:WideChar):Char; 
+function SysWideCharToCodePage(Ch:WideChar):Char;
 {Unicode to ANSI conversion (WideChar to Char)}
 {Note: Currently only supports SBCS}
 begin
  {}
  Result:=#0;
- 
+
  if AnsiPage = nil then Exit;
- 
+
  Result:=Char(AnsiPage.UnicodeTable.Values[Word(Ch)]);
 end;
 
@@ -1454,14 +1454,14 @@ begin
  else
   begin
    dwFlags:=MB_PRECOMPOSED;
-  end; 
+  end;
  DestLen:=MultiByteToWideChar(cp,dwFlags,Source,Len,nil,0);
  SetLength(Dest,DestLen);
  if DestLen > 0 then
   begin
    MultiByteToWideChar(cp,dwFlags,Source,Len,@Dest[1],DestLen);
    {SetCodePage(Dest,CP_UTF16,False);} {Not required, Dest will always have the value of DefaultUnicodeCodePage (CP_UTF16)}
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1485,7 +1485,7 @@ begin
  if Length(Result) > 0 then
   begin
    CharLowerBuffW(LPWSTR(Result),Length(Result));
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1495,9 +1495,9 @@ var
  Flags:DWORD;
 begin
  {}
- Flags:=0; 
+ Flags:=0;
  if coIgnoreCase in Options then Flags:=Flags or NORM_IGNORECASE;
- 
+
  Result:=CompareStringW(LOCALE_USER_DEFAULT,Flags,PWideChar(s1),Length(s1),PWideChar(s2),Length(s2)) - 2;
 end;
 
@@ -1536,11 +1536,11 @@ begin
  if cp = CP_UTF8 then
   begin
    dwFlags:=0;
-  end 
+  end
  else
   begin
    dwFlags:=MB_PRECOMPOSED;
-  end; 
+  end;
  DestLen:=MultiByteToWideChar(cp,dwFlags,Source,Len,nil,0);
  SetLength(Dest,DestLen);
  if DestLen > 0 then
@@ -1560,7 +1560,7 @@ begin
  if Length(Result) > 0 then
   begin
    CharUpperBuffW(LPWSTR(Result),Length(Result));
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1573,7 +1573,7 @@ begin
  if Length(Result) > 0 then
   begin
    CharLowerBuffW(LPWSTR(Result),Length(Result));
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1583,9 +1583,9 @@ var
  Flags:DWORD;
 begin
  {}
- Flags:=0; 
+ Flags:=0;
  if coIgnoreCase in Options then Flags:=Flags or NORM_IGNORECASE;
- 
+
  Result:=CompareStringW(LOCALE_USER_DEFAULT,Flags,PWideChar(s1),Length(s1),PWideChar(s2),Length(s2)) - 2;
 end;
 
@@ -1611,7 +1611,7 @@ begin
  else
   begin
    Result:='';
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1628,14 +1628,14 @@ begin
  else
   begin
    Result:='';
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
 function SysCompareStrAnsiString(const S1,S2:String):PtrInt;
 begin
- {} 
+ {}
  Result:=CompareStringA(LOCALE_USER_DEFAULT,0,PChar(S1),Length(S1),PChar(S2),Length(S2)) - 2;
 end;
 
@@ -1710,7 +1710,7 @@ initialization
  {Call SetUnicodeStringManager again because initialization of the system unit (InitUnicodeStringManager) sets the default manager}
  {Get Unicode String Manager}
  GetUnicodeStringManager(UnicodeStringManager);
- 
+
  {Initialize Unicode String Manager}
  {WideString}
  UnicodeStringManager.Wide2AnsiMoveProc:=@SysWide2AnsiMove;
@@ -1739,12 +1739,12 @@ initialization
  UnicodeStringManager.StrUpperAnsiStringProc:=@SysStrUpperAnsiString;
  {CodePage}
  UnicodeStringManager.GetStandardCodePageProc:=@SysGetStandardCodePage;
- 
+
  {Set Unicode String Manager}
  SetUnicodeStringManager(UnicodeStringManager);
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

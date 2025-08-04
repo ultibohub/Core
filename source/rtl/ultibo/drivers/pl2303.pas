@@ -17,7 +17,7 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -27,24 +27,24 @@ Credits
   Linux - \drivers\usb\serial\pl2303.h
   Linux - \drivers\usb\serial\usb-serial.c - Copyright (C) 2009 - 2013 Johan Hovold and others.
   Linux - \drivers\usb\serial\generic.c - Copyright (C) 2010 - 2013 Johan Hovold and others.
-  
+
 References
 ==========
 
-  
+
 Prolific PL2303
 ===============
 
  The Prolific PL2303 is a USB to serial interface chip used by multiple vendors.
  It includes a single serial port with bulk IN and OUT plus interrupt IN endpoints.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit PL2303; 
+unit PL2303;
 
 interface
 
@@ -58,54 +58,54 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Serial,Sy
 const
  {PL2303 specific constants}
  PL2303_DRIVER_NAME = 'Prolific PL2303 USB to Serial Driver'; {Name of PL2303 driver}
- 
+
  PL2303_SERIAL_DESCRIPTION = 'Prolific PL2303 USB to Serial'; {Description of PL2303 device}
- 
+
  PL2303_MIN_BAUD = 75;
  PL2303_MAX_BAUD = 1228800;
  PL2303_MAX_BAUD_HX = 12000000;
- 
+
  PL2303_MIN_DATABITS = SERIAL_DATA_5BIT;
  PL2303_MAX_DATABITS = SERIAL_DATA_8BIT;
- 
+
  PL2303_MIN_STOPBITS = SERIAL_STOP_1BIT;
  PL2303_MAX_STOPBITS = SERIAL_STOP_1BIT5;
- 
+
  PL2303_MAX_PARITY = SERIAL_PARITY_SPACE;
- 
+
  PL2303_MAX_FLOW = SERIAL_FLOW_DSR_DTR;
- 
+
  {PL2303 device models}
  PL2303_TYPE_01 = 0; {Type 0 and 1 (difference unknown)}
  PL2303_TYPE_HX = 1; {HX version of the PL2303 chip}
- 
+
  {PL2303 Bulk IN/OUT sizes}
  PL2303_BULK_IN_SIZE  = 256;
  PL2303_BULK_OUT_SIZE = 256;
- 
+
  {PL2303 USB requests}
  PL2303_SET_LINE_REQUEST_TYPE     = $21;
  PL2303_SET_LINE_REQUEST          = $20;
-                                  
+
  PL2303_SET_CONTROL_REQUEST_TYPE  = $21;
  PL2303_SET_CONTROL_REQUEST       = $22;
  PL2303_CONTROL_DTR               = $01;
  PL2303_CONTROL_RTS               = $02;
- 
+
  PL2303_BREAK_REQUEST_TYPE        = $21;
  PL2303_BREAK_REQUEST             = $23;
  PL2303_BREAK_ON                  = $ffff;
  PL2303_BREAK_OFF                 = $0000;
- 
+
  PL2303_GET_LINE_REQUEST_TYPE     = $a1;
  PL2303_GET_LINE_REQUEST          = $21;
- 
+
  PL2303_VENDOR_WRITE_REQUEST_TYPE = $40;
  PL2303_VENDOR_WRITE_REQUEST      = $01;
- 
+
  PL2303_VENDOR_READ_REQUEST_TYPE  = $c0;
  PL2303_VENDOR_READ_REQUEST       = $01;
- 
+
  PL2303_UART_STATE_INDEX          = 8;
  PL2303_UART_DCD                  = $01;
  PL2303_UART_DSR                  = $02;
@@ -115,18 +115,18 @@ const
  PL2303_UART_PARITY_ERROR         = $20;
  PL2303_UART_OVERRUN_ERROR        = $40;
  PL2303_UART_CTS                  = $80;
- 
+
  PL2303_UART_STATE_MSR_MASK       = PL2303_UART_DCD or PL2303_UART_DSR or PL2303_UART_RING or PL2303_UART_CTS; { $8b }
  PL2303_UART_STATE_TRANSIENT_MASK = PL2303_UART_BREAK_ERROR or PL2303_UART_FRAME_ERROR or PL2303_UART_PARITY_ERROR or PL2303_UART_OVERRUN_ERROR; { $74 }
- 
+
  {PL2303 device quirks}
  PL2303_QUIRK_NONE            = $00000000;
  PL2303_QUIRK_UART_STATE_IDX0 = $00000001;
  PL2303_QUIRK_LEGACY          = $00000002;
  PL2303_QUIRK_ENDPOINT_HACK   = $00000004;
- 
+
  {PL2303 supported baud rates}
- PL2303_SUPPORTED_BAUD_RATE_COUNT = 25; 
+ PL2303_SUPPORTED_BAUD_RATE_COUNT = 25;
  PL2303_SUPPORTED_BAUD_RATES:array[0..PL2303_SUPPORTED_BAUD_RATE_COUNT - 1] of LongWord = (
   75,
   150,
@@ -153,7 +153,7 @@ const
   2457600,
   3000000,
   6000000);
- 
+
  {PL2303 Vendor and Product ID constants}
  PL2303_VENDOR_ID               = $067b;
  PL2303_PRODUCT_ID              = $2303;
@@ -169,14 +169,14 @@ const
  PL2303_PRODUCT_ID_HCR331       = $331a;
  PL2303_PRODUCT_ID_MOTOROLA     = $0307;
  PL2303_PRODUCT_ID_ZTEK         = $e1f1;
-                                
+
  PL2303_ATEN_VENDOR_ID          = $0557;
  PL2303_ATEN_VENDOR_ID2         = $0547;
  PL2303_ATEN_PRODUCT_ID         = $2008;
  PL2303_ATEN_PRODUCT_UC485      = $2021;
  PL2303_ATEN_PRODUCT_UC232B     = $2022;
  PL2303_ATEN_PRODUCT_ID2        = $2118;
-                                
+
  PL2303_BENQ_VENDOR_ID          = $04a5;
  PL2303_BENQ_PRODUCT_ID_S81     = $4027;
 
@@ -194,10 +194,10 @@ const
 
  PL2303_MA620_VENDOR_ID         = $0df7;
  PL2303_MA620_PRODUCT_ID        = $0620;
-                                
+
  PL2303_RATOC_VENDOR_ID         = $0584;
  PL2303_RATOC_PRODUCT_ID        = $b000;
-                                
+
  PL2303_TRIPP_VENDOR_ID         = $2478;
  PL2303_TRIPP_PRODUCT_ID        = $2008;
 
@@ -305,10 +305,10 @@ const
  {SMART USB Serial Adapter}
  PL2303_SMART_VENDOR_ID         = $0b8c;
  PL2303_SMART_PRODUCT_ID        = $2303;
- 
+
  {PL2303 Device ID constants}
  PL2303_DEVICE_ID_COUNT = 64; {Number of supported Device IDs}
- 
+
  PL2303_DEVICE_ID:array[0..PL2303_DEVICE_ID_COUNT - 1] of TUSBDeviceId = (
   (idVendor:PL2303_VENDOR_ID;idProduct:PL2303_PRODUCT_ID),
   (idVendor:PL2303_VENDOR_ID;idProduct:PL2303_PRODUCT_ID_RSAQ2),
@@ -374,7 +374,7 @@ const
   (idVendor:PL2303_SANWA_VENDOR_ID;idProduct:PL2303_SANWA_PRODUCT_ID),
   (idVendor:PL2303_ADLINK_VENDOR_ID;idProduct:PL2303_ADLINK_ND6530_PRODUCT_ID),
   (idVendor:PL2303_SMART_VENDOR_ID;idProduct:PL2303_SMART_PRODUCT_ID));
- 
+
 {==============================================================================}
 type
  {PL2303 specific types}
@@ -404,11 +404,11 @@ type
   InterruptComplete:LongWord;
   InterruptErrors:LongWord;
  end;
- 
+
 {==============================================================================}
 {var}
  {PL2303 specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure PL2303Init;
@@ -426,13 +426,13 @@ function PL2303SerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:
 function PL2303DriverBind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 function PL2303DriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
 
-procedure PL2303ReceiveStart(Request:PUSBRequest);  
-procedure PL2303ReceiveWorker(Request:PUSBRequest); 
-procedure PL2303ReceiveComplete(Request:PUSBRequest); 
+procedure PL2303ReceiveStart(Request:PUSBRequest);
+procedure PL2303ReceiveWorker(Request:PUSBRequest);
+procedure PL2303ReceiveComplete(Request:PUSBRequest);
 
-procedure PL2303TransmitStart(Request:PUSBRequest);  
-procedure PL2303TransmitWorker(Request:PUSBRequest); 
-procedure PL2303TransmitComplete(Request:PUSBRequest); 
+procedure PL2303TransmitStart(Request:PUSBRequest);
+procedure PL2303TransmitWorker(Request:PUSBRequest);
+procedure PL2303TransmitComplete(Request:PUSBRequest);
 
 procedure PL2303InterruptWorker(Request:PUSBRequest);
 procedure PL2303InterruptComplete(Request:PUSBRequest);
@@ -461,8 +461,8 @@ implementation
 {==============================================================================}
 var
  {PL2303 specific variables}
- PL2303Initialized:Boolean; 
- 
+ PL2303Initialized:Boolean;
+
  PL2303Driver:PUSBDriver;  {PL2303 Driver interface (Set by PL2303Init)}
 
 {==============================================================================}
@@ -483,7 +483,7 @@ begin
   begin
    {Update PL2303 Driver}
    {Driver}
-   PL2303Driver.Driver.DriverName:=PL2303_DRIVER_NAME; 
+   PL2303Driver.Driver.DriverName:=PL2303_DRIVER_NAME;
    {USB}
    PL2303Driver.DriverBind:=PL2303DriverBind;
    PL2303Driver.DriverUnbind:=PL2303DriverUnbind;
@@ -502,12 +502,12 @@ begin
   begin
    if USB_LOG_ENABLED then USBLogError(nil,'PL2303: Failed to create PL2303 driver');
   end;
- 
+
  {Check Environment Variables}
  {PL2303_MAX_TRANSMIT}
  WorkInt:=StrToIntDef(EnvironmentGet('PL2303_MAX_TRANSMIT'),0);
  if WorkInt <> 0 then PL2303_MAX_TRANSMIT:=WorkInt;
- 
+
  PL2303Initialized:=True;
 end;
 
@@ -524,40 +524,40 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {$IF DEFINED(PL2303_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'PL2303: Device Open (BaudRate=' + IntToStr(BaudRate) + ' DataBits=' + SerialDataBitsToString(DataBits) + ' StopBits=' + SerialStopBitsToString(StopBits) + ' Parity=' + SerialParityToString(Parity) + ' FlowControl=' + SerialFlowControlToString(FlowControl) + ')');
  {$ENDIF}
- 
+
  {Get Device}
  Device:=PUSBDevice(Serial.Device.DeviceData);
  if Device = nil then Exit;
- 
+
  {Check Baud Rate}
  if ((BaudRate < PL2303_MIN_BAUD) or (BaudRate > Serial.Properties.MaxRate)) and (BaudRate <> SERIAL_BAUD_RATE_DEFAULT) then Exit;
- 
+
  {Check Data Bits}
  if (DataBits < PL2303_MIN_DATABITS) or (DataBits > PL2303_MAX_DATABITS) then Exit;
- 
+
  {Check Stop Bits}
  if (StopBits < PL2303_MIN_STOPBITS) or (StopBits > PL2303_MAX_STOPBITS) then Exit;
- 
+
  {Check Parity}
  if Parity > PL2303_MAX_PARITY then Exit;
- 
+
  {Check Flow Control}
  if FlowControl > PL2303_MAX_FLOW then Exit;
- 
+
  {Adjust Baud Rate}
  if BaudRate = SERIAL_BAUD_RATE_DEFAULT then
   begin
    BaudRate:=SERIAL_BAUD_RATE_STANDARD;
    if (BaudRate > Serial.Properties.MaxRate) then BaudRate:=SERIAL_BAUD_RATE_FALLBACK;
-  end; 
- 
+  end;
+
  {Initialize Device}
  if (PPL2303SerialDevice(Serial).Quirks and PL2303_QUIRK_LEGACY) <> 0 then
   begin
@@ -571,14 +571,14 @@ begin
    PL2303VendorWrite(Device,8,0);
    PL2303VendorWrite(Device,9,0);
   end;
-  
+
  {Get Line Request}
  if PL2303GetLineRequest(Device,@Data) <> USB_STATUS_SUCCESS then
   begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
-  
+
  {Data Bits (Data[6])}
  case DataBits of
   SERIAL_DATA_8BIT:Data[6]:=8;
@@ -586,7 +586,7 @@ begin
   SERIAL_DATA_6BIT:Data[6]:=6;
   SERIAL_DATA_5BIT:Data[6]:=5;
  end;
- 
+
  {Stop Bits (Data[4])}
  { Data[4]=0 is 1 stop bits}
  { Data[4]=1 is 1.5 stop bits}
@@ -596,7 +596,7 @@ begin
   SERIAL_STOP_1BIT5:Data[4]:=1;
   SERIAL_STOP_2BIT:Data[4]:=2;
  end;
- 
+
  {Parity (Data[5])}
  { Data[5]=0 is no parity}
  { Data[5]=1 is odd parity}
@@ -610,17 +610,17 @@ begin
   SERIAL_PARITY_MARK:Data[5]:=3;
   SERIAL_PARITY_SPACE:Data[5]:=4;
  end;
- 
+
  {Baud Rate (Data[0]:Data[3])}
  BaudRate:=PL2303EncodeBaudRate(Device,BaudRate,@Data[0]);
- 
+
  {Set Line Request}
  if PL2303SetLineRequest(Device,@Data) <> USB_STATUS_SUCCESS then
   begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
-  
+
  {Flow Control}
  PPL2303SerialDevice(Serial).Control:=PL2303_CONTROL_DTR or PL2303_CONTROL_RTS;
  PL2303SetControlRequest(Device,PPL2303SerialDevice(Serial).Control);
@@ -636,19 +636,19 @@ begin
     else
      begin
       PL2303VendorWrite(Device,$0,$61);
-     end;     
-   end;  
+     end;
+   end;
  end;
- 
+
  {Check Max Transmit}
  if PL2303_MAX_TRANSMIT = 0 then PL2303_MAX_TRANSMIT:=PL2303_BULK_OUT_SIZE;
- 
+
  {Check Receive Depth}
  if ReceiveDepth = 0 then ReceiveDepth:=SERIAL_RECEIVE_DEPTH_DEFAULT;
- 
+
  {Check Transmit Depth}
  if TransmitDepth = 0 then TransmitDepth:=SERIAL_TRANSMIT_DEPTH_DEFAULT;
- 
+
  {Allocate Recieve}
  EventReset(Serial.Receive.Wait);
  Serial.Receive.Start:=0;
@@ -660,7 +660,7 @@ begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Allocate Transmit}
  EventSet(Serial.Transmit.Wait);
  Serial.Transmit.Start:=0;
@@ -671,13 +671,13 @@ begin
   begin
    {Release Receive}
    FreeMem(Serial.Receive.Data);
-   
+
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Allocate Receive Request}
- PPL2303SerialDevice(Serial).ReceiveRequest:=USBRequestAllocate(Device,PPL2303SerialDevice(Serial).ReceiveEndpoint,PL2303ReceiveComplete,PL2303_BULK_IN_SIZE,Serial); 
+ PPL2303SerialDevice(Serial).ReceiveRequest:=USBRequestAllocate(Device,PPL2303SerialDevice(Serial).ReceiveEndpoint,PL2303ReceiveComplete,PL2303_BULK_IN_SIZE,Serial);
  if PPL2303SerialDevice(Serial).ReceiveRequest = nil then
   begin
    {Release Receive}
@@ -685,13 +685,13 @@ begin
 
    {Release Transmit}
    FreeMem(Serial.Transmit.Data);
-   
+
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Allocate Transmit Request}
- PPL2303SerialDevice(Serial).TransmitRequest:=USBRequestAllocate(Device,PPL2303SerialDevice(Serial).TransmitEndpoint,PL2303TransmitComplete,PL2303_BULK_OUT_SIZE,Serial); 
+ PPL2303SerialDevice(Serial).TransmitRequest:=USBRequestAllocate(Device,PPL2303SerialDevice(Serial).TransmitEndpoint,PL2303TransmitComplete,PL2303_BULK_OUT_SIZE,Serial);
  if PPL2303SerialDevice(Serial).TransmitRequest = nil then
   begin
    {Release Receive}
@@ -699,16 +699,16 @@ begin
 
    {Release Transmit}
    FreeMem(Serial.Transmit.Data);
-   
+
    {Release Receive Request}
    USBRequestRelease(PPL2303SerialDevice(Serial).ReceiveRequest);
-   
+
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Allocate Interrupt Request}
- PPL2303SerialDevice(Serial).InterruptRequest:=USBRequestAllocate(Device,PPL2303SerialDevice(Serial).InterruptEndpoint,PL2303InterruptComplete,PPL2303SerialDevice(Serial).InterruptEndpoint.wMaxPacketSize,Serial); 
+ PPL2303SerialDevice(Serial).InterruptRequest:=USBRequestAllocate(Device,PPL2303SerialDevice(Serial).InterruptEndpoint,PL2303InterruptComplete,PPL2303SerialDevice(Serial).InterruptEndpoint.wMaxPacketSize,Serial);
  if PPL2303SerialDevice(Serial).InterruptRequest = nil then
   begin
    {Release Receive}
@@ -716,39 +716,39 @@ begin
 
    {Release Transmit}
    FreeMem(Serial.Transmit.Data);
-   
+
    {Release Receive Request}
    USBRequestRelease(PPL2303SerialDevice(Serial).ReceiveRequest);
 
    {Release Transmit Request}
    USBRequestRelease(PPL2303SerialDevice(Serial).TransmitRequest);
-   
+
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Update Pending}
  Inc(PPL2303SerialDevice(Serial).PendingCount);
-       
+
  {$IF DEFINED(PL2303_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'PL2303: Submitting interrupt request');
  {$ENDIF}
- 
+
  {Submit Interrupt Request}
  Status:=USBRequestSubmit(PPL2303SerialDevice(Serial).InterruptRequest);
  if Status <> USB_STATUS_SUCCESS then
   begin
    if SERIAL_LOG_ENABLED then SerialLogError(Serial,'PL2303: Failed to submit interrupt request: ' + USBStatusToString(Status));
-        
+
    {Update Pending}
    Dec(PPL2303SerialDevice(Serial).PendingCount);
-   
+
    {Release Receive}
    FreeMem(Serial.Receive.Data);
 
    {Release Transmit}
    FreeMem(Serial.Transmit.Data);
-   
+
    {Release Receive Request}
    USBRequestRelease(PPL2303SerialDevice(Serial).ReceiveRequest);
 
@@ -757,7 +757,7 @@ begin
 
    {Release Interrupt Request}
    USBRequestRelease(PPL2303SerialDevice(Serial).InterruptRequest);
-   
+
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
@@ -767,32 +767,32 @@ begin
 
  {Set Active}
  PPL2303SerialDevice(Serial).ReceiveActive:=True;
- 
+
  {$IF DEFINED(PL2303_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'PL2303: Submitting receive request');
  {$ENDIF}
- 
+
  {Submit Receive Request}
  Status:=USBRequestSubmit(PPL2303SerialDevice(Serial).ReceiveRequest);
  if Status <> USB_STATUS_SUCCESS then
   begin
    if SERIAL_LOG_ENABLED then SerialLogError(Serial,'PL2303: Failed to submit receive request: ' + USBStatusToString(Status));
-        
+
    {Reset Active}
    PPL2303SerialDevice(Serial).ReceiveActive:=False;
-        
+
    {Update Pending}
    Dec(PPL2303SerialDevice(Serial).PendingCount);
-   
+
    {Cancel Interrupt Request}
    USBRequestCancel(PPL2303SerialDevice(Serial).InterruptRequest);
-   
+
    {Release Receive}
    FreeMem(Serial.Receive.Data);
 
    {Release Transmit}
    FreeMem(Serial.Transmit.Data);
-   
+
    {Release Receive Request}
    USBRequestRelease(PPL2303SerialDevice(Serial).ReceiveRequest);
 
@@ -801,11 +801,11 @@ begin
 
    {Release Interrupt Request}
    USBRequestRelease(PPL2303SerialDevice(Serial).InterruptRequest);
-   
+
    Result:=ERROR_OPERATION_FAILED;
    Exit;
   end;
- 
+
  {Update Properties}
  Serial.Properties.BaudRate:=BaudRate;
  Serial.Properties.DataBits:=DataBits;
@@ -814,7 +814,7 @@ begin
  Serial.Properties.FlowControl:=FlowControl;
  Serial.Properties.ReceiveDepth:=ReceiveDepth;
  Serial.Properties.TransmitDepth:=TransmitDepth;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -824,25 +824,25 @@ end;
 function PL2303SerialDeviceClose(Serial:PSerialDevice):LongWord;
 {Implementation of SerialDeviceClose API for PL2303 Serial}
 {Note: Not intended to be called directly by applications, use SerialDeviceClose instead}
-var 
+var
  Message:TMessage;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {$IF DEFINED(PL2303_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'PL2303: Device Close');
  {$ENDIF}
- 
+
  {Cancel Receive Request}
  USBRequestCancel(PPL2303SerialDevice(Serial).ReceiveRequest);
 
  {Cancel Interrupt Request}
  USBRequestCancel(PPL2303SerialDevice(Serial).InterruptRequest);
- 
+
  {Check Pending}
  if PPL2303SerialDevice(Serial).PendingCount <> 0 then
   begin
@@ -851,29 +851,29 @@ begin
    {$ENDIF}
 
    {Wait for Pending}
- 
+
    {Setup Waiter}
-   PPL2303SerialDevice(Serial).WaiterThread:=GetCurrentThreadId; 
- 
+   PPL2303SerialDevice(Serial).WaiterThread:=GetCurrentThreadId;
+
    {Release the Lock}
    MutexUnlock(Serial.Lock);
- 
+
    {Wait for Message}
-   ThreadReceiveMessage(Message); 
-   
+   ThreadReceiveMessage(Message);
+
    {Acquire the Lock}
    if MutexLock(Serial.Lock) <> ERROR_SUCCESS then Exit;
   end;
- 
+
  {Release Interrupt Request}
  USBRequestRelease(PPL2303SerialDevice(Serial).InterruptRequest);
- 
+
  {Release Transmit Request}
  USBRequestRelease(PPL2303SerialDevice(Serial).TransmitRequest);
- 
+
  {Release Receive Request}
  USBRequestRelease(PPL2303SerialDevice(Serial).ReceiveRequest);
- 
+
  {Release Receive}
  Serial.Receive.Start:=0;
  Serial.Receive.Count:=0;
@@ -885,7 +885,7 @@ begin
  Serial.Transmit.Count:=0;
  Serial.Transmit.Size:=0;
  FreeMem(Serial.Transmit.Data);
- 
+
  {Update Properties}
  Serial.Properties.BaudRate:=SERIAL_BAUD_RATE_DEFAULT;
  Serial.Properties.DataBits:=SERIAL_DATA_8BIT;
@@ -894,7 +894,7 @@ begin
  Serial.Properties.FlowControl:=SERIAL_FLOW_NONE;
  Serial.Properties.ReceiveDepth:=SERIAL_RECEIVE_DEPTH_DEFAULT;
  Serial.Properties.TransmitDepth:=SERIAL_TRANSMIT_DEPTH_DEFAULT;
- 
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -904,7 +904,7 @@ end;
 function PL2303SerialDeviceRead(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 {Implementation of SerialDeviceRead API for PL2303 Serial}
 {Note: Not intended to be called directly by applications, use SerialDeviceRead instead}
-var 
+var
  Data:Pointer;
  Total:LongWord;
  Offset:PtrUint;
@@ -915,17 +915,17 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {$IF DEFINED(PL2303_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'PL2303: Device Read (Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Read to Buffer}
  Offset:=0;
  Total:=Size;
@@ -937,14 +937,14 @@ begin
      {Start Receive}
      PL2303ReceiveStart(PPL2303SerialDevice(Serial).ReceiveRequest);
     end;
-   
+
    {Check Non Blocking}
    if ((Flags and SERIAL_READ_NON_BLOCK) <> 0) and (Serial.Receive.Count = 0) then
     begin
      Result:=ERROR_NO_MORE_ITEMS;
      Break;
     end;
- 
+
    {Check Peek Buffer}
    if (Flags and SERIAL_READ_PEEK_BUFFER) <> 0 then
     begin
@@ -952,10 +952,10 @@ begin
      Result:=ERROR_SUCCESS;
      Break;
     end;
- 
+
    {Release the Lock}
    MutexUnlock(Serial.Lock);
- 
+
    {Wait for Data}
    if EventWait(Serial.Receive.Wait) = ERROR_SUCCESS then
     begin
@@ -968,34 +968,34 @@ begin
         begin
          {Get Removed}
          Removed:=Min(Size,Available);
-         
+
          {Copy Data}
          System.Move(Data^,Pointer(Buffer + Offset)^,Removed);
 
          {Update Statistics}
          Inc(Serial.ReceiveCount,Removed);
-         
+
          {Update Count}
          Inc(Count,Removed);
-         
+
          {Update Size and Offset}
          Dec(Size,Removed);
          Inc(Offset,Removed);
-         
+
          {Complete Read}
          SerialBufferReadComplete(@Serial.Receive,Removed);
-         
+
          {Start Read}
          Data:=SerialBufferReadStart(@Serial.Receive,Available);
         end;
-       
+
        {Check Available}
        if Available = 0 then
         begin
          {Reset Event}
          EventReset(Serial.Receive.Wait);
         end;
-        
+
        {Check State}
        if (Size = 0) and not(PPL2303SerialDevice(Serial).ReceiveActive) and ((Serial.Receive.Size - Serial.Receive.Count) >= PPL2303SerialDevice(Serial).ReceiveSize) then
         begin
@@ -1007,21 +1007,21 @@ begin
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
        Exit;
-      end;      
+      end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
      Exit;
-    end;    
+    end;
   end;
- 
+
  {$IF DEFINED(PL2303_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'PL2303:  Return Count=' + IntToStr(Count));
  {$ENDIF}
- 
+
  {Return Result}
- if (Total = Count) then Result:=ERROR_SUCCESS; 
+ if (Total = Count) then Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}
@@ -1029,7 +1029,7 @@ end;
 function PL2303SerialDeviceWrite(Serial:PSerialDevice;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 {Implementation of SerialDeviceWrite API for Pl2303 Serial}
 {Note: Not intended to be called directly by applications, use SerialDeviceWrite instead}
-var 
+var
  Data:Pointer;
  Empty:Boolean;
  Total:LongWord;
@@ -1041,17 +1041,17 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Serial}
  if Serial = nil then Exit;
- 
+
  {$IF DEFINED(PL2303_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'PL2303: Device Write (Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Write from Buffer}
  Offset:=0;
  Total:=Size;
@@ -1063,7 +1063,7 @@ begin
      Result:=ERROR_INSUFFICIENT_BUFFER;
      Break;
     end;
- 
+
    {Check Peek Buffer}
    if (Flags and SERIAL_WRITE_PEEK_BUFFER) <> 0 then
     begin
@@ -1071,10 +1071,10 @@ begin
      Result:=ERROR_SUCCESS;
      Break;
     end;
-   
+
    {Release the Lock}
    MutexUnlock(Serial.Lock);
-   
+
    {Wait for Space}
    if EventWait(Serial.Transmit.Wait) = ERROR_SUCCESS then
     begin
@@ -1083,65 +1083,65 @@ begin
       begin
        {Check Empty}
        Empty:=(Serial.Transmit.Count = 0);
-       
+
        {Start Write}
        Data:=SerialBufferWriteStart(@Serial.Transmit,Available);
        while (Data <> nil) and (Available > 0) and (Size > 0) do
         begin
          {Get Added}
          Added:=Min(Size,Available);
-         
+
          {Copy Data}
          System.Move(Pointer(Buffer + Offset)^,Data^,Added);
- 
+
          {Update Statistics}
          Inc(Serial.TransmitCount,Added);
-         
+
          {Update Count}
          Inc(Count,Added);
-         
+
          {Update Size and Offset}
          Dec(Size,Added);
          Inc(Offset,Added);
- 
+
          {Complete Write}
          SerialBufferWriteComplete(@Serial.Transmit,Added);
-         
+
          {Start Write}
          Data:=SerialBufferWriteStart(@Serial.Transmit,Available);
         end;
-       
+
        {Check Available}
        if Available = 0 then
         begin
          {Reset Event}
          EventReset(Serial.Transmit.Wait);
         end;
-        
+
        {Check Empty}
        if Empty and not(PPL2303SerialDevice(Serial).TransmitActive) then
         begin
          {Start Transmit}
          PL2303TransmitStart(PPL2303SerialDevice(Serial).TransmitRequest);
-        end; 
+        end;
       end
      else
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
        Exit;
-      end;      
+      end;
     end
    else
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
      Exit;
-    end;    
+    end;
   end;
-  
+
  {$IF DEFINED(PL2303_DEBUG) or DEFINED(SERIAL_DEBUG)}
  if SERIAL_LOG_ENABLED then SerialLogDebug(Serial,'PL2303:  Return Count=' + IntToStr(Count));
  {$ENDIF}
- 
+
  {Return Result}
  if (Total = Count) then Result:=ERROR_SUCCESS;
 end;
@@ -1174,7 +1174,7 @@ begin
  {$IFDEF PL2303_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'PL2303: Attempting to bind USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
- 
+
  {Check Interface (Bind to device only)}
  if Interrface <> nil then
   begin
@@ -1185,7 +1185,7 @@ begin
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
+
  {Check PL2303 Device}
  if PL2303CheckDevice(Device) <> USB_STATUS_SUCCESS then
   begin
@@ -1263,19 +1263,19 @@ begin
    {$IFDEF PL2303_DEBUG}
    if USB_LOG_ENABLED then USBLogDebug(Device,'Assigning configuration ' + IntToStr(Device.Configuration.Descriptor.bConfigurationValue) + ' (' + IntToStr(Device.Configuration.Descriptor.bNumInterfaces) + ' interfaces available)');
    {$ENDIF}
-   
+
    {Set Configuration}
    Status:=USBDeviceSetConfiguration(Device,Device.Configuration.Descriptor.bConfigurationValue);
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(Device,'Failed to set device configuration: ' + USBStatusToString(Status));
-     
+
      {Return Result}
      Result:=Status;
      Exit;
     end;
   end;
- 
+
  {USB device reset not required because the USB core already did a reset on the port during attach}
 
  {Patch PL2303 Device}
@@ -1288,7 +1288,7 @@ begin
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
+
  {Initialize Device}
  PL2303VendorRead(Device,$8484,@Data);
  PL2303VendorWrite(Device,$0404,0);
@@ -1303,24 +1303,24 @@ begin
  if (Quirks and PL2303_QUIRK_LEGACY) <> 0 then
   begin
    PL2303VendorWrite(Device,2,$24);
-  end 
+  end
  else
   begin
    PL2303VendorWrite(Device,2,$44);
-  end; 
- 
+  end;
+
  {Create Serial}
  Serial:=PPL2303SerialDevice(SerialDeviceCreateEx(SizeOf(TPL2303SerialDevice)));
  if Serial = nil then
   begin
    if USB_LOG_ENABLED then USBLogError(Device,'PL2303: Failed to create new serial device');
-   
+
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
- {Update Serial} 
+
+ {Update Serial}
  {Device}
  Serial.Serial.Device.DeviceBus:=DEVICE_BUS_USB;
  Serial.Serial.Device.DeviceType:=SERIAL_TYPE_USB;
@@ -1338,7 +1338,7 @@ begin
  Serial.Serial.Properties.Flags:=Serial.Serial.Device.DeviceFlags;
  Serial.Serial.Properties.MinRate:=PL2303_MIN_BAUD;
  Serial.Serial.Properties.MaxRate:=PL2303_MAX_BAUD;
- if Model = PL2303_TYPE_HX then Serial.Serial.Properties.MaxRate:=PL2303_MAX_BAUD_HX; 
+ if Model = PL2303_TYPE_HX then Serial.Serial.Properties.MaxRate:=PL2303_MAX_BAUD_HX;
  Serial.Serial.Properties.BaudRate:=SERIAL_BAUD_RATE_DEFAULT;
  Serial.Serial.Properties.DataBits:=SERIAL_DATA_8BIT;
  Serial.Serial.Properties.StopBits:=SERIAL_STOP_1BIT;
@@ -1355,27 +1355,27 @@ begin
  Serial.TransmitEndpoint:=TransmitEndpoint;
  Serial.InterruptEndpoint:=InterruptEndpoint;
  Serial.WaiterThread:=INVALID_HANDLE_VALUE;
- 
- {Register Serial} 
+
+ {Register Serial}
  if SerialDeviceRegister(@Serial.Serial) <> ERROR_SUCCESS then
   begin
    if USB_LOG_ENABLED then USBLogError(Device,'PL2303: Failed to register new serial device');
-   
+
    {Destroy Serial}
    SerialDeviceDestroy(@Serial.Serial);
-   
+
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
   end;
- 
+
  {Update Device}
  Device.DriverData:=Serial;
- 
+
  {Return Result}
  Result:=USB_STATUS_SUCCESS;
 end;
-  
+
 {==============================================================================}
 
 function PL2303DriverUnbind(Device:PUSBDevice;Interrface:PUSBInterface):LongWord;
@@ -1388,16 +1388,16 @@ var
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
  {Check Interface}
  if Interrface <> nil then Exit;
- 
+
  {Check Driver}
  if Device.Driver <> PL2303Driver then Exit;
- 
+
  {$IFDEF PL2303_DEBUG}
  if USB_LOG_ENABLED then USBLogDebug(Device,'PL2303: Unbinding USB device (Manufacturer=' + Device.Manufacturer + ' Product=' + Device.Product + ' Address=' + IntToStr(Device.Address) + ')');
  {$ENDIF}
@@ -1405,25 +1405,25 @@ begin
  {Get Serial}
  Serial:=PPL2303SerialDevice(Device.DriverData);
  if Serial = nil then Exit;
- 
+
  {Close Serial}
- SerialDeviceClose(@Serial.Serial); 
- 
+ SerialDeviceClose(@Serial.Serial);
+
  {Update Device}
  Device.DriverData:=nil;
 
  {Deregister Serial}
  if SerialDeviceDeregister(@Serial.Serial) <> ERROR_SUCCESS then Exit;
- 
+
  {Destroy Serial}
  SerialDeviceDestroy(@Serial.Serial);
- 
+
  Result:=USB_STATUS_SUCCESS;
 end;
 
 {==============================================================================}
 
-procedure PL2303ReceiveStart(Request:PUSBRequest);  
+procedure PL2303ReceiveStart(Request:PUSBRequest);
 {Called to continue reception of data to the receive buffer}
 {Request: The USB receive request to use}
 
@@ -1437,11 +1437,11 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  {Get Serial}
  Serial:=PPL2303SerialDevice(Request.DriverData);
  if Serial = nil then Exit;
- 
+
  {Setup Count}
  Count:=0;
  Available:=Serial.Serial.Receive.Size - Serial.Serial.Receive.Count;
@@ -1449,17 +1449,17 @@ begin
   begin
    Count:=PL2303_BULK_IN_SIZE;
   end
- else if Available >= Serial.ReceiveSize then 
+ else if Available >= Serial.ReceiveSize then
   begin
    Count:=Serial.ReceiveSize;
   end;
-  
+
  {Check Count}
  if Count > 0 then
   begin
    {Update Request}
    Request.Size:=Count;
-   
+
    {Update Pending}
    Inc(Serial.PendingCount);
 
@@ -1478,7 +1478,7 @@ begin
 
      {Reset Active}
      Serial.ReceiveActive:=False;
-     
+
      {Update Pending}
      Dec(Serial.PendingCount);
     end;
@@ -1487,7 +1487,7 @@ end;
 
 {==============================================================================}
 
-procedure PL2303ReceiveWorker(Request:PUSBRequest); 
+procedure PL2303ReceiveWorker(Request:PUSBRequest);
 {Called (by a Worker thread) to process a completed USB request from the PL2303 bulk IN endpoint}
 {Request: The USB request which has completed}
 var
@@ -1504,10 +1504,10 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  {Get Serial}
  Serial:=PPL2303SerialDevice(Request.DriverData);
- if Serial <> nil then 
+ if Serial <> nil then
   begin
    {Acquire the Lock}
    if MutexLock(Serial.Serial.Lock) = ERROR_SUCCESS then
@@ -1522,21 +1522,21 @@ begin
         {$IFDEF PL2303_DEBUG}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'PL2303: Close pending, setting receive request status to USB_STATUS_DEVICE_DETACHED');
         {$ENDIF}
-      
+
         {Update Request}
         Request.Status:=USB_STATUS_DEVICE_DETACHED;
        end;
-      
-      {Check Result} 
+
+      {Check Result}
       if Request.Status = USB_STATUS_SUCCESS then
        begin
         {$IFDEF PL2303_DEBUG}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'PL2303: Receive complete (Size=' + IntToStr(Request.Size) + ' Actual Size=' + IntToStr(Request.ActualSize) + ')');
         {$ENDIF}
-        
+
         {Update Status}
         Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus and not(SERIAL_STATUS_BREAK_ERROR or SERIAL_STATUS_PARITY_ERROR or SERIAL_STATUS_FRAMING_ERROR or SERIAL_STATUS_OVERRUN_ERROR);
-        
+
         {Check Size}
         if Request.ActualSize > 0 then
          begin
@@ -1544,59 +1544,59 @@ begin
           Size:=Request.ActualSize;
           Count:=0;
           Offset:=0;
-          
+
           {Start Write}
           Data:=SerialBufferWriteStart(@Serial.Serial.Receive,Available);
           while (Data <> nil) and (Available > 0) and (Size > 0) do
            begin
             {Get Added}
             Added:=Min(Size,Available);
-            
+
             {Copy Data}
             System.Move(Pointer(Request.Data + Offset)^,Data^,Added);
-            
+
             {Update Count}
             Inc(Count,Added);
-            
+
             {Update Size and Offset}
             Dec(Size,Added);
             Inc(Offset,Added);
 
             {Complete Write}
             SerialBufferWriteComplete(@Serial.Serial.Receive,Added);
-         
+
             {Start Write}
             Data:=SerialBufferWriteStart(@Serial.Serial.Receive,Available);
-           end; 
-         
+           end;
+
           {Check Size}
           if Size > 0 then
            begin
             if USB_LOG_ENABLED then USBLogError(Request.Device,'PL2303: Buffer overrun, ' + IntToStr(Size) + ' bytes discarded');
            end;
-           
+
           {Check Count}
           if Count > 0 then
            begin
             {Set Event}
             EventSet(Serial.Serial.Receive.Wait);
            end;
-         end; 
+         end;
        end
-      else 
+      else
        begin
         if USB_LOG_ENABLED then USBLogError(Request.Device,'PL2303: Failed receive request (Status=' + USBStatusToString(Request.Status) + ')');
-   
+
         {Update Statistics}
-        Inc(Serial.Serial.ReceiveErrors); 
+        Inc(Serial.Serial.ReceiveErrors);
        end;
- 
+
       {Reset Active}
       Serial.ReceiveActive:=False;
-      
+
       {Update Pending}
-      Dec(Serial.PendingCount); 
-        
+      Dec(Serial.PendingCount);
+
       {Check State}
       if Serial.Serial.SerialState = SERIAL_STATE_CLOSING then
        begin
@@ -1609,19 +1609,19 @@ begin
             {$IFDEF PL2303_DEBUG}
             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'PL2303: Close pending, sending message to waiter thread (Thread=' + IntToHex(Serial.WaiterThread,8) + ')');
             {$ENDIF}
-            
+
             {Send Message}
             FillChar(Message,SizeOf(TMessage),0);
             ThreadSendMessage(Serial.WaiterThread,Message);
             Serial.WaiterThread:=INVALID_HANDLE_VALUE;
-           end; 
+           end;
          end;
        end
       else
-       begin      
+       begin
         {Start Receive}
         PL2303ReceiveStart(Request);
-       end;  
+       end;
      finally
       {Release the Lock}
       MutexUnlock(Serial.Serial.Lock);
@@ -1635,12 +1635,12 @@ begin
  else
   begin
    if USB_LOG_ENABLED then USBLogError(Request.Device,'PL2303: Receive request invalid');
-  end;    
+  end;
 end;
 
 {==============================================================================}
 
-procedure PL2303ReceiveComplete(Request:PUSBRequest); 
+procedure PL2303ReceiveComplete(Request:PUSBRequest);
 {Called when a USB request from the PL2303 bulk IN endpoint completes}
 {Request: The USB request which has completed}
 {Note: Request is passed to worker thread for processing to prevent blocking the USB completion}
@@ -1648,13 +1648,13 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  WorkerSchedule(0,TWorkerTask(PL2303ReceiveWorker),Request,nil)
 end;
 
 {==============================================================================}
 
-procedure PL2303TransmitStart(Request:PUSBRequest);  
+procedure PL2303TransmitStart(Request:PUSBRequest);
 {Called to continue transmission of data from the transmit buffer}
 {Request: The USB transmit request to use}
 
@@ -1672,77 +1672,77 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  {Get Serial}
  Serial:=PPL2303SerialDevice(Request.DriverData);
  if Serial = nil then Exit;
- 
+
  {Setup Count, Size and Offset}
  Size:=Min(PL2303_MAX_TRANSMIT,PL2303_BULK_OUT_SIZE);
  Count:=0;
  Offset:=0;
- 
+
  {Start Read}
  Data:=SerialBufferReadStart(@Serial.Serial.Transmit,Available);
  while (Data <> nil) and (Available > 0) and (Size > 0) do
   begin
    {Get Removed}
    Removed:=Min(Size,Available);
- 
+
    {Copy Data}
    System.Move(Data^,Pointer(Request.Data + Offset)^,Removed);
- 
+
    {Update Count}
    Inc(Count,Removed);
- 
+
    {Update Size and Offset}
    Dec(Size,Removed);
    Inc(Offset,Removed);
- 
+
    {Complete Read}
    SerialBufferReadComplete(@Serial.Serial.Transmit,Removed);
- 
+
    {Start Read}
    Data:=SerialBufferReadStart(@Serial.Serial.Transmit,Available);
-  end; 
-   
+  end;
+
  {Check Count}
  if Count > 0 then
   begin
    {Set Event}
    EventSet(Serial.Serial.Transmit.Wait);
-   
+
    {Update Request}
    Request.Size:=Count;
-   
+
    {Update Pending}
    Inc(Serial.PendingCount);
- 
+
    {Set Active}
    Serial.TransmitActive:=True;
- 
+
    {$IFDEF PL2303_DEBUG}
    if USB_LOG_ENABLED then USBLogDebug(Request.Device,'PL2303: Submitting transmit request');
    {$ENDIF}
-   
+
    {Submit Request}
    Status:=USBRequestSubmit(Request);
    if Status <> USB_STATUS_SUCCESS then
     begin
      if USB_LOG_ENABLED then USBLogError(Request.Device,'PL2303: Failed to submit transmit request: ' + USBStatusToString(Status));
-   
+
      {Reset Active}
      Serial.TransmitActive:=False;
-   
+
      {Update Pending}
      Dec(Serial.PendingCount);
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
-procedure PL2303TransmitWorker(Request:PUSBRequest); 
+procedure PL2303TransmitWorker(Request:PUSBRequest);
 {Called (by a Worker thread) to process a completed USB request to the PL2303 bulk OUT endpoint}
 {Request: The USB request which has completed}
 var
@@ -1752,10 +1752,10 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  {Get Serial}
  Serial:=PPL2303SerialDevice(Request.DriverData);
- if Serial <> nil then 
+ if Serial <> nil then
   begin
    {Acquire the Lock}
    if MutexLock(Serial.Serial.Lock) = ERROR_SUCCESS then
@@ -1770,32 +1770,32 @@ begin
         {$IFDEF PL2303_DEBUG}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'PL2303: Close pending, setting transmit request status to USB_STATUS_DEVICE_DETACHED');
         {$ENDIF}
-      
+
         {Update Request}
         Request.Status:=USB_STATUS_DEVICE_DETACHED;
        end;
-      
-      {Check Result} 
+
+      {Check Result}
       if Request.Status = USB_STATUS_SUCCESS then
        begin
         {$IFDEF PL2303_DEBUG}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'PL2303: Transmit complete (Size=' + IntToStr(Request.Size) + ' Actual Size=' + IntToStr(Request.ActualSize) + ')');
         {$ENDIF}
        end
-      else 
+      else
        begin
         if USB_LOG_ENABLED then USBLogError(Request.Device,'PL2303: Failed transmit request (Status=' + USBStatusToString(Request.Status) + ')');
-        
+
         {Update Statistics}
-        Inc(Serial.Serial.TransmitErrors); 
+        Inc(Serial.Serial.TransmitErrors);
        end;
-      
+
       {Reset Active}
       Serial.TransmitActive:=False;
-      
+
       {Update Pending}
-      Dec(Serial.PendingCount); 
-      
+      Dec(Serial.PendingCount);
+
       {Check State}
       if Serial.Serial.SerialState = SERIAL_STATE_CLOSING then
        begin
@@ -1808,19 +1808,19 @@ begin
             {$IFDEF PL2303_DEBUG}
             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'PL2303: Close pending, sending message to waiter thread (Thread=' + IntToHex(Serial.WaiterThread,8) + ')');
             {$ENDIF}
-            
+
             {Send Message}
             FillChar(Message,SizeOf(TMessage),0);
             ThreadSendMessage(Serial.WaiterThread,Message);
             Serial.WaiterThread:=INVALID_HANDLE_VALUE;
-           end; 
+           end;
          end;
        end
       else
        begin
         {Start Transmit}
         PL2303TransmitStart(Request);
-       end;       
+       end;
      finally
       {Release the Lock}
       MutexUnlock(Serial.Serial.Lock);
@@ -1834,12 +1834,12 @@ begin
  else
   begin
    if USB_LOG_ENABLED then USBLogError(Request.Device,'PL2303: Transmit request invalid');
-  end;    
+  end;
 end;
 
 {==============================================================================}
 
-procedure PL2303TransmitComplete(Request:PUSBRequest); 
+procedure PL2303TransmitComplete(Request:PUSBRequest);
 {Called when a USB request to the PL2303 bulk OUT endpoint completes}
 {Request: The USB request which has completed}
 {Note: Request is passed to worker thread for processing to prevent blocking the USB completion}
@@ -1847,7 +1847,7 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  WorkerSchedule(0,TWorkerTask(PL2303TransmitWorker),Request,nil)
 end;
 
@@ -1866,10 +1866,10 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  {Get Serial}
  Serial:=PPL2303SerialDevice(Request.DriverData);
- if Serial <> nil then 
+ if Serial <> nil then
   begin
    {Acquire the Lock}
    if MutexLock(Serial.Serial.Lock) = ERROR_SUCCESS then
@@ -1877,25 +1877,25 @@ begin
      try
       {Update Statistics}
       Inc(Serial.InterruptComplete);
- 
+
       {Check State}
       if Serial.Serial.SerialState = SERIAL_STATE_CLOSING then
        begin
         {$IFDEF PL2303_DEBUG}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'PL2303: Close pending, setting interrupt request status to USB_STATUS_DEVICE_DETACHED');
         {$ENDIF}
-      
+
         {Update Request}
         Request.Status:=USB_STATUS_DEVICE_DETACHED;
        end;
- 
-      {Check Result} 
+
+      {Check Result}
       if Request.Status = USB_STATUS_SUCCESS then
        begin
         {$IFDEF PL2303_DEBUG}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'PL2303: Interrupt complete (Size=' + IntToStr(Request.Size) + ' Actual Size=' + IntToStr(Request.ActualSize) + ')');
         {$ENDIF}
-        
+
         {Get Index}
         Index:=PL2303_UART_STATE_INDEX;
         if (Serial.Quirks and PL2303_QUIRK_UART_STATE_IDX0) <> 0 then
@@ -1908,14 +1908,14 @@ begin
          begin
           {Get State}
           State:=PByte(Request.Data + Index)^;
-          
+
           {$IFDEF PL2303_DEBUG}
           if USB_LOG_ENABLED then USBLogDebug(Request.Device,'PL2303: State=' + IntToHex(State,2));
           {$ENDIF}
-          
+
           {Set Status}
           Serial.Serial.SerialStatus:=SERIAL_STATUS_NONE;
-          
+
           {Check State}
           if (State and PL2303_UART_STATE_MSR_MASK) <> 0 then
            begin
@@ -1936,55 +1936,55 @@ begin
               Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_RI;
              end;
            end;
-           
+
           {Check State}
           if (State and PL2303_UART_STATE_TRANSIENT_MASK) <> 0 then
            begin
             if (State and PL2303_UART_BREAK_ERROR) <> 0 then
              begin
               Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_BREAK_ERROR;
-              
-              if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'PL2303: Break error on receive character'); 
+
+              if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'PL2303: Break error on receive character');
              end;
             if (State and PL2303_UART_PARITY_ERROR) <> 0 then
              begin
               Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_PARITY_ERROR;
-              
-              if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'PL2303: Parity error on receive character'); 
+
+              if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'PL2303: Parity error on receive character');
              end;
             if (State and PL2303_UART_FRAME_ERROR) <> 0 then
              begin
               Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_FRAMING_ERROR;
-              
-              if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'PL2303: Framing error on receive character'); 
+
+              if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'PL2303: Framing error on receive character');
              end;
             if (State and PL2303_UART_OVERRUN_ERROR) <> 0 then
              begin
               Serial.Serial.SerialStatus:=Serial.Serial.SerialStatus or SERIAL_STATUS_OVERRUN_ERROR;
-              
-              if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'PL2303: Overrun error on receive character'); 
+
+              if SERIAL_LOG_ENABLED then SerialLogError(@Serial.Serial,'PL2303: Overrun error on receive character');
              end;
            end;
          end
         else
          begin
           if USB_LOG_ENABLED then USBLogError(Request.Device,'PL2303: Interrupt request invalid size');
-          
+
           {Update Statistics}
-          Inc(Serial.InterruptErrors); 
+          Inc(Serial.InterruptErrors);
          end;
        end
-      else 
+      else
        begin
         if USB_LOG_ENABLED then USBLogError(Request.Device,'PL2303: Failed interrupt request (Status=' + USBStatusToString(Request.Status) + ')');
-   
+
         {Update Statistics}
-        Inc(Serial.InterruptErrors); 
+        Inc(Serial.InterruptErrors);
        end;
- 
+
       {Update Pending}
-      Dec(Serial.PendingCount); 
-        
+      Dec(Serial.PendingCount);
+
       {Check State}
       if Serial.Serial.SerialState = SERIAL_STATE_CLOSING then
        begin
@@ -1997,19 +1997,19 @@ begin
             {$IFDEF PL2303_DEBUG}
             if USB_LOG_ENABLED then USBLogDebug(Request.Device,'PL2303: Close pending, sending message to waiter thread (Thread=' + IntToHex(Serial.WaiterThread,8) + ')');
             {$ENDIF}
-            
+
             {Send Message}
             FillChar(Message,SizeOf(TMessage),0);
             ThreadSendMessage(Serial.WaiterThread,Message);
             Serial.WaiterThread:=INVALID_HANDLE_VALUE;
-           end; 
+           end;
          end;
        end
       else
-       begin      
+       begin
         {Update Pending}
         Inc(Serial.PendingCount);
- 
+
         {$IFDEF PL2303_DEBUG}
         if USB_LOG_ENABLED then USBLogDebug(Request.Device,'PL2303: Resubmitting interrupt request');
         {$ENDIF}
@@ -2019,11 +2019,11 @@ begin
         if Status <> USB_STATUS_SUCCESS then
          begin
           if USB_LOG_ENABLED then USBLogError(Request.Device,'PL2303: Failed to resubmit interrupt request: ' + USBStatusToString(Status));
-   
+
           {Update Pending}
           Dec(Serial.PendingCount);
          end;
-       end;  
+       end;
      finally
       {Release the Lock}
       MutexUnlock(Serial.Serial.Lock);
@@ -2037,7 +2037,7 @@ begin
  else
   begin
    if USB_LOG_ENABLED then USBLogError(Request.Device,'PL2303: Interrupt request invalid');
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -2050,7 +2050,7 @@ begin
  {}
  {Check Request}
  if Request = nil then Exit;
- 
+
  WorkerSchedule(0,TWorkerTask(PL2303InterruptWorker),Request,nil)
 end;
 
@@ -2060,13 +2060,13 @@ end;
 function PL2303CheckDevice(Device:PUSBDevice):LongWord;
 {Check the Vendor and Device ID against the supported devices}
 {Device: USB device to check}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 var
  Count:Integer;
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
 
@@ -2088,18 +2088,18 @@ end;
 function PL2303PatchDevice(Device:PUSBDevice;var Model,Quirks:LongWord):LongWord;
 {Check the USB device for quirks and model information needed by the driver}
 {Device: USB device to check}
-{Return: USB_STATUS_SUCCESS if completed or another error code on failure}      
+{Return: USB_STATUS_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=USB_STATUS_INVALID_PARAMETER;
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Setup Defaults}
  Model:=PL2303_TYPE_01;
  Quirks:=PL2303_QUIRK_NONE;
- 
+
  {Check Descriptor}
  if Device.Descriptor.bDeviceClass = $02 then
   begin
@@ -2117,14 +2117,14 @@ begin
   begin
    Model:=PL2303_TYPE_01; {Type 1}
   end;
-  
+
  {Check Model}
  case Model of
   PL2303_TYPE_01:begin
     Quirks:=Quirks or PL2303_QUIRK_LEGACY;
    end;
  end;
- 
+
  {Check Device ID}
  if (Device.Descriptor.idVendor = PL2303_SIEMENS_VENDOR_ID) and (Device.Descriptor.idProduct = PL2303_SIEMENS_PRODUCT_ID_SX1) then
   begin
@@ -2133,12 +2133,12 @@ begin
  else if (Device.Descriptor.idVendor = PL2303_SIEMENS_VENDOR_ID) and (Device.Descriptor.idProduct = PL2303_SIEMENS_PRODUCT_ID_X65) then
   begin
    Quirks:=Quirks or PL2303_QUIRK_UART_STATE_IDX0;
-  end 
+  end
  else if (Device.Descriptor.idVendor = PL2303_SIEMENS_VENDOR_ID) and (Device.Descriptor.idProduct = PL2303_SIEMENS_PRODUCT_ID_X75) then
   begin
    Quirks:=Quirks or PL2303_QUIRK_UART_STATE_IDX0;
   end;
- 
+
  Result:=USB_STATUS_SUCCESS;
 end;
 
@@ -2152,7 +2152,7 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Send Vendor Read Request}
  Result:=USBControlRequestEx(Device,nil,PL2303_VENDOR_READ_REQUEST,PL2303_VENDOR_READ_REQUEST_TYPE,Value,0,Data,1,100,False);
 end;
@@ -2167,7 +2167,7 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Send Vendor Write Request}
  Result:=USBControlRequestEx(Device,nil,PL2303_VENDOR_WRITE_REQUEST,PL2303_VENDOR_WRITE_REQUEST_TYPE,Value,Index,nil,0,100,False);
 end;
@@ -2182,7 +2182,7 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Send Get Line Request}
  Result:=USBControlRequestEx(Device,nil,PL2303_GET_LINE_REQUEST,PL2303_GET_LINE_REQUEST_TYPE,0,0,Data,7,100,False);
 end;
@@ -2197,7 +2197,7 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Send Set Line Request}
  Result:=USBControlRequestEx(Device,nil,PL2303_SET_LINE_REQUEST,PL2303_SET_LINE_REQUEST_TYPE,0,0,Data,7,100,False);
 end;
@@ -2212,7 +2212,7 @@ begin
 
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Send Set Control Request}
  Result:=USBControlRequestEx(Device,nil,PL2303_SET_CONTROL_REQUEST,PL2303_SET_CONTROL_REQUEST_TYPE,Value,0,nil,0,100,False);
 end;
@@ -2231,10 +2231,10 @@ function PL2303EncodeBaudRate(Device:PUSBDevice;BaudRate:LongWord;Data:PByte):Lo
   while Count < PL2303_SUPPORTED_BAUD_RATE_COUNT do
    begin
     if PL2303_SUPPORTED_BAUD_RATES[Count] > BaudRate then Break;
-    
+
     Inc(Count);
    end;
-  
+
   if Count = PL2303_SUPPORTED_BAUD_RATE_COUNT then
    begin
     BaudRate:=PL2303_SUPPORTED_BAUD_RATES[Count - 1];
@@ -2247,10 +2247,10 @@ function PL2303EncodeBaudRate(Device:PUSBDevice;BaudRate:LongWord;Data:PByte):Lo
    begin
     BaudRate:=PL2303_SUPPORTED_BAUD_RATES[Count];
    end;
-   
-  Result:=BaudRate; 
+
+  Result:=BaudRate;
  end;
- 
+
 var
  Baseline:LongWord;
  Mantissa:LongWord;
@@ -2282,14 +2282,14 @@ begin
    Mantissa:=Baseline div BaudRate;
    if Mantissa = 0 then Mantissa:=1; {Avoid dividing by zero if baud > 32*12M}
    Exponent:=0;
-   
+
    while Mantissa >= 512 do
     begin
      if Exponent < 7 then
       begin
        Mantissa:=Mantissa shr 2; {Divide by 4}
        Inc(Exponent);
-      end 
+      end
      else
       begin
        {Exponent is maxed. Trim Mantissa and leave}
@@ -2297,7 +2297,7 @@ begin
        Break;
       end;
     end;
-   
+
    Data[3]:=$80;
    Data[2]:=0;
    Data[1]:=(Exponent shl 1) or (Mantissa shr 8);
@@ -2305,7 +2305,7 @@ begin
 
    {Calculate and return the exact baud rate}
    Result:=(Baseline div Mantissa) shr (Exponent shl 1);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2313,9 +2313,9 @@ end;
 
 initialization
  PL2303Init;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -2323,4 +2323,4 @@ finalization
 {==============================================================================}
 
 end.
- 
+

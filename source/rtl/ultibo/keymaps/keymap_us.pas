@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -32,47 +32,47 @@ References
  QWERTY keyboard - https://en.wikipedia.org/wiki/QWERTY
 
  US English keyboard layout - https://www.microsoft.com/resources/msdn/goglobal/keyboards/kbdus.html
- 
- 
+
+
 US English Keymap (US)
 ======================
 
  This keymap is not intended to be used, it is an exact copy of the default keymap included in the Keymap unit.
- 
+
  The purpose of the file is to provide a template for creating alternate keyboard layouts with the standard US
  English layout as a starting point.
- 
- To create a custom keymapping for a new keyboard layout, make a copy of this file and change the filename and 
+
+ To create a custom keymapping for a new keyboard layout, make a copy of this file and change the filename and
  the unit name.
- 
+
  Then rename and update the KEYMAP_US_HEADER and KEYMAP_US_DATA structures to change the mapping of the keys to
  whatever is required for your new keyboard.
- 
+
  All of the SCAN_CODE_* values can be found in the GlobalConst unit, these values are based on the USB HID Usages
  (See Section 10 of the Universal Serial Bus HID Usage Tables v1.12) and represent the actual scan code values
- returned when a key is pressed. 
- 
+ returned when a key is pressed.
+
  To reduce production costs manufacturers don't change the scan codes that a key produces and only change the plastic
- cap on the key to reflect the difference for a new keyboard layout. 
- 
+ cap on the key to reflect the difference for a new keyboard layout.
+
  This unit defines the mappings between the raw SCAN_CODE_* values and the KEY_CODE_* values so that the characters
  returned by each keypress match with those shown on the key cap.
- 
+
  The KEY_CODE_* values are based on the Unicode standard with each key code mapped to the code point for that character
  (See http://unicode.org or http://unicode-table.com).
- 
+
  The TKeymapData structure defines a mapping of SCAN_CODE_* to KEY_CODE_* for 4 different states:
- 
+
   Normal         - The meaning of the key when pressed by itself.
   Shift          - The meaning of the key when pressed in combination with the Shift key
   AltGr          - The meaning of the key when pressed in combination with the AltGr key (Normally AltGr is returned as SCAN_CODE_RIGHT_ALT)
   Shift+AltGr    - The meaning of the key when pressed in combination with both the Shift and AltGr keys
- 
+
  In most keyboard layouts the AltGr field only applies to a small number of keys, the Shift and AltGr field is not used at
  all by many layouts.
- 
+
  You may also need to modify the KEYMAP_US_CAPSKEYS and KEYMAP_US_DEADKEYS structures depending on your keyboard layout.
- 
+
  The US layout defines the characters A to Z to be affected by Caps Lock (same behaviour as KEYMAP_FLAG_CAPS_ASCII) and
  no keys to behave as dead keys.
 
@@ -91,7 +91,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Keymap,SysUtils;
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {Keymap_US specific constants}
@@ -107,19 +107,19 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Keymap,SysUtils;
 {==============================================================================}
 {Initialization Functions}
 procedure Keymap_USInit;
- 
+
 {==============================================================================}
 {==============================================================================}
 
 implementation
- 
+
 {==============================================================================}
 {==============================================================================}
 var
  {Keymap_US specific variables}
  Keymap_USInitialized:Boolean;
- 
-var 
+
+var
  {Keymap US - US English}
  KEYMAP_US_HEADER:TKeymapHeader = (
   Mode:KEYMAP_MODE_NONE;
@@ -129,7 +129,7 @@ var
   Name:('US');
   Description:('US English')
   );
- 
+
  KEYMAP_US_DATA:TKeymapData = (
         {Modify the entries below to create a new keymapping for a different keyboard layout. The constants can all be found in the GlobalConst unit   }
         {Scan Code mappings:                 Normal                         Shift                          AltGr                          Shift+AltGr  }
@@ -224,7 +224,7 @@ var
         {SCAN_CODE_KEYPAD_ENTER           } (KEY_CODE_ENTER,                KEY_CODE_ENTER,                KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_1               } (KEY_CODE_END,                  KEY_CODE_1,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_2               } (KEY_CODE_DOWN_ARROW,           KEY_CODE_2,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
-        {SCAN_CODE_KEYPAD_3               } (KEY_CODE_PAGEDN,               KEY_CODE_3,                    KEY_CODE_NONE,                 KEY_CODE_NONE),             
+        {SCAN_CODE_KEYPAD_3               } (KEY_CODE_PAGEDN,               KEY_CODE_3,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_4               } (KEY_CODE_LEFT_ARROW,           KEY_CODE_4,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_5               } (KEY_CODE_CENTER,               KEY_CODE_5,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_6               } (KEY_CODE_RIGHT_ARROW,          KEY_CODE_6,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
@@ -390,7 +390,7 @@ var
                                             (KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE),
                                             (KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE))
   );
- 
+
  KEYMAP_US_CAPSKEYS:TKeymapCapskeys = (
   Count:1;
   Keys:((First:SCAN_CODE_A;             Last:SCAN_CODE_Z),
@@ -444,7 +444,7 @@ var
         (First:SCAN_CODE_NONE;          Last:SCAN_CODE_NONE),
         (First:SCAN_CODE_NONE;          Last:SCAN_CODE_NONE))
   );
-       
+
  KEYMAP_US_DEADKEYS:TKeymapDeadkeys = (
   Count:0;
   Keys:((Key:SCAN_CODE_NONE; {Unused}
@@ -469,9 +469,9 @@ var
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE))
-        ),                                        
-        (Key:SCAN_CODE_NONE; {Unused}                      
-         Index:KEYMAP_INDEX_NORMAL;               
+        ),
+        (Key:SCAN_CODE_NONE; {Unused}
+         Index:KEYMAP_INDEX_NORMAL;
          Resolves:((Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
@@ -492,9 +492,9 @@ var
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE))
-        ),                                        
-        (Key:SCAN_CODE_NONE; {Unused}                      
-         Index:KEYMAP_INDEX_NORMAL;               
+        ),
+        (Key:SCAN_CODE_NONE; {Unused}
+         Index:KEYMAP_INDEX_NORMAL;
          Resolves:((Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
@@ -515,9 +515,9 @@ var
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE))
-        ),                                        
-        (Key:SCAN_CODE_NONE; {Unused}                      
-         Index:KEYMAP_INDEX_NORMAL;               
+        ),
+        (Key:SCAN_CODE_NONE; {Unused}
+         Index:KEYMAP_INDEX_NORMAL;
          Resolves:((Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
@@ -538,9 +538,9 @@ var
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE))
-        ),                                        
-        (Key:SCAN_CODE_NONE; {Unused}                      
-         Index:KEYMAP_INDEX_NORMAL;               
+        ),
+        (Key:SCAN_CODE_NONE; {Unused}
+         Index:KEYMAP_INDEX_NORMAL;
          Resolves:((Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
@@ -563,7 +563,7 @@ var
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE))
         ))
   );
-                   
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -587,11 +587,11 @@ begin
   begin
    {Update Default}
    KEYMAP_DEFAULT:='US';
-   
+
    {Set Default}
    KeymapSetDefault(KeymapHandle);
-  end;  
-  
+  end;
+
  Keymap_USInitialized:=True;
 end;
 
@@ -600,9 +600,9 @@ end;
 
 initialization
  Keymap_USInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -610,4 +610,4 @@ finalization
 {==============================================================================}
 
 end.
-         
+

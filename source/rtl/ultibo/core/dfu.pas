@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
- 
+
 Device Firmware Update (DFU)
 ============================
 
@@ -51,9 +51,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB;
 {==============================================================================}
 //const
  {DFU specific constants}
-//To Do //A generic DFU unit 
-                           
-              
+//To Do //A generic DFU unit
+
+
 {==============================================================================}
 //type
  {DFU specific types}
@@ -65,7 +65,7 @@ var
  DFUInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure DFUInit;
@@ -87,9 +87,9 @@ begin
  {}
  {Check Initialized}
  if DFUInitialized then Exit;
- 
+
  //To Do
- 
+
  DFUInitialized:=True;
 end;
 
@@ -105,7 +105,7 @@ initialization
  DFUInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

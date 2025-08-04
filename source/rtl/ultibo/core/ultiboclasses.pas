@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -45,10 +45,10 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Unicode,Ultibo,SysUti
 
 //To Do //FPC supports TStream with 64bit interaces, check and confirm and remove TStreamEx etc
                       //Retain TMemoryStreamEx because it is for a different purpose (Grow without Realloc)
-                    
+
 //To Do //Look for:
 
-//Testing                    
+//Testing
 
 //Remove
 
@@ -91,7 +91,7 @@ const
  memoryStreamShift = 13;
 
  stringListDelta = $2000;
- 
+
 {==============================================================================}
 {Ultibo Class types (Threads)}
 type
@@ -109,7 +109,7 @@ type
   {}
   procedure TerminateAndWaitFor;
  end;
-  
+
 {==============================================================================}
 {Ultibo Class types (Timers)}
 type
@@ -124,7 +124,7 @@ type
   FWorker:Boolean;  {If True then use a Worker thread for the timer event}
   FOnTimer:TNotifyEvent;
   FTimerHandle:TTimerHandle;
-  
+
   {}
   procedure SetEnabled(Value:Boolean);
  protected
@@ -137,10 +137,10 @@ type
   property Interval:Integer read FInterval write FInterval;
   property Enabled:Boolean read FEnabled write SetEnabled;
   property Worker:Boolean read FWorker write FWorker;
-  
+
   property OnTimer:TNotifyEvent read FOnTimer write FOnTimer;
  end;
- 
+
 {==============================================================================}
 {Ultibo Class types (Object Lists)}
 type
@@ -156,9 +156,9 @@ type
    {Public Functions}
    procedure ClearList;
  end;
- 
+
 type
- {TThreadObjList  - TThreadList with Auto Free of List Objects} 
+ {TThreadObjList  - TThreadList with Auto Free of List Objects}
  TThreadObjList = class(TThreadList)
    {Thread Safe List which Frees all nodes on Destroy}
    constructor Create;
@@ -170,10 +170,10 @@ type
    {Public Functions}
    procedure ClearList;
  end;
- 
+
 {==============================================================================}
 {Ultibo Class types (Linked Lists)}
-type 
+type
  {TListObject - A TObject with .Prev/.Next with Properties for use in Lists}
  TListObject = class(TObject)
  private
@@ -185,8 +185,8 @@ type
   property Prev:TListObject read FPrev write FPrev;
   property Next:TListObject read FNext write FNext;
  end;
- 
-type 
+
+type
  {TLinkedList - A List of TListObjects with automatic .Prev/.Next Links}
  TLinkedList = class(TObject)
   {Linked List which does not Free nodes on Destroy}
@@ -206,12 +206,12 @@ type
   property Count:Integer read GetCount;
   property First:TListObject read FFirst;
   property Last:TListObject read FLast;
-  function Add(AValue:TListObject):Boolean; virtual;          
-  function Remove(AValue:TListObject):Boolean; virtual;       
+  function Add(AValue:TListObject):Boolean; virtual;
+  function Remove(AValue:TListObject):Boolean; virtual;
   function Insert(APrev,AValue:TListObject):Boolean; virtual;
-  procedure Clear; virtual;                                   
+  procedure Clear; virtual;
 end;
- 
+
 type
  {TLinkedObjList  - TLinkedList with Auto Free of List Objects}
  TLinkedObjList = class(TLinkedList)
@@ -224,11 +224,11 @@ type
    {Public Functions}
    procedure ClearList;
  end;
- 
+
 //type
  {TThreadLinkedList - A List of TListObjects with automatic .Prev/.Next Links}
  //To Do {Thread Safe Linked List which does not Free nodes on Destroy}
- 
+
 type
  {TThreadLinkedObjList  - TLinkedList with Auto Free of List Objects}
  TThreadLinkedObjList = class(TLinkedList) //TThreadLinkedList
@@ -246,11 +246,11 @@ type
    procedure LockList;    //To Do //Move to TThreadLinkedList
    procedure UnlockList;  //To Do //Move to TThreadLinkedList
  end;
- 
+
 //To Do //TSimpleListObject / TSimpleLinkedList / TSimpleLinkedObjList
 //Same as TLinkedList but with only .First/.Next links to save memory when using
 //for lists with many thousands of objects
- 
+
 {==============================================================================}
 {Ultibo Class types (Linked Trees)}
 type
@@ -267,7 +267,7 @@ type
   property FirstChild:TTreeObject read FFirstChild write FFirstChild;
   property LastChild:TTreeObject read FLastChild write FLastChild;
  end;
- 
+
 type
  {TLinkedTree - A Tree of TTreeObjects with automatic Prev/Next etc Links}
  TLinkedTree = class(TObject)
@@ -297,7 +297,7 @@ type
   function FirstChild(AParent:TTreeObject):TTreeObject;
   function LastChild(AParent:TTreeObject):TTreeObject;
 end;
- 
+
 type
  {TLinkedObjTree  - TLinkedTree with Auto Free of Tree Objects}
  TLinkedObjTree = class(TLinkedTree)
@@ -306,7 +306,7 @@ type
    destructor Destroy; override;
   private
    {Private Functions}
-   
+
   protected
    {Protected Functions}
    procedure ClearListItems(AParent:TTreeObject);
@@ -314,23 +314,23 @@ type
    {Public Functions}
    procedure ClearList;
  end;
- 
+
 //type
  {TThreadLinkedTree - A Tree of TTreeObjects with automatic Prev/Next etc Links}
  //To Do {Thread Safe Linked Tree which does not Free nodes on Destroy}
- 
+
 //type
- {TThreadLinkedObjTree  - TLinkedTree with Auto Free of Tree Objects} 
+ {TThreadLinkedObjTree  - TLinkedTree with Auto Free of Tree Objects}
  //To Do  {Thread Safe Linked Tree which Frees all nodes on Destroy}
                //Subclassed from TThreadLinkedTree
 
 //type
- {TSimpleTreeObject}               
- {TSimpleLinkedTree}               
+ {TSimpleTreeObject}
+ {TSimpleLinkedTree}
 //To Do //TSimpleTreeObject / TSimpleLinkedTree / TSimpleLinkedObjTree
 //Same as TLinkedTree but with only .First/.Next/.FirstChild links to save memory when
 //using for trees with many thousands of objects
-               
+
 {==============================================================================}
 {Ultibo Class types (B-Trees)}
 type
@@ -363,7 +363,7 @@ type
 
   procedure Clear;
  end;
-               
+
 type
  {TLinkedBtree - A B-Tree of TBtreeObjects with automatic Left/Right etc Links}
  TLinkedBtree = class(TObject)
@@ -471,7 +471,7 @@ type
   property Median:LongWord read FMedian;
 
   property SwapLeft:Boolean read FSwapLeft;
-  
+
   property Root:TBtreeObject read FRoot;
   property First:TBtreeObject read FFirst;
   property Last:TBtreeObject read FLast;
@@ -485,7 +485,7 @@ type
   procedure Empty;
   procedure Rebuild;
 end;
- 
+
 type
  {TLinkedObjBtree  - TLinkedBtree with Auto Free of B-Tree Objects}
  TLinkedObjBtree = class(TLinkedBtree)
@@ -499,7 +499,7 @@ type
    procedure ClearBtree;
    procedure EmptyBtree;
  end;
- 
+
 {==============================================================================}
 {Ultibo Class types (Hash Linked Lists)}
 type
@@ -522,7 +522,7 @@ type
   property KeyPrev:THashListObject read FKeyPrev write FKeyPrev;
   property KeyNext:THashListObject read FKeyNext write FKeyNext;
  end;
- 
+
  {THashLinkedList - A List of THashListObjects with automatic hash buckets}
  THashLinkedList = class(TLinkedList)
   constructor Create(AKeyBits:Byte);
@@ -544,7 +544,7 @@ type
   function Insert(APrev,AValue:TListObject):Boolean; override;
   procedure Clear; override;
 end;
- 
+
 type
  {THashLinkedObjList - THashLinkedList with Auto Free of List Objects}
  THashLinkedObjList = class(THashLinkedList)
@@ -556,7 +556,7 @@ type
    {Public Functions}
    procedure ClearList;
  end;
- 
+
 {==============================================================================}
 {Ultibo Class types (Hash Linked Trees)}
 type
@@ -588,7 +588,7 @@ type
   property KeyPrev:THashTreeObject read FKeyPrev write FKeyPrev;
   property KeyNext:THashTreeObject read FKeyNext write FKeyNext;
  end;
- 
+
  {THashLinkedTree - A Tree of THashTreeObjects with automatic hash buckets}
  THashLinkedTree = class(TLinkedTree)
   constructor Create(AKeyBits:Byte);
@@ -611,7 +611,7 @@ type
   procedure Move(AValue,AParent:TTreeObject); override;
   procedure Clear; override;
 end;
- 
+
 type
  {THashLinkedObjTree - THashLinkedTree with Auto Free of List Objects}
  THashLinkedObjTree = class(THashLinkedTree)
@@ -624,7 +624,7 @@ type
    {Public Functions}
    procedure ClearList;
  end;
- 
+
 {==============================================================================}
 {Ultibo Class types (String Lists)}
 type
@@ -645,7 +645,7 @@ type
   property Data:TObject read FData write FData;
   property Hash:LongWord read FHash;
  end;
- 
+
 type
  {TLinkedStringList - A List of TStringObjects with automatic Prev/Next Links}
  {Mostly identical methods to TStringList with addition of First/Last/Next/Prev}
@@ -701,7 +701,7 @@ type
   property OnChange:TNotifyEvent read FOnChange write FOnChange;
   property OnChanging:TNotifyEvent read FOnChanging write FOnChanging;
  end;
- 
+
 type
  {TStringBlock - Block object for TLinkedStringListEx}
  TStringBlock = class(TListObject)
@@ -716,7 +716,7 @@ type
   Count:LongWord;    {Current Items in this Block}
   Capacity:LongWord; {Total Capacity of this Block}
 end;
- 
+
 type
  {TStringObjectEx - A TStringObject for use with StringListEx}
  TStringObjectEx = class(TStringObject)
@@ -727,7 +727,7 @@ type
   {}
   property Block:TStringBlock read FBlock write FBlock;
 end;
- 
+
 type
  {TLinkedStringListEx - A TLinkedStringList with block list for entry Indexing}
  TLinkedStringListEx = class(TLinkedStringList)
@@ -767,7 +767,7 @@ type
   function IndexOf(const S:String):Integer; override;
   procedure Insert(Index:Integer;const S:String); override;
 end;
- 
+
 {==============================================================================}
 {Ultibo Class types (Hash String Lists)}
 type
@@ -790,7 +790,7 @@ type
   property KeyPrev:THashStringObject read FKeyPrev write FKeyPrev;
   property KeyNext:THashStringObject read FKeyNext write FKeyNext;
  end;
- 
+
  {THashLinkedStringList - A List of TStringObjects with automatic hash buckets}
  THashLinkedStringList = class(TLinkedStringListEx)
   constructor Create(AKeyBits:Byte);
@@ -816,7 +816,7 @@ type
   function IndexOf(const S:String):Integer; override;
   procedure Insert(Index:Integer;const S:String); override;
  end;
- 
+
 {==============================================================================}
 {Ultibo Class types (Integer Lists)}
 type
@@ -840,7 +840,7 @@ type
   function IndexOf(AValue:Integer):Integer;
   procedure Clear;
 end;
- 
+
 {==============================================================================}
 {Ultibo Class types (Date Time Lists)}
 type
@@ -864,7 +864,7 @@ type
   function IndexOf(AValue:TDateTime):Integer;
   procedure Clear;
 end;
- 
+
 {==============================================================================}
 {Ultibo Class types (Memory Streams)}
 type
@@ -879,7 +879,7 @@ type
   Size:LongWord;     {Size of Allocated Memory Block}
   Start:LongWord;    {Start of Allocated Memory Block in the Stream}
 end;
- 
+
 type
  {TMemoryStreamEx - A memory stream which does not Realloc on expand}
  TMemoryStreamEx = class(TStream)
@@ -914,10 +914,10 @@ type
   procedure LoadFromFile(const AFileName:String);
   procedure Clear;
 end;
- 
+
 {==============================================================================}
 {Ultibo Class types (64bit Streams)}
-{Note: No 64 bit TMemoryStreamEx because Pointers are currently only 32 bit} 
+{Note: No 64 bit TMemoryStreamEx because Pointers are currently only 32 bit}
 type
  {TStreamEx - A 64bit capable Stream class}
  TStreamEx = class(TStream)
@@ -935,7 +935,7 @@ type
   property SizeEx:Int64 read GetSizeEx write SetSizeEx;
   function SeekEx(const Offset:Int64;Origin:Word):Int64; virtual; abstract;
 end;
- 
+
 type
  {THandleStreamEx - A 64bit capable Handle Stream class}
  THandleStreamEx = class(TStreamEx)
@@ -955,7 +955,7 @@ type
   function SeekEx(const Offset:Int64;Origin:Word):Int64; override;
   property Handle:THandle read FHandle;
 end;
- 
+
 type
  {TFileStreamEx - A 64bit capable File Stream class}
  TFileStreamEx = class(THandleStreamEx)
@@ -986,7 +986,7 @@ type
   property Data:TObject read FData write FData;
   property Hash:LongWord read FHash;
  end;
- 
+
 type
  {TStringListEx - A String List class that does not use realloc to grow}
  {Mostly identical methods to TStringList with addition of block list}
@@ -1046,7 +1046,7 @@ type
   property OnChange:TNotifyEvent read FOnChange write FOnChange;
   property OnChanging:TNotifyEvent read FOnChanging write FOnChanging;
  end;
- 
+
 {==============================================================================}
 {Ultibo Class Variables}
 {var}
@@ -1055,7 +1055,7 @@ type
 {Initialization Functions}
 
 {==============================================================================}
-{Helper Functions} 
+{Helper Functions}
 
 {==============================================================================}
 {==============================================================================}
@@ -1065,11 +1065,11 @@ implementation
 {==============================================================================}
 {==============================================================================}
 
-procedure TimerExEvent(TimerEx:TTimerEx); 
+procedure TimerExEvent(TimerEx:TTimerEx);
 begin
  {}
  if TimerEx = nil then Exit;
- 
+
  TimerEx.Timer;
 end;
 
@@ -1140,7 +1140,7 @@ end;
 
 {==============================================================================}
 
-destructor TTimerEx.Destroy; 
+destructor TTimerEx.Destroy;
 begin
  {}
  if FEnabled then StopTimer;
@@ -1157,44 +1157,44 @@ begin
    if Value then
     begin
      StartTimer;
-    end  
+    end
    else
     begin
      StopTimer;
     end;
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-procedure TTimerEx.Timer; 
+procedure TTimerEx.Timer;
 begin
  {}
  {Check enabled in case the event fires once more after being set to false}
  if FEnabled and Assigned(FOnTimer) then
   begin
    FOnTimer(Self);
-  end; 
+  end;
 end;
 
 {==============================================================================}
 
-procedure TTimerEx.StartTimer; 
+procedure TTimerEx.StartTimer;
 var
  Flags:LongWord;
 begin
  {}
  if FEnabled then Exit;
- 
+
  FEnabled:=True;
- 
+
  {Check Interval}
  if FInterval < 1 then FInterval:=1000;
- 
+
  {Get Flags}
  Flags:=TIMER_FLAG_RESCHEDULE; {Rescheduled Automatically}
  if FWorker then Flags:=Flags or TIMER_FLAG_WORKER;
- 
+
  {Create Timer}
  FTimerHandle:=TimerCreateEx(FInterval,TIMER_STATE_ENABLED,Flags,TTimerEvent(TimerExEvent),Self);
  if FTimerHandle = INVALID_HANDLE_VALUE then
@@ -1205,7 +1205,7 @@ end;
 
 {==============================================================================}
 
-procedure TTimerEx.StopTimer; 
+procedure TTimerEx.StopTimer;
 begin
  {}
  if not FEnabled then Exit;
@@ -1214,7 +1214,7 @@ begin
 
  {Destroy Timer}
  TimerDestroy(FTimerHandle);
- 
+
  FTimerHandle:=INVALID_HANDLE_VALUE;
 end;
 
@@ -1369,9 +1369,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  Prev:=FLast;
  if Prev = nil then
   begin
@@ -1389,7 +1389,7 @@ begin
    AValue.Next:=nil;
    FLast:=AValue;
   end;
-  
+
  Result:=True;
 end;
 
@@ -1403,9 +1403,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  if APrev = nil then
   begin
    if FLast <> nil then
@@ -1446,7 +1446,7 @@ begin
      FLast:=AValue;
     end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -1459,9 +1459,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  if AValue.Prev <> nil then
   begin
    {Not First Object}
@@ -1499,7 +1499,7 @@ begin
   end;
  AValue.Prev:=nil;
  AValue.Next:=nil;
- 
+
  Result:=True;
 end;
 
@@ -1510,13 +1510,13 @@ function TLinkedList.Add(AValue:TListObject):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  if Link(AValue) then
   begin
    Inc(FCount);
-   
+
    Result:=True;
   end;
 end;
@@ -1528,13 +1528,13 @@ function TLinkedList.Remove(AValue:TListObject):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  if Unlink(AValue) then
   begin
    Dec(FCount);
-   
+
    Result:=True;
   end;
 end;
@@ -1545,13 +1545,13 @@ function TLinkedList.Insert(APrev,AValue:TListObject):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  if LinkEx(APrev,AValue) then
   begin
    Inc(FCount);
-   
+
    Result:=True;
   end;
 end;
@@ -1601,7 +1601,7 @@ begin
     Next:=Current.Next;
     Current.Free;
    end;
-   
+
   {Reset Defaults}
   Clear;
  except
@@ -1653,7 +1653,7 @@ begin
      Next:=Current.Next;
      Current.Free;
     end;
-    
+
    {Reset Defaults}
    Clear;
   finally
@@ -1716,9 +1716,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  if AParent <> nil then
   begin
    {Entry with Parent, add to Parents Chain}
@@ -1763,7 +1763,7 @@ begin
      FLast:=AValue;
     end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -1777,9 +1777,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  if AParent <> nil then
   begin
    {Entry with Parent, add to Parents Chain}
@@ -1871,7 +1871,7 @@ begin
       end;
     end;
   end;
- 
+
  Result:=True;
 end;
 
@@ -1883,9 +1883,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  if AValue.Parent <> nil then
   begin
    {Unlink Entry from current Parent}
@@ -1962,11 +1962,11 @@ begin
       end;
     end;
   end;
-  
+
  AValue.Parent:=nil;
  AValue.Prev:=nil;
  AValue.Next:=nil;
- 
+
  Result:=True;
 end;
 
@@ -1977,13 +1977,13 @@ function TLinkedTree.Add(AValue,AParent:TTreeObject):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  if Link(AValue,AParent) then
   begin
    Inc(FCount);
-   
+
    Result:=True;
   end;
 end;
@@ -1995,13 +1995,13 @@ function TLinkedTree.Remove(AValue:TTreeObject):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  if Unlink(AValue) then
   begin
    Dec(FCount);
-   
+
    Result:=True;
   end;
 end;
@@ -2012,13 +2012,13 @@ function TLinkedTree.Insert(APrev,AValue,AParent:TTreeObject):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  if LinkEx(APrev,AValue,AParent) then
   begin
    Inc(FCount);
-   
+
    Result:=True;
   end;
 end;
@@ -2029,7 +2029,7 @@ procedure TLinkedTree.Move(AValue,AParent:TTreeObject);
 begin
  {}
  if AValue = nil then Exit;
- 
+
  if Unlink(AValue) then
   begin
    Link(AValue,AParent);
@@ -2107,7 +2107,7 @@ var
 begin
  {}
  if AParent = nil then Exit;
- 
+
  {Clear Objects}
  Next:=AParent.FirstChild;
  while Next <> nil do
@@ -2137,7 +2137,7 @@ begin
     ClearListItems(Current);
     Current.Free;
    end;
-   
+
   {Reset Defaults}
   Clear;
  except
@@ -2195,7 +2195,7 @@ begin
  {}
  if AOrder < 5 then Exit;
  if AOrder = FOrder then Exit;
- 
+
  FOrder:=AOrder;
  FMedian:=(FOrder div 2);
  if (FOrder mod 2) > 0 then Inc(FMedian);
@@ -5934,7 +5934,7 @@ begin
      begin
       {Return Block}
       Result:=Last;
-      
+
       {Set Recent}
       FRecent:=Result;
      end
@@ -5949,10 +5949,10 @@ begin
       Result.Capacity:=stringListDelta shr PtrShift; {Divide by SizeOf(Pointer)}
       FBlocks.Add(Result);
       Inc(FCapacity,Result.Capacity);
-      
+
       {Set Recent}
       FRecent:=Result;
-      
+
       {Update Blocks}
       UpdateBlocks(Result);
      end;
@@ -5961,13 +5961,13 @@ begin
    begin
     {Get Length}
     Length:=(Block.Count shr 1); {Divide by 2}
-    
+
     {Get Offset}
     Offset:=(Block.Count - Length) shl PtrShift; {Multiply by SizeOf(Pointer)}
-    
+
     {Update Block}
     Dec(Block.Count,Length);
-    
+
     {Add Block}
     Result:=TStringBlock.Create;
     Result.Data:=GetMem(stringListDelta);
@@ -5977,16 +5977,16 @@ begin
     Result.Capacity:=stringListDelta shr PtrShift; {Divide by SizeOf(Pointer)}
     FBlocks.Insert(Block,Result);
     Inc(FCapacity,Result.Capacity);
-    
+
     {Copy Data}
     System.Move(Pointer(PtrUInt(Block.Data) + Offset)^,Pointer(PtrUInt(Result.Data))^,Length shl PtrShift);
-    
+
     {Set Recent}
     FRecent:=Result;
-    
+
     {Update Blocks}
     UpdateBlocks(Block);
-    
+
     {Check Index}
     if LongWord(Index) < (Block.Start + Block.Count) then Result:=Block;
    end;
@@ -6008,15 +6008,15 @@ begin
 
   {Get Previous}
   Prev:=TStringBlock(Block.Prev);
-  
+
   {Check Recent}
   if FRecent = Block then FRecent:=nil;
-  
+
   {Delete Block}
   Dec(FCapacity,Block.Capacity);
   FBlocks.Remove(Block);
   Block.Free;
-  
+
   {Update Blocks}
   Result:=UpdateBlocks(Prev);
  except
@@ -7046,10 +7046,10 @@ begin
    {Make Smaller}
    {Get Previous}
    Prev:=TMemoryBlock(FBlocks.Last);
-   
+
    {Get Difference}
    Difference:=FCapacity - ACapacity;
-   
+
    {Remove Block}
    while Prev <> nil do
     begin
@@ -7065,7 +7065,7 @@ begin
       begin
        Break;
       end;
-      
+
      Prev:=TMemoryBlock(FBlocks.Last);
     end;
   end
@@ -7074,10 +7074,10 @@ begin
    {Make Larger}
    {Get Previous}
    Prev:=TMemoryBlock(FBlocks.Last);
-   
+
    {Get Difference}
    Difference:=ACapacity - FCapacity;
-   
+
    {Create Block}
    Block:=TMemoryBlock.Create;
    Block.Memory:=GetMem(Difference);
@@ -7510,7 +7510,7 @@ begin
      begin
       {Return Block}
       Result:=Last;
-      
+
       {Set Recent}
       FRecent:=Result;
      end
@@ -7525,10 +7525,10 @@ begin
       Result.Capacity:=stringListDelta shr PtrShift; {Divide by SizeOf(Pointer)}
       FBlocks.Add(Result);
       Inc(FCapacity,Result.Capacity);
-      
+
       {Set Recent}
       FRecent:=Result;
-      
+
       {Update Blocks}
       UpdateBlocks(Result);
      end;
@@ -7537,13 +7537,13 @@ begin
    begin
     {Get Length}
     Length:=(Block.Count shr 1);
-    
+
     {Get Offset}
     Offset:=(Block.Count - Length) shl PtrShift; {Multiply by SizeOf(Pointer)}
-    
+
     {Update Block}
     Dec(Block.Count,Length);
-    
+
     {Add Block}
     Result:=TStringBlock.Create;
     Result.Data:=GetMem(stringListDelta);
@@ -7553,16 +7553,16 @@ begin
     Result.Capacity:=stringListDelta shr PtrShift; {Divide by SizeOf(Pointer)}
     FBlocks.Insert(Block,Result);
     Inc(FCapacity,Result.Capacity);
-    
+
     {Copy Data}
     System.Move(Pointer(PtrUInt(Block.Data) + Offset)^,Pointer(PtrUInt(Result.Data))^,Length shl PtrShift);
-    
+
     {Set Recent}
     FRecent:=Result;
-    
+
     {Update Blocks}
     UpdateBlocks(Block);
-    
+
     {Check Index}
     if LongWord(Index) < (Block.Start + Block.Count) then Result:=Block;
    end;
@@ -8044,7 +8044,7 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{Helper Functions} 
+{Helper Functions}
 
 {==============================================================================}
 {==============================================================================}
@@ -8053,7 +8053,7 @@ initialization
  {Nothing}
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

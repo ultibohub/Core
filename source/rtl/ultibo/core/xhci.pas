@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -55,9 +55,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,PCI,USB;
 //const
  {XHCI specific constants}
 
-//To Do //A generic XHCI unit 
-                           
-              
+//To Do //A generic XHCI unit
+
+
 {==============================================================================}
 //type
  {XHCI specific types}
@@ -69,7 +69,7 @@ var
  XHCIInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure XHCIInit;
@@ -91,9 +91,9 @@ begin
  {}
  {Check Initialized}
  if XHCIInitialized then Exit;
- 
+
  //To Do
- 
+
  XHCIInitialized:=True;
 end;
 
@@ -109,7 +109,7 @@ initialization
  XHCIInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

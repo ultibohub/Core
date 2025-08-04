@@ -18,13 +18,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -59,9 +59,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,FileSystem,Sy
 //const
  {CIFS specific constants}
 
-//To Do //A generic CIFS unit 
-                           
-              
+//To Do //A generic CIFS unit
+
+
 {==============================================================================}
 //type
  {CIFS specific types}
@@ -73,7 +73,7 @@ var
  CIFSInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure CIFSInit;
@@ -95,9 +95,9 @@ begin
  {}
  {Check Initialized}
  if CIFSInitialized then Exit;
- 
+
  //To Do
- 
+
  CIFSInitialized:=True;
 end;
 
@@ -113,7 +113,7 @@ initialization
  CIFSInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

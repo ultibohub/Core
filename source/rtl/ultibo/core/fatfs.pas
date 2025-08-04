@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
- 
+
 FAT FileSystem
 ==============
 
@@ -77,7 +77,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,FileSystem,SysUtils,C
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-  
+
 {==============================================================================}
 const
  {FATFS specific constants}
@@ -191,7 +191,7 @@ const
  lfnAttributeMask = (faReadOnly or faHidden or faSysFile or faVolumeID); {Not Used - See faLongName}
 
  fatBootSignature = $29;
- 
+
  fat32LeadSignature   = $41615252; {RRaA}
  fat32StructSignature = $61417272; {rrAa}
  fat32TrailSignature  = $AA550000; {Standard Boot Sector signature}
@@ -201,7 +201,7 @@ const
  fatBaseChars:set of Byte = [$00..$19]; {0..31} {Dont include $20 as that is checked separately}
  fatInvalidChars:set of Byte = [$22,$2A,$2B,$2C,$2F,$3A,$3B,$3C,$3D,$3E,$3F,$5B,$5C,$5D,$7C]; {34,42,43,44,47,58,59,60,61,62,63,91,92,93,124} {Dont include $2E as that is checked separately}
  fatLowercaseChars:set of Byte = [$61..$7A]; {97..122} {These dont account for the code page}
-              
+
 {==============================================================================}
 type
  {FATFS specific types}
@@ -284,7 +284,7 @@ type
   Reserved2:array[0..11] of Byte;  {Always 0}
   TrailSignature:LongWord;         {Signature AA550000h}
  end;
- 
+
 {==============================================================================}
 type
  {FATFS specific classes}
@@ -296,10 +296,10 @@ type
    FLongNames:Boolean;
    FOemConvert:Boolean;
    FNumericTail:Boolean;
-   
+
    FInfoSectorEnable:Boolean;
    FInfoImmediateUpdate:Boolean;
-   
+
    {Private Methods}
    function CheckLBA:Boolean;
    function CheckFAT32:Boolean;
@@ -315,7 +315,7 @@ type
    property LongNames:Boolean read FLongNames write FLongNames;
    property OemConvert:Boolean read FOemConvert write FOemConvert;
    property NumericTail:Boolean read FNumericTail write FNumericTail;
-   
+
    property InfoSectorEnable:Boolean read FInfoSectorEnable write FInfoSectorEnable;
    property InfoImmediateUpdate:Boolean read FInfoImmediateUpdate write FInfoImmediateUpdate;
 
@@ -327,7 +327,7 @@ type
    function RecognizeVolume(AVolume:TDiskVolume):Boolean; override;
    function MountVolume(AVolume:TDiskVolume;ADrive:TDiskDrive):Boolean; override;
  end;
- 
+
  TFATPartitioner = class(TDiskPartitioner)
    constructor Create(ADriver:TFileSysDriver;ARecognizer:TRecognizer);
   private
@@ -350,7 +350,7 @@ type
    {Public Methods}
    function AcceptPartition(ADevice:TDiskDevice;APartition,AParent:TDiskPartition;APartitionId:Byte):Boolean; override;
  end;
- 
+
  TFATFormatter = class(TDiskFormatter)
   private
    {Private Variables}
@@ -397,14 +397,14 @@ type
  TFATRepairer = class(TDiskRepairer)
   private
    {Private Variables}
-   //To Do //This could make good use of a Btree to verify cluster allocation and cross link etc 
+   //To Do //This could make good use of a Btree to verify cluster allocation and cross link etc
    {Private Methods}
   public
    {Public Variables}
 
    {Public Methods}
  end;
- 
+
  TFATDiskTable = class;
  TFATDiskBlock = class;
  TFATDiskEntry = class;
@@ -476,23 +476,23 @@ type
 
    FInfoBuffer:Pointer;          {Buffer for info sector handling (Sector size)}
    FInfoLock:TMutexHandle;       {Lock for info buffer}
-   
+
    FNameBuffer:Pointer;          {Buffer for long name handling}
    FNameLock:TMutexHandle;       {Lock for name buffer}
-   
+
    FReadBuffer:Pointer;          {Buffer for partial cluster entry reads (Cluster size)}
    FReadLock:TMutexHandle;       {Lock for read buffer}
 
    FWriteBuffer:Pointer;         {Buffer for partial cluster entry writes (Cluster size)}
    FWriteLock:TMutexHandle;      {Lock for write buffer}
-   
+
    FClusterBuffer:Pointer;       {Buffer of exactly cluster size}
    FClusterLock:TMutexHandle;    {Lock for cluster buffer}
 
    {Private Methods}
    function InfoLock:Boolean;
    function InfoUnlock:Boolean;
-   
+
    function NameLock:Boolean;
    function NameUnlock:Boolean;
 
@@ -501,12 +501,12 @@ type
 
    function WriteLock:Boolean;
    function WriteUnlock:Boolean;
-   
+
    function ClusterLock:Boolean;
    function ClusterUnlock:Boolean;
-   
+
    function IsRemovable:Boolean;
-   
+
    {Flag Methods}
    function GetHardError:Boolean;
    procedure SetHardError(AValue:Boolean);
@@ -519,7 +519,7 @@ type
 
    {Sector Methods}
    function UpdateInfoSector:Boolean;
-   
+
    {Cluster Methods}
    function FillCluster(ACluster:LongWord;AValue:Byte):Boolean;
 
@@ -671,10 +671,10 @@ type
 
    function GetDriveFreeSpaceEx:Int64; override;
    function GetDriveTotalSpaceEx:Int64; override;
-   
+
    function GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; override;
  end;
- 
+
  TFATDiskTable = class(TDiskTable)  {Represents a FAT table}
   private
    {Private Variables}
@@ -723,7 +723,7 @@ type
    {FAT12/16 Root directory only}
    property StartSector:LongWord read FStartCluster write FStartCluster;
  end;
- 
+
 {==============================================================================}
 {var}
  {FATFS specific variables}
@@ -810,7 +810,7 @@ const
   (Excluded:False;Extended:False;SectorCount:1048576;PartitionId:pidFAT16HUGE;LBAType:pidFAT16LBA), {up to 512 MB, FAT16 HUGE}
    {FAT32}
   (Excluded:False;Extended:False;SectorCount:$FFFFFFFF;PartitionId:pidFAT32;LBAType:pidFAT32LBA));  {above 512 MB, FAT32}
- 
+
 var
  {Formatting Variables}
  {fat12BootJump:TBootSectorJump = ($EB,$3C,$90);}
@@ -907,7 +907,7 @@ var
   $00,$00,$00,$00,$00,$00,$00,$44,$57,$4C,$44,$52,$20,$20,$20,$20,
   $20,$20,$00,$00
  );
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure FATFSInit;
@@ -942,13 +942,13 @@ begin
  FLongNames:=True;
  FOemConvert:=True;
  FNumericTail:=True;
- 
+
  FInfoSectorEnable:=True;
  FInfoImmediateUpdate:=False;
 
  FAllowDrive:=True;
  FAllowDefault:=True;
- 
+
  FPartitioner:=TFATPartitioner.Create(FDriver,Self);
  FFormatter:=TFATFormatter.Create(FDriver,Self);
  FDefragger:=TFATDefragger.Create(FDriver,Self);
@@ -961,9 +961,9 @@ function TFATRecognizer.CheckLBA:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
- 
+
  Result:=True; //To Do //Make Configurable via GlobalConfig
 end;
 
@@ -973,9 +973,9 @@ function TFATRecognizer.CheckFAT32:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
- 
+
  Result:=True; //To Do //Make Configurable via GlobalConfig
 end;
 
@@ -985,16 +985,16 @@ function TFATRecognizer.CheckBootSector(ABootSector:PBootSector;const AStartSect
 begin
  {}
  Result:=False;
- 
+
  if ABootSector = nil then Exit;
 
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATRecognizer.CheckBootSector - StartSector = ' + IntToStr(AStartSector) + ' SectorCount = ' + IntToStr(ASectorCount));
  {$ENDIF}
- 
+
  {Check Boot Sector (Accept 0 due to some faulty devices)}
  if (ABootSector.Signature <> BOOT_SECTOR_SIGNATURE) and (ABootSector.Signature <> 0) then Exit;
- 
+
  {Check for FAT}
  if ABootSector.BootSignature = fatBootSignature then
   begin
@@ -1042,7 +1042,7 @@ begin
    if PExtBootSector(ABootSector).BPB.SectorsPerFat16 <> 0 then Exit;
    {if PExtBootSector(ABootSector).BPB.HiddenSectors <> AStartSector then Exit;} {Doesnt work for Extended or Logical}
   end;
-  
+
  Result:=True;
 end;
 
@@ -1056,7 +1056,7 @@ end;
 
 {==============================================================================}
 
-function TFATRecognizer.RecognizePartitionId(APartitionId:Byte):Boolean; 
+function TFATRecognizer.RecognizePartitionId(APartitionId:Byte):Boolean;
 begin
  {}
  Result:=False;
@@ -1068,7 +1068,7 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATRecognizer.RecognizePartitionId (PartitionId = ' + IntToStr(APartitionId) + ')');
   {$ENDIF}
-  
+
   case APartitionId of
    pidExtended:begin
      {DOS Extended Partition}
@@ -1077,49 +1077,49 @@ begin
    pidExtLBA:begin
      {DOS Extended LBA Partition}
      if not CheckLBA then Exit;
-     
+
      Result:=True;
-    end; 
+    end;
    pidFAT12:begin
      {FAT 12 Partition}
      Result:=True;
-    end; 
+    end;
    pidFAT16:begin
      {FAT 16 Partition (under 32M)}
      Result:=True;
-    end; 
+    end;
    pidFAT16HUGE:begin
      {FAT 16 Partition (over 32M)}
      Result:=True;
-    end; 
+    end;
    pidFAT32:begin
      {FAT 32 Partition}
      if not CheckFAT32 then Exit;
-     
+
      Result:=True;
     end;
    pidFAT32LBA:begin
      {FAT 32 Partition LBA}
      if not CheckLBA then Exit;
      if not CheckFAT32 then Exit;
-     
+
      Result:=True;
     end;
    pidFAT16LBA:begin
      {FAT 16 Partition LBA}
      if not CheckLBA then Exit;
-     
+
      Result:=True;
     end;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TFATRecognizer.RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; 
+function TFATRecognizer.RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean;
 begin
  {}
  Result:=False;
@@ -1129,11 +1129,11 @@ begin
   if FDriver = nil then Exit;
 
   Result:=CheckBootSector(ABootSector,AStartSector,ASectorCount);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function TFATRecognizer.RecognizePartition(APartition:TDiskPartition):Boolean;
@@ -1150,13 +1150,13 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATRecognizer.RecognizePartition (Partition = ' + APartition.Name + ')');
   {$ENDIF}
-  
+
   case APartition.PartitionId of
    pidExtended:begin
      {DOS Extended Partition}
      APartition.Extended:=True;
      APartition.Recognized:=True;
-     
+
      Result:=True;
     end;
    pidExtLBA:begin
@@ -1164,32 +1164,32 @@ begin
      if not CheckLBA then Exit;
      APartition.Extended:=True;
      APartition.Recognized:=True;
-     
+
      Result:=True;
     end;
    pidFAT12:begin
      {FAT 12 Partition}
      APartition.Recognized:=True;
-     
+
      Result:=True;
     end;
    pidFAT16:begin
      {FAT 16 Partition (under 32M)}
      APartition.Recognized:=True;
-     
+
      Result:=True;
     end;
    pidFAT16HUGE:begin
      {FAT 16 Partition (over 32M)}
      APartition.Recognized:=True;
-     
+
      Result:=True;
     end;
    pidFAT32:begin
      {FAT 32 Partition}
      if not CheckFAT32 then Exit;
      APartition.Recognized:=True;
-     
+
      Result:=True;
     end;
    pidFAT32LBA:begin
@@ -1197,20 +1197,20 @@ begin
      if not CheckLBA then Exit;
      if not CheckFAT32 then Exit;
      APartition.Recognized:=True;
-     
+
      Result:=True;
     end;
    pidFAT16LBA:begin
      {FAT 16 Partition LBA}
      if not CheckLBA then Exit;
      APartition.Recognized:=True;
-     
+
      Result:=True;
     end;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1229,11 +1229,11 @@ begin
   if AVolume = nil then Exit;
   if AVolume.Device = nil then Exit;
   if AVolume.Device.Controller = nil then Exit;
-  
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATRecognizer.RecognizeVolume (Volume = ' + AVolume.Name + ')');
   {$ENDIF}
-  
+
   if AVolume.Partition <> nil then
    begin
     {Partitioned Media}
@@ -1242,13 +1242,13 @@ begin
     {$ENDIF}
     {Check Partition Id}
     case AVolume.Partition.PartitionId of
-     pidFAT12,pidFAT16,pidFAT16HUGE,pidFAT32,pidFAT32LBA,pidFAT16LBA:begin 
+     pidFAT12,pidFAT16,pidFAT16HUGE,pidFAT32,pidFAT32LBA,pidFAT16LBA:begin
        {$IFDEF FAT_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATRecognizer.RecognizeVolume - Volume Recognized');
        {$ENDIF}
-       
+
        AVolume.Recognized:=True;
-       
+
        Result:=True;
       end;
     end;
@@ -1259,7 +1259,7 @@ begin
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATRecognizer.RecognizeVolume - Non Partitioned Media');
     {$ENDIF}
-    
+
     {Check Device Type}
     case AVolume.Device.MediaType of
      mtFLOPPY,mtREMOVABLE,mtOTHER:begin  {No FAT on CDROM/DVD}
@@ -1271,26 +1271,26 @@ begin
 
          {Init Device}
          if not AVolume.Device.DeviceInit then Exit;
-         
+
          {Init Volume}
          if not AVolume.VolumeInit then Exit;
-         
+
          {Allocate Boot Sector}
          BootSector:=GetMem(AVolume.Device.SectorSize);
-         if BootSector = nil then Exit; 
+         if BootSector = nil then Exit;
          try
           {Read Boot Sector}
           if not FDriver.Cache.DeviceRead(AVolume.Device,AVolume.StartSector,1,BootSector^) then Exit;
-       
+
           {Check Boot Sector}
           if not CheckBootSector(BootSector,AVolume.StartSector,AVolume.SectorCount) then Exit;
-          
+
           {$IFDEF FAT_DEBUG}
           if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATRecognizer.RecognizeVolume - Volume Recognized');
           {$ENDIF}
-          
+
           AVolume.Recognized:=True;
-          
+
           Result:=True;
          finally
           FreeMem(BootSector);
@@ -1302,17 +1302,17 @@ begin
          {$IFDEF FAT_DEBUG}
          if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATRecognizer.RecognizeVolume - Volume Recognized (Default)');
          {$ENDIF}
-         
+
          AVolume.Recognized:=True;
-         
+
          Result:=True;
         end;
       end;
     end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1333,7 +1333,7 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATRecognizer.MountVolume (Volume = ' + AVolume.Name + ')');
   {$ENDIF}
-  
+
   {Check Recognized}
   if not RecognizeVolume(AVolume) then Exit;
 
@@ -1349,11 +1349,11 @@ begin
   FileSystem.InfoImmediateUpdate:=FInfoImmediateUpdate;
   FileSystem.FileSystemInit;
   FileSystem.MountFileSystem;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1373,7 +1373,7 @@ function TFATPartitioner.CheckLogical(ADevice:TDiskDevice;AParent:TDiskPartition
 begin
  {}
  Result:=False;
- 
+
  if ADevice = nil then Exit;
 
  {Check Type}
@@ -1392,7 +1392,7 @@ function TFATPartitioner.CheckExtended(ADevice:TDiskDevice;AParent:TDiskPartitio
 begin
  {}
  Result:=False;
- 
+
  if ADevice = nil then Exit;
 
  {Check Type}
@@ -1416,19 +1416,19 @@ var
 begin
  {}
  Result:=pidUnused;
- 
+
  if ACount = 0 then Exit;
  if ADevice = nil then Exit;
 
  {Get LBA}
  LBA:=(ADevice.LBA and ((ADevice.PhysicalCylinders > 1024) or (ADevice.PhysicalCylinders = 0)));
- 
+
  {Check Type}
  case APartitionId of
   pidFAT12,pidFAT16,pidFAT16HUGE,pidFAT16LBA,pidFAT32,pidFAT32LBA,pidExtended,pidExtLBA:begin
     {Get Extended}
     Extended:=(APartitionId = pidExtended) or (APartitionId = pidExtLBA);
-    
+
     {Get Type}
     for Count:=0 to fatMaxPartitionType do
      begin
@@ -1438,7 +1438,7 @@ begin
          begin
           Result:=fatPartitionType[Count].PartitionId;
           if LBA then Result:=fatPartitionType[Count].LBAType;
-          
+
           {DOS only allows standard type for second level Extended}
           if (Extended) and (AParent <> nil) then Result:=fatPartitionType[Count].PartitionId;
           Exit;
@@ -1457,7 +1457,7 @@ function TFATPartitioner.InitPartition(ADevice:TDiskDevice;AParent:TDiskPartitio
 begin
  {}
  Result:=False;
- 
+
  if ACount = 0 then Exit;
  if ADevice = nil then Exit;
 
@@ -1467,7 +1467,7 @@ begin
     {Initialize Partition Record}
     Result:=FillSectors(ADevice,nil,AStart,1,FInitChar);
    end;
-  pidFAT12,pidFAT16,pidFAT16HUGE,pidFAT16LBA:begin 
+  pidFAT12,pidFAT16,pidFAT16HUGE,pidFAT16LBA:begin
     {Initialize Boot Sector}
     Result:=FillSectors(ADevice,nil,AStart,1,FInitChar);
    end;
@@ -1497,10 +1497,10 @@ begin
    begin
     {Accept Create Partition}
     if ADevice = nil then Exit;
-    
+
     {Check Device}
     if (ADevice.MediaType <> mtFIXED) and (ADevice.MediaType <> mtREMOVABLE) then Exit;
-    
+
     {Check Partition and Volume}
     if FDriver.GetPartitionByDevice(ADevice,False,FILESYS_LOCK_NONE) = nil then {Do not lock}
      begin
@@ -1510,28 +1510,28 @@ begin
         try
          {Check File System Type}
          if Volume.FileSysType <> fsUNKNOWN then Exit;
-        finally  
+        finally
          Volume.ReaderUnlock;
-        end; 
+        end;
        end;
-     end; 
-    
+     end;
+
     {Check Parent}
     if AParent <> nil then
      begin
       {Check Extended}
       if not AParent.Extended then Exit;
-      
+
       {Check First Level}
       if AParent.Partition <> nil then Exit;
      end;
-    
+
     {Check Type}
     case APartitionId of
      pidExtended,pidExtLBA:begin
        {Check Parent}
        if AParent <> nil then Exit;
-       
+
        Result:=True;
       end;
      pidFAT12,pidFAT16,pidFAT16HUGE,pidFAT32,pidFAT32LBA,pidFAT16LBA:begin
@@ -1546,7 +1546,7 @@ begin
       {Accept Delete Partition}
       {Check Children}
       if (AParent = nil) and (FDriver.GetPartitionByPartition(APartition,False,FILESYS_LOCK_NONE) <> nil) then Exit; {Do not lock}
-      
+
       Result:=True;
      end
     else if APartitionId <> APartition.PartitionId then
@@ -1554,7 +1554,7 @@ begin
       {Accept Modify Partition}
       {Check Extended}
       if APartition.Extended then Exit;
-      
+
       {Check Current Type}
       case APartition.PartitionId of
        pidFAT12,pidFAT16,pidFAT16HUGE,pidFAT32,pidFAT32LBA,pidFAT16LBA,pidHPFSNTFS:begin
@@ -1572,7 +1572,7 @@ begin
       {Accept Activate Partition}
       {Check Primary}
       if not APartition.Primary then Exit;
-      
+
       {Check Type}
       case APartitionId of
        pidFAT12,pidFAT16,pidFAT16HUGE,pidFAT32,pidFAT32LBA,pidFAT16LBA:begin
@@ -1581,9 +1581,9 @@ begin
       end;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1595,22 +1595,22 @@ function TFATFormatter.CheckDevice(AVolume:TDiskVolume;ADrive:TDiskDrive;AFloppy
 begin
  {}
  Result:=False;
- 
+
  if AVolume = nil then Exit;
  if AVolume.Device = nil then Exit;
- 
+
  case AVolume.Device.MediaType of
   mtFIXED,mtREMOVABLE,mtOTHER:begin
     if AFloppyType <> ftUNKNOWN then Exit;
     if not AVolume.Device.Writeable then Exit;
-      
+
     Result:=True;
    end;
   mtFLOPPY:begin
     //if not AVolume.Device.DeviceInit then Exit; //To Do //Do this here to allow for change of Media ?
     if AFloppyType <> AVolume.Device.FloppyType then Exit; //To Do //Need a way to allow formatting different size floppies //why not case AVolume.Device.FloppyType of ?
     if not AVolume.Device.Writeable then Exit;
-      
+
     Result:=True;
    end;
  end;
@@ -1625,7 +1625,7 @@ function TFATFormatter.CheckPartition(AVolume:TDiskVolume;ADrive:TDiskDrive;AFil
 begin
  {}
  Result:=False;
- 
+
  if AVolume = nil then Exit;
 
  {Check FileSystem}
@@ -1662,7 +1662,7 @@ var
 begin
  {}
  Result:=pidUnused;
- 
+
  if AVolume = nil then Exit;
  if AVolume.Device = nil then Exit;
  if AVolume.Partition = nil then Exit;
@@ -1697,7 +1697,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AVolume = nil then Exit;
  if AVolume.Device = nil then Exit;
 
@@ -1736,7 +1736,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if ABootSector = nil then Exit;
  if AVolume = nil then Exit;
  if AVolume.Device = nil then Exit;
@@ -1763,7 +1763,7 @@ begin
             ABootSector.BPB.NumberOfFats:=2;
             ABootSector.BPB.SectorsPerFat16:=GetSectorsPerFat(AVolume,nil,AFATType,ABootSector);
             ABootSector.BPB.MediaId:=$F8;
-            
+
             Result:=ABootSector.BPB.SectorsPerCluster;
            end;
           Break;
@@ -1787,10 +1787,10 @@ begin
             ABootSector.BPB.NumberOfFats:=2;
             ABootSector.BPB.SectorsPerFat16:=GetSectorsPerFat(AVolume,nil,AFATType,ABootSector);
             ABootSector.BPB.MediaId:=$F8;
-            
+
             Result:=ABootSector.BPB.SectorsPerCluster;
            end;
-           
+
           Break;
          end;
        end;
@@ -1813,10 +1813,10 @@ begin
             PExtBootSector(ABootSector).BPB.SectorsPerFat16:=0;
             PExtBootSector(ABootSector).BPB.SectorsPerFat32:=GetSectorsPerFat(AVolume,nil,AFATType,ABootSector);
             PExtBootSector(ABootSector).BPB.MediaId:=$F8;
-            
+
             Result:=ABootSector.BPB.SectorsPerCluster;
            end;
-           
+
           Break;
          end;
        end;
@@ -1859,22 +1859,22 @@ var
 begin
  {}
  Result:=0;
- 
+
  if ABootSector = nil then Exit;
 
  {Get SectorCount}
  SectorCount:=0;
  if ADrive <> nil then SectorCount:=ADrive.SectorCount;
  if AVolume <> nil then SectorCount:=AVolume.SectorCount;
- 
+
  {Get RootSectorCount}
  RootSectorCount:=((ABootSector.BPB.RootEntryCount * fatEntrySize) + (ABootSector.BPB.BytesPerSector - 1)) div ABootSector.BPB.BytesPerSector;
- 
+
  {Get SectorsPerFat}
  WorkValue1:=SectorCount - (ABootSector.BPB.ReservedSectors + RootSectorCount);
  WorkValue2:=(256 * ABootSector.BPB.SectorsPerCluster) + ABootSector.BPB.NumberOfFats;
  if AFATType = ftFAT32 then WorkValue2:=(WorkValue2 div 2);
- 
+
  Result:=(WorkValue1 + (WorkValue2 - 1)) div WorkValue2;
 end;
 
@@ -1894,7 +1894,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABootSector = nil then Exit;
 
  {Get Values}
@@ -1904,15 +1904,15 @@ begin
  {Get DriveNumber}
  DriveNumber:=$FF; {previously $00;}
  if (AVolume.Device.MediaType = mtFIXED) or (AVolume.Device.MediaType = mtREMOVABLE) then DriveNumber:=AVolume.Device.DeviceNo;
- 
+
  {Get Heads and Sectors}
  NumberOfHeads:=AVolume.Device.LogicalHeads;
  SectorsPerTrack:=AVolume.Device.LogicalSectors;
- 
+
  {Get HiddenSectors}
  HiddenSectors:=0;
  if AVolume.Partition <> nil then HiddenSectors:=AVolume.Partition.SectorOffset;
- 
+
  {Get TotalSectors}
  TotalSectors16:=0;
  TotalSectors32:=0;
@@ -1925,7 +1925,7 @@ begin
     {Get System Name}
     SystemName:=fatNames[fatFAT12];
     if AFATType = ftFAT16 then SystemName:=fatNames[fatFAT16];
-    
+
     {Create BootSector}
     ABootSector.BootJump:=fat16BootJump;
     FillChar(ABootSector.OEMName[0],8,fatEntryPadding);
@@ -1952,13 +1952,13 @@ begin
     System.Move(SystemName[1],ABootSector.SystemName[0],Min(Length(SystemName),8));
     ABootSector.BootCode:=fat16BootCode;
     ABootSector.Signature:=BOOT_SECTOR_SIGNATURE;
-    
+
     Result:=True;
    end;
   ftFAT32:begin
     {Get System Name}
     SystemName:=fatNames[fatFAT32];
-    
+
     {Create BootSector}
     PExtBootSector(ABootSector).BootJump:=fat32BootJump;
     FillChar(PExtBootSector(ABootSector).OEMName[0],8,fatEntryPadding);
@@ -1992,7 +1992,7 @@ begin
     System.Move(SystemName[1],PExtBootSector(ABootSector).SystemName[0],Min(Length(SystemName),8));
     PExtBootSector(ABootSector).BootCode:=fat32BootCode;
     PExtBootSector(ABootSector).Signature:=BOOT_SECTOR_SIGNATURE;
-    
+
     Result:=True;
    end;
  end;
@@ -2006,7 +2006,7 @@ function TFATFormatter.WriteBootSector(AVolume:TDiskVolume;ADrive:TDiskDrive;AFA
 begin
  {}
  Result:=False;
- 
+
  if ABootSector = nil then Exit;
 
  {Check Type}
@@ -2014,7 +2014,7 @@ begin
   ftFAT12,ftFAT16:begin
     {Write ReservedSectors}
     if not FillSectors(AVolume,ADrive,0,ABootSector.BPB.ReservedSectors,0) then Exit;
-    
+
     {Write BootSector}
     if not WriteSectors(AVolume,ADrive,0,1,ABootSector^) then Exit;
     Result:=True;
@@ -2022,10 +2022,10 @@ begin
   ftFAT32:begin
     {Write ReservedSectors}
     if not FillSectors(AVolume,ADrive,0,PExtBootSector(ABootSector).BPB.ReservedSectors,0) then Exit;
-    
+
     {Write BootSector}
     if not WriteSectors(AVolume,ADrive,0,1,ABootSector^) then Exit;
-    
+
     {Write BootBackup}
     if not WriteSectors(AVolume,ADrive,PExtBootSector(ABootSector).BPB.BackupBootSector,1,ABootSector^) then Exit;
     Result:=True;
@@ -2048,7 +2048,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABootSector = nil then Exit;
 
  {Check Type}
@@ -2059,7 +2059,7 @@ begin
     NumberOfFats:=ABootSector.BPB.NumberOfFats;
     SectorsPerFat:=ABootSector.BPB.SectorsPerFat16;
     ReservedSectors:=ABootSector.BPB.ReservedSectors;
-    
+
     {Allocate Buffer}
     Buffer:=GetMem(SectorSize);
     if Buffer = nil then Exit;
@@ -2068,10 +2068,10 @@ begin
      for Count:=0 to NumberOfFats - 1 do
       begin
        if not FillSectors(AVolume,ADrive,ReservedSectors + (SectorsPerFat * Count),SectorsPerFat,0) then Exit;
-       
+
        {Read First Sector}
        if not ReadSectors(AVolume,ADrive,ReservedSectors + (SectorsPerFat * Count),1,Buffer^) then Exit;
-       
+
        {Set Default Entries} {2 Reserved Clusters}
        case AFATType of
         ftFAT12:begin
@@ -2081,11 +2081,11 @@ begin
           LongWord(Pointer(PtrUInt(Buffer) + 0)^):=($FFFFFF00 or ABootSector.BPB.MediaId);
          end;
        end;
-       
+
        {Write First Sector}
        if not WriteSectors(AVolume,ADrive,ReservedSectors + (SectorsPerFat * Count),1,Buffer^) then Exit;
       end;
-     
+
      Result:=True;
     finally
      FreeMem(Buffer);
@@ -2097,7 +2097,7 @@ begin
     NumberOfFats:=PExtBootSector(ABootSector).BPB.NumberOfFats;
     SectorsPerFat:=PExtBootSector(ABootSector).BPB.SectorsPerFat32;
     ReservedSectors:=PExtBootSector(ABootSector).BPB.ReservedSectors;
-    
+
     {Allocate Buffer}
     Buffer:=GetMem(SectorSize);
     if Buffer = nil then Exit;
@@ -2106,19 +2106,19 @@ begin
      for Count:=0 to NumberOfFats - 1 do
       begin
        if not FillSectors(AVolume,ADrive,ReservedSectors + (SectorsPerFat * Count),SectorsPerFat,0) then Exit;
-       
+
        {Read First Sector}
        if not ReadSectors(AVolume,ADrive,ReservedSectors + (SectorsPerFat * Count),1,Buffer^) then Exit;
-       
+
        {Set Default Entries} {2 Reserved Clusters and 1 Root Cluster}
        LongWord(Pointer(PtrUInt(Buffer) + 0)^):=($0FFFFF00 or PExtBootSector(ABootSector).BPB.MediaId);
        LongWord(Pointer(PtrUInt(Buffer) + 4)^):=($0FFFFFFF);
        LongWord(Pointer(PtrUInt(Buffer) + 8)^):=(fat32EndOfCluster);
-       
+
        {Write First Sector}
        if not WriteSectors(AVolume,ADrive,ReservedSectors + (SectorsPerFat * Count),1,Buffer^) then Exit;
       end;
-     
+
      Result:=True;
     finally
      FreeMem(Buffer);
@@ -2145,7 +2145,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABootSector = nil then Exit;
 
  {Check Type}
@@ -2157,16 +2157,16 @@ begin
     SectorsPerFat:=ABootSector.BPB.SectorsPerFat16;
     RootEntryCount:=ABootSector.BPB.RootEntryCount;
     ReservedSectors:=ABootSector.BPB.ReservedSectors;
-    
+
     {Get RootSectorCount}
     RootSectorCount:=((RootEntryCount * fatEntrySize) + SectorSize - 1) div SectorSize;
-    
+
     {Get RootStartSector}
     RootStartSector:=(ReservedSectors + (SectorsPerFat * NumberOfFats));
-    
+
     {Write RootDirectory}
     if not FillSectors(AVolume,ADrive,RootStartSector,RootSectorCount,0) then Exit;
-    
+
     Result:=True;
    end;
   ftFAT32:begin
@@ -2175,13 +2175,13 @@ begin
     SectorsPerFat:=PExtBootSector(ABootSector).BPB.SectorsPerFat32;
     ReservedSectors:=PExtBootSector(ABootSector).BPB.ReservedSectors;
     SectorsPerCluster:=PExtBootSector(ABootSector).BPB.SectorsPerCluster;
-    
+
     {Get DataStartSector}
     DataStartSector:=(ReservedSectors + (SectorsPerFat * NumberOfFats));
-    
+
     {Write RootCluster}
     if not FillSectors(AVolume,ADrive,DataStartSector,SectorsPerCluster,0) then Exit;
-    
+
     Result:=True;
    end;
  end;
@@ -2203,7 +2203,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABootSector = nil then Exit;
  if AInfoSector = nil then Exit;
 
@@ -2211,7 +2211,7 @@ begin
  SectorCount:=0;
  if ADrive <> nil then SectorCount:=ADrive.SectorCount;
  if AVolume <> nil then SectorCount:=AVolume.SectorCount;
- 
+
  {Check Type}
  case AFATType of
   ftFAT12,ftFAT16:begin
@@ -2223,13 +2223,13 @@ begin
     SectorsPerFat:=PExtBootSector(ABootSector).BPB.SectorsPerFat32;
     ReservedSectors:=PExtBootSector(ABootSector).BPB.ReservedSectors;
     SectorsPerCluster:=PExtBootSector(ABootSector).BPB.SectorsPerCluster;
-    
+
     {Get DataStartSector}
     DataStartSector:=(ReservedSectors + (SectorsPerFat * NumberOfFats));
-    
+
     {Get DataClusterCount}
     DataClusterCount:=((SectorCount - DataStartSector) div SectorsPerCluster);
-    
+
     {Create InfoSector}
     AInfoSector.LeadSignature:=fat32LeadSignature;
     {AInfoSector.Reserved1}
@@ -2238,7 +2238,7 @@ begin
     AInfoSector.LastFreeCluster:=fatUnknownCluster;
     {AInfoSector.Reserved2}
     AInfoSector.TrailSignature:=fat32TrailSignature;
-    
+
     Result:=True;
    end;
  end;
@@ -2252,7 +2252,7 @@ function TFATFormatter.WriteInfoSector(AVolume:TDiskVolume;ADrive:TDiskDrive;AFA
 begin
  {}
  Result:=False;
- 
+
  if ABootSector = nil then Exit;
  if AInfoSector = nil then Exit;
 
@@ -2264,10 +2264,10 @@ begin
   ftFAT32:begin
     {Write InfoSector}
     if not WriteSectors(AVolume,ADrive,PExtBootSector(ABootSector).BPB.FileSysInfoSector,1,AInfoSector^) then Exit;
-    
+
     {Write InfoBackup}
     if not WriteSectors(AVolume,ADrive,PExtBootSector(ABootSector).BPB.BackupBootSector + PExtBootSector(ABootSector).BPB.FileSysInfoSector,1,AInfoSector^) then Exit;
-    
+
     Result:=True;
    end;
  end;
@@ -2292,17 +2292,17 @@ begin
   {Check Volume}
   if AVolume.SectorCount = 0 then Exit;
   if AVolume.SectorSize <> MIN_SECTOR_SIZE then Exit;
-  
+
   {Check Device}
   if not CheckDevice(AVolume,nil,AFloppyType) then Exit;
-  
+
   {Check Partition}
   if not CheckPartition(AVolume,nil,AFileSysType) then Exit;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2330,7 +2330,7 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFormatter.FormatVolume (Name= ' + AVolume.Name + ')');
   {$ENDIF}
-  
+
   {Check Accepted}
   if not AcceptVolume(AVolume,AFloppyType,AFileSysType) then Exit;
 
@@ -2340,10 +2340,10 @@ begin
   if Drive <> nil then
    begin
     DriveNo:=Drive.DriveNo;
-    
+
     {Unlock Drive}
     Drive.ReaderUnlock;
-   end;  
+   end;
 
   {Dismount Volume}
   AVolume.DismountVolume;
@@ -2353,31 +2353,31 @@ begin
   if BootSector = nil then Exit;
   try
    FillChar(BootSector^,AVolume.SectorSize,0);
-   
+
    SectorsPerCluster:=GetSectorsPerCluster(AVolume,nil,AFloppyType,AFileSysType,BootSector,FATType);
    if SectorsPerCluster = 0 then Exit;
-   
+
    {Check FAT Type}
    case FATType of
     ftFAT12,ftFAT16:begin
       {Update Partition}
       if not UpdatePartitionId(AVolume,nil,FATType) then Exit;
-      
+
       {Create Boot Sector}
       if not CreateBootSector(AVolume,nil,FATType,BootSector) then Exit;
-      
+
       {Write Boot Sector}
       if not WriteBootSector(AVolume,nil,FATType,BootSector) then Exit;
-      
+
       {Write Fat Table}
       if not WriteFatTable(AVolume,nil,FATType,BootSector) then Exit;
-      
+
       {Write Root Directory}
       if not WriteRootDirectory(AVolume,nil,FATType,BootSector) then Exit;
-      
+
       {Mount Volume}
       if not AVolume.MountVolume(DriveNo) then Exit;
-      
+
       Result:=True;
      end;
     ftFAT32:begin
@@ -2386,31 +2386,31 @@ begin
       if InfoSector = nil then Exit;
       try
        FillChar(InfoSector^,AVolume.SectorSize,0);
-       
+
        {Update Partition}
        if not UpdatePartitionId(AVolume,nil,FATType) then Exit;
-       
+
        {Create Boot Sector}
        if not CreateBootSector(AVolume,nil,FATType,BootSector) then Exit;
-       
+
        {Write Boot Sector}
        if not WriteBootSector(AVolume,nil,FATType,BootSector) then Exit;
-       
+
        {Write Fat Table}
        if not WriteFatTable(AVolume,nil,FATType,BootSector) then Exit;
-       
+
        {Write Root Directory}
        if not WriteRootDirectory(AVolume,nil,FATType,BootSector) then Exit;
-       
+
        {Create Info Sector}
        if not CreateInfoSector(AVolume,nil,FATType,BootSector,InfoSector) then Exit;
-       
+
        {Write Info Sector}
        if not WriteInfoSector(AVolume,nil,FATType,BootSector,InfoSector) then Exit;
-       
+
        {Mount Volume}
        if not AVolume.MountVolume(DriveNo) then Exit;
-       
+
        Result:=True;
       finally
        FreeMem(InfoSector);
@@ -2420,9 +2420,9 @@ begin
   finally
    FreeMem(BootSector);
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2473,19 +2473,19 @@ begin
 
  FLastFreeCluster:=fatUnknownCluster;
  FFreeClusterCount:=fatUnknownCluster;
- 
+
  FInfoBuffer:=nil;
  FInfoLock:=MutexCreate;
- 
+
  FNameBuffer:=nil;
  FNameLock:=MutexCreate;
- 
+
  FReadBuffer:=nil;
  FReadLock:=MutexCreate;
 
  FWriteBuffer:=nil;
  FWriteLock:=MutexCreate;
- 
+
  FClusterBuffer:=nil;
  FClusterLock:=MutexCreate;
 end;
@@ -2508,18 +2508,18 @@ begin
   if FReadBuffer <> nil then FreeMem(FReadBuffer);
   FReadBuffer:=nil;
   MutexDestroy(FReadLock);
-  
+
   if FNameBuffer <> nil then FreeMem(FNameBuffer);
   FNameBuffer:=nil;
   MutexDestroy(FNameLock);
-  
+
   if FInfoBuffer <> nil then FreeMem(FInfoBuffer);
   FInfoBuffer:=nil;
   MutexDestroy(FInfoLock);
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2608,11 +2608,11 @@ function TFATFileSystem.IsRemovable:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
- 
+
  if FVolume = nil then Exit;
- 
+
  Result:=FVolume.Removable;
 end;
 
@@ -2630,9 +2630,9 @@ begin
 
   {Get Hard Error}
   Result:=not((FVolumeFlags and FHardError) = FHardError);
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2654,9 +2654,9 @@ begin
    begin
     FVolumeFlags:=(FVolumeFlags or FHardError); {Turn On}
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2673,9 +2673,9 @@ begin
 
   {Get Clean Shutdown}
   Result:=((FVolumeFlags and FCleanShutdown) = FCleanShutdown);
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2697,9 +2697,9 @@ begin
    begin
     FVolumeFlags:=(FVolumeFlags and not(FCleanShutdown)); {Turn Off}
    end;
- finally  
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2709,16 +2709,16 @@ function TFATFileSystem.GetVolumeFlags:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
  try
   if FFATType = ftNONE then Exit;
 
   //To Do //
-  
- finally  
+
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2734,10 +2734,10 @@ begin
   if FFATType = ftNONE then Exit;
 
   //To Do //
-  
- finally  
+
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2747,13 +2747,13 @@ function TFATFileSystem.UpdateInfoSector:Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Buffer}
  if FInfoBuffer = nil then Exit;
- 
+
  {Check ReadOnly}
  if FReadOnly then Exit;
- 
+
  {Check Type}
  case FFATType of
   ftFAT12,ftFAT16:begin
@@ -2770,25 +2770,25 @@ begin
        {$IFDEF FAT_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.UpdateInfoSector - Reading Info Sector');
        {$ENDIF}
-       
+
        {Read Info Sector}
        if not ReadSectors(FInfoSector,1,FInfoBuffer^) then Exit;
       end;
-    
+
      {Check Enable}
      if InfoSectorEnable then
       begin
        {Update Free Count and Last Free}
        if FFreeClusterCount <> fatUnknownCluster then PFATInfoSector(FInfoBuffer).FreeClusterCount:=FFreeClusterCount;
        if FLastFreeCluster <> fatUnknownCluster then PFATInfoSector(FInfoBuffer).LastFreeCluster:=FLastFreeCluster;
-       
+
        {$IFDEF FAT_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.UpdateInfoSector - Writing Info Sector');
        {$ENDIF}
-       
+
        {Write Info Sector}
-       if not WriteSectors(FInfoSector,1,FInfoBuffer^) then Exit;         
-       
+       if not WriteSectors(FInfoSector,1,FInfoBuffer^) then Exit;
+
        {$IFDEF FAT_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.UpdateInfoSector - Info Sector Updated (Free = ' + IntToHex(PFATInfoSector(FInfoBuffer).FreeClusterCount,8) + ' Last = ' + IntToHex(PFATInfoSector(FInfoBuffer).LastFreeCluster,8) + ')');
        {$ENDIF}
@@ -2806,17 +2806,17 @@ begin
          {$IFDEF FAT_DEBUG}
          if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.UpdateInfoSector - Writing Info Sector');
          {$ENDIF}
-         
+
          {Write Info Sector}
-         if not WriteSectors(FInfoSector,1,FInfoBuffer^) then Exit;         
-         
+         if not WriteSectors(FInfoSector,1,FInfoBuffer^) then Exit;
+
          {$IFDEF FAT_DEBUG}
          if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.UpdateInfoSector - Info Sector Reset');
          {$ENDIF}
         end;
       end;
-      
-     Result:=True; 
+
+     Result:=True;
     finally
      InfoUnlock;
     end;
@@ -2832,23 +2832,23 @@ begin
  {}
  Result:=False;
 
- if not ClusterLock then Exit; 
+ if not ClusterLock then Exit;
  try
   if FClusterBuffer = nil then Exit;
 
   {Read Cluster} {Dont need to read first}
   {if not ReadCluster(ACluster,FClusterBuffer^) then Exit;}
- 
+
   {Fill Cluster}
   FillChar(FClusterBuffer^,FClusterSize,AValue);
- 
+
   {Write Cluster}
   if not WriteCluster(ACluster,FClusterBuffer^) then Exit;
-  
+
   Result:=True;
- finally  
+ finally
   ClusterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2862,17 +2862,17 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ACluster < FStartCluster then Exit;
  if FVolume = nil then Exit;
  if FVolume.Device = nil then Exit;
  if FSectorsPerCluster = 0 then Exit;
- 
+
  {Calculate Sector (DataStartSector is Cluster 2)}
  {Sector:=((ACluster - FStartCluster) * FSectorsPerCluster);}
  Sector:=((ACluster - FStartCluster) shl FSectorShiftCount);
- 
+
  Result:=FDriver.Cache.DeviceRead(FVolume.Device,FStartSector + FDataStartSector + Sector,FSectorsPerCluster,ABuffer);
 end;
 
@@ -2887,7 +2887,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ACluster < FStartCluster then Exit;
  if FVolume = nil then Exit;
@@ -2896,7 +2896,7 @@ begin
 
  {Check ReadOnly}
  if FReadOnly then Exit;
- 
+
  {Calculate Sector (DataStartSector is Cluster 2)}
  {Sector:=((ACluster - FStartCluster) * FSectorsPerCluster);}
  Sector:=((ACluster - FStartCluster) shl FSectorShiftCount);
@@ -2920,15 +2920,15 @@ var
 begin
  {}
  Result:=fatUnknownCluster;
- 
+
  if not FBlocks.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FTotalClusterCount = 0 then Exit;
- 
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Check Last Allocated}
   if FLastFreeCluster = fatUnknownCluster then
    begin
@@ -2940,7 +2940,7 @@ begin
         if not SectorLock then Exit;
         try
          if FSectorBuffer = nil then Exit;
-        
+
          {Get Info Sector}
          if not ReadSectors(FInfoSector,1,FSectorBuffer^) then Exit;
          if PFATInfoSector(FSectorBuffer).LeadSignature <> fat32LeadSignature then Exit;
@@ -2962,12 +2962,12 @@ begin
        end;
      end;
    end;
-  
+
   {Get Start}
   Cluster:=0;
   if FLastFreeCluster <> fatUnknownCluster then Cluster:=FLastFreeCluster;
   Start:=Cluster;
- 
+
   {Check each Cluster}
   while Cluster < FTotalClusterCount do
    begin
@@ -2976,11 +2976,11 @@ begin
       {Get Block No}
       if FEntriesPerBlock = 0 then Exit;
       BlockNo:=((Cluster shr FBlockShiftCount) shl FBlockShiftCount);
-      
+
       {Get Block}
       DiskBlock:=TFATDiskBlock(GetBlockEx(BlockNo,True));
       if DiskBlock = nil then Exit;
-      
+
       {Check each Entry}
       EntryCount:=(Cluster - DiskBlock.BlockNo);
       while EntryCount < FEntriesPerBlock do
@@ -3033,13 +3033,13 @@ begin
             end;
           end;
         end;
-        
+
         {Move next Entry}
         Inc(EntryCount);
-        
+
         {Move next Cluster}
         Inc(Cluster);
-        
+
         {Check for Wrap}
         if (Start > 0) and (Cluster = Start) then Exit;
         if (Start > 0) and (Cluster >= FTotalClusterCount) then Cluster:=0;
@@ -3050,7 +3050,7 @@ begin
      begin
       {Move next Cluster}
       Inc(Cluster);
-      
+
       {Check for Wrap}
       if (Start > 0) and (Cluster = Start) then Exit;
       if (Start > 0) and (Cluster >= FTotalClusterCount) then Cluster:=0;
@@ -3058,7 +3058,7 @@ begin
    end;
  finally
   FBlocks.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3068,7 +3068,7 @@ function TFATFileSystem.GetFreeClusterCount:LongWord;
 {Note: For speed uses the FreeClusterCount after first lookup}
 var
  Cluster:LongWord;
- 
+
  BlockNo:LongWord;
  EntryCount:LongWord;
  ClusterOffset:LongWord;
@@ -3076,13 +3076,13 @@ var
 begin
  {}
  Result:=0;
- 
+
  if FDriver = nil then Exit;
  if FTotalClusterCount = 0 then Exit;
 
  {Check ReadOnly}
  if FReadOnly then Exit;
- 
+
  {Check Free Count}
  if FFreeClusterCount = fatUnknownCluster then
   begin
@@ -3096,7 +3096,7 @@ begin
         if not SectorLock then Exit;
         try
          if FSectorBuffer = nil then Exit;
-        
+
          {Get Info Sector}
          if not ReadSectors(FInfoSector,1,FSectorBuffer^) then Exit;
          if PFATInfoSector(FSectorBuffer).LeadSignature <> fat32LeadSignature then Exit;
@@ -3107,12 +3107,12 @@ begin
            {Get Free Cluster Count}
            FFreeClusterCount:=PFATInfoSector(FSectorBuffer).FreeClusterCount;
            Result:=FFreeClusterCount;
-           
+
            Exit;
           end;
         finally
          SectorUnlock;
-        end; 
+        end;
        end
       else
        begin
@@ -3120,11 +3120,11 @@ begin
         UpdateInfoSector;
        end;
      end;
-    
+
     {Get Start}
     Cluster:=0;
     FFreeClusterCount:=0;
-    
+
     {Check each Cluster}
     while Cluster < FTotalClusterCount do
      begin
@@ -3133,11 +3133,11 @@ begin
         {Get Block No}
         if FEntriesPerBlock = 0 then Exit;
         BlockNo:=((Cluster shr FBlockShiftCount) shl FBlockShiftCount);
-        
+
         {Get Block}
         DiskBlock:=TFATDiskBlock(GetBlockEx(BlockNo,True));
         if DiskBlock = nil then Exit;
-      
+
         {Check each Entry}
         EntryCount:=(Cluster - DiskBlock.BlockNo);
         while EntryCount < FEntriesPerBlock do
@@ -3182,28 +3182,28 @@ begin
               end;
             end;
           end;
-        
+
           {Move next Entry}
           Inc(EntryCount);
 
           {Move next Cluster}
           Inc(Cluster);
-          
+
           {Check Cluster}
           if Cluster >= FTotalClusterCount then Break;
          end;
        end
       else
-       begin      
+       begin
         {Move next Cluster}
         Inc(Cluster);
-       end; 
+       end;
      end;
    finally
     FBlocks.WriterUnlock;
-   end; 
+   end;
   end;
- 
+
  Result:=FFreeClusterCount;
 end;
 
@@ -3214,7 +3214,7 @@ function TFATFileSystem.SetNextFreeCluster(ACluster:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if FTotalClusterCount = 0 then Exit;
 
@@ -3227,24 +3227,24 @@ begin
      if not SectorLock then Exit;
      try
       if FSectorBuffer = nil then Exit;
-     
+
       {Get Info Sector}
       if not ReadSectors(FInfoSector,1,FSectorBuffer^) then Exit;
       if PFATInfoSector(FSectorBuffer).LeadSignature <> fat32LeadSignature then Exit;
       if PFATInfoSector(FSectorBuffer).StructureSignature <> fat32StructSignature then Exit;
       if PFATInfoSector(FSectorBuffer).TrailSignature <> fat32TrailSignature then Exit;
-     
+
       {Set Last Free Cluster}
       PFATInfoSector(FSectorBuffer).LastFreeCluster:=ACluster;
-     
+
       {Set Info Sector}
       if not WriteSectors(FInfoSector,1,FSectorBuffer^) then Exit;
      finally
       SectorUnlock;
-     end; 
+     end;
     end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -3255,7 +3255,7 @@ function TFATFileSystem.SetFreeClusterCount(ACount:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if FTotalClusterCount = 0 then Exit;
 
@@ -3268,24 +3268,24 @@ begin
      if not SectorLock then Exit;
      try
       if FSectorBuffer = nil then Exit;
-     
+
       {Get Info Sector}
       if not ReadSectors(FInfoSector,1,FSectorBuffer^) then Exit;
       if PFATInfoSector(FSectorBuffer).LeadSignature <> fat32LeadSignature then Exit;
       if PFATInfoSector(FSectorBuffer).StructureSignature <> fat32StructSignature then Exit;
       if PFATInfoSector(FSectorBuffer).TrailSignature <> fat32TrailSignature then Exit;
-      
+
       {Set Free Cluster Count}
       PFATInfoSector(FSectorBuffer).FreeClusterCount:=ACount;
-     
+
       {Set Info Sector}
       if not WriteSectors(FInfoSector,1,FSectorBuffer^) then Exit;
      finally
       SectorUnlock;
-     end; 
+     end;
     end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -3299,7 +3299,7 @@ function TFATFileSystem.GetStartCluster(AEntry:TDiskEntry):LongWord;
 begin
  {}
  Result:=FFreeCluster;
- 
+
  if AEntry = nil then Exit;
 
  {Check for Root}
@@ -3319,12 +3319,12 @@ function TFATFileSystem.GetParentCluster(AParent:TDiskEntry):LongWord;
 begin
  {}
  Result:=FFreeCluster;
- 
+
  if AParent = nil then Exit;
 
  {Check for Root}
  if AParent = FRoot then Exit;
- 
+
  {Get Start Cluster}
  Result:=TFATDiskEntry(AParent).StartCluster;
 end;
@@ -3339,18 +3339,18 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ANext < FStartCluster then Exit;
  if ACluster < FStartCluster then Exit;
 
  {Get Next Block}
  if FEntriesPerBlock = 0 then Exit;
  NextBlock:=((ANext shr FBlockShiftCount) shl FBlockShiftCount);
- 
+
  {Get Cluster Block}
  ClusterBlock:=((ACluster shr FBlockShiftCount) shl FBlockShiftCount);
  if NextBlock <> ClusterBlock then Exit;
- 
+
  Result:=True;
 end;
 
@@ -3368,24 +3368,24 @@ begin
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.GetNextChainCluster Parent = ' + IntToStr(AParent));
  {$ENDIF}
- 
+
  if AParent < FStartCluster then Exit;
 
  {Get Next}
  Cluster:=GetCluster(AParent);
- 
+
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.GetNextChainCluster Cluster = ' + IntToStr(Cluster));
  {$ENDIF}
- 
+
  {Check Next}
  if Cluster >= FEndOfFile then Exit;
  if Cluster = FBadCluster then Exit;
  if Cluster = FFreeCluster then Exit;
- 
+
  {Return Next}
  Result:=Cluster;
- 
+
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.GetNextChainCluster completed Result = ' + IntToStr(Result));
  {$ENDIF}
@@ -3401,20 +3401,20 @@ var
 begin
  {}
  Result:=0;
- 
+
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.GetLastChainCluster Parent = ' + IntToStr(AParent));
  {$ENDIF}
- 
+
  if AParent < FStartCluster then Exit;
 
  {Check Parent}
  if AParent = FBadCluster then Exit;
  if AParent = FFreeCluster then Exit;
- 
+
  {Return Parent}
  Result:=AParent;
- 
+
  {Get Next}
  Cluster:=GetCluster(AParent);
  while Cluster < FEndOfFile do
@@ -3422,14 +3422,14 @@ begin
    {Check Next}
    if Cluster = FBadCluster then Exit;
    if Cluster = FFreeCluster then Exit;
-   
+
    {Return Next}
    Result:=Cluster;
-   
+
    {Get Next}
    Cluster:=GetCluster(Cluster);
   end;
-  
+
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.GetLastChainCluster completed Result = ' + IntToStr(Result));
  {$ENDIF}
@@ -3445,11 +3445,11 @@ var
 begin
  {}
  Result:=0;
- 
+
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.GetChainClusterCount Parent = ' + IntToStr(AParent));
  {$ENDIF}
- 
+
  if AParent < FStartCluster then Exit;
 
  {Get Next}
@@ -3459,21 +3459,21 @@ begin
    {Check Next}
    if Cluster = FBadCluster then Exit;
    if Cluster = FFreeCluster then Exit;
-   
+
    {Count Next}
    Inc(Result);
-   
+
    {Get Next}
    Cluster:=GetCluster(Cluster);
   end;
- 
+
  {Check Last (Includes Parent)}
  if Cluster = FBadCluster then Exit;
  if Cluster = FFreeCluster then Exit;
- 
+
  {Count Last (Includes Parent)}
  Inc(Result);
- 
+
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.GetChainClusterCount completed Result = ' + IntToStr(Result));
  {$ENDIF}
@@ -3489,24 +3489,24 @@ var
 begin
  {}
  Result:=fatUnknownCluster;
- 
+
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.GetCluster Cluster = ' + IntToStr(ACluster));
  {$ENDIF}
- 
- if not FBlocks.WriterLock then Exit; 
+
+ if not FBlocks.WriterLock then Exit;
  try
   if ACluster >= FTotalClusterCount then Exit;
- 
+
   {Get Block No}
   if FEntriesPerBlock = 0 then Exit;
   {BlockNo:=((ACluster div FEntriesPerBlock) * FEntriesPerBlock);}
   BlockNo:=((ACluster shr FBlockShiftCount) shl FBlockShiftCount);
-  
+
   {Get Block}
   DiskBlock:=TFATDiskBlock(GetBlockEx(BlockNo,True));
   if DiskBlock = nil then Exit;
-  
+
   {Check Type}
   ClusterOffset:=0;
   case FFATType of
@@ -3535,23 +3535,23 @@ begin
      Result:=LongWord(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and not(FReservedBits);
     end;
   end;
-  
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.GetCluster Result = ' + IntToStr(Result));
-  
+
   {First and Last Clusters}
   if (FILESYS_LOG_ENABLED) and (ACluster = 0) then FileSysLogDebug('TFATFileSystem.GetCluster - Media Cluster = ' + IntToHex(ACluster,8) + ' ClusterOffset = ' + IntToStr(ClusterOffset) + ' BlockSector = ' + IntToStr(DiskBlock.BlockSector) + ' NextCluster = ' + IntToHex(Result,8));
   if (FILESYS_LOG_ENABLED) and (ACluster = 1) then FileSysLogDebug('TFATFileSystem.GetCluster - Reserved Cluster = ' + IntToHex(ACluster,8) + ' ClusterOffset = ' + IntToStr(ClusterOffset) + ' BlockSector = ' + IntToStr(DiskBlock.BlockSector) + ' NextCluster = ' + IntToHex(Result,8));
   if (FILESYS_LOG_ENABLED) and (ACluster = FStartCluster) then FileSysLogDebug('TFATFileSystem.GetCluster - First Cluster = ' + IntToHex(ACluster,8) + ' ClusterOffset = ' + IntToStr(ClusterOffset) + ' BlockSector = ' + IntToStr(DiskBlock.BlockSector) + ' NextCluster = ' + IntToHex(Result,8));
   if (FILESYS_LOG_ENABLED) and (ACluster = (FTotalClusterCount - 1)) then FileSysLogDebug('TFATFileSystem.GetCluster - Last Cluster = ' + IntToHex(ACluster,8) + ' ClusterOffset = ' + IntToStr(ClusterOffset) + ' BlockSector = ' + IntToStr(DiskBlock.BlockSector) + ' NextCluster = ' + IntToHex(Result,8));
-  
+
   {Start and End Clusters}
   if (FILESYS_LOG_ENABLED) and (ACluster = DiskBlock.BlockNo) then FileSysLogDebug('TFATFileSystem.GetCluster - Start Cluster = ' + IntToHex(ACluster,8) + ' ClusterOffset = ' + IntToStr(ClusterOffset) + ' BlockSector = ' + IntToStr(DiskBlock.BlockSector) + ' NextCluster = ' + IntToHex(Result,8));
   if (FILESYS_LOG_ENABLED) and (ACluster = (DiskBlock.BlockNo + FEntriesPerBlock - 1)) then FileSysLogDebug('TFATFileSystem.GetCluster - End Cluster = ' + IntToHex(ACluster,8) + ' ClusterOffset = ' + IntToStr(ClusterOffset) + ' BlockSector = ' + IntToStr(DiskBlock.BlockSector) + ' NextCluster = ' + IntToHex(Result,8));
   {$ENDIF}
  finally
   FBlocks.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3564,24 +3564,24 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FBlocks.WriterLock then Exit;
  try
   if ACluster >= FTotalClusterCount then Exit;
- 
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.SetCluster - Cluster = ' + IntToHex(ACluster,8) + ' Value = ' + IntToHex(AValue,8));
   {$ENDIF}
-  
+
   {Get Block No}
   if FEntriesPerBlock = 0 then Exit;
   {BlockNo:=((ACluster div FEntriesPerBlock) * FEntriesPerBlock);}
   BlockNo:=((ACluster shr FBlockShiftCount) shl FBlockShiftCount);
-  
+
   {Get Block}
   DiskBlock:=TFATDiskBlock(GetBlockEx(BlockNo,True));
   if DiskBlock = nil then Exit;
-  
+
   {Check Type}
   case FFATType of
    ftFAT12:begin
@@ -3599,7 +3599,7 @@ begin
        AValue:=AValue shl 4;
        Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^):=Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and $000F;
       end;
-      
+
      Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^):=Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) or AValue;
     end;
    ftFAT16:begin
@@ -3615,12 +3615,12 @@ begin
      LongWord(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^):=LongWord(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) or AValue;
     end;
   end;
-  
+
   {Set Block}
   if ACommit then Result:=SetBlock(DiskBlock) else Result:=True;
  finally
   FBlocks.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3642,16 +3642,16 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.AllocCluster Parent = ' + IntToHex(AParent,8) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
- 
+
   {Check Count}
   if ACount < 1 then Exit;
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Check Free}
   if FFreeClusterCount = fatUnknownCluster then GetFreeClusterCount;
-  
+
   {Set Count}
   AllocCount:=0; //To Do //Could use Result if Result was a Count of allocated
   PrevCluster:=0;
@@ -3662,21 +3662,21 @@ begin
     NextCluster:=GetNextFreeCluster;
     if NextCluster < FStartCluster then Exit;
     if NextCluster = fatUnknownCluster then Exit;
-    
+
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.AllocCluster Cluster = ' + IntToHex(NextCluster,8) + ' Count = ' + IntToStr(AllocCount));
     {$ENDIF}
-    
+
     {Check Count}
     if AllocCount = 0 then
      begin
       {First}
       {Set Start}
       StartCluster:=NextCluster;
-      
+
       {Allocate Cluster}
       if not SetCluster(NextCluster,FEndOfCluster,(ACount = 1)) then Exit;
-      
+
       {Set Previous}
       PrevCluster:=NextCluster;
      end
@@ -3685,10 +3685,10 @@ begin
       {Last}
       {Allocate Cluster}
       if not SetCluster(NextCluster,FEndOfCluster,not(CheckClusterBlock(PrevCluster,NextCluster))) then Exit;
-      
+
       {Update Previous}
       if not SetCluster(PrevCluster,NextCluster,True) then Exit;
-      
+
       {Set Previous}
       PrevCluster:=NextCluster;
      end
@@ -3697,46 +3697,46 @@ begin
       {Other}
       {Allocate Cluster}
       if not SetCluster(NextCluster,FEndOfCluster,False) then Exit;
-      
+
       {Update Previous}
       if not SetCluster(PrevCluster,NextCluster,not(CheckClusterBlock(PrevCluster,NextCluster))) then Exit;
-      
+
       {Set Previous}
       PrevCluster:=NextCluster;
      end;
-    
+
     {Update Free}
     if FFreeClusterCount < FTotalClusterCount then Dec(FFreeClusterCount);
-    
+
     {Update Count}
     Inc(AllocCount);
    end;
- 
+
   {Return Start}
   ACluster:=StartCluster;
-  
+
   {Check Parent}
   if AParent >=FStartCluster then
    begin
     {Get Last}
     AParent:=GetLastChainCluster(AParent);
     if AParent < FStartCluster then Exit;
-    
+
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.AllocCluster Last = ' + IntToHex(AParent,8));
     {$ENDIF}
-    
+
     {Update Chain}
     if not SetCluster(AParent,ACluster,True) then Exit;
    end;
-  
+
   {Update Info Sector}
   if (InfoSectorEnable and InfoImmediateUpdate) then UpdateInfoSector;
-  
+
   Result:=True;
  finally
   FBlocks.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3754,55 +3754,55 @@ begin
  try
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Check Free}
   if FFreeClusterCount = fatUnknownCluster then GetFreeClusterCount;
-  
+
   {Check Cluster} {Allows for zero length files}
   if ACluster >= FStartCluster then
    begin
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.ReleaseCluster Parent = ' + IntToHex(AParent,8) + ' Cluster = ' + IntToHex(ACluster,8));
     {$ENDIF}
-    
+
     {Check Parent}
     if AParent >=FStartCluster then
      begin
       {Check Chain}
       if GetNextChainCluster(AParent) <> ACluster then Exit;
-      
+
       {Update Chain}
       if not SetCluster(AParent,FEndOfCluster,True) then Exit;
      end;
-     
+
     {Check Cluster}
     Current:=ACluster;
     while Current > 0 do {GetNextChainCluster returns 0 on failure (Bad/Free/Last)}
      begin
       {Get Next}
       ACluster:=GetNextChainCluster(ACluster);
-      
+
       {Release Cluster}
       if not SetCluster(Current,FFreeCluster,not(CheckClusterBlock(Current,ACluster))) then Exit;
-      
+
       {Update Next and Free}
       if Current < FLastFreeCluster then FLastFreeCluster:=Current;
       if FFreeClusterCount < FTotalClusterCount then Inc(FFreeClusterCount);
-      
+
       {Check Next}
       if ACluster < FStartCluster then Break; {Break to allow completion}
-      
+
       Current:=ACluster;
      end;
    end;
-   
+
   {Update Info Sector}
   if (InfoSectorEnable and InfoImmediateUpdate) then UpdateInfoSector;
-   
+
   Result:=True;
  finally
   FBlocks.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3813,15 +3813,15 @@ function TFATFileSystem.CheckDirectoryRoot(AParent:TDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AParent = nil then Exit;
 
  {Check for FAT32}
  if FFATType = ftFAT32 then Exit;
- 
+
  {Check for Root}
  if AParent <> FRoot then Exit;
- 
+
  Result:=True;
 end;
 
@@ -3833,7 +3833,7 @@ function TFATFileSystem.CheckDirectoryStart(AParent:TDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if AParent = nil then Exit;
 
  {Check for Root}
@@ -3847,7 +3847,7 @@ begin
    {FAT32 or FAT12/16 non Root}
    if TFATDiskEntry(AParent).StartCluster < FStartCluster then Exit;
   end;
-  
+
  Result:=True;
 end;
 
@@ -3859,20 +3859,20 @@ function TFATFileSystem.GetFirstDirectorySector(AParent:TDiskEntry;var ASector:L
 begin
  {}
  Result:=False;
- 
+
  if AParent = nil then Exit;
 
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.GetFirstDirectorySector Parent = ' + AParent.Name);
  {$ENDIF}
- 
+
  {Check for Root}
  if (FFATType <> ftFAT32) and (AParent = FRoot) then
   begin
    {FAT12/16 Root}
    if TFATDiskEntry(AParent).StartSector <> FRootStartSector then Exit;
    ASector:=0;
-   
+
    Result:=True;
   end
  else
@@ -3880,10 +3880,10 @@ begin
    {FAT32 or FAT12/16 non Root}
    if TFATDiskEntry(AParent).StartCluster < FStartCluster then Exit;
    ASector:=((TFATDiskEntry(AParent).StartCluster - FStartCluster) shl FSectorShiftCount);
-   
+
    Result:=True;
   end;
-  
+
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.GetFirstDirectorySector completed Sector = ' + IntToStr(ASector));
  {$ENDIF}
@@ -3900,20 +3900,20 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AParent = nil then Exit;
 
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.GetNextDirectorySector Parent = ' + AParent.Name + ' Sector = ' + IntToStr(ASector));
  {$ENDIF}
- 
+
  {Check for Root}
  if (FFATType <> ftFAT32) and (AParent = FRoot) then
   begin
    {FAT12/16 Root}
    if ASector = (FRootSectorCount - 1) then Exit;
    Inc(ASector);
-   
+
    Result:=True;
   end
  else
@@ -3924,7 +3924,7 @@ begin
    if (AWrite) and ((ASector - Sector) < (FSectorsPerCluster - 1)) then
     begin
      Inc(ASector);
-     
+
      Result:=True;
     end
    else
@@ -3932,11 +3932,11 @@ begin
      Cluster:=GetNextChainCluster(Cluster);
      if Cluster < FStartCluster then Exit;
      ASector:=((Cluster - FStartCluster) shl FSectorShiftCount);
-     
+
      Result:=True;
     end;
   end;
-  
+
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.GetNextDirectorySector completed Sector = ' + IntToStr(ASector));
  {$ENDIF}
@@ -3950,7 +3950,7 @@ function TFATFileSystem.GetDirectorySectorCount(AParent:TDiskEntry;AWrite:Boolea
 begin
  {}
  Result:=0;
- 
+
  if AParent = nil then Exit;
 
  {Check for Root or Write}
@@ -3974,7 +3974,7 @@ function TFATFileSystem.GetDirectorySectorOffset(AParent:TDiskEntry):LongWord;
 begin
  {}
  Result:=0;
- 
+
  if AParent = nil then Exit;
 
  {Check for Root}
@@ -4012,48 +4012,48 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if ACount < 1 then Exit;
   if FDriver = nil then Exit;
   if AParent = nil then Exit;
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
-  if not ClusterLock then Exit; 
+
+  if not ClusterLock then Exit;
   try
    if FClusterBuffer = nil then Exit;
- 
+
    {$IFDEF FAT_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.AllocDirectory Parent = ' + AParent.Name);
    {$ENDIF}
-  
+
    {Check Start}
    if not CheckDirectoryStart(AParent) then Exit;
-  
+
    {Get Offsets}
    SectorCount:=GetDirectorySectorCount(AParent,False);
    SectorOffset:=GetDirectorySectorOffset(AParent);
-  
+
    {Get Start Sector}
    EntryCount:=ACount;
    BlockOffset:=0;
    if not GetFirstDirectorySector(AParent,BlockSector) then Exit;
-  
+
    repeat {First Sector will be zero for first data cluster}
     {Get Start Entry}
     EntryOffset:=0;
     EntrySector:=BlockSector;
-    
+
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.AllocDirectory DirectorySector = ' + IntToStr(BlockSector));
     {$ENDIF}
-   
+
     {Read Sectors}
     if not ReadSectors(SectorOffset + BlockSector,SectorCount,FClusterBuffer^) then Exit; {Note: SectorCount will never be more than SectorPerCluster}
-    
+
     {Read Block}
     while BlockOffset < (FSectorSize * SectorCount) do
      begin
@@ -4062,24 +4062,24 @@ begin
        begin
         {Get Directory}
         Directory:=PLFNDirectory(PtrUInt(FClusterBuffer) + BlockOffset + EntryOffset);
-        
+
         {Check for Free}
         if (Directory.Order = fatEntryFreeAll) or (Directory.Order = fatEntryFree) then
          begin
           {$IFDEF FAT_DEBUG}
           if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.AllocDirectory FreeSector = ' + IntToStr(EntrySector) + ' Offset = ' + IntToStr(EntryOffset));
           {$ENDIF}
-          
+
           {Save Entry}
           if EntryCount = ACount then
            begin
             AOffset:=EntryOffset;
             ASector:=EntrySector;
            end;
-          
+
           {Update Count}
           Dec(EntryCount);
-          
+
           {Return Entry}
           if EntryCount = 0 then
            begin
@@ -4092,24 +4092,24 @@ begin
           {Reset Count}
           EntryCount:=ACount;
          end;
-        
+
         {Get Next Entry}
         Inc(EntryOffset,fatEntrySize);
        end;
-     
+
       {Get Next Block}
       EntryOffset:=0;
       Inc(EntrySector);
       Inc(BlockOffset,FSectorSize);
      end;
-    
+
     {Get Next Sector}
     BlockOffset:=0;
    until not GetNextDirectorySector(AParent,BlockSector,False); {GetNextDirectorySector returns False on failure (Invalid/Last)}
-  finally  
+  finally
    ClusterUnlock;
-  end; 
-  
+  end;
+
   {Check for Root}
   if not CheckDirectoryRoot(AParent) then
    begin
@@ -4117,23 +4117,23 @@ begin
     StartCluster:=GetStartCluster(AParent);
     if StartCluster < FStartCluster then Exit;
     //To Do //Check Chain Count - Not more than ?? (64KB ?) - See docs
-    
+
     {Allocate Cluster}
     if not AllocCluster(StartCluster,Cluster,1) then Exit;
-    
+
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.AllocDirectory DirectoryStart = ' + IntToHex(StartCluster,8) + ' Cluster = ' + IntToHex(Cluster,8));
     {$ENDIF}
-    
+
     {Zero Cluster}
     if not FillCluster(Cluster,0) then Exit;
-    
+
     {Cluster Allocated Call AllocDirectory}
     Result:=AllocDirectory(AParent,ACount,AOffset,ASector);
    end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4151,32 +4151,32 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if ACount < 1 then Exit;
   if FDriver = nil then Exit;
   if AParent = nil then Exit;
- 
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
-  if not ClusterLock then Exit; 
+
+  if not ClusterLock then Exit;
   try
    if FClusterBuffer = nil then Exit;
- 
+
    {$IFDEF FAT_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.ReleaseDirectory Parent = ' + AParent.Name);
    {$ENDIF}
-  
+
    {Check Start}
    if not CheckDirectoryStart(AParent) then Exit;
-  
+
    {Get Offsets}
    SectorCount:=GetDirectorySectorCount(AParent,True); {SectorCount is always one on Write}
    SectorOffset:=GetDirectorySectorOffset(AParent);
    if (SectorCount = 0) or (SectorOffset = 0) then Exit;
-  
+
    {Get Start Sector}
    EntryCount:=ACount;
    EntryOffset:=AOffset;
@@ -4185,40 +4185,40 @@ begin
     begin
      {Get Sectors}
      if not ReadSectors(SectorOffset + EntrySector,SectorCount,FClusterBuffer^) then Exit; {Note: SectorCount will never be more than SectorPerCluster}
-    
+
      {Read Entries}
      while EntryOffset < FSectorSize do
       begin
        {$IFDEF FAT_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.ReleaseDirectory EntrySector = ' + IntToStr(EntrySector) + ' Offset = ' + IntToStr(EntryOffset));
        {$ENDIF}
-      
+
        {Modify Directory}
        Directory:=PLFNDirectory(PtrUInt(FClusterBuffer) + EntryOffset);
        Directory.Order:=fatEntryFree;
        Dec(EntryCount);
        if EntryCount = 0 then Break; {Break to allow completion}
-      
+
        {Get Next Entry}
        Inc(EntryOffset,fatEntrySize);
       end;
-    
+
      {Set Sectors}
      if not WriteSectors(SectorOffset + EntrySector,SectorCount,FClusterBuffer^) then Exit;
-    
+
      {Get Next Sector}
      EntryOffset:=0;
-    
+
      if not GetNextDirectorySector(AParent,EntrySector,True) then Break; {GetNextDirectorySector returns False on failure (Invalid/Last)} {Break to allow completion}
     end;
-   
+
    Result:=True;
- finally  
+ finally
   ClusterUnlock;
- end; 
+ end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4230,7 +4230,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if FDriver = nil then Exit;
 
  {Check the Table}
@@ -4251,7 +4251,7 @@ function TFATFileSystem.GetSectorShiftCount(ASectorsPerCluster:LongWord):Word;
 begin
  {}
  Result:=0;
- 
+
  if FDriver = nil then Exit;
 
  {Get the Shift Count}
@@ -4268,7 +4268,7 @@ function TFATFileSystem.GetClusterShiftCount(AClusterSize:LongWord):Word;
 begin
  {}
  Result:=0;
- 
+
  if FDriver = nil then Exit;
 
  {Get the Shift Count}
@@ -4287,7 +4287,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if FDriver = nil then Exit;
 
  {Check the Table}
@@ -4310,7 +4310,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if FDriver = nil then Exit;
 
  {Check the Table}
@@ -4331,13 +4331,13 @@ begin
  {}
  if FDriver = nil then Exit;
  if ADirectory = nil then Exit;
- 
+
  {Check for Convert}
  if FDriver.OemConvert then
   begin
    {Convert Name}
    Unicode.OemToCharBuffA(PChar(@ADirectory.Name[0]),PChar(@ADirectory.Name[0]),8);
-   
+
    {Convert Ext}
    Unicode.OemToCharBuffA(PChar(@ADirectory.Ext[0]),PChar(@ADirectory.Ext[0]),3);
   end;
@@ -4350,13 +4350,13 @@ begin
  {}
  if FDriver = nil then Exit;
  if ADirectory = nil then Exit;
- 
+
  {Check for Convert}
  if FDriver.OemConvert then
   begin
    {Convert Name}
    Unicode.CharToOemBuff(PChar(@ADirectory.Name[0]),PChar(@ADirectory.Name[0]),8);
-   
+
    {Convert Ext}
    Unicode.CharToOemBuff(PChar(@ADirectory.Ext[0]),PChar(@ADirectory.Ext[0]),3);
   end;
@@ -4374,7 +4374,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AName = nil then Exit;
  if AEntry = nil then Exit;
  if AEntry = FRoot then Exit;
@@ -4382,16 +4382,16 @@ begin
  {Get Directory}
  FATDirectory:=PFATDirectory(AName);
  LFNDirectory:=PLFNDirectory(AName);
- 
+
  {Check Name}
  if LFNDirectory.Order = fatEntrySpecial then LFNDirectory.Order:=fatEntryFree; {Substitute special character}
- 
+
  {Validate Name}
  if not ValidateName(FATDirectory) then Exit;
- 
+
  {Convert Name}
  ReadConvert(FATDirectory);
- 
+
  {Check Type}
  if (AEntry.Attributes and faMatchMask) = faDirectory then
   begin
@@ -4399,7 +4399,7 @@ begin
    {Get Name}
    Name:=Trim(FATDirectory.Name);
    if Trim(FATDirectory.Ext) <> fatBlankName then Name:=Name + GetFileChar + Trim(FATDirectory.Ext);
-   
+
    {Check Relative}
    if Name = fatDotName then AEntry.Attributes:=(AEntry.Attributes or faDot);
    if Name = fatDotDotName then AEntry.Attributes:=(AEntry.Attributes or faDotDot);
@@ -4426,11 +4426,11 @@ begin
          {Both}
          {Set Name (Short)}
          AEntry.AltName:=Name;
-         
+
          {Get Name}
          Name:=Lowercase(Trim(FATDirectory.Name));
          if Trim(FATDirectory.Ext) <> fatBlankName then Name:=Name + GetFileChar + Lowercase(Trim(FATDirectory.Ext));
-         
+
          {Set Name}
          AEntry.Name:=Name;
         end
@@ -4439,11 +4439,11 @@ begin
          {Name}
          {Set Name (Short)}
          AEntry.AltName:=Name;
-         
+
          {Get Name}
          Name:=Lowercase(Trim(FATDirectory.Name));
          if Trim(FATDirectory.Ext) <> fatBlankName then Name:=Name + GetFileChar + Trim(FATDirectory.Ext);
-         
+
          {Set Name}
          AEntry.Name:=Name;
         end
@@ -4452,11 +4452,11 @@ begin
          {Ext}
          {Load Name (Short)}
          AEntry.AltName:=Name;
-         
+
          {Get Name}
          Name:=Trim(FATDirectory.Name);
          if Trim(FATDirectory.Ext) <> fatBlankName then Name:=Name + GetFileChar + Lowercase(Trim(FATDirectory.Ext));
-         
+
          {Set Name}
          AEntry.Name:=Name;
         end
@@ -4467,7 +4467,7 @@ begin
         end;
       end;
     end;
-    
+
    Result:=True;
   end
  else if (AEntry.Attributes and faMatchMask) = faFile then
@@ -4476,7 +4476,7 @@ begin
    {Get Name}
    Name:=Trim(FATDirectory.Name);
    if Trim(FATDirectory.Ext) <> fatBlankName then Name:=Name + GetFileChar + Trim(FATDirectory.Ext);
-   
+
    {Check Short}
    if AShort then
     begin
@@ -4491,11 +4491,11 @@ begin
        {Both}
        {Set Name (Short)}
        AEntry.AltName:=Name;
-       
+
        {Get Name}
        Name:=Lowercase(Trim(FATDirectory.Name));
        if Trim(FATDirectory.Ext) <> fatBlankName then Name:=Name + GetFileChar + Lowercase(Trim(FATDirectory.Ext));
-       
+
        {Set Name}
        AEntry.Name:=Name;
       end
@@ -4504,11 +4504,11 @@ begin
        {Name}
        {Set Name (Short)}
        AEntry.AltName:=Name;
-       
+
        {Get Name}
        Name:=Lowercase(Trim(FATDirectory.Name));
        if Trim(FATDirectory.Ext) <> fatBlankName then Name:=Name + GetFileChar + Trim(FATDirectory.Ext);
-       
+
        {Set Name}
        AEntry.Name:=Name;
       end
@@ -4517,11 +4517,11 @@ begin
        {Ext}
        {Load Name (Short)}
        AEntry.AltName:=Name;
-       
+
        {Get Name}
        Name:=Trim(FATDirectory.Name);
        if Trim(FATDirectory.Ext) <> fatBlankName then Name:=Name + GetFileChar + Lowercase(Trim(FATDirectory.Ext));
-       
+
        {Set Name}
        AEntry.Name:=Name;
       end
@@ -4531,7 +4531,7 @@ begin
        AEntry.Name:=Name;
       end;
     end;
-    
+
    Result:=True;
   end
  else if (AEntry.Attributes and faMatchMask) = faVolumeId then
@@ -4539,10 +4539,10 @@ begin
    {Label}
    {Get Name}
    Name:=Trim(FATDirectory.Name) + Trim(FATDirectory.Ext);
-   
+
    {Check Short}
    if AShort then AEntry.AltName:=Name else AEntry.Name:=Name;
-   
+
    Result:=True;
   end;
 end;
@@ -4560,7 +4560,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AName = nil then Exit;
  if AEntry = nil then Exit;
  if AEntry = FRoot then Exit;
@@ -4568,11 +4568,11 @@ begin
  {Get Directory}
  FATDirectory:=PFATDirectory(AName);
  LFNDirectory:=PLFNDirectory(AName);
- 
+
  {Blank Name}
  FillChar(FATDirectory.Name[0],8,fatEntryPadding);
  FillChar(FATDirectory.Ext[0],3,fatEntryPadding);
- 
+
  {Check Short}
  if AShort then
   begin
@@ -4594,7 +4594,7 @@ begin
     end;
   end;
  if Length(Name) = 0 then Exit;
- 
+
  {Check Type}
  if (AEntry.Attributes and faMatchMask) = faDirectory then
   begin
@@ -4610,21 +4610,21 @@ begin
      {Folder}
      {Split Name}
      if not SplitFile(Name,Name,Ext) then Exit;
-     
+
      {Set Name}
      System.Move(Name[1],FATDirectory.Name[0],Min(Length(Name),8));
      if Length(Ext) <> 0 then System.Move(Ext[1],FATDirectory.Ext[0],Min(Length(Ext),3));
     end;
-   
+
    {Convert Name}
    WriteConvert(FATDirectory);
-   
+
    {Validate Name}
    {if not ValidateName(FATDirectory) then Exit;} {To be added after testing}
-   
+
    {Check Name}
    if LFNDirectory.Order = fatEntryFree then LFNDirectory.Order:=fatEntrySpecial; {Substitute special character}
-   
+
    Result:=True;
   end
  else if (AEntry.Attributes and faMatchMask) = faFile then
@@ -4632,20 +4632,20 @@ begin
    {File}
    {Split Name}
    if not SplitFile(Name,Name,Ext) then Exit;
-   
+
    {Set Name}
    System.Move(Name[1],FATDirectory.Name[0],Min(Length(Name),8));
    if Length(Ext) <> 0 then System.Move(Ext[1],FATDirectory.Ext[0],Min(Length(Ext),3));
-   
+
    {Convert Name}
    WriteConvert(FATDirectory);
-   
+
    {Validate Name}
    {if not ValidateName(FATDirectory) then Exit;} {To be added after testing}
-   
+
    {Check Name}
    if LFNDirectory.Order = fatEntryFree then LFNDirectory.Order:=fatEntrySpecial; {Substitute special character}
-   
+
    Result:=True;
   end
  else if (AEntry.Attributes and faMatchMask) = faVolumeId then
@@ -4653,16 +4653,16 @@ begin
    {Label}
    {Set Name}
    System.Move(Name[1],FATDirectory.Name[0],Min(Length(Name),11));
-   
+
    {Convert Name}
    WriteConvert(FATDirectory);
-   
+
    {Validate Name}
    {if not ValidateName(FATDirectory) then Exit;} {To be added after testing}
-   
+
    {Check Name}
    if LFNDirectory.Order = fatEntryFree then LFNDirectory.Order:=fatEntrySpecial; {Substitute special character}
-   
+
    Result:=True;
   end;
 end;
@@ -4677,7 +4677,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
 
  {Get Length}
@@ -4686,10 +4686,10 @@ begin
   begin
    {Allocate String}
    SetString(AName,nil,Size - 1); {Returned size includes null terminator}
-   
+
    {Convert String}
    Unicode.WideCharToMultiByte(CP_ACP,0,PWideChar(ABuffer),-1,PChar(AName),Size,nil,nil);
-   
+
    Result:=True;
   end;
 end;
@@ -4704,19 +4704,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
 
  {Fill Buffer}
  FillChar(ABuffer^,lfnMaxName,255); {Fill with FF by default}
- 
+
  {Convert String}
  Size:=Unicode.MultiByteToWideChar(CP_ACP,0,PChar(AName),-1,PWideChar(ABuffer),(lfnMaxName shr 1));
  if Size > 0 then
   begin
    {Set Length}
    PWord(PtrUInt(ABuffer) + LongWord((Size - 1) shl 1))^:=0; {Set null on end} {Returned size includes null terminator}
-   
+
    Result:=True;
   end;
 end;
@@ -4735,28 +4735,28 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ACount < 1 then Exit;
  if ADirectory = nil then Exit;
 
  {Get Directory}
  Directory:=PLFNDirectory(ADirectory);
- 
+
  {Check Order}
  if (Directory.Order and lfnEntryMask) <> ACount then Exit;
- 
+
  {Check Checksum}
  if Directory.Checksum <> AChecksum then Exit;
- 
+
  {Validate Directory}
  if not ValidateDirectory(Directory) then Exit;
- 
+
  {Check Last - Fill Buffer}
  if ALast then FillChar(ABuffer^,((ACount * lfnEntryChars) + 1) shl 1,0); {Fill with 0 by default}
- 
+
  {Get Offset}
  Offset:=((ACount - 1) * lfnEntryChars) shl 1;
- 
+
  {Load Name}
  Next:=#0;
  Count:=0;
@@ -4768,19 +4768,19 @@ begin
     5..10:Next:=Directory.Name2[Count - 5];
     11..12:Next:=Directory.Name3[Count - 11];
    end;
-   
+
    {Copy Char}
    PWideChar(PtrUInt(ABuffer) + Offset)^:=Next;
-   
+
    {Check Null}
    if Word(Next) = lfnEntryPadding then Break;
    if Word(Next) = lfnEntryNull then Break;
-   
+
    {Move Next}
    Inc(Count);
    Inc(Offset,2);
   end;
-  
+
  Result:=True;
 end;
 
@@ -4797,34 +4797,34 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ACount < 1 then Exit;
  if ADirectory = nil then Exit;
 
  {Get Directory}
  Directory:=PLFNDirectory(ADirectory);
- 
+
  {Set Order}
  Directory.Order:=ACount;
- 
+
  {Check Last - Set Last}
  if ALast then Directory.Order:=(Directory.Order or lfnEntryLast);
- 
+
  {Set Attributes}
  Directory.Attribute:=faLongName;
- 
+
  {Set FileType}
  {Directory.FileType:=0;} {Leave as found}
- 
+
  {Set Checksum}
  Directory.Checksum:=AChecksum;
- 
+
  {Set Reserved}
  Directory.Reserved:=0; {Always 0}
- 
+
  {Get Offset}
  Offset:=((ACount - 1) * lfnEntryChars) shl 1;
- 
+
  {Set Name}
  Next:=#0;
  Count:=0;
@@ -4838,12 +4838,12 @@ begin
     5..10:Directory.Name2[Count - 5]:=Next;
     11..12:Directory.Name3[Count - 11]:=Next;
    end;
-   
+
    {Move Next}
    Inc(Count);
    Inc(Offset,2);
   end;
-  
+
  Result:=True;
 end;
 
@@ -4862,7 +4862,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AEntry = nil then Exit;
  if AEntry = FRoot then Exit;
  if ADirectory = nil then Exit;
@@ -4870,27 +4870,27 @@ begin
  {Get Directory}
  FATDirectory:=PFATDirectory(ADirectory);
  LFNDirectory:=PLFNDirectory(ADirectory);
- 
+
  {Validate Directory}
  if not ValidateDirectory(FATDirectory) then Exit;
- 
+
  {Get Start Cluster}
  LongRec(StartCluster).Lo:=FATDirectory.FirstClusterLow;
  LongRec(StartCluster).Hi:=FATDirectory.FirstClusterHigh;
  AEntry.StartCluster:=StartCluster;
- 
+
  {Get Size}
  Int64Rec(Size).Lo:=FATDirectory.Length;
  Int64Rec(Size).Hi:=0;
  AEntry.Size:=Size;
- 
+
  {Get Write Time}
  Int64(FileTime):=0;
  Ultibo.DosDateTimeToFileTime(FATDirectory.WriteDate,FATDirectory.WriteTime,LocalTime);
  if Int64(LocalTime) > 0 then Ultibo.LocalFileTimeToFileTime(LocalTime,FileTime) else Int64(FileTime):=TIME_TICKS_TO_1980;
  if Int64(FileTime) < TIME_TICKS_TO_1980 then Int64(FileTime):=TIME_TICKS_TO_1980;
  AEntry.WriteTime:=FileTime;
- 
+
  {Get Create Time}
  Int64(FileTime):=0;
  Ultibo.DosDateTimeToFileTime(FATDirectory.CreateDate,FATDirectory.CreateTime,LocalTime);
@@ -4898,29 +4898,29 @@ begin
  if Int64(FileTime) < TIME_TICKS_TO_1980 then Int64(FileTime):=TIME_TICKS_TO_1980;
  Int64(FileTime):=Int64(FileTime) + (TIME_TICKS_PER_10MILLISECONDS * FATDirectory.CreateTimeMsecs);
  AEntry.CreateTime:=FileTime;
- 
+
  {Get Access Time}
  Int64(FileTime):=0;
  Ultibo.DosDateTimeToFileTime(FATDirectory.LastAccessDate,0,LocalTime);
  if Int64(LocalTime) > 0 then Ultibo.LocalFileTimeToFileTime(LocalTime,FileTime) else Int64(FileTime):=TIME_TICKS_TO_1980;
- if Int64(FileTime) < TIME_TICKS_TO_1980 then Int64(FileTime):=TIME_TICKS_TO_1980; 
+ if Int64(FileTime) < TIME_TICKS_TO_1980 then Int64(FileTime):=TIME_TICKS_TO_1980;
  AEntry.AccessTime:=FileTime;
- 
+
  {Get Attributes}
  AEntry.Attributes:=FATDirectory.Attribute;
  if FReadOnly then AEntry.Attributes:=(AEntry.Attributes or faReadOnly);
- 
+
  {Get CaseFlags}
  if (FATDirectory.CaseFlags and fatFlagName) = fatFlagName then AEntry.Attributes:=(AEntry.Attributes or faFlagName);
  if (FATDirectory.CaseFlags and fatFlagExt) = fatFlagExt then AEntry.Attributes:=(AEntry.Attributes or faFlagExt);
- 
+
  {Check Type}
  if (AEntry.Attributes and (faDirectory or faVolumeID)) = faNone then
   begin
    {File}
    AEntry.Attributes:=(AEntry.Attributes or faFile);
    AEntry.EntriesLoaded:=True;
-   
+
    {Get Name}
    Result:=NameToEntry(FATDirectory,AEntry,AShort);
   end
@@ -4928,7 +4928,7 @@ begin
   begin
    {Folder}
    AEntry.Attributes:=(AEntry.Attributes or faDirectory);
-   
+
    {Get Name}
    Result:=NameToEntry(FATDirectory,AEntry,AShort);
   end
@@ -4937,7 +4937,7 @@ begin
    {Label}
    AEntry.Attributes:=(AEntry.Attributes or faVolumeID);
    AEntry.EntriesLoaded:=True;
-   
+
    {Get Name}
    Result:=NameToEntry(FATDirectory,AEntry,AShort);
   end;
@@ -4956,7 +4956,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AEntry = nil then Exit;
  if AEntry = FRoot then Exit;
  if ADirectory = nil then Exit;
@@ -4964,38 +4964,38 @@ begin
  {Get Directory}
  FATDirectory:=PFATDirectory(ADirectory);
  LFNDirectory:=PLFNDirectory(ADirectory);
- 
+
  {Set Start Cluster}
  FATDirectory.FirstClusterLow:=LongRec(AEntry.StartCluster).Lo;
  FATDirectory.FirstClusterHigh:=LongRec(AEntry.StartCluster).Hi;
- 
+
  {Set Size}
  FATDirectory.Length:=Int64Rec(AEntry.Size).Lo;
- 
+
  {Set Write Time}
  Int64(LocalTime):=0;
  if Int64(AEntry.WriteTime) > 0 then Ultibo.FileTimeToLocalFileTime(AEntry.WriteTime,LocalTime);
  if not Ultibo.FileTimeToDosDateTime(LocalTime,FATDirectory.WriteDate,FATDirectory.WriteTime) then FATDirectory.WriteDate:=(PASCAL_TIME_DOS_TIME_START shr 16);
- 
+
  {Set Create Time}
  Int64(LocalTime):=0;
  if Int64(AEntry.CreateTime) > 0 then Ultibo.FileTimeToLocalFileTime(AEntry.CreateTime,LocalTime);
  if not Ultibo.FileTimeToDosDateTime(LocalTime,FATDirectory.CreateDate,FATDirectory.CreateTime) then FATDirectory.CreateDate:=(PASCAL_TIME_DOS_TIME_START shr 16);
  FATDirectory.CreateTimeMsecs:=(Int64(LocalTime) mod (2 * TIME_TICKS_PER_SECOND)) div TIME_TICKS_PER_10MILLISECONDS;
- 
+
  {Set Access Time}
  Int64(LocalTime):=0;
  if Int64(AEntry.AccessTime) > 0 then Ultibo.FileTimeToLocalFileTime(AEntry.AccessTime,LocalTime);
  if not Ultibo.FileTimeToDosDateTime(LocalTime,FATDirectory.LastAccessDate,FatTime) then FATDirectory.LastAccessDate:=(PASCAL_TIME_DOS_TIME_START shr 16);
- 
+
  {Set Attributes}
  FATDirectory.Attribute:=(AEntry.Attributes and faFindMask);
- 
+
  {Set CaseFlags}
  FATDirectory.CaseFlags:=fatFlagNone;
  if (AEntry.Attributes and faFlagName) = faFlagName then FATDirectory.CaseFlags:=(FATDirectory.CaseFlags or fatFlagName);
  if (AEntry.Attributes and faFlagExt) = faFlagExt then FATDirectory.CaseFlags:=(FATDirectory.CaseFlags or fatFlagExt);
- 
+
  {Set Name}
  Result:=EntryToName(AEntry,FATDirectory,AShort);
 end;
@@ -5006,7 +5006,7 @@ function TFATFileSystem.FATTypeToFileSysType(AFATType:TFATType):TFileSysType;
 begin
  {}
  Result:=fsUNKNOWN;
- 
+
  case AFATType of
   ftFAT12:Result:=fsFAT12;
   ftFAT16:Result:=fsFAT16;
@@ -5020,7 +5020,7 @@ function TFATFileSystem.LoadMaxFile:Integer;
 begin
  {}
  Result:=MAX_FAT_FILE;
- 
+
  if FLongNames then Result:=MAX_VFAT_FILE;
 end;
 
@@ -5030,7 +5030,7 @@ function TFATFileSystem.LoadMaxPath:Integer;
 begin
  {}
  Result:=MAX_FAT_PATH;
- 
+
  if FLongNames then Result:=MAX_VFAT_PATH;
 end;
 
@@ -5040,7 +5040,7 @@ function TFATFileSystem.LoadAttributes:LongWord;
 begin
  {}
  Result:=inherited LoadAttributes;
- 
+
  {if FLongNames then Result:=(Result or vaCasePreserved or vaUnicode);} {Now inbuilt}
 end;
 
@@ -5069,7 +5069,7 @@ function TFATFileSystem.LoadSystemName:String;
 begin
  {}
  Result:=fatBlankName;
- 
+
  if FDriver = nil then Exit;
 
  if not SectorLock then Exit;
@@ -5084,10 +5084,10 @@ begin
      if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
       begin
        if PBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
-      end; 
-     
+      end;
+
      SetString(Result,PBootSector(FSectorBuffer).SystemName,8);
-    
+
      Result:=Trim(Result);
     end;
    ftFAT32:begin
@@ -5096,16 +5096,16 @@ begin
      if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
       begin
        if PExtBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
-      end; 
-    
+      end;
+
      SetString(Result,PExtBootSector(FSectorBuffer).SystemName,8);
-    
+
      Result:=Trim(Result);
     end;
   end;
  finally
   SectorUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5115,7 +5115,7 @@ function TFATFileSystem.LoadVolumeName:String;
 begin
  {}
  Result:=fatBlankName;
- 
+
  if FDriver = nil then Exit;
 
  if not SectorLock then Exit;
@@ -5130,10 +5130,10 @@ begin
      if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
       begin
        if PBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
-      end; 
-     
+      end;
+
      SetString(Result,PBootSector(FSectorBuffer).VolumeName,11);
-    
+
      Result:=Trim(Result);
     end;
    ftFAT32:begin
@@ -5142,16 +5142,16 @@ begin
      if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
       begin
        if PExtBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
-      end; 
-    
+      end;
+
      SetString(Result,PExtBootSector(FSectorBuffer).VolumeName,11);
-    
+
      Result:=Trim(Result);
     end;
   end;
  finally
   SectorUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5161,7 +5161,7 @@ function TFATFileSystem.LoadVolumeSerial:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FDriver = nil then Exit;
 
  if not SectorLock then Exit;
@@ -5176,8 +5176,8 @@ begin
      if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
       begin
        if PBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
-      end; 
-    
+      end;
+
      Result:=PBootSector(FSectorBuffer).VolumeSerial;
     end;
    ftFAT32:begin
@@ -5186,14 +5186,14 @@ begin
      if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
       begin
        if PExtBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
-      end; 
-    
+      end;
+
      Result:=PExtBootSector(FSectorBuffer).VolumeSerial;
     end;
   end;
  finally
   SectorUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5211,12 +5211,12 @@ function TFATFileSystem.SetVolumeName(const AName:String):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
 
  {Check ReadOnly}
  if FReadOnly then Exit;
- 
+
  if not SectorLock then Exit;
  try
   if FSectorBuffer = nil then Exit;
@@ -5229,12 +5229,12 @@ begin
      if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
       begin
        if PBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
-      end; 
-     
+      end;
+
      FillChar(PBootSector(FSectorBuffer).VolumeName[0],11,fatEntryPadding);
      System.Move(AName[1],PBootSector(FSectorBuffer).VolumeName[0],Min(Length(AName),11));
      if not WriteSectors(FBootSector,1,FSectorBuffer^) then Exit;
-     
+
      {Get/Set BootBackup}
      if FBootBackup <> FBootSector then
       begin
@@ -5242,16 +5242,16 @@ begin
        if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
         begin
          if PBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
-        end; 
-       
+        end;
+
        FillChar(PBootSector(FSectorBuffer).VolumeName[0],11,fatEntryPadding);
        System.Move(AName[1],PBootSector(FSectorBuffer).VolumeName[0],Min(Length(AName),11));
        if not WriteSectors(FBootBackup,1,FSectorBuffer^) then Exit;
       end;
-      
+
      FVolumeName:=AName;
      UniqueString(FVolumeName);
-     
+
      Result:=True;
     end;
    ftFAT32:begin
@@ -5260,12 +5260,12 @@ begin
      if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
       begin
        if PExtBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
-      end; 
-     
+      end;
+
      FillChar(PExtBootSector(FSectorBuffer).VolumeName[0],11,fatEntryPadding);
      System.Move(AName[1],PExtBootSector(FSectorBuffer).VolumeName[0],Min(Length(AName),11));
      if not WriteSectors(FBootSector,1,FSectorBuffer^) then Exit;
-     
+
      {Get/Set BootBackup}
      if FBootBackup <> FBootSector then
       begin
@@ -5273,22 +5273,22 @@ begin
        if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
         begin
          if PExtBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
-        end; 
-       
+        end;
+
        FillChar(PExtBootSector(FSectorBuffer).VolumeName[0],11,fatEntryPadding);
        System.Move(AName[1],PExtBootSector(FSectorBuffer).VolumeName[0],Min(Length(AName),11));
        if not WriteSectors(FBootBackup,1,FSectorBuffer^) then Exit;
       end;
-      
+
      FVolumeName:=AName;
      UniqueString(FVolumeName);
-    
+
      Result:=True;
     end;
   end;
  finally
   SectorUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5298,12 +5298,12 @@ function TFATFileSystem.SetVolumeSerial(ASerial:LongWord):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
 
  {Check ReadOnly}
  if FReadOnly then Exit;
- 
+
  if not SectorLock then Exit;
  try
   if FSectorBuffer = nil then Exit;
@@ -5316,11 +5316,11 @@ begin
      if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
       begin
        if PBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
-      end; 
-     
+      end;
+
      PBootSector(FSectorBuffer).VolumeSerial:=ASerial;
      if not WriteSectors(FBootSector,1,FSectorBuffer^) then Exit;
-    
+
      {Get/Set BootBackup}
      if FBootBackup <> FBootSector then
       begin
@@ -5328,14 +5328,14 @@ begin
        if PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
         begin
          if PBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
-        end; 
-       
+        end;
+
        PBootSector(FSectorBuffer).VolumeSerial:=ASerial;
        if not WriteSectors(FBootBackup,1,FSectorBuffer^) then Exit;
       end;
-      
+
      FVolumeSerial:=ASerial;
-    
+
      Result:=True;
     end;
    ftFAT32:begin
@@ -5344,11 +5344,11 @@ begin
      if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
       begin
        if PExtBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
-      end; 
-     
+      end;
+
      PExtBootSector(FSectorBuffer).VolumeSerial:=ASerial;
      if not WriteSectors(FBootSector,1,FSectorBuffer^) then Exit;
-     
+
      {Get/Set BootBackup}
      if FBootBackup <> FBootSector then
       begin
@@ -5356,20 +5356,20 @@ begin
        if PExtBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE then
         begin
          if PExtBootSector(FSectorBuffer).BootSignature <> fatBootSignature then Exit;
-        end; 
-       
+        end;
+
        PExtBootSector(FSectorBuffer).VolumeSerial:=ASerial;
        if not WriteSectors(FBootBackup,1,FSectorBuffer^) then Exit;
       end;
-      
+
      FVolumeSerial:=ASerial;
-    
+
      Result:=True;
     end;
   end;
  finally
   SectorUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5390,7 +5390,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not FEntries.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -5401,16 +5401,16 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.ReadEntry EntryName = ' + AEntry.Name + ' Start = ' + IntToStr(AStart) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
- 
+
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
- 
+
   {Check Entry}
   if (AEntry.Attributes and faMatchMask) <> faFile then Exit;
- 
+
   {Get Start}
   StartCluster:=TFATDiskEntry(AEntry).StartCluster;
- 
+
   {Get Count}
   OffsetCount:=(AStart shr FClusterShiftCount); {Zero equals first Cluster}
   CurrentCount:=0;
@@ -5434,58 +5434,58 @@ begin
 
   {Get Offset}
   StartOffset:=(OffsetCount shl FClusterShiftCount); {Zero equals first Byte}
- 
+
   {Get Position}
   Offset:=0;
   Remain:=ACount;
   Start:=(AStart - StartOffset);
   Count:=Min(ACount,(FClusterSize - Start));
- 
+
   {Read Clusters}
   while Remain > 0 do
    begin
     {Check Count}
     if (Count < FClusterSize) then
      begin
-      if not ReadLock then Exit; 
+      if not ReadLock then Exit;
       try
        if FReadBuffer = nil then Exit;
-      
+
        {Read Cluster}
        if not ReadCluster(StartCluster,FReadBuffer^) then Exit;
-     
+
        {Read Buffer}
        System.Move(Pointer(PtrUInt(FReadBuffer) + Start)^,Pointer(PtrUInt(@ABuffer) + Offset)^,Count);
-      finally  
+      finally
        ReadUnlock;
-      end; 
+      end;
      end
     else
      begin
       {Read Cluster}
       if not ReadCluster(StartCluster,Pointer(PtrUInt(@ABuffer) + Offset)^) then Exit;
      end;
-    
+
     {Get Cluster}
     if ((Start + Count) = FClusterSize) then StartCluster:=GetNextChainCluster(StartCluster);
-   
+
     {Update Position}
     Inc(Offset,Count);
     Dec(Remain,Count);
     Start:=0;
     Count:=Min(Remain,FClusterSize);
    end;
-  
+
   Result:=(ACount - Remain);
 
   {Save Cluster}
   AValue:=StartCluster;
- 
+
   {Save Offset}
   AOffset:=((AStart + Result) shr FClusterShiftCount);
  finally
   FEntries.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5506,7 +5506,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not FEntries.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -5517,19 +5517,19 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.WriteEntry EntryName = ' + AEntry.Name + ' Start = ' + IntToStr(AStart) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
- 
+
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
- 
+
   {Check Entry}
   if (AEntry.Attributes and faMatchMask) <> faFile then Exit;
- 
+
   {Get Start}
   StartCluster:=TFATDiskEntry(AEntry).StartCluster;
- 
+
   {Get Count}
   OffsetCount:=(AStart shr FClusterShiftCount); {Zero equals first Cluster}
   CurrentCount:=0;
@@ -5553,61 +5553,61 @@ begin
 
   {Get Offset}
   StartOffset:=(OffsetCount shl FClusterShiftCount); {Zero equals first Byte}
- 
+
   {Get Position}
   Offset:=0;
   Remain:=ACount;
   Start:=(AStart - StartOffset);
   Count:=Min(ACount,(FClusterSize - Start));
- 
+
   {Write Clusters}
   while Remain > 0 do
    begin
     {Check Count}
-    if (Count < FClusterSize) then 
+    if (Count < FClusterSize) then
      begin
-      if not WriteLock then Exit; 
+      if not WriteLock then Exit;
       try
        if FWriteBuffer = nil then Exit;
-     
+
        {Read Cluster (if not cluster sized write)}
        if not ReadCluster(StartCluster,FWriteBuffer^) then Exit;
-     
+
        {Write Buffer}
        System.Move(Pointer(PtrUInt(@ABuffer) + Offset)^,Pointer(PtrUInt(FWriteBuffer) + Start)^,Count);
-     
+
        {Write Cluster}
        if not WriteCluster(StartCluster,FWriteBuffer^) then Exit;
-      finally  
+      finally
        WriteUnlock;
-      end; 
+      end;
      end
     else
      begin
       {Write Cluster}
       if not WriteCluster(StartCluster,Pointer(PtrUInt(@ABuffer) + Offset)^) then Exit;
      end;
-    
+
     {Get Cluster}
     if ((Start + Count) = FClusterSize) then StartCluster:=GetNextChainCluster(StartCluster);
-   
+
     {Update Position}
     Inc(Offset,Count);
     Dec(Remain,Count);
     Start:=0;
     Count:=Min(Remain,FClusterSize);
    end;
-  
+
   Result:=(ACount - Remain);
 
   {Save Cluster}
   AValue:=StartCluster;
- 
+
   {Save Offset}
   AOffset:=((AStart + Result) shr FClusterShiftCount);
  finally
   FEntries.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5618,7 +5618,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FTables.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -5634,14 +5634,14 @@ begin
       {Get Table}
       if GetTableEx(TableNo,True) = nil then Exit;
      end;
-    
+
     Inc(TableNo);
    end;
-  
+
   Result:=True;
  finally
   FTables.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5652,25 +5652,25 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FBlocks.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FTotalClusterCount = 0 then Exit;
-  
+
   {Get each Block}
   BlockNo:=0;
   while BlockNo < FTotalClusterCount do
    begin
     if GetBlockEx(BlockNo,True) = nil then Exit;
-   
+
     Inc(BlockNo,FEntriesPerBlock);
    end;
-  
+
   Result:=True;
  finally
   FBlocks.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5687,7 +5687,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if AParent = nil then Exit;
 
@@ -5702,38 +5702,38 @@ begin
       {$IFDEF FAT_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadEntries Parent = ' + AParent.Name);
       {$ENDIF}
-   
+
       {Check Directory}
       if (AParent.Attributes and faDirectory) = faDirectory then
        begin
-        if not ClusterLock then Exit; 
+        if not ClusterLock then Exit;
         try
          if FClusterBuffer = nil then Exit;
-       
+
          {Check Start}
          if not CheckDirectoryStart(AParent) then Exit;
-     
+
          {Get Offsets}
          SectorCount:=GetDirectorySectorCount(AParent,False);
          SectorOffset:=GetDirectorySectorOffset(AParent);
          if (SectorCount = 0) or (SectorOffset = 0) then Exit;
-     
+
          {Get Start Sector}
          BlockOffset:=0;
          if not GetFirstDirectorySector(AParent,BlockSector) then Exit;
-     
+
          repeat {First Sector will be zero for first data cluster}
           {Get Start Entry}
           EntryOffset:=0;
           EntrySector:=BlockSector;
-       
+
           {$IFDEF FAT_DEBUG}
           if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadEntries DirectorySector = ' + IntToStr(BlockSector));
           {$ENDIF}
-       
+
           {Read Sectors}
           if not ReadSectors(SectorOffset + BlockSector,SectorCount,FClusterBuffer^) then Exit; {Note: SectorCount will never be more than SectorPerCluster}
-       
+
           {Read Block}
           while BlockOffset < (FSectorSize * SectorCount) do
            begin
@@ -5742,10 +5742,10 @@ begin
              begin
               {Get Directory}
               Directory:=PLFNDirectory(PtrUInt(FClusterBuffer) + BlockOffset + EntryOffset);
-           
+
               {Check all Free}
               if Directory.Order = fatEntryFreeAll then Break; {Break to allow next Sector}
-           
+
               {Check for Free}
               if Directory.Order <> fatEntryFree then
                begin
@@ -5761,48 +5761,48 @@ begin
                 if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadEntries FreeSector = ' + IntToStr(EntrySector) + ' Offset = ' + IntToStr(EntryOffset));
                 {$ENDIF}
                end;
-            
+
               {Get Next Entry}
               Inc(EntryOffset,fatEntrySize);
-              
+
               {$IFDEF FAT_DEBUG}
               if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadEntries EntryOffset = ' + IntToStr(EntryOffset));
               {$ENDIF}
              end;
-         
+
             {Get Next Block}
             EntryOffset:=0;
             Inc(EntrySector);
             Inc(BlockOffset,FSectorSize);
-            
+
             {$IFDEF FAT_DEBUG}
             if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadEntries EntrySector = ' + IntToStr(EntrySector) + ' BlockOffset = ' + IntToStr(BlockOffset));
             {$ENDIF}
            end;
-      
+
           {Get Next Sector}
           BlockOffset:=0;
          until not GetNextDirectorySector(AParent,BlockSector,False); {GetNextDirectorySector returns False on failure (Invalid/Last)}
-         
+
          {$IFDEF FAT_DEBUG}
          if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadEntries GetNextDirectorySector returns False');
          {$ENDIF}
-        finally  
+        finally
          ClusterUnlock;
-        end; 
+        end;
        end;
-    
+
       AParent.EntriesLoaded:=True;
-      
+
       {$IFDEF FAT_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadEntries completed Parent = ' + AParent.Name);
       {$ENDIF}
      end;
    finally
     FEntries.WriterUnlock;
-   end; 
+   end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -5814,26 +5814,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FTables.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if ATableNo >= FNumberOfFats then Exit;
- 
+
   {Load Table}
   DiskTable:=TFATDiskTable.Create(FTableLocal);
   DiskTable.TableNo:=ATableNo;
   DiskTable.StartSector:=(FReservedSectors + (FSectorsPerFat * ATableNo));
   DiskTable.SectorCount:=FSectorsPerFat;
- 
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadTable - Table = ' + IntToHex(DiskTable.TableNo,8) + ' StartSector = ' + IntToStr(DiskTable.StartSector) + ' SectorCount = ' + IntToStr(DiskTable.SectorCount));
   {$ENDIF}
- 
+
   Result:=FTables.Add(DiskTable);
  finally
   FTables.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5854,7 +5854,7 @@ begin
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadBlock BlockNo = ' + IntToStr(ABlockNo));
  {$ENDIF}
- 
+
  if not FBlocks.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -5863,21 +5863,21 @@ begin
   {Get Table}
   DiskTable:=TFATDiskTable(GetTable(FActiveFat));
   if DiskTable = nil then Exit;
- 
+
   {Get Block No}
   if FEntriesPerBlock = 0 then Exit;
   {BlockNo:=((ABlockNo div FEntriesPerBlock) * FEntriesPerBlock);}
   BlockNo:=((ABlockNo shr FBlockShiftCount) shl FBlockShiftCount);
- 
+
   {Get Sector and Count}
   {BlockSector:=((BlockNo div FEntriesPerBlock) * FSectorsPerBlock);}
   BlockSector:=((BlockNo shr FBlockShiftCount) * FSectorsPerBlock);
   SectorCount:=Min(FSectorsPerBlock,(FSectorsPerFat - BlockSector));
- 
+
   {Allocate Buffer}
   BlockBuffer:=GetMem(SectorCount * FSectorSize);
   if BlockBuffer = nil then Exit;
- 
+
   {Read Sectors}
   if ReadSectors(DiskTable.StartSector + BlockSector,SectorCount,BlockBuffer^) then
    begin
@@ -5887,16 +5887,16 @@ begin
     DiskBlock.BlockBuffer:=BlockBuffer;
     DiskBlock.BlockSector:=BlockSector;
     DiskBlock.SectorCount:=SectorCount;
-   
+
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadBlock - Block = ' + IntToHex(DiskBlock.BlockNo,8) + ' BlockSector = ' + IntToStr(DiskBlock.BlockSector) + ' SectorCount = ' + IntToStr(DiskBlock.SectorCount));
     {$ENDIF}
-   
+
     Result:=FBlocks.Add(DiskBlock);
    end;
  finally
   FBlocks.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5914,24 +5914,24 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if AParent = nil then Exit;
  if ABuffer = nil then Exit;
 
  {Get Directory}
  Directory:=PLFNDirectory(PtrUInt(ABuffer) + ABlockOffset + AEntryOffset);
- 
+
  {Check for Long}
  if Directory.Attribute = faLongName then
   begin
    {$IFDEF FAT_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadEntry LongEntry = ' + IntToHex(Directory.Order,2));
    {$ENDIF}
-   
+
    {Check for Supported}
    if not FLongNames then Exit; {Exit to return to LoadEntries for next entry}
-   
+
    {Load Long}
    Result:=LoadLong(AParent,ABuffer,ABlockOffset,AEntryOffset,ABlockSector,AEntrySector);
   end
@@ -5940,10 +5940,10 @@ begin
    {$IFDEF FAT_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadEntry EntrySector = ' + IntToStr(AEntrySector) + ' Offset = ' + IntToStr(AEntryOffset));
    {$ENDIF}
-   
+
    {Check for Space}
    if Directory.Order = fatEntryPadding then Exit; {Exit to return to LoadEntries for next entry}
-   
+
    {Create Entry}
    DiskEntry:=TFATDiskEntry.Create(FEntryLocal);
    DiskEntry.EntryCount:=1;
@@ -5951,16 +5951,16 @@ begin
    DiskEntry.EntryOffset:=AEntryOffset;
    DiskEntry.NameSector:=AEntrySector;
    DiskEntry.EntrySector:=AEntrySector;
-   
+
    {Load Entry} {No AltName}
    if DirectoryToEntry(Directory,DiskEntry,False) then
     begin
      {$IFDEF FAT_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadEntry EntryName = ' + DiskEntry.Name);
      {$ENDIF}
-     
+
      FEntries.Add(DiskEntry,AParent); {Caller holds the entries writer lock}
-     
+
      Result:=True;
     end
    else
@@ -5993,7 +5993,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if AParent = nil then Exit;
  if ABuffer = nil then Exit;
@@ -6002,29 +6002,29 @@ begin
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadLong LongSector = ' + IntToStr(AEntrySector) + ' Offset = ' + IntToStr(AEntryOffset));
  {$ENDIF}
- 
+
  {Get Directory}
  Directory:=PLFNDirectory(PtrUInt(ABuffer) + ABlockOffset + AEntryOffset);
- 
+
  {Check for Last}
  if (Directory.Order and lfnEntryLast) <> lfnEntryLast then Exit;
- 
+
  {Get Name Count}
  NameCount:=(Directory.Order and lfnEntryMask);
  if (NameCount < 1) or (NameCount > lfnEntryMax) then Exit;
- 
+
  {Get Name Offsets}
  NameOffset:=AEntryOffset;
  NameSector:=AEntrySector;
- 
+
  {Get Offsets}
  SectorCount:=GetDirectorySectorCount(AParent,False);
  SectorOffset:=GetDirectorySectorOffset(AParent);
  if (SectorCount = 0) or (SectorOffset = 0) then Exit;
- 
+
  {Get Checksum}
  Checksum:=Directory.Checksum;
- 
+
  {Load Entry}
  EntryCount:=NameCount;
  if DirectoryToBuffer(Directory,FNameBuffer,EntryCount,Checksum,True) then
@@ -6032,7 +6032,7 @@ begin
    {Get Next Entry}
    Dec(EntryCount);
    Inc(AEntryOffset,fatEntrySize);
-   
+
    {Continue Entries}
    while True do {First Sector will be zero for first data cluster}
     begin
@@ -6044,13 +6044,13 @@ begin
         begin
          {Get Directory}
          Directory:=PLFNDirectory(PtrUInt(ABuffer) + ABlockOffset + AEntryOffset);
-         
+
          {Check All Free}
          if Directory.Order = fatEntryFreeAll then Exit; {Exit to return to LoadEntries for next entry}
-         
+
          {Check for Free}
          if Directory.Order = fatEntryFree then Exit; {Exit to return to LoadEntries for next entry}
-         
+
          {Check Entry Count}
          if EntryCount > 0 then
           begin
@@ -6074,11 +6074,11 @@ begin
               begin
                {Check for Order} {Note: This is also done by DirectoryToBuffer}
                if (Directory.Order and lfnEntryMask) <> EntryCount then Exit; {Exit to return to LoadEntries for next entry}
-               
+
                {$IFDEF FAT_DEBUG}
                if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadLong LongEntry = ' + IntToHex(Directory.Order,2));
                {$ENDIF}
-               
+
                {Load Entry}
                if not DirectoryToBuffer(Directory,FNameBuffer,EntryCount,Checksum,False) then Exit; {Exit to return to LoadEntries for next entry}
                Dec(EntryCount);
@@ -6099,10 +6099,10 @@ begin
              {$IFDEF FAT_DEBUG}
              if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadLong EntrySector = ' + IntToStr(AEntrySector) + ' Offset = ' + IntToStr(AEntryOffset));
              {$ENDIF}
-             
+
              {Convert Name}
              if not BufferToName(FNameBuffer,Name) then Exit; {Exit to return to LoadEntries for next entry}
-             
+
              {Create Entry}
              DiskEntry:=TFATDiskEntry.Create(FEntryLocal);
              DiskEntry.EntryCount:=NameCount + 1;
@@ -6111,7 +6111,7 @@ begin
              DiskEntry.NameSector:=NameSector;
              DiskEntry.EntrySector:=AEntrySector;
              DiskEntry.Name:=Name;
-             
+
              {Load Entry} {Use AltName}
              if DirectoryToEntry(Directory,DiskEntry,True) then
               begin
@@ -6125,46 +6125,46 @@ begin
                  DiskEntry.Name:=DiskEntry.AltName;
                  DiskEntry.AltName:='';
                 end;
-               
+
                {$IFDEF FAT_DEBUG}
                if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadLong LongName = ' + DiskEntry.Name + ' / ShortName = ' + DiskEntry.AltName);
                {$ENDIF}
-               
+
                FEntries.Add(DiskEntry,AParent); {Caller holds the entries writer lock}
-               
+
                Result:=True;
               end
              else
               begin
                DiskEntry.Free;
               end;
-              
+
              Exit; {Exit to return to LoadEntries for next entry}
             end;
           end;
-         
+
          {Get Next Entry}
          Inc(AEntryOffset,fatEntrySize);
         end;
-       
+
        {Get Next Block}
        AEntryOffset:=0;
        Inc(AEntrySector);
        Inc(ABlockOffset,FSectorSize);
       end;
-     
+
      {Get Next Sector}   //To Do //This could cause problems with LoadEntries trying to reload already loaded entries ?
      ABlockOffset:=0;
      if not GetNextDirectorySector(AParent,ABlockSector,False) then Exit; {GetNextDirectorySector returns False on failure (Invalid/Last)} {Exit to return to LoadEntries for next entry}
-     
+
      {Get First Entry}
      AEntryOffset:=0;
      AEntrySector:=ABlockSector;
-     
+
      {$IFDEF FAT_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.LoadLong DirectorySector = ' + IntToStr(ABlockSector));
      {$ENDIF}
-     
+
      {Read Sectors}     //To Do //This could cause problems with LoadEntries trying to reload already loaded entries ?
      if not ReadSectors(SectorOffset + ABlockSector,SectorCount,ABuffer^) then Exit; {Note: SectorCount will never be more than SectorPerCluster} {Exit to return to LoadEntries for next entry}
     end;
@@ -6197,7 +6197,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -6206,16 +6206,16 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.AddEntryEx Parent = ' + AParent.Name + ' Name = ' + AName + ' AltName = ' + AAltName);
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
- 
+
   {Check Relative}
   if (AParent.Attributes and (faDot or faDotDot)) <> faNone then Exit;
- 
+
   {Check Parent}
   if (AParent.Attributes and faMatchMask) <> faDirectory then Exit;
- 
+
   {Check Attribtues (Exclude Label/Dot/DotDot)}
   if (AAttributes and (faVolumeID or faDot or faDotDot)) = faNone then
    begin
@@ -6230,18 +6230,18 @@ begin
         Result:=nil;
        end;
       Exit;
-     end;     
-   end; 
+     end;
+   end;
 
   {Check for Short (or Label/Dot/DotDot)}
   if (IsEightDotThree(AName)) or ((AAttributes and (faVolumeID or faDot or faDotDot)) <> faNone) then
    begin
     {Get Count}
     EntryCount:=1;
-   
+
     {Get AltName}
     AltName:=fatBlankName;
-   
+
     {Get Flags}
     Flags:=faNone;
    end
@@ -6251,11 +6251,11 @@ begin
      begin
       {Get Count}
       EntryCount:=1;
-     
+
       {Get AltName}
-      AltName:=GenerateName(AParent,nil,AName); 
+      AltName:=GenerateName(AParent,nil,AName);
       if Length(AltName) = 0 then Exit;
-     
+
       {Get Flags}
       Flags:=GetNameFlags(AName);
      end
@@ -6263,12 +6263,12 @@ begin
      begin
       {Check Supported}
       if not FLongNames then Exit;
-     
+
       {Get Count}
       EntryCount:=CountName(AName);
       if EntryCount = 0 then Exit;
       Inc(EntryCount);
-     
+
       {Check AltName}
       if Length(AAltName) <> 0 then
        begin
@@ -6278,24 +6278,24 @@ begin
         if Length(AltName) = 0 then Exit;
        end
       else
-       begin      
+       begin
         {Get AltName}
         AltName:=GenerateName(AParent,nil,AName);
         if Length(AltName) = 0 then Exit;
-       end; 
-     
+       end;
+
       {Get Flags}
       Flags:=faNone;
      end;
    end;
- 
+
   {Allocate Directory}
   if not AllocDirectory(AParent,EntryCount,EntryOffset,EntrySector) then Exit;
- 
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.AddEntryEx EntrySector = ' + IntToStr(EntrySector) + ' Offset = ' + IntToStr(EntryOffset));
   {$ENDIF}
- 
+
   {Create Entry}
   DiskEntry:=TFATDiskEntry.Create(FEntryLocal);
   DiskEntry.EntryCount:=EntryCount;
@@ -6314,7 +6314,7 @@ begin
   DiskEntry.CreateTime:=DiskEntry.WriteTime;
   DiskEntry.AccessTime:=DiskEntry.WriteTime;
   DiskEntry.EntriesLoaded:=True;
- 
+
   {Check for Folder}
   if (AAttributes and faMatchMask) = faDirectory then
    begin
@@ -6325,21 +6325,21 @@ begin
       {Get Cluster}
       StartCluster:=GetParentCluster(TDiskEntry(AParent.Parent));
       DiskEntry.StartCluster:=StartCluster;
-      
+
       {$IFDEF FAT_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.AddEntryEx StartCluster = ' + IntToHex(StartCluster,8));
       {$ENDIF}
-      
+
       DiskEntry.Name:=fatDotDotName;
       DiskEntry.Attributes:=((AParent.Attributes or faDotDot) and not(faFlagBoth));
       DiskEntry.WriteTime:=AParent.WriteTime;
       DiskEntry.CreateTime:=AParent.CreateTime;
       DiskEntry.AccessTime:=AParent.AccessTime;
       DiskEntry.EntriesLoaded:=True;
-      
+
       {Set Entry}
       if not SetEntry(AParent,DiskEntry) then Exit;
-     
+
       if not FEntries.Add(DiskEntry,AParent) then Exit;
      end
     else if (AAttributes and faDot) = faDot then
@@ -6348,21 +6348,21 @@ begin
       {Get Cluster}
       StartCluster:=GetParentCluster(AParent);
       DiskEntry.StartCluster:=StartCluster;
-      
+
       {$IFDEF FAT_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.AddEntryEx StartCluster = ' + IntToHex(StartCluster,8));
       {$ENDIF}
-      
+
       DiskEntry.Name:=fatDotName;
       DiskEntry.Attributes:=((AParent.Attributes or faDot) and not(faFlagBoth));
       DiskEntry.WriteTime:=AParent.WriteTime;
       DiskEntry.CreateTime:=AParent.CreateTime;
       DiskEntry.AccessTime:=AParent.AccessTime;
       DiskEntry.EntriesLoaded:=True;
-      
+
       {Set Entry}
       if not SetEntry(AParent,DiskEntry) then Exit;
-     
+
       if not FEntries.Add(DiskEntry,AParent) then Exit;
      end
     else
@@ -6371,27 +6371,27 @@ begin
       {Allocate Cluster}
       if not AllocCluster(FFreeCluster,StartCluster,1) then Exit;
       DiskEntry.StartCluster:=StartCluster;
-     
-      {$IFDEF FAT_DEBUG} 
+
+      {$IFDEF FAT_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.AddEntryEx StartCluster = ' + IntToHex(StartCluster,8));
       {$ENDIF}
-     
+
       {Zero Cluster}
       if not FillCluster(StartCluster,0) then Exit;
-     
+
       {Set Entry}
       if not SetLong(AParent,DiskEntry) then Exit; {SetLong will call SetEntry}
       if not FEntries.Add(DiskEntry,AParent) then Exit;
-     
+
       {Create Dot}
       if AddEntry(DiskEntry,fatDotName,(AAttributes or faDot),False) = nil then Exit;
-     
+
       {Create DotDot}
       if AddEntry(DiskEntry,fatDotDotName,(AAttributes or faDotDot),False) = nil then Exit;
      end;
-    
+
     Result:=DiskEntry;
-    
+
     {Add Reference}
     if AReference then Result.AddReference;
    end
@@ -6400,9 +6400,9 @@ begin
     {File}
     {Set Entry}
     if not SetLong(AParent,DiskEntry) then Exit; {SetLong will call SetEntry}
-   
+
     if not FEntries.Add(DiskEntry,AParent) then Exit;
-   
+
     Result:=DiskEntry;
 
     {Add Reference}
@@ -6413,9 +6413,9 @@ begin
     {Label}
     {Set Entry}
     if not SetEntry(AParent,DiskEntry) then Exit;
-    
+
     if not FEntries.Add(DiskEntry,AParent) then Exit;
-   
+
     Result:=DiskEntry;
 
     {Add Reference}
@@ -6423,7 +6423,7 @@ begin
    end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6439,7 +6439,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -6450,38 +6450,38 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.RemoveEntry EntryName = ' + AEntry.Name);
   {$ENDIF}
- 
+
   {Check ReadOnly}
   if FReadOnly then Exit;
- 
+
   {Check Parent}
   if AEntry.Parent <> AParent then Exit;
- 
+
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
- 
+
   {Get Offsets} {Always use the NameOffset/NameSector}
   EntryCount:=TFATDiskEntry(AEntry).EntryCount;
   EntryOffset:=TFATDiskEntry(AEntry).NameOffset;
   EntrySector:=TFATDiskEntry(AEntry).NameSector;
   StartCluster:=TFATDiskEntry(AEntry).StartCluster;
- 
+
   {Release Cluster}
   if not ReleaseCluster(FFreeCluster,StartCluster) then Exit;
- 
+
   {Release Directory}
   if not ReleaseDirectory(AParent,EntryCount,EntryOffset,EntrySector) then Exit;
- 
+
   {Remove Entry}
   if not FEntries.Remove(AEntry) then Exit;
- 
+
   {Schedule Entry}
   if not FDriver.ScheduleEntry(AEntry,FILESYS_ENTRY_DELETE_TIMEOUT) then Exit;
- 
+
   Result:=True;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6499,7 +6499,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -6510,44 +6510,44 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.RenameEntry EntryName = ' + AEntry.Name + ' Name = ' + AName);
   {$ENDIF}
- 
+
   {Check ReadOnly}
   if FReadOnly then Exit;
- 
+
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
- 
+
   {Check Parent}
   if (AParent.Attributes and faMatchMask) <> faDirectory then Exit;
- 
+
   {Check Parent}
   if AEntry.Parent <> AParent then Exit;
- 
+
   {Check Attribtues (Exclude Label)}
   if (AEntry.Attributes and faVolumeID) = faNone then
    begin
     {Check Existing}
     if GetEntryEx(AParent,AName,faDirectory or faFile,False,False,True) <> nil then Exit;
-   end; 
- 
+   end;
+
   {Get Offsets} {Always use the NameOffset/NameSector}
   SourceCount:=TFATDiskEntry(AEntry).EntryCount;
   SourceOffset:=TFATDiskEntry(AEntry).NameOffset;
   SourceSector:=TFATDiskEntry(AEntry).NameSector;
- 
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.RenameEntry SourceSector = ' + IntToStr(SourceSector) + ' Offset = ' + IntToStr(SourceOffset));
   {$ENDIF}
- 
+
   {Check for Short (or Label)}
   if (IsEightDotThree(AName)) or ((AEntry.Attributes and faVolumeID) <> faNone) then
    begin
     {Get Count}
     DestCount:=1;
-   
+
     {Get AltName}
     AltName:=fatBlankName;
-    
+
     {Get Flags}
     Flags:=faNone;
    end
@@ -6557,11 +6557,11 @@ begin
      begin
       {Get Count}
       DestCount:=1;
-     
+
       {Get AltName}
       AltName:=GenerateName(AParent,AEntry,AName);
       if Length(AltName) = 0 then Exit;
-     
+
       {Get Flags}
       Flags:=GetNameFlags(AName);
      end
@@ -6569,50 +6569,50 @@ begin
      begin
       {Check Supported}
       if not FLongNames then Exit;
-     
+
       {Get Count}
       DestCount:=CountName(AName);
       if DestCount = 0 then Exit;
       Inc(DestCount);
-      
+
       {Get AltName}
       AltName:=GenerateName(AParent,AEntry,AName);
       if Length(AltName) = 0 then Exit;
-     
+
       {Get Flags}
       Flags:=faNone;
      end;
    end;
-  
+
   {Check Counts}
   if DestCount <> SourceCount then
    begin
     {Allocate Directory}
     if not AllocDirectory(AParent,DestCount,DestOffset,DestSector) then Exit;
-   
+
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.RenameEntry DestSector = ' + IntToStr(DestSector) + ' Offset = ' + IntToStr(DestOffset));
     {$ENDIF}
-   
+
     {Rename Entry}
     AEntry.Name:=AName;
     AEntry.AltName:=AltName;
     AEntry.Attributes:=(AEntry.Attributes or Flags);
     if Flags = faNone then AEntry.Attributes:=(AEntry.Attributes and not(faFlagBoth));
-   
+
     {Update Entry}
     TFATDiskEntry(AEntry).EntryCount:=DestCount;
     TFATDiskEntry(AEntry).NameOffset:=DestOffset;   {SetLong will update if needed}
     TFATDiskEntry(AEntry).EntryOffset:=DestOffset;
     TFATDiskEntry(AEntry).NameSector:=DestSector;   {SetLong will update if needed}
     TFATDiskEntry(AEntry).EntrySector:=DestSector;
-   
+
     {Set Entry}
     if not SetLong(AParent,AEntry) then Exit; {SetLong will call SetEntry}
-   
+
     {Release Directory}
     if not ReleaseDirectory(AParent,SourceCount,SourceOffset,SourceSector) then Exit;
-   
+
     Result:=True;
    end
   else
@@ -6622,15 +6622,15 @@ begin
     AEntry.AltName:=AltName;
     AEntry.Attributes:=(AEntry.Attributes or Flags);
     if Flags = faNone then AEntry.Attributes:=(AEntry.Attributes and not(faFlagBoth));
-   
+
     {Set Entry}
     if not SetLong(AParent,AEntry) then Exit; {SetLong will call SetEntry}
-   
+
     Result:=True;
    end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6641,7 +6641,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -6652,24 +6652,24 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.RenameEntryEx - Entry = ' + AEntry.Name + ' AltName = ' + AAltName);
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
 
   {Check Parent}
   if (AParent.Attributes and faMatchMask) <> faDirectory then Exit;
-  
+
   {Check Parent}
   if AEntry.Parent <> AParent then Exit;
-  
+
   {Check for Short (or Label)}
   if (IsEightDotThree(AEntry.Name)) or ((AEntry.Attributes and faVolumeID) <> faNone) then
    begin
     Exit;
-   end 
+   end
   else
    begin
     if CheckFlagName(AEntry.Name) then
@@ -6686,24 +6686,24 @@ begin
         if not(IsEightDotThree(AltName)) or (GetEntryEx(AParent,AltName,faDirectory or faFile,False,False,True) <> nil) then Exit;
        end
       else
-       begin  
+       begin
         {Get AltName}
         AltName:=GenerateName(AParent,AEntry,AEntry.Name);
         if Length(AltName) = 0 then Exit;
        end;
      end;
    end;
-   
+
   {Rename Entry}
   AEntry.AltName:=AltName;
-   
+
   {Set Entry}
   if not SetLong(AParent,AEntry) then Exit; {SetLong will call SetEntry}
-   
+
   Result:=True;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6719,7 +6719,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -6732,57 +6732,57 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.MoveEntry EntryName = ' + AEntry.Name + ' Dest = ' + ADest.Name);
   {$ENDIF}
- 
+
   {Check ReadOnly}
   if FReadOnly then Exit;
- 
+
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
- 
+
   {Check Source}
   if (ASource.Attributes and faMatchMask) <> faDirectory then Exit;
- 
+
   {Check Dest}
   if (ADest.Attributes and faMatchMask) <> faDirectory then Exit;
- 
+
   {Check Parent}
   if AEntry.Parent <> ASource then Exit;
- 
+
   {Check Attribtues (Exclude Label)}
   if (AEntry.Attributes and faVolumeID) = faNone then
    begin
     {Check Existing}
     if GetEntryEx(ADest,AEntry.Name,faDirectory or faFile,False,False,True) <> nil then Exit;
-   end; 
-  
+   end;
+
   {Get Offsets} {Always use the NameOffset/NameSector}
   EntryCount:=TFATDiskEntry(AEntry).EntryCount;
   SourceOffset:=TFATDiskEntry(AEntry).NameOffset;
   SourceSector:=TFATDiskEntry(AEntry).NameSector;
- 
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.MoveEntry SourceSector = ' + IntToStr(SourceSector) + ' Offset = ' + IntToStr(SourceOffset));
   {$ENDIF}
- 
+
   {Allocate Directory}
   if not AllocDirectory(ADest,EntryCount,DestOffset,DestSector) then Exit;
- 
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.MoveEntry DestSector = ' + IntToStr(DestSector) + ' Offset = ' + IntToStr(DestOffset));
   {$ENDIF}
- 
+
   {Update Entry}
   TFATDiskEntry(AEntry).NameOffset:=DestOffset;   {SetLong will update if needed}
   TFATDiskEntry(AEntry).EntryOffset:=DestOffset;
   TFATDiskEntry(AEntry).NameSector:=DestSector;   {SetLong will update if needed}
   TFATDiskEntry(AEntry).EntrySector:=DestSector;
- 
+
   {Set Entry}
   if not SetLong(ADest,AEntry) then Exit; {SetLong will call SetEntry}
- 
+
   {Release Directory}
   if not ReleaseDirectory(ASource,EntryCount,SourceOffset,SourceSector) then Exit;
- 
+
   {Check for Folder}
   if (AEntry.Attributes and faMatchMask) = faDirectory then
    begin
@@ -6795,17 +6795,17 @@ begin
        begin
         {Update DotDot}
         DiskEntry.StartCluster:=GetParentCluster(ADest);
-        
+
         if not SetEntry(AEntry,DiskEntry) then Exit;
         Break;
        end;
-       
+
       DiskEntry:=TFATDiskEntry(DiskEntry.Next);
      end;
-    
+
     {Move Entry}
     FEntries.Move(AEntry,ADest);
-   
+
     Result:=True;
    end
   else
@@ -6813,12 +6813,12 @@ begin
     {File/Label}
     {Move Entry}
     FEntries.Move(AEntry,ADest);
-    
+
     Result:=True;
    end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6833,7 +6833,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FBlocks.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -6842,15 +6842,15 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.SetBlock - Block = ' + IntToHex(ABlock.BlockNo,8));
   {$ENDIF}
- 
+
   {Check ReadOnly}
   if FReadOnly then Exit;
- 
+
   {Get Offsets}
   BlockBuffer:=TFATDiskBlock(ABlock).BlockBuffer;
   BlockSector:=TFATDiskBlock(ABlock).BlockSector;
   SectorCount:=TFATDiskBlock(ABlock).SectorCount;
-  
+
   if not FTables.WriterLock then Exit;
   try
    {Get each Table}
@@ -6859,17 +6859,17 @@ begin
     begin
      {Write Sectors}
      if not WriteSectors(NextTable.StartSector + BlockSector,SectorCount,BlockBuffer^) then Exit;
-   
+
      NextTable:=TFATDiskTable(NextTable.Next);
     end;
-  
+
    Result:=True;
   finally
    FTables.WriterUnlock;
-  end; 
+  end;
  finally
   FBlocks.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6886,7 +6886,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -6896,7 +6896,7 @@ begin
 
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Check for Long}
   if TFATDiskEntry(AEntry).EntryCount > 1 then
    begin
@@ -6904,50 +6904,50 @@ begin
    end
   else
    begin
-    if not ClusterLock then Exit; 
+    if not ClusterLock then Exit;
     try
      if FClusterBuffer = nil then Exit;
-     
+
      {$IFDEF FAT_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.SetEntry EntryName = ' + AEntry.Name);
      {$ENDIF}
-   
+
      {Check Start}
      if not CheckDirectoryStart(AParent) then Exit;
-   
+
      {Get Offsets}
      SectorCount:=GetDirectorySectorCount(AParent,True); {SectorCount is always one on Write}
      SectorOffset:=GetDirectorySectorOffset(AParent);
      if (SectorCount = 0) or (SectorOffset = 0) then Exit;
-   
+
      {Get Sector}
      EntryOffset:=TFATDiskEntry(AEntry).EntryOffset;
      EntrySector:=TFATDiskEntry(AEntry).EntrySector;
-   
+
      {$IFDEF FAT_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.SetEntry EntrySector = ' + IntToStr(EntrySector) + ' Offset = ' + IntToStr(EntryOffset));
      {$ENDIF}
-   
+
      {Read Sectors}
      if not ReadSectors(SectorOffset + EntrySector,SectorCount,FClusterBuffer^) then Exit; {Note: SectorCount will never be more than SectorPerCluster}
-   
+
      {Get Directory}
      Directory:=PLFNDirectory(PtrUInt(FClusterBuffer) + EntryOffset);
-   
+
      {Set Entry} {No AltName}
      if not EntryToDirectory(TFATDiskEntry(AEntry),Directory,False) then Exit;
-   
+
      {Write Sectors}
      if not WriteSectors(SectorOffset + EntrySector,SectorCount,FClusterBuffer^) then Exit;
-   
+
      Result:=True;
-    finally  
+    finally
      ClusterUnlock;
-    end; 
+    end;
    end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -6968,14 +6968,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if AParent = nil then Exit;
   if AEntry = nil then Exit;
   if AEntry = FRoot then Exit; {Cannot set Root}
- 
+
   {Check ReadOnly}
   if FReadOnly then Exit;
 
@@ -6986,34 +6986,34 @@ begin
    end
   else
    begin
-    if not ClusterLock then Exit; 
+    if not ClusterLock then Exit;
     try
      if FClusterBuffer = nil then Exit;
-    
+
      {$IFDEF FAT_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.SetLong LongName = ' + AEntry.Name + ' / ShortName = ' + AEntry.AltName);
      {$ENDIF}
-    
+
      {Check Start}
      if not CheckDirectoryStart(AParent) then Exit;
-    
+
      {Get Offsets}
      SectorCount:=GetDirectorySectorCount(AParent,True); {SectorCount is always one on Write}
      SectorOffset:=GetDirectorySectorOffset(AParent);
      if (SectorCount = 0) or (SectorOffset = 0) then Exit;
-    
+
      {Get Start Sector} {Always use the NameOffset/NameSector}
      EntryCount:=TFATDiskEntry(AEntry).EntryCount;
      EntryOffset:=TFATDiskEntry(AEntry).NameOffset;
      EntrySector:=TFATDiskEntry(AEntry).NameSector;
-    
+
      {$IFDEF FAT_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.SetLong LongSector = ' + IntToStr(EntrySector) + ' Offset = ' + IntToStr(EntryOffset));
      {$ENDIF}
-    
+
      {Convert Name}
      if not NameToBuffer(AEntry.Name,FNameBuffer) then Exit;
-    
+
      {Checksum Name}
      Checksum:=ChecksumName(AEntry);
      NameCount:=EntryCount;
@@ -7021,13 +7021,13 @@ begin
       begin
        {Get Sectors}
        if not ReadSectors(SectorOffset + EntrySector,SectorCount,FClusterBuffer^) then Exit; {Note: SectorCount will never be more than SectorPerCluster}
-      
+
        {Read Entries}
        while EntryOffset < FSectorSize do
         begin
          {Get Directory}
          Directory:=PLFNDirectory(PtrUInt(FClusterBuffer) + EntryOffset);
-        
+
          {Check Count}
          if EntryCount > 1 then
           begin
@@ -7039,39 +7039,39 @@ begin
            {$IFDEF FAT_DEBUG}
            if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.SetLong EntrySector = ' + IntToStr(EntrySector) + ' Offset = ' + IntToStr(EntryOffset));
            {$ENDIF}
-          
+
            {Set Entry} {Use AltName}
            if not EntryToDirectory(TFATDiskEntry(AEntry),Directory,True) then Exit;
-          
+
            {Set Offsets}
            TFATDiskEntry(AEntry).EntryOffset:=EntryOffset;
            TFATDiskEntry(AEntry).EntrySector:=EntrySector;
           end;
-         
+
          Dec(EntryCount);
          if EntryCount = 0 then Break; {Break to allow completion}
-        
+
          {Get Next Entry}
          Inc(EntryOffset,fatEntrySize);
         end;
-       
+
        {Set Sectors}
        if not WriteSectors(SectorOffset + EntrySector,SectorCount,FClusterBuffer^) then Exit;
-      
+
        {Get Next Sector}
        EntryOffset:=0;
-       
+
        if not GetNextDirectorySector(AParent,EntrySector,True) then Break; {GetNextDirectorySector returns False on failure (Invalid/Last)} {Break to allow completion}
       end;
-      
+
      Result:=True;
-    finally  
+    finally
      ClusterUnlock;
-    end; 
+    end;
    end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7088,7 +7088,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -7099,36 +7099,36 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.SizeEntry EntryName = ' + AEntry.Name + ' Size = ' + IntToStr(ASize));
   {$ENDIF}
- 
+
   {Check ReadOnly}
   if FReadOnly then Exit;
- 
+
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
- 
+
   {Check Entry}
   if (AEntry.Attributes and faMatchMask) <> faFile then Exit;
- 
+
   {Get Start}
   StartCluster:=TFATDiskEntry(AEntry).StartCluster;
- 
+
   {Check Count}
   CurrentCount:=GetChainClusterCount(StartCluster);
   CurrentSize:=(CurrentCount shl FClusterShiftCount); //To Do //Int64 ?? - FAT is only 32bit ?
   if CurrentSize < AEntry.Size then Exit;
   if CurrentSize > (AEntry.Size + FClusterSize) then Exit; //To Do //Improve this check ?? - cases where size is multiple of cluster (Use shr etc) (More accurate)
- 
+
   {Check Size}
-  if ASize = 0 then 
+  if ASize = 0 then
    begin
     {Zero}
     {Release Clusters}
     if not ReleaseCluster(FFreeCluster,StartCluster) then Exit;
-    
+
     {Update Entry}
     AEntry.Size:=ASize;
     TFATDiskEntry(AEntry).StartCluster:=FFreeCluster;
-   
+
     if not SetEntry(AParent,AEntry) then Exit;
    end
   else if ASize < AEntry.Size then
@@ -7149,17 +7149,17 @@ begin
         LastCluster:=NextCluster;
         NextCluster:=GetNextChainCluster(LastCluster);
         if NextCluster = 0 then Exit;
-        
+
         Inc(CurrentCount);
        end;
-       
+
       {Release Clusters}
       if not ReleaseCluster(LastCluster,NextCluster) then Exit;
      end;
-    
+
     {Update Entry}
     AEntry.Size:=ASize;
-   
+
     if not SetEntry(AParent,AEntry) then Exit;
    end
   else if ASize > AEntry.Size then
@@ -7175,32 +7175,32 @@ begin
         {Allocate Cluster}
         if not AllocCluster(FFreeCluster,StartCluster,1) then Exit;
         Inc(CurrentCount);
-       
-        {Update Entry} 
+
+        {Update Entry}
         TFATDiskEntry(AEntry).StartCluster:=StartCluster;
        end;
-      
+
       {Get Current Last Cluster}
       LastCluster:=GetLastChainCluster(StartCluster);
       if LastCluster = 0 then Exit;
-     
+
       {Allocate Clusters}
       if CurrentCount < EntryCount then
        begin
         if not AllocCluster(LastCluster,NextCluster,(EntryCount - CurrentCount)) then Exit;
        end;
      end;
-    
+
     {Update Entry}
     AEntry.Size:=ASize;
-   
+
     if not SetEntry(AParent,AEntry) then Exit;
    end;
-  
+
   Result:=True; {Note: If Size is same then just succeed}
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7212,11 +7212,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {$IFDEF FAT_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.GetBlock BlockNo = ' + IntToStr(ABlockNo));
  {$ENDIF}
- 
+
  if FDriver = nil then Exit;
  if ABlockNo >= FTotalClusterCount then Exit;
 
@@ -7224,21 +7224,21 @@ begin
  if FEntriesPerBlock = 0 then Exit;
  {BlockNo:=((ABlockNo div FEntriesPerBlock) * FEntriesPerBlock);}
  BlockNo:=((ABlockNo shr FBlockShiftCount) shl FBlockShiftCount);
- 
+
  {Call Inherited Method}
  Result:=inherited GetBlock(BlockNo);
 end;
 
 {==============================================================================}
 
-function TFATFileSystem.GetBlockEx(ABlockNo:LongWord;AWrite:Boolean):TDiskBlock; 
+function TFATFileSystem.GetBlockEx(ABlockNo:LongWord;AWrite:Boolean):TDiskBlock;
 {Overidden to implement multiple entry blocks}
 var
  BlockNo:LongWord;
 begin
  {}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
  if ABlockNo >= FTotalClusterCount then Exit;
 
@@ -7246,7 +7246,7 @@ begin
  if FEntriesPerBlock = 0 then Exit;
  {BlockNo:=((ABlockNo div FEntriesPerBlock) * FEntriesPerBlock);}
  BlockNo:=((ABlockNo shr FBlockShiftCount) shl FBlockShiftCount);
- 
+
  {Call Inherited Method}
  Result:=inherited GetBlockEx(BlockNo,AWrite);
 end;
@@ -7260,11 +7260,11 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check for Length}
  if Length(AName) = 0 then Exit;
  if Length(AName) > FMaxFile then Exit;
- 
+
  {Check for Long}
  if FLongNames then
   begin
@@ -7283,7 +7283,7 @@ begin
      if AName[Count] in SHORT_FILENAME_SUBST_CHARS then Exit;
     end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -7293,14 +7293,14 @@ function TFATFileSystem.CountName(const AName:String):Byte;
 begin
  {}
  Result:=0;
- 
+
  if Length(AName) = 0 then Exit;
- 
+
  Result:=1;
  while (Result * lfnEntryChars) < Length(AName) do
   begin
    Inc(Result);
-   
+
    if Result = lfnEntryMax then Exit; {Maximum Order value for LFN is $3F}
   end;
 end;
@@ -7311,7 +7311,7 @@ function TFATFileSystem.CompareName(const AName,AMatch:String;AWildcard:Boolean)
 begin
  {}
  Result:=False;
- 
+
  //To Do //Not used yet - See TFileSystem.MatchEntry/CompareName
  //Result:=True; //The base method will probably do for this
 end;
@@ -7359,7 +7359,7 @@ var
 begin
  {}
  Result:=fatBlankName;
- 
+
  if FDriver = nil then Exit;
  if AParent = nil then Exit;
  if Length(AName) = 0 then Exit;
@@ -7369,7 +7369,7 @@ begin
  Count:=1;
  Hash:=GenerateNameHash(AName,NAME_HASH_SIZE);
  AltName:=GenerateShortNameEx(AName,Count,Hash,False);
- 
+
  Current:=GetEntryEx(AParent,AltName,faDirectory or faFile,False,False,True);
  while (Current <> nil) and (Current <> AEntry) do
   begin
@@ -7377,7 +7377,7 @@ begin
     begin
      Inc(Count);
      AltName:=GenerateShortNameEx(AName,Count,Hash,False);
-     
+
      Current:=GetEntryEx(AParent,AltName,faDirectory or faFile,False,False,True);
     end
    else
@@ -7391,11 +7391,11 @@ begin
      if Step = lfnMaxHashAlias then Exit;
      Inc(Step);
      AltName:=GenerateShortNameEx(AName,Step,Hash,True);
-     
+
      Current:=GetEntryEx(AParent,AltName,faDirectory or faFile,False,False,True);
     end;
   end;
-  
+
  Result:=AltName;
 end;
 
@@ -7408,16 +7408,16 @@ var
 begin
  {}
  Result:=faNone;
- 
+
  if not FLongNames then Exit;
  if not FCaseFlags then Exit;
- 
+
  {Split Name}
  if not SplitFile(AName,Name,Ext) then Exit;
- 
+
  {Check Name}
  if Lowercase(Name) = Name then Result:=Result or faFlagName;
- 
+
  {Check Ext}
  if Lowercase(Ext) = Ext then Result:=Result or faFlagExt;
 end;
@@ -7431,27 +7431,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FLongNames then Exit;
  if not FCaseFlags then Exit;
- 
+
  {Check Short}
  if not IsEightDotThree(Uppercase(AName)) then Exit;
- 
+
  {Split Name}
  if not SplitFile(AName,Name,Ext) then Exit;
- 
+
  Result:=True;
- 
+
  {Check Both}
  if (Lowercase(Name) = Name) and (Lowercase(Ext) = Ext) then Exit;
- 
+
  {Check Name}
  if (Uppercase(Ext) = Ext) and (Lowercase(Name) = Name) then Exit;
- 
+
  {Check Ext}
  if (Uppercase(Name) = Name) and (Lowercase(Ext) = Ext) then Exit;
- 
+
  Result:=False;
 end;
 
@@ -7467,15 +7467,15 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AName = nil then Exit;
- 
+
  {Get Directory}
  FATDirectory:=PFATDirectory(AName);
- 
+
  {Check Directory}
  Directory:=((FATDirectory.Attribute and faDirectory) = faDirectory);
- 
+
  {Check Name}
  Space:=False;
  for Count:=1 to fatNameCount do
@@ -7490,23 +7490,23 @@ begin
     begin
      {Check base chars}
      if Value in fatBaseChars then Exit;
-     
+
      {Check invalid chars}
      if Value in fatInvalidChars then Exit;
-     
+
      {Check lowercase chars}
      if Value in fatLowercaseChars then Exit; {These dont account for the code page}
-     
+
      {Check space char}
      if (Count = 1) and (Value = fatSpaceChar) then Exit;
      if (Count > 1) and (Value = fatSpaceChar) then Space:=True;
-     
+
      {Check dot char}
      if (not Directory) and (Value = fatDotChar) then Exit;
      if (Directory) and (Count > 2) and (Value = fatDotChar) then Exit;
     end;
   end;
-  
+
  {Check Ext}
  Space:=False;
  for Count:=1 to fatExtCount do
@@ -7521,21 +7521,21 @@ begin
     begin
      {Check dot char}
      if Value = fatDotChar then Exit;
-     
+
      {Check base chars}
      if Value in fatBaseChars then Exit;
-     
+
      {Check invalid chars}
      if Value in fatInvalidChars then Exit;
-     
+
      {Check lowercase chars}
      if Value in fatLowercaseChars then Exit; {These dont account for the code page}
-     
+
      {Check space char}
      if Value = fatSpaceChar then Space:=True;
     end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -7548,13 +7548,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ADirectory = nil then Exit;
- 
+
  {Get Directory}
  FATDirectory:=PFATDirectory(ADirectory);
  LFNDirectory:=PLFNDirectory(ADirectory);
- 
+
  {Check Directory}
  if FATDirectory.Attribute = faLongName then
   begin
@@ -7579,7 +7579,7 @@ begin
    {File}
    {Nothing}
   end;
-  
+
  Result:=True;
 end;
 
@@ -7589,31 +7589,31 @@ function TFATFileSystem.FileSystemInit:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not WriterLock then Exit;
  try
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.FileSystemInit');
   {$ENDIF}
- 
+
   if FDriver = nil then Exit;
 
   {Clear Current}
   FFATType:=ftNONE;
   FVolumeFlags:=0;
-  
+
   FRoot:=nil;
-  
+
   SetCurrent(nil);
-  
+
   FChunks.ClearList;
   FTables.ClearList;
   FBlocks.ClearList;
   FEntries.ClearList;
-  
+
   FLastFreeCluster:=fatUnknownCluster;
   FFreeClusterCount:=fatUnknownCluster;
-  
+
   if FClusterBuffer <> nil then FreeMem(FClusterBuffer);
   FClusterBuffer:=nil;
 
@@ -7622,20 +7622,20 @@ begin
 
   if FReadBuffer <> nil then FreeMem(FReadBuffer);
   FReadBuffer:=nil;
-  
+
   if FNameBuffer <> nil then FreeMem(FNameBuffer);
   FNameBuffer:=nil;
 
   if FInfoBuffer <> nil then FreeMem(FInfoBuffer);
   FInfoBuffer:=nil;
-  
+
   FInfoSector:=0;
   FInfoBackup:=0;
 
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Settings Cleared');
   {$ENDIF}
-  
+
   {Setup Defaults}
   FPathChar:=LoadPathChar;
   FNameChar:=LoadNameChar;
@@ -7657,45 +7657,45 @@ begin
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Defaults Set');
   {$ENDIF}
-  
+
   {Check Volume}
   if FVolume = nil then Exit;
   if FVolume.Device = nil then Exit;
   FReadOnly:=not(FVolume.Device.Writeable);
-  
+
   {Clear Cache}
   if not FDriver.Cache.ReleaseDevicePages(FVolume.Device) then Exit;
-    
+
   {Load Sector Size, Start and Count}
   FSectorSize:=LoadSectorSize;
   FStartSector:=LoadStartSector;
   FSectorCount:=LoadSectorCount;
-    
+
   {Bind to Volume}
   FVolume.FileSystem:=Self;
-    
+
   {Bind to Drive}
   if FDrive <> nil then FDrive.FileSystem:=Self;
-    
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Volume Checked');
   {$ENDIF}
 
   {Get Boot Sector}
   if not ReadSectors(fatBootSector,1,FSectorBuffer^) then Exit;
-  
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Boot Sector Read');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                 PBootSector(FSectorBuffer).Signature=' + IntToHex(PBootSector(FSectorBuffer).Signature,4));
   {$ENDIF}
-  
+
   {Check Boot Sector (Accept 0 due to some faulty devices)}
   if (PBootSector(FSectorBuffer).Signature <> BOOT_SECTOR_SIGNATURE) and (PBootSector(FSectorBuffer).Signature <> 0) then Exit;
-  
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Boot Sector Checked');
   {$ENDIF}
-  
+
   {Check for FAT}
   if PBootSector(FSectorBuffer).BootSignature = fatBootSignature then
    begin
@@ -7709,7 +7709,7 @@ begin
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                 PBootSector(FSectorBuffer).BPB.NumberOfFats=' + IntToStr(PBootSector(FSectorBuffer).BPB.NumberOfFats));
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                 PBootSector(FSectorBuffer).BPB.RootEntryCount=' + IntToStr(PBootSector(FSectorBuffer).BPB.RootEntryCount));
     {$ENDIF}
-    
+
     {Check for FAT12/16}
     if PBootSector(FSectorBuffer).BPB.BytesPerSector = 0 then Exit;
     if (PBootSector(FSectorBuffer).BPB.BytesPerSector mod MIN_SECTOR_SIZE) <> 0 then Exit;
@@ -7729,15 +7729,15 @@ begin
     if PBootSector(FSectorBuffer).BPB.RootEntryCount = 0 then Exit;
     {if PBootSector(FSectorBuffer).BPB.HiddenSectors <> FStartSector then Exit;} {Doesnt work for Extended or Logical}
     if ((PBootSector(FSectorBuffer).BPB.RootEntryCount * fatEntrySize) mod PBootSector(FSectorBuffer).BPB.BytesPerSector) <> 0 then Exit;
-    
+
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                FAT12/16 Detected');
     {$ENDIF}
-    
+
     {Calculate Parameters}
     FSectorSize:=PBootSector(FSectorBuffer).BPB.BytesPerSector;
     FSectorCount:=PBootSector(FSectorBuffer).BPB.TotalSectors16;
-    if FSectorCount = 0 then FSectorCount:=PBootSector(FSectorBuffer).BPB.TotalSectors32; 
+    if FSectorCount = 0 then FSectorCount:=PBootSector(FSectorBuffer).BPB.TotalSectors32;
 
     FBootSector:=fatBootSector;
     FBootBackup:=fatBootSector;
@@ -7760,7 +7760,7 @@ begin
 
     FEntriesPerBlock:=GetEntriesPerBlock(FSectorSize,ftFAT16);
     FSectorsPerBlock:=GetSectorsPerBlock(FSectorSize,ftFAT16);
- 
+
     FBlockShiftCount:=GetBlockShiftCount(FSectorSize,ftFAT16);
     FSectorShiftCount:=GetSectorShiftCount(FSectorsPerCluster);
     FClusterShiftCount:=GetClusterShiftCount(FSectorSize * FSectorsPerCluster);
@@ -7780,16 +7780,16 @@ begin
     if FWriteBuffer = nil then Exit;
     FClusterBuffer:=GetMem(FClusterSize);
     if FClusterBuffer = nil then Exit;
-    
+
     {Reset Info Buffer}
     PFATInfoSector(FInfoBuffer).LeadSignature:=0;
     PFATInfoSector(FInfoBuffer).StructureSignature:=0;
     PFATInfoSector(FInfoBuffer).TrailSignature:=0;
-    
+
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                Parameters Calculated');
     {$ENDIF}
-    
+
     {Determine Type}
     FFATType:=ftFAT16;
     FEndOfFile:=fat16EndOfFile;
@@ -7818,12 +7818,12 @@ begin
       FCleanShutdown:=0; {Not applicable on FAT12}
       FReservedBits:=0;  {Not applicable on FAT12}
      end;
-    
+
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                Type Determined');
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                 FATType = ' + FATTypeToString(FFATType));
     {$ENDIF}
-    
+
     {Create Root}
     FRoot:=TFATDiskEntry.Create(FEntryLocal);
     FRoot.Name:=FRootName;
@@ -7831,9 +7831,9 @@ begin
     FRoot.Attributes:=faDirectory; {Must be a Directory}
     TFATDiskEntry(FRoot).StartSector:=FRootStartSector;
     FRoot.AddReference; {Prevent Deletion}
-    
+
     FEntries.Add(FRoot,nil);
-    
+
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                Root Created');
     {$ENDIF}
@@ -7874,11 +7874,11 @@ begin
     if PExtBootSector(FSectorBuffer).BPB.RootEntryCount <> 0 then Exit;
     if PExtBootSector(FSectorBuffer).BPB.SectorsPerFat16 <> 0 then Exit;
     {if PExtBootSector(FSectorBuffer).BPB.HiddenSectors <> FStartSector then Exit;} {Doesnt work for Extended or Logical}
-    
+
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                FAT32 Detected');
     {$ENDIF}
-    
+
     {Calculate Parameters}
     FSectorSize:=PExtBootSector(FSectorBuffer).BPB.BytesPerSector;
     FSectorCount:=PExtBootSector(FSectorBuffer).BPB.TotalSectors16;
@@ -7926,16 +7926,16 @@ begin
     if FWriteBuffer = nil then Exit;
     FClusterBuffer:=GetMem(FClusterSize);
     if FClusterBuffer = nil then Exit;
-    
+
     {Reset Info Buffer}
     PFATInfoSector(FInfoBuffer).LeadSignature:=0;
     PFATInfoSector(FInfoBuffer).StructureSignature:=0;
     PFATInfoSector(FInfoBuffer).TrailSignature:=0;
-    
+
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                Parameters Calculated');
     {$ENDIF}
-    
+
     {Determine Type}
     FFATType:=ftFAT32;
     FEndOfFile:=fat32EndOfFile;
@@ -7947,12 +7947,12 @@ begin
     FHardError:=fat32HardError;
     FCleanShutdown:=fat32CleanShutdown;
     FReservedBits:=fat32ReservedBits;
-    
+
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                Type Determined');
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                 FATType = ' + FATTypeToString(FFATType));
     {$ENDIF}
-    
+
     {Create Root}
     FRoot:=TFATDiskEntry.Create(FEntryLocal);
     FRoot.Name:=FRootName;
@@ -7960,14 +7960,14 @@ begin
     FRoot.Attributes:=faDirectory; {Must be a Directory}
     TFATDiskEntry(FRoot).StartCluster:=FRootStartCluster;
     FRoot.AddReference; {Prevent Deletion}
-    
+
     FEntries.Add(FRoot,nil);
-    
+
     {$IFDEF FAT_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('                Root Created');
     {$ENDIF}
    end;
-   
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then
    begin
@@ -8003,22 +8003,22 @@ begin
     FileSysLogDebug(' ClusterSize = ' + IntToStr(FClusterSize));
    end;
   {$ENDIF}
-  
+
   {Load Tables}
   LoadTables;
-  
+
   {Load Block}
   LoadBlock(0);
-  
+
   {Set Current}
   SetCurrent(FRoot);
-  
+
   {Setup Values}
   FSystemName:=LoadSystemName;
   FVolumeName:=LoadVolumeName;
   FVolumeSerial:=LoadVolumeSerial;
   FFileSysType:=LoadFileSysType;
-  
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.FileSystemInit Completed');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                SystemName = ' + FSystemName);
@@ -8026,11 +8026,11 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                VolumeSerial = ' + IntToHex(FVolumeSerial,8));
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                FileSysType = ' + FileSysTypeToString(FFileSysType));
   {$ENDIF}
-  
+
   Result:=True;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8051,15 +8051,15 @@ begin
   //To do - Allows for Mount/Dismount by formatter without dismounting Drive/Volume
   //Also allows updating the VolumeFlags (Dirty on Mount) on FAT32
   //See NTFS
-  
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.MountFileSystem Completed');
   {$ENDIF}
-  
+
   //Result:=True; //To do
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8080,18 +8080,18 @@ begin
   //To do - Allows for Mount/Dismount by formatter without dismounting Drive/Volume
   //Also allows updating the InfoSector and VolumeFlags (Clean on Dismount) on FAT32
   //See NTFS
-  
+
   {Update Info Sector}
   UpdateInfoSector;
-  
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.DismountFileSystem Completed');
   {$ENDIF}
-  
+
   //Result:=True; //To do
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8111,15 +8111,15 @@ begin
 
   //To do - Allows for formatter to init a new volume with the default information
   //See NTFS
-  
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.InitializeFileSystem Completed');
   {$ENDIF}
-  
+
   //Result:=True; //To do
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8146,7 +8146,7 @@ begin
   if Current <> nil then
    begin
     Result:=Current.Name;
-    
+
     {Remove Reference}
     Current.RemoveReference;
    end
@@ -8157,9 +8157,9 @@ begin
       Result:=GetVolumeName;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8192,29 +8192,29 @@ begin
        {No need to check File or Folder as Label can have same name}
        {Check Name}
        if not CheckName(ALabel) then Exit;
-       
+
        {Rename Label}
        if not RenameEntry(FRoot,Current,ALabel) then Exit;
-       
+
        {Set Volume Name}
        if not SetVolumeName(ALabel) then Exit;
-       
+
        Result:=True;
       end
      else
       begin
        {Remove Label}
        if not RemoveEntry(FRoot,Current) then Exit;
-       
+
        {Set Volume Name}
        if not SetVolumeName(fatDefaultName) then Exit;
-       
+
        Result:=True;
       end;
     finally
      {Remove Reference}
      Current.RemoveReference;
-    end; 
+    end;
    end
   else
    begin
@@ -8224,27 +8224,27 @@ begin
       {No need to check File or Folder as Label can have same name}
       {Check Name}
       if not CheckName(ALabel) then Exit;
-      
+
       {Add Label}
       Current:=AddEntry(FRoot,ALabel,faVolumeID,False);
       if Current = nil then Exit;
-      
+
       {Set Volume Name}
       if not SetVolumeName(ALabel) then Exit;
-      
+
       Result:=True;
      end
     else
      begin
       {Set Volume Name}
       if not SetVolumeName(fatDefaultName) then Exit;
-      
+
       Result:=True;
      end;
    end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8261,14 +8261,14 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.SetDriveSerial');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Serial = ' + IntToHex(ASerial,8));
   {$ENDIF}
-  
+
   {Set Volume Serial}
   if not SetVolumeSerial(ASerial) then Exit;
 
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -8289,16 +8289,16 @@ begin
 
   {Check Free Cluster Count}
   if GetFreeClusterCount = fatUnknownCluster then Exit;
-  
+
   {Return Free Space}
   Result:=FFreeClusterCount;
   Result:=(Result * FSectorsPerCluster);
   Result:=(Result * FSectorSize);
   {Modified to ensure Int64 mutliply}
   {Result:=((FFreeClusterCount * FSectorsPerCluster) * FSectorSize);}
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -8323,14 +8323,14 @@ begin
   Result:=(Result * FSectorSize);
   {Modified to ensure Int64 mutliply}
   {Result:=((FDataClusterCount * FSectorsPerCluster) * FSectorSize);}
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TFATFileSystem.GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; 
+function TFATFileSystem.GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean;
 {Get Drive Information from internal FAT data}
 begin
  {}
@@ -8346,18 +8346,18 @@ begin
 
   {Check Free Cluster Count}
   if GetFreeClusterCount = fatUnknownCluster then Exit;
-  
+
   {Return Drive Information}
   AClusterSize:=FClusterSize;
   ATotalClusterCount:=FDataClusterCount;
   AFreeClusterCount:=FFreeClusterCount;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {TFATDiskBlock}
@@ -8388,10 +8388,10 @@ begin
  {}
  {Check Initialized}
  if FATFSInitialized then Exit;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Create FAT Recognizer}
  if FILESYS_FAT_ENABLED then
   begin
@@ -8406,7 +8406,7 @@ begin
    Recognizer.QuickCheck:=FAT_QUICK_CHECK;
    Recognizer.InfoSectorEnable:=FAT_INFO_SECTOR_ENABLE;
    Recognizer.InfoImmediateUpdate:=FAT_INFO_IMMEDIATE_UPDATE;
-  end; 
+  end;
 
  FATFSInitialized:=True;
 end;
@@ -8423,22 +8423,22 @@ begin
  {}
  {Check Initialized}
  if not FATFSInitialized then Exit;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Terminate FileSystems}
- NextFileSystem:=FileSysDriver.GetFileSystemByNext(nil,True,False,FILESYS_LOCK_READ); 
+ NextFileSystem:=FileSysDriver.GetFileSystemByNext(nil,True,False,FILESYS_LOCK_READ);
  while NextFileSystem <> nil do
   begin
    CurrentFileSystem:=NextFileSystem;
-   NextFileSystem:=FileSysDriver.GetFileSystemByNext(CurrentFileSystem,True,False,FILESYS_LOCK_READ); 
-   
+   NextFileSystem:=FileSysDriver.GetFileSystemByNext(CurrentFileSystem,True,False,FILESYS_LOCK_READ);
+
    if CurrentFileSystem is TFATFileSystem then
     begin
      {Convert FileSystem}
      CurrentFileSystem.ReaderConvert;
-    
+
      {FileSysDriver.RemoveFileSystem(CurrentFileSystem);} {Done by Destroy}
      CurrentFileSystem.DismountFileSystem;
      CurrentFileSystem.Free;
@@ -8447,21 +8447,21 @@ begin
     begin
      {Unlock FileSystem}
      CurrentFileSystem.ReaderUnlock;
-    end;    
+    end;
   end;
 
  {Terminate Recognizer}
- NextRecognizer:=FileSysDriver.GetRecognizerByNext(nil,True,False,FILESYS_LOCK_READ); 
+ NextRecognizer:=FileSysDriver.GetRecognizerByNext(nil,True,False,FILESYS_LOCK_READ);
  while NextRecognizer <> nil do
   begin
    CurrentRecognizer:=NextRecognizer;
    NextRecognizer:=FileSysDriver.GetRecognizerByNext(CurrentRecognizer,True,False,FILESYS_LOCK_READ);
-   
+
    if CurrentRecognizer is TFATRecognizer then
     begin
      {Convert Recognizer}
      CurrentRecognizer.ReaderConvert;
-    
+
      {FileSysDriver.RemoveRecognizer(CurrentRecognizer);} {Done by Destroy}
      CurrentRecognizer.Free;
     end
@@ -8471,7 +8471,7 @@ begin
      CurrentRecognizer.ReaderUnlock;
     end;
   end;
- 
+
  FATFSInitialized:=False;
 end;
 
@@ -8486,7 +8486,7 @@ function FATTypeToString(AType:TFATType):String;
 begin
  {}
  Result:='ftNONE';
- 
+
  {Check Type}
  case AType of
   ftFAT12:Result:='ftFAT12';
@@ -8502,7 +8502,7 @@ initialization
  FATFSInit;
 
 {==============================================================================}
- 
+
 finalization
  FATFSQuit;
 

@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -48,7 +48,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {CP1250ANSI specific constants}
@@ -64,13 +64,13 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Initialization Functions}
 procedure CP1250ANSIInit;
- 
+
 {==============================================================================}
 {CP1250ANSI Functions}
- 
+
 {==============================================================================}
 {CP1250ANSI Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -124,7 +124,7 @@ var
   $0111,$0144,$0148,$00F3,$00F4,$0151,$00F6,$00F7,
   $0159,$016F,$00FA,$0171,$00FC,$00FD,$0163,$02D9)
  );
- 
+
  CP1250Lower:TLowerTable = (
   LowerID:1250;
   Values:(
@@ -145,7 +145,7 @@ var
   $E0,$E1,$E2,$E3,$E4,$E5,$E6,$E7,$E8,$E9,$EA,$EB,$EC,$ED,$EE,$EF,
   $F0,$F1,$F2,$F3,$F4,$F5,$F6,$F7,$F8,$F9,$FA,$FB,$FC,$FD,$FE,$FF)
  );
- 
+
  CP1250Upper:TUpperTable = (
   UpperID:1250;
   Values:(
@@ -166,7 +166,7 @@ var
   $C0,$C1,$C2,$C3,$C4,$C5,$C6,$C7,$C8,$C9,$CA,$CB,$CC,$CD,$CE,$CF,
   $D0,$D1,$D2,$D3,$D4,$D5,$D6,$F7,$D8,$D9,$DA,$DB,$DC,$DD,$DE,$FF)
  );
- 
+
  CP1250TO852:TTransTable = (
   TransID:852;
   Values:(
@@ -187,7 +187,7 @@ var
   $EA,$A0,$83,$C7,$84,$92,$86,$87,$9F,$82,$A9,$89,$D8,$A1,$8C,$D4,
   $D0,$E4,$E5,$A2,$93,$8B,$94,$F6,$FD,$85,$A3,$FB,$81,$EC,$EE,$FA)
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -204,7 +204,7 @@ begin
  {Check Environment Variables}
  //To Do //Check CODEPAGE_ANSI_DEFAULT //If 1250 then SetACP(1250) etc
          //For 852 OEM check CODEPAGE_OEM_DEFAULT //If 852 then SetOEMCP(852) etc
- 
+
  CP1250ANSIInitialized:=True;
 end;
 
@@ -221,9 +221,9 @@ end;
 
 initialization
  CP1250ANSIInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

@@ -17,95 +17,95 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
  Keyboard layouts - https://en.wikipedia.org/wiki/Keyboard_layout
 
  QWERTY keyboard - https://en.wikipedia.org/wiki/QWERTY
- 
+
  QWERTZ keyboard - https://en.wikipedia.org/wiki/QWERTZ
- 
+
  AZERTY keyboard - https://en.wikipedia.org/wiki/AZERTY
- 
+
  AltGr Key - https://en.wikipedia.org/wiki/AltGr_key
- 
+
  Caps Lock - https://en.wikipedia.org/wiki/Caps_lock
- 
+
  Dead Key - https://en.wikipedia.org/wiki/Dead_key
- 
+
  Windows Keyboard layouts - https://msdn.microsoft.com/en-au/goglobal/bb964651
- 
+
 Keymaps
 =======
 
  Keymaps define the translation of a keyboard scan code (the SCAN_CODE_* values) to a key code
  value (the KEY_CODE_* values) and provide the ability to handle different keyboard layouts in
  different countries and regions.
- 
+
  The keyboard scan codes are based on the values in Section 10 of the Universal Serial Bus HID
  Usage Tables v1.12 and are the actual values returned by the keyboard when a key is pressed.
- 
+
  The key code values are based on the Unicode standard with each key code mapped to the code point
  for that character.
- 
- This allows almost infinite flexibility in the way keyboard scan codes are mapped to actual 
+
+ This allows almost infinite flexibility in the way keyboard scan codes are mapped to actual
  characters and avoids the need to make unreliable assumptions about ASCII characters and upper
  or lower case handling.
- 
+
  Since the output of the keyboard is a stream of TKeyboardData structures containing both the
  scan code and the key code then higher level functions can retranslate the data in any way required.
- 
+
  Caps Keys
  ---------
- 
+
  Caps keys account for the set of keys which are affected by Caps Lock in any given keyboard layout.
- 
+
  In some layouts only the alphabetic keys are affected, in other layouts some or all of the numeric
  and punctuation keys are also affected.
- 
+
  The caps keys data for any keyboard layout allows defining ranges of keys that are affected by the
  Caps Lock state.
-  
+
  Dead Keys
  ---------
- 
+
  Dead keys account for the set of keys which behave as dead keys in any given keyboard layout.
- 
+
  On pressing a deadkey it will be recognized by the keyboard as such and stored until the next key
  press occurs. If the next keypress is one of the resolves for the pressed dead key then the output
  character will be the key code value of the resolve not for the key itself.
- 
+
  If the next keypress after a dead key is not one of the resolves that the dead key and the pressed
  key will both be output to the keyboard buffer.
- 
+
  Setting the default keymap for the system
  -----------------------------------------
- 
+
  Additional keymaps are provided as units which can be included in a program and will auto load
  themselves if included.
- 
+
  All keymap units are configured to check for both the environment variable KEYMAP_DEFAULT and the
  global configuration variable KEYMAP_DEFAULT to determine if either of them is set to the name of
  that keymap. If either is set to the keymap name then that keymap will also set itself as the default
  during system startup.
- 
- The environment variable KEYMAP_DEFAULT can be set by adding KEYMAP_DEFAULT=XX (where XX is the 
+
+ The environment variable KEYMAP_DEFAULT can be set by adding KEYMAP_DEFAULT=XX (where XX is the
  name of the keymap, eg DE for Keymap_DE) to the command line of the application (dependent on the
  system, for a Raspberry Pi use the cmdline.txt file on the SD card).
- 
+
  The global configuration variable KEYMAP_DEFAULT can be set in code by including the GlobalConfig
  unit in a program and setting the variable during startup.
- 
+
  At any time after startup the default keymap can be changed by call the KeymapSetDefault function.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -128,33 +128,33 @@ const
  KEYMAP_KEY_COUNT = 256;   {Number of key mappings in a keymap entry}
  KEYMAP_ROW_COUNT = 4;     {Number of mapping rows per key in a keymap entry (Normal, Shift, AltGr, Shift_AltGr)}
  KEYMAP_ROW_SIZE  = SizeOf(Word);
- 
+
  KEYMAP_MAX_CAPSKEYS = 50; {Maximum number of keys that can be listed in the TKeymapCapskeys structure}
  KEYMAP_MAX_DEADKEYS = 5;  {Maximum number of keys that can be listed in the TKeymapDeadkeys structure}
  KEYMAP_MAX_RESOLVES = 20; {Maximum number of resolves that can be listed in the TKeymapDeadkey structure}
- 
+
  {Keymap Signature}
  KEYMAP_SIGNATURE = $863FDBA1;
 
  {Keymap name constants}
  KEYMAP_NAME_LENGTH = SIZE_64;   {Length of keymap name}
  KEYMAP_DESC_LENGTH = SIZE_128;  {Length of keymap description}
- 
+
  {Keymap Mode constants}
  KEYMAP_MODE_NONE = 0;
- 
+
  {Keymap Flag constants}
  KEYMAP_FLAG_NONE       = $00000000;
  KEYMAP_FLAG_ALTGR      = $00000001; {The key mapping uses the AltGr key}
  KEYMAP_FLAG_CAPS_ALL   = $00000002; {Caps Lock shifts all characters not just alphabetic}
  KEYMAP_FLAG_CAPS_ASCII = $00000004; {Caps Lock shifts only ASCII characters A to Z}
- 
+
  {Keymap Index constants}
  KEYMAP_INDEX_NORMAL      = 0; {Normal (unshifted) value}
  KEYMAP_INDEX_SHIFT       = 1; {Shifted value}
  KEYMAP_INDEX_ALTGR       = 2; {AltGr value}
  KEYMAP_INDEX_SHIFT_ALTGR = 3; {Shift plus AltGr value}
- 
+
 {==============================================================================}
 type
  {Keymap specific types}
@@ -169,31 +169,31 @@ type
   Name:String[255];        {Keymap name}
   Description:String[255]; {Keymap description}
  end;
- 
+
  {Keymap Data}
  PKeymapData = ^TKeymapData;
  TKeymapData = record
   Data:array[0..255,KEYMAP_INDEX_NORMAL..KEYMAP_INDEX_SHIFT_ALTGR] of Word; {Key mapping data, 4 words for Normal, Shift, AltGr, Shift+AltGr for each of the 256 keys (See KEY_CODE_* constants)}
  end;
- 
+
  {Keymap Chars}
- PKeymapChars = ^TKeymapChars; 
+ PKeymapChars = ^TKeymapChars;
  TKeymapChars = array[0..0] of Word;
- 
+
  {Keymap Capskey (Keys affected by the Caps Lock function)}
  PKeymapCapskey = ^TKeymapCapskey;
  TKeymapCapskey = record
   First:Word;                    {First key in caps key range (SCAN_CODE_* value)}
   Last:Word;                     {Last key in caps key range (SCAN_CODE_* value)(Make first and last the same for a single key)}
  end;
- 
+
  {Keymap Capskeys}
  PKeymapCapskeys = ^TKeymapCapskeys;
  TKeymapCapskeys = record
   Count:LongWord;
   Keys:array[0..KEYMAP_MAX_CAPSKEYS - 1] of TKeymapCapskey;
  end;
- 
+
  {Keymap Resolve}
  PKeymapResolve = ^TKeymapResolve;
  TKeymapResolve = record
@@ -201,7 +201,7 @@ type
   Index:Byte; {The index state of the key pressed after the deadkey (eg KEYMAP_INDEX_NORMAL)}
   Code:Word;  {The key code of the resulting character (KEY_CODE_* value)}
  end;
- 
+
  {Keymap Deadkey (Keys which behave as dead keys)}
  PKeymapDeadkey = ^TKeymapDeadkey;
  TKeymapDeadkey = record
@@ -209,14 +209,14 @@ type
   Index:Byte;                    {The index state in which the key behaves as a deadkey (eg KEYMAP_INDEX_NORMAL)}
   Resolves:array[0..KEYMAP_MAX_RESOLVES - 1] of TKeymapResolve;
  end;
- 
+
  {Keymap Deadkeys}
  PKeymapDeadkeys = ^TKeymapDeadkeys;
  TKeymapDeadkeys = record
   Count:LongWord;
   Keys:array[0..KEYMAP_MAX_DEADKEYS - 1] of TKeymapDeadkey;
  end;
- 
+
  {Keymap Properties}
  PKeymapProperties = ^TKeymapProperties;
  TKeymapProperties = record
@@ -229,10 +229,10 @@ type
  end;
 
  PKeymapEntry = ^TKeymapEntry;
- 
+
  {Keymap Enumeration Callback}
  TKeymapEnumerate = function(Handle:TKeymapHandle;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Keymap Entry}
  TKeymapEntry = record
   {Keymap Properties}
@@ -251,11 +251,11 @@ type
   Prev:PKeymapEntry;             {Previous entry in Keymap table}
   Next:PKeymapEntry;             {Next entry in Keymap table}
  end;
- 
+
 {==============================================================================}
 {var}
  {Keymap specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure KeymapInit;
@@ -283,15 +283,15 @@ function KeymapResolveDeadkey(Handle:TKeymapHandle;DeadCode,ScanCode:Word;DeadIn
 
 function KeymapGetProperties(Handle:TKeymapHandle;Properties:PKeymapProperties):LongWord;
 
-function KeymapFindByName(const Name:String):TKeymapHandle; 
-function KeymapFindByDescription(const Description:String):TKeymapHandle; 
+function KeymapFindByName(const Name:String):TKeymapHandle;
+function KeymapFindByDescription(const Description:String):TKeymapHandle;
 function KeymapEnumerate(Callback:TKeymapEnumerate;Data:Pointer):LongWord;
 
 {==============================================================================}
 {Keymap Helper Functions}
 function KeymapGetCount:LongWord;
 function KeymapGetDefault:TKeymapHandle;
-function KeymapSetDefault(Handle:TKeymapHandle):LongWord; 
+function KeymapSetDefault(Handle:TKeymapHandle):LongWord;
 
 function KeymapCheck(Keymap:PKeymapEntry):PKeymapEntry;
 
@@ -309,10 +309,10 @@ var
  KeymapTable:PKeymapEntry;
  KeymapTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  KeymapTableCount:LongWord;
- 
+
  KeymapDefault:TKeymapHandle = INVALID_HANDLE_VALUE;
- 
-var 
+
+var
  {Default Keymap - US English}
  KEYMAP_US_ENGLISH_HEADER:TKeymapHeader = (
   Mode:KEYMAP_MODE_NONE;
@@ -322,7 +322,7 @@ var
   Name:('US');
   Description:('US English')
   );
- 
+
  KEYMAP_US_ENGLISH_DATA:TKeymapData = (
         {Scan Code mappings:                 Normal                         Shift                          AltGr                          Shift+AltGr  }
   Data:({SCAN_CODE_NONE                   } (KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE),
@@ -416,7 +416,7 @@ var
         {SCAN_CODE_KEYPAD_ENTER           } (KEY_CODE_ENTER,                KEY_CODE_ENTER,                KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_1               } (KEY_CODE_END,                  KEY_CODE_1,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_2               } (KEY_CODE_DOWN_ARROW,           KEY_CODE_2,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
-        {SCAN_CODE_KEYPAD_3               } (KEY_CODE_PAGEDN,               KEY_CODE_3,                    KEY_CODE_NONE,                 KEY_CODE_NONE),             
+        {SCAN_CODE_KEYPAD_3               } (KEY_CODE_PAGEDN,               KEY_CODE_3,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_4               } (KEY_CODE_LEFT_ARROW,           KEY_CODE_4,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_5               } (KEY_CODE_CENTER,               KEY_CODE_5,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_6               } (KEY_CODE_RIGHT_ARROW,          KEY_CODE_6,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
@@ -582,7 +582,7 @@ var
                                             (KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE),
                                             (KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE))
   );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -594,24 +594,24 @@ begin
  {}
  {Check Initialized}
  if KeymapInitialized then Exit;
- 
+
  {Initialize Keymap Table}
  KeymapTable:=nil;
- KeymapTableLock:=CriticalSectionCreate; 
+ KeymapTableLock:=CriticalSectionCreate;
  KeymapTableCount:=0;
  if KeymapTableLock = INVALID_HANDLE_VALUE then
   begin
    if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to create keymap table lock');
   end;
  KeymapDefault:=INVALID_HANDLE_VALUE;
- 
+
  {Load Default Keymap}
  KeymapDefault:=KeymapLoad(@KEYMAP_US_ENGLISH_HEADER,@KEYMAP_US_ENGLISH_DATA,SizeOf(TKeymapData));
  if KeymapDefault = INVALID_HANDLE_VALUE then
   begin
    if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to load default keymap');
   end;
- 
+
  KeymapInitialized:=True;
 end;
 
@@ -649,33 +649,33 @@ begin
 
  {Check Data}
  if Data = nil then Exit;
- 
+
  {Check Header}
  if (Header = nil) and (Properties = nil) then Exit;
- 
+
  {Check Capskeys}
  {if Capskeys = nil then Exit;} {May be nil}
 
  {Check Deadkeys}
  {if Deadkeys = nil then Exit;} {May be nil}
- 
+
  {Check Properties}
  if Properties = nil then
   begin
    {Check Count}
    if Header.KeyCount <> KEYMAP_KEY_COUNT then Exit;
    if Header.RowCount <> KEYMAP_ROW_COUNT then Exit;
-   
+
    {Get Size}
    TotalSize:=Header.KeyCount * (Header.RowCount * KEYMAP_ROW_SIZE); {Default 2K}
-   
+
    {Check Size}
    if Size < TotalSize then Exit;
-   
+
    {Create Keymap}
    Keymap:=PKeymapEntry(AllocMem(SizeOf(TKeymapEntry)));
    if Keymap = nil then Exit;
-   
+
    {Update Keymap}
    Keymap.Signature:=KEYMAP_SIGNATURE;
    Keymap.KeymapMode:=Header.Mode;
@@ -689,21 +689,21 @@ begin
    Keymap.DeadkeysData:=nil;
   end
  else
-  begin 
+  begin
    {Check Count}
    if Properties.KeyCount <> KEYMAP_KEY_COUNT then Exit;
    if Properties.RowCount <> KEYMAP_ROW_COUNT then Exit;
 
    {Get Size}
    TotalSize:=Properties.KeyCount * (Properties.RowCount * KEYMAP_ROW_SIZE); {Default 2K}
-   
+
    {Check Size}
    if Size < TotalSize then Exit;
 
    {Create Keymap}
    Keymap:=PKeymapEntry(AllocMem(SizeOf(TKeymapEntry)));
    if Keymap = nil then Exit;
-   
+
    {Update Keymap}
    Keymap.Signature:=KEYMAP_SIGNATURE;
    Keymap.KeymapMode:=Properties.KeymapMode;
@@ -716,7 +716,7 @@ begin
    Keymap.CapskeysData:=nil;
    Keymap.DeadkeysData:=nil;
   end;
- 
+
  {Update Keymap}
  Keymap.KeyData:=GetMem(TotalSize);
  if Keymap.KeyData = nil then
@@ -724,10 +724,10 @@ begin
    FreeMem(Keymap);
    Exit;
   end;
-  
+
  {Copy Data}
  System.Move(PKeymapChars(Data)[0],Keymap.KeyData^,TotalSize);
- 
+
  {Copy Capskeys}
  if Capskeys <> nil then
   begin
@@ -736,14 +736,14 @@ begin
     begin
      {Free Keys}
      FreeMem(Keymap.KeyData);
-    
+
      FreeMem(Keymap);
      Exit;
     end;
-  
+
    System.Move(Capskeys^,Keymap.CapskeysData^,SizeOf(TKeymapCapskeys));
   end;
- 
+
  {Copy Deadkeys}
  if Deadkeys <> nil then
   begin
@@ -755,17 +755,17 @@ begin
       begin
        FreeMem(Keymap.CapskeysData);
       end;
-     
+
      {Free Keys}
      FreeMem(Keymap.KeyData);
-    
+
      FreeMem(Keymap);
      Exit;
     end;
-   
+
    System.Move(Deadkeys^,Keymap.DeadkeysData^,SizeOf(TKeymapDeadkeys));
-  end; 
-  
+  end;
+
  {Insert Keymap}
  if CriticalSectionLock(KeymapTableLock) = ERROR_SUCCESS then
   begin
@@ -781,16 +781,16 @@ begin
       KeymapTable.Prev:=Keymap;
       KeymapTable:=Keymap;
      end;
- 
+
     {Increment Count}
     Inc(KeymapTableCount);
-    
+
     {Check Default}
     if KeymapDefault = INVALID_HANDLE_VALUE then
      begin
       KeymapDefault:=TKeymapHandle(Keymap);
      end;
-     
+
     {Return Result}
     Result:=TKeymapHandle(Keymap);
    finally
@@ -810,15 +810,15 @@ begin
     begin
      FreeMem(Keymap.CapskeysData);
     end;
-   
+
    {Free Keys}
    FreeMem(Keymap.KeyData);
-   
+
    {Free Keymap}
    FreeMem(Keymap);
-  end;  
+  end;
 end;
-  
+
 {==============================================================================}
 
 function KeymapUnload(Handle:TKeymapHandle):LongWord;
@@ -832,19 +832,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Keymap}
  Keymap:=PKeymapEntry(Handle);
  if Keymap = nil then Exit;
  if Keymap.Signature <> KEYMAP_SIGNATURE then Exit;
- 
+
  {Check Keymap}
  Result:=ERROR_NOT_FOUND;
  if KeymapCheck(Keymap) <> Keymap then Exit;
- 
+
  {Remove Keymap}
  if CriticalSectionLock(KeymapTableLock) = ERROR_SUCCESS then
   begin
@@ -858,7 +858,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -866,18 +866,18 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(KeymapTableCount);
- 
+
     {Check Default}
     if KeymapDefault = Handle then
      begin
       KeymapDefault:=TKeymapHandle(KeymapTable);
      end;
-     
+
     {Update Keymap}
     Keymap.Signature:=0;
 
@@ -886,19 +886,19 @@ begin
      begin
       FreeMem(Keymap.DeadkeysData);
      end;
-    
+
     {Free Capskeys data}
     if Keymap.CapskeysData <> nil then
      begin
       FreeMem(Keymap.CapskeysData);
      end;
- 
+
     {Free Keys}
     FreeMem(Keymap.KeyData);
-   
+
     {Free Keymap}
     FreeMem(Keymap);
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -908,7 +908,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -922,24 +922,24 @@ var
 begin
  {}
  Result:='';
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Keymap}
  Keymap:=PKeymapEntry(Handle);
  if Keymap = nil then Exit;
  if Keymap.Signature <> KEYMAP_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(KeymapTableLock) <> ERROR_SUCCESS then Exit;
 
  {Allocate Result}
  SetLength(Result,KEYMAP_NAME_LENGTH - 1);
- 
+
  {Get Name}
  StrLCopy(PChar(Result),Keymap.KeymapName,KEYMAP_NAME_LENGTH - 1);
-    
+
  {Update Result}
  SetLength(Result,StrLen(PChar(Result)));
 
@@ -958,15 +958,15 @@ var
 begin
  {}
  Result:='';
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Keymap}
  Keymap:=PKeymapEntry(Handle);
  if Keymap = nil then Exit;
  if Keymap.Signature <> KEYMAP_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(KeymapTableLock) <> ERROR_SUCCESS then Exit;
 
@@ -995,21 +995,21 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Keymap}
  Keymap:=PKeymapEntry(Handle);
  if Keymap = nil then Exit;
  if Keymap.Signature <> KEYMAP_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(KeymapTableLock) <> ERROR_SUCCESS then Exit;
- 
+
  {Check Flag}
  Result:=((Keymap.KeymapFlags and Flag) <> 0);
- 
+
  {Release Lock}
  CriticalSectionUnlock(KeymapTableLock);
 end;
@@ -1027,28 +1027,28 @@ var
 begin
  {}
  Result:=KEY_CODE_NONE;
- 
+
  {Check Scan Code}
  if ScanCode = SCAN_CODE_NONE then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Keymap}
  Keymap:=PKeymapEntry(Handle);
  if Keymap = nil then Exit;
  if Keymap.Signature <> KEYMAP_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(KeymapTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check ScanCode}
     if ScanCode >= Keymap.KeyCount then Exit;
-    
+
     {Check Index}
     if Index >= Keymap.RowCount then Exit;
-    
+
     {Get KeyCode}
     Result:=PKeymapData(Keymap.KeyData).Data[ScanCode,Index];
    finally
@@ -1056,9 +1056,9 @@ begin
    end;
   end;
 end;
-   
+
 {==============================================================================}
-   
+
 function KeymapGetCharCode(Handle:TKeymapHandle;KeyCode:Word):Char;
 {Resolve a key code value to an ANSI character code using the specified keymap}
 {Handle: The handle of the keymap to use for translation}
@@ -1070,12 +1070,12 @@ begin
 
  {Check Key Code}
  if KeyCode = KEY_CODE_NONE then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Do not lock}
- 
+
  {Check KeyCode}
  if KeyCode < KEY_CODE_TRANSLATE_START then
   begin
@@ -1083,16 +1083,16 @@ begin
    Result:=Chr(KeyCode);
   end
  else
-  begin 
+  begin
    {Check Private Area}
    if (KeyCode < KEY_CODE_PRIVATE_START) or (KeyCode > KEY_CODE_PRIVATE_END) then
     begin
      {Get CharCode (Translated)}
      Result:=WideCharToCodePage(WideChar(KeyCode));
     end;
-  end; 
+  end;
 end;
- 
+
 {==============================================================================}
 
 function KeymapGetCharUnicode(Handle:TKeymapHandle;KeyCode:Word):WideChar;
@@ -1106,12 +1106,12 @@ begin
 
  {Check Key Code}
  if KeyCode = KEY_CODE_NONE then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Do not lock}
- 
+
  {Check Private Area}
  if (KeyCode < KEY_CODE_PRIVATE_START) or (KeyCode > KEY_CODE_PRIVATE_END) then
   begin
@@ -1119,9 +1119,9 @@ begin
    Result:=WideChar(KeyCode);
   end;
 end;
-   
+
 {==============================================================================}
-   
+
 function KeymapCheckCapskey(Handle:TKeymapHandle;ScanCode:Word):Boolean;
 {Check if a scan code is affected by the Caps Lock key in the specified keymap}
 {Handle: The handle of the keymap to check}
@@ -1133,18 +1133,18 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Scan Code}
  if ScanCode = SCAN_CODE_NONE then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Keymap}
  Keymap:=PKeymapEntry(Handle);
  if Keymap = nil then Exit;
  if Keymap.Signature <> KEYMAP_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(KeymapTableLock) = ERROR_SUCCESS then
   begin
@@ -1154,7 +1154,7 @@ begin
      begin
       Result:=True;
      end
-    else if (Keymap.KeymapFlags and KEYMAP_FLAG_CAPS_ASCII) <> 0 then  
+    else if (Keymap.KeymapFlags and KEYMAP_FLAG_CAPS_ASCII) <> 0 then
      begin
       {Check for ASCII (A to Z)}
       if (ScanCode >= SCAN_CODE_A) and (ScanCode <= SCAN_CODE_Z) then
@@ -1163,7 +1163,7 @@ begin
        end;
      end
     else
-     begin    
+     begin
       {Check Capskeys}
       if (Keymap.CapskeysData <> nil) and (Keymap.CapskeysData.Count > 0) then
        begin
@@ -1176,17 +1176,17 @@ begin
              begin
               Result:=True;
               Exit;
-             end; 
-           end; 
+             end;
+           end;
          end;
        end;
-     end;  
+     end;
    finally
     CriticalSectionUnlock(KeymapTableLock);
    end;
   end;
 end;
-   
+
 {==============================================================================}
 
 function KeymapCheckDeadkey(Handle:TKeymapHandle;ScanCode:Word;Index:Byte):Boolean;
@@ -1201,18 +1201,18 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Scan Code}
  if ScanCode = SCAN_CODE_NONE then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Keymap}
  Keymap:=PKeymapEntry(Handle);
  if Keymap = nil then Exit;
  if Keymap.Signature <> KEYMAP_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(KeymapTableLock) = ERROR_SUCCESS then
   begin
@@ -1228,8 +1228,8 @@ begin
           Result:=True;
           Exit;
          end;
-       end; 
-     end; 
+       end;
+     end;
    finally
     CriticalSectionUnlock(KeymapTableLock);
    end;
@@ -1256,21 +1256,21 @@ begin
  {Setup KeyCode}
  KeyCode:=KEY_CODE_NONE;
  Result:=False;
- 
+
  {Check Dead Code}
  if DeadCode = SCAN_CODE_NONE then Exit;
- 
+
  {Check Scan Code}
  if ScanCode = SCAN_CODE_NONE then Exit;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Keymap}
  Keymap:=PKeymapEntry(Handle);
  if Keymap = nil then Exit;
  if Keymap.Signature <> KEYMAP_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(KeymapTableLock) = ERROR_SUCCESS then
   begin
@@ -1294,14 +1294,14 @@ begin
               Result:=True;
               Exit;
              end;
-            
+
             Inc(Counter);
-           end; 
-          
+           end;
+
           Exit;
-         end; 
-       end;  
-     end; 
+         end;
+       end;
+     end;
    finally
     CriticalSectionUnlock(KeymapTableLock);
    end;
@@ -1320,18 +1320,18 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
 
  {Check Properties}
  if Properties = nil then Exit;
- 
+
  {Get Keymap}
  Keymap:=PKeymapEntry(Handle);
  if Keymap = nil then Exit;
  if Keymap.Signature <> KEYMAP_SIGNATURE then Exit;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(KeymapTableLock) = ERROR_SUCCESS then
   begin
@@ -1352,12 +1352,12 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function KeymapFindByName(const Name:String):TKeymapHandle; 
+function KeymapFindByName(const Name:String):TKeymapHandle;
 {Find a keymap by name}
 {Name: The name of the keymap to find (eg US)}
 {Return: The handle of the matching keymap or INVALID_HANDLE_VALUE if not found}
@@ -1366,7 +1366,7 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(KeymapTableLock) = ERROR_SUCCESS then
   begin
@@ -1385,7 +1385,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       Keymap:=Keymap.Next;
      end;
@@ -1398,7 +1398,7 @@ end;
 
 {==============================================================================}
 
-function KeymapFindByDescription(const Description:String):TKeymapHandle; 
+function KeymapFindByDescription(const Description:String):TKeymapHandle;
 {Find a keymap by description}
 {Description: The description of the keymap to find (eg US English)}
 {Return: The handle of the matching keymap or INVALID_HANDLE_VALUE if not found}
@@ -1407,7 +1407,7 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Acquire Lock}
  if CriticalSectionLock(KeymapTableLock) = ERROR_SUCCESS then
   begin
@@ -1426,7 +1426,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       Keymap:=Keymap.Next;
      end;
@@ -1448,7 +1448,7 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
 
@@ -1465,11 +1465,11 @@ begin
        begin
         if Callback(TKeymapHandle(Keymap),Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Keymap:=Keymap.Next;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1480,7 +1480,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1504,32 +1504,32 @@ end;
 
 {==============================================================================}
 
-function KeymapSetDefault(Handle:TKeymapHandle):LongWord; 
+function KeymapSetDefault(Handle:TKeymapHandle):LongWord;
 {Set the current default keymap}
 var
  Keymap:PKeymapEntry;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Keymap}
  Keymap:=PKeymapEntry(Handle);
  if Keymap = nil then Exit;
  if Keymap.Signature <> KEYMAP_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(KeymapTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check Keymap}
     if KeymapCheck(Keymap) <> Keymap then Exit;
-    
+
     {Set Keymap Default}
     KeymapDefault:=TKeymapHandle(Keymap);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1552,11 +1552,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Keymap}
  if Keymap = nil then Exit;
  if Keymap.Signature <> KEYMAP_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(KeymapTableLock) = ERROR_SUCCESS then
   begin
@@ -1571,7 +1571,7 @@ begin
         Result:=Keymap;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -1589,7 +1589,7 @@ initialization
  KeymapInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

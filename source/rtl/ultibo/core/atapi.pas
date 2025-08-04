@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -51,9 +51,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Storage;
 //const
  {ATAPI specific constants}
 
-//To Do //A generic ATAPI unit 
-                           
-              
+//To Do //A generic ATAPI unit
+
+
 {==============================================================================}
 //type
  {ATAPI specific types}
@@ -65,7 +65,7 @@ var
  ATAPIInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure ATAPIInit;
@@ -87,9 +87,9 @@ begin
  {}
  {Check Initialized}
  if ATAPIInitialized then Exit;
- 
+
  //To Do
- 
+
  ATAPIInitialized:=True;
 end;
 
@@ -105,7 +105,7 @@ initialization
  ATAPIInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
- 
+
 CD FileSystem
 =============
 
@@ -271,7 +271,7 @@ const
 
  {Extension Flag Constants}
  cdfsElToritoExtensionFlagExtension = $20; {Extension Record Follows}
-              
+
 {==============================================================================}
 type
  {CDFS specific types}
@@ -567,7 +567,7 @@ type
    {Public Methods}
    function RecognizePartitionId(APartitionId:Byte):Boolean; override;
    function RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; override;
-   
+
    function RecognizePartition(APartition:TDiskPartition):Boolean; override;
    function RecognizeVolume(AVolume:TDiskVolume):Boolean; override;
    function MountVolume(AVolume:TDiskVolume;ADrive:TDiskDrive):Boolean; override;
@@ -606,7 +606,7 @@ type
    function AcceptVolume(AVolume:TDiskVolume;AFloppyType:TFloppyType;AFileSysType:TFileSysType):Boolean; override;
    function FormatVolume(AVolume:TDiskVolume;AFloppyType:TFloppyType;AFileSysType:TFileSysType):Boolean; override;
  end;
- 
+
  TCDFSResizer = class(TDiskResizer)
   private
    {Private Variables}
@@ -622,7 +622,7 @@ type
    function ShrinkVolume(AVolume:TDiskVolume;const AStart,ASize:Int64):Boolean; override;
    function ExpandVolume(AVolume:TDiskVolume;const AStart,ASize:Int64):Boolean; override;
  end;
- 
+
  TCDFSCopier = class(TDiskCopier)
   private
    {Private Variables}
@@ -637,7 +637,7 @@ type
 
    function CopyVolume(AVolume,ADest:TDiskVolume):Boolean; override;
  end;
- 
+
  {Inherited Classes}
  TCDFSDiskTable = class;
  TCDFSDiskBlock = class;
@@ -666,7 +666,7 @@ type
    FBlockWrite:Boolean;
    FTreesPrepared:Boolean;
    FCatalogsChecked:Boolean;
-   
+
    {CDFS Variables}
    FLogicalBlockSize:Word;       {Size of a logical block on disk}
    FLogicalBlockCount:LongWord;  {Number of logical blocks on disk}
@@ -704,19 +704,19 @@ type
    FExtensionLocal:TMutexHandle; {Local Lock shared by all Catalog Extensions}
    FDescriptorLocal:TMutexHandle;{Local Lock shared by all Volume Descriptors}
 
-   FExtendedLocal:TMutexHandle;  {Local Lock shared by all Extended Attributes}  
+   FExtendedLocal:TMutexHandle;  {Local Lock shared by all Extended Attributes}
 
    FPathLock:TSynchronizerHandle;{Lock shared by all Path lists}
-   
+
    FReadBuffer:Pointer;          {Buffer for partial cluster entry reads (Cluster size)}
    FReadLock:TMutexHandle;       {Lock for read buffer}
 
    FWriteBuffer:Pointer;         {Buffer for partial cluster entry writes (Cluster size)}
    FWriteLock:TMutexHandle;      {Lock for write buffer}
-   
+
    FClusterBuffer:Pointer;       {Buffer of exactly cluster size}
    FClusterLock:TMutexHandle;    {Lock for cluster buffer}
-   
+
    {Private Methods}
    function ReadLock:Boolean;
    function ReadUnlock:Boolean;
@@ -726,7 +726,7 @@ type
 
    function ClusterLock:Boolean;
    function ClusterUnlock:Boolean;
-   
+
    function LoadTree(AEntry:TDiskEntry):Boolean;
    function MarkTree(AEntry:TDiskEntry):Boolean;
    function PrepareTree(AEntry:TDiskEntry):Boolean;
@@ -780,7 +780,7 @@ type
    function GetTableDataFree(ATable:TDiskTable):LongWord;
    function GetEntryDataFree(AEntry:TDiskEntry):LongWord;
    function GetCatalogDataFree(ADescriptor:TCDFSDiskDescriptor):LongWord;
-   
+
    function GetPreviousPath(ATable:TCDFSDiskTable;APath:TCDFSDiskPath):TCDFSDiskPath;
    function GetPreviousEntry(AParent,AEntry:TCDFSDiskEntry):TCDFSDiskEntry;
 
@@ -936,10 +936,10 @@ type
 
    function GetDriveFreeSpaceEx:Int64; override;
    function GetDriveTotalSpaceEx:Int64; override;
-   
+
    function GetDriveInformation(var AClusterSize:LongWord;var ATotalClusterCount,AFreeClusterCount:Int64):Boolean; override;
  end;
- 
+
  TCDFSDiskTable = class(TDiskTable)       {Represents a CDFS path table}
    constructor Create(ALock:TSynchronizerHandle;ALocalLock:TMutexHandle;ADescriptor:TCDFSDiskDescriptor);
    destructor Destroy; override;
@@ -959,13 +959,13 @@ type
    FDataSize:LongWord;       {Data Length}
 
    {Object Variables}
-   FPaths:TFileSysListEx; 
+   FPaths:TFileSysListEx;
    FPathLocal:TMutexHandle;
-   
+
    FDescriptor:TCDFSDiskDescriptor;
-   
+
    {Private Methods}
-   
+
   public
    {Public Properties}
    property TableType:Byte read FTableType write FTableType;
@@ -986,7 +986,7 @@ type
    property PathLocal:TMutexHandle read FPathLocal;
    property Descriptor:TCDFSDiskDescriptor read FDescriptor;
  end;
- 
+
  TCDFSDiskBlock = class(TDiskBlock)       {Represents a block of clusters}
    constructor Create(ALocalLock:TMutexHandle);
    destructor Destroy; override;
@@ -1003,7 +1003,7 @@ type
    property BlockBuffer:Pointer read FBlockBuffer write FBlockBuffer;
    property BlockCluster:LongWord read FBlockCluster write FBlockCluster;
  end;
- 
+
  TCDFSDiskEntry = class(TDiskEntry)       {Represents a CDFS directory entry}
    constructor Create(ALocalLock:TMutexHandle);
    destructor Destroy; override;
@@ -1033,7 +1033,7 @@ type
    FAltPath:TCDFSDiskPath;
    FAltPathM:TCDFSDiskPath;
    FExtended:TCDFSDiskExtended;
-   
+
    {Private Methods}
    function GetVersion:String;
    procedure SetVersion(const AVersion:String);
@@ -1074,7 +1074,7 @@ type
    function DirectoryRecordSize:Byte;
    function ExtendedRecordSize:Byte;
  end;
- 
+
  TCDFSDiskCatalog = class(TDiskCatalog)   {Represents a CDFS boot catalog entry (Also the Initial/Default entry)}
    constructor Create(ALocalLock:TMutexHandle);
    destructor Destroy; override;
@@ -1145,14 +1145,14 @@ type
 
    {Public Methods}
   end;
- 
+
  TCDFSDiskPath = class(TListObject)       {Represents a CDFS path table entry}
    constructor Create(ALocalLock:TMutexHandle);
    destructor Destroy; override;
   private
    {Private Variables}
    FLocalLock:TMutexHandle;
-   
+
    FName:String;
    FHash:LongWord;
 
@@ -1202,7 +1202,7 @@ type
   private
    {Private Variables}
    FLocalLock:TMutexHandle;
-   
+
    FStartCluster:LongWord;
    FClusterCount:LongWord;
 
@@ -1226,7 +1226,7 @@ type
    FEscapeSequence:Pointer;         {Escape Sequences LEN_ESC bytes}
 
    {Object Variables}
-   
+
    {Private Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
@@ -1267,7 +1267,7 @@ type
   private
    {Private Variables}
    FLocalLock:TMutexHandle;
-   
+
    FUnicode:Boolean;
 
    FStartCluster:LongWord;
@@ -1310,7 +1310,7 @@ type
    FBootIdentifier:String;          {32 a-characters}
    FCatalogStart:LongWord;          {Absolute pointer to first sector of Boot Catalog}
    FCatalogCount:LongWord;          {Number of Sectors in Boot Catalog (Not Stored)}
-   
+
    {Descriptor Variables}           {TCDFSVolumeDescriptorPartition}
    FPartitionIdentifier:String;     {Volume Partition Identifier d-characters}
    FPartitionStart:LongWord;        {Volume Partition Location (first Logical Block)}
@@ -1326,19 +1326,19 @@ type
 
    FInitial:TCDFSDiskCatalog;
    FValidation:TCDFSDiskHeader;
-   
+
    {Private Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
 
    function GetStandardIdentifier:String;
    procedure SetStandardIdentifier(const AStandardIdentifier:String);
-   
+
    function GetSystemIdentifier:String;
    procedure SetSystemIdentifier(const ASystemIdentifier:String);
    function GetVolumeIdentifier:String;
    procedure SetVolumeIdentifier(const AVolumeIdentifier:String);
-   
+
    function GetVolumeSetIdentifier:String;
    procedure SetVolumeSetIdentifier(const AVolumeSetIdentifier:String);
    function GetPublisherIdentifier:String;
@@ -1353,10 +1353,10 @@ type
    procedure SetAbstractIdentifier(const AAbstractIdentifier:String);
    function GetBibliographicIdentifier:String;
    procedure SetBibliographicIdentifier(const ABibliographicIdentifier:String);
-   
+
    function GetBootIdentifier:String;
    procedure SetBootIdentifier(const ABootIdentifier:String);
-   
+
    function GetPartitionIdentifier:String;
    procedure SetPartitionIdentifier(const APartitionIdentifier:String);
   public
@@ -1427,7 +1427,7 @@ type
   private
    {Private Variables}
    FLocalLock:TMutexHandle;
-   
+
    FHeaderNo:LongWord;
 
    FHeaderOffset:LongWord;
@@ -1445,11 +1445,11 @@ type
    FSectionCount:Word;
 
    {Object Variables}
-   
+
    {Private Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    function GetVendorId:String;
    procedure SetVendorId(const AVendorId:String);
   public
@@ -1483,7 +1483,7 @@ type
   private
    {Private Variables}
    FLocalLock:TMutexHandle;
-   
+
    FExtensionNo:LongWord;
 
    FExtensionOffset:LongWord;
@@ -1496,7 +1496,7 @@ type
 
    {Object Variables}
    FCatalog:TCDFSDiskCatalog;
-   
+
    {Private Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
@@ -1517,11 +1517,11 @@ type
 
    {Public Methods}
   end;
- 
+
 {==============================================================================}
 {var}
  {CDFS specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure CDFSInit;
@@ -1567,10 +1567,10 @@ begin
  inherited Create(ADriver);
  FLongNames:=True;
  FSwapSerial:=False; {Set to True for Win9x compatibility}
- 
+
  FAllowDrive:=True;
  FAllowDefault:=False;
- 
+
  FFormatter:=TCDFSFormatter.Create(FDriver,Self);
  FResizer:=TCDFSResizer.Create(FDriver,Self);
  FCopier:=TCDFSCopier.Create(FDriver,Self);
@@ -1582,9 +1582,9 @@ function TCDFSRecognizer.CheckPrimaryDescriptor(ASector:PDiskSector;const AStart
 begin
  {}
  Result:=False;
- 
+
  if ASector = nil then Exit;
- 
+
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSRecognizer.CheckPrimaryDescriptor - StartSector = ' + IntToStr(AStartSector) + ' SectorCount = ' + IntToStr(ASectorCount));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                                  Descriptor.DescriptorType           = ' + IntToStr(PCDFSVolumeDescriptorHeader(ASector).DescriptorType));
@@ -1596,7 +1596,7 @@ begin
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                                  Descriptor.RootDirectory.FirstBlock = ' + IntToStr(PCDFSVolumeDescriptorPrimary(ASector).RootDirectory.FirstBlock));
  if FILESYS_LOG_ENABLED then FileSysLogDebug('                                  Descriptor.RootDirectory.DataSize   = ' + IntToStr(PCDFSVolumeDescriptorPrimary(ASector).RootDirectory.DataSize));
  {$ENDIF}
- 
+
  {Check for CDFS}
  if PCDFSVolumeDescriptorHeader(ASector).DescriptorVersion <> cdfsISO9660DescriptorVersion then Exit;
  if PCDFSVolumeDescriptorHeader(ASector).DescriptorType <> cdfsVolumeDescriptorTypePrimary then Exit;
@@ -1605,7 +1605,7 @@ begin
  if PCDFSVolumeDescriptorPrimary(ASector).VolumeSpaceSize > ASectorCount then Exit;
  if PCDFSVolumeDescriptorPrimary(ASector).LogicalBlockSize = 0 then Exit;
  if PCDFSVolumeDescriptorPrimary(ASector).LogicalBlockSize mod MIN_SECTOR_SIZE <> 0 then Exit;
- 
+
  Result:=True;
 end;
 
@@ -1619,7 +1619,7 @@ end;
 
 {==============================================================================}
 
-function TCDFSRecognizer.RecognizePartitionId(APartitionId:Byte):Boolean; 
+function TCDFSRecognizer.RecognizePartitionId(APartitionId:Byte):Boolean;
 begin
  {}
  Result:=False;
@@ -1627,16 +1627,16 @@ begin
  if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
- 
+
   {Nothing - CDFS does not support Partitions}
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TCDFSRecognizer.RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean; 
+function TCDFSRecognizer.RecognizeBootSector(ABootSector:PBootSector;const AStartSector,ASectorCount:Int64):Boolean;
 begin
  {}
  Result:=False;
@@ -1644,11 +1644,11 @@ begin
  if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
- 
+
   {Nothing - CDFS does not support "Removable" media}
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1663,11 +1663,11 @@ begin
  try
   if FDriver = nil then Exit;
   if APartition = nil then Exit;
-  
+
   {Nothing - CDFS does not support Partitions}
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1686,19 +1686,19 @@ begin
   if AVolume = nil then Exit;
   if AVolume.Device = nil then Exit;
   if AVolume.Device.Controller = nil then Exit;
- 
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSRecognizer.RecognizeVolume - Volume = ' + AVolume.Name);
   {$ENDIF}
 
   {Check for Partitioned Media}
   if AVolume.Partition <> nil then Exit;
-  
+
   {Non Partitioned Media}
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSRecognizer.RecognizeVolume - Non Partitioned Media');
   {$ENDIF}
-  
+
   {Check Device Type}
   case AVolume.Device.MediaType of
    mtCDROM,mtDVD:begin  {CDFS only on CDROM/DVD}
@@ -1707,29 +1707,29 @@ begin
       begin
        {Check Media}
        if not AVolume.Device.Controller.MediaReady(AVolume.Device) then Exit; {was Volume.Device.MediaReady}
-       
+
        {Init Device}
        if not AVolume.Device.DeviceInit then Exit;
 
        {Init Volume}
        if not AVolume.VolumeInit then Exit;
-       
+
        {Allocate Sector}
        Sector:=GetMem(AVolume.Device.SectorSize);
        if Sector = nil then Exit;
        try
         {Read Sector}
         if not FDriver.Cache.DeviceRead(AVolume.Device,AVolume.StartSector + cdfsISO9660StartSector,1,Sector^) then Exit;
-        
+
         {Check Descriptor}
         if not CheckPrimaryDescriptor(Sector,AVolume.StartSector + cdfsISO9660StartSector,AVolume.SectorCount) then Exit;
-        
+
         {$IFDEF CDFS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSRecognizer.RecognizeVolume - Volume Recognized');
         {$ENDIF}
-        
+
         AVolume.Recognized:=True;
-        
+
         Result:=True;
        finally
         FreeMem(Sector);
@@ -1741,16 +1741,16 @@ begin
        {$IFDEF CDFS_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSRecognizer.RecognizeVolume - Volume Recognized (Default)');
        {$ENDIF}
-       
+
        AVolume.Recognized:=True;
-       
+
        Result:=True;
       end;
     end;
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1767,11 +1767,11 @@ begin
  try
   if FDriver = nil then Exit;
   if AVolume = nil then Exit;
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSRecognizer.MountVolume - Volume = ' + AVolume.Name);
   {$ENDIF}
-  
+
   {Check Recognized}
   if not RecognizeVolume(AVolume) then Exit;
 
@@ -1783,11 +1783,11 @@ begin
   FileSystem.UnicodeNames:=FLongNames;  {Enabled only if LongNames Enabled}
   FileSystem.FileSystemInit;
   FileSystem.MountFileSystem;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1799,7 +1799,7 @@ function TCDFSFormatter.CheckDevice(AVolume:TDiskVolume;ADrive:TDiskDrive;AFlopp
 begin
  {}
  Result:=False;
- 
+
  if AVolume = nil then Exit;
  if AVolume.Device = nil then Exit;
 
@@ -1807,7 +1807,7 @@ begin
   mtCDROM,mtDVD:begin {CDFS only supported on CDROM/DVD media}
     if AFloppyType <> ftUNKNOWN then Exit;
     if not AVolume.Device.Writeable then Exit;
-    
+
     Result:=True;
    end;
  end;
@@ -1822,7 +1822,7 @@ function TCDFSFormatter.CheckPartition(AVolume:TDiskVolume;ADrive:TDiskDrive;AFi
 begin
  {}
  Result:=False;
- 
+
  if AVolume = nil then Exit;
 
  {Check FileSystem}
@@ -1831,7 +1831,7 @@ begin
     {CDFS/UDF File System}
     if AVolume.Device = nil then Exit;
     if AVolume.Partition <> nil then Exit; {CDFS only supported on Non Partitioned media}
-    
+
     {Non Partitioned Media}
     Result:=True;
    end;
@@ -1845,7 +1845,7 @@ function TCDFSFormatter.GetPathTableSize(AVolume:TDiskVolume;ADrive:TDiskDrive;A
 begin
  {}
  Result:=0;
- 
+
  if AVolume = nil then Exit;
 
  {Check Type}
@@ -1863,7 +1863,7 @@ function TCDFSFormatter.GetPathTableStart(AVolume:TDiskVolume;ADrive:TDiskDrive;
 begin
  {}
  Result:=0;
- 
+
  if AVolume = nil then Exit;
 
  {Check Type}
@@ -1908,7 +1908,7 @@ function TCDFSFormatter.GetRootDirectorySize(AVolume:TDiskVolume;ADrive:TDiskDri
 begin
  {}
  Result:=0;
- 
+
  if AVolume = nil then Exit;
 
  {Check Type}
@@ -1926,7 +1926,7 @@ function TCDFSFormatter.GetRootDirectoryStart(AVolume:TDiskVolume;ADrive:TDiskDr
 begin
  {}
  Result:=0;
- 
+
  if AVolume = nil then Exit;
 
  {Check Type}
@@ -1970,7 +1970,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if AVolume = nil then Exit;
  if ADescriptor = nil then Exit;
@@ -1978,7 +1978,7 @@ begin
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFormatter.CreatePrimaryDescriptor');
  {$ENDIF}
- 
+
  {Get Values}
  PathTableSize:=GetPathTableSize(AVolume,ADrive,ACDFSType,False);
  PathTableStart:=GetPathTableStart(AVolume,ADrive,ACDFSType,False,False);
@@ -2082,18 +2082,18 @@ begin
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFormatter.WritePrimaryDescriptor');
  {$ENDIF}
- 
+
  {Check Type}
  case ACDFSType of
   ctISO9660,ctJOLIET:begin
     Cluster:=cdfsISO9660StartSector;
-    
+
     {Write ReservedSectors}
     if not FillSectors(AVolume,ADrive,0,cdfsReservedSectors,0) then Exit;
-    
+
     {Write PrimaryDescriptor}
     if not WriteSectors(AVolume,ADrive,Cluster,1,ADescriptor^) then Exit;
-    
+
     Result:=True;
    end;
   ctUDF:begin
@@ -2112,7 +2112,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if AVolume = nil then Exit;
  if ADescriptor = nil then Exit;
@@ -2120,7 +2120,7 @@ begin
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFormatter.WritePrimaryPathTables');
  {$ENDIF}
- 
+
  {Check Type}
  case ACDFSType of
   ctISO9660,ctJOLIET:begin
@@ -2129,7 +2129,7 @@ begin
     if PathRecord = nil then Exit;
     try
      Cluster:=ADescriptor.PrimaryPathTable;
-     
+
      {Create L Path Table}
      PCDFSPathRecord(PathRecord).PathIdentifierSize:=1;
      PCDFSPathRecord(PathRecord).ExtendedSize:=0;
@@ -2142,7 +2142,7 @@ begin
 
      FillChar(PathRecord^,ADescriptor.LogicalBlockSize,0);
      Cluster:=LongWordBEtoN(ADescriptor.PrimaryPathTableM);
-     
+
      {Create M Path Table}
      PCDFSPathRecord(PathRecord).PathIdentifierSize:=1;
      PCDFSPathRecord(PathRecord).ExtendedSize:=0;
@@ -2175,7 +2175,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if AVolume = nil then Exit;
  if ADescriptor = nil then Exit;
@@ -2183,7 +2183,7 @@ begin
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFormatter.WritePrimaryRootDirectory');
  {$ENDIF}
- 
+
  {Check Type}
  case ACDFSType of
   ctISO9660,ctJOLIET:begin
@@ -2266,7 +2266,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if AVolume = nil then Exit;
  if ADescriptor = nil then Exit;
@@ -2274,7 +2274,7 @@ begin
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFormatter.CreateSupplementaryDescriptor');
  {$ENDIF}
- 
+
  {Get Values}
  PathTableSize:=GetPathTableSize(AVolume,ADrive,ACDFSType,True);
  PathTableStart:=GetPathTableStart(AVolume,ADrive,ACDFSType,True,False);
@@ -2369,7 +2369,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if AVolume = nil then Exit;
  if ADescriptor = nil then Exit;
@@ -2377,15 +2377,15 @@ begin
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFormatter.WriteSupplementaryDescriptor');
  {$ENDIF}
- 
+
  {Check Type}
  case ACDFSType of
   ctJOLIET:begin
     Cluster:=17;
-    
+
     {Write SupplementaryDescriptor}
     if not WriteSectors(AVolume,ADrive,Cluster,1,ADescriptor^) then Exit;
-    
+
     Result:=True;
    end;
   ctUDF:begin
@@ -2404,7 +2404,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if AVolume = nil then Exit;
  if ADescriptor = nil then Exit;
@@ -2412,7 +2412,7 @@ begin
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFormatter.WriteSupplementaryPathTables');
  {$ENDIF}
- 
+
  {Check Type}
  case ACDFSType of
   ctJOLIET:begin
@@ -2421,7 +2421,7 @@ begin
     if PathRecord = nil then Exit;
     try
      Cluster:=ADescriptor.PrimaryPathTable;
-     
+
      {Create L Path Table}
      PCDFSPathRecord(PathRecord).PathIdentifierSize:=1;
      PCDFSPathRecord(PathRecord).ExtendedSize:=0;
@@ -2434,7 +2434,7 @@ begin
 
      FillChar(PathRecord^,ADescriptor.LogicalBlockSize,0);
      Cluster:=LongWordBEtoN(ADescriptor.PrimaryPathTableM);
-     
+
      {Create M Path Table}
      PCDFSPathRecord(PathRecord).PathIdentifierSize:=1;
      PCDFSPathRecord(PathRecord).ExtendedSize:=0;
@@ -2467,7 +2467,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if AVolume = nil then Exit;
  if ADescriptor = nil then Exit;
@@ -2475,7 +2475,7 @@ begin
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFormatter.WriteSupplementaryRootDirectory');
  {$ENDIF}
- 
+
  {Check Type}
  case ACDFSType of
   ctJOLIET:begin
@@ -2487,7 +2487,7 @@ begin
 
      {Set Offset}
      Offset:=0;
-     
+
      {Create Root Directory} {Dot Record}
      PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).RecordSize:=ADescriptor.RootDirectory.RecordSize;
      PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).ExtendedSize:=ADescriptor.RootDirectory.ExtendedSize;
@@ -2506,7 +2506,7 @@ begin
 
      {Set Offset}
      Offset:=PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).RecordSize;
-     
+
      {Create Root Directory} {DotDot Record}
      PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).RecordSize:=ADescriptor.RootDirectory.RecordSize;
      PCDFSDirectoryRecord(PtrUInt(DirectoryRecord) + Offset).ExtendedSize:=ADescriptor.RootDirectory.ExtendedSize;
@@ -2544,7 +2544,7 @@ function TCDFSFormatter.CreateTerminatorDescriptor(AVolume:TDiskVolume;ADrive:TD
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if AVolume = nil then Exit;
  if ADescriptor = nil then Exit;
@@ -2552,7 +2552,7 @@ begin
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFormatter.CreateTerminatorDescriptor');
  {$ENDIF}
- 
+
  {Check Type}
  case ACDFSType of
   ctISO9660,ctJOLIET:begin
@@ -2579,7 +2579,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if AVolume = nil then Exit;
  if ADescriptor = nil then Exit;
@@ -2587,23 +2587,23 @@ begin
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFormatter.WriteTerminatorDescriptor');
  {$ENDIF}
- 
+
  {Check Type}
  case ACDFSType of
   ctISO9660:begin
     Cluster:=17;
-    
+
     {Write TerminatorDescriptor}
     if not WriteSectors(AVolume,ADrive,Cluster,1,ADescriptor^) then Exit;
-    
+
     Result:=True;
    end;
   ctJOLIET:begin
     Cluster:=18;
-    
+
     {Write TerminatorDescriptor}
     if not WriteSectors(AVolume,ADrive,Cluster,1,ADescriptor^) then Exit;
-    
+
     Result:=True;
    end;
   ctUDF:begin
@@ -2630,22 +2630,22 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFormatter.AcceptVolume VolumeName = ' + AVolume.Name + ' SectorSize = ' + IntToStr(AVolume.SectorSize) + ' SectorCount = ' + IntToStr(AVolume.SectorCount));
   {$ENDIF}
-  
+
   {Accept Format Volume}
   {Check Volume}
   if AVolume.SectorCount = 0 then Exit;
   if AVolume.SectorSize <> ISO_SECTOR_SIZE then Exit;
-  
+
   {Check Device}
   if not CheckDevice(AVolume,nil,AFloppyType) then Exit;
-  
+
   {Check Partition}
   if not CheckPartition(AVolume,nil,AFileSysType) then Exit;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2662,7 +2662,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -2673,7 +2673,7 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFormatter.FormatVolume VolumeName = ' + AVolume.Name + ' SectorSize = ' + IntToStr(AVolume.SectorSize) + ' SectorCount = ' + IntToStr(AVolume.SectorCount));
   {$ENDIF}
-  
+
   {Check Accepted}
   if not AcceptVolume(AVolume,AFloppyType,AFileSysType) then Exit;
 
@@ -2683,10 +2683,10 @@ begin
   if Drive <> nil then
    begin
     DriveNo:=Drive.DriveNo;
-    
+
     {Unlock Drive}
     Drive.ReaderUnlock;
-   end;  
+   end;
 
   {Dismount Volume}
   AVolume.DismountVolume;
@@ -2703,25 +2703,25 @@ begin
     CDFSType:=ctISO9660;
     if TCDFSRecognizer(FRecognizer).FLongNames then CDFSType:=ctJOLIET;
     if AFileSysType = fsUDF then CDFSType:=ctUDF;
-    
+
     {Check CDFS Type}
     case CDFSType of
      ctISO9660:begin
        {Create Primary Descriptor}
        if not CreatePrimaryDescriptor(AVolume,nil,CDFSType,PrimaryDescriptor) then Exit;
-       
+
        {Write Primary Descriptor}
        if not WritePrimaryDescriptor(AVolume,nil,CDFSType,PrimaryDescriptor) then Exit;
-       
+
        {Write Primary Path Tables}
        if not WritePrimaryPathTables(AVolume,nil,CDFSType,PrimaryDescriptor) then Exit;
-       
+
        {Write Primary Root Directory}
        if not WritePrimaryRootDirectory(AVolume,nil,CDFSType,PrimaryDescriptor) then Exit;
 
        {Create Terminator Descriptor}
        if not CreateTerminatorDescriptor(AVolume,nil,CDFSType,TerminatorDescriptor) then Exit;
-       
+
        {Write Terminator Descriptor}
        if not WriteTerminatorDescriptor(AVolume,nil,CDFSType,TerminatorDescriptor) then Exit;
 
@@ -2737,31 +2737,31 @@ begin
        try
         {Create Primary Descriptor}
         if not CreatePrimaryDescriptor(AVolume,nil,CDFSType,PrimaryDescriptor) then Exit;
-        
+
         {Write Primary Descriptor}
         if not WritePrimaryDescriptor(AVolume,nil,CDFSType,PrimaryDescriptor) then Exit;
-        
+
         {Write Primary Path Tables}
         if not WritePrimaryPathTables(AVolume,nil,CDFSType,PrimaryDescriptor) then Exit;
-        
+
         {Write Primary Root Directory}
         if not WritePrimaryRootDirectory(AVolume,nil,CDFSType,PrimaryDescriptor) then Exit;
 
         {Create Supplementary Descriptor}
         if not CreateSupplementaryDescriptor(AVolume,nil,CDFSType,SupplementaryDescriptor) then Exit;
-        
+
         {Write Supplementary Descriptor}
         if not WriteSupplementaryDescriptor(AVolume,nil,CDFSType,SupplementaryDescriptor) then Exit;
-        
+
         {Write Supplementary Path Tables}
         if not WriteSupplementaryPathTables(AVolume,nil,CDFSType,SupplementaryDescriptor) then Exit;
-        
+
         {Write Supplementary Root Directory}
         if not WriteSupplementaryRootDirectory(AVolume,nil,CDFSType,SupplementaryDescriptor) then Exit;
 
         {Create Terminator Descriptor}
         if not CreateTerminatorDescriptor(AVolume,nil,CDFSType,TerminatorDescriptor) then Exit;
-        
+
         {Write Terminator Descriptor}
         if not WriteTerminatorDescriptor(AVolume,nil,CDFSType,TerminatorDescriptor) then Exit;
 
@@ -2775,10 +2775,10 @@ begin
       end;
      ctUDF:begin
        {To be completed}
-       
+
        {Mount Volume}
        if not AVolume.MountVolume(DriveNo) then Exit;
-       
+
        {Result:=True;}
       end;
     end;
@@ -2788,9 +2788,9 @@ begin
   finally
    FreeMem(PrimaryDescriptor);
   end;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2809,9 +2809,9 @@ begin
   if AVolume.Device = nil then Exit;
 
   //To Do //
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2835,9 +2835,9 @@ begin
   if not AcceptVolume(AVolume,AStart,ASize) then Exit;
 
   //To Do //
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2861,9 +2861,9 @@ begin
   if not AcceptVolume(AVolume,AStart,ASize) then Exit;
 
   //To Do //
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2882,9 +2882,9 @@ begin
   if AVolume.Device = nil then Exit;
 
   //To Do //
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2909,9 +2909,9 @@ begin
   if not AcceptVolume(AVolume,ADest) then Exit;
 
   //To Do //
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2961,17 +2961,17 @@ begin
  FHeaderLocal:=MutexCreate;
  FExtensionLocal:=MutexCreate;
  FDescriptorLocal:=MutexCreate;
- 
+
  FExtendedLocal:=MutexCreate;
- 
+
  FPathLock:=SynchronizerCreate;
- 
+
  FReadBuffer:=nil;
  FReadLock:=MutexCreate;
 
  FWriteBuffer:=nil;
  FWriteLock:=MutexCreate;
- 
+
  FClusterBuffer:=nil;
  FClusterLock:=MutexCreate;
 end;
@@ -2986,7 +2986,7 @@ begin
   if FClusterBuffer <> nil then FreeMem(FClusterBuffer);
   FClusterBuffer:=nil;
   MutexDestroy(FClusterLock);
- 
+
   if FWriteBuffer <> nil then FreeMem(FWriteBuffer);
   FWriteBuffer:=nil;
   MutexDestroy(FWriteLock);
@@ -2994,26 +2994,26 @@ begin
   if FReadBuffer <> nil then FreeMem(FReadBuffer);
   FReadBuffer:=nil;
   MutexDestroy(FReadLock);
- 
+
   FDescriptors.Free;
   FExtensions.Free;
   FHeaders.Free;
 
   SynchronizerDestroy(FPathLock);
-  
+
   MutexDestroy(FExtendedLocal);
-  
+
   MutexDestroy(FDescriptorLocal);
   MutexDestroy(FExtensionLocal);
   MutexDestroy(FHeaderLocal);
-  
+
   FSupplementary:=nil;
   FPrimary:=nil;
   FBoot:=nil;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3074,7 +3074,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if AEntry = nil then Exit;
@@ -3082,10 +3082,10 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadTree - Entry = ' + AEntry.Name);
   {$ENDIF}
- 
+
   {Load Parent}
   if not LoadEntries(AEntry) then Exit;
- 
+
   {Load Children}
   Entry:=TDiskEntry(AEntry.FirstChild);
   while Entry <> nil do
@@ -3094,14 +3094,14 @@ begin
      begin
       if not LoadTree(Entry) then Exit;
      end;
-    
+
     Entry:=TDiskEntry(Entry.Next);
    end;
-  
+
   Result:=True;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -3113,7 +3113,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if AEntry = nil then Exit;
@@ -3121,13 +3121,13 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MarkTree - Entry = ' + AEntry.Name);
   {$ENDIF}
- 
+
   {Mark Parent}
   if TCDFSDiskEntry(AEntry).StartCluster > 0 then {No need to check ClusterCount as MarkCluster returns success on zero count}
    begin
     if not MarkClusters(TCDFSDiskEntry(AEntry).StartCluster,TCDFSDiskEntry(AEntry).ClusterCount,True) then Exit;
    end;
-  
+
   {Mark Children}
   Entry:=TDiskEntry(AEntry.FirstChild);
   while Entry <> nil do
@@ -3136,14 +3136,14 @@ begin
      begin
       if not MarkTree(Entry) then Exit;
      end;
-    
+
     Entry:=TDiskEntry(Entry.Next);
    end;
-  
+
   Result:=True;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -3156,7 +3156,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if AEntry = nil then Exit;
@@ -3164,13 +3164,13 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.PrepareTree - Entry = ' + AEntry.Name);
   {$ENDIF}
- 
+
   Entry:=TDiskEntry(AEntry.FirstChild);
   while Entry <> nil do
    begin
     Current:=Entry;
     Entry:=TDiskEntry(Entry.Next);
-   
+
     if (Current.Attributes and faDirectory) = faDirectory then
      begin
       if (Current.Attributes and (faDot or faDotDot)) = faNone then
@@ -3180,18 +3180,18 @@ begin
         if not FillClusters(TCDFSDiskEntry(Current).StartCluster,TCDFSDiskEntry(Current).ClusterCount,0) then Exit;
        end;
      end;
-    
+
     {Remove Entry}
     FEntries.Remove(Current);
-   
+
     {Schedule Entry}
     FDriver.ScheduleEntry(Current,FILESYS_ENTRY_DELETE_TIMEOUT);
    end;
-  
+
   Result:=True;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -3205,7 +3205,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ATable = nil then Exit;
  if TCDFSDiskTable(ATable).Descriptor = nil then Exit;
 
@@ -3214,13 +3214,13 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.PrepareTable - TableNo = ' + IntToHex(ATable.TableNo,8));
   {$ENDIF}
- 
+
   Path:=TCDFSDiskPath(TCDFSDiskTable(ATable).Paths.First);
   while Path <> nil do
    begin
     Current:=Path;
     Path:=TCDFSDiskPath(Path.Next);
-   
+
     if Current.Name <> cdfsDotName then
      begin
       {Update Descriptor} {Only on Primary Table}
@@ -3228,17 +3228,17 @@ begin
        begin
         TCDFSDiskTable(ATable).Descriptor.PathTableSize:=(TCDFSDiskTable(ATable).Descriptor.PathTableSize - Current.PathRecordSize(TCDFSDiskTable(ATable).Unicode));
        end;
-     
+
       TCDFSDiskTable(ATable).Paths.Remove(Current);
-     
+
       Current.Free;
      end;
    end;
-  
+
   Result:=SetPaths(TCDFSDiskTable(ATable));
  finally
   TCDFSDiskTable(ATable).Paths.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -3254,7 +3254,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Prepared}
  if not FTreesPrepared then
   begin
@@ -3266,28 +3266,28 @@ begin
       if not FDescriptors.WriterLock then Exit;
       try
        if FPrimary = nil then Exit;
-       
+
        if not FTables.ReaderLock then Exit;
        try
         {$IFDEF CDFS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.PrepareTrees');
         {$ENDIF}
-       
+
         {Load Trees}
         if not LoadTrees then Exit;
-      
+
         {Check Descriptor}
         if FSupplementary <> nil then
          begin
           {Prepare Entries}
           if FPrimary.Root = nil then Exit;
-        
+
           Entry:=TDiskEntry(FPrimary.Root.FirstChild);
           while Entry <> nil do
            begin
             Current:=Entry;
             Entry:=TDiskEntry(Entry.Next);
-           
+
             if (Current.Attributes and (faDot or faDotDot)) = faNone then
              begin
               if (Current.Attributes and faDirectory) = faDirectory then
@@ -3296,79 +3296,79 @@ begin
                 if not ReleaseClusters(TCDFSDiskEntry(Current).StartCluster,TCDFSDiskEntry(Current).ClusterCount) then Exit;
                 if not FillClusters(TCDFSDiskEntry(Current).StartCluster,TCDFSDiskEntry(Current).ClusterCount,0) then Exit;
                end;
-             
+
               {Remove Entry}
               FEntries.Remove(Current);
-             
+
               {Schedule Entry}
               FDriver.ScheduleEntry(Current,FILESYS_ENTRY_DELETE_TIMEOUT);
              end;
            end;
-          
+
           if not SetEntries(FPrimary.Root) then Exit;
-         
+
           {Prepare Tables}
           if FPrimary.Primary <> nil then
            begin
             if not PrepareTable(FPrimary.Primary) then Exit; {SetPaths will zero fill all existing clusters}
             if FPrimary.Primary.ClusterCount > 1 then if not ReleaseClusters(FPrimary.Primary.StartCluster + 1,FPrimary.Primary.ClusterCount - 1) then Exit;
-           
+
             {Update Table}
             FPrimary.Primary.ClusterCount:=1;
             FPrimary.Primary.DataFree:=0;
             FPrimary.Primary.DataSize:=(FPrimary.Primary.ClusterCount shl FClusterShiftCount);
            end;
-           
+
           if FPrimary.PrimaryM <> nil then
            begin
             if not PrepareTable(FPrimary.PrimaryM) then Exit; {SetPaths will zero fill all existing clusters}
             if FPrimary.PrimaryM.ClusterCount > 1 then if not ReleaseClusters(FPrimary.PrimaryM.StartCluster + 1,FPrimary.PrimaryM.ClusterCount - 1) then Exit;
-          
+
             {Update Table}
             FPrimary.PrimaryM.ClusterCount:=1;
             FPrimary.PrimaryM.DataFree:=0;
             FPrimary.PrimaryM.DataSize:=(FPrimary.PrimaryM.ClusterCount shl FClusterShiftCount);
            end;
-          
+
           if FPrimary.Alternate <> nil then
            begin
             if not PrepareTable(FPrimary.Alternate) then Exit; {SetPaths will zero fill all existing clusters}
             if FPrimary.Alternate.ClusterCount > 1 then if not ReleaseClusters(FPrimary.Alternate.StartCluster + 1,FPrimary.Alternate.ClusterCount - 1) then Exit;
-           
+
             {Update Table}
             FPrimary.Alternate.ClusterCount:=1;
             FPrimary.Alternate.DataFree:=0;
             FPrimary.Alternate.DataSize:=(FPrimary.Alternate.ClusterCount shl FClusterShiftCount);
            end;
-          
+
           if FPrimary.AlternateM <> nil then
            begin
             if not PrepareTable(FPrimary.AlternateM) then Exit; {SetPaths will zero fill all existing clusters}
             if FPrimary.AlternateM.ClusterCount > 1 then if not ReleaseClusters(FPrimary.AlternateM.StartCluster + 1,FPrimary.AlternateM.ClusterCount - 1) then Exit;
-           
+
             {Update Table}
             FPrimary.AlternateM.ClusterCount:=1;
             FPrimary.AlternateM.DataFree:=0;
             FPrimary.AlternateM.DataSize:=(FPrimary.AlternateM.ClusterCount shl FClusterShiftCount);
            end;
-          
+
           {Set Descriptor}
           if not SetDescriptor(FPrimary) then Exit;
          end;
-      
+
         FTreesPrepared:=True;
        finally
         FTables.ReaderUnlock;
-       end;       
+       end;
       finally
        FDescriptors.WriterUnlock;
-      end; 
+      end;
      end;
    finally
     FEntries.WriterUnlock;
-   end; 
+   end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -3396,26 +3396,26 @@ begin
       {$IFDEF CDFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.CheckCatalogs');
       {$ENDIF}
-   
+
       {Load Catalogs}
       if not LoadCatalogs then Exit;
-   
+
       {Check Catalogs}
       Catalog:=TCDFSDiskCatalog(FCatalogs.First);
       while Catalog <> nil do
        begin
         if Catalog.ClusterCount = 0 then Exit;
-     
+
         Catalog:=TCDFSDiskCatalog(Catalog.Next);
        end;
-    
+
       FCatalogsChecked:=True;
      end;
    finally
     FCatalogs.WriterUnlock;
-   end; 
+   end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -3430,13 +3430,13 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
  if ATable = nil then Exit;
 
  {Load Paths}
  {if not LoadPaths(TCDFSDiskTable(ATable)) then Exit;} {Do not call, called by LoadPath}
- 
+
  {Check Paths}
  Path:=TCDFSDiskPath(TCDFSDiskTable(ATable).Paths.First); {Protected by caller held paths lock}
  while Path <> nil do
@@ -3446,7 +3446,7 @@ begin
      Result:=Path;
      Exit;
     end;
-    
+
    Path:=TCDFSDiskPath(Path.Next); {Protected by caller held paths lock}
   end;
 end;
@@ -3461,9 +3461,9 @@ var
 begin
  {}
  Result:=nil;
- 
+
  //To Do //Lock ?
- 
+
  if FDriver = nil then Exit;
  if AEntry = nil then Exit;
 
@@ -3478,7 +3478,7 @@ begin
        Result:=Entry;
        Exit;
       end;
-      
+
      {Check Children}
      if Entry.FirstChild <> nil then
       begin
@@ -3486,7 +3486,7 @@ begin
        if Result <> nil then Exit;
       end;
     end;
-    
+
    Entry:=TCDFSDiskEntry(Entry.Next);
   end;
 end;
@@ -3497,9 +3497,9 @@ function TCDFSFileSystem.LoadVolumeFlags:LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FSupplementary = nil then Exit;
- 
+
  Result:=FSupplementary.VolumeFlags;
 end;
 
@@ -3513,10 +3513,10 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ACount = 0 then Exit;
 
- if not ClusterLock then Exit; 
+ if not ClusterLock then Exit;
  try
   if FClusterBuffer = nil then Exit;
 
@@ -3527,22 +3527,22 @@ begin
    begin
     {Read Cluster} {Don't need to read first}
     {if not ReadClusters(Cluster,1,FClusterBuffer^) then Exit;}
-   
+
     {Fill Cluster}
     FillChar(FClusterBuffer^,FClusterSize,AValue);
-   
+
     {Write Cluster}
     if not WriteClusters(Cluster,1,FClusterBuffer^) then Exit;
-   
+
     {Update Count}
     Dec(Count);
     Inc(Cluster);
    end;
-  
+
   Result:=True;
- finally  
+ finally
   ClusterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -3556,7 +3556,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ACount = 0 then Exit;
  if FDriver = nil then Exit;
  if ACluster > (FTotalClusterCount - 1) then Exit;
@@ -3567,7 +3567,7 @@ begin
 
  {Calculate Sector }
  Sector:=(ACluster shl FSectorShiftCount);
- 
+
  Result:=FDriver.Cache.DeviceRead(FVolume.Device,FStartSector + Sector,FSectorsPerCluster * ACount,ABuffer);
 end;
 
@@ -3582,7 +3582,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ACount = 0 then Exit;
  if FDriver = nil then Exit;
  if ACluster > (FTotalClusterCount - 1) then Exit;
@@ -3596,7 +3596,7 @@ begin
 
  {Calculate Sector}
  Sector:=(ACluster shl FSectorShiftCount);
- 
+
  Result:=FDriver.Cache.DeviceWrite(FVolume.Device,FStartSector + Sector,FSectorsPerCluster * ACount,ABuffer);
 end;
 
@@ -3624,46 +3624,46 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.TestClusters - Cluster = ' + IntToStr(ACluster) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Load Blocks}
   {if not LoadBlocks then Exit;} {Do not call, can be called by LoadBlocks}
-  
+
   {Get Params}
   Start:=ACluster;
   Remain:=ACount;
-  
+
   {Get Block}
   BlockNo:=(Start shr FBlockShiftCount);
   Block:=TCDFSDiskBlock(GetBlockEx(BlockNo,True));
   if Block = nil then Exit;
-  
+
   while Remain > 0 do
    begin
     {Get Count}
     Count:=Min(Remain,Block.BlockCount);
     if (Start > Block.BlockCluster) then Count:=Min(Remain,(Block.BlockCount - (Start - Block.BlockCluster)));
-    
+
     {Test Block}
     if not TestBlock(Block,Start,Count) then Exit;
-    
+
     {Update Params}
     Inc(Start,Count);
     Dec(Remain,Count);
     if Remain = 0 then Break;
-    
+
     {Get Block}
     BlockNo:=(Start shr FBlockShiftCount);
     Block:=TCDFSDiskBlock(GetBlockEx(BlockNo,True));
     if Block = nil then Exit;
    end;
-   
+
   Result:=True;
  finally
   FBlocks.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -3682,54 +3682,54 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FBlocks.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
- 
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MarkClusters - Cluster = ' + IntToStr(ACluster) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Load Blocks}
   {if not LoadBlocks then Exit;} {Do not call, can be called by LoadBlocks}
-  
+
   {Get Params}
   Start:=ACluster;
   Remain:=ACount;
-  
+
   {Get Block}
   BlockNo:=(Start shr FBlockShiftCount);
   Block:=TCDFSDiskBlock(GetBlockEx(BlockNo,True));
   if Block = nil then Exit;
-  
+
   while Remain > 0 do
    begin
     {Get Count}
     Count:=Min(Remain,Block.BlockCount);
     if (Start > Block.BlockCluster) then Count:=Min(Remain,(Block.BlockCount - (Start - Block.BlockCluster)));
-    
+
     {Mark Block}
     if not MarkBlock(Block,Start,Count,AUsed) then Exit;
-    
+
     {Update Params}
     Inc(Start,Count);
     Dec(Remain,Count);
     if Remain = 0 then Break;
-    
+
     {Get Block}
     BlockNo:=(Start shr FBlockShiftCount);
     Block:=TCDFSDiskBlock(GetBlockEx(BlockNo,True));
     if Block = nil then Exit;
    end;
-   
+
   Result:=True;
  finally
   FBlocks.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -3748,30 +3748,30 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FBlocks.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
- 
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AllocClusters - Cluster = ' + IntToStr(ACluster) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
-  
+
   {Check Start}
   if ACluster <> cdfsUnknownCluster then if ACluster < cdfsStartCluster then Exit;
-  
+
   {Check Count}
   if ACount = 0 then Exit;
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Load Blocks}
   if not LoadBlocks then Exit;
-  
+
   {Check Catalogs}
   if not CheckCatalogs then Exit;
-  
+
   {Check Cluster}
   if ACluster <> cdfsUnknownCluster then
    begin
@@ -3783,10 +3783,10 @@ begin
        begin
         {Mark Clusters}
         if not MarkClusters(ACluster,ACount,True) then Exit;
-        
+
         {Update Free}
         if FFreeClusterCount <> cdfsUnknownCluster then Dec(FFreeClusterCount,ACount);
-        
+
         Result:=True;
        end;
      end
@@ -3795,38 +3795,38 @@ begin
       {Multiple Clusters}
       Start:=ACluster;
       Remain:=ACount;
-      
+
       {Get Block}
       BlockNo:=(Start shr FBlockShiftCount);
       Block:=TCDFSDiskBlock(GetBlockEx(BlockNo,True));
       if Block = nil then Exit;
-      
+
       while Remain > 0 do
        begin
         {Get Count}
         Count:=Min(Remain,Block.BlockCount);
         if (Start > Block.BlockCluster) then Count:=Min(Remain,(Block.BlockCount - (Start - Block.BlockCluster)));
-        
+
         {Test Block}
         if not TestBlock(Block,Start,Count) then Exit;
-        
+
         {Update Params}
         Inc(Start,Count);
         Dec(Remain,Count);
         if Remain = 0 then Break;
-        
+
         {Get Block}
         BlockNo:=(Start shr FBlockShiftCount);
         Block:=TCDFSDiskBlock(GetBlockEx(BlockNo,True));
         if Block = nil then Exit;
        end;
-       
+
       {Mark Clusters}
       if not MarkClusters(ACluster,ACount,True) then Exit;
-      
+
       {Update Free}
       if FFreeClusterCount <> cdfsUnknownCluster then Dec(FFreeClusterCount,ACount);
-      
+
       Result:=True;
      end;
    end
@@ -3834,11 +3834,11 @@ begin
    begin
     {Next Free Cluster(s)}
     Cluster:=GetNextFreeCluster;
-    
+
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AllocClusters - Next Free Cluster = ' + IntToStr(Cluster));
     {$ENDIF}
-    
+
     if ACount = 1 then
      begin
       {Single Cluster}
@@ -3846,13 +3846,13 @@ begin
        begin
         {Mark Clusters}
         if not MarkClusters(Cluster,ACount,True) then Exit;
-        
+
         {Update Free}
         if FFreeClusterCount <> cdfsUnknownCluster then Dec(FFreeClusterCount,ACount);
-        
+
         {Return Cluster}
         ACluster:=Cluster;
-        
+
         Result:=True;
        end;
      end
@@ -3863,51 +3863,51 @@ begin
        begin
         Start:=Cluster;
         Remain:=ACount;
-        
+
         {Get Block}
         BlockNo:=(Start shr FBlockShiftCount);
         Block:=TCDFSDiskBlock(GetBlockEx(BlockNo,True));
         if Block = nil then Exit;
-        
+
         while Remain > 0 do
          begin
           {Get Count}
           Count:=Min(Remain,Block.BlockCount);
           if (Start > Block.BlockCluster) then Count:=Min(Remain,(Block.BlockCount - (Start - Block.BlockCluster)));
-          
+
           {Test Block}
           if not TestBlock(Block,Start,Count) then Break;
-          
+
           {Update Params}
           Inc(Start,Count);
           Dec(Remain,Count);
           if Remain = 0 then Break;
-          
+
           {Get Block}
           BlockNo:=(Start shr FBlockShiftCount);
           Block:=TCDFSDiskBlock(GetBlockEx(BlockNo,True));
           if Block = nil then Exit;
          end;
-        
+
         {Check Remain}
         if Remain = 0 then
          begin
           {Mark Clusters}
           if not MarkClusters(Cluster,ACount,True) then Exit;
-          
+
           {Update Free}
           if FFreeClusterCount <> cdfsUnknownCluster then Dec(FFreeClusterCount,ACount);
-          
+
           {Return Cluster}
           ACluster:=Cluster;
-          
+
           Result:=True;
          end;
-        
+
         {Check result}
         if Result then Break;
         Cluster:=GetNextFreeCluster;
-        
+
         {$IFDEF CDFS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AllocClusters - Next Free Cluster = ' + IntToStr(Cluster));
         {$ENDIF}
@@ -3916,7 +3916,7 @@ begin
    end;
  finally
   FBlocks.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -3934,57 +3934,57 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FBlocks.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
- 
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.ReleaseClusters - Cluster = ' + IntToStr(ACluster) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Load Blocks}
   if not LoadBlocks then Exit;
-  
+
   {Get Params}
   Start:=ACluster;
   Remain:=ACount;
-  
+
   {Get Block}
   BlockNo:=(Start shr FBlockShiftCount);
   Block:=TCDFSDiskBlock(GetBlockEx(BlockNo,True));
   if Block = nil then Exit;
-  
+
   while Remain > 0 do
    begin
     {Get Count}
     Count:=Min(Remain,Block.BlockCount);
     if (Start > Block.BlockCluster) then Count:=Min(Remain,(Block.BlockCount - (Start - Block.BlockCluster)));
-    
+
     {Mark Block}
     if not MarkBlock(Block,Start,Count,False) then Exit;
-    
+
     {Update Free}
     if FFreeClusterCount <> cdfsUnknownCluster then Inc(FFreeClusterCount,Count);
-    
+
     {Update Params}
     Inc(Start,Count);
     Dec(Remain,Count);
     if Remain = 0 then Break;
-    
+
     {Get Block}
     BlockNo:=(Start shr FBlockShiftCount);
     Block:=TCDFSDiskBlock(GetBlockEx(BlockNo,True));
     if Block = nil then Exit;
    end;
-   
+
   Result:=True;
  finally
   FBlocks.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -4001,23 +4001,23 @@ var
 begin
  {}
  Result:=cdfsUnknownCluster;
- 
+
  if not FBlocks.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
   if FEntriesPerBlock = 0 then Exit;
   if FTotalClusterCount = 0 then Exit;
- 
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.GetNextFreeCluster');
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Load Blocks}
   if not LoadBlocks then Exit;
-  
+
   {Get Params}
   Cluster:=0;
   Wrapped:=False;
@@ -4025,7 +4025,7 @@ begin
   if FLastFreeCluster >= FTotalClusterCount then FLastFreeCluster:=0;   {Check for Wraparound of Last Free}
   if FLastFreeCluster <> cdfsUnknownCluster then Cluster:=FLastFreeCluster;
   Origin:=Cluster;
-  
+
   {Check each Block}
   while Cluster < FTotalClusterCount do
    begin
@@ -4033,11 +4033,11 @@ begin
     BlockNo:=(Cluster shr FBlockShiftCount);
     Block:=TCDFSDiskBlock(GetBlockEx(BlockNo,True));
     if Block = nil then Exit;
-    
+
     {Get Start}
     Start:=Block.BlockCluster;
     if Origin = Cluster then Start:=Origin;
-    
+
     {Get Next Free}
     Next:=GetBlockNextFree(Block,Start);
     if Next <> cdfsUnknownCluster then
@@ -4046,20 +4046,20 @@ begin
       Result:=FLastFreeCluster;
       Exit;
      end;
-    
+
     {Check for Origin}
     if (Origin > 0) and (Wrapped) and (Start >= Origin) then Exit;
-    
+
     {Move next Block}
     Inc(Cluster,Block.BlockCount);
-    
+
     {Check for Wrap}
     if (Origin > 0) and (Cluster >= FTotalClusterCount) then Cluster:=0;
     if (Origin > 0) and (Cluster = 0) then Wrapped:=True;
    end;
  finally
   FBlocks.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -4073,21 +4073,21 @@ var
 begin
  {}
  Result:=cdfsUnknownCluster;
- 
+
  if FDriver = nil then Exit;
  if FEntriesPerBlock = 0 then Exit;
  if FTotalClusterCount = 0 then Exit;
- 
+
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.GetFreeClusterCount');
  {$ENDIF}
- 
+
  {Check ReadOnly}
  if FReadOnly then Exit;
- 
+
  {Load Blocks}
  if not LoadBlocks then Exit;
- 
+
  {Check Free Count}
  if FFreeClusterCount = cdfsUnknownCluster then
   begin
@@ -4096,7 +4096,7 @@ begin
     {Get Params}
     Cluster:=0;
     FFreeClusterCount:=0;
-    
+
     {Check each Block}
     while Cluster < FTotalClusterCount do
      begin
@@ -4104,19 +4104,19 @@ begin
       BlockNo:=(Cluster shr FBlockShiftCount);
       Block:=TCDFSDiskBlock(GetBlockEx(BlockNo,True));
       if Block = nil then Exit;
-      
+
       {Get Free Count}
       Count:=GetBlockFreeCount(Block);
       if Count <> cdfsUnknownCluster then Inc(FFreeClusterCount,Count);
-      
+
       {Move next Block}
       Inc(Cluster,Block.BlockCount);
      end;
    finally
     FBlocks.WriterUnlock;
-   end; 
+   end;
   end;
-   
+
  Result:=FFreeClusterCount;
 end;
 
@@ -4133,25 +4133,25 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABlock = nil then Exit;
- 
+
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.TestBlock - BlockNo = ' + IntToHex(ABlock.BlockNo,8) + ' Start = ' + IntToStr(AStart) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Check Start}
  if AStart < ABlock.BlockCluster then Exit;
  if AStart >= (ABlock.BlockCluster + ABlock.BlockCount) then Exit;
- 
+
  {Check Count}
  if ACount = 0 then Exit;
  if ACount > ABlock.BlockCount then Exit;
  if (AStart + ACount) > (ABlock.BlockCluster + ABlock.BlockCount) then Exit;
- 
+
  {Get Start}
  Start:=(AStart - ABlock.BlockCluster);
- 
+
  {Test Bitmap}
  Result:=TestBitmap(ABlock.BlockBuffer,ABlock.BlockCount,Start,ACount);
 end;
@@ -4169,25 +4169,25 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ABlock = nil then Exit;
- 
+
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MarkBlock - BlockNo = ' + IntToHex(ABlock.BlockNo,8) + ' Start = ' + IntToStr(AStart) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Check Start}
  if AStart < ABlock.BlockCluster then Exit;
  if AStart >= (ABlock.BlockCluster + ABlock.BlockCount) then Exit;
- 
+
  {Check Count}
  if ACount = 0 then Exit;
  if ACount > ABlock.BlockCount then Exit;
  if (AStart + ACount) > (ABlock.BlockCluster + ABlock.BlockCount) then Exit;
- 
+
  {Get Start}
  Start:=(AStart - ABlock.BlockCluster);
- 
+
  {Mark Bitmap}
  Result:=MarkBitmap(ABlock.BlockBuffer,ABlock.BlockCount,Start,ACount,AUsed);
 end;
@@ -4223,20 +4223,20 @@ var
 begin
  {}
  Result:=cdfsUnknownCluster;
- 
+
  if ABlock = nil then Exit;
- 
+
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.GetBlockNextFree - BlockNo = ' + IntToHex(ABlock.BlockNo,8) + ' Start = ' + IntToStr(AStart));
  {$ENDIF}
- 
+
  {Check Start}
  if AStart < ABlock.BlockCluster then Exit;
  if AStart >= (ABlock.BlockCluster + ABlock.BlockCount) then Exit;
- 
+
  {Get Start}
  Start:=(AStart - ABlock.BlockCluster);
- 
+
  {Get Next Free}
  Next:=GetBitmapNextFree(ABlock.BlockBuffer,ABlock.BlockCount,Start);
  if Next <> cdfsBitmapUnknown then Result:=(ABlock.BlockCluster + Next);
@@ -4252,13 +4252,13 @@ var
 begin
  {}
  Result:=cdfsUnknownCluster;
- 
+
  if ABlock = nil then Exit;
- 
+
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.GetBlockFreeCount - BlockNo = ' + IntToHex(ABlock.BlockNo,8));
  {$ENDIF}
- 
+
  {Get Free Count}
  Count:=GetBitmapFreeCount(ABlock.BlockBuffer,ABlock.BlockCount);
  if Count <> cdfsBitmapUnknown then Result:=Count;
@@ -4274,7 +4274,7 @@ function TCDFSFileSystem.TestBitmap(ABuffer:Pointer;ASize,AStart,ACount:LongWord
 {Note: Should only be called by TestBlock}
 {Note: Bitmaps are a multiple of 64 bits in size but free and used
        blocks are marked using an array of bytes in little endian order}
-{Note: Caller must hold the blocks lock}       
+{Note: Caller must hold the blocks lock}
 var
  Size:LongWord;   {Number of 64 bit blocks in bitmap}
  Start:LongWord;  {Starting block in the bitmap data}
@@ -4287,20 +4287,20 @@ var
 begin
  {} //To Do //See Changes / Improvments in NTFS
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.TestBitmap - Size = ' + IntToStr(ASize) + ' Start = ' + IntToStr(AStart) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Get Size}
  Size:=(ASize shr 6); {Divide by 64}
  if (Size shl 6) < ASize then Inc(Size);
- 
+
  {Get Start}
  Start:=(AStart shr 6); {Divide by 64}
- 
+
  {Get Params}
  Block:=Start;
  Offset:=(Block shl 3); {Multiply by 8}
@@ -4311,11 +4311,11 @@ begin
    {Get Bits}
    Bits:=Min(Remain,cdfsBitmapMaskBits);
    if Bit > 0 then Bits:=Min(Remain,(cdfsBitmapMaskBits - Bit));
-   
+
    {$IFDEF CDFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.TestBitmap - Block = ' + IntToStr(Block) + ' Offset = ' + IntToStr(Offset) + ' Remain = ' + IntToStr(Remain) + ' Bit = ' + IntToStr(Bit) + ' Bits = ' + IntToStr(Bits));
    {$ENDIF}
-   
+
    {Test Bits} //To Do //Can we optimize to test all bits at once as per VirtualDiskVpcImage.TestBitmap ?
    for Current:=Bit to (Bit + (Bits - 1)) do
     begin
@@ -4323,16 +4323,16 @@ begin
      if And64(Int64(Pointer(PtrUInt(ABuffer) + Offset)^),cdfsBitmapMasks[Current]) = cdfsBitmapMasks[Current] then Exit;
      //To Do //Replace these with inbuilt routines which handle Int64 without problems.
     end;
-   
+
    {Update Params}
    Bit:=0;
    Inc(Block);
    Inc(Offset,8);
    Dec(Remain,Bits);
-   
+
    if Remain = 0 then Break;
   end;
-  
+
  Result:=True;
 end;
 
@@ -4346,7 +4346,7 @@ function TCDFSFileSystem.MarkBitmap(ABuffer:Pointer;ASize,AStart,ACount:LongWord
 {Note: Should only be called by MarkBlock}
 {Note: Bitmaps are a multiple of 64 bits in size but free and used
        blocks are marked using an array of bytes in little endian order}
-{Note: Caller must hold the blocks lock}       
+{Note: Caller must hold the blocks lock}
 var
  Size:LongWord;   {Number of 64 bit blocks in bitmap}
  Start:LongWord;  {Starting block in the bitmap data}
@@ -4359,20 +4359,20 @@ var
 begin
  {} //To Do //See Changes / Improvments in NTFS
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MarkBitmap - Size = ' + IntToStr(ASize) + ' Start = ' + IntToStr(AStart) + ' Count = ' + IntToStr(ACount));
  {$ENDIF}
- 
+
  {Get Size}
  Size:=(ASize shr 6); {Divide by 64}
  if (Size shl 6) < ASize then Inc(Size);
- 
+
  {Get Start}
  Start:=(AStart shr 6); {Divide by 64}
- 
+
  {Get Params}
  Block:=Start;
  Offset:=(Block shl 3); {Multiply by 8}
@@ -4383,11 +4383,11 @@ begin
    {Get Bits}
    Bits:=Min(Remain,cdfsBitmapMaskBits);
    if Bit > 0 then Bits:=Min(Remain,(cdfsBitmapMaskBits - Bit));
-   
+
    {$IFDEF CDFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MarkBitmap - Block = ' + IntToStr(Block) + ' Offset = ' + IntToStr(Offset) + ' Remain = ' + IntToStr(Remain) + ' Bit = ' + IntToStr(Bit) + ' Bits = ' + IntToStr(Bits));
    {$ENDIF}
-   
+
    {Mark Bits} //To Do //Can we optimize to mark all bits at once as per VirtualDiskVpcImage.TestBitmap ?
    for Current:=Bit to (Bit + (Bits - 1)) do
     begin
@@ -4404,13 +4404,13 @@ begin
        //To Do //Replace these with inbuilt routines which handle Int64 without problems.
       end;
     end;
-   
+
    {Update Params}
    Bit:=0;
    Inc(Block);
    Inc(Offset,8);
    Dec(Remain,Bits);
-   
+
    if Remain = 0 then Break;
   end;
  Result:=True;
@@ -4419,7 +4419,7 @@ end;
 {=============================================================================}
 
 function TCDFSFileSystem.AllocBitmap(ABuffer:Pointer;ASize:LongWord;AStart,ACount:LongWord):Boolean;
-{Note: Caller must hold the blocks lock}       
+{Note: Caller must hold the blocks lock}
 begin
  {AllocBitmap simply calls MarkBitmap with True}
  Result:=MarkBitmap(ABuffer,ASize,AStart,ACount,True);
@@ -4428,7 +4428,7 @@ end;
 {=============================================================================}
 
 function TCDFSFileSystem.ReleaseBitmap(ABuffer:Pointer;ASize:LongWord;AStart,ACount:LongWord):Boolean;
-{Note: Caller must hold the blocks lock}       
+{Note: Caller must hold the blocks lock}
 begin
  {ReleaseBitmap simply calls MarkBitmap with False}
  Result:=MarkBitmap(ABuffer,ASize,AStart,ACount,False);
@@ -4442,7 +4442,7 @@ function TCDFSFileSystem.GetBitmapNextFree(ABuffer:Pointer;ASize,AStart:LongWord
 {Note: Should only be called by GetBlockNextFree}
 {Note: Bitmaps are a multiple of 64 bits in size but free and used
        blocks are marked using an array of bytes in little endian order}
-{Note: Caller must hold the blocks lock}              
+{Note: Caller must hold the blocks lock}
 var
  Size:LongWord;   {Number of 64 bit blocks in bitmap}
  Start:LongWord;  {Starting block in the bitmap data}
@@ -4455,20 +4455,20 @@ var
 begin
  {} //To Do //See Changes / Improvments in NTFS (And64 etc)
  Result:=cdfsBitmapUnknown;
- 
+
  if ABuffer = nil then Exit;
 
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.GetBitmapNextFree - Size = ' + IntToStr(ASize) + ' Start = ' + IntToStr(AStart));
  {$ENDIF}
- 
+
  {Get Size}
  Size:=(ASize shr 6); {Divide by 64}
  if (Size shl 6) < ASize then Inc(Size);
- 
+
  {Get Start}
  Start:=(AStart shr 6); {Divide by 64}
- 
+
  {Get Params}
  Block:=Start;
  Offset:=(Block shl 3); {Multiply by 8}
@@ -4479,11 +4479,11 @@ begin
    {Get Bits}
    Bits:=Min(Remain,cdfsBitmapMaskBits);
    if Bit > 0 then Bits:=Min(Remain,(cdfsBitmapMaskBits - Bit));
-   
+
    {$IFDEF CDFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.GetBitmapNextFree - Block = ' + IntToStr(Block) + ' Offset = ' + IntToStr(Offset) + ' Remain = ' + IntToStr(Remain) + ' Bit = ' + IntToStr(Bit) + ' Bits = ' + IntToStr(Bits));
    {$ENDIF}
-   
+
    {Mark Bits}
    if (Bit = 0) and (Int64(Pointer(PtrUInt(ABuffer) + Offset)^) = cdfsBitmapMaskNone) then
     begin
@@ -4511,12 +4511,12 @@ begin
         end;
       end;
     end;
-    
+
    {Update Params}
    Bit:=0;
    Inc(Block);
    Inc(Offset,8);
-   
+
    Dec(Remain,Bits);
   end;
 end;
@@ -4528,7 +4528,7 @@ function TCDFSFileSystem.GetBitmapFreeCount(ABuffer:Pointer;ASize:LongWord):Long
 {Note: Should only be called by GetBlockFreeCount}
 {Note: Bitmaps are a multiple of 64 bits in size but free and used
        blocks are marked using an array of bytes in little endian order}
-{Note: Caller must hold the blocks lock}              
+{Note: Caller must hold the blocks lock}
 var
  Size:LongWord;   {Number of 64 bit blocks in bitmap}
  Value:LongWord;
@@ -4539,19 +4539,19 @@ var
 begin
  {} //To Do //See Changes / Improvments in NTFS
  Result:=cdfsBitmapUnknown;
- 
+
  if ABuffer = nil then Exit;
- 
+
  Result:=0;
- 
+
  {$IFDEF CDFS_DEBUG}
  if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.GetBitmapFreeCount - Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Size}
  Size:=(ASize shr 6); {Divide by 64}
  if (Size shl 6) < ASize then Inc(Size);
- 
+
  {Get Params}
  Block:=0;
  Offset:=0;
@@ -4560,11 +4560,11 @@ begin
   begin
    {Get Bits}
    Bits:=Min(Remain,cdfsBitmapMaskBits);
-   
+
    {$IFDEF CDFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.GetBitmapFreeCount - Bits = ' + IntToStr(Bits) + ' cdfsBitmapOverlays = ' + IntToHex(cdfsBitmapOverlays[Bits - 1],16) + ' Hi = ' + IntToHex(Int64Rec(cdfsBitmapOverlays[Bits - 1]).Hi,8) + ' Lo = ' + IntToHex(Int64Rec(cdfsBitmapOverlays[Bits - 1]).Lo,8));
    {$ENDIF}
-   
+
    if Int64(Pointer(PtrUInt(ABuffer) + Offset)^) = cdfsBitmapMaskNone then
     begin
      {All Free}
@@ -4591,11 +4591,11 @@ begin
        Value:=(Value and (Value - 1));
       end;
     end;
-    
+
    {Update Params}
    Inc(Block);
    Inc(Offset,8);
-   
+
    Dec(Remain,Bits);
   end;
 end;
@@ -4610,7 +4610,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if FDriver = nil then Exit;
  if ATable = nil then Exit;
 
@@ -4619,23 +4619,23 @@ begin
   begin
    {Load Paths}
    if not LoadPaths(TCDFSDiskTable(ATable)) then Exit;
-   
+
    {Get Size}
    DataFree:=TCDFSDiskTable(ATable).DataSize;
-   
+
    {Get Paths}
    Path:=TCDFSDiskPath(TCDFSDiskTable(ATable).Paths.First); {Protected by caller held paths lock}
    while Path <> nil do
     begin
      Dec(DataFree,Path.PathRecordSize(TCDFSDiskTable(ATable).Unicode));
-     
+
      Path:=TCDFSDiskPath(Path.Next); {Protected by caller held paths lock}
     end;
-    
+
    {Set Free}
    TCDFSDiskTable(ATable).DataFree:=DataFree;
   end;
-  
+
  Result:=TCDFSDiskTable(ATable).DataFree;
 end;
 
@@ -4654,7 +4654,7 @@ begin
 
  {Check Relative} {Allow Dot only on Root Directory}
  if ((AEntry.Attributes and (faDot or faDotDot)) <> faNone) and (AEntry <> FRoot) then Exit;
- 
+
  {Check Directory}
  if (AEntry.Attributes and faDirectory) = faDirectory then
   begin
@@ -4663,23 +4663,23 @@ begin
     begin
      {Load Entries}
      if not LoadEntries(AEntry) then Exit;
-     
+
      {Get Size}
      DataFree:=TCDFSDiskEntry(AEntry).DataSize;
-     
+
      {Get Entries}
      Entry:=TCDFSDiskEntry(TCDFSDiskEntry(AEntry).FirstChild); {Protected by caller held entries lock}
      while Entry <> nil do
       begin
        Dec(DataFree,Entry.DirectoryRecordSize);
-       
+
        Entry:=TCDFSDiskEntry(Entry.Next); {Protected by caller held entries lock}
       end;
-     
+
      {Set Free}
      TCDFSDiskEntry(AEntry).DataFree:=DataFree;
     end;
-    
+
    Result:=TCDFSDiskEntry(AEntry).DataFree;
   end;
 end;
@@ -4701,41 +4701,41 @@ begin
 
  {Load Catalogs}
  if not LoadCatalogs then Exit;
- 
+
  {Check Descriptor}
  if ADescriptor.CatalogStart = 0 then Exit;
  if ADescriptor.CatalogCount = 0 then Exit;
- 
+
  {Get Size}
  DataFree:=(ADescriptor.CatalogCount shl FClusterShiftCount);
- 
+
  {Get Headers}
  Header:=TCDFSDiskHeader(FHeaders.First); {Protected by caller held headers lock}
  while Header <> nil do
   begin
    Dec(DataFree,cdfsHeaderRecordSize);
-   
+
    Header:=TCDFSDiskHeader(Header.Next); {Protected by caller held headers lock}
   end;
- 
+
  {Get Catalogs}
  Catalog:=TCDFSDiskCatalog(FCatalogs.First); {Protected by caller held catalogs lock}
  while Catalog <> nil do
   begin
    Dec(DataFree,cdfsCatalogRecordSize);
-   
+
    Catalog:=TCDFSDiskCatalog(Catalog.Next); {Protected by caller held catalogs lock}
   end;
- 
+
  {Get Extensions}
  Extension:=TCDFSDiskExtension(FExtensions.First); {Protected by caller held extensions lock}
  while Extension <> nil do
   begin
    Dec(DataFree,cdfsExtensionRecordSize);
-   
+
    Extension:=TCDFSDiskExtension(Extension.Next); {Protected by caller held extensions lock}
   end;
-  
+
  Result:=DataFree;
 end;
 
@@ -4754,7 +4754,7 @@ begin
 
  {Load Paths}
  if not LoadPaths(TCDFSDiskTable(ATable)) then Exit;
- 
+
  {Check Paths}
  Path:=TCDFSDiskPath(TCDFSDiskTable(ATable).Paths.Last); {Search Backwards} {Protected by caller held paths lock}
  while Path <> nil do
@@ -4764,7 +4764,7 @@ begin
      Result:=Path;
      Exit;
     end;
-    
+
    Path:=TCDFSDiskPath(Path.Prev); {Protected by caller held paths lock}
   end;
 end;
@@ -4784,7 +4784,7 @@ begin
 
  {Load Entries}
  if not LoadEntries(AParent) then Exit;
- 
+
  {Get Entries}
  Entry:=TCDFSDiskEntry(TCDFSDiskEntry(AParent).LastChild); {Search Backwards} {Protected by caller held entries lock}
  while Entry <> nil do
@@ -4794,7 +4794,7 @@ begin
      Result:=Entry;
      Exit;
     end;
-    
+
    Entry:=TCDFSDiskEntry(Entry.Prev); {Protected by caller held entries lock}
   end;
 end;
@@ -4807,14 +4807,14 @@ function TCDFSFileSystem.GetSectorsPerCluster(AClusterSize:LongWord):LongWord;
 begin
  {}
  Result:=0;
- 
+
  if FDriver = nil then Exit;
  if AClusterSize = 0 then Exit;
- 
+
  Result:=1;
- 
+
  if AClusterSize <= FSectorSize then Exit;
- 
+
  Result:=(AClusterSize div FSectorSize);
 end;
 
@@ -4826,7 +4826,7 @@ function TCDFSFileSystem.GetBlockShiftCount(AClusterSize:LongWord):Word;
 begin
  {}
  Result:=0;
- 
+
  if FDriver = nil then Exit;
  if AClusterSize = 0 then Exit;
 
@@ -4845,7 +4845,7 @@ function TCDFSFileSystem.GetSectorShiftCount(AClusterSize:LongWord):Word;
 begin
  {}
  Result:=0;
- 
+
  if FDriver = nil then Exit;
  if FSectorSize = 0 then Exit;
  if AClusterSize = 0 then Exit;
@@ -4865,7 +4865,7 @@ function TCDFSFileSystem.GetClusterShiftCount(AClusterSize:LongWord):Word;
 begin
  {}
  Result:=0;
- 
+
  if FDriver = nil then Exit;
  if AClusterSize = 0 then Exit;
 
@@ -4906,7 +4906,7 @@ var
 begin
  {}
  Result:=((ATotalClusterCount - 1) shr FBlockShiftCount);
- 
+
  ClusterCount:=Result;
  if (ClusterCount shl FBlockShiftCount) < (ATotalClusterCount - 1) then
   begin
@@ -4924,7 +4924,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ATable = nil then Exit;
 
  if not TCDFSDiskTable(ATable).Paths.WriterLock then Exit;
@@ -4932,7 +4932,7 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RenumberPaths - TableNo = ' + IntToHex(ATable.TableNo,8));
   {$ENDIF}
- 
+
   {Renumber Paths}
   Number:=cdfsRootPathNumber;
   Path:=TCDFSDiskPath(TCDFSDiskTable(ATable).Paths.First);
@@ -4940,18 +4940,18 @@ begin
    begin
     {Update Path Number}
     Path.PathNumber:=Number;
-   
+
     {Update Parent Number}
     if Path.Parent <> nil then Path.ParentNumber:=Path.Parent.PathNumber;
     Inc(Number);
-   
+
     Path:=TCDFSDiskPath(Path.Next);
    end;
-  
-  Result:=True; 
+
+  Result:=True;
  finally
   TCDFSDiskTable(ATable).Paths.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -4975,10 +4975,10 @@ var
 begin
  {}
  Result:=0;
- 
+
  if APath1 = nil then Exit;
  if APath2 = nil then Exit;
- 
+
  {Check Root}
  if APath1.Name = cdfsDotName then
   begin
@@ -5039,10 +5039,10 @@ var
 begin
  {}
  Result:=0;
- 
+
  if AEntry1 = nil then Exit;
  if AEntry2 = nil then Exit;
- 
+
  {Check Dot}
  if (AEntry1.Attributes and faDot) = faDot then
   begin
@@ -5076,7 +5076,7 @@ begin
      Ext2:='';
      SplitFile(AEntry1.Name,Name1,Ext1);
      SplitFile(AEntry2.Name,Name2,Ext2);
-     
+
      {Check Name}
      if (Length(Name1) <> 0) or (Length(Name2) <> 0) then
       begin
@@ -5085,7 +5085,7 @@ begin
        Result:=CompareString(WorkBuffer1,WorkBuffer2,False);
        if Result <> 0 then Exit;
       end;
-     
+
      {Check Extension}
      if (Length(Ext1) <> 0) or (Length(Ext2) <> 0) then
       begin
@@ -5094,7 +5094,7 @@ begin
        Result:=CompareString(WorkBuffer1,WorkBuffer2,False);
        if Result <> 0 then Exit;
       end;
-     
+
      {Check Version}
      if (Length(AEntry1.Version) <> 0) or (Length(AEntry2.Version) <> 0) then
       begin
@@ -5113,7 +5113,7 @@ function TCDFSFileSystem.PadString(const AString:String;ALength:Integer;APrefix,
 begin
  {}
  Result:=AString;
- 
+
  while Length(Result) < ALength do
   begin
    if APrefix then
@@ -5149,9 +5149,9 @@ var
 begin
  {}
  Result:=0;
- 
+
  if Length(AString1) <> Length(AString2) then Exit;
- 
+
  for Count:=1 to Length(AString1) do
   begin
    if AString1[Count] < AString2[Count] then
@@ -5176,16 +5176,16 @@ var
 begin
  {}
  Result:=0;
- 
+
  Offset:=0;
  Checksum:=0;
- 
+
  while Offset < SizeOf(TELTORITOValidationRecord) do
   begin
    Inc(Checksum,Word(Pointer(PtrUInt(AValidation) + Offset)^));
    Inc(Offset,SizeOf(Word));
   end;
-  
+
  if Checksum > 0 then
   begin
    Result:=($FFFF - Checksum) + 1;
@@ -5203,26 +5203,26 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ARecord = nil then Exit;
  if APath = nil then Exit;
 
  {Get Path}
  Path:=PCDFSPathRecord(ARecord);
- 
+
  {Check Swap}
  if AEndian then
   begin
    {Read Path}
    APath.ExtendedSize:=Path.ExtendedSize;
    APath.ParentNumber:=WordBEToN(Path.ParentNumber);
-   
+
    {Get Start}
    APath.StartCluster:=LongWordBEtoN(Path.FirstBlock);
-   
+
    {Get Name}
    APath.Name:=CDFSIdentifierToFileName(Path.PathIdentifier[0],Path.PathIdentifierSize,AUnicode);
-   
+
    Result:=True;
   end
  else
@@ -5230,13 +5230,13 @@ begin
    {Read Path}
    APath.ExtendedSize:=Path.ExtendedSize;
    APath.ParentNumber:=Path.ParentNumber;
-   
+
    {Get Start}
    APath.StartCluster:=Path.FirstBlock;
-   
+
    {Get Name}
    APath.Name:=CDFSIdentifierToFileName(Path.PathIdentifier[0],Path.PathIdentifierSize,AUnicode);
-   
+
    Result:=True;
   end;
 end;
@@ -5252,27 +5252,27 @@ var
 begin
  {}
  Result:=False;
- 
+
  if APath = nil then Exit;
  if ARecord = nil then Exit;
 
  {Get Path}
  Path:=PCDFSPathRecord(ARecord);
- 
+
  {Check Swap}
  if AEndian then
   begin
    {Write Path}
    Path.ExtendedSize:=APath.ExtendedSize;
    Path.ParentNumber:=WordNToBE(APath.ParentNumber);
-   
+
    {Set Start}
    Path.FirstBlock:=LongWordNtoBE(APath.StartCluster);
-   
+
    {Set Name}
    Path.PathIdentifierSize:=APath.PathIdentifierSize(AUnicode);
    if not CDFSFileNameToIdentifier(APath.PathIdentifier,Path.PathIdentifier[0],Path.PathIdentifierSize,AUnicode) then Exit;
-   
+
    Result:=True;
   end
  else
@@ -5280,14 +5280,14 @@ begin
    {Write Path}
    Path.ExtendedSize:=APath.ExtendedSize;
    Path.ParentNumber:=APath.ParentNumber;
-   
+
    {Set Start}
    Path.FirstBlock:=APath.StartCluster;
-   
+
    {Set Name}
    Path.PathIdentifierSize:=APath.PathIdentifierSize(AUnicode);
    if not CDFSFileNameToIdentifier(APath.PathIdentifier,Path.PathIdentifier[0],Path.PathIdentifierSize,AUnicode) then Exit;
-   
+
    Result:=True;
   end;
 end;
@@ -5305,13 +5305,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if ARecord = nil then Exit;
  if AEntry = nil then Exit;
- 
+
  {Get Directory}
  Directory:=PCDFSDirectoryRecord(ARecord);
- 
+
  {Read Entry}
  AEntry.RecordSize:=Directory.RecordSize;
  AEntry.ExtendedSize:=Directory.ExtendedSize;
@@ -5320,65 +5320,65 @@ begin
  AEntry.UnitSize:=Directory.UnitSize;
  AEntry.InterleaveSize:=Directory.InterleaveSize;
  AEntry.SequenceNumber:=Directory.SequenceNumber;
- 
+
  {Get Count}
  Count:=(Directory.DataSize shr FClusterShiftCount);
  if (Count shl FClusterShiftCount) < Directory.DataSize then Inc(Count);
  AEntry.ClusterCount:=Count;
- 
+
  {Get Start}
  AEntry.StartCluster:=Directory.FirstBlock;
- 
+
  {Get Times}
  AEntry.WriteTime:=CDFSTimeToFileTime(Directory.CreateTime);
  AEntry.CreateTime:=CDFSTimeToFileTime(Directory.CreateTime);
  AEntry.AccessTime:=cdfsNullFileTime;
- 
+
  {Get Attributes}
  if FReadOnly then AEntry.Attributes:=(AEntry.Attributes or faReadOnly);
  if (Directory.FileFlags and cdfsFileFlagExistence) = cdfsFileFlagExistence then AEntry.Attributes:=(AEntry.Attributes or faHidden);
  if (Directory.FileFlags and cdfsFileFlagDirectory) = cdfsFileFlagDirectory then AEntry.Attributes:=(AEntry.Attributes or faDirectory);
- 
+
  {Check Type}
  if (AEntry.Attributes and faDirectory) = faNone then
   begin
    {File}
    AEntry.Attributes:=(AEntry.Attributes or faFile);
    AEntry.EntriesLoaded:=True;
-   
+
    {Get Size}
    AEntry.Size:=AEntry.DataSize;
-   
+
    {Get Name}
    {AEntry.Name:=StripDot(StripVersion(CDFSIdentifierToFileName(Directory.FileIdentifier[0],Directory.FileIdentifierSize,AUnicode)));}
    WorkBuffer:=CDFSIdentifierToFileName(Directory.FileIdentifier[0],Directory.FileIdentifierSize,AUnicode);
    AEntry.Name:=StripDot(StripVersion(WorkBuffer));
-   
+
    {Get Version}
    AEntry.Version:=GetVersion(WorkBuffer);
-   
+
    Result:=True;
   end
  else if (AEntry.Attributes and faDirectory) = faDirectory then
   begin
    {Folder}
    AEntry.Attributes:=(AEntry.Attributes or faDirectory);
-   
+
    {Get Size}
    AEntry.Size:=0;
-   
+
    {Get Name}
    {AEntry.Name:=StripDot(StripVersion(CDFSIdentifierToFileName(Directory.FileIdentifier[0],Directory.FileIdentifierSize,AUnicode)));}
    WorkBuffer:=CDFSIdentifierToFileName(Directory.FileIdentifier[0],Directory.FileIdentifierSize,AUnicode);
    AEntry.Name:=StripDot(StripVersion(WorkBuffer));
-   
+
    {Get Version}
    AEntry.Version:=GetVersion(WorkBuffer);
-   
+
    {Check Relative}
    if AEntry.Name = cdfsDotName then AEntry.Attributes:=(AEntry.Attributes or faDot);
    if AEntry.Name = cdfsDotDotName then AEntry.Attributes:=(AEntry.Attributes or faDotDot);
-   
+
    Result:=True;
   end;
 end;
@@ -5394,13 +5394,13 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AEntry = nil then Exit;
  if ARecord = nil then Exit;
- 
+
  {Get Directory}
  Directory:=PCDFSDirectoryRecord(ARecord);
- 
+
  {Write Entry}
  Directory.RecordSize:=AEntry.DirectoryRecordSize;  {AEntry.RecordSize}
  Directory.ExtendedSize:=AEntry.ExtendedRecordSize; {AEntry.ExtendedSize}
@@ -5410,19 +5410,19 @@ begin
  Directory.InterleaveSize:=AEntry.InterleaveSize;
  Directory.SequenceNumber:=AEntry.SequenceNumber;
  Directory.SequenceNumberM:=WordNToBE(AEntry.SequenceNumber);
- 
+
  {Set Start}
  Directory.FirstBlock:=AEntry.StartCluster;
  Directory.FirstBlockM:=LongWordNtoBE(AEntry.StartCluster);
- 
+
  {Set Time}
  if not FileTimeToCDFSTime(AEntry.WriteTime,Directory.CreateTime) then Exit;
- 
+
  {Set Attributes}
  Directory.FileFlags:=cdfsFileFlagNone;
  if (AEntry.Attributes and faHidden) = faHidden then Directory.FileFlags:=(Directory.FileFlags or cdfsFileFlagExistence);
  if (AEntry.Attributes and faDirectory) = faDirectory then Directory.FileFlags:=(Directory.FileFlags or cdfsFileFlagDirectory);
- 
+
  {Check Type}
  if (AEntry.Attributes and faDirectory) = faNone then
   begin
@@ -5430,7 +5430,7 @@ begin
    {Set Name}
    Directory.FileIdentifierSize:=AEntry.FileIdentifierSize;
    if not CDFSFileNameToIdentifier(AEntry.FileIdentifier,Directory.FileIdentifier[0],Directory.FileIdentifierSize,AUnicode) then Exit;
-   
+
    Result:=True;
   end
  else if (AEntry.Attributes and faDirectory) = faDirectory then
@@ -5455,7 +5455,7 @@ begin
      Directory.FileIdentifierSize:=AEntry.FileIdentifierSize;
      if not CDFSFileNameToIdentifier(AEntry.FileIdentifier,Directory.FileIdentifier[0],Directory.FileIdentifierSize,AUnicode) then Exit;
     end;
-    
+
    Result:=True;
   end;
 end;
@@ -5466,7 +5466,7 @@ function TCDFSFileSystem.CDFSTypeToFileSysType(ACDFSType:TCDFSType):TFileSysType
 begin
  {}
  Result:=fsUNKNOWN;
- 
+
  case ACDFSType of
   ctISO9660,ctJOLIET,ctSIERRA,ctROCKRIDGE:Result:=fsCDFS;
   ctUDF:Result:=fsUDF;
@@ -5479,7 +5479,7 @@ function TCDFSFileSystem.LoadMaxFile:Integer;
 begin
  {}
  Result:=cdfsISO9660MaxFile;
- 
+
  if FLongNames then Result:=cdfsJolietMaxFile;
 end;
 
@@ -5489,7 +5489,7 @@ function TCDFSFileSystem.LoadMaxPath:Integer;
 begin
  {}
  Result:=cdfsISO9660MaxPath;
- 
+
  if FLongNames then Result:=cdfsJolietMaxPath;
 end;
 
@@ -5499,7 +5499,7 @@ function TCDFSFileSystem.LoadAttributes:LongWord;
 begin
  {}
  Result:=inherited LoadAttributes;
- 
+
  {if FLongNames then Result:=(Result or vaCasePreserved or vaUnicode);} {Now inbuilt}
 end;
 
@@ -5509,9 +5509,9 @@ function TCDFSFileSystem.LoadSystemName:String;
 begin
  {}
  Result:=cdfsBlankName;
- 
+
  if FDriver = nil then Exit;
- 
+
  case FCDFSType of
   ctISO9660,ctJOLIET,ctSIERRA,ctROCKRIDGE:Result:='CDFS';
   ctUDF:Result:='UDF';
@@ -5526,19 +5526,19 @@ var
 begin
  {}
  Result:=cdfsBlankName;
- 
+
  if not FDescriptors.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
- 
+
   Descriptor:=FPrimary;
   if FSupplementary <> nil then Descriptor:=FSupplementary;
   if Descriptor = nil then Exit;
- 
+
   Result:=Trim(Descriptor.VolumeIdentifier);
  finally
   FDescriptors.ReaderUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -5549,24 +5549,24 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not FDescriptors.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
   if FClusterBuffer = nil then Exit;
- 
+
   Descriptor:=FPrimary;
   if FSupplementary <> nil then Descriptor:=FSupplementary;
   if Descriptor = nil then Exit;
- 
+
   {Get Cluster}
   if not ReadClusters(Descriptor.StartCluster,1,FClusterBuffer^) then Exit;
- 
+
   {Calculate Volume Serial}
   Result:=CalculateVolumeSerial(FClusterBuffer,FClusterSize);
  finally
   FDescriptors.ReaderUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -5585,38 +5585,38 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FDescriptors.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
 
   {Check ReadOnly}
   if FReadOnly then Exit;
- 
+
   {Get Primary}
   Descriptor:=FPrimary;
   if Descriptor = nil then Exit;
   Descriptor.VolumeIdentifier:=Uppercase(AName);
   Descriptor.VolumeSetIdentifier:=Uppercase(AName);
- 
+
   {Set Primary}
   Result:=SetDescriptor(Descriptor);
- 
+
   {Get Supplementary}
   if FSupplementary <> nil then
    begin
     Descriptor:=FSupplementary;
     if Descriptor = nil then Exit;
-   
+
     Descriptor.VolumeIdentifier:=AName;
     Descriptor.VolumeSetIdentifier:=AName;
-   
+
     {Set Supplementary}
     Result:=SetDescriptor(Descriptor);
    end;
  finally
   FDescriptors.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -5627,24 +5627,24 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FDescriptors.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
 
   {Check ReadOnly}
   if FReadOnly then Exit;
- 
+
   {Get Primary}
   Descriptor:=FPrimary;
   if FSupplementary <> nil then Descriptor:=FSupplementary;
   if Descriptor = nil then Exit;
- 
+
   //To Do //Add value to ApplicationData to setup sum to be passed value ?
   //Result:=SetDescriptor(Descriptor); //To Do  //Primary and Supplementary Descriptors ? //See above
  finally
   FDescriptors.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -5677,55 +5677,55 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.ReadEntry Name = ' + AEntry.Name + ' Start = ' + IntToStr(AStart) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
-  
+
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
-  
+
   {Check Entry}
   if (AEntry.Attributes and faMatchMask) <> faFile then Exit;
-  
+
   {Get Cluster}
   Cluster:=TCDFSDiskEntry(AEntry).StartCluster + (AStart shr FClusterShiftCount);
-  
+
   {Get Position}
   Offset:=0;
   Remain:=ACount;
   Start:=(AStart - ((AStart shr FClusterShiftCount) shl FClusterShiftCount));
   Count:=Min(ACount,(FClusterSize - Start));
-  
+
   {Get Length}
   Length:=(ACount shr FClusterShiftCount);
-  
+
   {Read Clusters}
   while Remain > 0 do
    begin
     if Start > 0 then
      begin
       {Partial Cluster} {First}
-      if not ReadLock then Exit; 
+      if not ReadLock then Exit;
       try
        if FReadBuffer = nil then Exit;
 
        {Read Clusters}
        if not ReadClusters(Cluster,1,FReadBuffer^) then Break;
-      
+
        {Read Buffer}
        System.Move(Pointer(PtrUInt(FReadBuffer) + Start)^,Pointer(PtrUInt(@ABuffer) + Offset)^,Count);
-      
+
        {Update Cluster}
        Inc(Cluster);
-      
+
        {Update Position}
        Inc(Offset,Count);
        Dec(Remain,Count);
        Start:=0;
        Count:=Min(Remain,FClusterSize);
-      
+
        {Update Length}
        Length:=(Remain shr FClusterShiftCount);
-      finally  
+      finally
        ReadUnlock;
-      end; 
+      end;
      end
     else
      begin
@@ -5734,55 +5734,55 @@ begin
         {Full Clusters}
         {Read Clusters}
         if not ReadClusters(Cluster,Length,Pointer(PtrUInt(@ABuffer) + Offset)^) then Break;
-        
+
         {Update Cluster}
         Inc(Cluster,Length);
-        
+
         {Update Position}
         Inc(Offset,(Length shl FClusterShiftCount));
         Dec(Remain,(Length shl FClusterShiftCount));
-        
+
         {Start:=0;} {Already 0}
         Count:=Min(Remain,FClusterSize);
-        
+
         {Update Length}
         Length:=0;
        end
       else
        begin
         {Partial Cluster} {Last}
-        if not ReadLock then Exit; 
+        if not ReadLock then Exit;
         try
          if FReadBuffer = nil then Exit;
-         
+
          {Read Clusters}
          if not ReadClusters(Cluster,1,FReadBuffer^) then Break;
-        
+
          {Read Buffer}
          System.Move(FReadBuffer^,Pointer(PtrUInt(@ABuffer) + Offset)^,Count);
-        
+
          {Update Cluster}
          {Inc(Cluster);} {Must be last Read}
-        
+
          {Update Position}
          Inc(Offset,Count);
          Dec(Remain,Count);
          {Start:=0;} {Already 0}
          Count:=Min(Remain,FClusterSize);
-        
+
          {Update Length}
          {Length:=0;} {Already 0}
-        finally  
+        finally
          ReadUnlock;
-        end; 
+        end;
        end;
      end;
    end;
-   
+
   Result:=(ACount - Remain);
  finally
   FEntries.ReaderUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -5815,61 +5815,61 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.WriteEntry Name = ' + AEntry.Name + ' Start = ' + IntToStr(AStart) + ' Count = ' + IntToStr(ACount));
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
-  
+
   {Check Entry}
   if (AEntry.Attributes and faMatchMask) <> faFile then Exit;
-  
+
   {Get Cluster}
   Cluster:=TCDFSDiskEntry(AEntry).StartCluster + (AStart shr FClusterShiftCount);
-  
+
   {Get Position}
   Offset:=0;
   Remain:=ACount;
   Start:=(AStart - ((AStart shr FClusterShiftCount) shl FClusterShiftCount));
   Count:=Min(ACount,(FClusterSize - Start));
-  
+
   {Get Length}
   Length:=(ACount shr FClusterShiftCount);
-  
+
   {Write Clusters}
   while Remain > 0 do
    begin
     if Start > 0 then
      begin
       {Partial Cluster} {First}
-      if not WriteLock then Exit; 
+      if not WriteLock then Exit;
       try
        if FWriteBuffer = nil then Exit;
- 
+
        {Read Clusters}
        if not ReadClusters(Cluster,1,FWriteBuffer^) then Break;
-      
+
        {Write Buffer}
        System.Move(Pointer(PtrUInt(@ABuffer) + Offset)^,Pointer(PtrUInt(FWriteBuffer) + Start)^,Count);
-      
+
        {Write Clusters}
        if not WriteClusters(Cluster,1,FWriteBuffer^) then Break;
-      
+
        {Update Cluster}
        Inc(Cluster);
-      
+
        {Update Position}
        Inc(Offset,Count);
        Dec(Remain,Count);
        Start:=0;
        Count:=Min(Remain,FClusterSize);
-      
+
        {Update Length}
        Length:=(Remain shr FClusterShiftCount);
-      finally  
+      finally
        WriteUnlock;
-      end; 
+      end;
      end
     else
      begin
@@ -5878,58 +5878,58 @@ begin
         {Full Clusters}
         {Write Clusters}
         if not WriteClusters(Cluster,Length,Pointer(PtrUInt(@ABuffer) + Offset)^) then Break;
-        
+
         {Update Cluster}
         Inc(Cluster,Length);
-        
+
         {Update Position}
         Inc(Offset,(Length shl FClusterShiftCount));
         Dec(Remain,(Length shl FClusterShiftCount));
-        
+
         {Start:=0;} {Already 0}
         Count:=Min(Remain,FClusterSize);
-        
+
         {Update Length}
         Length:=0;
        end
       else
        begin
         {Partial Cluster} {Last}
-        if not WriteLock then Exit; 
+        if not WriteLock then Exit;
         try
          if FWriteBuffer = nil then Exit;
-         
+
          {Read Clusters}
          if not ReadClusters(Cluster,1,FWriteBuffer^) then Break;
-        
+
          {Write Buffer}
          System.Move(Pointer(PtrUInt(@ABuffer) + Offset)^,FWriteBuffer^,Count);
-        
+
          {Write Clusters}
          if not WriteClusters(Cluster,1,FWriteBuffer^) then Break;
-        
+
          {Update Cluster}
          {Inc(Cluster);} {Must be last Read}
-        
+
          {Update Position}
          Inc(Offset,Count);
          Dec(Remain,Count);
          {Start:=0;} {Already 0}
          Count:=Min(Remain,FClusterSize);
-        
+
          {Update Length}
          {Length:=0;} {Already 0}
-        finally  
+        finally
          WriteUnlock;
-        end; 
+        end;
        end;
      end;
    end;
-   
+
   Result:=(ACount - Remain);
  finally
   FEntries.ReaderUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -5942,7 +5942,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
 
  {Check Loaded}
@@ -5956,22 +5956,22 @@ begin
       {$IFDEF CDFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadTrees');
       {$ENDIF}
-    
+
       Entry:=TDiskEntry(FEntries.First);
       while Entry <> nil do
        begin
         if not LoadTree(Entry) then Exit;
-     
+
         Entry:=TDiskEntry(Entry.Next);
        end;
-    
+
       FTreesLoaded:=True;
      end;
    finally
     FEntries.WriterUnlock;
-   end; 
+   end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -5986,7 +5986,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FTables.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -5994,7 +5994,7 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadTables');
   {$ENDIF}
- 
+
   if not FDescriptors.ReaderLock then Exit;
   try
    {Get Primary Descriptors}
@@ -6008,31 +6008,31 @@ begin
        TableNo:=(cdfsPathTableTypePrimary shl cdfsTableTypeShift) or (Instance shl cdfsTableInstanceShift) or (cdfsVolumeDescriptorTypePrimary shl cdfsTableDescriptorShift);
        if GetTableEx(TableNo,True) = nil then Exit;
       end;
-      
+
      if Descriptor.PrimaryPathTableM <> 0 then
       begin
        TableNo:=(cdfsPathTableTypePrimaryM shl cdfsTableTypeShift) or (Instance shl cdfsTableInstanceShift) or (cdfsVolumeDescriptorTypePrimary shl cdfsTableDescriptorShift);
        if GetTableEx(TableNo,True) = nil then Exit;
       end;
-     
+
      {Load Alternate Tables}
      if Descriptor.AlternatePathTable <> 0 then
       begin
        TableNo:=(cdfsPathTableTypeAlternate shl cdfsTableTypeShift) or (Instance shl cdfsTableInstanceShift) or (cdfsVolumeDescriptorTypePrimary shl cdfsTableDescriptorShift);
        if GetTableEx(TableNo,True) = nil then Exit;
       end;
-      
+
      if Descriptor.AlternatePathTableM <> 0 then
       begin
        TableNo:=(cdfsPathTableTypeAlternateM shl cdfsTableTypeShift) or (Instance shl cdfsTableInstanceShift) or (cdfsVolumeDescriptorTypePrimary shl cdfsTableDescriptorShift);
        if GetTableEx(TableNo,True) = nil then Exit;
       end;
-     
+
      Inc(Instance);
-   
+
      Descriptor:=GetDescriptor(cdfsVolumeDescriptorTypePrimary,Instance);
     end;
-  
+
    {Get Supplementary Descriptors}
    Instance:=1;
    Descriptor:=GetDescriptor(cdfsVolumeDescriptorTypeSupplementary,Instance);
@@ -6044,38 +6044,38 @@ begin
        TableNo:=(cdfsPathTableTypePrimary shl cdfsTableTypeShift) or (Instance shl cdfsTableInstanceShift) or (cdfsVolumeDescriptorTypeSupplementary shl cdfsTableDescriptorShift);
        if GetTableEx(TableNo,True) = nil then Exit;
       end;
-      
+
      if Descriptor.PrimaryPathTableM <> 0 then
       begin
        TableNo:=(cdfsPathTableTypePrimaryM shl cdfsTableTypeShift) or (Instance shl cdfsTableInstanceShift) or (cdfsVolumeDescriptorTypeSupplementary shl cdfsTableDescriptorShift);
        if GetTableEx(TableNo,True) = nil then Exit;
       end;
-     
+
      {Load Alternate Tables}
      if Descriptor.AlternatePathTable <> 0 then
       begin
        TableNo:=(cdfsPathTableTypeAlternate shl cdfsTableTypeShift) or (Instance shl cdfsTableInstanceShift) or (cdfsVolumeDescriptorTypeSupplementary shl cdfsTableDescriptorShift);
        if GetTableEx(TableNo,True) = nil then Exit;
       end;
-      
+
      if Descriptor.AlternatePathTableM <> 0 then
       begin
        TableNo:=(cdfsPathTableTypeAlternateM shl cdfsTableTypeShift) or (Instance shl cdfsTableInstanceShift) or (cdfsVolumeDescriptorTypeSupplementary shl cdfsTableDescriptorShift);
        if GetTableEx(TableNo,True) = nil then Exit;
       end;
-      
+
      Inc(Instance);
-   
+
      Descriptor:=GetDescriptor(cdfsVolumeDescriptorTypeSupplementary,Instance);
     end;
   finally
    FDescriptors.ReaderUnlock;
-  end; 
-  
+  end;
+
   Result:=True;
  finally
   FTables.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -6094,7 +6094,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if FTotalBlockCount = 0 then Exit;
 
@@ -6109,22 +6109,22 @@ begin
       {$IFDEF CDFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadBlocks');
       {$ENDIF}
-   
+
       {Load Trees}
       if not LoadTrees then Exit;
-   
+
       {Load Catalogs}
       if not LoadCatalogs then Exit;
-   
+
       {Get each Block}
       BlockNo:=0;
       while BlockNo < FTotalBlockCount do
        begin
         if GetBlockEx(BlockNo,True) = nil then Exit;
-        
+
         Inc(BlockNo);
        end;
-      
+
       {Mark used Clusters}
       {Reserved Clusters (0 to 15)}
       {Mark Clusters}
@@ -6138,8 +6138,8 @@ begin
         begin
          {Mark Clusters}
          if not MarkClusters(Descriptor.StartCluster,1,True) then Exit;
-     
-         Descriptor:=TCDFSDiskDescriptor(Descriptor.Next); 
+
+         Descriptor:=TCDFSDiskDescriptor(Descriptor.Next);
         end;
 
        {Table Clusters}
@@ -6166,8 +6166,8 @@ begin
            {Mark Clusters}
            if not MarkClusters(Descriptor.AlternateM.StartCluster,Descriptor.AlternateM.ClusterCount,True) then Exit;
           end;
-       
-         Descriptor:=TCDFSDiskDescriptor(Descriptor.Next); 
+
+         Descriptor:=TCDFSDiskDescriptor(Descriptor.Next);
         end;
 
        {Entry Clusters}
@@ -6180,25 +6180,25 @@ begin
            try
             {Mark Clusters}
             if not MarkClusters(Descriptor.Root.StartCluster,Descriptor.Root.ClusterCount,True) then Exit;
-       
+
             {Get Entries}
-            Entry:=TCDFSDiskEntry(Descriptor.Root.FirstChild); 
+            Entry:=TCDFSDiskEntry(Descriptor.Root.FirstChild);
             while Entry <> nil do
              begin
               if (Entry.Attributes and (faDot or faDotDot)) = faNone then
                begin
                 if not MarkTree(Entry) then Exit;
                end;
-         
+
               Entry:=TCDFSDiskEntry(Entry.Next);
              end;
            finally
             FEntries.WriterUnlock;
-           end; 
+           end;
           end;
-      
+
          Descriptor:=TCDFSDiskDescriptor(Descriptor.Next);
-        end; 
+        end;
 
        {Catalog Clusters}
        Descriptor:=FBoot;
@@ -6209,61 +6209,61 @@ begin
            if not FHeaders.WriterLock then Exit;
            try
             {Headers}
-            Header:=TCDFSDiskHeader(FHeaders.First); 
+            Header:=TCDFSDiskHeader(FHeaders.First);
             while Header <> nil do
              begin
               {Mark Clusters}
               if not MarkClusters(Header.HeaderCluster,1,True) then Exit;
-             
-              Header:=TCDFSDiskHeader(Header.Next); 
+
+              Header:=TCDFSDiskHeader(Header.Next);
              end;
            finally
             FHeaders.WriterUnlock;
-           end;          
-           
+           end;
+
            if not FCatalogs.WriterLock then Exit;
            try
             {Catalogs}
-            Catalog:=TCDFSDiskCatalog(FCatalogs.First); 
+            Catalog:=TCDFSDiskCatalog(FCatalogs.First);
             while Catalog <> nil do
              begin
               {Mark Clusters}
               if not MarkClusters(Catalog.CatalogCluster,1,True) then Exit;
               if not MarkClusters(Catalog.StartCluster,Catalog.ClusterCount,True) then Exit;
-              
+
               Catalog:=TCDFSDiskCatalog(Catalog.Next);
              end;
            finally
             FCatalogs.WriterUnlock;
-           end;          
-          
+           end;
+
            if not FExtensions.WriterLock then Exit;
            try
             {Extensions}
-            Extension:=TCDFSDiskExtension(FExtensions.First); 
+            Extension:=TCDFSDiskExtension(FExtensions.First);
             while Extension <> nil do
              begin
               {Mark Clusters}
-              if not MarkClusters(Extension.ExtensionCluster,1,True) then Exit; 
-            
-              Extension:=TCDFSDiskExtension(Extension.Next); 
+              if not MarkClusters(Extension.ExtensionCluster,1,True) then Exit;
+
+              Extension:=TCDFSDiskExtension(Extension.Next);
              end;
            finally
             FExtensions.WriterUnlock;
-           end;          
+           end;
           end;
-        end; 
+        end;
       finally
        FDescriptors.WriterUnlock;
-      end; 
-       
+      end;
+
       FBlocksLoaded:=True;
      end;
    finally
     FBlocks.WriterUnlock;
-   end; 
+   end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -6276,7 +6276,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FDescriptors.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -6285,11 +6285,11 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadDescriptors');
   {$ENDIF}
-  
+
   {Get Start Cluster}
   Cluster:=cdfsISO9660StartSector;
   if not ReadClusters(Cluster,1,FClusterBuffer^) then Exit;
-  
+
   while LoadDescriptor(FClusterBuffer,Cluster) do
    begin
     {Check for Terminator}
@@ -6297,14 +6297,14 @@ begin
 
     {Get Next Cluster}
     Inc(Cluster);
-    
+
     if not ReadClusters(Cluster,1,FClusterBuffer^) then Exit;
    end;
-   
+
   Result:=True;
  finally
   FDescriptors.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -6314,7 +6314,7 @@ function TCDFSFileSystem.LoadRoots:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -6322,23 +6322,23 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadRoots');
   {$ENDIF}
- 
+
   {Load Primary}
   if FPrimary <> nil then
    begin
     if GetRoot(FPrimary) = nil then Exit;
    end;
-  
+
   {Load Supplementary}
   if FSupplementary <> nil then
    begin
     if GetRoot(FSupplementary) = nil then Exit;
    end;
-  
+
   Result:=True;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -6358,7 +6358,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ATable = nil then Exit;
 
@@ -6373,23 +6373,23 @@ begin
       {$IFDEF CDFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadPaths - Table = ' + IntToHex(ATable.TableNo,8) + ' Start = ' + IntToStr(ATable.StartCluster));
       {$ENDIF}
-      
+
       {Get Start}
       Start:=TCDFSDiskTable(ATable).StartCluster;
       Count:=TCDFSDiskTable(ATable).ClusterCount;
       if (Start = 0) or (Count = 0) then Exit;
-      
+
       {Get Size}
       if ATable.Descriptor = nil then Exit;
       Size:=ATable.Descriptor.PathTableSize;
-      
+
       {Get Buffer}
       Buffer:=GetMem((Count shl FClusterShiftCount));
       if Buffer = nil then Exit;
       try
        {Read Clusters}
        if not ReadClusters(Start,Count,Buffer^) then Exit;
-       
+
        {Get Offset}
        Offset:=0;
        Number:=cdfsRootPathNumber;
@@ -6397,10 +6397,10 @@ begin
         begin
          {Check Record}
          if PCDFSPathRecord(PtrUInt(Buffer) + Offset).PathIdentifierSize < cdfsPathIdentifierSize then Break;
-         
+
          {Load Path}
          if not LoadPath(ATable,Buffer,Offset,Number) then Exit;
-         
+
          {Update Offset}
          Uneven:=((PCDFSPathRecord(PtrUInt(Buffer) + Offset).PathIdentifierSize and cdfsUnevenSize) = cdfsUnevenSize);
          Inc(Offset,PCDFSPathRecord(PtrUInt(Buffer) + Offset).PathIdentifierSize + (cdfsPathRecordSize - 1));
@@ -6410,14 +6410,14 @@ begin
       finally
        FreeMem(Buffer);
       end;
-      
+
       ATable.PathsLoaded:=True;
-     end; 
+     end;
    finally
     ATable.Paths.WriterUnlock;
-   end; 
+   end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -6433,7 +6433,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if AParent = nil then Exit;
  if FClusterBuffer = nil then Exit;
@@ -6449,7 +6449,7 @@ begin
       {$IFDEF CDFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadEntries - Parent = ' + AParent.Name);
       {$ENDIF}
-      
+
       {Check Directory}
       if (AParent.Attributes and faDirectory) = faDirectory then
        begin
@@ -6457,40 +6457,40 @@ begin
         Start:=TCDFSDiskEntry(AParent).StartCluster;
         Count:=TCDFSDiskEntry(AParent).ClusterCount;
         if (Start = 0) or (Count = 0) then Exit;
-        
+
         {Get Cluster}
         Cluster:=Start;
         while Cluster < (Start + Count) do
          begin
           {Read Cluster}
           if not ReadClusters(Cluster,1,FClusterBuffer^) then Exit;
-          
+
           {Get Offset}
           Offset:=0;
           while (Offset < FClusterSize) and (Offset < TCDFSDiskEntry(AParent).DataSize) do
            begin
             {Check Record}
             if PCDFSDirectoryRecord(PtrUInt(FClusterBuffer) + Offset).RecordSize < cdfsDirectoryRecordSize then Break;
-            
+
             {Load Entry}
             if not LoadEntry(TCDFSDiskEntry(AParent),FClusterBuffer,Offset,Cluster) then Exit;
-            
+
             {Update Offset}
             Inc(Offset,PCDFSDirectoryRecord(PtrUInt(FClusterBuffer) + Offset).RecordSize);
            end;
-          
+
           {Update Cluster}
           Inc(Cluster);
          end;
        end;
-    
+
       AParent.EntriesLoaded:=True;
      end;
    finally
     FEntries.WriterUnlock;
-   end; 
+   end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -6519,7 +6519,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if FClusterBuffer = nil then Exit;
 
@@ -6542,7 +6542,7 @@ begin
            {$IFDEF CDFS_DEBUG}
            if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadCatalogs');
            {$ENDIF}
-           
+
            {Get Boot}
            Descriptor:=FBoot;
            if Descriptor <> nil then
@@ -6550,7 +6550,7 @@ begin
              {Get Start}
              Start:=Descriptor.CatalogStart;
              if Start = 0 then Exit;
-           
+
              {Setup Parameters}
              Count:=0;
              Completed:=False;
@@ -6562,7 +6562,7 @@ begin
              Header:=nil;
              Catalog:=nil;
              Extension:=nil;
-           
+
              {Get Cluster}
              Cluster:=Start;
              Descriptor.CatalogCount:=1;
@@ -6570,7 +6570,7 @@ begin
               begin
                {Read Cluster}
                if not ReadClusters(Cluster,1,FClusterBuffer^) then Exit;
-             
+
                {Get Offset}
                Offset:=0;
                while Offset < FClusterSize do
@@ -6580,15 +6580,15 @@ begin
                    {Check Validation}
                    if PELTORITOValidationRecord(PtrUInt(FClusterBuffer) + Offset).HeaderId <> cdfsElToritoHeaderId then Completed:=True;
                    if Completed then Break;
-                 
+
                    {Load Header}
                    if not LoadHeader(FClusterBuffer,Offset,Cluster,HeaderNo) then Completed:=True;
                    if Completed then Break;
-                 
+
                    Validation:=GetHeaderEx(HeaderNo,True);
                    if Validation = nil then Exit;
                    Descriptor.Validation:=Validation;
-                 
+
                    Inc(HeaderNo);
                   end
                  else
@@ -6598,16 +6598,16 @@ begin
                      {Check Initial}
                      if (PELTORITODefaultRecord(PtrUInt(FClusterBuffer) + Offset).BootIndicator <> cdfsElToritoBootIndicator) and (PELTORITODefaultRecord(PtrUInt(FClusterBuffer) + Offset).BootIndicator <> cdfsElToritoNoBootIndicator) then Completed:=True;
                      if Completed then Break;
-                     
+
                      {Load Catalog}
                      if not LoadCatalog(FClusterBuffer,Offset,Cluster,CatalogNo,True) then Completed:=True;
                      if Completed then Break;
-                   
-                     Initial:=TCDFSDiskCatalog(GetCatalogEx(CatalogNo,True)); 
+
+                     Initial:=TCDFSDiskCatalog(GetCatalogEx(CatalogNo,True));
                      if Initial = nil then Exit;
                      Descriptor.Initial:=Initial;
                      Initial.Validation:=Validation;
-                    
+
                      Inc(CatalogNo);
                     end
                    else
@@ -6622,15 +6622,15 @@ begin
                        Header:=nil;
                        Catalog:=nil;
                        Extension:=nil;
-                       
+
                        {Load Header}
                        if not LoadHeader(FClusterBuffer,Offset,Cluster,HeaderNo) then Completed:=True;
                        if Completed then Break;
-                     
+
                        Header:=GetHeaderEx(HeaderNo,True);
                        if Header = nil then Exit;
                        Count:=Header.SectionCount;
-                     
+
                        Inc(HeaderNo);
                       end
                      else if (PELTORITOSectionRecord(PtrUInt(FClusterBuffer) + Offset).BootIndicator = cdfsElToritoBootIndicator) or (PELTORITOSectionRecord(PtrUInt(FClusterBuffer) + Offset).BootIndicator = cdfsElToritoNoBootIndicator) then
@@ -6641,15 +6641,15 @@ begin
                        if Completed then Break;
                        Catalog:=nil;
                        Extension:=nil;
-                     
+
                        {Load Catalog}
                        if not LoadCatalog(FClusterBuffer,Offset,Cluster,CatalogNo,False) then Completed:=True;
                        if Completed then Break;
-                     
-                       Catalog:=TCDFSDiskCatalog(GetCatalogEx(CatalogNo,True)); 
+
+                       Catalog:=TCDFSDiskCatalog(GetCatalogEx(CatalogNo,True));
                        if Catalog = nil then Exit;
                        Catalog.Header:=Header;
-                     
+
                        Dec(Count);
                        Inc(CatalogNo);
                       end
@@ -6660,33 +6660,33 @@ begin
                        if Catalog = nil then Completed:=True;
                        if Completed then Break;
                        Extension:=nil;
-                     
+
                        {Load Extension}
                        if not LoadExtension(FClusterBuffer,Offset,Cluster,ExtensionNo) then Completed:=True;
                        if Completed then Break;
-                     
+
                        Extension:=GetExtensionEx(ExtensionNo,True);
                        if Extension = nil then Exit;
                        Extension.Catalog:=Catalog;
-                     
+
                        Inc(ExtensionNo);
                       end;
                     end;
                   end;
-               
+
                  {Update Offset}
                  Inc(Offset,cdfsCatalogRecordSize); {Same as cdfsHeaderRecordSize, cdfsExtensionRecordSize}
                 end;
-             
+
                if Completed then Break;
-             
+
                {Update Cluster}
                Inc(Cluster);
-             
+
                Descriptor.CatalogCount:=Descriptor.CatalogCount + 1;
               end;
             end;
-     
+
            FCatalogsLoaded:=True;
           finally
            FCatalogsLoading:=False;
@@ -6694,16 +6694,16 @@ begin
          end;
        finally
         FExtensions.WriterUnlock;
-       end; 
+       end;
       finally
        FHeaders.WriterUnlock;
-      end; 
+      end;
      finally
       FCatalogs.WriterUnlock;
-     end; 
+     end;
     end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -6720,7 +6720,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ATable = nil then Exit;
 
@@ -6732,46 +6732,46 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SetPaths - Table = ' + IntToHex(ATable.TableNo,8) + ' Start = ' + IntToStr(ATable.StartCluster));
     {$ENDIF}
-    
+
     {Get Start}
     Start:=TCDFSDiskTable(ATable).StartCluster;
     Count:=TCDFSDiskTable(ATable).ClusterCount;
     if (Start = 0) or (Count = 0) then Exit;
-    
+
     {Get Size}
     if ATable.Descriptor = nil then Exit;
     Size:=ATable.Descriptor.PathTableSize;
-    
+
     {Get Buffer}
     Buffer:=GetMem((Count shl FClusterShiftCount));
     if Buffer = nil then Exit;
     try
      {Read Clusters}
      if not ReadClusters(Start,Count,Buffer^) then Exit;
-     
+
      {Zero Clusters}
      ZeroMemory(Buffer,(Count shl FClusterShiftCount));
-     
+
      {Get Paths}
      Path:=TCDFSDiskPath(TCDFSDiskTable(ATable).Paths.First);
      while Path <> nil do
       begin
        {Set Path}
        if not SetPath(ATable,Path,Buffer) then Exit;
-       
+
        Path:=TCDFSDiskPath(Path.Next);
       end;
-     
+
      {Write Clusters}
      if not WriteClusters(Start,Count,Buffer^) then Exit;
-     
+
      Result:=True;
     finally
      FreeMem(Buffer);
     end;
    finally
     ATable.Paths.WriterUnlock;
-   end; 
+   end;
   end;
 end;
 
@@ -6786,7 +6786,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if AParent = nil then Exit;
  if FClusterBuffer = nil then Exit;
@@ -6799,7 +6799,7 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SetEntries - Parent = ' + AParent.Name);
     {$ENDIF}
-    
+
     {Check Directory}
     if (AParent.Attributes and faDirectory) = faDirectory then
      begin
@@ -6809,16 +6809,16 @@ begin
        Start:=TCDFSDiskEntry(AParent).StartCluster;
        Count:=TCDFSDiskEntry(AParent).ClusterCount;
        if (Start = 0) or (Count = 0) then Exit;
-       
+
        {Get Cluster}
        Cluster:=Start;
-       
+
        {Read Cluster}
        if not ReadClusters(Cluster,1,FClusterBuffer^) then Exit;
-       
+
        {Zero Cluster}
        ZeroMemory(FClusterBuffer,FClusterSize);
-       
+
        {Get Entries}
        Entry:=TCDFSDiskEntry(AParent.FirstChild);
        while Entry <> nil do
@@ -6828,26 +6828,26 @@ begin
           begin
            {Write Cluster}
            if not WriteClusters(Cluster,1,FClusterBuffer^) then Exit;
-           
+
            {Update Cluster}
            Inc(Cluster);
-           
+
            {Read Cluster}
            if not ReadClusters(Cluster,1,FClusterBuffer^) then Exit;
-           
+
            {Zero Cluster}
            ZeroMemory(FClusterBuffer,FClusterSize);
           end;
-          
+
          {Set Entry}
          if not SetEntry(AParent,Entry) then Exit;
-         
+
          Entry:=TCDFSDiskEntry(Entry.Next);
         end;
-        
+
        {Write Cluster}
        if not WriteClusters(Cluster,1,FClusterBuffer^) then Exit;
-       
+
        Result:=True;
       finally
        FBlockWrite:=False;
@@ -6855,7 +6855,7 @@ begin
      end;
    finally
     FEntries.WriterUnlock;
-   end; 
+   end;
   end;
 end;
 
@@ -6875,7 +6875,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if FClusterBuffer = nil then Exit;
 
@@ -6891,40 +6891,40 @@ begin
       {$IFDEF CDFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SetCatalogs');
       {$ENDIF}
-    
+
       FBlockWrite:=True;
       try
        {Get Boot}
        Descriptor:=FBoot;
        if Descriptor = nil then Exit;
-     
+
        {Get Start}
        Start:=Descriptor.CatalogStart;
        if Start = 0 then Exit;
-     
+
        {Get Cluster}
        Cluster:=Start;
-     
+
        {Read Cluster}
        if not ReadClusters(Cluster,1,FClusterBuffer^) then Exit;
-     
+
        {Zero Cluster}
        ZeroMemory(FClusterBuffer,FClusterSize);
-     
+
        {Get Validation}
        Validation:=Descriptor.Validation;
        if Validation = nil then Exit;
-     
+
        {Set Validation}
        if not SetHeader(Validation) then Exit;
-     
+
        {Get Initial}
        Initial:=Descriptor.Initial;
        if Initial = nil then Exit;
-     
+
        {Set Initial}
        if not SetCatalog(Initial) then Exit;
-     
+
        {Get Headers}
        Header:=TCDFSDiskHeader(FHeaders.First);
        while Header <> nil do
@@ -6936,22 +6936,22 @@ begin
             begin
              {Write Cluster}
              if not WriteClusters(Cluster,1,FClusterBuffer^) then Exit;
-           
+
              {Update Cluster}
              Inc(Cluster);
-           
+
              {Read Cluster}
              if not ReadClusters(Cluster,1,FClusterBuffer^) then Exit;
-           
+
              {Zero Cluster}
              ZeroMemory(FClusterBuffer,FClusterSize);
             end;
-          
+
            {Set Header}
            if not SetHeader(Header) then Exit;
-         
+
            {Get Catalogs}
-           Catalog:=TCDFSDiskCatalog(FCatalogs.First); 
+           Catalog:=TCDFSDiskCatalog(FCatalogs.First);
            while Catalog <> nil do
             begin
              if (Catalog.Header = Header) and (Catalog <> Initial) then
@@ -6961,22 +6961,22 @@ begin
                 begin
                  {Write Cluster}
                  if not WriteClusters(Cluster,1,FClusterBuffer^) then Exit;
-               
+
                  {Update Cluster}
                  Inc(Cluster);
-               
+
                  {Read Cluster}
                  if not ReadClusters(Cluster,1,FClusterBuffer^) then Exit;
-               
+
                  {Zero Cluster}
                  ZeroMemory(FClusterBuffer,FClusterSize);
                 end;
-              
+
                {Set Catalog}
                if not SetCatalog(Catalog) then Exit;
-             
+
                {Get Extensions}
-               Extension:=TCDFSDiskExtension(FExtensions.First); 
+               Extension:=TCDFSDiskExtension(FExtensions.First);
                while Extension <> nil do
                 begin
                  if (Extension.Catalog = Catalog) then
@@ -6986,47 +6986,47 @@ begin
                     begin
                      {Write Cluster}
                      if not WriteClusters(Cluster,1,FClusterBuffer^) then Exit;
-                    
+
                      {Update Cluster}
                      Inc(Cluster);
-                   
+
                      {Read Cluster}
                      if not ReadClusters(Cluster,1,FClusterBuffer^) then Exit;
-                   
+
                      {Zero Cluster}
                      ZeroMemory(FClusterBuffer,FClusterSize);
                     end;
-                  
+
                    {Set Extension}
                    if not SetExtension(Extension) then Exit;
                   end;
-                
+
                  Extension:=TCDFSDiskExtension(Extension.Next);
                 end;
               end;
-            
+
              Catalog:=TCDFSDiskCatalog(Catalog.Next);
             end;
           end;
-         Header:=TCDFSDiskHeader(Header.Next); 
+         Header:=TCDFSDiskHeader(Header.Next);
         end;
-     
+
        {Write Cluster}
        if not WriteClusters(Cluster,1,FClusterBuffer^) then Exit;
-     
+
        Result:=True;
       finally
        FBlockWrite:=False;
       end;
      finally
       FExtensions.WriterUnlock;
-     end; 
+     end;
     finally
      FHeaders.WriterUnlock;
-    end; 
+    end;
    finally
     FCatalogs.WriterUnlock;
-   end; 
+   end;
   end;
 end;
 
@@ -7050,70 +7050,70 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadTable - TableNo = ' + IntToHex(ATableNo,8));
   {$ENDIF}
- 
+
   {Get Descriptor}
   Instance:=(ATableNo and cdfsTableInstanceMask) shr cdfsTableInstanceShift;
   TableType:=(ATableNo and cdfsTableTypeMask) shr cdfsTableTypeShift;
   Descriptor:=GetDescriptor((ATableNo and cdfsTableDescriptorMask) shr cdfsTableDescriptorShift,Instance);
   if Descriptor = nil then Exit;
- 
+
   {Create Table}
   Table:=TCDFSDiskTable.Create(FPathLock,FTableLocal,Descriptor);
   Table.TableNo:=ATableNo;
   Table.TableType:=TableType;
   Table.Unicode:=Descriptor.Unicode;
-  
+
   {Get Count}
   Count:=(Descriptor.PathTableSize shr FClusterShiftCount);
   if (Count shl FClusterShiftCount) < Descriptor.PathTableSize then Inc(Count);
   Table.ClusterCount:=Count;
- 
+
   {Get Size}
   Table.DataFree:=0;
   Table.DataSize:=(Table.ClusterCount shl FClusterShiftCount);
- 
+
   {Check Type}
   case TableType of
    cdfsPathTableTypePrimary:begin
      {Setup Table}
      Table.StartCluster:=Descriptor.PrimaryPathTable;
      Table.Endian:=False;
-     
+
      Descriptor.Primary:=Table;
     end;
    cdfsPathTableTypeAlternate:begin
      {Setup Table}
      Table.StartCluster:=Descriptor.AlternatePathTable;
      Table.Endian:=False;
-     
+
      Descriptor.Alternate:=Table;
     end;
    cdfsPathTableTypePrimaryM:begin
      {Setup Table}
      Table.StartCluster:=Descriptor.PrimaryPathTableM;
      Table.Endian:=True;
-     
+
      Descriptor.PrimaryM:=Table;
     end;
    cdfsPathTableTypeAlternateM:begin
      {Setup Table}
      Table.StartCluster:=Descriptor.AlternatePathTableM;
      Table.Endian:=True;
-     
+
      Descriptor.AlternateM:=Table;
     end;
   end;
- 
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadTable - Type = ' + IntToStr(Table.TableType) + ' Start = ' + IntToStr(Table.StartCluster) + ' Count = ' + IntToStr(Table.ClusterCount));
   {$ENDIF}
-  
+
   FTables.Add(Table);
- 
+
   Result:=True;
  finally
   FTables.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -7137,29 +7137,29 @@ begin
 
   {Get Cluster}
   Cluster:=(ABlockNo shl FBlockShiftCount);
- 
+
   {Get Count}
   Count:=Min((FTotalClusterCount - Cluster),FEntriesPerBlock);
- 
+
   {Allocate Buffer}
   Buffer:=AllocMem((FClustersPerBlock shl FClusterShiftCount));
   if Buffer = nil then Exit;
- 
+
   {Load Block}
   Block:=TCDFSDiskBlock.Create(FBlockLocal);
   Block.BlockNo:=ABlockNo;
   Block.BlockCount:=Count;
   Block.BlockBuffer:=Buffer;
   Block.BlockCluster:=Cluster;
- 
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadBlock - BlockNo = ' + IntToHex(Block.BlockNo,8) + ' BlockCluster = ' + IntToStr(Block.BlockCluster) + ' BlockCount = ' + IntToStr(Block.BlockCount));
   {$ENDIF}
- 
+
   Result:=FBlocks.Add(Block);
  finally
   FBlocks.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -7170,7 +7170,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FDescriptors.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -7179,33 +7179,33 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadDescriptor - Cluster = ' + IntToStr(ACluster));
   {$ENDIF}
- 
+
   {Check Header}
   if PCDFSVolumeDescriptorHeader(ABuffer).DescriptorVersion <> cdfsISO9660DescriptorVersion then Exit;
   if not CompareIdentifier(PCDFSVolumeDescriptorHeader(ABuffer).StandardIdentifier[0],cdfsISO9660StandardIdentifier[1],5) then Exit;
-  
+
   {Create Descriptor}
   Descriptor:=TCDFSDiskDescriptor.Create(FDescriptorLocal);
   Descriptor.StartCluster:=ACluster;
   Descriptor.DescriptorType:=PCDFSVolumeDescriptorHeader(ABuffer).DescriptorType;
   Descriptor.DescriptorVersion:=PCDFSVolumeDescriptorHeader(ABuffer).DescriptorVersion;
   Descriptor.StandardIdentifier:=CDFSIdentifierToString(PCDFSVolumeDescriptorHeader(ABuffer).StandardIdentifier[0],5,False);
-  
+
   {Check Type}
   case PCDFSVolumeDescriptorHeader(ABuffer).DescriptorType of
    cdfsVolumeDescriptorTypeBoot:begin
      {$IFDEF CDFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadDescriptor - cdfsVolumeDescriptorTypeBoot');
      {$ENDIF}
-     
+
      {Get Type}
      FBootCatalog:=True;
-     
+
      {Read Descriptor}
      Descriptor.SystemIdentifier:=CDFSIdentifierToString(PCDFSVolumeDescriptorBoot(ABuffer).SystemIdentifier[0],32,False);
      Descriptor.BootIdentifier:=CDFSIdentifierToString(PCDFSVolumeDescriptorBoot(ABuffer).BootIdentifier[0],32,False);
      Descriptor.CatalogStart:=PELTORITOVolumeDescriptorBoot(ABuffer).CatalogStart;
-     
+
      if FBoot = nil then FBoot:=Descriptor;
     end;
    cdfsVolumeDescriptorTypePrimary:begin
@@ -7216,7 +7216,7 @@ begin
      {Get Type}
      FCDFSType:=ctISO9660;
      FLongNames:=False;
-     
+
      {Read Descriptor}
      Descriptor.SystemIdentifier:=CDFSIdentifierToString(PCDFSVolumeDescriptorPrimary(ABuffer).SystemIdentifier[0],32,False);
      Descriptor.VolumeIdentifier:=CDFSIdentifierToString(PCDFSVolumeDescriptorPrimary(ABuffer).VolumeIdentifier[0],32,False);
@@ -7242,7 +7242,7 @@ begin
      Descriptor.EffectiveTime:=CDFSDateTimeToFileTime(PCDFSVolumeDescriptorPrimary(ABuffer).EffectiveTime);
      Descriptor.FileStructureVersion:=PCDFSVolumeDescriptorPrimary(ABuffer).FileStructureVersion;
      Descriptor.ApplicationData:=CDFSDataToPointer(PCDFSVolumeDescriptorPrimary(ABuffer).ApplicationData[0],512,False);
-     
+
      {Get Primary}
      if FPrimary = nil then FPrimary:=Descriptor;
     end;
@@ -7257,7 +7257,7 @@ begin
      if CompareSequence(PCDFSVolumeDescriptorSupplementary(ABuffer).EscapeSequences[0],cdfsJolietUCS2Sequence3[1],3) then Descriptor.Unicode:=True;
      if Descriptor.Unicode then FCDFSType:=ctJOLIET;
      if Descriptor.Unicode then FLongNames:=True;
-     
+
      {Read Descriptor}
      Descriptor.SystemIdentifier:=CDFSIdentifierToString(PCDFSVolumeDescriptorSupplementary(ABuffer).SystemIdentifier[0],32,Descriptor.Unicode);
      Descriptor.VolumeIdentifier:=CDFSIdentifierToString(PCDFSVolumeDescriptorSupplementary(ABuffer).VolumeIdentifier[0],32,Descriptor.Unicode);
@@ -7285,7 +7285,7 @@ begin
      Descriptor.ApplicationData:=CDFSDataToPointer(PCDFSVolumeDescriptorSupplementary(ABuffer).ApplicationData[0],512,False);
      Descriptor.VolumeFlags:=PCDFSVolumeDescriptorSupplementary(ABuffer).VolumeFlags;
      Descriptor.EscapeSequences:=CDFSDataToPointer(PCDFSVolumeDescriptorSupplementary(ABuffer).EscapeSequences[0],32,False);
-     
+
      {Get Supplementary}
      if (FSupplementary = nil) and (Descriptor.Unicode) then FSupplementary:=Descriptor;
     end;
@@ -7305,17 +7305,17 @@ begin
      {Nothing}
     end;
   end;
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadDescriptor - Type = ' + IntToStr(Descriptor.DescriptorType));
   {$ENDIF}
-  
+
   FDescriptors.Add(Descriptor);
-  
+
   Result:=True;
  finally
   FDescriptors.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -7327,7 +7327,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -7337,7 +7337,7 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadRoot - Descriptor Type = ' + IntToStr(ADescriptor.DescriptorType));
   {$ENDIF}
- 
+
   {Load Paths}
   if not FTables.ReaderLock then Exit;
   try
@@ -7347,17 +7347,17 @@ begin
    if ADescriptor.AlternateM <> nil then if not LoadPaths(ADescriptor.AlternateM) then Exit;
   finally
    FTables.ReaderUnlock;
-  end;       
- 
+  end;
+
   {Read Cluster}
   if not ReadClusters(ADescriptor.StartCluster,1,FClusterBuffer^) then Exit;
- 
+
   {Create Entry}
   Entry:=TCDFSDiskEntry.Create(FEntryLocal);
   Entry.Unicode:=ADescriptor.Unicode;
   Entry.EntryOffset:=cdfsRootRecordOffset;
   Entry.EntryCluster:=ADescriptor.StartCluster;
- 
+
   {Load Entry}
   if RecordToEntry(@PCDFSVolumeDescriptorPrimary(FClusterBuffer).RootDirectory,Entry,Entry.Unicode) then
    begin
@@ -7365,11 +7365,11 @@ begin
     Entry.Name:=FRootName;
     Entry.AltName:=FRootPath;
     ADescriptor.Root:=Entry;
-   
+
     {$IFDEF CDFS_DEBUG}
-    if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadRoot - Name = ' + Entry.Name + ' Start = ' + IntToStr(Entry.StartCluster) + ' Count = ' + IntToStr(Entry.ClusterCount)); 
+    if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadRoot - Name = ' + Entry.Name + ' Start = ' + IntToStr(Entry.StartCluster) + ' Count = ' + IntToStr(Entry.ClusterCount));
     {$ENDIF}
-   
+
     {Get Paths}
     if not FTables.ReaderLock then Exit;
     try
@@ -7377,20 +7377,20 @@ begin
      if ADescriptor.PrimaryM <> nil then Entry.PathM:=GetPath(ADescriptor.PrimaryM,cdfsRootPathNumber,cdfsDotName);
      if ADescriptor.Alternate <> nil then Entry.AltPath:=GetPath(ADescriptor.Alternate,cdfsRootPathNumber,cdfsDotName);
      if ADescriptor.AlternateM <> nil then Entry.AltPathM:=GetPath(ADescriptor.AlternateM,cdfsRootPathNumber,cdfsDotName);
-   
+
      {$IFDEF CDFS_DEBUG}
      if FILESYS_LOG_ENABLED then if Entry.Path <> nil then FileSysLogDebug('TCDFSFileSystem.LoadRoot - Path = ' + Entry.Path.Name + ' Number = ' + IntToStr(Entry.Path.PathNumber));
      {$ENDIF}
     finally
      FTables.ReaderUnlock;
-    end;       
-   
+    end;
+
     {Add Entry}
     FEntries.Add(Entry,nil);
-   
+
     FRoot:=Entry;
     FRoot.AddReference; {Prevent Deletion}
-   
+
     Result:=True;
    end
   else
@@ -7399,7 +7399,7 @@ begin
    end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -7421,29 +7421,29 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadPath - Offset = ' + IntToStr(AOffset));
   {$ENDIF}
- 
+
   {Create Path}
   Path:=TCDFSDiskPath.Create(ATable.PathLocal);
   Path.PathNumber:=ANumber;
   Path.PathOffset:=AOffset;
- 
+
   {Load Path}
   if RecordToPath(Pointer(PtrUInt(ABuffer) + AOffset),Path,ATable.Unicode,ATable.Endian) then
    begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadPath - Name = ' + Path.Name + ' Number = ' + IntToStr(Path.PathNumber) + ' Parent = ' + IntToStr(Path.ParentNumber));
     {$ENDIF}
-   
+
     {Get Parent}
     Path.Parent:=LocatePath(ATable,Path.ParentNumber);
-   
+
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then if Path.Parent <> nil then FileSysLogDebug('TCDFSFileSystem.LoadPath - Parent = ' + Path.Parent.Name + ' Number = ' + IntToStr(Path.Parent.PathNumber));
     {$ENDIF}
-   
+
     {Add Path}
     ATable.Paths.Add(Path);
-   
+
     Result:=True;
    end
   else
@@ -7452,7 +7452,7 @@ begin
    end;
  finally
   ATable.Paths.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -7464,7 +7464,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -7474,29 +7474,29 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadEntry - Cluster = ' + IntToStr(ACluster) + ' Offset = ' + IntToStr(AOffset));
   {$ENDIF}
-  
+
   {Create Entry}
   Entry:=TCDFSDiskEntry.Create(FEntryLocal);
   Entry.Unicode:=AParent.Unicode;
   Entry.EntryOffset:=AOffset;
   Entry.EntryCluster:=ACluster;
-  
+
   {Load Entry}
   if RecordToEntry(Pointer(PtrUInt(ABuffer) + AOffset),Entry,Entry.Unicode) then
    begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadEntry - Name = ' + Entry.Name + ' Start = ' + IntToStr(Entry.StartCluster) + ' Count = ' + IntToStr(Entry.ClusterCount));
     {$ENDIF}
-    
+
     {Check Folder}
     if (Entry.Attributes and faDirectory) = faDirectory then
      begin
       //To Do //Lock ? Descriptors ? (Reader / Writer ?) only called by LoadEntries but who can call LoadEntries (Prefer Reader, could be Writer)
-      
+
       {Get Descriptor}
       Descriptor:=FPrimary;
       if Entry.Unicode then Descriptor:=FSupplementary;
-      
+
       {Get Paths}
       if Descriptor <> nil then
        begin
@@ -7506,19 +7506,19 @@ begin
          if Descriptor.PrimaryM <> nil then Entry.PathM:=GetPath(Descriptor.PrimaryM,AParent.PathNumber,Entry.Name);
          if Descriptor.Alternate <> nil then Entry.AltPath:=GetPath(Descriptor.Alternate,AParent.PathNumber,Entry.Name);
          if Descriptor.AlternateM <> nil then Entry.AltPathM:=GetPath(Descriptor.AlternateM,AParent.PathNumber,Entry.Name);
-        
+
          {$IFDEF CDFS_DEBUG}
          if FILESYS_LOG_ENABLED then if Entry.Path <> nil then FileSysLogDebug('TCDFSFileSystem.LoadEntry - Path = ' + Entry.Path.Name + ' Number = ' + IntToStr(Entry.Path.PathNumber));
          {$ENDIF}
         finally
          FTables.ReaderUnlock;
-        end;       
+        end;
        end;
      end;
-    
+
     {Add Entry}
     FEntries.Add(Entry,AParent);
-    
+
     Result:=True;
    end
   else
@@ -7527,7 +7527,7 @@ begin
    end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -7542,7 +7542,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FHeaders.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -7551,7 +7551,7 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadHeader - Cluster = ' + IntToStr(ACluster) + ' Offset = ' + IntToStr(AOffset));
   {$ENDIF}
-  
+
   {Check Header}
   SectionHeader:=PELTORITOSectionHeader(PtrUInt(ABuffer) + AOffset);
   if (SectionHeader.HeaderIndicator = cdfsElToritoHeaderIndicator) or (SectionHeader.HeaderIndicator = cdfsElToritoHeaderTerminator) then
@@ -7560,17 +7560,17 @@ begin
     Header:=TCDFSDiskHeader.Create(FHeaderLocal);
     Header.HeaderNo:=AHeaderNo;
     Header.HeaderOffset:=AOffset;
-    Header.HeaderCluster:=ACluster; 
+    Header.HeaderCluster:=ACluster;
 
     Header.Validation:=False;
     Header.HeaderIndicator:=SectionHeader.HeaderIndicator;
     Header.PlatformId:=SectionHeader.PlatformId;
     Header.SectionCount:=SectionHeader.SectionCount;
     Header.SectionId:=CDFSIdentifierToString(SectionHeader.SectionId[0],28,False);
-    
+
     {Add Header}
     FHeaders.Add(Header);
-    
+
     Result:=True;
    end
   else
@@ -7583,7 +7583,7 @@ begin
       Validation:=TCDFSDiskHeader.Create(FHeaderLocal);
       Validation.HeaderNo:=AHeaderNo;
       Validation.HeaderOffset:=AOffset;
-      Validation.HeaderCluster:=ACluster;  
+      Validation.HeaderCluster:=ACluster;
 
       Validation.Validation:=True;
       Validation.HeaderId:=ValidationRecord.HeaderId;
@@ -7591,13 +7591,13 @@ begin
       Validation.VendorId:=CDFSIdentifierToString(ValidationRecord.VendorId[0],24,False);
       Validation.Checksum:=ValidationRecord.Checksum;
       Validation.Signature:=ValidationRecord.Signature;
-      
+
       {Check Signature}
       if Validation.Signature = cdfsElToritoSignature then
        begin
         {Add Validation}
         FHeaders.Add(Validation);
-        
+
         Result:=True;
        end
       else
@@ -7608,7 +7608,7 @@ begin
    end;
  finally
   FHeaders.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -7623,7 +7623,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FCatalogs.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -7656,10 +7656,10 @@ begin
 
       if LoadTrees then Initial.Entry:=LocateEntry(TCDFSDiskEntry(FRoot),Initial.StartCluster); //To Do //Lock
       if Initial.Entry <> nil then Initial.Path:=GetEntryPath(Initial.Entry,False,False,False) else Initial.Path:=FRoot.Name;
-      
+
       {Add Initial}
       FCatalogs.Add(Initial);
-      
+
       Result:=True;
      end;
    end
@@ -7684,21 +7684,21 @@ begin
       Catalog.SelectionType:=SectionRecord.SelectionType;
       Catalog.SelectionData:=CDFSDataToPointer(SectionRecord.SelectionData[0],19,False);
 
-      Catalog.StartCluster:=SectionRecord.LoadRBA; 
+      Catalog.StartCluster:=SectionRecord.LoadRBA;
       Catalog.ClusterCount:=0; {Will be set to correct value if Entry is Located}
 
       if LoadTrees then Catalog.Entry:=LocateEntry(TCDFSDiskEntry(FRoot),Catalog.StartCluster); //To Do //Lock
       if Catalog.Entry <> nil then Catalog.Path:=GetEntryPath(Catalog.Entry,False,False,False) else Catalog.Path:=FRoot.Name;
-      
+
       {Add Catalog}
       FCatalogs.Add(Catalog);
-      
+
       Result:=True;
      end;
    end;
  finally
   FCatalogs.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -7711,7 +7711,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FExtensions.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -7720,7 +7720,7 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadExtension - Cluster = ' + IntToStr(ACluster) + ' Offset = ' + IntToStr(AOffset));
   {$ENDIF}
-  
+
   {Check Extension}
   SectionExtension:=PELTORITOSectionExtension(PtrUInt(ABuffer) + AOffset);
   if SectionExtension.ExtensionIndicator = cdfsElToritoExtensionIndicator then
@@ -7729,20 +7729,20 @@ begin
     Extension:=TCDFSDiskExtension.Create(FExtensionLocal);
     Extension.ExtensionNo:=AExtensionNo;
     Extension.ExtensionOffset:=AOffset;
-    Extension.ExtensionCluster:=ACluster; 
+    Extension.ExtensionCluster:=ACluster;
 
     Extension.ExtensionIndicator:=SectionExtension.ExtensionIndicator;
     Extension.ExtensionFlag:=SectionExtension.ExtensionFlag;
     Extension.SelectionData:=CDFSDataToPointer(SectionExtension.SelectionData[0],30,False);
-    
+
     {Add Extension}
     FExtensions.Add(Extension);
-    
+
     Result:=True;
    end;
  finally
   FExtensions.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -7751,7 +7751,7 @@ function TCDFSFileSystem.LoadExtended(AEntry:TDiskEntry):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -7760,11 +7760,11 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.LoadExtended - Entry = ' + AEntry.Name);
   {$ENDIF}
- 
+
   //To Do
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -7778,44 +7778,44 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FDescriptors.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
 
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Check Descriptor}
-  if GetDescriptorEx(AType,cdfsInstanceFirst,True) <> nil then Exit; 
-  
+  if GetDescriptorEx(AType,cdfsInstanceFirst,True) <> nil then Exit;
+
   {Get Terminator}
   Terminator:=GetDescriptorEx(cdfsVolumeDescriptorTypeTerminator,cdfsInstanceLast,True);
   if Terminator = nil then Exit;
-  
+
   {Check Cluster}
   Cluster:=Terminator.StartCluster + 1;
   if not AllocClusters(Cluster,1) then Exit;
-  
+
   {Create Descriptor}
   Descriptor:=TCDFSDiskDescriptor.Create(FDescriptorLocal);
   Descriptor.DescriptorType:=AType;
-  Descriptor.DescriptorVersion:=cdfsISO9660DescriptorVersion; 
+  Descriptor.DescriptorVersion:=cdfsISO9660DescriptorVersion;
   Descriptor.StandardIdentifier:=cdfsISO9660StandardIdentifier;
-  
+
   {Check Type}
   case AType of
    cdfsVolumeDescriptorTypeBoot:begin
      Descriptor.Unicode:=False;
      Descriptor.StartCluster:=cdfsELTORITOBootSector;
      Descriptor.SystemIdentifier:=cdfsELTORITOSystemIdentifier;
-     
+
      {Allocate Cluster}
      Cluster:=cdfsUnknownCluster;
      if not AllocClusters(Cluster,1) then Exit;
      Descriptor.CatalogStart:=Cluster;
      Descriptor.CatalogCount:=1;
-     
+
      {Move Descriptors}
      Current:=TCDFSDiskDescriptor(FDescriptors.First);
      while Current <> nil do
@@ -7824,23 +7824,23 @@ begin
         begin
          {Update Descriptor}
          Current.StartCluster:=Current.StartCluster + 1;
-         
+
          {Set Descriptor}
          if not SetDescriptor(Current) then Exit;
         end;
-        
+
        Current:=TCDFSDiskDescriptor(Current.Next);
       end;
-      
+
      {Add Descriptor}
      if not FDescriptors.Add(Descriptor) then Exit;
-     
+
      {Set Descriptor}
      if not SetDescriptor(Descriptor) then Exit;
-     
+
      FBootCatalog:=True;
      FBoot:=Descriptor;
-     
+
      Result:=Descriptor;
     end;
    cdfsVolumeDescriptorTypePrimary:begin
@@ -7862,7 +7862,7 @@ begin
   end;
  finally
   FDescriptors.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -7875,7 +7875,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FDescriptors.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -7883,20 +7883,20 @@ begin
 
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Get Terminator}
   Terminator:=GetDescriptorEx(cdfsVolumeDescriptorTypeTerminator,cdfsInstanceLast,True);
   if Terminator = nil then Exit;
-  
+
   {Get Cluster} {For ReleaseClusters}
   Cluster:=Terminator.StartCluster;
-  
+
   {Check Type}
   case ADescriptor.DescriptorType of
    cdfsVolumeDescriptorTypeBoot:begin
      {Release Clusters}
      if not ReleaseClusters(ADescriptor.CatalogStart,ADescriptor.CatalogCount) then Exit;
-     
+
      {Move Descriptors}
      Current:=TCDFSDiskDescriptor(FDescriptors.Last);
      while Current <> nil do
@@ -7905,25 +7905,25 @@ begin
         begin
          {Update Descriptor}
          Current.StartCluster:=Current.StartCluster - 1;
-         
+
          {Set Descriptor}
          if not SetDescriptor(Current) then Exit;
         end;
-        
+
        Current:=TCDFSDiskDescriptor(Current.Prev);
       end;
-      
+
      {Delete Descriptor}
      if not FDescriptors.Remove(ADescriptor) then Exit;
-     
+
      {Release Clusters}
      if not ReleaseClusters(Cluster,1) then Exit;
-     
+
      ADescriptor.Free;
-     
+
      FBootCatalog:=True; {Remains True as Volume is Writeable}
      FBoot:=nil;
-     
+
      Result:=True;
     end;
    cdfsVolumeDescriptorTypePrimary:begin
@@ -7941,7 +7941,7 @@ begin
   end;
  finally
   FDescriptors.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -7958,7 +7958,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
  if ATable = nil then Exit;
  if TCDFSDiskTable(ATable).Descriptor = nil then Exit;
@@ -7968,21 +7968,21 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AddPath TableNo = ' + IntToHex(ATable.TableNo,8) + ' Name = ' + AName);
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Prepare Trees}
   if not PrepareTrees then Exit;
-  
+
   {Get Parent}
   Parent:=LocatePath(TCDFSDiskTable(ATable),AParentNumber);
   if Parent = nil then Exit;
-  
+
   {Check Relative} {Dot and DotDot not allowed}
   if Length(AName) = 1 then if AName = cdfsDotName then Exit;
   if Length(AName) = 2 then if AName = cdfsDotDotName then Exit;
-  
+
   {Create Path}
   Path:=TCDFSDiskPath.Create(TCDFSDiskTable(ATable).PathLocal);
   Path.Name:=AName;
@@ -7998,7 +7998,7 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AddPath DataSize = ' + IntToStr(TCDFSDiskTable(ATable).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskTable(ATable).DataFree) + ' PathRecordSize = ' + IntToStr(Path.PathRecordSize(TCDFSDiskTable(ATable).Unicode)));
     {$ENDIF}
-    
+
     {Allocate Cluster (Next Contiguous)}
     Cluster:=TCDFSDiskTable(ATable).StartCluster + TCDFSDiskTable(ATable).ClusterCount;
     if AllocClusters(Cluster,1) then
@@ -8008,7 +8008,7 @@ begin
       //DataSize
       //DataFree
       //To Do
-      
+
       {Set Table}
       //To Do
      end
@@ -8017,33 +8017,33 @@ begin
       {Allocate Clusters (Contiguous Block)}
       Cluster:=cdfsUnknownCluster;
       if not AllocClusters(Cluster,TCDFSDiskTable(ATable).ClusterCount + 1) then Exit;
-      
+
       {Update Table}
       //ClusterCount
       //DataSize
       //DataFree
       //To Do
-      
+
       {Set Table}
       //To Do
-      
+
       {Update Descriptor}
       //To Do
-      
+
       {Set Descriptor}
       //To Do
-      
+
       {Update Paths}
       //To Do
-      
+
       {Set Paths}
       //To Do
      end;
    end;
-   
+
   {Update Free}
   TCDFSDiskTable(ATable).DataFree:=TCDFSDiskTable(ATable).DataFree - Path.PathRecordSize(TCDFSDiskTable(ATable).Unicode);
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AddPath DataSize = ' + IntToStr(TCDFSDiskTable(ATable).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskTable(ATable).DataFree));
   {$ENDIF}
@@ -8055,26 +8055,26 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AddPath Previous = ' + Previous.Name);
     {$ENDIF}
-    
+
     {Get Start}
     Offset:=Previous.PathOffset + Previous.PathRecordSize(TCDFSDiskTable(ATable).Unicode);
-    
+
     {Update Path}
     Path.PathOffset:=Offset;
-    
+
     {Update Offset}
     Inc(Offset,Path.PathRecordSize(TCDFSDiskTable(ATable).Unicode));
-    
+
     {Move Paths}
     Current:=TCDFSDiskPath(TCDFSDiskPath(Previous).Next);
     while Current <> nil do
      begin
       {Update Path}
       Current.PathOffset:=Offset;
-      
+
       {Update Offset}
       Inc(Offset,Current.PathRecordSize(TCDFSDiskTable(ATable).Unicode));
-      
+
       Current:=TCDFSDiskPath(Current.Next);
      end;
    end
@@ -8083,32 +8083,32 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AddPath First Path');
     {$ENDIF}
-    
+
     Path.PathOffset:=0; {This should never occur}
    end;
 
   {Insert Path}
   if not TCDFSDiskTable(ATable).Paths.Insert(Previous,Path) then Exit;
-  
+
   {Renumber Paths}
   if not RenumberPaths(ATable) then Exit;
-  
+
   {Set Paths}
   if not SetPaths(TCDFSDiskTable(ATable)) then Exit;
-  
+
   {Update Descriptor} {Only on Primary Table}
   if ATable = TCDFSDiskTable(ATable).Descriptor.Primary then
    begin
     TCDFSDiskTable(ATable).Descriptor.PathTableSize:=TCDFSDiskTable(ATable).Descriptor.PathTableSize + Path.PathRecordSize(TCDFSDiskTable(ATable).Unicode);
-    
+
     {Set Descriptor}
     if not SetDescriptor(TCDFSDiskTable(ATable).Descriptor) then Exit;
    end;
-  
+
   Result:=Path;
  finally
   TCDFSDiskTable(ATable).Paths.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -8121,7 +8121,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ATable = nil then Exit;
  if APath = nil then Exit;
@@ -8132,23 +8132,23 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RemovePath Path = ' + APath.Name);
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Prepare Trees}
   if not PrepareTrees then Exit;
-  
+
   {Check Relative} {Dot not allowed}
   if Length(APath.Name) = 1 then if APath.Name = cdfsDotName then Exit;
 
   {Update Free}
   GetTableDataFree(ATable);
   TCDFSDiskTable(ATable).DataFree:=TCDFSDiskTable(ATable).DataFree + APath.PathRecordSize(TCDFSDiskTable(ATable).Unicode);
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RemovePath DataSize = ' + IntToStr(TCDFSDiskTable(ATable).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskTable(ATable).DataFree));
-  {$ENDIF} 
+  {$ENDIF}
 
   {Move Paths}
   Current:=TCDFSDiskPath(TCDFSDiskPath(APath).Next);
@@ -8160,38 +8160,38 @@ begin
      begin
       {Update Path}
       Current.PathOffset:=Offset;
-      
+
       {Update Offset}
       Inc(Offset,Current.PathRecordSize(TCDFSDiskTable(ATable).Unicode));
-      
+
       Current:=TCDFSDiskPath(Current.Next);
      end;
    end;
 
   {Remove Path}
   if not TCDFSDiskTable(ATable).Paths.Remove(APath) then Exit;
-  
+
   {Renumber Paths}
   if not RenumberPaths(ATable) then Exit;
-  
+
   {Set Paths}
   if not SetPaths(TCDFSDiskTable(ATable)) then Exit;
-  
+
   {Update Descriptor} {Only on Primary Table}
   if ATable = TCDFSDiskTable(ATable).Descriptor.Primary then
    begin
     TCDFSDiskTable(ATable).Descriptor.PathTableSize:=TCDFSDiskTable(ATable).Descriptor.PathTableSize - APath.PathRecordSize(TCDFSDiskTable(ATable).Unicode);
-    
+
     {Set Descriptor}
     if not SetDescriptor(TCDFSDiskTable(ATable).Descriptor) then Exit;
    end;
-   
+
   APath.Free;
-  
+
   Result:=True;
  finally
   TCDFSDiskTable(ATable).Paths.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -8206,7 +8206,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ATable = nil then Exit;
  if APath = nil then Exit;
@@ -8217,20 +8217,20 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RenamePath TableNo = ' + IntToHex(ATable.TableNo,8) +  ' Path = ' + APath.Name + ' New = ' + AName);
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Prepare Trees}
   if not PrepareTrees then Exit;
-  
+
   {Check Relative} {Dot not allowed}
   if Length(APath.Name) = 1 then if APath.Name = cdfsDotName then Exit;
 
   {Update Free}
   GetTableDataFree(ATable);
   TCDFSDiskTable(ATable).DataFree:=TCDFSDiskTable(ATable).DataFree + APath.PathRecordSize(TCDFSDiskTable(ATable).Unicode);
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RenamePath DataSize = ' + IntToStr(TCDFSDiskTable(ATable).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskTable(ATable).DataFree));
   {$ENDIF}
@@ -8245,10 +8245,10 @@ begin
      begin
       {Update Path}
       Current.PathOffset:=Offset;
-      
+
       {Update Offset}
       Inc(Offset,Current.PathRecordSize(TCDFSDiskTable(ATable).Unicode));
-      
+
       Current:=TCDFSDiskPath(Current.Next);
      end;
    end;
@@ -8257,7 +8257,7 @@ begin
   if ATable = TCDFSDiskTable(ATable).Descriptor.Primary then
    begin
     TCDFSDiskTable(ATable).Descriptor.PathTableSize:=TCDFSDiskTable(ATable).Descriptor.PathTableSize - APath.PathRecordSize(TCDFSDiskTable(ATable).Unicode);
-    
+
     {Set Descriptor}
     if not SetDescriptor(TCDFSDiskTable(ATable).Descriptor) then Exit;
    end;
@@ -8274,7 +8274,7 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RenamePath DataSize = ' + IntToStr(TCDFSDiskTable(ATable).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskTable(ATable).DataFree) + ' PathRecordSize = ' + IntToStr(APath.PathRecordSize(TCDFSDiskTable(ATable).Unicode)));
     {$ENDIF}
-    
+
     {Allocate Cluster (Next Contiguous)}
     Cluster:=TCDFSDiskTable(ATable).StartCluster + TCDFSDiskTable(ATable).ClusterCount;
     if AllocClusters(Cluster,1) then
@@ -8284,7 +8284,7 @@ begin
       //DataSize
       //DataFree
       //To Do
-      
+
       {Set Table}
       //To Do
      end
@@ -8293,33 +8293,33 @@ begin
       {Allocate Clusters (Contiguous Block)}
       Cluster:=cdfsUnknownCluster;
       if not AllocClusters(Cluster,TCDFSDiskTable(ATable).ClusterCount + 1) then Exit;
-      
+
       {Update Table}
       //ClusterCount
       //DataSize
       //DataFree
       //To Do
-      
+
       {Set Table}
       //To Do
-      
+
       {Update Descriptor}
       //To Do
-      
+
       {Set Descriptor}
       //To Do
-      
+
       {Update Paths}
       //To Do
-      
+
       {Set Paths}
       //To Do
      end;
    end;
-   
+
   {Update Free}
   TCDFSDiskTable(ATable).DataFree:=TCDFSDiskTable(ATable).DataFree - APath.PathRecordSize(TCDFSDiskTable(ATable).Unicode);
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RenamePath DataSize = ' + IntToStr(TCDFSDiskTable(ATable).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskTable(ATable).DataFree));
   {$ENDIF}
@@ -8331,26 +8331,26 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RenamePath Previous = ' + Previous.Name);
     {$ENDIF}
-    
+
     {Get Start}
     Offset:=Previous.PathOffset + Previous.PathRecordSize(TCDFSDiskTable(ATable).Unicode);
-    
+
     {Update Path}
     APath.PathOffset:=Offset;
-    
+
     {Update Offset}
     Inc(Offset,APath.PathRecordSize(TCDFSDiskTable(ATable).Unicode));
-    
+
     {Move Paths}
     Current:=TCDFSDiskPath(TCDFSDiskPath(Previous).Next);
     while Current <> nil do
      begin
       {Update Path}
       Current.PathOffset:=Offset;
-      
+
       {Update Offset}
       Inc(Offset,Current.PathRecordSize(TCDFSDiskTable(ATable).Unicode));
-      
+
       Current:=TCDFSDiskPath(Current.Next);
      end;
    end
@@ -8359,32 +8359,32 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RenamePath First Path');
     {$ENDIF}
-    
+
     APath.PathOffset:=0; {This should never occur}
    end;
 
   {Insert Path}
   if not TCDFSDiskTable(ATable).Paths.Insert(Previous,APath) then Exit;
-  
+
   {Renumber Paths}
   if not RenumberPaths(ATable) then Exit;
-  
+
   {Set Paths}
   if not SetPaths(TCDFSDiskTable(ATable)) then Exit;
-  
+
   {Update Descriptor} {Only on Primary Table}
   if ATable = TCDFSDiskTable(ATable).Descriptor.Primary then
    begin
     TCDFSDiskTable(ATable).Descriptor.PathTableSize:=TCDFSDiskTable(ATable).Descriptor.PathTableSize + APath.PathRecordSize(TCDFSDiskTable(ATable).Unicode);
-    
+
     {Set Descriptor}
     if not SetDescriptor(TCDFSDiskTable(ATable).Descriptor) then Exit;
    end;
-   
+
   Result:=True;
  finally
   TCDFSDiskTable(ATable).Paths.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -8400,7 +8400,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ATable = nil then Exit;
  if APath = nil then Exit;
@@ -8411,24 +8411,24 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MovePath TableNo = ' + IntToHex(ATable.TableNo,8) +  ' Path = ' + APath.Name);
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Prepare Trees}
   if not PrepareTrees then Exit;
-  
+
   {Get Parent}
   Parent:=LocatePath(TCDFSDiskTable(ATable),ADestNumber);
   if Parent = nil then Exit;
-  
+
   {Check Relative} {Dot not allowed}
   if Length(APath.Name) = 1 then if APath.Name = cdfsDotName then Exit;
 
   {Update Free}
   GetTableDataFree(ATable);
   TCDFSDiskTable(ATable).DataFree:=TCDFSDiskTable(ATable).DataFree + APath.PathRecordSize(TCDFSDiskTable(ATable).Unicode);
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MovePath DataSize = ' + IntToStr(TCDFSDiskTable(ATable).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskTable(ATable).DataFree));
   {$ENDIF}
@@ -8443,10 +8443,10 @@ begin
      begin
       {Update Path}
       Current.PathOffset:=Offset;
-      
+
       {Update Offset}
       Inc(Offset,Current.PathRecordSize(TCDFSDiskTable(ATable).Unicode));
-      
+
       Current:=TCDFSDiskPath(Current.Next);
      end;
    end;
@@ -8455,7 +8455,7 @@ begin
   if ATable = TCDFSDiskTable(ATable).Descriptor.Primary then
    begin
     TCDFSDiskTable(ATable).Descriptor.PathTableSize:=TCDFSDiskTable(ATable).Descriptor.PathTableSize - APath.PathRecordSize(TCDFSDiskTable(ATable).Unicode);
-    
+
     {Set Descriptor}
     if not SetDescriptor(TCDFSDiskTable(ATable).Descriptor) then Exit;
    end;
@@ -8473,7 +8473,7 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MovePath DataSize = ' + IntToStr(TCDFSDiskTable(ATable).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskTable(ATable).DataFree) + ' PathRecordSize = ' + IntToStr(APath.PathRecordSize(TCDFSDiskTable(ATable).Unicode)));
     {$ENDIF}
-    
+
     {Allocate Cluster (Next Contiguous)}
     Cluster:=TCDFSDiskTable(ATable).StartCluster + TCDFSDiskTable(ATable).ClusterCount;
     if AllocClusters(Cluster,1) then
@@ -8483,7 +8483,7 @@ begin
       //DataSize
       //DataFree
       //To Do
-      
+
       {Set Table}
       //To Do
      end
@@ -8492,33 +8492,33 @@ begin
       {Allocate Clusters (Contiguous Block)}
       Cluster:=cdfsUnknownCluster;
       if not AllocClusters(Cluster,TCDFSDiskTable(ATable).ClusterCount + 1) then Exit;
-      
+
       {Update Table}
       //ClusterCount
       //DataSize
       //DataFree
       //To Do
-      
+
       {Set Table}
       //To Do
-      
+
       {Update Descriptor}
       //To Do
-      
+
       {Set Descriptor}
       //To Do
-      
+
       {Update Paths}
       //To Do
-      
+
       {Set Paths}
       //To Do
      end;
    end;
-   
+
   {Update Free}
   TCDFSDiskTable(ATable).DataFree:=TCDFSDiskTable(ATable).DataFree - APath.PathRecordSize(TCDFSDiskTable(ATable).Unicode);
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MovePath DataSize = ' + IntToStr(TCDFSDiskTable(ATable).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskTable(ATable).DataFree));
   {$ENDIF}
@@ -8530,26 +8530,26 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MovePath Previous = ' + Previous.Name);
     {$ENDIF}
-    
+
     {Get Start}
     Offset:=Previous.PathOffset + Previous.PathRecordSize(TCDFSDiskTable(ATable).Unicode);
-    
+
     {Update Path}
     APath.PathOffset:=Offset;
-    
+
     {Update Offset}
     Inc(Offset,APath.PathRecordSize(TCDFSDiskTable(ATable).Unicode));
-    
+
     {Move Paths}
     Current:=TCDFSDiskPath(TCDFSDiskPath(Previous).Next);
     while Current <> nil do
      begin
       {Update Path}
       Current.PathOffset:=Offset;
-      
+
       {Update Offset}
       Inc(Offset,Current.PathRecordSize(TCDFSDiskTable(ATable).Unicode));
-      
+
       Current:=TCDFSDiskPath(Current.Next);
      end;
    end
@@ -8558,32 +8558,32 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MovePath First Path');
     {$ENDIF}
-    
+
     APath.PathOffset:=0; {This should never occur}
    end;
 
   {Insert Path}
   if not TCDFSDiskTable(ATable).Paths.Insert(Previous,APath) then Exit;
-  
+
   {Renumber Paths}
   if not RenumberPaths(ATable) then Exit;
-  
+
   {Set Paths}
   if not SetPaths(TCDFSDiskTable(ATable)) then Exit;
-  
+
   {Update Descriptor} {Only on Primary Table}
   if ATable = TCDFSDiskTable(ATable).Descriptor.Primary then
    begin
     TCDFSDiskTable(ATable).Descriptor.PathTableSize:=TCDFSDiskTable(ATable).Descriptor.PathTableSize + APath.PathRecordSize(TCDFSDiskTable(ATable).Unicode);
-    
+
     {Set Descriptor}
     if not SetDescriptor(TCDFSDiskTable(ATable).Descriptor) then Exit;
    end;
-   
+
   Result:=True;
  finally
   TCDFSDiskTable(ATable).Paths.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -8610,16 +8610,16 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AddEntry Parent = ' + AParent.Name + ' Name = ' + AName + ' Attributes = ' + IntToHex(AAttributes,8));
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Prepare Trees}
   if not PrepareTrees then Exit;
-  
+
   {Check Relative} {Allow Dot only on Root Directory}
   if ((AParent.Attributes and (faDot or faDotDot)) <> faNone) and (AParent <> FRoot) then Exit;
-  
+
   {Check Parent}
   if (AParent.Attributes and faMatchMask) <> faDirectory then Exit;
 
@@ -8637,9 +8637,9 @@ begin
         Result:=nil;
        end;
       Exit;
-     end;     
-   end; 
-  
+     end;
+   end;
+
   {Check for Short}
   if IsEightDotThree(AName) then
    begin
@@ -8691,7 +8691,7 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AddEntry DataSize = ' + IntToStr(TCDFSDiskEntry(AParent).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskEntry(AParent).DataFree) + ' DirectoryRecordSize = ' + IntToStr(Entry.DirectoryRecordSize));
     {$ENDIF}
-    
+
     {Allocate Cluster (Next Contiguous)}
     Cluster:=TCDFSDiskEntry(AParent).StartCluster + TCDFSDiskEntry(AParent).ClusterCount;
     if AllocClusters(Cluster,1) then
@@ -8701,7 +8701,7 @@ begin
       //DataSize
       //DateFree
       //To Do
-      
+
       {Set Entry / Set Root}
       //if AParent = FRoot then SetRoot else SetEntry
       //To Do
@@ -8711,28 +8711,28 @@ begin
       {Allocate Clusters (Contiguous Block)}
       Cluster:=cdfsUnknownCluster;
       if not AllocClusters(Cluster,TCDFSDiskEntry(AParent).ClusterCount + 1) then Exit;
-      
+
       {Update Parent}
       //ClusterCount
       //DataSize
       //DateFree
       //To Do
-      
+
       {Set Entry / Set Root}
       //if AParent = FRoot then SetRoot else SetEntry
       //To Do
-      
+
       {Update Entries}
       //To Do
-      
+
       {Set Entries}
       //To Do
      end;
    end;
-   
+
   {Update Free}
   TCDFSDiskEntry(AParent).DataFree:=TCDFSDiskEntry(AParent).DataFree - Entry.DirectoryRecordSize;
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AddEntry DataSize = ' + IntToStr(TCDFSDiskEntry(AParent).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskEntry(AParent).DataFree));
   {$ENDIF}
@@ -8744,25 +8744,25 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AddEntry Previous = ' + Previous.Name);
     {$ENDIF}
-    
+
     {Get Start}
     Offset:=Previous.EntryOffset + Previous.DirectoryRecordSize;
     Cluster:=Previous.EntryCluster;
-    
+
     {Update Cluster}
     if (Offset + Entry.DirectoryRecordSize) >= FClusterSize then
      begin
       Offset:=0;
       Inc(Cluster);
      end;
-     
+
     {Update Entry}
     Entry.EntryOffset:=Offset;
     Entry.EntryCluster:=Cluster;
-    
+
     {Update Offset}
     Inc(Offset,Entry.DirectoryRecordSize);
-    
+
     {Move Entries}
     Current:=TCDFSDiskEntry(TCDFSDiskEntry(Previous).Next);
     if Current <> nil then
@@ -8775,17 +8775,17 @@ begin
           Offset:=0;
           Inc(Cluster);
          end;
-         
+
         {Update Entry}
         Current.EntryOffset:=Offset;
         Current.EntryCluster:=Cluster;
-        
+
         {Update Offset}
         Inc(Offset,Current.DirectoryRecordSize);
-        
+
         Current:=TCDFSDiskEntry(Current.Next);
        end;
-       
+
       {Set Entries}
       if not SetEntries(AParent) then Exit;
      end;
@@ -8795,7 +8795,7 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AddEntry First Entry');
     {$ENDIF}
-    
+
     Entry.EntryOffset:=0;
     Entry.EntryCluster:=TCDFSDiskEntry(AParent).StartCluster;
    end;
@@ -8836,10 +8836,10 @@ begin
         Entry.CreateTime:=TCDFSDiskEntry(AParent.Parent).CreateTime;
         Entry.AccessTime:=TCDFSDiskEntry(AParent.Parent).AccessTime;
        end;
-       
+
       {Insert Entry}
       if not FEntries.Insert(Previous,Entry,AParent) then Exit;
-      
+
       {Set Entry}
       if not SetEntry(AParent,Entry) then Exit;
      end
@@ -8855,10 +8855,10 @@ begin
       Entry.WriteTime:=AParent.WriteTime;
       Entry.CreateTime:=AParent.CreateTime;
       Entry.AccessTime:=AParent.AccessTime;
-      
+
       {Insert Entry}
       if not FEntries.Insert(Previous,Entry,AParent) then Exit;
-      
+
       {Set Entry}
       if not SetEntry(AParent,Entry) then Exit;
      end
@@ -8868,31 +8868,31 @@ begin
       {Allocate Cluster}
       Cluster:=cdfsUnknownCluster;
       if not AllocClusters(Cluster,2) then Exit; {Allocate 2 Clusters, only use one (To prevent small gaps at start of CD being filled)}
-      
+
       {$IFDEF CDFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AddEntry Cluster = ' + IntToStr(Cluster));
       {$ENDIF}
-      
+
       Entry.StartCluster:=Cluster;
       Entry.ClusterCount:=1;
       Entry.DataSize:=(Entry.ClusterCount shl FClusterShiftCount);
-      
+
       {Zero Cluster}
       if not FillClusters(Entry.StartCluster,Entry.ClusterCount,0) then Exit;
-      
+
       {Insert Entry}
       if not FEntries.Insert(Previous,Entry,AParent) then Exit;
-      
+
       {Set Entry}
       if not SetEntry(AParent,Entry) then Exit;
-      
+
       {Get Descriptor}
       if not FDescriptors.WriterLock then Exit;
       try
        Descriptor:=FPrimary;
        if Entry.Unicode then Descriptor:=FSupplementary;
        if Descriptor = nil then Exit;
-      
+
        {Create Paths}
        if not FTables.ReaderLock then Exit;
        try
@@ -8902,20 +8902,20 @@ begin
         if Descriptor.AlternateM <> nil then Entry.AltPathM:=AddPath(Descriptor.AlternateM,TCDFSDiskEntry(AParent).PathNumber,Name,Entry.StartCluster);
        finally
         FTables.ReaderUnlock;
-       end;       
+       end;
       finally
        FDescriptors.WriterUnlock;
-      end; 
-      
+      end;
+
       {Create Dot}
       if AddEntry(Entry,cdfsDotName,(AAttributes or faDot),False) = nil then Exit;
-      
+
       {Create DotDot}
       if AddEntry(Entry,cdfsDotDotName,(AAttributes or faDotDot),False) = nil then Exit;
      end;
-    
+
     Result:=Entry;
-   
+
     {Add Reference}
     if AReference then Result.AddReference;
    end
@@ -8925,31 +8925,31 @@ begin
     {Allocate Cluster}
     Cluster:=cdfsUnknownCluster;
     if not AllocClusters(Cluster,2) then Exit; {Allocate 2 Clusters, only use one (To prevent small gaps at start of CD being filled)}
-    
+
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AddEntry Cluster = ' + IntToStr(Cluster));
     {$ENDIF}
-    
+
     Entry.StartCluster:=Cluster;
     Entry.ClusterCount:=1;
-    
+
     {Zero Cluster}
     if not FillClusters(Entry.StartCluster,Entry.ClusterCount,0) then Exit;
-    
+
     {Insert Entry}
     if not FEntries.Insert(Previous,Entry,AParent) then Exit;
-    
+
     {Set Entry}
     if not SetEntry(AParent,Entry) then Exit;
-    
+
     Result:=Entry;
-   
+
     {Add Reference}
     if AReference then Result.AddReference;
    end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -8987,26 +8987,26 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RemoveEntry Name = ' + AEntry.Name);
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Prepare Trees}
   if not PrepareTrees then Exit;
-  
+
   {Check Parent}
   if AEntry.Parent <> AParent then Exit;
-  
+
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
-  
+
   {Release Clusters}
   if not ReleaseClusters(TCDFSDiskEntry(AEntry).StartCluster,TCDFSDiskEntry(AEntry).ClusterCount) then Exit;
 
   {Update Free}
   GetEntryDataFree(AParent);
   TCDFSDiskEntry(AParent).DataFree:=TCDFSDiskEntry(AParent).DataFree + TCDFSDiskEntry(AEntry).DirectoryRecordSize;
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RemoveEntry DataSize = ' + IntToStr(TCDFSDiskEntry(AParent).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskEntry(AParent).DataFree));
   {$ENDIF}
@@ -9026,14 +9026,14 @@ begin
         Offset:=0;
         Inc(Cluster);
        end;
-     
+
       {Update Entry}
       Current.EntryOffset:=Offset;
       Current.EntryCluster:=Cluster;
-     
+
       {Update Offset}
       Inc(Offset,Current.DirectoryRecordSize);
-     
+
       Current:=TCDFSDiskEntry(Current.Next);
      end;
    end;
@@ -9044,20 +9044,20 @@ begin
     {Folder}
     {Zero Clusters}
     if not FillClusters(TCDFSDiskEntry(AEntry).StartCluster,TCDFSDiskEntry(AEntry).ClusterCount,0) then Exit;
-    
+
     {Remove Entry}
     if not FEntries.Remove(AEntry) then Exit;
-    
+
     {Set Entries}
     if not SetEntries(AParent) then Exit;
-    
+
     {Get Descriptor}
     if not FDescriptors.WriterLock then Exit;
     try
      Descriptor:=FPrimary;
      if TCDFSDiskEntry(AEntry).Unicode then Descriptor:=FSupplementary;
      if Descriptor = nil then Exit;
-    
+
      {Remove Paths}
      if not FTables.ReaderLock then Exit;
      try
@@ -9067,14 +9067,14 @@ begin
       if Descriptor.AlternateM <> nil then if not RemovePath(Descriptor.AlternateM,TCDFSDiskEntry(AEntry).AltPathM) then Exit;
      finally
       FTables.ReaderUnlock;
-     end;       
+     end;
     finally
      FDescriptors.WriterUnlock;
-    end; 
-   
+    end;
+
     {Schedule Entry}
     if not FDriver.ScheduleEntry(AEntry,FILESYS_ENTRY_DELETE_TIMEOUT) then Exit;
-   
+
     Result:=True;
    end
   else if (AEntry.Attributes and faMatchMask) = faFile then
@@ -9082,21 +9082,21 @@ begin
     {File}
     {Zero Clusters}
     if TCDFSDiskEntry(AEntry).ClusterCount > 0 then if not FillClusters(TCDFSDiskEntry(AEntry).StartCluster,TCDFSDiskEntry(AEntry).ClusterCount,0) then Exit;
-    
+
     {Remove Entry}
     if not FEntries.Remove(AEntry) then Exit;
-    
+
     {Set Entries}
     if not SetEntries(AParent) then Exit;
-   
+
     {Schedule Entry}
     if not FDriver.ScheduleEntry(AEntry,FILESYS_ENTRY_DELETE_TIMEOUT) then Exit;
-   
+
     Result:=True;
    end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -9123,29 +9123,29 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RenameEntry Name = ' + AEntry.Name + ' New = ' + AName);
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Prepare Trees}
   if not PrepareTrees then Exit;
-  
+
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
-  
+
   {Check Parent}
   if (AParent.Attributes and faMatchMask) <> faDirectory then Exit;
 
   {Check Parent}
   if AEntry.Parent <> AParent then Exit;
-  
+
   {Check Attribtues (Include Folder/File)}
   if (AEntry.Attributes and (faDirectory or faFile)) <> faNone then
    begin
     {Check Existing}
     if GetEntryEx(AParent,AName,faDirectory or faFile,False,False,True) <> nil then Exit;
-   end; 
-  
+   end;
+
   {Check for Short}
   if IsEightDotThree(AName) then
    begin
@@ -9174,7 +9174,7 @@ begin
   {Update Free}
   GetEntryDataFree(AParent);
   TCDFSDiskEntry(AParent).DataFree:=TCDFSDiskEntry(AParent).DataFree + TCDFSDiskEntry(AEntry).DirectoryRecordSize;
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RenameEntry DataSize = ' + IntToStr(TCDFSDiskEntry(AParent).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskEntry(AParent).DataFree));
   {$ENDIF}
@@ -9194,14 +9194,14 @@ begin
         Offset:=0;
         Inc(Cluster);
        end;
-      
+
       {Update Entry}
       Current.EntryOffset:=Offset;
       Current.EntryCluster:=Cluster;
-      
+
       {Update Offset}
       Inc(Offset,Current.DirectoryRecordSize);
-      
+
       Current:=TCDFSDiskEntry(Current.Next);
      end;
    end;
@@ -9218,7 +9218,7 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RenameEntry DataSize = ' + IntToStr(TCDFSDiskEntry(AParent).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskEntry(AParent).DataFree) + ' DirectoryRecordSize = ' + IntToStr(TCDFSDiskEntry(AEntry).DirectoryRecordSize));
     {$ENDIF}
-    
+
     {Allocate Cluster (Next Contiguous)}
     Cluster:=TCDFSDiskEntry(AParent).StartCluster + TCDFSDiskEntry(AParent).ClusterCount;
     if AllocClusters(Cluster,1) then
@@ -9228,7 +9228,7 @@ begin
       //DataSize
       //DateFree
       //To Do
-      
+
       {Set Entry / Set Root}
       //if AParent = FRoot then SetRoot else SetEntry
       //To Do
@@ -9238,28 +9238,28 @@ begin
       {Allocate Clusters (Contiguous Block)}
       Cluster:=cdfsUnknownCluster;
       if not AllocClusters(Cluster,TCDFSDiskEntry(AParent).ClusterCount + 1) then Exit;
-      
+
       {Update Parent}
       //ClusterCount
       //DataSize
       //DateFree
       //To Do
-      
+
       {Set Entry / Set Root}
       //if AParent = FRoot then SetRoot else SetEntry
       //To Do
-      
+
       {Update Entries}
       //To Do
-      
+
       {Set Entries}
       //To Do
      end;
    end;
-   
+
   {Update Free}
   TCDFSDiskEntry(AParent).DataFree:=TCDFSDiskEntry(AParent).DataFree - TCDFSDiskEntry(AEntry).DirectoryRecordSize;
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RenameEntry DataSize = ' + IntToStr(TCDFSDiskEntry(AParent).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskEntry(AParent).DataFree));
   {$ENDIF}
@@ -9271,25 +9271,25 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RenameEntry Previous = ' + Previous.Name);
     {$ENDIF}
-    
+
     {Get Start}
     Offset:=Previous.EntryOffset + Previous.DirectoryRecordSize;
     Cluster:=Previous.EntryCluster;
-    
+
     {Update Cluster}
     if (Offset + TCDFSDiskEntry(AEntry).DirectoryRecordSize) >= FClusterSize then
      begin
       Offset:=0;
       Inc(Cluster);
      end;
-     
+
     {Update Entry}
     TCDFSDiskEntry(AEntry).EntryOffset:=Offset;
     TCDFSDiskEntry(AEntry).EntryCluster:=Cluster;
-    
+
     {Update Offset}
     Inc(Offset,TCDFSDiskEntry(AEntry).DirectoryRecordSize);
-    
+
     {Move Entries}
     Current:=TCDFSDiskEntry(TCDFSDiskEntry(Previous).Next);
     if Current <> nil then
@@ -9302,14 +9302,14 @@ begin
           Offset:=0;
           Inc(Cluster);
          end;
-         
+
         {Update Entry}
         Current.EntryOffset:=Offset;
         Current.EntryCluster:=Cluster;
-        
+
         {Update Offset}
         Inc(Offset,Current.DirectoryRecordSize);
-        
+
         Current:=TCDFSDiskEntry(Current.Next);
        end;
      end;
@@ -9319,7 +9319,7 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RenameEntry First Entry');
     {$ENDIF}
-    
+
     TCDFSDiskEntry(AEntry).EntryOffset:=0;  {This should never occur (Dot is always first and cannot be renamed)}
     TCDFSDiskEntry(AEntry).EntryCluster:=TCDFSDiskEntry(AParent).StartCluster;
    end;
@@ -9330,17 +9330,17 @@ begin
     {Folder}
     {Insert Entry}
     if not FEntries.Insert(Previous,AEntry,AParent) then Exit;
-    
+
     {Set Entries}
     if not SetEntries(AParent) then Exit;
-    
+
     {Get Descriptor}
     if not FDescriptors.WriterLock then Exit;
     try
      Descriptor:=FPrimary;
      if TCDFSDiskEntry(AEntry).Unicode then Descriptor:=FSupplementary;
      if Descriptor = nil then Exit;
-    
+
      {Rename Paths}
      if not FTables.ReaderLock then Exit;
      try
@@ -9350,11 +9350,11 @@ begin
       if (Descriptor.AlternateM <> nil) and (TCDFSDiskEntry(AEntry).AltPathM <> nil) then if not RenamePath(Descriptor.AlternateM,TCDFSDiskEntry(AEntry).AltPathM,Name) then Exit;
      finally
       FTables.ReaderUnlock;
-     end;       
+     end;
     finally
      FDescriptors.WriterUnlock;
-    end; 
-    
+    end;
+
     Result:=True;
    end
   else if (AEntry.Attributes and faMatchMask) = faFile then
@@ -9362,24 +9362,24 @@ begin
     {File}
     {Insert Entry}
     if not FEntries.Insert(Previous,AEntry,AParent) then Exit;
-    
+
     {Set Entries}
     if not SetEntries(AParent) then Exit;
-    
+
     Result:=True;
    end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
 
-function TCDFSFileSystem.RenameEntryEx(AParent,AEntry:TDiskEntry;const AAltName:String):Boolean; 
+function TCDFSFileSystem.RenameEntryEx(AParent,AEntry:TDiskEntry;const AAltName:String):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -9390,26 +9390,26 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RenameEntryEx - Entry = ' + AEntry.Name + ' AltName = ' + AAltName);
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Prepare Trees}
   if not PrepareTrees then Exit;
-  
+
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
-  
+
   {Check Parent}
   if (AParent.Attributes and faMatchMask) <> faDirectory then Exit;
- 
+
   {Check Parent}
   if AEntry.Parent <> AParent then Exit;
- 
+
   //To Do //See Above and AddEntryEx
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -9438,36 +9438,36 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MoveEntry Name = ' + AEntry.Name + ' Dest = ' + ADest.Name);
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Prepare Trees}
   if not PrepareTrees then Exit;
-  
+
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
-  
+
   {Check Source}
   if (ASource.Attributes and faMatchMask) <> faDirectory then Exit;
-  
+
   {Check Dest}
   if (ADest.Attributes and faMatchMask) <> faDirectory then Exit;
 
   {Check Parent}
   if AEntry.Parent <> ASource then Exit;
-  
+
   {Check Attribtues (Include Folder/File)}
   if (AEntry.Attributes and (faDirectory or faFile)) <> faNone then
    begin
     {Check Existing}
     if GetEntryEx(ADest,AEntry.Name,faDirectory or faFile,False,False,True) <> nil then Exit;
-   end; 
-  
+   end;
+
   {Update Free}
   GetEntryDataFree(ASource);
   TCDFSDiskEntry(ASource).DataFree:=TCDFSDiskEntry(ASource).DataFree + TCDFSDiskEntry(AEntry).DirectoryRecordSize;
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MoveEntry DataSize = ' + IntToStr(TCDFSDiskEntry(ASource).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskEntry(ASource).DataFree));
   {$ENDIF}
@@ -9487,21 +9487,21 @@ begin
         Offset:=0;
         Inc(Cluster);
        end;
-      
+
       {Update Entry}
       Current.EntryOffset:=Offset;
       Current.EntryCluster:=Cluster;
-      
+
       {Update Offset}
       Inc(Offset,Current.DirectoryRecordSize);
-      
+
       Current:=TCDFSDiskEntry(Current.Next);
      end;
    end;
 
   {Remove Entry}
   if not FEntries.Remove(AEntry) then Exit;
-  
+
   {Set Entries}
   if not SetEntries(ASource) then Exit;
 
@@ -9511,7 +9511,7 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MoveEntry DataSize = ' + IntToStr(TCDFSDiskEntry(ADest).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskEntry(ADest).DataFree) + ' DirectoryRecordSize = ' + IntToStr(TCDFSDiskEntry(AEntry).DirectoryRecordSize));
     {$ENDIF}
-    
+
     {Allocate Cluster (Next Contiguous)}
     Cluster:=TCDFSDiskEntry(ADest).StartCluster + TCDFSDiskEntry(ADest).ClusterCount;
     if AllocClusters(Cluster,1) then
@@ -9521,7 +9521,7 @@ begin
       //DataSize
       //DateFree
       //To Do
-      
+
       {Set Entry / Set Root}
       //if AParent = FRoot then SetRoot else SetEntry
       //To Do
@@ -9531,28 +9531,28 @@ begin
       {Allocate Clusters (Contiguous Block)}
       Cluster:=cdfsUnknownCluster;
       if not AllocClusters(Cluster,TCDFSDiskEntry(ADest).ClusterCount + 1) then Exit;
-      
+
       {Update Parent}
       //ClusterCount
       //DataSize
       //DateFree
       //To Do
-      
+
       {Set Entry / Set Root}
       //if AParent = FRoot then SetRoot else SetEntry
       //To Do
-      
+
       {Update Entries}
       //To Do
-      
+
       {Set Entries}
       //To Do
      end;
    end;
-  
+
   {Update Free}
   TCDFSDiskEntry(ADest).DataFree:=TCDFSDiskEntry(ADest).DataFree - TCDFSDiskEntry(AEntry).DirectoryRecordSize;
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MoveEntry DataSize = ' + IntToStr(TCDFSDiskEntry(ADest).DataSize) + ' DataFree = ' + IntToStr(TCDFSDiskEntry(ADest).DataFree));
   {$ENDIF}
@@ -9564,25 +9564,25 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MoveEntry Previous = ' + Previous.Name);
     {$ENDIF}
-    
+
     {Get Start}
     Offset:=Previous.EntryOffset + Previous.DirectoryRecordSize;
     Cluster:=Previous.EntryCluster;
-    
+
     {Update Cluster}
     if (Offset + TCDFSDiskEntry(AEntry).DirectoryRecordSize) >= FClusterSize then
      begin
       Offset:=0;
       Inc(Cluster);
      end;
-    
+
     {Update Entry}
     TCDFSDiskEntry(AEntry).EntryOffset:=Offset;
     TCDFSDiskEntry(AEntry).EntryCluster:=Cluster;
-    
+
     {Update Offset}
     Inc(Offset,TCDFSDiskEntry(AEntry).DirectoryRecordSize);
-    
+
     {Move Entries}
     Current:=TCDFSDiskEntry(TCDFSDiskEntry(Previous).Next);
     if Current <> nil then
@@ -9595,14 +9595,14 @@ begin
           Offset:=0;
           Inc(Cluster);
          end;
-        
+
         {Update Entry}
         Current.EntryOffset:=Offset;
         Current.EntryCluster:=Cluster;
-        
+
         {Update Offset}
         Inc(Offset,Current.DirectoryRecordSize);
-        
+
         Current:=TCDFSDiskEntry(Current.Next);
        end;
      end;
@@ -9612,7 +9612,7 @@ begin
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MoveEntry First Entry');
     {$ENDIF}
-    
+
     TCDFSDiskEntry(AEntry).EntryOffset:=0;  {This should never occur (Dot is always first and cannot be moved)}
     TCDFSDiskEntry(AEntry).EntryCluster:=TCDFSDiskEntry(ADest).StartCluster;
    end;
@@ -9623,17 +9623,17 @@ begin
     {Folder}
     {Insert Entry}
     if not FEntries.Insert(Previous,AEntry,ADest) then Exit;
-    
+
     {Set Entries}
     if not SetEntries(ADest) then Exit;
-    
+
     {Get Descriptor}
     if not FDescriptors.WriterLock then Exit;
     try
      Descriptor:=FPrimary;
      if TCDFSDiskEntry(AEntry).Unicode then Descriptor:=FSupplementary;
      if Descriptor = nil then Exit;
-    
+
      {Rename Paths}
      if not FTables.ReaderLock then Exit;
      try
@@ -9643,11 +9643,11 @@ begin
       if (Descriptor.AlternateM <> nil) and (TCDFSDiskEntry(AEntry).AltPathM <> nil) then if not MovePath(Descriptor.AlternateM,TCDFSDiskEntry(ADest).PathNumber,TCDFSDiskEntry(AEntry).AltPathM) then Exit;
      finally
       FTables.ReaderUnlock;
-     end;       
+     end;
     finally
      FDescriptors.WriterUnlock;
-    end; 
-    
+    end;
+
     {Get DotDot}
     Current:=TCDFSDiskEntry(AEntry.FirstChild);
     while Current <> nil do
@@ -9683,13 +9683,13 @@ begin
           TCDFSDiskEntry(AEntry).CreateTime:=TCDFSDiskEntry(ADest.Parent).CreateTime;
           TCDFSDiskEntry(AEntry).AccessTime:=TCDFSDiskEntry(ADest.Parent).AccessTime;
          end;
-         
+
         if not SetEntry(AEntry,Current) then Exit;
        end;
-       
+
       Current:=TCDFSDiskEntry(Current.Next);
      end;
-     
+
     Result:=True;
    end
   else if (AEntry.Attributes and faMatchMask) = faFile then
@@ -9697,15 +9697,15 @@ begin
     {File}
     {Insert Entry}
     if not FEntries.Insert(Previous,AEntry,ADest) then Exit;
-    
+
     {Set Entries}
     if not SetEntries(ADest) then Exit;
-    
+
     Result:=True;
    end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -9720,7 +9720,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if not FCatalogs.WriterLock then Exit;
@@ -9735,16 +9735,16 @@ begin
      {$IFDEF CDFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.AddCatalog -  Name = ' + AEntry.Name);
      {$ENDIF}
-  
+
      {Check ReadOnly}
      if FReadOnly then Exit;
-  
+
      {Prepare Trees}
      {if not PrepareTrees then Exit;} {Handled by AddEntry if needed}
-  
+
      {Check Entry}
      if (AEntry.Attributes and faMatchMask) <> faFile then Exit;
-  
+
      {Check Params}
      //To Do
 
@@ -9757,8 +9757,8 @@ begin
         {Add Descriptor}
         Descriptor:=AddDescriptor(cdfsVolumeDescriptorTypeBoot);
         if Descriptor = nil then Exit;
-       end; 
-  
+       end;
+
       {Check Free}
       if GetCatalogDataFree(Descriptor) < (cdfsHeaderRecordSize + cdfsCatalogRecordSize) then
        begin
@@ -9774,29 +9774,29 @@ begin
           {Allocate Clusters (Contiguous Block)}
           Cluster:=cdfsUnknownCluster;
           if not AllocClusters(Cluster,Descriptor.CatalogCount + 1) then Exit;
-       
+
           {Update Descriptor}
           Descriptor.CatalogStart:=Cluster;
           Descriptor.CatalogCount:=Descriptor.CatalogCount + 1;
-      
+
           {Set Descriptor}
           if not SetDescriptor(Descriptor) then Exit;
-      
+
           {Update Validation}
           //To Do
-      
+
           {Update Initial}
           //To Do
-        
+
           {Update Headers}
           //To Do
-      
+
           {Update Catalogs}
           //To Do
-      
+
           {Update Extensions}
           //To Do
-       
+
           {Set Catalogs}
           if not SetCatalogs then Exit;
          end;
@@ -9826,7 +9826,7 @@ begin
       if Descriptor.Validation = nil then
        begin
         if Descriptor.Initial <> nil then Exit;
-      
+
         {Add Validation}
         Header.Validation:=True;
         Header.HeaderId:=cdfsElToritoHeaderId;
@@ -9846,7 +9846,7 @@ begin
       else
        begin
         if Descriptor.Initial = nil then Exit;
-    
+
         {Add Header}
         Header.Validation:=False;
         Header.HeaderIndicator:=cdfsElToritoHeaderTerminator;
@@ -9871,29 +9871,29 @@ begin
 
       {Add Header}
       if not FHeaders.Add(Header) then Exit;
-  
+
       {Add Catalog}
       if not FCatalogs.Add(Catalog) then Exit;
-  
+
       {Set Catalogs}
       if not SetCatalogs then Exit;
-  
+
       Result:=Catalog;
      finally
       FDescriptors.WriterUnlock;
-     end; 
+     end;
     finally
      FExtensions.WriterUnlock;
-    end; 
+    end;
    finally
     FHeaders.WriterUnlock;
-   end; 
+   end;
   finally
    FCatalogs.WriterUnlock;
-  end; 
+  end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -9906,7 +9906,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FEntries.WriterLock then Exit;
  try
   if not FCatalogs.WriterLock then Exit;
@@ -9921,16 +9921,16 @@ begin
      {$IFDEF CDFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.RemoveCatalog -  CatalogNo = ' + IntToStr(ACatalog.CatalogNo) + ' Name = ' + ACatalog.Name);
      {$ENDIF}
-  
+
      {Check ReadOnly}
      if FReadOnly then Exit;
-  
+
      {Prepare Trees}
      {if not PrepareTrees then Exit;} {Handled by RemoveEntry if needed}
-  
+
      {Check Count}
      if TCDFSDiskCatalog(ACatalog).ClusterCount = 0 then Exit;
-  
+
      {Get Descriptor}
      if not FDescriptors.WriterLock then Exit;
      try
@@ -9944,22 +9944,22 @@ begin
       //{Update Enum Handles}
       //UpdateEnumHandles(nil,nil,nil,nil,nil,ACatalog);
       //{Remove Catalog}
-  
+
      finally
       FDescriptors.WriterUnlock;
-     end; 
+     end;
     finally
      FExtensions.WriterUnlock;
-    end; 
+    end;
    finally
     FHeaders.WriterUnlock;
-   end; 
+   end;
   finally
    FCatalogs.WriterUnlock;
-  end; 
+  end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -9968,7 +9968,7 @@ function TCDFSFileSystem.GetNextHeaderNo:LongWord;
 begin
  {}
  Result:=1;
- 
+
  while GetHeader(Result) <> nil do
   begin
    Inc(Result);
@@ -9983,7 +9983,7 @@ var
 begin
  {}
  Result:=0;
- 
+
  if not FHeaders.ReaderLock then Exit;
  try
   Header:=TCDFSDiskHeader(FHeaders.First);
@@ -9993,12 +9993,12 @@ begin
      begin
       Result:=Header.HeaderNo;
      end;
-    
+
     Header:=TCDFSDiskHeader(Header.Next);
    end;
  finally
   FHeaders.ReaderUnlock;
- end;   
+ end;
 end;
 
 {=============================================================================}
@@ -10007,7 +10007,7 @@ function TCDFSFileSystem.GetNextHeaderOffset:LongWord;
 begin
  {}
  Result:=0;
- 
+
  //To Do
 end;
 
@@ -10017,7 +10017,7 @@ function TCDFSFileSystem.GetNextHeaderCluster:LongWord;
 begin
  {}
  Result:=0;
- 
+
  //To Do
 end;
 
@@ -10027,7 +10027,7 @@ function TCDFSFileSystem.GetNextCatalogOffset:LongWord;
 begin
  {}
  Result:=0;
- 
+
  //To Do
 end;
 
@@ -10037,7 +10037,7 @@ function TCDFSFileSystem.GetNextCatalogCluster:LongWord;
 begin
  {}
  Result:=0;
- 
+
  //To Do
 end;
 
@@ -10048,7 +10048,7 @@ function TCDFSFileSystem.SetTable(ATable:TDiskTable):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not FTables.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -10057,14 +10057,14 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SetTable - TableNo = ' + IntToStr(ATable.TableNo));
   {$ENDIF}
- 
+
   {Check ReadOnly}
   if FReadOnly then Exit;
- 
+
   Result:=True;
  finally
   FTables.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -10074,7 +10074,7 @@ function TCDFSFileSystem.SetBlock(ABlock:TDiskBlock):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not FBlocks.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -10083,14 +10083,14 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SetBlock - BlockNo = ' + IntToHex(ABlock.BlockNo,8));
   {$ENDIF}
- 
+
   {Check ReadOnly}
   if FReadOnly then Exit;
- 
+
   Result:=True;
  finally
   FBlocks.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -10106,7 +10106,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FDescriptors.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -10117,45 +10117,45 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SetDescriptor - Type = ' + IntToStr(ADescriptor.DescriptorType));
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SetDescriptor - StartCluster = ' + IntToStr(ADescriptor.StartCluster));
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   FBlockWrite:=True;
   try
    {Read Cluster}
    if not ReadClusters(ADescriptor.StartCluster,1,FClusterBuffer^) then Exit;
-   
+
    {Zero Cluster}
    ZeroMemory(FClusterBuffer,FClusterSize);
-   
+
    {Get Descriptor}
    Descriptor:=PCDFSVolumeDescriptorHeader(FClusterBuffer);
-   
+
    {Set Descriptor}
    Descriptor.DescriptorType:=ADescriptor.DescriptorType;
    if not CDFSStringToIdentifier(ADescriptor.StandardIdentifier,Descriptor.StandardIdentifier[0],5,False) then Exit;
    Descriptor.DescriptorVersion:=ADescriptor.DescriptorVersion;
-   
+
    {Check Type}
    case ADescriptor.DescriptorType of
     cdfsVolumeDescriptorTypeBoot:begin
       {Get Descriptor}
       BootDescriptor:=PELTORITOVolumeDescriptorBoot(FClusterBuffer);
-      
+
       {Set Descriptor}
       if not CDFSStringToIdentifier(ADescriptor.SystemIdentifier + StringOfChar(#0,32 - Length(ADescriptor.SystemIdentifier)),BootDescriptor.SystemIdentifier[0],32,False) then Exit;
       BootDescriptor.CatalogStart:=ADescriptor.CatalogStart;
-      
+
       {Write Clusters}
       if not WriteClusters(ADescriptor.StartCluster,1,FClusterBuffer^) then Exit;
-      
+
       Result:=True;
      end;
     cdfsVolumeDescriptorTypePrimary:begin
       {Get Descriptor}
       PrimaryDescriptor:=PCDFSVolumeDescriptorPrimary(FClusterBuffer);
-      
+
       {Set Descriptor}
       if not CDFSStringToIdentifier(ADescriptor.SystemIdentifier + StringOfChar(' ',32 - Length(ADescriptor.SystemIdentifier)),PrimaryDescriptor.SystemIdentifier[0],32,False) then Exit;
       if not CDFSStringToIdentifier(ADescriptor.VolumeIdentifier + StringOfChar(' ',32 - Length(ADescriptor.VolumeIdentifier)),PrimaryDescriptor.VolumeIdentifier[0],32,False) then Exit;
@@ -10186,26 +10186,26 @@ begin
       if not FileTimeToCDFSDateTime(ADescriptor.EffectiveTime,PrimaryDescriptor.EffectiveTime) then Exit;
       PrimaryDescriptor.FileStructureVersion:=ADescriptor.FileStructureVersion;
       if not CDFSPointerToData(ADescriptor.ApplicationData,PrimaryDescriptor.ApplicationData[0],512,False) then Exit;
-      
+
       {Check Root}
       if ADescriptor.Root <> nil then
        begin
         {Update Root}
         ADescriptor.Root.EntryCluster:=ADescriptor.StartCluster;
-        
+
         {Set Root}
         if not SetRoot(ADescriptor,ADescriptor.Root) then Exit;
        end;
-      
+
       {Write Clusters}
       if not WriteClusters(ADescriptor.StartCluster,1,FClusterBuffer^) then Exit;
-      
+
       Result:=True;
      end;
     cdfsVolumeDescriptorTypeSupplementary:begin
       {Get Descriptor}
       SupplementaryDescriptor:=PCDFSVolumeDescriptorSupplementary(FClusterBuffer);
-      
+
       {Set Descriptor}
       SupplementaryDescriptor.VolumeFlags:=ADescriptor.VolumeFlags;
       if not CDFSStringToIdentifier(ADescriptor.SystemIdentifier + StringOfChar(' ',16 - Length(ADescriptor.SystemIdentifier)),SupplementaryDescriptor.SystemIdentifier[0],32,True) then Exit;
@@ -10238,26 +10238,26 @@ begin
       if not FileTimeToCDFSDateTime(ADescriptor.EffectiveTime,SupplementaryDescriptor.EffectiveTime) then Exit;
       SupplementaryDescriptor.FileStructureVersion:=ADescriptor.FileStructureVersion;
       if not CDFSPointerToData(ADescriptor.ApplicationData,SupplementaryDescriptor.ApplicationData[0],512,False) then Exit;
-      
+
       {Check Root}
       if ADescriptor.Root <> nil then
        begin
         {Update Root}
         ADescriptor.Root.EntryCluster:=ADescriptor.StartCluster;
-        
+
         {Set Root}
         if not SetRoot(ADescriptor,ADescriptor.Root) then Exit;
        end;
-       
+
       {Write Clusters}
       if not WriteClusters(ADescriptor.StartCluster,1,FClusterBuffer^) then Exit;
-      
+
       Result:=True;
      end;
     cdfsVolumeDescriptorTypePartition:begin
       {Get Descriptor}
       PartitionDescriptor:=PCDFSVolumeDescriptorPartition(FClusterBuffer);
-      
+
       {Set Descriptor}
       if not CDFSStringToIdentifier(ADescriptor.SystemIdentifier + StringOfChar(' ',32 - Length(ADescriptor.SystemIdentifier)),PartitionDescriptor.SystemIdentifier[0],32,False) then Exit;
       if not CDFSStringToIdentifier(ADescriptor.PartitionIdentifier + StringOfChar(' ',32 - Length(ADescriptor.PartitionIdentifier)),PartitionDescriptor.PartitionIdentifier[0],32,False) then Exit;
@@ -10266,19 +10266,19 @@ begin
       PartitionDescriptor.PartitionSize:=ADescriptor.PartitionSize;
       PartitionDescriptor.PartitionSizeM:=LongWordNtoBE(ADescriptor.PartitionSize);
       if not CDFSPointerToData(ADescriptor.SystemData,PartitionDescriptor.SystemData[0],1960,False) then Exit;
-      
+
       {Write Clusters}
       if not WriteClusters(ADescriptor.StartCluster,1,FClusterBuffer^) then Exit;
-      
+
       Result:=True;
      end;
     cdfsVolumeDescriptorTypeTerminator:begin
       {Get Descriptor}
       TerminatorDescriptor:=PCDFSVolumeDescriptorTerminator(FClusterBuffer);
-      
+
       {Write Clusters}
       if not WriteClusters(ADescriptor.StartCluster,1,FClusterBuffer^) then Exit;
-      
+
       Result:=True;
      end;
    end;
@@ -10287,7 +10287,7 @@ begin
   end;
  finally
   FDescriptors.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -10310,27 +10310,27 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SetRoot - Type = ' + IntToStr(ADescriptor.DescriptorType));
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Read Clusters} {If not called by SetDescriptor}
   if not FBlockWrite then if not ReadClusters(TCDFSDiskEntry(ARoot).EntryCluster,1,FClusterBuffer^) then Exit;
-  
+
   {Get Root}
   Directory:=PCDFSDirectoryRecord(PtrUInt(FClusterBuffer) + TCDFSDiskEntry(ARoot).EntryOffset);
-  
+
   {Set Root}
   if EntryToRecord(TCDFSDiskEntry(ARoot),Directory,TCDFSDiskEntry(ARoot).Unicode) then
    begin
     {Write Clusters} {If not called by SetDescriptor}
     if not FBlockWrite then if not WriteClusters(TCDFSDiskEntry(ARoot).EntryCluster,1,FClusterBuffer^) then Exit;
-    
+
     Result:=True;
    end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -10343,7 +10343,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if FDriver = nil then Exit;
  if ATable = nil then Exit;
  if APath = nil then Exit;
@@ -10354,13 +10354,13 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SetPath - TableNo = ' + IntToHex(ATable.TableNo,8) + ' Name = ' + APath.Name);
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Get Path}
   Path:=PCDFSPathRecord(PtrUInt(ABuffer) + APath.PathOffset);
-  
+
   {Set Path}
   if PathToRecord(APath,Path,TCDFSDiskTable(ATable).Unicode,TCDFSDiskTable(ATable).Endian) then
    begin
@@ -10368,7 +10368,7 @@ begin
    end;
  finally
   TCDFSDiskTable(ATable).Paths.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -10390,27 +10390,27 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SetEntry - Name = ' + AEntry.Name);
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Read Clusters} {If not called by SetEntries}
   if not FBlockWrite then if not ReadClusters(TCDFSDiskEntry(AEntry).EntryCluster,1,FClusterBuffer^) then Exit;
-  
+
   {Get Entry}
   Directory:=PCDFSDirectoryRecord(PtrUInt(FClusterBuffer) + TCDFSDiskEntry(AEntry).EntryOffset);
-  
+
   {Set Entry}
   if EntryToRecord(TCDFSDiskEntry(AEntry),Directory,TCDFSDiskEntry(AEntry).Unicode) then
    begin
     {Write Clusters} {If not called by SetEntries}
     if not FBlockWrite then if not WriteClusters(TCDFSDiskEntry(AEntry).EntryCluster,1,FClusterBuffer^) then Exit;
-    
+
     Result:=True;
    end;
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -10422,7 +10422,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FHeaders.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -10432,28 +10432,28 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SetHeader');
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Read Clusters} {If not called by SetCatalogs}
   if not FBlockWrite then if not ReadClusters(AHeader.HeaderCluster,1,FClusterBuffer^) then Exit;
-  
+
   {Check Header}
   if (AHeader.HeaderIndicator = cdfsElToritoHeaderIndicator) or (AHeader.HeaderIndicator = cdfsElToritoHeaderTerminator) then
    begin
     {Get Header}
     SectionHeader:=PELTORITOSectionHeader(PtrUInt(FClusterBuffer) + AHeader.HeaderOffset);
-    
+
     {Set Header}
     SectionHeader.HeaderIndicator:=AHeader.HeaderIndicator;
     SectionHeader.PlatformId:=AHeader.PlatformId;
     SectionHeader.SectionCount:=AHeader.SectionCount;
     if not CDFSStringToIdentifier(AHeader.SectionId + StringOfChar(#0,28 - Length(AHeader.SectionId)),SectionHeader.SectionId[0],28,False) then Exit;
-    
+
     {Write Clusters} {If not called by SetCatalogs}
     if not FBlockWrite then if not WriteClusters(AHeader.HeaderCluster,1,FClusterBuffer^) then Exit;
-    
+
     Result:=True;
    end
   else
@@ -10463,27 +10463,27 @@ begin
      begin
       {Get Validation}
       ValidationRecord:=PELTORITOValidationRecord(PtrUInt(FClusterBuffer) + AHeader.HeaderOffset);
-      
+
       {Set Validation}
       ValidationRecord.HeaderId:=AHeader.HeaderId;
       ValidationRecord.PlatformId:=AHeader.PlatformId;
       if not CDFSStringToIdentifier(AHeader.VendorId + StringOfChar(#0,24 - Length(AHeader.VendorId)),ValidationRecord.VendorId[0],24,False) then Exit;
       ValidationRecord.Checksum:=0;
       ValidationRecord.Signature:=AHeader.Signature;
-      
+
       {Update Checksum}
       ValidationRecord.Checksum:=ChecksumValidationRecord(ValidationRecord);
       AHeader.Checksum:=ValidationRecord.Checksum;
-      
+
       {Write Clusters} {If not called by SetCatalogs}
       if not FBlockWrite then if not WriteClusters(AHeader.HeaderCluster,1,FClusterBuffer^) then Exit;
-      
+
       Result:=True;
      end;
    end;
  finally
   FHeaders.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -10495,7 +10495,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FCatalogs.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -10505,19 +10505,19 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SetCatalog - Name = ' + ACatalog.Name);
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Read Clusters} {If not called by SetCatalogs}
   if not FBlockWrite then if not ReadClusters(TCDFSDiskCatalog(ACatalog).CatalogCluster,1,FClusterBuffer^) then Exit;
-  
+
   {Check Initial}
   if TCDFSDiskCatalog(ACatalog).Initial then
    begin
     {Get Initial}
     DefaultRecord:=PELTORITODefaultRecord(PtrUInt(FClusterBuffer) + TCDFSDiskCatalog(ACatalog).CatalogOffset);
-    
+
     {Set Initial}
     DefaultRecord.BootIndicator:=TCDFSDiskCatalog(ACatalog).BootIndicator;
     DefaultRecord.BootMedia:=TCDFSDiskCatalog(ACatalog).BootMedia;
@@ -10525,17 +10525,17 @@ begin
     DefaultRecord.SystemType:=TCDFSDiskCatalog(ACatalog).SystemType;
     DefaultRecord.LoadCount:=TCDFSDiskCatalog(ACatalog).LoadCount;
     DefaultRecord.LoadRBA:=TCDFSDiskCatalog(ACatalog).StartCluster;
-    
+
     {Write Clusters} {If not called by SetCatalogs}
     if not FBlockWrite then if not WriteClusters(TCDFSDiskCatalog(ACatalog).CatalogCluster,1,FClusterBuffer^) then Exit;
-    
+
     Result:=True;
    end
   else
    begin
     {Get Catalog}
     SectionRecord:=PELTORITOSectionRecord(PtrUInt(FClusterBuffer) + TCDFSDiskCatalog(ACatalog).CatalogOffset);
-    
+
     {Set Catalog}
     SectionRecord.BootIndicator:=TCDFSDiskCatalog(ACatalog).BootIndicator;
     SectionRecord.BootMedia:=TCDFSDiskCatalog(ACatalog).BootMedia;
@@ -10545,15 +10545,15 @@ begin
     SectionRecord.SelectionType:=TCDFSDiskCatalog(ACatalog).SelectionType;
     if not CDFSPointerToData(TCDFSDiskCatalog(ACatalog).SelectionData,SectionRecord.SelectionData[0],19,False) then Exit;
     SectionRecord.LoadRBA:=TCDFSDiskCatalog(ACatalog).StartCluster;
-    
+
     {Write Clusters} {If not called by SetCatalogs}
     if not FBlockWrite then if not WriteClusters(TCDFSDiskCatalog(ACatalog).CatalogCluster,1,FClusterBuffer^) then Exit;
-    
+
     Result:=True;
    end;
  finally
   FCatalogs.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -10564,7 +10564,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not FExtensions.WriterLock then Exit;
  try
   if FDriver = nil then Exit;
@@ -10574,28 +10574,28 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SetExtension');
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Read Clusters} {If not called by SetCatalogs}
   if not FBlockWrite then if not ReadClusters(AExtension.ExtensionCluster,1,FClusterBuffer^) then Exit;
-  
+
   {Get Extension}
   SectionExtension:=PELTORITOSectionExtension(PtrUInt(FClusterBuffer) + AExtension.ExtensionOffset);
-  
+
   {Set Extension}
   SectionExtension.ExtensionIndicator:=AExtension.ExtensionIndicator;
   SectionExtension.ExtensionFlag:=AExtension.ExtensionFlag;
   if not CDFSPointerToData(AExtension.SelectionData,SectionExtension.SelectionData[0],30,False) then Exit;
-  
+
   {Write Clusters} {If not called by SetCatalogs}
   if not FBlockWrite then if not WriteClusters(AExtension.ExtensionCluster,1,FClusterBuffer^) then Exit;
-  
+
   Result:=True;
  finally
   FExtensions.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -10615,14 +10615,14 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SetExtended');
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
 
   //To Do //To Do
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -10649,19 +10649,19 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SizeEntry EntryName = ' + AEntry.Name + ' Size = ' + IntToStr(ASize));
   {$ENDIF}
-  
+
   {Check ReadOnly}
   if FReadOnly then Exit;
-  
+
   {Prepare Trees}
   if not PrepareTrees then Exit;
-  
+
   {Check Relative}
   if (AEntry.Attributes and (faDot or faDotDot)) <> faNone then Exit;
-  
+
   {Check Entry}
   if (AEntry.Attributes and faMatchMask) <> faFile then Exit;
-  
+
   {Check Size}
   if ASize = 0 then
    begin
@@ -10672,14 +10672,14 @@ begin
       {Release Clusters (All except First)}
       if not ReleaseClusters(TCDFSDiskEntry(AEntry).StartCluster + 1,TCDFSDiskEntry(AEntry).ClusterCount - 1) then Exit;
      end;
-    
+
     {Check Count}
     if TCDFSDiskEntry(AEntry).ClusterCount > 0 then
      begin
       {Zero Clusters (All)}
       if not FillClusters(TCDFSDiskEntry(AEntry).StartCluster,TCDFSDiskEntry(AEntry).ClusterCount,0) then Exit;
      end;
-    
+
     {Update Entry}
     TCDFSDiskEntry(AEntry).ClusterCount:=1;
     TCDFSDiskEntry(AEntry).DataSize:=ASize;
@@ -10706,17 +10706,17 @@ begin
        begin
         {Release Clusters}
         if not ReleaseClusters(TCDFSDiskEntry(AEntry).StartCluster + Count,TCDFSDiskEntry(AEntry).ClusterCount - Count) then Exit;
-        
+
         {Zero Clusters}
         if not FillClusters(TCDFSDiskEntry(AEntry).StartCluster + Count,TCDFSDiskEntry(AEntry).ClusterCount - Count,0) then Exit;
        end;
      end;
-     
+
     {Update Entry}
     TCDFSDiskEntry(AEntry).ClusterCount:=Count;
     TCDFSDiskEntry(AEntry).DataSize:=ASize;
     TCDFSDiskEntry(AEntry).Size:=ASize;
-    
+
     {Set Entry}
     if not SetEntry(AParent,AEntry) then Exit;
    end
@@ -10726,11 +10726,11 @@ begin
     {Get Count}
     Count:=(ASize shr FClusterShiftCount);
     if (Count shl FClusterShiftCount) < ASize then Inc(Count);
-    
+
     {$IFDEF CDFS_DEBUG}
     if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.SizeEntry Count = ' + IntToStr(Count) + ' ClusterCount = ' + IntToStr(TCDFSDiskEntry(AEntry).ClusterCount));
     {$ENDIF}
-    
+
     {Check Count}
     if Count > TCDFSDiskEntry(AEntry).ClusterCount then
      begin
@@ -10741,7 +10741,7 @@ begin
         {Alloc Clusters (Contiguous Block)}
         Cluster:=cdfsUnknownCluster;
         if not AllocClusters(Cluster,Count) then Exit;
-        
+
         {Move Clusters}
         if TCDFSDiskEntry(AEntry).ClusterCount > 0 then
          begin
@@ -10755,29 +10755,29 @@ begin
             Dec(Remain);
             Inc(Current);
            end;
-          
+
           {Release Clusters}
           if not ReleaseClusters(TCDFSDiskEntry(AEntry).StartCluster,TCDFSDiskEntry(AEntry).ClusterCount) then Exit;
          end;
-         
+
         {Update Entry}
         TCDFSDiskEntry(AEntry).StartCluster:=Cluster;
        end;
      end;
-     
+
     {Update Entry}
     TCDFSDiskEntry(AEntry).ClusterCount:=Count;
     TCDFSDiskEntry(AEntry).DataSize:=ASize;
     TCDFSDiskEntry(AEntry).Size:=ASize;
-    
+
     {Set Entry}
     if not SetEntry(AParent,AEntry) then Exit;
    end;
-  
+
   Result:=True; {Note: If Size is same then just succeed}
  finally
   FEntries.WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -10787,7 +10787,7 @@ function TCDFSFileSystem.GetBlock(ABlockNo:LongWord):TDiskBlock;
 begin
  {}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
  if ABlockNo >= FTotalBlockCount then Exit;
 
@@ -10802,7 +10802,7 @@ function TCDFSFileSystem.GetBlockEx(ABlockNo:LongWord;AWrite:Boolean):TDiskBlock
 begin
  {}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
  if ABlockNo >= FTotalBlockCount then Exit;
 
@@ -10820,14 +10820,14 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not FDescriptors.ReaderLock then Exit;
  try
   if FDriver = nil then Exit;
- 
+
   Count:=0;
   Previous:=nil;
- 
+
   {Check Descriptors}
   Descriptor:=TCDFSDiskDescriptor(FDescriptors.First);
   while Descriptor <> nil do
@@ -10849,20 +10849,20 @@ begin
          end;
        end;
      end;
-    
+
     Descriptor:=TCDFSDiskDescriptor(Descriptor.Next);
    end;
-  
+
   {Get Last}
   if AInstance = cdfsInstanceLast then Result:=Previous;
  finally
   FDescriptors.ReaderUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
 
-function TCDFSFileSystem.GetDescriptorEx(AType,AInstance:Byte;AWrite:Boolean):TCDFSDiskDescriptor; 
+function TCDFSFileSystem.GetDescriptorEx(AType,AInstance:Byte;AWrite:Boolean):TCDFSDiskDescriptor;
 var
  Count:Byte;
  Previous:TCDFSDiskDescriptor;
@@ -10870,21 +10870,21 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if AWrite then
   begin
    if not FDescriptors.WriterLock then Exit;
   end
  else
-  begin   
+  begin
    if not FDescriptors.ReaderLock then Exit;
-  end; 
+  end;
  try
   if FDriver = nil then Exit;
- 
+
   Count:=0;
   Previous:=nil;
- 
+
   {Check Descriptors}
   Descriptor:=TCDFSDiskDescriptor(FDescriptors.First);
   while Descriptor <> nil do
@@ -10906,10 +10906,10 @@ begin
          end;
        end;
      end;
-    
+
     Descriptor:=TCDFSDiskDescriptor(Descriptor.Next);
    end;
-  
+
   {Get Last}
   if AInstance = cdfsInstanceLast then Result:=Previous;
  finally
@@ -10921,7 +10921,7 @@ begin
    begin
     FDescriptors.ReaderUnlock;
    end;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -10931,7 +10931,7 @@ function TCDFSFileSystem.GetRoot(ADescriptor:TCDFSDiskDescriptor):TDiskEntry;
 begin
  {}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
  if ADescriptor = nil then Exit;
 
@@ -10941,7 +10941,7 @@ begin
    {Load Root}
    if not LoadRoot(ADescriptor) then Exit;
   end;
-  
+
  {Get Root}
  Result:=ADescriptor.Root;
 end;
@@ -10951,22 +10951,22 @@ end;
 function TCDFSFileSystem.GetPath(ATable:TDiskTable;AParentNumber:Word;const AName:String):TCDFSDiskPath;
 {Note: Caller must hold the tables lock}
 var
- Hash:LongWord; 
+ Hash:LongWord;
  Next:TCDFSDiskPath;
 begin
  {}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
  if ATable = nil then Exit;
- 
+
  {Load Paths}
  if LoadPaths(TCDFSDiskTable(ATable)) then
   begin
    if not TCDFSDiskTable(ATable).Paths.ReaderLock then Exit;
    try
-    Hash:=GenerateNameHash(AName,NAME_HASH_SIZE); 
-   
+    Hash:=GenerateNameHash(AName,NAME_HASH_SIZE);
+
     {Check Paths}
     Next:=TCDFSDiskPath(TCDFSDiskTable(ATable).Paths.First);
     while Next <> nil do
@@ -10982,12 +10982,12 @@ begin
            end;
          end;
        end;
-       
+
       Next:=TCDFSDiskPath(Next.Next);
      end;
    finally
     TCDFSDiskTable(ATable).Paths.ReaderUnlock;
-   end; 
+   end;
   end;
 end;
 
@@ -11000,10 +11000,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
  if AHeaderNo = 0 then Exit;
- 
+
  {Load Catalogs}
  if LoadCatalogs then
   begin
@@ -11018,12 +11018,12 @@ begin
         Result:=Next;
         Exit;
        end;
-      
+
       Next:=TCDFSDiskHeader(Next.Next);
      end;
    finally
     FHeaders.ReaderUnlock;
-   end; 
+   end;
   end;
 end;
 
@@ -11036,10 +11036,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
  if AHeaderNo = 0 then Exit;
- 
+
  {Load Catalogs}
  if LoadCatalogs then
   begin
@@ -11048,9 +11048,9 @@ begin
      if not FHeaders.WriterLock then Exit;
     end
    else
-    begin   
+    begin
      if not FHeaders.ReaderLock then Exit;
-    end; 
+    end;
    try
     {Check Headers}
     Next:=TCDFSDiskHeader(FHeaders.First);
@@ -11061,7 +11061,7 @@ begin
         Result:=Next;
         Exit;
        end;
-      
+
       Next:=TCDFSDiskHeader(Next.Next);
      end;
    finally
@@ -11073,7 +11073,7 @@ begin
      begin
       FHeaders.ReaderUnlock;
      end;
-   end; 
+   end;
   end;
 end;
 
@@ -11088,7 +11088,7 @@ begin
  Result:=nil;
  if FDriver = nil then Exit;
  if AExtensionNo = 0 then Exit;
- 
+
  {Load Catalogs}
  if LoadCatalogs then
   begin
@@ -11103,12 +11103,12 @@ begin
         Result:=Next;
         Exit;
        end;
-      
+
       Next:=TCDFSDiskExtension(Next.Next);
      end;
    finally
     FExtensions.ReaderUnlock;
-   end; 
+   end;
   end;
 end;
 
@@ -11123,7 +11123,7 @@ begin
  Result:=nil;
  if FDriver = nil then Exit;
  if AExtensionNo = 0 then Exit;
- 
+
  {Load Catalogs}
  if LoadCatalogs then
   begin
@@ -11132,9 +11132,9 @@ begin
      if not FExtensions.WriterLock then Exit;
     end
    else
-    begin   
+    begin
      if not FExtensions.ReaderLock then Exit;
-    end; 
+    end;
    try
     {Check Extensions}
     Next:=TCDFSDiskExtension(FExtensions.First);
@@ -11145,7 +11145,7 @@ begin
         Result:=Next;
         Exit;
        end;
-      
+
       Next:=TCDFSDiskExtension(Next.Next);
      end;
    finally
@@ -11157,7 +11157,7 @@ begin
      begin
       FExtensions.ReaderUnlock;
      end;
-   end; 
+   end;
   end;
 end;
 
@@ -11167,7 +11167,7 @@ function TCDFSFileSystem.GetExtended(AEntry:TDiskEntry):TCDFSDiskExtended;
 begin
  {}
  Result:=nil;
- 
+
  if FDriver = nil then Exit;
  if AEntry = nil then Exit;
 
@@ -11177,7 +11177,7 @@ begin
    {Load Extended}
    if not LoadExtended(AEntry) then Exit;
   end;
- 
+
  {Get Extended}
  Result:=TCDFSDiskEntry(AEntry).Extended;
 end;
@@ -11190,14 +11190,14 @@ var
 begin
  {}
  Result:=cdfsBlankName;
- 
+
  {Check Length}
  if Length(Result) < 2 then Exit;
- 
+
  {Check Separator 2}
  Marker:=StrScan(PChar(AName),cdfsSeparator2Name);
  if Marker = nil then Exit;
- 
+
  Result:=Copy(AName,(PtrUInt(Marker) - PtrUInt(AName)) + 2,Length(AName));
 end;
 
@@ -11207,10 +11207,10 @@ function TCDFSFileSystem.StripDot(const AName:String):String;
 begin
  {}
  Result:=AName;
- 
+
  {Check Length}
  if Length(Result) < 2 then Exit;
- 
+
  {Check Separator 1}
  if (Result[Length(Result)] = cdfsSeparator1Name) and (Result[1] <> cdfsSeparator1Name) then
   begin
@@ -11226,10 +11226,10 @@ var
 begin
  {}
  Result:=AName;
- 
+
  {Check Length}
  if Length(Result) < 2 then Exit;
- 
+
  {Check Separator 2}
  Marker:=StrScan(PChar(AName),cdfsSeparator2Name);
  if Marker = nil then Exit;
@@ -11249,7 +11249,7 @@ begin
  {}
  Result:=False;
 
- //To Do 
+ //To Do
 end;
 
 {=============================================================================}
@@ -11281,7 +11281,7 @@ begin
  {}
  Result:=0;
  if ABuffer = nil then Exit;
- 
+
  {Set Start}
  Byte1:=0;
  Byte2:=0;
@@ -11297,10 +11297,10 @@ begin
    Byte4:=Byte4 + Byte(Pointer(PtrUInt(ABuffer) + LongWord(Count + 3))^);
    Inc(Count,4); {SizeOf(LongWord)}
   end;
-  
+
  {Calculate Result}
  Result:=(Byte1 shl 24) + (Byte2 shl 16) + (Byte3 shl 8) + Byte4;
- 
+
  {Check for Swap}
  if FSwapSerial then Result:=SwapEndian(Result);
 end;
@@ -11330,25 +11330,25 @@ begin
   FBlockWrite:=False;
   FTreesPrepared:=False;
   FCatalogsChecked:=False;
-  
+
   FRoot:=nil;
-  
+
   SetCurrent(nil);
-  
+
   FChunks.ClearList;
   FTables.ClearList;
   FBlocks.ClearList;
   FEntries.ClearList;
   FCatalogs.ClearList;
-  
+
   FLastFreeCluster:=cdfsUnknownCluster;
   FFreeClusterCount:=cdfsUnknownCluster;
-  
+
   FPrimary:=nil;
   FSupplementary:=nil;
-  
+
   FDescriptors.ClearList;
-  
+
   if FClusterBuffer <> nil then FreeMem(FClusterBuffer);
   FClusterBuffer:=nil;
 
@@ -11357,18 +11357,18 @@ begin
 
   if FReadBuffer <> nil then FreeMem(FReadBuffer);
   FReadBuffer:=nil;
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Settings Cleared');
   {$ENDIF}
-  
+
   {Setup Defaults}
   FPathChar:=LoadPathChar;
   FNameChar:=LoadNameChar;
   FFileChar:=LoadFileChar;
   FRootChar:=LoadRootChar;
   FRootName:=LoadRootName(False);
-  FRootPath:=LoadRootPath; 
+  FRootPath:=LoadRootPath;
   FMaxFile:=LoadMaxFile;
   FMaxPath:=LoadMaxPath;
   FMaxAltFile:=LoadMaxAltFile;
@@ -11389,25 +11389,25 @@ begin
   if FVolume.Device = nil then Exit;
   FReadOnly:=not(FVolume.Device.Writeable);
   FBootCatalog:=not(FReadOnly);
-  
+
   {Clear Cache}
   if not FDriver.Cache.ReleaseDevicePages(FVolume.Device) then Exit;
-  
+
   {Load Sector Size, Start and Count}
   FSectorSize:=LoadSectorSize;
   FStartSector:=LoadStartSector;
   FSectorCount:=LoadSectorCount;
-  
+
   {Bind to Volume}
   FVolume.FileSystem:=Self;
-  
+
   {Bind to Drive}
   if FDrive <> nil then FDrive.FileSystem:=Self;
 
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Volume Checked');
   {$ENDIF}
-  
+
   {Get Sector}
   if not ReadSectors(cdfsISO9660StartSector,1,FSectorBuffer^) then Exit;
 
@@ -11415,7 +11415,7 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Volume Descriptor Read');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                 PCDFSVolumeDescriptorHeader(FSectorBuffer).DescriptorVersion=' + IntToStr(PCDFSVolumeDescriptorHeader(FSectorBuffer).DescriptorVersion));
   {$ENDIF}
-  
+
   {Check for CDFS}
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Check for CDFS');
@@ -11427,7 +11427,7 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                 PCDFSVolumeDescriptorPrimary(FSectorBuffer).RootDirectory.FirstBlock = ' + IntToStr(PCDFSVolumeDescriptorPrimary(FSectorBuffer).RootDirectory.FirstBlock));
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                 PCDFSVolumeDescriptorPrimary(FSectorBuffer).RootDirectory.DataSize   = ' + IntToStr(PCDFSVolumeDescriptorPrimary(FSectorBuffer).RootDirectory.DataSize));
   {$ENDIF}
-  
+
   if PCDFSVolumeDescriptorHeader(FSectorBuffer).DescriptorVersion <> cdfsISO9660DescriptorVersion then Exit;
   if PCDFSVolumeDescriptorHeader(FSectorBuffer).DescriptorType <> cdfsVolumeDescriptorTypePrimary then Exit;
   if not CompareMem(@PCDFSVolumeDescriptorHeader(FSectorBuffer).StandardIdentifier[0],@cdfsISO9660StandardIdentifier[1],5) then Exit;
@@ -11439,7 +11439,7 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                CDFS Detected');
   {$ENDIF}
-  
+
   {Calculate Parameters}
   {FSectorSize:=PCDFSVolumeDescriptorPrimary(FSectorBuffer).LogicalBlockSize;} {Not Used}
   {FSectorCount:=PCDFSVolumeDescriptorPrimary(FSectorBuffer).VolumeSpaceSize;} {Not Used}
@@ -11467,7 +11467,7 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Parameters Calculated');
   {$ENDIF}
-  
+
   {Create Buffers}
   FReadBuffer:=GetMem(FClusterSize);
   if FReadBuffer = nil then Exit;
@@ -11510,35 +11510,35 @@ begin
 
   {Load Descriptors}
   if not LoadDescriptors then Exit;
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Descriptors Loaded');
   {$ENDIF}
-  
+
   {Load Tables}
   LoadTables;
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Tables Loaded');
   {$ENDIF}
-  
+
   {Load Roots}
   LoadRoots;
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                Roots Loaded');
   {$ENDIF}
-  
+
   {Set Current}
   SetCurrent(FRoot);
-  
+
   {Setup Values}
   FSystemName:=LoadSystemName;
   FVolumeName:=LoadVolumeName;
   FVolumeSerial:=LoadVolumeSerial;
   FFileSysType:=LoadFileSysType;
   FVolumeFlags:=LoadVolumeFlags;
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.FileSystemInit Completed');
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                SystemName = ' + FSystemName);
@@ -11546,11 +11546,11 @@ begin
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                VolumeSerial = ' + IntToHex(FVolumeSerial,8));
   if FILESYS_LOG_ENABLED then FileSysLogDebug('                FileSysType = ' + FileSysTypeToString(FFileSysType));
   {$ENDIF}
-  
+
   Result:=True;
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -11565,20 +11565,20 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MountFileSystem');
   {$ENDIF}
-  
+
   if FDriver = nil then Exit;
 
   //To do - Allows for Mount/Dismount by formatter without dismounting Drive/Volume
   //See NTFS
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.MountFileSystem Completed');
   {$ENDIF}
-  
+
   //Result:=True; //To do
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -11593,20 +11593,20 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.DismountFileSystem');
   {$ENDIF}
-  
+
   if FDriver = nil then Exit;
 
   //To do - Allows for Mount/Dismount by formatter without dismounting Drive/Volume
   //See NTFS
-  
+
   {$IFDEF FAT_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.DismountFileSystem Completed');
   {$ENDIF}
-  
+
   //Result:=True; //To do
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -11621,20 +11621,20 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.InitializeFileSystem');
   {$ENDIF}
- 
+
   if FDriver = nil then Exit;
 
   //To do - Allows for formatter to init a new volume with the default data
   //See NTFS
-  
+
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.InitializeFileSystem Completed');
   {$ENDIF}
-  
+
   //Result:=True; //To do
- finally  
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -11651,9 +11651,9 @@ begin
   {$ENDIF}
 
   Result:=LoadVolumeName;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -11671,9 +11671,9 @@ begin
   {$ENDIF}
 
   Result:=SetVolumeName(ALabel);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -11691,9 +11691,9 @@ begin
   {$ENDIF}
 
   Result:=SetVolumeSerial(ASerial);
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -11708,21 +11708,21 @@ begin
   {$IFDEF CDFS_DEBUG}
   if FILESYS_LOG_ENABLED then FileSysLogDebug('TCDFSFileSystem.GetDriveFreeSpaceEx');
   {$ENDIF}
- 
+
   if FDriver = nil then Exit;
 
   {Check Free Cluster Count}
   if GetFreeClusterCount = cdfsUnknownCluster then Exit;
-  
+
   {Return Free Space}
   Result:=FFreeClusterCount;
   Result:=(Result * FSectorsPerCluster);
   Result:=(Result * FSectorSize);
   {Modified to ensure Int64 mutliply}
   {Result:=((FFreeClusterCount * FSectorsPerCluster) * FSectorSize);}
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -11746,9 +11746,9 @@ begin
   Result:=(Result * FSectorSize);
   {Modified to ensure Int64 mutliply}
   {Result:=((FTotalClusterCount * FSectorsPerCluster) * FSectorSize);}
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -11769,18 +11769,18 @@ begin
 
   {Check Free Cluster Count}
   if GetFreeClusterCount = cdfsUnknownCluster then Exit;
-  
+
   {Return Drive Information}
   AClusterSize:=FClusterSize;
   ATotalClusterCount:=FTotalClusterCount;
   AFreeClusterCount:=FFreeClusterCount;
-  
+
   Result:=True;
- finally  
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {TCDFSDiskTable}
@@ -11790,7 +11790,7 @@ begin
  inherited Create(ALocalLock);
  FPaths:=TFileSysListEx.Create(ALock);
  FPathLocal:=MutexCreate;
- 
+
  FDescriptor:=ADescriptor;
 end;
 
@@ -11801,7 +11801,7 @@ begin
  {}
  FPaths.Free;
  MutexDestroy(FPathLocal);
- 
+
  FDescriptor:=nil;
  inherited Destroy;
 end;
@@ -11862,12 +11862,12 @@ function TCDFSDiskEntry.GetVersion:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FVersion;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -11877,10 +11877,10 @@ procedure TCDFSDiskEntry.SetVersion(const AVersion:String);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FVersion:=AVersion;
  UniqueString(FVersion);
- 
+
  ReleaseLock;
 end;
 
@@ -11890,12 +11890,12 @@ function TCDFSDiskEntry.PathNumber:Word;
 begin
  {}
  Result:=0;
- 
+
  if (Attributes and faDirectory) = faDirectory then
   begin
    {Folder}
    if FPath = nil then Exit;
-   
+
    Result:=FPath.PathNumber;
   end;
 end;
@@ -11906,17 +11906,17 @@ function TCDFSDiskEntry.ParentNumber:Word;
 begin
  {}
  Result:=0;
- 
+
  if (Attributes and faDirectory) = faDirectory then
   begin
    {Folder}
    if FPath = nil then Exit;
-   
+
    if FPath.Parent = nil then
     begin
      {Root}
      if Parent <> nil then Exit;
-     
+
      Result:=FPath.PathNumber;
     end
    else
@@ -11933,15 +11933,15 @@ function TCDFSDiskEntry.FileIdentifier:String;
 begin
  {}
  Result:=cdfsBlankName;
- 
+
  if (Attributes and faDirectory) = faNone then
   begin
    {File}
    Result:=Name;
-   
+
    {Check Dot}
    if StrScan(PChar(Name),cdfsSeparator1Name) = nil then Result:=Result + cdfsSeparator1Name;
-   
+
    {Check Version}
    if Length(Version) > 0 then Result:=Result + cdfsSeparator2Name + Version;
   end
@@ -11969,18 +11969,18 @@ function TCDFSDiskEntry.FileIdentifierSize:Byte;
 begin
  {}
  Result:=0;
- 
+
  if (Attributes and faDirectory) = faNone then
   begin
    {File}
    Result:=Length(Name);
-   
+
    {Check Dot}
    if StrScan(PChar(Name),cdfsSeparator1Name) = nil then Inc(Result);
-   
+
    {Check Version}
    if Length(Version) > 0 then Inc(Result,Length(cdfsSeparator2Name) + Length(Version));
-   
+
    {Check Unicode}
    if Unicode then Result:=(Result shl 1);
   end
@@ -11998,7 +11998,7 @@ begin
    else
     begin
      Result:=Length(Name);
-     
+
      {Check Unicode}
      if Unicode then Result:=(Result shl 1);
     end;
@@ -12013,11 +12013,11 @@ var
 begin
  {Record Size}
  Result:=cdfsDirectoryRecordSize - 1; {Default includes 1 byte identifier}
- 
+
  {Identifier Size}
  IdentifierSize:=FileIdentifierSize;
  Inc(Result,IdentifierSize);
- 
+
  {Identifier Padding}
  if (IdentifierSize and cdfsUnevenSize) = cdfsEvenSize then Inc(Result);
 end;
@@ -12028,9 +12028,9 @@ function TCDFSDiskEntry.ExtendedRecordSize:Byte;
 begin
  {}
  Result:=0;
- 
+
  if FExtended = nil then Exit;
- 
+
  Result:=FExtended.ExtendedRecordSize;
 end;
 
@@ -12062,7 +12062,7 @@ begin
  finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {=============================================================================}
@@ -12071,7 +12071,7 @@ function TCDFSDiskCatalog.GetName:String;
 begin
  {}
  Result:='';
- 
+
  if FEntry <> nil then
   begin
    Result:=FEntry.Name;
@@ -12091,7 +12091,7 @@ function TCDFSDiskCatalog.GetMediaType:TMediaType;
 begin
  {}
  Result:=mtUNKNOWN;
- 
+
  if (FBootMedia and cdfsElToritoMediaTypeMask) = cdfsElToritoMediaType12M then
   begin
    Result:=mtFLOPPY;
@@ -12131,7 +12131,7 @@ function TCDFSDiskCatalog.GetFloppyType:TFloppyType;
 begin
  {}
  Result:=ftUNKNOWN;
- 
+
  if (FBootMedia and cdfsElToritoMediaTypeMask) = cdfsElToritoMediaType12M then
   begin
    Result:=ft12M;
@@ -12174,7 +12174,7 @@ function TCDFSDiskCatalog.GetAttributes:LongWord;
 begin
  {}
  Result:=caNone;
- 
+
  {Default}
  if FInitial then
   begin
@@ -12221,7 +12221,7 @@ begin
   begin
    FInitial:=False;
   end;
-  
+
  {Bootable}
  if (AAttributes and caBootable) = caBootable then
   begin
@@ -12231,7 +12231,7 @@ begin
   begin
    FBootIndicator:=cdfsElToritoNoBootIndicator;
   end;
-  
+
  {Emulation}
  if (AAttributes and caNoEmulation) = caNoEmulation then
   begin
@@ -12276,7 +12276,7 @@ function TCDFSDiskCatalog.GetSectorCount:Int64;
 begin
  {}
  Result:=0;
- 
+
  if (FBootMedia and cdfsElToritoMediaTypeMask) = cdfsElToritoMediaTypeNone then
   begin
    if FEntry <> nil then
@@ -12318,7 +12318,7 @@ function TCDFSDiskCatalog.GetStartCluster:LongWord;
 begin
  {}
  Result:=FStartCluster;
- 
+
  if FEntry <> nil then
   begin
    Result:=FEntry.StartCluster;
@@ -12339,7 +12339,7 @@ function TCDFSDiskCatalog.GetClusterCount:LongWord;
 begin
  {}
  Result:=FClusterCount;
- 
+
  if (FBootMedia and cdfsElToritoMediaTypeMask) = cdfsElToritoMediaTypeNone then
   begin
    if FEntry <> nil then
@@ -12384,7 +12384,7 @@ begin
  {}
  inherited Create;
  FLocalLock:=ALocalLock;
- 
+
  FParent:=nil;
 end;
 
@@ -12394,7 +12394,7 @@ destructor TCDFSDiskPath.Destroy;
 begin
  {}
  FParent:=nil;
- 
+
  FLocalLock:=INVALID_HANDLE_VALUE;
  inherited Destroy;
 end;
@@ -12421,12 +12421,12 @@ function TCDFSDiskPath.GetName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FName;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12436,11 +12436,11 @@ procedure TCDFSDiskPath.SetName(const AName:String);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FName:=AName;
  UniqueString(FName);
- FHash:=GenerateNameHash(FName,NAME_HASH_SIZE); 
- 
+ FHash:=GenerateNameHash(FName,NAME_HASH_SIZE);
+
  ReleaseLock;
 end;
 
@@ -12458,7 +12458,7 @@ function TCDFSDiskPath.PathIdentifierSize(AUnicode:Boolean):Byte;
 begin
  {}
  Result:=Length(Name);
- 
+
  {Check for Dots}
  if (Result = 1) and (Name = cdfsDotName) then
   begin
@@ -12483,11 +12483,11 @@ var
 begin
  {Record Size}
  Result:=cdfsPathRecordSize - 1; {Default includes 1 byte identifier}
- 
+
  {Identifier Size}
  IdentifierSize:=PathIdentifierSize(AUnicode);
  Inc(Result,IdentifierSize);
- 
+
  {Identifier Padding}
  if (IdentifierSize and cdfsUnevenSize) = cdfsUnevenSize then Inc(Result);
 end;
@@ -12500,7 +12500,7 @@ begin
  {}
  inherited Create;
  FLocalLock:=ALocalLock;
- 
+
  FSystemData:=nil;
  FApplicationData:=nil;
  FEscapeSequence:=nil;
@@ -12517,7 +12517,7 @@ begin
  FApplicationData:=nil;
  if FEscapeSequence <> nil then FreeMem(FEscapeSequence);
  FEscapeSequence:=nil;
- 
+
  FLocalLock:=INVALID_HANDLE_VALUE;
  inherited Destroy;
 end;
@@ -12544,12 +12544,12 @@ function TCDFSDiskExtended.GetSystemIdentifier:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FSystemIdentifier;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12559,10 +12559,10 @@ procedure TCDFSDiskExtended.SetSystemIdentifier(const ASystemIdentifier:String);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FSystemIdentifier:=ASystemIdentifier;
  UniqueString(FSystemIdentifier);
- 
+
  ReleaseLock;
 end;
 
@@ -12582,7 +12582,7 @@ begin
  {}
  inherited Create;
  FLocalLock:=ALocalLock;
- 
+
  FApplicationData:=nil;
  FEscapeSequences:=nil;
  FSystemData:=nil;
@@ -12617,7 +12617,7 @@ begin
 
  FInitial:=nil;
  FValidation:=nil;
- 
+
  FLocalLock:=INVALID_HANDLE_VALUE;
  inherited Destroy;
 end;
@@ -12644,12 +12644,12 @@ function TCDFSDiskDescriptor.GetStandardIdentifier:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FStandardIdentifier;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12659,10 +12659,10 @@ procedure TCDFSDiskDescriptor.SetStandardIdentifier(const AStandardIdentifier:St
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FStandardIdentifier:=AStandardIdentifier;
  UniqueString(FStandardIdentifier);
- 
+
  ReleaseLock;
 end;
 
@@ -12672,12 +12672,12 @@ function TCDFSDiskDescriptor.GetSystemIdentifier:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FSystemIdentifier;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12687,10 +12687,10 @@ procedure TCDFSDiskDescriptor.SetSystemIdentifier(const ASystemIdentifier:String
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FSystemIdentifier:=ASystemIdentifier;
  UniqueString(FSystemIdentifier);
- 
+
  ReleaseLock;
 end;
 
@@ -12700,12 +12700,12 @@ function TCDFSDiskDescriptor.GetVolumeIdentifier:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FVolumeIdentifier;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12715,10 +12715,10 @@ procedure TCDFSDiskDescriptor.SetVolumeIdentifier(const AVolumeIdentifier:String
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FVolumeIdentifier:=AVolumeIdentifier;
  UniqueString(FVolumeIdentifier);
- 
+
  ReleaseLock;
 end;
 
@@ -12728,12 +12728,12 @@ function TCDFSDiskDescriptor.GetVolumeSetIdentifier:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FVolumeSetIdentifier;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12743,10 +12743,10 @@ procedure TCDFSDiskDescriptor.SetVolumeSetIdentifier(const AVolumeSetIdentifier:
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FVolumeSetIdentifier:=AVolumeSetIdentifier;
  UniqueString(FVolumeSetIdentifier);
- 
+
  ReleaseLock;
 end;
 
@@ -12756,12 +12756,12 @@ function TCDFSDiskDescriptor.GetPublisherIdentifier:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FPublisherIdentifier;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12771,10 +12771,10 @@ procedure TCDFSDiskDescriptor.SetPublisherIdentifier(const APublisherIdentifier:
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FPublisherIdentifier:=APublisherIdentifier;
  UniqueString(FPublisherIdentifier);
- 
+
  ReleaseLock;
 end;
 
@@ -12784,12 +12784,12 @@ function TCDFSDiskDescriptor.GetPreparerIdentifier:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FPreparerIdentifier;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12799,10 +12799,10 @@ procedure TCDFSDiskDescriptor.SetPreparerIdentifier(const APreparerIdentifier:St
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FPreparerIdentifier:=APreparerIdentifier;
  UniqueString(FPreparerIdentifier);
- 
+
  ReleaseLock;
 end;
 
@@ -12812,12 +12812,12 @@ function TCDFSDiskDescriptor.GetApplicationIdentifier:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FApplicationIdentifier;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12827,10 +12827,10 @@ procedure TCDFSDiskDescriptor.SetApplicationIdentifier(const AApplicationIdentif
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FApplicationIdentifier:=AApplicationIdentifier;
  UniqueString(FApplicationIdentifier);
- 
+
  ReleaseLock;
 end;
 
@@ -12840,12 +12840,12 @@ function TCDFSDiskDescriptor.GetCopyrightIdentifier:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FCopyrightIdentifier;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12855,10 +12855,10 @@ procedure TCDFSDiskDescriptor.SetCopyrightIdentifier(const ACopyrightIdentifier:
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FCopyrightIdentifier:=ACopyrightIdentifier;
  UniqueString(FCopyrightIdentifier);
- 
+
  ReleaseLock;
 end;
 
@@ -12868,12 +12868,12 @@ function TCDFSDiskDescriptor.GetAbstractIdentifier:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FAbstractIdentifier;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12883,10 +12883,10 @@ procedure TCDFSDiskDescriptor.SetAbstractIdentifier(const AAbstractIdentifier:St
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FAbstractIdentifier:=AAbstractIdentifier;
  UniqueString(FAbstractIdentifier);
- 
+
  ReleaseLock;
 end;
 
@@ -12896,12 +12896,12 @@ function TCDFSDiskDescriptor.GetBibliographicIdentifier:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FBibliographicIdentifier;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12911,10 +12911,10 @@ procedure TCDFSDiskDescriptor.SetBibliographicIdentifier(const ABibliographicIde
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FBibliographicIdentifier:=ABibliographicIdentifier;
  UniqueString(FBibliographicIdentifier);
- 
+
  ReleaseLock;
 end;
 
@@ -12924,12 +12924,12 @@ function TCDFSDiskDescriptor.GetBootIdentifier:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FBootIdentifier;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12939,10 +12939,10 @@ procedure TCDFSDiskDescriptor.SetBootIdentifier(const ABootIdentifier:String);
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FBootIdentifier:=ABootIdentifier;
  UniqueString(FBootIdentifier);
- 
+
  ReleaseLock;
 end;
 
@@ -12952,12 +12952,12 @@ function TCDFSDiskDescriptor.GetPartitionIdentifier:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
- 
+
  Result:=FPartitionIdentifier;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -12967,10 +12967,10 @@ procedure TCDFSDiskDescriptor.SetPartitionIdentifier(const APartitionIdentifier:
 begin
  {}
  if not AcquireLock then Exit;
- 
+
  FPartitionIdentifier:=APartitionIdentifier;
  UniqueString(FPartitionIdentifier);
- 
+
  ReleaseLock;
 end;
 
@@ -13015,12 +13015,12 @@ function TCDFSDiskHeader.GetVendorId:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FVendorId;
  UniqueString(Result);
- 
+
  ReleaseLock;
 end;
 
@@ -13033,7 +13033,7 @@ begin
 
  FVendorId:=AVendorId;
  UniqueString(FVendorId);
- 
+
  ReleaseLock;
 end;
 
@@ -13045,7 +13045,7 @@ begin
  {}
  inherited Create;
  FLocalLock:=ALocalLock;
- 
+
  FSelectionData:=nil;
 
  FCatalog:=nil;
@@ -13060,7 +13060,7 @@ begin
  FSelectionData:=nil;
 
  FCatalog:=nil;
- 
+
  FLocalLock:=INVALID_HANDLE_VALUE;
  inherited Destroy;
 end;
@@ -13091,10 +13091,10 @@ begin
  {}
  {Check Initialized}
  if CDFSInitialized then Exit;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Create CDFS Recognizer}
  if FILESYS_CDFS_ENABLED then
   begin
@@ -13104,7 +13104,7 @@ begin
    Recognizer.LongNames:=CDFS_LONG_NAMES;
    Recognizer.SwapSerial:=CDFS_SWAP_SERIAL;
   end;
- 
+
  CDFSInitialized:=True;
 end;
 
@@ -13120,17 +13120,17 @@ begin
  {}
  {Check Initialized}
  if not CDFSInitialized then Exit;
- 
+
  {Check Driver}
  if FileSysDriver = nil then Exit;
- 
+
  {Terminate FileSystems}
- NextFileSystem:=FileSysDriver.GetFileSystemByNext(nil,True,False,FILESYS_LOCK_READ); 
+ NextFileSystem:=FileSysDriver.GetFileSystemByNext(nil,True,False,FILESYS_LOCK_READ);
  while NextFileSystem <> nil do
   begin
    CurrentFileSystem:=NextFileSystem;
-   NextFileSystem:=FileSysDriver.GetFileSystemByNext(CurrentFileSystem,True,False,FILESYS_LOCK_READ); 
-   
+   NextFileSystem:=FileSysDriver.GetFileSystemByNext(CurrentFileSystem,True,False,FILESYS_LOCK_READ);
+
    if CurrentFileSystem is TCDFSFileSystem then
     begin
      {Convert FileSystem}
@@ -13148,12 +13148,12 @@ begin
   end;
 
  {Terminate Recognizer}
- NextRecognizer:=FileSysDriver.GetRecognizerByNext(nil,True,False,FILESYS_LOCK_READ); 
+ NextRecognizer:=FileSysDriver.GetRecognizerByNext(nil,True,False,FILESYS_LOCK_READ);
  while NextRecognizer <> nil do
   begin
    CurrentRecognizer:=NextRecognizer;
    NextRecognizer:=FileSysDriver.GetRecognizerByNext(CurrentRecognizer,True,False,FILESYS_LOCK_READ);
-   
+
    if CurrentRecognizer is TCDFSRecognizer then
     begin
      {Convert Recognizer}
@@ -13168,7 +13168,7 @@ begin
      CurrentRecognizer.ReaderUnlock;
     end;
   end;
- 
+
  CDFSInitialized:=False;
 end;
 
@@ -13187,15 +13187,15 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if ASize > 0 then
   begin
    Result:=GetMem(ASize);
    if Result = nil then Exit;
-   
+
    System.Move(AData,Result^,ASize);
-   
+
    {Check Swap}
    if ASwap then
     begin
@@ -13219,14 +13219,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  if APointer = nil then Exit;
- 
+
  {Check Size}
  if ASize > 0 then
   begin
    System.Move(APointer^,AData,ASize);
-   
+
    {Check Swap}
    if ASwap then
     begin
@@ -13238,7 +13238,7 @@ begin
       end;
     end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -13255,7 +13255,7 @@ var
 begin
  {}
  Result:=cdfsBlankName;
- 
+
  {Check Size}
  if ASize > 0 then
   begin
@@ -13268,14 +13268,14 @@ begin
      try
       {Get Length}
       Length:=(ASize shr 1);
-      
+
       {Check Count}
       Count:=Unicode.WideCharToMultiByte(CP_ACP,0,PWideChar(Buffer),Length,nil,0,nil,nil);
-      
+
       {$IFDEF CDFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('CDFSIdentifierToString - Size = ' + IntToStr(ASize) + ' Length = ' + IntToStr(Length) + ' Count = ' + IntToStr(Count));
       {$ENDIF}
-      
+
       if Count <= Length then
        begin
         SetString(Result,nil,Count); {Count does not include null terminator}
@@ -13287,7 +13287,7 @@ begin
           {$IFDEF CDFS_DEBUG}
           if FILESYS_LOG_ENABLED then FileSysLogDebug('CDFSIdentifierToString - Length = ' + IntToStr(PtrUInt(Terminator) - PtrUInt(Result)));
           {$ENDIF}
-          
+
           SetLength(Result,PtrUInt(Terminator) - PtrUInt(Result));
          end;
        end;
@@ -13300,7 +13300,7 @@ begin
      {$IFDEF CDFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('CDFSIdentifierToString - Size = ' + IntToStr(ASize));
      {$ENDIF}
-     
+
      SetString(Result,nil,ASize); {Size does not include null terminator}
      Unicode.OemToCharBuff(PChar(@AIdentifier),PChar(Result),ASize);
      {if Byte(Result[ASize]) = 0 then SetLength(Result,ASize - 1);} {Some CDs contain illegal null terminators}
@@ -13310,7 +13310,7 @@ begin
        {$IFDEF CDFS_DEBUG}
        if FILESYS_LOG_ENABLED then FileSysLogDebug('CDFSIdentifierToString - Length = ' + IntToStr(PtrUInt(Terminator) - PtrUInt(Result)));
        {$ENDIF}
-       
+
        SetLength(Result,PtrUInt(Terminator) - PtrUInt(Result));
       end;
     end;
@@ -13329,7 +13329,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Size}
  if ASize > 0 then
   begin
@@ -13345,14 +13345,14 @@ begin
        try
         {Get Length}
         Size:=(ASize shr 1);
-        
+
         {Check Count}
         Count:=Unicode.MultiByteToWideChar(CP_ACP,0,PChar(AString),Length(AString),nil,0);
-        
+
         {$IFDEF CDFS_DEBUG}
         if FILESYS_LOG_ENABLED then FileSysLogDebug('CDFSStringToIdentifier - Size = ' + IntToStr(ASize) + ' Length = ' + IntToStr(Size) + ' Count = ' + IntToStr(Count));
         {$ENDIF}
-        
+
         if Count > Size then Exit;
         if Unicode.MultiByteToWideChar(CP_ACP,0,PChar(AString),Length(AString),PWideChar(Buffer),Size) = 0 then Exit;
         if not CDFSPointerToData(Buffer,AIdentifier,ASize,True) then Exit;
@@ -13360,7 +13360,7 @@ begin
         FreeMem(Buffer);
        end;
       end;
-      
+
      Result:=True;
     end
    else
@@ -13368,13 +13368,13 @@ begin
      {$IFDEF CDFS_DEBUG}
      if FILESYS_LOG_ENABLED then FileSysLogDebug('CDFSStringToIdentifier - Size = ' + IntToStr(ASize));
      {$ENDIF}
-     
+
      FillChar(AIdentifier,ASize,0);
      if Length(AString) > 0 then
       begin
        Unicode.CharToOemBuff(PChar(AString),PChar(@AIdentifier),ASize);
       end;
-      
+
      Result:=True;
     end;
   end;
@@ -13388,14 +13388,14 @@ function CDFSIdentifierToFileName(const AIdentifier;ASize:Integer;AUnicode:Boole
 begin
  {}
  Result:=cdfsBlankName;
- 
+
  {Check for Dots}
  if (ASize = 1) and (PByte(@AIdentifier)^ = cdfsDotIdentifier) then
   begin
    {$IFDEF CDFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('CDFSIdentifierToFileName - cdfsDotName');
    {$ENDIF}
-   
+
    Result:=cdfsDotName;
   end
  else if (ASize = 1) and (PByte(@AIdentifier)^ = cdfsDotDotIdentifier) then
@@ -13403,7 +13403,7 @@ begin
    {$IFDEF CDFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('CDFSIdentifierToFileName - cdfsDotDotName');
    {$ENDIF}
-   
+
    Result:=cdfsDotDotName;
   end
  else
@@ -13420,17 +13420,17 @@ function CDFSFileNameToIdentifier(const AFileName:String;var AIdentifier;ASize:I
 begin
  {}
  Result:=False;
- 
+
  {Check for Dots}
  if (Length(AFileName) = 1) and  (AFileName = cdfsDotName) then
   begin
    {$IFDEF CDFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('CDFSFileNameToIdentifier - cdfsDotName');
    {$ENDIF}
-   
+
    FillChar(AIdentifier,ASize,0);
    PByte(@AIdentifier)^:=cdfsDotIdentifier;
-   
+
    Result:=True;
   end
  else if (Length(AFileName) = 2) and (AFileName = cdfsDotDotName) then
@@ -13438,10 +13438,10 @@ begin
    {$IFDEF CDFS_DEBUG}
    if FILESYS_LOG_ENABLED then FileSysLogDebug('CDFSFileNameToIdentifier - cdfsDotDotName');
    {$ENDIF}
-   
+
    FillChar(AIdentifier,ASize,0);
    PByte(@AIdentifier)^:=cdfsDotDotIdentifier;
-   
+
    Result:=True;
   end
  else
@@ -13461,7 +13461,7 @@ var
 begin
  {}
  Int64(Result):=0;
- 
+
  {Get System Time}
  SystemTime.wYear:=cdfsTimeStartYear + ATime.Years;
  SystemTime.wMonth:=ATime.Month;
@@ -13471,13 +13471,13 @@ begin
  SystemTime.wMinute:=ATime.Minute;
  SystemTime.wSecond:=ATime.Second;
  SystemTime.wMilliseconds:=0;
- 
+
  {Convert to File Time}
  if Ultibo.SystemTimeToFileTime(SystemTime,FileTime) then
   begin
    {Convert to UTC}
    Offset:=(ATime.Offset * cdfsTimeOffsetInterval);
-   
+
    Result:=ConvertFileTime(FileTime,Offset,False); {False due to inverse Offset value (eg AEST is +600 not -600}
   end;
 end;
@@ -13493,9 +13493,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  FillChar(ATime,SizeOf(TCDFSTime),0);
- 
+
  if Int64(AFileTime) = 0 then
   begin
    {Return 0}
@@ -13517,7 +13517,7 @@ begin
        ATime.Minute:=SystemTime.wMinute;
        ATime.Second:=SystemTime.wSecond;
        ATime.Offset:=Offset;
-       
+
        Result:=True;
       end;
     end;
@@ -13535,7 +13535,7 @@ var
 begin
  {}
  Int64(Result):=0;
- 
+
  {Get System Time}
  SystemTime.wYear:=StrToIntDef(ADateTime.Year,cdfsTimeStartYear);
  SystemTime.wMonth:=StrToIntDef(ADateTime.Month,0);
@@ -13544,13 +13544,13 @@ begin
  SystemTime.wMinute:=StrToIntDef(ADateTime.Minute,0);
  SystemTime.wSecond:=StrToIntDef(ADateTime.Second,0);
  SystemTime.wMilliseconds:=StrToIntDef(ADateTime.Hundredths,0) * 10;
- 
+
  {Convert to File Time}
  if Ultibo.SystemTimeToFileTime(SystemTime,FileTime) then
   begin
    {Convert to UTC}
    Offset:=(ADateTime.Offset * cdfsTimeOffsetInterval);
-   
+
    Result:=ConvertFileTime(FileTime,Offset,False); {False due to inverse Offset value (eg AEST is +600 not -600}
   end;
 end;
@@ -13566,9 +13566,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  FillChar(ADateTime,SizeOf(TCDFSDateTime),0);
- 
+
  if Int64(AFileTime) = 0 then
   begin
    {Return 0}
@@ -13591,7 +13591,7 @@ begin
        StrLCopy(ADateTime.Second,PChar(IntToStrLen(SystemTime.wSecond,2)),2);
        StrLCopy(ADateTime.Hundredths,PChar(IntToStrLen(SystemTime.wMilliseconds div 10,2)),2);
        ADateTime.Offset:=Offset;
-       
+
        Result:=True;
       end;
     end;
@@ -13605,7 +13605,7 @@ initialization
  CDFSInit;
 
 {==============================================================================}
- 
+
 finalization
  CDFSQuit;
 

@@ -17,7 +17,7 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -26,10 +26,10 @@ Credits
   Linux - \drivers\video\fbdev\amba-clcd.c - Copyright (C) 2001 ARM Limited
   Linux - \drivers\video\fbdev\amba-clcd-versatile.c
   Linux - \include\linux\amba\clcd.h - Copyright (C) 2001 ARM Limited
-  
+
   QEMU - \hw\display\pl110.c - Copyright (c) 2005-2009 CodeSourcery
   QEMU - \hw\display\pl110_template.h - Copyright (c) 2005 CodeSourcery
-  
+
 References
 ==========
 
@@ -40,25 +40,25 @@ ARM PrimeCell PL110 Color LCD
 
  The ARM PrimeCell PL110 Color LCD Controller is an AMBA compliant module that provides LCD
  display support for both TFT and STN displays in a variety of configurations.
- 
+
  While the controller supports TFT displays it differs from other TFT display controllers
  because it has a DMA interface to system memory rather than using SPI or other serial transfer
  protocols.
- 
+
  Currently this driver only supports the setup required for the QEMU VersatilePB target
  however it is possible to support additional configurations by adding more variations
  of the PL110FramebufferCreate functions (eg PL110FramebufferCreateSTN etc)
- 
+
  Note: The driver does not include support for FRAMEBUFFER_FLAG_SYNC as the QEMU emulation
  of the device does not provide interrupt support at present.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit PL110; 
+unit PL110;
 
 interface
 
@@ -75,7 +75,7 @@ const
 
  PL110_MAX_PHYSICALWIDTH = 1024;
  PL110_MAX_PHYSICALHEIGHT = 1024;
- 
+
  {PL110 mode constants}
  PL110_MODE_UNKNOWN = 0;
  PL110_MODE_VGA     = 1; {Connected to a VGA display}
@@ -102,15 +102,15 @@ const
  {PL110 Timing0 register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0161e/I913915.html)}
  PL110_CLCD_TIMING0_HBP = ($FF shl 24); {Horizontal back porch}
  PL110_CLCD_TIMING0_HFP = ($FF shl 16); {Horizontal front porch}
- PL110_CLCD_TIMING0_HSW = ($FF shl 8);  {Horizontal synchronization pulse width} 
+ PL110_CLCD_TIMING0_HSW = ($FF shl 8);  {Horizontal synchronization pulse width}
  PL110_CLCD_TIMING0_PPL = ($FC shl 2);  {Pixels-per-line (Actual pixels-per-line = 16 * (PPL + 1))}
 
  {PL110 Timing1 register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0161e/I913915.html)}
  PL110_CLCD_TIMING1_VBP = ($FF shl 24); {Vertical back porch}
- PL110_CLCD_TIMING1_VFP = ($FF shl 16); {Vertical front porch} 
+ PL110_CLCD_TIMING1_VFP = ($FF shl 16); {Vertical front porch}
  PL110_CLCD_TIMING1_VSW = ($FC shl 10); {Vertical synchronization pulse width}
- PL110_CLCD_TIMING1_LPP = ($3FF shl 0); {Lines per panel is the number of active lines per screen (Program to number of lines required minus 1)} 
- 
+ PL110_CLCD_TIMING1_LPP = ($3FF shl 0); {Lines per panel is the number of active lines per screen (Program to number of lines required minus 1)}
+
  {PL110 Timing2 register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0161e/I913915.html)}
  PL110_CLCD_TIMING2_PCD_HI = ($1F shl 27);  {Upper five bits of Panel Clock Divisor}
  PL110_CLCD_TIMING2_BCD    = (1 shl 26);    {Bypass pixel clock divider}
@@ -122,11 +122,11 @@ const
  PL110_CLCD_TIMING2_ACB    = ($1F shl 6);   {AC bias pin frequency}
  PL110_CLCD_TIMING2_CLKSEL = (1 shl 5);     {This bit drives the CLCDCLKSEL signal which is used as the select signal for the external LCD clock multiplexor}
  PL110_CLCD_TIMING2_PCD_LO = ($1F shl 0);   {Lower five bits of Panel Clock Divisor}
- 
+
  {PL110 Timing3 register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0161e/I913915.html)}
  PL110_CLCD_TIMING3_LEE = (1 shl 16);  {LCD Line end enable: 0 = CLLE disabled (held LOW) / 1 = CLLE signal active}
  PL110_CLCD_TIMING3_LED = ($3F shl 0); {Line-end signal delay from the rising-edge of the last panel clock}
- 
+
  {PL110 Control register bits (See: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0161e/I913915.html)}
  PL110_CLCD_CONTROL_LCDEN           = (1 shl 0);  {}
  PL110_CLCD_CONTROL_LCDBPP1         = (0 shl 1);  {LCD bits per pixel: 000 = 1 bpp}
@@ -155,7 +155,7 @@ const
  {PL110 control constants}
  PL110_CONTROL_VGA = PL110_CLCD_CONTROL_LCDTFT or PL110_CLCD_CONTROL_LCDVCOMP_BPORCH;
  PL110_CONTROL_SVGA = PL110_CLCD_CONTROL_LCDTFT or PL110_CLCD_CONTROL_LCDVCOMP_BPORCH;
- 
+
  {PL110 timing0 constants}
  PL110_TIMING0_VGA = $3F1F3F9C;
  PL110_TIMING0_SVGA = $1313A4C4;
@@ -163,11 +163,11 @@ const
  {PL110 timing1 constants}
  PL110_TIMING1_VGA = $090B61DF;
  PL110_TIMING1_SVGA = $0505F657;
-  
+
  {PL110 timing2 constants}
  PL110_TIMING2_VGA = $067F1800;
  PL110_TIMING2_SVGA = $071F1800;
- 
+
 {==============================================================================}
 type
  {PL110 specific types}
@@ -187,8 +187,8 @@ type
   ICR:LongWord;     {Interrupt Clear Register}
   UPCURR:LongWord;  {Upper Panel Current Address Value Registers}
   LPCURR:LongWord;  {Lower Panel Current Address Value Registers}
- end; 
- 
+ end;
+
  PPL110Framebuffer = ^TPL110Framebuffer;
  TPL110Framebuffer = record
   {Framebuffer Properties}
@@ -206,15 +206,15 @@ type
   Timing2:LongWord;               {Preset Timing2 register value}
   Timing3:LongWord;               {Preset Timing2 register value}
   Registers:PPL110CLCDRegisters;  {PL110 registers}
- end; 
- 
+ end;
+
 {==============================================================================}
 {var}
  {PL110 specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
- 
+
 {==============================================================================}
 {PL110 Functions}
 function PL110FramebufferCreateVGA(Address:PtrUInt;const Name:String;Rotation,Width,Height,Depth:LongWord):PFramebufferDevice;{$IFDEF API_EXPORT_PL110} stdcall; public name 'pl110_framebuffer_create_vga';{$ENDIF}
@@ -245,11 +245,11 @@ implementation
 {==============================================================================}
 {var}
  {PL110 specific variables}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 {PL110 Functions}
@@ -268,33 +268,33 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'PL110: Framebuffer Create VGA (Address=' + AddrToHex(Address) + ' Name=' + Name + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
  {$ENDIF}
 
  {Check Address}
  if Address = 0 then Exit;
- 
+
  {Check Rotation}
  if Rotation > FRAMEBUFFER_ROTATION_270 then Exit;
- 
+
  {Check Width and Height}
  if Width < 1 then Exit;
  if Height < 1 then Exit;
  if Width > PL110_MAX_PHYSICALWIDTH then Exit;
  if Height > PL110_MAX_PHYSICALHEIGHT then Exit;
- 
+
  {Check Depth}
  if (Depth <> FRAMEBUFFER_DEPTH_16) and (Depth <> FRAMEBUFFER_DEPTH_32) then Exit;
- 
+
  {Create Framebuffer}
  PL110Framebuffer:=PPL110Framebuffer(FramebufferDeviceCreateEx(SizeOf(TPL110Framebuffer)));
  if PL110Framebuffer <> nil then
   begin
    {Update Framebuffer}
    {Device}
-   PL110Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+   PL110Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO;
    PL110Framebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
    PL110Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_COMMIT or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_CACHED or FRAMEBUFFER_FLAG_VIRTUAL or FRAMEBUFFER_FLAG_OFFSETY{$IFDEF FPC_BIG_ENDIAN}or FRAMEBUFFER_FLAG_SWAP{$ENDIF FPC_BIG_ENDIAN};
    PL110Framebuffer.Framebuffer.Device.DeviceData:=nil;
@@ -324,10 +324,10 @@ begin
    PL110Framebuffer.Timing2:=PL110_TIMING2_VGA;
    PL110Framebuffer.Timing3:=0;
    PL110Framebuffer.Registers:=PPL110CLCDRegisters(Address);
-   
+
    {Setup Flags}
    {Nothing}
-   
+
    {Register Framebuffer}
    Status:=FramebufferDeviceRegister(@PL110Framebuffer.Framebuffer);
    if Status = ERROR_SUCCESS then
@@ -337,21 +337,21 @@ begin
      if Status = ERROR_SUCCESS then
       begin
        {Return Result}
-       Result:=PFramebufferDevice(PL110Framebuffer); 
+       Result:=PFramebufferDevice(PL110Framebuffer);
       end
      else
       begin
        if DEVICE_LOG_ENABLED then DeviceLogError(nil,'PL110: Failed to allocate new framebuffer device: ' + ErrorToString(Status));
-       
+
        {Deregister Framebuffer}
        FramebufferDeviceDeregister(@PL110Framebuffer.Framebuffer);
-       
+
        {Destroy Framebuffer}
        FramebufferDeviceDestroy(@PL110Framebuffer.Framebuffer);
       end;
     end
    else
-    begin     
+    begin
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'PL110: Failed to register new framebuffer device: ' + ErrorToString(Status));
 
      {Destroy Framebuffer}
@@ -381,33 +381,33 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'PL110: Framebuffer Create SVGA (Address=' + AddrToHex(Address) + ' Name=' + Name + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
  {$ENDIF}
 
  {Check Address}
  if Address = 0 then Exit;
- 
+
  {Check Rotation}
  if Rotation > FRAMEBUFFER_ROTATION_270 then Exit;
- 
+
  {Check Width and Height}
  if Width < 1 then Exit;
  if Height < 1 then Exit;
  if Width > PL110_MAX_PHYSICALWIDTH then Exit;
  if Height > PL110_MAX_PHYSICALHEIGHT then Exit;
- 
+
  {Check Depth}
  if (Depth <> FRAMEBUFFER_DEPTH_16) and (Depth <> FRAMEBUFFER_DEPTH_32) then Exit;
- 
+
  {Create Framebuffer}
  PL110Framebuffer:=PPL110Framebuffer(FramebufferDeviceCreateEx(SizeOf(TPL110Framebuffer)));
  if PL110Framebuffer <> nil then
   begin
    {Update Framebuffer}
    {Device}
-   PL110Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO; 
+   PL110Framebuffer.Framebuffer.Device.DeviceBus:=DEVICE_BUS_MMIO;
    PL110Framebuffer.Framebuffer.Device.DeviceType:=FRAMEBUFFER_TYPE_HARDWARE;
    PL110Framebuffer.Framebuffer.Device.DeviceFlags:=FRAMEBUFFER_FLAG_DMA or FRAMEBUFFER_FLAG_COMMIT or FRAMEBUFFER_FLAG_BLANK or FRAMEBUFFER_FLAG_CACHED or FRAMEBUFFER_FLAG_VIRTUAL or FRAMEBUFFER_FLAG_OFFSETY{$IFDEF FPC_BIG_ENDIAN}or FRAMEBUFFER_FLAG_SWAP{$ENDIF FPC_BIG_ENDIAN};
    PL110Framebuffer.Framebuffer.Device.DeviceData:=nil;
@@ -437,10 +437,10 @@ begin
    PL110Framebuffer.Timing2:=PL110_TIMING2_SVGA;
    PL110Framebuffer.Timing3:=0;
    PL110Framebuffer.Registers:=PPL110CLCDRegisters(Address);
-   
+
    {Setup Flags}
    {Nothing}
-   
+
    {Register Framebuffer}
    Status:=FramebufferDeviceRegister(@PL110Framebuffer.Framebuffer);
    if Status = ERROR_SUCCESS then
@@ -450,7 +450,7 @@ begin
      if Status = ERROR_SUCCESS then
       begin
        {Return Result}
-       Result:=PFramebufferDevice(PL110Framebuffer); 
+       Result:=PFramebufferDevice(PL110Framebuffer);
       end
      else
       begin
@@ -458,13 +458,13 @@ begin
 
        {Deregister Framebuffer}
        FramebufferDeviceDeregister(@PL110Framebuffer.Framebuffer);
-       
+
        {Destroy Framebuffer}
        FramebufferDeviceDestroy(@PL110Framebuffer.Framebuffer);
       end;
     end
    else
-    begin     
+    begin
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'PL110: Failed to register new framebuffer device: ' + ErrorToString(Status));
 
      {Destroy Framebuffer}
@@ -486,14 +486,14 @@ function PL110FramebufferDestroy(Framebuffer:PFramebufferDevice):LongWord;{$IFDE
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- 
+
  {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'PL110: Framebuffer Destroy');
  {$ENDIF}
- 
+
  {Release Framebuffer}
  Result:=FramebufferDeviceRelease(Framebuffer);
  if Result = ERROR_SUCCESS then
@@ -512,12 +512,12 @@ begin
    else
     begin
      if DEVICE_LOG_ENABLED then DeviceLogError(nil,'PL110: Failed to deregister framebuffer device: ' + ErrorToString(Result));
-    end;    
+    end;
   end
  else
   begin
    if DEVICE_LOG_ENABLED then DeviceLogError(nil,'PL110: Failed to release framebuffer device: ' + ErrorToString(Result));
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -540,16 +540,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'PL110: Framebuffer Allocate');
  {$ENDIF}
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     {Get Defaults}
@@ -558,16 +558,16 @@ begin
     Defaults.Mode:=FRAMEBUFFER_MODE_IGNORED;
     Defaults.PhysicalWidth:=PPL110Framebuffer(Framebuffer).Width;
     Defaults.PhysicalHeight:=PPL110Framebuffer(Framebuffer).Height;
-    Defaults.VirtualWidth:=Defaults.PhysicalWidth; 
+    Defaults.VirtualWidth:=Defaults.PhysicalWidth;
     Defaults.VirtualHeight:=Defaults.PhysicalHeight;
-    Defaults.OffsetX:=0;                           
-    Defaults.OffsetY:=0;                            
-    Defaults.OverscanTop:=0;                         
-    Defaults.OverscanBottom:=0;                      
-    Defaults.OverscanLeft:=0;                        
-    Defaults.OverscanRight:=0;                       
+    Defaults.OffsetX:=0;
+    Defaults.OffsetY:=0;
+    Defaults.OverscanTop:=0;
+    Defaults.OverscanBottom:=0;
+    Defaults.OverscanLeft:=0;
+    Defaults.OverscanRight:=0;
     Defaults.Rotation:=PPL110Framebuffer(Framebuffer).Rotation;
- 
+
     {Check Properties}
     if Properties <> nil then
      begin
@@ -578,8 +578,8 @@ begin
         PhysicalWidth:=Properties.PhysicalWidth;
         Defaults.PhysicalWidth:=PhysicalWidth;
         Defaults.VirtualWidth:=PhysicalWidth;
-       end; 
-       
+       end;
+
       {Adjust Physical Height}
       PhysicalHeight:=Defaults.PhysicalHeight;
       if (Properties.PhysicalHeight <> 0) and (Properties.PhysicalHeight <> PhysicalHeight) and (Properties.PhysicalHeight <= PL110_MAX_PHYSICALHEIGHT) then
@@ -588,7 +588,7 @@ begin
         Defaults.PhysicalHeight:=PhysicalHeight;
         Defaults.VirtualHeight:=PhysicalHeight;
        end;
-       
+
       {Adjust Virtual Width}
       VirtualWidth:=Defaults.VirtualWidth;
       if (Properties.VirtualWidth <> 0) and (Properties.VirtualWidth <> VirtualWidth) then
@@ -598,11 +598,11 @@ begin
          begin
           Properties.VirtualWidth:=PhysicalWidth;
          end;
-        
+
         VirtualWidth:=Properties.VirtualWidth;
         Defaults.VirtualWidth:=VirtualWidth;
        end;
-       
+
       {Adjust Virtual Height}
       VirtualHeight:=Defaults.VirtualHeight;
       if (Properties.VirtualHeight <> 0) and (Properties.VirtualHeight <> VirtualHeight) then
@@ -616,50 +616,50 @@ begin
         VirtualHeight:=Properties.VirtualHeight;
         Defaults.VirtualHeight:=VirtualHeight;
        end;
-      
+
       {Adjust Offset X} {Not supported}
-      (*if Properties.OffsetX <> 0 then  
+      (*if Properties.OffsetX <> 0 then
        begin
         {Check Offset X}
         if Properties.OffsetX > ((VirtualWidth - PhysicalWidth) - 1) then
          begin
           Properties.OffsetX:=0;
          end;
-        
+
         Defaults.OffsetX:=Properties.OffsetX;
        end;*)
 
       {Adjust Offset Y}
-      if Properties.OffsetY <> 0 then  
+      if Properties.OffsetY <> 0 then
        begin
         {Check Offset Y}
         if Properties.OffsetY > ((VirtualHeight - PhysicalHeight) - 1) then
          begin
           Properties.OffsetY:=0;
          end;
-        
+
         Defaults.OffsetY:=Properties.OffsetY;
-       end; 
-      
+       end;
+
       {Adjust Depth}
       if (Properties.Depth = FRAMEBUFFER_DEPTH_16) or (Properties.Depth = FRAMEBUFFER_DEPTH_32) then Defaults.Depth:=Properties.Depth;
-      
+
       {Adjust Order}
       if Properties.Order <= FRAMEBUFFER_ORDER_RGB then Defaults.Order:=Properties.Order;
-      
+
       {Adjust Rotation}
       if Properties.Rotation <= FRAMEBUFFER_ROTATION_270 then Defaults.Rotation:=Properties.Rotation;
-      
+
       {Check Rotation}
       if Properties.Rotation <> PPL110Framebuffer(Framebuffer).Rotation then
        begin
-        if (Properties.Rotation = FRAMEBUFFER_ROTATION_90) or (Properties.Rotation = FRAMEBUFFER_ROTATION_270) then 
+        if (Properties.Rotation = FRAMEBUFFER_ROTATION_90) or (Properties.Rotation = FRAMEBUFFER_ROTATION_270) then
          begin
           if (PPL110Framebuffer(Framebuffer).Rotation <> FRAMEBUFFER_ROTATION_90) and (PPL110Framebuffer(Framebuffer).Rotation <> FRAMEBUFFER_ROTATION_270) then
            begin
             Defaults.PhysicalWidth:=PhysicalHeight;
             Defaults.PhysicalHeight:=PhysicalWidth;
-            Defaults.VirtualWidth:=VirtualHeight; 
+            Defaults.VirtualWidth:=VirtualHeight;
             Defaults.VirtualHeight:=VirtualWidth;
            end;
          end
@@ -669,14 +669,14 @@ begin
            begin
             Defaults.PhysicalWidth:=PhysicalHeight;
             Defaults.PhysicalHeight:=PhysicalWidth;
-            Defaults.VirtualWidth:=VirtualHeight; 
+            Defaults.VirtualWidth:=VirtualHeight;
             Defaults.VirtualHeight:=VirtualWidth;
            end;
-         end;      
+         end;
        end;
      end;
-    
-    {Get Format}  
+
+    {Get Format}
     case Defaults.Depth of
      FRAMEBUFFER_DEPTH_16:begin
        Defaults.Format:=COLOR_FORMAT_RGB16;
@@ -692,17 +692,17 @@ begin
         end;
       end;
     end;
- 
+
     {Get Bytes}
     Bytes:=ColorFormatToBytes(Defaults.Format);
     if Bytes = 0 then Exit;
-    
+
     {Get Size}
     Defaults.Size:=(Defaults.VirtualWidth * Defaults.VirtualHeight) * Bytes;
-    
+
     {Get Pitch}
     Defaults.Pitch:=Defaults.VirtualWidth * Bytes;
- 
+
     {Allocate Framebuffer}
     if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and DMAAvailable then
      begin
@@ -718,23 +718,23 @@ begin
         Buffer:=GetAlignedMem(RoundUp(Defaults.Size,DMA_MULTIPLIER),DMA_ALIGNMENT);
        end
       else
-       begin      
+       begin
         Buffer:=GetMem(Defaults.Size);
-       end; 
+       end;
      end;
     if Buffer = nil then
      begin
       Result:=ERROR_OPERATION_FAILED;
-      Exit; 
-     end; 
-    
+      Exit;
+     end;
+
     {Check Cache}
     if not(DMA_CACHE_COHERENT) then
      begin
       {Clean Cache (Dest)}
       CleanDataCacheRange(PtrUInt(Buffer),Defaults.Size);
      end;
- 
+
     {Update Framebuffer}
     Framebuffer.Address:=PtrUInt(Buffer);
     Framebuffer.Size:=Defaults.Size;
@@ -754,10 +754,10 @@ begin
     Framebuffer.OverscanLeft:=Defaults.OverscanLeft;
     Framebuffer.OverscanRight:=Defaults.OverscanRight;
     Framebuffer.Rotation:=Defaults.Rotation;
-    
+
     {Memory Barrier}
     DataMemoryBarrier; {Before the First Write}
-    
+
     {Setup PL110}
     Value:=PPL110Framebuffer(Framebuffer).Control;
     if Framebuffer.Depth = FRAMEBUFFER_DEPTH_16 then
@@ -769,37 +769,37 @@ begin
      begin
       Value:=Value or PL110_CLCD_CONTROL_LCDBPP24;
       if Framebuffer.Order = FRAMEBUFFER_ORDER_RGB then Value:=Value or PL110_CLCD_CONTROL_BGR; {Note: This appears reversed from the description of the register bits}
-     end;  
+     end;
     PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
     PPL110Framebuffer(Framebuffer).Registers.TIMING0:=(PPL110Framebuffer(Framebuffer).Timing0 and not(PL110_CLCD_TIMING0_PPL)) or (((Framebuffer.PhysicalWidth - 1) div 16) shl 2);
     PPL110Framebuffer(Framebuffer).Registers.TIMING1:=(PPL110Framebuffer(Framebuffer).Timing1 and not(PL110_CLCD_TIMING1_LPP)) or (Framebuffer.PhysicalHeight - 1);
     PPL110Framebuffer(Framebuffer).Registers.TIMING2:=PPL110Framebuffer(Framebuffer).Timing2;
     PPL110Framebuffer(Framebuffer).Registers.TIMING3:=PPL110Framebuffer(Framebuffer).Timing3;
     UpperBase:=Framebuffer.Address + (Framebuffer.OffsetY * Framebuffer.Pitch);
-    LowerBase:=UpperBase + ((Framebuffer.PhysicalHeight * Framebuffer.Pitch) div 2); 
+    LowerBase:=UpperBase + ((Framebuffer.PhysicalHeight * Framebuffer.Pitch) div 2);
     PPL110Framebuffer(Framebuffer).Registers.UPBASE:=UpperBase;
     PPL110Framebuffer(Framebuffer).Registers.LPBASE:=LowerBase;
-    
+
     {Enable PL110}
     Value:=PPL110Framebuffer(Framebuffer).Registers.CONTROL;
     Value:=Value or PL110_CLCD_CONTROL_LCDEN;
-    PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value; 
+    PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
     MillisecondDelay(20);
-    
+
     Value:=Value or PL110_CLCD_CONTROL_LCDPWR;
-    PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value; 
-    
+    PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
+
     {Memory Barrier}
-    DataMemoryBarrier; {After the Last Read} 
-    
+    DataMemoryBarrier; {After the Last Read}
+
     {Update Statistics}
     Inc(Framebuffer.AllocateCount);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -817,21 +817,21 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'PL110: Framebuffer Release');
  {$ENDIF}
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     {Memory Barrier}
     DataMemoryBarrier; {Before the First Write}
-   
+
     {Disable PL110}
     Value:=PPL110Framebuffer(Framebuffer).Registers.CONTROL;
     if (Value and PL110_CLCD_CONTROL_LCDPWR) <> 0 then
@@ -840,16 +840,16 @@ begin
       PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
       MillisecondDelay(20);
      end;
-     
+
     if (Value and PL110_CLCD_CONTROL_LCDEN) <> 0 then
      begin
       Value:=Value and not(PL110_CLCD_CONTROL_LCDEN);
-      PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value; 
+      PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
      end;
-    
+
     {Memory Barrier}
-    DataMemoryBarrier; {After the Last Read} 
-    
+    DataMemoryBarrier; {After the Last Read}
+
     {Release Framebuffer}
     if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and DMAAvailable then
      begin
@@ -862,7 +862,7 @@ begin
       {Release Normal Buffer (No DMA)}
       FreeMem(Pointer(Framebuffer.Address));
      end;
-     
+
     {Update Framebuffer}
     Framebuffer.Address:=0;
     Framebuffer.Size:=0;
@@ -882,15 +882,15 @@ begin
     Framebuffer.OverscanLeft:=0;
     Framebuffer.OverscanRight:=0;
     Framebuffer.Rotation:=FRAMEBUFFER_ROTATION_0;
-    
+
     {Update Statistics}
     Inc(Framebuffer.ReleaseCount);
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -908,18 +908,18 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'PL110: Framebuffer Blank (Blank=' + BooleanToString(Blank) + ')');
  {$ENDIF}
- 
+
  {Memory Barrier}
  DataMemoryBarrier; {Before the First Write}
- 
+
  {Check Blank}
  if Blank then
   begin
@@ -931,11 +931,11 @@ begin
      PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
      MillisecondDelay(20);
     end;
-    
+
    if (Value and PL110_CLCD_CONTROL_LCDEN) <> 0 then
     begin
      Value:=Value and not(PL110_CLCD_CONTROL_LCDEN);
-     PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value; 
+     PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
     end;
   end
  else
@@ -943,16 +943,16 @@ begin
    {Enable PL110}
    Value:=PPL110Framebuffer(Framebuffer).Registers.CONTROL;
    Value:=Value or PL110_CLCD_CONTROL_LCDEN;
-   PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value; 
+   PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
    MillisecondDelay(20);
-   
+
    Value:=Value or PL110_CLCD_CONTROL_LCDPWR;
-   PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value; 
-  end;  
-  
+   PPL110Framebuffer(Framebuffer).Registers.CONTROL:=Value;
+  end;
+
  {Memory Barrier}
- DataMemoryBarrier; {After the Last Read} 
-  
+ DataMemoryBarrier; {After the Last Read}
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -968,12 +968,12 @@ begin
 
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'PL110: Framebuffer Commit (Address=' + IntToHex(Address,8) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Check Cache}
  if not DMA_CACHE_COHERENT then
   begin
@@ -981,15 +981,15 @@ begin
    if (Flags and FRAMEBUFFER_TRANSFER_DMA) = 0 then
     begin
      {Clean Cache}
-     CleanAndInvalidateDataCacheRange(Address,Size); 
+     CleanAndInvalidateDataCacheRange(Address,Size);
     end
    else
     begin
      {Invalidate Cache}
      InvalidateDataCacheRange(Address,Size);
-    end;  
-  end;  
- 
+    end;
+  end;
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -1005,46 +1005,46 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
  if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {$IF DEFINED(PL110_DEBUG) or DEFINED(FRAMEBUFFER_DEBUG)}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'PL110: Framebuffer Set Offset (X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ')');
  {$ENDIF}
 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Offset}
     if (Y > 0) and (Y > ((Framebuffer.VirtualHeight - Framebuffer.PhysicalHeight) - 1)) then Exit;
-    
+
     {Set Offset}
     UpperBase:=Framebuffer.Address + (Y * Framebuffer.Pitch);
-    LowerBase:=UpperBase + ((Framebuffer.PhysicalHeight * Framebuffer.Pitch) div 2); 
-      
+    LowerBase:=UpperBase + ((Framebuffer.PhysicalHeight * Framebuffer.Pitch) div 2);
+
     {Memory Barrier}
     DataMemoryBarrier; {Before the First Write}
-    
+
     {Update PL110}
     if Switch then
      begin
       PPL110Framebuffer(Framebuffer).Registers.UPBASE:=UpperBase;
       PPL110Framebuffer(Framebuffer).Registers.LPBASE:=LowerBase;
-     end; 
+     end;
 
     {Update Offset}
     if not(Pan) then
      begin
       Framebuffer.OffsetY:=Y;
-     end; 
-    
+     end;
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1061,9 +1061,9 @@ end;
 
 {initialization}
  {Nothing}
- 
+
 {==============================================================================}
- 
+
 {finalization}
  {Nothing}
 

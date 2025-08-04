@@ -17,14 +17,14 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
   Linux - \drivers\staging\fbtft\fbtft-core.c - Copyright (C) 2013 Noralf Tronnes
- 
+
 References
 ==========
 
@@ -33,19 +33,19 @@ TFT Framebuffer
 ===============
 
  This is a generic framebuffer device support unit for SPI based TFT screens using common chipsets.
- 
+
  This unit implements the shared functionality that is common to all devices and provides a set of
  functions that device specific drivers must implement. For each supported device a driver unit is
  required that implements the SPI communications to initialize the device, setup resolution and color
  depth as well as refreshing the framebuffer data to the device memory on change.
-  
+
 
  The resulting device created by the combination of this unit and a device specific driver is registered
  with Ultibo as a framebuffer device that can be accessed using all of the standard framebuffer API
  functions.
- 
+
  For examples of drivers that use this support unit see the HX8357D and ILI9340 units.
-  
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -66,21 +66,21 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,D
 const
  {TFTFramebuffer specific constants}
  TFT_FRAMEBUFFER_FRAME_RATE_DEFAULT = 20; {Default frame rate of 20 frames per second refresh}
- 
+
 {==============================================================================}
 type
  {TFTFramebuffer specific types}
  PTFTFramebuffer = ^TTFTFramebuffer;
- 
+
  {TFTFramebuffer Device Methods}
  TTFTFramebufferInitialize = function(Framebuffer:PTFTFramebuffer;Defaults:PFramebufferProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TTFTFramebufferDeinitialize = function(Framebuffer:PTFTFramebuffer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TTFTFramebufferGetDefaults = function(Framebuffer:PTFTFramebuffer;Properties,Defaults:PFramebufferProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TTFTFramebufferSetWriteAddress = function(Framebuffer:PTFTFramebuffer;X1,Y1,X2,Y2:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TTFTFramebufferWriteMemory = function(Framebuffer:PTFTFramebuffer;Address:PtrUInt;Size:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {TFTFramebuffer Device}
  TTFTFramebuffer = record
   {Framebuffer Properties}
@@ -107,7 +107,7 @@ type
   Timer:TTimerHandle;                             {Handle for dirty region redraw timer}
   FrameRate:LongWord;                             {Frame rate for display refresh (in Frames Per Second)}
   TransferSize:LongWord;                          {Maximum transfer size for the SPI device (or -1 if No Maximum)}
- end; 
+ end;
 
 {==============================================================================}
 {var}
@@ -142,7 +142,7 @@ implementation
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 {TFTFramebuffer Functions}
@@ -159,13 +159,13 @@ begin
 
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF FRAMEBUFFER_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'TFT Framebuffer Allocate');
  {$ENDIF}
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     {Check Parameters}
@@ -173,24 +173,24 @@ begin
     if not(Assigned(PTFTFramebuffer(Framebuffer).SetWriteAddress)) then Exit;
     if not(Assigned(PTFTFramebuffer(Framebuffer).WriteMemory)) then Exit;
     if PTFTFramebuffer(Framebuffer).TransferSize = 0 then Exit;
-    
+
     {Get Defaults}
     if Assigned(PTFTFramebuffer(Framebuffer).GetDefaults) then
      begin
       Result:=PTFTFramebuffer(Framebuffer).GetDefaults(PTFTFramebuffer(Framebuffer),Properties,@Defaults);
       if Result <> ERROR_SUCCESS then Exit;
      end;
- 
+
     {Get Bytes}
     Bytes:=ColorFormatToBytes(Defaults.Format);
     if Bytes = 0 then Exit;
-    
+
     {Get Size}
     Defaults.Size:=(Defaults.PhysicalWidth * Defaults.PhysicalHeight) * Bytes;
-    
+
     {Get Pitch}
     Defaults.Pitch:=Defaults.PhysicalWidth * Bytes;
-    
+
     {Allocate Framebuffer}
     if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and DMAAvailable then
      begin
@@ -206,30 +206,30 @@ begin
         Buffer:=GetAlignedMem(RoundUp(Defaults.Size,DMA_MULTIPLIER),DMA_ALIGNMENT);
        end
       else
-       begin      
+       begin
         Buffer:=GetMem(Defaults.Size);
-       end; 
+       end;
      end;
     if Buffer = nil then
      begin
       Result:=ERROR_OPERATION_FAILED;
-      Exit; 
-     end; 
-    
+      Exit;
+     end;
+
     {Check Cache}
     if not(DMA_CACHE_COHERENT) then
      begin
       {Clean Cache (Dest)}
       CleanDataCacheRange(PtrUInt(Buffer),Defaults.Size);
      end;
-    
+
     {Initialize Framebuffer}
     if Assigned(PTFTFramebuffer(Framebuffer).Initialize) then
      begin
       Result:=PTFTFramebuffer(Framebuffer).Initialize(PTFTFramebuffer(Framebuffer),@Defaults);
       if Result <> ERROR_SUCCESS then Exit;
-     end; 
-    
+     end;
+
     {Update Framebuffer}
     Framebuffer.Address:=PtrUInt(Buffer);
     Framebuffer.Size:=Defaults.Size;
@@ -249,7 +249,7 @@ begin
     Framebuffer.OverscanLeft:=Defaults.OverscanLeft;
     Framebuffer.OverscanRight:=Defaults.OverscanRight;
     Framebuffer.Rotation:=Defaults.Rotation;
-    
+
     {Update Dirty Region}
     PTFTFramebuffer(Framebuffer).DirtyY1:=Framebuffer.PhysicalHeight - 1;
     PTFTFramebuffer(Framebuffer).DirtyY2:=0;
@@ -259,24 +259,24 @@ begin
      begin
       Result:=ERROR_OPERATION_FAILED;
       Exit;
-     end; 
-    
+     end;
+
     {Create Timer}
     PTFTFramebuffer(Framebuffer).Timer:=TimerCreateEx(MILLISECONDS_PER_SECOND div PTFTFramebuffer(Framebuffer).FrameRate,TIMER_STATE_DISABLED,TIMER_FLAG_WORKER,TTimerEvent(TFTFramebufferUpdateDisplay),Framebuffer); {Scheduled as required}
     if PTFTFramebuffer(Framebuffer).Timer = INVALID_HANDLE_VALUE then
      begin
       Result:=ERROR_OPERATION_FAILED;
       Exit;
-     end; 
-    
+     end;
+
     {Update Statistics}
     Inc(Framebuffer.AllocateCount);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -295,27 +295,27 @@ begin
 
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF FRAMEBUFFER_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'TFT Framebuffer Release');
  {$ENDIF}
- 
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     {Destroy Timer}
     Result:=TimerDestroy(PTFTFramebuffer(Framebuffer).Timer);
     if Result <> ERROR_SUCCESS then Exit;
     PTFTFramebuffer(Framebuffer).Timer:=INVALID_HANDLE_VALUE;
-   
+
     {Deinitialize Framebuffer}
     if Assigned(PTFTFramebuffer(Framebuffer).Deinitialize) then
      begin
       Result:=PTFTFramebuffer(Framebuffer).Deinitialize(PTFTFramebuffer(Framebuffer));
       if Result <> ERROR_SUCCESS then Exit;
-     end; 
-    
+     end;
+
     {Release Framebuffer}
     if ((Framebuffer.Device.DeviceFlags and FRAMEBUFFER_FLAG_DMA) <> 0) and DMAAvailable then
      begin
@@ -328,7 +328,7 @@ begin
       {Release Normal Buffer (No DMA)}
       FreeMem(Pointer(Framebuffer.Address));
      end;
-     
+
     {Update Framebuffer}
     Framebuffer.Address:=0;
     Framebuffer.Size:=0;
@@ -348,22 +348,22 @@ begin
     Framebuffer.OverscanLeft:=0;
     Framebuffer.OverscanRight:=0;
     Framebuffer.Rotation:=FRAMEBUFFER_ROTATION_0;
-    
+
     {Update Dirty Region}
     MutexDestroy(PTFTFramebuffer(Framebuffer).Lock);
     PTFTFramebuffer(Framebuffer).Lock:=INVALID_HANDLE_VALUE;
     PTFTFramebuffer(Framebuffer).DirtyY1:=PTFTFramebuffer(Framebuffer).Height - 1;
     PTFTFramebuffer(Framebuffer).DirtyY2:=0;
     PTFTFramebuffer(Framebuffer).Ready:=True;
-    
+
     {Update Statistics}
     Inc(Framebuffer.ReleaseCount);
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -386,39 +386,39 @@ begin
 
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF FRAMEBUFFER_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'TFT Framebuffer Mark (X=' + IntToStr(X) + ' Y=' + IntToStr(Y) + ' Width=' + IntToStr(Width) + ' Height=' + IntToStr(Height) + ')');
  {$ENDIF}
- 
+
  {Acquire Dirty Region Lock}
- if MutexLock(PTFTFramebuffer(Framebuffer).Lock) = ERROR_SUCCESS then 
+ if MutexLock(PTFTFramebuffer(Framebuffer).Lock) = ERROR_SUCCESS then
   begin
    try
     {Clean:=False;}
     Enable:=False;
-    
+
     {Check Clean}
     {if PTFTFramebuffer(Framebuffer).DirtyY1 > PTFTFramebuffer(Framebuffer).DirtyY2 then
      begin
       Clean:=True;
      end;}
-     
+
     {Check Y}
     if Y < PTFTFramebuffer(Framebuffer).DirtyY1 then
      begin
       PTFTFramebuffer(Framebuffer).DirtyY1:=Y;
       Enable:=True;
      end;
-    
+
     {Check Height}
     if (Y + (Height - 1)) > PTFTFramebuffer(Framebuffer).DirtyY2 then
      begin
       PTFTFramebuffer(Framebuffer).DirtyY2:=(Y + (Height - 1));
       Enable:=True;
      end;
-    
+
     {Check Enable and Ready}
     if Enable and (PTFTFramebuffer(Framebuffer).Ready) then
      begin
@@ -428,7 +428,7 @@ begin
        begin
         {Clear Ready}
         PTFTFramebuffer(Framebuffer).Ready:=False;
-       end; 
+       end;
      end
     else
      begin
@@ -437,7 +437,7 @@ begin
    finally
     {Release Dirty Region Lock}
     MutexUnlock(PTFTFramebuffer(Framebuffer).Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -456,24 +456,24 @@ begin
 
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF FRAMEBUFFER_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'TFT Framebuffer Commit (Address=' + AddrToHex(Address) + ' Size=' + IntToStr(Size) + ')');
  {$ENDIF}
- 
+
  {Check Flags}
  if (Flags and FRAMEBUFFER_TRANSFER_DMA) = 0 then
   begin
    {Clean Cache}
-   CleanAndInvalidateDataCacheRange(Address,Size); 
+   CleanAndInvalidateDataCacheRange(Address,Size);
   end
  else
   begin
    {Invalidate Cache}
    InvalidateDataCacheRange(Address,Size);
-  end;  
- 
+  end;
+
  {Return Result}
  Result:=ERROR_SUCCESS;
 end;
@@ -493,22 +493,22 @@ begin
  {}
  {Check Framebuffer}
  if Framebuffer = nil then Exit;
- if Framebuffer.Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if Framebuffer.Framebuffer.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF FRAMEBUFFER_DEBUG}
  if DEVICE_LOG_ENABLED then DeviceLogDebug(nil,'TFT Framebuffer Update Display');
  {$ENDIF}
- 
+
  {Acquire Dirty Region Lock}
- if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then 
+ if MutexLock(Framebuffer.Lock) = ERROR_SUCCESS then
   begin
    try
     Unlock:=True;
-    
+
     {Get Dirty Region}
     DirtyY1:=Framebuffer.DirtyY1;
     DirtyY2:=Framebuffer.DirtyY2;
-    
+
     {Reset Dirty Region}
     Framebuffer.DirtyY1:=Framebuffer.Framebuffer.PhysicalHeight - 1;
     Framebuffer.DirtyY2:=0;
@@ -523,12 +523,12 @@ begin
       {Set Ready}
       Framebuffer.Ready:=True;
       Exit;
-      
+
       {Reset Region}
       {DirtyY1:=0;}
       {DirtyY2:=Framebuffer.Framebuffer.PhysicalHeight - 1;}
      end;
-    
+
     {Check Dirty Region}
     if (DirtyY1 > (Framebuffer.Framebuffer.PhysicalHeight - 1)) or (DirtyY2 > (Framebuffer.Framebuffer.PhysicalHeight - 1)) then
      begin
@@ -538,37 +538,37 @@ begin
       {Set Ready}
       Framebuffer.Ready:=True;
       Exit;
-     
+
       {Reset Region}
       {DirtyY1:=0;}
       {DirtyY2:=Framebuffer.Framebuffer.PhysicalHeight - 1;}
      end;
-     
+
     if Assigned(Framebuffer.SetWriteAddress) then
      begin
       {Set Write Address}
       Framebuffer.SetWriteAddress(Framebuffer,0,DirtyY1,Framebuffer.Framebuffer.PhysicalWidth - 1,DirtyY2);
-      
+
       {Get Size}
       Size:=((DirtyY2 - DirtyY1) + 1) * Framebuffer.Framebuffer.Pitch;
-      
+
       {Get Address}
       Address:=Framebuffer.Framebuffer.Address + (DirtyY1 * Framebuffer.Framebuffer.Pitch);
-      
+
       {Write Data}
       if Assigned(Framebuffer.WriteMemory) then
        begin
         {Release Dirty Region Lock}
         MutexUnlock(Framebuffer.Lock);
         Unlock:=False;
-       
+
         Framebuffer.WriteMemory(Framebuffer,Address,Size);
-        
+
         {Acquire Dirty Region Lock}
         if MutexLock(Framebuffer.Lock) <> ERROR_SUCCESS then Exit;
         Unlock:=True;
        end;
-     end; 
+     end;
 
     {Check Dirty}
     if Framebuffer.DirtyY1 <= Framebuffer.DirtyY2 then
@@ -580,18 +580,18 @@ begin
      begin
       {Set Ready}
       Framebuffer.Ready:=True;
-     end;     
+     end;
    finally
     {Release Dirty Region Lock}
     if Unlock then MutexUnlock(Framebuffer.Lock);
-   end; 
+   end;
   end;
 end;
 
 {==============================================================================}
 {==============================================================================}
 {TFTFramebuffer Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -599,7 +599,7 @@ end;
  {Nothing}
 
 {==============================================================================}
- 
+
 {finalization}
  {Nothing}
 
@@ -607,4 +607,4 @@ end;
 {==============================================================================}
 
 end.
- 
+

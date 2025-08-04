@@ -22,7 +22,7 @@ Credits
 =======
 
  Information for this unit was obtained from:
-   
+
 References
 ==========
 
@@ -47,14 +47,14 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-           
+
 {==============================================================================}
 const
  {Storage specific constants}
  STORAGE_NAME_PREFIX = 'Storage';  {Name prefix for Storage Devices}
- 
+
  STORAGE_STATUS_TIMER_INTERVAL = 1000;
- 
+
  {Storage Device Types}
  STORAGE_TYPE_NONE      = 0;
  STORAGE_TYPE_HDD       = 1;
@@ -63,9 +63,9 @@ const
  STORAGE_TYPE_OPTICAL   = 4;
  STORAGE_TYPE_TAPE      = 5;
  STORAGE_TYPE_REMOVABLE = 6;
- 
+
  STORAGE_TYPE_MAX       = 6;
- 
+
  {Storage Type Names}
  STORAGE_TYPE_NAMES:array[STORAGE_TYPE_NONE..STORAGE_TYPE_MAX] of String = (
   'STORAGE_TYPE_NONE',
@@ -75,7 +75,7 @@ const
   'STORAGE_TYPE_OPTICAL',
   'STORAGE_TYPE_TAPE',
   'STORAGE_TYPE_REMOVABLE');
-  
+
  {Storage Device States}
  STORAGE_STATE_EJECTED   = 0;
  STORAGE_STATE_EJECTING  = 1;
@@ -83,14 +83,14 @@ const
  STORAGE_STATE_INSERTED  = 3;
 
  STORAGE_STATE_MAX       = 3;
- 
+
  {Storage State Names}
  STORAGE_STATE_NAMES:array[STORAGE_STATE_EJECTED..STORAGE_STATE_MAX] of String = (
   'STORAGE_STATE_EJECTED',
   'STORAGE_STATE_EJECTING',
   'STORAGE_STATE_INSERTING',
   'STORAGE_STATE_INSERTED');
- 
+
  {Storage Device Flags}
  STORAGE_FLAG_NONE       = $00000000;
  STORAGE_FLAG_REMOVABLE  = $00000001;
@@ -104,7 +104,7 @@ const
  STORAGE_FLAG_LOCKED     = $00000100;
  STORAGE_FLAG_EJECTABLE  = $00000200;
  STORAGE_FLAG_CHANGABLE  = $00000400;
- 
+
  {Storage Device Control Codes}
  STORAGE_CONTROL_TEST_READY       = 1;  {Test Unit Ready}
  STORAGE_CONTROL_RESET            = 2;  {Reset Device}
@@ -115,7 +115,7 @@ const
  STORAGE_CONTROL_TEST_LOCKED      = 7;  {Test Media Locked}
  STORAGE_CONTROL_TEST_CHANGED     = 8;  {Test Media Changed}
  STORAGE_CONTROL_GET_VENDORID     = 9;  {Get Vendor ID}
- STORAGE_CONTROL_GET_PRODUCTID    = 10; {Get Product ID} 
+ STORAGE_CONTROL_GET_PRODUCTID    = 10; {Get Product ID}
  STORAGE_CONTROL_GET_SERIAL       = 11; {Get Serial No}
  STORAGE_CONTROL_GET_REVISION     = 12; {Get Revision No}
  STORAGE_CONTROL_GET_PRODUCT      = 13; {Get Product Name}
@@ -129,30 +129,30 @@ const
  STORAGE_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Storage error messages}
  STORAGE_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Storage messages}
 
-var 
+var
  STORAGE_DEFAULT_LOG_LEVEL:LongWord = STORAGE_LOG_LEVEL_DEBUG; {Minimum level for Storage messages.  Only messages with level greater than or equal to this will be printed}
- 
-var 
+
+var
  {Storage logging}
- STORAGE_LOG_ENABLED:Boolean; 
- 
+ STORAGE_LOG_ENABLED:Boolean;
+
 {==============================================================================}
 type
  {Storage specific types}
  {Storage Device}
  PStorageDevice = ^TStorageDevice;
- 
+
  {Storage Enumeration Callback}
  TStorageEnumerate = function(Storage:PStorageDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Storage Notification Callback}
  TStorageNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Storage Device Methods}
  TStorageDeviceRead = function(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TStorageDeviceWrite = function(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TStorageDeviceErase = function(Storage:PStorageDevice;const Start,Count:Int64):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TStorageDeviceControl = function(Storage:PStorageDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TStorageDevice = record
   {Device Properties}
   Device:TDevice;                      {The Device entry for this Storage}
@@ -181,22 +181,22 @@ type
   WriteErrors:UInt64;
   EraseCount:UInt64;
   EraseErrors:UInt64;
-  {Internal Properties}                                                                        
+  {Internal Properties}
   Prev:PStorageDevice;                 {Previous entry in Storage table}
   Next:PStorageDevice;                 {Next entry in Storage table}
  end;
-  
+
 {==============================================================================}
 {var}
  {Storage specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure StorageInit;
 
 {==============================================================================}
 {Storage Functions}
-function StorageDeviceRead(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord; 
+function StorageDeviceRead(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord;
 function StorageDeviceWrite(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord;
 function StorageDeviceErase(Storage:PStorageDevice;const Start,Count:Int64):LongWord;
 function StorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
@@ -263,30 +263,30 @@ begin
  {}
  {Check Initialized}
  if StorageInitialized then Exit;
- 
+
  {Initialize Logging}
- STORAGE_LOG_ENABLED:=(STORAGE_DEFAULT_LOG_LEVEL <> STORAGE_LOG_LEVEL_NONE); 
- 
+ STORAGE_LOG_ENABLED:=(STORAGE_DEFAULT_LOG_LEVEL <> STORAGE_LOG_LEVEL_NONE);
+
  {Initialize Storage Table}
  StorageTable:=nil;
- StorageTableLock:=CriticalSectionCreate; 
+ StorageTableLock:=CriticalSectionCreate;
  StorageTableCount:=0;
  if StorageTableLock = INVALID_HANDLE_VALUE then
   begin
    if STORAGE_LOG_ENABLED then StorageLogError(nil,'Failed to create storage table lock');
   end;
- 
+
  StorageInitialized:=True;
 end;
 
 {==============================================================================}
 {==============================================================================}
 {Storage Functions}
-function StorageDeviceRead(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord; 
+function StorageDeviceRead(Storage:PStorageDevice;const Start,Count:Int64;Buffer:Pointer):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Storage}
  if Storage = nil then Exit;
  if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
@@ -304,11 +304,11 @@ function StorageDeviceWrite(Storage:PStorageDevice;const Start,Count:Int64;Buffe
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Storage}
  if Storage = nil then Exit;
  if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  if not Assigned(Storage.DeviceWrite) then Exit;
 
@@ -322,7 +322,7 @@ function StorageDeviceErase(Storage:PStorageDevice;const Start,Count:Int64):Long
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Storage}
  if Storage = nil then Exit;
  if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
@@ -340,7 +340,7 @@ function StorageDeviceControl(Storage:PStorageDevice;Request:Integer;Argument1:P
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Storage}
  if Storage = nil then Exit;
  if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
@@ -362,14 +362,14 @@ function StorageDeviceSetState(Storage:PStorageDevice;State:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Storage}
  if Storage = nil then Exit;
  if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {Check State}
  if State > STORAGE_STATE_INSERTED then Exit;
- 
+
  {Check State}
  if Storage.StorageState = State then
   begin
@@ -381,10 +381,10 @@ begin
    {Acquire the Lock}
    if MutexLock(Storage.Lock) = ERROR_SUCCESS then
     begin
-     try 
+     try
       {Set State}
       Storage.StorageState:=State;
-  
+
       {Notify State}
       NotifierNotify(@Storage.Device,StorageDeviceStateToNotification(State));
 
@@ -399,7 +399,7 @@ begin
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
     end;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -412,7 +412,7 @@ function StorageDeviceStartStatus(Storage:PStorageDevice;Interval:LongWord):Long
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Storage}
  if Storage = nil then Exit;
  if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
@@ -428,10 +428,10 @@ begin
    {Acquire the Lock}
    if MutexLock(Storage.Lock) = ERROR_SUCCESS then
     begin
-     try 
+     try
       {Check Interval}
       if Interval < 1 then Interval:=STORAGE_STATUS_TIMER_INTERVAL;
-       
+
       {Create Timer}
       Storage.StatusTimer:=TimerCreateEx(Interval,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(StorageStatusTimer),Storage); {Rescheduled by Timer Event}
       if Storage.StatusTimer = INVALID_HANDLE_VALUE then
@@ -439,7 +439,7 @@ begin
         Result:=ERROR_OPERATION_FAILED;
         Exit;
        end;
-      
+
       {Return Result}
       Result:=ERROR_SUCCESS;
      finally
@@ -451,7 +451,7 @@ begin
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
     end;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -463,11 +463,11 @@ function StorageDeviceStopStatus(Storage:PStorageDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Storage}
  if Storage = nil then Exit;
  if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Timer}
  if Storage.StatusTimer = INVALID_HANDLE_VALUE then
   begin
@@ -479,11 +479,11 @@ begin
    {Acquire the Lock}
    if MutexLock(Storage.Lock) = ERROR_SUCCESS then
     begin
-     try 
+     try
       {Destroy Timer}
       Result:=TimerDestroy(Storage.StatusTimer);
       if Result <> ERROR_SUCCESS then Exit;
-      
+
       Storage.StatusTimer:=INVALID_HANDLE_VALUE;
      finally
       {Release the Lock}
@@ -494,7 +494,7 @@ begin
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
     end;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -516,16 +516,16 @@ function StorageDeviceCreateEx(Size:LongWord):PStorageDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TStorageDevice) then Exit;
- 
+
  {Create Storage}
  Result:=PStorageDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=STORAGE_TYPE_NONE;
  Result.Device.DeviceFlags:=STORAGE_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -542,16 +542,16 @@ begin
  Result.Product:=nil;
  Result.Revision:=nil;
  Result.StatusTimer:=INVALID_HANDLE_VALUE;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
   begin
    if STORAGE_LOG_ENABLED then StorageLogError(nil,'Failed to create lock for storage device');
-   
+
    {Destroy Storage}
    StorageDeviceDestroy(Result);
-   
+
    {Return Result}
    Result:=nil;
    Exit;
@@ -565,36 +565,36 @@ function StorageDeviceDestroy(Storage:PStorageDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Storage}
  if Storage = nil then Exit;
  if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Storage}
  Result:=ERROR_IN_USE;
  if StorageDeviceCheck(Storage) = Storage then Exit;
 
  {Check State}
  if Storage.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Lock}
  if Storage.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Storage.Lock);
   end;
- 
+
  {Destroy Timer}
  if Storage.StatusTimer <> INVALID_HANDLE_VALUE then
   begin
    TimerDestroy(Storage.StatusTimer);
   end;
- 
+
  {Update Storage}
  if Storage.Vendor <> nil then FreeMem(Storage.Vendor);
  if Storage.Product <> nil then FreeMem(Storage.Product);
  if Storage.Revision <> nil then FreeMem(Storage.Revision);
- 
- {Destroy Storage} 
+
+ {Destroy Storage}
  Result:=DeviceDestroy(@Storage.Device);
 end;
 
@@ -607,19 +607,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Storage}
  if Storage = nil then Exit;
  if Storage.StorageId <> DEVICE_ID_ANY then Exit;
  if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Storage}
  Result:=ERROR_ALREADY_EXISTS;
  if StorageDeviceCheck(Storage) = Storage then Exit;
- 
+
  {Check State}
  if Storage.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Storage}
  if CriticalSectionLock(StorageTableLock) = ERROR_SUCCESS then
   begin
@@ -631,19 +631,19 @@ begin
       Inc(StorageId);
      end;
     Storage.StorageId:=StorageId;
-    
+
     {Update Device}
     Storage.Device.DeviceName:=STORAGE_NAME_PREFIX + IntToStr(Storage.StorageId);
     Storage.Device.DeviceClass:=DEVICE_CLASS_STORAGE;
-    
+
     {Register Device}
     Result:=DeviceRegister(@Storage.Device);
     if Result <> ERROR_SUCCESS then
      begin
       Storage.StorageId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link Storage}
     if StorageTable = nil then
      begin
@@ -655,10 +655,10 @@ begin
       StorageTable.Prev:=Storage;
       StorageTable:=Storage;
      end;
- 
+
     {Increment Count}
     Inc(StorageTableCount);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -668,7 +668,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -681,19 +681,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Storage}
  if Storage = nil then Exit;
  if Storage.StorageId = DEVICE_ID_ANY then Exit;
  if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Storage}
  Result:=ERROR_NOT_FOUND;
  if StorageDeviceCheck(Storage) <> Storage then Exit;
- 
+
  {Check State}
  if Storage.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove Storage}
  if CriticalSectionLock(StorageTableLock) = ERROR_SUCCESS then
   begin
@@ -701,7 +701,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@Storage.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink Storage}
     Prev:=Storage.Prev;
     Next:=Storage.Next;
@@ -711,7 +711,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -719,15 +719,15 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(StorageTableCount);
- 
+
     {Update Storage}
     Storage.StorageId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -737,7 +737,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -748,10 +748,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if StorageId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(StorageTableLock) = ERROR_SUCCESS then
   begin
@@ -770,7 +770,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       Storage:=Storage.Next;
      end;
@@ -792,10 +792,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(StorageTableLock) = ERROR_SUCCESS then
   begin
@@ -814,7 +814,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       Storage:=Storage.Next;
      end;
@@ -840,7 +840,7 @@ begin
  {}
  Result:=PStorageDevice(DeviceFindByDescription(Description));
 end;
-       
+
 {==============================================================================}
 
 function StorageDeviceEnumerate(Callback:TStorageEnumerate;Data:Pointer):LongWord;
@@ -849,10 +849,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(StorageTableLock) = ERROR_SUCCESS then
   begin
@@ -870,7 +870,7 @@ begin
       {Get Next}
       Storage:=Storage.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -881,7 +881,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -890,19 +890,19 @@ function StorageDeviceNotification(Storage:PStorageDevice;Callback:TStorageNotif
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Storage}
  if Storage = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_STORAGE,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check Storage}
    if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@Storage.Device,DEVICE_CLASS_STORAGE,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -924,11 +924,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Storage}
  if Storage = nil then Exit;
  if Storage.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(StorageTableLock) = ERROR_SUCCESS then
   begin
@@ -943,7 +943,7 @@ begin
         Result:=Storage;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -960,7 +960,7 @@ function StorageDeviceTypeToString(StorageType:LongWord):String;
 begin
  {}
  Result:='STORAGE_TYPE_UNKNOWN';
- 
+
  if StorageType <= STORAGE_TYPE_MAX then
   begin
    Result:=STORAGE_TYPE_NAMES[StorageType];
@@ -973,7 +973,7 @@ function StorageDeviceStateToString(StorageState:LongWord):String;
 begin
  {}
  Result:='STORAGE_STATE_UNKNOWN';
- 
+
  if StorageState <= STORAGE_STATE_MAX then
   begin
    Result:=STORAGE_STATE_NAMES[StorageState];
@@ -987,7 +987,7 @@ function StorageDeviceStateToNotification(State:LongWord):LongWord;
 begin
  {}
  Result:=DEVICE_NOTIFICATION_NONE;
- 
+
  {Check State}
  case State of
   STORAGE_STATE_EJECTED:Result:=DEVICE_NOTIFICATION_EJECT;
@@ -1006,7 +1006,7 @@ begin
  {}
  {Check Level}
  if Level < STORAGE_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = STORAGE_LOG_LEVEL_DEBUG then
@@ -1021,17 +1021,17 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'Storage: ';
- 
+
  {Check Storage}
  if Storage <> nil then
   begin
    WorkBuffer:=WorkBuffer + STORAGE_NAME_PREFIX + IntToStr(Storage.StorageId) + ': ';
   end;
 
- {Output Logging}  
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_STORAGE,LogLevelToLoggingSeverity(Level),'Storage',WorkBuffer + AText);
 end;
 
@@ -1092,7 +1092,7 @@ initialization
  StorageInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

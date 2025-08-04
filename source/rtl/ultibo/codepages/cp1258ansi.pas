@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -48,7 +48,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {CP1258ANSI specific constants}
@@ -64,13 +64,13 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
 {==============================================================================}
 {Initialization Functions}
 procedure CP1258ANSIInit;
- 
+
 {==============================================================================}
 {CP1258ANSI Functions}
- 
+
 {==============================================================================}
 {CP1258ANSI Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -122,7 +122,7 @@ var
   $0111,$00F1,$0323,$00F3,$00F4,$01A1,$00F6,$00F7,
   $00F8,$00F9,$00FA,$00FB,$00FC,$01B0,$20AB,$00FF)
  );
- 
+
  CP1258Lower:TLowerTable = (
   LowerID:1258;
   Values:(
@@ -143,7 +143,7 @@ var
   $E0,$E1,$E2,$E3,$E4,$E5,$E6,$E7,$E8,$E9,$EA,$EB,$EC,$ED,$EE,$EF,
   $F0,$F1,$F2,$F3,$F4,$F5,$F6,$F7,$F8,$F9,$FA,$FB,$FC,$FD,$FE,$FF)
  );
- 
+
  CP1258Upper:TUpperTable = (
   UpperID:1258;
   Values:(
@@ -164,7 +164,7 @@ var
   $C0,$C1,$C2,$C3,$C4,$C5,$C6,$C7,$C8,$C9,$CA,$CB,$EC,$CD,$CE,$CF,
   $D0,$D1,$F2,$D3,$D4,$D5,$D6,$F7,$D8,$D9,$DA,$DB,$DC,$DD,$FE,$9F)
  );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -177,7 +177,7 @@ begin
  {Load Default Code Pages}
  LoadPage(CP_ANSI_1258,@CPANSI1258,@CP1258Lower,@CP1258Upper);
  DefaultTrans(CP_ANSI_1258,CP_OEM_1258);
- 
+
  CP1258ANSIInitialized:=True;
 end;
 
@@ -194,9 +194,9 @@ end;
 
 initialization
  CP1258ANSIInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

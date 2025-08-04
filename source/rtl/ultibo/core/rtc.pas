@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -37,7 +37,7 @@ RTC Devices
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit RTC; 
+unit RTC;
 
 interface
 
@@ -51,32 +51,32 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
 const
  {RTC specific constants}
  RTC_NAME_PREFIX = 'RTC';  {Name prefix for RTC Devices}
- 
+
  {RTC Device Types}
  RTC_TYPE_NONE      = 0;
- 
+
  RTC_TYPE_MAX       = 0;
- 
+
  {RTC Type Names}
  RTC_TYPE_NAMES:array[RTC_TYPE_NONE..RTC_TYPE_MAX] of String = (
   'RTC_TYPE_NONE');
- 
+
  {RTC Device States}
  RTC_STATE_DISABLED = 0;
  RTC_STATE_ENABLED  = 1;
- 
+
  RTC_STATE_MAX      = 1;
- 
+
  {RTC State Names}
  RTC_STATE_NAMES:array[RTC_STATE_DISABLED..RTC_STATE_MAX] of String = (
   'RTC_STATE_DISABLED',
   'RTC_STATE_ENABLED');
- 
+
  {RTC Device Flags}
  RTC_FLAG_NONE          = $00000000;
  RTC_FLAG_ALARM         = $00000001; {Device supports one or more alarms}
  RTC_FLAG_WATCHDOG      = $00000002; {Device has a watchdog timer function}
- 
+
  {RTC logging}
  RTC_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {RTC debugging messages}
  RTC_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {RTC informational messages, such as a device being attached or detached}
@@ -84,12 +84,12 @@ const
  RTC_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {RTC error messages}
  RTC_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No RTC messages}
 
-var 
+var
  RTC_DEFAULT_LOG_LEVEL:LongWord = RTC_LOG_LEVEL_DEBUG; {Minimum level for RTC messages.  Only messages with level greater than or equal to this will be printed}
- 
-var 
+
+var
  {RTC logging}
- RTC_LOG_ENABLED:Boolean; 
+ RTC_LOG_ENABLED:Boolean;
 
 {==============================================================================}
 type
@@ -103,22 +103,22 @@ type
   MaxTime:Int64;       {Maximum time value represented by the device (Time when a rollover will occur)}
   AlarmCount:LongWord; {Number of alarms supported by the device (0 if not supported)}
  end;
- 
+
  {RTC Device}
  PRTCDevice = ^TRTCDevice;
- 
+
  {RTC Enumeration Callback}
  TRTCEnumerate = function(RTC:PRTCDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {RTC Notification Callback}
  TRTCNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {RTC Device Methods}
  TRTCDeviceStart = function(RTC:PRTCDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TRTCDeviceStop = function(RTC:PRTCDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TRTCDeviceGetTime = function(RTC:PRTCDevice):Int64;{$IFDEF i386} stdcall;{$ENDIF}
  TRTCDeviceSetTime = function(RTC:PRTCDevice;const Time:Int64):Int64;{$IFDEF i386} stdcall;{$ENDIF}
  TRTCDeviceGetProperties = function(RTC:PRTCDevice;Properties:PRTCProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TRTCDevice = record
   {Device Properties}
   Device:TDevice;                                 {The Device entry for this RTC}
@@ -136,19 +136,19 @@ type
   {Driver Properties}
   Lock:TMutexHandle;                              {Device lock}
   Properties:TRTCProperties;                      {Device properties}
-  {Internal Properties}                                                                        
+  {Internal Properties}
   Prev:PRTCDevice;                                {Previous entry in RTC table}
   Next:PRTCDevice;                                {Next entry in RTC table}
- end; 
-  
+ end;
+
 {==============================================================================}
 {var}
  {RTC specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure RTCInit;
- 
+
 {==============================================================================}
 {RTC Functions}
 function RTCDeviceStart(RTC:PRTCDevice):LongWord;
@@ -156,10 +156,10 @@ function RTCDeviceStop(RTC:PRTCDevice):LongWord;
 
 function RTCDeviceGetTime(RTC:PRTCDevice):Int64;
 function RTCDeviceSetTime(RTC:PRTCDevice;const Time:Int64):Int64;
- 
+
 function RTCDeviceProperties(RTC:PRTCDevice;Properties:PRTCProperties):LongWord; inline;
 function RTCDeviceGetProperties(RTC:PRTCDevice;Properties:PRTCProperties):LongWord;
-  
+
 function RTCDeviceCreate:PRTCDevice;
 function RTCDeviceCreateEx(Size:LongWord):PRTCDevice;
 function RTCDeviceDestroy(RTC:PRTCDevice):LongWord;
@@ -171,7 +171,7 @@ function RTCDeviceFind(RTCId:LongWord):PRTCDevice;
 function RTCDeviceFindByName(const Name:String):PRTCDevice; inline;
 function RTCDeviceFindByDescription(const Description:String):PRTCDevice; inline;
 function RTCDeviceEnumerate(Callback:TRTCEnumerate;Data:Pointer):LongWord;
- 
+
 function RTCDeviceNotification(RTC:PRTCDevice;Callback:TRTCNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
 
 {==============================================================================}
@@ -185,7 +185,7 @@ function SysRTCSetTime(const Time:Int64):Int64;
 {RTC Helper Functions}
 function RTCGetCount:LongWord;
 function RTCDeviceGetDefault:PRTCDevice;
-function RTCDeviceSetDefault(RTC:PRTCDevice):LongWord; 
+function RTCDeviceSetDefault(RTC:PRTCDevice):LongWord;
 
 function RTCDeviceCheck(RTC:PRTCDevice):PRTCDevice;
 
@@ -219,7 +219,7 @@ var
  RTCDeviceTableCount:LongWord;
 
  RTCDeviceDefault:PRTCDevice;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -228,28 +228,28 @@ begin
  {}
  {Check Initialized}
  if RTCInitialized then Exit;
- 
+
  {Initialize Logging}
- RTC_LOG_ENABLED:=(RTC_DEFAULT_LOG_LEVEL <> RTC_LOG_LEVEL_NONE); 
- 
+ RTC_LOG_ENABLED:=(RTC_DEFAULT_LOG_LEVEL <> RTC_LOG_LEVEL_NONE);
+
  {Initialize RTC Table}
  RTCDeviceTable:=nil;
- RTCDeviceTableLock:=CriticalSectionCreate; 
+ RTCDeviceTableLock:=CriticalSectionCreate;
  RTCDeviceTableCount:=0;
  if RTCDeviceTableLock = INVALID_HANDLE_VALUE then
   begin
    if RTC_LOG_ENABLED then RTCLogError(nil,'Failed to create RTC table lock');
   end;
  RTCDeviceDefault:=nil;
- 
+
  {Register Platform RTC Handlers}
  RTCAvailableHandler:=SysRTCAvailable;
  RTCGetTimeHandler:=SysRTCGetTime;
  RTCSetTimeHandler:=SysRTCSetTime;
- 
+
  RTCInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {RTC Functions}
@@ -257,19 +257,19 @@ function RTCDeviceStart(RTC:PRTCDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check RTC}
  if RTC = nil then Exit;
- if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF RTC_DEBUG}
  if RTC_LOG_ENABLED then RTCLogDebug(RTC,'RTC Device Start');
  {$ENDIF}
- 
+
  {Check Disabled}
  Result:=ERROR_SUCCESS;
  if RTC.RTCState <> RTC_STATE_DISABLED then Exit;
- 
+
  if MutexLock(RTC.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -284,22 +284,22 @@ begin
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
      end;
-     
+
     {Enable Device}
     RTC.RTCState:=RTC_STATE_ENABLED;
-    
+
     {Notify Enable}
     NotifierNotify(@RTC.Device,DEVICE_NOTIFICATION_ENABLE);
-    
+
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(RTC.Lock);
-   end; 
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -308,11 +308,11 @@ function RTCDeviceStop(RTC:PRTCDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check RTC}
  if RTC = nil then Exit;
- if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF RTC_DEBUG}
  if RTC_LOG_ENABLED then RTCLogDebug(RTC,'RTC Device Stop');
  {$ENDIF}
@@ -320,7 +320,7 @@ begin
  {Check Enabled}
  Result:=ERROR_SUCCESS;
  if RTC.RTCState <> RTC_STATE_ENABLED then Exit;
- 
+
  if MutexLock(RTC.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -334,23 +334,23 @@ begin
      begin
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
-     end;    
-  
+     end;
+
     {Disable Device}
     RTC.RTCState:=RTC_STATE_DISABLED;
-    
+
     {Notify Disable}
     NotifierNotify(@RTC.Device,DEVICE_NOTIFICATION_DISABLE);
-    
+
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(RTC.Lock);
-   end; 
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -359,18 +359,18 @@ function RTCDeviceGetTime(RTC:PRTCDevice):Int64;
 begin
  {}
  Result:=0;
- 
+
  {Check RTC}
  if RTC = nil then Exit;
- if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF RTC_DEBUG}
  if RTC_LOG_ENABLED then RTCLogDebug(RTC,'RTC Device Get Time');
  {$ENDIF}
- 
+
  {Check Enabled}
  if RTC.RTCState <> RTC_STATE_ENABLED then Exit;
- 
+
  if Assigned(RTC.DeviceGetTime) then
   begin
    Result:=RTC.DeviceGetTime(RTC);
@@ -383,26 +383,26 @@ function RTCDeviceSetTime(RTC:PRTCDevice;const Time:Int64):Int64;
 begin
  {}
  Result:=0;
- 
+
  {Check RTC}
  if RTC = nil then Exit;
- if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF RTC_DEBUG}
  if RTC_LOG_ENABLED then RTCLogDebug(RTC,'RTC Device Set Time (Time=' + IntToStr(Time) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  if RTC.RTCState <> RTC_STATE_ENABLED then Exit;
- 
+
  if Assigned(RTC.DeviceSetTime) then
   begin
    Result:=RTC.DeviceSetTime(RTC,Time);
   end;
 end;
- 
+
 {==============================================================================}
- 
+
 function RTCDeviceProperties(RTC:PRTCDevice;Properties:PRTCProperties):LongWord; inline;
 {Get the properties for the specified RTC device}
 {RTC: The RTC device to get properties from}
@@ -425,22 +425,22 @@ function RTCDeviceGetProperties(RTC:PRTCDevice;Properties:PRTCProperties):LongWo
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Properties}
  if Properties = nil then Exit;
- 
+
  {Check RTC}
  if RTC = nil then Exit;
- if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit; 
+ if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {$IFDEF RTC_DEBUG}
  if RTC_LOG_ENABLED then RTCLogDebug(RTC,'RTC Device Get Properties');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if RTC.RTCState <> RTC_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if Assigned(RTC.DeviceGetProperties) then
   begin
    Result:=RTC.DeviceGetProperties(RTC,Properties);
@@ -448,15 +448,15 @@ begin
  else
   begin
    if MutexLock(RTC.Lock) <> ERROR_SUCCESS then Exit;
-   
+
    {Get Properties}
    System.Move(RTC.Properties,Properties^,SizeOf(TRTCProperties));
 
    {Return Result}
    Result:=ERROR_SUCCESS;
-   
+
    MutexUnlock(RTC.Lock);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -478,16 +478,16 @@ function RTCDeviceCreateEx(Size:LongWord):PRTCDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TRTCDevice) then Exit;
- 
+
  {Create RTC}
  Result:=PRTCDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=RTC_TYPE_NONE;
  Result.Device.DeviceFlags:=RTC_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -501,7 +501,7 @@ begin
  Result.DeviceSetTime:=nil;
  Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -520,25 +520,25 @@ function RTCDeviceDestroy(RTC:PRTCDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check RTC}
  if RTC = nil then Exit;
  if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check RTC}
  Result:=ERROR_IN_USE;
  if RTCDeviceCheck(RTC) = RTC then Exit;
 
  {Check State}
  if RTC.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Lock}
  if RTC.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(RTC.Lock);
   end;
- 
- {Destroy RTC} 
+
+ {Destroy RTC}
  Result:=DeviceDestroy(@RTC.Device);
 end;
 
@@ -551,25 +551,25 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check RTC}
  if RTC = nil then Exit;
  if RTC.RTCId <> DEVICE_ID_ANY then Exit;
  if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Interfaces}
  if not(Assigned(RTC.DeviceStart)) then Exit;
  if not(Assigned(RTC.DeviceStop)) then Exit;
  if not(Assigned(RTC.DeviceGetTime)) then Exit;
  if not(Assigned(RTC.DeviceSetTime)) then Exit;
- 
+
  {Check RTC}
  Result:=ERROR_ALREADY_EXISTS;
  if RTCDeviceCheck(RTC) = RTC then Exit;
- 
+
  {Check State}
  if RTC.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert RTC}
  if CriticalSectionLock(RTCDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -581,19 +581,19 @@ begin
       Inc(RTCId);
      end;
     RTC.RTCId:=RTCId;
-    
+
     {Update Device}
-    RTC.Device.DeviceName:=RTC_NAME_PREFIX + IntToStr(RTC.RTCId); 
+    RTC.Device.DeviceName:=RTC_NAME_PREFIX + IntToStr(RTC.RTCId);
     RTC.Device.DeviceClass:=DEVICE_CLASS_RTC;
-    
+
     {Register Device}
     Result:=DeviceRegister(@RTC.Device);
     if Result <> ERROR_SUCCESS then
      begin
       RTC.RTCId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link RTC}
     if RTCDeviceTable = nil then
      begin
@@ -605,16 +605,16 @@ begin
       RTCDeviceTable.Prev:=RTC;
       RTCDeviceTable:=RTC;
      end;
- 
+
     {Increment Count}
     Inc(RTCDeviceTableCount);
-    
+
     {Check Default}
     if RTCDeviceDefault = nil then
      begin
       RTCDeviceDefault:=RTC;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -624,7 +624,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -637,19 +637,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check RTC}
  if RTC = nil then Exit;
  if RTC.RTCId = DEVICE_ID_ANY then Exit;
  if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check RTC}
  Result:=ERROR_NOT_FOUND;
  if RTCDeviceCheck(RTC) <> RTC then Exit;
- 
+
  {Check State}
  if RTC.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove RTC}
  if CriticalSectionLock(RTCDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -657,7 +657,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@RTC.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink RTC}
     Prev:=RTC.Prev;
     Next:=RTC.Next;
@@ -667,7 +667,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -675,21 +675,21 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(RTCDeviceTableCount);
- 
+
     {Check Default}
     if RTCDeviceDefault = RTC then
      begin
       RTCDeviceDefault:=RTCDeviceTable;
      end;
- 
+
     {Update RTC}
     RTC.RTCId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -699,7 +699,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -710,10 +710,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if RTCId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(RTCDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -732,7 +732,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       RTC:=RTC.Next;
      end;
@@ -758,7 +758,7 @@ begin
  {}
  Result:=PRTCDevice(DeviceFindByDescription(Description));
 end;
-       
+
 {==============================================================================}
 
 function RTCDeviceEnumerate(Callback:TRTCEnumerate;Data:Pointer):LongWord;
@@ -767,10 +767,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(RTCDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -784,11 +784,11 @@ begin
        begin
         if Callback(RTC,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       RTC:=RTC.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -799,7 +799,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -808,25 +808,25 @@ function RTCDeviceNotification(RTC:PRTCDevice;Callback:TRTCNotification;Data:Poi
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check RTC}
  if RTC = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_RTC,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check RTC}
    if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@RTC.Device,DEVICE_CLASS_RTC,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
 {==============================================================================}
 {RTL RTC Functions}
-function SysRTCAvailable:Boolean; 
+function SysRTCAvailable:Boolean;
 {Check if an RTC device is available}
 begin
  {}
@@ -841,7 +841,7 @@ function SysRTCGetTime:Int64;
 begin
  {}
  Result:=0;
- 
+
  if RTCDeviceDefault = nil then Exit;
 
  Result:=RTCDeviceGetTime(RTCDeviceDefault);
@@ -857,7 +857,7 @@ function SysRTCSetTime(const Time:Int64):Int64;
 begin
  {}
  Result:=0;
- 
+
  if RTCDeviceDefault = nil then Exit;
 
  Result:=RTCDeviceSetTime(RTCDeviceDefault,Time);
@@ -884,26 +884,26 @@ end;
 
 {==============================================================================}
 
-function RTCDeviceSetDefault(RTC:PRTCDevice):LongWord; 
+function RTCDeviceSetDefault(RTC:PRTCDevice):LongWord;
 {Set the current default RTC device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check RTC}
  if RTC = nil then Exit;
  if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(RTCDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check RTC}
     if RTCDeviceCheck(RTC) <> RTC then Exit;
-    
+
     {Set RTC Default}
     RTCDeviceDefault:=RTC;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -926,11 +926,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check RTC}
  if RTC = nil then Exit;
  if RTC.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(RTCDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -945,7 +945,7 @@ begin
         Result:=RTC;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -962,7 +962,7 @@ function RTCDeviceTypeToString(RTCType:LongWord):String;
 begin
  {}
  Result:='RTC_TYPE_UNKNOWN';
- 
+
  if RTCType <= RTC_TYPE_MAX then
   begin
    Result:=RTC_TYPE_NAMES[RTCType];
@@ -975,7 +975,7 @@ function RTCDeviceStateToString(RTCState:LongWord):String;
 begin
  {}
  Result:='RTC_STATE_UNKNOWN';
- 
+
  if RTCState <= RTC_STATE_MAX then
   begin
    Result:=RTC_STATE_NAMES[RTCState];
@@ -988,14 +988,14 @@ function RTCTimeIsValid(const Time:TSystemTime):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Time.Year < 1900 then Exit;
  if (Time.Month < 1) or (Time.Month > 12) then Exit;
  if (Time.Day < 1) or (Time.Day > 31) then Exit;
  if (Time.Hour >= 24) then Exit;
  if (Time.Minute >= 60) then Exit;
  if (Time.Second >= 60) then Exit;
- 
+
  Result:=True;
 end;
 
@@ -1011,13 +1011,13 @@ begin
 
  {Setup FileTime}
  FileTime:=0;
- 
+
  {Convert to DateTime}
  DateTime:=SystemTimeToDateTime(SystemTime);
- 
+
  {Convert to FileTime}
  FileTime:=((Trunc(DateTime) * TIME_TICKS_PER_DAY) + TIME_TICKS_TO_1899) + ((Round(Frac(DateTime) * PASCAL_TIME_MILLISECONDS_PER_DAY) * TIME_TICKS_PER_MILLISECOND));
- 
+
  Result:=True;
 end;
 
@@ -1033,15 +1033,15 @@ begin
 
  {Setup SystemTime}
  FillChar(SystemTime,SizeOf(TSystemTime),0);
- 
+
  if FileTime < TIME_TICKS_TO_1899 then Exit;
- 
+
  {Convert to DateTime}
  DateTime:=((FileTime - TIME_TICKS_TO_1899) div TIME_TICKS_PER_DAY) + (((FileTime - TIME_TICKS_TO_1899) mod TIME_TICKS_PER_DAY) / TIME_TICKS_PER_DAY);
- 
+
  {Convert to SystemTime}
  DateTimeToSystemTime(DateTime,SystemTime);
- 
+
  Result:=True;
 end;
 
@@ -1054,7 +1054,7 @@ begin
  {}
  {Check Level}
  if Level < RTC_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = RTC_LOG_LEVEL_DEBUG then
@@ -1069,17 +1069,17 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'RTC: ';
- 
+
  {Check RTC}
  if RTC <> nil then
   begin
    WorkBuffer:=WorkBuffer + RTC_NAME_PREFIX + IntToStr(RTC.RTCId) + ': ';
   end;
 
- {Output Logging}  
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_RTC,LogLevelToLoggingSeverity(Level),'RTC',WorkBuffer + AText);
 end;
 
@@ -1122,7 +1122,7 @@ initialization
  RTCInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -1130,4 +1130,4 @@ finalization
 {==============================================================================}
 
 end.
-  
+

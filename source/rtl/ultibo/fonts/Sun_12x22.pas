@@ -20,7 +20,7 @@ Credits
 =======
 
  Information for this unit was obtained from:
- 
+
   Linux - KBD – Linux keyboard tools - http://kbd-project.org/
 
  This font was originally from the file sun12x22.psfu

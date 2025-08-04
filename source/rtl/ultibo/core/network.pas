@@ -17,7 +17,7 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -46,66 +46,66 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,Devices,Sy
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-  
+
 {==============================================================================}
 const
  {Network specific constants}
  NETWORK_NAME_PREFIX = 'Network';   {Name prefix for Network Devices}
- 
+
  {Network Device Types}
  NETWORK_TYPE_NONE      = 0;
  NETWORK_TYPE_ETHERNET  = 1;
  NETWORK_TYPE_TOKENRING = 2;
  NETWORK_TYPE_80211     = 3;  {IEEE 802.11 Wireless (WiFi) network}
- 
+
  NETWORK_TYPE_MAX       = 3;
- 
+
  {Network Type Names}
  NETWORK_TYPE_NAMES:array[NETWORK_TYPE_NONE..NETWORK_TYPE_MAX] of String = (
   'NETWORK_TYPE_NONE',
   'NETWORK_TYPE_ETHERNET',
   'NETWORK_TYPE_TOKENRING',
   'NETWORK_TYPE_80211');
- 
+
  {Network Device States}
  NETWORK_STATE_CLOSED  = 0;
  NETWORK_STATE_CLOSING = 1;
  NETWORK_STATE_OPENING = 2;
  NETWORK_STATE_OPEN    = 3;
- 
+
  NETWORK_STATE_MAX     = 3;
- 
+
  {Network State Names}
  NETWORK_STATE_NAMES:array[NETWORK_STATE_CLOSED..NETWORK_STATE_MAX] of String = (
   'NETWORK_STATE_CLOSED',
   'NETWORK_STATE_CLOSING',
   'NETWORK_STATE_OPENING',
   'NETWORK_STATE_OPEN');
- 
+
  {Network Device Status}
  NETWORK_STATUS_DOWN  = 0;
  NETWORK_STATUS_UP    = 1;
- 
+
  NETWORK_STATUS_MAX   = 1;
- 
+
  {Network Status Names}
  NETWORK_STATUS_NAMES:array[NETWORK_STATUS_DOWN..NETWORK_STATUS_MAX] of String = (
   'NETWORK_STATUS_DOWN',
   'NETWORK_STATUS_UP');
- 
+
  {Network Device Flags}
  NETWORK_FLAG_NONE           = $00000000;
  NETWORK_FLAG_RX_BUFFER      = $00000001; {Device supports Receive Buffer (NetworkBufferReceive/NetworkBufferRelease)}
  NETWORK_FLAG_TX_BUFFER      = $00000002; {Device supports Transmit Buffer (NetworkBufferAllocate/NetworkBufferTransmit)}
  NETWORK_FLAG_RX_MULTIPACKET = $00000004; {Device supports multiple packets in the same Receive entry}
  NETWORK_FLAG_TX_MULTIPACKET = $00000008; {Device supports multiple packets in the same Transmit entry}
- 
+
  {Network Device Control Codes}
  NETWORK_CONTROL_CLEAR_STATS   = 1;  {Clear Statistics}
  NETWORK_CONTROL_SET_MAC       = 2;  {Set the MAC for this device}
  NETWORK_CONTROL_GET_MAC       = 3;  {Get the MAC for this device}
- NETWORK_CONTROL_SET_LOOPBACK  = 4;  {Set Loopback Mode}          
- NETWORK_CONTROL_RESET         = 5;  {Reset the device}  
+ NETWORK_CONTROL_SET_LOOPBACK  = 4;  {Set Loopback Mode}
+ NETWORK_CONTROL_RESET         = 5;  {Reset the device}
  NETWORK_CONTROL_DISABLE       = 6;  {Disable the device}
  NETWORK_CONTROL_GET_HARDWARE  = 7;  {Get Hardware address for this device}
  NETWORK_CONTROL_GET_BROADCAST = 8;  {Get Broadcast address for this device}
@@ -119,35 +119,35 @@ const
  NETWORK_CONTROL_ADD_MULTICAST = 16; {Add a multicast address to this device}
  NETWORK_CONTROL_DEL_MULTICAST = 17; {Delete a multicast address from this device}
  NETWORK_CONTROL_GET_MULTICAST = 18; {Get the list of multicast address for this device}
- 
+
  //To Do //Broadcast/Multicast/Promiscuous/Speed/Duplex/Link etc
  //To Do //Get DeviceId/VendorId/Stats etc
  //To Do //Get Overhead
  //To Do //Get/Set VLAN tags
- 
+
  {Network Link States}
  NETWORK_LINK_DOWN = NETWORK_STATUS_DOWN;
  NETWORK_LINK_UP   = NETWORK_STATUS_UP;
- 
+
  {Network Speed States}
  NETWORK_SPEED_NONE = 0;
  NETWORK_SPEED_10   = 10;
  NETWORK_SPEED_100  = 100;
  NETWORK_SPEED_1000 = 1000;
- 
+
  {Network Duplex States}
  NETWORK_DUPLEX_NONE = 0;
  NETWORK_DUPLEX_HALF = 1;
- NETWORK_DUPLEX_FULL = 2; 
- 
+ NETWORK_DUPLEX_FULL = 2;
+
  {Network Lock States}
  NETWORK_LOCK_NONE  = 0;
  NETWORK_LOCK_READ  = 1;
  NETWORK_LOCK_WRITE = 2;
-  
+
  {Network Buffer Size}
- NETWORK_BUFFER_SIZE = 1024; 
- 
+ NETWORK_BUFFER_SIZE = 1024;
+
  {Network Events}
  NETWORK_EVENT_NONE             = $00000000;
  NETWORK_EVENT_SYSTEM_START     = $00000001; {The network sub system is starting}
@@ -161,35 +161,35 @@ const
 
  {Network Event Signature}
  NETWORK_EVENT_SIGNATURE = $BE1D50C2;
- 
+
  {Network Event States}
  NETWORK_EVENT_STATE_UNREGISTERED = 0;
  NETWORK_EVENT_STATE_REGISTERED   = 1;
- 
+
  {Network Event Flags}
  NETWORK_EVENT_FLAG_NONE = $00000000;
- 
+
 const
  {Adapter Types}
  ADAPTER_TYPE_UNKNOWN  = 0;
  ADAPTER_TYPE_WIRED    = 1;
- ADAPTER_TYPE_LOOPBACK = 2; 
+ ADAPTER_TYPE_LOOPBACK = 2;
  ADAPTER_TYPE_WIRELESS = 3;
  ADAPTER_TYPE_SLIP     = 4;
  ADAPTER_TYPE_PPP      = 5;
- 
+
  {Adapter Threads}
  ADAPTER_THREAD_NAME     = 'Network Adapter';       {Thread name for Network adapter threads}
  ADAPTER_THREAD_PRIORITY = THREAD_PRIORITY_HIGHER;  {Thread priority for Network adapter threads}
- 
+
  {Adapter State}
  ADAPTER_STATE_DISABLED = 0;
  ADAPTER_STATE_ENABLED  = 1;
- 
+
  {Adapter Status}
  ADAPTER_STATUS_DOWN    = 0;
  ADAPTER_STATUS_UP      = 1;
- 
+
  {Configuration Types}
  CONFIG_TYPE_AUTO     = 0; //To Do //Why aren't these in Transport ?
  CONFIG_TYPE_STATIC   = 1;
@@ -200,17 +200,17 @@ const
  CONFIG_TYPE_LOOPBACK = 6;
  CONFIG_TYPE_SLIP     = 7;
  CONFIG_TYPE_PPP      = 8;
- 
+
  CONFIG_TYPE_UNKNOWN  = Word(-1);
- 
+
  {Authentication Types}
  AUTH_TYPE_UNKNOWN = 0;
  AUTH_TYPE_EAP     = 1;
  AUTH_TYPE_RSN     = 2;
- 
+
 const
- {Frame Types}             
- FRAME_TYPE_UNKNOWN       = 0;  
+ {Frame Types}
+ FRAME_TYPE_UNKNOWN       = 0;
  FRAME_TYPE_ETHERNET_II   = 1;  {Blue Book}
  FRAME_TYPE_TOKEN_RING    = 3;  {IEEE 802.5}
  FRAME_TYPE_APPLETALK     = 5;  {LocalTalk}
@@ -221,7 +221,7 @@ const
  FRAME_START_ETHERNET_SNAP = $AAAA;
  FRAME_START_ETHERNET_8023 = $FFFF;
 
- ADAPTER_MODE_NONE            = 1;   //To Do //Remove ??  //Maybe not, seem to be for Get/SetReceiveMode ? //Use for Filtering 
+ ADAPTER_MODE_NONE            = 1;   //To Do //Remove ??  //Maybe not, seem to be for Get/SetReceiveMode ? //Use for Filtering
  ADAPTER_MODE_LOCAL           = 2;
  ADAPTER_MODE_BROADCAST       = 3;  {This is the default}
  ADAPTER_MODE_LOCAL_MULTI     = 4;  {Mode 3 plus directed Multicast}
@@ -231,7 +231,7 @@ const
  {Configuration Commands}
  //To Do //Why aren't these in Transport ?
  //To Do //Change these to ADAPTER_CONFIG_ instead ? (or CONFIG_COMMAND_ ? //this one)
- CONFIG_ADAPTER_DISCOVER  = 0;   {Discover an Address from the ConfigHandler} 
+ CONFIG_ADAPTER_DISCOVER  = 0;   {Discover an Address from the ConfigHandler}
  CONFIG_ADAPTER_REQUEST   = 1;   {Request an Address from the ConfigHandler} {Either configured or obtained from Discover}
  CONFIG_ADAPTER_RELEASE   = 2;   {Release the Address obtained from ConfigHandler}
  CONFIG_ADAPTER_RENEW     = 3;   {Renew the Address obtained from ConfigHandler}
@@ -248,7 +248,7 @@ const
  AUTH_COMMAND_DISASSOCIATE   = 1;
  AUTH_COMMAND_AUTHENTICATE   = 2;
  AUTH_COMMAND_UNAUTHENTICATE = 3;
- 
+
  {Multicast Addressing}
  MAX_MULTICAST_ADDRESS = 8;   {Maximum number of addresses per adapter}
 
@@ -259,7 +259,7 @@ const
 
  {Media Types}
  MEDIA_TYPE_UNKNOWN  = $0000;
- 
+
  MEDIA_TYPE_ETHERNET  = $0001;  {ARP type of Ethernet Hardware (This value must not change, it is the actual values used by ARP packets)}
  MEDIA_TYPE_TOKENRING = $0006;  {ARP type of Token-Ring Hardware (This value must not change, it is the actual values used by ARP packets)}
  MEDIA_TYPE_IEEE80211 = $1000;
@@ -269,21 +269,21 @@ const
 
  {Packet Types}
  PACKET_MIN_TYPE   = $0600;  {If the value Ethernet header TypeLength field is greater than this the frame is Ethernet II}
- 
+
  PACKET_TYPE_IP    = $0800;
  PACKET_TYPE_IP6   = $86DD;
  PACKET_TYPE_ARP   = $0806;
  PACKET_TYPE_RARP  = $8035;
  PACKET_TYPE_8021Q = $8100;  {802.1Q with extended Ethernet header}
  PACKET_TYPE_IPX   = $8137;  {IPX on EII}
- 
+
  PACKET_TYPE_EAPOL = $888E;  {EAP-over-LAN (EAPOL)}
  PACKET_TYPE_RSN   = $88C7;  {RSN pre-authentication}
  PACKET_TYPE_TDLS  = $890D;  {Tunneled direct-link setup}
- 
+
  PACKET_TYPE_RAW   = $FFFF;  {IPX on 802.3}  //To Do //$00     //See: https://en.wikipedia.org/wiki/Ethernet_frame
  PACKET_TYPE_LLC   = $0001;  {IPX on 802.2}  //To Do //$E0 ??  //See: https://en.wikipedia.org/wiki/Ethernet_frame
- 
+
  {Generic MII registers (Management Interface)}
  MII_BMCR        = $00; {Basic mode control register}
  MII_BMSR        = $01; {Basic mode status register }
@@ -308,7 +308,7 @@ const
  MII_RESV2       = $1a; {Reserved...}
  MII_TPISTATUS   = $1b; {TPI status for 10mbps}
  MII_NCONFIG     = $1c; {Network interface config}
- 
+
  {Basic mode control register}
  BMCR_RESV      = $003f; {Unused...}
  BMCR_SPEED1000 = $0040; {MSB of Speed (1000)}
@@ -321,7 +321,7 @@ const
  BMCR_SPEED100  = $2000; {Select 100Mbps}
  BMCR_LOOPBACK  = $4000; {TXD loopback bits}
  BMCR_RESET     = $8000; {Reset to default state}
- 
+
  {Basic mode status register}
  BMSR_ERCAP        = $0001; {Ext-reg capability}
  BMSR_JCD          = $0002; {Jabber detected}
@@ -338,7 +338,7 @@ const
  BMSR_100HALF      = $2000; {Can do 100mbps, half-duplex}
  BMSR_100FULL      = $4000; {Can do 100mbps, full-duplex}
  BMSR_100BASE4     = $8000; {Can do 100mbps, 4k packets}
- 
+
  {Advertisement control register}
  ADVERTISE_SLCT          = $001f; {Selector bits}
  ADVERTISE_CSMA          = $0001; {Only selector supported}
@@ -360,7 +360,7 @@ const
 
  ADVERTISE_FULL = ADVERTISE_100FULL or ADVERTISE_10FULL or ADVERTISE_CSMA;
  ADVERTISE_ALL = ADVERTISE_10HALF or ADVERTISE_10FULL or ADVERTISE_100HALF or ADVERTISE_100FULL;
- 
+
  {Link partner ability register}
  LPA_SLCT            = $001f; {Same as advertise selector}
  LPA_10HALF          = $0020; {Can do 10mbps half-duplex}
@@ -392,12 +392,12 @@ const
 
  ESTATUS_1000_TFULL = $2000; {Can do 1000BT Full}
  ESTATUS_1000_THALF = $1000; {Can do 1000BT Half}
- 
+
  {N-way test register}
  NWAYTEST_RESV1    = $00ff; {Unused...}
  NWAYTEST_LOOPBACK = $0100; {Enable loopback for N-way}
  NWAYTEST_RESV2    = $fe00; {Unused...}
- 
+
  {1000BASE-T Control register}
  ADVERTISE_1000FULL    = $0200; {Advertise 1000BASE-T full duplex}
  ADVERTISE_1000HALF    = $0100; {Advertise 1000BASE-T half duplex}
@@ -414,20 +414,20 @@ const
  {Flow control flags}
  FLOW_CTRL_TX  = $01;
  FLOW_CTRL_RX  = $02;
- 
+
  {MMD Access Control register fields}
  MII_MMD_CTRL_DEVAD_MASK = $1f;   {Mask MMD DEVAD}
  MII_MMD_CTRL_ADDR       = $0000; {Address}
  MII_MMD_CTRL_NOINCR     = $4000; {no post increment}
  MII_MMD_CTRL_INCR_RDWT  = $8000; {post increment on reads & writes}
  MII_MMD_CTRL_INCR_ON_WT = $C000; {post increment on writes only}
- 
+
  {PHY Link State}
  PHY_LINK_DOWN = 0;
  PHY_LINK_UP = 1;
- 
+
  PHY_LINK_UNKNOWN = -1;
- 
+
  {PHY Interface Modes}
  PHY_INTERFACE_MODE_NONE = 0;
  PHY_INTERFACE_MODE_INTERNAL = 1;
@@ -453,27 +453,27 @@ const
  PHY_INTERFACE_MODE_XAUI = 21;
  PHY_INTERFACE_MODE_10GKR = 22; {10GBASE-KR, XFI, SFI - single lane 10G Serdes}
  PHY_INTERFACE_MODE_USXGMII = 23;
- 
+
  {PHY Link Speeds}
  PHY_SPEED_10   = 10;
  PHY_SPEED_100  = 100;
  PHY_SPEED_1000 = 1000;
- 
+
  PHY_SPEED_UNKNOWN = -1;
- 
+
  {PHY Duplex Modes}
  PHY_DUPLEX_HALF = 0;
  PHY_DUPLEX_FULL = 1;
 
  PHY_DUPLEX_UNKNOWN = -1;
- 
+
  {Service Sets}
  SERVICE_SET_UNKNOWN = 0;
  SERVICE_SET_BSS     = 1; {Basic Service Set}
  SERVICE_SET_ESS     = 2; {Extended Service Set}
  SERVICE_SET_IBSS    = 3; {Independent Basic Service Set}
  SERVICE_SET_MBSS    = 4; {Mesh Basic Service Set}
- 
+
  {Network logging}
  NETWORK_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Network debugging messages}
  NETWORK_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Network informational messages, such as a device being attached or detached}
@@ -481,13 +481,13 @@ const
  NETWORK_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Network error messages}
  NETWORK_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Network messages}
 
-var 
+var
  NETWORK_DEFAULT_LOG_LEVEL:LongWord = NETWORK_LOG_LEVEL_DEBUG; {Minimum level for Network messages.  Only messages with level greater than or equal to this will be printed}
- 
-var 
+
+var
  {Network logging}
- NETWORK_LOG_ENABLED:Boolean; 
- 
+ NETWORK_LOG_ENABLED:Boolean;
+
 {==============================================================================}
 const
  {Ethernet specific constants}
@@ -500,17 +500,17 @@ const
  ETHERNET_MTU             = 1500;
  ETHERNET_MIN_PAYLOAD     = 46;
  ETHERNET_MIN_PACKET_SIZE = ETHERNET_HEADER_SIZE + ETHERNET_VLAN_SIZE + ETHERNET_MIN_PAYLOAD;
- ETHERNET_MAX_PACKET_SIZE = ETHERNET_HEADER_SIZE + ETHERNET_VLAN_SIZE + ETHERNET_MTU;    
- 
+ ETHERNET_MAX_PACKET_SIZE = ETHERNET_HEADER_SIZE + ETHERNET_VLAN_SIZE + ETHERNET_MTU;
+
  //ETHERNET_RECEIVE_BUFFER_SIZE  = ETHERNET_MAX_PACKET_SIZE + ETHERNET_CRC_SIZE + ?? //To Do //See: ETH_RX_BUF_SIZE in ether.h
  ETHERNET_TRANSMIT_BUFFER_SIZE = ETHERNET_MAX_PACKET_SIZE;
- 
+
  {Ethernet 802.3 Network} {FRAME_TYPE_ETHERNET_8022}
  LLC_HEADER_SIZE = 3;  {SizeOf(TLLCHeader)} {Optionally can be 4 if Control is 2 octets}
 
  {Ethernet SNAP Network} {FRAME_TYPE_ETHERNET_SNAP}
- SNAP_HEADER_SIZE = 5;  {SizeOf(TSNAPHeader)} 
- 
+ SNAP_HEADER_SIZE = 5;  {SizeOf(TSNAPHeader)}
+
 {==============================================================================}
 type
  {Network specific types}
@@ -519,7 +519,7 @@ type
 
  PHardwareAddresses = ^THardwareAddresses;
  THardwareAddresses = array[0..0] of THardwareAddress;
- 
+
  PMulticastAddresses = ^TMulticastAddresses;
  TMulticastAddresses = array[0..MAX_MULTICAST_ADDRESS - 1] of THardwareAddress;
 
@@ -529,19 +529,19 @@ type
   Data:Pointer;
   Next:PPacketFragment;
  end;
- 
+
  {Adapter Statistics}
- PAdapterStatistics = ^TAdapterStatistics; 
+ PAdapterStatistics = ^TAdapterStatistics;
  TAdapterStatistics = record
   PacketsIn:UInt64;
   PacketsOut:UInt64;
-  BytesIn:UInt64; 
+  BytesIn:UInt64;
   BytesOut:UInt64;
   ErrorsIn:UInt64;
   ErrorsOut:UInt64;
   PacketsLost:UInt64;
  end;
- 
+
  {Network Packet}
  PNetworkPacket = ^TNetworkPacket;
  TNetworkPacket = record
@@ -550,7 +550,7 @@ type
   Length:LongInt;  {Length of packet data (Set by driver on Receive / Set by caller on Transmit, contains maximum length on Allocate)}
   Flags:LongWord;  {Packet specific flags (eg Error, Broadcast etc) (Dependent on network type)}
  end;
- 
+
  {Network Buffer}
  PNetworkBuffer = ^TNetworkBuffer;
  TNetworkBuffer = record
@@ -559,7 +559,7 @@ type
   Count:LongWord;            {Number of packets ready in buffer}
   Packets:array[0..(NETWORK_BUFFER_SIZE - 1)] of PNetworkPacket;
  end;
- 
+
  {Network Entry}
  PNetworkEntry = ^TNetworkEntry;
  TNetworkEntry = record
@@ -570,7 +570,7 @@ type
   DriverData:Pointer;              {Driver private data (Managed by driver that owns this entry)}
   Packets:array of TNetworkPacket; {Array of 0 to Count - 1 packets in this entry (Allocated by driver that owns this entry, must be at least one)}
  end;
- 
+
  {Network Queue}
  PNetworkQueue = ^TNetworkQueue;
  TNetworkQueue = record
@@ -581,7 +581,7 @@ type
   Flags:LongWord;                 {Queue specific flags (eg Paused, Halted etc) (Managed by driver)}
   Entries:array of PNetworkEntry; {Array of 0 to Total - 1 entries in this queue (Allocated by driver that owns this queue)}
  end;
- 
+
  {Network Statistics (Returned by NETWORK_CONTROL_GET_STATS)}
  PNetworkStatistics = ^TNetworkStatistics;
  TNetworkStatistics = record
@@ -596,31 +596,31 @@ type
   BufferOverruns:UInt64;
   BufferUnavailable:UInt64;
  end;
- 
+
  {Network Device}
  PNetworkDevice = ^TNetworkDevice;
- 
+
  {Network Enumeration Callback}
  TNetworkEnumerate = function(Network:PNetworkDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Network Notification Callback}
  TNetworkNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Network Device Methods}
  TNetworkDeviceOpen = function(Network:PNetworkDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TNetworkDeviceClose = function(Network:PNetworkDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TNetworkDeviceRead = function(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- TNetworkDeviceWrite = function(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF} 
+ TNetworkDeviceWrite = function(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TNetworkDeviceControl = function(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TNetworkBufferAllocate = function(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TNetworkBufferRelease = function(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TNetworkBufferReceive = function(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TNetworkBufferTransmit = function(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TNetworkDevice = record
   {Device Properties}
   Device:TDevice;                        {The Device entry for this Network}
-  {Network Properties}                   
+  {Network Properties}
   NetworkId:LongWord;                    {Unique Id of this Network in the Network table}
   NetworkState:LongWord;                 {Network state (eg NETWORK_STATE_OPEN)}
   NetworkStatus:LongWord;                {Network status (eg NETWORK_STATUS_UP)}
@@ -639,31 +639,31 @@ type
   TransmitWait:TSemaphoreHandle;         {Transmit complete semaphore}
   ReceiveBuffer:TBufferHandle;           {Buffer for receive packets}
   TransmitBuffer:TBufferHandle;          {Buffer for transmit packets}
-                                         
+
   ReceiveQueue:TNetworkQueue;            {Queue for receive packets}
   TransmitQueue:TNetworkQueue;           {Queue for transmit packets (If applicable)}
-  {Statistics Properties}                
+  {Statistics Properties}
   ReceiveBytes:UInt64;
-  ReceiveCount:UInt64;                 
-  ReceiveErrors:UInt64;                
+  ReceiveCount:UInt64;
+  ReceiveErrors:UInt64;
   TransmitBytes:UInt64;
-  TransmitCount:UInt64;                
-  TransmitErrors:UInt64;               
+  TransmitCount:UInt64;
+  TransmitErrors:UInt64;
   StatusCount:UInt64;
   StatusErrors:UInt64;
-  BufferOverruns:UInt64;               
-  BufferUnavailable:UInt64;               
-  {Internal Properties}                                                                          
+  BufferOverruns:UInt64;
+  BufferUnavailable:UInt64;
+  {Internal Properties}
   Prev:PNetworkDevice;                   {Previous entry in Network table}
   Next:PNetworkDevice;                   {Next entry in Network table}
- end; 
- 
+ end;
+
  {Network Event}
  PNetworkEvent = ^TNetworkEvent;
- 
+
  {Network Event Callback}
  TNetworkEventCallback = function(Data:Pointer;Event:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TNetworkEvent = record
   {Event Properties}
   Signature:LongWord;             {Signature for entry validation}
@@ -675,8 +675,8 @@ type
   {Internal Properties}
   Prev:PNetworkEvent;             {Previous entry in Event table}
   Next:PNetworkEvent;             {Next entry in Event table}
- end; 
- 
+ end;
+
 {==============================================================================}
 const
  {Network specific constants}
@@ -684,7 +684,7 @@ const
  HARDWARE_DEFAULT:THardwareAddress = ($00,$00,$00,$00,$00,$00);
  HARDWARE_LOOPBACK:THardwareAddress = ($00,$00,$00,$00,$00,$01);
  HARDWARE_BROADCAST:THardwareAddress = ($FF,$FF,$FF,$FF,$FF,$FF);
- 
+
 {==============================================================================}
 type
  {Ethernet specific types}
@@ -698,8 +698,8 @@ type
   SourceAddress:THardwareAddress;
   TypeLength:Word;          {Length or Type (IEEE 802.3 or BlueBook/DIX Ethernet)}
   Data:array[0..0] of Byte; {Not part of header, included to provide a pointer to the start of data}
- end;  
- 
+ end;
+
  {Ethernet 802.3 Network} {FRAME_TYPE_ETHERNET_8022}
  PLLCHeader = ^TLLCHeader;
  TLLCHeader = packed record
@@ -716,7 +716,7 @@ type
   ProtocolID:Word;
   Data:array[0..0] of Byte;  {Not part of header, included to provide a pointer to the start of data}
  end;
- 
+
 {==============================================================================}
 const
  {Ethernet specific constants}
@@ -724,7 +724,7 @@ const
  ETHERNET_LOOPBACK:THardwareAddress = ($00,$00,$00,$00,$00,$01);
  ETHERNET_BROADCAST:THardwareAddress = ($FF,$FF,$FF,$FF,$FF,$FF);
  ETHERNET_MULTICAST:THardwareAddress = ($01,$00,$5E,$00,$00,$00);
- 
+
 {==============================================================================}
 type
  {Network specific classes}
@@ -733,7 +733,7 @@ type
  TAdapterCallback = function(AAdapter:TNetworkAdapter):Boolean of object;
 
  TNetworkSettings = class;
- 
+
  TAdapterManager = class(TObject)
    constructor Create(ASettings:TNetworkSettings);
    destructor Destroy; override;
@@ -741,12 +741,12 @@ type
    {Internal Variables}
    FLock:TSynchronizerHandle;
    FSettings:TNetworkSettings;
-   
+
    {Status Variables}
    FAdapters:TNetworkList;    {List of TNetworkAdapter objects}
 
    {Event Variables}
-   
+
    {Internal Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
@@ -759,24 +759,24 @@ type
    {Public Methods}
    function AddAdapter(AAdapter:TNetworkAdapter):Boolean;
    function RemoveAdapter(AAdapter:TNetworkAdapter):Boolean;
-   
+
    function GetAdapterByName(const AName:String;ALock:Boolean;AState:LongWord):TNetworkAdapter;
    function GetAdapterByType(AAdapterType:Word;ALock:Boolean;AState:LongWord):TNetworkAdapter;
    function GetAdapterByDevice(ADevice:PNetworkDevice;ALock:Boolean;AState:LongWord):TNetworkAdapter;
    function GetAdapterByAdapter(AAdapter:TNetworkAdapter;ALock:Boolean;AState:LongWord):TNetworkAdapter;
    function GetAdapterByNext(APrevious:TNetworkAdapter;ALock,AUnlock:Boolean;AState:LongWord):TNetworkAdapter;
-   
+
    function StartAdapters:Boolean;
    function StopAdapters:Boolean;
    function ProcessStatus:Boolean;
-   
+
    function EnumerateAdapters(ACallback:TAdapterCallback):Boolean;
  end;
 
  TAdapterPacketHandler = function(AHandle:THandle;ASource,ADest,APacket:Pointer;ASize:Integer;ABroadcast:Boolean):Boolean of object;
  TAdapterMonitorHandler = function(AHandle:THandle;APacket:Pointer;ASize:Integer;AStatus:Pointer):Boolean of object;
  TAdapterAuthenticatorHandler = function(AHandle:THandle;ACommand:Word):Boolean of object;
- 
+
  TAdapterTransport = class(TListObject) {Upstream}
    constructor Create;
    destructor Destroy; override;
@@ -789,7 +789,7 @@ type
    PacketType:Word;
    PacketName:String;
    PacketHandler:TAdapterPacketHandler;
-   
+
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
@@ -825,7 +825,7 @@ type
   public
    {Status Variables}
    MonitorHandler:TAdapterMonitorHandler;
-   
+
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
@@ -843,20 +843,20 @@ type
    {Status Variables}
    AuthType:Word;    {EAP/RSN}
    AuthenticatorHandler:TAdapterAuthenticatorHandler;
-   
+
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
  end;
- 
+
  TNetworkList = class(TLinkedObjList)
    constructor Create;
    destructor Destroy; override;
   private
    {Internal Variables}
-   FLock:TSynchronizerHandle; 
+   FLock:TSynchronizerHandle;
   public
    {Public Methods}
    procedure ClearList;
@@ -869,7 +869,7 @@ type
    function WriterConvert:Boolean;
    function WriterOwner:Boolean;
  end;
- 
+
  TAdapterThread = class;
  TNetworkAdapter = class(TListObject)
    constructor Create(AManager:TAdapterManager;ADevice:PNetworkDevice;const AName:String);
@@ -883,7 +883,7 @@ type
    FManager:TAdapterManager;
    FDevice:PNetworkDevice;
    FName:String;
-   
+
    {Status Variables}
    FState:Integer;
    FStatus:Integer;
@@ -893,14 +893,14 @@ type
    FThread:TAdapterThread;            {Thread for adapter receiving}
    FBufferedReceive:Boolean;
    FBufferedTransmit:Boolean;
-   
+
    FBindings:TNetworkList;            {List of TAdapterBinding objects}
    FTransports:TNetworkList;          {List of TAdapterTransport objects}
    FMonitors:TNetworkList;            {List of TAdapterMonitor objects}
    FAuthenticators:TNetworkList;      {List of TAdapterAuthenticator objects}
-   
+
    FStatistics:TAdapterStatistics;
-   
+
    {Event Methods}
 
    {Internal Methods}
@@ -908,7 +908,7 @@ type
    function GetThreadID:TThreadID;
 
    procedure SetStatus(AStatus:Integer); virtual;
-   
+
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
   public
@@ -933,18 +933,18 @@ type
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
    function WriterConvert:Boolean;
-   
+
    function GetTransportByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TAdapterTransport;
    function GetTransportByType(APacketType,AFrameType:Word;ALock:Boolean;AState:LongWord):TAdapterTransport;
    function GetTransportByTransport(ATransport:TAdapterTransport;ALock:Boolean;AState:LongWord):TAdapterTransport;
    function GetTransportByNext(APrevious:TAdapterTransport;ALock,AUnlock:Boolean;AState:LongWord):TAdapterTransport;
-   
+
    function GetBindingByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TAdapterBinding;
    function GetBindingByType(ATransport:TAdapterTransport;APacketType,AFrameType:Word;ALock:Boolean;AState:LongWord):TAdapterBinding;
    function GetBindingByTransport(ATransport:TAdapterTransport;ALock:Boolean;AState:LongWord):TAdapterBinding;
    function GetBindingByBinding(ABinding:TAdapterBinding;ALock:Boolean;AState:LongWord):TAdapterBinding;
    function GetBindingByNext(APrevious:TAdapterBinding;ALock,AUnlock:Boolean;AState:LongWord):TAdapterBinding;
-   
+
    function GetMonitorByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TAdapterMonitor;
    function GetMonitorByMonitor(AMonitor:TAdapterMonitor;ALock:Boolean;AState:LongWord):TAdapterMonitor;
    function GetMonitorByNext(APrevious:TAdapterMonitor;ALock,AUnlock:Boolean;AState:LongWord):TAdapterMonitor;
@@ -953,19 +953,19 @@ type
    function GetAuthenticatorByType(AAuthType:Word;ALock:Boolean;AState:LongWord):TAdapterAuthenticator;
    function GetAuthenticatorByAuthenticator(AAuthenticator:TAdapterAuthenticator;ALock:Boolean;AState:LongWord):TAdapterAuthenticator;
    function GetAuthenticatorByNext(APrevious:TAdapterAuthenticator;ALock,AUnlock:Boolean;AState:LongWord):TAdapterAuthenticator;
-   
+
    function AddTransport(APacketType,AFrameType:Word;const APacketName:String;APacketHandler:TAdapterPacketHandler):THandle; virtual;
    function RemoveTransport(AHandle:THandle;APacketType:Word):Boolean; virtual;
 
    function AddBinding(ATransport:TAdapterTransport;APacketType,AFrameType:Word):THandle; virtual;
    function RemoveBinding(AHandle:THandle;APacketType:Word):Boolean; virtual;
-   
+
    function AddMonitor(AMonitorHandler:TAdapterMonitorHandler):THandle; virtual;
    function RemoveMonitor(AHandle:THandle):Boolean; virtual;
 
    function AddAuthenticator(AAuthType:Word;AAuthenticatorHandler:TAdapterAuthenticatorHandler):THandle; virtual;
    function RemoveAuthenticator(AHandle:THandle;AAuthType:Word):Boolean; virtual;
-   
+
    function GetMTU(AHandle:THandle):Word; virtual;
 
    function SendPacket(AHandle:THandle;ADest:Pointer;APacket:PPacketFragment;ASize:Integer):Boolean; virtual;
@@ -1005,16 +1005,16 @@ type
   protected
    {Internal Variables}
    FAdapter:TNetworkAdapter;
-   
+
    {Internal Methods}
    procedure Execute; override;
-   
-  public   
+
+  public
    {Public Methods}
    function SendHandle(AHandle:THandle):Boolean;
    function ReceiveHandle:THandle;
  end;
- 
+
  TAdapterBuffer = class(TObject)  {Ring buffer for Packets}
    constructor Create; //To Do //Count (Size ?)
    destructor Destroy; override;
@@ -1042,11 +1042,11 @@ type
   public
    {}
    property Size:Integer read FSize write SetSize;
-   
+
    function ReadNext:Pointer;
    function WriteNext:Pointer;
  end;
- 
+
  TWiredAdapter = class(TNetworkAdapter)
    constructor Create(AManager:TAdapterManager;ADevice:PNetworkDevice;const AName:String);
   private
@@ -1057,7 +1057,7 @@ type
    FHardwareAddress:THardwareAddress;
    FBroadcastAddress:THardwareAddress;
    FMulticastAddresses:TMulticastAddresses;
-   
+
    {Private Methods}
    function ProcessPacket(ABuffer:Pointer;ASize:Integer):Boolean;
   protected
@@ -1074,7 +1074,7 @@ type
 
    function ClearStatistics(AHandle:THandle):Boolean; override;
    function GetStatistics(AHandle:THandle):TAdapterStatistics; override;
-   
+
    function GetDefaultAddress(AHandle:THandle):THardwareAddress; override;
    function GetHardwareAddress(AHandle:THandle):THardwareAddress; override;
    function SetHardwareAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
@@ -1083,17 +1083,17 @@ type
 
    function AddMulticastAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
    function RemoveMulticastAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
-   
+
    function StartAdapter:Boolean; override;
    function StopAdapter:Boolean; override;
    function ProcessAdapter:Boolean; override;
-   
+
    function CompareDefault(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
    function CompareHardware(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
    function CompareBroadcast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
    function CompareMulticast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
  end;
- 
+
  TNetworkSetting = class(TListObject)
   private
    {Internal Variables}
@@ -1101,17 +1101,17 @@ type
    FValue:String;
 
    FHash:LongWord;
-   
+
    {Internal Methods}
    procedure SetName(const AName:String);
   public
    {Public Properties}
    property Name:String read FName write SetName;
    property Value:String read FValue write FValue;
-   
+
    property Hash:LongWord read FHash;
  end;
- 
+
  TNetworkSettings = class(TObject)
    constructor Create;
    destructor Destroy; override;
@@ -1119,86 +1119,86 @@ type
    {Internal Variables}
    FLock:TSynchronizerHandle;
    FLocalLock:TMutexHandle;
-   
+
    {Status Variables}
-   FHostName:String; 
+   FHostName:String;
    FDomainName:String;
    FList:TLinkedObjList;
-   
+
    {Event Variables}
-   
+
    {Internal Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
    function WriterLock:Boolean;
    function WriterUnlock:Boolean;
-   
+
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
-   
+
    function GetHostName:String;
    procedure SetHostName(const AHostName:String);
-   
+
    function GetDomainName:String;
    procedure SetDomainName(const ADomainName:String);
-   
+
    function ExtractName(const AValue,AToken:String):String;
    function ExtractValue(const AValue,AToken:String):String;
    function ExtractPrefix(const AValue:String):String;
-   
+
    function SplitName(const AName:String):String;
    function SplitPrefix(const AName:String):String;
 
    function MergePrefix(const APrefix,AName:String):String;
-   
+
    function TranslateString(const AValue,ADefault:String):String;
    function TranslateInteger(const AValue:String;ADefault:Integer):Integer;
    function TranslateBoolean(const AValue:String;ADefault:Boolean):Boolean;
-   
+
    function GetFromList(const AName:String):TNetworkSetting;
-   
+
    function FindFromList(const AName:String):String;
    function FindFromEnvironment(const AName:String):String;
   public
    {Public Properties}
    property HostName:String read GetHostName write SetHostName;
    property DomainName:String read GetDomainName write SetDomainName;
-   
+
    {Public Methods}
    function GetString(const AName:String):String;
    function GetStringDefault(const AName,ADefault:String):String;
-   
+
    function GetInteger(const AName:String):Integer;
    function GetIntegerDefault(const AName:String;ADefault:Integer):Integer;
-   
+
    function GetBoolean(const AName:String):Boolean;
    function GetBooleanDefault(const AName:String;ADefault:Boolean):Boolean;
-   
+
    function AddString(const AName,AValue:String):Boolean;
    function AddInteger(const AName:String;AValue:Integer):Boolean;
    function AddBoolean(const AName:String;AValue:Boolean):Boolean;
-   
+
    function Remove(const AName:String):Boolean;
-   
+
    function LoadFromFile(const AFileName:String;AFlat:Boolean):Boolean;
    function LoadFromStream(AStream:TStream;AFlat:Boolean):Boolean;
    function LoadFromStrings(AStrings:TStrings;AFlat:Boolean):Boolean;
-   
+
    function SaveToFile(const AFileName:String;AFlat:Boolean):Boolean;
    function SaveToStream(AStream:TStream;AFlat:Boolean):Boolean;
    function SaveToStrings(AStrings:TStrings;AFlat:Boolean):Boolean;
-   
+
    function LoadFromEnvironment:Boolean;
  end;
-  
+
  TServiceSet = class(TListObject)
    constructor Create;
    destructor Destroy; override;
   private
    {Internal Variables}
-   FLock:TSynchronizerHandle; 
+   FLock:TSynchronizerHandle;
    FLocalLock:TMutexHandle;
-   
+
    {Internal Methods}
    function GetName:String;
    procedure SetName(const AName:String);
@@ -1213,7 +1213,7 @@ type
    FServiceSetTime:Int64;     {Flush time}
    FAddress:THardwareAddress; {Address of service set}
    FAdapter:TNetworkAdapter;
-   
+
    {Internal Methods}
    function AcquireLock:Boolean;
    function ReleaseLock:Boolean;
@@ -1224,7 +1224,7 @@ type
    property ServiceSetTime:Int64 read FServiceSetTime write SetServiceSetTime;
    property Address:THardwareAddress read FAddress write SetAddress;
    property Adapter:TNetworkAdapter read FAdapter write SetAdapter;
- 
+
    {Public Methods}
    function ReaderLock:Boolean;
    function ReaderUnlock:Boolean;
@@ -1233,31 +1233,31 @@ type
    function WriterUnlock:Boolean;
    function WriterConvert:Boolean;
  end;
- 
+
 {==============================================================================}
 var
  {Network specific variables}
  AdapterManager:TAdapterManager;
  NetworkSettings:TNetworkSettings;
- 
+
 {==============================================================================}
 {var}
  {Ethernet specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure NetworkInit;
 function NetworkStart:LongWord;
 function NetworkStop:LongWord;
- 
+
 function NetworkStartCompleted:Boolean;
- 
+
 {==============================================================================}
 {Network Functions}
 function NetworkDeviceOpen(Network:PNetworkDevice):LongWord;
 function NetworkDeviceClose(Network:PNetworkDevice):LongWord;
-function NetworkDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
-function NetworkDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
+function NetworkDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
+function NetworkDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
 function NetworkDeviceControl(Network:PNetworkDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
 
 function NetworkBufferAllocate(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
@@ -1293,10 +1293,10 @@ function NetworkEventNotify(Event:LongWord):LongWord;
 {==============================================================================}
 {RTL Network Functions}
 function SysHostGetName:String;
-function SysHostSetName(const AName:String):Boolean; 
+function SysHostSetName(const AName:String):Boolean;
 
 function SysHostGetDomain:String;
-function SysHostSetDomain(const ADomain:String):Boolean; 
+function SysHostSetDomain(const ADomain:String):Boolean;
 
 {==============================================================================}
 {Network Helper Functions}
@@ -1325,13 +1325,13 @@ procedure NetworkLogDebug(Network:PNetworkDevice;const AText:String); inline;
 function HardwareAddressToString(const AAddress:THardwareAddress;const ASeparator: String = ''):String;
 function StringToHardwareAddress(const AAddress:String):THardwareAddress;
 
-function ValidHardwareAddress(const AAddress:THardwareAddress):Boolean; 
+function ValidHardwareAddress(const AAddress:THardwareAddress):Boolean;
 function RandomHardwareAddress:THardwareAddress;
 
-function CompareHardwareAddress(const AAddress1,AAddress2:THardwareAddress):Boolean; 
-function CompareHardwareDefault(const AAddress:THardwareAddress):Boolean; 
-function CompareHardwareBroadcast(const AAddress:THardwareAddress):Boolean; 
-function CompareHardwareMulticast(const AAddress:THardwareAddress):Boolean; 
+function CompareHardwareAddress(const AAddress1,AAddress2:THardwareAddress):Boolean;
+function CompareHardwareDefault(const AAddress:THardwareAddress):Boolean;
+function CompareHardwareBroadcast(const AAddress:THardwareAddress):Boolean;
+function CompareHardwareMulticast(const AAddress:THardwareAddress):Boolean;
 
 function AdapterTypeToString(AType:Word):String;
 function AdapterModeToString(AMode:Word):String;
@@ -1366,7 +1366,7 @@ var
  {Network specific variables}
  NetworkInitialized:Boolean;
  NetworkStarted:Boolean;
- 
+
  NetworkTable:PNetworkDevice;
  NetworkTableLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  NetworkTableCount:LongWord;
@@ -1374,18 +1374,18 @@ var
  NetworkEventTable:PNetworkEvent;
  NetworkEventLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
  NetworkEventCount:LongWord;
- 
+
 {==============================================================================}
 {==============================================================================}
-threadvar 
+threadvar
  {Network specific thread variables}
  NetworkLastError:LongInt;
- 
+
 {==============================================================================}
 {==============================================================================}
 {var}
  {Ethernet specific variables}
- 
+
 {==============================================================================}
 {==============================================================================}
 {TAdapterManager}
@@ -1395,7 +1395,7 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FSettings:=ASettings;
- 
+
  FAdapters:=TNetworkList.Create;
 end;
 
@@ -1409,7 +1409,7 @@ begin
   FAdapters.Free;
   FSettings:=nil;
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -1466,10 +1466,10 @@ begin
   finally
    {Release Lock}
    FAdapters.WriterUnlock;
-  end; 
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1491,10 +1491,10 @@ begin
   finally
    {Release Lock}
    FAdapters.WriterUnlock;
-  end;   
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1507,10 +1507,10 @@ begin
  FAdapters.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Name}
   if Length(AName) = 0 then Exit;
-  
+
   {Get Adapter}
   Adapter:=TNetworkAdapter(FAdapters.First);
   while Adapter <> nil do
@@ -1518,20 +1518,20 @@ begin
     {Check Adapter}
     if Uppercase(Adapter.Name) = Uppercase(AName) then
      begin
-      {Lock Adapter} 
+      {Lock Adapter}
       if ALock then if AState = NETWORK_LOCK_READ then Adapter.ReaderLock else Adapter.WriterLock;
-      
+
       {Return Result}
       Result:=Adapter;
       Exit;
      end;
-    
+
     {Get Next}
     Adapter:=TNetworkAdapter(Adapter.Next);
    end;
  finally
   FAdapters.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -1544,7 +1544,7 @@ begin
  FAdapters.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Adapter}
   Adapter:=TNetworkAdapter(FAdapters.First);
   while Adapter <> nil do
@@ -1552,20 +1552,20 @@ begin
     {Check Adapter}
     if Adapter.AdapterType = AAdapterType then
      begin
-      {Lock Adapter} 
+      {Lock Adapter}
       if ALock then if AState = NETWORK_LOCK_READ then Adapter.ReaderLock else Adapter.WriterLock;
-      
+
       {Return Result}
       Result:=Adapter;
       Exit;
      end;
-    
+
     {Get Next}
     Adapter:=TNetworkAdapter(Adapter.Next);
    end;
  finally
   FAdapters.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -1578,7 +1578,7 @@ begin
  FAdapters.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Adapter}
   Adapter:=TNetworkAdapter(FAdapters.First);
   while Adapter <> nil do
@@ -1586,20 +1586,20 @@ begin
     {Check Adapter}
     if Adapter.Device = ADevice then
      begin
-      {Lock Adapter} 
+      {Lock Adapter}
       if ALock then if AState = NETWORK_LOCK_READ then Adapter.ReaderLock else Adapter.WriterLock;
-      
+
       {Return Result}
       Result:=Adapter;
       Exit;
      end;
-    
+
     {Get Next}
     Adapter:=TNetworkAdapter(Adapter.Next);
    end;
  finally
   FAdapters.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -1612,7 +1612,7 @@ begin
  FAdapters.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Adapter}
   Adapter:=TNetworkAdapter(FAdapters.First);
   while Adapter <> nil do
@@ -1620,20 +1620,20 @@ begin
     {Check Adapter}
     if Adapter = AAdapter then
      begin
-      {Lock Adapter} 
+      {Lock Adapter}
       if ALock then if AState = NETWORK_LOCK_READ then Adapter.ReaderLock else Adapter.WriterLock;
-      
+
       {Return Result}
       Result:=Adapter;
       Exit;
      end;
-    
+
     {Get Next}
     Adapter:=TNetworkAdapter(Adapter.Next);
    end;
  finally
   FAdapters.ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -1646,7 +1646,7 @@ begin
  FAdapters.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -1656,7 +1656,7 @@ begin
      begin
       {Lock Adapter}
       if ALock then if AState = NETWORK_LOCK_READ then Adapter.ReaderLock else Adapter.WriterLock;
-      
+
       {Return Result}
       Result:=Adapter;
      end;
@@ -1669,17 +1669,17 @@ begin
      begin
       {Lock Adapter}
       if ALock then if AState = NETWORK_LOCK_READ then Adapter.ReaderLock else Adapter.WriterLock;
-      
+
       {Return Result}
       Result:=Adapter;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   FAdapters.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -1692,11 +1692,11 @@ begin
  ReaderLock;
  try
   Result:=True;
-  
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'AdapterManager: StartAdapters');
   {$ENDIF}
-  
+
   {Get Adapter}
   Adapter:=TNetworkAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
   while Adapter <> nil do
@@ -1706,14 +1706,14 @@ begin
      begin
       {Start Adapter}
       if not(Adapter.StartAdapter) then Result:=False;
-     end; 
-    
+     end;
+
     {Get Next}
     Adapter:=TNetworkAdapter(GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ));
    end;
  finally
   ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -1726,24 +1726,24 @@ begin
  ReaderLock;
  try
   Result:=True;
-  
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'AdapterManager: StopAdapters');
   {$ENDIF}
-  
+
   {Get Adapter}
   Adapter:=TNetworkAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
   while Adapter <> nil do
    begin
     {Stop Adapter}
     if not(Adapter.StopAdapter) then Result:=False;
-    
+
     {Get Next}
     Adapter:=TNetworkAdapter(GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ));
    end;
  finally
   ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -1756,24 +1756,24 @@ begin
  ReaderLock;
  try
   Result:=True;
-  
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'AdapterManager: ProcessStatus');
   {$ENDIF}
-  
+
   {Get Adapter}
   Adapter:=TNetworkAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
   while Adapter <> nil do
    begin
     {Process Status}
     if not(Adapter.ProcessStatus) then Result:=False;
-    
+
     {Get Next}
     Adapter:=TNetworkAdapter(GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ));
    end;
  finally
   ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -1786,29 +1786,29 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {Check Callback}
   if not Assigned(ACallback) then Exit;
- 
+
   Result:=True;
-  
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'AdapterManager: EnumerateAdapters');
   {$ENDIF}
-  
+
   {Get Adapter}
   Adapter:=TNetworkAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
   while Adapter <> nil do
    begin
     {Enumerate Adapter}
     if not(ACallback(Adapter)) then Result:=False;
-    
+
     {Get Next}
     Adapter:=TNetworkAdapter(GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ));
    end;
  finally
   ReaderUnlock;
- end;   
+ end;
 end;
 
 {==============================================================================}
@@ -1819,7 +1819,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- 
+
  FrameType:=FRAME_TYPE_UNKNOWN;
  PacketType:=PACKET_TYPE_RAW;
  PacketName:='';
@@ -1835,7 +1835,7 @@ begin
  try
   PacketHandler:=nil;
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -1881,7 +1881,7 @@ begin
  {}
  inherited Create;
  FLock:=SynchronizerCreate;
- 
+
  FrameType:=FRAME_TYPE_UNKNOWN;
  PacketType:=PACKET_TYPE_RAW;
  Transport:=ATransport
@@ -1896,7 +1896,7 @@ begin
  try
   Transport:=nil;
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -1945,17 +1945,17 @@ begin
 
  MonitorHandler:=nil;
 end;
- 
+
 {==============================================================================}
 
-destructor TAdapterMonitor.Destroy; 
+destructor TAdapterMonitor.Destroy;
 begin
  {}
  WriterLock;
  try
   MonitorHandler:=nil;
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -2005,17 +2005,17 @@ begin
  AuthType:=AUTH_TYPE_UNKNOWN;
  AuthenticatorHandler:=nil;
 end;
- 
+
 {==============================================================================}
 
-destructor TAdapterAuthenticator.Destroy; 
+destructor TAdapterAuthenticator.Destroy;
 begin
  {}
  WriterLock;
  try
   AuthenticatorHandler:=nil;
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -2095,11 +2095,11 @@ begin
     {Get Next}
     Current:=Next;
     Next:=Current.Next;
-    
+
     {Free Object}
     Current.Free;
    end;
-  
+
   {Reset Defaults}
   Clear;
  finally
@@ -2125,7 +2125,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkList.ReaderConvert:Boolean; 
+function TNetworkList.ReaderConvert:Boolean;
 {Convert a Reader lock to a Writer lock}
 begin
  {}
@@ -2175,7 +2175,7 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FLocalLock:=MutexCreate;
- 
+
  FManager:=AManager;
  FDevice:=ADevice;
  FName:=AName;
@@ -2188,14 +2188,14 @@ begin
  FThread:=nil;
  FBufferedReceive:=False;
  FBufferedTransmit:=False;
- 
+
  FBindings:=TNetworkList.Create;
  FTransports:=TNetworkList.Create;
  FMonitors:=TNetworkList.Create;
  FAuthenticators:=TNetworkList.Create;
- 
+
  FillChar(FStatistics,SizeOf(TAdapterStatistics),0);
- 
+
  if FManager <> nil then FManager.AddAdapter(Self);
 end;
 
@@ -2207,21 +2207,21 @@ begin
  WriterLock;
  try
   if FManager <> nil then FManager.RemoveAdapter(Self);
-  
+
   FAuthenticators.Free;
   FMonitors.Free;
   FTransports.Free;
   FBindings.Free;
-  
+
   FThread:=nil;
   FState:=ADAPTER_STATE_DISABLED;
   FStatus:=ADAPTER_STATUS_DOWN;
   FDevice:=nil;
   FManager:=nil;
-  
+
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -2233,12 +2233,12 @@ function TNetworkAdapter.GetName:String;
 begin
  {}
  Result:='';
-   
+
  if not AcquireLock then Exit;
-   
+
  Result:=FName;
  UniqueString(Result);
-   
+
  ReleaseLock;
 end;
 
@@ -2248,26 +2248,26 @@ function TNetworkAdapter.GetThreadID:TThreadID;
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  if FThread = nil then Exit;
- 
+
  Result:=FThread.ThreadID;
 end;
 
 {==============================================================================}
 
-procedure TNetworkAdapter.SetStatus(AStatus:Integer); 
+procedure TNetworkAdapter.SetStatus(AStatus:Integer);
 begin
  {}
  {Check State}
  if FState <> ADAPTER_STATE_ENABLED then Exit;
- 
+
  {Check Status}
  case AStatus of
   ADAPTER_STATUS_DOWN:begin
     {Set Status}
     FStatus:=AStatus;
-    
+
     {$IFDEF NETWORK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'NetworkAdapter: Status = ADAPTER_STATUS_DOWN');
     {$ENDIF}
@@ -2275,11 +2275,11 @@ begin
   ADAPTER_STATUS_UP:begin
     {Set Status}
     FStatus:=AStatus;
-    
+
     {$IFDEF NETWORK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'NetworkAdapter: Status = ADAPTER_STATUS_UP');
     {$ENDIF}
-   end;  
+   end;
  end;
 end;
 
@@ -2317,7 +2317,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkAdapter.ReaderConvert:Boolean; 
+function TNetworkAdapter.ReaderConvert:Boolean;
 {Convert a Reader lock to a Writer lock}
 begin
  {}
@@ -2367,20 +2367,20 @@ begin
     {Check Transport}
     if THandle(Transport) = AHandle then
      begin
-      {Lock Transport} 
+      {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-      
+
       {Return Result}
       Result:=Transport;
       Exit;
      end;
-    
+
     {Get Next}
     Transport:=TAdapterTransport(Transport.Next);
    end;
- finally 
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2393,7 +2393,7 @@ begin
  FTransports.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Transport}
   Transport:=TAdapterTransport(FTransports.First);
   while Transport <> nil do
@@ -2401,24 +2401,24 @@ begin
     {Check Transport}
     if (Transport.PacketType = APacketType) and (Transport.FrameType = AFrameType) then
      begin
-      {Lock Transport} 
+      {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-      
+
       {Return Result}
       Result:=Transport;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Transport:=TAdapterTransport(Transport.Next);
    end;
- finally 
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
-  
+
 function TNetworkAdapter.GetTransportByTransport(ATransport:TAdapterTransport;ALock:Boolean;AState:LongWord):TAdapterTransport;
 var
  Transport:TAdapterTransport;
@@ -2435,24 +2435,24 @@ begin
     {Check Transport}
     if Transport = ATransport then
      begin
-      {Lock Transport} 
+      {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-      
+
       {Return Result}
       Result:=Transport;
       Exit;
      end;
-    
+
     {Get Next}
     Transport:=TAdapterTransport(Transport.Next);
    end;
- finally 
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
-  
+
 function TNetworkAdapter.GetTransportByNext(APrevious:TAdapterTransport;ALock,AUnlock:Boolean;AState:LongWord):TAdapterTransport;
 var
  Transport:TAdapterTransport;
@@ -2461,7 +2461,7 @@ begin
  FTransports.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -2471,7 +2471,7 @@ begin
      begin
       {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-      
+
       {Return Result}
       Result:=Transport;
      end;
@@ -2484,19 +2484,19 @@ begin
      begin
       {Lock Transport}
       if ALock then if AState = NETWORK_LOCK_READ then Transport.ReaderLock else Transport.WriterLock;
-      
+
       {Return Result}
       Result:=Transport;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   FTransports.ReaderUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function TNetworkAdapter.GetBindingByHandle(AHandle:THandle;ALock:Boolean;AState:LongWord):TAdapterBinding;
@@ -2507,28 +2507,28 @@ begin
  FBindings.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Binding}
   Binding:=TAdapterBinding(FBindings.First);
   while Binding <> nil do
    begin
-    {Check Binding}   
+    {Check Binding}
     if THandle(Binding) = AHandle then
      begin
-      {Lock Binding} 
+      {Lock Binding}
       if ALock then if AState = NETWORK_LOCK_READ then Binding.ReaderLock else Binding.WriterLock;
-      
+
       {Return Result}
       Result:=Binding;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Binding:=TAdapterBinding(Binding.Next);
    end;
- finally 
+ finally
   FBindings.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2541,7 +2541,7 @@ begin
  FBindings.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Binding}
   Binding:=TAdapterBinding(FBindings.First);
   while Binding <> nil do
@@ -2551,21 +2551,21 @@ begin
      begin
       if (Binding.PacketType = APacketType) and (Binding.FrameType = AFrameType) then
        begin
-        {Lock Binding} 
+        {Lock Binding}
         if ALock then if AState = NETWORK_LOCK_READ then Binding.ReaderLock else Binding.WriterLock;
-       
+
         {Return Result}
         Result:=Binding;
         Exit;
        end;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Binding:=TAdapterBinding(Binding.Next);
    end;
- finally 
+ finally
   FBindings.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2578,7 +2578,7 @@ begin
  FBindings.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Binding}
   Binding:=TAdapterBinding(FBindings.First);
   while Binding <> nil do
@@ -2586,20 +2586,20 @@ begin
     {Check Binding}
     if Binding.Transport = ATransport then
      begin
-      {Lock Binding} 
+      {Lock Binding}
       if ALock then if AState = NETWORK_LOCK_READ then Binding.ReaderLock else Binding.WriterLock;
-      
+
       {Return Result}
       Result:=Binding;
       Exit;
      end;
-    
-    {Get Next} 
+
+    {Get Next}
     Binding:=TAdapterBinding(Binding.Next);
    end;
- finally 
+ finally
   FBindings.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2612,28 +2612,28 @@ begin
  FBindings.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Binding}
   Binding:=TAdapterBinding(FBindings.First);
   while Binding <> nil do
    begin
-    {Check Binding}   
+    {Check Binding}
     if Binding = ABinding then
      begin
-      {Lock Binding} 
+      {Lock Binding}
       if ALock then if AState = NETWORK_LOCK_READ then Binding.ReaderLock else Binding.WriterLock;
-      
+
       {Return Result}
       Result:=Binding;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Binding:=TAdapterBinding(Binding.Next);
    end;
- finally 
+ finally
   FBindings.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2646,7 +2646,7 @@ begin
  FBindings.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -2656,7 +2656,7 @@ begin
      begin
       {Lock Binding}
       if ALock then if AState = NETWORK_LOCK_READ then Binding.ReaderLock else Binding.WriterLock;
-      
+
       {Return Result}
       Result:=Binding;
      end;
@@ -2669,17 +2669,17 @@ begin
      begin
       {Lock Binding}
       if ALock then if AState = NETWORK_LOCK_READ then Binding.ReaderLock else Binding.WriterLock;
-      
+
       {Return Result}
       Result:=Binding;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   FBindings.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2700,20 +2700,20 @@ begin
     {Check Monitor}
     if THandle(Monitor) = AHandle then
      begin
-      {Lock Monitor} 
+      {Lock Monitor}
       if ALock then if AState = NETWORK_LOCK_READ then Monitor.ReaderLock else Monitor.WriterLock;
-      
+
       {Return Result}
       Result:=Monitor;
       Exit;
      end;
-    
+
     {Get Next}
     Monitor:=TAdapterMonitor(Monitor.Next);
    end;
- finally 
+ finally
   FMonitors.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2734,20 +2734,20 @@ begin
     {Check Monitor}
     if Monitor = AMonitor then
      begin
-      {Lock Monitor} 
+      {Lock Monitor}
       if ALock then if AState = NETWORK_LOCK_READ then Monitor.ReaderLock else Monitor.WriterLock;
-      
+
       {Return Result}
       Result:=Monitor;
       Exit;
      end;
-    
+
     {Get Next}
     Monitor:=TAdapterMonitor(Monitor.Next);
    end;
- finally 
+ finally
   FMonitors.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2760,7 +2760,7 @@ begin
  FMonitors.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -2770,7 +2770,7 @@ begin
      begin
       {Lock Monitor}
       if ALock then if AState = NETWORK_LOCK_READ then Monitor.ReaderLock else Monitor.WriterLock;
-      
+
       {Return Result}
       Result:=Monitor;
      end;
@@ -2783,17 +2783,17 @@ begin
      begin
       {Lock Monitor}
       if ALock then if AState = NETWORK_LOCK_READ then Monitor.ReaderLock else Monitor.WriterLock;
-      
+
       {Return Result}
       Result:=Monitor;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   FMonitors.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2814,20 +2814,20 @@ begin
     {Check Authenticator}
     if THandle(Authenticator) = AHandle then
      begin
-      {Lock Authenticator} 
+      {Lock Authenticator}
       if ALock then if AState = NETWORK_LOCK_READ then Authenticator.ReaderLock else Authenticator.WriterLock;
-      
+
       {Return Result}
       Result:=Authenticator;
       Exit;
      end;
-    
+
     {Get Next}
     Authenticator:=TAdapterAuthenticator(Authenticator.Next);
    end;
- finally 
+ finally
   FAuthenticators.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2840,7 +2840,7 @@ begin
  FAuthenticators.ReaderLock;
  try
   Result:=nil;
-  
+
   {Get Authenticator}
   Authenticator:=TAdapterAuthenticator(FAuthenticators.First);
   while Authenticator <> nil do
@@ -2848,20 +2848,20 @@ begin
     {Check Authenticator}
     if Authenticator.AuthType = AAuthType then
      begin
-      {Lock Authenticator} 
+      {Lock Authenticator}
       if ALock then if AState = NETWORK_LOCK_READ then Authenticator.ReaderLock else Authenticator.WriterLock;
-      
+
       {Return Result}
       Result:=Authenticator;
       Exit;
      end;
-     
-    {Get Next} 
+
+    {Get Next}
     Authenticator:=TAdapterAuthenticator(Authenticator.Next);
    end;
- finally 
+ finally
   FAuthenticators.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2882,20 +2882,20 @@ begin
     {Check Authenticator}
     if Authenticator = AAuthenticator then
      begin
-      {Lock Authenticator} 
+      {Lock Authenticator}
       if ALock then if AState = NETWORK_LOCK_READ then Authenticator.ReaderLock else Authenticator.WriterLock;
-      
+
       {Return Result}
       Result:=Authenticator;
       Exit;
      end;
-    
+
     {Get Next}
     Authenticator:=TAdapterAuthenticator(Authenticator.Next);
    end;
- finally 
+ finally
   FAuthenticators.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2908,7 +2908,7 @@ begin
  FAuthenticators.ReaderLock;
  try
   Result:=nil;
-  
+
   {Check Previous}
   if APrevious = nil then
    begin
@@ -2918,7 +2918,7 @@ begin
      begin
       {Lock Authenticator}
       if ALock then if AState = NETWORK_LOCK_READ then Authenticator.ReaderLock else Authenticator.WriterLock;
-      
+
       {Return Result}
       Result:=Authenticator;
      end;
@@ -2931,17 +2931,17 @@ begin
      begin
       {Lock Authenticator}
       if ALock then if AState = NETWORK_LOCK_READ then Authenticator.ReaderLock else Authenticator.WriterLock;
-      
+
       {Return Result}
       Result:=Authenticator;
      end;
 
     {Unlock Previous}
     if AUnlock then if AState = NETWORK_LOCK_READ then APrevious.ReaderUnlock else APrevious.WriterUnlock;
-   end;   
- finally 
+   end;
+ finally
   FAuthenticators.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2978,7 +2978,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkAdapter.AddMonitor(AMonitorHandler:TAdapterMonitorHandler):THandle; 
+function TNetworkAdapter.AddMonitor(AMonitorHandler:TAdapterMonitorHandler):THandle;
 begin
  {Virtual Base Method}
  Result:=INVALID_HANDLE_VALUE;
@@ -2986,7 +2986,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkAdapter.RemoveMonitor(AHandle:THandle):Boolean; 
+function TNetworkAdapter.RemoveMonitor(AHandle:THandle):Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
@@ -3002,7 +3002,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkAdapter.RemoveAuthenticator(AHandle:THandle;AAuthType:Word):Boolean; 
+function TNetworkAdapter.RemoveAuthenticator(AHandle:THandle;AAuthType:Word):Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
@@ -3058,7 +3058,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkAdapter.ClearStatistics(AHandle:THandle):Boolean; 
+function TNetworkAdapter.ClearStatistics(AHandle:THandle):Boolean;
 begin
  {Virtual Base Method}
  FillChar(FStatistics,SizeOf(TAdapterStatistics),0);
@@ -3146,7 +3146,7 @@ end;
 
 {==============================================================================}
 
-function TNetworkAdapter.ProcessStatus:Boolean; 
+function TNetworkAdapter.ProcessStatus:Boolean;
 begin
  {Virtual Base Method}
  Result:=False;
@@ -3168,12 +3168,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  for Count:=0 to HARDWARE_ADDRESS_SIZE - 1 do
   begin
    if AAddress1[Count] <> AAddress2[Count] then Exit;
   end;
-  
+
  Result:=True;
 end;
 
@@ -3185,7 +3185,7 @@ var
 begin
  {}
  DefaultAddress:=GetDefaultAddress(AHandle);
- 
+
  Result:=CompareAddress(AAddress,DefaultAddress);
 end;
 
@@ -3197,7 +3197,7 @@ var
 begin
  {}
  HardwareAddress:=GetHardwareAddress(AHandle);
- 
+
  Result:=CompareAddress(AAddress,HardwareAddress);
 end;
 
@@ -3209,7 +3209,7 @@ var
 begin
  {}
  BroadcastAddress:=GetBroadcastAddress(AHandle);
- 
+
  Result:=CompareAddress(AAddress,BroadcastAddress);
 end;
 
@@ -3222,7 +3222,7 @@ var
 begin
  {}
  MulticastAddresses:=GetMulticastAddresses(AHandle);
- 
+
  for Count:=0 to MAX_MULTICAST_ADDRESS - 1 do
   begin
    Result:=CompareAddress(AAddress,MulticastAddresses[Count]);
@@ -3242,7 +3242,7 @@ end;
 
 {==============================================================================}
 
-procedure TAdapterThread.Execute; 
+procedure TAdapterThread.Execute;
 var
  WorkBuffer:String;
 begin
@@ -3251,13 +3251,13 @@ begin
   {Get Name}
   WorkBuffer:=ADAPTER_THREAD_NAME;
   if FAdapter <> nil then WorkBuffer:=WorkBuffer + ' (' + FAdapter.Name + ')';
-  
+
   {Set Name}
   ThreadSetName(GetCurrentThreadID,WorkBuffer);
-  
+
   {Set Priority}
   ThreadSetPriority(GetCurrentThreadID,ADAPTER_THREAD_PRIORITY);
-  
+
   while not(Terminated) do
    begin
     {Check Adapter}
@@ -3266,13 +3266,13 @@ begin
       {Process Adapter}
       FAdapter.ProcessAdapter;
      end;
-   end;  
+   end;
  except
   on E: Exception do
    begin
     if NETWORK_LOG_ENABLED then NetworkLogError(nil,'AdapterThread: Exception: ' + E.Message + ' at ' + PtrToHex(ExceptAddr));
    end;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3283,7 +3283,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  FillChar(Message,SizeOf(TMessage),0);
  Message.Msg:=PtrUInt(AHandle);
  if ThreadSendMessage(FThreadID,Message) = ERROR_SUCCESS then
@@ -3300,7 +3300,7 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  FillChar(Message,SizeOf(TMessage),0);
  if ThreadReceiveMessage(Message) = ERROR_SUCCESS then
   begin
@@ -3316,7 +3316,7 @@ begin
  {}
  inherited Create;
  FLock:=CriticalSectionCreate;
- 
+
  FSize:=0;
  FCount:=0;
  FNextRead:=0;
@@ -3336,7 +3336,7 @@ begin
   FMemory.Free;
   FList.Free;
   inherited Destroy;
- finally 
+ finally
   {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
@@ -3374,7 +3374,7 @@ begin
       {First Setting of Size}
       {Preallocate the Memory}
       FMemory.SetSize(MAX_PHYSICAL_PACKET * ASize);
-      
+
       {Create List Pointers for each Buffer}
       for Count:=0 to ASize - 1 do
        begin
@@ -3387,7 +3387,7 @@ begin
       {Increasing Size}
       {Reallocate the Memory}
       FMemory.SetSize(MAX_PHYSICAL_PACKET * ASize);
-      
+
       {Create List Pointers for each new Buffer}
       for Count:=FSize to ASize - 1 do
        begin
@@ -3396,9 +3396,9 @@ begin
       FSize:=ASize;
      end;
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3407,25 +3407,25 @@ function TAdapterBuffer.ReadNext:Pointer;
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if FCount > 0 then
    begin
     Result:=FList.Items[FNextRead];
-    
+
     Inc(FNextRead);
-    
+
     if FNextRead = FSize then
      begin
       FNextRead:=0;
      end;
-    
+
     Dec(FCount);
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3434,25 +3434,25 @@ function TAdapterBuffer.WriteNext:Pointer;
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   if FCount < FSize then
    begin
     Result:=FList.Items[FNextWrite];
-    
+
     Inc(FNextWrite);
-    
+
     if FNextWrite = FSize then
      begin
       FNextWrite:=0;
      end;
-    
+
     Inc(FCount);
    end;
- finally 
+ finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3487,40 +3487,40 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Media Type}
  case FMediaType of
   MEDIA_TYPE_ETHERNET:begin
     {Check Size}
     if ASize < ETHERNET_HEADER_SIZE then Exit;
-     
+
     {Get Header}
     Ethernet:=PEthernetHeader(ABuffer);
-     
+
     {Determine Frame Type}
     FrameType:=FRAME_TYPE_UNKNOWN;
-     
+
     //To Do //Check for 802.1Q tag here, TypeLength = $8100 if tagged, real TypeLength is after the 4 byte 802.1Q tag
-    
+
     {Check Type Length}
     if WordBEtoN(Ethernet.TypeLength) > PACKET_MIN_TYPE then
      begin
       {$IFDEF NETWORK_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_II));
       {$ENDIF}
-       
+
       {Get Frame Type}
       FrameType:=FRAME_TYPE_ETHERNET_II;
-       
+
       {Get Packet Type}
       PacketType:=WordBEtoN(Ethernet.TypeLength);
-       
+
       {Get Size}
       Size:=ASize - ETHERNET_HEADER_SIZE;
-       
+
       {Get Data}
       Data:=Pointer(PtrUInt(ABuffer) + ETHERNET_HEADER_SIZE);
-       
+
       {Get Dest Address}
       Dest:=@Ethernet.DestAddress;
       {Get Source Address}
@@ -3534,24 +3534,24 @@ begin
         {$IFDEF NETWORK_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_SNAP));
         {$ENDIF}
-         
+
         {Get Frame Type}
         FrameType:=FRAME_TYPE_ETHERNET_SNAP;
-         
+
         {Get LLC}
         LLC:=PLLCHeader(@Ethernet.Data);
-         
+
         Exit; //To Do
        end
-      else if PWord(@Ethernet.Data)^ = FRAME_START_ETHERNET_8023 then 
+      else if PWord(@Ethernet.Data)^ = FRAME_START_ETHERNET_8023 then
        begin
         {$IFDEF NETWORK_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_8023));
         {$ENDIF}
-        
+
         {Get Frame Type}
         FrameType:=FRAME_TYPE_ETHERNET_8023;
-        
+
         Exit; //To Do
        end
       else
@@ -3559,62 +3559,62 @@ begin
         {$IFDEF NETWORK_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(FRAME_TYPE_ETHERNET_8022));
         {$ENDIF}
-         
+
         {Get Frame Type}
         FrameType:=FRAME_TYPE_ETHERNET_8022;
 
         {Get LLC}
         LLC:=PLLCHeader(@Ethernet.Data);
-         
+
         Exit; //To Do
-       end;           
-     end;         
-   end; 
+       end;
+     end;
+   end;
   MEDIA_TYPE_TOKENRING:begin
     Exit; //To Do
    end;
- end; 
-  
+ end;
+
  {$IFDEF NETWORK_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Packet = ' + PacketTypeToString(PacketType));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Size = ' + IntToStr(Size));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Source = ' + HardwareAddressToString(Source^));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Dest = ' + HardwareAddressToString(Dest^));
  {$ENDIF}
-  
+
  {Get Transport}
  Transport:=TAdapterTransport(GetTransportByType(PacketType,FrameType,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
  try
   {Check Handler}
   if not(Assigned(Transport.PacketHandler)) then Exit;
-  
+
   {Call the Packet Handler}
   Transport.PacketHandler(THandle(Transport),Source,Dest,Data,Size,CompareBroadcast(THandle(Transport),Dest^));
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-procedure TWiredAdapter.SetStatus(AStatus:Integer); 
+procedure TWiredAdapter.SetStatus(AStatus:Integer);
 var
  Value:PtrUInt;
 begin
  {}
  {Check State}
  if FState <> ADAPTER_STATE_ENABLED then Exit;
- 
+
  {Check Status}
  case AStatus of
   ADAPTER_STATUS_DOWN:begin
     {Set Status}
     FStatus:=AStatus;
-    
+
     {$IFDEF NETWORK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: Status = ADAPTER_STATUS_DOWN');
     {$ENDIF}
@@ -3622,20 +3622,20 @@ begin
   ADAPTER_STATUS_UP:begin
     {Check Device}
     if FDevice = nil then Exit;
-    
+
     {Get Link Status}
     if FDevice.DeviceControl(FDevice,NETWORK_CONTROL_GET_LINK,0,Value) <> ERROR_SUCCESS then Exit;
-    
+
     {Check Link Status}
     if Value <> NETWORK_LINK_UP then Exit;
-    
+
     {Set Status}
     FStatus:=AStatus;
-    
+
     {$IFDEF NETWORK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: Status = ADAPTER_STATUS_UP');
     {$ENDIF}
-   end;  
+   end;
  end;
 end;
 
@@ -3649,26 +3649,26 @@ begin
  ReaderLock;
  try
   Result:=INVALID_HANDLE_VALUE;
-  
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: AddTransport (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Packet = ' + PacketTypeToString(APacketType));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(AFrameType));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Name = ' + APacketName);
   {$ENDIF}
-  
+
   {Check State}
   if FState = ADAPTER_STATE_DISABLED then Exit;
-  
+
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   {Get Transport}
   Transport:=TAdapterTransport(GetTransportByType(APacketType,AFrameType,False,NETWORK_LOCK_NONE)); {Do not lock}
   if Transport <> nil then Exit;
-  
+
   {Check Frame Type}
-  case AFrameType of 
+  case AFrameType of
    FRAME_TYPE_ETHERNET_II,FRAME_TYPE_ETHERNET_8022,FRAME_TYPE_ETHERNET_SNAP,FRAME_TYPE_ETHERNET_8023:begin
      {Check Media Type}
      if FMediaType <> MEDIA_TYPE_ETHERNET then Exit;
@@ -3683,29 +3683,29 @@ begin
      Exit;
     end;
   end;
-  
+
   {Create Transport}
   Transport:=TAdapterTransport.Create;
   Transport.FrameType:=AFrameType;
   Transport.PacketType:=APacketType;
   Transport.PacketName:=APacketName;
   Transport.PacketHandler:=APacketHandler;
- 
+
   {Acquire Lock}
   FTransports.WriterLock;
   try
    {Add Transport}
    FTransports.Add(Transport);
- 
+
    {Return Result}
    Result:=THandle(Transport);
   finally
    {Release Lock}
    FTransports.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3718,7 +3718,7 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: RemoveTransport (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -3727,40 +3727,40 @@ begin
 
   {Check State}
   if FState = ADAPTER_STATE_DISABLED then Exit;
-  
+
   {Get Transport}
   Transport:=TAdapterTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Transport = nil then Exit;
-  
+
   {Check Transport}
   if Transport.PacketType <> APacketType then
    begin
     {Unlock Transport}
     Transport.WriterUnlock;
     Exit;
-   end; 
-  
+   end;
+
   {Acquire Lock}
   FTransports.WriterLock;
   try
    {Remove Transport}
    FTransports.Remove(Transport);
-  
+
    {Unlock Transport}
    Transport.WriterUnlock;
-  
+
    {Destroy Transport}
    Transport.Free;
- 
+
    {Return Result}
    Result:=True;
   finally
    {Release Lock}
    FTransports.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3773,12 +3773,12 @@ begin
  ReaderLock;
  try
   Result:=0;
-  
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: GetMTU (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
   {$ENDIF}
- 
+
   {Check State}
   if FState = ADAPTER_STATE_DISABLED then Exit;
 
@@ -3787,12 +3787,12 @@ begin
 
   {Get Device MTU}
   if FDevice.DeviceControl(FDevice,NETWORK_CONTROL_GET_MTU,0,Value) <> ERROR_SUCCESS then Exit;
-  
+
   {Return Result}
   Result:=Value;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3812,25 +3812,25 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF NETWORK_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: SendPacket (' + Name + ')');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Check Dest}
  if ADest = nil then Exit;
-  
+
  {Check Packet}
  if APacket = nil then Exit;
 
  {Check State}
  if FState = ADAPTER_STATE_DISABLED then Exit;
- 
+
  {Check Device}
  if FDevice = nil then Exit;
- 
+
  {Get Transport}
  Transport:=TAdapterTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
@@ -3838,29 +3838,29 @@ begin
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Media = ' + MediaTypeToString(FMediaType));
   {$ENDIF}
-  
+
   {Check Media Type}
   case FMediaType of
    MEDIA_TYPE_ETHERNET:begin
      {$IFDEF NETWORK_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(Transport.FrameType));
      {$ENDIF}
-     
+
      {Check Frame Type}
      case Transport.FrameType of
       FRAME_TYPE_ETHERNET_II:begin
         {Check Size}
         if ASize > (ETHERNET_MAX_PACKET_SIZE - ETHERNET_HEADER_SIZE) then Exit;
-     
-        {Check Buffered} 
+
+        {Check Buffered}
         if FBufferedTransmit then
          begin
           {Allocate Buffer}
           if NetworkBufferAllocate(FDevice,NetworkEntry) <> ERROR_SUCCESS then Exit;
-          
+
           {Get First Packet}
           NetworkPacket:=@NetworkEntry.Packets[0];
-          
+
           {Get Buffer}
           Buffer:=NetworkPacket.Data;
          end
@@ -3869,13 +3869,13 @@ begin
           {Get Buffer}
           Buffer:=GetMem(ASize + ETHERNET_HEADER_SIZE);
          end;
-        
+
         {Check Buffer}
         if Buffer = nil then Exit;
-     
+
         {Get Header}
         Ethernet:=PEthernetHeader(Buffer);
-     
+
         {Build Header}
         Ethernet.DestAddress:=PHardwareAddress(ADest)^;
         Ethernet.SourceAddress:=FHardwareAddress;
@@ -3890,17 +3890,17 @@ begin
         Size:=ETHERNET_HEADER_SIZE;
        end;
       FRAME_TYPE_ETHERNET_8022:begin
-     
+
         Size:=0;
         Exit; //To Do
        end;
       FRAME_TYPE_ETHERNET_SNAP:begin
-     
+
         Size:=0;
         Exit; //To Do
        end;
       FRAME_TYPE_ETHERNET_8023:begin
-   
+
         Size:=0;
         Exit; //To Do
        end;
@@ -3910,7 +3910,7 @@ begin
      {$IFDEF NETWORK_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Frame = ' + FrameTypeToString(Transport.FrameType));
      {$ENDIF}
-     
+
      {Check Frame Type}
      case Transport.FrameType of
       FRAME_TYPE_TOKEN_RING:begin
@@ -3921,7 +3921,7 @@ begin
      end;
     end;
   end;
-  
+
   {Check Buffered}
   if FBufferedTransmit then
    begin
@@ -3934,21 +3934,21 @@ begin
        begin
         System.Move(Packet.Data^,Pointer(PtrUInt(Buffer) + PtrUInt(Size))^,NetworkPacket.Length - Size);
         Size:=NetworkPacket.Length;
-        
+
         Break;
        end
       else
        begin
         System.Move(Packet.Data^,Pointer(PtrUInt(Buffer) + PtrUInt(Size))^,Packet.Size);
         Inc(Size,Packet.Size);
-       end; 
-      
+       end;
+
       Packet:=Packet.Next;
      end;
-     
+
     {Update Packet}
     NetworkPacket.Length:=Size;
-     
+
     {Transmit Buffer}
     Result:=NetworkBufferTransmit(FDevice,NetworkEntry) = ERROR_SUCCESS;
    end
@@ -3960,24 +3960,24 @@ begin
      begin
       System.Move(Packet.Data^,Pointer(PtrUInt(Buffer) + PtrUInt(Size))^,Packet.Size);
       Inc(Size,Packet.Size);
-      
+
       Packet:=Packet.Next;
      end;
-     
+
     {Send the Packet}
     Result:=NetworkDeviceWrite(FDevice,Buffer,Size,Length) = ERROR_SUCCESS;
-   
+
     {Release Buffer}
     FreeMem(Buffer);
-   end; 
- finally 
+   end;
+ finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TWiredAdapter.ClearStatistics(AHandle:THandle):Boolean; 
+function TWiredAdapter.ClearStatistics(AHandle:THandle):Boolean;
 var
  Value:PtrUInt;
 begin
@@ -3996,23 +3996,23 @@ begin
 
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   {Clear Statistics}
   if FDevice.DeviceControl(FDevice,NETWORK_CONTROL_CLEAR_STATS,0,Value) = ERROR_SUCCESS then
    begin
     FillChar(FStatistics,SizeOf(TAdapterStatistics),0);
-   
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TWiredAdapter.GetStatistics(AHandle:THandle):TAdapterStatistics; 
+function TWiredAdapter.GetStatistics(AHandle:THandle):TAdapterStatistics;
 var
  Value:PtrUInt;
  Statistics:TNetworkStatistics;
@@ -4032,32 +4032,32 @@ begin
 
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   {Get Statistics}
   if FDevice.DeviceControl(FDevice,NETWORK_CONTROL_GET_STATS,PtrUInt(@Statistics),Value) = ERROR_SUCCESS then
    begin
     Result.PacketsIn:=Statistics.ReceiveCount;
     Result.PacketsOut:=Statistics.TransmitCount;
-    Result.BytesIn:=Statistics.ReceiveBytes; 
+    Result.BytesIn:=Statistics.ReceiveBytes;
     Result.BytesOut:=Statistics.TransmitBytes;
     Result.ErrorsIn:=Statistics.ReceiveErrors;
     Result.ErrorsOut:=Statistics.TransmitErrors;
     Result.PacketsLost:=Statistics.BufferOverruns + Statistics.BufferUnavailable;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
-function TWiredAdapter.GetDefaultAddress(AHandle:THandle):THardwareAddress; 
+function TWiredAdapter.GetDefaultAddress(AHandle:THandle):THardwareAddress;
 begin
  {}
  ReaderLock;
  try
   FillChar(Result,SizeOf(THardwareAddress),0);
- 
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: GetDefaultAddress (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -4068,12 +4068,12 @@ begin
 
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   {Return Result}
   Result:=HARDWARE_DEFAULT;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4086,7 +4086,7 @@ begin
  ReaderLock;
  try
   FillChar(Result,SizeOf(THardwareAddress),0);
- 
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: GetHardwareAddress (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -4094,15 +4094,15 @@ begin
 
   {Check State}
   if FState = ADAPTER_STATE_DISABLED then Exit;
-  
+
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   {Get Hardware Address}
   FDevice.DeviceControl(FDevice,NETWORK_CONTROL_GET_HARDWARE,PtrUInt(@Result),Value);
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4115,7 +4115,7 @@ begin
  WriterLock;
  try
   Result:=False;
-  
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: SetHardwareAddress (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -4124,21 +4124,21 @@ begin
 
   {Check State}
   if FState = ADAPTER_STATE_DISABLED then Exit;
-  
+
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   {Set Hardware Address}
   if FDevice.DeviceControl(FDevice,NETWORK_CONTROL_SET_MAC,PtrUInt(@AAddress),Value) = ERROR_SUCCESS then
    begin
     FHardwareAddress:=AAddress;
-   
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4151,7 +4151,7 @@ begin
  ReaderLock;
  try
   FillChar(Result,SizeOf(THardwareAddress),0);
- 
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: GetBroadcastAddress (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -4162,12 +4162,12 @@ begin
 
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   {Get Hardware Address}
   FDevice.DeviceControl(FDevice,NETWORK_CONTROL_GET_BROADCAST,PtrUInt(@Result),Value);
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4178,7 +4178,7 @@ begin
  ReaderLock;
  try
   FillChar(Result,SizeOf(TMulticastAddresses),0);
-  
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: GetMulticastAddresses (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -4189,11 +4189,11 @@ begin
 
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   //To Do //NETWORK_CONTROL_GET_MULTICAST
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4204,7 +4204,7 @@ begin
  WriterLock;
  try
   Result:=False;
-  
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: AddMulticastAddress (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -4216,11 +4216,11 @@ begin
 
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   //To Do //NETWORK_CONTROL_ADD_MULTICAST
- finally 
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4231,7 +4231,7 @@ begin
  WriterLock;
  try
   Result:=False;
-  
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: RemoveMulticastAddress (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -4243,11 +4243,11 @@ begin
 
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   //To Do //NETWORK_CONTROL_DEL_MULTICAST
- finally 
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4261,14 +4261,14 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: StartAdapter (' + Name + ')');
   {$ENDIF}
 
   {Check State}
   if FState <> ADAPTER_STATE_DISABLED then Exit;
- 
+
   {Check Device}
   if FDevice = nil then Exit;
 
@@ -4277,18 +4277,18 @@ begin
    NETWORK_TYPE_ETHERNET:FMediaType:=MEDIA_TYPE_ETHERNET;
    NETWORK_TYPE_TOKENRING:FMediaType:=MEDIA_TYPE_TOKENRING;
   end;
-  if FMediaType = MEDIA_TYPE_UNKNOWN then Exit;   
-  
+  if FMediaType = MEDIA_TYPE_UNKNOWN then Exit;
+
   {Check Buffered Receive/Transmit}
   FBufferedReceive:=(FDevice.Device.DeviceFlags and NETWORK_FLAG_RX_BUFFER) <> 0;
   FBufferedTransmit:=(FDevice.Device.DeviceFlags and NETWORK_FLAG_TX_BUFFER) <> 0;
-  
+
   {Open Device}
   if FDevice.DeviceOpen(FDevice) = ERROR_SUCCESS then
    begin
     {Set State}
     FState:=ADAPTER_STATE_ENABLED;
-    
+
     {Get Address}
     Value:=Uppercase(Manager.Settings.GetString(Name + '_HARDWARE_ADDRESS'));
     if Length(Value) <> 0 then
@@ -4297,40 +4297,40 @@ begin
       if ValidHardwareAddress(Address) then
        begin
          if NETWORK_LOG_ENABLED then NetworkLogInfo(nil,'WiredAdapter: Setting hardware address for adapter ' + Name + ' to ' + Value);
-         
+
          {Convert Lock (Reader to Writer)}
          ReaderConvert;
-         
+
          {Set Address}
          SetHardwareAddress(INVALID_HANDLE_VALUE,Address);
-         
+
          {Convert Lock (Writer to Reader)}
          WriterConvert;
        end;
      end;
-    
+
     {Get Properties}
     FDefaultAddress:=GetDefaultAddress(INVALID_HANDLE_VALUE);
     FHardwareAddress:=GetHardwareAddress(INVALID_HANDLE_VALUE);
-    FBroadcastAddress:=GetBroadcastAddress(INVALID_HANDLE_VALUE); 
-    FMulticastAddresses:=GetMulticastAddresses(INVALID_HANDLE_VALUE); 
+    FBroadcastAddress:=GetBroadcastAddress(INVALID_HANDLE_VALUE);
+    FMulticastAddresses:=GetMulticastAddresses(INVALID_HANDLE_VALUE);
 
     {Set Status}
     SetStatus(ADAPTER_STATUS_UP);
-    
+
     {Create Thread}
     FThread:=TAdapterThread.Create(Self);
     {FThread.FreeOnTerminate:=True;} {Freed by StopAdapter}
-  
+
     {Start Thread}
     FThread.Start;
-  
+
     {Return Result}
     Result:=True;
-   end; 
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4345,20 +4345,20 @@ begin
  ReaderLock;
  try
   Result:=False;
-   
+
   {$IFDEF NETWORK_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: StopAdapter (' + Name + ')');
   {$ENDIF}
 
   {Check State}
   if FState <> ADAPTER_STATE_ENABLED then Exit;
-  
+
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   {Check Thread}
   if FThread = nil then Exit;
-   
+
   {Close Device}
   ResultCode:=FDevice.DeviceClose(FDevice);
   if (ResultCode = ERROR_SUCCESS) or (ResultCode = ERROR_NOT_OPEN) then
@@ -4371,11 +4371,11 @@ begin
 
     {Wait For Thread}
     FThread.WaitFor;
-  
+
     {Destroy Thread}
     FThread.Free;
     FThread:=nil;
-  
+
     {Get Transport}
     Transport:=TAdapterTransport(GetTransportByNext(nil,True,False,NETWORK_LOCK_READ));
     while Transport <> nil do
@@ -4383,11 +4383,11 @@ begin
       {Get Next}
       Current:=Transport;
       Transport:=TAdapterTransport(GetTransportByNext(Current,True,True,NETWORK_LOCK_READ));
-    
+
       {Remove Transport}
       RemoveTransport(THandle(Current),Current.PacketType);
      end;
-  
+
     {Reset Status}
     FStatus:=ADAPTER_STATUS_DOWN;
 
@@ -4396,16 +4396,16 @@ begin
     FillChar(FHardwareAddress,SizeOf(THardwareAddress),0);
     FillChar(FBroadcastAddress,SizeOf(THardwareAddress),0);
     FillChar(FMulticastAddresses,SizeOf(TMulticastAddresses),0);
-    
+
     {Reset State}
     FState:=ADAPTER_STATE_DISABLED;
-    
+
     {Return Result}
     Result:=True;
-   end; 
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4421,16 +4421,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check State}
  if FState = ADAPTER_STATE_DISABLED then Exit;
 
  {Check Device}
  if FDevice = nil then Exit;
- 
+
  {Check Thread}
  if FThread = nil then Exit;
- 
+
  {Check Buffered}
  if FBufferedReceive then
   begin
@@ -4440,13 +4440,13 @@ begin
     {$IFDEF NETWORK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiredAdapter: ProcessAdapter (' + Name + ')');
     {$ENDIF}
-   
+
     {Get each Packet}
     for Count:=0 to NetworkEntry.Count - 1 do
      begin
       {Get Packet}
       NetworkPacket:=@NetworkEntry.Packets[Count];
-     
+
       {Process Packet}
       Result:=ProcessPacket(NetworkPacket.Data,NetworkPacket.Length);
       if not Result then Exit;
@@ -4465,12 +4465,12 @@ begin
       Size:=ETHERNET_MAX_PACKET_SIZE;
      end;
     MEDIA_TYPE_TOKENRING:begin
-      
+
       Size:=0;
       Exit; //To Do
      end;
-   end; 
-               
+   end;
+
    {Get Buffer}
    Buffer:=GetMem(Size);
    if Buffer = nil then Exit;
@@ -4484,17 +4484,17 @@ begin
 
       {Process Packet}
       Result:=ProcessPacket(Buffer,Length);
-     end; 
+     end;
    finally
     {Release Buffer}
     FreeMem(Buffer);
-   end; 
-  end; 
+   end;
+  end;
 end;
 
 {==============================================================================}
 
-function TWiredAdapter.CompareDefault(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+function TWiredAdapter.CompareDefault(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
 begin
  {}
  Result:=CompareAddress(AAddress,FDefaultAddress);
@@ -4502,7 +4502,7 @@ end;
 
 {==============================================================================}
 
-function TWiredAdapter.CompareHardware(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+function TWiredAdapter.CompareHardware(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
 begin
  {}
  Result:=CompareAddress(AAddress,FHardwareAddress);
@@ -4510,7 +4510,7 @@ end;
 
 {==============================================================================}
 
-function TWiredAdapter.CompareBroadcast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+function TWiredAdapter.CompareBroadcast(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
 begin
  {}
  Result:=CompareAddress(AAddress,FBroadcastAddress);
@@ -4518,7 +4518,7 @@ end;
 
 {==============================================================================}
 
-function TWiredAdapter.CompareMulticast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+function TWiredAdapter.CompareMulticast(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
 var
  Count:Integer;
 begin
@@ -4549,10 +4549,10 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FLocalLock:=MutexCreate;
- 
+
  FList:=TLinkedObjList.Create;
 end;
- 
+
 {==============================================================================}
 
 destructor TNetworkSettings.Destroy;
@@ -4563,7 +4563,7 @@ begin
   FList.Free;
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -4623,7 +4623,7 @@ function TNetworkSettings.GetHostName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  {Check Host Name}
@@ -4633,8 +4633,8 @@ begin
    FHostName:=GetString('HOST_NAME');
    UniqueString(FHostName);
   end;
-  
- {Return Host Name} 
+
+ {Return Host Name}
  Result:=FHostName;
  UniqueString(Result);
 
@@ -4647,16 +4647,16 @@ procedure TNetworkSettings.SetHostName(const AHostName:String);
 begin
  {}
  if Length(AHostName) = 0 then Exit;
- 
- if not AcquireLock then Exit; 
- 
+
+ if not AcquireLock then Exit;
+
  {Set Host Name}
  FHostName:=AHostName;
  UniqueString(FHostName);
- 
+
  {Update Host Name}
  AddString('HOST_NAME',AHostName);
- 
+
  ReleaseLock;
 end;
 
@@ -4666,7 +4666,7 @@ function TNetworkSettings.GetDomainName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  {Check Domain Name}
@@ -4676,8 +4676,8 @@ begin
    FDomainName:=GetString('HOST_DOMAIN');
    UniqueString(FDomainName);
   end;
-  
- {Return Domain Name} 
+
+ {Return Domain Name}
  Result:=FDomainName;
  UniqueString(Result);
 
@@ -4690,16 +4690,16 @@ procedure TNetworkSettings.SetDomainName(const ADomainName:String);
 begin
  {}
  if Length(ADomainName) = 0 then Exit;
- 
- if not AcquireLock then Exit; 
- 
+
+ if not AcquireLock then Exit;
+
  {Set Host Name}
  FDomainName:=ADomainName;
  UniqueString(FDomainName);
- 
+
  {Update Host Name}
  AddString('HOST_DOMAIN',ADomainName);
- 
+
  ReleaseLock;
 end;
 
@@ -4738,7 +4738,7 @@ begin
  else
   begin
    Result:=Copy(AValue,PosIdx + 1,Length(AValue));
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4780,7 +4780,7 @@ begin
  else
   begin
    Result:=Copy(AName,PosIdx + 1,Length(AName));
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4813,30 +4813,30 @@ begin
    if Length(AName) <> 0 then
     begin
      Result:=APrefix;
-     
+
      {Check Prefix}
      if APrefix[Length(APrefix)] = '_' then
       begin
        Delete(Result,Length(Result),1);
       end;
-     
+
      {Check Name}
      if AName[1] <> '_' then
       begin
        Result:=Result + '_';
       end;
-      
+
      Result:=Result + AName;
     end
    else
     begin
      Result:=APrefix;
-    end;    
+    end;
   end
  else
   begin
    Result:=AName;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4851,7 +4851,7 @@ begin
  else
   begin
    Result:=ADefault;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4866,7 +4866,7 @@ begin
  else
   begin
    Result:=ADefault;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4883,15 +4883,15 @@ begin
      WorkInt:=StrToIntDef(AValue,1);
     end
    else
-    begin   
+    begin
      WorkInt:=StrToIntDef(AValue,0);
-    end; 
+    end;
    if WorkInt = 0 then Result:=False else Result:=True;
   end
  else
   begin
    Result:=ADefault;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4903,9 +4903,9 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if Length(AName) = 0 then Exit;
- 
+
  Hash:=GenerateNameHash(AName,stringHashSize);
  Setting:=TNetworkSetting(FList.First);
  while Setting <> nil do
@@ -4918,7 +4918,7 @@ begin
        Exit;
       end;
     end;
-   
+
    Setting:=TNetworkSetting(Setting.Next);
   end;
 end;
@@ -4938,7 +4938,7 @@ begin
  else
   begin
    Result:='';
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -4965,22 +4965,22 @@ var
 begin
  {}
  Result:=ADefault;
- 
+
  if not ReaderLock then Exit;
- 
+
  Value:=FindFromList(AName);
  if Length(Value) <> 0 then
   begin
    Result:=Value;
   end
  else
-  begin 
+  begin
    Result:=TranslateString(FindFromEnvironment(AName),ADefault);
   end;
- 
+
  ReaderUnlock;
 end;
-   
+
 {==============================================================================}
 
 function TNetworkSettings.GetInteger(const AName:String):Integer;
@@ -4997,19 +4997,19 @@ var
 begin
  {}
  Result:=ADefault;
- 
+
  if not ReaderLock then Exit;
- 
+
  Value:=FindFromList(AName);
  if Length(Value) <> 0 then
   begin
    Result:=TranslateInteger(Value,ADefault);
   end
- else 
+ else
   begin
    Result:=TranslateInteger(FindFromEnvironment(AName),ADefault);
   end;
- 
+
  ReaderUnlock;
 end;
 
@@ -5029,35 +5029,35 @@ var
 begin
  {}
  Result:=ADefault;
- 
+
  if not ReaderLock then Exit;
- 
+
  Value:=FindFromList(AName);
  if Length(Value) <> 0 then
   begin
    Result:=TranslateBoolean(Value,ADefault);
   end
- else 
+ else
   begin
    Result:=TranslateBoolean(FindFromEnvironment(AName),ADefault);
   end;
- 
+
  ReaderUnlock;
 end;
 
 {==============================================================================}
 
 function TNetworkSettings.AddString(const AName,AValue:String):Boolean;
-var 
+var
  Setting:TNetworkSetting;
 begin
  {}
  Result:=False;
- 
+
  if Length(AName) = 0 then Exit;
- 
+
  if not WriterLock then Exit;
- 
+
  {Get Setting}
  Setting:=GetFromList(AName);
  if Setting = nil then
@@ -5066,17 +5066,17 @@ begin
    Setting:=TNetworkSetting.Create;
    Setting.Name:=Uppercase(AName);
    Setting.Value:=AValue;
-   
+
    Result:=FList.Add(Setting);
   end
  else
   begin
    {Update Setting}
    Setting.Value:=AValue;
-   
+
    Result:=True;
-  end;  
- 
+  end;
+
  WriterUnlock;
 end;
 
@@ -5100,33 +5100,33 @@ begin
  else
   begin
    Result:=AddString(AName,'0');
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
 function TNetworkSettings.Remove(const AName:String):Boolean;
-var 
+var
  Setting:TNetworkSetting;
 begin
  {}
  Result:=False;
- 
+
  if Length(AName) = 0 then Exit;
 
  if not WriterLock then Exit;
- 
+
  {Get Setting}
  Setting:=GetFromList(AName);
  if Setting <> nil then
   begin
    {Remove Setting}
    Result:=FList.Remove(Setting);
-   
+
    {Destroy Setting}
    Setting.Free;
   end;
- 
+
  WriterUnlock;
 end;
 
@@ -5141,7 +5141,7 @@ begin
  try
   {Check Filename}
   if Length(AFileName) = 0 then Exit;
-  
+
   {Check File}
   if FileExists(AFileName) then
    begin
@@ -5152,11 +5152,11 @@ begin
      Result:=LoadFromStream(FileStream,AFlat);
     finally
      FileStream.Free;
-    end;    
-   end; 
+    end;
+   end;
  except
   {}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5167,21 +5167,21 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Stream}
  if AStream = nil then Exit;
- 
+
  {Create Strings}
  StringList:=TStringList.Create;
  try
   {Load Strings}
   StringList.LoadFromStream(AStream);
-  
+
   {Load from Strings}
   Result:=LoadFromStrings(StringList,AFlat);
  finally
   StringList.Free;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5194,12 +5194,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Strings}
  if AStrings = nil then Exit;
- 
+
  if not WriterLock then Exit;
- 
+
  {Load Strings}
  Prefix:='';
  for Count:=0 to AStrings.Count - 1 do
@@ -5227,8 +5227,8 @@ begin
         end;
       end;
     end;
-  end; 
- 
+  end;
+
  WriterUnlock;
 end;
 
@@ -5243,17 +5243,17 @@ begin
  try
   {Check Filename}
   if Length(AFileName) = 0 then Exit;
-  
+
   {Check File}
   if FileExists(AFileName) then
    begin
     {Delete File}
     SysUtils.DeleteFile(AFileName);
    end;
-  
+
   {Check File}
   if not FileExists(AFileName) then
-   begin  
+   begin
     {Create File}
     FileStream:=TFileStream.Create(AFileName,fmCreate);
     try
@@ -5261,11 +5261,11 @@ begin
      Result:=SaveToStream(FileStream,AFlat);
     finally
      FileStream.Free;
-    end;    
-   end; 
+    end;
+   end;
  except
   {}
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5276,21 +5276,21 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Stream}
  if AStream = nil then Exit;
- 
+
  {Create Strings}
  StringList:=TStringList.Create;
  try
   {Save to Strings}
   Result:=SaveToStrings(StringList,AFlat);
-  
+
   {Save Strings}
   StringList.SaveToStream(AStream);
  finally
   StringList.Free;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5302,14 +5302,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Strings}
  if AStrings = nil then Exit;
- 
+
  if not WriterLock then Exit;
- 
+
  //To Do //Continuing
- 
+
  WriterUnlock;
 end;
 
@@ -5319,44 +5319,44 @@ function TNetworkSettings.LoadFromEnvironment:Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Host configuration}
  {HOST_NAME}
  HOST_NAME:=TranslateString(FindFromEnvironment('HOST_NAME'),HOST_NAME);
  AddString('HOST_NAME',HOST_NAME);
- 
+
  {HOST_DOMAIN}
  HOST_DOMAIN:=TranslateString(FindFromEnvironment('HOST_DOMAIN'),HOST_DOMAIN);
  AddString('HOST_DOMAIN',HOST_DOMAIN);
 
- {Winsock configuration} 
+ {Winsock configuration}
  {WINSOCK_AUTOSTART}
  WINSOCK_AUTOSTART:=TranslateBoolean(FindFromEnvironment('WINSOCK_AUTOSTART'),WINSOCK_AUTOSTART);
  {WINSOCK_ASYNCSTART}
  WINSOCK_ASYNCSTART:=TranslateBoolean(FindFromEnvironment('WINSOCK_ASYNCSTART'),WINSOCK_ASYNCSTART);
- 
- {Winsock2 configuration} 
+
+ {Winsock2 configuration}
  {WINSOCK2_AUTOSTART}
  WINSOCK2_AUTOSTART:=TranslateBoolean(FindFromEnvironment('WINSOCK2_AUTOSTART'),WINSOCK2_AUTOSTART);
  {WINSOCK2_ASYNCSTART}
  WINSOCK2_ASYNCSTART:=TranslateBoolean(FindFromEnvironment('WINSOCK2_ASYNCSTART'),WINSOCK2_ASYNCSTART);
- 
+
  {Sockets configuration}
  {SOCKETS_AUTOSTART}
  SOCKETS_AUTOSTART:=TranslateBoolean(FindFromEnvironment('SOCKETS_AUTOSTART'),SOCKETS_AUTOSTART);
  {SOCKETS_ASYNCSTART}
  SOCKETS_ASYNCSTART:=TranslateBoolean(FindFromEnvironment('SOCKETS_ASYNCSTART'),SOCKETS_ASYNCSTART);
- 
+
  {Client configuration}
  {DNS_CLIENT_ENABLED}
  DNS_CLIENT_ENABLED:=TranslateBoolean(FindFromEnvironment('DNS_CLIENT_ENABLED'),DNS_CLIENT_ENABLED);
  AddBoolean('DNS_CLIENT_ENABLED',DNS_CLIENT_ENABLED);
- 
+
  {Protocol configuration}
  {RAW_PROTOCOL_ENABLED}
  RAW_PROTOCOL_ENABLED:=TranslateBoolean(FindFromEnvironment('RAW_PROTOCOL_ENABLED'),RAW_PROTOCOL_ENABLED);
  AddBoolean('RAW_PROTOCOL_ENABLED',RAW_PROTOCOL_ENABLED);
- 
+
  {UDP_PROTOCOL_ENABLED}
  UDP_PROTOCOL_ENABLED:=TranslateBoolean(FindFromEnvironment('UDP_PROTOCOL_ENABLED'),UDP_PROTOCOL_ENABLED);
  AddBoolean('UDP_PROTOCOL_ENABLED',UDP_PROTOCOL_ENABLED);
@@ -5400,7 +5400,7 @@ begin
  {LOOPBACK_CONFIG_ENABLED}
  LOOPBACK_CONFIG_ENABLED:=TranslateBoolean(FindFromEnvironment('LOOPBACK_CONFIG_ENABLED'),LOOPBACK_CONFIG_ENABLED);
  AddBoolean('LOOPBACK_CONFIG_ENABLED',LOOPBACK_CONFIG_ENABLED);
- 
+
  {Transport configuration}
  {IP_TRANSPORT_ENABLED}
  IP_TRANSPORT_ENABLED:=TranslateBoolean(FindFromEnvironment('IP_TRANSPORT_ENABLED'),IP_TRANSPORT_ENABLED);
@@ -5425,7 +5425,7 @@ begin
  {EAPOL_TRANSPORT_ENABLED}
  EAPOL_TRANSPORT_ENABLED:=TranslateBoolean(FindFromEnvironment('EAPOL_TRANSPORT_ENABLED'),EAPOL_TRANSPORT_ENABLED);
  AddBoolean('EAPOL_TRANSPORT_ENABLED',EAPOL_TRANSPORT_ENABLED);
- 
+
  {Network configuration}
  {WIRED_NETWORK_ENABLED}
  WIRED_NETWORK_ENABLED:=TranslateBoolean(FindFromEnvironment('WIRED_NETWORK_ENABLED'),WIRED_NETWORK_ENABLED);
@@ -5438,7 +5438,7 @@ begin
  {WIRELESS_NETWORK_ENABLED}
  WIRELESS_NETWORK_ENABLED:=TranslateBoolean(FindFromEnvironment('WIRELESS_NETWORK_ENABLED'),WIRELESS_NETWORK_ENABLED);
  AddBoolean('WIRELESS_NETWORK_ENABLED',WIRELESS_NETWORK_ENABLED);
- 
+
  {TCP configuration}
  {TCP_MIN_BACKLOG}
  TCP_MIN_BACKLOG:=TranslateInteger(FindFromEnvironment('TCP_MIN_BACKLOG'),TCP_MIN_BACKLOG);
@@ -5447,11 +5447,11 @@ begin
  {TCP_MAX_BACKLOG}
  TCP_MAX_BACKLOG:=TranslateInteger(FindFromEnvironment('TCP_MAX_BACKLOG'),TCP_MAX_BACKLOG);
  AddInteger('TCP_MAX_BACKLOG',TCP_MAX_BACKLOG);
- 
+
  {TCP_RECEIVE_BACKLOG}
  TCP_RECEIVE_BACKLOG:=TranslateInteger(FindFromEnvironment('TCP_RECEIVE_BACKLOG'),TCP_RECEIVE_BACKLOG);
  AddInteger('TCP_RECEIVE_BACKLOG',TCP_RECEIVE_BACKLOG);
- 
+
  Result:=True;
 end;
 
@@ -5464,7 +5464,7 @@ begin
  inherited Create;
  FLock:=SynchronizerCreate;
  FLocalLock:=MutexCreate;
- 
+
  FServiceSetType:=SERVICE_SET_UNKNOWN;
  FServiceSetTime:=GetTickCount64;
  FillChar(FAddress,SizeOf(THardwareAddress),0);
@@ -5473,14 +5473,14 @@ end;
 
 {==============================================================================}
 
-destructor TServiceSet.Destroy; 
+destructor TServiceSet.Destroy;
 begin
  {}
  WriterLock;
  try
   MutexDestroy(FLocalLock);
   inherited Destroy;
- finally 
+ finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   SynchronizerDestroy(FLock);
  end;
@@ -5492,7 +5492,7 @@ function TServiceSet.GetName:String;
 begin
  {}
  Result:='';
- 
+
  if not AcquireLock then Exit;
 
  Result:=FName;
@@ -5632,19 +5632,19 @@ end;
 {==============================================================================}
 {Initialization Functions}
 procedure NetworkInit;
-var 
+var
  WorkBuffer:String;
 begin
  {}
  {Check Initialized}
  if NetworkInitialized then Exit;
- 
+
  {Initialize Logging}
- NETWORK_LOG_ENABLED:=(NETWORK_DEFAULT_LOG_LEVEL <> NETWORK_LOG_LEVEL_NONE); 
- 
+ NETWORK_LOG_ENABLED:=(NETWORK_DEFAULT_LOG_LEVEL <> NETWORK_LOG_LEVEL_NONE);
+
  {Initialize Network Table}
  NetworkTable:=nil;
- NetworkTableLock:=CriticalSectionCreate; 
+ NetworkTableLock:=CriticalSectionCreate;
  NetworkTableCount:=0;
  if NetworkTableLock = INVALID_HANDLE_VALUE then
   begin
@@ -5653,31 +5653,31 @@ begin
 
  {Initialize Event Table}
  NetworkEventTable:=nil;
- NetworkEventLock:=CriticalSectionCreate; 
+ NetworkEventLock:=CriticalSectionCreate;
  NetworkEventCount:=0;
  if NetworkEventLock = INVALID_HANDLE_VALUE then
   begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to create event table lock');
   end;
- 
+
  {Create Network Settings}
  NetworkSettings:=TNetworkSettings.Create;
- 
+
  {Create Adapter Manager}
  AdapterManager:=TAdapterManager.Create(NetworkSettings);
- 
+
  {Check Environment Variables (Network)}
   {Done by NetworkSettings.LoadFromEnvironment}
- 
+
  {Load Environment Settings}
  NetworkSettings.LoadFromEnvironment;
- 
+
  {Register Platform Network Handlers}
  HostGetNameHandler:=SysHostGetName;
  HostSetNameHandler:=SysHostSetName;
  HostGetDomainHandler:=SysHostGetDomain;
  HostSetDomainHandler:=SysHostSetDomain;
- 
+
  NetworkInitialized:=True;
 end;
 
@@ -5687,28 +5687,28 @@ function NetworkStart:LongWord;
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {Check Started}
  if NetworkStarted then Exit;
- 
+
  Result:=ERROR_INVALID_PARAMETER;
 
  {Check Manager}
  if AdapterManager = nil then Exit;
- 
+
  {Notify Event}
  NetworkEventNotify(NETWORK_EVENT_SYSTEM_START);
- 
+
  {Start Adapters}
  if not AdapterManager.StartAdapters then
   begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to start one or more network adapters');
   end;
- 
- {Set Started} 
+
+ {Set Started}
  NetworkStarted:=True;
- 
- {Return Result} 
+
+ {Return Result}
  Result:=ERROR_SUCCESS;
 end;
 
@@ -5718,15 +5718,15 @@ function NetworkStop:LongWord;
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {Check Started}
  if not(NetworkStarted) then Exit;
- 
+
  Result:=ERROR_INVALID_PARAMETER;
 
  {Check Manager}
  if AdapterManager = nil then Exit;
- 
+
  {Stop Adapters}
  if not AdapterManager.StopAdapters then
   begin
@@ -5735,11 +5735,11 @@ begin
 
  {Notify Event}
  NetworkEventNotify(NETWORK_EVENT_SYSTEM_STOP);
-  
+
  {Set Started}
- NetworkStarted:=False;    
- 
- {Return Result} 
+ NetworkStarted:=False;
+
+ {Return Result}
  Result:=ERROR_SUCCESS;
 end;
 
@@ -5763,14 +5763,14 @@ begin
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  if not Assigned(Network.DeviceOpen) then Exit;
- 
+
  {Call Open}
  Result:=Network.DeviceOpen(Network);
 end;
- 
+
 {==============================================================================}
 
 function NetworkDeviceClose(Network:PNetworkDevice):LongWord;
@@ -5781,7 +5781,7 @@ begin
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  if not Assigned(Network.DeviceClose) then Exit;
 
@@ -5791,7 +5791,7 @@ end;
 
 {==============================================================================}
 
-function NetworkDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
+function NetworkDeviceRead(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
 var
  Entry:PNetworkEntry;
  Packet:PNetworkPacket;
@@ -5801,11 +5801,11 @@ begin
 
  {Setup Length}
  Length:=0;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  if Assigned(Network.DeviceRead) then
   begin
@@ -5817,30 +5817,30 @@ begin
    {Default Method}
    {Check Buffer}
    if Buffer = nil then Exit;
-   
+
    {Check Size}
    if Size = 0 then Exit;
-   
+
    {Check State}
    Result:=ERROR_NOT_READY;
    if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
-   
+
    {Receive Buffer}
    Result:=NetworkBufferReceive(Network,Entry);
    if Result <> ERROR_SUCCESS then Exit;
-   
+
    {Get First Packet}
    Packet:=@Entry.Packets[0];
-   
+
    {Get Size}
    if Packet.Length < Size then
     begin
      Size:=Packet.Length;
     end;
-   
+
    {Copy Data}
    System.Move(Packet.Data^,Buffer^,Size);
-   
+
    {Release Buffer}
    Result:=NetworkBufferRelease(Network,Entry);
    if Result = ERROR_SUCCESS then
@@ -5853,7 +5853,7 @@ end;
 
 {==============================================================================}
 
-function NetworkDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord; 
+function NetworkDeviceWrite(Network:PNetworkDevice;Buffer:Pointer;Size:LongWord;var Length:LongWord):LongWord;
 var
  Entry:PNetworkEntry;
  Packet:PNetworkPacket;
@@ -5863,11 +5863,11 @@ begin
 
  {Setup Length}
  Length:=0;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  if Assigned(Network.DeviceWrite) then
   begin
@@ -5879,18 +5879,18 @@ begin
    {Default Method}
    {Check Buffer}
    if Buffer = nil then Exit;
-   
+
    {Check Size}
    if Size = 0 then Exit;
-   
+
    {Check State}
    Result:=ERROR_NOT_READY;
    if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
-   
+
    {Allocate Buffer}
    Result:=NetworkBufferAllocate(Network,Entry);
    if Result <> ERROR_SUCCESS then Exit;
-   
+
    {Get First Packet}
    Packet:=@Entry.Packets[0];
 
@@ -5899,13 +5899,13 @@ begin
     begin
      Size:=Packet.Length;
     end;
-   
+
    {Update Packet}
    Packet.Length:=Size;
-   
+
    {Copy Data}
    System.Move(Buffer^,Packet.Data^,Size);
-   
+
    {Transmit Buffer}
    Result:=NetworkBufferTransmit(Network,Entry);
    if Result = ERROR_SUCCESS then
@@ -5926,7 +5926,7 @@ begin
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  Result:=ERROR_NOT_SUPPORTED;
  if not Assigned(Network.DeviceControl) then Exit;
@@ -5941,7 +5941,7 @@ function NetworkBufferAllocate(Network:PNetworkDevice;var Entry:PNetworkEntry):L
 {Allocate a transmit buffer from the specified network device, the returned entry will
  include a buffer for writing data to as well as an offset value to allow the driver
  data to be written to the start of the buffer.
- 
+
  When the data has been copied to the buffer, pass the entry to NetworkBufferTransmit}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
@@ -5950,11 +5950,11 @@ begin
 
  {Setup Entry}
  Entry:=nil;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  Result:=ERROR_NOT_SUPPORTED;
  if not Assigned(Network.BufferAllocate) then Exit;
@@ -5962,7 +5962,7 @@ begin
  {Call Allocate}
  Result:=Network.BufferAllocate(Network,Entry);
 end;
- 
+
 {==============================================================================}
 
 function NetworkBufferRelease(Network:PNetworkDevice;Entry:PNetworkEntry):LongWord;
@@ -5976,7 +5976,7 @@ begin
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  Result:=ERROR_NOT_SUPPORTED;
  if not Assigned(Network.BufferRelease) then Exit;
@@ -5990,9 +5990,9 @@ end;
 function NetworkBufferReceive(Network:PNetworkDevice;var Entry:PNetworkEntry):LongWord;
 {Receive a completed receive buffer from the specified network device. The returned
  entry will contain a one or more packets of data to read from.
- 
+
  When the data has been processed pass the returned buffer to NetworkBufferRelease}
- 
+
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
@@ -6000,11 +6000,11 @@ begin
 
  {Setup Entry}
  Entry:=nil;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  Result:=ERROR_NOT_SUPPORTED;
  if not Assigned(Network.BufferReceive) then Exit;
@@ -6026,7 +6026,7 @@ begin
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  Result:=ERROR_NOT_SUPPORTED;
  if not Assigned(Network.BufferTransmit) then Exit;
@@ -6034,7 +6034,7 @@ begin
  {Call Release}
  Result:=Network.BufferTransmit(Network,Entry);
 end;
- 
+
 {==============================================================================}
 
 function NetworkDeviceSetState(Network:PNetworkDevice;State:LongWord):LongWord;
@@ -6045,14 +6045,14 @@ function NetworkDeviceSetState(Network:PNetworkDevice;State:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {Check State}
  if State > NETWORK_STATE_OPEN then Exit;
- 
+
  {Check State}
  if Network.NetworkState = State then
   begin
@@ -6064,10 +6064,10 @@ begin
    {Acquire the Lock}
    if MutexLock(Network.Lock) = ERROR_SUCCESS then
     begin
-     try 
+     try
       {Set State}
       Network.NetworkState:=State;
-  
+
       {Notify State}
       NotifierNotify(@Network.Device,NetworkDeviceStateToNotification(State));
 
@@ -6082,7 +6082,7 @@ begin
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
     end;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6095,14 +6095,14 @@ function NetworkDeviceSetStatus(Network:PNetworkDevice;Status:LongWord):LongWord
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {Check Status}
  if Status > NETWORK_STATUS_UP then Exit;
- 
+
  {Check Status}
  if Network.NetworkStatus = Status then
   begin
@@ -6114,10 +6114,10 @@ begin
    {Acquire the Lock}
    if MutexLock(Network.Lock) = ERROR_SUCCESS then
     begin
-     try 
+     try
       {Set Status}
       Network.NetworkStatus:=Status;
-  
+
       {Notify Status}
       NotifierNotify(@Network.Device,NetworkDeviceStatusToNotification(Status));
 
@@ -6132,7 +6132,7 @@ begin
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
     end;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6154,16 +6154,16 @@ function NetworkDeviceCreateEx(Size:LongWord):PNetworkDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TNetworkDevice) then Exit;
- 
+
  {Create Network}
  Result:=PNetworkDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=NETWORK_TYPE_NONE;
  Result.Device.DeviceFlags:=NETWORK_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -6186,8 +6186,8 @@ begin
  Result.ReceiveQueue.Wait:=INVALID_HANDLE_VALUE;
  Result.TransmitQueue.Buffer:=INVALID_HANDLE_VALUE;
  Result.TransmitQueue.Wait:=INVALID_HANDLE_VALUE;
- 
- {Create Lock} 
+
+ {Create Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
   begin
@@ -6196,7 +6196,7 @@ begin
    Result:=nil;
    Exit;
   end;
- 
+
  {Create Buffer Semaphore}
  Result.Buffer.Wait:=SemaphoreCreate(0);
  if Result.Buffer.Wait = INVALID_HANDLE_VALUE then
@@ -6215,31 +6215,31 @@ function NetworkDeviceDestroy(Network:PNetworkDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Network}
  Result:=ERROR_IN_USE;
  if NetworkDeviceCheck(Network) = Network then Exit;
 
  {Check State}
  if Network.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
- {Destroy Buffer Semaphore} 
+
+ {Destroy Buffer Semaphore}
  if Network.Buffer.Wait <> INVALID_HANDLE_VALUE then
   begin
    SemaphoreDestroy(Network.Buffer.Wait);
   end;
-  
- {Destroy Lock} 
+
+ {Destroy Lock}
  if Network.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Network.Lock);
   end;
- 
- {Destroy Network} 
+
+ {Destroy Network}
  Result:=DeviceDestroy(@Network.Device);
 end;
 
@@ -6252,12 +6252,12 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.NetworkId <> DEVICE_ID_ANY then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Functions}
  if not Assigned(Network.DeviceOpen) then Exit;
  if not Assigned(Network.DeviceClose) then Exit;
@@ -6271,14 +6271,14 @@ begin
    if not Assigned(Network.BufferAllocate) then Exit;
    if not Assigned(Network.BufferTransmit) then Exit;
   end;
-  
+
  {Check Network}
  Result:=ERROR_ALREADY_EXISTS;
  if NetworkDeviceCheck(Network) = Network then Exit;
- 
+
  {Check State}
  if Network.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Network}
  if CriticalSectionLock(NetworkTableLock) = ERROR_SUCCESS then
   begin
@@ -6290,19 +6290,19 @@ begin
       Inc(NetworkId);
      end;
     Network.NetworkId:=NetworkId;
-    
+
     {Update Device}
     Network.Device.DeviceName:=NETWORK_NAME_PREFIX + IntToStr(Network.NetworkId);
     Network.Device.DeviceClass:=DEVICE_CLASS_NETWORK;
-    
+
     {Register Device}
     Result:=DeviceRegister(@Network.Device);
     if Result <> ERROR_SUCCESS then
      begin
       Network.NetworkId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link Network}
     if NetworkTable = nil then
      begin
@@ -6314,10 +6314,10 @@ begin
       NetworkTable.Prev:=Network;
       NetworkTable:=Network;
      end;
- 
+
     {Increment Count}
     Inc(NetworkTableCount);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -6327,7 +6327,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6340,19 +6340,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.NetworkId = DEVICE_ID_ANY then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Network}
  Result:=ERROR_NOT_FOUND;
  if NetworkDeviceCheck(Network) <> Network then Exit;
- 
+
  {Check State}
  if Network.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove Network}
  if CriticalSectionLock(NetworkTableLock) = ERROR_SUCCESS then
   begin
@@ -6360,7 +6360,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@Network.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink Network}
     Prev:=Network.Prev;
     Next:=Network.Next;
@@ -6370,7 +6370,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -6378,15 +6378,15 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(NetworkTableCount);
- 
+
     {Update Network}
     Network.NetworkId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -6396,7 +6396,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6407,10 +6407,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if NetworkId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(NetworkTableLock) = ERROR_SUCCESS then
   begin
@@ -6429,7 +6429,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       Network:=Network.Next;
      end;
@@ -6439,9 +6439,9 @@ begin
    end;
   end;
 end;
-       
+
 {==============================================================================}
-       
+
 function NetworkDeviceFindByName(const Name:String):PNetworkDevice; inline;
 begin
  {}
@@ -6455,7 +6455,7 @@ begin
  {}
  Result:=PNetworkDevice(DeviceFindByDescription(Description));
 end;
-       
+
 {==============================================================================}
 
 function NetworkDeviceEnumerate(Callback:TNetworkEnumerate;Data:Pointer):LongWord;
@@ -6464,10 +6464,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(NetworkTableLock) = ERROR_SUCCESS then
   begin
@@ -6481,11 +6481,11 @@ begin
        begin
         if Callback(Network,Data) <> ERROR_SUCCESS then Exit;
        end;
-      
+
       {Get Next}
       Network:=Network.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -6496,7 +6496,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6512,12 +6512,12 @@ begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_NETWORK,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check Network}
    if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@Network.Device,DEVICE_CLASS_NETWORK,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -6532,7 +6532,7 @@ begin
 
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Create Event}
  NetworkEvent:=AllocMem(SizeOf(TNetworkEvent));
  if NetworkEvent = nil then Exit;
@@ -6544,7 +6544,7 @@ begin
  NetworkEvent.Callback:=Callback;
  NetworkEvent.Data:=Data;
  NetworkEvent.Event:=Event;
- 
+
  {Insert Event}
  if CriticalSectionLock(NetworkEventLock) = ERROR_SUCCESS then
   begin
@@ -6560,7 +6560,7 @@ begin
       NetworkEventTable.Prev:=NetworkEvent;
       NetworkEventTable:=NetworkEvent;
      end;
-    
+
     {Increment Count}
     Inc(NetworkEventCount);
 
@@ -6571,7 +6571,7 @@ begin
    end;
   end;
 end;
-    
+
 {==============================================================================}
 
 function NetworkEventRelease(Event:PNetworkEvent):LongWord;
@@ -6582,17 +6582,17 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Event}
  if Event = nil then Exit;
  if Event.Signature <> NETWORK_EVENT_SIGNATURE then Exit;
- 
+
  {Check Event}
  if NetworkEventCheck(Event) <> Event then Exit;
 
  {Check State}
  if Event.EventState <> NETWORK_EVENT_STATE_UNREGISTERED then Exit;
- 
+
  {Remove Event}
  if CriticalSectionLock(NetworkEventLock) = ERROR_SUCCESS then
   begin
@@ -6606,7 +6606,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -6614,18 +6614,18 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
-    
+       end;
+     end;
+
     {Decrement Count}
     Dec(NetworkEventCount);
 
     {Invalidate Event}
     Event.Signature:=0;
- 
+
     {Free Event}
     FreeMem(Event);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -6635,7 +6635,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6647,13 +6647,13 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Check Event}
  if Event = NETWORK_EVENT_NONE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(NetworkEventLock) = ERROR_SUCCESS then
   begin
@@ -6661,17 +6661,17 @@ begin
     {Allocate Event}
     NetworkEvent:=NetworkEventAllocate(Callback,Data,Event);
     if NetworkEvent = nil then Exit;
-    
+
     {Register Event}
     NetworkEvent.EventState:=NETWORK_EVENT_STATE_REGISTERED;
- 
+
     {Return Result}
     Result:=THandle(NetworkEvent);
    finally
     {Release the Lock}
     CriticalSectionUnlock(NetworkEventLock);
    end;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6683,7 +6683,7 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Exit;
 
@@ -6691,14 +6691,14 @@ begin
  NetworkEvent:=PNetworkEvent(Handle);
  if NetworkEvent = nil then Exit;
  if NetworkEvent.Signature <> NETWORK_EVENT_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(NetworkEventLock) = ERROR_SUCCESS then
   begin
    try
     {Deregister Event}
     NetworkEvent.EventState:=NETWORK_EVENT_STATE_UNREGISTERED;
-   
+
     {Release Event}
     Result:=NetworkEventRelease(NetworkEvent);
    finally
@@ -6709,7 +6709,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 {==============================================================================}
 
@@ -6720,16 +6720,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Event}
  if Event = NETWORK_EVENT_NONE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(NetworkEventLock) = ERROR_SUCCESS then
   begin
    try
     Result:=ERROR_SUCCESS;
- 
+
     {Get Event}
     NetworkEvent:=NetworkEventTable;
     while NetworkEvent <> nil do
@@ -6744,7 +6744,7 @@ begin
           if Status <> ERROR_SUCCESS then Result:=Status;
          end;
        end;
-       
+
       {Get Next}
       NetworkEvent:=NetworkEvent.Next;
      end;
@@ -6756,7 +6756,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -6766,28 +6766,28 @@ function SysHostGetName:String;
 begin
  {}
  Result:='';
- 
+
  {Check Settings}
  if NetworkSettings = nil then Exit;
- 
+
  Result:=NetworkSettings.HostName;
 end;
 
 {==============================================================================}
 
-function SysHostSetName(const AName:String):Boolean; 
+function SysHostSetName(const AName:String):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Name}
  if Length(AName) = 0 then Exit;
- 
+
  {Check Settings}
  if NetworkSettings = nil then Exit;
- 
+
  NetworkSettings.HostName:=AName;
- 
+
  Result:=True;
 end;
 
@@ -6797,28 +6797,28 @@ function SysHostGetDomain:String;
 begin
  {}
  Result:='';
- 
+
  {Check Settings}
  if NetworkSettings = nil then Exit;
- 
+
  Result:=NetworkSettings.DomainName;
 end;
 
 {==============================================================================}
 
-function SysHostSetDomain(const ADomain:String):Boolean; 
+function SysHostSetDomain(const ADomain:String):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check Domain}
  if Length(ADomain) = 0 then Exit;
- 
+
  {Check Settings}
  if NetworkSettings = nil then Exit;
- 
+
  NetworkSettings.DomainName:=ADomain;
- 
+
  Result:=True;
 end;
 
@@ -6860,11 +6860,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Network}
  if Network = nil then Exit;
  if Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(NetworkTableLock) = ERROR_SUCCESS then
   begin
@@ -6879,7 +6879,7 @@ begin
         Result:=Network;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -6896,7 +6896,7 @@ function NetworkDeviceTypeToString(NetworkType:LongWord):String;
 begin
  {}
  Result:='NETWORK_TYPE_UNKNOWN';
- 
+
  if NetworkType <= NETWORK_TYPE_MAX then
   begin
    Result:=NETWORK_TYPE_NAMES[NetworkType];
@@ -6909,7 +6909,7 @@ function NetworkDeviceStateToString(NetworkState:LongWord):String;
 begin
  {}
  Result:='NETWORK_STATE_UNKNOWN';
- 
+
  if NetworkState <= NETWORK_STATE_MAX then
   begin
    Result:=NETWORK_STATE_NAMES[NetworkState];
@@ -6922,7 +6922,7 @@ function NetworkDeviceStatusToString(NetworkStatus:LongWord):String;
 begin
  {}
  Result:='NETWORK_STATUS_UNKNOWN';
- 
+
  if NetworkStatus <= NETWORK_STATUS_MAX then
   begin
    Result:=NETWORK_STATUS_NAMES[NetworkStatus];
@@ -6936,7 +6936,7 @@ function NetworkDeviceStateToNotification(State:LongWord):LongWord;
 begin
  {}
  Result:=DEVICE_NOTIFICATION_NONE;
- 
+
  {Check State}
  case State of
   NETWORK_STATE_CLOSED:Result:=DEVICE_NOTIFICATION_CLOSE;
@@ -6953,7 +6953,7 @@ function NetworkDeviceStatusToNotification(Status:LongWord):LongWord;
 begin
  {}
  Result:=DEVICE_NOTIFICATION_NONE;
- 
+
  {Check Status}
  case Status of
   NETWORK_STATUS_DOWN:Result:=DEVICE_NOTIFICATION_DOWN;
@@ -6970,7 +6970,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Event}
  if Event = nil then Exit;
  if Event.Signature <> NETWORK_EVENT_SIGNATURE then Exit;
@@ -6989,7 +6989,7 @@ begin
         Result:=Event;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -6999,7 +6999,7 @@ begin
    end;
   end;
 end;
- 
+
 {==============================================================================}
 
 procedure NetworkLog(Level:LongWord;Network:PNetworkDevice;const AText:String);
@@ -7009,7 +7009,7 @@ begin
  {}
  {Check Level}
  if Level < NETWORK_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = NETWORK_LOG_LEVEL_DEBUG then
@@ -7024,17 +7024,17 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'Network: ';
- 
+
  {Check Network}
  if Network <> nil then
   begin
    WorkBuffer:=WorkBuffer + NETWORK_NAME_PREFIX + IntToStr(Network.NetworkId) + ': ';
   end;
 
- {Output Logging}  
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_NETWORK,LogLevelToLoggingSeverity(Level),'Network',WorkBuffer + AText);
 end;
 
@@ -7081,7 +7081,7 @@ begin
  for Count:=0 to HARDWARE_ADDRESS_SIZE - 1 do
   begin
    if Count > 0 then Result:=Result + ASeparator;
-   
+
    Result:=Result + IntToHex(AAddress[Count],2);
   end;
 end;
@@ -7112,7 +7112,7 @@ end;
 
 {==============================================================================}
 
-function ValidHardwareAddress(const AAddress:THardwareAddress):Boolean; 
+function ValidHardwareAddress(const AAddress:THardwareAddress):Boolean;
 begin
  {}
  Result:=False;
@@ -7129,23 +7129,23 @@ var
 begin
  {}
  Randomize;
- 
+
  {Generate Random Address}
  for Count:=0 to HARDWARE_ADDRESS_SIZE - 1 do
   begin
    Result[Count]:=Random(256);
   end;
-  
+
  {Clear Multicast Bit}
  Result[0]:=Result[0] and $FE;
- 
- {Set Local Assignment Bit} 
+
+ {Set Local Assignment Bit}
  Result[0]:=Result[0] or $02;
 end;
 
 {==============================================================================}
 
-function CompareHardwareAddress(const AAddress1,AAddress2:THardwareAddress):Boolean; 
+function CompareHardwareAddress(const AAddress1,AAddress2:THardwareAddress):Boolean;
 var
  Count:Integer;
 begin
@@ -7160,7 +7160,7 @@ end;
 
 {==============================================================================}
 
-function CompareHardwareDefault(const AAddress:THardwareAddress):Boolean; 
+function CompareHardwareDefault(const AAddress:THardwareAddress):Boolean;
 begin
  {}
  Result:=CompareHardwareAddress(AAddress,HARDWARE_DEFAULT);
@@ -7168,7 +7168,7 @@ end;
 
 {==============================================================================}
 
-function CompareHardwareBroadcast(const AAddress:THardwareAddress):Boolean; 
+function CompareHardwareBroadcast(const AAddress:THardwareAddress):Boolean;
 begin
  {}
  Result:=CompareHardwareAddress(AAddress,HARDWARE_BROADCAST);
@@ -7176,7 +7176,7 @@ end;
 
 {==============================================================================}
 
-function CompareHardwareMulticast(const AAddress:THardwareAddress):Boolean; 
+function CompareHardwareMulticast(const AAddress:THardwareAddress):Boolean;
 begin
  {}
  Result:=(AAddress[0] and $01) <> 0;
@@ -7188,7 +7188,7 @@ function AdapterTypeToString(AType:Word):String;
 begin
  {}
  Result:='ADAPTER_TYPE_UNKNOWN';
- 
+
  {Check Type}
  case AType of
   ADAPTER_TYPE_WIRED:Result:='ADAPTER_TYPE_WIRED';
@@ -7196,7 +7196,7 @@ begin
   ADAPTER_TYPE_WIRELESS:Result:='ADAPTER_TYPE_WIRELESS';
   ADAPTER_TYPE_SLIP:Result:='ADAPTER_TYPE_SLIP';
   ADAPTER_TYPE_PPP:Result:='ADAPTER_TYPE_PPP';
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7205,16 +7205,16 @@ function AdapterModeToString(AMode:Word):String;
 begin
  {}
  Result:='';
- 
+
  {Check Mode}
  case AMode of
   ADAPTER_MODE_NONE:Result:='ADAPTER_MODE_NONE';
-  ADAPTER_MODE_LOCAL:Result:='ADAPTER_MODE_LOCAL';     
-  ADAPTER_MODE_BROADCAST:Result:='ADAPTER_MODE_BROADCAST';  
-  ADAPTER_MODE_LOCAL_MULTI:Result:='ADAPTER_MODE_LOCAL_MULTI'; 
+  ADAPTER_MODE_LOCAL:Result:='ADAPTER_MODE_LOCAL';
+  ADAPTER_MODE_BROADCAST:Result:='ADAPTER_MODE_BROADCAST';
+  ADAPTER_MODE_LOCAL_MULTI:Result:='ADAPTER_MODE_LOCAL_MULTI';
   ADAPTER_MODE_BROADCAST_MULTI:Result:='ADAPTER_MODE_BROADCAST_MULTI';
   ADAPTER_MODE_PROMISCUOUS:Result:='ADAPTER_MODE_PROMISCUOUS';
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7223,7 +7223,7 @@ function AdapterConfigToString(AConfig:Word):String;
 begin
  {}
  Result:='';
- 
+
  {Check Config}
  case AConfig of
   CONFIG_ADAPTER_DISCOVER:Result:='CONFIG_ADAPTER_DISCOVER';
@@ -7233,7 +7233,7 @@ begin
   CONFIG_ADAPTER_REBIND:Result:='CONFIG_ADAPTER_REBIND';
   CONFIG_ADAPTER_INFORM:Result:='CONFIG_ADAPTER_INFORM';
   CONFIG_ADAPTER_REBOOT:Result:='CONFIG_ADAPTER_REBOOT';
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7242,12 +7242,12 @@ function AdapterStateToString(AState:Integer):String;
 begin
  {}
  Result:='';
- 
+
  {Check State}
  case AState of
   ADAPTER_STATE_DISABLED:Result:='ADAPTER_STATE_DISABLED';
   ADAPTER_STATE_ENABLED:Result:='ADAPTER_STATE_ENABLED';
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7256,12 +7256,12 @@ function AdapterStatusToString(AStatus:Integer):String;
 begin
  {}
  Result:='';
- 
+
  {Check Status}
  case AStatus of
   ADAPTER_STATUS_DOWN:Result:='ADAPTER_STATUS_DOWN';
   ADAPTER_STATUS_UP:Result:='ADAPTER_STATUS_UP';
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7270,7 +7270,7 @@ function FrameTypeToString(AType:Word):String;
 begin
  {}
  Result:='FRAME_TYPE_UNKNOWN';
- 
+
  {Check Type}
  case AType of
   FRAME_TYPE_ETHERNET_II:Result:='FRAME_TYPE_ETHERNET_II';
@@ -7279,7 +7279,7 @@ begin
   FRAME_TYPE_ETHERNET_8022:Result:='FRAME_TYPE_ETHERNET_8022';
   FRAME_TYPE_ETHERNET_SNAP:Result:='FRAME_TYPE_ETHERNET_SNAP';
   FRAME_TYPE_ETHERNET_8023:Result:='FRAME_TYPE_ETHERNET_8023';
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7288,7 +7288,7 @@ function MediaTypeToString(AType:Word):String;
 begin
  {}
  Result:='';
- 
+
  {Check Type}
  case AType of
   MEDIA_TYPE_ETHERNET:Result:='MEDIA_TYPE_ETHERNET';
@@ -7297,7 +7297,7 @@ begin
   MEDIA_TYPE_LOOPBACK:Result:='MEDIA_TYPE_LOOPBACK';
   MEDIA_TYPE_PPP:Result:='MEDIA_TYPE_PPP';
   MEDIA_TYPE_SLIP:Result:='MEDIA_TYPE_SLIP';
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7306,7 +7306,7 @@ function PacketTypeToString(AType:Word):String;
 begin
  {}
  Result:='';
- 
+
  {Check Type}
  case AType of
   PACKET_TYPE_IP:Result:='PACKET_TYPE_IP';
@@ -7320,7 +7320,7 @@ begin
   PACKET_TYPE_TDLS:Result:='PACKET_TYPE_TDLS';
   PACKET_TYPE_RAW:Result:='PACKET_TYPE_RAW';
   PACKET_TYPE_LLC:Result:='PACKET_TYPE_LLC';
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7329,7 +7329,7 @@ function ConfigTypeToString(AType:Word):String;
 begin
  {}
  Result:='CONFIG_TYPE_UNKNOWN';
- 
+
  {Check Type}
  case AType of
   CONFIG_TYPE_AUTO:Result:='CONFIG_TYPE_AUTO';
@@ -7341,7 +7341,7 @@ begin
   CONFIG_TYPE_LOOPBACK:Result:='CONFIG_TYPE_LOOPBACK';
   CONFIG_TYPE_SLIP:Result:='CONFIG_TYPE_SLIP';
   CONFIG_TYPE_PPP:Result:='CONFIG_TYPE_PPP';
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7350,7 +7350,7 @@ function ConfigCommandToString(ACommand:Word):String;
 begin
  {}
  Result:='';
- 
+
  {Check Command}
  case ACommand of
   CONFIG_ADAPTER_DISCOVER:Result:='CONFIG_ADAPTER_DISCOVER';
@@ -7360,7 +7360,7 @@ begin
   CONFIG_ADAPTER_REBIND:Result:='CONFIG_ADAPTER_REBIND';
   CONFIG_ADAPTER_INFORM:Result:='CONFIG_ADAPTER_INFORM';
   CONFIG_ADAPTER_REBOOT:Result:='CONFIG_ADAPTER_REBOOT';
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7369,37 +7369,37 @@ function AuthTypeToString(AType:Word):String;
 begin
  {}
  Result:='AUTH_TYPE_UNKNOWN';
- 
+
  {Check Type}
  case AType of
   AUTH_TYPE_EAP:Result:='AUTH_TYPE_EAP';
   AUTH_TYPE_RSN:Result:='AUTH_TYPE_RSN';
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function AuthCommandToString(ACommand:Word):String;
 begin
  {}
  Result:='';
- 
+
  {Check Command}
  case ACommand of
   AUTH_COMMAND_ASSOCIATE:Result:='AUTH_COMMAND_ASSOCIATE';
   AUTH_COMMAND_DISASSOCIATE:Result:='AUTH_COMMAND_DISASSOCIATE';
   AUTH_COMMAND_AUTHENTICATE:Result:='AUTH_COMMAND_AUTHENTICATE';
   AUTH_COMMAND_UNAUTHENTICATE:Result:='AUTH_COMMAND_UNAUTHENTICATE';
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
 
 function PhyInterfaceModeToString(AMode:Word):String;
 begin
  {}
  Result:='';
- 
+
  {Check Mode}
  case AMode of
   PHY_INTERFACE_MODE_INTERNAL:Result:='internal';
@@ -7425,7 +7425,7 @@ begin
   PHY_INTERFACE_MODE_XAUI:Result:='xaui';
   PHY_INTERFACE_MODE_10GKR:Result:='10gbase-kr';
   PHY_INTERFACE_MODE_USXGMII:Result:='usxgmii';
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7434,13 +7434,13 @@ function PhyLinkSpeedToString(ASpeed:Word):String;
 begin
  {}
  Result:='';
- 
+
  {Check Speed}
  case ASpeed of
   PHY_SPEED_10:Result:='10';
   PHY_SPEED_100:Result:='100';
   PHY_SPEED_1000:Result:='1000';
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -7449,23 +7449,23 @@ function PhyDuplexModeToString(AMode:Word):String;
 begin
  {}
  Result:='';
- 
+
  {Check Mode}
  case AMode of
   PHY_DUPLEX_HALF:Result:='half';
   PHY_DUPLEX_FULL:Result:='full';
- end; 
+ end;
 end;
-  
+
 {==============================================================================}
-  
+
 function MatchStringToPhyInterfaceMode(const AMode: String):Word;
 var
  Count:LongWord;
 begin
  {}
  Result:=PHY_INTERFACE_MODE_NONE;
- 
+
  for Count:=PHY_INTERFACE_MODE_INTERNAL to PHY_INTERFACE_MODE_USXGMII do
   begin
    if Lowercase(AMode) = Lowercase(PhyInterfaceModeToString(Count)) then
@@ -7475,7 +7475,7 @@ begin
     end;
   end;
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 
@@ -7483,7 +7483,7 @@ initialization
  NetworkInit;
 
 {==============================================================================}
- 
+
 finalization
  NetworkStop;
 

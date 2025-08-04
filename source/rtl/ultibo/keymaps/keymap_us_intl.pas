@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -32,8 +32,8 @@ References
  QWERTY keyboard - https://en.wikipedia.org/wiki/QWERTY
 
  US International keyboard layout - https://www.microsoft.com/resources/msdn/goglobal/keyboards/kbdusx.html
- 
- 
+
+
 US International Keymap (US-INTL)
 =================================
 
@@ -53,7 +53,7 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Keymap,SysUtils;
 {==============================================================================}
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
-        
+
 {==============================================================================}
 {const}
  {Keymap_US_Intl specific constants}
@@ -69,19 +69,19 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Keymap,SysUtils;
 {==============================================================================}
 {Initialization Functions}
 procedure Keymap_US_IntlInit;
- 
+
 {==============================================================================}
 {==============================================================================}
 
 implementation
- 
+
 {==============================================================================}
 {==============================================================================}
 var
  {Keymap_US_Intl specific variables}
  Keymap_US_IntlInitialized:Boolean;
- 
-var 
+
+var
  {Keymap US-INTL - US International}
  KEYMAP_US_INTL_HEADER:TKeymapHeader = (
   Mode:KEYMAP_MODE_NONE;
@@ -91,7 +91,7 @@ var
   Name:('US-INTL');
   Description:('US International')
   );
- 
+
  KEYMAP_US_INTL_DATA:TKeymapData = (
         {Scan Code mappings:                 Normal                         Shift                          AltGr                          Shift+AltGr  }
   Data:({SCAN_CODE_NONE                   } (KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE),
@@ -185,7 +185,7 @@ var
         {SCAN_CODE_KEYPAD_ENTER           } (KEY_CODE_ENTER,                KEY_CODE_ENTER,                KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_1               } (KEY_CODE_END,                  KEY_CODE_1,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_2               } (KEY_CODE_DOWN_ARROW,           KEY_CODE_2,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
-        {SCAN_CODE_KEYPAD_3               } (KEY_CODE_PAGEDN,               KEY_CODE_3,                    KEY_CODE_NONE,                 KEY_CODE_NONE),             
+        {SCAN_CODE_KEYPAD_3               } (KEY_CODE_PAGEDN,               KEY_CODE_3,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_4               } (KEY_CODE_LEFT_ARROW,           KEY_CODE_4,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_5               } (KEY_CODE_CENTER,               KEY_CODE_5,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
         {SCAN_CODE_KEYPAD_6               } (KEY_CODE_RIGHT_ARROW,          KEY_CODE_6,                    KEY_CODE_NONE,                 KEY_CODE_NONE),
@@ -351,7 +351,7 @@ var
                                             (KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE),
                                             (KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE,                 KEY_CODE_NONE))
   );
- 
+
  KEYMAP_US_INTL_DEADKEYS:TKeymapDeadkeys = (
   Count:5;
   Keys:((Key:SCAN_CODE_GRAVE; {Grave Accent (Normal)}
@@ -376,9 +376,9 @@ var
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE))
-        ),                                        
-        (Key:SCAN_CODE_APOSTROPHE; {Acute Accent (Normal)}                      
-         Index:KEYMAP_INDEX_NORMAL;               
+        ),
+        (Key:SCAN_CODE_APOSTROPHE; {Acute Accent (Normal)}
+         Index:KEYMAP_INDEX_NORMAL;
          Resolves:((Key:SCAN_CODE_A;              Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_ACUTE_A),
                    (Key:SCAN_CODE_A;              Index:KEYMAP_INDEX_SHIFT;               Code:KEY_CODE_CAPITAL_ACUTE_A),
                    (Key:SCAN_CODE_C;              Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_CEDILLA_C),
@@ -399,9 +399,9 @@ var
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE))
-        ),                                        
-        (Key:SCAN_CODE_GRAVE; {Tilde (Shift)}                      
-         Index:KEYMAP_INDEX_SHIFT;               
+        ),
+        (Key:SCAN_CODE_GRAVE; {Tilde (Shift)}
+         Index:KEYMAP_INDEX_SHIFT;
          Resolves:((Key:SCAN_CODE_A;              Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_TILDE_A),
                    (Key:SCAN_CODE_A;              Index:KEYMAP_INDEX_SHIFT;               Code:KEY_CODE_CAPITAL_TILDE_A),
                    (Key:SCAN_CODE_N;              Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_TILDE_N),
@@ -422,9 +422,9 @@ var
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE))
-        ),                                        
-        (Key:SCAN_CODE_APOSTROPHE; {Diaeresis (Shift)}                      
-         Index:KEYMAP_INDEX_SHIFT;               
+        ),
+        (Key:SCAN_CODE_APOSTROPHE; {Diaeresis (Shift)}
+         Index:KEYMAP_INDEX_SHIFT;
          Resolves:((Key:SCAN_CODE_A;              Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_DIAERESIS_A),
                    (Key:SCAN_CODE_A;              Index:KEYMAP_INDEX_SHIFT;               Code:KEY_CODE_CAPITAL_DIAERESIS_A),
                    (Key:SCAN_CODE_E;              Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_DIAERESIS_E),
@@ -445,9 +445,9 @@ var
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE),
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE))
-        ),                                        
-        (Key:SCAN_CODE_6; {Circumflex Accent (Shift)}                      
-         Index:KEYMAP_INDEX_SHIFT;               
+        ),
+        (Key:SCAN_CODE_6; {Circumflex Accent (Shift)}
+         Index:KEYMAP_INDEX_SHIFT;
          Resolves:((Key:SCAN_CODE_A;              Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_CIRCUMFLEX_A),
                    (Key:SCAN_CODE_A;              Index:KEYMAP_INDEX_SHIFT;               Code:KEY_CODE_CAPITAL_CIRCUMFLEX_A),
                    (Key:SCAN_CODE_E;              Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_CIRCUMFLEX_E),
@@ -470,7 +470,7 @@ var
                    (Key:SCAN_CODE_NONE;           Index:KEYMAP_INDEX_NORMAL;              Code:KEY_CODE_NONE))
         ))
   );
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -488,17 +488,17 @@ begin
   begin
    if PLATFORM_LOG_ENABLED then PlatformLogError('Failed to load keymap US-INTL');
   end;
-  
+
  {Check Environment Variables}
  if (Uppercase(EnvironmentGet('KEYMAP_DEFAULT')) = 'US-INTL') or (Uppercase(KEYMAP_DEFAULT) = 'US-INTL') then
   begin
    {Update Default}
    KEYMAP_DEFAULT:='US-INTL';
-   
+
    {Set Default}
    KeymapSetDefault(KeymapHandle);
-  end;  
-  
+  end;
+
  Keymap_US_IntlInitialized:=True;
 end;
 
@@ -507,9 +507,9 @@ end;
 
 initialization
  Keymap_US_IntlInit;
- 
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 
@@ -517,4 +517,4 @@ finalization
 {==============================================================================}
 
 end.
-         
+

@@ -1,12 +1,12 @@
 {DispmanX Headers:
- 
+
   Ported to FreePascal by Garry Wood <garry@softoz.com.au>
- 
+
  Original Copyright:
- 
+
   Copyright (c) 2012, Broadcom Europe Ltd
   All rights reserved.
-  
+
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
       * Redistributions of source code must retain the above copyright
@@ -17,7 +17,7 @@
       * Neither the name of the copyright holder nor the
         names of its contributors may be used to endorse or promote products
         derived from this software without specific prior written permission.
-  
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,7 +28,7 @@
   ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  
+
  }
 
 {$IFNDEF FPC_DOTTEDUNITS}
@@ -38,9 +38,9 @@ unit DispmanX;
 {$mode objfpc} {Default to ObjFPC compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
- 
+
 interface
- 
+
 {$IFDEF FPC_DOTTEDUNITS}
 uses
   {$ifdef ultibo}
@@ -58,7 +58,7 @@ uses
   {$endif}
   SysUtils;
 {$ENDIF FPC_DOTTEDUNITS}
- 
+
 {$PACKRECORDS C}
 
 const
@@ -69,7 +69,7 @@ const
 {$ifndef ultibo}
 type
  int32_t = Longint;
- 
+
  uint8_t = Byte;
  uint32_t = LongWord;
  Puint32_t = ^uint32_t;
@@ -77,7 +77,7 @@ type
 
 {From interface\vmcs_host\vc_dispmanx_types.h}
 const
- VC_DISPMANX_VERSION = 1;    
+ VC_DISPMANX_VERSION = 1;
 
  { Opaque handles }
 type
@@ -97,33 +97,33 @@ type
  DISPMANX_PROTECTION_T = uint32_t;
 
 const
- DISPMANX_NO_HANDLE = 0;   
- 
- DISPMANX_PROTECTION_MAX = $0f;    
- DISPMANX_PROTECTION_NONE = 0;    
+ DISPMANX_NO_HANDLE = 0;
+
+ DISPMANX_PROTECTION_MAX = $0f;
+ DISPMANX_PROTECTION_NONE = 0;
  DISPMANX_PROTECTION_HDCP = 11;    { Derived from the WM DRM levels, 101-300 }
- 
- 
+
+
  { Default display IDs.
    Note: if you overwrite with your own dispmanx_platform_init function, you
    should use IDs you provided during dispmanx_display_attach. }
- DISPMANX_ID_MAIN_LCD = 0;    
- DISPMANX_ID_AUX_LCD = 1;    
- DISPMANX_ID_HDMI = 2;    
- DISPMANX_ID_SDTV = 3;    
- DISPMANX_ID_FORCE_LCD = 4;    
- DISPMANX_ID_FORCE_TV = 5;    
+ DISPMANX_ID_MAIN_LCD = 0;
+ DISPMANX_ID_AUX_LCD = 1;
+ DISPMANX_ID_HDMI = 2;
+ DISPMANX_ID_SDTV = 3;
+ DISPMANX_ID_FORCE_LCD = 4;
+ DISPMANX_ID_FORCE_TV = 5;
  DISPMANX_ID_FORCE_OTHER = 6;  { non-default display  }
- 
+
 type
  PDISPMANX_STATUS_T = ^DISPMANX_STATUS_T;
- DISPMANX_STATUS_T = int32_t; 
+ DISPMANX_STATUS_T = int32_t;
 const
  { Return codes. Nonzero ones indicate failure. }
  DISPMANX_SUCCESS = 0;
  DISPMANX_INVALID = -1;
  { XXX others TBA  }
- 
+
 type
  PDISPMANX_TRANSFORM_T = ^DISPMANX_TRANSFORM_T;
  DISPMANX_TRANSFORM_T = uint32_t;
@@ -133,20 +133,20 @@ const
  DISPMANX_ROTATE_90 = 1;
  DISPMANX_ROTATE_180 = 2;
  DISPMANX_ROTATE_270 = 3;
- 
+
  DISPMANX_FLIP_HRIZ = 1 shl 16;
  DISPMANX_FLIP_VERT = 1 shl 17;
- 
+
  { invert left/right images  }
  DISPMANX_STEREOSCOPIC_INVERT = 1 shl 19;
- 
+
  { extra flags for controlling 3d duplication behaviour  }
  DISPMANX_STEREOSCOPIC_NONE = 0 shl 20;
  DISPMANX_STEREOSCOPIC_MONO = 1 shl 20;
  DISPMANX_STEREOSCOPIC_SBS = 2 shl 20;
  DISPMANX_STEREOSCOPIC_TB = 3 shl 20;
  DISPMANX_STEREOSCOPIC_MASK = 15 shl 20;
- 
+
  { extra flags for controlling snapshot behaviour  }
  DISPMANX_SNAPSHOT_NO_YUV = 1 shl 24;
  DISPMANX_SNAPSHOT_NO_RGB = 1 shl 25;
@@ -157,13 +157,13 @@ const
 type
  PDISPMANX_FLAGS_ALPHA_T = ^DISPMANX_FLAGS_ALPHA_T;
  DISPMANX_FLAGS_ALPHA_T = uint32_t;
-const 
+const
  { Bottom 2 bits sets the alpha mode  }
  DISPMANX_FLAGS_ALPHA_FROM_SOURCE = 0;
  DISPMANX_FLAGS_ALPHA_FIXED_ALL_PIXELS = 1;
  DISPMANX_FLAGS_ALPHA_FIXED_NON_ZERO = 2;
  DISPMANX_FLAGS_ALPHA_FIXED_EXCEED_0X07 = 3;
-  
+
  DISPMANX_FLAGS_ALPHA_PREMULT = 1 shl 16;
  DISPMANX_FLAGS_ALPHA_MIX = 1 shl 17;
 
@@ -179,13 +179,13 @@ type
  VC_DISPMANX_ALPHA_T = record
   flags : DISPMANX_FLAGS_ALPHA_T;
   opacity : uint32_t;
-  mask : DISPMANX_RESOURCE_HANDLE_T; 
+  mask : DISPMANX_RESOURCE_HANDLE_T;
  end;
-  
+
 type
  PDISPMANX_FLAGS_CLAMP_T = ^DISPMANX_FLAGS_CLAMP_T;
  DISPMANX_FLAGS_CLAMP_T = uint32_t;
-const 
+const
  DISPMANX_FLAGS_CLAMP_NONE = 0;
  DISPMANX_FLAGS_CLAMP_LUMA_TRANSPARENT = 1;
  {DISPMANX_FLAGS_CLAMP_TRANSPARENT = 2;}
@@ -196,7 +196,7 @@ const
 type
  PDISPMANX_FLAGS_KEYMASK_T = ^DISPMANX_FLAGS_KEYMASK_T;
  DISPMANX_FLAGS_KEYMASK_T = uint32_t;
-const 
+const
  DISPMANX_FLAGS_KEYMASK_OVERRIDE = 1;
  DISPMANX_FLAGS_KEYMASK_SMOOTH = 1 shl 1;
  DISPMANX_FLAGS_KEYMASK_CR_INV = 1 shl 2;
@@ -244,58 +244,58 @@ type
 
  { Update callback.  }
  DISPMANX_CALLBACK_FUNC_T = procedure (u:DISPMANX_UPDATE_HANDLE_T; arg:pointer); cdecl;
- 
+
  { Progress callback  }
  DISPMANX_PROGRESS_CALLBACK_FUNC_T = procedure (u:DISPMANX_UPDATE_HANDLE_T; line:uint32_t; arg:pointer); cdecl;
- 
+
  { Pluggable display interface  }
  Pint32_t_array3 = ^int32_t_array3;
  int32_t_array3 = array[0..2] of int32_t;
 
  Puint32_t_array3 = ^uint32_t_array3;
  uint32_t_array3 = array[0..2] of uint32_t;
- 
+
  Ptag_DISPMANX_DISPLAY_FUNCS_T = ^tag_DISPMANX_DISPLAY_FUNCS_T;
  tag_DISPMANX_DISPLAY_FUNCS_T = record
   {Get essential HVS configuration to be passed to the HVS driver. Options
    is any combination of the following flags: HVS_ONESHOT, HVS_FIFOREG,
    HVS_FIFO32, HVS_AUTOHSTART, HVS_INTLACE; and if HVS_FIFOREG, one of;
    ( HVS_FMT_RGB888, HVS_FMT_RGB565, HVS_FMT_RGB666, HVS_FMT_YUV) }
-  get_hvs_config : function (instance:pointer; pchan:Puint32_t; poptions:Puint32_t; info:PDISPLAY_INFO_T; bg_colour:Puint32_t; 
+  get_hvs_config : function (instance:pointer; pchan:Puint32_t; poptions:Puint32_t; info:PDISPLAY_INFO_T; bg_colour:Puint32_t;
                     test_mode:Puint32_t):int32_t; cdecl;
-  
+
   {Get optional HVS configuration for gamma tables, OLED matrix and dither controls.
    Set these function pointers to NULL if the relevant features are not required}
   get_gamma_params : function (instance:pointer; gain:Pint32_t_array3; offset:Pint32_t_array3; gamma:Pint32_t_array3):int32_t; cdecl;
   get_oled_params : function (instance:pointer; poffsets:Puint32_t; coeffs:Puint32_t_array3):int32_t; cdecl;
   get_dither : function (instance:pointer; dither_depth:Puint32_t; dither_type:Puint32_t):int32_t; cdecl;
-  
+
   {Get mode information, which may be returned to the applications as a courtesy.
    Transform should be set to 0, and (width,height) should be final dimensions}
   get_info : function (instance:pointer; info:PDISPMANX_MODEINFO_T):int32_t; cdecl;
-  
+
   {Inform driver that the application refcount has become nonzero / zero
    These callbacks might perhaps be used for backlight and power management}
   open : function (instance:pointer):int32_t; cdecl;
   close : function (instance:pointer):int32_t; cdecl;
-  
+
   {Display list updated callback. Primarily of use to a "one-shot" display.
    For convenience of the driver, we pass the register address of the HVS FIFO}
   dlist_updated : procedure (instance:pointer; fifo_reg:Puint32_t);
-  
+
   {End-of-field callback. This may occur in an interrupt context}
   eof_callback : procedure (instance:pointer); cdecl;
- 
+
   {Return screen resolution format}
   get_input_format : function (instance:pointer):DISPLAY_INPUT_FORMAT_T; cdecl;
-  
+
   suspend_resume : function (instance:pointer; up:longint):int32_t; cdecl;
-  
+
   get_3d_format : function (instance:pointer):DISPLAY_3D_FORMAT_T; cdecl;
  end;
  DISPMANX_DISPLAY_FUNCS_T = tag_DISPMANX_DISPLAY_FUNCS_T;
  PDISPMANX_DISPLAY_FUNCS_T = ^DISPMANX_DISPLAY_FUNCS_T;
- 
+
 {From interface\vmcs_host\vc_dispmanx.h}
  { Display manager service API }
  { Same function as above, to aid migration of code. }
@@ -314,7 +314,7 @@ type
  { Write the bitmap data to VideoCore memory }
  function vc_dispmanx_resource_write_data(res:DISPMANX_RESOURCE_HANDLE_T; src_type:VC_IMAGE_TYPE_T; src_pitch:longint; src_address:pointer; rect:PVC_RECT_T):longint; cdecl; external libvchostif name 'vc_dispmanx_resource_write_data';
 
- function vc_dispmanx_resource_write_data_handle(res:DISPMANX_RESOURCE_HANDLE_T; src_type:VC_IMAGE_TYPE_T; src_pitch:longint; handle:VCHI_MEM_HANDLE_T; offset:uint32_t; 
+ function vc_dispmanx_resource_write_data_handle(res:DISPMANX_RESOURCE_HANDLE_T; src_type:VC_IMAGE_TYPE_T; src_pitch:longint; handle:VCHI_MEM_HANDLE_T; offset:uint32_t;
             rect:PVC_RECT_T):longint; cdecl; external libvchostif name 'vc_dispmanx_resource_write_data_handle';
 
  function vc_dispmanx_resource_read_data(handle:DISPMANX_RESOURCE_HANDLE_T; p_rect:PVC_RECT_T; dst_address:pointer; dst_pitch:uint32_t):longint; cdecl; external libvchostif name 'vc_dispmanx_resource_read_data';
@@ -352,7 +352,7 @@ type
  function vc_dispmanx_update_start(priority:int32_t):DISPMANX_UPDATE_HANDLE_T; cdecl; external libvchostif name 'vc_dispmanx_update_start';
 
  { Add an elment to a display as part of an update }
- function vc_dispmanx_element_add(update:DISPMANX_UPDATE_HANDLE_T; display:DISPMANX_DISPLAY_HANDLE_T; layer:int32_t; dest_rect:PVC_RECT_T; src:DISPMANX_RESOURCE_HANDLE_T; 
+ function vc_dispmanx_element_add(update:DISPMANX_UPDATE_HANDLE_T; display:DISPMANX_DISPLAY_HANDLE_T; layer:int32_t; dest_rect:PVC_RECT_T; src:DISPMANX_RESOURCE_HANDLE_T;
             src_rect:PVC_RECT_T; protection:DISPMANX_PROTECTION_T; alpha:PVC_DISPMANX_ALPHA_T; clamp:PDISPMANX_CLAMP_T; transform:DISPMANX_TRANSFORM_T):DISPMANX_ELEMENT_HANDLE_T; cdecl; external libvchostif name 'vc_dispmanx_element_add';
 
  { Change the source image of a display element }
@@ -377,7 +377,7 @@ type
  function vc_dispmanx_query_image_formats(supported_formats:Puint32_t):longint; cdecl; external libvchostif name 'vc_dispmanx_query_image_formats';
 
  {New function added to VCHI to change attributes, set_opacity does not work there. }
- function vc_dispmanx_element_change_attributes(update:DISPMANX_UPDATE_HANDLE_T; element:DISPMANX_ELEMENT_HANDLE_T; change_flags:uint32_t; layer:int32_t; opacity:uint8_t; 
+ function vc_dispmanx_element_change_attributes(update:DISPMANX_UPDATE_HANDLE_T; element:DISPMANX_ELEMENT_HANDLE_T; change_flags:uint32_t; layer:int32_t; opacity:uint8_t;
             dest_rect:PVC_RECT_T; src_rect:PVC_RECT_T; mask:DISPMANX_RESOURCE_HANDLE_T; transform:DISPMANX_TRANSFORM_T):longint; cdecl; external libvchostif name 'vc_dispmanx_element_change_attributes';
 
  {xxx hack to get the image pointer from a resource handle, will be obsolete real soon }
@@ -396,7 +396,7 @@ type
 
  { Start triggering callbacks synced to vsync }
  function vc_dispmanx_vsync_callback(display:DISPMANX_DISPLAY_HANDLE_T; cb_func:DISPMANX_CALLBACK_FUNC_T; cb_arg:pointer):longint; cdecl; external libvchostif name 'vc_dispmanx_vsync_callback';
- 
+
 implementation
 
 end.

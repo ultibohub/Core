@@ -17,19 +17,19 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
  <See NTFS.pas>
- 
+
 References
 ==========
 
  <See NTFS.pas>
- 
+
 NT Filesystem
 =============
 
@@ -48,28 +48,28 @@ NT Filesystem
 
          Time/Attributes - TNTFSStandardInformation
          Size            - TNTFSData (DataSize - Resident, StreamSize - NonResident)
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit NTFSTypes; 
+unit NTFSTypes;
 
 interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,FileSystem,SysUtils,Classes,Unicode,Security,Ultibo,UltiboUtils,UltiboClasses,
      NTFSConst;
-     
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-     
+
 {==============================================================================}
 type
  {NTFS specific types}
- TNTFSType = (ntNONE,ntNTFS12,ntNTFS30,ntNTFS31); 
+ TNTFSType = (ntNONE,ntNTFS12,ntNTFS30,ntNTFS31);
 
  {Record Number Types}
  PNTFSRecordNumber = ^TNTFSRecordNumber;
@@ -752,7 +752,7 @@ type
 
  {Compression Types}
   {Nothing}
-  
+
 {==============================================================================}
 {==============================================================================}
 
@@ -761,4 +761,4 @@ implementation
 {==============================================================================}
 {==============================================================================}
 
-end. 
+end.

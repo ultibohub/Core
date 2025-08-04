@@ -17,7 +17,7 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -28,53 +28,53 @@ Credits
           \include\linux\ieee80211.h
 
           \net\mac80211\rx.c
-  
+
           \net\wireless\chan.c
           \net\wireless\util.c
-          
+
 References
 ==========
 
  Based on information from sources of WPA supplicant, the Linux kernel and others
- 
+
  Linux Wireless - https://wireless.wiki.kernel.org/en/developers/Documentation/ieee80211
                   https://wireless.wiki.kernel.org/en/developers/documentation/mac80211
-                  
+
 WiFi
 ====
 
- Terminology 
+ Terminology
  -----------
- 
+
  IEEE80211 - https://en.wikipedia.org/wiki/IEEE_802.11
              https://en.wikipedia.org/wiki/IEEE_802.11a-1999
              https://en.wikipedia.org/wiki/IEEE_802.11b-1999
              https://en.wikipedia.org/wiki/IEEE_802.11g-2003
              https://en.wikipedia.org/wiki/IEEE_802.11n-2009
-             
+
              https://en.wikipedia.org/wiki/Wireless_LAN
              https://en.wikipedia.org/wiki/Wi-Fi_Direct
-    
-    
+
+
  WEP - https://en.wikipedia.org/wiki/Wired_Equivalent_Privacy
- 
+
  WPA - https://en.wikipedia.org/wiki/Wi-Fi_Protected_Access
- 
+
  WPA2 - https://en.wikipedia.org/wiki/IEEE_802.11i-2004
- 
+
  MIC - https://en.wikipedia.org/wiki/Message_authentication_code
- 
+
  TKIP - https://en.wikipedia.org/wiki/Temporal_Key_Integrity_Protocol
- 
+
  CCMP - https://en.wikipedia.org/wiki/CCMP
- 
+
  EAPOL - https://en.wikipedia.org/wiki/IEEE_802.1X
- 
+
  MLME (MAC Layer Management Entity)
- 
+
  Driver Porting
  --------------
- 
+
   Initialization
 
    For USB drivers USBDriverBind is equivalent to Linux usb_driver.probe (Mandatory)
@@ -82,25 +82,25 @@ WiFi
 
   NetworkDeviceOpen is equivalent to Linux ieee80211_ops.start (Mandatory)
   NetworkDeviceClose is equivalient to Linux ieee80211_ops.stop (Mandatory)
-   
+
   WiFiDeviceConfigure is equivalent to Linux ieee80211_ops.config (Mandatory)
   WiFiDeviceConfigureFilter is equivalent to Linux ieee80211_ops.configure_filter (Mandatory)
   WiFiDeviceConfigureInterface is equivalent to Linux ieee80211_ops.add_interface/remove_interface (Mandatory) (Note: Multiple virtual interfaces are not supported)
-           
+
   WiFiDeviceCreate/WiFiDeviceCreateEx is equivalent to Linux mac80211 - ieee80211_alloc_hw/ieee80211_alloc_hw_nm
   WiFiDeviceDestroy is equivalent to Linux mac80211 - ieee80211_free_hw
-   
+
   WiFiDeviceRegister is equivalent to Linux mac80211 - ieee80211_register_hw
   WiFiDeviceDeregister is equivalent to Linux mac80211 - ieee80211_unregister_hw
-   
+
  Driver Information
  ------------------
- 
+
   https://en.wikipedia.org/wiki/Comparison_of_open-source_wireless_drivers
-  
+
   https://wireless.wiki.kernel.org/en/users/Drivers
-  
-  
+
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
@@ -119,16 +119,16 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,Devices,Ne
         //See: http://w1.fi/wpa_supplicant/devel/driver_wrapper.html
         //See: http://w1.fi/wpa_supplicant/devel/code_structure.html
         //See: http://w1.fi/cgit
-                      
+
 //To Do //In general terms WPA appears to the network stack as a Transport layer
         //sending and receiving 2 specific packet types:
         //EAP-over-LAN (EAPOL) $888E and RSN pre-authentication $88C7
-                   
+
 //To Do //radiotap support
         //See: http://www.radiotap.org/
-        //See: /include/net/ieee80211_radiotap.h               
+        //See: /include/net/ieee80211_radiotap.h
         //See: \net\mac80211\rx.c
-        
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
@@ -136,23 +136,23 @@ uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,Devices,Ne
 {==============================================================================}
 const
  {IEEE80211 specific constants} {As per Linux ieee80211.h}
- 
+
  {DS bit usage
- 
+
  TA = transmitter address
  RA = receiver address
  DA = destination address
  SA = source address
- 
+
  ToDS    FromDS  A1(RA)  A2(TA)  A3      A4      Use
  -----------------------------------------------------------------
  0       0       DA      SA      BSSID   -       IBSS/DLS
  0       1       DA      BSSID   SA      -       AP -> STA
  1       0       BSSID   SA      DA      -       AP <- STA
  1       1       RA      TA      DA      SA      unspecified (WDS)}
- 
+
  IEEE80211_FCS_LEN = 4;
- 
+
  IEEE80211_FCTL_VERS             = $0003;
  IEEE80211_FCTL_FTYPE            = $000c;
  IEEE80211_FCTL_STYPE            = $00f0;
@@ -165,15 +165,15 @@ const
  IEEE80211_FCTL_PROTECTED        = $4000;
  IEEE80211_FCTL_ORDER            = $8000;
  IEEE80211_FCTL_CTL_EXT          = $0f00;
- 
+
  IEEE80211_SCTL_FRAG             = $000F;
  IEEE80211_SCTL_SEQ              = $FFF0;
- 
+
  IEEE80211_FTYPE_MGMT            = $0000;
  IEEE80211_FTYPE_CTL             = $0004;
  IEEE80211_FTYPE_DATA            = $0008;
  IEEE80211_FTYPE_EXT             = $000c;
- 
+
  {Management}
  IEEE80211_STYPE_ASSOC_REQ       = $0000;
  IEEE80211_STYPE_ASSOC_RESP      = $0010;
@@ -187,7 +187,7 @@ const
  IEEE80211_STYPE_AUTH            = $00B0;
  IEEE80211_STYPE_DEAUTH          = $00C0;
  IEEE80211_STYPE_ACTION          = $00D0;
- 
+
  {Control}
  IEEE80211_STYPE_CTL_EXT         = $0060;
  IEEE80211_STYPE_BACK_REQ        = $0080;
@@ -198,7 +198,7 @@ const
  IEEE80211_STYPE_ACK             = $00D0;
  IEEE80211_STYPE_CFEND           = $00E0;
  IEEE80211_STYPE_CFENDACK        = $00F0;
- 
+
  {Data}
  IEEE80211_STYPE_DATA                    = $0000;
  IEEE80211_STYPE_DATA_CFACK              = $0010;
@@ -216,9 +216,9 @@ const
  IEEE80211_STYPE_QOS_CFACK               = $00D0;
  IEEE80211_STYPE_QOS_CFPOLL              = $00E0;
  IEEE80211_STYPE_QOS_CFACKPOLL           = $00F0;
- 
+
  {Extension, added by 802.11ad}
- IEEE80211_STYPE_DMG_BEACON              = $0000; 
+ IEEE80211_STYPE_DMG_BEACON              = $0000;
 
  {Control extension - for IEEE80211_FTYPE_CTL | IEEE80211_STYPE_CTL_EXT}
  IEEE80211_CTL_EXT_POLL          = $2000;
@@ -229,11 +229,11 @@ const
  IEEE80211_CTL_EXT_SSW           = $8000;
  IEEE80211_CTL_EXT_SSW_FBACK     = $9000;
  IEEE80211_CTL_EXT_SSW_ACK       = $a000;
- 
+
  //To Do //IEEE80211_SN_MASK/IEEE80211_MAX_SN/IEEE80211_SN_MODULO etc from ieee80211.h
- 
+
  //To Do //IEEE80211_SEQ_TO_SN etc from ieee80211.h
- 
+
  {Miscellaneous IEEE 802.11 constants}
  IEEE80211_MAX_FRAG_THRESHOLD    = 2352;
  IEEE80211_MAX_RTS_THRESHOLD     = 2353;
@@ -250,17 +250,17 @@ const
  IEEE80211_MAX_FRAME_LEN         = 2352;
  IEEE80211_MAX_SSID_LEN          = 32;
  IEEE80211_MAX_MESH_ID_LEN       = 32;
- 
+
  IEEE80211_FIRST_TSPEC_TSID      = 8;
  IEEE80211_NUM_TIDS              = 16;
- 
+
  IEEE80211_MAX_CHAINS            = 4;
- 
+
  {Number of user priorities 802.11 uses}
  IEEE80211_NUM_UPS               = 8;
- 
+
  IEEE80211_QOS_CTL_LEN           = 2;
- 
+
  IEEE80211_QOS_CTL_TAG1D_MASK            = $0007; {1d tag mask}
  IEEE80211_QOS_CTL_TID_MASK              = $000f; {TID mask}
  IEEE80211_QOS_CTL_EOSP                  = $0010; {EOSP}
@@ -273,7 +273,7 @@ const
  IEEE80211_QOS_CTL_MESH_CONTROL_PRESENT  = $0100; {Mesh Control 802.11s}
  IEEE80211_QOS_CTL_MESH_PS_LEVEL         = $0200; {Mesh Power Save Level}
  IEEE80211_QOS_CTL_RSPI                  = $0400; {Mesh Receiver Service Period Initiated}
- 
+
  {U-APSD queue for WMM IEs sent by AP}
  IEEE80211_WMM_IE_AP_QOSINFO_UAPSD       = (1 shl 7);
  IEEE80211_WMM_IE_AP_QOSINFO_PARAM_SET_CNT_MASK  = $0f;
@@ -283,7 +283,7 @@ const
  IEEE80211_WMM_IE_STA_QOSINFO_AC_BK      = (1 shl 2);
  IEEE80211_WMM_IE_STA_QOSINFO_AC_BE      = (1 shl 3);
  IEEE80211_WMM_IE_STA_QOSINFO_AC_MASK    = $0f;
- 
+
  {U-APSD max SP length for WMM IEs sent by STA}
  IEEE80211_WMM_IE_STA_QOSINFO_SP_ALL     = $00;
  IEEE80211_WMM_IE_STA_QOSINFO_SP_2       = $01;
@@ -293,38 +293,38 @@ const
  IEEE80211_WMM_IE_STA_QOSINFO_SP_SHIFT   = 5;
 
  IEEE80211_HT_CTL_LEN           = 4;
- 
- {Mesh flags} 
+
+ {Mesh flags}
  IEEE80211_MESH_FLAGS_AE_A4        = $1;
  IEEE80211_MESH_FLAGS_AE_A5_A6     = $2;
  IEEE80211_MESH_FLAGS_AE           = $3;
  IEEE80211_MESH_FLAGS_PS_DEEP      = $4;
- 
+
  {Mesh PREQ element flags}
  IEEE80211_PREQ_PROACTIVE_PREP_FLAG      = (1 shl 2); {proactive PREP subfield}
- 
+
  {Mesh PREQ element per target flags}
  IEEE80211_PREQ_TO_FLAG  = (1 shl 0); {target only subfield}
  IEEE80211_PREQ_USN_FLAG = (1 shl 2); {unknown target HWMP sequence number subfield}
- 
+
  {Mesh Configuration IE capability field flags}
  IEEE80211_MESHCONF_CAPAB_ACCEPT_PLINKS          = $01; {STA is willing to establish additional mesh peerings with other mesh STAs}
  IEEE80211_MESHCONF_CAPAB_FORWARDING             = $08; {the STA forwards MSDUs}
  IEEE80211_MESHCONF_CAPAB_TBTT_ADJUSTING         = $20; {TBTT adjustment procedure is ongoing}
  IEEE80211_MESHCONF_CAPAB_POWER_SAVE_LEVEL       = $40; {STA is in deep sleep mode or has neighbors in deep sleep mode}
- 
+
  {Mesh channel switch parameters flags}
  WLAN_EID_CHAN_SWITCH_PARAM_TX_RESTRICT = (1 shl 0);
  WLAN_EID_CHAN_SWITCH_PARAM_INITIATOR   = (1 shl 1);
- WLAN_EID_CHAN_SWITCH_PARAM_REASON      = (1 shl 2); 
- 
+ WLAN_EID_CHAN_SWITCH_PARAM_REASON      = (1 shl 2);
+
  {Root announcement flags}
  IEEE80211_RANN_FLAG_IS_GATE = (1 shl 0);
- 
+
  {HT channel width values}
  IEEE80211_HT_CHANWIDTH_20MHZ = 0;
  IEEE80211_HT_CHANWIDTH_ANY   = 1;
- 
+
  {VHT operating mode field bits}
  IEEE80211_OPMODE_NOTIF_CHANWIDTH_MASK   = 3;
  IEEE80211_OPMODE_NOTIF_CHANWIDTH_20MHZ  = 0;
@@ -334,12 +334,12 @@ const
  IEEE80211_OPMODE_NOTIF_RX_NSS_MASK      = $70;
  IEEE80211_OPMODE_NOTIF_RX_NSS_SHIFT     = 4;
  IEEE80211_OPMODE_NOTIF_RX_NSS_TYPE_BF   = $80;
- 
+
  WLAN_SA_QUERY_TR_ID_LEN = 2;
- 
+
  {Supported Rates value encodings in 802.11n-2009 7.3.2.2}
  IEEE80211_BSS_MEMBERSHIP_SELECTOR_HT_PHY = 127;
- 
+
  {Peer-to-Peer IE attribute related definitions}
  IEEE80211_P2P_ATTR_STATUS              = 0;
  IEEE80211_P2P_ATTR_MINOR_REASON        = 1;
@@ -362,11 +362,11 @@ const
  IEEE80211_P2P_ATTR_INVITE_FLAGS        = 18;
  {19 - 220: Reserved}
  IEEE80211_P2P_ATTR_VENDOR_SPECIFIC     = 221;
- 
+
  IEEE80211_P2P_ATTR_MAX  = 222;
- 
+
  IEEE80211_P2P_NOA_DESC_MAX = 4;
- 
+
  IEEE80211_P2P_OPPPS_ENABLE_BIT         = (1 shl 7);
  IEEE80211_P2P_OPPPS_CTWINDOW_MASK      = $7F;
 
@@ -376,7 +376,7 @@ const
  IEEE80211_BAR_CTRL_CBMTID_COMPRESSED_BA = $0004;
  IEEE80211_BAR_CTRL_TID_INFO_MASK        = $f000;
  IEEE80211_BAR_CTRL_TID_INFO_SHIFT       = 12;
- 
+
  IEEE80211_HT_MCS_MASK_LEN = 10;
 
  {802.11n HT capability MSC set}
@@ -426,14 +426,14 @@ const
  IEEE80211_HT_AMPDU_PARM_FACTOR         = $03;
  IEEE80211_HT_AMPDU_PARM_DENSITY        = $1C;
  IEEE80211_HT_AMPDU_PARM_DENSITY_SHIFT  = 2;
- 
+
  {Maximum length of AMPDU that the STA can receive in high-throughput (HT). Length = 2 ^ (13 + max_ampdu_length_exp) - 1 (octets)}
  {As per Linux ieee80211.h ieee80211_max_ampdu_length_exp}
  IEEE80211_HT_MAX_AMPDU_8K  = 0;
  IEEE80211_HT_MAX_AMPDU_16K = 1;
  IEEE80211_HT_MAX_AMPDU_32K = 2;
  IEEE80211_HT_MAX_AMPDU_64K = 3;
- 
+
  {Maximum length of AMPDU that the STA can receive in VHT.Length = 2 ^ (13 + max_ampdu_length_exp) - 1 (octets)}
  {As per Linux ieee80211.h ieee80211_vht_max_ampdu_length_exp}
  IEEE80211_VHT_MAX_AMPDU_8K    = 0;
@@ -446,7 +446,7 @@ const
  IEEE80211_VHT_MAX_AMPDU_1024K = 7;
 
  IEEE80211_HT_MAX_AMPDU_FACTOR = 13;
- 
+
  {Minimum MPDU start spacing}
  {As per Linux ieee80211.h ieee80211_min_mpdu_spacing}
  IEEE80211_HT_MPDU_DENSITY_NONE = 0;     {No restriction}
@@ -456,7 +456,7 @@ const
  IEEE80211_HT_MPDU_DENSITY_2    = 4;     {2 usec}
  IEEE80211_HT_MPDU_DENSITY_4    = 5;     {4 usec}
  IEEE80211_HT_MPDU_DENSITY_8    = 6;     {8 usec}
- IEEE80211_HT_MPDU_DENSITY_16   = 7;     {16 usec} 
+ IEEE80211_HT_MPDU_DENSITY_16   = 7;     {16 usec}
 
  {For HT operation IE HTParam}
  IEEE80211_HT_PARAM_CHA_SEC_OFFSET               = $03;
@@ -465,7 +465,7 @@ const
  IEEE80211_HT_PARAM_CHA_SEC_BELOW                = $03;
  IEEE80211_HT_PARAM_CHAN_WIDTH_ANY               = $04;
  IEEE80211_HT_PARAM_RIFS_MODE                    = $08;
- 
+
  {For HT operation IE OperationMode}
  IEEE80211_HT_OP_MODE_PROTECTION                 = $0003;
  IEEE80211_HT_OP_MODE_PROTECTION_NONE            = 0;
@@ -474,7 +474,7 @@ const
  IEEE80211_HT_OP_MODE_PROTECTION_NONHT_MIXED     = 3;
  IEEE80211_HT_OP_MODE_NON_GF_STA_PRSNT           = $0004;
  IEEE80211_HT_OP_MODE_NON_HT_STA_PRSNT           = $0010;
- 
+
  {For HT operation IE STBCParam}
  IEEE80211_HT_STBC_PARAM_DUAL_BEACON             = $0040;
  IEEE80211_HT_STBC_PARAM_DUAL_CTS_PROT           = $0080;
@@ -490,22 +490,22 @@ const
  IEEE80211_ADDBA_PARAM_BUF_SIZE_MASK  = $FFC0;
  IEEE80211_DELBA_PARAM_TID_MASK       = $F000;
  IEEE80211_DELBA_PARAM_INITIATOR_MASK = $0800;
- 
+
  {A-PMDU buffer sizes} {According to IEEE802.11n spec size varies from 8K to 64K (in powers of 2)}
  IEEE80211_MIN_AMPDU_BUF = $8;
  IEEE80211_MAX_AMPDU_BUF = $40;
- 
+
  {Spatial Multiplexing Power Save Modes (for capability)}
  WLAN_HT_CAP_SM_PS_STATIC       = 0;
  WLAN_HT_CAP_SM_PS_DYNAMIC      = 1;
  WLAN_HT_CAP_SM_PS_INVALID      = 2;
  WLAN_HT_CAP_SM_PS_DISABLED     = 3;
- 
+
  {For SM power control field lower two bits}
  WLAN_HT_SMPS_CONTROL_DISABLED  = 0;
  WLAN_HT_SMPS_CONTROL_STATIC    = 1;
  WLAN_HT_SMPS_CONTROL_DYNAMIC   = 3;
- 
+
  {VHT MCS support definitions}
  {These definitions are used in each 2-bit subfield of the RXMCSMap and TXMCSMap fields of TIEEE8021VHTMCSInfo, which are
  both split into 8 subfields by number of streams. These values indicate which MCSes are supported for the number of streams the value appears for}
@@ -513,7 +513,7 @@ const
  IEEE80211_VHT_MCS_SUPPORT_0_8   = 1; {MCSes 0-8 are supported}
  IEEE80211_VHT_MCS_SUPPORT_0_9   = 2; {MCSes 0-9 are supported}
  IEEE80211_VHT_MCS_NOT_SUPPORTED = 3; {This number of streams isn't supported}
- 
+
  {VHT channel width}
  IEEE80211_VHT_CHANWIDTH_USE_HT          = 0; {use the HT operation IE to determine the channel width (20 or 40 MHz)}
  IEEE80211_VHT_CHANWIDTH_80MHZ           = 1; {80 MHz bandwidth}
@@ -551,20 +551,20 @@ const
  IEEE80211_VHT_CAP_VHT_LINK_ADAPTATION_VHT_UNSOL_MFB     = $08000000;
  IEEE80211_VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB       = $0c000000;
  IEEE80211_VHT_CAP_RX_ANTENNA_PATTERN                    = $10000000;
- IEEE80211_VHT_CAP_TX_ANTENNA_PATTERN                    = $20000000; 
- 
+ IEEE80211_VHT_CAP_TX_ANTENNA_PATTERN                    = $20000000;
+
  {Authentication algorithms}
  WLAN_AUTH_OPEN       = 0;
  WLAN_AUTH_SHARED_KEY = 1;
  WLAN_AUTH_FT         = 2;
  WLAN_AUTH_SAE        = 3;
  WLAN_AUTH_LEAP       = 128;
- 
+
  WLAN_AUTH_CHALLENGE_LEN = 128;
- 
+
  WLAN_CAPABILITY_ESS     = (1 shl 0);
  WLAN_CAPABILITY_IBSS    = (1 shl 1);
- 
+
  {A mesh STA sets the ESS and IBSS capability bits to zero. however, this holds true for p2p probe responses (in the p2p_find phase) as well.}
  //WLAN_CAPABILITY_IS_STA_BSS(cap) = (!((cap) & (WLAN_CAPABILITY_ESS | WLAN_CAPABILITY_IBSS))) //To DO //ieee80211.h
  WLAN_CAPABILITY_CF_POLLABLE     = (1 shl 2);
@@ -582,7 +582,7 @@ const
  WLAN_CAPABILITY_DSSS_OFDM       = (1 shl 13);
  WLAN_CAPABILITY_DEL_BACK        = (1 shl 14);
  WLAN_CAPABILITY_IMM_BACK        = (1 shl 15);
- 
+
  {DMG (60gHz) 802.11ad}
  {Type - bits 0..1}
  WLAN_CAPABILITY_DMG_TYPE_MASK           = (3 shl 0);
@@ -605,23 +605,23 @@ const
  IEEE80211_SPCT_MSR_RPRT_TYPE_BASIC      = 0;
  IEEE80211_SPCT_MSR_RPRT_TYPE_CCA        = 1;
  IEEE80211_SPCT_MSR_RPRT_TYPE_RPI        = 2;
- 
+
  {802.11g ERP information element}
  WLAN_ERP_NON_ERP_PRESENT = (1 shl 0);
  WLAN_ERP_USE_PROTECTION  = (1 shl 1);
  WLAN_ERP_BARKER_PREAMBLE = (1 shl 2);
- 
+
  {WLAN_ERP_BARKER_PREAMBLE values}
  WLAN_ERP_PREAMBLE_SHORT = 0;
  WLAN_ERP_PREAMBLE_LONG = 1;
- 
+
  {Band ID, 802.11ad #8.4.1.45}
  IEEE80211_BANDID_TV_WS = 0; {TV white spaces}
  IEEE80211_BANDID_SUB1  = 1; {Sub-1 GHz (excluding TV white spaces)}
  IEEE80211_BANDID_2G    = 2; {2.4 GHz}
  IEEE80211_BANDID_3G    = 3; {3.6 GHz}
  IEEE80211_BANDID_5G    = 4; {4.9 and 5 GHz}
- IEEE80211_BANDID_60G   = 5; {60 GHz} 
+ IEEE80211_BANDID_60G   = 5; {60 GHz}
 
  {802.11 Status codes}
  WLAN_STATUS_SUCCESS = 0;
@@ -920,10 +920,10 @@ const
  WLAN_EID_AID = 197;
  WLAN_EID_QUIET_CHANNEL = 198;
  WLAN_EID_OPMODE_NOTIF = 199;
- 
+
  WLAN_EID_VENDOR_SPECIFIC = 221;
- WLAN_EID_QOS_PARAMETER = 222; 
- 
+ WLAN_EID_QOS_PARAMETER = 222;
+
  {802.11 Action category code}
  WLAN_CATEGORY_SPECTRUM_MGMT = 0;
  WLAN_CATEGORY_QOS = 1;
@@ -946,15 +946,15 @@ const
  WLAN_CATEGORY_UNPROT_DMG = 20;
  WLAN_CATEGORY_VHT = 21;
  WLAN_CATEGORY_VENDOR_SPECIFIC_PROTECTED = 126;
- WLAN_CATEGORY_VENDOR_SPECIFIC = 127; 
- 
+ WLAN_CATEGORY_VENDOR_SPECIFIC = 127;
+
  {SPECTRUM_MGMT action code}
  WLAN_ACTION_SPCT_MSR_REQ = 0;
  WLAN_ACTION_SPCT_MSR_RPRT = 1;
  WLAN_ACTION_SPCT_TPC_REQ = 2;
  WLAN_ACTION_SPCT_TPC_RPRT = 3;
- WLAN_ACTION_SPCT_CHL_SWITCH = 4; 
- 
+ WLAN_ACTION_SPCT_CHL_SWITCH = 4;
+
  {HT action codes}
  WLAN_HT_ACTION_NOTIFY_CHANWIDTH = 0;
  WLAN_HT_ACTION_SMPS = 1;
@@ -963,7 +963,7 @@ const
  WLAN_HT_ACTION_CSI = 4;
  WLAN_HT_ACTION_NONCOMPRESSED_BF = 5;
  WLAN_HT_ACTION_COMPRESSED_BF = 6;
- WLAN_HT_ACTION_ASEL_IDX_FEEDBACK = 7; 
+ WLAN_HT_ACTION_ASEL_IDX_FEEDBACK = 7;
 
  {VHT action codes}
  WLAN_VHT_ACTION_COMPRESSED_BF = 0;
@@ -1059,22 +1059,22 @@ const
 
  {TDLS specific payload type in the LLC/SNAP header}
  WLAN_TDLS_SNAP_RFTYPE   = $2;
- 
+
  {BSS Coex IE information field bits}
  WLAN_BSS_COEX_INFORMATION_REQUEST       = (1 shl 0);
 
  {mesh synchronization method identifier}
  IEEE80211_SYNC_METHOD_NEIGHBOR_OFFSET = 1;   {The default synchronization method}
  IEEE80211_SYNC_METHOD_VENDOR          = 255; {A vendor specific synchronization method that will be specified in a vendor specific information element}
- 
+
  {mesh path selection protocol identifier}
  IEEE80211_PATH_PROTOCOL_HWMP   = 1;   {The default path selection protocol}
  IEEE80211_PATH_PROTOCOL_VENDOR = 255; {A vendor specific protocol that will be specified in a vendor specific information element}
- 
+
  {mesh path selection metric identifier}
  IEEE80211_PATH_METRIC_AIRTIME = 1;   {the default path selection metric}
  IEEE80211_PATH_METRIC_VENDOR  = 255; {a vendor specific metric that will be specified in a vendor specific information element}
- 
+
  {root mesh STA mode identifier} {These attribute are used by dot11MeshHWMPRootMode to set root mesh STA mode}
  IEEE80211_ROOTMODE_NO_ROOT         = 0; {the mesh STA is not a root mesh STA (default)}
  IEEE80211_ROOTMODE_ROOT            = 1; {the mesh STA is a root mesh STA if greater than this value}
@@ -1086,12 +1086,12 @@ const
  IEEE80211_COUNTRY_IE_MIN_LEN   = 6;
  {The Country String field of the element shall be 3 octets in length}
  IEEE80211_COUNTRY_STRING_LEN   = 3;
- 
+
  {For regulatory extension stuff see IEEE 802.11-2007 Annex I (page 1141) and Annex J (page 1147). Also review 7.3.2.9.}
  {When dot11RegulatoryClassesRequired is true and the
   first_channel/reg_extension_id is >= 201 then the IE
   compromises of the 'ext' struct represented below:
- 
+
    - Regulatory extension ID - when generating IE this just needs
      to be monotonically increasing for each triplet passed in
      the IE
@@ -1101,7 +1101,7 @@ const
      the index by multiplying by 3, so index 10 yields a propagation
      of 10 us. Valid values are 0-31, values 32-255 are not defined
      yet. A value of 0 inicates air propagation of <= 1 us.
- 
+
    See also Table I.2 for Emission limit sets and table
    I.3 for Behavior limit sets. Table J.1 indicates how to map
    a reg_class to an emission limit set and behavior limit set}
@@ -1110,20 +1110,20 @@ const
  {Timeout Interval}
  WLAN_TIMEOUT_REASSOC_DEADLINE = 1; {802.11r}
  WLAN_TIMEOUT_KEY_LIFETIME = 2; {802.11r}
- WLAN_TIMEOUT_ASSOC_COMEBACK = 3; {802.11w} 
+ WLAN_TIMEOUT_ASSOC_COMEBACK = 3; {802.11w}
 
  {BACK action code}
  WLAN_ACTION_ADDBA_REQ = 0;
  WLAN_ACTION_ADDBA_RESP = 1;
- WLAN_ACTION_DELBA = 2; 
- 
+ WLAN_ACTION_DELBA = 2;
+
  {BACK (block-ack) parties}
  WLAN_BACK_RECIPIENT = 0;
- WLAN_BACK_INITIATOR = 1; 
+ WLAN_BACK_INITIATOR = 1;
 
  {SA Query action}
  WLAN_ACTION_SA_QUERY_REQUEST = 0;
- WLAN_ACTION_SA_QUERY_RESPONSE = 1; 
+ WLAN_ACTION_SA_QUERY_RESPONSE = 1;
 
  {cipher suite selectors}
  WLAN_CIPHER_SUITE_USE_GROUP     = $000FAC00;
@@ -1141,7 +1141,7 @@ const
  WLAN_CIPHER_SUITE_BIP_CMAC_256  = $000FAC0D;
 
  WLAN_CIPHER_SUITE_SMS4          = $00147201;
- 
+
  {AKM suite selectors}
  WLAN_AKM_SUITE_8021X            = $000FAC01;
  WLAN_AKM_SUITE_PSK              = $000FAC02;
@@ -1168,13 +1168,13 @@ const
 
  IEEE80211_TSPEC_STATUS_ADMISS_ACCEPTED = 0;
  IEEE80211_TSPEC_STATUS_ADDTS_INVAL_PARAMS = $1;
- 
+
  {These constants are NOT defined by IEEE80211 but are internal to the implementation}
  {IEEE80211 frequency bands} {As per Linux cfg80211.h IEEE80211_BAND_*}
  IEEE80211_BAND_2GHZ  = 0; {NL80211_BAND_2GHZ}  {2.4GHz ISM band}
  IEEE80211_BAND_5GHZ  = 1; {NL80211_BAND_5GHZ}  {5GHz band (4.9-5.7)}
  IEEE80211_BAND_60GHZ = 2; {NL80211_BAND_60GHZ} {60 GHz band (58.32 - 64.80 GHz)}
- 
+
  IEEE80211_NUM_BANDS  = 3;
 
  {IEEE80211 channel flags} {As per Linux cfg80211.h IEEE80211_CHAN_*}
@@ -1186,18 +1186,18 @@ const
  IEEE80211_CHAN_NO_HT40MINUS  = (1 shl 5); {Extension channel below this channel is not permitted}
  IEEE80211_CHAN_NO_OFDM       = (1 shl 6); {OFDM is not allowed on this channel}
  IEEE80211_CHAN_NO_80MHZ      = (1 shl 7); {If the driver supports 80 MHz on the band, this flag indicates that an 80 MHz channel cannot use this channel as the control or any of the secondary channels}
- IEEE80211_CHAN_NO_160MHZ     = (1 shl 8); {If the driver supports 160 MHz on the band,	this flag indicates that an 160 MHz channel cannot use this	channel as the control or any of the secondary channels}
+ IEEE80211_CHAN_NO_160MHZ     = (1 shl 8); {If the driver supports 160 MHz on the band,    this flag indicates that an 160 MHz channel cannot use this    channel as the control or any of the secondary channels}
  IEEE80211_CHAN_INDOOR_ONLY   = (1 shl 9); {see NL80211_FREQUENCY_ATTR_INDOOR_ONLY}
  IEEE80211_CHAN_GO_CONCURRENT = (1 shl 10); {see NL80211_FREQUENCY_ATTR_GO_CONCURRENT}
  IEEE80211_CHAN_NO_20MHZ      = (1 shl 11); {20 MHz bandwidth is not permitted on this channel}
  IEEE80211_CHAN_NO_10MHZ      = (1 shl 12); {10 MHz bandwidth is not permitted on this channel}
 
  IEEE80211_CHAN_NO_HT40       = IEEE80211_CHAN_NO_HT40PLUS or IEEE80211_CHAN_NO_HT40MINUS;
- 
- 
+
+
  IEEE80211_DFS_MIN_CAC_TIME_MS = 60000;
  IEEE80211_DFS_MIN_NOP_TIME_MS = (30 * 60 * 1000);
- 
+
  {IEEE80211 rate flags} {As per Linux cfg80211.h IEEE80211_RATE_*}
  IEEE80211_RATE_SHORT_PREAMBLE = (1 shl 0);
  IEEE80211_RATE_MANDATORY_A    = (1 shl 1);
@@ -1206,21 +1206,21 @@ const
  IEEE80211_RATE_ERP_G          = (1 shl 4);
  IEEE80211_RATE_SUPPORTS_5MHZ  = (1 shl 5);
  IEEE80211_RATE_SUPPORTS_10MHZ = (1 shl 6);
- 
+
  {IEEE80211 type values} {As per Linux cfg80211.h IEEE80211_BSS_TYPE_*}
  IEEE80211_BSS_TYPE_ESS  = 0; {Infrastructure BSS}
  IEEE80211_BSS_TYPE_PBSS = 1; {Personal BSS}
  IEEE80211_BSS_TYPE_IBSS = 2; {Independent BSS}
  IEEE80211_BSS_TYPE_MBSS = 3; {Mesh BSS}
  IEEE80211_BSS_TYPE_ANY  = 4; {Wildcard value for matching any BSS type}
- 
+
  {IEEE80211 privacy values} {As per Linux cfg80211.h IEEE80211_PRIVACY_*}
  IEEE80211_PRIVACY_ON  = 0; {privacy bit set}
  IEEE80211_PRIVACY_OFF = 1; {privacy bit clear}
  IEEE80211_PRIVACY_ANY = 2; {Wildcard value for matching any privacy setting}
- 
+
  //To Do //IEEE80211_PRIVACY macro
- 
+
  {IEEE80211 filter flags} {As per Linux mac80211.h FIF_*}
  IEEE80211_FIF_PROMISC_IN_BSS      = (1 shl 0); {promiscuous mode within your BSS, think of the BSS as your network segment and then this corresponds to the regular ethernet device promiscuous mode}
  IEEE80211_FIF_ALLMULTI            = (1 shl 1); {pass all multicast frames, this is used if requested by the user or if the hardware is not capable of filtering by multicast address}
@@ -1250,7 +1250,7 @@ const
  IEEE80211_HW_WANT_MONITOR_VIF              = (1 shl 14);
  IEEE80211_HW_NO_AUTO_VIF                   = (1 shl 15);
  IEEE80211_HW_SW_CRYPTO_CONTROL             = (1 shl 16);
- {free slots}                               
+ {free slots}
  IEEE80211_HW_REPORTS_TX_ACK_STATUS         = (1 shl 18);
  IEEE80211_HW_CONNECTION_MONITOR            = (1 shl 19);
  IEEE80211_HW_QUEUE_CONTROL                 = (1 shl 20);
@@ -1264,13 +1264,13 @@ const
  IEEE80211_HW_CHANCTX_STA_CSA               = (1 shl 28);
  IEEE80211_HW_SUPPORTS_CLONED_SKBS          = (1 shl 29);
  IEEE80211_SINGLE_HW_SCAN_ON_ALL_BANDS      = (1 shl 30);
- 
+
  {IEEE80211 configuration flags} {As per Linux mac80211.h IEEE80211_CONF_*}
  IEEE80211_CONF_MONITOR    = (1 shl 0);
  IEEE80211_CONF_PS         = (1 shl 1);
  IEEE80211_CONF_IDLE       = (1 shl 2);
  IEEE80211_CONF_OFFCHANNEL = (1 shl 3);
- 
+
  {IEEE80211 configuration changed flags} {As per Linux mac80211.h IEEE80211_CONF_CHANGE_*}
  IEEE80211_CONF_CHANGE_SMPS            = (1 shl 1);
  IEEE80211_CONF_CHANGE_LISTEN_INTERVAL = (1 shl 2);
@@ -1280,29 +1280,29 @@ const
  IEEE80211_CONF_CHANGE_CHANNEL         = (1 shl 6);
  IEEE80211_CONF_CHANGE_RETRY_LIMITS    = (1 shl 7);
  IEEE80211_CONF_CHANGE_IDLE            = (1 shl 8);
- 
+
  IEEE80211_TX_STATUS_HEADROOM = 14;
 
  IEEE80211_MAX_CSA_COUNTERS_NUM = 2;
- 
- //To Do 
- 
+
+ //To Do
+
 {==============================================================================}
 const
  {WiFi specific constants}
  WIFI_DEVICE_TIMER_INTERVAL = 100; {Timer interval for new device additions}
- 
+
  EAPOL_TRANSPORT_NAME = 'EAPOL';
  RSN_TRANSPORT_NAME = 'RSN';
 
  {WiFi Device States}
  WIFI_STATE_NONE = 0;
  //To Do
- 
+
  {WiFi Device Status}
  WIFI_STATUS_NONE = 0;
  //To Do
- 
+
  {WiFi Device Flags} {As per Linux cfg80211.h WIPHY_FLAG_*}
  {(1 shl 0)}
  {(1 shl 1)}
@@ -1327,7 +1327,7 @@ const
  WIFI_FLAG_HAS_REMAIN_ON_CHANNEL = (1 shl 21); {Device supports remain-on-channel call}
  WIFI_FLAG_SUPPORTS_5_10_MHZ     = (1 shl 22); {Device supports 5 MHz and 10 MHz channels}
  WIFI_FLAG_HAS_CHANNEL_SWITCH    = (1 shl 23); {Device supports channel switch in beaconing mode (AP, IBSS, Mesh, ...)}
- 
+
  {WiFi Device Features} {As per Linux nl80211.h NL80211_FEATURE_*}
  WIFI_FEATURE_SK_TX_STATUS               = (1 shl 0); {This driver supports reflecting back TX status to the socket error queue when requested with the socket option}
  WIFI_FEATURE_HT_IBSS                    = (1 shl 1); {This driver supports IBSS with HT datarates}
@@ -1342,7 +1342,7 @@ const
  WIFI_FEATURE_NEED_OBSS_SCAN             = (1 shl 10); {The driver expects userspace to perform OBSS scans and generate 20/40 BSS coex reports}
  WIFI_FEATURE_P2P_GO_CTWIN               = (1 shl 11); {P2P GO implementation supports CT Window setting}
  WIFI_FEATURE_P2P_GO_OPPPS               = (1 shl 12); {P2P GO implementation supports opportunistic powersave}
- {bit 13 is reserved}                    
+ {bit 13 is reserved}
  WIFI_FEATURE_ADVERTISE_CHAN_LIMITS      = (1 shl 14); {cfg80211 advertises channel limits (HT40, VHT 80/160 MHz) if this flag is set}
  WIFI_FEATURE_FULL_AP_CLIENT_STATE       = (1 shl 15); {The driver supports full state transitions for AP clients}
  WIFI_FEATURE_USERSPACE_MPM              = (1 shl 16); {This driver supports a userspace Mesh Peering Management}
@@ -1361,12 +1361,12 @@ const
  WIFI_FEATURE_SCAN_RANDOM_MAC_ADDR       = (1 shl 29); {This device/driver supports using a random MAC address during scan (if the device is unassociated)}
  WIFI_FEATURE_SCHED_SCAN_RANDOM_MAC_ADDR = (1 shl 30); {This device/driver supports using a random MAC address for every scan iteration during scheduled scan (while not associated)}
  WIFI_FEATURE_ND_RANDOM_MAC_ADDR         = (1 shl 31); {This device/driver supports using a random MAC address for every scan iteration during "net detect", i.e. scan in unassociated WoWLAN}
- 
+
  {WiFi Device LED values}
  WIFI_LED_OFF  = 0;
  WIFI_LED_HALF = 127;
  WIFI_LED_FULL = 255;
- 
+
  {WiFi Interface Types} {As per Linux nl80211.h NL80211_IFTYPE_*}
  WIFI_IFTYPE_UNSPECIFIED = 0; {Unspecified type, driver decides}
  WIFI_IFTYPE_ADHOC       = 1; {Independent BSS member}
@@ -1380,15 +1380,15 @@ const
  WIFI_IFTYPE_P2P_GO      = 9; {P2P group owner}
  WIFI_IFTYPE_P2P_DEVICE  = 10; {P2P device interface type}
  WIFI_IFTYPE_OCB         = 11; {Outside Context of a BSS}
-                         
+
  WIFI_NUM_IFTYPES        = 12; {Number of defined interface types}
- 
+
  {WiFi Channel Types} {As per Linux nl80211.h NL80211_CHAN_*}
  WIFI_CHAN_NO_HT     = 0; {20 MHz, non-HT channel}
  WIFI_CHAN_HT20      = 1; {20 MHz HT channel}
  WIFI_CHAN_HT40MINUS = 2; {HT40 channel, secondary channel below the control channel}
  WIFI_CHAN_HT40PLUS  = 3; {HT40 channel, secondary channel above the control channel}
- 
+
  {WiFi Channel Widths} {As per Linux nl80211.h NL80211_CHAN_WIDTH_*}
  WIFI_CHAN_WIDTH_20_NOHT = 0; {20 MHz, non-HT channel}
  WIFI_CHAN_WIDTH_20      = 1; {20 MHz HT channel}
@@ -1398,23 +1398,23 @@ const
  WIFI_CHAN_WIDTH_160     = 5; {160 MHz channel, the %NL80211_ATTR_CENTER_FREQ1 attribute must be provided as well}
  WIFI_CHAN_WIDTH_5       = 6; {5 MHz OFDM channel}
  WIFI_CHAN_WIDTH_10      = 7; {10 MHz OFDM channel}
- 
+
  {WiFi Signal Types} {As per Linux cfg80211.h CFG80211_SIGNAL_TYPE_*}
  WIFI_SIGNAL_TYPE_NONE   = 0; {No signal strength information available}
  WIFI_SIGNAL_TYPE_MBM    = 1; {Signal strength in mBm (100*dBm)}
  WIFI_SIGNAL_TYPE_UNSPEC = 2; {Signal strength, increasing from 0 through 100}
- 
+
  {WiFi TX power adjustment} {As per Linux nl80211.h NL80211_TX_POWER_*}
  WIFI_TX_POWER_AUTOMATIC = 0; {automatically determine transmit power}
  WIFI_TX_POWER_LIMITED   = 1; {limit TX power by the mBm parameter}
  WIFI_TX_POWER_FIXED     = 2; {fix TX power to the mBm parameter}
- 
+
  {WiFi RX Flags} {As per Linux mac80211.h RX_FLAG_*}
- WIFI_RX_FLAG_MMIC_ERROR	        = (1 shl 0);  {Michael MIC error was reported on this frame}
+ WIFI_RX_FLAG_MMIC_ERROR            = (1 shl 0);  {Michael MIC error was reported on this frame}
  WIFI_RX_FLAG_DECRYPTED             = (1 shl 1);  {This frame was decrypted in hardware}
  WIFI_RX_FLAG_MMIC_STRIPPED         = (1 shl 3);  {The Michael MIC is stripped off this frame,verification has been done by the hardware}
  WIFI_RX_FLAG_IV_STRIPPED           = (1 shl 4);  {The IV/ICV are stripped from this frame}
- WIFI_RX_FLAG_FAILED_FCS_CRC        = (1 shl 5);  {Set this flag if the FCS check failed on	the frame}
+ WIFI_RX_FLAG_FAILED_FCS_CRC        = (1 shl 5);  {Set this flag if the FCS check failed on    the frame}
  WIFI_RX_FLAG_FAILED_PLCP_CRC       = (1 shl 6);  {Set this flag if the PCLP check failed on the frame}
  WIFI_RX_FLAG_MACTIME_START         = (1 shl 7);  {The timestamp passed in the RX status MACTime field is valid and contains the time the first symbol of the MPDU was received}
  WIFI_RX_FLAG_SHORTPRE              = (1 shl 8);  {Short preamble was used for this frame}
@@ -1438,12 +1438,12 @@ const
  WIFI_RX_FLAG_5MHZ                  = (1 shl 29); {5 MHz (quarter channel) was used}
  WIFI_RX_FLAG_AMSDU_MORE            = (1 shl 30); {Some drivers may prefer to report separate A-MSDU subframes instead of a one huge frame for performance reasons}
  WIFI_RX_FLAG_RADIOTAP_VENDOR_DATA  = (1 shl 31); {This frame contains vendor-specific radiotap data in the data (before the frame)}
- 
+
  {WiFi RX VHT Flags} {As per Linux mac80211.h RX_VHT_FLAG_*}
- WIFI_RX_VHT_FLAG_80MHZ	 = (1 shl 0); {80 MHz was used}
+ WIFI_RX_VHT_FLAG_80MHZ     = (1 shl 0); {80 MHz was used}
  WIFI_RX_VHT_FLAG_160MHZ = (1 shl 1); {160 MHz was used}
  WIFI_RX_VHT_FLAG_BF     = (1 shl 2); {packet was beamformed}
- 
+
 {==============================================================================}
 type
  {IEEE80211 specific types} {As per Linux ieee80211.h}
@@ -1459,7 +1459,7 @@ type
   Address4:THardwareAddress;
  end;
  {$PACKRECORDS DEFAULT}
- 
+
  {$PACKRECORDS 2}
  PIEEE80211Header3Address = ^TIEEE80211Header3Address; {From Linux ieee80211.h ieee80211_hdr_3addr}
  TIEEE80211Header3Address = record {Not Packed}
@@ -1482,7 +1482,7 @@ type
   Address3:THardwareAddress;
   SequenceControl:Word; {LE16}
   QoSControl:Word;      {LE16}
- end; 
+ end;
  {$PACKRECORDS DEFAULT}
 
  {$PACKRECORDS 2}
@@ -1503,30 +1503,30 @@ type
   Duration:Word; {LE16}
   Offset:Word;   {LE16}
  end;
- 
+
  PIEEE80211MeasurementIE = ^TIEEE80211MeasurementIE;  {Measurement Request/Report information element} {From Linux ieee80211.h ieee80211_msrment_ie}
  TIEEE80211MeasurementIE = packed record
   Token:Byte;
   Mode:Byte;
   TType:Byte; {Type}
-  Request:array[0..0] of Byte; 
+  Request:array[0..0] of Byte;
  end;
- 
+
  PIEEE80211ChannelSwitchIE = ^TIEEE80211ChannelSwitchIE; {Channel Switch Announcement information element} {From Linux ieee80211.h ieee80211_channel_sw_ie}
  TIEEE80211ChannelSwitchIE = packed record
   Mode:Byte;
   NewChannel:Byte;
-  Count:Byte; 
+  Count:Byte;
  end;
- 
+
  PIEEE80211ExtChannelSwitchIE = ^TIEEE80211ExtChannelSwitchIE; {Extended Channel Switch Announcement element} {From Linux ieee80211.h ieee80211_ext_chansw_ie}
  TIEEE80211ExtChannelSwitchIE = packed record
   Mode:Byte;
   NewOperatingClass:Byte;
   NewChannel:Byte;
-  Count:Byte; 
+  Count:Byte;
  end;
- 
+
  PIEEE80211SecondaryChannelOffsetIE = ^TIEEE80211SecondaryChannelOffsetIE; {Secondary Channel Offset element} {From Linux ieee80211.h ieee80211_sec_chan_offs_ie}
  TIEEE80211SecondaryChannelOffsetIE = packed record
   SecondaryChannelOffset:Byte; {Secondary channel offset, uses IEEE80211_HT_PARAM_CHA_SEC_* values here}
@@ -1539,14 +1539,14 @@ type
   MeshReason:Word;   {LE16}
   MeshPreValue:Word; {LE16}
  end;
- 
+
  PIEEE80211WidebandChannelSwitchIE = ^TIEEE80211WidebandChannelSwitchIE; {Wide bandwidth channel switch IE} {From Linux ieee80211.h ieee80211_wide_bw_chansw_ie}
  TIEEE80211WidebandChannelSwitchIE = packed record
   NewChannelWidth:Byte;
   NewCenterFreqSeg0:Byte;
   NewCenterFreqSeg1:Byte;
  end;
- 
+
  PIEEE80211TrafficIndicationMapIE = ^TIEEE80211TrafficIndicationMapIE; {Traffic Indication Map information element} {From Linux ieee80211.h ieee80211_tim_ie}
  TIEEE80211TrafficIndicationMapIE = packed record
   DTIMCount:Byte;
@@ -1565,7 +1565,7 @@ type
   MeshConfForm:Byte;
   MeshConfCap:Byte;
  end;
- 
+
  PIEEE80211RootAnnouncementIE = ^TIEEE80211RootAnnouncementIE; {Root Announcement information element} {From Linux ieee80211.h ieee80211_rann_ie}
  TIEEE80211RootAnnouncementIE = packed record
   RannFlags:Byte;
@@ -1582,15 +1582,15 @@ type
   TXPower:Byte;
   LinkMargin:Byte;
  end;
- 
+
  TIEEE80211ManagementAuth = packed record {From Linux ieee80211.h ieee80211_mgmt}
   AuthAlgorithm:Word;   {LE16}
   AuthTransaction:Word; {LE16}
   StatusCode:Word;      {LE16}
   {Possibly followed by Challenge text}
-  Variable:array[0..0] of Byte; 
- end; 
- 
+  Variable:array[0..0] of Byte;
+ end;
+
  TIEEE80211ManagementDeauth = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ReasonCode:Word; {LE16}
  end;
@@ -1599,7 +1599,7 @@ type
   CapabilitiesInfo:Word; {LE16}
   ListenInterval:Word;   {LE16}
   {followed by SSID and Supported rates}
-  Variable:array[0..0] of Byte; 
+  Variable:array[0..0] of Byte;
  end;
 
  TIEEE80211ManagementAssocResponse = packed record {From Linux ieee80211.h ieee80211_mgmt}
@@ -1607,60 +1607,60 @@ type
   StatusCode:Word;       {LE16}
   AID:Word;              {LE16}
   {followed by Supported rates}
-  Variable:array[0..0] of Byte; 
+  Variable:array[0..0] of Byte;
  end;
- 
+
  TIEEE80211ManagementReassocRequest = packed record {From Linux ieee80211.h ieee80211_mgmt}
   CapabilitiesInfo:Word; {LE16}
   ListenInterval:Word;   {LE16}
   CurrentAP:THardwareAddress;
   {followed by SSID and Supported rates}
-  Variable:array[0..0] of Byte; 
+  Variable:array[0..0] of Byte;
  end;
- 
+
  TIEEE80211ManagementDisassoc = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ReasonCode:Word; {LE16}
  end;
- 
+
  TIEEE80211ManagementBeacon = packed record {From Linux ieee80211.h ieee80211_mgmt}
   Timestamp:Int64;       {LE64}
   BeaconInterval:Word;   {LE16}
   CapabilitiesInfo:Word; {LE16}
   {followed by some of SSID, Supported rates, FH Params, DS Params, CF Params, IBSS Params, TIM}
-  Variable:array[0..0] of Byte; 
+  Variable:array[0..0] of Byte;
  end;
- 
+
  TIEEE80211ManagementProbeRequest = packed record {From Linux ieee80211.h ieee80211_mgmt}
   {only variable items: SSID, Supported rates}
-  Variable:array[0..0] of Byte; 
+  Variable:array[0..0] of Byte;
  end;
- 
+
  TIEEE80211ManagementProbeResponse = packed record {From Linux ieee80211.h ieee80211_mgmt}
   Timestamp:Int64;       {LE64}
   BeaconInterval:Word;   {LE16}
   CapabilitiesInfo:Word; {LE16}
   {followed by some of SSID, Supported rates, FH Params, DS Params, CF Params, IBSS Params}
-  Variable:array[0..0] of Byte; 
+  Variable:array[0..0] of Byte;
  end;
 
  TIEEE80211ManagementActionWMEAction = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   DialogToken:Byte;
   StatusCode:Byte;
-  Variable:array[0..0] of Byte; 
+  Variable:array[0..0] of Byte;
  end;
- 
+
  TIEEE80211ManagementActionChannelSwitch = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
-  Variable:array[0..0] of Byte; 
+  Variable:array[0..0] of Byte;
  end;
- 
+
  TIEEE80211ManagementActionExtChannelSwitch = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   Data:TIEEE80211ExtChannelSwitchIE;
-  Variable:array[0..0] of Byte; 
+  Variable:array[0..0] of Byte;
  end;
- 
+
  TIEEE80211ManagementActionMeasurement = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   DialogToken:Byte;
@@ -1668,7 +1668,7 @@ type
   Length:Byte;
   Element:TIEEE80211MeasurementIE;
  end;
- 
+
  TIEEE80211ManagementActionAddBARequest = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   DialogToken:Byte;
@@ -1676,7 +1676,7 @@ type
   Timeout:Word;             {LE16}
   StartSequenceNumber:Word; {LE16}
  end;
- 
+
  TIEEE80211ManagementActionAddBAResponse = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   DialogToken:Byte;
@@ -1690,15 +1690,15 @@ type
   Params:Word;     {LE16}
   ReasonCode:Word; {LE16}
  end;
- 
+
  TIEEE80211ManagementActionSelfProt = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
-  Variable:array[0..0] of Byte; 
+  Variable:array[0..0] of Byte;
  end;
- 
+
  TIEEE80211ManagementActionMeshAction = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
-  Variable:array[0..0] of Byte; 
+  Variable:array[0..0] of Byte;
  end;
 
  TIEEE80211ManagementActionSAQuery = packed record {From Linux ieee80211.h ieee80211_mgmt}
@@ -1715,14 +1715,14 @@ type
   ActionCode:Byte;
   ChannelWidth:Byte;
  end;
- 
+
  TIEEE80211ManagementActionTDLSDiscoverResponse = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   DialogToken:Byte;
   Capability:Word; {LE16}
-  Variable:array[0..0] of Byte; 
+  Variable:array[0..0] of Byte;
  end;
- 
+
  TIEEE80211ManagementActionVHTOpmodeNotify = packed record {From Linux ieee80211.h ieee80211_mgmt}
   ActionCode:Byte;
   OperatingMode:Byte;
@@ -1735,7 +1735,7 @@ type
   TPCElementLength:Byte;
   TPC:TIEEE80211TPCReportIE;
  end;
- 
+
  TIEEE80211ManagementAction = packed record {From Linux ieee80211.h ieee80211_mgmt}
   case Integer of
    0:(WMEAction:TIEEE80211ManagementAuth);
@@ -1754,7 +1754,7 @@ type
    13:(VHTOpmodeNotify:TIEEE80211ManagementActionVHTOpmodeNotify);
    14:(TPCReport:TIEEE80211ManagementActionTPCReport);
  end;
- 
+
  {$PACKRECORDS 2}
  PIEEE80211Management = ^TIEEE80211Management; {From Linux ieee80211.h ieee80211_mgmt}
  TIEEE80211Management = record {Not Packed}
@@ -1778,9 +1778,9 @@ type
    10:(Action:TIEEE80211ManagementAction);
  end;
  {$PACKRECORDS DEFAULT}
-  
+
  //To Do //IEEE80211_MIN_ACTION_SIZE from ieee80211.h
- 
+
  PIEEE80211ManagementMICIE = ^TIEEE80211ManagementMICIE; {Management MIC information element (IEEE 802.11w)} {From Linux ieee80211.h ieee80211_mmie}
  TIEEE80211ManagementMICIE = packed record
   ElementID:Byte;
@@ -1789,7 +1789,7 @@ type
   SequenceNumber:array[0..5] of Byte;
   MIC:array[0..7] of Byte;
  end;
- 
+
  PIEEE80211ManagementMIC16IE = ^TIEEE80211ManagementMIC16IE; {Management MIC information element (IEEE 802.11w) for GMAC and CMAC-256} {From Linux ieee80211.h ieee80211_mmie_16}
  TIEEE80211ManagementMIC16IE = packed record
   ElementID:Byte;
@@ -1839,7 +1839,7 @@ type
   TransmitterAddress:THardwareAddress;
  end;
  {$PACKRECORDS DEFAULT}
- 
+
  {$PACKRECORDS 2}
  PIEEE80211CTS = ^TIEEE80211CTS;
  TIEEE80211CTS = record {Not Packed}
@@ -1865,7 +1865,7 @@ type
   SwitchTime:Word;    {LE16}
   SwitchTimeout:Word; {LE16}
  end;
- 
+
  PIEEE80211TDLSLinkIdentifierIE = ^TIEEE80211TDLSLinkIdentifierIE; {Link-id information element} {From Linux ieee80211.h  ieee80211_tdls_lnkie}
  TIEEE80211TDLSLinkIdentifierIE = packed record
   ElementID:Byte; {Link Identifier IE}
@@ -1914,7 +1914,7 @@ type
   StatusCode:Word; {LE16}
   Variable:array[0..0] of Byte;
  end;
- 
+
  PIEEE80211TDLSData = ^TIEEE80211TDLSData; {TDLS Data} {From Linux ieee80211.h ieee80211_tdls_data}
  TIEEE80211TDLSData = packed record
   DestinationAddress:THardwareAddress;
@@ -1940,14 +1940,14 @@ type
   Interval:LongWord; {LE32}
   StartTime:LongWord; {LE32}
  end;
- 
+
  PIEEE80211P2PNOAAttribute = ^TIEEE80211P2PNOAAttribute; {Notice of Absence attribute - described in P2P spec 4.1.14} {From Linux ieee80211.h ieee80211_p2p_noa_attr}
  TIEEE80211P2PNOAAttribute = packed record
   Index:Byte;
   OPPPS_CTWindow:Byte;
   Description:array[0..IEEE80211_P2P_NOA_DESC_MAX - 1] of TIEEE80211P2PNOADescription;
  end;
- 
+
  PIEEE80211Bar = ^TIEEE80211Bar; {HT Block Ack Request} {From Linux ieee80211.h ieee80211_bar}
  TIEEE80211Bar = packed record {This structure refers to "HT BlockAckReq" as described in 802.11n draft section 7.2.1.7.1}
   FrameControl:Word;       {LE16}
@@ -1957,7 +1957,7 @@ type
   Control:Word;            {LE16}
   StartSequenceNumber:Word;{LE16}
  end;
- 
+
  PIEEE80211MCSInfo = ^TIEEE80211MCSInfo; {HT MCS information} {From Linux ieee80211.h ieee80211_mcs_info}
  TIEEE80211MCSInfo = packed record
   RXMask:array[0..IEEE80211_HT_MCS_MASK_LEN - 1] of Byte; {RX mask}
@@ -1965,7 +1965,7 @@ type
   TXParams:Byte;       {TX parameters}
   Reserved:array[0..2] of Byte;
  end;
- 
+
  PIEEE80211HTCapabilities = ^TIEEE80211HTCapabilities; {HT capabilities} {From Linux ieee80211.h ieee80211_ht_cap}
  TIEEE80211HTCapabilities = packed record {This structure is the "HT capabilities element" as described in 802.11n D5.0 7.3.2.57}
   CapabilityInfo:Word;  {LE16}
@@ -1975,7 +1975,7 @@ type
   TXBFCapInfo:LongWord;   {LE32}
   AntennaSelectionInfo:Byte;
  end;
- 
+
  PIEEE80211HTOperation = ^TIEEE80211HTOperation; {HT operation IE} {From Linux ieee80211.h ieee80211_ht_operation}
  TIEEE80211HTOperation = packed record
   PrimaryChannel:Byte;
@@ -1983,8 +1983,8 @@ type
   OperationMode:Word; {LE16}
   STBCParam:Word;     {LE16}
   BasicSet:array[0..15] of Byte;
- end; 
- 
+ end;
+
  PIEEE80211VHTMCSInfo = ^TIEEE80211VHTMCSInfo; {VHT MCS information} {From Linux ieee80211.h ieee80211_vht_mcs_info}
  TIEEE80211VHTMCSInfo = packed record
   RXMCSMap:Word;  {LE16} {RX MCS map 2 bits for each stream, total 8 streams}
@@ -1992,51 +1992,51 @@ type
   TXMCSMap:Word;  {LE16} {TX MCS map 2 bits for each stream, total 8 streams}
   TXHighest:Word; {LE16} {Indicates highest long GI VHT PPDU data rate STA can transmit. Rate expressed in units of 1 Mbps. If this field is 0 this value should not be used to consider the highest TX data rate supported. The top 3 bits of this field are reserved.}
  end;
- 
+
  PIEEE80211VHTCapabilities = ^TIEEE80211VHTCapabilities; {VHT capabilities} {From Linux ieee80211.h ieee80211_vht_cap}
  TIEEE80211VHTCapabilities = packed record {This structure is the "VHT capabilities element" as described in 802.11ac D3.0 8.4.2.160}
   VHTCapabilityInfo:LongWord; {LE32} {VHT capability info}
   SupportedMCS:TIEEE80211VHTMCSInfo; {VHT MCS supported rates}
  end;
- 
+
  PIEEE80211VHTOperation = ^TIEEE80211VHTOperation; {VHT operation IE} {From Linux ieee80211.h ieee80211_vht_operation}
  TIEEE80211VHTOperation = packed record {This structure is the "VHT operation element" as described in 802.11ac D3.0 8.4.2.161}
   ChannelWidth:Byte;
   CenterFreqSeg1Idx:Byte;
   CenterFreqSeg2Idx:Byte;
   BasicMCSSet:Word; {LE16}
- end; 
- 
- TIEEE80211CountryTripletIEChannels = packed record 
+ end;
+
+ TIEEE80211CountryTripletIEChannels = packed record
   FirstChannel:Byte;
   NumChannels:Byte;
   MaxPower:ShortInt;
  end;
- 
- TIEEE80211CountryTripletIEExt = packed record 
+
+ TIEEE80211CountryTripletIEExt = packed record
   RegExtensionID:Byte;
   RegClass:Byte;
   CoverageClass:Byte;
  end;
- 
+
  {Channels numbers in the IE must be monotonically increasing if dot11RegulatoryClassesRequired is not true.
   If dot11RegulatoryClassesRequired is true consecutive subband triplets following a regulatory triplet shall have monotonically increasing first_channel number fields.
   Channel numbers shall not overlap.  Note that MaxPower is signed}
  PIEEE80211CountryTripletIE = ^TIEEE80211CountryTripletIE; {Country Triplet IE} {From Linux ieee80211.h ieee80211_country_ie_triplet}
- TIEEE80211CountryTripletIE = packed record 
+ TIEEE80211CountryTripletIE = packed record
   case Integer of
    0:(Channels:TIEEE80211CountryTripletIEChannels);
    1:(Ext:TIEEE80211CountryTripletIEExt);
  end;
 
  PIEEE80211TimeoutIntervalIE = ^TIEEE80211TimeoutIntervalIE; {Timeout Interval element} {From Linux ieee80211.h ieee80211_timeout_interval_ie}
- TIEEE80211TimeoutIntervalIE = packed record 
+ TIEEE80211TimeoutIntervalIE = packed record
   IntervalType:Byte;
   Value:LongWord; {LE32}
- end; 
- 
+ end;
+
  PIEEE80211TSpecIE = ^TIEEE80211TSpecIE; {WMM/802.11e Tspec Element} {From Linux ieee80211.h ieee80211_tspec_ie}
- TIEEE80211TSpecIE = packed record 
+ TIEEE80211TSpecIE = packed record
   ElementID:Byte;
   Length:Byte;
   OUI:array[0..2] of Byte;
@@ -2061,7 +2061,7 @@ type
   SBA:Word; {LE16}
   MediumTime:Word; {LE16}
  end;
- 
+
  {These structures are NOT defined by IEEE80211 but are internal to the implementation}
  PIEEE80211Channel = ^TIEEE80211Channel; {From Linux cfg80211.h ieee80211_channel}
  TIEEE80211Channel = record
@@ -2075,10 +2075,10 @@ type
   BeaconFound:LongBool;
   //To Do //ieee80211_channel
  end;
-  
+
  PIEEE80211Channels = ^TIEEE80211Channels;
  TIEEE80211Channels = array[0..0] of TIEEE80211Channel;
- 
+
  PIEEE80211Rate = ^TIEEE80211Rate; {From Linux cfg80211.h ieee80211_rate}
  TIEEE80211Rate = record
   Flags:LongWord;            {rate-specific flags}
@@ -2086,10 +2086,10 @@ type
   HardwareRate:Word;         {driver/hardware value for this rate}
   HardwareRateShort:Word;    {driver/hardware value for this rate when short preamble is used}
  end;
-  
+
  PIEEE80211Rates = ^TIEEE80211Rates;
  TIEEE80211Rates = array[0..0] of TIEEE80211Rate;
- 
+
  PIEEE80211ChannelDefinition = ^TIEEE80211ChannelDefinition;
  TIEEE80211ChannelDefinition = record
   Channel:PIEEE80211Channel; {Control channel}
@@ -2097,7 +2097,7 @@ type
   CenterFrequency1:LongWord; {Center frequency of first segment}
   CenterFrequency2:LongWord; {Center frequency of second segment (only with 80+80 MHz)}
  end;
-  
+
  PIEEE80211StationHTCap = ^TIEEE80211StationHTCap; {802.11n HT capabilities for an STA} {From Linux cfg80211.h ieee80211_sta_ht_cap}
  TIEEE80211StationHTCap = record
   Capabilities:LongWord;     {HT capabilities map as described in 802.11n spec (eg IEEE80211_HT_CAP_*)}
@@ -2113,7 +2113,7 @@ type
   VHTSupported:LongBool;       {True if VHT supported by the STA}
   VHTMCS:TIEEE80211VHTMCSInfo; {Supported VHT MCS rates}
  end;
- 
+
  PIEEE80211SupportedBand = ^TIEEE80211SupportedBand;  {From Linux cfg80211.h ieee80211_supported_band}
  TIEEE80211SupportedBand = record
   Channels:PIEEE80211Channels;
@@ -2123,16 +2123,16 @@ type
   HTCapabilities:TIEEE80211StationHTCap;
   VHTCapabilities:TIEEE80211StationVHTCap;
  end;
- 
+
  PIEEE80211BSSConfiguration = ^TIEEE80211BSSConfiguration;
  TIEEE80211BSSConfiguration = record  {From Linux mac80211.h ieee80211_bss_conf}
   BSSID:PByte;                 {The BSSID for this BSS}
-  {Association related}        
+  {Association related}
   Associated:LongBool;         {Association status}
   IBSSJoined:LongBool;         {Indicates whether this station is part of an IBSS or not}
   IBSSCreator:LongBool;        {Indicates if a new IBSS network is being created}
   AssociationID:Word;          {Association ID number, valid only when Associated is true}
-  {ERP related}                
+  {ERP related}
   UseCTSProtection:LongBool;   {Use CTS protection}
   UseShortPreamble:LongBool;   {Use 802.11b short preamble (if the hardware cannot handle this it must set the IEEE80211_HW_2GHZ_SHORT_PREAMBLE_INCAPABLE flag)}
   UseShortSlot:LongBool;       {Use short slot time (only relevant for ERP) (if the hardware cannot handle this it must set the IEEE80211_HW_2GHZ_SHORT_SLOT_INCAPABLE flag)}
@@ -2162,7 +2162,7 @@ type
   TXPowerType:LongWord;        {TX power adjustment used to control per packet Transmit Power Control (TPC) in driver for the current interface (WIFI_TX_POWER_*)}
   P2PNOAAttribute:TIEEE80211P2PNOAAttribute; {P2P NoA attribute for P2P powersave}
  end;
- 
+
  PIEEE80211RXStatus = ^TIEEE80211RXStatus;
  TIEEE80211RXStatus = record  {From Linux mac80211.h ieee80211_rx_status}
   MACTime:Int64;            {Value in microseconds of the 64-bit Time Synchronization Function (TSF) timer when the first data symbol (MPDU) arrived at the hardware}
@@ -2176,27 +2176,27 @@ type
   RXFlags:Byte;             {Internal RX flags (IEEE80211_RX_*)}
   Band:Byte;                {The active band when this frame was received}
   Antenna:Byte;             {Antenna used}
-  Signal:Byte;              {Signal strength when receiving this frame, either in dBm, in dB or	unspecified depending on the hardware capabilities flags IEEE80211_HW_SIGNAL_*}
+  Signal:Byte;              {Signal strength when receiving this frame, either in dBm, in dB or    unspecified depending on the hardware capabilities flags IEEE80211_HW_SIGNAL_*}
   Chains:Byte;              {Bitmask of receive chains for which separate signal strength values were filled}
   ChainSignal:array[0..IEEE80211_MAX_CHAINS - 1] of Byte; {Per-chain signal strength, in dBm (unlike Signal, doesn't support dB or unspecified units)}
   AMPDUDelimiterCRC:Byte;   {A-MPDU delimiter CRC}
  end;
- 
+
  PIEEE80211TXInfo = ^TIEEE80211TXInfo;
  TIEEE80211TXInfo = record  {From Linux mac80211.h ieee80211_tx_info}
   //To Do //From ieee80211_tx_info
  end;
- 
+
  PIEEE80211InformationElements = ^TIEEE80211InformationElements;  {From Linux ieee80211_i.h ieee802_11_elems}
  TIEEE80211InformationElements = record
   Address:Pointer;
   Size:LongWord;
-  
+
   {Information Elements}
   LinkIdentifier:PIEEE80211TDLSLinkIdentifierIE;
   ChannelSwitchTiming:PIEEE80211ChannelSwitchTiming;
   ExtendedCapabilities:Pointer;
-  SSID:Pointer; 
+  SSID:Pointer;
   SupportedRates:Pointer;
   DSParameters:Pointer;
   TrafficIndicationMap:PIEEE80211TrafficIndicationMapIE;
@@ -2206,7 +2206,7 @@ type
   ExtendedSupportedRates:Pointer;
   WMMInfo:Pointer;
   WMMParam:Pointer;
-  HTCapabilities:PIEEE80211HTCapabilities; 
+  HTCapabilities:PIEEE80211HTCapabilities;
   HTOperation:PIEEE80211HTOperation;
   VHTCapabilities:PIEEE80211VHTCapabilities;
   VHTOperation:PIEEE80211VHTOperation;
@@ -2228,25 +2228,25 @@ type
   OpmodeNotification:Pointer;
   SecondaryChannelOffset:PIEEE80211SecondaryChannelOffsetIE;
   MeshChannelSwitchParams:PIEEE80211MeshChannelSwitchParamsIE;
-  
+
   {Lengths of Elements}
   ExtendedCapabilitiesLength:Byte;
   SSIDLength:Byte;
   SupportedRatesLength:Byte;
-  TrafficIndicationMapLength:Byte; 
-  ChallengeTextLength:Byte; 
+  TrafficIndicationMapLength:Byte;
+  ChallengeTextLength:Byte;
   RSNLength:Byte;
   ExtendedSupportedRatesLength:Byte;
-  WMMInfoLength:Byte; 
-  WMMParamLength:Byte; 
-  MeshIDLength:Byte; 
-  PeerManagementLength:Byte; 
-  PREQLength:Byte; 
-  PREPLength:Byte; 
-  PERRLength:Byte; 
+  WMMInfoLength:Byte;
+  WMMParamLength:Byte;
+  MeshIDLength:Byte;
+  PeerManagementLength:Byte;
+  PREQLength:Byte;
+  PREPLength:Byte;
+  PERRLength:Byte;
   CountryLength:Byte;
  end;
- 
+
 {==============================================================================}
 type
  {WiFi specific types}
@@ -2255,7 +2255,7 @@ type
   Timer:TTimerHandle;
   Device:PNetworkDevice;
  end;
- 
+
  {WiFi Hardware}
  PWiFiHardware = ^TWiFiHardware;
  TWiFiHardware = record
@@ -2271,7 +2271,7 @@ type
   MaxTXAggregationSubframes:LongWord; {Maximum number of subframes in an aggregate an HT driver will transmit, used by the peer as a hint to size its reorder buffer}
   //To Do //From ieee80211_hw
  end;
- 
+
  {WiFi Configuration}
  PWiFiConfiguration = ^TWiFiConfiguration;
  TWiFiConfiguration = record
@@ -2285,46 +2285,46 @@ type
   ChannelDefinition:TIEEE80211ChannelDefinition; {The channel definition to tune to}
   //To Do //From ieee80211_conf
  end;
- 
+
  {WiFi Interface}
  PWiFiInterface = ^TWiFiInterface;
  TWiFiInterface = record
   InterfaceType:LongWord;                      {Type of this virtual interface (WIFI_IFTYPE_*)}
   Address:THardwareAddress;                    {Address of this interface}
   BSSConfiguration:TIEEE80211BSSConfiguration; {BSS configuration for this interface, either our own or the BSS we're associated to}
-  
+
   DriverFlags:LongWord;                        {Interface specific flags (IEEE80211_VIF_*)}
   //To Do //From ieee80211_vif and ieee80211_sub_if_data
  end;
- 
+
  {WiFi Device}
  PWiFiDevice = ^TWiFiDevice;
- 
+
  {WiFi Device Methods}
  TWiFiDeviceConfigure = function(WiFi:PWiFiDevice;Flags:LongWord):LongWord;
  TWiFiDeviceConfigureFilter = function(WiFi:PWiFiDevice;var Filter:LongWord):LongWord;
  TWiFiDeviceConfigureInterface = function(WiFi:PWiFiDevice;Interrface:PWiFiInterface):LongWord;
  //To Do
- 
+
  TWiFiDevice = record
   {Network Properties}
   Network:TNetworkDevice;
   {WiFi Properties}
   WiFiFlags:LongWord;                 {Flags for this WiFi device (eg WIFI_FLAG_*)}
   WiFiState:LongWord;                 {State of this WiFi device (eg WIFI_STATE_*)}
-  WiFiStatus:LongWord;                {Status of this WiFi device (eg WIFI_STATUS_*)}         
-  WiFiFeatures:LongWord;              {Features of this WiFi device (eg WIFI_FEATURE_*)}         
+  WiFiStatus:LongWord;                {Status of this WiFi device (eg WIFI_STATUS_*)}
+  WiFiFeatures:LongWord;              {Features of this WiFi device (eg WIFI_FEATURE_*)}
   DeviceConfigure:TWiFiDeviceConfigure;
   DeviceConfigureFilter:TWiFiDeviceConfigureFilter;
   DeviceConfigureInterface:TWiFiDeviceConfigureInterface;
-  
+
   //To Do //From wiphy
   PermanentAddress:THardwareAddress;  {The permanent MAC address of this device}
   AddressMask:THardwareAddress;       {If the device supports multiple MAC addresses by masking, set this to a mask with variable bits set to 1, e.g. if the last four bits are variable then set it to 00-00-00-00-00-0f}
   Addresses:PHardwareAddresses;       {If the device has more than one address, set this to a list of addresses (6 bytes each). The first one will be used by default for PermanentAddress. In this case, the mask should be set to all zeroes}
   AddressCount:LongWord;              {The number of addresses in Addresses array}
   InterfaceModes:LongWord;            {Bitmask of interfaces types valid for this wifi, must be set by driver (eg 1 shl WIFI_IFTYPE_*)}
-  
+
   SignalType:LongWord;                {Signal type reported in bss}
   RetryShort:LongWord;                {Retry limit for short frames (dot11ShortRetryLimit)}
   RetryLong:LongWord;                 {Retry limit for long frames (dot11LongRetryLimit)}
@@ -2332,32 +2332,32 @@ type
   RTSThreshold:LongWord;              {RTS threshold (dot11RTSThreshold); -1 = RTS/CTS disabled}
   CoverageClass:LongWord;             {Current coverage class}
   MaxCSACounters:Byte;                {Number of supported csa_counters in beacons and probe responses}
-  
+
   MaxScanSSIDs:Byte;                  {Maximum number of SSIDs the device can scan for in any given scan}
   MaxScanIELength:Word;               {Maximum length of user-controlled IEs device can add to probe request frames transmitted during a scan, must not include fixed IEs like supported rates}
 
   MaxRemainOnChannelDuration:Word;    {Maximum time a remain-on-channel operation may request, if implemented}
-  
+
   CipherSuites:PLongWord;             //To Do
   CipherSuiteCount:LongWord;
-  
+
   Bands:array[0..IEEE80211_NUM_BANDS - 1] of PIEEE80211SupportedBand;
-  
+
   //To Do //From ieee80211_local
    //To Do //Scan and BSS info
-   
+
   RXChains:LongWord;                  {Number of RX chains the hardware has}
   TXHeadroom:LongWord;                {Required headroom for hardware}
   ScanIELength:LongWord;
-  
+
   Hardware:TWiFiHardware;             {Hardware information and state}
   Configuration:TWiFiConfiguration;   {Configuration of the device}
   Interrface:TWiFiInterface;          {Interface of the device}
-  
+
   {Driver Properties}
   //To Do
- end; 
- 
+ end;
+
 {==============================================================================}
 type
  {WiFi specific classes}
@@ -2372,12 +2372,12 @@ type
    FHardwareAddress:THardwareAddress;
    FBroadcastAddress:THardwareAddress;
    FMulticastAddresses:TMulticastAddresses;
-   
+
    {Internal Methods}
    function CheckReceiveFrame(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
-   
+
    function ReceiveHandler(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
-   
+
    function ScanReceiver(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
    function DataReceiver(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
   protected
@@ -2394,7 +2394,7 @@ type
 
    function ClearStatistics(AHandle:THandle):Boolean; override;
    function GetStatistics(AHandle:THandle):TAdapterStatistics; override;
-   
+
    function GetDefaultAddress(AHandle:THandle):THardwareAddress; override;
    function GetHardwareAddress(AHandle:THandle):THardwareAddress; override;
    function SetHardwareAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
@@ -2403,33 +2403,33 @@ type
 
    function AddMulticastAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
    function RemoveMulticastAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
-   
+
    function StartAdapter:Boolean; override;
    function StopAdapter:Boolean; override;
    function ProcessAdapter:Boolean; override;
-   
+
    function CompareDefault(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
    function CompareHardware(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
    function CompareBroadcast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
    function CompareMulticast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; override;
  end;
- 
+
  TEAPOLTransportAdapter = class(TTransportAdapter)
    constructor Create;
   private
    {Internal Variables}
-   
+
   public
    {Status Variables}
-   
+
  end;
- 
+
  TEAPOLTransport = class(TNetworkTransport)
    constructor Create(AManager:TTransportManager;const AName:String);
    destructor Destroy; override;
   private
    {Internal Variables}
- 
+
    {Status Variables}
 
    {Internal Methods}
@@ -2439,7 +2439,7 @@ type
    {Inherited Methods}
 
    {Internal Methods}
-   
+
   public
    {Public Methods}
    function AddAdapter(AAdapter:TNetworkAdapter;AConfigType:Word;AAddress,ANetmask,AGateway,AServer:Pointer):Boolean; override;
@@ -2451,7 +2451,7 @@ type
 
    function BindTransport(AAdapter:TNetworkAdapter):Boolean; override;
    function UnbindTransport(AAdapter:TNetworkAdapter):Boolean; override;
-   
+
    {EAPOL Methods}
    //To Do
  end;
@@ -2460,18 +2460,18 @@ type
    constructor Create;
   private
    {Internal Variables}
-   
+
   public
    {Status Variables}
-   
+
  end;
- 
+
  TRSNTransport = class(TNetworkTransport)
    constructor Create(AManager:TTransportManager;const AName:String);
    destructor Destroy; override;
   private
    {Internal Variables}
- 
+
    {Status Variables}
 
    {Internal Methods}
@@ -2481,7 +2481,7 @@ type
    {Inherited Methods}
 
    {Internal Methods}
-   
+
   public
    {Public Methods}
    function AddAdapter(AAdapter:TNetworkAdapter;AConfigType:Word;AAddress,ANetmask,AGateway,AServer:Pointer):Boolean; override;
@@ -2493,15 +2493,15 @@ type
 
    function BindTransport(AAdapter:TNetworkAdapter):Boolean; override;
    function UnbindTransport(AAdapter:TNetworkAdapter):Boolean; override;
-   
+
    {RSN Methods}
    //To Do
  end;
- 
+
 {==============================================================================}
 {var}
  {WiFi specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure WiFiInit;
@@ -2514,7 +2514,7 @@ function WiFiStartCompleted:Boolean;
 {WiFi Functions}
 function WiFiDeviceConfigure(WiFi:PWiFiDevice;Flags:LongWord):LongWord;
 function WiFiDeviceConfigureFilter(WiFi:PWiFiDevice;var Filter:LongWord):LongWord;
-function WiFiDeviceConfigureInterface(WiFi:PWiFiDevice;Interrface:PWiFiInterface):LongWord; 
+function WiFiDeviceConfigureInterface(WiFi:PWiFiDevice;Interrface:PWiFiInterface):LongWord;
 
 //To Do //WiFiDeviceSetState/WiFiDeviceSetStatus
 
@@ -2617,7 +2617,7 @@ var
  {WiFi specific variables}
  WiFiInitialized:Boolean;
  WiFiStarted:Boolean;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TWiFiAdapter}
@@ -2642,79 +2642,79 @@ function TWiFiAdapter.CheckReceiveFrame(APacket:PNetworkPacket;AStatus:PIEEE8021
 begin
  {}
  Result:=False;
- 
- {Check Packet} 
+
+ {Check Packet}
  if APacket = nil then Exit;
- 
+
  {Check Status}
  if AStatus = nil then Exit;
- 
+
  {Check Frame Errors}
  if (AStatus.Flags and (WIFI_RX_FLAG_FAILED_FCS_CRC or WIFI_RX_FLAG_FAILED_PLCP_CRC or WIFI_RX_FLAG_AMPDU_IS_ZEROLEN)) <> 0 then Exit;
- 
+
  {Check Frame Size}
  if APacket.Length < 16 then Exit;
- 
+
  {Check Control Frames}
  if IEEE80211IsCtl(PIEEE80211Header(APacket.Data).FrameControl) and not(IEEE80211IsPSPoll(PIEEE80211Header(APacket.Data).FrameControl)) and not(IEEE80211IsBackReq(PIEEE80211Header(APacket.Data).FrameControl)) then Exit;
- 
+
  Result:=True;
 end;
- 
+
 {==============================================================================}
- 
+
 function TWiFiAdapter.ReceiveHandler(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
 {__ieee80211_rx_handle_packet / ieee80211_prepare_and_rx_handle}
 var
  FrameType:Word;
  PacketType:Word;
  FrameControl:Word;
- Transport:TAdapterTransport; 
+ Transport:TAdapterTransport;
 begin
  {}
  Result:=False;
- 
- {Check Packet} 
+
+ {Check Packet}
  if APacket = nil then Exit;
- 
+
  {Check Status}
  if AStatus = nil then Exit;
- 
+
  {Get Frame Control}
  FrameControl:=PIEEE80211Header(APacket.Data).FrameControl;
 
  {$IFDEF WIFI_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Receiving Frame (FrameControl=' + IntToHex(FrameControl,4) + ')');
  {$ENDIF}
- 
+
  {Check Management}
  if IEEE80211IsMgmt(FrameControl) then
   begin
    {Check Length (Drop if too short)}
    if APacket.Length < IEEE80211HeaderLength(FrameControl) then Exit;
   end;
- 
+
  {Check Beacon / Probe Response}
  if IEEE80211IsProbeResp(FrameControl) or IEEE80211IsBeacon(FrameControl) then
   begin
    Result:=ScanReceiver(APacket,AStatus);
   end;
-  
+
  {Check Data}
  if IEEE80211IsData(FrameControl) then
   begin
    Result:=DataReceiver(APacket,AStatus);
   end
  else
-  begin 
- 
+  begin
+
    //To Do //Continuing //ieee80211_prepare_and_rx_handle
-   
-  end; 
+
+  end;
 end;
- 
+
 {==============================================================================}
- 
+
 function TWiFiAdapter.ScanReceiver(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
 {ieee80211_scan_rx}
 var
@@ -2725,10 +2725,10 @@ var
 begin
  {}
  Result:=False;
- 
- {Check Packet} 
+
+ {Check Packet}
  if APacket = nil then Exit;
- 
+
  {Check Status}
  if AStatus = nil then Exit;
 
@@ -2738,7 +2738,7 @@ begin
 
  {Get Management}
  Management:=PIEEE80211Management(APacket.Data);
- 
+
  {Check Length (Drop if too short)}
  if APacket.Length < 24 then Exit;
 
@@ -2750,30 +2750,30 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: BSSID=' + HardwareAddressToString(Management.BSSID));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: SequenceControl=' + IntToHex(Management.SequenceControl,4));
  {$ENDIF}
- 
+
  {Check Type}
  if IEEE80211IsProbeResp(Management.FrameControl) then
   begin
    {Elements Buffer}
    Buffer:=@Management.ProbeResponse.Variable;
-   
+
    {Elements Offset}
    Offset:=PtrUInt(Buffer) - PtrUInt(Management);
-   
+
    {$IFDEF WIFI_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: ProbeResponse.Timestamp=' + IntToHex(Management.ProbeResponse.Timestamp,16));
    if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: ProbeResponse.BeaconInterval=' + IntToHex(Management.ProbeResponse.BeaconInterval,4));
    if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: ProbeResponse.CapabilitiesInfo=' + IntToHex(Management.ProbeResponse.CapabilitiesInfo,4));
    {$ENDIF}
   end
- else if IEEE80211IsBeacon(Management.FrameControl) then 
+ else if IEEE80211IsBeacon(Management.FrameControl) then
   begin
    {Elements Buffer}
    Buffer:=@Management.Beacon.Variable;
-  
+
    {Elements Offset}
    Offset:=PtrUInt(Buffer) - PtrUInt(Management);
-   
+
    {$IFDEF WIFI_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Beacon.Timestamp=' + IntToHex(Management.Beacon.Timestamp,16));
    if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Beacon.BeaconInterval=' + IntToHex(Management.Beacon.BeaconInterval,4));
@@ -2784,24 +2784,24 @@ begin
   begin
    {Invalid}
    Exit;
-  end;  
- 
+  end;
+
  {Check Offset}
  if Offset > APacket.Length then Exit;
- 
+
  {Parse Elements}
  if not IEEE80211ParseInformationElements(Buffer + Offset,APacket.Length - Offset,False,@Elements) then Exit;
- 
+
  //check Offset ? - Done
  if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Offset=' + IntToStr(Offset));
- 
+
  //To Do //Continuing //ieee802_11_parse_elems
- 
+
  //To Do //Continuing
- 
+
  Result:=True;
 end;
- 
+
 {==============================================================================}
 
 function TWiFiAdapter.DataReceiver(APacket:PNetworkPacket;AStatus:PIEEE80211RXStatus):Boolean;
@@ -2809,34 +2809,34 @@ function TWiFiAdapter.DataReceiver(APacket:PNetworkPacket;AStatus:PIEEE80211RXSt
 begin
  {}
  Result:=False;
- 
- {Check Packet} 
+
+ {Check Packet}
  if APacket = nil then Exit;
- 
+
  {Check Status}
  if AStatus = nil then Exit;
 
  {$IFDEF WIFI_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Data Receive');
  {$ENDIF}
- 
+
  //To Do //Continuing
 end;
- 
+
 {==============================================================================}
 
-procedure TWiFiAdapter.SetStatus(AStatus:Integer); 
+procedure TWiFiAdapter.SetStatus(AStatus:Integer);
 begin
  {}
  {Check State}
  if FState <> ADAPTER_STATE_ENABLED then Exit;
- 
+
  {Check Status}
  case AStatus of
   ADAPTER_STATUS_DOWN:begin
     {Set Status}
     FStatus:=AStatus;
-    
+
     {$IFDEF NETWORK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: Status = ADAPTER_STATUS_DOWN');
     {$ENDIF}
@@ -2844,17 +2844,17 @@ begin
   ADAPTER_STATUS_UP:begin
     {Check Device}
     //To Do //Check Device status before allowing ADAPTER_STATUS_UP
-    
+
     {Set Status}
     FStatus:=AStatus;
-    
+
     {$IFDEF NETWORK_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: Status = ADAPTER_STATUS_UP');
     {$ENDIF}
-   end;  
+   end;
  end;
 end;
- 
+
 {==============================================================================}
 
 function TWiFiAdapter.AddTransport(APacketType,AFrameType:Word;const APacketName:String;APacketHandler:TAdapterPacketHandler):THandle;
@@ -2865,26 +2865,26 @@ begin
  ReaderLock;
  try
   Result:=INVALID_HANDLE_VALUE;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: AddTransport (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Packet = ' + PacketTypeToString(APacketType));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Frame = ' + FrameTypeToString(AFrameType));
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Name = ' + APacketName);
   {$ENDIF}
-  
+
   {Check State}
   if FState = ADAPTER_STATE_DISABLED then Exit;
-  
+
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   {Get Transport}
   Transport:=TAdapterTransport(GetTransportByType(APacketType,AFrameType,False,NETWORK_LOCK_NONE)); {Do not lock}
   if Transport <> nil then Exit;
- 
+
   {Check Frame Type}
-  case AFrameType of 
+  case AFrameType of
    FRAME_TYPE_ETHERNET_II:begin //To Do //Continuing //FRAME_TYPE_ETHERNET_8022
      {Check Media Type}
      if FMediaType <> MEDIA_TYPE_ETHERNET then Exit;
@@ -2895,31 +2895,31 @@ begin
      Exit;
     end;
   end;
-  
+
   {Create Transport}
   Transport:=TAdapterTransport.Create;
   Transport.FrameType:=AFrameType;
   Transport.PacketType:=APacketType;
   Transport.PacketName:=APacketName;
   Transport.PacketHandler:=APacketHandler;
- 
+
   {Acquire Lock}
   FTransports.WriterLock;
   try
    {Add Transport}
    FTransports.Add(Transport);
- 
+
    {Return Result}
    Result:=THandle(Transport);
   finally
    {Release Lock}
    FTransports.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-    
+
 {==============================================================================}
 
 function TWiFiAdapter.RemoveTransport(AHandle:THandle;APacketType:Word):Boolean;
@@ -2930,7 +2930,7 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: RemoveTransport (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -2939,40 +2939,40 @@ begin
 
   {Check State}
   if FState = ADAPTER_STATE_DISABLED then Exit;
-  
+
   {Get Transport}
   Transport:=TAdapterTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Transport = nil then Exit;
-  
+
   {Check Transport}
   if Transport.PacketType <> APacketType then
    begin
     {Unlock Transport}
     Transport.WriterUnlock;
     Exit;
-   end; 
-  
+   end;
+
   {Acquire Lock}
   FTransports.WriterLock;
   try
    {Remove Transport}
    FTransports.Remove(Transport);
-  
+
    {Unlock Transport}
    Transport.WriterUnlock;
-  
+
    {Destroy Transport}
    Transport.Free;
- 
+
    {Return Result}
    Result:=True;
   finally
    {Release Lock}
    FTransports.WriterUnlock;
-  end;  
- finally 
+  end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -2985,7 +2985,7 @@ begin
  ReaderLock;
  try
   Result:=0;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: GetMTU (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -2999,14 +2999,14 @@ begin
 
   {Get Device MTU}
   if NetworkDeviceControl(FDevice,NETWORK_CONTROL_GET_MTU,0,Value) <> ERROR_SUCCESS then Exit; //To Do
- 
+
   {Return Result}
   Result:=Value;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-    
+
 {==============================================================================}
 
 function TWiFiAdapter.SendPacket(AHandle:THandle;ADest:Pointer;APacket:PPacketFragment;ASize:Integer):Boolean;
@@ -3022,41 +3022,41 @@ var
 begin
  {}
  Result:=False;
-  
+
  {$IFDEF WIFI_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: SendPacket (' + Name + ')');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Size = ' + IntToStr(ASize));
  {$ENDIF}
-  
+
  {Check Dest}
  if ADest = nil then Exit;
-  
+
  {Check Packet}
  if APacket = nil then Exit;
 
  {Check State}
  if FState = ADAPTER_STATE_DISABLED then Exit;
- 
+
  {Check Device}
  if FDevice = nil then Exit;
- 
+
  {Check Flags}
  if (FDevice.Device.DeviceFlags and NETWORK_FLAG_TX_BUFFER) = 0 then Exit;
- 
+
  {Get Transport}
  Transport:=TAdapterTransport(GetTransportByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Transport = nil then Exit;
  try
   //To Do //Continuing
- finally 
+ finally
   Transport.ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TWiFiAdapter.ClearStatistics(AHandle:THandle):Boolean; 
+function TWiFiAdapter.ClearStatistics(AHandle:THandle):Boolean;
 begin
  {}
  ReaderLock;
@@ -3073,16 +3073,16 @@ begin
 
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   //To Do //NETWORK_CONTROL_CLEAR_STATS
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TWiFiAdapter.GetStatistics(AHandle:THandle):TAdapterStatistics; 
+function TWiFiAdapter.GetStatistics(AHandle:THandle):TAdapterStatistics;
 begin
  {}
  ReaderLock;
@@ -3099,40 +3099,40 @@ begin
 
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   //To Do //NETWORK_CONTROL_GET_STATS
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TWiFiAdapter.GetDefaultAddress(AHandle:THandle):THardwareAddress; 
+function TWiFiAdapter.GetDefaultAddress(AHandle:THandle):THardwareAddress;
 begin
  {}
  ReaderLock;
  try
   FillChar(Result,SizeOf(THardwareAddress),0);
- 
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: GetDefaultAddress (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
   {$ENDIF}
- 
+
   {Check State}
   if FState = ADAPTER_STATE_DISABLED then Exit;
 
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   {Return Result}
   Result:=HARDWARE_DEFAULT;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-    
+
 {==============================================================================}
 
 function TWiFiAdapter.GetHardwareAddress(AHandle:THandle):THardwareAddress;
@@ -3143,7 +3143,7 @@ begin
  ReaderLock;
  try
   FillChar(Result,SizeOf(THardwareAddress),0);
- 
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: GetHardwareAddress (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -3151,17 +3151,17 @@ begin
 
   {Check State}
   if FState = ADAPTER_STATE_DISABLED then Exit;
-  
+
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   {Get Hardware Address}
   NetworkDeviceControl(FDevice,NETWORK_CONTROL_GET_HARDWARE,PtrUInt(@Result),Value);
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-    
+
 {==============================================================================}
 
 function TWiFiAdapter.SetHardwareAddress(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
@@ -3172,7 +3172,7 @@ begin
  WriterLock;
  try
   Result:=False;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: SetHardwareAddress (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -3181,23 +3181,23 @@ begin
 
   {Check State}
   if FState = ADAPTER_STATE_DISABLED then Exit;
-  
+
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   {Set Hardware Address}
   if NetworkDeviceControl(FDevice,NETWORK_CONTROL_SET_MAC,PtrUInt(@AAddress),Value) = ERROR_SUCCESS then
    begin
     FHardwareAddress:=AAddress;
-   
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
-    
+
 {==============================================================================}
 
 function TWiFiAdapter.GetBroadcastAddress(AHandle:THandle):THardwareAddress;
@@ -3208,7 +3208,7 @@ begin
  ReaderLock;
  try
   FillChar(Result,SizeOf(THardwareAddress),0);
- 
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: GetBroadcastAddress (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -3219,14 +3219,14 @@ begin
 
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   {Get Hardware Address}
   NetworkDeviceControl(FDevice,NETWORK_CONTROL_GET_BROADCAST,PtrUInt(@Result),Value);
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-    
+
 {==============================================================================}
 
 function TWiFiAdapter.GetMulticastAddresses(AHandle:THandle):TMulticastAddresses;
@@ -3235,7 +3235,7 @@ begin
  ReaderLock;
  try
   FillChar(Result,SizeOf(TMulticastAddresses),0);
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: GetMulticastAddresses (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -3246,11 +3246,11 @@ begin
 
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   //To Do //NETWORK_CONTROL_GET_MULTICAST
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3261,7 +3261,7 @@ begin
  WriterLock;
  try
   Result:=False;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: AddMulticastAddress (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -3273,11 +3273,11 @@ begin
 
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   //To Do //NETWORK_CONTROL_ADD_MULTICAST
- finally 
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3288,7 +3288,7 @@ begin
  WriterLock;
  try
   Result:=False;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: RemoveMulticastAddress (' + Name + ')');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter:  Handle = ' + IntToHex(AHandle,8));
@@ -3300,13 +3300,13 @@ begin
 
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   //To Do //NETWORK_CONTROL_DEL_MULTICAST
- finally 
+ finally
   WriterUnlock;
- end; 
+ end;
 end;
-    
+
 {==============================================================================}
 
 function TWiFiAdapter.StartAdapter:Boolean;
@@ -3317,83 +3317,83 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: StartAdapter (' + Name + ')');
   {$ENDIF}
-  
+
   {Check State}
   if FState <> ADAPTER_STATE_DISABLED then Exit;
-  
+
   {Check Device}
   if FDevice = nil then Exit;
-   
+
   {Check Media Type}
   case FDevice.Device.DeviceType of
    NETWORK_TYPE_80211:FMediaType:=MEDIA_TYPE_ETHERNET;
   end;
-  if FMediaType = MEDIA_TYPE_UNKNOWN then Exit;   
-  
+  if FMediaType = MEDIA_TYPE_UNKNOWN then Exit;
+
   {Check Flags}
   if (FDevice.Device.DeviceFlags and NETWORK_FLAG_RX_BUFFER) = 0 then Exit;
   if (FDevice.Device.DeviceFlags and NETWORK_FLAG_TX_BUFFER) = 0 then Exit;
-  
+
   //To Do //See ieee80211_do_open for other stuff (IFTYPES etc)
-  
+
   {Open Device}
   if NetworkDeviceOpen(FDevice) = ERROR_SUCCESS then
    begin
     {Default Flags (Configure all)}
     ConfigurationFlags:=LongWord(not(0));
-    
+
     {Copy Permanent Address} //To Do //Check for Address is zero (Default) (To allow specifying from config or Manager.Settings as per WiredAdapter)
     System.Move(PWiFiDevice(FDevice).PermanentAddress,PWiFiDevice(FDevice).Interrface.Address,SizeOf(THardwareAddress));
-   
+
     {Configure Interface}
     if WiFiDeviceConfigureInterface(PWiFiDevice(FDevice),@PWiFiDevice(FDevice).Interrface) <> ERROR_SUCCESS then
      begin
       NetworkDeviceClose(FDevice);
       Exit;
      end;
-    
+
     {Configure Device}
     if WiFiDeviceConfigure(PWiFiDevice(FDevice),ConfigurationFlags) <> ERROR_SUCCESS then
      begin
       NetworkDeviceClose(FDevice);
       Exit;
      end;
-     
+
     //To Do
-    
+
     {Set State}
     FState:=ADAPTER_STATE_ENABLED;
-    
+
     {Get Properties}
     FDefaultAddress:=GetDefaultAddress(INVALID_HANDLE_VALUE);
     FHardwareAddress:=GetHardwareAddress(INVALID_HANDLE_VALUE);
-    FBroadcastAddress:=GetBroadcastAddress(INVALID_HANDLE_VALUE); 
-    FMulticastAddresses:=GetMulticastAddresses(INVALID_HANDLE_VALUE); 
+    FBroadcastAddress:=GetBroadcastAddress(INVALID_HANDLE_VALUE);
+    FMulticastAddresses:=GetMulticastAddresses(INVALID_HANDLE_VALUE);
 
     {Set Status (Down until Associated)}
     FStatus:=ADAPTER_STATUS_DOWN;
-    
+
     {Create Thread}
     FThread:=TAdapterThread.Create(Self);
     {FThread.FreeOnTerminate:=True;} {Freed by StopAdapter}
-  
+
     {Start Thread}
     FThread.Start;
-  
+
     {Return Result}
     Result:=True;
-   end; 
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
-    
+
 function TWiFiAdapter.StopAdapter:Boolean;
 var
  ResultCode:LongWord;
@@ -3404,22 +3404,22 @@ begin
  ReaderLock;
  try
   Result:=False;
-   
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFiAdapter: StopAdapter (' + Name + ')');
   {$ENDIF}
 
   {Check State}
   if FState <> ADAPTER_STATE_ENABLED then Exit;
-  
+
   {Check Device}
   if FDevice = nil then Exit;
-  
+
   {Check Thread}
   if FThread = nil then Exit;
-    
+
   //To Do //See ieee80211_do_stop
-  
+
   {Close Device}
   ResultCode:=NetworkDeviceClose(FDevice);
   if (ResultCode = ERROR_SUCCESS) or (ResultCode = ERROR_NOT_OPEN) then
@@ -3432,11 +3432,11 @@ begin
 
     {Wait For Thread}
     FThread.WaitFor;
-  
+
     {Destroy Thread}
     FThread.Free;
     FThread:=nil;
-  
+
     {Get Transport}
     Transport:=TAdapterTransport(GetTransportByNext(nil,True,False,NETWORK_LOCK_READ));
     while Transport <> nil do
@@ -3444,14 +3444,14 @@ begin
       {Get Next}
       Current:=Transport;
       Transport:=TAdapterTransport(GetTransportByNext(Current,True,True,NETWORK_LOCK_READ));
-    
+
       {Remove Transport}
       RemoveTransport(THandle(Current),Current.PacketType);
      end;
-  
+
     {Reset Status}
     FStatus:=ADAPTER_STATUS_DOWN;
-  
+
     {Reset Properties}
     FillChar(FDefaultAddress,SizeOf(THardwareAddress),0);
     FillChar(FHardwareAddress,SizeOf(THardwareAddress),0);
@@ -3460,15 +3460,15 @@ begin
 
     {Reset State}
     FState:=ADAPTER_STATE_DISABLED;
-    
+
     {Return Result}
     Result:=True;
-   end; 
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
-    
+
 {==============================================================================}
 
 function TWiFiAdapter.ProcessAdapter:Boolean;
@@ -3482,19 +3482,19 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check State}
  if FState = ADAPTER_STATE_DISABLED then Exit;
 
  {Check Device}
  if FDevice = nil then Exit;
- 
+
  {Check Thread}
  if FThread = nil then Exit;
 
  {Check Flags}
  if (FDevice.Device.DeviceFlags and NETWORK_FLAG_RX_BUFFER) = 0 then Exit;
- 
+
  {Receive Buffer}
  if NetworkBufferReceive(FDevice,Entry) = ERROR_SUCCESS then
   begin
@@ -3502,30 +3502,30 @@ begin
     {$IFDEF WIFI_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: ProcessAdapter (' + Name + ')');
     {$ENDIF}
- 
+
     {Get Packet}
     Packet:=@Entry.Packets[0]; //To Do //Multiple packets per entry
-    
+
     {$IFDEF WIFI_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Packet Length = ' + IntToStr(Packet.Length));
     {$ENDIF}
-    
+
     {Get Status}
     Status:=PIEEE80211RXStatus(Entry.DriverData);
-    
+
     {$IFDEF WIFI_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Status.Band = ' + IntToStr(Status.Band));
     {$ENDIF}
-    
+
     {Check Band}
     if Status.Band >= IEEE80211_NUM_BANDS then Exit;
-    
+
     {Get Band}
     SupportedBand:=PWiFiDevice(FDevice).Bands[Status.Band];
     if SupportedBand = nil then Exit;
-    
+
     //To Do //Continuing //Check Reconfig/Quiescing/Suspended ? //ieee80211_rx
-    
+
     {Check Status}
     Rate:=nil;
     if (Status.Flags and WIFI_RX_FLAG_FAILED_PLCP_CRC) = 0 then
@@ -3534,17 +3534,17 @@ begin
       if (Status.Flags and WIFI_RX_FLAG_HT) <> 0 then
        begin
         {RateIndex is MCS index, which can be [0-76] as documented on:
-        
+
          http://wireless.kernel.org/en/developers/Documentation/ieee80211/802.11n
-        
+
          Anything else would be some sort of driver or hardware error}
         if Status.RateIndex > 76 then
-         begin        
+         begin
           if NETWORK_LOG_ENABLED then NetworkLogError(FDevice,'WiFiAdapter: HT rate not in MCS index range [0-76] (RateIndex= ' + IntToStr(Status.RateIndex) + ')');
           Exit;
          end;
        end
-      else if (Status.Flags and WIFI_RX_FLAG_VHT) <> 0 then 
+      else if (Status.Flags and WIFI_RX_FLAG_VHT) <> 0 then
        begin
         if (Status.RateIndex > 9) or (Status.VHTNSS = 0) or (Status.VHTNSS > 8) then
          begin
@@ -3559,18 +3559,18 @@ begin
           if NETWORK_LOG_ENABLED then NetworkLogError(FDevice,'WiFiAdapter: Rate index exceeds supported rate count (RateIndex= ' + IntToStr(Status.RateIndex) + ')');
           Exit;
          end;
-        
+
         {Get Rate}
         Rate:=@SupportedBand.Rates[Status.RateIndex];
-       end;       
+       end;
      end;
-    
+
     //To Do //Continuing //ieee80211_rx_monitor //radiotap not supported yet //Add TAdapterMonitor class
-    
+
     if CheckReceiveFrame(Packet,Status) then
      begin
       //To Do //Continuing //ieee80211_tpt_led_trig_rx
-      
+
       {Call Receive Handler}
       ReceiveHandler(Packet,Status);
      end
@@ -3580,19 +3580,19 @@ begin
       if NETWORK_LOG_ENABLED then NetworkLogDebug(FDevice,'WiFiAdapter: Dropping received frame (FrameControl=' + IntToHex(PIEEE80211Header(Packet.Data).FrameControl,4) + ' Length=' + IntToStr(Packet.Length) +')');
       {$ENDIF}
      end;
-     
+
     {Return Result}
     Result:=True;
    finally
     {Release Buffer}
     NetworkBufferRelease(FDevice,Entry);
    end;
-  end; 
+  end;
 end;
- 
+
  {==============================================================================}
 
-function TWiFiAdapter.CompareDefault(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+function TWiFiAdapter.CompareDefault(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
 begin
  {}
  Result:=CompareAddress(AAddress,FDefaultAddress);
@@ -3600,7 +3600,7 @@ end;
 
 {==============================================================================}
 
-function TWiFiAdapter.CompareHardware(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+function TWiFiAdapter.CompareHardware(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
 begin
  {}
  Result:=CompareAddress(AAddress,FHardwareAddress);
@@ -3608,7 +3608,7 @@ end;
 
 {==============================================================================}
 
-function TWiFiAdapter.CompareBroadcast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+function TWiFiAdapter.CompareBroadcast(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
 begin
  {}
  Result:=CompareAddress(AAddress,FBroadcastAddress);
@@ -3616,7 +3616,7 @@ end;
 
 {==============================================================================}
 
-function TWiFiAdapter.CompareMulticast(AHandle:THandle;const AAddress:THardwareAddress):Boolean; 
+function TWiFiAdapter.CompareMulticast(AHandle:THandle;const AAddress:THardwareAddress):Boolean;
 var
  Count:Integer;
 begin
@@ -3636,7 +3636,7 @@ begin
  {}
  inherited Create;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TEAPOLTransport}
@@ -3652,7 +3652,7 @@ end;
 
 {==============================================================================}
 
-destructor TEAPOLTransport.Destroy; 
+destructor TEAPOLTransport.Destroy;
 begin
  {}
  WriterLock;
@@ -3661,7 +3661,7 @@ begin
  finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3679,12 +3679,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF WIFI_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL: PacketHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Adapter}
  Adapter:=TEAPOLTransportAdapter(GetAdapterByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Adapter = nil then Exit;
@@ -3692,20 +3692,20 @@ begin
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL:  PacketType = ' + PacketTypeToString(Adapter.PacketType));
   {$ENDIF}
- 
+
   {Check Packet Type}
   case Adapter.PacketType of
    PACKET_TYPE_EAPOL:begin
-    
+
      //To Do
 
     end;
   end;
- finally 
+ finally
   Adapter.ReaderUnlock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
 function TEAPOLTransport.AddAdapter(AAdapter:TNetworkAdapter;AConfigType:Word;AAddress,ANetmask,AGateway,AServer:Pointer):Boolean;
@@ -3724,18 +3724,18 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL: AddAdapter');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL:  Config = ' + ConfigTypeToString(AConfigType));
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
 
   {Check State}
   if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
-  
+
   {Get Adapter}
   Adapter:=TEAPOLTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
   if Adapter = nil then
@@ -3756,34 +3756,34 @@ begin
       Adapter.ConfigType:=CONFIG_TYPE_AUTO;
       Adapter.Configured:=True;
       Adapter.Configuring:=False;
-      
+
       {Acquire Lock}
       FAdapters.WriterLock;
       try
        {Add Adapter}
        FAdapters.Add(Adapter);
-      
+
        {Return Result}
        Result:=True;
       finally
        {Release Lock}
        FAdapters.WriterUnlock;
-      end;  
+      end;
      end;
    end
   else
    begin
     {Unlock Adapter}
     Adapter.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
 function TEAPOLTransport.RemoveAdapter(AAdapter:TNetworkAdapter):Boolean;
@@ -3796,18 +3796,18 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL: RemoveAdapter');
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
- 
+
   {Get Adapter}
   Adapter:=TEAPOLTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Adapter = nil then Exit;
-  
+
   {Remove EAPOL Type}
   if AAdapter.RemoveTransport(Adapter.Handle,Adapter.PacketType) then
    begin
@@ -3816,23 +3816,23 @@ begin
     try
      {Remove Adapter}
      FAdapters.Remove(Adapter);
-    
+
      {Unlock Adapter}
      Adapter.WriterUnlock;
-    
+
      {Destroy Adapter}
      Adapter.Free;
-     
+
      {Return Result}
      Result:=True;
     finally
      {Release Lock}
      FAdapters.WriterUnlock;
-    end;  
+    end;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3844,19 +3844,19 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL: StartTransport');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3871,14 +3871,14 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL: StopTransport');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Get Adapter}
   Adapter:=TEAPOLTransportAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
   while Adapter <> nil do
@@ -3886,16 +3886,16 @@ begin
     {Get Next}
     Current:=Adapter;
     Adapter:=TEAPOLTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
-    
-    {Remove Adapter} 
-    RemoveAdapter(Current.Adapter); 
+
+    {Remove Adapter}
+    RemoveAdapter(Current.Adapter);
    end;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3905,14 +3905,14 @@ function TEAPOLTransport.ProcessTransport:Boolean;
 begin
  {}
  //To Do
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TEAPOLTransport.BindTransport(AAdapter:TNetworkAdapter):Boolean; 
+function TEAPOLTransport.BindTransport(AAdapter:TNetworkAdapter):Boolean;
 {Bind this transport to an adapter if appropriate}
 {Adapter: The adapter to bind to}
 var
@@ -3921,15 +3921,15 @@ begin
  {}
  ReaderLock;
  try
-  Result:=False; 
- 
+  Result:=False;
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL: BindTransport');
   {$ENDIF}
- 
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL:  Adapter = ' + AAdapter.Name);
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL:   State = ' + AdapterStateToString(AAdapter.State));
@@ -3940,45 +3940,45 @@ begin
 
   {Check State}
   if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
-  
+
   Result:=True;
-  
+
   {Check Media}
   if AAdapter.MediaType <> MEDIA_TYPE_ETHERNET then Exit;
-  
+
   {Check Type}
   if AAdapter.AdapterType = ADAPTER_TYPE_UNKNOWN then Exit;
-  
-  Result:=False; 
-  
+
+  Result:=False;
+
   {Get Adapter}
   Adapter:=TEAPOLTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
   if Adapter = nil then
    begin
     {Check Type}
     case AAdapter.AdapterType of
-     ADAPTER_TYPE_WIRELESS:begin 
+     ADAPTER_TYPE_WIRELESS:begin
        {Add Adapter}
        Result:=AddAdapter(AAdapter,CONFIG_TYPE_AUTO,nil,nil,nil,nil);
-      end;     
+      end;
     end;
    end
   else
    begin
     {Unlock Adapter}
     Adapter.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
-   end;   
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TEAPOLTransport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean; 
+function TEAPOLTransport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean;
 {Unbind this transport from an adapter if appropriate}
 {Adapter: The adapter to unbind from}
 var
@@ -3987,15 +3987,15 @@ begin
  {}
  ReaderLock;
  try
-  Result:=False; 
- 
+  Result:=False;
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL: UnbindTransport');
   {$ENDIF}
- 
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'EAPOL:  Adapter = ' + AAdapter.Name);
   {$ENDIF}
@@ -4014,10 +4014,10 @@ begin
    begin
     {Return Result}
     Result:=True;
-   end;   
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4044,7 +4044,7 @@ end;
 
 {==============================================================================}
 
-destructor TRSNTransport.Destroy; 
+destructor TRSNTransport.Destroy;
 begin
  {}
  WriterLock;
@@ -4053,7 +4053,7 @@ begin
  finally
   {WriterUnlock;} {Can destroy Synchronizer while holding lock}
   inherited Destroy;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4071,12 +4071,12 @@ var
 begin
  {}
  Result:=False;
- 
+
  {$IFDEF WIFI_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN: PacketHandler');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN:  Size = ' + IntToStr(ASize));
  {$ENDIF}
- 
+
  {Get Adapter}
  Adapter:=TRSNTransportAdapter(GetAdapterByHandle(AHandle,True,NETWORK_LOCK_READ));
  if Adapter = nil then Exit;
@@ -4084,20 +4084,20 @@ begin
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN:  PacketType = ' + PacketTypeToString(Adapter.PacketType));
   {$ENDIF}
- 
+
   {Check Packet Type}
   case Adapter.PacketType of
    PACKET_TYPE_RSN:begin
-    
+
      //To Do
 
     end;
   end;
- finally 
+ finally
   Adapter.ReaderUnlock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
 function TRSNTransport.AddAdapter(AAdapter:TNetworkAdapter;AConfigType:Word;AAddress,ANetmask,AGateway,AServer:Pointer):Boolean;
@@ -4116,18 +4116,18 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN: AddAdapter');
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN:  Config = ' + ConfigTypeToString(AConfigType));
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
 
   {Check State}
   if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
-  
+
   {Get Adapter}
   Adapter:=TRSNTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
   if Adapter = nil then
@@ -4148,34 +4148,34 @@ begin
       Adapter.ConfigType:=CONFIG_TYPE_AUTO;
       Adapter.Configured:=True;
       Adapter.Configuring:=False;
-      
+
       {Acquire Lock}
       FAdapters.WriterLock;
       try
        {Add Adapter}
        FAdapters.Add(Adapter);
-      
+
        {Return Result}
        Result:=True;
       finally
        {Release Lock}
        FAdapters.WriterUnlock;
-      end;  
+      end;
      end;
    end
   else
    begin
     {Unlock Adapter}
     Adapter.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
 function TRSNTransport.RemoveAdapter(AAdapter:TNetworkAdapter):Boolean;
@@ -4188,18 +4188,18 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN: RemoveAdapter');
   {$ENDIF}
-  
+
   {Check Adapter}
   if AAdapter = nil then Exit;
- 
+
   {Get Adapter}
   Adapter:=TRSNTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_WRITE)); {Writer due to remove}
   if Adapter = nil then Exit;
-  
+
   {Remove RSN Type}
   if AAdapter.RemoveTransport(Adapter.Handle,Adapter.PacketType) then
    begin
@@ -4208,25 +4208,25 @@ begin
     try
      {Remove Adapter}
      FAdapters.Remove(Adapter);
-    
+
      {Unlock Adapter}
      Adapter.WriterUnlock;
-    
+
      {Destroy Adapter}
      Adapter.Free;
-     
+
      {Return Result}
      Result:=True;
     finally
      {Release Lock}
      FAdapters.WriterUnlock;
-    end;  
+    end;
    end;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
- 
+
 {==============================================================================}
 
 function TRSNTransport.StartTransport:Boolean;
@@ -4236,19 +4236,19 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN: StartTransport');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4263,14 +4263,14 @@ begin
  ReaderLock;
  try
   Result:=False;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN: StopTransport');
   {$ENDIF}
-  
+
   {Check Manager}
   if Manager = nil then Exit;
-  
+
   {Get Adapter}
   Adapter:=TRSNTransportAdapter(GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ));
   while Adapter <> nil do
@@ -4278,16 +4278,16 @@ begin
     {Get Next}
     Current:=Adapter;
     Adapter:=TRSNTransportAdapter(GetAdapterByNext(Current,True,True,NETWORK_LOCK_READ));
-    
-    {Remove Adapter} 
+
+    {Remove Adapter}
     RemoveAdapter(Current.Adapter);
    end;
-  
+
   {Return Result}
   Result:=True;
- finally 
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4297,14 +4297,14 @@ function TRSNTransport.ProcessTransport:Boolean;
 begin
  {}
  //To Do
- 
+
  {Return Result}
  Result:=True;
 end;
 
 {==============================================================================}
 
-function TRSNTransport.BindTransport(AAdapter:TNetworkAdapter):Boolean; 
+function TRSNTransport.BindTransport(AAdapter:TNetworkAdapter):Boolean;
 {Bind this transport to an adapter if appropriate}
 {Adapter: The adapter to bind to}
 var
@@ -4313,15 +4313,15 @@ begin
  {}
  ReaderLock;
  try
-  Result:=False; 
- 
+  Result:=False;
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN: BindTransport');
   {$ENDIF}
- 
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN:  Adapter = ' + AAdapter.Name);
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN:   State = ' + AdapterStateToString(AAdapter.State));
@@ -4332,45 +4332,45 @@ begin
 
   {Check State}
   if AAdapter.State <> ADAPTER_STATE_ENABLED then Exit;
-  
+
   Result:=True;
-  
+
   {Check Media}
   if AAdapter.MediaType <> MEDIA_TYPE_ETHERNET then Exit;
-  
+
   {Check Type}
   if AAdapter.AdapterType = ADAPTER_TYPE_UNKNOWN then Exit;
-  
-  Result:=False; 
-  
+
+  Result:=False;
+
   {Get Adapter}
   Adapter:=TRSNTransportAdapter(GetAdapterByAdapter(AAdapter,True,NETWORK_LOCK_READ));
   if Adapter = nil then
    begin
     {Check Type}
     case AAdapter.AdapterType of
-     ADAPTER_TYPE_WIRELESS:begin 
+     ADAPTER_TYPE_WIRELESS:begin
        {Add Adapter}
        Result:=AddAdapter(AAdapter,CONFIG_TYPE_AUTO,nil,nil,nil,nil);
-      end;     
+      end;
     end;
    end
   else
    begin
     {Unlock Adapter}
     Adapter.ReaderUnlock;
-    
+
     {Return Result}
     Result:=True;
-   end;   
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
 
-function TRSNTransport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean; 
+function TRSNTransport.UnbindTransport(AAdapter:TNetworkAdapter):Boolean;
 {Unbind this transport from an adapter if appropriate}
 {Adapter: The adapter to unbind from}
 var
@@ -4379,15 +4379,15 @@ begin
  {}
  ReaderLock;
  try
-  Result:=False; 
- 
+  Result:=False;
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN: UnbindTransport');
   {$ENDIF}
- 
+
   {Check Adapter}
   if AAdapter = nil then Exit;
-  
+
   {$IFDEF WIFI_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RSN:  Adapter = ' + AAdapter.Name);
   {$ENDIF}
@@ -4406,10 +4406,10 @@ begin
    begin
     {Return Result}
     Result:=True;
-   end;   
- finally 
+   end;
+ finally
   ReaderUnlock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -4420,25 +4420,25 @@ begin
  {}
  {Check Initialized}
  if WiFiInitialized then Exit;
- 
+
  {Create EAPOL Transport}
- if NetworkSettings.GetBooleanDefault('EAPOL_TRANSPORT_ENABLED',EAPOL_TRANSPORT_ENABLED) then 
+ if NetworkSettings.GetBooleanDefault('EAPOL_TRANSPORT_ENABLED',EAPOL_TRANSPORT_ENABLED) then
   begin
    TEAPOLTransport.Create(TransportManager,EAPOL_TRANSPORT_NAME);
-  end; 
- 
+  end;
+
  {Create RSN Transport}
- if NetworkSettings.GetBooleanDefault('RSN_TRANSPORT_ENABLED',RSN_TRANSPORT_ENABLED) then 
+ if NetworkSettings.GetBooleanDefault('RSN_TRANSPORT_ENABLED',RSN_TRANSPORT_ENABLED) then
   begin
    TRSNTransport.Create(TransportManager,RSN_TRANSPORT_NAME);
-  end; 
- 
+  end;
+
  {Register Start Event}
  NetworkEventRegister(WiFiStart,nil,NETWORK_EVENT_SYSTEM_START);
- 
+
  {Register Stop Event}
  NetworkEventRegister(WiFiStop,nil,NETWORK_EVENT_SYSTEM_STOP);
- 
+
  WiFiInitialized:=True;
 end;
 
@@ -4448,27 +4448,27 @@ function WiFiStart(Data:Pointer;Event:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {Check Started}
  if WiFiStarted then Exit;
- 
+
  {Check Event}
  if (Event and NETWORK_EVENT_SYSTEM_START) <> 0 then
   begin
    Result:=ERROR_INVALID_PARAMETER;
-   
+
    {Register Notification}
    NetworkDeviceNotification(nil,WiFiNetworkDeviceNotify,nil,DEVICE_NOTIFICATION_REGISTER or DEVICE_NOTIFICATION_DEREGISTER or DEVICE_NOTIFICATION_CLOSING,NOTIFIER_FLAG_NONE);
-   
+
    {Enumerate Adapters}
    NetworkDeviceEnumerate(WiFiNetworkDeviceEnum,nil);
-   
-   {Set Started} 
+
+   {Set Started}
    WiFiStarted:=True;
-   
-   {Return Result} 
+
+   {Return Result}
    Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -4477,35 +4477,35 @@ function WiFiStop(Data:Pointer;Event:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {Check Started}
  if not(WiFiStarted) then Exit;
- 
+
  {Check Event}
  if (Event and NETWORK_EVENT_SYSTEM_STOP) <> 0 then
   begin
    Result:=ERROR_INVALID_PARAMETER;
-   
+
    {Deregister Notification}
    NetworkDeviceNotification(nil,WiFiNetworkDeviceNotify,nil,DEVICE_NOTIFICATION_NONE,NOTIFIER_FLAG_NONE);
-   
+
    {Set Started}
-   WiFiStarted:=False;    
-   
-   {Return Result} 
+   WiFiStarted:=False;
+
+   {Return Result}
    Result:=ERROR_SUCCESS;
-  end; 
+  end;
 end;
- 
+
 {==============================================================================}
- 
+
 function WiFiStartCompleted:Boolean;
 {Returns True if the WiFi sub system has been started}
 begin
  {}
  Result:=WiFiStarted;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {WiFi Functions}
@@ -4517,12 +4517,12 @@ begin
  {Check WiFi}
  if WiFi = nil then Exit;
  if WiFi.Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  if not Assigned(WiFi.DeviceConfigure) then Exit;
- 
+
  //To Do //Check for channel/power etc changes //See ieee80211_hw_conf_chan (do within this function, not used elsewhere)
- 
+
  {Call Configure}
  Result:=WiFi.DeviceConfigure(WiFi,Flags);
 end;
@@ -4537,17 +4537,17 @@ begin
  {Check WiFi}
  if WiFi = nil then Exit;
  if WiFi.Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  if not Assigned(WiFi.DeviceConfigureFilter) then Exit;
- 
+
  {Call Configure Filter}
  Result:=WiFi.DeviceConfigureFilter(WiFi,Filter);
 end;
 
 {==============================================================================}
 
-function WiFiDeviceConfigureInterface(WiFi:PWiFiDevice;Interrface:PWiFiInterface):LongWord; 
+function WiFiDeviceConfigureInterface(WiFi:PWiFiDevice;Interrface:PWiFiInterface):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
@@ -4555,10 +4555,10 @@ begin
  {Check WiFi}
  if WiFi = nil then Exit;
  if WiFi.Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  if not Assigned(WiFi.DeviceConfigureInterface) then Exit;
- 
+
  {Call Configure Interface}
  Result:=WiFi.DeviceConfigureInterface(WiFi,Interrface);
 end;
@@ -4584,7 +4584,7 @@ begin
  {Create WiFi}
  Result:=PWiFiDevice(NetworkDeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update WiFi}
  Result.WiFiFlags:=WIFI_FLAG_NETNS_OK or WIFI_FLAG_4ADDR_AP or WIFI_FLAG_4ADDR_STATION or WIFI_FLAG_REPORTS_OBSS or WIFI_FLAG_OFFCHAN_TX;
  Result.WiFiState:=WIFI_STATE_NONE;
@@ -4607,10 +4607,10 @@ begin
  {Configuration}
  Result.Configuration.LongFrameMaxTXCount:=Result.RetryLong;
  Result.Configuration.ShortFrameMaxTXCount:=Result.RetryShort;
- 
- 
+
+
  //To Do //ieee80211_alloc_hw_nm
- 
+
  //To Do //ieee80211_default_mgmt_stypes//
 end;
 
@@ -4620,9 +4620,9 @@ function WiFiDeviceDestroy(WiFi:PWiFiDevice):LongWord;
 begin
  {}
  //To Do //ieee80211_free_hw
- 
+
  //To Do //Free .Bands[]  //.Channels/.Rates (Allocated by driver)
- 
+
  {Destroy Network}
  Result:=NetworkDeviceDestroy(@WiFi.Network);
 end;
@@ -4645,7 +4645,7 @@ begin
  {$IFDEF WIFI_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFi: Device register');
  {$ENDIF}
- 
+
  {Check WiFi}
  if WiFi = nil then Exit;
  if WiFi.Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
@@ -4668,36 +4668,36 @@ begin
    if not Assigned(WiFi.Network.BufferAllocate) then Exit;
    if not Assigned(WiFi.Network.BufferTransmit) then Exit;
   end;
- 
+
  {Check Optional Flags}
  //if Assigned(WiFi.DeviceRemainOnChannel) then //To Do
  // begin
  //  WiFi.WiFiFlags:=WiFi.WiFiFlags or WIFI_FLAG_HAS_REMAIN_ON_CHANNEL;
  // end;
- 
+
  //if not Assigned(WiFi.DeviceSetKey) then //To Do
  // begin
  //  WiFi.WiFiFlags:=WiFi.WiFiFlags or WIFI_FLAG_IBSS_RSN;
  // end;
- 
+
  {Check Optional Features}
  //if not Assigned(WiFi.DeviceHardwareScan) then //To Do
  // begin
  //  Result.WiFiFeatures:=Result.WiFiFeatures or WIFI_FEATURE_LOW_PRIORITY_SCAN or WIFI_FEATURE_AP_SCAN;
  // end;
- 
+
  //To Do //IEEE80211_HW_QUEUE_CONTROL
- 
+
  //To Do //WIFI_FEATURE_TDLS_CHANNEL_SWITCH
- 
+
  {Check Report Rates}
  if WiFi.Hardware.MaxReportRates = 0 then
   begin
    WiFi.Hardware.MaxReportRates:=WiFi.Hardware.MaxRates;
   end;
-  
+
  WiFi.RXChains:=1;
- 
+
  {Make sure at least one band is configured}
  MaxRateCount:=0;
  ChannelCount:=0;
@@ -4713,49 +4713,49 @@ begin
       begin
        {Initialize Default Channel}
        IEEE80211InitializeChannelDefinition(@ChannelDefinition,@SupportedBand.Channels[0],WIFI_CHAN_NO_HT);
-       
+
        WiFi.Configuration.ChannelDefinition:=ChannelDefinition;
       end;
-    
+
      Inc(ChannelCount,SupportedBand.ChannelCount);
-     
+
      if MaxRateCount < SupportedBand.RateCount then
       begin
        MaxRateCount:=SupportedBand.RateCount;
       end;
-      
+
      HTSupported:=HTSupported or SupportedBand.HTCapabilities.HTSupported;
      VHTSupported:=VHTSupported or SupportedBand.VHTCapabilities.VHTSupported;
-     
+
      if SupportedBand.HTCapabilities.HTSupported then
       begin
        WiFi.RXChains:=Max(IEEE80211MCSToChains(@SupportedBand.HTCapabilities.MCS),WiFi.RXChains);
       end;
-     
+
      {TODO: Consider VHT for RX chains}
     end;
   end;
- 
+
  {If driver supports AP, also support VLAN}
  if (WiFi.InterfaceModes and (1 shl WIFI_IFTYPE_AP)) <> 0 then
   begin
    WiFi.InterfaceModes:=WiFi.InterfaceModes or (1 shl WIFI_IFTYPE_AP_VLAN);
   end;
-  
+
  {Always supports monitor}
  WiFi.InterfaceModes:=WiFi.InterfaceModes or (1 shl WIFI_IFTYPE_MONITOR);
- 
+
  //To Do //int_scan_req //See also //ieee80211_local//cfg80211_scan_request
- 
+
  {If the underlying driver supports mesh, provide routing of mesh authentication frames}
  if (WiFi.InterfaceModes and (1 shl WIFI_IFTYPE_MESH_POINT)) <> 0 then
   begin
    WiFi.WiFiFlags:=WiFi.WiFiFlags or WIFI_FLAG_MESH_AUTH;
   end;
- 
+
  {Support control port protocol changing}
  WiFi.WiFiFlags:=WiFi.WiFiFlags or WIFI_FLAG_CONTROL_PORT_PROTOCOL;
- 
+
  if (WiFi.Hardware.Flags and IEEE80211_HW_SIGNAL_DBM) <> 0 then
   begin
    WiFi.SignalType:=WIFI_SIGNAL_TYPE_MBM;
@@ -4769,7 +4769,7 @@ begin
      Exit;
     end;
   end;
-  
+
  {Calculate scan IE length} {Includes the DS Params, (extended) supported rates, and HT information}
  WiFi.ScanIELength:=4 + MaxRateCount {(ext) supp rates} + 3; {DS Params}
  if HTSupported then
@@ -4786,54 +4786,54 @@ begin
    WiFi.MaxScanSSIDs:=4;
    WiFi.MaxScanIELength:=IEEE80211_MAX_DATA_LEN;
  // end;
- 
+
  {If the driver supports any scan IEs, then assume the limit includes the standard IEs to add, otherwise leave it at zero}
  if WiFi.MaxScanIELength > 0 then
   begin
    WiFi.MaxScanIELength:=WiFi.MaxScanIELength - WiFi.ScanIELength;
   end;
-  
+
  //To Do //ieee80211_cs_list_valid
 
  //To Do //ieee80211_init_cipher_suites
- 
+
  //if not Assigned(WiFi.DeviceRemainOnChannel) then //To Do
  // begin
    WiFi.MaxRemainOnChannelDuration:=5000;
  // end;
-  
+
  {Don't support internal TDLS setup}
  if (WiFi.WiFiFlags and WIFI_FLAG_SUPPORTS_TDLS) <> 0 then
   begin
    WiFi.WiFiFlags:=WiFi.WiFiFlags or WIFI_FLAG_TDLS_EXTERNAL_SETUP;
   end;
-  
+
  //To Do //IEEE80211_HW_CHANCTX_STA_CSA
- 
+
  WiFi.MaxCSACounters:=IEEE80211_MAX_CSA_COUNTERS_NUM;
- 
+
  {The hardware needs headroom for sending the frame}
  WiFi.TXHeadroom:=Max(WiFi.Hardware.ExtraTXHeadroom,IEEE80211_TX_STATUS_HEADROOM);
- 
+
  {If the driver doesn't specify a max listen interval use 5 which should be a safe default}
  if WiFi.Hardware.MaxListenInterval = 0 then
   begin
    WiFi.Hardware.MaxListenInterval:=5;
   end;
  WiFi.Configuration.ListenInterval:=WiFi.Hardware.MaxListenInterval;
- 
+
  //To Do //dynamic_ps_forced_timeout
- 
+
  //To Do //txq_ac_max_pending
- 
+
  //To Do //ieee80211_wep_init
- 
+
  WiFi.Hardware.Flags:=IEEE80211_CONF_IDLE;
- 
+
  //To Do //ieee80211_led_init
- 
+
  //To Do //ieee80211_init_rate_ctrl_alg
- 
+
  {Add default STA interface if supported}
  if ((WiFi.InterfaceModes and (1 shl WIFI_IFTYPE_STATION)) <> 0) and ((WiFi.Hardware.Flags and IEEE80211_HW_NO_AUTO_VIF) = 0) then
   begin
@@ -4843,9 +4843,9 @@ begin
    WiFi.Interrface.InterfaceType:=WIFI_IFTYPE_STATION;
    //To Do //ieee80211_if_add in \net\mac80211\iface.c
   end;
-  
+
  //To Do //ieee80211_register_hw
- 
+
  {Register Network}
  Result:=NetworkDeviceRegister(@WiFi.Network);
 end;
@@ -4864,9 +4864,9 @@ begin
  {Check WiFi}
  if WiFi = nil then Exit;
  if WiFi.Network.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  //To Do //ieee80211_deregister_hw
- 
+
  {Deregister Network}
  Result:=NetworkDeviceDeregister(@WiFi.Network);
 end;
@@ -4879,9 +4879,9 @@ function WiFiConfigurationIsHT(Configuration:PWiFiConfiguration):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Configuration = nil then Exit;
- 
+
  Result:=(Configuration.ChannelDefinition.Width <> WIFI_CHAN_WIDTH_5) and (Configuration.ChannelDefinition.Width <> WIFI_CHAN_WIDTH_10) and (Configuration.ChannelDefinition.Width <> WIFI_CHAN_WIDTH_20_NOHT);
 end;
 
@@ -4892,12 +4892,12 @@ function WiFiConfigurationIsHT20(Configuration:PWiFiConfiguration):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Configuration = nil then Exit;
- 
+
  Result:=(Configuration.ChannelDefinition.Width = WIFI_CHAN_WIDTH_20);
 end;
- 
+
 {==============================================================================}
 
 function WiFiConfigurationIsHT40(Configuration:PWiFiConfiguration):Boolean;
@@ -4905,9 +4905,9 @@ function WiFiConfigurationIsHT40(Configuration:PWiFiConfiguration):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Configuration = nil then Exit;
- 
+
  Result:=(Configuration.ChannelDefinition.Width = WIFI_CHAN_WIDTH_40);
 end;
 
@@ -4918,10 +4918,10 @@ function WiFiConfigurationIsHT40Plus(Configuration:PWiFiConfiguration):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Configuration = nil then Exit;
- 
- Result:=(Configuration.ChannelDefinition.Width = WIFI_CHAN_WIDTH_40) and (Configuration.ChannelDefinition.CenterFrequency1 > Configuration.ChannelDefinition.Channel.CenterFrequency); 
+
+ Result:=(Configuration.ChannelDefinition.Width = WIFI_CHAN_WIDTH_40) and (Configuration.ChannelDefinition.CenterFrequency1 > Configuration.ChannelDefinition.Channel.CenterFrequency);
 end;
 
 {==============================================================================}
@@ -4931,10 +4931,10 @@ function WiFiConfigurationIsHT40Minus(Configuration:PWiFiConfiguration):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if Configuration = nil then Exit;
- 
- Result:=(Configuration.ChannelDefinition.Width = WIFI_CHAN_WIDTH_40) and (Configuration.ChannelDefinition.CenterFrequency1 < Configuration.ChannelDefinition.Channel.CenterFrequency); 
+
+ Result:=(Configuration.ChannelDefinition.Width = WIFI_CHAN_WIDTH_40) and (Configuration.ChannelDefinition.CenterFrequency1 < Configuration.ChannelDefinition.Channel.CenterFrequency);
 end;
 
 {==============================================================================}
@@ -4947,15 +4947,15 @@ begin
  {$IFDEF WIFI_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFi: Network device add');
  {$ENDIF}
- 
+
  {Check Event}
  if Event = nil then Exit;
  if Event.Device = nil then Exit;
- 
+
  {$IFDEF WIFI_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFi:  Device = ' + DeviceGetName(@Event.Device.Device));
  {$ENDIF}
- 
+
  {Destroy Timer}
  if Event.Timer <> INVALID_HANDLE_VALUE then
   begin
@@ -4969,7 +4969,7 @@ begin
 
  {Check Settings}
  if NetworkSettings = nil then Exit;
- 
+
  {Check Started}
  if WiFiStarted then
   begin
@@ -4981,30 +4981,30 @@ begin
       if Adapter = nil then
        begin
         {Create Adapter}
-        if NetworkSettings.GetBooleanDefault('WIRELESS_NETWORK_ENABLED',WIRELESS_NETWORK_ENABLED) then 
+        if NetworkSettings.GetBooleanDefault('WIRELESS_NETWORK_ENABLED',WIRELESS_NETWORK_ENABLED) then
          begin
           Adapter:=TWiFiAdapter.Create(AdapterManager,Event.Device,DeviceGetName(@Event.Device.Device));
-      
+
           {Check Adapter}
           if not NetworkSettings.GetBoolean(Adapter.Name + '_DISABLED') then
            begin
             {Start Adapter}
             Adapter.StartAdapter;
-            
+
             {Bind Transports}
             TransportManager.BindTransports(Adapter);
-            
+
             {Bind Monitors}
             TransportManager.BindMonitors(Adapter);
-            
+
             {Bind Authenticators}
             TransportManager.BindAuthenticators(Adapter);
-           end; 
-         end; 
-       end; 
+           end;
+         end;
+       end;
      end;
-   end; 
-  end;  
+   end;
+  end;
 end;
 
 {==============================================================================}
@@ -5015,18 +5015,18 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {$IFDEF WIFI_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFi: Network device remove');
  {$ENDIF}
- 
+
  {Check Network}
  if Network = nil then Exit;
 
  {$IFDEF WIFI_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFi:  Device = ' + DeviceGetName(@Network.Device));
  {$ENDIF}
- 
+
  {Check Managers}
  if AdapterManager = nil then Exit;
  if TransportManager = nil then Exit;
@@ -5043,28 +5043,28 @@ begin
        begin
         {Unbind Authenticators}
         TransportManager.UnbindAuthenticators(Adapter);
-       
+
         {Unbind Monitors}
         TransportManager.UnbindMonitors(Adapter);
 
         {Unbind Transports}
         TransportManager.UnbindTransports(Adapter);
-        
+
         {Stop Adapter}
         Adapter.StopAdapter;
-        
+
         {Unlock Adapter}
         Adapter.ReaderUnlock;
-        
+
         {Free Adapter}
         Adapter.Free;
-       end; 
+       end;
      end;
-   end; 
-  end;  
-  
+   end;
+  end;
+
  {Return Result}
- Result:=ERROR_SUCCESS;    
+ Result:=ERROR_SUCCESS;
 end;
 
 {==============================================================================}
@@ -5075,24 +5075,24 @@ var
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {$IFDEF WIFI_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFi: Network device enumeration');
  {$ENDIF}
 
  {Check Network}
  if Network = nil then Exit;
- 
+
  {$IFDEF WIFI_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFi:  Device = ' + DeviceGetName(@Network.Device));
  {$ENDIF}
- 
+
  {Check Manager}
  if AdapterManager = nil then Exit;
 
  {Check Settings}
  if NetworkSettings = nil then Exit;
- 
+
  {Check Started}
  if not WiFiStarted then
   begin
@@ -5104,16 +5104,16 @@ begin
       if Adapter = nil then
        begin
         {Create Adapter}
-        if NetworkSettings.GetBooleanDefault('WIRELESS_NETWORK_ENABLED',WIRELESS_NETWORK_ENABLED) then 
+        if NetworkSettings.GetBooleanDefault('WIRELESS_NETWORK_ENABLED',WIRELESS_NETWORK_ENABLED) then
          begin
           TWiFiAdapter.Create(AdapterManager,Network,DeviceGetName(@Network.Device));
-         end; 
-       end; 
+         end;
+       end;
      end;
-   end; 
-  end;  
+   end;
+  end;
 end;
- 
+
 {==============================================================================}
 
 function WiFiNetworkDeviceNotify(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;
@@ -5123,14 +5123,14 @@ var
 begin
  {}
  Result:=ERROR_SUCCESS;
- 
+
  {$IFDEF WIFI_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'WiFi: Network device notification (Notification=' + NotificationToString(Notification) + ')');
  {$ENDIF}
- 
+
  {Check Device}
  if Device = nil then Exit;
- 
+
  {Check Manager}
  if AdapterManager = nil then Exit;
 
@@ -5147,11 +5147,11 @@ begin
        {Create Event}
        Event:=AllocMem(SizeOf(TWiFiDeviceEvent));
        if Event = nil then Exit;
-       
+
        {Setup Event}
        Event.Timer:=INVALID_HANDLE_VALUE;
        Event.Device:=PNetworkDevice(Device);
-       
+
        {Create Timer}
        Event.Timer:=TimerCreateEx(WIFI_DEVICE_TIMER_INTERVAL,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(WiFiNetworkDeviceAdd),Event);
        if Event.Timer = INVALID_HANDLE_VALUE then
@@ -5191,7 +5191,7 @@ begin
     end;
   end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {IEEE80211 Helper Functions}
@@ -5352,7 +5352,7 @@ function IEEE80211IsAssocResp(FrameControl:Word):Boolean; inline;
 {ieee80211_is_assoc_resp}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_ASSOC_RESP); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_ASSOC_RESP);
 end;
 
 {==============================================================================}
@@ -5362,7 +5362,7 @@ function IEEE80211IsReassocReq(FrameControl:Word):Boolean; inline;
 {ieee80211_is_reassoc_req}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_REASSOC_REQ); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_REASSOC_REQ);
 end;
 
 {==============================================================================}
@@ -5372,7 +5372,7 @@ function IEEE80211IsReassocResp(FrameControl:Word):Boolean; inline;
 {ieee80211_is_reassoc_resp}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_REASSOC_RESP); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_REASSOC_RESP);
 end;
 
 {==============================================================================}
@@ -5382,7 +5382,7 @@ function IEEE80211IsProbeReq(FrameControl:Word):Boolean; inline;
 {ieee80211_is_probe_req}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_PROBE_REQ); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_PROBE_REQ);
 end;
 
 {==============================================================================}
@@ -5392,7 +5392,7 @@ function IEEE80211IsProbeResp(FrameControl:Word):Boolean; inline;
 {ieee80211_is_probe_resp}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_PROBE_RESP); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_PROBE_RESP);
 end;
 
 {==============================================================================}
@@ -5402,7 +5402,7 @@ function IEEE80211IsBeacon(FrameControl:Word):Boolean; inline;
 {ieee80211_is_beacon}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_BEACON); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_BEACON);
 end;
 
 {==============================================================================}
@@ -5412,7 +5412,7 @@ function IEEE80211IsATIM(FrameControl:Word):Boolean; inline;
 {ieee80211_is_atim}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_ATIM); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_ATIM);
 end;
 
 {==============================================================================}
@@ -5432,7 +5432,7 @@ function IEEE80211IsAuth(FrameControl:Word):Boolean; inline;
 {ieee80211_is_auth}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_AUTH); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_AUTH);
 end;
 
 {==============================================================================}
@@ -5442,7 +5442,7 @@ function IEEE80211IsDeauth(FrameControl:Word):Boolean; inline;
 {ieee80211_is_deauth}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_DEAUTH); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_DEAUTH);
 end;
 
 {==============================================================================}
@@ -5452,7 +5452,7 @@ function IEEE80211IsAction(FrameControl:Word):Boolean; inline;
 {ieee80211_is_action}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_ACTION); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_MGMT or IEEE80211_STYPE_ACTION);
 end;
 
 {==============================================================================}
@@ -5462,7 +5462,7 @@ function IEEE80211IsBackReq(FrameControl:Word):Boolean; inline;
 {ieee80211_is_back_req}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_BACK_REQ); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_BACK_REQ);
 end;
 
 {==============================================================================}
@@ -5472,7 +5472,7 @@ function IEEE80211IsBack(FrameControl:Word):Boolean; inline;
 {ieee80211_is_back}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_BACK); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_BACK);
 end;
 
 {==============================================================================}
@@ -5482,7 +5482,7 @@ function IEEE80211IsPSPoll(FrameControl:Word):Boolean; inline;
 {ieee80211_is_pspoll}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_PSPOLL); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_PSPOLL);
 end;
 
 {==============================================================================}
@@ -5492,7 +5492,7 @@ function IEEE80211IsRTS(FrameControl:Word):Boolean; inline;
 {ieee80211_is_rts}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_RTS); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_RTS);
 end;
 
 {==============================================================================}
@@ -5502,7 +5502,7 @@ function IEEE80211IsCTS(FrameControl:Word):Boolean; inline;
 {ieee80211_is_cts}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_CTS); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_CTS);
 end;
 
 {==============================================================================}
@@ -5512,7 +5512,7 @@ function IEEE80211IsACK(FrameControl:Word):Boolean; inline;
 {ieee80211_is_ack}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_ACK); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_ACK);
 end;
 
 {==============================================================================}
@@ -5522,7 +5522,7 @@ function IEEE80211IsCFEnd(FrameControl:Word):Boolean; inline;
 {ieee80211_is_cfend}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_CFEND); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_CFEND);
 end;
 
 {==============================================================================}
@@ -5532,7 +5532,7 @@ function IEEE80211IsCFEndAck(FrameControl:Word):Boolean; inline;
 {ieee80211_is_cfendack}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_CFENDACK); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_CTL or IEEE80211_STYPE_CFENDACK);
 end;
 
 {==============================================================================}
@@ -5542,7 +5542,7 @@ function IEEE80211IsNullFunc(FrameControl:Word):Boolean; inline;
 {ieee80211_is_nullfunc}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_DATA or IEEE80211_STYPE_NULLFUNC); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_DATA or IEEE80211_STYPE_NULLFUNC);
 end;
 
 {==============================================================================}
@@ -5552,7 +5552,7 @@ function IEEE80211IsQoSNullFunc(FrameControl:Word):Boolean; inline;
 {ieee80211_is_qos_nullfunc}
 begin
  {}
- Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_DATA or IEEE80211_STYPE_QOS_NULLFUNC); 
+ Result:=(FrameControl and (IEEE80211_FCTL_FTYPE or IEEE80211_FCTL_STYPE)) = (IEEE80211_FTYPE_DATA or IEEE80211_STYPE_QOS_NULLFUNC);
 end;
 
 {==============================================================================}
@@ -5563,7 +5563,7 @@ function IEEE80211IsBufferableMMPDU(FrameControl:Word):Boolean; inline;
 begin
  {}
  {IEEE 802.11-2012, definition of "bufferable management frame" note that this ignores the IBSS special case}
- Result:=IEEE80211IsMgmt(FrameControl) and (IEEE80211IsAction(FrameControl) or IEEE80211IsDisassoc(FrameControl) or IEEE80211IsDeauth(FrameControl)); 
+ Result:=IEEE80211IsMgmt(FrameControl) and (IEEE80211IsAction(FrameControl) or IEEE80211IsDisassoc(FrameControl) or IEEE80211IsDeauth(FrameControl));
 end;
 
 {==============================================================================}
@@ -5585,7 +5585,7 @@ var
 begin
  {}
  HeaderLength:=24;
- 
+
  if IEEE80211IsData(FrameControl) then
   begin
    if IEEE80211HasA4(FrameControl) then
@@ -5600,22 +5600,22 @@ begin
        HeaderLength:=HeaderLength + IEEE80211_HT_CTL_LEN;
       end;
     end;
-   
+
    Result:=HeaderLength;
    Exit;
   end;
-  
+
  if IEEE80211IsMgmt(FrameControl) then
   begin
    if IEEE80211HasOrder(FrameControl) then
     begin
      HeaderLength:=HeaderLength + IEEE80211_HT_CTL_LEN;
     end;
-  
+
    Result:=HeaderLength;
    Exit;
   end;
- 
+
  if IEEE80211IsCtl(FrameControl) then
   begin
    {ACK and CTS are 10 bytes, all others 16. To see how
@@ -5634,7 +5634,7 @@ begin
      HeaderLength:=16;
     end;
   end;
- 
+
  Result:=HeaderLength;
 end;
 
@@ -5647,13 +5647,13 @@ var
 begin
  {}
  Result:=0;
- 
+
  if Data = nil then Exit;
  if Size < 10 then Exit;
- 
+
  HeaderLength:=IEEE80211HeaderLength(PIEEE80211Header(Data).FrameControl);
  if HeaderLength > Size then Exit;
- 
+
  Result:=HeaderLength;
 end;
 
@@ -5664,9 +5664,9 @@ function IEEE80211MCSToChains(MCS:PIEEE80211MCSInfo):Byte;
 begin
  {}
  Result:=1;
- 
+
  if MCS = nil then exit;
- 
+
  {TODO: consider RXHighest}
  if MCS.RXMask[3] <> 0 then
   begin
@@ -5676,7 +5676,7 @@ begin
   begin
    Result:=3;
   end
- else if MCS.RXMask[1] <> 0 then  
+ else if MCS.RXMask[1] <> 0 then
   begin
    Result:=2;
   end;
@@ -5689,36 +5689,36 @@ function IEEE80211ChannelToFrequency(Channel:Integer;Band:LongWord):Integer;
 begin
  {}
  Result:=0;
- 
+
  {See 802.11 17.3.8.3.2 and Annex J there are overlapping channel numbers in 5GHz and 2GHz bands}
  if Channel <= 0 then Exit; {Not Supported}
- 
+
  case Band of
   IEEE80211_BAND_2GHZ:begin
     if Channel = 14 then
      begin
       Result:=2484;
-     end            
+     end
     else if Channel < 14 then
      begin
       Result:=2407 + Channel * 5;
-     end; 
-   end;              
+     end;
+   end;
   IEEE80211_BAND_5GHZ:begin
     if (Channel >= 182) and (Channel <= 196) then
      begin
       Result:=4000 + Channel * 5;
-     end 
+     end
     else
      begin
       Result:=5000 + Channel * 5;
-     end; 
-   end;              
+     end;
+   end;
   IEEE80211_BAND_60GHZ:begin
     if Channel < 5 then
-     begin     
+     begin
       Result:=56160 + Channel * 2160;
-     end; 
+     end;
    end;
  end;
 end;
@@ -5733,26 +5733,26 @@ begin
  if Frequency = 2484 then
   begin
    Result:=14;
-  end 
+  end
  else if Frequency < 2484 then
   begin
    Result:=(Frequency - 2407) div 5;
-  end 
+  end
  else if (Frequency >= 4910) and (Frequency <= 4980) then
   begin
    Result:=(Frequency - 4000) div 5;
-  end 
+  end
  else if Frequency <= 45000 then {DMG band lower limit}
   begin
    Result:=(Frequency - 5000) div 5;
-  end 
+  end
  else if (Frequency >= 58320) and (Frequency <= 64800) then
   begin
    Result:=(Frequency - 56160) div 2160;
-  end 
+  end
  else
   begin
-   Result:=0; 
+   Result:=0;
   end;
 end;
 
@@ -5764,10 +5764,10 @@ begin
  {}
  if Definition = nil then exit;
  if Channel = nil then Exit;
- 
+
  Definition.Channel:=Channel;
  Definition.CenterFrequency2:=0;
- 
+
  case ChannelType of
   WIFI_CHAN_NO_HT:begin
     Definition.Width:=WIFI_CHAN_WIDTH_20_NOHT;
@@ -5788,7 +5788,7 @@ begin
   else
    begin
     if NETWORK_LOG_ENABLED then NetworkLogError(nil,'WiFi: Invalid ChannelType=' + IntToStr(ChannelType));
-   end;   
+   end;
  end;
 end;
 
@@ -5799,19 +5799,19 @@ function IEEE80211FindInformationElement(Identifier:Byte;InformationElement:PByt
 begin
  {}
  Result:=nil;
- 
+
  {Check Element}
  if InformationElement = nil then Exit;
- 
+
  while (ElementLength > 2) and (InformationElement[0] <> Identifier) do
   begin
    Dec(ElementLength,InformationElement[1] + 2);
    Inc(InformationElement,InformationElement[1] + 2);
   end;
-  
+
  if ElementLength < 2 then Exit;
  if ElementLength < (2 + InformationElement[1]) then Exit;
-  
+
  Result:=InformationElement;
 end;
 
@@ -5830,18 +5830,18 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Elements}
  if Elements = nil then Exit;
- 
+
  {Setup Elements}
  FillChar(Elements^,SizeOf(TIEEE80211InformationElements),0);
  Elements.Address:=Buffer;
  Elements.Size:=Size;
- 
+
  {Parse Elements}
  Remain:=Size;
  Current:=Buffer;
@@ -5851,11 +5851,11 @@ begin
    {Get Identifier}
    Identifier:=Current^;
    Inc(Current);
-   
+
    {Get Length}
    ElementLength:=Current^;
    Inc(Current);
-   
+
    {Check Remain}
    Dec(Remain,2);
    if ElementLength > Remain then
@@ -5863,11 +5863,11 @@ begin
      ParseError:=True;
      Break;
     end;
-    
+
    ParseFailed:=False;
-   
-   case Identifier of 
-	WLAN_EID_LINK_ID:begin
+
+   case Identifier of
+    WLAN_EID_LINK_ID:begin
       if (ElementLength + 2) <> SizeOf(TIEEE80211TDLSLinkIdentifierIE) then
        begin
         ParseFailed:=True;
@@ -5876,7 +5876,7 @@ begin
        begin
         Elements.LinkIdentifier:=PIEEE80211TDLSLinkIdentifierIE(Current - 2);
        end;
-     end;  
+     end;
     WLAN_EID_CHAN_SWITCH_TIMING:begin
       if ElementLength <> SizeOf(TIEEE80211ChannelSwitchTiming) then
        begin
@@ -5885,7 +5885,7 @@ begin
       else
        begin
         Elements.ChannelSwitchTiming:=PIEEE80211ChannelSwitchTiming(Current);
-       end;       
+       end;
      end;
     WLAN_EID_EXT_CAPABILITY:begin
       Elements.ExtendedCapabilities:=Current;
@@ -5907,7 +5907,7 @@ begin
       else
        begin
         ParseFailed:=True;
-       end;       
+       end;
      end;
     WLAN_EID_TIM:begin
       if ElementLength >= SizeOf(TIEEE80211TrafficIndicationMapIE) then
@@ -5918,7 +5918,7 @@ begin
       else
        begin
         ParseFailed:=True;
-       end;       
+       end;
      end;
     WLAN_EID_CHALLENGE:begin
       Elements.ChallengeText:=Current;
@@ -5942,7 +5942,7 @@ begin
             Elements.WMMParamLength:=ElementLength;
            end;
          end
-        
+
        end;
      end;
     WLAN_EID_RSN:begin
@@ -5957,7 +5957,7 @@ begin
       else
        begin
         ParseFailed:=True;
-       end;       
+       end;
     WLAN_EID_EXT_SUPP_RATES:begin
       Elements.ExtendedSupportedRates:=Current;
       Elements.ExtendedSupportedRatesLength:=ElementLength;
@@ -5970,7 +5970,7 @@ begin
       else
        begin
         ParseFailed:=True;
-       end;       
+       end;
      end;
     WLAN_EID_HT_OPERATION:begin
       if ElementLength >= SizeOf(TIEEE80211HTOperation) then
@@ -5980,7 +5980,7 @@ begin
       else
        begin
         ParseFailed:=True;
-       end;       
+       end;
      end;
     WLAN_EID_VHT_CAPABILITY:begin
       if ElementLength >= SizeOf(TIEEE80211VHTCapabilities) then
@@ -5990,7 +5990,7 @@ begin
       else
        begin
         ParseFailed:=True;
-       end;       
+       end;
      end;
     WLAN_EID_VHT_OPERATION:begin
       if ElementLength >= SizeOf(TIEEE80211VHTOperation) then
@@ -6000,7 +6000,7 @@ begin
       else
        begin
         ParseFailed:=True;
-       end;       
+       end;
      end;
     WLAN_EID_OPMODE_NOTIF:begin
       if ElementLength > 0 then
@@ -6010,7 +6010,7 @@ begin
       else
        begin
         ParseFailed:=True;
-       end;       
+       end;
      end;
     WLAN_EID_MESH_ID:begin
       Elements.MeshID:=Current;
@@ -6024,8 +6024,8 @@ begin
       else
        begin
         ParseFailed:=True;
-       end;       
-     end;    
+       end;
+     end;
     WLAN_EID_PEER_MGMT:begin
       Elements.PeerManagement:=Current;
       Elements.PeerManagementLength:=ElementLength;
@@ -6056,7 +6056,7 @@ begin
       else
        begin
         ParseFailed:=True;
-       end;       
+       end;
      end;
     WLAN_EID_CHANNEL_SWITCH:begin
       if ElementLength <> SizeOf(TIEEE80211ChannelSwitchIE) then
@@ -6066,7 +6066,7 @@ begin
       else
        begin
         Elements.ChannelSwitch:=PIEEE80211ChannelSwitchIE(Current);
-       end;       
+       end;
      end;
     WLAN_EID_EXT_CHANSWITCH_ANN:begin
       if ElementLength <> SizeOf(TIEEE80211ExtChannelSwitchIE) then
@@ -6076,7 +6076,7 @@ begin
       else
        begin
         Elements.ExtChannelSwitch:=PIEEE80211ExtChannelSwitchIE(Current);
-       end;       
+       end;
      end;
     WLAN_EID_SECONDARY_CHANNEL_OFFSET:begin
       if ElementLength <> SizeOf(TIEEE80211SecondaryChannelOffsetIE) then
@@ -6086,7 +6086,7 @@ begin
       else
        begin
         Elements.SecondaryChannelOffset:=PIEEE80211SecondaryChannelOffsetIE(Current);
-       end;       
+       end;
      end;
     WLAN_EID_CHAN_SWITCH_PARAM:begin
       if ElementLength <> SizeOf(TIEEE80211MeshChannelSwitchParamsIE) then
@@ -6096,7 +6096,7 @@ begin
       else
        begin
         Elements.MeshChannelSwitchParams:=PIEEE80211MeshChannelSwitchParamsIE(Current);
-       end;       
+       end;
      end;
     WLAN_EID_WIDE_BW_CHANNEL_SWITCH:begin
       if not(Action) or (ElementLength <> SizeOf(TIEEE80211WidebandChannelSwitchIE)) then
@@ -6106,7 +6106,7 @@ begin
       else
        begin
         Elements.WidebandChannelSwitch:=PIEEE80211WidebandChannelSwitchIE(Current);
-       end;       
+       end;
      end;
     WLAN_EID_CHANNEL_SWITCH_WRAPPER:begin
       if Action then
@@ -6151,7 +6151,7 @@ begin
         ParseFailed:=True;
        end
       else
-       begin      
+       begin
         {Cisco OUI and DTPC tag (0x00)}
         if (Current[0] = $00) and (Current[1] = $40) and (Current[2] = $96) and (Current[3] = $00) then
          begin
@@ -6162,9 +6162,9 @@ begin
           else
            begin
             Elements.CiscoDTPC:=Current;
-           end;           
+           end;
          end;
-       end; 
+       end;
      end;
     WLAN_EID_TIMEOUT_INTERVAL:begin
       if ElementLength >= SizeOf(TIEEE80211TimeoutIntervalIE) then
@@ -6174,27 +6174,27 @@ begin
       else
        begin
         ParseFailed:=True;
-       end;       
+       end;
      end;
    end;
-   
-   
+
+
    {Check Error}
    if ParseFailed then
     begin
      ParseError:=True;
     end;
-    
+
    {Update Position}
    Dec(Remain,ElementLength);
    Inc(Current,ElementLength);
   end;
- 
+
  if Remain <> 0 then
   begin
    ParseError:=True;
   end;
-  
+
  Result:=not(ParseError);
 end;
 
@@ -6207,9 +6207,9 @@ initialization
   begin
    WiFiStart(nil,NETWORK_EVENT_SYSTEM_START);
   end;
-  
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

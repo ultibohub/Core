@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -47,30 +47,30 @@ interface
 
 uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Network,Transport,Protocol,Sockets,
      Loopback,ARP,IP,IPv6,UDP,TCP,ICMP,ICMPv6,IGMP,RAW,DHCP,DNS;
-      
+
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-      
+
 {==============================================================================}
 const
  {Winsock2 specific constants}
  WINSOCK_VERSION = $0202;
- 
+
  WINSOCK_TCP_SERVER_THREAD_NAME = 'TCP Server';                 {Thread name for TCP server threads}
  WINSOCK_TCP_SERVER_THREAD_PRIORITY = THREAD_PRIORITY_NORMAL;   {Thread priority for TCP server threads}
- 
+
  WINSOCK_TCP_LISTENER_THREAD_NAME = 'TCP Listener';             {Thread name for TCP listener threads}
  WINSOCK_TCP_LISTENER_THREAD_PRIORITY = THREAD_PRIORITY_NORMAL; {Thread priority for TCP listener threads}
- 
+
  WINSOCK_UDP_SERVER_THREAD_NAME = 'UDP Server';                 {Thread name for UDP server threads}
  WINSOCK_UDP_SERVER_THREAD_PRIORITY = THREAD_PRIORITY_NORMAL;   {Thread priority for UDP server threads}
- 
+
  WINSOCK_UDP_LISTENER_THREAD_NAME = 'UDP Listener';             {Thread name for UDP listener threads}
  WINSOCK_UDP_LISTENER_THREAD_PRIORITY = THREAD_PRIORITY_NORMAL; {Thread priority for UDP listener threads}
- 
+
  FD_SETSIZE = GlobalSock.FD_SETSIZE;
- 
+
 const
  IOCPARM_MASK = GlobalSock.IOCPARM_MASK;
  IOC_VOID     = GlobalSock.IOC_VOID;
@@ -78,7 +78,7 @@ const
  IOC_IN       = GlobalSock.IOC_IN;
  IOC_INOUT    = GlobalSock.IOC_INOUT;
 
- FIONREAD = GlobalSock.FIONREAD; 
+ FIONREAD = GlobalSock.FIONREAD;
  FIONBIO = GlobalSock.FIONBIO;
  FIOASYNC = GlobalSock.FIOASYNC;
 
@@ -87,7 +87,7 @@ const
  SIOCSLOWAT = GlobalSock.SIOCSLOWAT;
  SIOCGLOWAT = GlobalSock.SIOCGLOWAT;
  SIOCATMARK = GlobalSock.SIOCATMARK;
- 
+
 const
 { Protocols }
  IPPROTO_IP       =  GlobalSock.IPPROTO_IP;
@@ -101,7 +101,7 @@ const
  IPPROTO_HMP      =  GlobalSock.IPPROTO_HMP;
  IPPROTO_IDP      =  GlobalSock.IPPROTO_IDP;
  IPPROTO_RDP      =  GlobalSock.IPPROTO_RDP;
- IPPROTO_IPV6	  =  GlobalSock.IPPROTO_IPV6;
+ IPPROTO_IPV6      =  GlobalSock.IPPROTO_IPV6;
  IPPROTO_ROUTING  =  GlobalSock.IPPROTO_ROUTING;
  IPPROTO_FRAGMENT =  GlobalSock.IPPROTO_FRAGMENT;
  IPPROTO_ICMPV6   =  GlobalSock.IPPROTO_ICMPV6;
@@ -153,7 +153,7 @@ const
  IMPLINK_IP         =  GlobalSock.IMPLINK_IP;
  IMPLINK_LOWEXPER   =  GlobalSock.IMPLINK_LOWEXPER;
  IMPLINK_HIGHEXPER  =  GlobalSock.IMPLINK_HIGHEXPER;
- 
+
 const
  TF_DISCONNECT           = GlobalSock.TF_DISCONNECT;
  TF_REUSE_SOCKET         = GlobalSock.TF_REUSE_SOCKET;
@@ -288,7 +288,7 @@ const
  _SS_ALIGNSIZE   = GlobalSock._SS_ALIGNSIZE;
  _SS_PAD1SIZE    = GlobalSock._SS_PAD1SIZE;
  _SS_PAD2SIZE    = GlobalSock._SS_PAD2SIZE;
- 
+
 const
 { Protocol families, same as address families for now. }
  PF_UNSPEC       = GlobalSock.PF_UNSPEC;
@@ -322,7 +322,7 @@ const
  PF_NETDES       = GlobalSock.PF_NETDES;
 
  PF_MAX          = GlobalSock.PF_MAX;
- 
+
 const
  INADDR_ANY       = GlobalSock.INADDR_ANY;
  INADDR_LOOPBACK  = GlobalSock.INADDR_LOOPBACK;
@@ -352,7 +352,7 @@ const
 
 { Define constant based on rfc883, used by gethostbyxxxx() calls. }
  MAXGETHOSTSTRUCT        = GlobalSock.MAXGETHOSTSTRUCT;
- 
+
 const
 { WinSock 2 extension -- bit values and indices for FD_XXX network events }
  FD_READ_BIT = 0;
@@ -373,7 +373,7 @@ const
  FD_GROUP_QOS = (1  shl  FD_GROUP_QOS_BIT);
  FD_MAX_EVENTS = 8;
  FD_ALL_EVENTS = ((1  shl  FD_MAX_EVENTS) - 1);
- 
+
 const
 { All Windows Sockets error constants are biased by WSABASEERR from the "normal"}
  WSABASEERR              = GlobalSock.WSABASEERR;
@@ -434,7 +434,7 @@ const
  WSASYSNOTREADY          = GlobalSock.WSASYSNOTREADY;
  WSAVERNOTSUPPORTED      = GlobalSock.WSAVERNOTSUPPORTED;
  WSANOTINITIALISED       = GlobalSock.WSANOTINITIALISED;
- 
+
  WSAENOMORE              = GlobalSock.WSAENOMORE;
  WSAECANCELLED           = GlobalSock.WSAECANCELLED;
  WSAEINVALIDPROCTABLE    = GlobalSock.WSAEINVALIDPROCTABLE;
@@ -446,7 +446,7 @@ const
  WSA_E_NO_MORE           = GlobalSock.WSA_E_NO_MORE;
  WSA_E_CANCELLED         = GlobalSock.WSA_E_CANCELLED;
  WSAEREFUSED             = GlobalSock.WSAEREFUSED;
- 
+
 { Error return codes from gethostbyname() and gethostbyaddr()
   (when using the resolver). Note that these errors are
   retrieved via WSAGetLastError() and must therefore follow
@@ -480,7 +480,7 @@ const
 
  WSANO_ADDRESS           = GlobalSock.WSANO_ADDRESS;
  NO_ADDRESS              = GlobalSock.NO_ADDRESS;
- 
+
 const
 { WinSock 2 extension -- new error codes and type definition }
  WSA_IO_PENDING = GlobalSock.WSA_IO_PENDING;
@@ -496,7 +496,7 @@ const
  WSA_WAIT_IO_COMPLETION = GlobalSock.WSA_WAIT_IO_COMPLETION;
  WSA_WAIT_TIMEOUT = GlobalSock.WSA_WAIT_TIMEOUT;
  WSA_INFINITE = GlobalSock.WSA_INFINITE;
- 
+
 { Windows Sockets errors redefined as regular Berkeley error constants.
   These are commented out in Windows NT to avoid conflicts with errno.h.
   Use the WSA constants instead. }
@@ -542,7 +542,7 @@ const
  ENOTREADY          =  GlobalSock.ENOTREADY;
  EVERNOTSUPPORTED   =  GlobalSock.EVERNOTSUPPORTED;
  ENOTINITIALISED    =  GlobalSock.ENOTINITIALISED;
- 
+
 const
  WSADESCRIPTION_LEN     =   GlobalSock.WSADESCRIPTION_LEN;
  WSASYS_STATUS_LEN      =   GlobalSock.WSASYS_STATUS_LEN;
@@ -550,7 +550,7 @@ const
  BASE_PROTOCOL          = 1;
  LAYERED_PROTOCOL       = 0;
  WSAPROTOCOL_LEN        = 255;
- 
+
 const
 { WinSock 2 extension -- WSABUF and QOS struct, include qos.h to pull in FLOWSPEC and related definitions }
  SERVICETYPE_NOTRAFFIC             =  $00000000;  // No data in this direction
@@ -560,7 +560,7 @@ const
  SERVICETYPE_NETWORK_UNAVAILABLE   =  $00000004;  // Used to notify change to user
  SERVICETYPE_GENERAL_INFORMATION   =  $00000005;  // corresponds to "General Parameters" defined by IntServ
  SERVICETYPE_NOCHANGE              =  $00000006;  // used to indicate that the flow spec contains no change from any previous one
- 
+
  SERVICE_IMMEDIATE_TRAFFIC_CONTROL =  $80000000; // to turn on immediate traffic control, OR this flag with the ServiceType field in teh FLOWSPEC
 
 { WinSock 2 extension -- manifest constants for return values of the condition function }
@@ -576,7 +576,7 @@ const
 { WinSock 2 extension -- data type and manifest constants for socket groups }
  SG_UNCONSTRAINED_GROUP = $01;
  SG_CONSTRAINED_GROUP = $02;
- 
+
 const
 { Flag bit definitions for dwProviderFlags }
  PFL_MULTIPLE_PROTO_ENTRIES = $00000001;
@@ -645,7 +645,7 @@ const
 { WinSock 2 extension -- manifest constants for SIO_TRANSLATE_HANDLE ioctl }
  TH_NETDEV = $00000001;
  TH_TAPI = $00000002;
- 
+
 const
  SERVICE_MULTIPLE = $00000001;
 
@@ -699,7 +699,7 @@ const
  SERVICE_TYPE_VALUE_TCPPORT = SERVICE_TYPE_VALUE_TCPPORTA;
  SERVICE_TYPE_VALUE_UDPPORT = SERVICE_TYPE_VALUE_UDPPORTA;
  SERVICE_TYPE_VALUE_OBJECTID = SERVICE_TYPE_VALUE_OBJECTIDA;
- 
+
 const
  LUP_DEEP = $0001;
  LUP_CONTAINERS = $0002;
@@ -722,14 +722,14 @@ const
 
 { Return flags }
  RESULT_IS_ALIAS = $0001;
- 
+
 const
 { WSARecvMsg flags }
  MSG_TRUNC     =  $0100;
  MSG_CTRUNC    =  $0200;
  MSG_BCAST     =  $0400;
  MSG_MCAST     =  $0800;
- 
+
 { Event flag definitions for WSAPoll() }
  POLLRDNORM = $0100;
  POLLRDBAND = $0200;
@@ -743,7 +743,7 @@ const
  POLLERR    = $0001;
  POLLHUP    = $0002;
  POLLNVAL   = $0004;
- 
+
 const
  {Error codes from getaddrinfo()}
  EAI_AGAIN    = GlobalSock.EAI_AGAIN;
@@ -757,7 +757,7 @@ const
  EAI_SOCKTYPE = GlobalSock.EAI_SOCKTYPE;
 
  EAI_NODATA = GlobalSock.EAI_NODATA;
- 
+
 const
  {Flags used in "hints" argument to getaddrinfo()}
  {Note: Under Linux these values may be different}
@@ -788,13 +788,13 @@ const
  INET6_ADDRSTR_ANY = GlobalSock.INET6_ADDRSTR_ANY;
 
  INET_ADDRSTR_BROADCAST = GlobalSock.INET_ADDRSTR_BROADCAST;
- 
+
  INET_ADDRSTRLEN  = GlobalSock.INET_ADDRSTRLEN;
  INET6_ADDRSTRLEN = GlobalSock.INET6_ADDRSTRLEN;
 
  IN6ADDR_ANY_INIT:TIn6Addr = (u6_addr16: (0, 0, 0, 0, 0, 0, 0, 0));
  IN6ADDR_LOOPBACK_INIT:TIn6Addr = (u6_addr8: (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1));
- 
+
 {==============================================================================}
 type
  {Winsock2 specific types}
@@ -814,16 +814,16 @@ type
  PWSAEVENT = GlobalSock.PWSAEVENT;
  LPWSAEVENT = GlobalSock.LPWSAEVENT;
  PMBChar = GlobalSock.PMBChar;
- 
+
 type
  PFDSet = GlobalSock.PFDSet;
  fdset = GlobalSock.fdset;
  TFDSet = GlobalSock.TFDSet;
- 
+
  PTimeVal = GlobalSock.PTimeVal;
  timeval = GlobalSock.timeval;
  TTimeVal = GlobalSock.TTimeVal;
- 
+
 type
  PHostEnt = GlobalSock.PHostEnt;
  hostent = GlobalSock.hostent;
@@ -840,7 +840,7 @@ type
  PProtoEnt = GlobalSock.PProtoEnt;
  protoent = GlobalSock.protoent;
  TProtoEnt = GlobalSock.TProtoEnt;
- 
+
 type
  SunB = GlobalSock.SunB;
 
@@ -863,7 +863,7 @@ type
  PSockAddrIn = GlobalSock.PSockAddrIn;
  sockaddr_in = GlobalSock.sockaddr_in;
  TSockAddrIn = GlobalSock.TSockAddrIn;
- 
+
  {IPv6 version of above}
  PSockAddrIn6 = GlobalSock.PSockAddrIn6;
  sockaddr_in6 = GlobalSock.sockaddr_in6;
@@ -872,7 +872,7 @@ type
  {IPX version of above}
  PSockAddrIpx = GlobalSock.PSockAddrIpx;
  TSockAddrIpx = GlobalSock.TSockAddrIpx;
- 
+
 type
  { Structure used by kernel to store most addresses. }
  PSOCKADDR = GlobalSock.PSOCKADDR;
@@ -881,38 +881,38 @@ type
  {IPv6 version of above}
  PSOCKADDR6 = GlobalSock.PSOCKADDR6;
  TSockAddr6 = GlobalSock.TSockAddr6;
- 
+
  {IPX version of above}
  {PSOCKADDRIPX = GlobalSock.PSOCKADDRIPX;}
  {TSockAddrIpx = GlobalSock.TSockAddrIpx;}
- 
+
  { Structure used by kernel to pass protocol information in raw sockets. }
  PSockProto = GlobalSock.PSockProto;
  sockproto = GlobalSock.sockproto;
  TSockProto = GlobalSock.TSockProto;
- 
+
 type
  {RFC 2553: protocol-independent placeholder for socket addresses}
  PSockAddrStorage = GlobalSock.PSockAddrStorage;
  sockaddr_storage = GlobalSock.sockaddr_storage;
  TSockAddrStorage = GlobalSock.TSockAddrStorage;
- 
+
 type
 { Structure used for manipulating linger option. }
  PLinger = GlobalSock.PLinger;
  linger = GlobalSock.linger;
  TLinger = GlobalSock.TLinger;
- 
+
 type
  PWSAData = GlobalSock.PWSAData;
  WSAData = GlobalSock.WSAData;
  TWSAData = GlobalSock.TWSAData;
- 
+
  WSAOVERLAPPED = TOverlapped;
  TWSAOverlapped = WSAOverlapped;
  PWSAOverlapped = ^WSAOverlapped;
  LPWSAOVERLAPPED = PWSAOverlapped;
- 
+
 type
  BLOB = record
   cbSize : ULONG;
@@ -921,7 +921,7 @@ type
  _BLOB = BLOB;
  TBLOB = BLOB;
  PBLOB = ^BLOB;
- 
+
 type
 { WinSock 2 extension -- WSABUF and QOS struct, include qos.h to pull in FLOWSPEC and related definitions }
  WSABUF = record
@@ -952,7 +952,7 @@ type
  end {TQualityOfService};
  PQOS = ^TQualityOfService;
  LPQOS = PQOS;
- 
+
 type
  GROUP = u_long;
  PGROUP = ^GROUP;
@@ -972,7 +972,7 @@ type
                          // length > 1 means protocol chain
   ChainEntries: Array[0..MAX_PROTOCOL_CHAIN-1] of LongInt; { a list of dwCatalogEntryIds }
  end {TWSAPROTOCOLCHAIN};
- 
+
 type
  TWSAProtocol_InfoA = record
   dwServiceFlags1: LongInt;
@@ -1026,7 +1026,7 @@ type
 
  TWSAProtocol_Info = TWSAProtocol_InfoA;
  LPWSAProtocol_Info = PWSAProtocol_InfoA;
- 
+
 type
 { SockAddr Information }
  SOCKET_ADDRESS = record
@@ -1042,7 +1042,7 @@ type
   iSocketType, iProtocol : LongInt;
  end {CSADDR_INFO};
  PCSADDR_INFO = ^CSADDR_INFO;
- 
+
 { Address list returned via SIO_ADDRESS_LIST_QUERY }
  SOCKET_ADDRESS_LIST = record
   iAddressCount: Longint;
@@ -1088,7 +1088,7 @@ type
  end {TWSAQuerySetA};
  PWSAQuerySetA = ^TWSAQuerySetA;
  LPWSAQuerySetA = PWSAQuerySetA;
- 
+
  TWSAQuerySetW = record
   dwSize: LongInt;
   lpszServiceInstanceName: PWideChar;
@@ -1147,7 +1147,7 @@ type
   lpValue: Pointer;
  end {_WSANSClassInfoA};
  PWSANSClassInfoA = ^TWSANSClassInfoA;
- 
+
  TWSANSClassInfoW = record
   lpszName: PWideChar;
   dwNameSpace: LongInt;
@@ -1212,17 +1212,17 @@ type
 { WSAAccept() and overlapped I/O completion routine. }
  LPCONDITIONPROC = function (lpCallerId: LPWSABUF; lpCallerData : LPWSABUF; lpSQOS, lpGQOS : LPQOS; lpCalleeId, lpCalleeData : LPWSABUF; g : PGROUP; dwCallbackData : DWORD_PTR ) : Longint;{$IFDEF i386} stdcall;{$ENDIF}
  LPWSAOVERLAPPED_COMPLETION_ROUTINE = procedure ( const dwError, cbTransferred : DWORD; const lpOverlapped : LPWSAOVERLAPPED; const dwFlags : DWORD );{$IFDEF i386} stdcall;{$ENDIF}
- 
+
 type
  {Structure used in getaddrinfo() call}
  PAddrInfo = GlobalSock.PAddrInfo;
  TAddrInfo = GlobalSock.TAddrInfo;
  PPAddrInfo = GlobalSock.PPAddrInfo;
- 
+
 {==============================================================================}
 type
  {Winsock2 specific classes}
- 
+
  {Base Socket classes}
  TWinsock2Socket = class(TListObject)
  public
@@ -1256,7 +1256,7 @@ type
   function GetLocalHost:String;
   function GetLocalAddress:String;
   function GetLocalAddresses:TStrings;
- 
+
   function GetSendSize:Integer;
   procedure SetSendSize(ASize:Integer);
   function GetReceiveSize:Integer;
@@ -1279,7 +1279,7 @@ type
   FLastError:LongInt;
   {}
   function GetBroadcastAddress:String;
-  
+
   function AllocateFamily:Boolean; virtual;
 
   function AllocateAddress(var ALength:Integer):PSockAddr;
@@ -1333,7 +1333,7 @@ type
 
   function ResolveHostEx(const AHost:String;AFamily:Integer;AAll:Boolean):TStrings;
  end;
- 
+
  TWinsock2SocketThread = class(TThreadEx) //To do //Base on TListObject instead ? //Move the stuff from ThreadEx to Here ?
  private
   {}
@@ -1346,7 +1346,7 @@ type
   property Prev:TWinsock2SocketThread read FPrev write FPrev;
   property Next:TWinsock2SocketThread read FNext write FNext;
  end;
- 
+
  TWinsock2SocketThreads = class(TObject) //To do //Base on TThreadLinkedList instead when completed //Need to override Add/Remove/Insert (for Find) and add Find
  public
   {}
@@ -1395,7 +1395,7 @@ type
   property Prev:TWinsock2SocketBuffer read FPrev write FPrev;
   property Next:TWinsock2SocketBuffer read FNext write FNext;
  end;
- 
+
  TWinsock2SocketBuffers = class(TObject) //To do //Base on TThreadLinkedList instead when completed //Need to override Add/Remove/Insert (for Find) and add Find
  public
   {}
@@ -1430,9 +1430,9 @@ type
   function Find(AValue:TWinsock2SocketBuffer):Boolean; virtual;
   procedure Clear; virtual;
  end;
- 
+
  {Raw Socket (SOCK_RAW) classes}
- TWinsock2RAWSocket = class(TWinsock2Socket) 
+ TWinsock2RAWSocket = class(TWinsock2Socket)
  public
   {}
   constructor Create;
@@ -1440,11 +1440,11 @@ type
   {}
   FBufferSize:Integer;
   FBroadcastEnabled:Boolean;
-  
+
   procedure SetSocketType(ASocketType:Integer); override;
   procedure SetProtocol(AProtocol:Integer); override;
 
-  procedure SetBufferSize(ABufferSize:Integer); 
+  procedure SetBufferSize(ABufferSize:Integer);
   procedure SetBroadcastEnabled(ABroadcastEnabled:Boolean);
  protected
   {}
@@ -1461,14 +1461,14 @@ type
   function RecvData(AData:Pointer;ACount:Integer):Integer; virtual;
   function SendData(AData:Pointer;ACount:Integer):Integer; virtual;
   function BroadcastData(AData:Pointer;ACount:Integer):Integer; virtual;
-  
+
   function RecvDataFrom(var AHost:String;AData:Pointer;ACount:Integer):Integer; virtual;
   function SendDataTo(const AHost:String;AData:Pointer;ACount:Integer):Integer; virtual;
   function BroadcastDataTo(const AAddress:String;AData:Pointer;ACount:Integer):Integer; virtual;
  end;
- 
+
  {Stream Socket (SOCK_STREAM) classes}
- TWinsock2TCPSocket = class(TWinsock2Socket) 
+ TWinsock2TCPSocket = class(TWinsock2Socket)
  public
   {}
   constructor Create;
@@ -1482,7 +1482,7 @@ type
   procedure SetProtocol(AProtocol:Integer); override;
 
   procedure SetBacklog(ABacklog:Integer);
-  
+
   procedure SetUseNagle(AUseNagle:Boolean);
   procedure SetUseKeepalive(AUseKeepalive:Boolean);
   procedure SetSegmentSize(ASegmentSize:Integer);
@@ -1493,9 +1493,9 @@ type
   FBacklog:Integer;
   FMaxSegmentSize:LongWord;
 
-  {}  
+  {}
   function Listen(ABacklog:Integer):LongInt;
-  
+
   function ReadFromSocket(AData:Pointer;ASize:Integer):LongInt;
   function WriteToSocket(AData:Pointer;ASize:Integer):LongInt;
 
@@ -1509,7 +1509,7 @@ type
   property UseKeepalive:Boolean read FUseKeepalive write SetUseKeepalive;
   property SegmentSize:Integer read FSegmentSize write SetSegmentSize;
   property MaxSegmentSize:LongWord read GetMaxSegmentSize write SetMaxSegmentSize;
-  
+
   {}
   function ReadData(AData:Pointer;ACount:Integer):Boolean;
   function WriteData(AData:Pointer;ACount:Integer):Boolean;
@@ -1518,7 +1518,7 @@ type
  end;
 
  {Datagram Socket (SOCK_DGRAM) classes}
- TWinsock2UDPSocket = class(TWinsock2Socket) 
+ TWinsock2UDPSocket = class(TWinsock2Socket)
  public
   {}
   constructor Create;
@@ -1526,11 +1526,11 @@ type
   {}
   FBufferSize:Integer;
   FBroadcastEnabled:Boolean;
-  
+
   procedure SetSocketType(ASocketType:Integer); override;
   procedure SetProtocol(AProtocol:Integer); override;
-  
-  procedure SetBufferSize(ABufferSize:Integer); 
+
+  procedure SetBufferSize(ABufferSize:Integer);
   procedure SetBroadcastEnabled(ABroadcastEnabled:Boolean);
  protected
   {}
@@ -1572,7 +1572,7 @@ type
   procedure SetFamily(AFamily:Integer); override;
 
   procedure SetBoundAddress(const ABoundAddress:String); override;
-  
+
   procedure SetRemoteHost(const ARemoteHost:String);
   procedure SetRemoteAddress(const ARemoteAddress:String);
  protected
@@ -1591,7 +1591,7 @@ type
   function Connect:Boolean; virtual;
   function Disconnect:Boolean; override;
  end;
- 
+
  {Stream Client classes}
  TWinsock2TCPClient = class(TWinsock2TCPSocket)
  public
@@ -1622,13 +1622,13 @@ type
   property RemotePort:Word read FRemotePort write SetRemotePort;
   property RemoteHost:String read FRemoteHost write SetRemoteHost;
   property RemoteAddress:String read FRemoteAddress write SetRemoteAddress;
-  
+
   {}
   function Connect:Boolean; virtual;
   function ConnectEx:Boolean; virtual;
   function Disconnect:Boolean; override;
  end;
- 
+
  {Datagram Client classes}
  TWinsock2UDPClient = class(TWinsock2UDPSocket)
  public
@@ -1642,14 +1642,14 @@ type
   FRemotePort:Word;
   FRemoteHost:String;
   FRemoteAddress:String;
-  
+
   {}
   procedure SetUseConnect(AUseConnect:Boolean);
 
   procedure SetFamily(AFamily:Integer); override;
 
   procedure SetBoundAddress(const ABoundAddress:String); override;
-  
+
   procedure SetRemotePort(ARemotePort:Word);
   procedure SetRemoteHost(const ARemoteHost:String);
   procedure SetRemoteAddress(const ARemoteAddress:String);
@@ -1665,12 +1665,12 @@ type
   property RemotePort:Word read FRemotePort write SetRemotePort;
   property RemoteHost:String read FRemoteHost write SetRemoteHost;
   property RemoteAddress:String read FRemoteAddress write SetRemoteAddress;
-  
+
   {}
   function Connect:Boolean; virtual;
   function Disconnect:Boolean; override;
  end;
- 
+
  {Stream Server classes}
  TWinsock2TCPListener = class;
  TWinsock2TCPServer = class(TWinsock2TCPSocket)
@@ -1776,7 +1776,7 @@ type
 
   procedure DoConnect(AThread:TWinsock2TCPServerThread); virtual;
   procedure DoDisconnect(AThread:TWinsock2TCPServerThread); virtual;
-  
+
   function DoExecute(AThread:TWinsock2TCPServerThread):Boolean; virtual;
  public
   {}
@@ -1788,7 +1788,7 @@ type
   property OnDisconnect:TTCPDisconnectEvent read FOnDisconnect write FOnDisconnect;
   property OnCreateThread:TTCPCreateThreadEvent read FOnCreateThread write FOnCreateThread;
  end;
- 
+
  {Datagrams Server classes}
  TWinsock2UDPListener = class;
  TWinsock2UDPServerBuffer = class;
@@ -1809,11 +1809,11 @@ type
  protected
   {}
   FBuffer:TWinsock2UDPServerBuffer;
-  
+
   function GetData:Pointer; virtual;
   function GetSize:Integer; virtual;
   function GetCount:Integer; virtual;
-  
+
   procedure SetBuffer(ABuffer:TWinsock2UDPServerBuffer); virtual;
   procedure SetLastError(ALastError:LongInt); virtual;
  public
@@ -1822,22 +1822,22 @@ type
   property PeerAddress:String read FPeerAddress;
   property UseListener:Boolean read FUseListener write SetUseListener;
   property Listener:TWinsock2UDPListener read FListener;
-  
+
   property Buffer:TWinsock2UDPServerBuffer read FBuffer;
-  
+
   property Data:Pointer read GetData;
   property Size:Integer read GetSize;
   property Count:Integer read GetCount;
-  
+
   function RecvData(AData:Pointer;ACount:Integer):Integer; override;
   function SendData(AData:Pointer;ACount:Integer):Integer; override;
   function BroadcastData(APort:Word;AData:Pointer;ACount:Integer):Integer; override;
-  
+
   function RecvDataFrom(var AHost:String;var APort:Word;AData:Pointer;ACount:Integer):Integer; override;
   function SendDataTo(const AHost:String;APort:Word;AData:Pointer;ACount:Integer):Integer; override;
   function BroadcastDataTo(const AAddress:String;APort:Word;AData:Pointer;ACount:Integer):Integer; override;
  end;
- 
+
  TWinsock2UDPServerThread = class(TWinsock2SocketThread)
  public
   {}
@@ -1846,14 +1846,14 @@ type
  private
   {}
   FLock:TCriticalSectionHandle;
-  
+
   FActive:Boolean;
   FData:TObject;
   FServer:TWinsock2UDPServer;
   {}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
-  
+
   function GetActive:Boolean;
   procedure SetActive(AActive:Boolean);
  protected
@@ -1868,7 +1868,7 @@ type
   {}
   procedure Execution; override;
  end;
- 
+
  TWinsock2UDPListenerThread = class(TWinsock2SocketThread)
  public
   {}
@@ -1887,7 +1887,7 @@ type
   {}
   procedure Execution; override;
  end;
- 
+
  TWinsock2UDPServerThreads = class(TWinsock2SocketThreads)
  public
   {}
@@ -1903,7 +1903,7 @@ type
   procedure SetMin(AMin:Integer);
   function GetMax:Integer;
   procedure SetMax(AMax:Integer);
-   
+
   procedure CreateThreads;
   function CreateThread(AForce:Boolean):TWinsock2UDPServerThread;
   procedure TerminateThread(AThread:TWinsock2UDPServerThread);
@@ -1918,7 +1918,7 @@ type
   procedure TerminateAll;
   function Terminate(AThread:TWinsock2UDPServerThread):Boolean;
  end;
- 
+
  TWinsock2UDPServerBuffer = class(TWinsock2SocketBuffer)
  public
   {}
@@ -1927,7 +1927,7 @@ type
  private
   {}
   FLock:TCriticalSectionHandle;
-  
+
   FActive:Boolean;
   FData:Pointer;
   FSize:Integer;
@@ -1935,7 +1935,7 @@ type
   {}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
-  
+
   function GetActive:Boolean;
   procedure SetActive(AActive:Boolean);
   procedure SetCount(ACount:Integer);
@@ -1946,7 +1946,7 @@ type
   property Size:Integer read FSize;
   property Count:Integer read FCount write SetCount;
  end;
- 
+
  TWinsock2UDPServerBuffers = class(TWinsock2SocketBuffers)
  public
   {}
@@ -1962,7 +1962,7 @@ type
   procedure SetMin(AMin:Integer);
   function GetMax:Integer;
   procedure SetMax(AMax:Integer);
-   
+
   procedure CreateBuffers;
   function CreateBuffer(AForce:Boolean):TWinsock2UDPServerBuffer;
   procedure DeleteBuffer(ABuffer:TWinsock2UDPServerBuffer);
@@ -1977,13 +1977,13 @@ type
   procedure DeleteAll;
   function Delete(ABuffer:TWinsock2UDPServerBuffer):Boolean;
  end;
- 
+
  TUDPExecuteEvent = function(AThread:TWinsock2UDPServerThread):Boolean of Object;
  TUDPCreateThreadEvent = procedure(AServer:TWinsock2UDPServer;var AThread:TWinsock2UDPServerThread) of Object;
  TUDPSelectThreadEvent = procedure(AServer:TWinsock2UDPServer;var AThread:TWinsock2UDPServerThread) of Object;
  TUDPCreateBufferEvent = procedure(ASize:Integer;var ABuffer:TWinsock2UDPServerBuffer) of Object;
  TUDPSelectBufferEvent = procedure(ASize:Integer;var ABuffer:TWinsock2UDPServerBuffer) of Object;
- 
+
  TWinsock2UDPListener = class(TWinsock2UDPSocket)
  public
   {}
@@ -2005,7 +2005,7 @@ type
   {}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
-  
+
   procedure SetActive(AActive:Boolean);
   procedure SetUseListener(AUseListener:Boolean);
  protected
@@ -2013,7 +2013,7 @@ type
   procedure SetLastError(ALastError:LongInt); virtual;
 
   function DoExecute(AThread:TWinsock2UDPServerThread):Boolean; virtual;
-  
+
   function SendToSocketEx(AHandle:THandle;ASockAddr:PSockAddr;ASockLen:Integer;AData:Pointer;ASize:Integer;var ACount:Integer):LongInt; override;
  public
   {}
@@ -2021,16 +2021,16 @@ type
   property UseListener:Boolean read FUseListener write SetUseListener;
   property Threads:TWinsock2UDPServerThreads read FThreads;
   property Buffers:TWinsock2UDPServerBuffers read FBuffers;
-  
+
   property OnExecute:TUDPExecuteEvent read FOnExecute write FOnExecute;
   property OnCreateThread:TUDPCreateThreadEvent read FOnCreateThread write FOnCreateThread;
   property OnCreateBuffer:TUDPCreateBufferEvent read FOnCreateBuffer write FOnCreateBuffer;
  end;
- 
+
 {==============================================================================}
 {var}
  {Winsock2 specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure WS2Init;
@@ -2045,13 +2045,13 @@ function accept( const s: TSocket; addr: PSockAddr; addrlen: PLongint ): TSocket
 function accept( const s: TSocket; addr: PSockAddr; var addrlen: Longint ): TSocket; overload;
 function bind( const s: TSocket; addr: PSockAddr; namelen: Longint ): Longint; overload;
 function bind( const s: TSocket; var addr: TSockAddr; namelen: Longint ): Longint; overload;
-function closesocket( const s: TSocket ): Longint; 
+function closesocket( const s: TSocket ): Longint;
 function connect( const s: TSocket; name: PSockAddr; namelen: Longint): Longint; overload;
 function connect( const s: TSocket; var name: TSockAddr; namelen: Longint): Longint; overload;
 function ioctlsocket( const s: TSocket; cmd: Longint; var arg: u_long ): Longint; overload;
 function ioctlsocket( const s: TSocket; cmd: Longint; argp: pu_long ): Longint; overload;
-function getpeername( const s: TSocket; var name: TSockAddr; var namelen: Longint ): Longint; 
-function getsockname( const s: TSocket; var name: TSockAddr; var namelen: Longint ): Longint; 
+function getpeername( const s: TSocket; var name: TSockAddr; var namelen: Longint ): Longint;
+function getsockname( const s: TSocket; var name: TSockAddr; var namelen: Longint ): Longint;
 function getsockopt( const s: TSocket; const level, optname: Longint; optval: PChar; var optlen: Longint ): Longint; overload;
 function getsockopt( const s: TSocket; const level, optname: Longint; optval: Pointer; var optlen: Longint ): Longint; overload;
 function getsockopt( const s: TSocket; const level, optname: Longint; var optval; var optlen: Longint ): Longint; overload;
@@ -2061,20 +2061,20 @@ function htonl(hostlong: u_long): u_long;
 function htonll(hostlonglong: UInt64): UInt64;
 function htons(hostshort: u_short): u_short;
 function inet_addr(const cp: PChar): u_long;
-function inet_ntoa(inaddr: TInAddr): PChar; 
-function listen(s: TSocket; backlog: Longint): Longint; 
+function inet_ntoa(inaddr: TInAddr): PChar;
+function listen(s: TSocket; backlog: Longint): Longint;
 function ntohd(netdouble: UInt64): Double;
 function ntohf(netfloat: UInt32): Single;
 function ntohl(netlong: u_long): u_long;
 function ntohll(netlonglong: UInt64): UInt64;
-function ntohs(netshort: u_short): u_short; 
+function ntohs(netshort: u_short): u_short;
 function recv(s: TSocket; var Buf; len, flags: Longint): Longint;  overload;
 function recv(s: TSocket; Buf: PChar; len, flags: Longint): Longint; overload;
 function recv(s: TSocket; Buf: Pointer; len, flags: Longint): Longint;  overload;
 function recvfrom(s: TSocket; Buf: PChar; len, flags: Longint; from: PSockAddr; fromlen: PLongint): Longint; overload;
 function recvfrom(s: TSocket; Buf: Pointer; len, flags: Longint; from: PSockAddr; fromlen: PLongint): Longint; overload;
 function recvfrom(s: TSocket; var Buf; len, flags: Longint; var from: TSockAddr; var fromlen: Longint): Longint; overload;
-function select(nfds: Longint; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): Longint; 
+function select(nfds: Longint; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): Longint;
 function send(s: TSocket; var Buf; len, flags: Longint): Longint; overload;
 function send(s: TSocket; const Buf: PChar; len, flags: Longint): Longint; overload;
 function send(s: TSocket; Buf: Pointer; len, flags: Longint): Longint; overload;
@@ -2084,16 +2084,16 @@ function sendto(s: TSocket; Buf: Pointer; len, flags: Longint; addrto: PSockAddr
 function setsockopt(s: TSocket; level, optname: Longint; const optval; optlen: Longint): Longint; overload;
 function setsockopt(s: TSocket; level, optname: Longint; const optval: PChar; optlen: Longint): Longint; overload;
 function setsockopt(s: TSocket; level, optname: Longint; optval: Pointer; optlen: Longint): Longint; overload;
-function shutdown(s: TSocket; how: Longint): Longint; 
-function socket(af, struct, protocol: Longint): TSocket; 
+function shutdown(s: TSocket; how: Longint): Longint;
+function socket(af, struct, protocol: Longint): TSocket;
 
-function gethostbyaddr(addr: Pointer; len, family: Longint): PHostEnt; 
-function gethostbyname(const name: PChar): PHostEnt; 
-function gethostname(name: PChar; len: Longint): Longint; 
-function getservbyport(port: Longint; const proto: PChar): PServEnt; 
-function getservbyname(const name, proto: PChar): PServEnt; 
-function getprotobynumber(proto: Longint): PProtoEnt; 
-function getprotobyname(const name: PChar): PProtoEnt; 
+function gethostbyaddr(addr: Pointer; len, family: Longint): PHostEnt;
+function gethostbyname(const name: PChar): PHostEnt;
+function gethostname(name: PChar; len: Longint): Longint;
+function getservbyport(port: Longint; const proto: PChar): PServEnt;
+function getservbyname(const name, proto: PChar): PServEnt;
+function getprotobynumber(proto: Longint): PProtoEnt;
+function getprotobyname(const name: PChar): PProtoEnt;
 
 function getaddrinfo(pNodeName, pServiceName: PChar; pHints: PAddrInfo; var ppResult: PAddrInfo): LongInt;
 procedure freeaddrinfo(ai: PAddrInfo);
@@ -2102,11 +2102,11 @@ function getnameinfo(sa: PSockAddr; salen: Integer; host: PChar; hostlen: DWORD;
 function gai_strerror(ecode: Integer): PChar;
 
 function WSAStartup(wVersionRequired: word; var WSData: TWSAData): Longint;
-function WSACleanup: Longint; 
+function WSACleanup: Longint;
 procedure WSASetLastError(iError: Longint); inline;
 function WSAGetLastError: Longint; inline;
 function WSAIsBlocking: BOOL;
-function WSAUnhookBlockingHook: Longint; 
+function WSAUnhookBlockingHook: Longint;
 function WSASetBlockingHook(lpBlockFunc: TFarProc): TFarProc;
 function WSACancelBlockingCall: Longint;
 function WSAAsyncGetServByName(HWindow: HWND; wMsg: u_int; const name, proto: PChar; buf: PChar; buflen: Longint): THandle;
@@ -2134,16 +2134,16 @@ function WSAConnect( s : TSocket; name : PSockAddr; namelen : Longint; lpCallerD
 function WSAConnectByList( s : TSocket; SocketAddressList : PSOCKET_ADDRESS_LIST; LocalAddressLength : LPDWORD;  LocalAddress : PSockAddr; RemoteAddressLength : LPDWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
 function WSAConnectByNameA( s : TSocket; nodename : PChar; servicename : PChar; LocalAddressLength : LPDWORD; LocalAddress : PSockAddr; RemoteAddressLength : LPDWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
 function WSAConnectByNameW( s : TSocket; nodename : PWideChar; servicename : PWideChar; LocalAddressLength : LPDWORD; LocalAddress : PSockAddr; RemoteAddressLength : LPDWORD; RemoteAddress : PSockAddr; timeout : PTimeVal; Reserved : LPWSAOVERLAPPED): BOOL;
-function WSACreateEvent : WSAEVENT; 
+function WSACreateEvent : WSAEVENT;
 function WSADuplicateSocketA( s : TSocket; dwProcessId : DWORD; lpProtocolInfo : LPWSAProtocol_InfoA ) : Longint;
 function WSADuplicateSocketW( s : TSocket; dwProcessId : DWORD; lpProtocolInfo : LPWSAProtocol_InfoW ) : Longint;
 function WSAEnumNetworkEvents( s : TSocket; hEventObject : WSAEVENT; lpNetworkEvents : LPWSANETWORKEVENTS ) :Longint;
 function WSAEnumProtocolsA( lpiProtocols : PLongint; lpProtocolBuffer : LPWSAProtocol_InfoA; lpdwBufferLength : LPDWORD ) : Longint;
 function WSAEnumProtocolsW( lpiProtocols : PLongint; lpProtocolBuffer : LPWSAProtocol_InfoW; lpdwBufferLength : LPDWORD ) : Longint;
 function WSAEventSelect( s : TSocket; hEventObject : WSAEVENT; lNetworkEvents : LongInt ): Longint;
-function WSAGetOverlappedResult( s : TSocket; lpOverlapped : LPWSAOVERLAPPED; lpcbTransfer : LPDWORD; fWait : BOOL; lpdwFlags : LPDWORD ) : BOOL; 
+function WSAGetOverlappedResult( s : TSocket; lpOverlapped : LPWSAOVERLAPPED; lpcbTransfer : LPDWORD; fWait : BOOL; lpdwFlags : LPDWORD ) : BOOL;
 function WSAGetQosByName( s : TSocket; lpQOSName : LPWSABUF; lpQOS : LPQOS ): BOOL;
-function WSAHtonl( s : TSocket; hostlong : u_long; lpnetlong : pu_long ): Longint; 
+function WSAHtonl( s : TSocket; hostlong : u_long; lpnetlong : pu_long ): Longint;
 function WSAHtons( s : TSocket; hostshort : u_short; lpnetshort : pu_short ): Longint;
 function WSAIoctl( s : TSocket; dwIoControlCode : DWORD; lpvInBuffer : Pointer; cbInBuffer : DWORD; lpvOutBuffer : Pointer; cbOutBuffer : DWORD; lpcbBytesReturned : LPDWORD; lpOverlapped : LPWSAOVERLAPPED; lpCompletionRoutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE ) : Longint;
 function WSAJoinLeaf( s : TSocket; name : PSockAddr; namelen : Longint; lpCallerData,lpCalleeData : LPWSABUF; lpSQOS,lpGQOS : LPQOS; dwFlags : DWORD ) : TSocket;
@@ -2184,12 +2184,12 @@ function WSARemoveServiceClass( lpServiceClassId : PGUID ) : Longint;
 function WSAGetServiceClassInfoA( lpProviderId : PGUID; lpServiceClassId : PGUID; lpdwBufSize : LPDWORD; lpServiceClassInfo : LPWSAServiceClassInfoA ): Longint;
 function WSAGetServiceClassInfoW( lpProviderId : PGUID; lpServiceClassId : PGUID; lpdwBufSize : LPDWORD; lpServiceClassInfo : LPWSAServiceClassInfoW ): Longint;
 
-function WSAEnumNameSpaceProvidersA( lpdwBufferLength: LPDWORD; lpnspBuffer: LPWSANameSpace_InfoA ): Longint; 
-function WSAEnumNameSpaceProvidersW( lpdwBufferLength: LPDWORD; lpnspBuffer: LPWSANameSpace_InfoW ): Longint; 
+function WSAEnumNameSpaceProvidersA( lpdwBufferLength: LPDWORD; lpnspBuffer: LPWSANameSpace_InfoA ): Longint;
+function WSAEnumNameSpaceProvidersW( lpdwBufferLength: LPDWORD; lpnspBuffer: LPWSANameSpace_InfoW ): Longint;
 
 function WSAGetServiceClassNameByClassIdA( lpServiceClassId: PGUID; lpszServiceClassName: PChar; lpdwBufferLength: LPDWORD ): Longint;
-function WSAGetServiceClassNameByClassIdW( lpServiceClassId: PGUID; lpszServiceClassName: PWideChar; lpdwBufferLength: LPDWORD ): Longint; 
-function WSASetServiceA( lpqsRegInfo: LPWSAQuerySetA; essoperation: TWSAESetServiceOp; dwControlFlags: DWORD ): Longint; 
+function WSAGetServiceClassNameByClassIdW( lpServiceClassId: PGUID; lpszServiceClassName: PWideChar; lpdwBufferLength: LPDWORD ): Longint;
+function WSASetServiceA( lpqsRegInfo: LPWSAQuerySetA; essoperation: TWSAESetServiceOp; dwControlFlags: DWORD ): Longint;
 function WSASetServiceW( lpqsRegInfo: LPWSAQuerySetW; essoperation: TWSAESetServiceOp; dwControlFlags: DWORD ): Longint;
 
 function WSAMakeSyncReply(Buflen, Error: Word): Longint;
@@ -2206,14 +2206,14 @@ procedure FD_ZERO(var FDSet: TFDSet);
 
 {==============================================================================}
 {Winsock2 Undocumented Functions}
-function WsControl(Proto:DWORD;Action:DWORD;pRequestInfo:Pointer; var pcbRequestInfoLen:DWORD;pResponseInfo:Pointer; var pcbResponseInfoLen:DWORD):Integer; 
+function WsControl(Proto:DWORD;Action:DWORD;pRequestInfo:Pointer; var pcbRequestInfoLen:DWORD;pResponseInfo:Pointer; var pcbResponseInfoLen:DWORD):Integer;
 
-function getnetbyaddr(addr: Pointer; len, Struct: Integer): PNetEnt; 
-function getnetbyname(const name: PChar): PNetEnt; 
+function getnetbyaddr(addr: Pointer; len, Struct: Integer): PNetEnt;
+function getnetbyname(const name: PChar): PNetEnt;
 
 {==============================================================================}
 {Winsock2 Enhanced Functions}
-function WsControlEx(Proto:DWORD;Action:DWORD;pRequestInfo:Pointer; var pcbRequestInfoLen:DWORD;pResponseInfo:Pointer; var pcbResponseInfoLen:DWORD):Integer; 
+function WsControlEx(Proto:DWORD;Action:DWORD;pRequestInfo:Pointer; var pcbRequestInfoLen:DWORD;pResponseInfo:Pointer; var pcbResponseInfoLen:DWORD):Integer;
 
 {==============================================================================}
 {RTL Text IO Functions}
@@ -2224,7 +2224,7 @@ function SysTextIOWriteBuffer(ABuffer:PChar;ACount:LongInt;AUserData:Pointer):Lo
 {==============================================================================}
 {Winsock2 Helper Functions}
 function Winsock2RedirectInput(s:TSocket):Boolean;
-function Winsock2RedirectOutput(s:TSocket):Boolean; 
+function Winsock2RedirectOutput(s:TSocket):Boolean;
 
 function Winsock2ErrorToString(AError:LongInt):String;
 
@@ -2238,20 +2238,20 @@ implementation
 var
  {Winsock2 specific variables}
  WS2Initialized:Boolean;
- 
+
  WS2StartupCount:LongWord;
  WS2StartupError:LongWord;
  WS2StartupLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
 
  WS2TlsSize:LongWord;
  WS2TlsIndex:LongWord;
- 
+
  WS2MaxSockets:Word;
  WS2MaxDatagram:Word;
 
  WS2TextIOInputSocket:TSocket = INVALID_SOCKET;
  WS2TextIOOutputSocket:TSocket = INVALID_SOCKET;
- 
+
 {==============================================================================}
 {==============================================================================}
 {TWinsock2Socket}
@@ -2292,7 +2292,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: SetFamily');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -2318,7 +2318,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: SetSocketType');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -2337,7 +2337,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: SetProtocol');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -2357,7 +2357,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: SetBoundPort');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  BoundPort = ' + IntToStr(ABoundPort));
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -2379,7 +2379,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: SetBoundAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  BoundAddress = ' + ABoundAddress);
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -2410,7 +2410,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: SetReuseAddress');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  FReuseAddress:=AReuseAddress;
 
@@ -2420,7 +2420,7 @@ begin
  if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_REUSEADDR,PChar(@WorkBool),SizeOf(WorkBool)) = ERROR_SUCCESS then Exit;
 
  FLastError:=Winsock2.WSAGetLastError;
- 
+
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
  {$ENDIF}
@@ -2441,7 +2441,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: GetLocalPort');
  {$ENDIF}
- 
+
  FLastError:=WSAENOTCONN;
  if not Connected then Exit;
 
@@ -2453,7 +2453,7 @@ begin
   if Winsock2.getsockname(Handle,SockAddr^,SockAddrLength) = SOCKET_ERROR then
    begin
     FLastError:=Winsock2.WSAGetLastError;
-    
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockname returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -2471,7 +2471,7 @@ begin
        Result:=Winsock2.ntohs(PSockAddrIn6(SockAddr).sin6_port);
       end;
     end;
-    
+
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Result = ' + IntToStr(Result));
     {$ENDIF}
@@ -2495,13 +2495,13 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: GetLocalHost');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  SetLength(WorkBuffer,MAX_PATH);
  if Winsock2.gethostname(PChar(WorkBuffer),Length(WorkBuffer)) = SOCKET_ERROR then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  gethostname returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -2509,7 +2509,7 @@ begin
  else
   begin
    Result:=String(PChar(WorkBuffer));
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Result = ' + Result);
    {$ENDIF}
@@ -2530,14 +2530,14 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: GetLocalAddress');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  Addresses:=GetLocalAddresses;
  if Addresses <> nil then
   begin
    try
     if Addresses.Count > 0 then Result:=Addresses.Strings[0];
-    
+
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Result = ' + Result);
     {$ENDIF}
@@ -2568,7 +2568,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: GetLocalAddresses');
  {$ENDIF}
- 
+
  Name:=GetLocalHost;
  AddrInfo:=nil;
  HintsInfo.ai_family:=AF_UNSPEC;
@@ -2585,7 +2585,7 @@ begin
  if Winsock2.getaddrinfo(PChar(Name),nil,@HintsInfo,AddrInfo) <> ERROR_SUCCESS then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getaddrinfo returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -2605,12 +2605,12 @@ begin
        AF_INET6:begin
          {IPv6}
          SetLength(WorkBuffer,INET6_ADDRSTRLEN);
-         
+
          if Winsock2.InetNtopA(AF_INET6,@PSockAddrIn6(NextAddr.ai_addr).sin6_addr,PChar(WorkBuffer),Length(WorkBuffer)) <> nil then
           begin
            Result.Add(String(PChar(WorkBuffer)));
-          end; 
-         
+          end;
+
          {BufferLength:=Length(WorkBuffer);
          if Winsock2.WSAAddressToStringA(PSockAddr(NextAddr.ai_addr),NextAddr.ai_addrlen,nil,PChar(WorkBuffer),@BufferLength) = ERROR_SUCCESS then
           begin
@@ -2654,7 +2654,7 @@ begin
  if Winsock2.getsockopt(Handle,SOL_SOCKET,SO_SNDBUF,PChar(@Result),Size) = SOCKET_ERROR then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockopt returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -2672,7 +2672,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: SetSendSize');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  FSendSize:=ASize;
 
@@ -2681,7 +2681,7 @@ begin
  if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_SNDBUF,PChar(@ASize),SizeOf(Integer)) = SOCKET_ERROR then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -2702,7 +2702,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: GetReceiveSize');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  Result:=FReceiveSize;
 
@@ -2712,7 +2712,7 @@ begin
  if Winsock2.getsockopt(Handle,SOL_SOCKET,SO_RCVBUF,PChar(@Result),Size) = SOCKET_ERROR then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockopt returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -2730,16 +2730,16 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: SetReceiveSize');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  FReceiveSize:=ASize;
- 
+
  if not Connected then Exit;
- 
+
  if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_RCVBUF,PChar(@ASize),SizeOf(Integer)) = SOCKET_ERROR then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -2760,7 +2760,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: GetSendTimeout');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  Result:=FSendTimeout;
 
@@ -2770,7 +2770,7 @@ begin
  if Winsock2.getsockopt(Handle,SOL_SOCKET,SO_SNDTIMEO,PChar(@Result),Size) = SOCKET_ERROR then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockopt returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -2788,7 +2788,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: SetSendTimeout');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  FSendTimeout:=ATimeout;
 
@@ -2797,7 +2797,7 @@ begin
  if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_SNDTIMEO,PChar(@ATimeout),SizeOf(Integer)) = SOCKET_ERROR then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -2818,7 +2818,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: GetReceiveTimeout');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  Result:=FReceiveTimeout;
 
@@ -2828,7 +2828,7 @@ begin
  if Winsock2.getsockopt(Handle,SOL_SOCKET,SO_RCVTIMEO,PChar(@Result),Size) = SOCKET_ERROR then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockopt returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -2846,16 +2846,16 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: SetReceiveTimeout');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  FReceiveTimeout:=ATimeout;
 
  if not Connected then Exit;
- 
+
  if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_RCVTIMEO,PChar(@ATimeout),SizeOf(Integer)) = SOCKET_ERROR then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -2876,7 +2876,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: GetConnectTimeout');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  Result:=FConnectTimeout;
 
@@ -2886,7 +2886,7 @@ begin
  if Winsock2.getsockopt(Handle,SOL_SOCKET,SO_CONNTIMEO,PChar(@Result),Size) = SOCKET_ERROR then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockopt returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -2904,7 +2904,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: SetConnectTimeout');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  FConnectTimeout:=ATimeout;
 
@@ -2913,7 +2913,7 @@ begin
  if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_CONNTIMEO,PChar(@ATimeout),SizeOf(Integer)) = SOCKET_ERROR then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -2928,14 +2928,14 @@ begin
  Result:='';
  FLastError:=WSANOTINITIALISED;
  if WS2StartupError <> ERROR_SUCCESS then Exit;
- 
+
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: GetBroadcastAddress');
  {$ENDIF}
- 
+
  FLastError:=WSAENOTCONN;
  if not Connected then Exit;
- 
+
  {Check Family}
  FLastError:=WSAEINVAL;
  case FFamily of
@@ -2950,7 +2950,7 @@ begin
     Result:=''; {No broadcast in IPv6}
    end;
  end;
- 
+
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Result = ' + Result);
  {$ENDIF}
@@ -2971,7 +2971,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: AllocateFamily');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -3034,7 +3034,7 @@ begin
      end;
    end;
   end;
-  
+
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  BoundAddress = ' + FBoundAddress);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Family = ' + AddressFamilyToString(FFamily));
@@ -3055,7 +3055,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: AllocateAddress');
  {$ENDIF}
- 
+
  {Check Family}
  FLastError:=WSAEINVAL;
  case FFamily of
@@ -3094,7 +3094,7 @@ begin
   {$IFDEF WINSOCK2_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: ReleaseAddress');
   {$ENDIF}
-  
+
   FreeMem(ASockAddr);
   ASockAddr:=nil;
   ALength:=0;
@@ -3126,7 +3126,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  BoundAddress = ' + FBoundAddress);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  BoundPort = ' + IntToStr(FBoundPort));
  {$ENDIF}
- 
+
  {Allocate Address}
  Result:=AllocateAddress(ALength);
  if Result = nil then Exit;
@@ -3146,13 +3146,13 @@ begin
        begin
         FLastError:=WSAEINVAL;
         ReleaseAddress(Result,ALength,False);
-        
+
         {$IFDEF WINSOCK2_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  inet_addr returned: = INADDR_NONE');
         {$ENDIF}
-        
+
         Exit;
-       end; 
+       end;
       if (InAddr.S_addr = INADDR_ANY) and (FBoundAddress <> INET_ADDRSTR_ANY) then
        begin
         FLastError:=WSAEINVAL;
@@ -3161,9 +3161,9 @@ begin
         {$IFDEF WINSOCK2_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  inet_addr returned: = INADDR_ANY');
         {$ENDIF}
-        
+
         Exit;
-       end; 
+       end;
       Result.sin_addr.S_addr:=InAddr.S_addr;
      end;
     FLastError:=ERROR_SUCCESS;
@@ -3183,10 +3183,10 @@ begin
         {$IFDEF WINSOCK2_DEBUG}
         if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  InetPtonA returned: ' + Winsock2ErrorToString(FLastError));
         {$ENDIF}
-        
+
         Exit;
        end;
-      
+
       {BufferLength:=SizeOf(TSockAddrIn6);
       if Winsock2.WSAStringToAddressA(PChar(FBoundAddress),FFamily,nil,PSockAddrIn(@SockAddr),@BufferLength) = SOCKET_ERROR then
        begin
@@ -3194,7 +3194,7 @@ begin
         ReleaseAddress(Result,ALength,False);
         Exit;
        end;}
-       
+
       PSockAddrIn6(Result).sin6_addr.s6_addr:=SockAddr.sin6_addr.s6_addr;
      end;
     FLastError:=ERROR_SUCCESS;
@@ -3214,14 +3214,14 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: AllocateSocket');
  {$ENDIF}
- 
+
  FSocketType:=ASocketType;
  FLastError:=ERROR_SUCCESS;
  FHandle:=Winsock2.socket(FFamily,FSocketType,FProtocol);
  if FHandle = INVALID_SOCKET then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  socket returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -3256,7 +3256,7 @@ begin
    if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_REUSEADDR,PChar(@WorkBool),SizeOf(WorkBool)) = SOCKET_ERROR then
     begin
      FLastError:=Winsock2.WSAGetLastError;
-      
+
      {$IFDEF WINSOCK2_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
@@ -3269,7 +3269,7 @@ begin
    if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_SNDBUF,PChar(@FSendSize),SizeOf(FSendSize)) = SOCKET_ERROR then
     begin
      FLastError:=Winsock2.WSAGetLastError;
-   
+
      {$IFDEF WINSOCK2_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
@@ -3339,7 +3339,7 @@ begin
   if Result = SOCKET_ERROR then
    begin
     FLastError:=Winsock2.WSAGetLastError;
-    
+
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  bind returned: = ' + Winsock2ErrorToString(FLastError));
     {$ENDIF}
@@ -3362,7 +3362,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: SockAddrToPort');
  {$ENDIF}
- 
+
  FLastError:=WSAEINVAL;
  if ASockAddr = nil then Exit;
 
@@ -3395,7 +3395,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: SockAddrToAddress');
  {$ENDIF}
- 
+
  FLastError:=WSAEINVAL;
  if ASockAddr = nil then Exit;
 
@@ -3404,7 +3404,7 @@ begin
  if Winsock2.getnameinfo(ASockAddr,ALength,PChar(WorkBuffer),NI_MAXHOST,nil,0,NI_NUMERICHOST) <> ERROR_SUCCESS then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getnameinfo returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -3428,7 +3428,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: PortToSockAddr');
  {$ENDIF}
- 
+
  FLastError:=WSAEINVAL;
  if ASockAddr = nil then Exit;
 
@@ -3446,7 +3446,7 @@ begin
    end;
  end;
 end;
- 
+
 {==============================================================================}
 
 function TWinsock2Socket.AddressToSockAddr(const AAddress:String;var ALength:Integer):PSockAddr;
@@ -3464,7 +3464,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: AddressToSockAddr');
  {$ENDIF}
- 
+
  AddrInfo:=nil;
  HintsInfo.ai_family:=AF_UNSPEC;
  HintsInfo.ai_protocol:=IPPROTO_IP;
@@ -3479,7 +3479,7 @@ begin
  if Winsock2.getaddrinfo(PChar(AAddress),nil,@HintsInfo,AddrInfo) <> ERROR_SUCCESS then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getaddrinfo returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -3547,7 +3547,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: Shutdown');
  {$ENDIF}
- 
+
  FLastError:=WSAENOTCONN;
  if not Connected then Exit;
 
@@ -3555,7 +3555,7 @@ begin
  if Winsock2.shutdown(FHandle,SD_BOTH) = SOCKET_ERROR then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  shutdown returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -3595,7 +3595,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: CloseSocket');
  {$ENDIF}
- 
+
  FLastError:=WSAENOTCONN;
  if not Connected then Exit;
 
@@ -3607,7 +3607,7 @@ begin
  if Winsock2.closesocket(OldHandle) = SOCKET_ERROR then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  closesocket returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -3640,7 +3640,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: ResolveHost');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Host = ' + AHost);
  {$ENDIF}
- 
+
  {Check Numeric}
  SockAddrLength:=0;
  SockAddr:=AddressToSockAddr(AHost,SockAddrLength);
@@ -3648,12 +3648,12 @@ begin
   begin
    try
     FLastError:=ERROR_SUCCESS;
-    
+
     case SockAddr.sin_family of
      AF_INET:begin
        {IPv4}
        Result:=Winsock2.inet_ntoa(SockAddr.sin_addr);
-       
+
        {$IFDEF WINSOCK2_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Result = ' + Result);
        {$ENDIF}
@@ -3661,15 +3661,15 @@ begin
      AF_INET6:begin
        {IPv6}
        SetLength(WorkBuffer,INET6_ADDRSTRLEN);
-       
+
        if Winsock2.InetNtopA(AF_INET6,@PSockAddrIn6(SockAddr).sin6_addr,PChar(WorkBuffer),Length(WorkBuffer)) <> nil then
         begin
          Result:=String(PChar(WorkBuffer));
-         
+
          {$IFDEF WINSOCK2_DEBUG}
          if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Result = ' + Result);
          {$ENDIF}
-        end; 
+        end;
       end;
     end;
    finally
@@ -3687,12 +3687,12 @@ begin
    HintsInfo.ai_addr:=nil;      {Must be nil}
    HintsInfo.ai_next:=nil;      {Must be nil}
    HintsInfo.ai_flags:=AI_ADDRCONFIG;
-  
+
    FLastError:=ERROR_SUCCESS;
    if Winsock2.getaddrinfo(PChar(AHost),nil,@HintsInfo,AddrInfo) <> ERROR_SUCCESS then
     begin
      FLastError:=Winsock2.WSAGetLastError;
-     
+
      {$IFDEF WINSOCK2_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getaddrinfo returned: = ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
@@ -3707,28 +3707,28 @@ begin
          AF_INET:begin
            {IPv4}
            Result:=Winsock2.inet_ntoa(PSockAddrIn(NextAddr.ai_addr).sin_addr);
-           
+
            {$IFDEF WINSOCK2_DEBUG}
            if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Result = ' + Result);
            {$ENDIF}
-           
+
            Exit;
           end;
          AF_INET6:begin
            {IPv6}
            SetLength(WorkBuffer,INET6_ADDRSTRLEN);
-           
+
            if Winsock2.InetNtopA(AF_INET6,@PSockAddrIn6(NextAddr.ai_addr).sin6_addr,PChar(WorkBuffer),Length(WorkBuffer)) <> nil then
             begin
              Result:=String(PChar(WorkBuffer));
-             
+
              {$IFDEF WINSOCK2_DEBUG}
              if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Result = ' + Result);
              {$ENDIF}
-             
+
              Exit;
-            end; 
-           
+            end;
+
            {BufferLength:=Length(WorkBuffer);
            if Winsock2.WSAAddressToStringA(PSockAddr(NextAddr.ai_addr),NextAddr.ai_addrlen,nil,PChar(WorkBuffer),@BufferLength) = ERROR_SUCCESS then
             begin
@@ -3765,7 +3765,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: ResolveAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Address = ' + AAddress);
  {$ENDIF}
- 
+
  SockAddrLength:=0;
  SockAddr:=AddressToSockAddr(AAddress,SockAddrLength);
  if SockAddr = nil then Exit;
@@ -3776,7 +3776,7 @@ begin
   if Winsock2.getnameinfo(SockAddr,SockAddrLength,PChar(WorkBuffer),NI_MAXHOST,nil,0,Flags) <> ERROR_SUCCESS then
    begin
     FLastError:=Winsock2.WSAGetLastError;
-    
+
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getnameinfo returned: = ' + Winsock2ErrorToString(FLastError));
     {$ENDIF}
@@ -3784,14 +3784,14 @@ begin
   else
    begin
     Result:=String(PChar(WorkBuffer));
-    
+
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Result = ' + Result);
     {$ENDIF}
    end;
  finally
   ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3810,20 +3810,20 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: ResolveFamily');
  {$ENDIF}
- 
+
  SockAddrLength:=0;
  SockAddr:=AddressToSockAddr(AAddress,SockAddrLength);
  if SockAddr = nil then Exit;
  try
   FLastError:=ERROR_SUCCESS;
   Result:=SockAddr.sin_family;
-  
+
   {$IFDEF WINSOCK2_DEBUG}
   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Result = ' + AddressFamilyToString(Result));
   {$ENDIF}
  finally
   ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -3849,7 +3849,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket: ResolveHostEx');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Host = ' + AHost);
  {$ENDIF}
- 
+
  {Check Numeric}
  SockAddrLength:=0;
  SockAddr:=AddressToSockAddr(AHost,SockAddrLength);
@@ -3857,7 +3857,7 @@ begin
   begin
    try
     FLastError:=ERROR_SUCCESS;
-    
+
     case SockAddr.sin_family of
      AF_INET:begin
        {IPv4}
@@ -3866,11 +3866,11 @@ begin
      AF_INET6:begin
        {IPv6}
        SetLength(WorkBuffer,INET6_ADDRSTRLEN);
-       
+
        if Winsock2.InetNtopA(AF_INET6,@PSockAddrIn6(SockAddr).sin6_addr,PChar(WorkBuffer),Length(WorkBuffer)) <> nil then
         begin
          Result.Add(String(PChar(WorkBuffer)));
-        end; 
+        end;
       end;
     end;
    finally
@@ -3878,7 +3878,7 @@ begin
    end;
   end
  else
-  begin 
+  begin
    AddrInfo:=nil;
    HintsInfo.ai_family:=AFamily;
    HintsInfo.ai_protocol:=IPPROTO_IP;
@@ -3888,13 +3888,13 @@ begin
    HintsInfo.ai_addr:=nil;      {Must be nil}
    HintsInfo.ai_next:=nil;      {Must be nil}
    if AAll then HintsInfo.ai_flags:=AI_ALL else HintsInfo.ai_flags:=AI_ADDRCONFIG;
-  
+
    FLastError:=ERROR_SUCCESS;
    Result:=TStringList.Create;
    if Winsock2.getaddrinfo(PChar(AHost),nil,@HintsInfo,AddrInfo) <> ERROR_SUCCESS then
     begin
      FLastError:=Winsock2.WSAGetLastError;
-     
+
      {$IFDEF WINSOCK2_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getaddrinfo returned: = ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
@@ -3913,12 +3913,12 @@ begin
          AF_INET6:begin
            {IPv6}
            SetLength(WorkBuffer,INET6_ADDRSTRLEN);
-           
+
            if Winsock2.InetNtopA(AF_INET6,@PSockAddrIn6(NextAddr.ai_addr).sin6_addr,PChar(WorkBuffer),Length(WorkBuffer)) <> nil then
             begin
              Result.Add(String(PChar(WorkBuffer)));
-            end; 
-           
+            end;
+
            {BufferLength:=Length(WorkBuffer);
            if Winsock2.WSAAddressToStringA(PSockAddr(NextAddr.ai_addr),NextAddr.ai_addrlen,nil,PChar(WorkBuffer),@BufferLength) = ERROR_SUCCESS then
             begin
@@ -3928,7 +3928,7 @@ begin
         end;
         NextAddr:=NextAddr.ai_next;
        end;
-       
+
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  Result Count = ' + IntToStr(Result.Count));
       {$ENDIF}
@@ -3967,7 +3967,7 @@ begin
   Clear;
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -3978,7 +3978,7 @@ function TWinsock2SocketThreads.GetCount:Integer;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FCount;
@@ -3992,7 +3992,7 @@ function TWinsock2SocketThreads.GetFirst:TWinsock2SocketThread;
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FFirst;
@@ -4006,7 +4006,7 @@ function TWinsock2SocketThreads.GetLast:TWinsock2SocketThread;
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FLast;
@@ -4023,9 +4023,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  Prev:=FLast;
  if Prev = nil then
   begin
@@ -4043,7 +4043,7 @@ begin
    AValue.Next:=nil;
    FLast:=AValue;
   end;
-  
+
  Result:=True;
 end;
 
@@ -4057,9 +4057,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  if APrev = nil then
   begin
    if FLast <> nil then
@@ -4100,7 +4100,7 @@ begin
      FLast:=AValue;
     end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -4114,9 +4114,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  if AValue.Prev <> nil then
   begin
    {Not First Object}
@@ -4154,7 +4154,7 @@ begin
   end;
  AValue.Prev:=nil;
  AValue.Next:=nil;
- 
+
  Result:=True;
 end;
 
@@ -4181,13 +4181,13 @@ function TWinsock2SocketThreads.Add(AValue:TWinsock2SocketThread):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if AValue = nil then Exit;
-  
+
   if Find(AValue) then Exit;
-  
+
   if Link(AValue) then
    begin
     Inc(FCount);
@@ -4205,13 +4205,13 @@ function TWinsock2SocketThreads.Remove(AValue:TWinsock2SocketThread):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if AValue = nil then Exit;
-  
+
   if not Find(AValue) then Exit;
-  
+
   if Unlink(AValue) then
    begin
     Dec(FCount);
@@ -4228,13 +4228,13 @@ function TWinsock2SocketThreads.Insert(APrev,AValue:TWinsock2SocketThread):Boole
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if AValue = nil then Exit;
-  
+
   if Find(AValue) then Exit;
-  
+
   if LinkEx(APrev,AValue) then
    begin
     Inc(FCount);
@@ -4253,11 +4253,11 @@ var
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if AValue = nil then Exit;
-  
+
   Next:=FFirst;
   while Next <> nil do
    begin
@@ -4266,7 +4266,7 @@ begin
       Result:=True;
       Exit;
      end;
-     
+
     Next:=Next.Next;
    end;
  finally
@@ -4276,13 +4276,13 @@ end;
 
 {==============================================================================}
 
-function TWinsock2SocketThreads.FindByID(AThreadID:TThreadID):TWinsock2SocketThread; 
+function TWinsock2SocketThreads.FindByID(AThreadID:TThreadID):TWinsock2SocketThread;
 var
  Next:TWinsock2SocketThread;
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   Next:=FFirst;
@@ -4293,7 +4293,7 @@ begin
       Result:=Next;
       Exit;
      end;
-     
+
     Next:=Next.Next;
    end;
  finally
@@ -4335,7 +4335,7 @@ end;
 
 {==============================================================================}
 
-destructor TWinsock2SocketBuffers.Destroy; 
+destructor TWinsock2SocketBuffers.Destroy;
 begin
  {}
  AcquireLock;
@@ -4343,7 +4343,7 @@ begin
   Clear;
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -4354,7 +4354,7 @@ function TWinsock2SocketBuffers.GetCount:Integer;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FCount;
@@ -4368,7 +4368,7 @@ function TWinsock2SocketBuffers.GetFirst:TWinsock2SocketBuffer;
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FFirst;
@@ -4382,7 +4382,7 @@ function TWinsock2SocketBuffers.GetLast:TWinsock2SocketBuffer;
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FLast;
@@ -4399,9 +4399,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  Prev:=FLast;
  if Prev = nil then
   begin
@@ -4419,7 +4419,7 @@ begin
    AValue.Next:=nil;
    FLast:=AValue;
   end;
-  
+
  Result:=True;
 end;
 
@@ -4433,9 +4433,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  if APrev = nil then
   begin
    if FLast <> nil then
@@ -4476,7 +4476,7 @@ begin
      FLast:=AValue;
     end;
   end;
-  
+
  Result:=True;
 end;
 
@@ -4490,9 +4490,9 @@ var
 begin
  {}
  Result:=False;
- 
+
  if AValue = nil then Exit;
- 
+
  if AValue.Prev <> nil then
   begin
    {Not First Object}
@@ -4530,7 +4530,7 @@ begin
   end;
  AValue.Prev:=nil;
  AValue.Next:=nil;
- 
+
  Result:=True;
 end;
 
@@ -4552,18 +4552,18 @@ end;
 
 {==============================================================================}
 
-function TWinsock2SocketBuffers.Add(AValue:TWinsock2SocketBuffer):Boolean; 
+function TWinsock2SocketBuffers.Add(AValue:TWinsock2SocketBuffer):Boolean;
 {Add AValue to List and link with Siblings}
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if AValue = nil then Exit;
-  
+
   if Find(AValue) then Exit;
-  
+
   if Link(AValue) then
    begin
     Inc(FCount);
@@ -4576,18 +4576,18 @@ end;
 
 {==============================================================================}
 
-function TWinsock2SocketBuffers.Remove(AValue:TWinsock2SocketBuffer):Boolean; 
+function TWinsock2SocketBuffers.Remove(AValue:TWinsock2SocketBuffer):Boolean;
 {Unlink AValue from Siblings and Remove from List}
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if AValue = nil then Exit;
-  
+
   if not Find(AValue) then Exit;
-  
+
   if Unlink(AValue) then
    begin
     Dec(FCount);
@@ -4600,17 +4600,17 @@ end;
 
 {==============================================================================}
 
-function TWinsock2SocketBuffers.Insert(APrev,AValue:TWinsock2SocketBuffer):Boolean; 
+function TWinsock2SocketBuffers.Insert(APrev,AValue:TWinsock2SocketBuffer):Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if AValue = nil then Exit;
-  
+
   if Find(AValue) then Exit;
-  
+
   if LinkEx(APrev,AValue) then
    begin
     Inc(FCount);
@@ -4623,17 +4623,17 @@ end;
 
 {==============================================================================}
 
-function TWinsock2SocketBuffers.Find(AValue:TWinsock2SocketBuffer):Boolean; 
+function TWinsock2SocketBuffers.Find(AValue:TWinsock2SocketBuffer):Boolean;
 var
  Next:TWinsock2SocketBuffer;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
  try
   if AValue = nil then Exit;
-  
+
   Next:=FFirst;
   while Next <> nil do
    begin
@@ -4642,7 +4642,7 @@ begin
       Result:=True;
       Exit;
      end;
-     
+
     Next:=Next.Next;
    end;
  finally
@@ -4652,7 +4652,7 @@ end;
 
 {==============================================================================}
 
-procedure TWinsock2SocketBuffers.Clear; 
+procedure TWinsock2SocketBuffers.Clear;
 begin
  {}
  if not AcquireLock then Exit;
@@ -4673,13 +4673,13 @@ begin
  inherited Create;
  FSocketType:=SOCK_RAW;
  FProtocol:=IPPROTO_IP;
- 
+
  FBufferSize:=WS2MaxDatagram;
  FBroadcastEnabled:=False;
 end;
- 
+
 {==============================================================================}
- 
+
 procedure TWinsock2RAWSocket.SetSocketType(ASocketType:Integer);
 begin
  {}
@@ -4689,7 +4689,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Socket: SetSocketType');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -4713,7 +4713,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Socket: SetProtocol');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -4723,7 +4723,7 @@ end;
 
 {==============================================================================}
 
-procedure TWinsock2RAWSocket.SetBufferSize(ABufferSize:Integer); 
+procedure TWinsock2RAWSocket.SetBufferSize(ABufferSize:Integer);
 begin
  {}
  FLastError:=WSANOTINITIALISED;
@@ -4732,10 +4732,10 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Socket: SetBufferSize');
  {$ENDIF}
- 
+
  FLastError:=WSAEINVAL;
  if ABufferSize > WS2MaxDatagram then Exit;
- 
+
  FLastError:=ERROR_SUCCESS;
  FBufferSize:=ABufferSize;
 end;
@@ -4753,17 +4753,17 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Socket: SetBroadcastEnabled');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  FBroadcastEnabled:=ABroadcastEnabled;
- 
+
  if not Connected then Exit;
- 
+
  WorkBool:=FBroadcastEnabled;
  if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_BROADCAST,PChar(@WorkBool),SizeOf(WorkBool)) = ERROR_SUCCESS then Exit;
 
  FLastError:=Winsock2.WSAGetLastError;
- 
+
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
  {$ENDIF}
@@ -4815,7 +4815,7 @@ begin
     begin
      Count:=Winsock2.recvfrom(AHandle,AData^,ASize,0,ASockAddr^,ASockLen^);
     end;
-    
+
    if Count = SOCKET_ERROR then
     begin
      OldError:=Winsock2.WSAGetLastError;
@@ -4838,7 +4838,7 @@ begin
        ACount:=Count;
       end;
     end;
-   
+
    Result:=ERROR_SUCCESS;
    FLastError:=ERROR_SUCCESS;
   end
@@ -4873,7 +4873,7 @@ begin
    else
     begin
      Count:=Winsock2.sendto(Handle,AData^,ASize,0,ASockAddr^,ASockLen);
-    end;    
+    end;
 
    if Count = SOCKET_ERROR then
     begin
@@ -4894,7 +4894,7 @@ begin
        ACount:=Count;
       end;
     end;
-   
+
    Result:=ERROR_SUCCESS;
    FLastError:=ERROR_SUCCESS;
   end
@@ -4918,9 +4918,9 @@ begin
 
  FLastError:=WSAENOTCONN;
  if not Connected then Exit;
- 
+
  if RecvFromSocket(nil,nil,AData,ACount,Count) = SOCKET_ERROR then Exit;
- 
+
  FLastError:=ERROR_SUCCESS;
  Result:=Count;
 end;
@@ -4959,10 +4959,10 @@ begin
 
  FLastError:=WSAEACCES;
  if not BroadcastEnabled then Exit;
- 
+
  Result:=SendDataTo(GetBroadcastAddress,AData,ACount);
 end;
- 
+
 {==============================================================================}
 
 function TWinsock2RAWSocket.RecvDataFrom(var AHost:String;AData:Pointer;ACount:Integer):Integer;
@@ -4979,16 +4979,16 @@ begin
 
  FLastError:=WSAENOTCONN;
  if not Connected then Exit;
- 
+
  {Allocate Address}
  SockAddrLength:=0;
  SockAddr:=AllocateAddress(SockAddrLength);
  if SockAddr = nil then Exit;
  try
   if RecvFromSocket(SockAddr,@SockAddrLength,AData,ACount,Count) = SOCKET_ERROR then Exit;
-  
+
   AHost:=SockAddrToAddress(SockAddr,SockAddrLength);
-  
+
   FLastError:=ERROR_SUCCESS;
   Result:=Count;
  finally
@@ -5019,7 +5019,7 @@ begin
  FLastError:=WSAEINVAL;
  Address:=ResolveHost(AHost);
  if Length(Address) = 0 then Exit;
- 
+
  {Allocate Address}
  SockAddrLength:=0;
  SockAddr:=AddressToSockAddr(Address,SockAddrLength);
@@ -5031,7 +5031,7 @@ begin
   Result:=Count;
  finally
   ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5048,7 +5048,7 @@ begin
 
  FLastError:=WSAEACCES;
  if not BroadcastEnabled then Exit;
- 
+
  Result:=SendDataTo(AAddress,AData,ACount);
 end;
 
@@ -5061,9 +5061,9 @@ begin
  inherited Create;
  FSocketType:=SOCK_STREAM;
  FProtocol:=IPPROTO_TCP;
- 
+
  FBacklog:=SOMAXCONN;
- 
+
  FUseNagle:=True;
  FUseKeepalive:=False;
  FSegmentSize:=0;
@@ -5081,7 +5081,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket: SetSocketType');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -5105,7 +5105,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket: SetProtocol');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -5129,7 +5129,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket: SetBacklog');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -5150,17 +5150,17 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket: SetUseNagle');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  FUseNagle:=AUseNagle;
- 
+
  if not Connected then Exit;
- 
+
  WorkBool:=FUseNagle;
  if Winsock2.setsockopt(Handle,IPPROTO_TCP,TCP_NODELAY,PChar(@WorkBool),SizeOf(WorkBool)) = ERROR_SUCCESS then Exit;
 
  FLastError:=Winsock2.WSAGetLastError;
- 
+
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
  {$ENDIF}
@@ -5179,7 +5179,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket: SetUseKeepalive');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  FUseKeepalive:=AUseKeepalive;
 
@@ -5189,7 +5189,7 @@ begin
  if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_KEEPALIVE,PChar(@WorkBool),SizeOf(WorkBool)) = ERROR_SUCCESS then Exit;
 
  FLastError:=Winsock2.WSAGetLastError;
- 
+
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
  {$ENDIF}
@@ -5206,7 +5206,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket: SetSegmentSize');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  FSegmentSize:=ASegmentSize;
 end;
@@ -5253,16 +5253,16 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket: SetMaxSegmentSize');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  FMaxSegmentSize:=AMaxSegmentSize;
 
  if not Connected then Exit;
- 
+
  if Winsock2.setsockopt(Handle,IPPROTO_TCP,TCP_MAXSEG,PChar(@FMaxSegmentSize),SizeOf(FMaxSegmentSize)) = ERROR_SUCCESS then Exit;
 
  FLastError:=Winsock2.WSAGetLastError;
- 
+
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
  {$ENDIF}
@@ -5283,7 +5283,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket: Listen');
  {$ENDIF}
- 
+
  {Set Options}
  if not UseNagle then
   begin
@@ -5291,11 +5291,11 @@ begin
    if Winsock2.setsockopt(Handle,IPPROTO_TCP,TCP_NODELAY,PChar(@WorkBool),SizeOf(WorkBool)) = SOCKET_ERROR then
     begin
      FLastError:=Winsock2.WSAGetLastError;
-      
+
      {$IFDEF WINSOCK2_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
-      
+
      Exit;
     end;
   end;
@@ -5305,11 +5305,11 @@ begin
    if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_KEEPALIVE,PChar(@WorkBool),SizeOf(WorkBool)) = SOCKET_ERROR then
     begin
      FLastError:=Winsock2.WSAGetLastError;
-     
+
      {$IFDEF WINSOCK2_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
-      
+
      Exit;
     end;
   end;
@@ -5318,11 +5318,11 @@ begin
    if Winsock2.setsockopt(Handle,IPPROTO_TCP,TCP_MAXSEG,PChar(@FMaxSegmentSize),SizeOf(FMaxSegmentSize)) = SOCKET_ERROR then
     begin
      FLastError:=Winsock2.WSAGetLastError;
-      
+
      {$IFDEF WINSOCK2_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
-      
+
      Exit;
     end;
   end;
@@ -5354,13 +5354,13 @@ begin
  {Set Backlog}
  FBacklog:=ABacklog;
  FLastError:=ERROR_SUCCESS;
- 
+
  {Listen Socket}
  Result:=Winsock2.listen(Handle,Backlog);
  if Result = SOCKET_ERROR then
   begin
    FLastError:=Winsock2.WSAGetLastError;
-   
+
    {$IFDEF WINSOCK2_DEBUG}
    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  listen returned: = ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
@@ -5603,7 +5603,7 @@ begin
  FLastError:=ERROR_SUCCESS;
  Result:=True;
 end;
-  
+
 {==============================================================================}
 {==============================================================================}
 {TWinsock2UDPSocket}
@@ -5613,7 +5613,7 @@ begin
  inherited Create;
  FSocketType:=SOCK_DGRAM;
  FProtocol:=IPPROTO_UDP;
- 
+
  FBufferSize:=WS2MaxDatagram;
  FBroadcastEnabled:=False;
 end;
@@ -5629,7 +5629,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Socket: SetSocketType');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -5653,7 +5653,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Socket: SetProtocol');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -5668,7 +5668,7 @@ end;
 
 {==============================================================================}
 
-procedure TWinsock2UDPSocket.SetBufferSize(ABufferSize:Integer); 
+procedure TWinsock2UDPSocket.SetBufferSize(ABufferSize:Integer);
 begin
  {}
  FLastError:=WSANOTINITIALISED;
@@ -5677,10 +5677,10 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Socket: SetBufferSize');
  {$ENDIF}
- 
+
  FLastError:=WSAEINVAL;
  if ABufferSize > WS2MaxDatagram then Exit;
- 
+
  FLastError:=ERROR_SUCCESS;
  FBufferSize:=ABufferSize;
 end;
@@ -5698,17 +5698,17 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Socket: SetBroadcastEnabled');
  {$ENDIF}
- 
+
  FLastError:=ERROR_SUCCESS;
  FBroadcastEnabled:=ABroadcastEnabled;
- 
+
  if not Connected then Exit;
- 
+
  WorkBool:=FBroadcastEnabled;
  if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_BROADCAST,PChar(@WorkBool),SizeOf(WorkBool)) = ERROR_SUCCESS then Exit;
 
  FLastError:=Winsock2.WSAGetLastError;
- 
+
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
  {$ENDIF}
@@ -5760,7 +5760,7 @@ begin
     begin
      Count:=Winsock2.recvfrom(AHandle,AData^,ASize,0,ASockAddr^,ASockLen^);
     end;
-    
+
    if Count = SOCKET_ERROR then
     begin
      OldError:=Winsock2.WSAGetLastError;
@@ -5783,7 +5783,7 @@ begin
        ACount:=Count;
       end;
     end;
-   
+
    Result:=ERROR_SUCCESS;
    FLastError:=ERROR_SUCCESS;
   end
@@ -5818,7 +5818,7 @@ begin
    else
     begin
      Count:=Winsock2.sendto(Handle,AData^,ASize,0,ASockAddr^,ASockLen);
-    end;    
+    end;
 
    if Count = SOCKET_ERROR then
     begin
@@ -5839,7 +5839,7 @@ begin
        ACount:=Count;
       end;
     end;
-   
+
    Result:=ERROR_SUCCESS;
    FLastError:=ERROR_SUCCESS;
   end
@@ -5863,9 +5863,9 @@ begin
 
  FLastError:=WSAENOTCONN;
  if not Connected then Exit;
- 
+
  if RecvFromSocket(nil,nil,AData,ACount,Count) = SOCKET_ERROR then Exit;
- 
+
  FLastError:=ERROR_SUCCESS;
  Result:=Count;
 end;
@@ -5904,7 +5904,7 @@ begin
 
  FLastError:=WSAEACCES;
  if not BroadcastEnabled then Exit;
- 
+
  Result:=SendDataTo(GetBroadcastAddress,APort,AData,ACount);
 end;
 
@@ -5925,17 +5925,17 @@ begin
 
  FLastError:=WSAENOTCONN;
  if not Connected then Exit;
- 
+
  {Allocate Address}
  SockAddrLength:=0;
  SockAddr:=AllocateAddress(SockAddrLength);
  if SockAddr = nil then Exit;
  try
   if RecvFromSocket(SockAddr,@SockAddrLength,AData,ACount,Count) = SOCKET_ERROR then Exit;
-  
+
   AHost:=SockAddrToAddress(SockAddr,SockAddrLength);
   APort:=SockAddrToPort(SockAddr,SockAddrLength);
-  
+
   FLastError:=ERROR_SUCCESS;
   Result:=Count;
  finally
@@ -5963,11 +5963,11 @@ begin
  FLastError:=WSAEINVAL;
  if Length(AHost) = 0 then Exit;
  if APort = 0 then Exit;
- 
+
  FLastError:=WSAEINVAL;
  Address:=ResolveHost(AHost);
  if Length(Address) = 0 then Exit;
- 
+
  {Allocate Address}
  SockAddrLength:=0;
  SockAddr:=AddressToSockAddr(Address,SockAddrLength);
@@ -5975,14 +5975,14 @@ begin
  try
   FLastError:=WSAEINVAL;
   if not PortToSockAddr(APort,SockAddr,SockAddrLength) then Exit;
-  
+
   if SendToSocket(SockAddr,SockAddrLength,AData,ACount,Count) = SOCKET_ERROR then Exit;
 
   FLastError:=ERROR_SUCCESS;
   Result:=Count;
  finally
   ReleaseAddress(SockAddr,SockAddrLength,FLastError = ERROR_SUCCESS);
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -5999,7 +5999,7 @@ begin
 
  FLastError:=WSAEACCES;
  if not BroadcastEnabled then Exit;
- 
+
  Result:=SendDataTo(AAddress,APort,AData,ACount);
 end;
 
@@ -6011,7 +6011,7 @@ begin
  {}
  inherited Create;
  FUseConnect:=True;
- 
+
  FRemoteHost:='';
  FRemoteAddress:='';
 end;
@@ -6036,7 +6036,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client: SetUseConnect');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -6055,7 +6055,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client: SetFamily');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -6086,7 +6086,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client: SetBoundAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  BoundAddress = ' + ABoundAddress);
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -6137,7 +6137,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client: SetRemoteHost');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  RemoteHost = ' + ARemoteHost);
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -6176,7 +6176,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client: SetRemoteAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  RemoteAddress = ' + ARemoteAddress);
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -6232,7 +6232,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client: AllocateFamily');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -6242,7 +6242,7 @@ begin
   begin
    Result:=inherited AllocateFamily;
   end
- else 
+ else
   begin
    {Check Family}
    case FFamily of
@@ -6305,7 +6305,7 @@ begin
      end;
     end;
   end;
-  
+
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  RemoteAddress = ' + FRemoteAddress);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  BoundAddress = ' + FBoundAddress);
@@ -6333,7 +6333,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client: AllocateRemoteAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  RemoteAddress = ' + FRemoteAddress);
  {$ENDIF}
- 
+
  FLastError:=WSAEINVAL;
  if Length(FRemoteAddress) = 0 then Exit;
 
@@ -6356,7 +6356,7 @@ begin
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  inet_addr returned: = INADDR_NONE');
       {$ENDIF}
-      
+
       Exit;
      end;
     if InAddr.S_addr = INADDR_ANY then
@@ -6377,19 +6377,19 @@ begin
     {IPv6}
     {Setup remote address}
     PSockAddrIn6(Result).sin6_port:=Winsock2.htons(IPPORT_ANY);
-    
+
     if Winsock2.InetPtonA(AF_INET6,PChar(FRemoteAddress),@SockAddr.sin6_addr) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
       ReleaseAddress(Result,ALength,False);
- 
+
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  InetPtonA returned: ' + Winsock2ErrorToString(FLastError));
       {$ENDIF}
-      
+
       Exit;
      end;
-    
+
     {BufferLength:=SizeOf(TSockAddrIn6);
     if Winsock2.WSAStringToAddressA(PChar(FRemoteAddress),FFamily,nil,PSockAddrIn(@SockAddr),@BufferLength) = SOCKET_ERROR then
      begin
@@ -6397,7 +6397,7 @@ begin
       ReleaseAddress(Result,ALength,False);
       Exit;
      end;}
-     
+
     PSockAddrIn6(Result).sin6_addr.s6_addr:=SockAddr.sin6_addr.s6_addr;
     FLastError:=ERROR_SUCCESS;
    end;
@@ -6423,7 +6423,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  RemoteHost = ' + FRemoteHost);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  RemoteAddress = ' + FRemoteAddress);
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -6439,7 +6439,7 @@ begin
       if FFamily = AF_INET then FFamily:=AF_INET6 else FFamily:=AF_INET;
       FRemoteAddress:=ResolveHost(FRemoteHost);
      end;
-     
+
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  ResolvedAddress = ' + FRemoteAddress);
     {$ENDIF}
@@ -6469,10 +6469,10 @@ begin
       Exit;
      end;
    end;
-  
+
   {Bind Socket}
   if Bind = SOCKET_ERROR then Exit;
-  
+
   {Connect Socket}
   if UseConnect then
    begin
@@ -6484,11 +6484,11 @@ begin
      if Winsock2.connect(Handle,SockAddr^,SockAddrLength) = SOCKET_ERROR then
       begin
        FLastError:=Winsock2.WSAGetLastError;
-       
+
        {$IFDEF WINSOCK2_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  connect returned: = ' + Winsock2ErrorToString(FLastError));
        {$ENDIF}
-       
+
        Exit;
       end;
      Result:=True;
@@ -6500,7 +6500,7 @@ begin
    begin
     FLastError:=ERROR_SUCCESS;
     Result:=True;
-   end;   
+   end;
  finally
   if not(Result) then Disconnect;
  end;
@@ -6551,7 +6551,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client: SetFamily');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -6582,7 +6582,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client: SetBoundAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  BoundAddress = ' + ABoundAddress);
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -6633,7 +6633,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client: SetRemotePort');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  RemotePort = ' + IntToStr(ARemotePort));
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -6653,7 +6653,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client: SetRemoteHost');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  RemoteHost = ' + ARemoteHost);
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -6692,7 +6692,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client: SetRemoteAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  RemoteAddress = ' + ARemoteAddress);
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -6748,7 +6748,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client: AllocateFamily');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -6817,7 +6817,7 @@ begin
      end;
     end;
   end;
-  
+
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  RemoteAddress = ' + FRemoteAddress);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  BoundAddress = ' + FBoundAddress);
@@ -6846,7 +6846,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  RemoteAddress = ' + FRemoteAddress);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  RemotePort = ' + IntToStr(FRemotePort));
  {$ENDIF}
- 
+
  FLastError:=WSAEINVAL;
  if Length(FRemoteAddress) = 0 then Exit;
 
@@ -6865,22 +6865,22 @@ begin
      begin
       FLastError:=WSAEINVAL;
       ReleaseAddress(Result,ALength,False);
-      
+
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  inet_addr returned: = INADDR_NONE');
       {$ENDIF}
-      
+
       Exit;
      end;
     if InAddr.S_addr = INADDR_ANY then
      begin
       FLastError:=WSAEINVAL;
       ReleaseAddress(Result,ALength,False);
-      
+
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  inet_addr returned: = INADDR_ANY');
       {$ENDIF}
-      
+
       Exit;
      end;
     Result.sin_addr.S_addr:=InAddr.S_addr;
@@ -6890,19 +6890,19 @@ begin
     {IPv6}
     {Setup remote address}
     PSockAddrIn6(Result).sin6_port:=Winsock2.htons(FRemotePort);
-    
+
     if Winsock2.InetPtonA(AF_INET6,PChar(FRemoteAddress),@SockAddr.sin6_addr) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
       ReleaseAddress(Result,ALength,False);
-      
+
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  InetPtonA returned: ' + Winsock2ErrorToString(FLastError));
       {$ENDIF}
-      
+
       Exit;
      end;
-    
+
     {BufferLength:=SizeOf(TSockAddrIn6);
     if Winsock2.WSAStringToAddressA(PChar(FRemoteAddress),FFamily,nil,PSockAddrIn(@SockAddr),@BufferLength) = SOCKET_ERROR then
      begin
@@ -6910,7 +6910,7 @@ begin
       ReleaseAddress(Result,ALength,False);
       Exit;
      end;}
-     
+
     PSockAddrIn6(Result).sin6_addr.s6_addr:=SockAddr.sin6_addr.s6_addr;
     FLastError:=ERROR_SUCCESS;
    end;
@@ -6936,7 +6936,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  RemoteHost = ' + FRemoteHost);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  RemoteAddress = ' + FRemoteAddress);
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -6952,7 +6952,7 @@ begin
       if FFamily = AF_INET then FFamily:=AF_INET6 else FFamily:=AF_INET;
       FRemoteAddress:=ResolveHost(FRemoteHost);
      end;
-     
+
     {$IFDEF WINSOCK2_DEBUG}
     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  ResolvedAddress = ' + FRemoteAddress);
     {$ENDIF}
@@ -6974,11 +6974,11 @@ begin
     if Winsock2.setsockopt(Handle,IPPROTO_TCP,TCP_NODELAY,PChar(@WorkBool),SizeOf(WorkBool)) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
-      
+
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
       {$ENDIF}
-      
+
       Exit;
      end;
    end;
@@ -6988,11 +6988,11 @@ begin
     if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_KEEPALIVE,PChar(@WorkBool),SizeOf(WorkBool)) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
-      
+
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
       {$ENDIF}
-      
+
       Exit;
      end;
    end;
@@ -7001,15 +7001,15 @@ begin
     if Winsock2.setsockopt(Handle,IPPROTO_TCP,TCP_MAXSEG,PChar(@FMaxSegmentSize),SizeOf(FMaxSegmentSize)) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
-      
+
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
       {$ENDIF}
-      
+
       Exit;
      end;
    end;
-   
+
   {Bind Socket}
   if Bind = SOCKET_ERROR then Exit;
 
@@ -7046,11 +7046,11 @@ begin
    if Winsock2.connect(Handle,SockAddr^,SockAddrLength) = SOCKET_ERROR then
     begin
      FLastError:=Winsock2.WSAGetLastError;
-     
+
      {$IFDEF WINSOCK2_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  connect returned: = ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
-     
+
      Exit;
     end;
    Result:=True;
@@ -7083,7 +7083,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  RemoteHost = ' + FRemoteHost);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  RemoteAddress = ' + FRemoteAddress);
  {$ENDIF}
- 
+
  if Length(FRemoteHost) = 0 then
   begin
    Result:=Connect;
@@ -7146,7 +7146,7 @@ begin
  {}
  inherited Create;
  FUseConnect:=True;
- 
+
  FRemotePort:=0;
  FRemoteHost:='';
  FRemoteAddress:='';
@@ -7172,7 +7172,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client: SetUseConnect');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -7191,7 +7191,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client: SetFamily');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -7222,7 +7222,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client: SetBoundAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  BoundAddress = ' + ABoundAddress);
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -7273,7 +7273,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client: SetRemotePort');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  RemotePort = ' + IntToStr(ARemotePort));
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -7293,7 +7293,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client: SetRemoteHost');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  RemoteHost = ' + ARemoteHost);
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -7332,7 +7332,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client: SetRemoteAddress');
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  RemoteAddress = ' + ARemoteAddress);
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -7388,7 +7388,7 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client: AllocateFamily');
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -7398,7 +7398,7 @@ begin
   begin
    Result:=inherited AllocateFamily;
   end
- else 
+ else
   begin
    {Check Family}
    case FFamily of
@@ -7461,7 +7461,7 @@ begin
      end;
     end;
   end;
-  
+
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  RemoteAddress = ' + FRemoteAddress);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  BoundAddress = ' + FBoundAddress);
@@ -7490,7 +7490,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  RemoteAddress = ' + FRemoteAddress);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  RemotePort = ' + IntToStr(FRemotePort));
  {$ENDIF}
- 
+
  FLastError:=WSAEINVAL;
  if Length(FRemoteAddress) = 0 then Exit;
 
@@ -7509,22 +7509,22 @@ begin
      begin
       FLastError:=WSAEINVAL;
       ReleaseAddress(Result,ALength,False);
-      
+
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  inet_addr returned: = INADDR_NONE');
       {$ENDIF}
-      
+
       Exit;
      end;
     if InAddr.S_addr = INADDR_ANY then
      begin
       FLastError:=WSAEINVAL;
       ReleaseAddress(Result,ALength,False);
-      
+
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  inet_addr returned: = INADDR_ANY');
       {$ENDIF}
-      
+
       Exit;
      end;
     Result.sin_addr.S_addr:=InAddr.S_addr;
@@ -7534,19 +7534,19 @@ begin
     {IPv6}
     {Setup remote address}
     PSockAddrIn6(Result).sin6_port:=Winsock2.htons(FRemotePort);
-    
+
     if Winsock2.InetPtonA(AF_INET6,PChar(FRemoteAddress),@SockAddr.sin6_addr) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
       ReleaseAddress(Result,ALength,False);
-      
+
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  InetPtonA returned: ' + Winsock2ErrorToString(FLastError));
       {$ENDIF}
-      
+
       Exit;
      end;
-    
+
     {BufferLength:=SizeOf(TSockAddrIn6);
     if Winsock2.WSAStringToAddressA(PChar(FRemoteAddress),FFamily,nil,PSockAddrIn(@SockAddr),@BufferLength) = SOCKET_ERROR then
      begin
@@ -7554,7 +7554,7 @@ begin
       ReleaseAddress(Result,ALength,False);
       Exit;
      end;}
-     
+
     PSockAddrIn6(Result).sin6_addr.s6_addr:=SockAddr.sin6_addr.s6_addr;
     FLastError:=ERROR_SUCCESS;
    end;
@@ -7580,7 +7580,7 @@ begin
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  RemoteHost = ' + FRemoteHost);
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  RemoteAddress = ' + FRemoteAddress);
  {$ENDIF}
- 
+
  FLastError:=WSAEISCONN;
  if Connected then Exit;
 
@@ -7604,10 +7604,10 @@ begin
     FFamily:=WorkInt;
    end;
   end;
-  
+
  {Check Family}
  if not AllocateFamily then Exit;
- 
+
  {Create Socket}
  if AllocateSocket(FSocketType) = INVALID_SOCKET then Exit;
  try
@@ -7618,18 +7618,18 @@ begin
     if Winsock2.setsockopt(Handle,SOL_SOCKET,SO_BROADCAST,PChar(@WorkBool),SizeOf(WorkBool)) = SOCKET_ERROR then
      begin
       FLastError:=Winsock2.WSAGetLastError;
-      
+
       {$IFDEF WINSOCK2_DEBUG}
       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
       {$ENDIF}
-      
+
       Exit;
      end;
    end;
-  
+
   {Bind Socket}
   if Bind = SOCKET_ERROR then Exit;
-  
+
   {Connect Socket}
   if UseConnect then
    begin
@@ -7641,11 +7641,11 @@ begin
      if Winsock2.connect(Handle,SockAddr^,SockAddrLength) = SOCKET_ERROR then
       begin
        FLastError:=Winsock2.WSAGetLastError;
-       
+
        {$IFDEF WINSOCK2_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  connect returned: = ' + Winsock2ErrorToString(FLastError));
        {$ENDIF}
-       
+
        Exit;
       end;
      Result:=True;
@@ -7657,7 +7657,7 @@ begin
    begin
     FLastError:=ERROR_SUCCESS;
     Result:=True;
-   end;   
+   end;
  finally
   if not(Result) then Disconnect;
  end;
@@ -7758,9 +7758,9 @@ begin
  if FServer.Listener = nil then Exit;
  FServer.Listener.DoConnect(Self);
 
- {Set Name} 
+ {Set Name}
  ThreadSetName(GetCurrentThreadID,WINSOCK_TCP_SERVER_THREAD_NAME);
- 
+
  {Set Priority}
  ThreadSetPriority(GetCurrentThreadID,WINSOCK_TCP_SERVER_THREAD_PRIORITY);
 end;
@@ -7776,7 +7776,7 @@ begin
  try
   if FServer = nil then Exit;
   if FServer.Listener = nil then Exit;
-  
+
   if not FServer.Listener.DoExecute(Self) then Exit;
   Success:=True;
  finally
@@ -7811,7 +7811,7 @@ begin
  {}
  {Set Name}
  ThreadSetName(GetCurrentThreadID,WINSOCK_TCP_LISTENER_THREAD_NAME);
- 
+
  {Set Priority}
  ThreadSetPriority(GetCurrentThreadID,WINSOCK_TCP_LISTENER_THREAD_PRIORITY);
 end;
@@ -7867,7 +7867,7 @@ begin
         Server.FPeerAddress:=FListener.SockAddrToAddress(SockAddr,SockAddrLength);
         Server.FPeerPort:=FListener.SockAddrToPort(SockAddr,SockAddrLength);
         Server.SetHandle(NewHandle);
-        
+
         {Create Thread}
         Thread:=nil;
         if Assigned(FListener.OnCreateThread) then
@@ -7879,10 +7879,10 @@ begin
           Thread:=TWinsock2TCPServerThread.Create(Server);
          end;
         FListener.Threads.Add(Thread);
-        
+
         {Start Thread}
         Thread.Start;
-        
+
         Success:=True;
        end;
      finally
@@ -7905,7 +7905,7 @@ begin
  {}
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  if GetCurrentThreadID <> AThread.ThreadID then
   begin
    AThread.FreeOnTerminate:=False;
@@ -7932,7 +7932,7 @@ begin
   begin
    Remove(Thread);
    TerminateThread(Thread);
-   
+
    Thread:=TWinsock2TCPServerThread(First);
   end;
 end;
@@ -7943,9 +7943,9 @@ function TWinsock2TCPServerThreads.Terminate(AThread:TWinsock2TCPServerThread):B
 begin
  {}
  Result:=False;
- 
+
  if AThread = nil then Exit;
- 
+
  Result:=Remove(AThread);
  if Result then TerminateThread(AThread);
 end;
@@ -7981,24 +7981,24 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Listener: SetActive');
  {$ENDIF}
- 
+
  if AActive then
   begin
    {Allocate Family}
    if not AllocateFamily then Exit;
-   
+
    {Allocate Socket}
    if AllocateSocket(FSocketType) = INVALID_SOCKET then Exit;
-   
-   {Bind} 
+
+   {Bind}
    if Bind = SOCKET_ERROR then Exit;
-   
+
    {Listen}
    if Listen(FBacklog) = SOCKET_ERROR then Exit;
-   
+
    {Create Thread}
    FListenerThread:=TWinsock2TCPListenerThread.Create(Self);
-   
+
    {Start Thread}
    FListenerThread.Start;
   end
@@ -8006,11 +8006,11 @@ begin
   begin
    {Disconnect Thread}
    FListenerThread.FListener.Disconnect;
-   
+
    {Terminate Thread}
    FListenerThread.TerminateAndWaitFor;
   end;
-  
+
  FActive:=AActive;
 end;
 
@@ -8041,11 +8041,11 @@ begin
    if Winsock2.setsockopt(AThread.Server.Handle,IPPROTO_TCP,TCP_NODELAY,PChar(@WorkBool),SizeOf(WorkBool)) = SOCKET_ERROR then
     begin
      FLastError:=Winsock2.WSAGetLastError;
-      
+
      {$IFDEF WINSOCK2_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Listener:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
-      
+
      Exit;
     end;
   end;
@@ -8055,11 +8055,11 @@ begin
    if Winsock2.setsockopt(AThread.Server.Handle,SOL_SOCKET,SO_KEEPALIVE,PChar(@WorkBool),SizeOf(WorkBool)) = SOCKET_ERROR then
     begin
      FLastError:=Winsock2.WSAGetLastError;
-      
+
      {$IFDEF WINSOCK2_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Listener:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
-      
+
      Exit;
     end;
   end;
@@ -8068,11 +8068,11 @@ begin
    if Winsock2.setsockopt(AThread.Server.Handle,IPPROTO_TCP,TCP_MAXSEG,PChar(@FMaxSegmentSize),SizeOf(FMaxSegmentSize)) = SOCKET_ERROR then
     begin
      FLastError:=Winsock2.WSAGetLastError;
-      
+
      {$IFDEF WINSOCK2_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Listener:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
-      
+
      Exit;
     end;
   end;*){Handshake already completed, cannot set MSS}
@@ -8138,12 +8138,12 @@ begin
  inherited Create;
  FPeerPort:=0;
  FPeerAddress:='';
- 
+
  FUseListener:=False;
  FListener:=AListener;
 
  FBuffer:=nil;
- 
+
  if FListener <> nil then
   begin
    ReuseAddress:=AListener.ReuseAddress;
@@ -8159,7 +8159,7 @@ end;
 
 {==============================================================================}
 
-destructor TWinsock2UDPServer.Destroy; 
+destructor TWinsock2UDPServer.Destroy;
 begin
  {}
  FBuffer:=nil;
@@ -8178,52 +8178,52 @@ begin
  {$IFDEF WINSOCK2_DEBUG}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Server: SetUseListener');
  {$ENDIF}
- 
+
  FLastError:=WSAEINVAL;
- if FListener = nil then Exit; 
- 
+ if FListener = nil then Exit;
+
  FUseListener:=AUseListener;
 end;
 
 {==============================================================================}
 
-function TWinsock2UDPServer.GetData:Pointer; 
+function TWinsock2UDPServer.GetData:Pointer;
 begin
  {}
  Result:=nil;
- 
+
  if FBuffer = nil then Exit;
- 
+
  Result:=FBuffer.Data;
 end;
 
 {==============================================================================}
 
-function TWinsock2UDPServer.GetSize:Integer; 
+function TWinsock2UDPServer.GetSize:Integer;
 begin
  {}
  Result:=0;
- 
+
  if FBuffer = nil then Exit;
- 
+
  Result:=FBuffer.Size;
 end;
-  
+
 {==============================================================================}
-  
-function TWinsock2UDPServer.GetCount:Integer;   
+
+function TWinsock2UDPServer.GetCount:Integer;
 begin
  {}
  Result:=0;
- 
+
  if FBuffer = nil then Exit;
- 
+
  Result:=FBuffer.Count;
 end;
 
 {==============================================================================}
 
-procedure TWinsock2UDPServer.SetBuffer(ABuffer:TWinsock2UDPServerBuffer); 
+procedure TWinsock2UDPServer.SetBuffer(ABuffer:TWinsock2UDPServerBuffer);
 begin
  {}
  FBuffer:=ABuffer;
@@ -8231,7 +8231,7 @@ end;
 
 {==============================================================================}
 
-procedure TWinsock2UDPServer.SetLastError(ALastError:LongInt); 
+procedure TWinsock2UDPServer.SetLastError(ALastError:LongInt);
 begin
  {}
  FLastError:=ALastError;
@@ -8239,114 +8239,114 @@ end;
 
 {==============================================================================}
 
-function TWinsock2UDPServer.RecvData(AData:Pointer;ACount:Integer):Integer; 
+function TWinsock2UDPServer.RecvData(AData:Pointer;ACount:Integer):Integer;
 begin
  {}
  if FUseListener then
   begin
    Result:=0;
    FLastError:=WSAEINVAL;
-   
+
    {Invalid, the listener thread will receive all data from the listening socket}
   end
  else
   begin
    Result:=inherited RecvData(AData,ACount);
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function TWinsock2UDPServer.SendData(AData:Pointer;ACount:Integer):Integer; 
+function TWinsock2UDPServer.SendData(AData:Pointer;ACount:Integer):Integer;
 begin
  {}
  if FUseListener then
   begin
    Result:=0;
    FLastError:=WSAEINVAL;
-   if FListener = nil then Exit; 
-  
+   if FListener = nil then Exit;
+
    Result:=FListener.SendData(AData,ACount);
   end
  else
   begin
    Result:=inherited SendData(AData,ACount);
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function TWinsock2UDPServer.BroadcastData(APort:Word;AData:Pointer;ACount:Integer):Integer; 
+function TWinsock2UDPServer.BroadcastData(APort:Word;AData:Pointer;ACount:Integer):Integer;
 begin
  {}
  if FUseListener then
   begin
    Result:=0;
    FLastError:=WSAEINVAL;
-   if FListener = nil then Exit; 
-  
+   if FListener = nil then Exit;
+
    Result:=FListener.BroadcastData(APort,AData,ACount);
   end
  else
   begin
    Result:=inherited BroadcastData(APort,AData,ACount);
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function TWinsock2UDPServer.RecvDataFrom(var AHost:String;var APort:Word;AData:Pointer;ACount:Integer):Integer; 
+function TWinsock2UDPServer.RecvDataFrom(var AHost:String;var APort:Word;AData:Pointer;ACount:Integer):Integer;
 begin
  {}
  if FUseListener then
   begin
    Result:=0;
    FLastError:=WSAEINVAL;
-   
+
    {Invalid, the listener thread will receive all data from the listening socket}
   end
  else
   begin
    Result:=inherited RecvDataFrom(AHost,APort,AData,ACount);
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function TWinsock2UDPServer.SendDataTo(const AHost:String;APort:Word;AData:Pointer;ACount:Integer):Integer; 
+function TWinsock2UDPServer.SendDataTo(const AHost:String;APort:Word;AData:Pointer;ACount:Integer):Integer;
 begin
  {}
  if FUseListener then
   begin
    Result:=0;
    FLastError:=WSAEINVAL;
-   if FListener = nil then Exit; 
-  
+   if FListener = nil then Exit;
+
    Result:=FListener.SendDataTo(AHost,APort,AData,ACount);
   end
  else
   begin
    Result:=inherited SendDataTo(AHost,APort,AData,ACount);
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function TWinsock2UDPServer.BroadcastDataTo(const AAddress:String;APort:Word;AData:Pointer;ACount:Integer):Integer; 
+function TWinsock2UDPServer.BroadcastDataTo(const AAddress:String;APort:Word;AData:Pointer;ACount:Integer):Integer;
 begin
  {}
  if FUseListener then
   begin
    Result:=0;
    FLastError:=WSAEINVAL;
-   if FListener = nil then Exit; 
-   
+   if FListener = nil then Exit;
+
    Result:=FListener.BroadcastDataTo(AAddress,APort,AData,ACount);
   end
  else
   begin
    Result:=inherited BroadcastDataTo(AAddress,APort,AData,ACount);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -8357,7 +8357,7 @@ begin
  {}
  inherited Create(True,THREAD_STACK_DEFAULT_SIZE);
  FLock:=CriticalSectionCreate;
- 
+
  FActive:=False;
  FData:=nil;
  FServer:=AServer;
@@ -8366,7 +8366,7 @@ end;
 
 {==============================================================================}
 
-destructor TWinsock2UDPServerThread.Destroy; 
+destructor TWinsock2UDPServerThread.Destroy;
 begin
  {}
  AcquireLock;
@@ -8375,7 +8375,7 @@ begin
   if FServer <> nil then FServer.Free;
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -8402,7 +8402,7 @@ function TWinsock2UDPServerThread.GetActive:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FActive;
@@ -8439,14 +8439,14 @@ begin
  {}
  {Set Name}
  ThreadSetName(GetCurrentThreadID,WINSOCK_UDP_SERVER_THREAD_NAME);
- 
+
  {Set Priority}
  ThreadSetPriority(GetCurrentThreadID,WINSOCK_UDP_SERVER_THREAD_PRIORITY);
 end;
 
 {==============================================================================}
 
-procedure TWinsock2UDPServerThread.Execution; 
+procedure TWinsock2UDPServerThread.Execution;
 var
  Success:Boolean;
 begin
@@ -8458,7 +8458,7 @@ begin
     if FServer = nil then Exit;
     if FServer.Buffer = nil then Exit;
     if FServer.Listener = nil then Exit;
-    
+
     if not FServer.Listener.DoExecute(Self) then Exit;
     Success:=True;
    finally
@@ -8485,7 +8485,7 @@ end;
 
 {==============================================================================}
 
-destructor TWinsock2UDPListenerThread.Destroy; 
+destructor TWinsock2UDPListenerThread.Destroy;
 begin
  {}
  FListener:=nil;
@@ -8494,7 +8494,7 @@ end;
 
 {==============================================================================}
 
-procedure TWinsock2UDPListenerThread.AfterExecution; 
+procedure TWinsock2UDPListenerThread.AfterExecution;
 begin
  {}
  if FListener = nil then Exit;
@@ -8508,14 +8508,14 @@ begin
  {}
  {Set Name}
  ThreadSetName(GetCurrentThreadID,WINSOCK_UDP_LISTENER_THREAD_NAME);
- 
+
  {Set Priority}
  ThreadSetPriority(GetCurrentThreadID,WINSOCK_UDP_LISTENER_THREAD_PRIORITY);
 end;
 
 {==============================================================================}
 
-procedure TWinsock2UDPListenerThread.Execution; 
+procedure TWinsock2UDPListenerThread.Execution;
 var
  Success:Boolean;
  SockAddr:PSockAddr;
@@ -8529,14 +8529,14 @@ begin
  Success:=False;
  try
   if FListener = nil then Exit;
- 
+
   {Get Buffer}
   Buffer:=FListener.Buffers.GetBuffer;
   if Buffer = nil then Exit;
-  
+
   {Set Active}
   Buffer.Active:=True;
-  
+
   {Allocate Address}
   SockAddrLength:=0;
   SockAddr:=FListener.AllocateAddress(SockAddrLength);
@@ -8544,7 +8544,7 @@ begin
   try
    {RecvFrom}
    FListener.SetLastError(ERROR_SUCCESS);
-   Buffer.Count:=Winsock2.recvfrom(FListener.Handle,Buffer.Data^,Buffer.Size,0,SockAddr^,SockAddrLength); 
+   Buffer.Count:=Winsock2.recvfrom(FListener.Handle,Buffer.Data^,Buffer.Size,0,SockAddr^,SockAddrLength);
    if Buffer.Count = SOCKET_ERROR then
     begin
      FListener.SetLastError(Winsock2.WSAGetLastError);
@@ -8579,19 +8579,19 @@ begin
             Thread.Server.FPeerAddress:=FListener.SockAddrToAddress(SockAddr,SockAddrLength);
             Thread.Server.FPeerPort:=FListener.SockAddrToPort(SockAddr,SockAddrLength);
             Thread.Server.SetBuffer(Buffer);
-          
+
             {Start Thread}
             Thread.Active:=True;
             Thread.Start;
-            
+
             Success:=True;
-           end; 
+           end;
          end;
        finally
         FListener.ReleaseAddress(SockName,SockNameLength);
        end;
       end;
-    end;    
+    end;
   finally
    FListener.ReleaseAddress(SockAddr,SockAddrLength);
   end;
@@ -8599,7 +8599,7 @@ begin
   if not Success then Terminate;
  end;
 end;
-   
+
 {==============================================================================}
 {==============================================================================}
 {TWinsock2UDPServerThreads}
@@ -8609,17 +8609,17 @@ begin
  inherited Create;
  FMin:=5;
  FMax:=10;
- 
+
  FListener:=AListener;
 end;
-   
+
 {==============================================================================}
 
 function TWinsock2UDPServerThreads.GetMin:Integer;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FMin;
@@ -8637,17 +8637,17 @@ begin
  FMin:=AMin;
  if FMin = 0 then FMin:=1;
  if FMin > FMax then FMax:=FMin;
- 
+
  ReleaseLock;
 end;
-   
+
 {==============================================================================}
 
 function TWinsock2UDPServerThreads.GetMax:Integer;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FMax;
@@ -8667,7 +8667,7 @@ begin
 
  ReleaseLock;
 end;
-   
+
 {==============================================================================}
 
 procedure TWinsock2UDPServerThreads.CreateThreads;
@@ -8678,7 +8678,7 @@ begin
    if CreateThread(False) = nil then Exit;
   end;
 end;
-   
+
 {==============================================================================}
 
 function TWinsock2UDPServerThreads.CreateThread(AForce:Boolean):TWinsock2UDPServerThread;
@@ -8689,7 +8689,7 @@ begin
  {}
  Result:=nil;
  if FListener = nil then Exit;
-  
+
  if (Count < FMax) or AForce then
   begin
    {Create Server}
@@ -8700,10 +8700,10 @@ begin
      begin
       {Allocate Family}
       if not Server.AllocateFamily then Exit;
-    
+
       {Allocate Socket}
       if Server.AllocateSocket(Server.SocketType) = INVALID_SOCKET then Exit;
-    
+
       {Set Options}
       if Server.BroadcastEnabled then
        begin
@@ -8714,11 +8714,11 @@ begin
           Exit;
          end;
        end;
-    
-      {Bind} 
+
+      {Bind}
       if Server.Bind = SOCKET_ERROR then Exit;
-     end; 
-     
+     end;
+
     {Create Thread}
     if Assigned(FListener.OnCreateThread) then
      begin
@@ -8729,23 +8729,23 @@ begin
       Result:=TWinsock2UDPServerThread.Create(Server);
      end;
     Add(Result);
-     
+
     {Start Thread}
     Result.Start;
    finally
     if Result = nil then Server.Free;
-   end;    
+   end;
   end;
 end;
 
 {==============================================================================}
-   
+
 procedure TWinsock2UDPServerThreads.TerminateThread(AThread:TWinsock2UDPServerThread);
 begin
  {}
  if AThread = nil then Exit;
  if AThread.Server = nil then Exit;
- 
+
  if GetCurrentThreadID <> AThread.ThreadID then
   begin
    AThread.FreeOnTerminate:=False;
@@ -8760,16 +8760,16 @@ begin
    AThread.Terminate;
   end;
 end;
-   
+
 {==============================================================================}
-   
+
 function TWinsock2UDPServerThreads.GetThread:TWinsock2UDPServerThread;
 var
  Thread:TWinsock2UDPServerThread;
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   Thread:=TWinsock2UDPServerThread(First);
@@ -8780,13 +8780,13 @@ begin
       Result:=Thread;
       Exit;
      end;
-     
+
     Thread:=TWinsock2UDPServerThread(Thread.Next);
    end;
  finally
   ReleaseLock;
  end;
- 
+
  if Result = nil then Result:=CreateThread(True);
 end;
 
@@ -8796,17 +8796,17 @@ procedure TWinsock2UDPServerThreads.ReleaseThread(AThread:TWinsock2UDPServerThre
 begin
  {}
  if AThread = nil then Exit;
- 
+
  AThread.Data:=nil;
  AThread.Active:=False;
 
- if Count > FMax then 
+ if Count > FMax then
   begin
    Remove(AThread);
    TerminateThread(AThread);
   end;
 end;
- 
+
 {==============================================================================}
 
 procedure TWinsock2UDPServerThreads.TerminateAll;
@@ -8819,7 +8819,7 @@ begin
   begin
    Remove(Thread);
    TerminateThread(Thread);
-   
+
    Thread:=TWinsock2UDPServerThread(First);
   end;
 end;
@@ -8830,13 +8830,13 @@ function TWinsock2UDPServerThreads.Terminate(AThread:TWinsock2UDPServerThread):B
 begin
  {}
  Result:=False;
- 
+
  if AThread = nil then Exit;
- 
+
  Result:=Remove(AThread);
  if Result then TerminateThread(AThread);
 end;
-   
+
 {==============================================================================}
 {==============================================================================}
 {TWinsock2UDPServerBuffer}
@@ -8845,18 +8845,18 @@ begin
  {}
  inherited Create;
  FLock:=CriticalSectionCreate;
- 
+
  FActive:=False;
  FData:=nil;
  FSize:=ASize;
  FCount:=0;
- 
+
  if FSize <> 0 then FData:=GetMem(FSize);
 end;
- 
+
 {==============================================================================}
 
-destructor TWinsock2UDPServerBuffer.Destroy; 
+destructor TWinsock2UDPServerBuffer.Destroy;
 begin
  {}
  AcquireLock;
@@ -8864,7 +8864,7 @@ begin
   if FData <> nil then FreeMem(FData);
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -8891,7 +8891,7 @@ function TWinsock2UDPServerBuffer.GetActive:Boolean;
 begin
  {}
  Result:=False;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FActive;
@@ -8910,9 +8910,9 @@ begin
 
  ReleaseLock;
 end;
-   
+
 {==============================================================================}
-   
+
 procedure TWinsock2UDPServerBuffer.SetCount(ACount:Integer);
 begin
  {}
@@ -8922,7 +8922,7 @@ begin
 
  ReleaseLock;
 end;
-   
+
 {==============================================================================}
 {==============================================================================}
 {TWinsock2UDPServerBuffers}
@@ -8932,7 +8932,7 @@ begin
  inherited Create;
  FMin:=5;
  FMax:=10;
- 
+
  FListener:=AListener;
 end;
 
@@ -8942,7 +8942,7 @@ function TWinsock2UDPServerBuffers.GetMin:Integer;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FMin;
@@ -8960,7 +8960,7 @@ begin
  FMin:=AMin;
  if FMin = 0 then FMin:=1;
  if FMin > FMax then FMax:=FMin;
- 
+
  ReleaseLock;
 end;
 
@@ -8970,7 +8970,7 @@ function TWinsock2UDPServerBuffers.GetMax:Integer;
 begin
  {}
  Result:=0;
- 
+
  if not AcquireLock then Exit;
 
  Result:=FMax;
@@ -9009,7 +9009,7 @@ begin
  {}
  Result:=nil;
  if FListener = nil then Exit;
-  
+
  if (Count < FMax) or AForce then
   begin
    {Create Buffer}
@@ -9024,7 +9024,7 @@ begin
    Add(Result);
   end;
 end;
-   
+
 {==============================================================================}
 
 procedure TWinsock2UDPServerBuffers.DeleteBuffer(ABuffer:TWinsock2UDPServerBuffer);
@@ -9034,7 +9034,7 @@ begin
 
  ABuffer.Free;
 end;
- 
+
 {==============================================================================}
 
 function TWinsock2UDPServerBuffers.GetBuffer:TWinsock2UDPServerBuffer;
@@ -9043,7 +9043,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  if not AcquireLock then Exit;
  try
   Buffer:=TWinsock2UDPServerBuffer(First);
@@ -9054,13 +9054,13 @@ begin
       Result:=Buffer;
       Exit;
      end;
-     
+
     Buffer:=TWinsock2UDPServerBuffer(Buffer.Next);
    end;
  finally
   ReleaseLock;
  end;
- 
+
  if Result = nil then Result:=CreateBuffer(True);
 end;
 
@@ -9071,10 +9071,10 @@ begin
  {}
  if ABuffer = nil then Exit;
 
- ABuffer.Count:=0; 
+ ABuffer.Count:=0;
  ABuffer.Active:=False;
 
- if Count > FMax then 
+ if Count > FMax then
   begin
    Remove(ABuffer);
    DeleteBuffer(ABuffer);
@@ -9093,7 +9093,7 @@ begin
   begin
    Remove(Buffer);
    DeleteBuffer(Buffer);
-   
+
    Buffer:=TWinsock2UDPServerBuffer(First);
   end;
 end;
@@ -9104,13 +9104,13 @@ function TWinsock2UDPServerBuffers.Delete(ABuffer:TWinsock2UDPServerBuffer):Bool
 begin
  {}
  Result:=False;
- 
+
  if ABuffer = nil then Exit;
- 
+
  Result:=Remove(ABuffer);
  if Result then DeleteBuffer(ABuffer);
 end;
-   
+
 {==============================================================================}
 {==============================================================================}
 {TWinsock2UDPListener}
@@ -9119,16 +9119,16 @@ begin
  {}
  inherited Create;
  FLock:=CriticalSectionCreate;
- 
+
  FActive:=False;
  FUseListener:=True;
  FThreads:=TWinsock2UDPServerThreads.Create(Self);
  FBuffers:=TWinsock2UDPServerBuffers.Create(Self);
  FListenerThread:=nil;
 end;
- 
+
 {==============================================================================}
- 
+
 destructor TWinsock2UDPListener.Destroy;
 begin
  {}
@@ -9141,7 +9141,7 @@ begin
   FBuffers.Free;
   inherited Destroy;
  finally
-  {ReleaseLock;} {Can destroy Critical Section while holding lock} 
+  {ReleaseLock;} {Can destroy Critical Section while holding lock}
   CriticalSectionDestroy(FLock);
  end;
 end;
@@ -9163,22 +9163,22 @@ begin
 end;
 
 {==============================================================================}
-  
+
 procedure TWinsock2UDPListener.SetActive(AActive:Boolean);
 var
  WorkBool:LongBool;
 begin
  {}
  if FActive = AActive then Exit;
- 
+
  if AActive then
   begin
    {Allocate Family}
    if not AllocateFamily then Exit;
-   
+
    {Allocate Socket}
    if AllocateSocket(FSocketType) = INVALID_SOCKET then Exit;
-   
+
    {Set Options}
    if BroadcastEnabled then
     begin
@@ -9188,20 +9188,20 @@ begin
        FLastError:=Winsock2.WSAGetLastError;
        Exit;
       end;
-    end; 
-   
+    end;
+
    {Bind}
    if Bind = SOCKET_ERROR then Exit;
-   
+
    {Create Thread}
    FListenerThread:=TWinsock2UDPListenerThread.Create(Self);
-   
+
    {Create Threads}
    FThreads.CreateThreads;
-   
+
    {Create Buffers}
    FBuffers.CreateBuffers;
-   
+
    {Start Thread}
    FListenerThread.Start;
   end
@@ -9209,17 +9209,17 @@ begin
   begin
    {Disconnect Thread}
    FListenerThread.FListener.Disconnect;
-   
+
    {Terminate Thread}
    FListenerThread.TerminateAndWaitFor;
-   
+
    {Terminate Threads}
-   FThreads.TerminateAll; 
-   
+   FThreads.TerminateAll;
+
    {Delete Buffers}
    FBuffers.DeleteAll;
   end;
-  
+
  FActive:=AActive;
 end;
 
@@ -9236,7 +9236,7 @@ end;
 
 {==============================================================================}
 
-procedure TWinsock2UDPListener.SetLastError(ALastError:LongInt); 
+procedure TWinsock2UDPListener.SetLastError(ALastError:LongInt);
 begin
  {}
  FLastError:=ALastError;
@@ -9244,7 +9244,7 @@ end;
 
 {==============================================================================}
 
-function TWinsock2UDPListener.DoExecute(AThread:TWinsock2UDPServerThread):Boolean; 
+function TWinsock2UDPListener.DoExecute(AThread:TWinsock2UDPServerThread):Boolean;
 begin
  {}
  Result:=True;
@@ -9261,7 +9261,7 @@ begin
   Result:=inherited SendToSocketEx(AHandle,ASockAddr,ASockLen,AData,ASize,ACount);
  finally
   ReleaseLock;
- end; 
+ end;
 end;
 
 {==============================================================================}
@@ -9272,39 +9272,39 @@ begin
  {}
  {Check Initialized}
  if WS2Initialized then Exit;
- 
+
  {Set Startup Defaults}
  WS2StartupCount:=0;
  WS2StartupError:=WSANOTINITIALISED;
- 
+
  {Create Startup Lock}
  WS2StartupLock:=CriticalSectionCreate;
  if WS2StartupLock = INVALID_HANDLE_VALUE then
   begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to create winsock2 startup lock');
   end;
- 
+
  {Set TLS Size}
  WS2TlsSize:=SizeOf(TNetToAddr);
- 
+
  {Allocate TLS Index}
  WS2TlsIndex:=ThreadAllocTlsIndexEx(THREAD_TLS_FLAG_FREE);
  if WS2TlsIndex = TLS_OUT_OF_INDEXES then
   begin
    if NETWORK_LOG_ENABLED then NetworkLogError(nil,'Failed to allocate TLS index');
   end;
- 
+
  {Set WS2MaxSockets}
  WS2MaxSockets:=WINSOCK2_MAX_SOCKETS;
- 
+
  {Set WS2MaxDatagram}
  WS2MaxDatagram:=WINSOCK2_MAX_UDP;
- 
+
  {Setup Platform Text IO Handlers}
  {TextIOReadCharHandler:=SysTextIOReadChar;}       {Only registered when calling Winsock2RedirectInput}
  {TextIOWriteCharHandler:=SysTextIOWriteChar;}     {Only registered when calling Winsock2RedirectOutput}
  {TextIOWriteBufferHandler:=SysTextIOWriteBuffer;} {Only registered when calling Winsock2RedirectOutput}
- 
+
  WS2Initialized:=True;
 end;
 
@@ -9316,7 +9316,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Start Winsock}
  FillChar(WSAData,SizeOf(TWSAData),0);
  if WSAStartup(WINSOCK_VERSION,WSAData) = ERROR_SUCCESS then
@@ -9324,10 +9324,10 @@ begin
    {Get Parameters}
    WS2MaxSockets:=WSAData.iMaxSockets;
    WS2MaxDatagram:=WSAData.iMaxUdpDg;
-   
+
    {Return Result}
    Result:=True;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -9340,7 +9340,7 @@ begin
 end;
 
 {==============================================================================}
- 
+
 procedure WS2AsyncStart(Data:Pointer);
 begin
  {}
@@ -9357,7 +9357,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Winsock2 Functions}
-function accept( const s: TSocket; addr: PSockAddr; addrlen: PLongint ): TSocket; 
+function accept( const s: TSocket; addr: PSockAddr; addrlen: PLongint ): TSocket;
 {Accept an incoming connection attempt on a socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -9370,21 +9370,21 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
-  
+
   {Check Manager}
   if ProtocolManager = nil then Exit;
-  
+
   {Check Socket}
   if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
 
   {Accept Socket}
   Result:=TSocket(Socket.Protocol.Accept(Socket,addr,addrlen));
-  
+
   {Unlock Socket}
   Socket.ReaderUnlock;
  except
@@ -9401,7 +9401,7 @@ end;
 
 {==============================================================================}
 
-function accept( const s: TSocket; addr: PSockAddr; var addrlen: Longint ): TSocket; 
+function accept( const s: TSocket; addr: PSockAddr; var addrlen: Longint ): TSocket;
 {Accept an incoming connection attempt on a socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -9412,7 +9412,7 @@ end;
 
 {==============================================================================}
 
-function bind( const s: TSocket; addr: PSockAddr; namelen: Longint ): Longint; 
+function bind( const s: TSocket; addr: PSockAddr; namelen: Longint ): Longint;
 {Associate a local address with a socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -9429,7 +9429,7 @@ end;
 
 {==============================================================================}
 
-function bind( const s: TSocket; var addr: TSockAddr; namelen: Longint ): Longint; 
+function bind( const s: TSocket; var addr: TSockAddr; namelen: Longint ): Longint;
 {Associate a local address with a socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -9442,7 +9442,7 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -9473,7 +9473,7 @@ end;
 
 {==============================================================================}
 
-function closesocket( const s: TSocket ): Longint; 
+function closesocket( const s: TSocket ): Longint;
 {Close an existing socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -9486,7 +9486,7 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -9517,7 +9517,7 @@ end;
 
 {==============================================================================}
 
-function connect( const s: TSocket; name: PSockAddr; namelen: Longint): Longint; 
+function connect( const s: TSocket; name: PSockAddr; namelen: Longint): Longint;
 {Establish a connection to a specified socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -9534,7 +9534,7 @@ end;
 
 {==============================================================================}
 
-function connect( const s: TSocket; var name: TSockAddr; namelen: Longint): Longint; 
+function connect( const s: TSocket; var name: TSockAddr; namelen: Longint): Longint;
 {Establish a connection to a specified socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -9547,7 +9547,7 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -9578,7 +9578,7 @@ end;
 
 {==============================================================================}
 
-function ioctlsocket( const s: TSocket; cmd: Longint; var arg: u_long ): Longint; 
+function ioctlsocket( const s: TSocket; cmd: Longint; var arg: u_long ): Longint;
 {Control the I/O mode of a socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -9591,7 +9591,7 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -9622,7 +9622,7 @@ end;
 
 {==============================================================================}
 
-function ioctlsocket( const s: TSocket; cmd: Longint; argp: pu_long ): Longint; 
+function ioctlsocket( const s: TSocket; cmd: Longint; argp: pu_long ): Longint;
 {Control the I/O mode of a socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -9639,7 +9639,7 @@ end;
 
 {==============================================================================}
 
-function getpeername( const s: TSocket; var name: TSockAddr; var namelen: Longint ): Longint; 
+function getpeername( const s: TSocket; var name: TSockAddr; var namelen: Longint ): Longint;
 {Retrieve the address of the peer to which a socket is connected}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -9652,7 +9652,7 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -9683,7 +9683,7 @@ end;
 
 {==============================================================================}
 
-function getsockname( const s: TSocket; var name: TSockAddr; var namelen: Longint ): Longint; 
+function getsockname( const s: TSocket; var name: TSockAddr; var namelen: Longint ): Longint;
 {Retrieve the local name for a socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -9696,7 +9696,7 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -9727,7 +9727,7 @@ end;
 
 {==============================================================================}
 
-function getsockopt( const s: TSocket; const level, optname: Longint; optval: PChar; var optlen: Longint ): Longint; 
+function getsockopt( const s: TSocket; const level, optname: Longint; optval: PChar; var optlen: Longint ): Longint;
 {Retrieve a socket option}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -9775,7 +9775,7 @@ end;
 
 {==============================================================================}
 
-function getsockopt( const s: TSocket; const level, optname: Longint; optval: Pointer; var optlen: Longint ): Longint; 
+function getsockopt( const s: TSocket; const level, optname: Longint; optval: Pointer; var optlen: Longint ): Longint;
 {Retrieve a socket option}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -9786,7 +9786,7 @@ end;
 
 {==============================================================================}
 
-function getsockopt( const s: TSocket; const level, optname: Longint; var optval; var optlen: Longint ): Longint; 
+function getsockopt( const s: TSocket; const level, optname: Longint; var optval; var optlen: Longint ): Longint;
 {Retrieve a socket option}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -9868,7 +9868,7 @@ end;
 
 {==============================================================================}
 
-function inet_ntoa(inaddr: TInAddr): PChar; 
+function inet_ntoa(inaddr: TInAddr): PChar;
 {Convert an (IPv4) Internet network address into an ASCII string in Internet standard dotted-decimal format}
 {As per the Winsock specification, the buffer returned by this function is only
  guaranteed to be valid until the next Winsock function call is made within the
@@ -9882,7 +9882,7 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Get TLS Value}
  NetToAddr:=ThreadGetTlsValue(WS2TlsIndex);
  if NetToAddr = nil then
@@ -9890,24 +9890,24 @@ begin
    {Allocate TLS Value}
    NetToAddr:=AllocMem(WS2TlsSize);
    if NetToAddr = nil then Exit;
-   
+
    {Set TLS Value}
    if ThreadSetTlsValue(WS2TlsIndex,NetToAddr) <> ERROR_SUCCESS then Exit;
   end;
- 
- {Convert to String}  
+
+ {Convert to String}
  WorkBuffer:=InAddrToString(inaddr);
  if WorkBuffer <> '' then
   begin
    {Copy to Buffer}
    StrLCopy(PChar(NetToAddr),PChar(WorkBuffer),MAX_NAME_SIZE);
-   Result:=PChar(NetToAddr); 
+   Result:=PChar(NetToAddr);
   end;
 end;
 
 {==============================================================================}
 
-function listen(s: TSocket; backlog: Longint): Longint; 
+function listen(s: TSocket; backlog: Longint): Longint;
 {Place a socket in a state in which it is listening for incoming connections}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -9920,7 +9920,7 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -9958,7 +9958,7 @@ function ntohd(netdouble: UInt64): Double;
 begin
  {}
  netdouble:=Int64BEtoN(netdouble); {Big Endian to Native}
- 
+
  System.Move(netdouble,Result,SizeOf(UInt64));
 end;
 
@@ -9999,7 +9999,7 @@ end;
 
 {==============================================================================}
 
-function ntohs(netshort: u_short): u_short; 
+function ntohs(netshort: u_short): u_short;
 {Convert a u_short from TCP/IP network byte order to host byte order}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10010,7 +10010,7 @@ end;
 
 {==============================================================================}
 
-function recv(s: TSocket; var Buf; len, flags: Longint): Longint;  
+function recv(s: TSocket; var Buf; len, flags: Longint): Longint;
 {Receive data from a connected socket or a bound connectionless socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10023,7 +10023,7 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -10054,7 +10054,7 @@ end;
 
 {==============================================================================}
 
-function recv(s: TSocket; Buf: PChar; len, flags: Longint): Longint; 
+function recv(s: TSocket; Buf: PChar; len, flags: Longint): Longint;
 {Receive data from a connected socket or a bound connectionless socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10071,7 +10071,7 @@ end;
 
 {==============================================================================}
 
-function recv(s: TSocket; Buf: Pointer; len, flags: Longint): Longint;  
+function recv(s: TSocket; Buf: Pointer; len, flags: Longint): Longint;
 {Receive data from a connected socket or a bound connectionless socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10088,7 +10088,7 @@ end;
 
 {==============================================================================}
 
-function recvfrom(s: TSocket; Buf: PChar; len, flags: Longint; from: PSockAddr; fromlen: PLongint): Longint; 
+function recvfrom(s: TSocket; Buf: PChar; len, flags: Longint; from: PSockAddr; fromlen: PLongint): Longint;
 {Receive a datagram and store the source address}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10113,7 +10113,7 @@ end;
 
 {==============================================================================}
 
-function recvfrom(s: TSocket; Buf: Pointer; len, flags: Longint; from: PSockAddr; fromlen: PLongint): Longint; 
+function recvfrom(s: TSocket; Buf: Pointer; len, flags: Longint; from: PSockAddr; fromlen: PLongint): Longint;
 {Receive a datagram and store the source address}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10138,7 +10138,7 @@ end;
 
 {==============================================================================}
 
-function recvfrom(s: TSocket; var Buf; len, flags: Longint; var from: TSockAddr; var fromlen: Longint): Longint; 
+function recvfrom(s: TSocket; var Buf; len, flags: Longint; var from: TSockAddr; var fromlen: Longint): Longint;
 {Receive a datagram and store the source address}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10151,7 +10151,7 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -10182,7 +10182,7 @@ end;
 
 {==============================================================================}
 
-function select(nfds: Longint; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): Longint; 
+function select(nfds: Longint; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): Longint;
 {Determine the status of one or more sockets, waiting if necessary, to perform synchronous I/O}
 {Note: All sockets contained by the FDSet must be of the same type}
 
@@ -10194,11 +10194,11 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Manager}
   NetworkSetLastError(WSASYSNOTREADY);
   if ProtocolManager = nil then Exit;
-  
+
   {Select Socket}
   Result:=ProtocolManager.Select(nfds,readfds,writefds,exceptfds,timeout);
  except
@@ -10215,7 +10215,7 @@ end;
 
 {==============================================================================}
 
-function send(s: TSocket; var Buf; len, flags: Longint): Longint; 
+function send(s: TSocket; var Buf; len, flags: Longint): Longint;
 {Send data on a connected socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10228,7 +10228,7 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -10259,7 +10259,7 @@ end;
 
 {==============================================================================}
 
-function send(s: TSocket; const Buf: PChar; len, flags: Longint): Longint; 
+function send(s: TSocket; const Buf: PChar; len, flags: Longint): Longint;
 {Send data on a connected socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10276,7 +10276,7 @@ end;
 
 {==============================================================================}
 
-function send(s: TSocket; Buf: Pointer; len, flags: Longint): Longint; 
+function send(s: TSocket; Buf: Pointer; len, flags: Longint): Longint;
 {Send data on a connected socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10293,7 +10293,7 @@ end;
 
 {==============================================================================}
 
-function sendto(s: TSocket; var Buf; len, flags: Longint; var addrto: TSockAddr; tolen: Longint): Longint; 
+function sendto(s: TSocket; var Buf; len, flags: Longint; var addrto: TSockAddr; tolen: Longint): Longint;
 {Send data to a specific destination}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10306,7 +10306,7 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -10337,7 +10337,7 @@ end;
 
 {==============================================================================}
 
-function sendto(s: TSocket; const Buf: PChar; len, flags: Longint; addrto: PSockAddr; tolen: Longint): Longint; 
+function sendto(s: TSocket; const Buf: PChar; len, flags: Longint; addrto: PSockAddr; tolen: Longint): Longint;
 {Send data to a specific destination}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10362,7 +10362,7 @@ end;
 
 {==============================================================================}
 
-function sendto(s: TSocket; Buf: Pointer; len, flags: Longint; addrto: PSockAddr; tolen: Longint): Longint; 
+function sendto(s: TSocket; Buf: Pointer; len, flags: Longint; addrto: PSockAddr; tolen: Longint): Longint;
 {Send data to a specific destination}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10387,7 +10387,7 @@ end;
 
 {==============================================================================}
 
-function setsockopt(s: TSocket; level, optname: Longint; const optval; optlen: Longint): Longint;  
+function setsockopt(s: TSocket; level, optname: Longint; const optval; optlen: Longint): Longint;
 {Set a socket option}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10398,7 +10398,7 @@ end;
 
 {==============================================================================}
 
-function setsockopt(s: TSocket; level, optname: Longint; const optval: PChar; optlen: Longint): Longint; 
+function setsockopt(s: TSocket; level, optname: Longint; const optval: PChar; optlen: Longint): Longint;
 {Set a socket option}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10411,7 +10411,7 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -10442,7 +10442,7 @@ end;
 
 {==============================================================================}
 
-function setsockopt(s: TSocket; level, optname: Longint; optval: Pointer; optlen: Longint): Longint; 
+function setsockopt(s: TSocket; level, optname: Longint; optval: Pointer; optlen: Longint): Longint;
 {Set a socket option}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10453,7 +10453,7 @@ end;
 
 {==============================================================================}
 
-function shutdown(s: TSocket; how: Longint): Longint; 
+function shutdown(s: TSocket; how: Longint): Longint;
 {Disable sends or receives on a socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10466,7 +10466,7 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -10474,7 +10474,7 @@ begin
 
   {Check Manager}
   if ProtocolManager = nil then Exit;
-  
+
   {Check Socket}
   if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
 
@@ -10497,7 +10497,7 @@ end;
 
 {==============================================================================}
 
-function socket(af, struct, protocol: Longint): TSocket; 
+function socket(af, struct, protocol: Longint): TSocket;
 {Create a socket that is bound to a specific transport service provider}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10512,7 +10512,7 @@ begin
   {Check Manager}
   NetworkSetLastError(WSASYSNOTREADY);
   if ProtocolManager = nil then Exit;
-  
+
   {Create Socket}
   Result:=ProtocolManager.Socket(af,Struct,protocol);
  except
@@ -10529,7 +10529,7 @@ end;
 
 {==============================================================================}
 
-function gethostbyaddr(addr: Pointer; len, family: Longint): PHostEnt; 
+function gethostbyaddr(addr: Pointer; len, family: Longint): PHostEnt;
 {Retrieve the host information corresponding to a network address}
 {Note: Address will be in network byte order where applicable}
 
@@ -10541,11 +10541,11 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   {Check Client}
   NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
-  
+
   {Get Host By Address}
   Result:=DNSClient.GetHostByAddr(addr,len,family);
  except
@@ -10562,7 +10562,7 @@ end;
 
 {==============================================================================}
 
-function gethostbyname(const name: PChar): PHostEnt; 
+function gethostbyname(const name: PChar): PHostEnt;
 {Retrieve network address corresponding to a host name}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10594,7 +10594,7 @@ end;
 
 {==============================================================================}
 
-function gethostname(name: PChar; len: Longint): Longint; 
+function gethostname(name: PChar; len: Longint): Longint;
 {Retrieve the standard host name for the local computer}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10626,7 +10626,7 @@ end;
 
 {==============================================================================}
 
-function getservbyport(port: Longint; const proto: PChar): PServEnt; 
+function getservbyport(port: Longint; const proto: PChar): PServEnt;
 {Retrieve service information corresponding to a port and protocol}
 {Note: Port will be in network byte order}
 
@@ -10659,7 +10659,7 @@ end;
 
 {==============================================================================}
 
-function getservbyname(const name, proto: PChar): PServEnt; 
+function getservbyname(const name, proto: PChar): PServEnt;
 {Retrieve service information corresponding to a service name and protocol}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10691,7 +10691,7 @@ end;
 
 {==============================================================================}
 
-function getprotobynumber(proto: Longint): PProtoEnt; 
+function getprotobynumber(proto: Longint): PProtoEnt;
 {Retrieve protocol information corresponding to a protocol number}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10723,7 +10723,7 @@ end;
 
 {==============================================================================}
 
-function getprotobyname(const name: PChar): PProtoEnt; 
+function getprotobyname(const name: PChar): PProtoEnt;
 {Retrieve the protocol information corresponding to a protocol name}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -10765,15 +10765,15 @@ begin
  try
   {Set Result}
   ppResult:=nil;
-  
+
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
- 
+
   {Check Client}
   NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
- 
+
   {Get Address Info}
   Result:=DNSClient.GetAddrInfo(pNodeName,pServiceName,pHints,ppResult);
  except
@@ -10804,7 +10804,7 @@ begin
   {Check Client}
   NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
-  
+
   {Free Address Info}
   DNSClient.FreeAddrInfo(ai);
  except
@@ -10831,11 +10831,11 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
- 
+
   {Check Client}
   NetworkSetLastError(WSASYSNOTREADY);
   if DNSClient = nil then Exit;
- 
+
   {Get Name Info}
   Result:=DNSClient.GetNameInfo(sa,salen,host,hostlen,serv,servlen,flags);
  except
@@ -10885,7 +10885,7 @@ begin
   {Set Result}
   Result:=WSASYSNOTREADY; {SOCKET_ERROR; See Spec}
   NetworkSetLastError(WSASYSNOTREADY);
-  
+
   {Acquire the Lock}
   if CriticalSectionLock(WS2StartupLock) = ERROR_SUCCESS then
    begin
@@ -10896,20 +10896,20 @@ begin
        {$IFDEF WINSOCK2_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: WSAStartup additional call');
        {$ENDIF}
-       
+
        {Check Version}
        Result:=WSAVERNOTSUPPORTED; {SOCKET_ERROR; See Spec}
        NetworkSetLastError(WSAVERNOTSUPPORTED);
        if wVersionRequired < WINSOCK2_LOW_VERSION then Exit;
        if wVersionRequired > WINSOCK2_HIGH_VERSION then Exit;
-   
+
        {$IFDEF WINSOCK2_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: WSAStartup checked version');
        {$ENDIF}
-   
+
        {Increment Count}
        Inc(WS2StartupCount);
-   
+
        {Return Winsock2 Data}
        WSData.wVersion:=Min(WINSOCK2_HIGH_VERSION,wVersionRequired);
        WSData.wHighVersion:=WINSOCK2_HIGH_VERSION;
@@ -10918,7 +10918,7 @@ begin
        WSData.iMaxSockets:=WINSOCK2_MAX_SOCKETS;
        WSData.iMaxUdpDg:=WINSOCK2_MAX_UDP;
        WSData.lpVendorInfo:=nil;
-       
+
        {Check Startup}
        if WS2StartupError <> ERROR_SUCCESS then
         begin
@@ -10938,7 +10938,7 @@ begin
        {$IFDEF WINSOCK2_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: WSAStartup initial call');
        {$ENDIF}
-      
+
        {Check Version}
        Result:=WSAVERNOTSUPPORTED; {SOCKET_ERROR; See Spec}
        NetworkSetLastError(WSAVERNOTSUPPORTED);
@@ -10948,7 +10948,7 @@ begin
        {$IFDEF WINSOCK2_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: WSAStartup checked version');
        {$ENDIF}
-       
+
        {Increment Count}
        Inc(WS2StartupCount);
 
@@ -10960,27 +10960,27 @@ begin
        WSData.iMaxSockets:=WINSOCK2_MAX_SOCKETS;
        WSData.iMaxUdpDg:=WINSOCK2_MAX_UDP;
        WSData.lpVendorInfo:=nil;
-    
+
        {Initialize Components}
        Result:=WSASYSNOTREADY; {SOCKET_ERROR; See Spec}
        NetworkSetLastError(WSASYSNOTREADY);
        WS2StartupError:=WSASYSNOTREADY;
-       
+
        {Start Sockets}
        if SocketsStart <> ERROR_SUCCESS then Exit;
        {$IFDEF WINSOCK2_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: WSAStartup started sockets');
        {$ENDIF}
-       
+
        {$IFDEF WINSOCK2_DEBUG}
        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: WSAStartup completed');
        {$ENDIF}
-       
+
        {Return Result}
        Result:=ERROR_SUCCESS;  {NO_ERROR; See Spec}
        NetworkSetLastError(ERROR_SUCCESS);
        WS2StartupError:=ERROR_SUCCESS;
-      end; 
+      end;
     finally
      {Release the Lock}
      CriticalSectionUnlock(WS2StartupLock);
@@ -11010,7 +11010,7 @@ begin
  try
   {Set Error}
   NetworkSetLastError(WSASYSNOTREADY);
-  
+
   {Acquire the Lock}
   if CriticalSectionLock(WS2StartupLock) = ERROR_SUCCESS then
    begin
@@ -11018,31 +11018,31 @@ begin
      {Check Started}
      NetworkSetLastError(WSANOTINITIALISED);
      if WS2StartupCount = 0 then Exit;
-  
+
      {Decrement Count}
      Dec(WS2StartupCount);
      Result:=NO_ERROR;
      NetworkSetLastError(ERROR_SUCCESS);
      if WS2StartupCount > 0 then Exit;
-  
+
      {$IFDEF WINSOCK2_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: WSACleanup final call');
      {$ENDIF}
-  
+
      {Shutdown and Cleanup}
      Result:=SOCKET_ERROR;
      NetworkSetLastError(WSAENETDOWN);
-  
+
      {Stop Sockets}
      if SocketsStop <> ERROR_SUCCESS then Exit;
      {$IFDEF WINSOCK2_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: WSACleanup stopped sockets');
      {$ENDIF}
-  
+
      {$IFDEF WINSOCK2_DEBUG}
      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2: WSACleanup completed');
      {$ENDIF}
- 
+
      {Return Result}
      Result:=NO_ERROR;
      NetworkSetLastError(ERROR_SUCCESS);
@@ -11098,7 +11098,7 @@ end;
 
 {==============================================================================}
 
-function WSAUnhookBlockingHook: Longint; 
+function WSAUnhookBlockingHook: Longint;
 begin
  {}
  {Not Implemented}
@@ -11244,13 +11244,13 @@ begin
  {}
  Result:=SOCKET_ERROR;
  NetworkSetLastError(WSAEFAULT);
- 
+
  {Check Address}
  if pszAddrString = nil then Exit;
- 
+
  {Check Buffer}
  if pAddrBuf = nil then Exit;
- 
+
  {Check Family}
  NetworkSetLastError(WSAEAFNOSUPPORT);
  case Family of
@@ -11277,7 +11277,7 @@ begin
     if In6AddrIsEqual(PIn6Addr(pAddrBuf)^,IN6ADDR_NONE) then Exit;
 
     Result:=1; {As per Spec}
-   end;  
+   end;
  end;
 end;
 
@@ -11294,16 +11294,16 @@ begin
  {}
  Result:=SOCKET_ERROR;
  NetworkSetLastError(WSAEFAULT);
- 
+
  {Check Address}
  if pszAddrString = nil then Exit;
- 
+
  {Check Buffer}
  if pAddrBuf = nil then Exit;
- 
+
  {Get Address}
  AddrString:=Ultibo.WideCharToString(pszAddrString);
- 
+
  {Check Family}
  NetworkSetLastError(WSAEAFNOSUPPORT);
  case Family of
@@ -11330,7 +11330,7 @@ begin
     if In6AddrIsEqual(PIn6Addr(pAddrBuf)^,IN6ADDR_NONE) then Exit;
 
     Result:=1; {As per Spec}
-   end;  
+   end;
  end;
 end;
 
@@ -11359,13 +11359,13 @@ begin
  {}
  Result:=nil;
  NetworkSetLastError(WSA_INVALID_PARAMETER);
- 
+
  {Check Address}
  if pAddr = nil then Exit;
- 
+
  {Check Buffer}
  if pStringBuf = nil then Exit;
-  
+
  {Check Family}
  NetworkSetLastError(WSAEAFNOSUPPORT);
  case Family of
@@ -11373,22 +11373,22 @@ begin
     {IPv4}
     NetworkSetLastError(WSA_INVALID_PARAMETER);
     if StringBufSize < INET_ADDRSTRLEN then Exit;
-    
+
     WorkBuffer:=InAddrToString(PInAddr(pAddr)^);
     StrLCopy(pStringBuf,PChar(WorkBuffer),StringBufSize);
-    
+
     Result:=pStringBuf;
    end;
   AF_INET6:begin
     {IPv6}
     NetworkSetLastError(WSA_INVALID_PARAMETER);
     if StringBufSize < INET6_ADDRSTRLEN then Exit;
-    
+
     WorkBuffer:=In6AddrToString(PIn6Addr(pAddr)^);
     StrLCopy(pStringBuf,PChar(WorkBuffer),StringBufSize);
-    
+
     Result:=pStringBuf;
-   end;  
+   end;
  end;
 end;
 
@@ -11405,13 +11405,13 @@ begin
  {}
  Result:=nil;
  NetworkSetLastError(WSA_INVALID_PARAMETER);
- 
+
  {Check Address}
  if pAddr = nil then Exit;
- 
+
  {Check Buffer}
  if pStringBuf = nil then Exit;
-  
+
  {Check Family}
  NetworkSetLastError(WSAEAFNOSUPPORT);
  case Family of
@@ -11419,22 +11419,22 @@ begin
     {IPv4}
     NetworkSetLastError(WSA_INVALID_PARAMETER);
     if StringBufSize < INET_ADDRSTRLEN then Exit;
-    
+
     WorkBuffer:=InAddrToString(PInAddr(pAddr)^);
     Ultibo.StringToWideChar(WorkBuffer,pStringBuf,StringBufSize shl 1); {Buffer length in chars, Multiply by SizeOf(WideChar)}
-    
+
     Result:=pStringBuf;
    end;
   AF_INET6:begin
     {IPv6}
     NetworkSetLastError(WSA_INVALID_PARAMETER);
     if StringBufSize < INET6_ADDRSTRLEN then Exit;
-    
+
     WorkBuffer:=In6AddrToString(PIn6Addr(pAddr)^);
     Ultibo.StringToWideChar(WorkBuffer,pStringBuf,StringBufSize shl 1); {Buffer length in chars, Multiply by SizeOf(WideChar)}
-    
+
     Result:=pStringBuf;
-   end;  
+   end;
  end;
 end;
 
@@ -11448,7 +11448,7 @@ var
  g:GROUP;
  Status:LongInt;
  CallerId:WSABUF;
- CalleeId:WSABUF; 
+ CalleeId:WSABUF;
  PeerName:TSockAddr;
  PeerNameLen:LongInt;
  SockName:TSockAddr;
@@ -11632,7 +11632,7 @@ end;
 
 {==============================================================================}
 
-function WSACreateEvent : WSAEVENT; 
+function WSACreateEvent : WSAEVENT;
 {Create a manual reset event object with an initial state of unsignaled}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -11799,7 +11799,7 @@ end;
 
 {==============================================================================}
 
-function WSAGetOverlappedResult( s : TSocket; lpOverlapped : LPWSAOVERLAPPED; lpcbTransfer : LPDWORD; fWait : BOOL; lpdwFlags : LPDWORD ) : BOOL; 
+function WSAGetOverlappedResult( s : TSocket; lpOverlapped : LPWSAOVERLAPPED; lpcbTransfer : LPDWORD; fWait : BOOL; lpdwFlags : LPDWORD ) : BOOL;
 {Retrieve the results of an overlapped operation on the specified socket}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -11859,7 +11859,7 @@ end;
 
 {==============================================================================}
 
-function WSAHtonl( s : TSocket; hostlong : u_long; lpnetlong : pu_long ): Longint; 
+function WSAHtonl( s : TSocket; hostlong : u_long; lpnetlong : pu_long ): Longint;
 {Convert a u_long from host byte order to network byte order}
 
 {See the Windows Sockets 2 documentation for additional information}
@@ -11893,7 +11893,7 @@ begin
 
   {Unlock Socket}
   Socket.ReaderUnlock;
-  
+
   {Return Result}
   NetworkSetLastError(ERROR_SUCCESS);
   Result:=ERROR_SUCCESS;
@@ -11928,7 +11928,7 @@ begin
   {Check Parameters}
   NetworkSetLastError(WSAEFAULT);
   if lpnetshort = nil then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -11945,7 +11945,7 @@ begin
 
   {Unlock Socket}
   Socket.ReaderUnlock;
-  
+
   {Return Result}
   NetworkSetLastError(ERROR_SUCCESS);
   Result:=ERROR_SUCCESS;
@@ -12090,7 +12090,7 @@ begin
   {Check Parameters}
   NetworkSetLastError(WSAEFAULT);
   if lphostlong = nil then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -12107,7 +12107,7 @@ begin
 
   {Unlock Socket}
   Socket.ReaderUnlock;
-  
+
   {Return Result}
   NetworkSetLastError(ERROR_SUCCESS);
   Result:=ERROR_SUCCESS;
@@ -12142,7 +12142,7 @@ begin
   {Check Parameters}
   NetworkSetLastError(WSAEFAULT);
   if lphostshort = nil then Exit;
-  
+
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
   Socket:=TProtocolSocket(s);
@@ -12159,7 +12159,7 @@ begin
 
   {Unlock Socket}
   Socket.ReaderUnlock;
-  
+
   {Return Result}
   NetworkSetLastError(ERROR_SUCCESS);
   Result:=ERROR_SUCCESS;
@@ -12221,9 +12221,9 @@ begin
 
   {Check Buffer and Count}
   NetworkSetLastError(WSAEINVAL);
-  if lpBuffers = nil then Exit; 
+  if lpBuffers = nil then Exit;
   if dwBufferCount = 0 then Exit;
-  if lpFlags = nil then Exit; 
+  if lpFlags = nil then Exit;
 
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
@@ -12255,7 +12255,7 @@ begin
       {Unlock Socket}
       Socket.ReaderUnlock;
       Exit;
-     end; 
+     end;
 
     {Get Start}
     Count:=0;
@@ -12275,7 +12275,7 @@ begin
         {Unlock Socket}
         Socket.ReaderUnlock;
         Exit;
-       end; 
+       end;
 
       {Receive Buffer}
       Status:=Socket.Protocol.Recv(Socket,Buffer.buf^,Buffer.len,Flags);
@@ -12354,9 +12354,9 @@ begin
 
   {Check Buffer and Count}
   NetworkSetLastError(WSAEINVAL);
-  if lpBuffers = nil then Exit; 
+  if lpBuffers = nil then Exit;
   if dwBufferCount = 0 then Exit;
-  if lpFlags = nil then Exit; 
+  if lpFlags = nil then Exit;
 
   {Check Socket}
   NetworkSetLastError(WSAENOTSOCK);
@@ -12388,7 +12388,7 @@ begin
       {Unlock Socket}
       Socket.ReaderUnlock;
       Exit;
-     end; 
+     end;
 
     {Get Start}
     Count:=0;
@@ -12408,7 +12408,7 @@ begin
         {Unlock Socket}
         Socket.ReaderUnlock;
         Exit;
-       end; 
+       end;
 
       {Check Address and Length}
       if (lpFrom <> nil) and (lpFromlen <> nil) then
@@ -12487,7 +12487,7 @@ begin
 
   {Check Buffer and Count}
   NetworkSetLastError(WSAEINVAL);
-  if lpMsg.lpBuffers = nil then Exit; 
+  if lpMsg.lpBuffers = nil then Exit;
   if lpMsg.dwBufferCount = 0 then Exit;
 
   {Check Name and Namelen}
@@ -12508,7 +12508,7 @@ begin
 
   {Check Socket}
   if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
- 
+
   {Check Overlapped}
   if (lpOverlapped <> nil) and Socket.SocketFlags.Overlapped then
    begin
@@ -12528,7 +12528,7 @@ begin
       {Unlock Socket}
       Socket.ReaderUnlock;
       Exit;
-     end; 
+     end;
 
     {Get Start}
     Count:=0;
@@ -12548,7 +12548,7 @@ begin
         {Unlock Socket}
         Socket.ReaderUnlock;
         Exit;
-       end; 
+       end;
 
       {Check Address and Length}
       if (lpMsg.name <> nil) and (lpMsg.name.lpSockaddr <> nil) then
@@ -12652,7 +12652,7 @@ begin
 
   {Check Buffer and Count}
   NetworkSetLastError(WSAEINVAL);
-  if lpBuffers = nil then Exit; 
+  if lpBuffers = nil then Exit;
   if dwBufferCount = 0 then Exit;
 
   {Check Socket}
@@ -12685,7 +12685,7 @@ begin
       {Unlock Socket}
       Socket.ReaderUnlock;
       Exit;
-     end; 
+     end;
 
     {Get Start}
     Count:=0;
@@ -12705,7 +12705,7 @@ begin
         {Unlock Socket}
         Socket.ReaderUnlock;
         Exit;
-       end; 
+       end;
 
       {Send Buffer}
       Status:=Socket.Protocol.Send(Socket,Buffer.buf^,Buffer.len,Flags);
@@ -12781,7 +12781,7 @@ begin
 
   {Check Buffer and Count}
   NetworkSetLastError(WSAEINVAL);
-  if lpBuffers = nil then Exit; 
+  if lpBuffers = nil then Exit;
   if dwBufferCount = 0 then Exit;
 
   {Check Socket}
@@ -12814,7 +12814,7 @@ begin
       {Unlock Socket}
       Socket.ReaderUnlock;
       Exit;
-     end; 
+     end;
 
     {Get Start}
     Count:=0;
@@ -12834,7 +12834,7 @@ begin
         {Unlock Socket}
         Socket.ReaderUnlock;
         Exit;
-       end; 
+       end;
 
       {Check Address}
       if lpTo <> nil then
@@ -12910,13 +12910,13 @@ begin
 
   {Check Message}
   NetworkSetLastError(WSAEINVAL);
-  if lpMsg = nil then Exit; 
+  if lpMsg = nil then Exit;
 
   {Check Buffer and Count}
   NetworkSetLastError(WSAEINVAL);
   if lpMsg.lpBuffers = nil then Exit;
   if lpMsg.dwBufferCount = 0 then Exit;
- 
+
   {Check Name and Namelen}
   NetworkSetLastError(WSAEFAULT);
   if (lpMsg.name = nil) and (lpMsg.namelen <> 0) then Exit;
@@ -12935,7 +12935,7 @@ begin
 
   {Check Socket}
   if not ProtocolManager.CheckSocket(s,True,NETWORK_LOCK_READ) then Exit;
- 
+
   {Check Overlapped}
   if (lpOverlapped <> nil) and Socket.SocketFlags.Overlapped then
    begin
@@ -12955,7 +12955,7 @@ begin
       {Unlock Socket}
       Socket.ReaderUnlock;
       Exit;
-     end; 
+     end;
 
     {Get Start}
     Count:=0;
@@ -12975,7 +12975,7 @@ begin
         {Unlock Socket}
         Socket.ReaderUnlock;
         Exit;
-       end; 
+       end;
 
       {Check Address}
       if (lpMsg.name <> nil) and (lpMsg.name.lpSockaddr <> nil) then
@@ -13511,7 +13511,7 @@ end;
 
 {==============================================================================}
 
-function WSAEnumNameSpaceProvidersA( lpdwBufferLength: LPDWORD; lpnspBuffer: LPWSANameSpace_InfoA ): Longint; 
+function WSAEnumNameSpaceProvidersA( lpdwBufferLength: LPDWORD; lpnspBuffer: LPWSANameSpace_InfoA ): Longint;
 begin
  {}
  {Not Implemented}
@@ -13521,7 +13521,7 @@ end;
 
 {==============================================================================}
 
-function WSAEnumNameSpaceProvidersW( lpdwBufferLength: LPDWORD; lpnspBuffer: LPWSANameSpace_InfoW ): Longint; 
+function WSAEnumNameSpaceProvidersW( lpdwBufferLength: LPDWORD; lpnspBuffer: LPWSANameSpace_InfoW ): Longint;
 begin
  {}
  {Not Implemented}
@@ -13541,7 +13541,7 @@ end;
 
 {==============================================================================}
 
-function WSAGetServiceClassNameByClassIdW( lpServiceClassId: PGUID; lpszServiceClassName: PWideChar; lpdwBufferLength: LPDWORD ): Longint; 
+function WSAGetServiceClassNameByClassIdW( lpServiceClassId: PGUID; lpszServiceClassName: PWideChar; lpdwBufferLength: LPDWORD ): Longint;
 begin
  {}
  {Not Implemented}
@@ -13551,7 +13551,7 @@ end;
 
 {==============================================================================}
 
-function WSASetServiceA( lpqsRegInfo: LPWSAQuerySetA; essoperation: TWSAESetServiceOp; dwControlFlags: DWORD ): Longint; 
+function WSASetServiceA( lpqsRegInfo: LPWSAQuerySetA; essoperation: TWSAESetServiceOp; dwControlFlags: DWORD ): Longint;
 begin
  {}
  {Not Implemented}
@@ -13637,11 +13637,11 @@ begin
        FDSet.fd_array[I]:=FDSet.fd_array[I + 1];
        Inc(I);
       end;
-      
+
      Dec(FDSet.fd_count);
      Break;
     end;
-    
+
    Inc(I);
   end;
 end;
@@ -13666,7 +13666,7 @@ begin
      Exit;
     end;
   end;
-  
+
  Result:=False;
 end;
 
@@ -13699,7 +13699,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Winsock2 Undocumented Functions}
-function WsControl(Proto:DWORD;Action:DWORD;pRequestInfo:Pointer; var pcbRequestInfoLen:DWORD;pResponseInfo:Pointer; var pcbResponseInfoLen:DWORD):Integer; 
+function WsControl(Proto:DWORD;Action:DWORD;pRequestInfo:Pointer; var pcbRequestInfoLen:DWORD;pResponseInfo:Pointer; var pcbResponseInfoLen:DWORD):Integer;
 var
  Protocol:TNetworkProtocol;
 begin
@@ -13709,9 +13709,9 @@ begin
   {Check Started}
   NetworkSetLastError(WSANOTINITIALISED);
   if WS2StartupError <> ERROR_SUCCESS then Exit;
-  
+
   NetworkSetLastError(WSAEPROTONOSUPPORT);
-  
+
   //To Do //For those that are documented call WsControlEx with adjusted params
           //See: https://tangentsoft.com/wskfaq/articles/wscontrol.html
  except
@@ -13728,7 +13728,7 @@ end;
 
 {==============================================================================}
 
-function getnetbyaddr(addr: Pointer; len, Struct: Integer): PNetEnt; 
+function getnetbyaddr(addr: Pointer; len, Struct: Integer): PNetEnt;
 {Retrieve the network information corresponding to a network address}
 {Note: Address will be in network byte order where applicable}
 begin
@@ -13759,7 +13759,7 @@ end;
 
 {==============================================================================}
 
-function getnetbyname(const name: PChar): PNetEnt; 
+function getnetbyname(const name: PChar): PNetEnt;
 {Retrieve network address corresponding to a network name}
 begin
  {}
@@ -13790,7 +13790,7 @@ end;
 {==============================================================================}
 {==============================================================================}
 {Winsock2 Enhanced Functions}
-function WsControlEx(Proto:DWORD;Action:DWORD;pRequestInfo:Pointer; var pcbRequestInfoLen:DWORD;pResponseInfo:Pointer; var pcbResponseInfoLen:DWORD):Integer; 
+function WsControlEx(Proto:DWORD;Action:DWORD;pRequestInfo:Pointer; var pcbRequestInfoLen:DWORD;pResponseInfo:Pointer; var pcbResponseInfoLen:DWORD):Integer;
 var
  Count:LongWord;
  Address:TAddressEntry;
@@ -13798,17 +13798,17 @@ var
  Binding:TTransportBinding;
  Protocol:TNetworkProtocol;
  Transport:TNetworkTransport;
- 
+
  IPRoute:TIPRouteEntry;
  IPAddress:TIPAddressEntry;
  IPTransport:TIPTransport;
- 
+
  ARPAddress:TARPAddressEntry;
  ARPTransport:TARPTransport;
 
  TCPSocket:TTCPSocket;
  UDPSocket:TUDPSocket;
- 
+
  WSAIfRow:PWSAIfRow;
  WSAIfTable:PWSAIfTable;
  WSAIpAddrRow:PWSAIpAddrRow;
@@ -13822,7 +13822,7 @@ var
  WSATcpTable:PWSATcpTable;
  WSAUdpRow:PWSAUdpRow;
  WSAUdpTable:PWSAUdpTable;
- 
+
  WSATTL:LongWord;
  WSAIpStats:PWSAIpStats;
  WSAFixedInfo:PWSAFixedInfo;
@@ -13839,13 +13839,13 @@ begin
 
   {Set Error}
   NetworkSetLastError(WSAEPROTONOSUPPORT);
-  
+
   {Check Proto}
   case Proto of
    IPPROTO_IP:begin
      {Set Error}
      NetworkSetLastError(WSAEOPNOTSUPP);
-     
+
      {Get Transport}
      Transport:=TransportManager.GetTransportByType(AF_INET,PACKET_TYPE_IP,True,NETWORK_LOCK_READ);
      if Transport = nil then Exit;
@@ -13857,26 +13857,26 @@ begin
          NetworkSetLastError(WSAENOBUFS);
          pcbResponseInfoLen:=SizeOf(DWORD);
          if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
-         
+
          NetworkSetLastError(WSAEINVAL);
          if pRequestInfo = nil then Exit;
-         
+
          Count:=0;
-         
+
          {Count Adapters}
          Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
          while Adapter <> nil do
           begin
            Inc(Count);
-           
+
            {Get Next Adapter}
            Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
-          end; 
-         
+          end;
+
          {Return Count}
          PDWORD(pRequestInfo)^:=Count;
-         
-         {Return Result} 
+
+         {Return Result}
          Result:=NO_ERROR;
          NetworkSetLastError(ERROR_SUCCESS);
         end;
@@ -13889,15 +13889,15 @@ begin
          NetworkSetLastError(WSAEINVAL);
          WSAIfRow:=PWSAIfRow(pRequestInfo);
          if WSAIfRow = nil then Exit;
-         
+
          NetworkSetLastError(WSAENOTSOCK);
-         
-         {Scan Adapters} 
+
+         {Scan Adapters}
          Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
          while Adapter <> nil do
           begin
            {Check Adapter}
-           if Adapter.Index = WSAIfRow.dwIndex then 
+           if Adapter.Index = WSAIfRow.dwIndex then
             begin
              {Get IfRow}
              FillChar(WSAIfRow^,SizeOf(TWSAIfRow),0);
@@ -13914,7 +13914,7 @@ begin
                 MEDIA_TYPE_LOOPBACK:WSAIfRow.dwType:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
                 MEDIA_TYPE_PPP:WSAIfRow.dwType:=WSA_IF_TYPE_PPP;
                 MEDIA_TYPE_SLIP:WSAIfRow.dwType:=WSA_IF_TYPE_SLIP;
-               else  
+               else
                 WSAIfRow.dwType:=WSA_IF_TYPE_OTHER;
                end;
               end;
@@ -13926,46 +13926,46 @@ begin
              WSAIfRow.dwOperStatus:=WSA_IF_OPER_STATUS_OPERATIONAL;
              Break;
             end;
-            
+
            {Get Next Adapter}
            Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
           end;
          if Adapter = nil then Exit;
-         
-         {Return Result} 
+
+         {Return Result}
          Result:=NO_ERROR;
          NetworkSetLastError(ERROR_SUCCESS);
         end;
        WSA_GETIFTABLE:begin
          {Get IfTable}
          Count:=0;
-         
-         {Count Adapters} 
+
+         {Count Adapters}
          Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
          while Adapter <> nil do
           begin
            Inc(Count);
-           
+
            {Get Next Adapter}
            Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
           end;
-         
+
          NetworkSetLastError(WSAENOBUFS);
-         pcbResponseInfoLen:=(SizeOf(TWSAIfTable) + (Count * SizeOf(TWSAIfRow))); 
+         pcbResponseInfoLen:=(SizeOf(TWSAIfTable) + (Count * SizeOf(TWSAIfRow)));
          if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
-         
+
          NetworkSetLastError(WSAEINVAL);
          WSAIfTable:=PWSAIfTable(pRequestInfo);
          if WSAIfTable = nil then Exit;
 
          WSAIfTable.dwNumEntries:=0;
-         
-         {Scan Adapters} 
+
+         {Scan Adapters}
          Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
          while Adapter <> nil do
           begin
            Inc(WSAIfTable.dwNumEntries);
-           
+
            {Get IfRow}
            WSAIfRow:=PWSAIfRow(@WSAIfTable.table[WSAIfTable.dwNumEntries - 1]);
            if WSAIfRow = nil then Exit;
@@ -13983,7 +13983,7 @@ begin
               MEDIA_TYPE_LOOPBACK:WSAIfRow.dwType:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
               MEDIA_TYPE_PPP:WSAIfRow.dwType:=WSA_IF_TYPE_PPP;
               MEDIA_TYPE_SLIP:WSAIfRow.dwType:=WSA_IF_TYPE_SLIP;
-             else  
+             else
               WSAIfRow.dwType:=WSA_IF_TYPE_OTHER;
              end;
             end;
@@ -13993,60 +13993,60 @@ begin
            System.Move(Adapter.Hardware[0],WSAIfRow.bPhysAddr[0],SizeOf(THardwareAddress));
            WSAIfRow.dwAdminStatus:=WSA_IF_ADMIN_STATUS_UP;
            WSAIfRow.dwOperStatus:=WSA_IF_OPER_STATUS_OPERATIONAL;
-           
+
            {Get Next Adapter}
            Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
           end;
-          
-         {Return Result} 
+
+         {Return Result}
          Result:=NO_ERROR;
          NetworkSetLastError(ERROR_SUCCESS);
         end;
        WSA_GETIPADDRTABLE:begin
          {Get IpAddrTable}
          Count:=0;
-        
+
          {Count Adapters}
          Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
          while Adapter <> nil do
           begin
            Inc(Count);
-           
+
            {Get Next Adapter}
            Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
           end;
-         
+
          NetworkSetLastError(WSAENOBUFS);
          pcbResponseInfoLen:=(SizeOf(TWSAIpAddrTable) + (Count * SizeOf(TWSAIpAddrRow)));
          if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
-         
+
          NetworkSetLastError(WSAEINVAL);
          WSAIpAddrTable:=PWSAIpAddrTable(pRequestInfo);
          if WSAIpAddrTable = nil then Exit;
 
          WSAIpAddrTable.dwNumEntries:=0;
-         
+
          {Scan Adapters} //To Do //Change to Bindings
          Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
          while Adapter <> nil do
           begin
            Inc(WSAIpAddrTable.dwNumEntries);
-           
+
            {Get IpAddrRow}
            WSAIpAddrRow:=PWSAIpAddrRow(@WSAIpAddrTable.table[WSAIpAddrTable.dwNumEntries - 1]);
            if WSAIpAddrRow = nil then Exit;
            FillChar(WSAIpAddrRow^,SizeOf(TWSAIpAddrRow),0);
-           WSAIpAddrRow.dwAddr:=LongWordNtoBE(TIPTransportAdapter(Adapter).Address.S_addr); 
+           WSAIpAddrRow.dwAddr:=LongWordNtoBE(TIPTransportAdapter(Adapter).Address.S_addr);
            WSAIpAddrRow.dwIndex:=Adapter.Index;
-           WSAIpAddrRow.dwMask:=LongWordNtoBE(TIPTransportAdapter(Adapter).Netmask.S_addr); 
+           WSAIpAddrRow.dwMask:=LongWordNtoBE(TIPTransportAdapter(Adapter).Netmask.S_addr);
            WSAIpAddrRow.dwBCastAddr:=LongWordNtoBE(TIPTransportAdapter(Adapter).Directed.S_addr);
            WSAIpAddrRow.dwReasmSize:=0;
-           
+
            {Get Next Adapter}
            Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
           end;
-          
-         {Return Result} 
+
+         {Return Result}
          Result:=NO_ERROR;
          NetworkSetLastError(ERROR_SUCCESS);
         end;
@@ -14058,17 +14058,17 @@ begin
          try
           {Get IpNetTable}
           Count:=0;
-         
+
           {Count Addresses}
           ARPAddress:=ARPTransport.GetAddressByNext(nil,True,False,NETWORK_LOCK_READ);
           while ARPAddress <> nil do
            begin
             Inc(Count);
-            
+
             {Get Next Address}
             ARPAddress:=ARPTransport.GetAddressByNext(ARPAddress,True,True,NETWORK_LOCK_READ);
            end;
-          
+
           NetworkSetLastError(WSAENOBUFS);
           pcbResponseInfoLen:=(SizeOf(TWSAIpNetTable) + (Count * SizeOf(TWSAIpNetRow)));
           if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
@@ -14076,15 +14076,15 @@ begin
           NetworkSetLastError(WSAEINVAL);
           WSAIpNetTable:=PWSAIpNetTable(pRequestInfo);
           if (WSAIpNetTable = nil) and (pcbRequestInfoLen > 0) then Exit;
-          
+
           WSAIpNetTable.dwNumEntries:=0;
-          
-          {Scan Addresses} 
+
+          {Scan Addresses}
           ARPAddress:=ARPTransport.GetAddressByNext(nil,True,False,NETWORK_LOCK_READ);
           while ARPAddress <> nil do
            begin
             Inc(WSAIpNetTable.dwNumEntries);
-            
+
             {Get IpNetRow}
             WSAIpNetRow:=PWSAIpNetRow(@WSAIpNetTable.table[WSAIpNetTable.dwNumEntries - 1]);
             if WSAIpNetRow = nil then Exit;
@@ -14092,7 +14092,7 @@ begin
             WSAIpNetRow.dwIndex:=WSAIpNetTable.dwNumEntries;
             WSAIpNetRow.dwPhysAddrLen:=SizeOf(THardwareAddress);
             System.Move(ARPAddress.Hardware[0],WSAIpNetRow.bPhysAddr[0],SizeOf(THardwareAddress));
-            WSAIpNetRow.dwAddr:=LongWordNtoBE(ARPAddress.Address.S_addr); 
+            WSAIpNetRow.dwAddr:=LongWordNtoBE(ARPAddress.Address.S_addr);
             case ARPAddress.AddressType of
              ADDRESS_TYPE_DYNAMIC:WSAIpNetRow.dwType:=WSA_IPNET_TYPE_DYNAMIC;
              ADDRESS_TYPE_STATIC:WSAIpNetRow.dwType:=WSA_IPNET_TYPE_STATIC;
@@ -14100,64 +14100,64 @@ begin
              begin
               WSAIpNetRow.dwType:=WSA_IPNET_TYPE_OTHER;
              end;
-            end; 
-          
+            end;
+
            {Get Next Address}
            ARPAddress:=ARPTransport.GetAddressByNext(ARPAddress,True,True,NETWORK_LOCK_READ);
           end;
-          
-          {Return Result} 
+
+          {Return Result}
           Result:=NO_ERROR;
           NetworkSetLastError(ERROR_SUCCESS);
          finally
           ARPTransport.ReaderUnlock;
          end;
-        end; 
+        end;
        WSA_GETIPFORWARDTABLE:begin
          {Get IP Transport}
          IPTransport:=TIPTransport(Transport);
-         
+
          {Get IpForwardTable}
          Count:=0;
-         
+
          {Count Routes}
          IPRoute:=IPTransport.GetRouteByNext(nil,True,False,NETWORK_LOCK_READ);
          while IPRoute <> nil do
           begin
            Inc(Count);
-           
+
            {Get Next Route}
            IPRoute:=IPTransport.GetRouteByNext(IPRoute,True,True,NETWORK_LOCK_READ);
           end;
-         
+
          NetworkSetLastError(WSAENOBUFS);
          pcbResponseInfoLen:=(SizeOf(TWSAIpForwardTable) + (Count * SizeOf(TWSAIpForwardRow)));
          if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
-         
+
          NetworkSetLastError(WSAEINVAL);
          WSAIpForwardTable:=PWSAIpForwardTable(pRequestInfo);
          if WSAIpForwardTable = nil then Exit;
 
          WSAIpForwardTable.dwNumEntries:=0;
-         
+
          {Scan Routes}
          IPRoute:=IPTransport.GetRouteByNext(nil,True,False,NETWORK_LOCK_READ);
          while IPRoute <> nil do
           begin
            Inc(WSAIpForwardTable.dwNumEntries);
-         
+
            {Get IpForwardRow}
            WSAIpForwardRow:=PWSAIpForwardRow(@WSAIpForwardTable.table[WSAIpForwardTable.dwNumEntries - 1]);
            if WSAIpForwardRow = nil then Exit;
            FillChar(WSAIpForwardRow^,SizeOf(TWSAIpForwardRow),0);
-           WSAIpForwardRow.dwForwardDest:=LongWordNtoBE(IPRoute.Network.S_addr); 
-           WSAIpForwardRow.dwForwardMask:=LongWordNtoBE(IPRoute.Netmask.S_addr); 
+           WSAIpForwardRow.dwForwardDest:=LongWordNtoBE(IPRoute.Network.S_addr);
+           WSAIpForwardRow.dwForwardMask:=LongWordNtoBE(IPRoute.Netmask.S_addr);
            WSAIpForwardRow.dwForwardPolicy:=IPRoute.TOS;
            WSAIpForwardRow.dwForwardNextHop:=0;
            WSAIpForwardRow.dwForwardType:=WSA_IPROUTE_TYPE_DIRECT;
            if not IPTransport.CompareAddress(IPRoute.Gateway,IPRoute.Address) then
             begin
-             WSAIpForwardRow.dwForwardNextHop:=LongWordNtoBE(IPRoute.Gateway.S_addr); 
+             WSAIpForwardRow.dwForwardNextHop:=LongWordNtoBE(IPRoute.Gateway.S_addr);
              WSAIpForwardRow.dwForwardType:=WSA_IPROUTE_TYPE_INDIRECT;
             end;
            IPAddress:=IPTransport.GetAddressByAddress(IPRoute.Address,True,NETWORK_LOCK_READ);
@@ -14167,7 +14167,7 @@ begin
              if Adapter <> nil then
               begin
                WSAIpForwardRow.dwForwardIfIndex:=Adapter.Index;
-               
+
                Adapter.ReaderUnlock;
               end;
              IPAddress.ReaderUnlock;
@@ -14175,15 +14175,15 @@ begin
            WSAIpForwardRow.dwForwardProto:=WSA_IPPROTO_LOCAL;
            WSAIpForwardRow.dwForwardAge:=(GetTickCount64 - IPRoute.RouteTime) div MILLISECONDS_PER_SECOND;
            WSAIpForwardRow.dwForwardMetric1:=IPRoute.Metric;
-           
+
            {Get Next Route}
            IPRoute:=IPTransport.GetRouteByNext(IPRoute,True,True,NETWORK_LOCK_READ);
           end;
-         
-         {Return Result} 
+
+         {Return Result}
          Result:=NO_ERROR;
          NetworkSetLastError(ERROR_SUCCESS);
-        end;       
+        end;
        WSA_GETTCPTABLE:begin
          {Get TCP Protocol}
          NetworkSetLastError(WSAEOPNOTSUPP);
@@ -14192,7 +14192,7 @@ begin
          try
           {Get TcpTable}
           Count:=0;
-          
+
           {Count Sockets}
           TCPSocket:=TTCPSocket(Protocol.GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
           while TCPSocket <> nil do
@@ -14202,7 +14202,7 @@ begin
              begin
               Inc(Count);
              end;
-           
+
             {Get Next Socket}
             TCPSocket:=TTCPSocket(Protocol.GetSocketByNext(TCPSocket,True,True,NETWORK_LOCK_READ));
            end;
@@ -14210,13 +14210,13 @@ begin
           NetworkSetLastError(WSAENOBUFS);
           pcbResponseInfoLen:=(SizeOf(TWSATcpTable) + (Count * SizeOf(TWSATcpRow)));
           if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
-          
+
           NetworkSetLastError(WSAEINVAL);
           WSATcpTable:=PWSATcpTable(pRequestInfo);
           if WSATcpTable = nil then Exit;
- 
+
           WSATcpTable.dwNumEntries:=0;
-           
+
           {Scan Sockets}
           TCPSocket:=TTCPSocket(Protocol.GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
           while TCPSocket <> nil do
@@ -14225,7 +14225,7 @@ begin
             if (TCPSocket.Family = AF_INET) and (TCPSocket.Struct = SOCK_STREAM) and (TCPSocket.Proto = IPPROTO_TCP) then
              begin
               Inc(WSATcpTable.dwNumEntries);
-              
+
               {Get TcpRow}
               WSATcpRow:=PWSATcpRow(@WSATcpTable.table[WSATcpTable.dwNumEntries - 1]);
               if WSATcpRow = nil then Exit;
@@ -14248,18 +14248,18 @@ begin
               WSATcpRow.dwLocalAddr:=LongWordNtoBE(TIPState(TCPSocket.TransportState).LocalAddress.S_addr);
               WSATcpRow.dwRemoteAddr:=LongWordNtoBE(TIPState(TCPSocket.TransportState).RemoteAddress.S_addr);
              end;
-             
+
             {Get Next Socket}
             TCPSocket:=TTCPSocket(Protocol.GetSocketByNext(TCPSocket,True,True,NETWORK_LOCK_READ));
            end;
-          
-          {Return Result} 
+
+          {Return Result}
           Result:=NO_ERROR;
           NetworkSetLastError(ERROR_SUCCESS);
          finally
           Protocol.ReaderUnlock;
          end;
-        end;       
+        end;
        WSA_GETUDPTABLE:begin
          {Get UDP Protocol}
          NetworkSetLastError(WSAEOPNOTSUPP);
@@ -14268,7 +14268,7 @@ begin
          try
           {Get UdpTable}
           Count:=0;
-         
+
           {Count Sockets}
           UDPSocket:=TUDPSocket(Protocol.GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
           while UDPSocket <> nil do
@@ -14278,7 +14278,7 @@ begin
              begin
               Inc(Count);
              end;
-           
+
             {Get Next Socket}
             UDPSocket:=TUDPSocket(Protocol.GetSocketByNext(UDPSocket,True,True,NETWORK_LOCK_READ));
            end;
@@ -14286,13 +14286,13 @@ begin
           NetworkSetLastError(WSAENOBUFS);
           pcbResponseInfoLen:=(SizeOf(TWSAUdpTable) + (Count * SizeOf(TWSAUdpRow)));
           if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
-          
+
           NetworkSetLastError(WSAEINVAL);
           WSAUdpTable:=PWSAUdpTable(pRequestInfo);
           if WSAUdpTable = nil then Exit;
- 
+
           WSAUdpTable.dwNumEntries:=0;
-           
+
           {Scan Sockets}
           UDPSocket:=TUDPSocket(Protocol.GetSocketByNext(nil,True,False,NETWORK_LOCK_READ));
           while UDPSocket <> nil do
@@ -14301,7 +14301,7 @@ begin
             if (UDPSocket.Family = AF_INET) and (UDPSocket.Struct = SOCK_DGRAM) and (UDPSocket.Proto = IPPROTO_UDP) then
              begin
               Inc(WSAUdpTable.dwNumEntries);
-              
+
               {Get UdpRow}
               WSAUdpRow:=PWSAUdpRow(@WSAUdpTable.table[WSAUdpTable.dwNumEntries - 1]);
               if WSAUdpRow = nil then Exit;
@@ -14309,64 +14309,64 @@ begin
               WSAUdpRow.dwLocalPort:=WordNtoBE(UDPSocket.ProtocolState.LocalPort);
               WSAUdpRow.dwLocalAddr:=LongWordNtoBE(TIPState(UDPSocket.TransportState).LocalAddress.S_addr);
              end;
-             
+
             {Get Next Socket}
             UDPSocket:=TUDPSocket(Protocol.GetSocketByNext(UDPSocket,True,True,NETWORK_LOCK_READ));
            end;
-          
-          {Return Result} 
+
+          {Return Result}
           Result:=NO_ERROR;
           NetworkSetLastError(ERROR_SUCCESS);
          finally
           Protocol.ReaderUnlock;
          end;
-        end;       
+        end;
        WSA_GETIPSTATISTICS:begin
          {Get IpStatistics}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
-        end;   
+        end;
        WSA_GETICMPSTATISTICS:begin
          {Get IcmpStatistics}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
-        end;   
+        end;
        WSA_GETTCPSTATISTICS:begin
          {Get TcpStatistics}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
-        end;   
+        end;
        WSA_GETUDPSTATISTICS:begin
          {Get UdpStatistics}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
-        end;   
+        end;
        WSA_SETIFENTRY:begin
          {Set IfEntry}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
-        end; 
+        end;
        WSA_CREATEIPFORWARDENTRY:begin
          {Create IpForwardEntry}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
         end;
-       WSA_SETIPFORWARDENTRY:begin       
+       WSA_SETIPFORWARDENTRY:begin
          {Set IpForwardEntry}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
         end;
-       WSA_DELETEIPFORWARDENTRY:begin       
+       WSA_DELETEIPFORWARDENTRY:begin
          {Delete IpForwardEntry}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
         end;
        WSA_SETIPSTATISTICS:begin
@@ -14374,11 +14374,11 @@ begin
          NetworkSetLastError(WSAENOBUFS);
          pcbResponseInfoLen:=SizeOf(TWSAIpStats);
          if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
-         
+
          NetworkSetLastError(WSAEINVAL);
          WSAIpStats:=PWSAIpStats(pRequestInfo);
          if WSAIpStats = nil then Exit;
-         
+
          {Set Forwarding}
          if WSAIpStats.dwForwarding <> WSA_USE_CURRENT_FORWARDING then
           begin
@@ -14386,7 +14386,7 @@ begin
            if WSAIpStats.dwForwarding > WSA_IP_NOT_FORWARDING then Exit;
            TIPTransport(Transport).Forwarding:=WSAIpStats.dwForwarding;
           end;
-         
+
          {Set DefaultTTL}
          if WSAIpStats.dwDefaultTTL <> WSA_USE_CURRENT_TTL then
           begin
@@ -14395,8 +14395,8 @@ begin
            if WSAIpStats.dwDefaultTTL > 512 then Exit;
            TIPTransport(Transport).DefaultTTL:=WSAIpStats.dwDefaultTTL;
           end;
-          
-         {Return Result} 
+
+         {Return Result}
          Result:=NO_ERROR;
          NetworkSetLastError(ERROR_SUCCESS);
         end;
@@ -14405,122 +14405,122 @@ begin
          NetworkSetLastError(WSAENOBUFS);
          pcbResponseInfoLen:=SizeOf(LongWord);
          if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
-         
+
          NetworkSetLastError(WSAEINVAL);
          WSATTL:=LongWord(pRequestInfo);
-         
+
          {Set DefaultTTL}
          NetworkSetLastError(WSAEINVAL);
          if WSATTL = 0 then Exit;
          if WSATTL > 512 then Exit;
          TIPTransport(Transport).DefaultTTL:=WSATTL;
-          
-         {Return Result} 
+
+         {Return Result}
          Result:=NO_ERROR;
          NetworkSetLastError(ERROR_SUCCESS);
         end;
        WSA_CREATEIPNETENTRY:begin
          {Create IpNetEntry}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
         end;
        WSA_SETIPNETENTRY:begin
          {Set IpNetEntry}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
         end;
        WSA_DELETEIPNETENTRY:begin
          {Delete IpNetEntry}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
         end;
        WSA_FLUSHIPNETTABLE:begin
          {Flush IpNetEntry}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
         end;
        WSA_SETTCPENTRY:begin
          {Set TcpEntry}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
         end;
        WSA_GETINTERFACEINFO:begin
          {Get IpInterfaceInfo}
          Count:=0;
-         
+
          {Count Adapters}
          Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
          while Adapter <> nil do
           begin
            Inc(Count);
-           
+
            {Get Next Adapter}
            Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
           end;
-         
+
          NetworkSetLastError(WSAENOBUFS);
          pcbResponseInfoLen:=(SizeOf(TWSAIpInterfaceInfo) + (Count * SizeOf(TWSAIpAdapterIndexMap)));
          if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
-         
+
          NetworkSetLastError(WSAEINVAL);
          WSAIpInterfaceInfo:=PWSAIpInterfaceInfo(pRequestInfo);
          if WSAIpInterfaceInfo = nil then Exit;
-         
+
          WSAIpInterfaceInfo.NumAdapters:=0;
-         
-         {Scan Adapters} 
+
+         {Scan Adapters}
          Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
          while Adapter <> nil do
           begin
            Inc(WSAIpInterfaceInfo.NumAdapters);
-           
+
            {Get IpAdapterIndexMap}
            WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(@WSAIpInterfaceInfo.Adapter[WSAIpInterfaceInfo.NumAdapters - 1]);
            if WSAIpAdapterIndexMap = nil then Exit;
            WSAIpAdapterIndexMap.Index:=Adapter.Index;
            WSAIpAdapterIndexMap.Name:=Adapter.Name;
-           
+
            {Get Next Adapter}
            Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
           end;
-          
-         {Return Result} 
+
+         {Return Result}
          Result:=NO_ERROR;
          NetworkSetLastError(ERROR_SUCCESS);
         end;
        WSA_GETBESTINTERFACE:begin
          {Get BestInterface}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
         end;
        WSA_GETBESTROUTE:begin
          {Get BestRoute}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
         end;
        WSA_GETADAPTERINDEX:begin
          {Get AdapterIndex}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
         end;
        WSA_ADDIPADDRESS:begin
          {Add IPAddress}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
         end;
        WSA_DELETEIPADDRESS:begin
          {Delete IPAddress}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
         end;
        WSA_GETNETWORKPARAMS:begin
@@ -14532,31 +14532,31 @@ begin
          NetworkSetLastError(WSAEINVAL);
          WSAFixedInfo:=PWSAFixedInfo(pRequestInfo);
          if WSAFixedInfo = nil then Exit;
-         
+
          StrLCopy(WSAFixedInfo.HostName,PChar(Transport.Manager.Settings.HostName),WSA_MAX_HOSTNAME_LEN);
          StrLCopy(WSAFixedInfo.DomainName,PChar(Transport.Manager.Settings.DomainName),WSA_MAX_DOMAIN_NAME_LEN);
          WSAFixedInfo.CurrentDnsServer:=@WSAFixedInfo.DnsServerList;
          WSAFixedInfo.DnsServerList.Next:=nil;
          StrLCopy(WSAFixedInfo.DnsServerList.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransport(Transport).Nameservers[0]))),15);
-         
-         {Return Result} 
+
+         {Return Result}
          Result:=NO_ERROR;
          NetworkSetLastError(ERROR_SUCCESS);
         end;
        WSA_GETADAPTERSINFO:begin
          {Get IpAdapterInfo}
          Count:=0;
-         
+
          {Count Adapters}
          Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
          while Adapter <> nil do
           begin
            Inc(Count);
-           
+
            {Get Next Adapter}
            Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
           end;
-         
+
          NetworkSetLastError(WSAENOBUFS);
          pcbResponseInfoLen:=(SizeOf(TWSAIpAdapterInfo) * Count);
          if pcbRequestInfoLen < pcbResponseInfoLen then Exit;
@@ -14564,10 +14564,10 @@ begin
          NetworkSetLastError(WSAEINVAL);
          WSAIpAdapterInfo:=PWSAIpAdapterInfo(pRequestInfo);
          if WSAIpAdapterInfo = nil then Exit;
-         
+
          FillChar(WSAIpAdapterInfo^,SizeOf(TWSAIpAdapterInfo),0);
-         
-         {Scan Adapters} 
+
+         {Scan Adapters}
          Adapter:=Transport.GetAdapterByNext(nil,True,False,NETWORK_LOCK_READ);
          while Adapter <> nil do
           begin
@@ -14588,11 +14588,11 @@ begin
               MEDIA_TYPE_LOOPBACK:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_SOFTWARE_LOOPBACK;
               MEDIA_TYPE_PPP:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_PPP;
               MEDIA_TYPE_SLIP:WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_SLIP;
-             else  
+             else
               WSAIpAdapterInfo.Type_:=WSA_IF_TYPE_OTHER;
              end;
             end;
-           end; 
+           end;
            WSAIpAdapterInfo.DhcpEnabled:=0;
            if Adapter.ConfigType = CONFIG_TYPE_DHCP then WSAIpAdapterInfo.DhcpEnabled:=1;
            WSAIpAdapterInfo.CurrentIpAddress:=@WSAIpAdapterInfo.IpAddressList;
@@ -14605,28 +14605,28 @@ begin
            StrLCopy(WSAIpAdapterInfo.DhcpServer.IpAddress.S,PChar(InAddrToString(InAddrToNetwork(TIPTransportAdapter(Adapter).Server))),15);
            WSAIpAdapterInfo.LeaseObtained:=TIPTransportAdapter(Adapter).LeaseTime;
            WSAIpAdapterInfo.LeaseExpires:=TIPTransportAdapter(Adapter).ExpiryTime;
-           
+
            {Get Next Adapter}
            Adapter:=Transport.GetAdapterByNext(Adapter,True,True,NETWORK_LOCK_READ);
-           
+
            {Get Next IpAdapterInfo}
            if Adapter <> nil then
             begin
              WSAIpAdapterInfo.Next:=PWSAIpAdapterInfo(PtrUInt(WSAIpAdapterInfo) + SizeOf(TWSAIpAdapterInfo));
              WSAIpAdapterInfo:=WSAIpAdapterInfo.Next;
-             
+
              FillChar(WSAIpAdapterInfo^,SizeOf(TWSAIpAdapterInfo),0);
             end;
           end;
-          
-         {Return Result} 
+
+         {Return Result}
          Result:=NO_ERROR;
          NetworkSetLastError(ERROR_SUCCESS);
         end;
        WSA_GETPERADAPTERINFO:begin
          {Get PerAdapterInfo}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
         end;
        WSA_IPRELEASEADDRESS:begin
@@ -14638,11 +14638,11 @@ begin
          NetworkSetLastError(WSAEINVAL);
          WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(pRequestInfo);
          if WSAIpAdapterIndexMap = nil then Exit;
-         
+
          {Get Adapter}
          //To Do //IPHLPAPI
-          
-         {Return Result} 
+
+         {Return Result}
          Result:=NO_ERROR;
          NetworkSetLastError(ERROR_SUCCESS);
         end;
@@ -14655,46 +14655,46 @@ begin
          NetworkSetLastError(WSAEINVAL);
          WSAIpAdapterIndexMap:=PWSAIpAdapterIndexMap(pRequestInfo);
          if WSAIpAdapterIndexMap = nil then Exit;
-         
+
          {Get Adapter}
          //To Do //IPHLPAPI
-          
-         {Return Result} 
+
+         {Return Result}
          Result:=NO_ERROR;
          NetworkSetLastError(ERROR_SUCCESS);
         end;
        WSA_SENDARP:begin
          {Send ARP}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
 
         end;
        WSA_GETRTTANDHOPCOUNT:begin
          {Get RTTAndHopCount}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
 
         end;
        WSA_GETFRIENDLYIFINDEX:begin
          {Get FriendlyIfIndex}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
 
         end;
-       WSA_ENABLEROUTER:begin 
+       WSA_ENABLEROUTER:begin
          {Enable Router}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
 
         end;
        WSA_UNENABLEROUTER:begin
          {Unenable Router}
          NetworkSetLastError(WSAEINVAL);
-         
+
          //To Do //IPHLPAPI
 
         end;
@@ -14731,7 +14731,7 @@ var
 begin
  {}
  Result:=False;
- 
+
  Count:=Winsock2.recv(WS2TextIOInputSocket,ACh,SizeOf(Char),0);
  if Count = SOCKET_ERROR then
   begin
@@ -14749,7 +14749,7 @@ begin
     end;
   end;
 
- Result:=True;  
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -14777,9 +14777,9 @@ begin
  {}
  Total:=0;
  Result:=0;
- 
+
  if ABuffer = nil then Exit;
- 
+
  if ACount > 0 then
   begin
    Offset:=0;
@@ -14805,10 +14805,10 @@ begin
         Inc(Offset,Count);
        end;
      end;
-   until Offset >= ACount;   
+   until Offset >= ACount;
   end;
-  
- Result:=Total; 
+
+ Result:=Total;
 end;
 
 {==============================================================================}
@@ -14824,26 +14824,26 @@ function Winsock2RedirectInput(s:TSocket):Boolean;
 begin
  {}
  Result:=True;
- 
+
  if s = INVALID_SOCKET then
   begin
    {Stop Redirection}
    TextIOReadCharHandler:=nil;
-   
+
    WS2TextIOInputSocket:=INVALID_SOCKET;
   end
  else
   begin
    {Start Redirection}
    TextIOReadCharHandler:=SysTextIOReadChar;
-  
+
    WS2TextIOInputSocket:=s;
-  end;  
+  end;
 end;
 
 {==============================================================================}
 
-function Winsock2RedirectOutput(s:TSocket):Boolean; 
+function Winsock2RedirectOutput(s:TSocket):Boolean;
 {Redirect standard output to the socket specified by s}
 {s: The socket to redirect output to (or INVALID_SOCKET to stop redirection)}
 {Return: True if completed successfully or False if an error occurred}
@@ -14853,13 +14853,13 @@ function Winsock2RedirectOutput(s:TSocket):Boolean;
 begin
  {}
  Result:=True;
- 
+
  if s = INVALID_SOCKET then
   begin
    {Stop Redirection}
    TextIOWriteCharHandler:=nil;
    TextIOWriteBufferHandler:=nil;
-   
+
    WS2TextIOOutputSocket:=INVALID_SOCKET;
   end
  else
@@ -14867,9 +14867,9 @@ begin
    {Start Redirection}
    TextIOWriteCharHandler:=SysTextIOWriteChar;
    TextIOWriteBufferHandler:=SysTextIOWriteBuffer;
-  
+
    WS2TextIOOutputSocket:=s;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -14981,10 +14981,10 @@ initialization
      {Schedule Worker}
      WorkerSchedule(WINSOCK2_STARTDELAY,TWorkerTask(WS2AsyncStart),nil,nil); {Delay start to allow device initialization}
     end;
-  end; 
-  
+  end;
+
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

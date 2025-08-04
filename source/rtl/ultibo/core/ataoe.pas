@@ -17,13 +17,13 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
@@ -51,9 +51,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Storage,Netwo
 //const
  {ATAoE specific constants}
 
-//To Do //A generic ATAoE unit 
-                           
-              
+//To Do //A generic ATAoE unit
+
+
 {==============================================================================}
 //type
  {ATAoE specific types}
@@ -65,7 +65,7 @@ var
  ATAoEInitialized:Boolean;
 
  //To Do
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure ATAoEInit;
@@ -87,9 +87,9 @@ begin
  {}
  {Check Initialized}
  if ATAoEInitialized then Exit;
- 
+
  //To Do
- 
+
  ATAoEInitialized:=True;
 end;
 
@@ -105,7 +105,7 @@ initialization
  ATAoEInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

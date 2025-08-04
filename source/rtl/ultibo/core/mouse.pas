@@ -17,7 +17,7 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -27,22 +27,22 @@ References
 ==========
 
  USB HID Device Class Definition 1_11.pdf
- 
+
    http://www.usb.org/developers/hidpage/HID1_11.pdf
 
  USB HID Usage Tables 1_12v2.pdf
 
    http://www.usb.org/developers/hidpage/Hut1_12v2.pdf
- 
+
 Mouse Devices
 =============
 
  This unit provides the Mouse device interface and mouse API to be used
  by both drivers and applications.
- 
+
  The API includes functions to create, register, locate, read, write,
  control and configure each connected mouse device.
- 
+
  The API supports a global mouse buffer so multiple devices can feed data
  into a common buffer as well as a buffer per device to allow each device
  to be used for a specific purpose. For example an application with two
@@ -69,37 +69,37 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
 const
  {Mouse specific constants}
  MOUSE_NAME_PREFIX = 'Mouse';    {Name prefix for Mouse Devices}
- 
+
  {Mouse Device Types}
  MOUSE_TYPE_NONE     = 0;
  MOUSE_TYPE_USB      = 1;
  MOUSE_TYPE_PS2      = 2;
  MOUSE_TYPE_SERIAL   = 3;
- 
+
  MOUSE_TYPE_MAX      = 3;
- 
+
  {Mouse Type Names}
  MOUSE_TYPE_NAMES:array[MOUSE_TYPE_NONE..MOUSE_TYPE_MAX] of String = (
   'MOUSE_TYPE_NONE',
   'MOUSE_TYPE_USB',
   'MOUSE_TYPE_PS2',
   'MOUSE_TYPE_SERIAL');
- 
+
  {Mouse Device States}
  MOUSE_STATE_DETACHED  = 0;
  MOUSE_STATE_DETACHING = 1;
  MOUSE_STATE_ATTACHING = 2;
  MOUSE_STATE_ATTACHED  = 3;
- 
+
  MOUSE_STATE_MAX       = 3;
- 
+
  {Mouse State Names}
  MOUSE_STATE_NAMES:array[MOUSE_STATE_DETACHED..MOUSE_STATE_MAX] of String = (
   'MOUSE_STATE_DETACHED',
   'MOUSE_STATE_DETACHING',
   'MOUSE_STATE_ATTACHING',
   'MOUSE_STATE_ATTACHED');
- 
+
  {Mouse Device Flags}
  MOUSE_FLAG_NONE         = $00000000;
  MOUSE_FLAG_NON_BLOCK    = $00000001; {If set device reads are non blocking (Also supported in Flags parameter of MouseReadEx)}
@@ -110,10 +110,10 @@ const
  MOUSE_FLAG_INVERT_X     = $00000020; {If set invert the X coordinate}
  MOUSE_FLAG_INVERT_Y     = $00000040; {If set invert the Y coordinate}
  MOUSE_FLAG_SWAP_MAX_XY  = $00000080; {If set swap the maximum X and Y values}
- 
+
  {Flags supported by MOUSE_CONTROL_GET/SET/CLEAR_FLAG}
  MOUSE_FLAG_MASK = MOUSE_FLAG_NON_BLOCK or MOUSE_FLAG_DIRECT_READ or MOUSE_FLAG_SWAP_BUTTONS or MOUSE_FLAG_SWAP_XY or MOUSE_FLAG_INVERT_X or MOUSE_FLAG_INVERT_Y or MOUSE_FLAG_SWAP_MAX_XY;
- 
+
  {Mouse Device Control Codes}
  MOUSE_CONTROL_GET_FLAG         = 1;  {Get Flag}
  MOUSE_CONTROL_SET_FLAG         = 2;  {Set Flag}
@@ -129,11 +129,11 @@ const
  MOUSE_CONTROL_SET_ROTATION     = 12; {Set Rotation value (0, 90, 180, 270)(Only where supported by the driver)}
 
  {Mouse Buffer Size}
- MOUSE_BUFFER_SIZE = 512; 
- 
+ MOUSE_BUFFER_SIZE = 512;
+
  {Mouse Sampling Rate}
  MOUSE_SAMPLE_RATE   = 100;  {100 samples/sec}
- 
+
  {Mouse Data Definitions (Values for TMouseData.Buttons)}
  MOUSE_LEFT_BUTTON    =  $0001; {The Left mouse button is pressed}
  MOUSE_RIGHT_BUTTON   =  $0002; {The Right mouse button is pressed}
@@ -150,7 +150,7 @@ const
  MOUSE_ROTATION_90  = FRAMEBUFFER_ROTATION_90;   {90 degree rotation}
  MOUSE_ROTATION_180 = FRAMEBUFFER_ROTATION_180;  {180 degree rotation}
  MOUSE_ROTATION_270 = FRAMEBUFFER_ROTATION_270;  {270 degree rotation}
- 
+
  {Mouse logging}
  MOUSE_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Mouse debugging messages}
  MOUSE_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Mouse informational messages, such as a device being attached or detached}
@@ -158,22 +158,22 @@ const
  MOUSE_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Mouse error messages}
  MOUSE_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Mouse messages}
 
-var 
+var
  MOUSE_DEFAULT_LOG_LEVEL:LongWord = MOUSE_LOG_LEVEL_DEBUG; {Minimum level for Mouse messages.  Only messages with level greater than or equal to this will be printed}
- 
-var 
+
+var
  {Mouse logging}
- MOUSE_LOG_ENABLED:Boolean; 
+ MOUSE_LOG_ENABLED:Boolean;
 
 {==============================================================================}
 const
  {USB Mouse specific constants}
  {Note: The following constants are duplicated with the USBMouse unit for backwards compatibility}
- 
+
  {HID Interface Subclass types (See USB HID v1.11 specification)}
  USB_HID_SUBCLASS_NONE           = 0;     {Section 4.2}
  USB_HID_SUBCLASS_BOOT           = 1;     {Section 4.2}
- 
+
  {HID Interface Protocol types (See USB HID v1.11 specification)}
  USB_HID_BOOT_PROTOCOL_NONE      = 0;     {Section 4.3}
  USB_HID_BOOT_PROTOCOL_KEYBOARD  = 1;     {Section 4.3}
@@ -183,7 +183,7 @@ const
  USB_HID_DESCRIPTOR_TYPE_HID                  = $21;  {Section 7.1}
  USB_HID_DESCRIPTOR_TYPE_REPORT               = $22;  {Section 7.1}
  USB_HID_DESCRIPTOR_TYPE_PHYSICAL_DESCRIPTOR  = $23;  {Section 7.1}
- 
+
  {HID Request types}
  USB_HID_REQUEST_GET_REPORT      = $01;
  USB_HID_REQUEST_GET_IDLE        = $02;
@@ -191,30 +191,30 @@ const
  USB_HID_REQUEST_SET_REPORT      = $09;
  USB_HID_REQUEST_SET_IDLE        = $0A;
  USB_HID_REQUEST_SET_PROTOCOL    = $0B;   {Section 7.2}
- 
+
  {HID Protocol types}
  USB_HID_PROTOCOL_BOOT           = 0;     {Section 7.2.5}
  USB_HID_PROTOCOL_REPORT         = 1;     {Section 7.2.5}
- 
+
  {HID Report types}
  USB_HID_REPORT_INPUT            = 1;     {Section 7.2.1}
  USB_HID_REPORT_OUTPUT           = 2;     {Section 7.2.1}
  USB_HID_REPORT_FEATURE          = 3;     {Section 7.2.1}
- 
+
  {HID Report IDs}
  USB_HID_REPORTID_NONE           = 0;     {Section 7.2.1}
- 
+
  {HID Boot Protocol Button bits}
  USB_HID_BOOT_LEFT_BUTTON    = (1 shl 0);
  USB_HID_BOOT_RIGHT_BUTTON   = (1 shl 1);
  USB_HID_BOOT_MIDDLE_BUTTON  = (1 shl 2);
  USB_HID_BOOT_SIDE_BUTTON    = (1 shl 3);
  USB_HID_BOOT_EXTRA_BUTTON   = (1 shl 4);
- 
+
  {HID Boot Protocol Report data}
  USB_HID_BOOT_REPORT_SIZE  = 3;            {Appendix B of HID Device Class Definition 1.11}
- USB_HID_BOOT_DATA_SIZE    = 8;            {Allocate more than the minimum to allow for extra data} 
- 
+ USB_HID_BOOT_DATA_SIZE    = 8;            {Allocate more than the minimum to allow for extra data}
+
 {==============================================================================}
 type
  {Mouse specific types}
@@ -230,16 +230,16 @@ type
   MaximumWheel:Word;     {The maximum Wheel value of the mouse (Only applicable if Buttons includes MOUSE_ABSOLUTE_WHEEL, otherwise must be 0)}
   Reserved:Word;         {Reserved field (Round structure to 16 bytes)}
  end;
- 
+
  {Mouse Buffer}
  PMouseBuffer = ^TMouseBuffer;
  TMouseBuffer = record
   Wait:TSemaphoreHandle;     {Buffer ready semaphore}
   Start:LongWord;            {Index of first buffer ready}
   Count:LongWord;            {Number of entries ready in buffer}
-  Buffer:array[0..(MOUSE_BUFFER_SIZE - 1)] of TMouseData; 
+  Buffer:array[0..(MOUSE_BUFFER_SIZE - 1)] of TMouseData;
  end;
- 
+
  {Mouse Properties}
  PMouseProperties = ^TMouseProperties;
  TMouseProperties = record
@@ -250,26 +250,26 @@ type
   MaxWheel:LongWord;     {Maximum (absolute) wheel value for the mouse device}
   MaxButtons:LongWord;   {Maximum buttons mask (eg MOUSE_LEFT_BUTTON or MOUSE_RIGHT_BUTTON etc)}
  end;
- 
+
  {Mouse Device}
  PMouseDevice = ^TMouseDevice;
- 
+
  {Mouse Enumeration Callback}
  TMouseEnumerate = function(Mouse:PMouseDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Mouse Notification Callback}
  TMouseNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Mouse Device Methods}
  TMouseDeviceRead = function(Mouse:PMouseDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TMouseDeviceUpdate = function(Mouse:PMouseDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TMouseDeviceControl = function(Mouse:PMouseDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TMouseDeviceGetProperties = function(Mouse:PMouseDevice;Properties:PMouseProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TMouseDevice = record
   {Device Properties}
   Device:TDevice;                                {The Device entry for this Mouse}
-  {Mouse Properties}                             
+  {Mouse Properties}
   MouseId:LongWord;                              {Unique Id of this Mouse in the Mouse table}
   MouseState:LongWord;                           {Mouse state (eg MOUSE_STATE_ATTACHED)}
   MouseRate:LongWord;                            {Mouse sample rate (Samples per second)}
@@ -281,20 +281,20 @@ type
   Lock:TMutexHandle;                             {Mouse lock}
   Buffer:TMouseBuffer;                           {Mouse input buffer}
   Properties:TMouseProperties;                   {Device properties}
-  {Statistics Properties}                        
-  ReceiveCount:LongWord;                         
-  ReceiveErrors:LongWord;                        
-  BufferOverruns:LongWord;                       
-  {Internal Properties}                                                                                  
+  {Statistics Properties}
+  ReceiveCount:LongWord;
+  ReceiveErrors:LongWord;
+  BufferOverruns:LongWord;
+  {Internal Properties}
   Prev:PMouseDevice;                             {Previous entry in Mouse table}
   Next:PMouseDevice;                             {Next entry in Mouse table}
  end;
- 
+
 {==============================================================================}
 type
  {USB Mouse specific types}
  {Note: The following structure is duplicated with the USBMouse unit for backwards compatibility}
- 
+
  {USB HID Descriptor}
  PUSBHIDDescriptor = ^TUSBHIDDescriptor;
  TUSBHIDDescriptor = packed record
@@ -307,11 +307,11 @@ type
   wHIDDescriptorLength:Word;
   {Note: Up to two optional bHIDDescriptorType/wHIDDescriptorLength pairs after the Report descriptor details}
  end;
- 
+
 {==============================================================================}
 {var}
  {Mouse specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure MouseInit;
@@ -320,9 +320,9 @@ procedure MouseInit;
 {Mouse Functions}
 function MousePeek:LongWord;
 function MouseRead(Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
-function MouseReadEx(Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord; 
+function MouseReadEx(Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 
-function MouseWrite(Buffer:Pointer;Size,Count:LongWord):LongWord; 
+function MouseWrite(Buffer:Pointer;Size,Count:LongWord):LongWord;
 
 function MouseFlush:LongWord;
 
@@ -412,19 +412,19 @@ begin
  {}
  {Check Initialized}
  if MouseInitialized then Exit;
- 
+
  {Initialize Logging}
- MOUSE_LOG_ENABLED:=(MOUSE_DEFAULT_LOG_LEVEL <> MOUSE_LOG_LEVEL_NONE); 
- 
+ MOUSE_LOG_ENABLED:=(MOUSE_DEFAULT_LOG_LEVEL <> MOUSE_LOG_LEVEL_NONE);
+
  {Initialize Mouse Table}
  MouseTable:=nil;
- MouseTableLock:=CriticalSectionCreate; 
+ MouseTableLock:=CriticalSectionCreate;
  MouseTableCount:=0;
  if MouseTableLock = INVALID_HANDLE_VALUE then
   begin
    if MOUSE_LOG_ENABLED then MouseLogError(nil,'Failed to create mouse table lock');
   end;
- 
+
  {Initialize Mouse Buffer}
  MouseBuffer:=AllocMem(SizeOf(TMouseBuffer));
  MouseBufferLock:=INVALID_HANDLE_VALUE;
@@ -441,19 +441,19 @@ begin
      if MOUSE_LOG_ENABLED then MouseLogError(nil,'Failed to create mouse buffer semaphore');
     end;
 
-   {Create Lock} 
-   MouseBufferLock:=MutexCreate; 
+   {Create Lock}
+   MouseBufferLock:=MutexCreate;
    if MouseBufferLock = INVALID_HANDLE_VALUE then
     begin
      if MOUSE_LOG_ENABLED then MouseLogError(nil,'Failed to create mouse buffer lock');
     end;
-  end;  
- 
+  end;
+
  {Setup Platform Console Handlers}
  ConsoleHideMouseHandler:=SysConsoleHideMouse;
  ConsoleShowMouseHandler:=SysConsoleShowMouse;
  ConsoleReadMouseHandler:=SysConsoleReadMouse;
- 
+
  MouseInitialized:=True;
 end;
 
@@ -498,17 +498,17 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Size}
  if Size < SizeOf(TMouseData) then Exit;
- 
+
  {$IFDEF MOUSE_DEBUG}
  if MOUSE_LOG_ENABLED then MouseLogDebug(nil,'Attempting to read ' + IntToStr(Size) + ' bytes from mouse');
  {$ENDIF}
- 
+
  {Read to Buffer}
  Count:=0;
  Offset:=0;
@@ -532,10 +532,10 @@ begin
          begin
           {Copy Data}
           PMouseData(PtrUInt(Buffer) + Offset)^:=MouseBuffer.Buffer[MouseBuffer.Start];
-          
+
           {Update Count}
           Inc(Count);
-          
+
           Result:=ERROR_SUCCESS;
           Break;
          end
@@ -556,7 +556,7 @@ begin
       end;
     end
    else
-    begin   
+    begin
      {Wait for Mouse Data}
      if SemaphoreWait(MouseBuffer.Wait) = ERROR_SUCCESS then
       begin
@@ -566,16 +566,16 @@ begin
          try
           {Copy Data}
           PMouseData(PtrUInt(Buffer) + Offset)^:=MouseBuffer.Buffer[MouseBuffer.Start];
-            
+
           {Update Start}
           MouseBuffer.Start:=(MouseBuffer.Start + 1) mod MOUSE_BUFFER_SIZE;
-          
+
           {Update Count}
           Dec(MouseBuffer.Count);
-    
+
           {Update Count}
           Inc(Count);
-            
+
           {Update Size and Offset}
           Dec(Size,SizeOf(TMouseData));
           Inc(Offset,SizeOf(TMouseData));
@@ -596,11 +596,11 @@ begin
        Exit;
       end;
     end;
-   
+
    {Return Result}
    Result:=ERROR_SUCCESS;
   end;
-  
+
  {$IFDEF MOUSE_DEBUG}
  if MOUSE_LOG_ENABLED then MouseLogDebug(nil,'Return count=' + IntToStr(Count));
  {$ENDIF}
@@ -608,7 +608,7 @@ end;
 
 {==============================================================================}
 
-function MouseWrite(Buffer:Pointer;Size,Count:LongWord):LongWord; 
+function MouseWrite(Buffer:Pointer;Size,Count:LongWord):LongWord;
 {Write mouse data packets to the global mouse buffer}
 {Buffer: Pointer to a buffer to copy the mouse data packets from}
 {Size: The size of the buffer in bytes (Must be at least TMouseData or greater)}
@@ -619,16 +619,16 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Size}
  if Size < SizeOf(TMouseData) then Exit;
- 
+
  {Check Count}
  if Count < 1 then Exit;
- 
+
  {$IFDEF MOUSE_DEBUG}
  if MOUSE_LOG_ENABLED then MouseLogDebug(nil,'Attempting to write ' + IntToStr(Size) + ' bytes to mouse');
  {$ENDIF}
@@ -646,19 +646,19 @@ begin
        begin
         {Copy Data}
         MouseBuffer.Buffer[(MouseBuffer.Start + MouseBuffer.Count) mod MOUSE_BUFFER_SIZE]:=PMouseData(PtrUInt(Buffer) + Offset)^;
-        
+
         {Update Count}
         Inc(MouseBuffer.Count);
-        
+
         {Update Count}
         Dec(Count);
-        
+
         {Update Size and Offset}
         Dec(Size,SizeOf(TMouseData));
         Inc(Offset,SizeOf(TMouseData));
-        
+
         {Signal Data Received}
-        SemaphoreSignal(MouseBuffer.Wait); 
+        SemaphoreSignal(MouseBuffer.Wait);
        end
       else
        begin
@@ -675,12 +675,12 @@ begin
      Result:=ERROR_CAN_NOT_COMPLETE;
      Exit;
     end;
-    
+
    {Return Result}
    Result:=ERROR_SUCCESS;
   end;
 end;
- 
+
 {==============================================================================}
 
 function MouseFlush:LongWord;
@@ -689,7 +689,7 @@ function MouseFlush:LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Acquire the Lock}
  if MutexLock(MouseBufferLock) = ERROR_SUCCESS then
   begin
@@ -699,9 +699,9 @@ begin
       {Wait for Data (Should not Block)}
       if SemaphoreWait(MouseBuffer.Wait) = ERROR_SUCCESS then
        begin
-        {Update Start} 
+        {Update Start}
         MouseBuffer.Start:=(MouseBuffer.Start + 1) mod MOUSE_BUFFER_SIZE;
-        
+
         {Update Count}
         Dec(MouseBuffer.Count);
        end
@@ -709,9 +709,9 @@ begin
        begin
         Result:=ERROR_CAN_NOT_COMPLETE;
         Exit;
-       end;    
-     end; 
-    
+       end;
+     end;
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -725,10 +725,10 @@ begin
    Exit;
   end;
 end;
- 
+
 {==============================================================================}
 
-function MouseDeviceRead(Mouse:PMouseDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; 
+function MouseDeviceRead(Mouse:PMouseDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
 {Read mouse data packets from the buffer of the specified mouse}
 {Mouse: The mouse device to read from}
 {Buffer: Pointer to a buffer to copy the mouse data packets to}
@@ -740,17 +740,17 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mouse}
  if Mouse = nil then Exit;
  if Mouse.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Size}
  if Size < SizeOf(TMouseData) then Exit;
- 
+
  {Check Method}
  if Assigned(Mouse.DeviceRead) then
   begin
@@ -758,7 +758,7 @@ begin
    Result:=Mouse.DeviceRead(Mouse,Buffer,Size,Count);
   end
  else
-  begin 
+  begin
    {Default Method}
    {Check Mouse Attached}
    if Mouse.MouseState <> MOUSE_STATE_ATTACHED then Exit;
@@ -766,7 +766,7 @@ begin
    {$IFDEF MOUSE_DEBUG}
    if MOUSE_LOG_ENABLED then MouseLogDebug(Mouse,'Attempting to read ' + IntToStr(Size) + ' bytes from mouse');
    {$ENDIF}
-   
+
    {Read to Buffer}
    Count:=0;
    Offset:=0;
@@ -778,7 +778,7 @@ begin
        if Count = 0 then Result:=ERROR_NO_MORE_ITEMS;
        Break;
       end;
-    
+
      {Wait for Mouse Data}
      if SemaphoreWait(Mouse.Buffer.Wait) = ERROR_SUCCESS then
       begin
@@ -788,16 +788,16 @@ begin
          try
           {Copy Data}
           PMouseData(PtrUInt(Buffer) + Offset)^:=Mouse.Buffer.Buffer[Mouse.Buffer.Start];
-          
+
           {Update Start}
           Mouse.Buffer.Start:=(Mouse.Buffer.Start + 1) mod MOUSE_BUFFER_SIZE;
-        
+
           {Update Count}
           Dec(Mouse.Buffer.Count);
-  
+
           {Update Count}
           Inc(Count);
-          
+
           {Update Size and Offset}
           Dec(Size,SizeOf(TMouseData));
           Inc(Offset,SizeOf(TMouseData));
@@ -811,21 +811,21 @@ begin
          Result:=ERROR_CAN_NOT_COMPLETE;
          Exit;
         end;
-      end  
+      end
      else
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
        Exit;
       end;
-     
+
      {Return Result}
      Result:=ERROR_SUCCESS;
     end;
-    
+
    {$IFDEF MOUSE_DEBUG}
    if MOUSE_LOG_ENABLED then MouseLogDebug(Mouse,'Return count=' + IntToStr(Count));
    {$ENDIF}
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -850,7 +850,7 @@ begin
    Result:=Mouse.DeviceUpdate(Mouse);
   end
  else
-  begin 
+  begin
    {Default Method}
    {Check Mouse Attached}
    if Mouse.MouseState <> MOUSE_STATE_ATTACHED then Exit;
@@ -873,7 +873,7 @@ begin
      Result:=ERROR_CAN_NOT_COMPLETE;
      Exit;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -888,11 +888,11 @@ function MouseDeviceControl(Mouse:PMouseDevice;Request:Integer;Argument1:PtrUInt
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mouse}
  if Mouse = nil then Exit;
  if Mouse.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  if Assigned(Mouse.DeviceControl) then
   begin
@@ -900,7 +900,7 @@ begin
    Result:=Mouse.DeviceControl(Mouse,Request,Argument1,Argument2);
   end
  else
-  begin 
+  begin
    {Default Method}
    {Check Mouse Attached}
    if Mouse.MouseState <> MOUSE_STATE_ATTACHED then Exit;
@@ -916,43 +916,43 @@ begin
          if (Mouse.Device.DeviceFlags and Argument1) <> 0 then
           begin
            Argument2:=Ord(True);
-           
+
            {Return Result}
            Result:=ERROR_SUCCESS;
           end;
         end;
-       MOUSE_CONTROL_SET_FLAG:begin 
+       MOUSE_CONTROL_SET_FLAG:begin
          {Set Flag}
          if (Argument1 and not(MOUSE_FLAG_MASK)) = 0 then
           begin
            Mouse.Device.DeviceFlags:=(Mouse.Device.DeviceFlags or Argument1);
            Mouse.Properties.Flags:=Mouse.Device.DeviceFlags;
-         
+
            {Request Update}
            Result:=MouseDeviceUpdate(Mouse);
-          end; 
+          end;
         end;
-       MOUSE_CONTROL_CLEAR_FLAG:begin 
+       MOUSE_CONTROL_CLEAR_FLAG:begin
          {Clear Flag}
          if (Argument1 and not(MOUSE_FLAG_MASK)) = 0 then
           begin
            Mouse.Device.DeviceFlags:=(Mouse.Device.DeviceFlags and not(Argument1));
            Mouse.Properties.Flags:=Mouse.Device.DeviceFlags;
-         
+
            {Request Update}
            Result:=MouseDeviceUpdate(Mouse);
-          end; 
+          end;
         end;
        MOUSE_CONTROL_FLUSH_BUFFER:begin
          {Flush Buffer}
-         while Mouse.Buffer.Count > 0 do 
+         while Mouse.Buffer.Count > 0 do
           begin
            {Wait for Data (Should not Block)}
            if SemaphoreWait(Mouse.Buffer.Wait) = ERROR_SUCCESS then
             begin
              {Update Start}
              Mouse.Buffer.Start:=(Mouse.Buffer.Start + 1) mod MOUSE_BUFFER_SIZE;
-             
+
              {Update Count}
              Dec(Mouse.Buffer.Count);
             end
@@ -962,56 +962,56 @@ begin
              Exit;
             end;
           end;
-          
-         {Return Result} 
+
+         {Return Result}
          Result:=ERROR_SUCCESS;
-        end;       
+        end;
        MOUSE_CONTROL_GET_SAMPLE_RATE:begin
          {Get Sample Rate}
          Argument2:=Mouse.MouseRate;
-         
+
          {Return Result}
          Result:=ERROR_SUCCESS;
         end;
        MOUSE_CONTROL_SET_SAMPLE_RATE:begin
          {Set Sample Rate}
          Mouse.MouseRate:=Argument1;
-         
+
          {Return Result}
          Result:=ERROR_SUCCESS;
-        end;       
+        end;
        MOUSE_CONTROL_GET_MAX_X:begin
          {Get Maximum X}
          Argument2:=Mouse.Properties.MaxX;
-         
+
          {Return Result}
          Result:=ERROR_SUCCESS;
-        end;       
+        end;
        MOUSE_CONTROL_GET_MAX_Y:begin
          {Get Maximum Y}
          Argument2:=Mouse.Properties.MaxY;
-         
+
          {Return Result}
          Result:=ERROR_SUCCESS;
-        end;       
+        end;
        MOUSE_CONTROL_GET_MAX_WHEEL:begin
          {Get Maximum Wheel}
          Argument2:=Mouse.Properties.MaxWheel;
-         
+
          {Return Result}
          Result:=ERROR_SUCCESS;
-        end;       
+        end;
        MOUSE_CONTROL_GET_MAX_BUTTONS:begin
          {Get Maximum Buttons mask}
          Argument2:=Mouse.Properties.MaxButtons;
-         
+
          {Return Result}
          Result:=ERROR_SUCCESS;
-        end;       
+        end;
        MOUSE_CONTROL_GET_ROTATION:begin
          {Get Rotation}
          Argument2:=Mouse.Properties.Rotation;
-         
+
          {Return Result}
          Result:=ERROR_SUCCESS;
         end;
@@ -1037,7 +1037,7 @@ begin
      Result:=ERROR_CAN_NOT_COMPLETE;
      Exit;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1065,7 +1065,7 @@ begin
    Result:=Mouse.DeviceGetProperties(Mouse,Properties);
   end
  else
-  begin 
+  begin
    {Default Method}
    {Check Mouse Attached}
    {if Mouse.MouseState <> MOUSE_STATE_ATTACHED then Exit;} {Allow when attaching}
@@ -1089,7 +1089,7 @@ begin
      Result:=ERROR_CAN_NOT_COMPLETE;
      Exit;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1102,14 +1102,14 @@ function MouseDeviceSetState(Mouse:PMouseDevice;State:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mouse}
  if Mouse = nil then Exit;
  if Mouse.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {Check State}
  if State > MOUSE_STATE_ATTACHED then Exit;
- 
+
  {Check State}
  if Mouse.MouseState = State then
   begin
@@ -1121,10 +1121,10 @@ begin
    {Acquire the Lock}
    if MutexLock(Mouse.Lock) = ERROR_SUCCESS then
     begin
-     try 
+     try
       {Set State}
       Mouse.MouseState:=State;
-  
+
       {Notify State}
       NotifierNotify(@Mouse.Device,MouseDeviceStateToNotification(State));
 
@@ -1139,7 +1139,7 @@ begin
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
     end;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1161,16 +1161,16 @@ function MouseDeviceCreateEx(Size:LongWord):PMouseDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TMouseDevice) then Exit;
- 
+
  {Create Mouse}
  Result:=PMouseDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=MOUSE_TYPE_NONE;
  Result.Device.DeviceFlags:=MOUSE_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -1185,7 +1185,7 @@ begin
  Result.DeviceGetProperties:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Buffer.Wait:=INVALID_HANDLE_VALUE;
- 
+
  {Check Defaults}
  if MOUSE_SWAP_BUTTONS_DEFAULT then Result.Device.DeviceFlags:=Result.Device.DeviceFlags or MOUSE_FLAG_SWAP_BUTTONS;
 
@@ -1196,7 +1196,7 @@ begin
  Result.Properties.MaxY:=0;
  Result.Properties.MaxWheel:=0;
  Result.Properties.MaxButtons:=MOUSE_LEFT_BUTTON or MOUSE_RIGHT_BUTTON;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -1206,7 +1206,7 @@ begin
    Result:=nil;
    Exit;
   end;
- 
+
  {Create Buffer Semaphore}
  Result.Buffer.Wait:=SemaphoreCreate(0);
  if Result.Buffer.Wait = INVALID_HANDLE_VALUE then
@@ -1227,31 +1227,31 @@ function MouseDeviceDestroy(Mouse:PMouseDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mouse}
  if Mouse = nil then Exit;
  if Mouse.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Mouse}
  Result:=ERROR_IN_USE;
  if MouseDeviceCheck(Mouse) = Mouse then Exit;
 
  {Check State}
  if Mouse.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Buffer Semaphore}
  if Mouse.Buffer.Wait <> INVALID_HANDLE_VALUE then
   begin
    SemaphoreDestroy(Mouse.Buffer.Wait);
   end;
-  
+
  {Destroy Lock}
  if Mouse.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Mouse.Lock);
   end;
- 
- {Destroy Mouse} 
+
+ {Destroy Mouse}
  Result:=DeviceDestroy(@Mouse.Device);
 end;
 
@@ -1266,19 +1266,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mouse}
  if Mouse = nil then Exit;
  if Mouse.MouseId <> DEVICE_ID_ANY then Exit;
  if Mouse.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Mouse}
  Result:=ERROR_ALREADY_EXISTS;
  if MouseDeviceCheck(Mouse) = Mouse then Exit;
- 
+
  {Check State}
  if Mouse.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Mouse}
  if CriticalSectionLock(MouseTableLock) = ERROR_SUCCESS then
   begin
@@ -1290,19 +1290,19 @@ begin
       Inc(MouseId);
      end;
     Mouse.MouseId:=MouseId;
-    
+
     {Update Device}
-    Mouse.Device.DeviceName:=MOUSE_NAME_PREFIX + IntToStr(Mouse.MouseId); 
+    Mouse.Device.DeviceName:=MOUSE_NAME_PREFIX + IntToStr(Mouse.MouseId);
     Mouse.Device.DeviceClass:=DEVICE_CLASS_MOUSE;
-    
+
     {Register Device}
     Result:=DeviceRegister(@Mouse.Device);
     if Result <> ERROR_SUCCESS then
      begin
       Mouse.MouseId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link Mouse}
     if MouseTable = nil then
      begin
@@ -1314,10 +1314,10 @@ begin
       MouseTable.Prev:=Mouse;
       MouseTable:=Mouse;
      end;
- 
+
     {Increment Count}
     Inc(MouseTableCount);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1327,7 +1327,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1342,19 +1342,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mouse}
  if Mouse = nil then Exit;
  if Mouse.MouseId = DEVICE_ID_ANY then Exit;
  if Mouse.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Mouse}
  Result:=ERROR_NOT_FOUND;
  if MouseDeviceCheck(Mouse) <> Mouse then Exit;
- 
+
  {Check State}
  if Mouse.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove Mouse}
  if CriticalSectionLock(MouseTableLock) = ERROR_SUCCESS then
   begin
@@ -1362,7 +1362,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@Mouse.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink Mouse}
     Prev:=Mouse.Prev;
     Next:=Mouse.Next;
@@ -1372,7 +1372,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -1380,15 +1380,15 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(MouseTableCount);
- 
+
     {Update Mouse}
     Mouse.MouseId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1398,7 +1398,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1412,10 +1412,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if MouseId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(MouseTableLock) = ERROR_SUCCESS then
   begin
@@ -1434,7 +1434,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       Mouse:=Mouse.Next;
      end;
@@ -1444,9 +1444,9 @@ begin
    end;
   end;
 end;
-       
+
 {==============================================================================}
-       
+
 function MouseDeviceFindByName(const Name:String):PMouseDevice; inline;
 {Find a mouse device by name in the mouse table}
 {Name: The name of the mouse to find (eg Mouse0)}
@@ -1466,7 +1466,7 @@ begin
  {}
  Result:=PMouseDevice(DeviceFindByDescription(Description));
 end;
-       
+
 {==============================================================================}
 
 function MouseDeviceEnumerate(Callback:TMouseEnumerate;Data:Pointer):LongWord;
@@ -1479,10 +1479,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(MouseTableLock) = ERROR_SUCCESS then
   begin
@@ -1496,11 +1496,11 @@ begin
        begin
         if Callback(Mouse,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Mouse:=Mouse.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1511,7 +1511,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1526,19 +1526,19 @@ function MouseDeviceNotification(Mouse:PMouseDevice;Callback:TMouseNotification;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mouse}
  if Mouse = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_MOUSE,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check Mouse}
    if Mouse.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@Mouse.Device,DEVICE_CLASS_MOUSE,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1570,7 +1570,7 @@ var
 begin
  {}
  Result:=True;
- 
+
  if MouseRead(@Data,SizeOf(TMouseData),Count) = ERROR_SUCCESS then
   begin
    X:=Data.OffsetX;
@@ -1578,13 +1578,13 @@ begin
    Buttons:=Data.Buttons;
   end
  else
-  begin 
+  begin
    X:=0;
    Y:=0;
    Buttons:=0;
-  end; 
+  end;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Mouse Helper Functions}
@@ -1604,11 +1604,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Mouse}
  if Mouse = nil then Exit;
  if Mouse.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(MouseTableLock) = ERROR_SUCCESS then
   begin
@@ -1623,7 +1623,7 @@ begin
         Result:=Mouse;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -1640,7 +1640,7 @@ function MouseDeviceTypeToString(MouseType:LongWord):String;
 begin
  {}
  Result:='MOUSE_TYPE_UNKNOWN';
- 
+
  if MouseType <= MOUSE_TYPE_MAX then
   begin
    Result:=MOUSE_TYPE_NAMES[MouseType];
@@ -1653,7 +1653,7 @@ function MouseDeviceStateToString(MouseState:LongWord):String;
 begin
  {}
  Result:='MOUSE_STATE_UNKNOWN';
- 
+
  if MouseState <= MOUSE_STATE_MAX then
   begin
    Result:=MOUSE_STATE_NAMES[MouseState];
@@ -1667,7 +1667,7 @@ function MouseDeviceRotationToString(Rotation:LongWord):String;
 begin
  {}
  Result:='MOUSE_ROTATION_UNKNOWN';
- 
+
  case Rotation of
   MOUSE_ROTATION_0:Result:='MOUSE_ROTATION_0';
   MOUSE_ROTATION_90:Result:='MOUSE_ROTATION_90';
@@ -1683,7 +1683,7 @@ function MouseDeviceStateToNotification(State:LongWord):LongWord;
 begin
  {}
  Result:=DEVICE_NOTIFICATION_NONE;
- 
+
  {Check State}
  case State of
   MOUSE_STATE_DETACHED:Result:=DEVICE_NOTIFICATION_DETACH;
@@ -1701,11 +1701,11 @@ function MouseDeviceResolveRotation(ARotation:LongWord):LongWord;
 begin
  {}
  case ARotation of
-  90:Result:=MOUSE_ROTATION_90;  
-  180:Result:=MOUSE_ROTATION_180;  
-  270:Result:=MOUSE_ROTATION_270;  
+  90:Result:=MOUSE_ROTATION_90;
+  180:Result:=MOUSE_ROTATION_180;
+  270:Result:=MOUSE_ROTATION_270;
   else
-   Result:=ARotation;  
+   Result:=ARotation;
  end;
 end;
 
@@ -1724,13 +1724,13 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Mouse}
  if Mouse = nil then Exit;
- 
+
  {Check Data}
  if Data = nil then Exit;
- 
+
  {Check Flags}
  if (Mouse.Device.DeviceFlags and MOUSE_FLAG_DIRECT_READ) = 0 then
   begin
@@ -1748,13 +1748,13 @@ begin
          begin
           {Copy Data}
           Next^:=Data^;
-      
+
           {Update Count}
           Inc(MouseBuffer.Count);
-          
+
           {Signal Data Received}
           if Signal then SemaphoreSignal(MouseBuffer.Wait);
-          
+
           {Return Result}
           Result:=ERROR_SUCCESS;
          end;
@@ -1762,12 +1762,12 @@ begin
       else
        begin
         if MOUSE_LOG_ENABLED then MouseLogError(Mouse,'Buffer overflow, packet discarded');
-        
+
         {Update Statistics}
-        Inc(Mouse.BufferOverruns); 
-        
+        Inc(Mouse.BufferOverruns);
+
         Result:=ERROR_INSUFFICIENT_BUFFER;
-       end;            
+       end;
      finally
       {Release the Lock}
       MutexUnlock(MouseBufferLock);
@@ -1776,12 +1776,12 @@ begin
    else
     begin
      if MOUSE_LOG_ENABLED then MouseLogError(Mouse,'Failed to acquire lock on buffer');
-     
+
      Result:=ERROR_CAN_NOT_COMPLETE;
     end;
   end
  else
-  begin              
+  begin
    {Direct Buffer}
    {Check Buffer}
    if (Mouse.Buffer.Count < MOUSE_BUFFER_SIZE) then
@@ -1792,13 +1792,13 @@ begin
       begin
        {Copy Data}
        Next^:=Data^;
-       
+
        {Update Count}
        Inc(Mouse.Buffer.Count);
-       
+
        {Signal Data Received}
        if Signal then SemaphoreSignal(Mouse.Buffer.Wait);
-       
+
        {Return Result}
        Result:=ERROR_SUCCESS;
       end;
@@ -1806,12 +1806,12 @@ begin
    else
     begin
      if MOUSE_LOG_ENABLED then MouseLogError(Mouse,'Buffer overflow, packet discarded');
-     
+
      {Update Statistics}
-     Inc(Mouse.BufferOverruns); 
-     
+     Inc(Mouse.BufferOverruns);
+
      Result:=ERROR_INSUFFICIENT_BUFFER;
-    end;            
+    end;
   end;
 end;
 
@@ -1824,7 +1824,7 @@ begin
  {}
  {Check Level}
  if Level < MOUSE_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = MOUSE_LOG_LEVEL_DEBUG then
@@ -1839,17 +1839,17 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'Mouse: ';
- 
+
  {Check Mouse}
  if Mouse <> nil then
   begin
    WorkBuffer:=WorkBuffer + MOUSE_NAME_PREFIX + IntToStr(Mouse.MouseId) + ': ';
   end;
-  
- {Output Logging} 
+
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_MOUSE,LogLevelToLoggingSeverity(Level),'Mouse',WorkBuffer + AText);
 end;
 
@@ -1896,10 +1896,10 @@ initialization
  MouseInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
- 
+
 {==============================================================================}
 {==============================================================================}
 

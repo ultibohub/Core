@@ -17,58 +17,58 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
  I2C - https://en.wikipedia.org/wiki/I%C2%B2C
-  
+
  I2C Bus - https://www.i2c-bus.org/
 
 I2C Devices
 ===========
 
  I2C (Inter-Integrated Circuit) is a serial bus for communication between peripheral components.
- 
+
  Originally invented by Phillips the I2C protocol is used by thousands of common chips that perform
  a wide range of tasks such as real time clocks, temperature and other sensors, small LCD displays
  and many more.
- 
+
  Each device is assigned a 7bit address which is used by the host (or master) to signal the device
  that a message written to the bus is intended for that device or that the host wants to read data
- from that device. 
- 
+ from that device.
+
  A small number of devices and hosts support 10bit addressing which expands the number of available
  addresses. The 10bit address format is defined here https://www.i2c-bus.org/addressing/10-bit-addressing/
- and the reserved addresses are defined on this page https://www.i2c-bus.org/addressing/ 
- 
+ and the reserved addresses are defined on this page https://www.i2c-bus.org/addressing/
+
  Speeds range from 10Kbps to 3.4Mbps although the typical speed is either 100Kbps or 400Kbps.
- 
+
  This unit implements the standardized interface for I2C devices and allows reading or writing to
  a specific address, setting a clock rate for the communication and determining device properties.
- 
+
  For the purpose of this interface a device is the I2C controller attached to the local system
  and may be either a master or a slave. Since the protocol does not include any form of enumeration
  or identification the interface does not attempt to represent the devices connected to the bus,
  any driver written to communicate with a connected I2C device should know (or allow configuration
  of) the address to read and write to and the specific message format required for that device.
 
- The Intel System Management Bus (SMBus) is a variation of the I2C bus and in certain cases the 
+ The Intel System Management Bus (SMBus) is a variation of the I2C bus and in certain cases the
  two are compatible with each other.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit I2C; 
+unit I2C;
 
 interface
 
@@ -88,33 +88,33 @@ const
  I2C_TYPE_NONE      = 0;
  I2C_TYPE_MASTER    = 1;
  I2C_TYPE_SLAVE     = 2;
- 
+
  I2C_TYPE_MAX       = 2;
-  
+
  {I2C Type Names}
  I2C_TYPE_NAMES:array[I2C_TYPE_NONE..I2C_TYPE_MAX] of String = (
   'I2C_TYPE_NONE',
   'I2C_TYPE_MASTER',
   'I2C_TYPE_SLAVE');
- 
+
  {I2C Device States}
  I2C_STATE_DISABLED = 0;
  I2C_STATE_ENABLED  = 1;
- 
+
  I2C_STATE_MAX      = 1;
- 
+
  {I2C State Names}
  I2C_STATE_NAMES:array[I2C_STATE_DISABLED..I2C_STATE_MAX] of String = (
   'I2C_STATE_DISABLED',
   'I2C_STATE_ENABLED');
- 
+
  {I2C Device Flags}
  I2C_FLAG_NONE          = $00000000;
  I2C_FLAG_SLAVE         = $00000001; {Device is a slave not a master}
  I2C_FLAG_10BIT         = $00000002; {Device supports 10bit addressing}
  I2C_FLAG_16BIT         = $00000004; {Device supports 16bit addressing}
  I2C_FLAG_DMA           = $00000008; {Device supports DMA transfers}
- 
+
  {I2C Transfer Flags}
  I2C_TRANSFER_NONE       = $00000000;
  I2C_TRANSFER_DMA        = $00000001; {Use DMA for transfer (Write/Read) (If supported) (Note: Buffers must be DMA compatible)}
@@ -126,18 +126,18 @@ const
  I2C_LOG_LEVEL_WARN      = LOG_LEVEL_WARN;   {I2C warning messages}
  I2C_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {I2C error messages}
  I2C_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No I2C messages}
- 
-var 
+
+var
  I2C_DEFAULT_LOG_LEVEL:LongWord = I2C_LOG_LEVEL_DEBUG; {Minimum level for I2C messages.  Only messages with level greater than or equal to this will be printed}
- 
-var 
+
+var
  {I2C logging}
- I2C_LOG_ENABLED:Boolean; 
- 
+ I2C_LOG_ENABLED:Boolean;
+
 {==============================================================================}
 type
  {I2C specific types}
- 
+
  {I2C Properties}
  PI2CProperties = ^TI2CProperties;
  TI2CProperties = record
@@ -148,32 +148,32 @@ type
   ClockRate:LongWord;    {Current clock rate}
   SlaveAddress:Word;     {Current slave address}
  end;
- 
+
  {I2C Device}
  PI2CDevice = ^TI2CDevice;
- 
+
  {I2C Enumeration Callback}
  TI2CEnumerate = function(I2C:PI2CDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {I2C Notification Callback}
  TI2CNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {I2C Device Methods}
  TI2CDeviceStart = function(I2C:PI2CDevice;Rate:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TI2CDeviceStop = function(I2C:PI2CDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TI2CDeviceRead = function(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TI2CDeviceWrite = function(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TI2CDeviceWriteRead = function(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TI2CDeviceWriteWrite = function(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
-  
+
  TI2CDeviceGetRate = function(I2C:PI2CDevice):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TI2CDeviceSetRate = function(I2C:PI2CDevice;Rate:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TI2CDeviceGetAddress = function(I2C:PI2CDevice):Word;{$IFDEF i386} stdcall;{$ENDIF}
  TI2CDeviceSetAddress = function(I2C:PI2CDevice;Address:Word):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TI2CDeviceGetProperties = function(I2C:PI2CDevice;Properties:PI2CProperties):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TI2CDevice = record
   {Device Properties}
   Device:TDevice;                                 {The Device entry for this I2C}
@@ -200,13 +200,13 @@ type
   Lock:TMutexHandle;                              {Device lock}
   Wait:TSemaphoreHandle;                          {Read/Write wait event}
   ClockRate:LongWord;                             {Clock rate (Hz)}
-  SlaveAddress:Word;                              {Slave address}             
+  SlaveAddress:Word;                              {Slave address}
   Properties:TI2CProperties;                      {Device properties}
-  {Internal Properties}                                                                        
+  {Internal Properties}
   Prev:PI2CDevice;                                {Previous entry in I2C table}
   Next:PI2CDevice;                                {Next entry in I2C table}
- end; 
- 
+ end;
+
 {==============================================================================}
 {var}
  {I2C specific variables}
@@ -214,12 +214,12 @@ type
 {==============================================================================}
 {Initialization Functions}
 procedure I2CInit;
- 
+
 {==============================================================================}
 {I2C Functions}
 function I2CDeviceStart(I2C:PI2CDevice;Rate:LongWord):LongWord;
 function I2CDeviceStop(I2C:PI2CDevice):LongWord;
- 
+
 function I2CDeviceRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
 function I2CDeviceReadEx(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
 
@@ -231,16 +231,16 @@ function I2CDeviceWriteReadEx(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:Lo
 
 function I2CDeviceWriteWrite(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
 function I2CDeviceWriteWriteEx(I2C:PI2CDevice;Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size,Flags:LongWord;var Count:LongWord):LongWord;
- 
+
 function I2CDeviceGetRate(I2C:PI2CDevice):LongWord;
 function I2CDeviceSetRate(I2C:PI2CDevice;Rate:LongWord):LongWord;
- 
+
 function I2CDeviceGetAddress(I2C:PI2CDevice):Word;
 function I2CDeviceSetAddress(I2C:PI2CDevice;Address:Word):LongWord;
 
 function I2CDeviceProperties(I2C:PI2CDevice;Properties:PI2CProperties):LongWord; inline;
 function I2CDeviceGetProperties(I2C:PI2CDevice;Properties:PI2CProperties):LongWord;
-  
+
 function I2CDeviceCreate:PI2CDevice;
 function I2CDeviceCreateEx(Size:LongWord):PI2CDevice;
 function I2CDeviceDestroy(I2C:PI2CDevice):LongWord;
@@ -252,7 +252,7 @@ function I2CDeviceFind(I2CId:LongWord):PI2CDevice;
 function I2CDeviceFindByName(const Name:String):PI2CDevice; inline;
 function I2CDeviceFindByDescription(const Description:String):PI2CDevice; inline;
 function I2CDeviceEnumerate(Callback:TI2CEnumerate;Data:Pointer):LongWord;
- 
+
 function I2CDeviceNotification(I2C:PI2CDevice;Callback:TI2CNotification;Data:Pointer;Notification,Flags:LongWord):LongWord;
 
 {==============================================================================}
@@ -281,27 +281,27 @@ function I2CSlaveFindByDescription(const Description:String):PI2CDevice; inline;
 
 {==============================================================================}
 {RTL I2C Functions}
-function SysI2CAvailable:Boolean; 
- 
-function SysI2CStart(Rate:LongWord):LongWord; 
-function SysI2CStop:LongWord; 
- 
-function SysI2CRead(Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; 
-function SysI2CWrite(Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; 
-function SysI2CWriteRead(Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord; 
-function SysI2CWriteWrite(Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord; 
+function SysI2CAvailable:Boolean;
 
-function SysI2CGetRate:LongWord; 
-function SysI2CSetRate(Rate:LongWord):LongWord; 
- 
-function SysI2CGetAddress:Word; 
-function SysI2CSetAddress(Address:Word):LongWord; 
- 
+function SysI2CStart(Rate:LongWord):LongWord;
+function SysI2CStop:LongWord;
+
+function SysI2CRead(Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function SysI2CWrite(Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function SysI2CWriteRead(Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+function SysI2CWriteWrite(Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
+
+function SysI2CGetRate:LongWord;
+function SysI2CSetRate(Rate:LongWord):LongWord;
+
+function SysI2CGetAddress:Word;
+function SysI2CSetAddress(Address:Word):LongWord;
+
 {==============================================================================}
 {I2C Helper Functions}
 function I2CGetCount:LongWord;
 function I2CDeviceGetDefault:PI2CDevice;
-function I2CDeviceSetDefault(I2C:PI2CDevice):LongWord; 
+function I2CDeviceSetDefault(I2C:PI2CDevice):LongWord;
 
 function I2CDeviceCheck(I2C:PI2CDevice):PI2CDevice;
 
@@ -318,7 +318,7 @@ procedure I2CLogInfo(I2C:PI2CDevice;const AText:String); inline;
 procedure I2CLogWarn(I2C:PI2CDevice;const AText:String); inline;
 procedure I2CLogError(I2C:PI2CDevice;const AText:String); inline;
 procedure I2CLogDebug(I2C:PI2CDevice;const AText:String); inline;
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -347,20 +347,20 @@ begin
  {}
  {Check Initialized}
  if I2CInitialized then Exit;
- 
+
  {Initialize Logging}
- I2C_LOG_ENABLED:=(I2C_DEFAULT_LOG_LEVEL <> I2C_LOG_LEVEL_NONE); 
- 
+ I2C_LOG_ENABLED:=(I2C_DEFAULT_LOG_LEVEL <> I2C_LOG_LEVEL_NONE);
+
  {Initialize I2C Table}
  I2CDeviceTable:=nil;
- I2CDeviceTableLock:=CriticalSectionCreate; 
+ I2CDeviceTableLock:=CriticalSectionCreate;
  I2CDeviceTableCount:=0;
  if I2CDeviceTableLock = INVALID_HANDLE_VALUE then
   begin
    if I2C_LOG_ENABLED then I2CLogError(nil,'Failed to create I2C table lock');
   end;
  I2CDeviceDefault:=nil;
- 
+
  {Register Platform I2C Handlers}
  I2CAvailableHandler:=SysI2CAvailable;
  I2CStartHandler:=SysI2CStart;
@@ -373,10 +373,10 @@ begin
  I2CSetRateHandler:=SysI2CSetRate;
  I2CGetAddressHandler:=SysI2CGetAddress;
  I2CSetAddressHandler:=SysI2CSetAddress;
- 
+
  I2CInitialized:=True;
 end;
- 
+
 {==============================================================================}
 {==============================================================================}
 {I2C Functions}
@@ -388,19 +388,19 @@ function I2CDeviceStart(I2C:PI2CDevice;Rate:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
- if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF I2C_DEBUG}
  if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Start (Rate=' + IntToStr(Rate) + ')');
  {$ENDIF}
- 
+
  {Check Disabled}
  Result:=ERROR_SUCCESS;
  if I2C.I2CState <> I2C_STATE_DISABLED then Exit;
- 
+
  if MutexLock(I2C.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -415,22 +415,22 @@ begin
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
      end;
-     
+
     {Enable Device}
     I2C.I2CState:=I2C_STATE_ENABLED;
-    
+
     {Notify Enable}
     NotifierNotify(@I2C.Device,DEVICE_NOTIFICATION_ENABLE);
-    
+
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(I2C.Lock);
-   end; 
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -442,19 +442,19 @@ function I2CDeviceStop(I2C:PI2CDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
- if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF I2C_DEBUG}
  if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Stop');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_SUCCESS;
  if I2C.I2CState <> I2C_STATE_ENABLED then Exit;
- 
+
  if MutexLock(I2C.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -468,27 +468,27 @@ begin
      begin
       Result:=ERROR_INVALID_PARAMETER;
       Exit;
-     end;    
-  
+     end;
+
     {Disable Device}
     I2C.I2CState:=I2C_STATE_DISABLED;
-    
+
     {Notify Disable}
     NotifierNotify(@I2C.Device,DEVICE_NOTIFICATION_DISABLE);
-    
+
     Result:=ERROR_SUCCESS;
    finally
     MutexUnlock(I2C.Lock);
-   end; 
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
- 
+
 function I2CDeviceRead(I2C:PI2CDevice;Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; inline;
 {Read data from the specified I2C device}
 {I2C: The I2C device to read from}
@@ -518,22 +518,22 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
- if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF I2C_DEBUG}
  if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Read (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if I2C.I2CState <> I2C_STATE_ENABLED then Exit;
- 
+
  if MutexLock(I2C.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(I2C.DeviceRead) then
@@ -544,14 +544,14 @@ begin
    else
     begin
      Result:=ERROR_INVALID_PARAMETER;
-    end;    
-    
+    end;
+
    MutexUnlock(I2C.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -585,22 +585,22 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
- if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF I2C_DEBUG}
  if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Write (Address=' + IntToHex(Address,4) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if I2C.I2CState <> I2C_STATE_ENABLED then Exit;
- 
+
  if MutexLock(I2C.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(I2C.DeviceWrite) then
@@ -611,14 +611,14 @@ begin
    else
     begin
      Result:=ERROR_INVALID_PARAMETER;
-    end;    
-    
+    end;
+
    MutexUnlock(I2C.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -660,23 +660,23 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffers}
  if Initial = nil then Exit;
  if Data = nil then Exit;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
- if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF I2C_DEBUG}
  if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Write Read (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if I2C.I2CState <> I2C_STATE_ENABLED then Exit;
- 
+
  {Check Slave}
  if (I2C.Device.DeviceFlags and I2C_FLAG_SLAVE) <> 0 then Exit;
 
@@ -703,17 +703,17 @@ begin
         end;
       end
      else
-      begin     
+      begin
        Result:=ERROR_INVALID_PARAMETER;
-      end; 
-    end;    
-    
+      end;
+    end;
+
    MutexUnlock(I2C.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -753,23 +753,23 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffers}
  if Initial = nil then Exit;
  if Data = nil then Exit;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
- if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF I2C_DEBUG}
  if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Write Write (Address=' + IntToHex(Address,4) + ' Len=' + IntToStr(Len) + ' Size=' + IntToStr(Size) + ' Flags=' + IntToHex(Flags,8) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  if I2C.I2CState <> I2C_STATE_ENABLED then Exit;
- 
+
  {Check Slave}
  if (I2C.Device.DeviceFlags and I2C_FLAG_SLAVE) <> 0 then Exit;
 
@@ -783,18 +783,18 @@ begin
    else
     begin
      Result:=ERROR_CALL_NOT_IMPLEMENTED;
-    end;    
-    
+    end;
+
    MutexUnlock(I2C.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
- 
+
 function I2CDeviceGetRate(I2C:PI2CDevice):LongWord;
 {Get the clock rate of the specified I2C device}
 {I2C: The I2C device to get the clock rate from}
@@ -802,18 +802,18 @@ function I2CDeviceGetRate(I2C:PI2CDevice):LongWord;
 begin
  {}
  Result:=0;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
- if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF I2C_DEBUG}
  if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Get Rate');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if I2C.I2CState <> I2C_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  {Check Slave}
  if (I2C.Device.DeviceFlags and I2C_FLAG_SLAVE) <> 0 then Exit;
 
@@ -828,8 +828,8 @@ begin
     begin
      {Get Rate}
      Result:=I2C.ClockRate;
-    end;  
-    
+    end;
+
    MutexUnlock(I2C.Lock);
   end;
 end;
@@ -844,19 +844,19 @@ function I2CDeviceSetRate(I2C:PI2CDevice;Rate:LongWord):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
- if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF I2C_DEBUG}
  if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Set Rate (Rate=' + IntToStr(Rate) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  Result:=ERROR_NOT_SUPPORTED;
  {if I2C.I2CState <> I2C_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  {Check Slave}
  if (I2C.Device.DeviceFlags and I2C_FLAG_SLAVE) <> 0 then Exit;
 
@@ -872,23 +872,23 @@ begin
      begin
       {Check Rate}
       if Rate = 0 then Exit;
-      
+
       {Set Rate}
       I2C.ClockRate:=Rate;
       I2C.Properties.ClockRate:=Rate;
-      
+
       Result:=ERROR_SUCCESS;
-     end;  
-   finally  
+     end;
+   finally
     MutexUnlock(I2C.Lock);
-   end; 
+   end;
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
   end;
 end;
- 
+
 {==============================================================================}
 
 function I2CDeviceGetAddress(I2C:PI2CDevice):Word;
@@ -898,18 +898,18 @@ function I2CDeviceGetAddress(I2C:PI2CDevice):Word;
 begin
  {}
  Result:=I2C_ADDRESS_INVALID;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
- if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF I2C_DEBUG}
  if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Get Address');
  {$ENDIF}
- 
+
  {Check Enabled}
  {if I2C.I2CState <> I2C_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(I2C.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(I2C.DeviceGetAddress) then
@@ -921,8 +921,8 @@ begin
     begin
      {Get Address}
      Result:=I2C.SlaveAddress;
-    end;  
-    
+    end;
+
    MutexUnlock(I2C.Lock);
   end;
 end;
@@ -937,19 +937,19 @@ function I2CDeviceSetAddress(I2C:PI2CDevice;Address:Word):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
- if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF I2C_DEBUG}
  if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Set Address (Address=' + IntToHex(Address,4) + ')');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if I2C.I2CState <> I2C_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(I2C.Lock) = ERROR_SUCCESS then
   begin
    try
@@ -962,16 +962,16 @@ begin
      begin
       {Check Address}
       if Address = I2C_ADDRESS_INVALID then Exit;
-      
+
       {Set Address}
       I2C.SlaveAddress:=Address;
       I2C.Properties.SlaveAddress:=Address;
-      
+
       Result:=ERROR_SUCCESS;
-     end;  
-   finally  
+     end;
+   finally
     MutexUnlock(I2C.Lock);
-   end; 
+   end;
   end
  else
   begin
@@ -1003,22 +1003,22 @@ function I2CDeviceGetProperties(I2C:PI2CDevice;Properties:PI2CProperties):LongWo
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Properties}
  if Properties = nil then Exit;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
- if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit; 
- 
+ if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
+
  {$IFDEF I2C_DEBUG}
  if I2C_LOG_ENABLED then I2CLogDebug(I2C,'I2C Device Get Properties');
  {$ENDIF}
- 
+
  {Check Enabled}
  {Result:=ERROR_NOT_SUPPORTED;}
  {if I2C.I2CState <> I2C_STATE_ENABLED then Exit;} {Allow when disabled}
- 
+
  if MutexLock(I2C.Lock) = ERROR_SUCCESS then
   begin
    if Assigned(I2C.DeviceGetProperties) then
@@ -1030,17 +1030,17 @@ begin
     begin
      {Get Properties}
      System.Move(I2C.Properties,Properties^,SizeOf(TI2CProperties));
-       
+
      {Return Result}
      Result:=ERROR_SUCCESS;
-    end;  
-    
+    end;
+
    MutexUnlock(I2C.Lock);
   end
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;    
+  end;
 end;
 
 {==============================================================================}
@@ -1062,16 +1062,16 @@ function I2CDeviceCreateEx(Size:LongWord):PI2CDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TI2CDevice) then Exit;
- 
+
  {Create I2C}
  Result:=PI2CDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=I2C_TYPE_MASTER;
  Result.Device.DeviceFlags:=I2C_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -1092,7 +1092,7 @@ begin
  Result.Wait:=INVALID_HANDLE_VALUE;
  Result.ClockRate:=0;
  Result.SlaveAddress:=I2C_ADDRESS_INVALID;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreateEx(False,MUTEX_DEFAULT_SPINCOUNT,MUTEX_FLAG_RECURSIVE);
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -1113,25 +1113,25 @@ function I2CDeviceDestroy(I2C:PI2CDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
  if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check I2C}
  Result:=ERROR_IN_USE;
  if I2CDeviceCheck(I2C) = I2C then Exit;
 
  {Check State}
  if I2C.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Lock}
  if I2C.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(I2C.Lock);
   end;
- 
- {Destroy I2C} 
+
+ {Destroy I2C}
  Result:=DeviceDestroy(@I2C.Device);
 end;
 
@@ -1147,25 +1147,25 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
  if I2C.I2CId <> DEVICE_ID_ANY then Exit;
  if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Interfaces}
  if not(Assigned(I2C.DeviceStart)) then Exit;
  if not(Assigned(I2C.DeviceStop)) then Exit;
  if not(Assigned(I2C.DeviceRead)) then Exit;
  if not(Assigned(I2C.DeviceWrite)) then Exit;
- 
+
  {Check I2C}
  Result:=ERROR_ALREADY_EXISTS;
  if I2CDeviceCheck(I2C) = I2C then Exit;
- 
+
  {Check State}
  if I2C.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert I2C}
  if CriticalSectionLock(I2CDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1183,7 +1183,7 @@ begin
       I2C.I2CId:=I2CId;
 
       {Update Device}
-      I2C.Device.DeviceName:=I2C_NAME_PREFIX + IntToStr(I2C.I2CId); 
+      I2C.Device.DeviceName:=I2C_NAME_PREFIX + IntToStr(I2C.I2CId);
       I2C.Device.DeviceClass:=DEVICE_CLASS_I2C;
      end
     else
@@ -1197,7 +1197,7 @@ begin
       I2C.I2CId:=I2CId;
 
       {Update Device}
-      I2C.Device.DeviceName:=I2CSLAVE_NAME_PREFIX + IntToStr(I2C.I2CId); 
+      I2C.Device.DeviceName:=I2CSLAVE_NAME_PREFIX + IntToStr(I2C.I2CId);
       I2C.Device.DeviceClass:=DEVICE_CLASS_I2C;
      end;
 
@@ -1207,8 +1207,8 @@ begin
      begin
       I2C.I2CId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link I2C}
     if I2CDeviceTable = nil then
      begin
@@ -1220,16 +1220,16 @@ begin
       I2CDeviceTable.Prev:=I2C;
       I2CDeviceTable:=I2C;
      end;
- 
+
     {Increment Count}
     Inc(I2CDeviceTableCount);
-    
+
     {Check Default}
     if not(Slave) and (I2CDeviceDefault = nil) then
      begin
       I2CDeviceDefault:=I2C;
      end;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1239,7 +1239,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1254,19 +1254,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
  if I2C.I2CId = DEVICE_ID_ANY then Exit;
  if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check I2C}
  Result:=ERROR_NOT_FOUND;
  if I2CDeviceCheck(I2C) <> I2C then Exit;
- 
+
  {Check State}
  if I2C.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove I2C}
  if CriticalSectionLock(I2CDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1274,7 +1274,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@I2C.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink I2C}
     Prev:=I2C.Prev;
     Next:=I2C.Next;
@@ -1284,7 +1284,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -1292,21 +1292,21 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(I2CDeviceTableCount);
- 
+
     {Check Default}
     if I2CDeviceDefault = I2C then
      begin
       I2CDeviceDefault:=I2CDeviceTable;
      end;
- 
+
     {Update I2C}
     I2C.I2CId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1316,7 +1316,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1330,10 +1330,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if I2CId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(I2CDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1355,8 +1355,8 @@ begin
             Exit;
            end;
          end;
-        end; 
-       
+        end;
+
       {Get Next}
       I2C:=I2C.Next;
      end;
@@ -1366,9 +1366,9 @@ begin
    end;
   end;
 end;
-     
+
 {==============================================================================}
-     
+
 function I2CDeviceFindByName(const Name:String):PI2CDevice; inline;
 {Find an I2C device by name in the device table}
 {Name: The name of the I2C device to find (eg I2C0)}
@@ -1388,7 +1388,7 @@ begin
  {}
  Result:=PI2CDevice(DeviceFindByDescription(Description));
 end;
-       
+
 {==============================================================================}
 
 function I2CDeviceEnumerate(Callback:TI2CEnumerate;Data:Pointer):LongWord;
@@ -1401,10 +1401,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(I2CDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1418,11 +1418,11 @@ begin
        begin
         if Callback(I2C,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       I2C:=I2C.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1433,7 +1433,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1448,19 +1448,19 @@ function I2CDeviceNotification(I2C:PI2CDevice;Callback:TI2CNotification;Data:Poi
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check I2C}
  if I2C = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_I2C,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check I2C}
    if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@I2C.Device,DEVICE_CLASS_I2C,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1645,7 +1645,7 @@ begin
             Exit;
            end;
          end;
-       end;  
+       end;
 
       {Get Next}
       I2C:=I2C.Next;
@@ -1682,45 +1682,45 @@ end;
 {==============================================================================}
 {==============================================================================}
 {RTL I2C Functions}
-function SysI2CAvailable:Boolean; 
+function SysI2CAvailable:Boolean;
 {Check if an I2C device is available}
 begin
  {}
  Result:=(I2CDeviceDefault <> nil);
 end;
- 
+
 {==============================================================================}
- 
-function SysI2CStart(Rate:LongWord):LongWord; 
+
+function SysI2CStart(Rate:LongWord):LongWord;
 {Start the default I2C device ready for reading and writing}
 {Rate: The clock rate to set for the device (0 to use the default rate)}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if I2CDeviceDefault = nil then Exit;
- 
+
  Result:=I2CDeviceStart(I2CDeviceDefault,Rate);
 end;
 
 {==============================================================================}
 
-function SysI2CStop:LongWord; 
+function SysI2CStop:LongWord;
 {Stop the default I2C device and terminate reading and writing}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if I2CDeviceDefault = nil then Exit;
- 
+
  Result:=I2CDeviceStop(I2CDeviceDefault);
 end;
 
 {==============================================================================}
- 
-function SysI2CRead(Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; 
+
+function SysI2CRead(Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
 {Read data from the default I2C device}
 {Address: The slave address to read from (I2C_ADDRESS_INVALID to use the current address)}
 {Buffer: Pointer to a buffer to receive the data}
@@ -1732,15 +1732,15 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if I2CDeviceDefault = nil then Exit;
- 
+
  Result:=I2CDeviceReadEx(I2CDeviceDefault,Address,Buffer,Size,I2C_TRANSFER_NONE,Count);
 end;
 
 {==============================================================================}
 
-function SysI2CWrite(Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord; 
+function SysI2CWrite(Address:Word;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;
 {Write data to the default I2C device}
 {Address: The slave address to write to (I2C_ADDRESS_INVALID to use the current address)}
 {Buffer: Pointer to a buffer of data to transmit}
@@ -1752,15 +1752,15 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if I2CDeviceDefault = nil then Exit;
- 
+
  Result:=I2CDeviceWriteEx(I2CDeviceDefault,Address,Buffer,Size,I2C_TRANSFER_NONE,Count);
 end;
 
 {==============================================================================}
 
-function SysI2CWriteRead(Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;  
+function SysI2CWriteRead(Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
 {Write data to and Read data from the default I2C device in one operation}
 {Useful for devices that require a register address specified before a read (eg EEPROM devices)}
 {Address: The slave address to write to (I2C_ADDRESS_INVALID to use the current address)}
@@ -1775,15 +1775,15 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if I2CDeviceDefault = nil then Exit;
- 
+
  Result:=I2CDeviceWriteReadEx(I2CDeviceDefault,Address,Initial,Len,Data,Size,I2C_TRANSFER_NONE,Count);
 end;
 
 {==============================================================================}
 
-function SysI2CWriteWrite(Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord; 
+function SysI2CWriteWrite(Address:Word;Initial:Pointer;Len:LongWord;Data:Pointer;Size:LongWord;var Count:LongWord):LongWord;
 {Write 2 data blocks to the default I2C device in one operation}
 {Useful for devices that require a register address specified before a write (eg EEPROM devices)}
 {Address: The slave address to write to (I2C_ADDRESS_INVALID to use the current address)}
@@ -1798,67 +1798,67 @@ begin
  {Setup Result}
  Count:=0;
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if I2CDeviceDefault = nil then Exit;
- 
+
  Result:=I2CDeviceWriteWriteEx(I2CDeviceDefault,Address,Initial,Len,Data,Size,I2C_TRANSFER_NONE,Count);
 end;
 
 {==============================================================================}
- 
-function SysI2CGetRate:LongWord; 
+
+function SysI2CGetRate:LongWord;
 {Get the clock rate of the default I2C device}
 {Return: The clock rate in Hz or 0 on failure}
 begin
  {}
  Result:=0;
- 
+
  if I2CDeviceDefault = nil then Exit;
- 
+
  Result:=I2CDeviceGetRate(I2CDeviceDefault);
 end;
 
 {==============================================================================}
 
-function SysI2CSetRate(Rate:LongWord):LongWord; 
+function SysI2CSetRate(Rate:LongWord):LongWord;
 {Set the clock rate for the default I2C device}
 {Rate: The clock rate to set in Hz}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if I2CDeviceDefault = nil then Exit;
- 
+
  Result:=I2CDeviceSetRate(I2CDeviceDefault,Rate);
 end;
 
 {==============================================================================}
- 
-function SysI2CGetAddress:Word; 
+
+function SysI2CGetAddress:Word;
 {Get the slave address for the default I2C device}
 {Return: The slave address or I2C_ADDRESS_INVALID on failure}
 begin
  {}
  Result:=I2C_ADDRESS_INVALID;
- 
+
  if I2CDeviceDefault = nil then Exit;
- 
+
  Result:=I2CDeviceGetAddress(I2CDeviceDefault);
 end;
 
 {==============================================================================}
 
-function SysI2CSetAddress(Address:Word):LongWord; 
+function SysI2CSetAddress(Address:Word):LongWord;
 {Set the slave address for the default I2C device}
 {Address: The slave address to set}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  if I2CDeviceDefault = nil then Exit;
- 
+
  Result:=I2CDeviceSetAddress(I2CDeviceDefault,Address);
 end;
 
@@ -1883,26 +1883,26 @@ end;
 
 {==============================================================================}
 
-function I2CDeviceSetDefault(I2C:PI2CDevice):LongWord; 
+function I2CDeviceSetDefault(I2C:PI2CDevice):LongWord;
 {Set the current default I2C device}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
  if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(I2CDeviceTableLock) = ERROR_SUCCESS then
   begin
    try
     {Check I2C}
     if I2CDeviceCheck(I2C) <> I2C then Exit;
-    
+
     {Set I2C Default}
     I2CDeviceDefault:=I2C;
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1925,11 +1925,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check I2C}
  if I2C = nil then Exit;
  if I2C.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(I2CDeviceTableLock) = ERROR_SUCCESS then
   begin
@@ -1944,7 +1944,7 @@ begin
         Result:=I2C;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -1977,7 +1977,7 @@ function I2CTypeToString(I2CType:LongWord):String;
 begin
  {}
  Result:='I2C_TYPE_UNKNOWN';
- 
+
  if I2CType <= I2C_TYPE_MAX then
   begin
    Result:=I2C_TYPE_NAMES[I2CType];
@@ -1991,7 +1991,7 @@ function I2CStateToString(I2CState:LongWord):String;
 begin
  {}
  Result:='I2C_STATE_UNKNOWN';
- 
+
  if I2CState <= I2C_STATE_MAX then
   begin
    Result:=I2C_STATE_NAMES[I2CState];
@@ -2005,14 +2005,14 @@ function I2CIs7BitAddress(Address:Word):Boolean;
 begin
  {}
  Result:=False;
- 
+
  {Check for bits outside of the 7bit range (10bit = 0x3FF / 7bit = 0x7F)}
  if (Address and $0380) <> 0 then Exit;
- 
+
  {Check for bits in the reserved ranges (1111XXX and 0000XXX)}
  if (Address and $78) = $78 then Exit;
  if (Address <= $07) then Exit;
- 
+
  Result:=True;
 end;
 
@@ -2043,7 +2043,7 @@ begin
  {}
  {Check Level}
  if Level < I2C_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = I2C_LOG_LEVEL_DEBUG then
@@ -2058,17 +2058,17 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'I2C: ';
- 
+
  {Check I2C}
  if I2C <> nil then
   begin
    WorkBuffer:=WorkBuffer + I2C_NAME_PREFIX + IntToStr(I2C.I2CId) + ': ';
   end;
 
- {Output Logging}  
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_I2C,LogLevelToLoggingSeverity(Level),'I2C',WorkBuffer + AText);
 end;
 
@@ -2111,7 +2111,7 @@ initialization
  I2CInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

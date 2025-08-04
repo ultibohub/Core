@@ -17,7 +17,7 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -25,9 +25,9 @@ Credits
 
 References
 ==========
- 
+
  USB HID Device Class Definition 1_11.pdf
- 
+
    http://www.usb.org/developers/hidpage/HID1_11.pdf
 
  USB HID Usage Tables 1_12v2.pdf
@@ -35,22 +35,22 @@ References
    http://www.usb.org/developers/hidpage/Hut1_12v2.pdf
 
  Pascal Keyboard scan codes
- 
+
    http://www.freepascal.org/docs-html/rtl/keyboard/kbdscancode.html
-  
+
  ASCII Control codes
- 
+
    https://en.wikipedia.org/wiki/ASCII
- 
+
 Keyboard Devices
 ================
 
  This unit provides the Keyboard device interface and keyboard API to be used
  by both drivers and applications.
- 
+
  The API includes functions to create, register, locate, read, write,
  control and configure each connected keyboard device.
- 
+
  The API supports a global keyboard buffer so multiple devices can feed data
  into a common buffer as well as a buffer per device to allow each device
  to be used for a specific purpose. For example an application with two
@@ -72,50 +72,50 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Keymap,SysUti
 {==============================================================================}
 {Global definitions}
 {$INCLUDE GlobalDefines.inc}
-              
+
 {==============================================================================}
 const
  {Keyboard specific constants}
  KEYBOARD_NAME_PREFIX = 'Keyboard';  {Name prefix for Keyboard Devices}
- 
+
  {Keyboard Device Types}
  KEYBOARD_TYPE_NONE     = 0;
  KEYBOARD_TYPE_USB      = 1;
  KEYBOARD_TYPE_PS2      = 2;
  KEYBOARD_TYPE_SERIAL   = 3;
- 
+
  KEYBOARD_TYPE_MAX      = 3;
- 
+
  {Keyboard Type Names}
  KEYBOARD_TYPE_NAMES:array[KEYBOARD_TYPE_NONE..KEYBOARD_TYPE_MAX] of String = (
   'KEYBOARD_TYPE_NONE',
   'KEYBOARD_TYPE_USB',
   'KEYBOARD_TYPE_PS2',
   'KEYBOARD_TYPE_SERIAL');
- 
+
  {Keyboard Device States}
  KEYBOARD_STATE_DETACHED  = 0;
  KEYBOARD_STATE_DETACHING = 1;
  KEYBOARD_STATE_ATTACHING = 2;
  KEYBOARD_STATE_ATTACHED  = 3;
- 
+
  KEYBOARD_STATE_MAX       = 3;
- 
+
  {Keyboard State Names}
  KEYBOARD_STATE_NAMES:array[KEYBOARD_STATE_DETACHED..KEYBOARD_STATE_MAX] of String = (
   'KEYBOARD_STATE_DETACHED',
   'KEYBOARD_STATE_DETACHING',
   'KEYBOARD_STATE_ATTACHING',
   'KEYBOARD_STATE_ATTACHED');
- 
+
  {Keyboard Device Flags}
  KEYBOARD_FLAG_NONE        = $00000000;
  KEYBOARD_FLAG_NON_BLOCK   = $00000001; {If set device reads are non blocking (Also supported in Flags parameter of KeyboardReadEx)}
  KEYBOARD_FLAG_DIRECT_READ = $00000002; {If set device writes keyboard data to its local buffer which must be read using KeyboardDeviceRead}
  KEYBOARD_FLAG_PEEK_BUFFER = $00000004; {Peek at the buffer to see if any data is available, don't remove it (Used only in Flags parameter of KeyboardReadEx)}
- 
+
  KEYBOARD_FLAG_MASK = KEYBOARD_FLAG_NON_BLOCK or KEYBOARD_FLAG_DIRECT_READ or KEYBOARD_FLAG_PEEK_BUFFER;
- 
+
  {Keyboard Device Control Codes}
  KEYBOARD_CONTROL_GET_FLAG         = 1;  {Get Flag}
  KEYBOARD_CONTROL_SET_FLAG         = 2;  {Set Flag}
@@ -136,16 +136,16 @@ const
  KEYBOARD_LED_SCROLLLOCK = $00000004;
  KEYBOARD_LED_COMPOSE    = $00000008;
  KEYBOARD_LED_KANA       = $00000010;
- 
+
  KEYBOARD_LED_MASK = KEYBOARD_LED_NUMLOCK or KEYBOARD_LED_CAPSLOCK or KEYBOARD_LED_SCROLLLOCK or KEYBOARD_LED_COMPOSE or KEYBOARD_LED_KANA;
- 
+
  {Keyboard Buffer Size}
- KEYBOARD_BUFFER_SIZE = 512; 
+ KEYBOARD_BUFFER_SIZE = 512;
 
  {Keyboard Sampling Rate}
  KEYBOARD_REPEAT_RATE   = 40;         {40msec -> 25cps}
  KEYBOARD_REPEAT_DELAY  = 10;         {10 x KEYBOARD_REPEAT_RATE = 400msec initial delay before repeat}
- 
+
  {Keyboard Data Definitions (Values for TKeyboardData.Modifiers)}
  KEYBOARD_LEFT_CTRL    =  $00000001; {The Left Control key is pressed}
  KEYBOARD_LEFT_SHIFT   =  $00000002; {The Left Shift key is pressed}
@@ -156,16 +156,16 @@ const
  KEYBOARD_RIGHT_ALT    =  $00000040; {The Right Alt key is pressed}
  KEYBOARD_RIGHT_GUI    =  $00000080; {The Right GUI (or Windows) key is pressed}
  KEYBOARD_NUM_LOCK     =  $00000100; {Num Lock is currently on}
- KEYBOARD_CAPS_LOCK    =  $00000200; {Caps Lock is currently on} 
+ KEYBOARD_CAPS_LOCK    =  $00000200; {Caps Lock is currently on}
  KEYBOARD_SCROLL_LOCK  =  $00000400; {Scroll Lock is currently on}
- KEYBOARD_COMPOSE      =  $00000800; {Compose is currently on} 
+ KEYBOARD_COMPOSE      =  $00000800; {Compose is currently on}
  KEYBOARD_KANA         =  $00001000; {Kana is currently on}
  KEYBOARD_KEYUP        =  $00002000; {The key state changed to up}
  KEYBOARD_KEYDOWN      =  $00004000; {The key state changed to down}
  KEYBOARD_KEYREPEAT    =  $00008000; {The key is being repeated}
  KEYBOARD_DEADKEY      =  $00010000; {The key is a being handled as a deadkey}
  KEYBOARD_ALTGR        =  $00020000; {The AltGr key is pressed (Normally also Right Alt but may be Ctrl-Alt)}
- 
+
  {Keyboard logging}
  KEYBOARD_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {Keyboard debugging messages}
  KEYBOARD_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {Keyboard informational messages, such as a device being attached or detached}
@@ -173,22 +173,22 @@ const
  KEYBOARD_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {Keyboard error messages}
  KEYBOARD_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No Keyboard messages}
 
-var 
+var
  KEYBOARD_DEFAULT_LOG_LEVEL:LongWord = KEYBOARD_LOG_LEVEL_DEBUG; {Minimum level for Keyboard messages.  Only messages with level greater than or equal to this will be printed}
- 
-var 
+
+var
  {Keyboard logging}
- KEYBOARD_LOG_ENABLED:Boolean; 
- 
+ KEYBOARD_LOG_ENABLED:Boolean;
+
 {==============================================================================}
 const
  {USB Keyboard specific constants}
  {Note: The following constants are duplicated with the USBKeyboard unit for backwards compatibility}
- 
+
  {HID Interface Subclass types (See USB HID v1.11 specification)}
  USB_HID_SUBCLASS_NONE           = 0;     {Section 4.2}
  USB_HID_SUBCLASS_BOOT           = 1;     {Section 4.2}
- 
+
  {HID Interface Protocol types (See USB HID v1.11 specification)}
  USB_HID_BOOT_PROTOCOL_NONE      = 0;     {Section 4.3}
  USB_HID_BOOT_PROTOCOL_KEYBOARD  = 1;     {Section 4.3}
@@ -198,7 +198,7 @@ const
  USB_HID_DESCRIPTOR_TYPE_HID                  = $21;  {Section 7.1}
  USB_HID_DESCRIPTOR_TYPE_REPORT               = $22;  {Section 7.1}
  USB_HID_DESCRIPTOR_TYPE_PHYSICAL_DESCRIPTOR  = $23;  {Section 7.1}
- 
+
  {HID Request types}
  USB_HID_REQUEST_GET_REPORT      = $01;   {Section 7.2}
  USB_HID_REQUEST_GET_IDLE        = $02;   {Section 7.2}
@@ -206,19 +206,19 @@ const
  USB_HID_REQUEST_SET_REPORT      = $09;   {Section 7.2}
  USB_HID_REQUEST_SET_IDLE        = $0A;   {Section 7.2}
  USB_HID_REQUEST_SET_PROTOCOL    = $0B;   {Section 7.2}
- 
+
  {HID Protocol types}
  USB_HID_PROTOCOL_BOOT           = 0;     {Section 7.2.5}
  USB_HID_PROTOCOL_REPORT         = 1;     {Section 7.2.5}
- 
+
  {HID Report types}
  USB_HID_REPORT_INPUT            = 1;     {Section 7.2.1}
  USB_HID_REPORT_OUTPUT           = 2;     {Section 7.2.1}
  USB_HID_REPORT_FEATURE          = 3;     {Section 7.2.1}
- 
+
  {HID Report IDs}
  USB_HID_REPORTID_NONE           = 0;     {Section 7.2.1}
-  
+
  {HID Boot Protocol Modifier bits}
  USB_HID_BOOT_LEFT_CTRL   = (1 shl 0);
  USB_HID_BOOT_LEFT_SHIFT  = (1 shl 1);
@@ -231,19 +231,19 @@ const
 
  {HID Boot Protocol Report data}
  USB_HID_BOOT_REPORT_SIZE  = 8;            {Appendix B of HID Device Class Definition 1.11}
- 
+
  {HID Boot Protocol Output bits}
  USB_HID_BOOT_NUMLOCK_LED     = (1 shl 0);
  USB_HID_BOOT_CAPSLOCK_LED    = (1 shl 1);
  USB_HID_BOOT_SCROLLLOCK_LED  = (1 shl 2);
  USB_HID_BOOT_COMPOSE_LED     = (1 shl 3);
  USB_HID_BOOT_KANA_LED        = (1 shl 4);
- 
+
  USB_HID_BOOT_LEDMASK = USB_HID_BOOT_NUMLOCK_LED or USB_HID_BOOT_CAPSLOCK_LED or USB_HID_BOOT_SCROLLLOCK_LED or USB_HID_BOOT_COMPOSE_LED or USB_HID_BOOT_KANA_LED;
- 
+
  {HID Boot Protocol Output data}
  USB_HID_BOOT_OUTPUT_SIZE  = 1;            {Appendix B of HID Device Class Definition 1.11}
- 
+
  {Map of HID Boot Protocol keyboard Usage IDs to Characters}
  {Entries not filled in are left 0 and are interpreted as unrecognized input and ignored (Section 10 of the Universal Serial Bus HID Usage Tables v1.12)}
  {Note: These are no longer used, see the Keymap unit for scan code to key code translation tables}
@@ -291,8 +291,8 @@ const
     {40}  (#13, #13),     {Keyboard Enter)}
     {41}  (#27, #27),     {Keyboard Escape}
     {42}  (#8, #8),       {Keyboard Backspace}
-    {43}  (#9, #9),       {Keyboard Tab}       
-    {44}  (' ', ' '),     {Keyboard Spacebar}  
+    {43}  (#9, #9),       {Keyboard Tab}
+    {44}  (' ', ' '),     {Keyboard Spacebar}
     {45}  ('-', '_'),     {Keyboard - or _}
     {46}  ('=', '+'),     {Keyboard = or +}
     {47}  ('[', '{'),     {Keyboard [ or Left Brace}
@@ -332,14 +332,14 @@ const
     {81}  (#0, #0),       {Keyboard Down Arrow}
     {82}  (#0, #0),       {Keyboard Up Arrow}
     {83}  (#0, #0),       {Keyboard Num Lock}
-    {84}  ('/', '/'),     {Keypad /}                 
-    {85}  ('*', '*'),     {Keypad *}                 
-    {86}  ('-', '-'),     {Keypad -}                 
-    {87}  ('+', '+'),     {Keypad +}                
-    {88}  (#13,#13),      {Keypad Enter}             
-    {89}  ('1', '1'),     {Keypad 1 and End}         
-    {90}  ('2', '2'),     {Keypad 2 and Down Arrow}  
-    {91}  ('3', '3'),     {Keypad 3 and PageDn}                       
+    {84}  ('/', '/'),     {Keypad /}
+    {85}  ('*', '*'),     {Keypad *}
+    {86}  ('-', '-'),     {Keypad -}
+    {87}  ('+', '+'),     {Keypad +}
+    {88}  (#13,#13),      {Keypad Enter}
+    {89}  ('1', '1'),     {Keypad 1 and End}
+    {90}  ('2', '2'),     {Keypad 2 and Down Arrow}
+    {91}  ('3', '3'),     {Keypad 3 and PageDn}
     {92}  ('4', '4'),     {Keypad 4 and Left Arrow}
     {93}  ('5', '5'),     {Keypad 5}
     {94}  ('6', '6'),     {Keypad 6 and Right Arrow}
@@ -505,11 +505,11 @@ const
     {254} (#0, #0),       {Reserved}
     {255} (#0, #0)        {Reserved (256 to 65535 Reserved)}
   );*)
- 
+
  USB_HID_BOOT_USAGE_NUMLOCK    = SCAN_CODE_NUMLOCK;    {83}
  USB_HID_BOOT_USAGE_CAPSLOCK   = SCAN_CODE_CAPSLOCK;   {57}
  USB_HID_BOOT_USAGE_SCROLLLOCK = SCAN_CODE_SCROLLLOCK; {71}
- 
+
 {==============================================================================}
 type
  {Keyboard specific types}
@@ -529,22 +529,22 @@ type
   Wait:TSemaphoreHandle;     {Data ready semaphore}
   Start:LongWord;            {Index of first buffer ready}
   Count:LongWord;            {Number of messages ready in buffer}
-  Buffer:array[0..(KEYBOARD_BUFFER_SIZE - 1)] of TKeyboardData; 
+  Buffer:array[0..(KEYBOARD_BUFFER_SIZE - 1)] of TKeyboardData;
  end;
- 
+
  {Keyboard Device}
  PKeyboardDevice = ^TKeyboardDevice;
- 
+
  {Keyboard Enumeration Callback}
  TKeyboardEnumerate = function(Keyboard:PKeyboardDevice;Data:Pointer):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  {Keyboard Notification Callback}
  TKeyboardNotification = function(Device:PDevice;Data:Pointer;Notification:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  {Keyboard Device Methods}
  TKeyboardDeviceGet = function(Keyboard:PKeyboardDevice;var KeyCode:Word):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TKeyboardDeviceRead = function(Keyboard:PKeyboardDevice;Buffer:Pointer;Size:LongWord;var Count:LongWord):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
  TKeyboardDeviceControl = function(Keyboard:PKeyboardDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;{$IFDEF i386} stdcall;{$ENDIF}
- 
+
  TKeyboardDevice = record
   {Device Properties}
   Device:TDevice;                      {The Device entry for this Keyboard}
@@ -554,8 +554,8 @@ type
   KeyboardLEDs:LongWord;               {Keyboard LEDs (eg KEYBOARD_LED_NUMLOCK)}
   KeyboardRate:LongWord;               {Keyboard repeat rate (Milliseconds)}
   KeyboardDelay:LongWord;              {Keyboard repeat delay (Number of KeyboardRate intervals before first repeat)}
-  DeviceGet:TKeyboardDeviceGet;        {A Device specific DeviceGet method implementing a standard Keyboard device interface (Or nil if the default method is suitable)} 
-  DeviceRead:TKeyboardDeviceRead;      {A Device specific DeviceRead method implementing a standard Keyboard device interface (Or nil if the default method is suitable)} 
+  DeviceGet:TKeyboardDeviceGet;        {A Device specific DeviceGet method implementing a standard Keyboard device interface (Or nil if the default method is suitable)}
+  DeviceRead:TKeyboardDeviceRead;      {A Device specific DeviceRead method implementing a standard Keyboard device interface (Or nil if the default method is suitable)}
   DeviceControl:TKeyboardDeviceControl;{A Device specific DeviceControl method implementing a standard Keyboard device interface (Or nil if the default method is suitable)}
   {Driver Properties}
   Lock:TMutexHandle;                   {Keyboard lock}
@@ -567,16 +567,16 @@ type
   ReceiveCount:LongWord;
   ReceiveErrors:LongWord;
   BufferOverruns:LongWord;
-  {Internal Properties}                                                                                
+  {Internal Properties}
   Prev:PKeyboardDevice;                {Previous entry in Keyboard table}
   Next:PKeyboardDevice;                {Next entry in Keyboard table}
- end;                                                                                          
- 
+ end;
+
 {==============================================================================}
 type
  {USB Keyboard specific types}
  {Note: The following structure is duplicated with the USBKeyboard unit for backwards compatibility}
- 
+
  {USB HID Descriptor}
  PUSBHIDDescriptor = ^TUSBHIDDescriptor;
  TUSBHIDDescriptor = packed record
@@ -589,11 +589,11 @@ type
   wHIDDescriptorLength:Word;
   {Note: Up to two optional bHIDDescriptorType/wHIDDescriptorLength pairs after the Report descriptor details}
  end;
- 
+
 {==============================================================================}
 {var}
  {Keyboard specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure KeyboardInit;
@@ -678,13 +678,13 @@ var
 
  KeyboardBuffer:PKeyboardBuffer;                          {Global keyboard input buffer}
  KeyboardBufferLock:TMutexHandle = INVALID_HANDLE_VALUE;  {Global keyboard buffer lock}
- 
+
 {==============================================================================}
 {==============================================================================}
 var
  {RTL Console specific variables}
  SysConsoleLastCode:Byte;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -698,13 +698,13 @@ begin
  {}
  {Check Initialized}
  if KeyboardInitialized then Exit;
- 
+
  {Initialize Logging}
- KEYBOARD_LOG_ENABLED:=(KEYBOARD_DEFAULT_LOG_LEVEL <> KEYBOARD_LOG_LEVEL_NONE); 
- 
+ KEYBOARD_LOG_ENABLED:=(KEYBOARD_DEFAULT_LOG_LEVEL <> KEYBOARD_LOG_LEVEL_NONE);
+
  {Initialize Keyboard Table}
  KeyboardTable:=nil;
- KeyboardTableLock:=CriticalSectionCreate; 
+ KeyboardTableLock:=CriticalSectionCreate;
  KeyboardTableCount:=0;
  if KeyboardTableLock = INVALID_HANDLE_VALUE then
   begin
@@ -727,20 +727,20 @@ begin
      if KEYBOARD_LOG_ENABLED then KeyboardLogError(nil,'Failed to create keyboard buffer semaphore');
     end;
 
-   {Create Lock} 
-   KeyboardBufferLock:=MutexCreate; 
+   {Create Lock}
+   KeyboardBufferLock:=MutexCreate;
    if KeyboardBufferLock = INVALID_HANDLE_VALUE then
     begin
      if KEYBOARD_LOG_ENABLED then KeyboardLogError(nil,'Failed to create keyboard buffer lock');
     end;
-  end;  
-  
+  end;
+
  {Setup Platform Console Handlers}
  ConsoleGetKeyHandler:=SysConsoleGetKey;
  ConsolePeekKeyHandler:=SysConsolePeekKey;
  ConsoleReadCharHandler:=SysConsoleReadChar;
  ConsoleReadWideCharHandler:=SysConsoleReadWideChar;
- 
+
  KeyboardInitialized:=True;
 end;
 
@@ -754,7 +754,7 @@ function KeyboardGet(var KeyCode:Word):LongWord;
 
 {Note: Key code is the value translated from the scan code using the current keymap
        it may not be a character code and it may include non printable characters.
-       
+
        To translate a key code to a character call KeymapGetCharCode()}
 var
  Count:LongWord;
@@ -772,7 +772,7 @@ begin
    else
     begin
      KeyCode:=KEY_CODE_NONE;
-    end;  
+    end;
   end;
 end;
 
@@ -816,17 +816,17 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Size}
  if Size < SizeOf(TKeyboardData) then Exit;
- 
+
  {$IFDEF KEYBOARD_DEBUG}
  if KEYBOARD_LOG_ENABLED then KeyboardLogDebug(nil,'Attempting to read ' + IntToStr(Size) + ' bytes from keyboard');
  {$ENDIF}
- 
+
  {Read to Buffer}
  Count:=0;
  Offset:=0;
@@ -850,10 +850,10 @@ begin
          begin
           {Copy Data}
           PKeyboardData(PtrUInt(Buffer) + Offset)^:=KeyboardBuffer.Buffer[KeyboardBuffer.Start];
-          
+
           {Update Count}
           Inc(Count);
-          
+
           Result:=ERROR_SUCCESS;
           Break;
          end
@@ -874,7 +874,7 @@ begin
       end;
     end
    else
-    begin   
+    begin
      {Wait for Keyboard Data}
      if SemaphoreWait(KeyboardBuffer.Wait) = ERROR_SUCCESS then
       begin
@@ -884,16 +884,16 @@ begin
          try
           {Copy Data}
           PKeyboardData(PtrUInt(Buffer) + Offset)^:=KeyboardBuffer.Buffer[KeyboardBuffer.Start];
-            
+
           {Update Start}
           KeyboardBuffer.Start:=(KeyboardBuffer.Start + 1) mod KEYBOARD_BUFFER_SIZE;
-          
+
           {Update Count}
           Dec(KeyboardBuffer.Count);
-     
+
           {Update Count}
           Inc(Count);
-            
+
           {Update Size and Offset}
           Dec(Size,SizeOf(TKeyboardData));
           Inc(Offset,SizeOf(TKeyboardData));
@@ -912,13 +912,13 @@ begin
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
        Exit;
-      end;    
+      end;
     end;
-    
+
    {Return Result}
    Result:=ERROR_SUCCESS;
   end;
-  
+
  {$IFDEF KEYBOARD_DEBUG}
  if KEYBOARD_LOG_ENABLED then KeyboardLogDebug(nil,'Return count=' + IntToStr(Count));
  {$ENDIF}
@@ -938,11 +938,11 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Get Keymap}
  Keymap:=KeymapGetDefault;
  if Keymap = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Setup Data}
  FillChar(Data,SizeOf(TKeyboardData),0);
  Data.Modifiers:=Modifiers;
@@ -950,7 +950,7 @@ begin
  Data.KeyCode:=KeyCode;
  Data.CharCode:=KeymapGetCharCode(Keymap,Data.KeyCode);
  Data.CharUnicode:=KeymapGetCharUnicode(Keymap,Data.KeyCode);
- 
+
  {Write Data}
  Result:=KeyboardWrite(@Data,SizeOf(TKeyboardData),1);
 end;
@@ -968,20 +968,20 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Size}
  if Size < SizeOf(TKeyboardData) then Exit;
- 
+
  {Check Count}
  if Count < 1 then Exit;
- 
+
  {$IFDEF KEYBOARD_DEBUG}
  if KEYBOARD_LOG_ENABLED then KeyboardLogDebug(nil,'Attempting to write ' + IntToStr(Size) + ' bytes to keyboard');
  {$ENDIF}
- 
+
  {Write from Buffer}
  Offset:=0;
  while (Size >= SizeOf(TKeyboardData)) and (Count > 0) do
@@ -995,19 +995,19 @@ begin
        begin
         {Copy Data}
         KeyboardBuffer.Buffer[(KeyboardBuffer.Start + KeyboardBuffer.Count) mod KEYBOARD_BUFFER_SIZE]:=PKeyboardData(PtrUInt(Buffer) + Offset)^;
-        
+
         {Update Count}
         Inc(KeyboardBuffer.Count);
-        
+
         {Update Count}
         Dec(Count);
-        
+
         {Update Size and Offset}
         Dec(Size,SizeOf(TKeyboardData));
         Inc(Offset,SizeOf(TKeyboardData));
-        
+
         {Signal Data Received}
-        SemaphoreSignal(KeyboardBuffer.Wait); 
+        SemaphoreSignal(KeyboardBuffer.Wait);
        end
       else
        begin
@@ -1024,21 +1024,21 @@ begin
      Result:=ERROR_CAN_NOT_COMPLETE;
      Exit;
     end;
-    
+
    {Return Result}
    Result:=ERROR_SUCCESS;
   end;
 end;
- 
+
 {==============================================================================}
- 
+
 function KeyboardFlush:LongWord;
 {Flush the contents of the global keyboard buffer}
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Acquire the Lock}
  if MutexLock(KeyboardBufferLock) = ERROR_SUCCESS then
   begin
@@ -1048,9 +1048,9 @@ begin
       {Wait for Data (Should not Block)}
       if SemaphoreWait(KeyboardBuffer.Wait) = ERROR_SUCCESS then
        begin
-        {Update Start} 
+        {Update Start}
         KeyboardBuffer.Start:=(KeyboardBuffer.Start + 1) mod KEYBOARD_BUFFER_SIZE;
-        
+
         {Update Count}
         Dec(KeyboardBuffer.Count);
        end
@@ -1058,9 +1058,9 @@ begin
        begin
         Result:=ERROR_CAN_NOT_COMPLETE;
         Exit;
-       end;    
-     end; 
-    
+       end;
+     end;
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1085,7 +1085,7 @@ function KeyboardDeviceGet(Keyboard:PKeyboardDevice;var KeyCode:Word):LongWord;
 
 {Note: Key code is the value translated from the scan code using the current keymap
        it may not be a character code and it may include non printable characters.
-       
+
        To translate a key code to a character call KeymapGetCharCode()}
 var
  Count:LongWord;
@@ -1093,11 +1093,11 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Keyboard}
  if Keyboard = nil then Exit;
  if Keyboard.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  if Assigned(Keyboard.DeviceGet) then
   begin
@@ -1105,7 +1105,7 @@ begin
    Result:=Keyboard.DeviceGet(Keyboard,KeyCode);
   end
  else
-  begin 
+  begin
    {Default Method}
    Result:=KeyboardDeviceRead(Keyboard,@Data,SizeOf(TKeyboardData),Count);
    while Result = ERROR_SUCCESS do
@@ -1115,12 +1115,12 @@ begin
       begin
        KeyCode:=Data.KeyCode;
        Break;
-      end; 
-     
+      end;
+
      {Get Next Key}
      Result:=KeyboardDeviceRead(Keyboard,@Data,SizeOf(TKeyboardData),Count);
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1137,14 +1137,14 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Keyboard}
  if Keyboard = nil then Exit;
  if Keyboard.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Buffer}
  if Buffer = nil then Exit;
- 
+
  {Check Size}
  if Size < SizeOf(TKeyboardData) then Exit;
 
@@ -1155,7 +1155,7 @@ begin
    Result:=Keyboard.DeviceRead(Keyboard,Buffer,Size,Count);
   end
  else
-  begin 
+  begin
    {Default Method}
    {Check Keyboard Attached}
    if Keyboard.KeyboardState <> KEYBOARD_STATE_ATTACHED then Exit;
@@ -1163,7 +1163,7 @@ begin
    {$IFDEF KEYBOARD_DEBUG}
    if KEYBOARD_LOG_ENABLED then KeyboardLogDebug(Keyboard,'Attempting to read ' + IntToStr(Size) + ' bytes from keyboard');
    {$ENDIF}
-   
+
    {Read to Buffer}
    Count:=0;
    Offset:=0;
@@ -1175,7 +1175,7 @@ begin
        if Count = 0 then Result:=ERROR_NO_MORE_ITEMS;
        Break;
       end;
-    
+
      {Wait for Keyboard Data}
      if SemaphoreWait(Keyboard.Buffer.Wait) = ERROR_SUCCESS then
       begin
@@ -1185,16 +1185,16 @@ begin
          try
           {Copy Data}
           PKeyboardData(PtrUInt(Buffer) + Offset)^:=Keyboard.Buffer.Buffer[Keyboard.Buffer.Start];
-          
+
           {Update Start}
           Keyboard.Buffer.Start:=(Keyboard.Buffer.Start + 1) mod KEYBOARD_BUFFER_SIZE;
-        
+
           {Update Count}
           Dec(Keyboard.Buffer.Count);
-  
+
           {Update Count}
           Inc(Count);
-          
+
           {Update Size and Offset}
           Dec(Size,SizeOf(TKeyboardData));
           Inc(Offset,SizeOf(TKeyboardData));
@@ -1208,23 +1208,23 @@ begin
          Result:=ERROR_CAN_NOT_COMPLETE;
          Exit;
         end;
-      end  
+      end
      else
       begin
        Result:=ERROR_CAN_NOT_COMPLETE;
        Exit;
-      end;    
-     
+      end;
+
      {Return Result}
      Result:=ERROR_SUCCESS;
     end;
-    
+
    {$IFDEF KEYBOARD_DEBUG}
    if KEYBOARD_LOG_ENABLED then KeyboardLogDebug(Keyboard,'Return count=' + IntToStr(Count));
    {$ENDIF}
-  end;  
+  end;
 end;
- 
+
 {==============================================================================}
 
 function KeyboardDeviceControl(Keyboard:PKeyboardDevice;Request:Integer;Argument1:PtrUInt;var Argument2:PtrUInt):LongWord;
@@ -1237,11 +1237,11 @@ function KeyboardDeviceControl(Keyboard:PKeyboardDevice;Request:Integer;Argument
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Keyboard}
  if Keyboard = nil then Exit;
  if Keyboard.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Method}
  if Assigned(Keyboard.DeviceControl) then
   begin
@@ -1249,7 +1249,7 @@ begin
    Result:=Keyboard.DeviceControl(Keyboard,Request,Argument1,Argument2);
   end
  else
-  begin 
+  begin
    {Default Method}
    {Check Keyboard Attached}
    if Keyboard.KeyboardState <> KEYBOARD_STATE_ATTACHED then Exit;
@@ -1265,41 +1265,41 @@ begin
          if (Keyboard.Device.DeviceFlags and Argument1) <> 0 then
           begin
            Argument2:=Ord(True);
-           
+
            {Return Result}
            Result:=ERROR_SUCCESS;
           end;
         end;
-       KEYBOARD_CONTROL_SET_FLAG:begin 
+       KEYBOARD_CONTROL_SET_FLAG:begin
          {Set Flag}
          if (Argument1 and not(KEYBOARD_FLAG_MASK)) = 0 then
           begin
            Keyboard.Device.DeviceFlags:=(Keyboard.Device.DeviceFlags or Argument1);
-         
+
            {Return Result}
            Result:=ERROR_SUCCESS;
-          end; 
+          end;
         end;
-       KEYBOARD_CONTROL_CLEAR_FLAG:begin 
+       KEYBOARD_CONTROL_CLEAR_FLAG:begin
          {Clear Flag}
          if (Argument1 and not(KEYBOARD_FLAG_MASK)) = 0 then
           begin
            Keyboard.Device.DeviceFlags:=(Keyboard.Device.DeviceFlags and not(Argument1));
-         
+
            {Return Result}
            Result:=ERROR_SUCCESS;
-          end; 
+          end;
         end;
        KEYBOARD_CONTROL_FLUSH_BUFFER:begin
          {Flush Buffer}
-         while Keyboard.Buffer.Count > 0 do 
+         while Keyboard.Buffer.Count > 0 do
           begin
            {Wait for Data (Should not Block)}
            if SemaphoreWait(Keyboard.Buffer.Wait) = ERROR_SUCCESS then
             begin
              {Update Start}
              Keyboard.Buffer.Start:=(Keyboard.Buffer.Start + 1) mod KEYBOARD_BUFFER_SIZE;
-             
+
              {Update Count}
              Dec(Keyboard.Buffer.Count);
             end
@@ -1309,8 +1309,8 @@ begin
              Exit;
             end;
           end;
-          
-         {Return Result} 
+
+         {Return Result}
          Result:=ERROR_SUCCESS;
         end;
        KEYBOARD_CONTROL_GET_LED:begin
@@ -1319,7 +1319,7 @@ begin
          if (Keyboard.KeyboardLEDs and Argument1) <> 0 then
           begin
            Argument2:=Ord(True);
-           
+
            {Return Result}
            Result:=ERROR_SUCCESS;
           end;
@@ -1329,46 +1329,46 @@ begin
          if (Argument1 and not(KEYBOARD_LED_MASK)) = 0 then
           begin
            Keyboard.KeyboardLEDs:=(Keyboard.KeyboardLEDs or Argument1);
-         
+
            {Return Result}
            Result:=ERROR_SUCCESS;
-          end; 
+          end;
         end;
        KEYBOARD_CONTROL_CLEAR_LED:begin
          {Clear LED}
          if (Argument1 and not(KEYBOARD_LED_MASK)) = 0 then
           begin
            Keyboard.KeyboardLEDs:=(Keyboard.KeyboardLEDs and not(Argument1));
-         
+
            {Return Result}
            Result:=ERROR_SUCCESS;
-          end; 
+          end;
         end;
        KEYBOARD_CONTROL_GET_REPEAT_RATE:begin
          {Get Repeat Rate}
          Argument2:=Keyboard.KeyboardRate;
-         
+
          {Return Result}
          Result:=ERROR_SUCCESS;
         end;
        KEYBOARD_CONTROL_SET_REPEAT_RATE:begin
          {Set Repeat Rate}
          Keyboard.KeyboardRate:=Argument1;
-         
+
          {Return Result}
          Result:=ERROR_SUCCESS;
         end;
        KEYBOARD_CONTROL_GET_REPEAT_DELAY:begin
          {Get Repeat Delay}
          Argument2:=Keyboard.KeyboardDelay;
-         
+
          {Return Result}
          Result:=ERROR_SUCCESS;
         end;
        KEYBOARD_CONTROL_SET_REPEAT_DELAY:begin
          {Set Repeat Delay}
          Keyboard.KeyboardDelay:=Argument1;
-         
+
          {Return Result}
          Result:=ERROR_SUCCESS;
         end;
@@ -1383,7 +1383,7 @@ begin
      Result:=ERROR_CAN_NOT_COMPLETE;
      Exit;
     end;
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1396,14 +1396,14 @@ function KeyboardDeviceSetState(Keyboard:PKeyboardDevice;State:LongWord):LongWor
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Keyboard}
  if Keyboard = nil then Exit;
  if Keyboard.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
  {Check State}
  if State > KEYBOARD_STATE_ATTACHED then Exit;
- 
+
  {Check State}
  if Keyboard.KeyboardState = State then
   begin
@@ -1415,10 +1415,10 @@ begin
    {Acquire the Lock}
    if MutexLock(Keyboard.Lock) = ERROR_SUCCESS then
     begin
-     try 
+     try
       {Set State}
       Keyboard.KeyboardState:=State;
-  
+
       {Notify State}
       NotifierNotify(@Keyboard.Device,KeyboardDeviceStateToNotification(State));
 
@@ -1433,7 +1433,7 @@ begin
     begin
      Result:=ERROR_CAN_NOT_COMPLETE;
     end;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1455,16 +1455,16 @@ function KeyboardDeviceCreateEx(Size:LongWord):PKeyboardDevice;
 begin
  {}
  Result:=nil;
- 
+
  {Check Size}
  if Size < SizeOf(TKeyboardDevice) then Exit;
- 
+
  {Create Keyboard}
  Result:=PKeyboardDevice(DeviceCreateEx(Size));
  if Result = nil then Exit;
- 
+
  {Update Device}
- Result.Device.DeviceBus:=DEVICE_BUS_NONE;   
+ Result.Device.DeviceBus:=DEVICE_BUS_NONE;
  Result.Device.DeviceType:=KEYBOARD_TYPE_NONE;
  Result.Device.DeviceFlags:=KEYBOARD_FLAG_NONE;
  Result.Device.DeviceData:=nil;
@@ -1480,12 +1480,12 @@ begin
  Result.DeviceControl:=nil;
  Result.Lock:=INVALID_HANDLE_VALUE;
  Result.Buffer.Wait:=INVALID_HANDLE_VALUE;
- 
+
  {Check Defaults}
  if KEYBOARD_NUM_LOCK_DEFAULT then Result.KeyboardLEDs:=Result.KeyboardLEDs or KEYBOARD_LED_NUMLOCK;
  if KEYBOARD_CAPS_LOCK_DEFAULT then Result.KeyboardLEDs:=Result.KeyboardLEDs or KEYBOARD_LED_CAPSLOCK;
  if KEYBOARD_SCROLL_LOCK_DEFAULT then Result.KeyboardLEDs:=Result.KeyboardLEDs or KEYBOARD_LED_SCROLLLOCK;
- 
+
  {Create Lock}
  Result.Lock:=MutexCreate;
  if Result.Lock = INVALID_HANDLE_VALUE then
@@ -1495,7 +1495,7 @@ begin
    Result:=nil;
    Exit;
   end;
- 
+
  {Create Buffer Semaphore}
  Result.Buffer.Wait:=SemaphoreCreate(0);
  if Result.Buffer.Wait = INVALID_HANDLE_VALUE then
@@ -1516,31 +1516,31 @@ function KeyboardDeviceDestroy(Keyboard:PKeyboardDevice):LongWord;
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Keyboard}
  if Keyboard = nil then Exit;
  if Keyboard.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Keyboard}
  Result:=ERROR_IN_USE;
  if KeyboardDeviceCheck(Keyboard) = Keyboard then Exit;
 
  {Check State}
  if Keyboard.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Destroy Buffer Semaphore}
  if Keyboard.Buffer.Wait <> INVALID_HANDLE_VALUE then
   begin
    SemaphoreDestroy(Keyboard.Buffer.Wait);
   end;
-  
+
  {Destroy Lock}
  if Keyboard.Lock <> INVALID_HANDLE_VALUE then
   begin
    MutexDestroy(Keyboard.Lock);
   end;
- 
- {Destroy Keyboard} 
+
+ {Destroy Keyboard}
  Result:=DeviceDestroy(@Keyboard.Device);
 end;
 
@@ -1555,19 +1555,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Keyboard}
  if Keyboard = nil then Exit;
  if Keyboard.KeyboardId <> DEVICE_ID_ANY then Exit;
  if Keyboard.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Keyboard}
  Result:=ERROR_ALREADY_EXISTS;
  if KeyboardDeviceCheck(Keyboard) = Keyboard then Exit;
- 
+
  {Check State}
  if Keyboard.Device.DeviceState <> DEVICE_STATE_UNREGISTERED then Exit;
- 
+
  {Insert Keyboard}
  if CriticalSectionLock(KeyboardTableLock) = ERROR_SUCCESS then
   begin
@@ -1579,19 +1579,19 @@ begin
       Inc(KeyboardId);
      end;
     Keyboard.KeyboardId:=KeyboardId;
-    
+
     {Update Device}
-    Keyboard.Device.DeviceName:=KEYBOARD_NAME_PREFIX + IntToStr(Keyboard.KeyboardId); 
+    Keyboard.Device.DeviceName:=KEYBOARD_NAME_PREFIX + IntToStr(Keyboard.KeyboardId);
     Keyboard.Device.DeviceClass:=DEVICE_CLASS_KEYBOARD;
-    
+
     {Register Device}
     Result:=DeviceRegister(@Keyboard.Device);
     if Result <> ERROR_SUCCESS then
      begin
       Keyboard.KeyboardId:=DEVICE_ID_ANY;
       Exit;
-     end; 
-    
+     end;
+
     {Link Keyboard}
     if KeyboardTable = nil then
      begin
@@ -1603,10 +1603,10 @@ begin
       KeyboardTable.Prev:=Keyboard;
       KeyboardTable:=Keyboard;
      end;
- 
+
     {Increment Count}
     Inc(KeyboardTableCount);
-    
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1616,7 +1616,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1631,19 +1631,19 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Keyboard}
  if Keyboard = nil then Exit;
  if Keyboard.KeyboardId = DEVICE_ID_ANY then Exit;
  if Keyboard.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Check Keyboard}
  Result:=ERROR_NOT_FOUND;
  if KeyboardDeviceCheck(Keyboard) <> Keyboard then Exit;
- 
+
  {Check State}
  if Keyboard.Device.DeviceState <> DEVICE_STATE_REGISTERED then Exit;
- 
+
  {Remove Keyboard}
  if CriticalSectionLock(KeyboardTableLock) = ERROR_SUCCESS then
   begin
@@ -1651,7 +1651,7 @@ begin
     {Deregister Device}
     Result:=DeviceDeregister(@Keyboard.Device);
     if Result <> ERROR_SUCCESS then Exit;
-    
+
     {Unlink Keyboard}
     Prev:=Keyboard.Prev;
     Next:=Keyboard.Next;
@@ -1661,7 +1661,7 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=nil;
-       end;       
+       end;
      end
     else
      begin
@@ -1669,15 +1669,15 @@ begin
       if Next <> nil then
        begin
         Next.Prev:=Prev;
-       end;       
-     end;     
- 
+       end;
+     end;
+
     {Decrement Count}
     Dec(KeyboardTableCount);
- 
+
     {Update Keyboard}
     Keyboard.KeyboardId:=DEVICE_ID_ANY;
- 
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1687,7 +1687,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1701,10 +1701,10 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Id}
  if KeyboardId = DEVICE_ID_ANY then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(KeyboardTableLock) = ERROR_SUCCESS then
   begin
@@ -1723,7 +1723,7 @@ begin
           Exit;
          end;
        end;
-       
+
       {Get Next}
       Keyboard:=Keyboard.Next;
      end;
@@ -1733,9 +1733,9 @@ begin
    end;
   end;
 end;
-   
+
 {==============================================================================}
-   
+
 function KeyboardDeviceFindByName(const Name:String):PKeyboardDevice; inline;
 {Find a keyboard device by name in the keyboard table}
 {Name: The name of the keyboard to find (eg Keyboard0)}
@@ -1755,7 +1755,7 @@ begin
  {}
  Result:=PKeyboardDevice(DeviceFindByDescription(Description));
 end;
-      
+
 {==============================================================================}
 
 function KeyboardDeviceEnumerate(Callback:TKeyboardEnumerate;Data:Pointer):LongWord;
@@ -1768,10 +1768,10 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Callback}
  if not Assigned(Callback) then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(KeyboardTableLock) = ERROR_SUCCESS then
   begin
@@ -1785,11 +1785,11 @@ begin
        begin
         if Callback(Keyboard,Data) <> ERROR_SUCCESS then Exit;
        end;
-       
+
       {Get Next}
       Keyboard:=Keyboard.Next;
      end;
-     
+
     {Return Result}
     Result:=ERROR_SUCCESS;
    finally
@@ -1800,7 +1800,7 @@ begin
  else
   begin
    Result:=ERROR_CAN_NOT_COMPLETE;
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -1815,19 +1815,19 @@ function KeyboardDeviceNotification(Keyboard:PKeyboardDevice;Callback:TKeyboardN
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Keyboard}
  if Keyboard = nil then
   begin
    Result:=DeviceNotification(nil,DEVICE_CLASS_KEYBOARD,Callback,Data,Notification,Flags);
   end
  else
-  begin 
+  begin
    {Check Keyboard}
    if Keyboard.Device.Signature <> DEVICE_SIGNATURE then Exit;
 
    Result:=DeviceNotification(@Keyboard.Device,DEVICE_CLASS_KEYBOARD,Callback,Data,Notification,Flags);
-  end; 
+  end;
 end;
 
 {==============================================================================}
@@ -1843,14 +1843,14 @@ var
 begin
  {}
  Result:=True;
- 
+
  {Check Last}
  if SysConsoleLastCode <> 0 then
   begin
    {Return Key}
    ACh:=Char(SysConsoleLastCode);
    if SysConsoleLastCode = $FF then ACh:=#0;
-   
+
    {Clear Last}
    SysConsoleLastCode:=0;
   end
@@ -1865,13 +1865,13 @@ begin
       begin
        {Get Char Code}
        CharCode:=Data.CharCode;
-       
+
        {Remap Key Code}
        if KeyboardRemapKeyCode(Data.ScanCode,Data.KeyCode,Byte(CharCode),Data.Modifiers) then
         begin
          {Save Last}
          SysConsoleLastCode:=Byte(CharCode);
-         
+
          {Key is Extended}
          ACh:=#0;
         end
@@ -1882,37 +1882,37 @@ begin
           begin
            {Save Last (No Key)}
            SysConsoleLastCode:=$FF;
-           
+
            {Key is Extended}
            ACh:=#0;
           end
          else
-          begin  
+          begin
            {Check Ctrl Keys}
            if (Data.Modifiers and (KEYBOARD_LEFT_CTRL or KEYBOARD_RIGHT_CTRL)) <> 0 then
             begin
              {Remap Ctrl Code}
              CharCode:=Char(KeyboardRemapCtrlCode(Data.KeyCode,Byte(CharCode)));
-            end;         
+            end;
 
            {Return Key}
            ACh:=CharCode;
-          end; 
-        end;        
-       
+          end;
+        end;
+
        Break;
-      end; 
-   
+      end;
+
      {Get Next Key}
      Status:=KeyboardRead(@Data,SizeOf(TKeyboardData),Count);
     end;
-   if Status <> ERROR_SUCCESS then 
+   if Status <> ERROR_SUCCESS then
     begin
      ACh:=#0;
-     
+
      Result:=False;
-    end;  
-  end;  
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -1927,14 +1927,14 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Last}
  if SysConsoleLastCode <> 0 then
   begin
    {Return Next Key}
    ACh:=Char(SysConsoleLastCode);
-   
-   Result:=True;   
+
+   Result:=True;
   end
  else
   begin
@@ -1952,7 +1952,7 @@ begin
       begin
        {Get Char Code}
        CharCode:=Data.CharCode;
-       
+
        {Remap Key Code}
        if KeyboardRemapKeyCode(Data.ScanCode,Data.KeyCode,Byte(CharCode),Data.Modifiers) then
         begin
@@ -1968,31 +1968,31 @@ begin
            ACh:=#0;
           end
          else
-          begin         
+          begin
            {Check Ctrl Keys}
            if (Data.Modifiers and (KEYBOARD_LEFT_CTRL or KEYBOARD_RIGHT_CTRL)) <> 0 then
             begin
              {Remap Ctrl Code}
              CharCode:=Char(KeyboardRemapCtrlCode(Data.KeyCode,Byte(CharCode)));
-            end;         
-            
+            end;
+
            {Return Next Key}
            ACh:=CharCode;
-          end; 
-        end;        
-       
+          end;
+        end;
+
        Result:=True;
        Break;
-      end;      
-   
+      end;
+
      {Peek Next Key}
      Status:=KeyboardReadEx(@Data,SizeOf(TKeyboardData),KEYBOARD_FLAG_NON_BLOCK or KEYBOARD_FLAG_PEEK_BUFFER,Count);
     end;
-   if Status <> ERROR_SUCCESS then 
+   if Status <> ERROR_SUCCESS then
     begin
      ACh:=#0;
-    end;  
-  end;  
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -2007,7 +2007,7 @@ var
 begin
  {}
  Result:=True;
- 
+
  {Get Next Key}
  Status:=KeyboardRead(@Data,SizeOf(TKeyboardData),Count);
  while Status = ERROR_SUCCESS do
@@ -2019,24 +2019,24 @@ begin
       begin
        {Get Char Code}
        CharCode:=Data.CharCode;
-       
+
        {Check Ctrl Keys}
        if (Data.Modifiers and (KEYBOARD_LEFT_CTRL or KEYBOARD_RIGHT_CTRL)) <> 0 then
         begin
          {Remap Ctrl Code}
          CharCode:=Char(KeyboardRemapCtrlCode(Data.KeyCode,Byte(CharCode)));
-        end;         
-       
-       ACh:=CharCode; 
+        end;
+
+       ACh:=CharCode;
        Break;
-      end; 
-    end; 
-   
+      end;
+    end;
+
    {Get Next Key}
    Status:=KeyboardRead(@Data,SizeOf(TKeyboardData),Count);
   end;
-  
- if Status <> ERROR_SUCCESS then 
+
+ if Status <> ERROR_SUCCESS then
   begin
    ACh:=#0;
   end
@@ -2044,7 +2044,7 @@ begin
   begin
    {Echo to Console}
    ConsoleWriteChar(ACh,AUserData);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2059,7 +2059,7 @@ var
 begin
  {}
  Result:=True;
- 
+
  {Get Next Key}
  Status:=KeyboardRead(@Data,SizeOf(TKeyboardData),Count);
  while Status = ERROR_SUCCESS do
@@ -2071,24 +2071,24 @@ begin
       begin
        {Get Char Unicode}
        CharUnicode:=Data.CharUnicode;
-       
+
        {Check Ctrl Keys}
        if (Data.Modifiers and (KEYBOARD_LEFT_CTRL or KEYBOARD_RIGHT_CTRL)) <> 0 then
         begin
          {Remap Ctrl Code}
          CharUnicode:=WideChar(KeyboardRemapCtrlCode(Data.KeyCode,Word(CharUnicode)));
         end;
-       
+
        ACh:=CharUnicode;
        Break;
-      end; 
-    end; 
-   
+      end;
+    end;
+
    {Get Next Key}
    Status:=KeyboardRead(@Data,SizeOf(TKeyboardData),Count);
   end;
-  
- if Status <> ERROR_SUCCESS then 
+
+ if Status <> ERROR_SUCCESS then
   begin
    ACh:=#0;
   end
@@ -2096,7 +2096,7 @@ begin
   begin
    {Echo to Console}
    ConsoleWriteChar(ACh,AUserData);
-  end;  
+  end;
 end;
 
 {==============================================================================}
@@ -2118,11 +2118,11 @@ var
 begin
  {}
  Result:=nil;
- 
+
  {Check Keyboard}
  if Keyboard = nil then Exit;
  if Keyboard.Device.Signature <> DEVICE_SIGNATURE then Exit;
- 
+
  {Acquire the Lock}
  if CriticalSectionLock(KeyboardTableLock) = ERROR_SUCCESS then
   begin
@@ -2137,7 +2137,7 @@ begin
         Result:=Keyboard;
         Exit;
        end;
-      
+
       {Get Next}
       Current:=Current.Next;
      end;
@@ -2154,7 +2154,7 @@ function KeyboardDeviceTypeToString(KeyboardType:LongWord):String;
 begin
  {}
  Result:='KEYBOARD_TYPE_UNKNOWN';
- 
+
  if KeyboardType <= KEYBOARD_TYPE_MAX then
   begin
    Result:=KEYBOARD_TYPE_NAMES[KeyboardType];
@@ -2167,7 +2167,7 @@ function KeyboardDeviceStateToString(KeyboardState:LongWord):String;
 begin
  {}
  Result:='KEYBOARD_STATE_UNKNOWN';
- 
+
  if KeyboardState <= KEYBOARD_STATE_MAX then
   begin
    Result:=KEYBOARD_STATE_NAMES[KeyboardState];
@@ -2181,7 +2181,7 @@ function KeyboardDeviceStateToNotification(State:LongWord):LongWord;
 begin
  {}
  Result:=DEVICE_NOTIFICATION_NONE;
- 
+
  {Check State}
  case State of
   KEYBOARD_STATE_DETACHED:Result:=DEVICE_NOTIFICATION_DETACH;
@@ -2200,7 +2200,7 @@ function KeyboardRemapCtrlCode(KeyCode,CharCode:Word):Word;
 begin
  {}
  Result:=CharCode;
- 
+
  if (KeyCode >= KEY_CODE_A) and (KeyCode <= KEY_CODE_Z) then
   begin
    {Convert to Ctrl-A to Ctrl-Z (^A to ^Z)}
@@ -2216,22 +2216,22 @@ begin
    {Convert to Ctrl-[ (^[)}
    Result:=27;
   end
- else if (KeyCode = KEY_CODE_BACKSLASH) then 
+ else if (KeyCode = KEY_CODE_BACKSLASH) then
   begin
    {Convert to Ctrl-\ (^\)}
    Result:=28;
   end
- else if (KeyCode = KEY_CODE_RIGHT_SQUARE) then 
+ else if (KeyCode = KEY_CODE_RIGHT_SQUARE) then
   begin
    {Convert to Ctrl-] (^])}
    Result:=29;
   end
- else if (KeyCode = KEY_CODE_6) or (KeyCode = KEY_CODE_CARET) then 
+ else if (KeyCode = KEY_CODE_6) or (KeyCode = KEY_CODE_CARET) then
   begin
    {Convert to Ctrl-^ (^^)}
    Result:=30;
   end
- else if (KeyCode = KEY_CODE_MINUS) or (KeyCode = KEY_CODE_UNDERSCORE) then 
+ else if (KeyCode = KEY_CODE_MINUS) or (KeyCode = KEY_CODE_UNDERSCORE) then
   begin
    {Convert to Ctrl-_ (^_)}
    Result:=31;
@@ -2253,7 +2253,7 @@ begin
  Result:=False;
 
  {Check for Alt}
- if (Modifiers and (KEYBOARD_LEFT_ALT or KEYBOARD_RIGHT_ALT)) <> 0 then 
+ if (Modifiers and (KEYBOARD_LEFT_ALT or KEYBOARD_RIGHT_ALT)) <> 0 then
   begin
    {Check Key Code}
    case KeyCode of
@@ -2262,12 +2262,12 @@ begin
       CharCode:=KeyCode - (KEY_CODE_F1 - $68);
       Result:=True;
      end;
-    {Alt F11-F12} 
+    {Alt F11-F12}
     KEY_CODE_F11..KEY_CODE_F12:begin
       CharCode:=KeyCode - (KEY_CODE_F11 - $8B);
       Result:=True;
      end;
-    {Alt ESC/Space/Back} 
+    {Alt ESC/Space/Back}
     KEY_CODE_ESCAPE:begin
       CharCode:=$01;
       Result:=True;
@@ -2334,7 +2334,7 @@ begin
       Result:=True;
      end;
    end;
-   
+
    {Check for AltGr}
    if (Modifiers and KEYBOARD_ALTGR) = 0 then
     begin
@@ -2528,9 +2528,9 @@ begin
         CharCode:=$83;
         Result:=True;
        end;
-     end; 
+     end;
     end;
-   
+
    {Check Scan Code}
    case ScanCode of
     {Alt Asterisk/Plus}
@@ -2544,7 +2544,7 @@ begin
      end;
    end;
   end
-  
+
  {Check for Ctrl}
  else if (Modifiers and (KEYBOARD_LEFT_CTRL or KEYBOARD_RIGHT_CTRL)) <> 0 then
   begin
@@ -2555,12 +2555,12 @@ begin
       CharCode:=KeyCode - (KEY_CODE_F1 - $5E);
       Result:=True;
      end;
-    {Ctrl F11-F12} 
+    {Ctrl F11-F12}
     KEY_CODE_F11..KEY_CODE_F12:begin
       CharCode:=KeyCode - (KEY_CODE_F11 - $89);
       Result:=True;
      end;
-    {Ctrl Ins/Del} 
+    {Ctrl Ins/Del}
     KEY_CODE_INSERT:begin
       CharCode:=$04;
       Result:=True;
@@ -2609,7 +2609,7 @@ begin
     KEY_CODE_CENTER:begin
       CharCode:=$8F;
       Result:=True;
-     end;    
+     end;
     KEY_CODE_DOWN_ARROW:begin
       CharCode:=$91;
       Result:=True;
@@ -2618,13 +2618,13 @@ begin
       CharCode:=$94;
       Result:=True;
      end;
-    {Ctrl 2} 
+    {Ctrl 2}
     KEY_CODE_2:begin
       CharCode:=$03;
       Result:=True;
      end;
-   end; 
-   
+   end;
+
    {Check Scan Code}
    case ScanCode of
     {Ctrl Plus}
@@ -2634,7 +2634,7 @@ begin
      end;
    end;
   end
-  
+
  {Check for Shift}
  else if (Modifiers and (KEYBOARD_LEFT_SHIFT or KEYBOARD_RIGHT_SHIFT)) <> 0 then
   begin
@@ -2645,12 +2645,12 @@ begin
       CharCode:=KeyCode - (KEY_CODE_F1 - $54);
       Result:=True;
      end;
-    {Shift F11-F12} 
+    {Shift F11-F12}
     KEY_CODE_F11..KEY_CODE_F12:begin
       CharCode:=KeyCode - (KEY_CODE_F11 - $87);
       Result:=True;
      end;
-    {Shift Ins/Del/Tab} 
+    {Shift Ins/Del/Tab}
     KEY_CODE_INSERT:begin
       CharCode:=$05;
       Result:=True;
@@ -2663,9 +2663,9 @@ begin
       CharCode:=$0F;
       Result:=True;
      end;
-   end; 
+   end;
   end
-  
+
  {Check Normal}
  else
   begin
@@ -2676,7 +2676,7 @@ begin
       CharCode:=KeyCode - (KEY_CODE_F1 - $3B);
       Result:=True;
      end;
-    {F11-F12} 
+    {F11-F12}
     KEY_CODE_F11..KEY_CODE_F12:begin
       CharCode:=KeyCode - (KEY_CODE_F11 - $85);
       Result:=True;
@@ -2726,7 +2726,7 @@ begin
       CharCode:=$53;
       Result:=True;
      end;
-   end; 
+   end;
   end;
 end;
 
@@ -2743,9 +2743,9 @@ function KeyboardRemapScanCode(ScanCode,KeyCode:Word;var CharCode:Byte;Modifiers
 begin
  {}
  Result:=False;
- 
+
  {Check for Alt}
- if (Modifiers and (KEYBOARD_LEFT_ALT or KEYBOARD_RIGHT_ALT)) <> 0 then 
+ if (Modifiers and (KEYBOARD_LEFT_ALT or KEYBOARD_RIGHT_ALT)) <> 0 then
   begin
    {Check Scan Code}
    case ScanCode of
@@ -2754,12 +2754,12 @@ begin
       CharCode:=ScanCode + 46; { $68 }
       Result:=True;
      end;
-    {Alt F11-F12} 
+    {Alt F11-F12}
     SCAN_CODE_F11..SCAN_CODE_F12:begin
       CharCode:=ScanCode + 71; { $8B }
       Result:=True;
      end;
-    {Alt ESC/Space/Back} 
+    {Alt ESC/Space/Back}
     SCAN_CODE_ESCAPE:begin
       CharCode:=$01;
       Result:=True;
@@ -2826,7 +2826,7 @@ begin
       Result:=True;
      end;
    end;
-   
+
    {Check for AltGr}
    if (Modifiers and KEYBOARD_ALTGR) = 0 then
     begin
@@ -3020,9 +3020,9 @@ begin
         CharCode:=$83;
         Result:=True;
        end;
-     end; 
+     end;
     end;
-   
+
    {Check Scan Code}
    case ScanCode of
     {Alt Asterisk/Plus}
@@ -3036,7 +3036,7 @@ begin
      end;
    end;
   end
- 
+
  {Check for Ctrl}
  else if (Modifiers and (KEYBOARD_LEFT_CTRL or KEYBOARD_RIGHT_CTRL)) <> 0 then
   begin
@@ -3047,12 +3047,12 @@ begin
       CharCode:=ScanCode + 36; { $5E }
       Result:=True;
      end;
-    {Ctrl F11-F12} 
+    {Ctrl F11-F12}
     SCAN_CODE_F11..SCAN_CODE_F12:begin
       CharCode:=ScanCode + 69; { $89 }
       Result:=True;
      end;
-    {Ctrl Ins/Del} 
+    {Ctrl Ins/Del}
     SCAN_CODE_INSERT:begin
       CharCode:=$04;
       Result:=True;
@@ -3110,13 +3110,13 @@ begin
       CharCode:=$94;
       Result:=True;
      end;
-    {Ctrl 2} 
+    {Ctrl 2}
     SCAN_CODE_2:begin
       CharCode:=$03;
       Result:=True;
      end;
-   end; 
-   
+   end;
+
    {Check Scan Code}
    case ScanCode of
     {Ctrl Plus}
@@ -3126,7 +3126,7 @@ begin
      end;
    end;
   end
- 
+
  {Check for Shift}
  else if (Modifiers and (KEYBOARD_LEFT_SHIFT or KEYBOARD_RIGHT_SHIFT)) <> 0 then
   begin
@@ -3137,12 +3137,12 @@ begin
       CharCode:=ScanCode + 26; { $54 }
       Result:=True;
      end;
-    {Shift F11-F12} 
+    {Shift F11-F12}
     SCAN_CODE_F11..SCAN_CODE_F12:begin
       CharCode:=ScanCode + 67; { $87 }
       Result:=True;
      end;
-    {Shift Ins/Del/Tab} 
+    {Shift Ins/Del/Tab}
     SCAN_CODE_INSERT:begin
       CharCode:=$05;
       Result:=True;
@@ -3157,7 +3157,7 @@ begin
      end;
    end;
   end
- 
+
  {Check Normal}
  else
   begin
@@ -3168,7 +3168,7 @@ begin
       CharCode:=ScanCode + 1; { $3B }
       Result:=True;
      end;
-    {F11-F12} 
+    {F11-F12}
     SCAN_CODE_F11..SCAN_CODE_F12:begin
       CharCode:=ScanCode + 65; { $85 }
       Result:=True;
@@ -3218,7 +3218,7 @@ begin
       CharCode:=$53;
       Result:=True;
      end;
-   end; 
+   end;
   end;
 end;
 
@@ -3237,13 +3237,13 @@ var
 begin
  {}
  Result:=ERROR_INVALID_PARAMETER;
- 
+
  {Check Keyboard}
  if Keyboard = nil then Exit;
- 
+
  {Check Data}
  if Data = nil then Exit;
- 
+
  {Check Flags}
  if (Keyboard.Device.DeviceFlags and KEYBOARD_FLAG_DIRECT_READ) = 0 then
   begin
@@ -3261,13 +3261,13 @@ begin
          begin
           {Copy Data}
           Next^:=Data^;
-      
+
           {Update Count}
           Inc(KeyboardBuffer.Count);
-          
+
           {Signal Data Received}
           if Signal then SemaphoreSignal(KeyboardBuffer.Wait);
-          
+
           {Return Result}
           Result:=ERROR_SUCCESS;
          end;
@@ -3275,12 +3275,12 @@ begin
       else
        begin
         if KEYBOARD_LOG_ENABLED then KeyboardLogError(Keyboard,'Buffer overflow, key discarded');
-        
+
         {Update Statistics}
-        Inc(Keyboard.BufferOverruns); 
-        
+        Inc(Keyboard.BufferOverruns);
+
         Result:=ERROR_INSUFFICIENT_BUFFER;
-       end;            
+       end;
      finally
       {Release the Lock}
       MutexUnlock(KeyboardBufferLock);
@@ -3289,12 +3289,12 @@ begin
    else
     begin
      if KEYBOARD_LOG_ENABLED then KeyboardLogError(Keyboard,'Failed to acquire lock on buffer');
-     
+
      Result:=ERROR_CAN_NOT_COMPLETE;
     end;
   end
  else
-  begin              
+  begin
    {Direct Buffer}
    {Check Buffer}
    if (Keyboard.Buffer.Count < KEYBOARD_BUFFER_SIZE) then
@@ -3305,13 +3305,13 @@ begin
       begin
        {Copy Data}
        Next^:=Data^;
-       
+
        {Update Count}
        Inc(Keyboard.Buffer.Count);
-       
+
        {Signal Data Received}
        if Signal then SemaphoreSignal(Keyboard.Buffer.Wait);
-       
+
        {Return Result}
        Result:=ERROR_SUCCESS;
       end;
@@ -3319,12 +3319,12 @@ begin
    else
     begin
      if KEYBOARD_LOG_ENABLED then KeyboardLogError(Keyboard,'Buffer overflow, key discarded');
-     
+
      {Update Statistics}
-     Inc(Keyboard.BufferOverruns); 
-     
+     Inc(Keyboard.BufferOverruns);
+
      Result:=ERROR_INSUFFICIENT_BUFFER;
-    end;            
+    end;
   end;
 end;
 
@@ -3337,7 +3337,7 @@ begin
  {}
  {Check Level}
  if Level < KEYBOARD_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = KEYBOARD_LOG_LEVEL_DEBUG then
@@ -3352,17 +3352,17 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'Keyboard: ';
- 
+
  {Check Keyboard}
  if Keyboard <> nil then
   begin
    WorkBuffer:=WorkBuffer + KEYBOARD_NAME_PREFIX + IntToStr(Keyboard.KeyboardId) + ': ';
   end;
-  
- {Output Logging} 
+
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_KEYBOARD,LogLevelToLoggingSeverity(Level),'Keyboard',WorkBuffer + AText);
 end;
 
@@ -3406,7 +3406,7 @@ initialization
  KeyboardInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

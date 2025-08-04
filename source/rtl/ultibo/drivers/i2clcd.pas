@@ -17,7 +17,7 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
@@ -33,27 +33,27 @@ Generic I2C LCD
  Generic 16x2 or 20x4 LCD displays with an I2C interface are available from many suppliers and
  commonly include a Hitachi HD44780 LCD and NXP PCF8574 I/O expander to convert the I2C data into
  GPIO inputs for the display.
- 
+
  This unit combines the drivers for the HD44780 and PCF8574 to create a console device which can
  be used with the standard console and console window API.
- 
+
  Only text mode is supported as the HD44780 does not support setting individual pixels.
- 
+
  Some examples of generic displays that will work with the unit include the following:
- 
+
   https://www.amazon.com/SunFounder-Serial-Module-Display-Arduino/dp/B019K5X53O
-  
+
   https://www.auselectronicsdirect.com.au/2-x-16-lcd-display-module-with-i2c-interface-for-a
 
  But you can find these units from many suppliers worldwide.
- 
+
 }
 
 {$mode delphi} {Default to Delphi compatible syntax}
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
-unit I2CLCD; 
+unit I2CLCD;
 
 interface
 
@@ -69,17 +69,17 @@ const
  I2CLCD_CONSOLE_DESCRIPTION = 'Generic I2C LCD';  {Description of I2CLCD device}
 
  I2CLCD_SIGNATURE = $00CF8574;
- 
+
  {I2CLCD GPIO constants}
  I2CLCD_PIN_RS        = GPIO_PIN_0; {GPIO pin for the LCD RS line}
  I2CLCD_PIN_RW        = GPIO_PIN_1; {GPIO pin for the LCD RW line}
  I2CLCD_PIN_EN        = GPIO_PIN_2; {GPIO pin for the LCD EN line}
- I2CLCD_PIN_BACKLIGHT = GPIO_PIN_3; {GPIO pin for the LCD Backlight} 
+ I2CLCD_PIN_BACKLIGHT = GPIO_PIN_3; {GPIO pin for the LCD Backlight}
  I2CLCD_PIN_D4        = GPIO_PIN_4; {GPIO pin for the LCD D4 line}
  I2CLCD_PIN_D5        = GPIO_PIN_5; {GPIO pin for the LCD D5 line}
  I2CLCD_PIN_D6        = GPIO_PIN_6; {GPIO pin for the LCD D6 line}
  I2CLCD_PIN_D7        = GPIO_PIN_7; {GPIO pin for the LCD D7 line}
- 
+
 {==============================================================================}
 type
  {I2CLCD specific types}
@@ -97,13 +97,13 @@ type
 var
  {I2CLCD specific variables}
  I2CLCD_AUTOSTART:LongBool = True;    {If True then auto start the I2CLCD device on boot}
- 
+
  I2CLCD_I2C_ADDRESS:Word = $27;
  I2CLCD_I2C_DEVICE:String = 'I2C0';
- 
+
  I2CLCD_LCD_WIDTH:LongWord = 16;
  I2CLCD_LCD_HEIGHT:LongWord = 2;
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure I2CLCDInit;
@@ -118,7 +118,7 @@ function I2CLCDBacklightOff(Handle:THandle):Boolean;{$IFDEF API_EXPORT_I2CLCD} s
 
 {==============================================================================}
 {I2CLCD Helper Functions}
- 
+
 {==============================================================================}
 {==============================================================================}
 
@@ -129,9 +129,9 @@ implementation
 var
  {I2CLCD specific variables}
  I2CLCDInitialized:Boolean;
- 
+
  I2CLCDDefault:THandle = INVALID_HANDLE_VALUE;
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -146,7 +146,7 @@ begin
  {}
  {Check Initialized}
  if I2CLCDInitialized then Exit;
- 
+
  {Check Environment Variables}
  {I2CLCD_AUTOSTART}
  WorkInt:=StrToIntDef(EnvironmentGet('I2CLCD_AUTOSTART'),1);
@@ -155,11 +155,11 @@ begin
  {I2CLCD_I2C_ADDRESS}
  WorkInt:=StrToIntDef(EnvironmentGet('I2CLCD_I2C_ADDRESS'),0);
  if WorkInt > 0 then I2CLCD_I2C_ADDRESS:=WorkInt;
- 
+
  {I2CLCD_I2C_DEVICE}
  WorkBuffer:=EnvironmentGet('I2CLCD_I2C_DEVICE');
  if Length(WorkBuffer) <> 0 then I2CLCD_I2C_DEVICE:=WorkBuffer;
- 
+
  {I2CLCD_LCD_WIDTH}
  WorkInt:=StrToIntDef(EnvironmentGet('I2CLCD_LCD_WIDTH'),I2CLCD_LCD_WIDTH);
  if WorkInt <> I2CLCD_LCD_WIDTH then I2CLCD_LCD_WIDTH:=WorkInt;
@@ -167,13 +167,13 @@ begin
  {I2CLCD_LCD_HEIGHT}
  WorkInt:=StrToIntDef(EnvironmentGet('I2CLCD_LCD_HEIGHT'),I2CLCD_LCD_HEIGHT);
  if WorkInt <> I2CLCD_LCD_HEIGHT then I2CLCD_LCD_HEIGHT:=WorkInt;
- 
- {Start I2CLCD} 
+
+ {Start I2CLCD}
  if I2CLCD_AUTOSTART then
   begin
    I2CLCDDefault:=I2CLCDStart(I2CLCD_I2C_DEVICE,I2CLCD_I2C_ADDRESS,I2CLCD_LCD_WIDTH,I2CLCD_LCD_HEIGHT);
   end;
- 
+
  I2CLCDInitialized:=True;
 end;
 
@@ -197,19 +197,19 @@ var
 begin
  {}
  Result:=INVALID_HANDLE_VALUE;
- 
+
  {Check Device}
  if Length(Device) = 0 then Exit;
- 
+
  {Check Address}
  if Address = I2C_ADDRESS_INVALID then Exit;
- 
+
  {Check Width}
  if Width < 1 then Width:=16;
- 
+
  {Check Height}
  if Height < 1 then Height:=2;
- 
+
  {Check I2C Device}
  I2C:=PI2CDevice(DeviceFindByName(Device));
  if I2C = nil then
@@ -229,7 +229,7 @@ begin
    {Create I2CLCD}
    I2CLCDDisplay:=AllocMem(SizeOf(TI2CLCDDisplay));
    if I2CLCDDisplay = nil then Exit;
-   
+
    {Update I2CLCD}
    I2CLCDDisplay.Signature:=I2CLCD_SIGNATURE;
    I2CLCDDisplay.Width:=Width;
@@ -237,13 +237,13 @@ begin
    I2CLCDDisplay.I2C:=I2C;
    I2CLCDDisplay.GPIO:=GPIO;
    I2CLCDDisplay.Console:=Console;
-   
+
    {Setup Backlight}
    GPIODeviceFunctionSelect(GPIO,I2CLCD_PIN_BACKLIGHT,GPIO_FUNCTION_OUT);
-   
+
    {Return Result}
    Result:=THandle(I2CLCDDisplay);
-   
+
    {Check Default}
    if I2CLCDDefault = INVALID_HANDLE_VALUE then
     begin
@@ -251,7 +251,7 @@ begin
     end;
   finally
    if Result = INVALID_HANDLE_VALUE then HD44780ConsoleDestroy(Console);
-  end;  
+  end;
  finally
   if Result = INVALID_HANDLE_VALUE then PCF857XGPIODestroy(GPIO);
  end;
@@ -268,16 +268,16 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Handle:=I2CLCDDefault;
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Display}
  I2CLCDDisplay:=PI2CLCDDisplay(Handle);
  if I2CLCDDisplay = nil then Exit;
  if I2CLCDDisplay.Signature <> I2CLCD_SIGNATURE then Exit;
- 
+
  {Check Console Device}
  if I2CLCDDisplay.Console <> nil then
   begin
@@ -286,7 +286,7 @@ begin
     begin
      {Update I2CLCD}
      I2CLCDDisplay.Console:=nil;
-     
+
      {Check GPIO Device}
      if I2CLCDDisplay.GPIO <> nil then
       begin
@@ -295,23 +295,23 @@ begin
         begin
          {Update I2CLCD}
          I2CLCDDisplay.GPIO:=nil;
-         
+
          {Check Default}
          if I2CLCDDefault = THandle(PtrUInt(I2CLCDDisplay)) then
           begin
            I2CLCDDefault:=INVALID_HANDLE_VALUE;
           end;
-         
+
          {Invalidate I2CLCD}
          I2CLCDDisplay.Signature:=0;
-         
+
          {Destroy I2CLCD}
          FreeMem(I2CLCDDisplay);
-         
+
          {Return Result}
          Result:=True;
-        end; 
-      end;  
+        end;
+      end;
     end;
   end;
 end;
@@ -328,20 +328,20 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Handle:=I2CLCDDefault;
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Display}
  I2CLCDDisplay:=PI2CLCDDisplay(Handle);
  if I2CLCDDisplay = nil then Exit;
  if I2CLCDDisplay.Signature <> I2CLCD_SIGNATURE then Exit;
- 
+
  {Turn on Backlight}
  GPIODeviceOutputSet(I2CLCDDisplay.GPIO,I2CLCD_PIN_BACKLIGHT,GPIO_LEVEL_HIGH);
 
- Result:=True; 
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -355,20 +355,20 @@ var
 begin
  {}
  Result:=False;
- 
+
  {Check Handle}
  if Handle = INVALID_HANDLE_VALUE then Handle:=I2CLCDDefault;
  if Handle = INVALID_HANDLE_VALUE then Exit;
- 
+
  {Get Display}
  I2CLCDDisplay:=PI2CLCDDisplay(Handle);
  if I2CLCDDisplay = nil then Exit;
  if I2CLCDDisplay.Signature <> I2CLCD_SIGNATURE then Exit;
- 
+
  {Turn off Backlight}
  GPIODeviceOutputSet(I2CLCDDisplay.GPIO,I2CLCD_PIN_BACKLIGHT,GPIO_LEVEL_LOW);
 
- Result:=True; 
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -380,9 +380,9 @@ end;
 
 initialization
  I2CLCDInit;
- 
+
 {==============================================================================}
- 
+
 {finalization}
  {Nothing}
 

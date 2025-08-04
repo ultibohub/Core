@@ -17,17 +17,17 @@ Licence
 =======
 
  LGPLv2.1 with static linking exception (See COPYING.modifiedLGPL.txt)
- 
+
 Credits
 =======
 
  Information for this unit was obtained from:
 
- 
+
 References
 ==========
 
- 
+
 FTP
 ===
 
@@ -52,9 +52,9 @@ uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils,Classes,Ulti
 {==============================================================================}
 const
  {FTP specific constants}
- 
+
  //To Do //See: POP3 etc for framework
-        
+
  {FTP logging}
  FTP_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {FTP debugging messages}
  FTP_LOG_LEVEL_INFO      = LOG_LEVEL_INFO;   {FTP informational messages}
@@ -62,14 +62,14 @@ const
  FTP_LOG_LEVEL_ERROR     = LOG_LEVEL_ERROR;  {FTP error messages}
  FTP_LOG_LEVEL_NONE      = LOG_LEVEL_NONE;   {No FTP messages}
 
-var 
- FTP_DEFAULT_LOG_LEVEL:LongWord = FTP_LOG_LEVEL_DEBUG; {Minimum level for FTP messages.  Only messages with level greater than or equal to this will be printed} 
- 
-var 
+var
+ FTP_DEFAULT_LOG_LEVEL:LongWord = FTP_LOG_LEVEL_DEBUG; {Minimum level for FTP messages.  Only messages with level greater than or equal to this will be printed}
+
+var
  {FTP logging}
- FTP_LOG_ENABLED:Boolean; 
-        
-              
+ FTP_LOG_ENABLED:Boolean;
+
+
 {==============================================================================}
 //type
  {FTP specific types}
@@ -82,13 +82,13 @@ var
  {Helper classes}
 
  {Client classes}
- 
+
  {Server classes}
- 
+
 {==============================================================================}
 {var}
  {FTP specific variables}
- 
+
 {==============================================================================}
 {Initialization Functions}
 procedure FTPInit;
@@ -130,7 +130,7 @@ var
 {==============================================================================}
 {==============================================================================}
 {TFTPListener}
- 
+
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
@@ -139,10 +139,10 @@ begin
  {}
  {Check Initialized}
  if FTPInitialized then Exit;
- 
+
  {Initialize Logging}
- FTP_LOG_ENABLED:=(FTP_DEFAULT_LOG_LEVEL <> FTP_LOG_LEVEL_NONE); 
- 
+ FTP_LOG_ENABLED:=(FTP_DEFAULT_LOG_LEVEL <> FTP_LOG_LEVEL_NONE);
+
  FTPInitialized:=True;
 end;
 
@@ -160,7 +160,7 @@ begin
  {}
  {Check Level}
  if Level < FTP_DEFAULT_LOG_LEVEL then Exit;
- 
+
  WorkBuffer:='';
  {Check Level}
  if Level = FTP_LOG_LEVEL_DEBUG then
@@ -175,11 +175,11 @@ begin
   begin
    WorkBuffer:=WorkBuffer + '[ERROR] ';
   end;
- 
+
  {Add Prefix}
  WorkBuffer:=WorkBuffer + 'FTP: ';
 
- {Output Logging} 
+ {Output Logging}
  LoggingOutputEx(LOGGING_FACILITY_IMAP,LogLevelToLoggingSeverity(Level),'FTP',WorkBuffer + AText);
 end;
 
@@ -222,7 +222,7 @@ initialization
  FTPInit;
 
 {==============================================================================}
- 
+
 finalization
  {Nothing}
 

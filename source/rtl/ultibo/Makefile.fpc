@@ -63,7 +63,7 @@ implicitunits=exeinfo \
               cp852 \
               unicodenumtable \
               unicodedata
-       
+
 [require]
 nortl=y
 
@@ -226,7 +226,7 @@ ULTIBO_UNITS=globalconfig \
              graphicsconsole \
              syscalls \
              api
-             
+
 ULTIBO_FONTS=Latin1_8x8 \
              Latin1_8x10 \
              Latin1_8x12 \
@@ -234,7 +234,7 @@ ULTIBO_FONTS=Latin1_8x8 \
              Sun_12x22 \
              Default8x9 \
              Default8x16
-             
+
 ULTIBO_EXTRAS=ConsoleShell \
               RemoteShell \
               ShellFilesystem \
@@ -245,7 +245,7 @@ ULTIBO_EXTRAS=ConsoleShell \
               WiringI2C \
               WiringSerial \
               WiringSPI
-              
+
 ULTIBO_PLATFORM_UNITS=
 ULTIBO_PLATFORM_EXTRAS=
 
@@ -529,11 +529,11 @@ fgl$(PPUEXT): $(OBJPASDIR)/fgl.pp objpas$(PPUEXT) types$(PPUEXT) system$(PPUEXT)
 
 dateutil$(PPUEXT) : $(OBJPASDIR)/dateutil.pp $(SYSTEMUNIT)$(PPUEXT)
         $(COMPILER) -I$(OBJPASDIR) $(OBJPASDIR)/dateutil.pp
-       
+
 # let it depend on buildcollations to prevent simultaneous building of unicodedata
 character$(PPUEXT): sysutils$(PPUEXT) $(OBJPASDIR)/character.pas objpas$(PPUEXT) rtlconsts$(PPUEXT)
         $(COMPILER) $(OBJPASDIR)/character.pas
-        
+
 #
 # Mac Pascal Model
 #
@@ -570,7 +570,7 @@ charset$(PPUEXT) : $(INC)/charset.pp objpas$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
 
 #cp866$(PPUEXT): $(RTL)/charmaps/cp866.pas system$(PPUEXT) charset$(PPUEXT)
 #        $(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp866.pas
-        
+
 #cp8859_5$(PPUEXT): $(RTL)/charmaps/cp8859_5.pas system$(PPUEXT) charset$(PPUEXT)
 #        $(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp8859_5.pas
 
@@ -621,7 +621,7 @@ charset$(PPUEXT) : $(INC)/charset.pp objpas$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
 
 #cp8859_2$(PPUEXT): $(RTL)/charmaps/cp8859_2.pas system$(PPUEXT) charset$(PPUEXT)
 #        $(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cp8859_2.pas
-    
+
 cpall$(PPUEXT): $(RTL)/charmaps/cpall.pas system$(PPUEXT) charset$(PPUEXT)
         $(COMPILER) -Fu$(INC) -Fi$(RTL)/charmaps $(RTL)/charmaps/cpall.pas
 
@@ -630,10 +630,10 @@ iso7185$(PPUEXT) : $(INC)/iso7185.pp $(SYSTEMUNIT)$(PPUEXT)
 
 extpas$(PPUEXT) : $(INC)/extpas.pp dos$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
         $(COMPILER) $(INC)/extpas.pp
-        
+
 fpwidestring$(PPUEXT): $(OBJPASDIR)/fpwidestring.pp character$(PPUEXT)
         $(COMPILER) $(OBJPASDIR)/fpwidestring.pp
-        
+
 #
 # Unit specific rules
 #
@@ -647,7 +647,7 @@ $(foreach unit,$(CPU_UNITS),$(eval $(call CPU_UNITS_RULE,$(unit))))
 $(addsuffix $(PPUEXT),$(CPU_UNITS)):
 	$(COMPILER) $<
 
-    
+
 #
 # Ultibo specific rules
 #
@@ -678,7 +678,7 @@ $(foreach unit,$(ULTIBO_EXTRAS),$(eval $(call ULTIBO_EXTRAS_RULE,$(unit))))
 
 $(addsuffix $(PPUEXT),$(ULTIBO_EXTRAS)):
 	$(COMPILER) $<
-    
+
 #
 # Ultibo Platform specific rules
 #
@@ -714,7 +714,7 @@ $(foreach unit,$(ULTIBO_DRIVER_UNITS),$(eval $(call ULTIBO_DRIVER_UNITS_RULE,$(u
 
 $(addsuffix $(PPUEXT),$(ULTIBO_DRIVER_UNITS)):
 	$(COMPILER) $<
-    
+
 #
 # Ultibo Keymap specific rules
 #
@@ -727,7 +727,7 @@ $(foreach unit,$(ULTIBO_KEYMAP_UNITS),$(eval $(call ULTIBO_KEYMAP_UNITS_RULE,$(u
 
 $(addsuffix $(PPUEXT),$(ULTIBO_KEYMAP_UNITS)):
 	$(COMPILER) $<
-    
+
 #
 # Ultibo Code Page specific rules
 #
@@ -740,7 +740,7 @@ $(foreach unit,$(ULTIBO_CODEPAGE_UNITS),$(eval $(call ULTIBO_CODEPAGE_UNITS_RULE
 
 $(addsuffix $(PPUEXT),$(ULTIBO_CODEPAGE_UNITS)):
 	$(COMPILER) $<
-    
+
 #
 # Other $(SYSTEMUNIT)-dependent RTL Units
 #
