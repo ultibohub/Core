@@ -42,7 +42,18 @@ unit RemoteShell;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils,Classes,UltiboClasses,Winsock2,Services,Shell;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  SysUtils,
+  Classes,
+  UltiboClasses,
+  Winsock2,
+  Services,
+  Shell;
 
 {==============================================================================}
 {Global definitions}

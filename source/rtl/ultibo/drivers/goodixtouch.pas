@@ -65,7 +65,19 @@ unit GoodixTouch;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,I2C,Touch,Mouse,Keyboard,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  GPIO,
+  I2C,
+  Touch,
+  Mouse,
+  Keyboard,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

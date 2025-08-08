@@ -59,8 +59,19 @@ unit NTFSTypes;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,FileSystem,SysUtils,Classes,Unicode,Security,Ultibo,UltiboUtils,UltiboClasses,
-     NTFSConst;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  FileSystem,
+  SysUtils,
+  Classes,
+  Unicode,
+  Security,
+  Ultibo,
+  UltiboUtils,
+  UltiboClasses,
+  NTFSConst;
 
 {==============================================================================}
 {Global definitions}

@@ -94,7 +94,10 @@ unit VersatilePB;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes;
 
 {==============================================================================}
 {Global definitions}

@@ -62,7 +62,16 @@ unit WiringSerial;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Serial,SysUtils,Wiring;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Serial,
+  SysUtils,
+  Wiring;
 
 {==============================================================================}
 {Global definitions}

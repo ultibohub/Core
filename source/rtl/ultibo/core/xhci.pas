@@ -42,7 +42,15 @@ unit XHCI;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,PCI,USB;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  PCI,
+  USB;
 
 //To Do //See: \u-boot-HEAD-5745f8c\drivers\usb\host
 //To Do //Pi4

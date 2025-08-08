@@ -41,7 +41,14 @@ unit Authentication;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils,Classes;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  SysUtils,
+  Classes;
 
 {==============================================================================}
 {Global definitions}

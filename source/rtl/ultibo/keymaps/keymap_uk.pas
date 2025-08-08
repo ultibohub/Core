@@ -48,7 +48,13 @@ unit Keymap_UK;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Keymap,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Keymap,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

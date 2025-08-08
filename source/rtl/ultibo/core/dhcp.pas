@@ -43,7 +43,22 @@ unit DHCP;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,SysUtils,Classes,Network,Transport,Protocol,IP,IPv6,ARP,UDP,Ultibo,UltiboClasses;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  SysUtils,
+  Classes,
+  Network,
+  Transport,
+  Protocol,
+  IP,
+  IPv6,
+  ARP,
+  UDP,
+  Ultibo,
+  UltiboClasses;
 
 {==============================================================================}
 {Global definitions}

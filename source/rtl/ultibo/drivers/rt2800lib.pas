@@ -46,7 +46,18 @@ unit RT2800LIB;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Network,WiFi,Crypto,RT2X00LIB,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Network,
+  WiFi,
+  Crypto,
+  RT2X00LIB,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

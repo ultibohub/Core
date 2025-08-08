@@ -42,7 +42,20 @@ unit VirtualDisk;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Storage,FileSystem,SysUtils,Classes,Unicode,Ultibo,UltiboUtils,UltiboClasses;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Storage,
+  FileSystem,
+  SysUtils,
+  Classes,
+  Unicode,
+  Ultibo,
+  UltiboUtils,
+  UltiboClasses;
 
 {==============================================================================}
 {Global definitions}

@@ -60,7 +60,17 @@ unit USBCDCEthernet;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,USBCDC,Network,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  USB,
+  USBCDC,
+  Network,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

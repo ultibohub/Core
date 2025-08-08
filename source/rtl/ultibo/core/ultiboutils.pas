@@ -41,7 +41,16 @@ unit UltiboUtils;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Threads,Unicode,Security,Ultibo,SysUtils,Classes;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Threads,
+  Unicode,
+  Security,
+  Ultibo,
+  SysUtils,
+  Classes;
 
 {==============================================================================}
 {Global definitions}

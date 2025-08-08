@@ -45,7 +45,19 @@ unit ARP;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Threads,SysUtils,Classes,Network,Transport,Protocol,Ultibo,UltiboClasses;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  Threads,
+  SysUtils,
+  Classes,
+  Network,
+  Transport,
+  Protocol,
+  Ultibo,
+  UltiboClasses;
 
 {==============================================================================}
 {Global definitions}

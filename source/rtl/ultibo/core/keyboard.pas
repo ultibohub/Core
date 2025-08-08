@@ -67,7 +67,15 @@ unit Keyboard;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Keymap,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Keymap,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

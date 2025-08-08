@@ -43,7 +43,11 @@ unit CP1255ANSI;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Locale;
 
 {==============================================================================}
 {Global definitions}
@@ -76,7 +80,8 @@ procedure CP1255ANSIInit;
 
 implementation
 
-uses CP862OEM;
+uses
+  CP862OEM;
 
 {==============================================================================}
 {==============================================================================}

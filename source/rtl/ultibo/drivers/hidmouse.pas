@@ -53,7 +53,16 @@ unit HIDMouse;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,HID,Mouse,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  HID,
+  Mouse,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

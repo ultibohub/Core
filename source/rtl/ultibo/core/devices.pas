@@ -106,7 +106,14 @@ unit Devices;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  HeapManager,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

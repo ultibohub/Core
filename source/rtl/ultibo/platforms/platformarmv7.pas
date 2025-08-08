@@ -73,7 +73,15 @@ unit PlatformARMv7;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformARM,HeapManager,Threads,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  PlatformARM,
+  HeapManager,
+  Threads,
+  SysUtils;
 
 //To Do //Look for:
 

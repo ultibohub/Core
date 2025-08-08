@@ -71,8 +71,24 @@ unit NTFS;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,FileSystem,SysUtils,Classes,Unicode,Security,Ultibo,UltiboUtils,UltiboClasses,
-     NTFSConst,NTFSTypes,NTFSClass,NTFSUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  FileSystem,
+  SysUtils,
+  Classes,
+  Unicode,
+  Security,
+  Ultibo,
+  UltiboUtils,
+  UltiboClasses,
+  NTFSConst,
+  NTFSTypes,
+  NTFSClass,
+  NTFSUtils;
 
 //To Do //Look for:
 

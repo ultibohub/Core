@@ -65,7 +65,19 @@ unit AF16x2LCD;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,I2C,GPIO,Console,MCP230XX,HD44780,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  I2C,
+  GPIO,
+  Console,
+  MCP230XX,
+  HD44780,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

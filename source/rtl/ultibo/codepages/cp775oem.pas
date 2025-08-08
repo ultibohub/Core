@@ -43,7 +43,11 @@ unit CP775OEM;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Locale;
 
 {==============================================================================}
 {Global definitions}
@@ -76,7 +80,8 @@ procedure CP775OEMInit;
 
 implementation
 
-uses CP1257ANSI;
+uses
+  CP1257ANSI;
 
 {==============================================================================}
 {==============================================================================}

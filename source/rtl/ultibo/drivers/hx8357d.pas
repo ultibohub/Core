@@ -52,7 +52,18 @@ unit HX8357D;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,SPI,Framebuffer,TFTFramebuffer,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  GPIO,
+  SPI,
+  Framebuffer,
+  TFTFramebuffer,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

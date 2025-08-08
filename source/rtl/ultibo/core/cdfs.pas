@@ -42,7 +42,19 @@ unit CDFS;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,FileSystem,SysUtils,Classes,Unicode,Ultibo,UltiboUtils,UltiboClasses;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  FileSystem,
+  SysUtils,
+  Classes,
+  Unicode,
+  Ultibo,
+  UltiboUtils,
+  UltiboClasses;
 
 //To Do //How to protect AllocCluster/ReleaseCluster ? (ClusterLock ? / FBlocks !)
 

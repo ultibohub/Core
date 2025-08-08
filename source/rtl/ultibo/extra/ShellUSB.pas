@@ -42,7 +42,20 @@ unit ShellUSB;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Shell;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  USB,
+  SysUtils,
+  Classes,
+  Ultibo,
+  UltiboClasses,
+  UltiboUtils,
+  Shell;
 
 {==============================================================================}
 {Global definitions}

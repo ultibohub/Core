@@ -42,7 +42,18 @@ unit POP3;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils,Classes,UltiboClasses,Winsock2,Crypto,Authentication;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  SysUtils,
+  Classes,
+  UltiboClasses,
+  Winsock2,
+  Crypto,
+  Authentication;
 
 {==============================================================================}
 {Global definitions}

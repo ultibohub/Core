@@ -42,7 +42,14 @@ unit Codec;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  SysUtils;
 
 //To Do //See also: \source\packages\a52\src\a52.pas
 //To Do //See also: \source\packages\fcl-sound\src

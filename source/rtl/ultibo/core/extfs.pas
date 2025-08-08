@@ -42,7 +42,19 @@ unit EXTFS;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,FileSystem,SysUtils,Classes,Unicode,Ultibo,UltiboUtils,UltiboClasses;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  FileSystem,
+  SysUtils,
+  Classes,
+  Unicode,
+  Ultibo,
+  UltiboUtils,
+  UltiboClasses;
 
 //To Do //See: http://wiki.osdev.org/Ext2
 

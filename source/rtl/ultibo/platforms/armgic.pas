@@ -44,7 +44,18 @@ unit ARMGIC;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF CPUARM}{$IFDEF CPUAARCH64}PlatformAARCH64,{$ENDIF CPUAARCH64}SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  {$IFDEF CPUARM}
+  PlatformARM,
+  {$ENDIF CPUARM}
+  {$IFDEF CPUAARCH64}
+  PlatformAARCH64,
+  {$ENDIF CPUAARCH64}
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

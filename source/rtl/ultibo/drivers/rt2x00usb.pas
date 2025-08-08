@@ -46,7 +46,18 @@ unit RT2X00USB;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Network,WiFi,RT2X00LIB,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  USB,
+  Network,
+  WiFi,
+  RT2X00LIB,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

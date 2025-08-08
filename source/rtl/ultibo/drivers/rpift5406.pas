@@ -105,7 +105,17 @@ unit RPiFT5406;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads,Devices,Touch,Mouse,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  HeapManager,
+  Threads,
+  Devices,
+  Touch,
+  Mouse,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

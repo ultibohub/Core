@@ -72,7 +72,20 @@ unit RPiSenseHat;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,GPIO,I2C,Framebuffer,Keyboard,Keymap,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  HeapManager,
+  Devices,
+  GPIO,
+  I2C,
+  Framebuffer,
+  Keyboard,
+  Keymap,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

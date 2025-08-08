@@ -57,7 +57,15 @@ unit UART;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Serial,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Serial,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

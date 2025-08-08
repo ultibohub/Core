@@ -45,7 +45,23 @@ interface
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformPC,Platformx86,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF};
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  PlatformPC,
+  Platformx86,
+  Threads,
+  {$IFDEF CONSOLE_EARLY_INIT}
+  Devices,
+  Framebuffer,
+  Console,
+  {$ENDIF}
+  {$IFDEF LOGGING_EARLY_INIT}
+  Logging,
+  {$ENDIF}
+  SysUtils;
 
 //To Do //See: \u-boot-HEAD-5745f8c\arch\x86\cpu
 

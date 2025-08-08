@@ -41,11 +41,59 @@ unit WebStatus;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF}{$IFDEF CPUAARCH64}PlatformAARCH64,{$ENDIF}
-     Threads,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Winsock2,HTTP,HeapManager,
-     DeviceTree,Devices,USB,PCI,MMC,HID,USBHID,Network,Transport,Protocol,Storage,
-     FileSystem,Keyboard,Keymap,Mouse,Touch,Console,Framebuffer,Font,Logging,Timezone,
-     Locale,Unicode,Iphlpapi,GPIO,UART,Serial,I2C,SPI,PWM,DMA,RTC,Joystick;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  {$IFDEF CPUARM}
+  PlatformARM,
+  {$ENDIF}
+  {$IFDEF CPUAARCH64}
+  PlatformAARCH64,
+  {$ENDIF}
+  Threads,
+  SysUtils,
+  Classes,
+  Ultibo,
+  UltiboClasses,
+  UltiboUtils,
+  Winsock2,
+  HTTP,
+  HeapManager,
+  DeviceTree,
+  Devices,
+  USB,
+  PCI,
+  MMC,
+  HID,
+  USBHID,
+  Network,
+  Transport,
+  Protocol,
+  Storage,
+  FileSystem,
+  Keyboard,
+  Keymap,
+  Mouse,
+  Touch,
+  Console,
+  Framebuffer,
+  Font,
+  Logging,
+  Timezone,
+  Locale,
+  Unicode,
+  Iphlpapi,
+  GPIO,
+  UART,
+  Serial,
+  I2C,
+  SPI,
+  PWM,
+  DMA,
+  RTC,
+  Joystick;
 
 //To Do //Look for:
 

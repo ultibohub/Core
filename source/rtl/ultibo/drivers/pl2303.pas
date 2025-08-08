@@ -48,7 +48,16 @@ unit PL2303;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Serial,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  USB,
+  Serial,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

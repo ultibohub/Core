@@ -60,7 +60,16 @@ unit WiringI2C;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,I2C,SysUtils,Wiring;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  I2C,
+  SysUtils,
+  Wiring;
 
 {==============================================================================}
 {Global definitions}

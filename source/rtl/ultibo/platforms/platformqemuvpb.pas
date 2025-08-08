@@ -59,7 +59,31 @@ interface
 {Global definitions} {Must be prior to uses}
 {$INCLUDE ..\core\GlobalDefines.inc}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,VersatilePB,Platform,{$IFDEF CPUARM}PlatformARM,PlatformARMv7,{$ENDIF CPUARM}{$IFDEF CPUAARCH64}PlatformAARCH64,PlatformARMv8,{$ENDIF CPUAARCH64}HeapManager,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF},SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  VersatilePB,
+  Platform,
+  {$IFDEF CPUARM}
+  PlatformARM,
+  PlatformARMv7,
+  {$ENDIF CPUARM}
+  {$IFDEF CPUAARCH64}
+  PlatformAARCH64,
+  PlatformARMv8,
+  {$ENDIF CPUAARCH64}
+  HeapManager,
+  Threads,
+  {$IFDEF CONSOLE_EARLY_INIT}
+  Devices,
+  Framebuffer,
+  Console,
+  {$ENDIF}
+  {$IFDEF LOGGING_EARLY_INIT}
+  Logging,
+  {$ENDIF}
+  SysUtils;
 
 {==============================================================================}
 {const}

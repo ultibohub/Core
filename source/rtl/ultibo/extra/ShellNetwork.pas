@@ -42,8 +42,23 @@ unit ShellNetwork;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Network,SysUtils,
-     Classes,Ultibo,UltiboClasses,UltiboUtils,Shell,Winsock2,Iphlpapi,Services;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Network,
+  SysUtils,
+  Classes,
+  Ultibo,
+  UltiboClasses,
+  UltiboUtils,
+  Shell,
+  Winsock2,
+  Iphlpapi,
+  Services;
 
 {==============================================================================}
 {Global definitions}

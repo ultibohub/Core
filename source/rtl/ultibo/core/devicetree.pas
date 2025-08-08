@@ -72,7 +72,12 @@ unit DeviceTree;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

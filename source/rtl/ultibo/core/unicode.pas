@@ -70,7 +70,13 @@ unit Unicode;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Locale,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Locale,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

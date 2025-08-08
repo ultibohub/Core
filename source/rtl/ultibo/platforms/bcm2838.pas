@@ -79,7 +79,10 @@ unit BCM2838;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes;
 
 {==============================================================================}
 {Global definitions}

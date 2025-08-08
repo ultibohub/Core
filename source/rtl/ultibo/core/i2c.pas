@@ -72,7 +72,14 @@ unit I2C;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

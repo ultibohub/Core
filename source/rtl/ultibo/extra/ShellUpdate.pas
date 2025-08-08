@@ -42,7 +42,21 @@ unit ShellUpdate;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,FileSystem,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Shell,HTTP;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  FileSystem,
+  SysUtils,
+  Classes,
+  Ultibo,
+  UltiboClasses,
+  UltiboUtils,
+  Shell,
+  HTTP;
 
 //To Do //Look for:
 

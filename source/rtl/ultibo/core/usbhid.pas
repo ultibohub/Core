@@ -76,7 +76,16 @@ unit USBHID;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,HID,USB,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  HID,
+  USB,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

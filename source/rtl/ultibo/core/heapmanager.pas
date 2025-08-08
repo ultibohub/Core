@@ -41,7 +41,10 @@ unit HeapManager;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes;
 
 //To Do //Look for:
 

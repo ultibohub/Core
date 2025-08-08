@@ -54,7 +54,16 @@ unit SMSC95XX;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Network,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  USB,
+  Network,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

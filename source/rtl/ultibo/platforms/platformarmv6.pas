@@ -59,7 +59,15 @@ unit PlatformARMv6;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,PlatformARM,HeapManager,Threads,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  PlatformARM,
+  HeapManager,
+  Threads,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

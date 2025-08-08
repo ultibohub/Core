@@ -41,7 +41,18 @@ unit NFS;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,FileSystem,SysUtils,Classes,UltiboClasses,Winsock2;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  FileSystem,
+  SysUtils,
+  Classes,
+  UltiboClasses,
+  Winsock2;
 
 //To Do //See: https://en.wikipedia.org/wiki/Network_File_System
 

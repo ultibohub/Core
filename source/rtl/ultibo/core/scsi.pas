@@ -49,7 +49,15 @@ unit SCSI;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Storage,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Storage,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

@@ -89,7 +89,21 @@ unit PiTFT35;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,PWM,SPI,Framebuffer,Touch,HX8357D,STMPE,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  GPIO,
+  PWM,
+  SPI,
+  Framebuffer,
+  Touch,
+  HX8357D,
+  STMPE,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

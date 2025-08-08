@@ -41,7 +41,14 @@ unit Platform;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalStrings,HeapManager,Dos,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalStrings,
+  HeapManager,
+  Dos,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

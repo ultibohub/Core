@@ -55,8 +55,32 @@ unit Sockets;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,Devices,SysUtils,Classes,Network,Transport,Protocol,
-     Loopback,ARP,IP,IPv6,UDP,TCP,ICMP,ICMPv6,IGMP,RAW,DHCP,DNS,CTypes;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  Platform,
+  Threads,
+  Devices,
+  SysUtils,
+  Classes,
+  Network,
+  Transport,
+  Protocol,
+  Loopback,
+  ARP,
+  IP,
+  IPv6,
+  UDP,
+  TCP,
+  ICMP,
+  ICMPv6,
+  IGMP,
+  RAW,
+  DHCP,
+  DNS,
+  CTypes;
 
 {==============================================================================}
 {Global definitions}

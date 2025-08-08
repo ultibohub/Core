@@ -58,7 +58,17 @@ unit HD44780;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Console,Font,GPIO,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Console,
+  Font,
+  GPIO,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

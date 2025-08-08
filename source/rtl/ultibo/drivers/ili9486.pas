@@ -56,7 +56,17 @@ unit ILI9486;
 
 interface
 
-uses GlobalConfig,GlobalConst,Platform,Threads,Devices,GPIO,SPI,Framebuffer,TFTFramebuffer,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  Platform,
+  Threads,
+  Devices,
+  GPIO,
+  SPI,
+  Framebuffer,
+  TFTFramebuffer,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

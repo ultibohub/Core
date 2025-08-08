@@ -228,7 +228,16 @@ unit USB;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,Unicode,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  HeapManager,
+  Devices,
+  Unicode,
+  SysUtils;
 
 //To Do //For some USB 3.0 information see: \u-boot-HEAD-5745f8c\include\usb.h
               //eg usb_interface / ss_ep_comp_desc (Super Speed Endpoint Companion Descriptor)

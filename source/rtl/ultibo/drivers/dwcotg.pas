@@ -118,7 +118,16 @@ unit DWCOTG;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,USB,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  HeapManager,
+  Devices,
+  USB,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

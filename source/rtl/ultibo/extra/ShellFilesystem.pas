@@ -42,7 +42,20 @@ unit ShellFilesystem;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,FileSystem,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Shell;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  FileSystem,
+  SysUtils,
+  Classes,
+  Ultibo,
+  UltiboClasses,
+  UltiboUtils,
+  Shell;
 
 //To Do //Change some of the direct calls to use FileSysDriver instead (eg Device.ActivatePartition etc)
 

@@ -57,7 +57,18 @@ unit Transport;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Threads,Devices,SysUtils,Classes,Network,Ultibo,UltiboClasses;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  Threads,
+  Devices,
+  SysUtils,
+  Classes,
+  Network,
+  Ultibo,
+  UltiboClasses;
 
 {==============================================================================}
 {Global definitions}

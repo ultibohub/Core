@@ -41,7 +41,16 @@ unit DVB;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Audio,Video,USB;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Audio,
+  Video,
+  USB;
 
 //To Do
 

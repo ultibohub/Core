@@ -50,7 +50,13 @@ unit Keymap_DE;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Keymap,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Keymap,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

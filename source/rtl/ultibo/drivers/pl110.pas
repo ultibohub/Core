@@ -62,7 +62,17 @@ unit PL110;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,DMA,Framebuffer,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  HeapManager,
+  Devices,
+  DMA,
+  Framebuffer,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

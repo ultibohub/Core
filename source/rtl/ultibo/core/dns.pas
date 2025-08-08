@@ -46,7 +46,22 @@ unit DNS;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,SysUtils,Classes,Network,Transport,Protocol,IP,IPv6,UDP,Ultibo,UltiboUtils,UltiboClasses;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  SysUtils,
+  Classes,
+  Network,
+  Transport,
+  Protocol,
+  IP,
+  IPv6,
+  UDP,
+  Ultibo,
+  UltiboUtils,
+  UltiboClasses;
 
 //To Do //IPv6 support
 

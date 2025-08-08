@@ -50,7 +50,17 @@ interface
 {Global definitions} {Must be prior to uses}
 {$INCLUDE ..\core\GlobalDefines.inc}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads{$IFDEF DEVICE_TREE_ENABLE},DeviceTree{$ENDIF DEVICE_TREE_ENABLE},SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  HeapManager,
+  Threads,
+  {$IFDEF DEVICE_TREE_ENABLE}
+  DeviceTree,
+  {$ENDIF DEVICE_TREE_ENABLE}
+  SysUtils;
 
 {==============================================================================}
 //const

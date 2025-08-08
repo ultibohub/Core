@@ -346,7 +346,30 @@ interface
 {--$DEFINE BCM2708_SPI0_DMA_CS_DLEN} {Use DMA to load the CS and DLEN registers of SPI0 (See 10.6.3 DMA on Page 158 of BCM2835 ARM Peripherals)}
                                      {Not used by the Linux driver, works on RPi 2/3, fails randomly on RPi A/B/Zero}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2835,Platform{$IFNDEF CONSOLE_EARLY_INIT},PlatformRPi{$ENDIF},Threads,HeapManager,Devices,SPI,I2C,DMA,PWM,GPIO,UART,Serial,MMC,BCMSDHOST,Framebuffer,Audio,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  BCM2835,
+  Platform,
+  {$IFNDEF CONSOLE_EARLY_INIT}
+  PlatformRPi,
+  {$ENDIF}
+  Threads,
+  HeapManager,
+  Devices,
+  SPI,
+  I2C,
+  DMA,
+  PWM,
+  GPIO,
+  UART,
+  Serial,
+  MMC,
+  BCMSDHOST,
+  Framebuffer,
+  Audio,
+  SysUtils;
 
 {==============================================================================}
 const

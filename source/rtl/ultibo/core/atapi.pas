@@ -41,7 +41,14 @@ unit ATAPI;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Storage;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Storage;
 
 {==============================================================================}
 {Global definitions}

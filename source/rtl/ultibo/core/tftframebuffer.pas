@@ -56,7 +56,19 @@ unit TFTFramebuffer;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,DMA,GPIO,SPI,Framebuffer,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  HeapManager,
+  Devices,
+  DMA,
+  GPIO,
+  SPI,
+  Framebuffer,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

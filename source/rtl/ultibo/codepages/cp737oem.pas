@@ -43,7 +43,11 @@ unit CP737OEM;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Locale;
 
 {==============================================================================}
 {Global definitions}
@@ -76,7 +80,8 @@ procedure CP737OEMInit;
 
 implementation
 
-uses CP1253ANSI;
+uses
+  CP1253ANSI;
 
 {==============================================================================}
 {==============================================================================}

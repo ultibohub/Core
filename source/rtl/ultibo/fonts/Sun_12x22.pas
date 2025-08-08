@@ -35,7 +35,12 @@ unit Sun_12x22;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Font;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Font;
 
 {==============================================================================}
 {const}

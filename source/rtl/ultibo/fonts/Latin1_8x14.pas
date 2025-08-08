@@ -35,7 +35,12 @@ unit Latin1_8x14;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Font;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Font;
 
 {==============================================================================}
 {const}

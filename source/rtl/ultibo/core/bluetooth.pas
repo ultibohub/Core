@@ -41,7 +41,21 @@ unit Bluetooth;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Keyboard,Mouse,Storage,Network,Audio,Video,Serial;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  USB,
+  Keyboard,
+  Mouse,
+  Storage,
+  Network,
+  Audio,
+  Video,
+  Serial;
 
 {==============================================================================}
 {Global definitions}

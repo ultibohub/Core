@@ -46,7 +46,15 @@ unit Audio;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Codec,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Codec,
+  SysUtils;
 
 //To Do //Add PCM/I2S, MPEG etc //No, they should include audio if required
 

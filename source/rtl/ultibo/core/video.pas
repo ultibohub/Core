@@ -46,7 +46,15 @@ unit Video;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Codec,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Codec,
+  SysUtils;
 
 //To Do //Add MPEG etc //No, they should include video if required
 

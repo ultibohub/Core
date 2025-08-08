@@ -76,7 +76,20 @@ unit PlatformARMv8;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,{$IFDEF CPUARM}PlatformARM,{$ENDIF CPUARM}{$IFDEF CPUAARCH64}PlatformAARCH64,{$ENDIF CPUAARCH64}HeapManager,Threads,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  {$IFDEF CPUARM}
+  PlatformARM,
+  {$ENDIF CPUARM}
+  {$IFDEF CPUAARCH64}
+  PlatformAARCH64,
+  {$ENDIF CPUAARCH64}
+  HeapManager,
+  Threads,
+  SysUtils;
 
 //To Do //Look for:
 

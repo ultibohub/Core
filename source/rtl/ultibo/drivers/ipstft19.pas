@@ -73,7 +73,19 @@ unit IPSTFT19;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,PWM,SPI,Framebuffer,ST77XX,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  GPIO,
+  PWM,
+  SPI,
+  Framebuffer,
+  ST77XX,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

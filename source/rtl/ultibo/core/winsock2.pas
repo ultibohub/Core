@@ -45,8 +45,34 @@ unit Winsock2;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Network,Transport,Protocol,Sockets,
-     Loopback,ARP,IP,IPv6,UDP,TCP,ICMP,ICMPv6,IGMP,RAW,DHCP,DNS;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  Platform,
+  Threads,
+  SysUtils,
+  Classes,
+  Ultibo,
+  UltiboClasses,
+  UltiboUtils,
+  Network,
+  Transport,
+  Protocol,
+  Sockets,
+  Loopback,
+  ARP,
+  IP,
+  IPv6,
+  UDP,
+  TCP,
+  ICMP,
+  ICMPv6,
+  IGMP,
+  RAW,
+  DHCP,
+  DNS;
 
 {==============================================================================}
 {Global definitions}

@@ -60,7 +60,16 @@ unit PCI;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,Unicode,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  HeapManager,
+  Devices,
+  Unicode,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

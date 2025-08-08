@@ -60,7 +60,16 @@ unit WiringSPI;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SPI,SysUtils,Wiring;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  SPI,
+  SysUtils,
+  Wiring;
 
 {==============================================================================}
 {Global definitions}

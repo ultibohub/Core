@@ -42,7 +42,18 @@ unit ConsoleShell;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils,Classes,UltiboClasses,Console,Shell;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  SysUtils,
+  Classes,
+  UltiboClasses,
+  Console,
+  Shell;
 
 {==============================================================================}
 {Global definitions}

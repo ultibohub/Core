@@ -46,7 +46,17 @@ unit RTL8188EU;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Network,WiFi,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  USB,
+  Network,
+  WiFi,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

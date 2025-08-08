@@ -43,7 +43,20 @@ unit ICMP;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Threads,SysUtils,Classes,Network,Transport,Protocol,IP,Ultibo,UltiboClasses;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  Threads,
+  SysUtils,
+  Classes,
+  Network,
+  Transport,
+  Protocol,
+  IP,
+  Ultibo,
+  UltiboClasses;
 
 {==============================================================================}
 {Global definitions}

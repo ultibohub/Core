@@ -121,7 +121,22 @@ unit PiTFT28;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,SPI,I2C,Framebuffer,Touch,ILI9340,STMPE,FT5x06Touch,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  GPIO,
+  SPI,
+  I2C,
+  Framebuffer,
+  Touch,
+  ILI9340,
+  STMPE,
+  FT5x06Touch,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

@@ -61,7 +61,15 @@ unit VC4V3D;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  HeapManager,
+  Devices,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}
@@ -515,7 +523,13 @@ function V3DQPUExecute(NumQPUs,Control,NoFlush,Timeout:LongWord):LongWord;
 
 implementation
 
-uses {$IFDEF CPUARMV6}BCM2835{$ELSE}BCM2837{$ENDIF};
+uses
+  {$IFDEF CPUARMV6}
+  BCM2835
+  {$ELSE}
+  BCM2837
+  {$ENDIF}
+  ;
 
 {==============================================================================}
 {==============================================================================}

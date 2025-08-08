@@ -59,7 +59,18 @@ unit BCMSDHOST;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,DMA,Storage,MMC,GPIO,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  DMA,
+  Storage,
+  MMC,
+  GPIO,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

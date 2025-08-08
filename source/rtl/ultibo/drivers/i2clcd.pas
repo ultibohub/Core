@@ -57,7 +57,19 @@ unit I2CLCD;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,I2C,GPIO,Console,PCF857X,HD44780,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  I2C,
+  GPIO,
+  Console,
+  PCF857X,
+  HD44780,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

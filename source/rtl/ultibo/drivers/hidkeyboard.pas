@@ -56,7 +56,17 @@ unit HIDKeyboard;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,HID,Keyboard,Keymap,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  HID,
+  Keyboard,
+  Keymap,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

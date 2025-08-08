@@ -41,7 +41,16 @@ unit FTP;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils,Classes,UltiboClasses,Winsock2;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  SysUtils,
+  Classes,
+  UltiboClasses,
+  Winsock2;
 
 //To Do //A generic FTP interface (Client and Server)
 

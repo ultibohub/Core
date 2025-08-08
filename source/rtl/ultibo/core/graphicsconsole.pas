@@ -78,7 +78,18 @@ unit GraphicsConsole;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Framebuffer,Font,Console,SysUtils,Classes;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Framebuffer,
+  Font,
+  Console,
+  SysUtils,
+  Classes;
 
 {==============================================================================}
 {Global definitions}

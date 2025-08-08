@@ -82,7 +82,16 @@ unit Wiring;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,PWM,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  GPIO,
+  PWM,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

@@ -63,7 +63,16 @@ unit PS2;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Keyboard,Mouse,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Keyboard,
+  Mouse,
+  SysUtils;
 
 //To Do //Intellimouse extensions (Wheel plus Buttons 4 and 5) see http://www.computer-engineering.org/ps2mouse/
         //Scancode sets 1 and 3

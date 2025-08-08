@@ -43,7 +43,11 @@ unit CP862OEM;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Locale;
 
 {==============================================================================}
 {Global definitions}
@@ -76,7 +80,8 @@ procedure CP862OEMInit;
 
 implementation
 
-uses CP1255ANSI;
+uses
+  CP1255ANSI;
 
 {==============================================================================}
 {==============================================================================}

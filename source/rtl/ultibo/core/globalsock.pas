@@ -49,7 +49,10 @@ unit GlobalSock;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes;
 
 //To Do //Clean this up to be more in line with other units //See headers of Winsock/Winsock2 for format
 

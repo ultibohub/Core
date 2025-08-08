@@ -59,7 +59,16 @@ unit PCF857X;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,I2C,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  GPIO,
+  I2C,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

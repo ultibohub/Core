@@ -43,7 +43,11 @@ unit CP720OEM;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Locale;
 
 {==============================================================================}
 {Global definitions}
@@ -76,7 +80,8 @@ procedure CP720OEMInit;
 
 implementation
 
-uses CP1256ANSI;
+uses
+  CP1256ANSI;
 
 {==============================================================================}
 {==============================================================================}

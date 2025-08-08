@@ -66,7 +66,22 @@ unit IP;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,SysUtils,Classes,Network,Transport,Protocol,ARP,Ultibo,UltiboUtils,UltiboClasses;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  Platform,
+  Threads,
+  SysUtils,
+  Classes,
+  Network,
+  Transport,
+  Protocol,
+  ARP,
+  Ultibo,
+  UltiboUtils,
+  UltiboClasses;
 
 {==============================================================================}
 {Global definitions}

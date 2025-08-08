@@ -56,7 +56,16 @@ unit DS1307;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,RTC,I2C,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  RTC,
+  I2C,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

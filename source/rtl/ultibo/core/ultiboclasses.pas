@@ -41,7 +41,16 @@ unit UltiboClasses;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Unicode,Ultibo,SysUtils,Classes;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Unicode,
+  Ultibo,
+  SysUtils,
+  Classes;
 
 //To Do //FPC supports TStream with 64bit interaces, check and confirm and remove TStreamEx etc
                       //Retain TMemoryStreamEx because it is for a different purpose (Grow without Realloc)

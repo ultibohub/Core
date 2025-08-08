@@ -43,7 +43,20 @@ unit Raw;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,SysUtils,Classes,Network,Transport,Protocol,IP,IPv6,Ultibo,UltiboClasses;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  SysUtils,
+  Classes,
+  Network,
+  Transport,
+  Protocol,
+  IP,
+  IPv6,
+  Ultibo,
+  UltiboClasses;
 
 {==============================================================================}
 {Global definitions}

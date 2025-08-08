@@ -130,7 +130,12 @@ unit Security;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,SysUtils,Classes; //To Do //Can we remove Classes ? //Required for TStringList
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  SysUtils,
+  Classes; //To Do //Can we remove Classes ? //Required for TStringList
 
 //To Do //Look for:
 

@@ -58,7 +58,18 @@ unit FT5x06Touch;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,I2C,Touch,Mouse,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  GPIO,
+  I2C,
+  Touch,
+  Mouse,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

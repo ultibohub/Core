@@ -56,7 +56,15 @@ unit SMC91X;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Network,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Network,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

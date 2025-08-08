@@ -41,7 +41,14 @@ unit VPN;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  SysUtils;
 
 //To Do //A generic VPN client //This will most likely be some form of NetworkAdapter module (See Network / Loopback etc)
 

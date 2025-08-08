@@ -77,7 +77,17 @@ unit USBStorage;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Storage,SCSI,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  USB,
+  Storage,
+  SCSI,
+  SysUtils;
 
 //To Do               //USB Storage Read Protect / Write Protect
                       //USB Storage CBI Transport

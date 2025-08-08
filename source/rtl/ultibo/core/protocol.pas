@@ -50,7 +50,20 @@ unit Protocol;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,Devices,SysUtils,Classes,Network,Transport,Ultibo,UltiboClasses;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  Platform,
+  Threads,
+  Devices,
+  SysUtils,
+  Classes,
+  Network,
+  Transport,
+  Ultibo,
+  UltiboClasses;
 
 {==============================================================================}
 {Global definitions}

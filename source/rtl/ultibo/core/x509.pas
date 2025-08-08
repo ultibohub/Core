@@ -65,7 +65,16 @@ unit X509;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Crypto,ASN1,Classes,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Crypto,
+  ASN1,
+  Classes,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

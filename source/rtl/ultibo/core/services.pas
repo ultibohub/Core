@@ -84,8 +84,23 @@ unit Services;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Logging,SysUtils,
-     Classes,Ultibo,UltiboClasses,Winsock2,Protocol,ICMP,Crypto,Authentication;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Logging,
+  SysUtils,
+  Classes,
+  Ultibo,
+  UltiboClasses,
+  Winsock2,
+  Protocol,
+  ICMP,
+  Crypto,
+  Authentication;
 
 {==============================================================================}
 {Global definitions}

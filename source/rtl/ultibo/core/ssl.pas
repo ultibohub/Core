@@ -49,7 +49,14 @@ unit SSL;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  SysUtils;
 
 //To Do //SSL/TLS functionality
         //See: \source\packages\fcl-net\src\sslsockets.pp

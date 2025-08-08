@@ -52,7 +52,20 @@ unit RT2800USB;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Network,WiFi,RT2800LIB,RT2X00USB,RT2X00LIB,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  USB,
+  Network,
+  WiFi,
+  RT2800LIB,
+  RT2X00USB,
+  RT2X00LIB,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

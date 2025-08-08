@@ -41,7 +41,20 @@ unit Shell;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,HeapManager,SysUtils,Classes,Ultibo,UltiboClasses,UltiboUtils,Authentication;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  HeapManager,
+  SysUtils,
+  Classes,
+  Ultibo,
+  UltiboClasses,
+  UltiboUtils,
+  Authentication;
 
 {==============================================================================}
 {Global definitions}

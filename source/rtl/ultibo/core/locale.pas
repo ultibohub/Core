@@ -69,7 +69,12 @@ unit Locale;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  SysUtils;
 
 //To Do //Extract a list of default Locale info (LCID etc) from Windows using GetLocaleInfoW
                       //See: https://msdn.microsoft.com/en-us/goglobal/bb896001.aspx

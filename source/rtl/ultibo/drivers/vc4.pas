@@ -171,7 +171,22 @@ unit VC4;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Syscalls,Devices,VC4V3D,VC4VCHIQ,{VC4VCSM,}Audio,Video,CTypes,SysUtils; //To Do //Add VCSM when completed
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  HeapManager,
+  Syscalls,
+  Devices,
+  VC4V3D,
+  VC4VCHIQ,
+  //VC4VCSM, //Add VCSM when completed
+  Audio,
+  Video,
+  CTypes,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}
@@ -1053,7 +1068,13 @@ function vc4_bcm_host_get_sdram_address: cunsigned; cdecl; public name 'vc4_bcm_
 
 implementation
 
-uses {$IFDEF CPUARMV6}BCM2835{$ELSE}BCM2837{$ENDIF};
+uses
+  {$IFDEF CPUARMV6}
+  BCM2835
+  {$ELSE}
+  BCM2837
+  {$ENDIF}
+  ;
 
 {==============================================================================}
 {==============================================================================}

@@ -41,7 +41,15 @@ unit Logging;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Console,Devices,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Console,
+  Devices,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

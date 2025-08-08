@@ -93,7 +93,16 @@ unit RPiGPIOExpander;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Threads,Devices,GPIO,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  HeapManager,
+  Threads,
+  Devices,
+  GPIO,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}
@@ -175,7 +184,13 @@ function RPiGPIOExpanderSetConfig(GPIO,Direction,Polarity,Terminator,PullUp,Stat
 
 implementation
 
-uses {$IFDEF CPUARMV6}BCM2835{$ELSE}BCM2837{$ENDIF};
+uses
+  {$IFDEF CPUARMV6}
+  BCM2835
+  {$ELSE}
+  BCM2837
+  {$ENDIF}
+  ;
 
 {==============================================================================}
 {==============================================================================}

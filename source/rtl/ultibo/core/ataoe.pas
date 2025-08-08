@@ -41,7 +41,15 @@ unit ATAoE;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Storage,Network;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Storage,
+  Network;
 
 {==============================================================================}
 {Global definitions}

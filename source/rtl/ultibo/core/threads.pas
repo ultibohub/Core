@@ -584,7 +584,15 @@ unit Threads;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,Locale,Unicode,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  HeapManager,
+  Locale,
+  Unicode,
+  SysUtils;
 
 //To Do //Look for:
 

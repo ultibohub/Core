@@ -62,7 +62,16 @@ unit USBMouse;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Mouse,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  USB,
+  Mouse,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

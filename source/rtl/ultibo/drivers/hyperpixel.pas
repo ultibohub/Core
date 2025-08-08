@@ -169,7 +169,20 @@ unit HyperPixel;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,I2C,Touch,I2CGPIO,GoodixTouch,FT5x06Touch,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  GPIO,
+  I2C,
+  Touch,
+  I2CGPIO,
+  GoodixTouch,
+  FT5x06Touch,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

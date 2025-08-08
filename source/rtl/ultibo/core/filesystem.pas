@@ -76,7 +76,23 @@ unit FileSystem;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,Logging,Storage,Dos,SysUtils,Classes,Unicode,Ultibo,UltiboUtils,UltiboClasses;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  HeapManager,
+  Devices,
+  Logging,
+  Storage,
+  Dos,
+  SysUtils,
+  Classes,
+  Unicode,
+  Ultibo,
+  UltiboUtils,
+  UltiboClasses;
 
 //To Do //The handling of UpdateEnumHandles/UpdateFindHandles may still be not sufficient, handles are updated and then entry is removed etc
         //This could leave open the possibility of another thread moving to that entry in between time (need a WriterLock somewhere ?)

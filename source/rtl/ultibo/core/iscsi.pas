@@ -41,7 +41,15 @@ unit iSCSI;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Storage,Winsock2;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Storage,
+  Winsock2;
 
 {==============================================================================}
 {Global definitions}

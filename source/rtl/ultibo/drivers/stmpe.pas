@@ -76,7 +76,19 @@ unit STMPE;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,GPIO,SPI,I2C,Touch,Mouse,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  GPIO,
+  SPI,
+  I2C,
+  Touch,
+  Mouse,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

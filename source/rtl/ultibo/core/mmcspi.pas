@@ -45,7 +45,16 @@ unit MMCSPI;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,MMC,SPI,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  MMC,
+  SPI,
+  SysUtils;
 
 //To Do
 

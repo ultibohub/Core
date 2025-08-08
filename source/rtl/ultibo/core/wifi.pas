@@ -111,7 +111,18 @@ unit WiFi;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,Devices,Network,Transport,Crypto,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  Platform,
+  Threads,
+  Devices,
+  Network,
+  Transport,
+  Crypto,
+  SysUtils;
 
 //To Do //See: http://w1.fi/wpa_supplicant/
         //See: http://w1.fi/wpa_supplicant/devel/

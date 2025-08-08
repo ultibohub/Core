@@ -55,7 +55,10 @@ unit BCM2835;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes;
 
 {==============================================================================}
 {Global definitions}

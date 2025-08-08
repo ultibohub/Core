@@ -39,7 +39,18 @@ unit Network;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,Devices,SysUtils,Classes,Ultibo,UltiboClasses;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  Platform,
+  Threads,
+  Devices,
+  SysUtils,
+  Classes,
+  Ultibo,
+  UltiboClasses;
 
 //To Do //For Ethernet Frame and VLAN tagging etc see: https://en.wikipedia.org/wiki/Ethernet_frame
 

@@ -43,7 +43,11 @@ unit CP1253ANSI;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Locale;
 
 {==============================================================================}
 {Global definitions}
@@ -76,7 +80,8 @@ procedure CP1253ANSIInit;
 
 implementation
 
-uses CP737OEM;
+uses
+  CP737OEM;
 
 {==============================================================================}
 {==============================================================================}

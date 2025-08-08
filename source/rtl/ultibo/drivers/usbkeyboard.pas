@@ -62,7 +62,17 @@ unit USBKeyboard;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,Keyboard,Keymap,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  USB,
+  Keyboard,
+  Keymap,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

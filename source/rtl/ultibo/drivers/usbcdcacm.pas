@@ -61,7 +61,17 @@ unit USBCDCACM;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,USB,USBCDC,Serial,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  USB,
+  USBCDC,
+  Serial,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

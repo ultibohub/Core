@@ -43,7 +43,11 @@ unit CP866OEM;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Locale;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Locale;
 
 {==============================================================================}
 {Global definitions}
@@ -76,7 +80,8 @@ procedure CP866OEMInit;
 
 implementation
 
-uses CP1251ANSI;
+uses
+  CP1251ANSI;
 
 {==============================================================================}
 {==============================================================================}

@@ -72,7 +72,18 @@ unit PL050;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Keyboard,Keymap,Mouse,PS2,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Keyboard,
+  Keymap,
+  Mouse,
+  PS2,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

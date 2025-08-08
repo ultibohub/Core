@@ -86,7 +86,18 @@ unit LCDA35;
 
 interface
 
-uses GlobalConfig,GlobalConst,Platform,Threads,Devices,GPIO,SPI,Framebuffer,Touch,ILI9486,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  Platform,
+  Threads,
+  Devices,
+  GPIO,
+  SPI,
+  Framebuffer,
+  Touch,
+  ILI9486,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

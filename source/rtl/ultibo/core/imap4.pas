@@ -41,7 +41,16 @@ unit IMAP4;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils,Classes,UltiboClasses,Winsock2;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  SysUtils,
+  Classes,
+  UltiboClasses,
+  Winsock2;
 
 {==============================================================================}
 {Global definitions}

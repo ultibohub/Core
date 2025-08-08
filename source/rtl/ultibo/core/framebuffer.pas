@@ -42,7 +42,15 @@ unit Framebuffer;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,HeapManager,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  HeapManager,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

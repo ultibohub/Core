@@ -244,7 +244,20 @@ unit Syscalls;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,HeapManager,Devices,FileSystem,Sockets,Crypto,Ultibo,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  Platform,
+  Threads,
+  HeapManager,
+  Devices,
+  FileSystem,
+  Sockets,
+  Crypto,
+  Ultibo,
+  SysUtils;
 
 //To Do //Which Pthreads functions are cancellation points? (Find a list)
         //See: http://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_09_05

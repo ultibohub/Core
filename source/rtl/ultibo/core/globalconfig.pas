@@ -43,7 +43,11 @@ unit GlobalConfig;
 
 interface
 
-uses GlobalConst,GlobalTypes,GlobalStrings,SysUtils;
+uses
+  GlobalConst,
+  GlobalTypes,
+  GlobalStrings,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

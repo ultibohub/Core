@@ -110,7 +110,16 @@ unit I2CGPIO;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,I2C,GPIO,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  I2C,
+  GPIO,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

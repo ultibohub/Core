@@ -48,7 +48,14 @@ unit USBCDC;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,USB,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  USB,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

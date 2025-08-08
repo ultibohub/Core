@@ -66,7 +66,21 @@ unit IPv6;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,SysUtils,Classes,Network,Transport,Protocol,Ultibo,UltiboUtils,UltiboClasses;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  Platform,
+  Threads,
+  SysUtils,
+  Classes,
+  Network,
+  Transport,
+  Protocol,
+  Ultibo,
+  UltiboUtils,
+  UltiboClasses;
 
 //To Do //IPv6 uses NDP (Neighbour Discovery Protocol) (via ICMPv6) instead of ARP
                       //See: http://keepingitclassless.net/2011/10/neighbor-solicitation-ipv6s-replacement-for-arp/

@@ -45,7 +45,16 @@ unit Loopback;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,SysUtils,Classes,Network,Ultibo,UltiboClasses;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  SysUtils,
+  Classes,
+  Network,
+  Ultibo,
+  UltiboClasses;
 
 {==============================================================================}
 {Global definitions}

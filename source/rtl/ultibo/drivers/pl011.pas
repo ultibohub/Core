@@ -43,7 +43,16 @@ unit PL011;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,UART,Serial,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  UART,
+  Serial,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

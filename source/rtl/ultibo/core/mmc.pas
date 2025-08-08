@@ -126,7 +126,16 @@ unit MMC;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,DMA,Storage,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  DMA,
+  Storage,
+  SysUtils;
 
 //To Do //For SPI based MMC/SDHCI see: \drivers\mmc\mmc_spi.c
         //For RPMB (Replay Protected Memory Block) see: \drivers\mmc\rpmb.c

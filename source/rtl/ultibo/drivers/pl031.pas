@@ -54,7 +54,15 @@ unit PL031;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,RTC,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  RTC,
+  SysUtils;
 
 //To Do //Support for Get/Set RTC Alarm with event on Interrupt
 

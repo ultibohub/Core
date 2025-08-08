@@ -55,7 +55,17 @@ unit PL18X;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,DMA,Storage,MMC,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  DMA,
+  Storage,
+  MMC,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

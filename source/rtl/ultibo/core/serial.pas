@@ -57,7 +57,15 @@ unit Serial;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Logging,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Logging,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

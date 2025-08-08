@@ -41,7 +41,13 @@ unit Platformx86_64;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,HeapManager,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  HeapManager,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

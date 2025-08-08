@@ -31,7 +31,12 @@ unit Default8x9;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Font;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Font;
 
 {==============================================================================}
 {const}

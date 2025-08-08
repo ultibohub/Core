@@ -120,7 +120,25 @@ interface
 {Global definitions} {Must be prior to uses}
 {$INCLUDE ..\core\GlobalDefines.inc}
 
-uses GlobalConfig,GlobalConst,GlobalTypes,BCM2835,Platform,PlatformRPi,PlatformARM,PlatformARMv6,Threads{$IFDEF CONSOLE_EARLY_INIT},Devices,Framebuffer,Console{$ENDIF}{$IFDEF LOGGING_EARLY_INIT},Logging{$ENDIF};
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  BCM2835,
+  Platform,
+  PlatformRPi,
+  PlatformARM,
+  PlatformARMv6,
+  Threads,
+  {$IFDEF CONSOLE_EARLY_INIT}
+  Devices,
+  Framebuffer,
+  Console,
+  {$ENDIF}
+  {$IFDEF LOGGING_EARLY_INIT}
+  Logging,
+  {$ENDIF}
+  SysUtils;
 
 {==============================================================================}
 {Boot Functions}

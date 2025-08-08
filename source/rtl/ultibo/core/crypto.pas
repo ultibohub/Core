@@ -141,7 +141,14 @@ unit Crypto;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,BigInt,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  BigInt,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

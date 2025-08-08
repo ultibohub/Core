@@ -45,7 +45,16 @@ unit RTLWIFI;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Network,WiFi,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Network,
+  WiFi,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

@@ -47,7 +47,15 @@ unit Iphlpapi;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,GlobalSock,Platform,Threads,SysUtils,Winsock2;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  GlobalSock,
+  Platform,
+  Threads,
+  SysUtils,
+  Winsock2;
 
 {==============================================================================}
 {Global definitions}

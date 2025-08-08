@@ -42,7 +42,12 @@ unit MPEG;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads;
 
 {==============================================================================}
 {Global definitions}

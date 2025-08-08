@@ -53,7 +53,17 @@ unit HIDTouch;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,HID,Touch,Mouse,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  HID,
+  Touch,
+  Mouse,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}

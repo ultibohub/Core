@@ -41,7 +41,19 @@ unit SMTP;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,SysUtils,Classes,UltiboClasses,UltiboUtils,Winsock2,Crypto,Authentication;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  SysUtils,
+  Classes,
+  UltiboClasses,
+  UltiboUtils,
+  Winsock2,
+  Crypto,
+  Authentication;
 
 //To Do //Look for:
 

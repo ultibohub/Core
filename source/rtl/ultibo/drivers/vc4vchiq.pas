@@ -122,7 +122,16 @@ unit VC4VCHIQ;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,HeapManager,Devices,CTypes,SysUtils;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  HeapManager,
+  Devices,
+  CTypes,
+  SysUtils;
 
 {==============================================================================}
 {Global definitions}
@@ -1349,7 +1358,13 @@ function VCHIQResumeStatusToString(Status:VC_RESUME_STATUS_T):String;
 
 implementation
 
-uses {$IFDEF CPUARMV6}BCM2835{$ELSE}BCM2837{$ENDIF};
+uses
+  {$IFDEF CPUARMV6}
+  BCM2835
+  {$ELSE}
+  BCM2837
+  {$ENDIF}
+  ;
 
 {==============================================================================}
 {==============================================================================}

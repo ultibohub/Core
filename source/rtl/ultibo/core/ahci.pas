@@ -41,7 +41,14 @@ unit AHCI;
 
 interface
 
-uses GlobalConfig,GlobalConst,GlobalTypes,Platform,Threads,Devices,Storage;
+uses
+  GlobalConfig,
+  GlobalConst,
+  GlobalTypes,
+  Platform,
+  Threads,
+  Devices,
+  Storage;
 
 //To Do //See: \u-boot-HEAD-5745f8c\drivers\block
 
