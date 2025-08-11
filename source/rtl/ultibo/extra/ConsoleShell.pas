@@ -38,10 +38,26 @@ Console Shell
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit ConsoleShell;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  System.SysUtils,
+  System.Classes,
+  Core.UltiboClasses,
+  Core.Console,
+  Core.Shell;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -54,6 +70,7 @@ uses
   UltiboClasses,
   Console,
   Shell;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}

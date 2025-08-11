@@ -85,10 +85,29 @@ Adafruit PiTFT 3.5" LCD
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit PiTFT35;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.GPIO,
+  Core.PWM,
+  Core.SPI,
+  Core.Framebuffer,
+  Core.Touch,
+  Drivers.HX8357D,
+  Drivers.STMPE,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -104,6 +123,7 @@ uses
   HX8357D,
   STMPE,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}

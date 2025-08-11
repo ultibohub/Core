@@ -37,10 +37,23 @@ Digital Audio Broadcast (DAB)
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit DAB;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.Audio,
+  Core.USB;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -50,6 +63,7 @@ uses
   Devices,
   Audio,
   USB;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do
 

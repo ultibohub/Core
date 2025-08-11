@@ -72,10 +72,31 @@ Filesystems
 {$openstrings off} {Disable Openstrings which are on by default in Delphi mode (Main only)}
 {$ENDIF}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit FileSystem;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.HeapManager,
+  Core.Devices,
+  Core.Logging,
+  Core.Storage,
+  TP.DOS,
+  System.SysUtils,
+  System.Classes,
+  Core.Unicode,
+  Core.Ultibo,
+  Core.UltiboUtils,
+  Core.UltiboClasses;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -93,6 +114,7 @@ uses
   Ultibo,
   UltiboUtils,
   UltiboClasses;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //The handling of UpdateEnumHandles/UpdateFindHandles may still be not sufficient, handles are updated and then entry is removed etc
         //This could leave open the possibility of another thread moving to that entry in between time (need a WriterLock somewhere ?)

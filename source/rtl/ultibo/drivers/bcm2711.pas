@@ -515,7 +515,9 @@ BCM2711 Framebuffer Device
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit BCM2711;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
@@ -525,6 +527,32 @@ interface
 {--$DEFINE BCM2711_SPI0_DMA_CS_DLEN} {Use DMA to load the CS and DLEN registers of SPI0 (See 10.6.3 DMA on Page 158 of BCM2835 ARM Peripherals)}
                                      {Not used by the Linux driver, works on RPi 2/3/4, fails randomly on RPi A/B/Zero}
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Platforms.BCM2838,
+  Core.Platform,
+  {$IFNDEF CONSOLE_EARLY_INIT}
+  Platforms.PlatformRPi4,
+  {$ENDIF}
+  Core.Threads,
+  Core.HeapManager,
+  Core.Devices,
+  Core.SPI,
+  Core.I2C,
+  Core.DMA,
+  Core.PWM,
+  Core.GPIO,
+  Core.UART,
+  Core.Serial,
+  Core.MMC,
+  Drivers.BCMSDHOST,
+  Core.Framebuffer,
+  Core.Audio,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -549,6 +577,7 @@ uses
   Framebuffer,
   Audio,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 const

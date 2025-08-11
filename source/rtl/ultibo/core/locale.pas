@@ -65,16 +65,27 @@ Locale
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit Locale;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
   GlobalTypes,
   Platform,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //Extract a list of default Locale info (LCID etc) from Windows using GetLocaleInfoW
                       //See: https://msdn.microsoft.com/en-us/goglobal/bb896001.aspx

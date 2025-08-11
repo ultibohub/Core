@@ -107,10 +107,26 @@ WiFi
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit WiFi;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.GlobalSock,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.Network,
+  Core.Transport,
+  Core.Crypto,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -123,6 +139,7 @@ uses
   Transport,
   Crypto,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //See: http://w1.fi/wpa_supplicant/
         //See: http://w1.fi/wpa_supplicant/devel/

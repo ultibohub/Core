@@ -102,7 +102,9 @@ Keymaps
  system, for a Raspberry Pi use the cmdline.txt file on the SD card).
 
  The global configuration variable KEYMAP_DEFAULT can be set in code by including the GlobalConfig
+{$IFNDEF FPC_DOTTEDUNITS}
  unit in a program and setting the variable during startup.
+{$ENDIF FPC_DOTTEDUNITS}
 
  At any time after startup the default keymap can be changed by call the KeymapSetDefault function.
 
@@ -112,10 +114,21 @@ Keymaps
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit Keymap;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -123,6 +136,7 @@ uses
   Platform,
   Threads,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}

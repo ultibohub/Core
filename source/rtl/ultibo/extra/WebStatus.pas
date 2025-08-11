@@ -37,10 +37,67 @@ Web Status
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit WebStatus;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  {$IFDEF CPUARM}
+  Platforms.PlatformARM,
+  {$ENDIF}
+  {$IFDEF CPUAARCH64}
+  Platforms.PlatformAARCH64,
+  {$ENDIF}
+  Core.Threads,
+  System.SysUtils,
+  System.Classes,
+  Core.Ultibo,
+  Core.UltiboClasses,
+  Core.UltiboUtils,
+  Core.Winsock2,
+  Core.HTTP,
+  Core.HeapManager,
+  Core.DeviceTree,
+  Core.Devices,
+  Core.USB,
+  Core.PCI,
+  Core.MMC,
+  Core.HID,
+  Core.USBHID,
+  Core.Network,
+  Core.Transport,
+  Core.Protocol,
+  Core.Storage,
+  Core.FileSystem,
+  Core.Keyboard,
+  Core.Keymap,
+  Core.Mouse,
+  Core.Touch,
+  Core.Console,
+  Core.Framebuffer,
+  Core.Font,
+  Core.Logging,
+  Core.Timezone,
+  Core.Locale,
+  Core.Unicode,
+  Core.Iphlpapi,
+  Core.GPIO,
+  Core.UART,
+  Core.Serial,
+  Core.I2C,
+  Core.SPI,
+  Core.PWM,
+  Core.DMA,
+  Core.RTC,
+  Core.Joystick;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -94,6 +151,7 @@ uses
   DMA,
   RTC,
   Joystick;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //Look for:
 

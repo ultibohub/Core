@@ -122,10 +122,24 @@ including WiFi, Bluetooth, Ethernet and others.
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit MMC;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.DMA,
+  Core.Storage,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -136,6 +150,7 @@ uses
   DMA,
   Storage,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //For SPI based MMC/SDHCI see: \drivers\mmc\mmc_spi.c
         //For RPMB (Replay Protected Memory Block) see: \drivers\mmc\rpmb.c

@@ -80,10 +80,31 @@ Services
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit Services;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.Logging,
+  System.SysUtils,
+  System.Classes,
+  Core.Ultibo,
+  Core.UltiboClasses,
+  Core.Winsock2,
+  Core.Protocol,
+  Core.ICMP,
+  Core.Crypto,
+  Core.Authentication;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -101,6 +122,7 @@ uses
   ICMP,
   Crypto,
   Authentication;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}

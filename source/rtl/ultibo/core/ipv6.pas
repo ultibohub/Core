@@ -62,10 +62,29 @@ Internet Protocol version 6
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit IPv6;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.GlobalSock,
+  Core.Platform,
+  Core.Threads,
+  System.SysUtils,
+  System.Classes,
+  Core.Network,
+  Core.Transport,
+  Core.Protocol,
+  Core.Ultibo,
+  Core.UltiboUtils,
+  Core.UltiboClasses;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -81,6 +100,7 @@ uses
   Ultibo,
   UltiboUtils,
   UltiboClasses;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //IPv6 uses NDP (Neighbour Discovery Protocol) (via ICMPv6) instead of ARP
                       //See: http://keepingitclassless.net/2011/10/neighbor-solicitation-ipv6s-replacement-for-arp/

@@ -38,10 +38,31 @@ Shell Network
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit ShellNetwork;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.Network,
+  System.SysUtils,
+  System.Classes,
+  Core.Ultibo,
+  Core.UltiboClasses,
+  Core.UltiboUtils,
+  Core.Shell,
+  Core.Winsock2,
+  Core.Iphlpapi,
+  Core.Services;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -59,6 +80,7 @@ uses
   Winsock2,
   Iphlpapi,
   Services;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}

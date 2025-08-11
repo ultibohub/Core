@@ -126,16 +126,27 @@ Security
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit Security;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  System.SysUtils,
+  System.Classes; //To Do //Can we remove Classes ? //Required for TStringList
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
   GlobalTypes,
   SysUtils,
   Classes; //To Do //Can we remove Classes ? //Required for TStringList
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //Look for:
 

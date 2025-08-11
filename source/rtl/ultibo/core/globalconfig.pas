@@ -39,15 +39,25 @@ Global Configuration
 {$H+}            {Default to AnsiString}
 {$inline on}     {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit GlobalConfig;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.GlobalStrings,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConst,
   GlobalTypes,
   GlobalStrings,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}

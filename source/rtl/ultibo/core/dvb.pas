@@ -37,10 +37,24 @@ Digital Video Broadcast (DVB)
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit DVB;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.Audio,
+  Core.Video,
+  Core.USB;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -51,6 +65,7 @@ uses
   Audio,
   Video,
   USB;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do
 

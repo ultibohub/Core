@@ -38,10 +38,27 @@ CD FileSystem
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit CDFS;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.FileSystem,
+  System.SysUtils,
+  System.Classes,
+  Core.Unicode,
+  Core.Ultibo,
+  Core.UltiboUtils,
+  Core.UltiboClasses;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -55,6 +72,7 @@ uses
   Ultibo,
   UltiboUtils,
   UltiboClasses;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //How to protect AllocCluster/ReleaseCluster ? (ClusterLock ? / FBlocks !)
 

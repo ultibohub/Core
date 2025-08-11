@@ -40,10 +40,26 @@ ARM Generic Interrupt Controller
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit ARMGIC;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  {$IFDEF CPUARM}
+  Platforms.PlatformARM,
+  {$ENDIF CPUARM}
+  {$IFDEF CPUAARCH64}
+  Platforms.PlatformAARCH64,
+  {$ENDIF CPUAARCH64}
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -56,6 +72,7 @@ uses
   PlatformAARCH64,
   {$ENDIF CPUAARCH64}
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}

@@ -240,10 +240,28 @@ Syscalls
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit Syscalls;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.GlobalSock,
+  Core.Platform,
+  Core.Threads,
+  Core.HeapManager,
+  Core.Devices,
+  Core.FileSystem,
+  Core.Sockets,
+  Core.Crypto,
+  Core.Ultibo,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -258,6 +276,7 @@ uses
   Crypto,
   Ultibo,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //Which Pthreads functions are cancellation points? (Find a list)
         //See: http://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_09_05

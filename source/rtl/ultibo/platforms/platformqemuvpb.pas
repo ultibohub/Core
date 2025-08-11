@@ -51,7 +51,9 @@ Platform QEMUVPB
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit PlatformQEMUVPB;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
@@ -59,6 +61,33 @@ interface
 {Global definitions} {Must be prior to uses}
 {$INCLUDE ..\core\GlobalDefines.inc}
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Platforms.VersatilePB,
+  Core.Platform,
+  {$IFDEF CPUARM}
+  Platforms.PlatformARM,
+  Platforms.PlatformARMv7,
+  {$ENDIF CPUARM}
+  {$IFDEF CPUAARCH64}
+  Platforms.PlatformAARCH64,
+  Platforms.PlatformARMv8,
+  {$ENDIF CPUAARCH64}
+  Core.HeapManager,
+  Core.Threads,
+  {$IFDEF CONSOLE_EARLY_INIT}
+  Core.Devices,
+  Core.Framebuffer,
+  Core.Console,
+  {$ENDIF}
+  {$IFDEF LOGGING_EARLY_INIT}
+  Core.Logging,
+  {$ENDIF}
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -84,6 +113,7 @@ uses
   Logging,
   {$ENDIF}
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {const}

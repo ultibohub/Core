@@ -57,10 +57,23 @@ VideoCore IV V3D
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit VC4V3D;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.HeapManager,
+  Core.Devices,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -70,6 +83,7 @@ uses
   HeapManager,
   Devices,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -523,6 +537,15 @@ function V3DQPUExecute(NumQPUs,Control,NoFlush,Timeout:LongWord):LongWord;
 
 implementation
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  {$IFDEF CPUARMV6}
+  Platforms.BCM2835
+  {$ELSE}
+  Platforms.BCM2837
+  {$ENDIF}
+  ;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   {$IFDEF CPUARMV6}
   BCM2835
@@ -530,6 +553,7 @@ uses
   BCM2837
   {$ENDIF}
   ;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {==============================================================================}

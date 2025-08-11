@@ -42,7 +42,9 @@ Platform AARCH64
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit PlatformAARCH64;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
@@ -50,6 +52,19 @@ interface
 {Global definitions} {Must be prior to uses}
 {$INCLUDE ..\core\GlobalDefines.inc}
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.HeapManager,
+  Core.Threads,
+  {$IFDEF DEVICE_TREE_ENABLE}
+  Core.DeviceTree,
+  {$ENDIF DEVICE_TREE_ENABLE}
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -61,6 +76,7 @@ uses
   DeviceTree,
   {$ENDIF DEVICE_TREE_ENABLE}
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 //const

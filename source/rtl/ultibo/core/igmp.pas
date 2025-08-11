@@ -44,10 +44,28 @@ Internet Group Management Protocol
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit IGMP;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.GlobalSock,
+  Core.Threads,
+  System.SysUtils,
+  System.Classes,
+  Core.Network,
+  Core.Transport,
+  Core.Protocol,
+  Core.IP,
+  Core.Ultibo,
+  Core.UltiboClasses;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -62,6 +80,7 @@ uses
   IP,
   Ultibo,
   UltiboClasses;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}

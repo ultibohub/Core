@@ -47,10 +47,21 @@ Big Integer Arithmetic
 {$inline on}      {Allow use of Inline procedures}
 {$pointermath on} {Allow pointer arithmetic}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit BigInt;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -58,6 +69,7 @@ uses
   Platform,
   Threads,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}

@@ -39,15 +39,25 @@ CP857 OEM (Turkish)
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit CP857OEM;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Locale;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
   GlobalTypes,
   Locale;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -80,8 +90,13 @@ procedure CP857OEMInit;
 
 implementation
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  CodePages.CP1254ANSI;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   CP1254ANSI;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {==============================================================================}

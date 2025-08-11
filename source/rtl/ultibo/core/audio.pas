@@ -42,10 +42,23 @@ USB Audio Devices
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit Audio;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.Codec,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -55,6 +68,7 @@ uses
   Devices,
   Codec,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //Add PCM/I2S, MPEG etc //No, they should include audio if required
 

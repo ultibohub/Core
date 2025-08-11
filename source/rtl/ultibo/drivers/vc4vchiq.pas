@@ -118,10 +118,24 @@ VideoCore IV VCHIQ
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit VC4VCHIQ;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.HeapManager,
+  Core.Devices,
+  System.CTypes,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -132,6 +146,7 @@ uses
   Devices,
   CTypes,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -1358,6 +1373,15 @@ function VCHIQResumeStatusToString(Status:VC_RESUME_STATUS_T):String;
 
 implementation
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  {$IFDEF CPUARMV6}
+  Platforms.BCM2835
+  {$ELSE}
+  Platforms.BCM2837
+  {$ENDIF}
+  ;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   {$IFDEF CPUARMV6}
   BCM2835
@@ -1365,6 +1389,7 @@ uses
   BCM2837
   {$ENDIF}
   ;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {==============================================================================}

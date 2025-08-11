@@ -37,10 +37,26 @@ Network File System (NFS)
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit NFS;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.FileSystem,
+  System.SysUtils,
+  System.Classes,
+  Core.UltiboClasses,
+  Core.Winsock2;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -53,6 +69,7 @@ uses
   Classes,
   UltiboClasses,
   Winsock2;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //See: https://en.wikipedia.org/wiki/Network_File_System
 

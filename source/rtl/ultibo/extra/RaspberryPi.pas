@@ -48,11 +48,48 @@ Raspberry Pi
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit RaspberryPi;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Platforms.BCM2835,
+  Core.Platform,
+  Core.Threads,
+  Core.MMC,
+  Drivers.BCM2708,
+  Drivers.BCMSDHOST,
+  Core.USB,
+  Drivers.DWCOTG,
+  Drivers.SMSC95XX,
+  Drivers.USBStorage,
+  Core.Framebuffer,
+  Core.Console,
+  Core.Keyboard,
+  Core.Mouse,
+  Core.HID,
+  Core.USBHID,
+  Drivers.HIDKeyboard,
+  Drivers.HIDMouse,
+  Core.FileSystem,
+  Core.EXTFS,
+  Core.FATFS,
+  Core.NTFS,
+  Core.CDFS,
+  Core.VirtualDisk,
+  Core.Logging,
+  Core.Sockets,
+  Core.Winsock2,
+  Core.Services,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
   GlobalConfig,
   GlobalConst,
   GlobalTypes,
@@ -85,6 +122,7 @@ uses
   Winsock2,
   Services,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Initialization Functions}

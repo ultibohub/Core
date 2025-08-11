@@ -61,10 +61,24 @@ X.509 Public Key Certificates
 {$inline on}      {Allow use of Inline procedures}
 {$pointermath on} {Allow pointer arithmetic}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit X509;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Crypto,
+  Core.ASN1,
+  System.Classes,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -75,6 +89,7 @@ uses
   ASN1,
   Classes,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}

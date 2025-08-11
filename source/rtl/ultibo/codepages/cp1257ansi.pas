@@ -39,15 +39,25 @@ CP1257 ANSI (Baltic)
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit CP1257ANSI;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Locale;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
   GlobalTypes,
   Locale;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -80,8 +90,13 @@ procedure CP1257ANSIInit;
 
 implementation
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  CodePages.CP775OEM;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   CP775OEM;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {==============================================================================}

@@ -38,7 +38,9 @@ Global Types
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit GlobalTypes;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 

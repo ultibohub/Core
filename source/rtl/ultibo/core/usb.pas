@@ -224,10 +224,24 @@ to the hub to determine exactly what changed on the affected ports.
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit USB;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.HeapManager,
+  Core.Devices,
+  Core.Unicode,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -238,6 +252,7 @@ uses
   Devices,
   Unicode,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //For some USB 3.0 information see: \u-boot-HEAD-5745f8c\include\usb.h
               //eg usb_interface / ss_ep_comp_desc (Super Speed Endpoint Companion Descriptor)

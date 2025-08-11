@@ -39,10 +39,28 @@ Internet Control Message Protocol version 6
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit ICMPv6;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.GlobalSock,
+  Core.Threads,
+  System.SysUtils,
+  System.Classes,
+  Core.Network,
+  Core.Transport,
+  Core.Protocol,
+  Core.IPv6,
+  Core.Ultibo,
+  Core.UltiboClasses;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -57,6 +75,7 @@ uses
   IPv6,
   Ultibo,
   UltiboClasses;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //IPv6 uses NDP (via ICMPv6) instead of ARP
                       //See: http://keepingitclassless.net/2011/10/neighbor-solicitation-ipv6s-replacement-for-arp/

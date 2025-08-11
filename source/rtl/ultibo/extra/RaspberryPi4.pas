@@ -49,11 +49,52 @@ Raspberry Pi 4
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit RaspberryPi4;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Platforms.BCM2838,
+  Core.Platform,
+  Core.Threads,
+  Core.MMC,
+  Drivers.BCM2711,
+  Drivers.BCMSDHOST,
+  Core.USB,
+  Core.PCI,
+  Core.XHCI,
+  Drivers.DWCOTG,
+  Drivers.USBStorage,
+  Drivers.GENET,
+  //Drivers.BRCMSTBPCIe, //To Do //PCIe Host driver
+  Drivers.RPiGPIOExpander,
+  Core.Framebuffer,
+  Core.Console,
+  Core.Keyboard,
+  Core.Mouse,
+  Core.HID,
+  Core.USBHID,
+  Drivers.HIDKeyboard,
+  Drivers.HIDMouse,
+  Core.FileSystem,
+  Core.EXTFS,
+  Core.FATFS,
+  Core.NTFS,
+  Core.CDFS,
+  Core.VirtualDisk,
+  Core.Logging,
+  Core.Sockets,
+  Core.Winsock2,
+  Core.Services,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
   GlobalConfig,
   GlobalConst,
   GlobalTypes,
@@ -90,6 +131,7 @@ uses
   Winsock2,
   Services,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Initialization Functions}

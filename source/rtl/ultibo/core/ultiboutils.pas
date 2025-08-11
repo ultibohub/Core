@@ -37,10 +37,24 @@ Ultibo Utils
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit UltiboUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Threads,
+  Core.Unicode,
+  Core.Security,
+  Core.Ultibo,
+  System.SysUtils,
+  System.Classes;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -51,6 +65,7 @@ uses
   Ultibo,
   SysUtils,
   Classes;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}

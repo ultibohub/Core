@@ -62,7 +62,9 @@ API
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit API;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
@@ -70,6 +72,175 @@ interface
 {Global definitions} {Must be prior to uses}
 {$INCLUDE GlobalDefines.inc}
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+
+  {$IFDEF API_EXPORT_PLATFORM}
+  Core.Platform,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_THREADS}
+  Core.Threads,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_HEAP}
+  Core.HeapManager,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_DEVICE_TREE}
+  Core.DeviceTree,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_DEVICES}
+  Core.Devices,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_CONSOLE}
+  Core.Console,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_LOGGING}
+  Core.Logging,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_DMA}
+  Core.DMA,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_PCI}
+  Core.PCI,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_USB}
+  Core.USB,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_MMC}
+  Core.MMC,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_SPI}
+  Core.SPI,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_I2C}
+  Core.I2C,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_PWM}
+  Core.PWM,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_PCM}
+  Core.I2S,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_GPIO}
+  Core.GPIO,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_UART}
+  Core.UART,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_SERIAL}
+  Core.Serial,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_RTC}
+  Core.RTC,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_FONT}
+  Core.Font,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_FRAMEBUFFER}
+  Core.Framebuffer,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_GRAPHICSCONSOLE}
+  Core.GraphicsConsole,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_HID}
+  Core.HID,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_KEYMAP}
+  Core.Keymap,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_KEYBOARD}
+  Core.Keyboard,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_MOUSE}
+  Core.Mouse,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_TOUCH}
+  Core.Touch,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_JOYSTICK}
+  Core.Joystick,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_STORAGE}
+  Core.Storage,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_NETWORK}
+  Core.Network,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_TIMEZONE}
+  Core.Timezone,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_LOCALE}
+  Core.Locale,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_UNICODE}
+  Core.Unicode,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_TFTFRAMEBUFFER}
+  Core.TFTFramebuffer,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_PS2}
+  Core.PS2,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_FILESYSTEM}
+  Core.FileSystem,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_WINSOCK}
+  Core.Winsock,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_WINSOCK2}
+  Core.Winsock2,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_IPHLPAPI}
+  Core.Iphlpapi,
+  {$ENDIF}
+
+  {$IFDEF API_EXPORT_ULTIBO}
+  Core.Security,
+  Core.Ultibo,
+  {$ENDIF}
+
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -237,6 +408,7 @@ uses
   {$ENDIF}
 
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {const}

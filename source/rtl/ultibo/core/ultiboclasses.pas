@@ -37,10 +37,24 @@ Ultibo Classes
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit UltiboClasses;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Unicode,
+  Core.Ultibo,
+  System.SysUtils,
+  System.Classes;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -51,6 +65,7 @@ uses
   Ultibo,
   SysUtils,
   Classes;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //FPC supports TStream with 64bit interaces, check and confirm and remove TStreamEx etc
                       //Retain TMemoryStreamEx because it is for a different purpose (Grow without Realloc)

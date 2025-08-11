@@ -59,10 +59,24 @@ PS2 Keyboard/Mouse Controller
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit PS2;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.Keyboard,
+  Core.Mouse,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -73,6 +87,7 @@ uses
   Keyboard,
   Mouse,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //Intellimouse extensions (Wheel plus Buttons 4 and 5) see http://www.computer-engineering.org/ps2mouse/
         //Scancode sets 1 and 3

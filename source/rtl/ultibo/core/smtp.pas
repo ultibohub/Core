@@ -37,10 +37,27 @@ SMTP
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit SMTP;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  System.SysUtils,
+  System.Classes,
+  Core.UltiboClasses,
+  Core.UltiboUtils,
+  Core.Winsock2,
+  Core.Crypto,
+  Core.Authentication;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -54,6 +71,7 @@ uses
   Winsock2,
   Crypto,
   Authentication;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //Look for:
 

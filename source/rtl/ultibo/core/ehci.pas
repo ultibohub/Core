@@ -38,10 +38,23 @@ Enhanced Host Controller Interface (EHCI)
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit EHCI;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.PCI,
+  Core.USB;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -51,6 +64,7 @@ uses
   Devices,
   PCI,
   USB;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //See: \u-boot-HEAD-5745f8c\drivers\usb\host
 

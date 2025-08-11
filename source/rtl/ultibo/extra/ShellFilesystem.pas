@@ -38,10 +38,28 @@ Shell FileSystem
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit ShellFilesystem;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.FileSystem,
+  System.SysUtils,
+  System.Classes,
+  Core.Ultibo,
+  Core.UltiboClasses,
+  Core.UltiboUtils,
+  Core.Shell;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -56,6 +74,7 @@ uses
   UltiboClasses,
   UltiboUtils,
   Shell;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //Change some of the direct calls to use FileSysDriver instead (eg Device.ActivatePartition etc)
 

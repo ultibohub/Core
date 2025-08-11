@@ -38,7 +38,9 @@ Global Constants
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit GlobalConst;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 

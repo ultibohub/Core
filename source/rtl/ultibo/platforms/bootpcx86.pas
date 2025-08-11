@@ -37,7 +37,9 @@ PC
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit BootPCx86;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
@@ -45,6 +47,25 @@ interface
 {Global definitions}
 {$INCLUDE ..\core\GlobalDefines.inc}
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Platforms.PlatformPC,
+  Platforms.Platformx86,
+  Core.Threads,
+  {$IFDEF CONSOLE_EARLY_INIT}
+  Core.Devices,
+  Core.Framebuffer,
+  Core.Console,
+  {$ENDIF}
+  {$IFDEF LOGGING_EARLY_INIT}
+  Core.Logging,
+  {$ENDIF}
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -62,6 +83,7 @@ uses
   Logging,
   {$ENDIF}
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //See: \u-boot-HEAD-5745f8c\arch\x86\cpu
 

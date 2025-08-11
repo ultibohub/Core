@@ -73,10 +73,25 @@ USB Mass Storage Devices
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit USBStorage;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.USB,
+  Core.Storage,
+  Core.SCSI,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -88,6 +103,7 @@ uses
   Storage,
   SCSI,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do               //USB Storage Read Protect / Write Protect
                       //USB Storage CBI Transport

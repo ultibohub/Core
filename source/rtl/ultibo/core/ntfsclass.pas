@@ -105,10 +105,30 @@ NT Filesystem
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit NTFSClass;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Threads,
+  Core.FileSystem,
+  System.SysUtils,
+  System.Classes,
+  Core.Unicode,
+  Core.Security,
+  Core.Ultibo,
+  Core.UltiboUtils,
+  Core.UltiboClasses,
+  Core.NTFSConst,
+  Core.NTFSTypes,
+  Core.NTFSUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -125,6 +145,7 @@ uses
   NTFSConst,
   NTFSTypes,
   NTFSUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //Look for:
 

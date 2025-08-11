@@ -69,10 +69,23 @@ For usage of barriers (DMB/DSB/ISB) after cache maintenance operations see: ARM.
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit PlatformARMv7;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Platforms.PlatformARM,
+  Core.HeapManager,
+  Core.Threads,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -82,6 +95,7 @@ uses
   HeapManager,
   Threads,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //Look for:
 

@@ -167,10 +167,30 @@ VideoCore IV
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit VC4;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.HeapManager,
+  Core.Syscalls,
+  Core.Devices,
+  Drivers.VC4V3D,
+  Drivers.VC4VCHIQ,
+  //Drivers.VC4VCSM, //Add VCSM when completed
+  Core.Audio,
+  Core.Video,
+  System.CTypes,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -187,6 +207,7 @@ uses
   Video,
   CTypes,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
@@ -1068,6 +1089,15 @@ function vc4_bcm_host_get_sdram_address: cunsigned; cdecl; public name 'vc4_bcm_
 
 implementation
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  {$IFDEF CPUARMV6}
+  Platforms.BCM2835
+  {$ELSE}
+  Platforms.BCM2837
+  {$ENDIF}
+  ;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   {$IFDEF CPUARMV6}
   BCM2835
@@ -1075,6 +1105,7 @@ uses
   BCM2837
   {$ENDIF}
   ;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {==============================================================================}

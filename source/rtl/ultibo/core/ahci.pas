@@ -37,10 +37,22 @@ Advanced Host Controller Interface (AHCI)
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit AHCI;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.Storage;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -49,6 +61,7 @@ uses
   Threads,
   Devices,
   Storage;
+{$ENDIF FPC_DOTTEDUNITS}
 
 //To Do //See: \u-boot-HEAD-5745f8c\drivers\block
 

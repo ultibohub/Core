@@ -41,10 +41,41 @@ Winsock
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit Winsock;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.GlobalSock,
+  Core.Platform,
+  Core.Threads,
+  System.SysUtils,
+  System.Classes,
+  Core.UltiboClasses,
+  Core.UltiboUtils,
+  Core.Network,
+  Core.Transport,
+  Core.Protocol,
+  Core.Sockets,
+  Core.Loopback,
+  Core.ARP,
+  Core.IP,
+  Core.IPv6,
+  Core.UDP,
+  Core.TCP,
+  Core.ICMP,
+  Core.ICMPv6,
+  Core.IGMP,
+  Core.Raw,
+  Core.DHCP,
+  Core.DNS;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -72,6 +103,7 @@ uses
   RAW,
   DHCP,
   DNS;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}

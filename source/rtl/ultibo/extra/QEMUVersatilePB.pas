@@ -51,11 +51,60 @@ QEMU VersatilePB
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit QEMUVersatilePB;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
-uses 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Platforms.VersatilePB,
+  Core.Platform,
+  Core.Threads,
+  Platforms.PlatformQEMUVPB,
+  Core.Devices,
+  Core.DMA,
+  //Drivers.PL08X,        {ARM PrimeCell PL080/PL081 DMA driver} //To Do //Continuing
+  Core.Serial,
+  Core.UART,
+  Drivers.PL011,        {ARM PrimeCell PL011 UART driver}
+  Core.RTC,
+  Drivers.PL031,        {ARM PrimeCell PL031 Real Time Clock driver}
+  Core.MMC,
+  Drivers.PL18X,        {ARM PrimeCell PL181 SDHCI driver}
+  Core.USB,
+  //Core.OHCI,            {USB OHCI Controller driver}  //To Do //Continuing
+  Drivers.USBStorage,
+  Core.Network,
+  Drivers.SMC91X,       {SMC LAN91C11 Network driver}
+  Core.Framebuffer,
+  Drivers.PL110,        {ARM PrimeCell PL110 Color LCD driver}
+  Core.Console,
+  Core.Keyboard,
+  Core.Mouse,
+  Core.PS2,
+  Drivers.PL050,        {ARM PrimeCell PL050 PS2 Keyboard/Mouse driver}
+  Core.HID,
+  Core.USBHID,
+  Drivers.HIDKeyboard,
+  Drivers.HIDMouse,
+  Core.FileSystem,
+  Core.EXTFS,
+  Core.FATFS,
+  Core.NTFS,
+  Core.CDFS,
+  Core.VirtualDisk,
+  Core.Logging,
+  Core.Sockets,
+  Core.Winsock2,
+  Core.Services,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
+uses
   GlobalConfig,
   GlobalConst,
   GlobalTypes,
@@ -100,6 +149,7 @@ uses
   Winsock2,
   Services,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 
 {==============================================================================}

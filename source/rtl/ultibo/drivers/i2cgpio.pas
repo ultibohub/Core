@@ -59,10 +59,17 @@ I2C GPIO
  Pi (I2C0 or BSC1) which is on GPIO pins 2 and 3 you simply initialize an instance
  of the I2CGPIO device by calling the I2CGPIOCreate function like this:
 
- uses
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.I2C,
+  Core.GPIO,
+  Drivers.I2CGPIO;
+{$ELSE FPC_DOTTEDUNITS}
+uses
   I2C,
   GPIO,
   I2CGPIO;
+{$ENDIF FPC_DOTTEDUNITS}
 
  var
   I2CDevice:PI2CDevice;
@@ -106,10 +113,24 @@ I2C GPIO
 {$H+}          {Default to AnsiString}
 {$inline on}   {Allow use of Inline procedures}
 
+{$IFNDEF FPC_DOTTEDUNITS}
 unit I2CGPIO;
+{$ENDIF FPC_DOTTEDUNITS}
 
 interface
 
+{$IFDEF FPC_DOTTEDUNITS}
+uses
+  Core.GlobalConfig,
+  Core.GlobalConst,
+  Core.GlobalTypes,
+  Core.Platform,
+  Core.Threads,
+  Core.Devices,
+  Core.I2C,
+  Core.GPIO,
+  System.SysUtils;
+{$ELSE FPC_DOTTEDUNITS}
 uses
   GlobalConfig,
   GlobalConst,
@@ -120,6 +141,7 @@ uses
   I2C,
   GPIO,
   SysUtils;
+{$ENDIF FPC_DOTTEDUNITS}
 
 {==============================================================================}
 {Global definitions}
