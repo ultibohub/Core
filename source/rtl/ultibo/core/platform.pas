@@ -2353,6 +2353,8 @@ function ClockMilliseconds:Int64;
 function ClockMicroseconds:Int64;
 function ClockNanoseconds:Int64;
 
+function ClockGetBase:Int64;
+
 function ClockGetTime:Int64;
 function ClockSetTime(const Time:Int64;RTC:Boolean):Int64;
 
@@ -6575,6 +6577,22 @@ begin
 
  Result:=ClockGetTotal div CLOCK_CYCLES_PER_NANOSECOND;
  {$ENDIF}
+end;
+
+{==============================================================================}
+
+function ClockGetBase:Int64;
+{Get the current clock base in 100 nanosecond ticks since 1/1/1601}
+{Return: The current clock base or zero if not set}
+{Note: Clock base is the value added to the system clock to obtain the current time
+       which is calculated at the last setting of the clock}
+{Note: This is the same time format as Windows FILE_TIME and is intended to allow
+       compatibility with file system functions etc.}
+{Note: By default the time returned by this function is considered to be UTC but
+       the actual conversion between UTC and local time is handled at a higher level}
+begin
+ {}
+ Result:=ClockBase;
 end;
 
 {==============================================================================}

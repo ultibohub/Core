@@ -1202,6 +1202,8 @@ function clock_milliseconds: int64_t; stdcall; public name 'clock_milliseconds';
 function clock_microseconds: int64_t; stdcall; public name 'clock_microseconds';
 function clock_nanoseconds: int64_t; stdcall; public name 'clock_nanoseconds';
 
+function clock_get_base: int64_t; stdcall; public name 'clock_get_base';
+
 function clock_get_time: int64_t; stdcall; public name 'clock_get_time';
 function clock_set_time(const time: int64_t; rtc: BOOL): int64_t; stdcall; public name 'clock_set_time';
 
@@ -8439,6 +8441,22 @@ function clock_nanoseconds: int64_t; stdcall;
 begin
  {}
  Result:=ClockNanoseconds;
+end;
+
+{==============================================================================}
+
+function clock_get_base: int64_t; stdcall;
+{Get the current clock base in 100 nanosecond ticks since 1/1/1601}
+{Return: The current clock base or zero if not set}
+{Note: Clock base is the value added to the system clock to obtain the current time
+       which is calculated at the last setting of the clock}
+{Note: This is the same time format as Windows FILE_TIME and is intended to allow
+       compatibility with file system functions etc.}
+{Note: By default the time returned by this function is considered to be UTC but
+       the actual conversion between UTC and local time is handled at a higher level}
+begin
+ {}
+ Result:=ClockGetBase;
 end;
 
 {==============================================================================}
