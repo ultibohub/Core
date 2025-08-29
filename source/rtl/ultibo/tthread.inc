@@ -74,7 +74,7 @@ var
   P: Integer;
   I: TThreadPriority;
 begin
-  P := ThreadGetPriority(FHandle);
+  P := System.ThreadGetPriority(FHandle);
   Result := tpNormal;
   for I := Low(TThreadPriority) to High(TThreadPriority) do
     if Priorities[I] = P then Result := I;
@@ -82,7 +82,7 @@ end;
 
 procedure TThread.SetPriority(Value: TThreadPriority);
 begin
-  ThreadSetPriority(FHandle, Priorities[Value]);
+  System.ThreadSetPriority(FHandle, Priorities[Value]);
 end;
 
 

@@ -7455,17 +7455,19 @@ end;
 {==============================================================================}
 
 function GetThreadPriority(hThread:HANDLE):Integer;
+{Note: Returns priority values in the range -15..+15, must use the FPC RTL function}
 begin
  {}
- Result:=Threads.ThreadGetPriority(hThread);
+ Result:=System.ThreadGetPriority(hThread);
 end;
 
 {==============================================================================}
 
 function SetThreadPriority(hThread:HANDLE;nPriority:Integer):BOOL;
+{Note: Expects priority values in the range -15..+15, must use the FPC RTL function}
 begin
  {}
- Result:=(Threads.ThreadSetPriority(hThread,nPriority) <> LongWord(INVALID_HANDLE_VALUE));
+ Result:=System.ThreadSetPriority(hThread,nPriority);
 end;
 
 {==============================================================================}
