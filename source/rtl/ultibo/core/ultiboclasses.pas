@@ -1,7 +1,7 @@
 {
 Ultibo classes unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -123,6 +123,8 @@ type
  TThreadEx = class(TThread)
  private
   {}
+  function GetName:String;
+  procedure SetName(const AName:String);
  protected
   {}
   procedure Execution; virtual;
@@ -131,7 +133,12 @@ type
   procedure Execute; override;
  public
   {}
+  property Name:String read GetName write SetName;
+
   procedure TerminateAndWaitFor;
+
+  function MapPriority(Value:TThreadPriority):LongWord;
+  function UnmapPriority(Value:LongWord):TThreadPriority;
  end;
 
 {==============================================================================}
@@ -1100,6 +1107,22 @@ end;
 {==============================================================================}
 {==============================================================================}
 {TThreadEx}
+function TThreadEx.GetName:String;
+begin
+ {Get Name}
+ Result:=ThreadGetName(Handle);
+end;
+
+{==============================================================================}
+
+procedure TThreadEx.SetName(const AName:String);
+begin
+ {Set Name}
+ ThreadSetName(Handle,AName);
+end;
+
+{==============================================================================}
+
 procedure TThreadEx.Execution;
 begin
  {Nothing}
@@ -1150,6 +1173,41 @@ begin
  if not Terminated then Terminate;
  if Suspended then Start; {Resume is Deprecated}
  WaitFor;
+end;
+
+{==============================================================================}
+
+const
+ Priorities:array[TThreadPriority] of LongWord =
+  (THREAD_PRIORITY_IDLE, THREAD_PRIORITY_LOWEST, THREAD_PRIORITY_LOWER,
+   THREAD_PRIORITY_NORMAL, THREAD_PRIORITY_HIGHER,
+   THREAD_PRIORITY_HIGHEST, THREAD_PRIORITY_CRITICAL);
+
+function TThreadEx.MapPriority(Value:TThreadPriority):LongWord;
+{Map a TThreadPriority value to an Ultibo thread priority value}
+begin
+ {}
+ Result:=Priorities[Value];
+end;
+
+{==============================================================================}
+
+function TThreadEx.UnmapPriority(Value:LongWord):TThreadPriority;
+{Unmap an Ultibo thread priority value to a TThreadPriority value}
+var
+ Priority:TThreadPriority;
+begin
+ {}
+ Result:=tpNormal;
+
+ for Priority:=Low(TThreadPriority) to High(TThreadPriority) do
+  begin
+   if Priorities[Priority] = Value then
+    begin
+     Result:=Priority;
+     Exit;
+    end;
+  end;
 end;
 
 {==============================================================================}

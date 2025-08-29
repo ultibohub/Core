@@ -1393,7 +1393,7 @@ type
   function ResolveHostEx(const AHost:String;AFamily:Integer;AAll:Boolean):TStrings;
  end;
 
- TWinsock2SocketThread = class(TThreadEx) //To do //Base on TListObject instead ? //Move the stuff from ThreadEx to Here ?
+ TWinsock2SocketThread = class(TThreadEx)
  private
   {}
   FPrev:TWinsock2SocketThread;
@@ -1434,12 +1434,16 @@ type
   property Count:Integer read GetCount;
   property First:TWinsock2SocketThread read GetFirst;
   property Last:TWinsock2SocketThread read GetLast;
+
   function Add(AValue:TWinsock2SocketThread):Boolean; virtual;
   function Remove(AValue:TWinsock2SocketThread):Boolean; virtual;
   function Insert(APrev,AValue:TWinsock2SocketThread):Boolean; virtual;
   function Find(AValue:TWinsock2SocketThread):Boolean; virtual;
   function FindByID(AThreadID:TThreadID):TWinsock2SocketThread; virtual;
   procedure Clear; virtual;
+
+  procedure ThreadName(const AThreadName:String);
+  procedure ThreadPriority(AThreadPriority:LongWord);
  end;
 
  TWinsock2SocketBuffer = class(TObject) //To do //Base on TListObject instead ?
@@ -1483,6 +1487,7 @@ type
   property Count:Integer read GetCount;
   property First:TWinsock2SocketBuffer read GetFirst;
   property Last:TWinsock2SocketBuffer read GetLast;
+
   function Add(AValue:TWinsock2SocketBuffer):Boolean; virtual;
   function Remove(AValue:TWinsock2SocketBuffer):Boolean; virtual;
   function Insert(APrev,AValue:TWinsock2SocketBuffer):Boolean; virtual;
@@ -1820,6 +1825,13 @@ type
  private
   {}
   FActive:Boolean;
+
+  FListenerName:String;
+  FListenerPriority:LongWord;
+
+  FServerName:String;
+  FServerPriority:LongWord;
+
   FThreads:TWinsock2TCPServerThreads;
   FListenerThread:TWinsock2TCPListenerThread;
 
@@ -1829,6 +1841,12 @@ type
   FOnCreateThread:TTCPCreateThreadEvent;
   {}
   procedure SetActive(AActive:Boolean);
+
+  procedure SetListenerName(const AListenerName:String);
+  procedure SetListenerPriority(AListenerPriority:LongWord);
+
+  procedure SetServerName(const AServerName:String);
+  procedure SetServerPriority(AServerPriority:LongWord);
  protected
   {}
   procedure SetLastError(ALastError:LongInt); virtual;
@@ -1840,6 +1858,13 @@ type
  public
   {}
   property Active:Boolean read FActive write SetActive;
+
+  property ListenerName:String read FListenerName write SetListenerName;
+  property ListenerPriority:LongWord read FListenerPriority write SetListenerPriority;
+
+  property ServerName:String read FServerName write SetServerName;
+  property ServerPriority:LongWord read FServerPriority write SetServerPriority;
+
   property Threads:TWinsock2TCPServerThreads read FThreads;
 
   property OnExecute:TTCPExecuteEvent read FOnExecute write FOnExecute;
@@ -2054,6 +2079,13 @@ type
 
   FActive:Boolean;
   FUseListener:Boolean;
+
+  FListenerName:String;
+  FListenerPriority:LongWord;
+
+  FServerName:String;
+  FServerPriority:LongWord;
+
   FThreads:TWinsock2UDPServerThreads;
   FBuffers:TWinsock2UDPServerBuffers;
   FListenerThread:TWinsock2UDPListenerThread;
@@ -2067,6 +2099,12 @@ type
 
   procedure SetActive(AActive:Boolean);
   procedure SetUseListener(AUseListener:Boolean);
+
+  procedure SetListenerName(const AListenerName:String);
+  procedure SetListenerPriority(AListenerPriority:LongWord);
+
+  procedure SetServerName(const AServerName:String);
+  procedure SetServerPriority(AServerPriority:LongWord);
  protected
   {}
   procedure SetLastError(ALastError:LongInt); virtual;
@@ -2078,6 +2116,13 @@ type
   {}
   property Active:Boolean read FActive write SetActive;
   property UseListener:Boolean read FUseListener write SetUseListener;
+
+  property ListenerName:String read FListenerName write SetListenerName;
+  property ListenerPriority:LongWord read FListenerPriority write SetListenerPriority;
+
+  property ServerName:String read FServerName write SetServerName;
+  property ServerPriority:LongWord read FServerPriority write SetServerPriority;
+
   property Threads:TWinsock2UDPServerThreads read FThreads;
   property Buffers:TWinsock2UDPServerBuffers read FBuffers;
 
@@ -4372,6 +4417,52 @@ begin
  FLast:=nil;
 
  ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2SocketThreads.ThreadName(const AThreadName:String);
+{Set the name of each thread in the socket thread list}
+var
+ Next:TWinsock2SocketThread;
+begin
+ {}
+ if not AcquireLock then Exit;
+ try
+  Next:=FFirst;
+  while Next <> nil do
+   begin
+    {Set Name}
+    Next.Name:=AThreadName;
+
+    Next:=Next.Next;
+   end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2SocketThreads.ThreadPriority(AThreadPriority:LongWord);
+{Set the priority of each thread in the socket thread list}
+var
+ Next:TWinsock2SocketThread;
+begin
+ {}
+ if not AcquireLock then Exit;
+ try
+  Next:=FFirst;
+  while Next <> nil do
+   begin
+    {Set Priority}
+    Next.Priority:=Next.UnmapPriority(AThreadPriority);
+
+    Next:=Next.Next;
+   end;
+ finally
+  ReleaseLock;
+ end;
 end;
 
 {==============================================================================}
@@ -7818,10 +7909,10 @@ begin
  FServer.Listener.DoConnect(Self);
 
  {Set Name}
- ThreadSetName(GetCurrentThreadID,WINSOCK_TCP_SERVER_THREAD_NAME);
+ ThreadSetName(GetCurrentThreadID,FServer.Listener.ServerName);
 
  {Set Priority}
- ThreadSetPriority(GetCurrentThreadID,WINSOCK_TCP_SERVER_THREAD_PRIORITY);
+ ThreadSetPriority(GetCurrentThreadID,FServer.Listener.ServerPriority);
 end;
 
 {==============================================================================}
@@ -7868,11 +7959,13 @@ end;
 procedure TWinsock2TCPListenerThread.BeforeExecution;
 begin
  {}
+ if FListener = nil then Exit;
+
  {Set Name}
- ThreadSetName(GetCurrentThreadID,WINSOCK_TCP_LISTENER_THREAD_NAME);
+ ThreadSetName(GetCurrentThreadID,FListener.ListenerName);
 
  {Set Priority}
- ThreadSetPriority(GetCurrentThreadID,WINSOCK_TCP_LISTENER_THREAD_PRIORITY);
+ ThreadSetPriority(GetCurrentThreadID,FListener.ListenerPriority);
 end;
 
 {==============================================================================}
@@ -8016,7 +8109,15 @@ constructor TWinsock2TCPListener.Create;
 begin
  {}
  inherited Create;
+
+ FListenerName:=WINSOCK_TCP_LISTENER_THREAD_NAME;
+ FListenerPriority:=WINSOCK_TCP_LISTENER_THREAD_PRIORITY;
+
+ FServerName:=WINSOCK_TCP_SERVER_THREAD_NAME;
+ FServerPriority:=WINSOCK_TCP_SERVER_THREAD_PRIORITY;
+
  FThreads:=TWinsock2TCPServerThreads.Create;
+ FListenerThread:=nil;
 end;
 
 {==============================================================================}
@@ -8068,9 +8169,62 @@ begin
 
    {Terminate Thread}
    FListenerThread.TerminateAndWaitFor;
+   FListenerThread:=nil;
   end;
 
  FActive:=AActive;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2TCPListener.SetListenerName(const AListenerName:String);
+begin
+ {}
+ if FListenerName <> AListenerName then
+  begin
+   FListenerName:=AListenerName;
+
+   if FListenerThread <> nil then FListenerThread.Name:=FListenerName;
+  end;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2TCPListener.SetListenerPriority(AListenerPriority:LongWord);
+begin
+ {}
+ if FListenerPriority <> AListenerPriority then
+  begin
+   FListenerPriority:=AListenerPriority;
+
+   if FListenerThread <> nil then FListenerThread.Priority:=FListenerThread.UnmapPriority(FListenerPriority);
+  end;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2TCPListener.SetServerName(const AServerName:String);
+begin
+ {}
+ if FServerName <> AServerName then
+  begin
+   FServerName:=AServerName;
+
+   if FThreads <> nil then FThreads.ThreadName(AServerName);
+  end;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2TCPListener.SetServerPriority(AServerPriority:LongWord);
+begin
+ {}
+ if FServerPriority <> AServerPriority then
+  begin
+   FServerPriority:=AServerPriority;
+
+   if FThreads <> nil then FThreads.ThreadPriority(AServerPriority);
+  end;
 end;
 
 {==============================================================================}
@@ -8496,11 +8650,14 @@ end;
 procedure TWinsock2UDPServerThread.BeforeExecution;
 begin
  {}
+ if FServer = nil then Exit;
+ if FServer.Listener = nil then Exit;
+
  {Set Name}
- ThreadSetName(GetCurrentThreadID,WINSOCK_UDP_SERVER_THREAD_NAME);
+ ThreadSetName(GetCurrentThreadID,FServer.Listener.ServerName);
 
  {Set Priority}
- ThreadSetPriority(GetCurrentThreadID,WINSOCK_UDP_SERVER_THREAD_PRIORITY);
+ ThreadSetPriority(GetCurrentThreadID,FServer.Listener.ServerPriority);
 end;
 
 {==============================================================================}
@@ -8565,11 +8722,13 @@ end;
 procedure TWinsock2UDPListenerThread.BeforeExecution;
 begin
  {}
+ if FListener = nil then Exit;
+
  {Set Name}
- ThreadSetName(GetCurrentThreadID,WINSOCK_UDP_LISTENER_THREAD_NAME);
+ ThreadSetName(GetCurrentThreadID,FListener.ListenerName);
 
  {Set Priority}
- ThreadSetPriority(GetCurrentThreadID,WINSOCK_UDP_LISTENER_THREAD_PRIORITY);
+ ThreadSetPriority(GetCurrentThreadID,FListener.ListenerPriority);
 end;
 
 {==============================================================================}
@@ -8666,7 +8825,7 @@ constructor TWinsock2UDPServerThreads.Create(AListener:TWinsock2UDPListener);
 begin
  {}
  inherited Create;
- FMin:=5;
+ FMin:=2;
  FMax:=10;
 
  FListener:=AListener;
@@ -8989,7 +9148,7 @@ constructor TWinsock2UDPServerBuffers.Create(AListener:TWinsock2UDPListener);
 begin
  {}
  inherited Create;
- FMin:=5;
+ FMin:=2;
  FMax:=10;
 
  FListener:=AListener;
@@ -9181,6 +9340,13 @@ begin
 
  FActive:=False;
  FUseListener:=True;
+
+ FListenerName:=WINSOCK_UDP_LISTENER_THREAD_NAME;
+ FListenerPriority:=WINSOCK_UDP_LISTENER_THREAD_PRIORITY;
+
+ FServerName:=WINSOCK_UDP_SERVER_THREAD_NAME;
+ FServerPriority:=WINSOCK_UDP_SERVER_THREAD_PRIORITY;
+
  FThreads:=TWinsock2UDPServerThreads.Create(Self);
  FBuffers:=TWinsock2UDPServerBuffers.Create(Self);
  FListenerThread:=nil;
@@ -9271,6 +9437,7 @@ begin
 
    {Terminate Thread}
    FListenerThread.TerminateAndWaitFor;
+   FListenerThread:=nil;
 
    {Terminate Threads}
    FThreads.TerminateAll;
@@ -9291,6 +9458,58 @@ begin
  if WS2StartupError <> ERROR_SUCCESS then Exit;
 
  FUseListener:=AUseListener;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2UDPListener.SetListenerName(const AListenerName:String);
+begin
+ {}
+ if FListenerName <> AListenerName then
+  begin
+   FListenerName:=AListenerName;
+
+   if FListenerThread <> nil then FListenerThread.Name:=FListenerName;
+  end;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2UDPListener.SetListenerPriority(AListenerPriority:LongWord);
+begin
+ {}
+ if FListenerPriority <> AListenerPriority then
+  begin
+   FListenerPriority:=AListenerPriority;
+
+   if FListenerThread <> nil then FListenerThread.Priority:=FListenerThread.UnmapPriority(FListenerPriority);
+  end;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2UDPListener.SetServerName(const AServerName:String);
+begin
+ {}
+ if FServerName <> AServerName then
+  begin
+   FServerName:=AServerName;
+
+   if FThreads <> nil then FThreads.ThreadName(AServerName);
+  end;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2UDPListener.SetServerPriority(AServerPriority:LongWord);
+begin
+ {}
+ if FServerPriority <> AServerPriority then
+  begin
+   FServerPriority:=AServerPriority;
+
+   if FThreads <> nil then FThreads.ThreadPriority(AServerPriority);
+  end;
 end;
 
 {==============================================================================}

@@ -1,7 +1,7 @@
 {
 Ultibo HTTP interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -97,6 +97,12 @@ uses
 {==============================================================================}
 const
  {HTTP specific constants}
+ HTTP_LISTENER_THREAD_NAME = 'HTTP Listener'; {Thread name for HTTP listener threads}
+ HTTP_SERVER_THREAD_NAME = 'HTTP Server';     {Thread name for HTTP server threads}
+
+ HTTP_BUFFER_SIZE = SIZE_2K;
+
+ {HTTP Character constants}
  HTTP_TAB = Chr(9);                 {Tab}
  HTTP_SPACE = Chr(32);              {Space}
  HTTP_DASH = '-';                   {-}
@@ -111,10 +117,6 @@ const
  HTTP_HEADER_SEPARATOR = ':';       {:}
  HTTP_BOOKMARK_SEPARATOR = '#';     {#}
  HTTP_PROTOCOL_SEPARATOR = '://';   {://}
-
- HTTP_BUFFER_SIZE = SIZE_2K;
-
- {HTTP Character constants}
 
  {HTTP Date constants}
  HTTP_DATE_FORMAT_RFC1123 = 'ddd, dd mmm yyyy hh:nn:ss "GMT"';  {RFC 822, updated by RFC 1123}
@@ -8764,8 +8766,12 @@ constructor THTTPListener.Create;
 begin
  {}
  inherited Create;
+
  BoundPort:=HTTP_PORT_DEFAULT;
  UseNagle:=False; {Nagle is not recommended for HTTP (Will often delay the last segment without reason)}
+
+ ListenerName:=HTTP_LISTENER_THREAD_NAME;
+ ServerName:=HTTP_SERVER_THREAD_NAME;
 
  FLock:=CriticalSectionCreate;
 
