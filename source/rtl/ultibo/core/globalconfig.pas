@@ -1313,19 +1313,20 @@ var
  SSH_AUTOSTART:LongBool = True;                 {If True then auto start the SSH server on boot (Only if RemoteShell unit included)}
 
 var
- {SysLog}
- SYSLOG_BOUND_PORT:Word;                        {The local port for SysLog to bind to (0 for dynamic port)}
+ {Syslog}
+ SYSLOG_BOUND_PORT:Word;                        {The local port for Syslog to bind to (0 for dynamic port)}
 
- SYSLOG_SERVER_DEFAULT:String = '127.0.0.1';    {The default SysLog server to send messages to}
- SYSLOG_PORT_DEFAULT:Word = 514;                          {The default SysLog port}
- SYSLOG_PROTOCOL_DEFAULT:LongWord = LOGGING_PROTOCOL_UDP; {The default SysLog protocol}
- SYSLOG_OCTET_COUNTING:LongBool;                {If True use the Octet Counting method of framing the SysLog message (LOGGING_PROTOCOL_TCP only)(See: RFC6587)}
+ SYSLOG_SERVER_DEFAULT:String = '127.0.0.1';    {The default Syslog server to send messages to}
+ SYSLOG_PORT_DEFAULT:Word = 514;                          {The default Syslog port}
+ SYSLOG_PROTOCOL_DEFAULT:LongWord = LOGGING_PROTOCOL_UDP; {The default Syslog protocol}
+ SYSLOG_BSD_FORMAT:LongBool = True;             {If True use the BSD message format described in RFC3164, otherwise use the IETF message format described in RFC5424}
+ SYSLOG_OCTET_COUNTING:LongBool;                {If True use the Octet Counting method of framing the Syslog message (LOGGING_PROTOCOL_TCP only)(See: RFC6587)}
  SYSLOG_BROADCAST_ENABLED:LongBool = True;      {If True enable use of a broadcast address for the Syslog server}
 
- SYSLOG_AUTOSTART:LongBool = True;              {If True then auto start the SysLog client on boot (Only if Services unit included)}
+ SYSLOG_AUTOSTART:LongBool = True;              {If True then auto start the Syslog client on boot (Only if Services unit included)}
 
- SYSLOG_REGISTER_LOGGING:LongBool = True;       {If True then register SysLog as a Logging device on boot (Only if Services unit included)}
- SYSLOG_LOGGING_DEFAULT:LongBool = True;        {If True then SysLog can be the default Logging device (Only if Services unit included)}
+ SYSLOG_REGISTER_LOGGING:LongBool = True;       {If True then register Syslog as a Logging device on boot (Only if Services unit included)}
+ SYSLOG_LOGGING_DEFAULT:LongBool = True;        {If True then Syslog can be the default Logging device (Only if Services unit included)}
 
 var
  {POP3}

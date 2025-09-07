@@ -1,7 +1,7 @@
 {
 Ultibo POP3 interface unit.
 
-Copyright (C) 2020 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -79,6 +79,9 @@ uses
 {==============================================================================}
 const
  {POP3 specific constants}
+ POP3_LISTENER_THREAD_NAME = 'POP3 Listener'; {Thread name for POP3 listener threads}
+ POP3_SERVER_THREAD_NAME = 'POP3 Server';     {Thread name for POP3 server threads}
+
  POP3_LINE_END = Chr(13) + Chr(10); {CR LF}
 
  POP3_BUFFER_SIZE = SIZE_4K;
@@ -1705,8 +1708,12 @@ constructor TPOP3Listener.Create;
 begin
  {}
  inherited Create;
+
  BoundPort:=POP3_PORT_DEFAULT;
  UseNagle:=False; {Nagle is not recommended for POP3 (Due to strict request reply nature of the protocol)}
+
+ ListenerName:=POP3_LISTENER_THREAD_NAME;
+ ServerName:=POP3_SERVER_THREAD_NAME;
 end;
 
 {==============================================================================}

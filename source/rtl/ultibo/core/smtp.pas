@@ -1,7 +1,7 @@
 {
 Ultibo SMTP interface unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -84,6 +84,9 @@ uses
 {==============================================================================}
 const
  {SMTP specific constants}
+ SMTP_LISTENER_THREAD_NAME = 'SMTP Listener'; {Thread name for SMTP listener threads}
+ SMTP_SERVER_THREAD_NAME = 'SMTP Server';     {Thread name for SMTP server threads}
+
  SMTP_LINE_END = Chr(13) + Chr(10); {CR LF}
 
  SMTP_BUFFER_SIZE = SIZE_4K;
@@ -2221,8 +2224,12 @@ constructor TSMTPListener.Create;
 begin
  {}
  inherited Create;
+
  BoundPort:=SMTP_PORT_DEFAULT;
  UseNagle:=False; {Nagle is not recommended for SMTP (Due to strict request reply nature of the protocol)}
+
+ ListenerName:=SMTP_LISTENER_THREAD_NAME;
+ ServerName:=SMTP_SERVER_THREAD_NAME;
 end;
 
 {==============================================================================}

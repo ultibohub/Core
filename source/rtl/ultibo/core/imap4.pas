@@ -1,7 +1,7 @@
 {
 Ultibo IMAP4 interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -74,6 +74,8 @@ uses
 {==============================================================================}
 const
  {IMAP4 specific constants}
+ IMAP4_LISTENER_THREAD_NAME = 'IMAP4 Listener'; {Thread name for IMAP4 listener threads}
+ IMAP4_SERVER_THREAD_NAME = 'IMAP4 Server';     {Thread name for IMAP4 server threads}
 
  //To Do //See: POP3 etc for framework
 
