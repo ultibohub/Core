@@ -1625,8 +1625,8 @@ type
   destructor Destroy; override;
  private
   {}
-  FUseConnect:Boolean;
-
+  FUseConnect:Boolean;  {If True then connect the socket to the RemoteHost or RemoteAddress to allow using SendData}
+                        {instead of SendDataTo. Must be set to False if not setting RemoteHost or Address (Default: True)}
   FRemoteHost:String;
   FRemoteAddress:String;
 
@@ -1701,8 +1701,8 @@ type
   destructor Destroy; override;
  private
   {}
-  FUseConnect:Boolean;
-
+  FUseConnect:Boolean;  {If True then connect the socket to the RemoteHost or RemoteAddress to allow using SendData}
+                        {instead of SendDataTo. Must be set to False if not setting RemoteHost or Address (Default: True)}
   FRemotePort:Word;
   FRemoteHost:String;
   FRemoteAddress:String;

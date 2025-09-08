@@ -1,7 +1,7 @@
 {
 USB CDC ACM Driver.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -405,9 +405,13 @@ begin
   end;
 
  {Check Environment Variables}
+ {CDCACM_BIND_DELAY}
+ WorkInt:=StrToIntDef(EnvironmentGet('CDCACM_BIND_DELAY'),CDCACM_BIND_DELAY);
+ if WorkInt <> CDCACM_BIND_DELAY then CDCACM_BIND_DELAY:=WorkInt;
+
  {CDCACM_MAX_TRANSMIT}
- WorkInt:=StrToIntDef(EnvironmentGet('CDCACM_MAX_TRANSMIT'),0);
- if WorkInt <> 0 then CDCACM_MAX_TRANSMIT:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('CDCACM_MAX_TRANSMIT'),CDCACM_MAX_TRANSMIT);
+ if WorkInt <> CDCACM_MAX_TRANSMIT then CDCACM_MAX_TRANSMIT:=WorkInt;
 
  CDCACMInitialized:=True;
 end;
@@ -465,6 +469,13 @@ begin
    {Clear Bulk IN/OUT Endpoints}
    USBDeviceClearFeature(Device,PCDCACMDevice(Serial).ReceiveEndpoint,USB_DEVICE_FEATURE_ENDPOINT_HALT);  //To Do //USB_CONTROL_SET_TIMEOUT
    USBDeviceClearFeature(Device,PCDCACMDevice(Serial).TransmitEndpoint,USB_DEVICE_FEATURE_ENDPOINT_HALT);  //To Do //USB_CONTROL_SET_TIMEOUT
+  end;
+
+ {Get Line Coding}
+ if CDCACMGetLineRequest(PCDCACMDevice(Serial),LineCoding) <> USB_STATUS_SUCCESS then
+  begin
+   Result:=ERROR_OPERATION_FAILED;
+   Exit;
   end;
 
  {Setup Line Coding}
@@ -1290,7 +1301,20 @@ begin
     end;
   end;
 
+ {Set Interface}
+ if USBDeviceSetInterface(Device,DataInterface.Descriptor.bInterfaceNumber,DataInterface.Descriptor.bAlternateSetting) <> USB_STATUS_SUCCESS then
+  begin
+   if USB_LOG_ENABLED then USBLogError(Device,'CDC ACM: Failed to set interface alternate setting');
+
+   {Return Result}
+   Result:=USB_STATUS_DEVICE_UNSUPPORTED;
+   Exit;
+  end;
+
  {USB device reset not required because the USB core already did a reset on the port during attach}
+
+ {Some devices need a short time to settle before proceeding}
+ Sleep(CDCACM_BIND_DELAY);
 
  {Create Serial}
  Serial:=PCDCACMDevice(SerialDeviceCreateEx(SizeOf(TCDCACMDevice)));

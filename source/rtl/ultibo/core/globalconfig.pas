@@ -1319,9 +1319,9 @@ var
  SYSLOG_SERVER_DEFAULT:String = '127.0.0.1';    {The default Syslog server to send messages to}
  SYSLOG_PORT_DEFAULT:Word = 514;                          {The default Syslog port}
  SYSLOG_PROTOCOL_DEFAULT:LongWord = LOGGING_PROTOCOL_UDP; {The default Syslog protocol}
- SYSLOG_BSD_FORMAT:LongBool = True;             {If True use the BSD message format described in RFC3164, otherwise use the IETF message format described in RFC5424}
+ SYSLOG_BSD_FORMAT:LongBool = True;             {If True use the BSD message format described in RFC3164, otherwise use the IETF message format described in RFC5424 (Default: True)}
  SYSLOG_OCTET_COUNTING:LongBool;                {If True use the Octet Counting method of framing the Syslog message (LOGGING_PROTOCOL_TCP only)(See: RFC6587)}
- SYSLOG_BROADCAST_ENABLED:LongBool = True;      {If True enable use of a broadcast address for the Syslog server}
+ SYSLOG_BROADCAST_ENABLED:LongBool = True;      {If True enable use of a broadcast address for the Syslog server (LOGGING_PROTOCOL_UDP only)(Default: True)}
 
  SYSLOG_AUTOSTART:LongBool = True;              {If True then auto start the Syslog client on boot (Only if Services unit included)}
 
@@ -1370,6 +1370,7 @@ var
  FTDISERIAL_MAX_TRANSMIT:LongWord;              {The maximum transmit size of the FTDI USB to Serial converter (Defaults to maximum supported by the device if not specified)}
 
  {USB CDC ACM}
+ CDCACM_BIND_DELAY:LongWord = 500;              {Delay during USB binding required by some devices (Milliseconds)}
  CDCACM_MAX_TRANSMIT:LongWord;                  {The maximum transmit size for USB CDC ACM Serial devices (Defaults to maximum supported by the device if not specified)}
 
  {DS1307}
