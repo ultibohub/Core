@@ -1,7 +1,7 @@
 {
 Microchip LAN78xx USB Ethernet Driver.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1583,7 +1583,7 @@ begin
 
     try
      {Allocate Receive Queue Buffer}
-     Network.ReceiveQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry),PLAN78XXNetwork(Network).ReceiveEntryCount);
+     Network.ReceiveQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry),PLAN78XXNetwork(Network).ReceiveEntryCount + 1);
      if Network.ReceiveQueue.Buffer = INVALID_HANDLE_VALUE then
       begin
        if NETWORK_LOG_ENABLED then NetworkLogError(Network,'LAN78XX: Failed to create receive queue buffer');
@@ -1633,7 +1633,7 @@ begin
      SetLength(Network.ReceiveQueue.Entries,PLAN78XXNetwork(Network).ReceiveEntryCount);
 
      {Allocate Transmit Queue Buffer}
-     Network.TransmitQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry),PLAN78XXNetwork(Network).TransmitEntryCount);
+     Network.TransmitQueue.Buffer:=BufferCreate(SizeOf(TNetworkEntry),PLAN78XXNetwork(Network).TransmitEntryCount + 1);
      if Network.TransmitQueue.Buffer = INVALID_HANDLE_VALUE then
       begin
        if USB_LOG_ENABLED then USBLogError(Device,'LAN78XX: Failed to create transmit queue buffer');
