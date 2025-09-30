@@ -2173,6 +2173,8 @@ procedure _longjmp(var env: jmp_buf; val: int); cdecl; public name '_longjmp';
 procedure msleep(msecs: uint); cdecl; public name 'msleep';
 function gettid: pid_t; cdecl; public name 'gettid';
 
+function fd_handle(fd: int): THANDLE; cdecl; public name 'fd_handle';
+
 {==============================================================================}
 {Syscalls Helper Functions}
 procedure __malloc_lock(ptr: P_reent); cdecl; public name '__malloc_lock';
@@ -13021,6 +13023,42 @@ function gettid: pid_t; cdecl;
 begin
  {}
  Result:=ThreadGetCurrent;
+end;
+
+{==============================================================================}
+
+function fd_handle(fd: int): THANDLE; cdecl;
+{Convert an existing Syscalls file descriptor (fd) value into an Ultibo HANDLE value}
+
+{Note: Exported function for use by C libraries, not intended to be called by applications}
+var
+ Entry:PSyscallsEntry;
+begin
+ {}
+ Result:=INVALID_HANDLE_VALUE;
+
+ {$IFDEF SYSCALLS_DEBUG}
+ if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls fd_handle (fd=' + IntToStr(fd) + ')');
+ {$ENDIF}
+
+ {Check descriptor}
+ Entry:=SyscallsGetEntry(fd);
+ if Entry <> nil then
+  begin
+   {Normal descriptor}
+   if Entry^.Source = SYSCALLS_ENTRY_FILE then
+    begin
+     {Get Handle}
+     Result:=Entry^.Handle;
+   {$IFDEF SYSCALLS_EXPORT_SOCKETS}
+    end
+   else if Entry^.Source = SYSCALLS_ENTRY_SOCKET then
+    begin
+     {Get Handle}
+     Result:=Entry^.Handle;
+   {$ENDIF}
+    end;
+  end;
 end;
 
 {==============================================================================}
