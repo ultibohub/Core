@@ -1976,10 +1976,15 @@ type
  public
   {}
   constructor Create(AListener:TWinsock2UDPListener);
+  destructor Destroy; override;
  private
   {}
-  FMin:Integer;
-  FMax:Integer;
+  FMin:Integer;           {Minimum thread count to maintain in server thread pool}
+  FMax:Integer;           {Maximum thread count to maintain in thread pool, threads above max will terminate on completion}
+  FLimit:Integer;         {Absolute thread count limit, new threads will not be created once reached (0 = No Limit)}
+
+  FWait:TSemaphoreHandle;
+  FWaitTimeout:LongWord;  {Time to wait for a thread to be available before creating a new thread (0 = No Wait / INFINITE = Wait Forever)}
 
   FListener:TWinsock2UDPListener;
   {}
@@ -1987,14 +1992,22 @@ type
   procedure SetMin(AMin:Integer);
   function GetMax:Integer;
   procedure SetMax(AMax:Integer);
+  function GetLimit:Integer;
+  procedure SetLimit(ALimit:Integer);
+
+  function GetWaitTimeout:LongWord;
+  procedure SetWaitTimeout(AWaitTimeout:LongWord);
 
   procedure CreateThreads;
-  function CreateThread(AForce:Boolean):TWinsock2UDPServerThread;
+  function CreateThread(AForce,ASignal:Boolean):TWinsock2UDPServerThread;
   procedure TerminateThread(AThread:TWinsock2UDPServerThread);
  public
   {}
   property Min:Integer read GetMin write SetMin;
   property Max:Integer read GetMax write SetMax;
+  property Limit:Integer read GetLimit write SetLimit;
+
+  property WaitTimeout:LongWord read GetWaitTimeout write SetWaitTimeout;
   {}
   function GetThread:TWinsock2UDPServerThread;
   procedure ReleaseThread(AThread:TWinsock2UDPServerThread);
@@ -2035,10 +2048,14 @@ type
  public
   {}
   constructor Create(AListener:TWinsock2UDPListener);
+  destructor Destroy; override;
  private
   {}
-  FMin:Integer;
-  FMax:Integer;
+  FMin:Integer;           {Minimum buffer count to maintain in server buffer pool}
+  FMax:Integer;           {Maximum buffer count to maintain in buffer pool, buffers above max will be destroyed on completion}
+
+  FWait:TSemaphoreHandle;
+  FWaitTimeout:LongWord;  {Time to wait for a buffer to be available before creating a new buffer (0 = No Wait / INFINITE = Wait Forever)}
 
   FListener:TWinsock2UDPListener;
   {}
@@ -2047,13 +2064,18 @@ type
   function GetMax:Integer;
   procedure SetMax(AMax:Integer);
 
+  function GetWaitTimeout:LongWord;
+  procedure SetWaitTimeout(AWaitTimeout:LongWord);
+
   procedure CreateBuffers;
-  function CreateBuffer(AForce:Boolean):TWinsock2UDPServerBuffer;
+  function CreateBuffer(AForce,ASignal:Boolean):TWinsock2UDPServerBuffer;
   procedure DeleteBuffer(ABuffer:TWinsock2UDPServerBuffer);
  public
   {}
   property Min:Integer read GetMin write SetMin;
   property Max:Integer read GetMax write SetMax;
+
+  property WaitTimeout:LongWord read GetWaitTimeout write SetWaitTimeout;
   {}
   function GetBuffer:TWinsock2UDPServerBuffer;
   procedure ReleaseBuffer(ABuffer:TWinsock2UDPServerBuffer);
@@ -8803,6 +8825,15 @@ begin
             Thread.Start;
 
             Success:=True;
+           end
+          else
+           begin
+            if NETWORK_LOG_ENABLED then NetworkLogError(nil,FListener.ListenerName + ' failed to get available server thread, discarding ' + IntToStr(Buffer.Count) + ' bytes of data');
+
+            {Release Buffer}
+            FListener.Buffers.ReleaseBuffer(Buffer);
+
+            Success:=True;
            end;
          end;
        finally
@@ -8827,8 +8858,27 @@ begin
  inherited Create;
  FMin:=2;
  FMax:=10;
+ FLimit:=0;
+
+ FWait:=INVALID_HANDLE_VALUE;
+ FWaitTimeout:=0;
 
  FListener:=AListener;
+end;
+
+{==============================================================================}
+
+destructor TWinsock2UDPServerThreads.Destroy;
+begin
+ {}
+ AcquireLock;
+
+ if FWait <> INVALID_HANDLE_VALUE then SemaphoreDestroy(FWait);
+ FWait:=INVALID_HANDLE_VALUE;
+
+ ReleaseLock;
+
+ inherited Destroy;
 end;
 
 {==============================================================================}
@@ -8853,7 +8903,7 @@ begin
  if not AcquireLock then Exit;
 
  FMin:=AMin;
- if FMin = 0 then FMin:=1;
+ if FMin <= 0 then FMin:=1;
  if FMin > FMax then FMax:=FMin;
 
  ReleaseLock;
@@ -8888,18 +8938,86 @@ end;
 
 {==============================================================================}
 
+function TWinsock2UDPServerThreads.GetLimit:Integer;
+begin
+ {}
+ Result:=0;
+
+ if not AcquireLock then Exit;
+
+ Result:=FLimit;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2UDPServerThreads.SetLimit(ALimit:Integer);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FLimit:=ALimit;
+ if (FLimit <> 0) and (FLimit < FMax) then FLimit:=FMax;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function TWinsock2UDPServerThreads.GetWaitTimeout:LongWord;
+begin
+ {}
+ Result:=0;
+
+ if not AcquireLock then Exit;
+
+ Result:=FWaitTimeout;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2UDPServerThreads.SetWaitTimeout(AWaitTimeout:LongWord);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ if FWaitTimeout <> AWaitTimeout then
+  begin
+   FWaitTimeout:=AWaitTimeout;
+
+   if FWaitTimeout > 0 then
+    begin
+     {Create Semaphore}
+     if FWait = INVALID_HANDLE_VALUE then FWait:=SemaphoreCreate(Count);
+    end
+   else
+    begin
+     {Destroy Semaphore}
+     if FWait <> INVALID_HANDLE_VALUE then SemaphoreDestroy(FWait);
+     FWait:=INVALID_HANDLE_VALUE;
+    end;
+  end;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
 procedure TWinsock2UDPServerThreads.CreateThreads;
 begin
  {}
  while Count < FMin do
   begin
-   if CreateThread(False) = nil then Exit;
+   if CreateThread(False,True) = nil then Exit;
   end;
 end;
 
 {==============================================================================}
 
-function TWinsock2UDPServerThreads.CreateThread(AForce:Boolean):TWinsock2UDPServerThread;
+function TWinsock2UDPServerThreads.CreateThread(AForce,ASignal:Boolean):TWinsock2UDPServerThread;
 var
  WorkBool:LongBool;
  Server:TWinsock2UDPServer;
@@ -8948,6 +9066,9 @@ begin
      end;
     Add(Result);
 
+    {Signal Semaphore}
+    if ASignal and (FWait <> INVALID_HANDLE_VALUE) then SemaphoreSignal(FWait);
+
     {Start Thread}
     Result.Start;
    finally
@@ -8983,13 +9104,44 @@ end;
 
 function TWinsock2UDPServerThreads.GetThread:TWinsock2UDPServerThread;
 var
+ Status:LongWord;
+ Timeout:LongWord;
  Thread:TWinsock2UDPServerThread;
 begin
  {}
  Result:=nil;
 
+ {Check Threads}
+ CreateThreads;
+
+ {Check Timeout}
+ Timeout:=WaitTimeout;
+ if Timeout > 0 then
+  begin
+   {Check Listener}
+   while FListener.Connected do
+    begin
+     {Adjust Timeout}
+     if Timeout = INFINITE then Timeout:=1000;
+
+     {Wait Semaphore}
+     Status:=SemaphoreWaitEx(FWait,Timeout);
+
+     {Check Success}
+     if Status = ERROR_SUCCESS then Break;
+
+     {Check Timeout}
+     Timeout:=WaitTimeout;
+     if Timeout = 0 then Break;                 {WaitTimeout must have been changed to 0}
+     if Status <> ERROR_WAIT_TIMEOUT then Exit; {Wait returned status other than Success or Timeout}
+     if Timeout <> INFINITE then Break;         {Timeout occurred and WaitTimeout is not infinite}
+    end;
+   if not FListener.Connected then Exit;        {Listener is not connected, shutting down}
+  end;
+
  if not AcquireLock then Exit;
  try
+  {Find Inactive Thread}
   Thread:=TWinsock2UDPServerThread(First);
   while Thread <> nil do
    begin
@@ -9005,7 +9157,8 @@ begin
   ReleaseLock;
  end;
 
- if Result = nil then Result:=CreateThread(True);
+ {Create Thread if none found}
+ if Result = nil then Result:=CreateThread((FLimit = 0) or (Count < FLimit),False);
 end;
 
 {==============================================================================}
@@ -9022,6 +9175,11 @@ begin
   begin
    Remove(AThread);
    TerminateThread(AThread);
+  end
+ else
+  begin
+   {Signal Semaphore}
+   if FWait <> INVALID_HANDLE_VALUE then SemaphoreSignal(FWait);
   end;
 end;
 
@@ -9151,7 +9309,25 @@ begin
  FMin:=2;
  FMax:=10;
 
+ FWait:=INVALID_HANDLE_VALUE;
+ FWaitTimeout:=0;
+
  FListener:=AListener;
+end;
+
+{==============================================================================}
+
+destructor TWinsock2UDPServerBuffers.Destroy;
+begin
+ {}
+ AcquireLock;
+
+ if FWait <> INVALID_HANDLE_VALUE then SemaphoreDestroy(FWait);
+ FWait:=INVALID_HANDLE_VALUE;
+
+ ReleaseLock;
+
+ inherited Destroy;
 end;
 
 {==============================================================================}
@@ -9176,7 +9352,7 @@ begin
  if not AcquireLock then Exit;
 
  FMin:=AMin;
- if FMin = 0 then FMin:=1;
+ if FMin <= 0 then FMin:=1;
  if FMin > FMax then FMax:=FMin;
 
  ReleaseLock;
@@ -9211,18 +9387,59 @@ end;
 
 {==============================================================================}
 
+function TWinsock2UDPServerBuffers.GetWaitTimeout:LongWord;
+begin
+ {}
+ Result:=0;
+
+ if not AcquireLock then Exit;
+
+ Result:=FWaitTimeout;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2UDPServerBuffers.SetWaitTimeout(AWaitTimeout:LongWord);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ if FWaitTimeout <> AWaitTimeout then
+  begin
+   FWaitTimeout:=AWaitTimeout;
+
+   if FWaitTimeout > 0 then
+    begin
+     {Create Semaphore}
+     if FWait = INVALID_HANDLE_VALUE then FWait:=SemaphoreCreate(Count);
+    end
+   else
+    begin
+     {Destroy Semaphore}
+     if FWait <> INVALID_HANDLE_VALUE then SemaphoreDestroy(FWait);
+     FWait:=INVALID_HANDLE_VALUE;
+    end;
+  end;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
 procedure TWinsock2UDPServerBuffers.CreateBuffers;
 begin
  {}
  while Count < FMin do
   begin
-   if CreateBuffer(False) = nil then Exit;
+   if CreateBuffer(False,True) = nil then Exit;
   end;
 end;
 
 {==============================================================================}
 
-function TWinsock2UDPServerBuffers.CreateBuffer(AForce:Boolean):TWinsock2UDPServerBuffer;
+function TWinsock2UDPServerBuffers.CreateBuffer(AForce,ASignal:Boolean):TWinsock2UDPServerBuffer;
 begin
  {}
  Result:=nil;
@@ -9240,6 +9457,9 @@ begin
      Result:=TWinsock2UDPServerBuffer.Create(FListener.BufferSize);
     end;
    Add(Result);
+
+   {Signal Semaphore}
+   if ASignal and (FWait <> INVALID_HANDLE_VALUE) then SemaphoreSignal(FWait);
   end;
 end;
 
@@ -9257,13 +9477,44 @@ end;
 
 function TWinsock2UDPServerBuffers.GetBuffer:TWinsock2UDPServerBuffer;
 var
+ Status:LongWord;
+ Timeout:LongWord;
  Buffer:TWinsock2UDPServerBuffer;
 begin
  {}
  Result:=nil;
 
+ {Check Buffers}
+ CreateBuffers;
+
+ {Check Timeout}
+ Timeout:=WaitTimeout;
+ if Timeout > 0 then
+  begin
+   {Check Listener}
+   while FListener.Connected do
+    begin
+     {Adjust Timeout}
+     if Timeout = INFINITE then Timeout:=1000;
+
+     {Wait Semaphore}
+     Status:=SemaphoreWaitEx(FWait,Timeout);
+
+     {Check Success}
+     if Status = ERROR_SUCCESS then Break;
+
+     {Check Timeout}
+     Timeout:=WaitTimeout;
+     if Timeout = 0 then Break;                 {WaitTimeout must have been changed to 0}
+     if Status <> ERROR_WAIT_TIMEOUT then Exit; {Wait returned status other than Success or Timeout}
+     if Timeout <> INFINITE then Break;         {Timeout occurred and WaitTimeout is not infinite}
+    end;
+   if not FListener.Connected then Exit;        {Listener is not connected, shutting down}
+  end;
+
  if not AcquireLock then Exit;
  try
+  {Find Inactive Buffer}
   Buffer:=TWinsock2UDPServerBuffer(First);
   while Buffer <> nil do
    begin
@@ -9279,7 +9530,8 @@ begin
   ReleaseLock;
  end;
 
- if Result = nil then Result:=CreateBuffer(True);
+ {Create Buffer if none found}
+ if Result = nil then Result:=CreateBuffer(True,False);
 end;
 
 {==============================================================================}
@@ -9296,6 +9548,11 @@ begin
   begin
    Remove(ABuffer);
    DeleteBuffer(ABuffer);
+  end
+ else
+  begin
+   {Signal Semaphore}
+   if FWait <> INVALID_HANDLE_VALUE then SemaphoreSignal(FWait);
   end;
 end;
 

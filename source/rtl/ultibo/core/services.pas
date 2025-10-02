@@ -828,6 +828,8 @@ type
   FBufferSize:Integer;
   FMinThreads:Integer;
   FMaxThreads:Integer;
+  FThreadLimit:Integer;
+  FThreadWait:LongWord;
   FBSDFormat:Boolean;   {If True expect messages in BSD format (RFC 3164), otherwise expect messages in IETF format (RFC 5424)}
   FAutoDetect:Boolean;  {If True then auto detect the message format}
   FOctetCounting:Boolean;
@@ -855,6 +857,8 @@ type
   procedure SetBufferSize(ABufferSize:Integer);
   procedure SetMinThreads(AMinThreads:Integer);
   procedure SetMaxThreads(AMaxThreads:Integer);
+  procedure SetThreadLimit(AThreadLimit:Integer);
+  procedure SetThreadWait(AThreadWait:LongWord);
   procedure SetBSDFormat(ABSDFormat:Boolean);
   procedure SetAutoDetect(AAutoDetect:Boolean);
   procedure SetOctetCounting(AOctetCounting:Boolean);
@@ -885,6 +889,8 @@ type
   property BufferSize:Integer read FBufferSize write SetBufferSize;
   property MinThreads:Integer read FMinThreads write SetMinThreads;
   property MaxThreads:Integer read FMaxThreads write SetMaxThreads;
+  property ThreadLimit:Integer read FThreadLimit write SetThreadLimit;
+  property ThreadWait:LongWord read FThreadWait write SetThreadWait;
   property BSDFormat:Boolean read FBSDFormat write SetBSDFormat;
   property AutoDetect:Boolean read FAutoDetect write SetAutoDetect;
   property OctetCounting:Boolean read FOctetCounting write SetOctetCounting;
@@ -4083,6 +4089,8 @@ begin
  FBufferSize:=WINSOCK2_MAX_UDP;
  FMinThreads:=2;
  FMaxThreads:=10;
+ FThreadLimit:=0;
+ FThreadWait:=50;
  FBSDFormat:=SYSLOG_BSD_FORMAT;
  FAutoDetect:=SYSLOG_BSD_FORMAT;
  FOctetCounting:=SYSLOG_OCTET_COUNTING;
@@ -4095,6 +4103,12 @@ begin
 
  FUDPListener:=nil;
  FTCPListener:=nil;
+
+ {Check Protocol}
+ if (FProtocol <> LOGGING_PROTOCOL_UDP) and (FProtocol <> LOGGING_PROTOCOL_TCP) then
+  begin
+   FProtocol:=LOGGING_PROTOCOL_UDP;
+  end;
 end;
 
 {==============================================================================}
@@ -4145,6 +4159,7 @@ begin
   {Check Protocol}
   case FProtocol of
    LOGGING_PROTOCOL_UDP:begin
+     {Update Active}
      FActive:=AActive;
 
      {Check Active}
@@ -4160,6 +4175,8 @@ begin
          FUDPListener.BufferSize:=FBufferSize;
          FUDPListener.Threads.Min:=FMinThreads;
          FUDPListener.Threads.Max:=FMaxThreads;
+         FUDPListener.Threads.Limit:=FThreadLimit;
+         FUDPListener.Threads.WaitTimeout:=FThreadWait;
          FUDPListener.ListenerName:=FListenerName;
          FUDPListener.ListenerPriority:=FListenerPriority;
          FUDPListener.ServerName:=FServerName;
@@ -4176,6 +4193,7 @@ begin
       end;
     end;
    LOGGING_PROTOCOL_TCP:begin
+     {Update Active}
      FActive:=AActive;
 
      {Check Active}
@@ -4225,6 +4243,7 @@ begin
      if FTCPListener <> nil then FTCPListener.Free;
      FTCPListener:=nil;
 
+     {Update Protocol}
      FProtocol:=AProtocol;
     end;
    LOGGING_PROTOCOL_TCP:begin
@@ -4232,6 +4251,7 @@ begin
      if FUDPListener <> nil then FUDPListener.Free;
      FUDPListener:=nil;
 
+     {Update Protocol}
      FProtocol:=AProtocol;
     end;
   end;
@@ -4249,17 +4269,16 @@ begin
 
  if not AcquireLock then Exit;
  try
+  {Update Bound Port}
+  FBoundPort:=ABoundPort;
+
   {Check Protocol}
   case FProtocol of
    LOGGING_PROTOCOL_UDP:begin
-     FBoundPort:=ABoundPort;
-
      {Update UDP Listener}
      if FUDPListener <> nil then FUDPListener.BoundPort:=FBoundPort;
     end;
    LOGGING_PROTOCOL_TCP:begin
-     FBoundPort:=ABoundPort;
-
      {Update TCP Listener}
      if FTCPListener <> nil then FTCPListener.BoundPort:=FBoundPort;
     end;
@@ -4278,19 +4297,16 @@ begin
 
  if not AcquireLock then Exit;
  try
+  {Update Buffer Size}
+  FBufferSize:=ABufferSize;
+
   {Check Protocol}
   case FProtocol of
    LOGGING_PROTOCOL_UDP:begin
-     FBufferSize:=ABufferSize;
-
      {Update UDP Listener}
      if FUDPListener <> nil then FUDPListener.BufferSize:=FBufferSize;
     end;
-   LOGGING_PROTOCOL_TCP:begin
-     FBufferSize:=ABufferSize;
-
-     {Does not apply to TCP Listener}
-    end;
+   {Does not apply to TCP Listener}
   end;
  finally
   ReleaseLock;
@@ -4306,19 +4322,19 @@ begin
 
  if not AcquireLock then Exit;
  try
+  {Update Min Threads}
+  FMinThreads:=AMinThreads;
+  if FMinThreads <= 0 then FMinThreads:=1;
+  if FMinThreads > FMaxThreads then FMaxThreads:=FMinThreads;
+
   {Check Protocol}
   case FProtocol of
    LOGGING_PROTOCOL_UDP:begin
-     FMinThreads:=AMinThreads;
-
      {Update UDP Listener}
      if FUDPListener <> nil then FUDPListener.Threads.Min:=FMinThreads;
+     if FUDPListener <> nil then FUDPListener.Threads.Max:=FMaxThreads;
     end;
-   LOGGING_PROTOCOL_TCP:begin
-     FMinThreads:=AMinThreads;
-
-     {Does not apply to TCP Listener}
-    end;
+   {Does not apply to TCP Listener}
   end;
  finally
   ReleaseLock;
@@ -4334,19 +4350,68 @@ begin
 
  if not AcquireLock then Exit;
  try
+  {Update Max Threads}
+  FMaxThreads:=AMaxThreads;
+  if FMaxThreads < FMinThreads then FMaxThreads:=FMinThreads;
+
   {Check Protocol}
   case FProtocol of
    LOGGING_PROTOCOL_UDP:begin
-     FMaxThreads:=AMaxThreads;
-
      {Update UDP Listener}
      if FUDPListener <> nil then FUDPListener.Threads.Max:=FMaxThreads;
     end;
-   LOGGING_PROTOCOL_TCP:begin
-     FMaxThreads:=AMaxThreads;
+   {Does not apply to TCP Listener}
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
 
-     {Does not apply to TCP Listener}
+{==============================================================================}
+
+procedure TSyslogListener.SetThreadLimit(AThreadLimit:Integer);
+begin
+ {}
+ if AThreadLimit = FThreadLimit then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Update Thread Limit}
+  FThreadLimit:=AThreadLimit;
+  if (FThreadLimit <> 0) and (FThreadLimit < FMaxThreads) then FThreadLimit:=FMaxThreads;
+
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.Threads.Limit:=FThreadLimit;
     end;
+   {Does not apply to TCP Listener}
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetThreadWait(AThreadWait:LongWord);
+begin
+ {}
+ if AThreadWait = FThreadWait then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Update Thread Wait}
+  FThreadWait:=AThreadWait;
+
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.Threads.WaitTimeout:=FThreadWait;
+    end;
+   {Does not apply to TCP Listener}
   end;
  finally
   ReleaseLock;
