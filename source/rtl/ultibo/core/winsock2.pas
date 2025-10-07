@@ -2413,7 +2413,7 @@ begin
  FLastError:=Winsock2.WSAGetLastError;
  
  {$IFDEF WINSOCK2_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
  {$ENDIF}
 end;
 
@@ -2446,7 +2446,7 @@ begin
     FLastError:=Winsock2.WSAGetLastError;
     
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockname returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockname returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
    end
   else
@@ -2494,7 +2494,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  gethostname returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  gethostname returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end
  else
@@ -2578,7 +2578,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getaddrinfo returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getaddrinfo returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end
  else
@@ -2647,7 +2647,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockopt returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end;
 end;
@@ -2674,7 +2674,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end;
 end;
@@ -2705,7 +2705,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockopt returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end;
 end;
@@ -2732,7 +2732,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end;
 end;
@@ -2763,7 +2763,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockopt returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end;
 end;
@@ -2790,7 +2790,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end;
 end;
@@ -2821,7 +2821,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockopt returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end;
 end;
@@ -2848,7 +2848,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end;
 end;
@@ -2879,7 +2879,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getsockopt returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end;
 end;
@@ -2906,7 +2906,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end;
 end;
@@ -3139,7 +3139,7 @@ begin
         ReleaseAddress(Result,ALength,False);
         
         {$IFDEF WINSOCK2_DEBUG}
-        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  inet_addr returned: = INADDR_NONE');
+        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  inet_addr returned: INADDR_NONE');
         {$ENDIF}
         
         Exit;
@@ -3150,7 +3150,7 @@ begin
         ReleaseAddress(Result,ALength,False);
 
         {$IFDEF WINSOCK2_DEBUG}
-        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  inet_addr returned: = INADDR_ANY');
+        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  inet_addr returned: INADDR_ANY');
         {$ENDIF}
         
         Exit;
@@ -3214,7 +3214,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  socket returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  socket returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end
  else
@@ -3249,7 +3249,7 @@ begin
      FLastError:=Winsock2.WSAGetLastError;
       
      {$IFDEF WINSOCK2_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
 
      Exit;
@@ -3262,7 +3262,7 @@ begin
      FLastError:=Winsock2.WSAGetLastError;
    
      {$IFDEF WINSOCK2_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
 
      Exit;
@@ -3275,7 +3275,7 @@ begin
      FLastError:=Winsock2.WSAGetLastError;
 
      {$IFDEF WINSOCK2_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
 
      Exit;
@@ -3288,7 +3288,7 @@ begin
      FLastError:=Winsock2.WSAGetLastError;
 
      {$IFDEF WINSOCK2_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
 
      Exit;
@@ -3301,7 +3301,7 @@ begin
      FLastError:=Winsock2.WSAGetLastError;
 
      {$IFDEF WINSOCK2_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
 
      Exit;
@@ -3314,7 +3314,7 @@ begin
      FLastError:=Winsock2.WSAGetLastError;
 
      {$IFDEF WINSOCK2_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
 
      Exit;
@@ -3332,7 +3332,7 @@ begin
     FLastError:=Winsock2.WSAGetLastError;
     
     {$IFDEF WINSOCK2_DEBUG}
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  bind returned: = ' + Winsock2ErrorToString(FLastError));
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  bind returned: ' + Winsock2ErrorToString(FLastError));
     {$ENDIF}
    end;
  finally
@@ -3397,7 +3397,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getnameinfo returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getnameinfo returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end
  else
@@ -3472,7 +3472,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getaddrinfo returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getaddrinfo returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end
  else
@@ -3548,7 +3548,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  shutdown returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  shutdown returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end
  else
@@ -3600,7 +3600,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  closesocket returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  closesocket returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end
  else
@@ -3685,7 +3685,7 @@ begin
      FLastError:=Winsock2.WSAGetLastError;
      
      {$IFDEF WINSOCK2_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getaddrinfo returned: = ' + Winsock2ErrorToString(FLastError));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getaddrinfo returned: ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
     end
    else
@@ -3769,7 +3769,7 @@ begin
     FLastError:=Winsock2.WSAGetLastError;
     
     {$IFDEF WINSOCK2_DEBUG}
-    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getnameinfo returned: = ' + Winsock2ErrorToString(FLastError));
+    if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getnameinfo returned: ' + Winsock2ErrorToString(FLastError));
     {$ENDIF}
    end
   else
@@ -3887,7 +3887,7 @@ begin
      FLastError:=Winsock2.WSAGetLastError;
      
      {$IFDEF WINSOCK2_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getaddrinfo returned: = ' + Winsock2ErrorToString(FLastError));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 Socket:  getaddrinfo returned: ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
     end
    else
@@ -4756,7 +4756,7 @@ begin
  FLastError:=Winsock2.WSAGetLastError;
  
  {$IFDEF WINSOCK2_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
  {$ENDIF}
 end;
 
@@ -5153,7 +5153,7 @@ begin
  FLastError:=Winsock2.WSAGetLastError;
  
  {$IFDEF WINSOCK2_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
  {$ENDIF}
 end;
 
@@ -5182,7 +5182,7 @@ begin
  FLastError:=Winsock2.WSAGetLastError;
  
  {$IFDEF WINSOCK2_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
  {$ENDIF}
 end;
 
@@ -5228,7 +5228,7 @@ begin
  FLastError:=Winsock2.WSAGetLastError;
 
  {$IFDEF WINSOCK2_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  getsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  getsockopt returned: ' + Winsock2ErrorToString(FLastError));
  {$ENDIF}
 end;
 
@@ -5255,7 +5255,7 @@ begin
  FLastError:=Winsock2.WSAGetLastError;
  
  {$IFDEF WINSOCK2_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
  {$ENDIF}
 end;
 
@@ -5284,7 +5284,7 @@ begin
      FLastError:=Winsock2.WSAGetLastError;
       
      {$IFDEF WINSOCK2_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
       
      Exit;
@@ -5298,7 +5298,7 @@ begin
      FLastError:=Winsock2.WSAGetLastError;
      
      {$IFDEF WINSOCK2_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
       
      Exit;
@@ -5311,7 +5311,7 @@ begin
      FLastError:=Winsock2.WSAGetLastError;
       
      {$IFDEF WINSOCK2_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
       
      Exit;
@@ -5353,7 +5353,7 @@ begin
    FLastError:=Winsock2.WSAGetLastError;
    
    {$IFDEF WINSOCK2_DEBUG}
-   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  listen returned: = ' + Winsock2ErrorToString(FLastError));
+   if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Socket:  listen returned: ' + Winsock2ErrorToString(FLastError));
    {$ENDIF}
   end;
 end;
@@ -5701,7 +5701,7 @@ begin
  FLastError:=Winsock2.WSAGetLastError;
  
  {$IFDEF WINSOCK2_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Socket:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Socket:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
  {$ENDIF}
 end;
 
@@ -6345,7 +6345,7 @@ begin
       ReleaseAddress(Result,ALength,False);
 
       {$IFDEF WINSOCK2_DEBUG}
-      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  inet_addr returned: = INADDR_NONE');
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  inet_addr returned: INADDR_NONE');
       {$ENDIF}
       
       Exit;
@@ -6356,7 +6356,7 @@ begin
       ReleaseAddress(Result,ALength,False);
 
       {$IFDEF WINSOCK2_DEBUG}
-      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  inet_addr returned: = INADDR_ANY');
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  inet_addr returned: INADDR_ANY');
       {$ENDIF}
 
       Exit;
@@ -6454,7 +6454,7 @@ begin
       FLastError:=Winsock2.WSAGetLastError;
 
       {$IFDEF WINSOCK2_DEBUG}
-      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
       {$ENDIF}
 
       Exit;
@@ -6477,7 +6477,7 @@ begin
        FLastError:=Winsock2.WSAGetLastError;
        
        {$IFDEF WINSOCK2_DEBUG}
-       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  connect returned: = ' + Winsock2ErrorToString(FLastError));
+       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 RAW Client:  connect returned: ' + Winsock2ErrorToString(FLastError));
        {$ENDIF}
        
        Exit;
@@ -6858,7 +6858,7 @@ begin
       ReleaseAddress(Result,ALength,False);
       
       {$IFDEF WINSOCK2_DEBUG}
-      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  inet_addr returned: = INADDR_NONE');
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  inet_addr returned: INADDR_NONE');
       {$ENDIF}
       
       Exit;
@@ -6869,7 +6869,7 @@ begin
       ReleaseAddress(Result,ALength,False);
       
       {$IFDEF WINSOCK2_DEBUG}
-      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  inet_addr returned: = INADDR_ANY');
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  inet_addr returned: INADDR_ANY');
       {$ENDIF}
       
       Exit;
@@ -6967,7 +6967,7 @@ begin
       FLastError:=Winsock2.WSAGetLastError;
       
       {$IFDEF WINSOCK2_DEBUG}
-      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
       {$ENDIF}
       
       Exit;
@@ -6981,7 +6981,7 @@ begin
       FLastError:=Winsock2.WSAGetLastError;
       
       {$IFDEF WINSOCK2_DEBUG}
-      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
       {$ENDIF}
       
       Exit;
@@ -6994,7 +6994,7 @@ begin
       FLastError:=Winsock2.WSAGetLastError;
       
       {$IFDEF WINSOCK2_DEBUG}
-      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
       {$ENDIF}
       
       Exit;
@@ -7039,7 +7039,7 @@ begin
      FLastError:=Winsock2.WSAGetLastError;
      
      {$IFDEF WINSOCK2_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  connect returned: = ' + Winsock2ErrorToString(FLastError));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Client:  connect returned: ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
      
      Exit;
@@ -7502,7 +7502,7 @@ begin
       ReleaseAddress(Result,ALength,False);
       
       {$IFDEF WINSOCK2_DEBUG}
-      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  inet_addr returned: = INADDR_NONE');
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  inet_addr returned: INADDR_NONE');
       {$ENDIF}
       
       Exit;
@@ -7513,7 +7513,7 @@ begin
       ReleaseAddress(Result,ALength,False);
       
       {$IFDEF WINSOCK2_DEBUG}
-      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  inet_addr returned: = INADDR_ANY');
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  inet_addr returned: INADDR_ANY');
       {$ENDIF}
       
       Exit;
@@ -7611,7 +7611,7 @@ begin
       FLastError:=Winsock2.WSAGetLastError;
       
       {$IFDEF WINSOCK2_DEBUG}
-      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+      if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
       {$ENDIF}
       
       Exit;
@@ -7634,7 +7634,7 @@ begin
        FLastError:=Winsock2.WSAGetLastError;
        
        {$IFDEF WINSOCK2_DEBUG}
-       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  connect returned: = ' + Winsock2ErrorToString(FLastError));
+       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 UDP Client:  connect returned: ' + Winsock2ErrorToString(FLastError));
        {$ENDIF}
        
        Exit;
@@ -8034,7 +8034,7 @@ begin
      FLastError:=Winsock2.WSAGetLastError;
       
      {$IFDEF WINSOCK2_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Listener:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Listener:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
       
      Exit;
@@ -8048,7 +8048,7 @@ begin
      FLastError:=Winsock2.WSAGetLastError;
       
      {$IFDEF WINSOCK2_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Listener:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Listener:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
       
      Exit;
@@ -8061,7 +8061,7 @@ begin
      FLastError:=Winsock2.WSAGetLastError;
       
      {$IFDEF WINSOCK2_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Listener:  setsockopt returned: = ' + Winsock2ErrorToString(FLastError));
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Winsock2 TCP Listener:  setsockopt returned: ' + Winsock2ErrorToString(FLastError));
      {$ENDIF}
       
      Exit;
@@ -13067,91 +13067,7 @@ end;
 function Winsock2ErrorToString(AError:LongInt):String;
 begin
  {}
- Result:='';
- case LongWord(AError) of   {LongWord for WSA_WAIT_FAILED}
-  ERROR_SUCCESS:Result:='ERROR_SUCCESS';
-
-  WSAEINTR:Result:='WSAEINTR';
-  WSAEBADF:Result:='WSAEBADF';
-  WSAEACCES:Result:='WSAEACCES';
-  WSAEFAULT:Result:='WSAEFAULT';
-  WSAEINVAL:Result:='WSAEINVAL';
-  WSAEMFILE:Result:='WSAEMFILE';
-
-  WSAEWOULDBLOCK:Result:='WSAEWOULDBLOCK';
-  WSAEINPROGRESS:Result:='WSAEINPROGRESS';
-  WSAEALREADY:Result:='WSAEALREADY';
-  WSAENOTSOCK:Result:='WSAENOTSOCK';
-  WSAEDESTADDRREQ:Result:='WSAEDESTADDRREQ';
-  WSAEMSGSIZE:Result:='WSAEMSGSIZE';
-  WSAEPROTOTYPE:Result:='WSAEPROTOTYPE';
-  WSAENOPROTOOPT:Result:='WSAENOPROTOOPT';
-  WSAEPROTONOSUPPORT:Result:='WSAEPROTONOSUPPORT';
-  WSAESOCKTNOSUPPORT:Result:='WSAESOCKTNOSUPPORT';
-  WSAEOPNOTSUPP:Result:='WSAEOPNOTSUPP';
-  WSAEPFNOSUPPORT:Result:='WSAEPFNOSUPPORT';
-  WSAEAFNOSUPPORT:Result:='WSAEAFNOSUPPORT';
-  WSAEADDRINUSE:Result:='WSAEADDRINUSE';
-  WSAEADDRNOTAVAIL:Result:='WSAEADDRNOTAVAIL';
-  WSAENETDOWN:Result:='WSAENETDOWN';
-  WSAENETUNREACH:Result:='WSAENETUNREACH';
-  WSAENETRESET:Result:='WSAENETRESET';
-  WSAECONNABORTED:Result:='WSAECONNABORTED';
-  WSAECONNRESET:Result:='WSAECONNRESET';
-  WSAENOBUFS:Result:='WSAENOBUFS';
-  WSAEISCONN:Result:='WSAEISCONN';
-  WSAENOTCONN:Result:='WSAENOTCONN';
-  WSAESHUTDOWN:Result:='WSAESHUTDOWN';
-  WSAETOOMANYREFS:Result:='WSAETOOMANYREFS';
-  WSAETIMEDOUT:Result:='WSAETIMEDOUT';
-  WSAECONNREFUSED:Result:='WSAECONNREFUSED';
-  WSAELOOP:Result:='WSAELOOP';
-  WSAENAMETOOLONG:Result:='WSAENAMETOOLONG';
-  WSAEHOSTDOWN:Result:='WSAEHOSTDOWN';
-  WSAEHOSTUNREACH:Result:='WSAEHOSTUNREACH';
-  WSAENOTEMPTY:Result:='WSAENOTEMPTY';
-  WSAEPROCLIM:Result:='WSAEPROCLIM';
-  WSAEUSERS:Result:='WSAEUSERS';
-  WSAEDQUOT:Result:='WSAEDQUOT';
-  WSAESTALE:Result:='WSAESTALE';
-  WSAEREMOTE:Result:='WSAEREMOTE';
-
-  WSASYSNOTREADY:Result:='WSASYSNOTREADY';
-  WSAVERNOTSUPPORTED:Result:='WSAVERNOTSUPPORTED';
-  WSANOTINITIALISED:Result:='WSANOTINITIALISED';
-  WSAEDISCON:Result:='WSAEDISCON';
-  WSAENOMORE:Result:='WSAENOMORE';
-  WSAECANCELLED:Result:='WSAECANCELLED';
-  WSAEINVALIDPROCTABLE:Result:='WSAEINVALIDPROCTABLE';
-  WSAEINVALIDPROVIDER:Result:='WSAEINVALIDPROVIDER';
-  WSAEPROVIDERFAILEDINIT:Result:='WSAEPROVIDERFAILEDINIT';
-  WSASYSCALLFAILURE:Result:='WSASYSCALLFAILURE';
-  WSASERVICE_NOT_FOUND:Result:='WSASERVICE_NOT_FOUND';
-  WSATYPE_NOT_FOUND:Result:='WSATYPE_NOT_FOUND';
-  WSA_E_NO_MORE:Result:='WSA_E_NO_MORE';
-  WSA_E_CANCELLED:Result:='WSA_E_CANCELLED';
-  WSAEREFUSED:Result:='WSAEREFUSED';
-
-  WSAHOST_NOT_FOUND:Result:='WSAHOST_NOT_FOUND';
-  WSATRY_AGAIN:Result:='WSATRY_AGAIN';
-  WSANO_RECOVERY:Result:='WSANO_RECOVERY';
-  WSANO_DATA:Result:='WSANO_DATA';
-  {WSANO_ADDRESS:Result:='WSANO_ADDRESS';}
-
-  WSA_IO_PENDING:Result:='WSA_IO_PENDING';
-  WSA_IO_INCOMPLETE:Result:='WSA_IO_INCOMPLETE';
-  WSA_INVALID_HANDLE:Result:='WSA_INVALID_HANDLE';
-  WSA_INVALID_PARAMETER:Result:='WSA_INVALID_PARAMETER';
-  WSA_NOT_ENOUGH_MEMORY:Result:='WSA_NOT_ENOUGH_MEMORY';
-  WSA_OPERATION_ABORTED:Result:='WSA_OPERATION_ABORTED';
-  {WSA_INVALID_EVENT:Result:='WSA_INVALID_EVENT';}
-  WSA_MAXIMUM_WAIT_EVENTS:Result:='WSA_MAXIMUM_WAIT_EVENTS';
-  WSA_WAIT_FAILED:Result:='WSA_WAIT_FAILED';
-  {WSA_WAIT_EVENT_0:Result:='WSA_WAIT_EVENT_0';}
-  WSA_WAIT_IO_COMPLETION:Result:='WSA_WAIT_IO_COMPLETION';
-  WSA_WAIT_TIMEOUT:Result:='WSA_WAIT_TIMEOUT';
-  {WSA_INFINITE:Result:='WSA_INFINITE';}
- end;
+ Result:=SocketErrorToString(AError);
 end;
 
 {==============================================================================}
