@@ -471,12 +471,12 @@ begin
    USBDeviceClearFeature(Device,PCDCACMDevice(Serial).TransmitEndpoint,USB_DEVICE_FEATURE_ENDPOINT_HALT);  //To Do //USB_CONTROL_SET_TIMEOUT
   end;
 
- {Get Line Coding}
- if CDCACMGetLineRequest(PCDCACMDevice(Serial),LineCoding) <> USB_STATUS_SUCCESS then
+ {Get Line Coding} {May cause failures with some devices}
+ {if CDCACMGetLineRequest(PCDCACMDevice(Serial),LineCoding) <> USB_STATUS_SUCCESS then
   begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
-  end;
+  end;}
 
  {Setup Line Coding}
  FillChar(LineCoding,SizeOf(TUSBCDCLineCoding),0);
