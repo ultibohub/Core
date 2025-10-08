@@ -2002,7 +2002,7 @@ begin
      {Check for Closed}
      if ASocket.SocketState.Closed then
       begin
-       NetworkSetLastError(WSAEINTR);
+       Result:=0;
        Exit;
       end;
     end;
