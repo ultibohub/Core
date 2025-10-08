@@ -1,7 +1,7 @@
 {
 Ultibo DHCP/BOOTP Protocol client unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -89,9 +89,9 @@ uses
 const
  {DHCP specific constants}
  {BOOTP/DHCP Constants}
- BOOTP_DELAY   = 1000;  {Previously 0}
- BOOTP_TIMEOUT = 8000;  {Previously 4000} {We wait for 8 seconds for a BOOTP reply}
- BOOTP_RETRIES = 6;     {Previously 4}    {Try the request 6 times}
+ BOOTP_DELAY   = 250;   {Wait 250 ms before starting initial request (Previously 1000 ms)}
+ BOOTP_TIMEOUT = 4000;  {Wait up to 4 seconds for a BOOTP reply (Previous 8 seconds)}
+ BOOTP_RETRIES = 6;     {Retry BOOTP requests up to 6 times}
 
  BOOTP_MIN_DELAY   = 0;
  BOOTP_MAX_DELAY   = 10000;
@@ -100,9 +100,10 @@ const
  BOOTP_MIN_RETRIES = 1;
  BOOTP_MAX_RETRIES = 100;
 
- DHCP_DELAY   = 1000;   {Previously 0}
- DHCP_TIMEOUT = 8000;   {Previously 4000} {We wait for 8 seconds for a DHCP reply}
- DHCP_RETRIES = 6;      {Previously 4}    {Try the request 6 times}
+ DHCP_DELAY   = 250;     {Wait 250 ms before starting initial request (Previously 1000 ms)}
+ DHCP_TIMEOUT = 4000;    {Wait up to 4 seconds for a DHCP reply (Previous 8 seconds)}
+ DHCP_RETRIES = 6;       {Retry DHCP requests up to 6 times}
+ DHCP_BROADCAST = False; {If True set the broadcast flag in the DHCP request}
 
  DHCP_MIN_DELAY   = 0;
  DHCP_MAX_DELAY   = 10000;
@@ -235,12 +236,10 @@ type
   YourIP:TInAddr;                                      {'your' (client) IP address filled by server if client doesn't know}
   ServerIP:TInAddr;                                    {server IP address returned in bootreply}
   GatewayIP:TInAddr;                                   {gateway IP address, used in optional cross-gateway booting.}
-  {ClientHardware:array[0..15] of Byte;}               {client hardware address, filled by client}
   ClientHardware:THardwareAddress;                     {client hardware address, filled by client}
   DummyData:array[0..9] of Byte;                       {dummy to fill out remaining bytes of above}
   ServerName:array[0..63] of Byte;                     {optional server host name, null terminated}
   FileName:array[0..127] of Byte;                      {boot file name, null terminated string 'generic' name or null in bootrequest, fully qualified directory-path name in bootreply.}
-  {VendorData:array[0..63] of Byte;}                   {optional vendor-specific area}
   VendorData:array[0..BOOTP_VENDOR_SIZE - 1] of Byte;  {optional vendor-specific area}
  end;
 
@@ -257,12 +256,10 @@ type
   YourIP:TInAddr;             {'your' (client) IP address filled by server if client doesn't know}
   ServerIP:TInAddr;           {server IP address returned in bootreply}
   GatewayIP:TInAddr;          {gateway IP address, used in optional cross-gateway booting.}
-  {ClientHardware:array[0..15] of Byte;}  {client hardware address, filled by client}
   ClientHardware:THardwareAddress;  {client hardware address, filled by client}
   DummyData:array[0..9] of Byte;    {dummy to fill out remaining bytes of above}
   ServerName:array[0..63] of Byte;  {optional server host name, null terminated}
   FileName:array[0..127] of Byte;   {boot file name, null terminated string 'generic' name or null in bootrequest, fully qualified directory-path name in bootreply.}
-  {Options:array[0..311] of Byte;}    {DHCP options area (minimum 312 bytes)}
   Options:array[0..DHCP_OPTIONS_SIZE - 1] of Byte; {DHCP options area (minimum 312 bytes)}
  end;
 
@@ -320,9 +317,11 @@ type
    function ExtractDHCPOption(AOption:Byte;AHeader:PDHCPHeader;AValue:Pointer;var ASize:Integer):Boolean;
   protected
    {Inherited Methods}
+   FBroadcastFlag:Boolean;
 
   public
    {Public Properties}
+   property BroadcastFlag:Boolean read FBroadcastFlag;
 
    {Public Methods}
    function AddTransport(ATransport:TNetworkTransport):Boolean; override;
@@ -333,6 +332,7 @@ type
    function ProcessConfig:Boolean; override;
 
    function SetConfig(AInitDelay,ARetryCount,ARetryTimeout:LongWord):Boolean; override;
+   function SetBroadcast(ABroadcastFlag:Boolean):Boolean;
  end;
 
  TBOOTPConfigTransport = class(TConfigTransport)
@@ -571,6 +571,7 @@ begin
  FRetryTimeout:=DHCP_TIMEOUT;
  FARP:=nil;
  FUDP:=nil;
+ FBroadcastFlag:=DHCP_BROADCAST;
 end;
 
 {==============================================================================}
@@ -611,8 +612,8 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: ConfigHandler');
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig:  Command = ' + ConfigCommandToString(ACommand));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: ConfigHandler');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config:  Command = ' + ConfigCommandToString(ACommand));
  {$ENDIF}
 
  {Check Adapter}
@@ -637,7 +638,7 @@ begin
       CONFIG_ADAPTER_DISCOVER:begin
         {Perform Discover}
         {$IFDEF DHCP_DEBUG}
-        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Attempting DHCP Configuration - Discover');
+        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Attempting DHCP Configuration - Discover');
         {$ENDIF}
 
         {Set Configuring}
@@ -741,7 +742,7 @@ begin
       CONFIG_ADAPTER_REBOOT:begin
         {Perform Reboot}
         {$IFDEF DHCP_DEBUG}
-        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Attempting DHCP Configuration - Reboot');
+        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Attempting DHCP Configuration - Reboot');
         {$ENDIF}
 
         {Set Configuring}
@@ -832,7 +833,7 @@ begin
       CONFIG_ADAPTER_RELEASE,CONFIG_ADAPTER_RENEW,CONFIG_ADAPTER_REBIND,CONFIG_ADAPTER_INFORM:begin
         {Perform Release, Renew, Rebind or Inform}
         {$IFDEF DHCP_DEBUG}
-        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Attempting DHCP Configuration - Release/Renew/Rebind/Inform');
+        if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Attempting DHCP Configuration - Release/Renew/Rebind/Inform');
         {$ENDIF}
 
         {Set Configuring}
@@ -1008,7 +1009,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Creating DHCP Request');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Creating DHCP Request');
  {$ENDIF}
 
  {Check Header}
@@ -1059,7 +1060,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Checking DHCP Reply');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Checking DHCP Reply');
  {$ENDIF}
 
  {Check Header}
@@ -1102,7 +1103,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Handling DHCP Reply');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Handling DHCP Reply');
  {$ENDIF}
 
  {Check Header}
@@ -1452,7 +1453,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Discover');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Sending DHCP Discover');
  {$ENDIF}
 
  {Check Socket}
@@ -1468,7 +1469,7 @@ begin
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
-   Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
+   if FBroadcastFlag then Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=IP_DEFAULT_ADDRESS;
 
    {Add the Options}
@@ -1534,7 +1535,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Request');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Sending DHCP Request');
  {$ENDIF}
 
  {Check Socket}
@@ -1550,7 +1551,7 @@ begin
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
-   Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
+   if FBroadcastFlag then Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=IP_DEFAULT_ADDRESS;
 
    {Add the Options}
@@ -1623,7 +1624,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Decline');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Sending DHCP Decline');
  {$ENDIF}
 
  {Check Socket}
@@ -1639,7 +1640,7 @@ begin
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
-   Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
+   if FBroadcastFlag then Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=IP_DEFAULT_ADDRESS;
 
    {Add the Options}
@@ -1694,7 +1695,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Release');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Sending DHCP Release');
  {$ENDIF}
 
  {Check Socket}
@@ -1761,7 +1762,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Inform');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Sending DHCP Inform');
  {$ENDIF}
 
  {Check Socket}
@@ -1777,7 +1778,7 @@ begin
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
-   Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
+   if FBroadcastFlag then Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Address);
 
    {Add the Options}
@@ -1842,7 +1843,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Request (Renew)');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Sending DHCP Request (Renew)');
  {$ENDIF}
 
  {Check Socket}
@@ -1917,7 +1918,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Request (Rebind)');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Sending DHCP Request (Rebind)');
  {$ENDIF}
 
  {Check Socket}
@@ -1933,7 +1934,7 @@ begin
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
-   Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
+   if FBroadcastFlag then Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=InAddrToNetwork(TIPTransportAdapter(AAdapter).Address);
 
    {Add the Options}
@@ -1993,7 +1994,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Sending DHCP Request (Reboot)');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Sending DHCP Request (Reboot)');
  {$ENDIF}
 
  {Check Socket}
@@ -2009,7 +2010,7 @@ begin
  if CreateDHCPRequest(@Header,ATransport,AAdapter,AIdentifier,ACount) then
   begin
    {Set the DHCP Fields}
-   Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
+   if FBroadcastFlag then Header.Flags:=WordNtoBE(DHCP_FLAG_BROADCAST);
    Header.ClientIP:=IP_DEFAULT_ADDRESS;
 
    {Add the Options}
@@ -2068,6 +2069,10 @@ function TDHCPConfig.RecvDHCPReply(ASocket:TProtocolSocket;ATransport:TDHCPConfi
 {Note: Caller must hold the Socket, Transport and Adapter locks}
 var
  Size:Integer;
+ Status:Integer;
+ StartTime:Int64;
+ Timeout:Integer;
+ Remaining:Integer;
  SockSize:Integer;
  SockAddr:TSockAddr;
  Header:PDHCPHeader;
@@ -2076,7 +2081,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Receiving DHCP Reply');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Receiving DHCP Reply');
  {$ENDIF}
 
  {Check Socket}
@@ -2098,17 +2103,51 @@ begin
   {Zero the Header}
   FillChar(Header^,SizeOf(TDHCPHeader) * 2,0);
 
-  {Receive Datagram}
-  SockSize:=SizeOf(TSockAddr);
-  if FUDP.RecvFrom(ASocket,Header^,Size,0,SockAddr,SockSize) > 0 then
+  {Get the Timeout}
+  Timeout:=FRetryTimeout;
+
+  {Start Receive}
+  StartTime:=GetTickCount64;
+  Remaining:=Timeout;
+  while Remaining > 0 do
    begin
-    {Check for Reply}
-    if CheckDHCPReply(Header,ATransport,AAdapter,AIdentifier) then
+    {Set the Timeout}
+    if FUDP.SetSockOpt(ASocket,SOL_SOCKET,SO_RCVTIMEO,PChar(@Remaining),SizeOf(Integer)) = SOCKET_ERROR then Exit;
+
+    {Receive Datagram}
+    SockSize:=SizeOf(TSockAddr);
+    Status:=FUDP.RecvFrom(ASocket,Header^,Size,0,SockAddr,SockSize);
+    if Status > 0 then
      begin
-      {Handle Reply}
-      Result:=HandleDHCPReply(Header,ATransport,AAdapter,ACommand);
-      if Result then Exit;
+      {Check for Reply}
+      if CheckDHCPReply(Header,ATransport,AAdapter,AIdentifier) then
+       begin
+        {Handle Reply}
+        Result:=HandleDHCPReply(Header,ATransport,AAdapter,ACommand);
+        Exit;
+       end;
+     end
+    else
+     begin
+      {Check Error}
+      if Status = SOCKET_ERROR then
+       begin
+        {Check Timeout}
+        if NetworkGetLastError = WSAETIMEDOUT then
+         begin
+          if NETWORK_LOG_ENABLED then NetworkLogError(nil,'DHCP Config: Timeout waiting for DHCP reply');
+         end
+        else
+         begin
+          if NETWORK_LOG_ENABLED then NetworkLogError(nil,'DHCP Config: Failure receiving DHCP reply: ' + SocketErrorToString(NetworkGetLastError));
+         end;
+       end;
+
+      Exit;
      end;
+
+    {Update the Timeout}
+    Remaining:=Timeout - (GetTickCount64 - StartTime);
    end;
  finally
   FreeMem(Header);
@@ -2128,8 +2167,8 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Inserting DHCP Option');
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig:  Option = '  + IntToStr(AOption));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Inserting DHCP Option');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config:  Option = '  + IntToStr(AOption));
  {$ENDIF}
 
  {Check Header}
@@ -2198,7 +2237,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: Extracting DHCP Option');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: Extracting DHCP Option');
  {$ENDIF}
 
  {Check Header}
@@ -2232,7 +2271,7 @@ begin
      if AHeader.Options[Count] = AOption then
       begin
        {$IFDEF DHCP_DEBUG}
-       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: ExtractDHCPOption - Found Option');
+       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: ExtractDHCPOption - Found Option');
        {$ENDIF}
 
        {Check for end of buffer}
@@ -2267,7 +2306,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: AddTransport');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: AddTransport');
   {$ENDIF}
 
   {Check Transport}
@@ -2358,7 +2397,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: RemoveTransport');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: RemoveTransport');
   {$ENDIF}
 
   {Check Transport}
@@ -2437,7 +2476,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: StartConfig');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: StartConfig');
   {$ENDIF}
 
   {Check Manager}
@@ -2493,7 +2532,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCPConfig: StopConfig');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'DHCP Config: StopConfig');
   {$ENDIF}
 
   {Check Manager}
@@ -2563,6 +2602,17 @@ begin
 end;
 
 {==============================================================================}
+
+function TDHCPConfig.SetBroadcast(ABroadcastFlag:Boolean):Boolean;
+{Enable or Disable the Broadcast flag option for the DHCP config}
+begin
+ {}
+ FBroadcastFlag:=ABroadcastFlag;
+
+ Result:=True;
+end;
+
+{==============================================================================}
 {==============================================================================}
 {TBOOTPConfig}
 constructor TBOOTPConfig.Create(AManager:TProtocolManager);
@@ -2613,8 +2663,8 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: ConfigHandler');
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig:  Command = ' + ConfigCommandToString(ACommand));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTP Config: ConfigHandler');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTP Config:  Command = ' + ConfigCommandToString(ACommand));
  {$ENDIF}
 
  {Check Adapter}
@@ -2635,7 +2685,7 @@ begin
    CONFIG_ADAPTER_DISCOVER:begin
      {Perform Discover}
      {$IFDEF DHCP_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: Attempting BOOTP Configuration');
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTP Config: Attempting BOOTP Configuration');
      {$ENDIF}
 
      {Set Configuring}
@@ -2744,7 +2794,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: Creating BOOTP Request');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTP Config: Creating BOOTP Request');
  {$ENDIF}
 
  {Check Header}
@@ -2791,7 +2841,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: Checking BOOTP Reply');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTP Config: Checking BOOTP Reply');
  {$ENDIF}
 
  {Check Header}
@@ -2827,7 +2877,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: Handling BOOTP Reply');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTP Config: Handling BOOTP Reply');
  {$ENDIF}
 
  {Check Header}
@@ -2917,7 +2967,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: Sending BOOTP Request');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTP Config: Sending BOOTP Request');
  {$ENDIF}
 
  {Check Socket}
@@ -2951,6 +3001,10 @@ function TBOOTPConfig.RecvBOOTPReply(ASocket:TProtocolSocket;ATransport:TBOOTPCo
 {Note: Caller must hold the Socket, Transport and Adapter locks}
 var
  Size:Integer;
+ Status:Integer;
+ StartTime:Int64;
+ Timeout:Integer;
+ Remaining:Integer;
  SockSize:Integer;
  SockAddr:TSockAddr;
  Header:PBOOTPHeader;
@@ -2959,7 +3013,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: Receiving BOOTP Reply');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTP Config: Receiving BOOTP Reply');
  {$ENDIF}
 
  {Check Socket}
@@ -2981,17 +3035,51 @@ begin
   {Zero the Header}
   FillChar(Header^,SizeOf(TBOOTPHeader) * 2,0);
 
-  {Receive Datagram}
-  SockSize:=SizeOf(TSockAddr);
-  if FUDP.RecvFrom(ASocket,Header^,Size,0,SockAddr,SockSize) > 0 then
+  {Get the Timeout}
+  Timeout:=FRetryTimeout;
+
+  {Start Receive}
+  StartTime:=GetTickCount64;
+  Remaining:=Timeout;
+  while Remaining > 0 do
    begin
-    {Check for Reply}
-    if CheckBOOTPReply(Header,ATransport,AAdapter,AIdentifier) then
+    {Set the Timeout}
+    if FUDP.SetSockOpt(ASocket,SOL_SOCKET,SO_RCVTIMEO,PChar(@Remaining),SizeOf(Integer)) = SOCKET_ERROR then Exit;
+
+    {Receive Datagram}
+    SockSize:=SizeOf(TSockAddr);
+    Status:=FUDP.RecvFrom(ASocket,Header^,Size,0,SockAddr,SockSize);
+    if Status > 0 then
      begin
-      {Handle Reply}
-      Result:=HandleBOOTPReply(Header,ATransport,AAdapter);
-      if Result then Exit;
+      {Check for Reply}
+      if CheckBOOTPReply(Header,ATransport,AAdapter,AIdentifier) then
+       begin
+        {Handle Reply}
+        Result:=HandleBOOTPReply(Header,ATransport,AAdapter);
+        Exit;
+       end;
+     end
+    else
+     begin
+      {Check Error}
+      if Status = SOCKET_ERROR then
+       begin
+        {Check Timeout}
+        if NetworkGetLastError = WSAETIMEDOUT then
+         begin
+          if NETWORK_LOG_ENABLED then NetworkLogError(nil,'BOOTP Config: Timeout waiting for BOOTP reply');
+         end
+        else
+         begin
+          if NETWORK_LOG_ENABLED then NetworkLogError(nil,'BOOTP Config: Failure receiving BOOTP reply: ' + SocketErrorToString(NetworkGetLastError));
+         end;
+       end;
+
+      Exit;
      end;
+
+    {Update the Timeout}
+    Remaining:=Timeout - (GetTickCount64 - StartTime);
    end;
  finally
   FreeMem(Header);
@@ -3011,7 +3099,7 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: Extracting BOOTP Option');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTP Config: Extracting BOOTP Option');
  {$ENDIF}
 
  {Check Header}
@@ -3045,7 +3133,7 @@ begin
      if AHeader.VendorData[Count] = AOption then
       begin
        {$IFDEF DHCP_DEBUG}
-       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: ExtractBOOTPOption - Found Option');
+       if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTP Config: ExtractBOOTPOption - Found Option');
        {$ENDIF}
 
        {Check for end of buffer}
@@ -3080,7 +3168,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: AddTransport');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTP Config: AddTransport');
   {$ENDIF}
 
   {Check Transport}
@@ -3145,7 +3233,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: RemoveTransport');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTP Config: RemoveTransport');
   {$ENDIF}
 
   {Check Transport}
@@ -3200,7 +3288,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: StartConfig');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTP Config: StartConfig');
   {$ENDIF}
 
   {Check Manager}
@@ -3245,7 +3333,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTPConfig: StopConfig');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'BOOTP Config: StopConfig');
   {$ENDIF}
 
   if Manager = nil then Exit;
@@ -3346,8 +3434,8 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARPConfig: ConfigHandler');
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARPConfig:  Command = ' + ConfigCommandToString(ACommand));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP Config: ConfigHandler');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP Config:  Command = ' + ConfigCommandToString(ACommand));
  {$ENDIF}
 
  {Check Adapter}
@@ -3365,7 +3453,7 @@ begin
    CONFIG_ADAPTER_DISCOVER:begin
      {Perform Discover}
      {$IFDEF DHCP_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARPConfig: Attempting ARP Configuration');
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP Config: Attempting ARP Configuration');
      {$ENDIF}
 
      {Set Configuring}
@@ -3445,7 +3533,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARPConfig: AddTransport');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP Config: AddTransport');
   {$ENDIF}
 
   {Check Transport}
@@ -3511,7 +3599,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARPConfig: RemoveTransport');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP Config: RemoveTransport');
   {$ENDIF}
 
   {Check Transport}
@@ -3566,7 +3654,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARPConfig: StartConfig');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP Config: StartConfig');
   {$ENDIF}
 
   {Check Manager}
@@ -3607,7 +3695,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARPConfig: StopConfig');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'ARP Config: StopConfig');
   {$ENDIF}
 
   {Check Manager}
@@ -3686,8 +3774,8 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARPConfig: ConfigHandler');
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARPConfig:  Command = ' + ConfigCommandToString(ACommand));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP Config: ConfigHandler');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP Config:  Command = ' + ConfigCommandToString(ACommand));
  {$ENDIF}
 
  {Check Adapter}
@@ -3705,7 +3793,7 @@ begin
    CONFIG_ADAPTER_DISCOVER:begin
      {Perform Discover}
      {$IFDEF DHCP_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARPConfig: Attempting RARP Configuration');
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP Config: Attempting RARP Configuration');
      {$ENDIF}
 
      {Set Configuring}
@@ -3760,7 +3848,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARPConfig: AddTransport');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP Config: AddTransport');
   {$ENDIF}
 
   {Check Transport}
@@ -3826,7 +3914,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARPConfig: RemoveTransport');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP Config: RemoveTransport');
   {$ENDIF}
 
   {Check Transport}
@@ -3881,7 +3969,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARPConfig: StartConfig');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP Config: StartConfig');
   {$ENDIF}
 
   {Check Manager}
@@ -3922,7 +4010,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARPConfig: StopConfig');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'RARP Config: StopConfig');
   {$ENDIF}
 
   {Check Manager}
@@ -4000,8 +4088,8 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'StaticConfig: ConfigHandler');
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'StaticConfig:  Command = ' + ConfigCommandToString(ACommand));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Static Config: ConfigHandler');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Static Config:  Command = ' + ConfigCommandToString(ACommand));
  {$ENDIF}
 
  {Check Adapter}
@@ -4019,7 +4107,7 @@ begin
    CONFIG_ADAPTER_REQUEST:begin
      {Perform Request}
      {$IFDEF DHCP_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'StaticConfig: Attempting Static Configuration');
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Static Config: Attempting Static Configuration');
      {$ENDIF}
 
      {Set Configuring}
@@ -4090,7 +4178,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'StaticConfig: AddTransport');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Static Config: AddTransport');
   {$ENDIF}
 
   {Check Transport}
@@ -4181,7 +4269,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'StaticConfig: RemoveTransport');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Static Config: RemoveTransport');
   {$ENDIF}
 
   {Check Transport}
@@ -4260,7 +4348,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'StaticConfig: StartConfig');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Static Config: StartConfig');
   {$ENDIF}
 
   {Check Manager}
@@ -4312,7 +4400,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'StaticConfig: StopConfig');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Static Config: StopConfig');
   {$ENDIF}
 
   {Check Manager}
@@ -4394,8 +4482,8 @@ begin
  Result:=False;
 
  {$IFDEF DHCP_DEBUG}
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackConfig: ConfigHandler');
- if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackConfig:  Command = ' + ConfigCommandToString(ACommand));
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Loopback Config: ConfigHandler');
+ if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Loopback Config:  Command = ' + ConfigCommandToString(ACommand));
  {$ENDIF}
 
  {Check Adapter}
@@ -4410,7 +4498,7 @@ begin
    CONFIG_ADAPTER_REQUEST:begin
      {Perform Request}
      {$IFDEF DHCP_DEBUG}
-     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackConfig: Attempting Loopback Configuration');
+     if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Loopback Config: Attempting Loopback Configuration');
      {$ENDIF}
 
      {Set Configuring}
@@ -4471,7 +4559,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackConfig: AddTransport');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Loopback Config: AddTransport');
   {$ENDIF}
 
   {Check Transport}
@@ -4562,7 +4650,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackConfig: RemoveTransport');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Loopback Config: RemoveTransport');
   {$ENDIF}
 
   {Check Transport}
@@ -4641,7 +4729,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackConfig: StartConfig');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Loopback Config: StartConfig');
   {$ENDIF}
 
   {Check Manager}
@@ -4689,7 +4777,7 @@ begin
   Result:=False;
 
   {$IFDEF DHCP_DEBUG}
-  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'LoopbackConfig: StopConfig');
+  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'Loopback Config: StopConfig');
   {$ENDIF}
 
   {Check Manager}
@@ -4745,6 +4833,7 @@ var
  InitDelay:LongWord;
  RetryCount:LongWord;
  RetryTimeout:LongWord;
+ BroadcastFlag:Boolean;
 
  DHCPConfig:TDHCPConfig;
  BOOTPConfig:TBOOTPConfig;
@@ -4780,6 +4869,12 @@ begin
 
    {Set Configuration}
    DHCPConfig.SetConfig(InitDelay,RetryCount,RetryTimeout);
+
+   {Get Broadcast}
+   BroadcastFlag:=NetworkSettings.GetBooleanDefault('DHCP_CONFIG_BROADCAST',DHCP_BROADCAST);
+
+   {Set Broadcast}
+   DHCPConfig.SetBroadcast(BroadcastFlag);
   end;
 
  {Create BOOTP Config}
