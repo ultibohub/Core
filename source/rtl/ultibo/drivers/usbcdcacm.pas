@@ -472,11 +472,11 @@ begin
   end;
 
  {Get Line Coding} {May cause failures with some devices}
- {if CDCACMGetLineRequest(PCDCACMDevice(Serial),LineCoding) <> USB_STATUS_SUCCESS then
+ (*if CDCACMGetLineRequest(PCDCACMDevice(Serial),LineCoding) <> USB_STATUS_SUCCESS then
   begin
    Result:=ERROR_OPERATION_FAILED;
    Exit;
-  end;}
+  end;*)
 
  {Setup Line Coding}
  FillChar(LineCoding,SizeOf(TUSBCDCLineCoding),0);
@@ -1301,15 +1301,15 @@ begin
     end;
   end;
 
- {Set Interface}
- if USBDeviceSetInterface(Device,DataInterface.Descriptor.bInterfaceNumber,DataInterface.Descriptor.bAlternateSetting) <> USB_STATUS_SUCCESS then
+ {Set Interface} {May cause failures with some devices}
+ (*if USBDeviceSetInterface(Device,DataInterface.Descriptor.bInterfaceNumber,DataInterface.Descriptor.bAlternateSetting) <> USB_STATUS_SUCCESS then
   begin
    if USB_LOG_ENABLED then USBLogError(Device,'CDC ACM: Failed to set interface alternate setting');
 
    {Return Result}
    Result:=USB_STATUS_DEVICE_UNSUPPORTED;
    Exit;
-  end;
+  end;*)
 
  {USB device reset not required because the USB core already did a reset on the port during attach}
 
