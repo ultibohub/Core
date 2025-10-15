@@ -13918,6 +13918,12 @@ begin
    if SYSCALLS_HEAP_MIN = 0 then SYSCALLS_HEAP_MIN:=SYSCALLS_HEAP_BLOCKSIZE;
   end;
 
+ {Check Heap Max (Must be less than or equal to CPU memory size)}
+ if (CPU_MEMORY_SIZE <> 0) and (SYSCALLS_HEAP_MAX > CPU_MEMORY_SIZE) then
+  begin
+   SYSCALLS_HEAP_MAX:=CPU_MEMORY_SIZE;
+  end;
+
  {Check Heap Max (Must be a multiple of block size)}
  if (SYSCALLS_HEAP_MAX mod SYSCALLS_HEAP_BLOCKSIZE) <> 0 then
   begin
@@ -14102,6 +14108,14 @@ begin
      {Check Remain}
      if Remain > 0 then
       begin
+       {Check Size}
+       if (SyscallsHeapSize + (Size - Remain)) > SYSCALLS_HEAP_MAX then
+        begin
+         {Failure}
+         Address:=nil;
+         Break;
+        end;
+
        {Get End}
        if Address = nil then Address:=SyscallsHeapEnd;
 
@@ -14128,6 +14142,14 @@ begin
        {$IFDEF SYSCALLS_DEBUG}
        if PLATFORM_LOG_ENABLED then PlatformLogDebug('Syscalls New Heap Block');
        {$ENDIF}
+
+       {Check Size}
+       if (SyscallsHeapSize + Size) > SYSCALLS_HEAP_MAX then
+        begin
+         {Failure}
+         Address:=nil;
+         Break;
+        end;
 
        {Check Max}
        if SyscallsHeapSize >= SYSCALLS_HEAP_MAX then

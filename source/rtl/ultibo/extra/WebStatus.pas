@@ -1,7 +1,7 @@
 {
 Ultibo Web Status unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3011,7 +3011,16 @@ begin
  AddBold(AResponse,'Initial Heap','');
  AddBlank(AResponse);
  AddItemEx(AResponse,'INITIAL_HEAP_SIZE',IntToStr(INITIAL_HEAP_SIZE),3);
- AddItemEx(AResponse,'INITIAL_HEAP_BASE','0x' + IntToHex(INITIAL_HEAP_BASE,8),3);
+ AddItemEx(AResponse,'INITIAL_HEAP_BASE','0x' + AddrToHex(INITIAL_HEAP_BASE),3);
+ AddBlank(AResponse);
+
+ {Add Syscalls Heap}
+ AddBold(AResponse,'Syscalls Heap','');
+ AddBlank(AResponse);
+ AddItemEx(AResponse,'SYSCALLS_HEAP_BASE','0x' + AddrToHex(SYSCALLS_HEAP_BASE),3);
+ AddItemEx(AResponse,'SYSCALLS_HEAP_MIN',IntToStr(SYSCALLS_HEAP_MIN),3);
+ AddItemEx(AResponse,'SYSCALLS_HEAP_MAX',IntToStr(SYSCALLS_HEAP_MAX),3);
+ AddItemEx(AResponse,'SYSCALLS_HEAP_BLOCKSIZE',IntToStr(SYSCALLS_HEAP_BLOCKSIZE),3);
  AddBlank(AResponse);
 
  {Add Heap Status}
