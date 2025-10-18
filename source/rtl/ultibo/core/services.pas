@@ -564,6 +564,8 @@ type
   constructor Create;
  private
   {Internal Variables}
+  FLocalMode:Boolean;     {If True the SNTP listener will set the mode to NTP_MODE_PRIVATE and return local time instead of universal time}
+
   FOnGetBase:TNTPGetBase;
   FOnGetTime:TNTPGetTime;
 
@@ -579,6 +581,8 @@ type
   function DoGetTime:Int64;
  public
   {Public Properties}
+  property LocalMode:Boolean read FLocalMode write FLocalMode;
+
   property OnGetBase:TNTPGetBase read FOnGetBase write FOnGetBase;
   property OnGetTime:TNTPGetTime read FOnGetTime write FOnGetTime;
 
@@ -2078,6 +2082,7 @@ begin
    if ReceiveTime < TIME_TICKS_TO_2001 then Leap:=NTP_LEAP_ALARM else Leap:=NTP_LEAP_NONE;
    {Mode}
    if Mode = NTP_MODE_SYMMETRIC_ACTIVE then Mode:=NTP_MODE_SYMMETRIC_PASSIVE else Mode:=NTP_MODE_SERVER;
+   if LocalMode then Mode:=NTP_MODE_PRIVATE;
    NTPReply.LeapVersionMode:=(Leap shl 6) or (Version shl 3) or (Mode shl 0);
    NTPReply.Stratum:=NTP_STRATUM_SECONDARY2; {NTP_STRATUM_PRIMARY}
 
@@ -2099,7 +2104,7 @@ begin
    {Send Reply}
    if AThread.Server.SendDataTo(AThread.Server.PeerAddress,AThread.Server.PeerPort,@NTPReply,SizeOf(TNTPPacket)) <> SizeOf(TNTPPacket) then
     begin
-     if SERVICE_LOG_ENABLED then ServiceLogError('SNTP Listener: Failed to send replace (Error = ' + Winsock2ErrorToString(FLastError) + ')');
+     if SERVICE_LOG_ENABLED then ServiceLogError('SNTP Listener: Failed to send reply (Error = ' + Winsock2ErrorToString(FLastError) + ')');
     end;
   end;
 
@@ -2120,11 +2125,24 @@ end;
 {==============================================================================}
 
 function TSNTPListener.DoGetTime:Int64;
+var
+ ClockTime:Int64;
 begin
  {}
  if not Assigned(FOnGetTime) or not FOnGetTime(Result) then
   begin
-   Result:=ClockGetTime;
+   if LocalMode then
+    begin
+     {Get Local Time}
+     ClockTime:=ClockGetTime;
+
+     FileTimeToLocalFileTime(TFileTime(ClockTime),TFileTime(Result));
+    end
+   else
+    begin
+     {Get Universal Time}
+     Result:=ClockGetTime;
+    end;
   end;
 end;
 
