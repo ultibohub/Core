@@ -840,9 +840,11 @@ type
 
   FListenerName:String;
   FListenerPriority:LongWord;
+  FListenerStackSize:SizeUInt;
 
   FServerName:String;
   FServerPriority:LongWord;
+  FServerStackSize:SizeUInt;
 
   FUDPListener:TWinsock2UDPListener;
   FTCPListener:TWinsock2TCPListener;
@@ -869,9 +871,11 @@ type
 
   procedure SetListenerName(const AListenerName:String);
   procedure SetListenerPriority(AListenerPriority:LongWord);
+  procedure SetListenerStackSize(AListenerStackSize:SizeUInt);
 
   procedure SetServerName(const AServerName:String);
   procedure SetServerPriority(AServerPriority:LongWord);
+  procedure SetServerStackSize(AServerStackSize:SizeUInt);
 
   function DoUDPExecute(AThread:TWinsock2UDPServerThread):Boolean;
   function DoTCPExecute(AThread:TWinsock2TCPServerThread):Boolean;
@@ -901,9 +905,11 @@ type
 
   property ListenerName:String read FListenerName write SetListenerName;
   property ListenerPriority:LongWord read FListenerPriority write SetListenerPriority;
+  property ListenerStackSize:SizeUInt read FListenerStackSize write SetListenerStackSize;
 
   property ServerName:String read FServerName write SetServerName;
   property ServerPriority:LongWord read FServerPriority write SetServerPriority;
+  property ServerStackSize:SizeUInt read FServerStackSize write SetServerStackSize;
 
   property OnRecvMessage:TSyslogRecvMessage read FOnRecvMessage write FOnRecvMessage;
   property OnDecodeMessage:TSyslogDecodeMessage read FOnDecodeMessage write FOnDecodeMessage;
@@ -4115,9 +4121,11 @@ begin
 
  FListenerName:=SYSLOG_LISTENER_THREAD_NAME;
  FListenerPriority:=THREAD_PRIORITY_NORMAL;
+ FListenerStackSize:=THREAD_STACK_DEFAULT_SIZE;
 
  FServerName:=SYSLOG_SERVER_THREAD_NAME;
  FServerPriority:=THREAD_PRIORITY_NORMAL;
+ FServerStackSize:=THREAD_STACK_DEFAULT_SIZE;
 
  FUDPListener:=nil;
  FTCPListener:=nil;
@@ -4197,8 +4205,10 @@ begin
          FUDPListener.Threads.WaitTimeout:=FThreadWait;
          FUDPListener.ListenerName:=FListenerName;
          FUDPListener.ListenerPriority:=FListenerPriority;
+         FUDPListener.ListenerStackSize:=FListenerStackSize;
          FUDPListener.ServerName:=FServerName;
          FUDPListener.ServerPriority:=FServerPriority;
+         FUDPListener.ServerStackSize:=FServerStackSize;
         end;
 
        {Update UDP Listener}
@@ -4226,8 +4236,10 @@ begin
          FTCPListener.BoundPort:=FBoundPort;
          FTCPListener.ListenerName:=FListenerName;
          FTCPListener.ListenerPriority:=FListenerPriority;
+         FTCPListener.ListenerStackSize:=FListenerStackSize;
          FTCPListener.ServerName:=FServerName;
          FTCPListener.ServerPriority:=FServerPriority;
+         FTCPListener.ServerStackSize:=FServerStackSize;
         end;
 
        {Update TCP Listener}
@@ -4535,6 +4547,35 @@ end;
 
 {==============================================================================}
 
+procedure TSyslogListener.SetListenerStackSize(AListenerStackSize:LongWord);
+begin
+ {}
+ if FListenerStackSize = AListenerStackSize then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     FListenerStackSize:=AListenerStackSize;
+
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.ListenerStackSize:=AListenerStackSize;
+    end;
+   LOGGING_PROTOCOL_TCP:begin
+     FListenerStackSize:=AListenerStackSize;
+
+     {Update TCP Listener}
+     if FTCPListener <> nil then FTCPListener.ListenerStackSize:=AListenerStackSize;
+    end;
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
 procedure TSyslogListener.SetServerName(const AServerName:String);
 begin
  {}
@@ -4584,6 +4625,35 @@ begin
 
      {Update TCP Listener}
      if FTCPListener <> nil then FTCPListener.ServerPriority:=AServerPriority;
+    end;
+  end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+procedure TSyslogListener.SetServerStackSize(AServerStackSize:LongWord);
+begin
+ {}
+ if FServerStackSize = AServerStackSize then Exit;
+
+ if not AcquireLock then Exit;
+ try
+  {Check Protocol}
+  case FProtocol of
+   LOGGING_PROTOCOL_UDP:begin
+     FServerStackSize:=AServerStackSize;
+
+     {Update UDP Listener}
+     if FUDPListener <> nil then FUDPListener.ServerStackSize:=AServerStackSize;
+    end;
+   LOGGING_PROTOCOL_TCP:begin
+     FServerStackSize:=AServerStackSize;
+
+     {Update TCP Listener}
+     if FTCPListener <> nil then FTCPListener.ServerStackSize:=AServerStackSize;
     end;
   end;
  finally

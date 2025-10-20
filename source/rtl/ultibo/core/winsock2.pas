@@ -1763,7 +1763,7 @@ type
  TWinsock2TCPServerThread = class(TWinsock2SocketThread)
  public
   {}
-  constructor Create(AServer:TWinsock2TCPServer);
+  constructor Create(AServer:TWinsock2TCPServer;AStackSize:SizeUInt = 0);
   destructor Destroy; override;
  private
   {}
@@ -1784,7 +1784,7 @@ type
  TWinsock2TCPListenerThread = class(TWinsock2SocketThread)
  public
   {}
-  constructor Create(AListener:TWinsock2TCPListener);
+  constructor Create(AListener:TWinsock2TCPListener;AStackSize:SizeUInt = 0);
  private
   {}
   FListener:TWinsock2TCPListener;
@@ -1828,9 +1828,11 @@ type
 
   FListenerName:String;
   FListenerPriority:LongWord;
+  FListenerStackSize:SizeUInt;
 
   FServerName:String;
   FServerPriority:LongWord;
+  FServerStackSize:SizeUInt;
 
   FThreads:TWinsock2TCPServerThreads;
   FListenerThread:TWinsock2TCPListenerThread;
@@ -1844,9 +1846,11 @@ type
 
   procedure SetListenerName(const AListenerName:String);
   procedure SetListenerPriority(AListenerPriority:LongWord);
+  procedure SetListenerStackSize(AListenerStackSize:SizeUInt);
 
   procedure SetServerName(const AServerName:String);
   procedure SetServerPriority(AServerPriority:LongWord);
+  procedure SetServerStackSize(AServerStackSize:SizeUInt);
  protected
   {}
   procedure SetLastError(ALastError:LongInt); virtual;
@@ -1861,9 +1865,11 @@ type
 
   property ListenerName:String read FListenerName write SetListenerName;
   property ListenerPriority:LongWord read FListenerPriority write SetListenerPriority;
+  property ListenerStackSize:SizeUInt read FListenerStackSize write SetListenerStackSize;
 
   property ServerName:String read FServerName write SetServerName;
   property ServerPriority:LongWord read FServerPriority write SetServerPriority;
+  property ServerStackSize:SizeUInt read FServerStackSize write SetServerStackSize;
 
   property Threads:TWinsock2TCPServerThreads read FThreads;
 
@@ -1925,7 +1931,7 @@ type
  TWinsock2UDPServerThread = class(TWinsock2SocketThread)
  public
   {}
-  constructor Create(AServer:TWinsock2UDPServer);
+  constructor Create(AServer:TWinsock2UDPServer;AStackSize:SizeUInt = 0);
   destructor Destroy; override;
  private
   {}
@@ -1956,7 +1962,7 @@ type
  TWinsock2UDPListenerThread = class(TWinsock2SocketThread)
  public
   {}
-  constructor Create(AListener:TWinsock2UDPListener);
+  constructor Create(AListener:TWinsock2UDPListener;AStackSize:SizeUInt = 0);
   destructor Destroy; override;
  private
   {}
@@ -2104,9 +2110,11 @@ type
 
   FListenerName:String;
   FListenerPriority:LongWord;
+  FListenerStackSize:SizeUInt;
 
   FServerName:String;
   FServerPriority:LongWord;
+  FServerStackSize:SizeUInt;
 
   FThreads:TWinsock2UDPServerThreads;
   FBuffers:TWinsock2UDPServerBuffers;
@@ -2124,9 +2132,11 @@ type
 
   procedure SetListenerName(const AListenerName:String);
   procedure SetListenerPriority(AListenerPriority:LongWord);
+  procedure SetListenerStackSize(AListenerStackSize:SizeUInt);
 
   procedure SetServerName(const AServerName:String);
   procedure SetServerPriority(AServerPriority:LongWord);
+  procedure SetServerStackSize(AServerStackSize:SizeUInt);
  protected
   {}
   procedure SetLastError(ALastError:LongInt); virtual;
@@ -2141,9 +2151,11 @@ type
 
   property ListenerName:String read FListenerName write SetListenerName;
   property ListenerPriority:LongWord read FListenerPriority write SetListenerPriority;
+  property ListenerStackSize:SizeUInt read FListenerStackSize write SetListenerStackSize;
 
   property ServerName:String read FServerName write SetServerName;
   property ServerPriority:LongWord read FServerPriority write SetServerPriority;
+  property ServerStackSize:SizeUInt read FServerStackSize write SetServerStackSize;
 
   property Threads:TWinsock2UDPServerThreads read FThreads;
   property Buffers:TWinsock2UDPServerBuffers read FBuffers;
@@ -7891,10 +7903,11 @@ end;
 {==============================================================================}
 {==============================================================================}
 {TWinsock2TCPServerThread}
-constructor TWinsock2TCPServerThread.Create(AServer:TWinsock2TCPServer);
+constructor TWinsock2TCPServerThread.Create(AServer:TWinsock2TCPServer;AStackSize:SizeUInt = 0);
 begin
  {}
- inherited Create(True,THREAD_STACK_DEFAULT_SIZE);
+ if AStackSize = 0 then AStackSize:=THREAD_STACK_DEFAULT_SIZE;
+ inherited Create(True,AStackSize);
  FData:=nil;
  FServer:=AServer;
  FreeOnTerminate:=False;
@@ -7959,10 +7972,11 @@ end;
 {==============================================================================}
 {==============================================================================}
 {TWinsock2TCPListenerThread}
-constructor TWinsock2TCPListenerThread.Create(AListener:TWinsock2TCPListener);
+constructor TWinsock2TCPListenerThread.Create(AListener:TWinsock2TCPListener;AStackSize:SizeUInt = 0);
 begin
  {}
- inherited Create(True,THREAD_STACK_DEFAULT_SIZE);
+ if AStackSize = 0 then AStackSize:=THREAD_STACK_DEFAULT_SIZE;
+ inherited Create(True,AStackSize);
  FListener:=AListener;
  FreeOnTerminate:=True;
 end;
@@ -8050,7 +8064,7 @@ begin
          end;
         if Thread = nil then
          begin
-          Thread:=TWinsock2TCPServerThread.Create(Server);
+          Thread:=TWinsock2TCPServerThread.Create(Server,FListener.ServerStackSize);
          end;
         FListener.Threads.Add(Thread);
 
@@ -8179,7 +8193,7 @@ begin
    if Listen(FBacklog) = SOCKET_ERROR then Exit;
 
    {Create Thread}
-   FListenerThread:=TWinsock2TCPListenerThread.Create(Self);
+   FListenerThread:=TWinsock2TCPListenerThread.Create(Self,ListenerStackSize);
 
    {Start Thread}
    FListenerThread.Start;
@@ -8225,6 +8239,20 @@ end;
 
 {==============================================================================}
 
+procedure TWinsock2TCPListener.SetListenerStackSize(AListenerStackSize:SizeUInt);
+begin
+ {}
+ if FListenerStackSize <> AListenerStackSize then
+  begin
+   {Can only be set when inactive}
+   if FListenerThread <> nil then Exit;
+
+   FListenerStackSize:=AListenerStackSize;
+  end;
+end;
+
+{==============================================================================}
+
 procedure TWinsock2TCPListener.SetServerName(const AServerName:String);
 begin
  {}
@@ -8246,6 +8274,19 @@ begin
    FServerPriority:=AServerPriority;
 
    if FThreads <> nil then FThreads.ThreadPriority(AServerPriority);
+  end;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2TCPListener.SetServerStackSize(AServerStackSize:SizeUInt);
+begin
+ {}
+ if FServerStackSize <> AServerStackSize then
+  begin
+   FServerStackSize:=AServerStackSize;
+
+   {if FThreads <> nil then FThreads.ThreadStackSize(AServerStackSize);} {Can only be set at thread create}
   end;
 end;
 
@@ -8587,10 +8628,11 @@ end;
 {==============================================================================}
 {==============================================================================}
 {TWinsock2UDPServerThread}
-constructor TWinsock2UDPServerThread.Create(AServer:TWinsock2UDPServer);
+constructor TWinsock2UDPServerThread.Create(AServer:TWinsock2UDPServer;AStackSize:SizeUInt = 0);
 begin
  {}
- inherited Create(True,THREAD_STACK_DEFAULT_SIZE);
+ if AStackSize = 0 then AStackSize:=THREAD_STACK_DEFAULT_SIZE;
+ inherited Create(True,AStackSize);
  FLock:=CriticalSectionCreate;
 
  FActive:=False;
@@ -8713,10 +8755,11 @@ end;
 {==============================================================================}
 {==============================================================================}
 {TWinsock2UDPListenerThread}
-constructor TWinsock2UDPListenerThread.Create(AListener:TWinsock2UDPListener);
+constructor TWinsock2UDPListenerThread.Create(AListener:TWinsock2UDPListener;AStackSize:SizeUInt = 0);
 begin
  {}
- inherited Create(True,THREAD_STACK_DEFAULT_SIZE);
+ if AStackSize = 0 then AStackSize:=THREAD_STACK_DEFAULT_SIZE;
+ inherited Create(True,AStackSize);
  FListener:=AListener;
  FreeOnTerminate:=True;
 end;
@@ -9062,7 +9105,7 @@ begin
      end;
     if Result = nil then
      begin
-      Result:=TWinsock2UDPServerThread.Create(Server);
+      Result:=TWinsock2UDPServerThread.Create(Server,FListener.ServerStackSize);
      end;
     Add(Result);
 
@@ -9676,7 +9719,7 @@ begin
    if Bind = SOCKET_ERROR then Exit;
 
    {Create Thread}
-   FListenerThread:=TWinsock2UDPListenerThread.Create(Self);
+   FListenerThread:=TWinsock2UDPListenerThread.Create(Self,ListenerStackSize);
 
    {Create Threads}
    FThreads.CreateThreads;
@@ -9745,6 +9788,20 @@ end;
 
 {==============================================================================}
 
+procedure TWinsock2UDPListener.SetListenerStackSize(AListenerStackSize:SizeUInt);
+begin
+ {}
+ if FListenerStackSize <> AListenerStackSize then
+  begin
+   {Can only be set when inactive}
+   if FListenerThread <> nil then Exit;
+
+   FListenerStackSize:=AListenerStackSize;
+  end;
+end;
+
+{==============================================================================}
+
 procedure TWinsock2UDPListener.SetServerName(const AServerName:String);
 begin
  {}
@@ -9766,6 +9823,19 @@ begin
    FServerPriority:=AServerPriority;
 
    if FThreads <> nil then FThreads.ThreadPriority(AServerPriority);
+  end;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2UDPListener.SetServerStackSize(AServerStackSize:SizeUInt);
+begin
+ {}
+ if FServerStackSize <> AServerStackSize then
+  begin
+   FServerStackSize:=AServerStackSize;
+
+   {if FThreads <> nil then FThreads.ThreadStackSize(AServerStackSize);} {Can only be set at thread create}
   end;
 end;
 
