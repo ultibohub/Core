@@ -63,6 +63,7 @@ uses
   Core.UltiboUtils,
   Core.Winsock2,
   Core.HTTP,
+  Core.Authentication,
   Core.HeapManager,
   Core.DeviceTree,
   Core.Devices,
@@ -117,6 +118,7 @@ uses
   UltiboUtils,
   Winsock2,
   HTTP,
+  Authentication,
   HeapManager,
   DeviceTree,
   Devices,
@@ -188,21 +190,39 @@ type
 type
  {Web Status specific classes}
  TWebStatusSub = class;
+ TWebStatusPage = class;
+ TWebStatusLogin = class;
+ TWebStatusLogout = class;
  TWebStatusMain = class(THTTPDocument)
  public
   {}
-  constructor Create;
+  constructor Create(AListener:THTTPListener;const AHost,AURL:String;ARedirect:Boolean);
   destructor Destroy; override;
  private
   {Internal Variables}
   FTitle:String;
-  FCaption:String; //To Do //Hash ?
-  FSubPages:TStringList; //To Do //TLinkedStringList ?
+  FCaption:String;
+  FPages:TStringList;
+  FLoginPage:TWebStatusLogin;
+  FLogoutPage:TWebStatusLogout;
+  FRedirectPage:THTTPRedirect;
+
+  FHost:String;
+  FListener:THTTPListener;
+
+  FFontName:String;
+  FAllowRestart:Boolean;
+  FAllowShutdown:Boolean;
 
   {Internal Methods}
   function GetTitle:String;
   procedure SetTitle(const ATitle:String);
   function GetCaption:String;
+
+  function GetHost:String;
+
+  function GetFontName:String;
+  procedure SetFontName(const AFontName:String);
 
   function NormalizedDateToStr(const DateTime:TDateTime):String;
   function NormalizedTimeToStr(const DateTime:TDateTime):String;
@@ -215,6 +235,9 @@ type
   {Internal Methods}
   function MakeBold(const AName:String):String;
   function MakeLink(const AName,ALink:String):String;
+
+  procedure AddRemoteAction(AResponse:THTTPServerResponse);
+  procedure AddConfirmAction(AResponse:THTTPServerResponse);
 
   function AddBlank(AResponse:THTTPServerResponse):Boolean;
   function AddBlankEx(AResponse:THTTPServerResponse;AColumns:LongWord):Boolean;
@@ -245,20 +268,37 @@ type
   function AddContent(AResponse:THTTPServerResponse;const AContent:String):Boolean;
 
   function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+
+  function DoAuthenticate(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var AAuthenticated:Boolean):Boolean; override;
+  function DoDeauthenticate(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var ADeauthenticated:Boolean):Boolean; override;
  public
   {Public Properties}
   property Title:String read GetTitle write SetTitle;
   property Caption:String read GetCaption;
 
+  property Host:String read GetHost;
+  property Listener:THTTPListener read FListener;
+
+  property FontName:String read GetFontName write SetFontName;
+  property AllowRestart:Boolean read FAllowRestart write FAllowRestart;
+  property AllowShutdown:Boolean read FAllowShutdown write FAllowShutdown;
+
   {Public Methods}
-  function RegisterSubPage(ASub:TWebStatusSub):Boolean;
-  function DeregisterSubPage(ASub:TWebStatusSub):Boolean;
+  function RegisterPage(APage:TWebStatusPage):Boolean;
+  function DeregisterPage(APage:TWebStatusPage):Boolean;
+
+  function RegisterPages:Boolean;
+  function DeregisterPages:Boolean;
+
+  function EnableUserAuthentication(AUserAuthenticator:TAuthenticator):Boolean;
+  function EnableSessionAuthentication(AUserAuthenticator,ASessionAuthenticator:TAuthenticator):Boolean;
+  function DisableAuthentication:Boolean;
  end;
 
  TWebStatusSub = class(THTTPDocument)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); virtual;
   destructor Destroy; override;
  private
   {Internal Variables}
@@ -266,6 +306,7 @@ type
 
   {Internal Methods}
   function GetTitle:String;
+  function GetPath:String;
   function GetCaption:String;
 
   function NormalizedDateToStr(const DateTime:TDateTime):String;
@@ -275,11 +316,15 @@ type
   function NormalizedIntervalToStr(const DateTime:TDateTime):String;
  protected
   {Internal Variables}
-  FCaption:String; //To Do //Hash ?
+  FPath:String;
+  FCaption:String;
 
   {Internal Methods}
   function MakeBold(const AName:String):String;
   function MakeLink(const AName,ALink:String):String;
+
+  procedure AddRemoteAction(AResponse:THTTPServerResponse);
+  procedure AddConfirmAction(AResponse:THTTPServerResponse);
 
   function AddBlank(AResponse:THTTPServerResponse):Boolean;
   function AddBlankEx(AResponse:THTTPServerResponse;AColumns:LongWord):Boolean;
@@ -309,20 +354,48 @@ type
 
   function AddContent(AResponse:THTTPServerResponse;const AContent:String):Boolean;
 
+  function FindUserAuthenticator(AHost:THTTPHost;ARequest:THTTPServerRequest):TAuthenticator;
+  function FindSessionAuthenticator(AHost:THTTPHost;ARequest:THTTPServerRequest):TAuthenticator;
+
   function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+
+  function DoAuthenticate(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var AAuthenticated:Boolean):Boolean; override;
  public
   {Public Properties}
   property Main:TWebStatusMain read FMain;
+  property Path:String read GetPath;
   property Caption:String read GetCaption;
 
   {Public Methods}
 
  end;
 
- TWebStatusPlatform = class(TWebStatusSub)
+ TWebStatusPage = class(TWebStatusSub)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
+  destructor Destroy; override;
+ private
+  {Internal Variables}
+
+ protected
+  {Internal Variables}
+
+  {Internal Methods}
+
+ public
+  {Public Properties}
+
+  {Public Methods}
+
+ end;
+
+ TWebStatusClass = class of TWebStatusPage;
+
+ TWebStatusPlatform = class(TWebStatusPage)
+ public
+  {}
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -339,10 +412,10 @@ type
 
  end;
 
- TWebStatusMemory = class(TWebStatusSub)
+ TWebStatusMemory = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -359,12 +432,14 @@ type
 
  end;
 
- TWebStatusHeap = class(TWebStatusSub)
+ TWebStatusHeap = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
+  FFreeCount:LongWord;
+  FUsedCount:LongWord;
 
   {Internal Methods}
 
@@ -377,15 +452,17 @@ type
   function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
  public
   {Public Properties}
+  property FreeCount:LongWord read FFreeCount write FFreeCount;
+  property UsedCount:LongWord read FUsedCount write FUsedCount;
 
   {Public Methods}
 
  end;
 
- TWebStatusCPU = class(TWebStatusSub)
+ TWebStatusCPU = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -402,10 +479,10 @@ type
 
  end;
 
- TWebStatusFPU = class(TWebStatusSub)
+ TWebStatusFPU = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -422,10 +499,10 @@ type
 
  end;
 
- TWebStatusGPU = class(TWebStatusSub)
+ TWebStatusGPU = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -442,10 +519,10 @@ type
 
  end;
 
- TWebStatusRTL = class(TWebStatusSub)
+ TWebStatusRTL = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -462,10 +539,10 @@ type
 
  end;
 
- TWebStatusClock = class(TWebStatusSub)
+ TWebStatusClock = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -482,10 +559,10 @@ type
 
  end;
 
- TWebStatusLocale = class(TWebStatusSub)
+ TWebStatusLocale = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -502,10 +579,10 @@ type
 
  end;
 
- TWebStatusThreading = class(TWebStatusSub)
+ TWebStatusThreading = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -522,10 +599,10 @@ type
 
  end;
 
- TWebStatusThreadList = class(TWebStatusSub)
+ TWebStatusThreadList = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -546,10 +623,10 @@ type
 
  end;
 
- TWebStatusScheduler = class(TWebStatusSub)
+ TWebStatusScheduler = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -566,10 +643,10 @@ type
 
  end;
 
- TWebStatusDevices = class(TWebStatusSub)
+ TWebStatusDevices = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -625,10 +702,10 @@ type
 
  end;
 
- TWebStatusDrivers = class(TWebStatusSub)
+ TWebStatusDrivers = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -645,10 +722,10 @@ type
 
  end;
 
- TWebStatusHandles = class(TWebStatusSub)
+ TWebStatusHandles = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -668,10 +745,10 @@ type
 
  end;
 
- TWebStatusUSB = class(TWebStatusSub)
+ TWebStatusUSB = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
   function USBFlagsToFlagNames(AFlags:LongWord):TStringList;
@@ -690,10 +767,10 @@ type
 
  end;
 
- TWebStatusPCI = class(TWebStatusSub)
+ TWebStatusPCI = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
   function PCIFlagsToFlagNames(AFlags:LongWord):TStringList;
@@ -712,10 +789,10 @@ type
 
  end;
 
- TWebStatusMMC = class(TWebStatusSub)
+ TWebStatusMMC = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
   function MMCFlagsToFlagNames(AFlags:LongWord):TStringList;
@@ -744,10 +821,10 @@ type
 
  end;
 
- TWebStatusHID = class(TWebStatusSub)
+ TWebStatusHID = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
   function HIDFlagsToFlagNames(AFlags:LongWord):TStringList;
@@ -764,10 +841,10 @@ type
 
  end;
 
- TWebStatusNetwork = class(TWebStatusSub)
+ TWebStatusNetwork = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -787,10 +864,10 @@ type
 
  end;
 
- TWebStatusStorage = class(TWebStatusSub)
+ TWebStatusStorage = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -810,10 +887,10 @@ type
 
  end;
 
- TWebStatusFilesystem = class(TWebStatusSub)
+ TWebStatusFilesystem = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -830,10 +907,10 @@ type
 
  end;
 
- TWebStatusCache = class(TWebStatusSub)
+ TWebStatusCache = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -850,10 +927,10 @@ type
 
  end;
 
- TWebStatusKeyboard = class(TWebStatusSub)
+ TWebStatusKeyboard = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -875,10 +952,10 @@ type
 
  end;
 
- TWebStatusMouse = class(TWebStatusSub)
+ TWebStatusMouse = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -900,10 +977,10 @@ type
 
  end;
 
- TWebStatusTouch = class(TWebStatusSub)
+ TWebStatusTouch = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -923,10 +1000,10 @@ type
 
  end;
 
- TWebStatusJoystick = class(TWebStatusSub)
+ TWebStatusJoystick = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -946,10 +1023,10 @@ type
 
  end;
 
- TWebStatusFramebuffer = class(TWebStatusSub)
+ TWebStatusFramebuffer = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -966,16 +1043,16 @@ type
 
  end;
 
- //TWebStatusConsole = class(TWebStatusSub) //To Do
+ //TWebStatusConsole = class(TWebStatusPage) //To Do
 
- //TWebStatusLogging = class(TWebStatusSub) //To Do
+ //TWebStatusLogging = class(TWebStatusPage) //To Do
 
- //TWebStatusTimezone = class(TWebStatusSub) //To Do
+ //TWebStatusTimezone = class(TWebStatusPage) //To Do
 
- TWebStatusEnvironment = class(TWebStatusSub)
+ TWebStatusEnvironment = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -992,10 +1069,10 @@ type
 
  end;
 
- TWebStatusPageTables = class(TWebStatusSub)
+ TWebStatusPageTables = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -1015,10 +1092,10 @@ type
 
  end;
 
- TWebStatusVectorTables = class(TWebStatusSub)
+ TWebStatusVectorTables = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -1035,10 +1112,10 @@ type
 
  end;
 
- TWebStatusIRQFIQSWI = class(TWebStatusSub)
+ TWebStatusIRQFIQSWI = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -1055,10 +1132,10 @@ type
 
  end;
 
- TWebStatusGPIO = class(TWebStatusSub)
+ TWebStatusGPIO = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -1075,10 +1152,10 @@ type
 
  end;
 
- TWebStatusConfiguration = class(TWebStatusSub)
+ TWebStatusConfiguration = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -1095,10 +1172,10 @@ type
 
  end;
 
- TWebStatusDeviceTree = class(TWebStatusSub)
+ TWebStatusDeviceTree = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -1116,10 +1193,10 @@ type
  end;
 
 {$IF DEFINED(LOCK_DEBUG) or DEFINED(SPIN_DEBUG) or DEFINED(MUTEX_DEBUG) or DEFINED(CLOCK_DEBUG) or DEFINED(SCHEDULER_DEBUG) or DEFINED(INTERRUPT_DEBUG) or DEFINED(EXCEPTION_DEBUG)}
- TWebStatusDebug = class(TWebStatusSub)
+ TWebStatusDebug = class(TWebStatusPage)
  public
   {}
-  constructor Create(AMain:TWebStatusMain);
+  constructor Create(AMain:TWebStatusMain); override;
  private
   {Internal Variables}
 
@@ -1139,10 +1216,11 @@ type
 
  TWebStatusContent = function(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean of Object;
 
- TWebStatusCustom = class(TWebStatusSub)
+ TWebStatusCustom = class(TWebStatusPage)
  public
   {}
   constructor Create(const AName,APath:String;AColumns:LongWord);
+  constructor CreateEx(AListener:THTTPListener;const AHost,AName,APath:String;AColumns:LongWord);
  private
   {Internal Variables}
   FColumns:LongWord;
@@ -1162,6 +1240,55 @@ type
   property Columns:LongWord read FColumns write FColumns;
 
   property OnContent:TWebStatusContent read FOnContent write FOnContent;
+
+  {Public Methods}
+
+ end;
+
+ TWebStatusLogin = class(TWebStatusSub)
+ public
+  {}
+  constructor Create(AMain:TWebStatusMain); override;
+ private
+  {Internal Variables}
+
+  {Internal Methods}
+
+ protected
+  {Internal Variables}
+
+  {Internal Methods}
+  function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+  function DoPost(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+
+  function AddForm(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; virtual;
+  function AddScript(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; virtual;
+ public
+  {Public Properties}
+
+  {Public Methods}
+
+ end;
+
+ TWebStatusLogout = class(TWebStatusSub)
+ public
+  {}
+  constructor Create(AMain:TWebStatusMain); override;
+ private
+  {Internal Variables}
+
+  {Internal Methods}
+
+ protected
+  {Internal Variables}
+
+  {Internal Methods}
+
+  function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+
+  function DoDeauthenticate(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var ADeauthenticated:Boolean):Boolean; override;
+ public
+  {Public Properties}
 
   {Public Methods}
 
@@ -1191,11 +1318,19 @@ var
 
 {==============================================================================}
 {Initialization Functions}
+procedure WebStatusInit;
 
 {==============================================================================}
 {Web Status Functions}
+function WebStatusFind(AListener:THTTPListener;const AHost:String):TWebStatusMain;
+
 function WebStatusRegister(AListener:THTTPListener;const AHost,AURL:String;ARedirect:Boolean):Boolean;
+function WebStatusRegisterEx(AListener:THTTPListener;const AHost,AURL:String;ARedirect:Boolean;AClass:TWebStatusClass):Boolean;
 function WebStatusDeregister(AListener:THTTPListener;const AHost:String):Boolean;
+
+function WebStatusEnableUserAuthentication(AListener:THTTPListener;const AHost:String;AUserAuthenticator:TAuthenticator):Boolean;
+function WebStatusEnableSessionAuthentication(AListener:THTTPListener;const AHost:String;AUserAuthenticator,ASessionAuthenticator:TAuthenticator):Boolean;
+function WebStatusDisableAuthentication(AListener:THTTPListener;const AHost:String):Boolean;
 
 {==============================================================================}
 {Web Status Helper Functions}
@@ -1235,59 +1370,51 @@ implementation
 {==============================================================================}
 var
  {Web Status specific variables}
- WebStatusMain:TWebStatusMain;
- WebStatusPlatform:TWebStatusPlatform;
- WebStatusMemory:TWebStatusMemory;
- WebStatusHeap:TWebStatusHeap;
- WebStatusCPU:TWebStatusCPU;
- WebStatusFPU:TWebStatusFPU;
- WebStatusGPU:TWebStatusGPU;
- WebStatusRTL:TWebStatusRTL;
- WebStatusClock:TWebStatusClock;
- WebStatusLocale:TWebStatusLocale;
- WebStatusThreading:TWebStatusThreading;
- WebStatusThreadList:TWebStatusThreadList;
- WebStatusScheduler:TWebStatusScheduler;
- WebStatusDevices:TWebStatusDevices;
- WebStatusDrivers:TWebStatusDrivers;
- WebStatusHandles:TWebStatusHandles;
- WebStatusUSB:TWebStatusUSB;
- WebStatusPCI:TWebStatusPCI;
- WebStatusMMC:TWebStatusMMC;
- WebStatusHID:TWebStatusHID;
- WebStatusNetwork:TWebStatusNetwork;
- WebStatusStorage:TWebStatusStorage;
- WebStatusFilesystem:TWebStatusFilesystem;
- WebStatusCache:TWebStatusCache;
- WebStatusKeyboard:TWebStatusKeyboard;
- WebStatusMouse:TWebStatusMouse;
- WebStatusTouch:TWebStatusTouch;
- WebStatusJoystick:TWebStatusJoystick;
- WebStatusFramebuffer:TWebStatusFramebuffer;
- WebStatusEnvironment:TWebStatusEnvironment;
- WebStatusPageTables:TWebStatusPageTables;
- WebStatusVectorTables:TWebStatusVectorTables;
- WebStatusIRQFIQSWI:TWebStatusIRQFIQSWI;
- WebStatusGPIO:TWebStatusGPIO;
- WebStatusConfiguration:TWebStatusConfiguration;
- WebStatusDeviceTree:TWebStatusDeviceTree;
- {$IF DEFINED(LOCK_DEBUG) or DEFINED(SPIN_DEBUG) or DEFINED(MUTEX_DEBUG) or DEFINED(CLOCK_DEBUG) or DEFINED(SCHEDULER_DEBUG) or DEFINED(INTERRUPT_DEBUG) or DEFINED(EXCEPTION_DEBUG)}
- WebStatusDebug:TWebStatusDebug;
- {$ENDIF}
+ WebStatusInitialized:Boolean;
 
- WebStatusRedirect:THTTPRedirect;
+ WebStatusLock:TCriticalSectionHandle = INVALID_HANDLE_VALUE;
+ WebStatusInstances:TList;
 
 {==============================================================================}
 {==============================================================================}
 {TWebStatusMain}
-constructor TWebStatusMain.Create;
+constructor TWebStatusMain.Create(AListener:THTTPListener;const AHost,AURL:String;ARedirect:Boolean);
 begin
  {}
  inherited Create;
+ {Setup Defaults}
  Name:='/status';
  FTitle:='Ultibo Core (Release: ' + ULTIBO_RELEASE_NAME + ' Version: ' + ULTIBO_RELEASE_VERSION + ' Date: ' + ULTIBO_RELEASE_DATE + ')';
  FCaption:='General';
- FSubPages:=TStringList.Create;
+ FPages:=TStringList.Create;
+ FLoginPage:=nil;
+ FLogoutPage:=nil;
+ FRedirectPage:=nil;
+
+ FHost:=AHost;
+ FListener:=AListener;
+
+ FFontName:=WEBSTATUS_FONT_NAME;
+ FAllowRestart:=WEBSTATUS_ALLOW_RESTART;
+ FAllowShutdown:=WEBSTATUS_ALLOW_SHUTDOWN;
+
+ {Set Name}
+ if Length(AURL) <> 0 then Name:=AURL;
+
+ if FListener <> nil then
+  begin
+   {Register Document}
+   FListener.RegisterDocument(FHost,Self);
+
+   {Register Redirect}
+   if ARedirect then
+    begin
+     FRedirectPage:=THTTPRedirect.Create;
+     FRedirectPage.Name:='/';
+     FRedirectPage.Location:=Name;
+     FListener.RegisterDocument(FHost,FRedirectPage);
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -1297,7 +1424,21 @@ begin
  {}
  AcquireLock;
  try
-  FSubPages.Free;
+  if FListener <> nil then
+   begin
+    {Deregister Redirect}
+    if FRedirectPage <> nil then FListener.DeregisterDocument(FHost,FRedirectPage);
+
+    {Deregister Document}
+    FListener.DeregisterDocument(FHost,Self);
+   end;
+
+  if FRedirectPage <> nil then FRedirectPage.Free;
+  if FLogoutPage <> nil then FLogoutPage.Free;
+  if FLoginPage <> nil then FLoginPage.Free;
+  FPages.Free;
+
+  FListener:=nil;
  finally
   ReleaseLock;
   inherited Destroy;
@@ -1339,6 +1480,45 @@ begin
 
  Result:=FCaption;
  UniqueString(Result);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function TWebStatusMain.GetHost:String;
+begin
+ {}
+ AcquireLock;
+
+ Result:=FHost;
+ UniqueString(Result);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function TWebStatusMain.GetFontName:String;
+begin
+ {}
+ AcquireLock;
+
+ Result:=FFontName;
+ UniqueString(Result);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure TWebStatusMain.SetFontName(const AFontName:String);
+begin
+ {}
+ AcquireLock;
+
+ FFontName:=AFontName;
+ UniqueString(FFontName);
 
  ReleaseLock;
 end;
@@ -1403,6 +1583,46 @@ function TWebStatusMain.MakeLink(const AName,ALink:String):String;
 begin
  {}
  Result:='<a href="' + ALink + '">' + AName + '</a>';
+end;
+
+{==============================================================================}
+
+procedure TWebStatusMain.AddRemoteAction(AResponse:THTTPServerResponse);
+begin
+ {}
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ AddContent(AResponse,'<script>');
+ AddContent(AResponse,'function RemoteAction(theUrl) {');
+ AddContent(AResponse,'  var xmlhttp;');
+ AddContent(AResponse,'  if (window.XMLHttpRequest) {');
+ AddContent(AResponse,'    xmlhttp = new XMLHttpRequest();');
+ AddContent(AResponse,'  } else {');
+ AddContent(AResponse,'    // code for older browsers');
+ AddContent(AResponse,'    xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");');
+ AddContent(AResponse,'  }');
+ AddContent(AResponse,'  xmlhttp.open("GET", theUrl, true);');
+ AddContent(AResponse,'  xmlhttp.send();');
+ AddContent(AResponse,'}');
+ AddContent(AResponse,'</script>');
+end;
+
+{==============================================================================}
+
+procedure TWebStatusMain.AddConfirmAction(AResponse:THTTPServerResponse);
+begin
+ {}
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ AddContent(AResponse,'<script>');
+ AddContent(AResponse,'function ConfirmAction(theUrl, thePrompt) {');
+ AddContent(AResponse,'  if (confirm(thePrompt) == true) {');
+ AddContent(AResponse,'    RemoteAction(theUrl);');
+ AddContent(AResponse,'  }');
+ AddContent(AResponse,'}');
+ AddContent(AResponse,'</script>');
 end;
 
 {==============================================================================}
@@ -1825,6 +2045,7 @@ function TWebStatusMain.AddHeaderEx(AResponse:THTTPServerResponse;const ATitle,A
 var
  Title:String;
  Caption:String;
+ ReturnURL:String;
  Count:Integer;
  Percent:LongWord;
  Sub:TWebStatusSub;
@@ -1870,7 +2091,7 @@ begin
   AddContent(AResponse,'   <title>' + Title + '</title>');
   AddContent(AResponse,' </head>');
   AddContent(AResponse,' <body link=#4dad00 vlink=#4dad00 alink=#00cc00>');
-  AddContent(AResponse,'   <table style=" text-align: left; width: 75%; height: 100%; margin-left: auto; margin-right: auto; font-family: ' + WEBSTATUS_FONT_NAME + ';" border="0" cellpadding="2" cellspacing="2">');
+  AddContent(AResponse,'   <table style=" text-align: left; width: 75%; height: 100%; margin-left: auto; margin-right: auto; font-family: ' + FontName + ';" border="0" cellpadding="2" cellspacing="2">');
   AddContent(AResponse,'     <tbody>');
   AddContent(AResponse,'       <tr>');
   AddContent(AResponse,'         <td colspan="' + IntToStr(AColumns + 1) + '" rowspan="1" style=" text-align: center; vertical-align: middle; color: rgb(231, 231, 231); background-color: rgb(0, 187, 0); height: 65px;"><strong>' + Title + '</strong><br>');
@@ -1881,33 +2102,75 @@ begin
   AddContent(AResponse,'           <table style=" text-align: left; width: 100%;" border="0" cellpadding="2" cellspacing="2">');
   AddContent(AResponse,'             <tbody>');
 
-  {Add Main Page}
-  AddContent(AResponse,'               <tr>');
-  if ASub = nil then
+  {Check Login}
+  if (FLoginPage <> nil) and (ASub = FLoginPage) then
    begin
-    AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(192, 192, 192)"><span style="color: rgb(255, 255, 255);"><a href="' + Name + '">' + GetCaption + '</a></span><br>');
+    {Add Login Page}
+    AddContent(AResponse,'               <tr>');
+    AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(192, 192, 192)"><span style="color: rgb(255, 255, 255);"><a href="' + FLoginPage.Name + '">' + FLoginPage.Caption + '</a></span><br>');
+    AddContent(AResponse,'                 </td>');
+    AddContent(AResponse,'               </tr>');
+
+    {Add Page Placeholders}
+    for Count:=0 to FPages.Count - 1 do
+     begin
+      Sub:=TWebStatusSub(FPages.Objects[Count]);
+      if Sub <> nil then
+       begin
+        AddContent(AResponse,'               <tr>');
+        AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(231, 231, 231)"><br>');
+        AddContent(AResponse,'                 </td>');
+        AddContent(AResponse,'               </tr>');
+       end;
+     end;
    end
   else
    begin
-    AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(231, 231, 231)"><a href="' + Name + '">' + GetCaption + '</a><br>');
-   end;
-  AddContent(AResponse,'                 </td>');
-  AddContent(AResponse,'               </tr>');
+    {Add Main Page}
+    AddContent(AResponse,'               <tr>');
+    if ASub = nil then
+     begin
+      AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(192, 192, 192)"><span style="color: rgb(255, 255, 255);"><a href="' + Name + '">' + GetCaption + '</a></span><br>');
+     end
+    else
+     begin
+      AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(231, 231, 231)"><a href="' + Name + '">' + GetCaption + '</a><br>');
+     end;
+    AddContent(AResponse,'                 </td>');
+    AddContent(AResponse,'               </tr>');
 
-  {Add Sub Pages}
-  for Count:=0 to FSubPages.Count - 1 do
-   begin
-    Sub:=TWebStatusSub(FSubPages.Objects[Count]);
-    if Sub <> nil then
+    {Add Pages}
+    for Count:=0 to FPages.Count - 1 do
+     begin
+      Sub:=TWebStatusSub(FPages.Objects[Count]);
+      if Sub <> nil then
+       begin
+        AddContent(AResponse,'               <tr>');
+        if Sub = ASub then
+         begin
+          AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(192, 192, 192)"><span style="color: rgb(255, 255, 255);"><a href="' + Sub.Name + '">' + Sub.Caption + '</a></span><br>');
+         end
+        else
+         begin
+          AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(231, 231, 231)"><a href="' + Sub.Name + '">' + Sub.Caption + '</a><br>');
+         end;
+        AddContent(AResponse,'                 </td>');
+        AddContent(AResponse,'               </tr>');
+       end;
+     end;
+
+    {Check Logout}
+    if (FLogoutPage <> nil) then
      begin
       AddContent(AResponse,'               <tr>');
-      if Sub = ASub then
+      if ASub = FLogoutPage then
        begin
-        AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(192, 192, 192)"><span style="color: rgb(255, 255, 255);"><a href="' + Sub.Name + '">' + Sub.Caption + '</a></span><br>');
+        AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(192, 192, 192)"><a href="' + FLogoutPage.Name + '">' + FLogoutPage.Caption + '</a><br>');
        end
       else
        begin
-        AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(231, 231, 231)"><a href="' + Sub.Name + '">' + Sub.Caption + '</a><br>');
+        if ASub = nil then ReturnURL:='?returnurl=' + Name else ReturnURL:='?returnurl=' + ASub.Name;
+        AddContent(AResponse,'                 <td style="text-align: center; background-color: rgb(231, 231, 231)"><a href="' + FLogoutPage.Name + ReturnURL + '">' + FLogoutPage.Caption + '</a><br>');
        end;
       AddContent(AResponse,'                 </td>');
       AddContent(AResponse,'               </tr>');
@@ -2022,39 +2285,11 @@ end;
 {==============================================================================}
 
 function TWebStatusMain.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
-
- procedure AddRemoteAction;
- begin
-  AddContent(AResponse,'<script>');
-  AddContent(AResponse,'function RemoteAction(theUrl) {');
-  AddContent(AResponse,'  var xmlhttp;');
-  AddContent(AResponse,'  if (window.XMLHttpRequest) {');
-  AddContent(AResponse,'    xmlhttp = new XMLHttpRequest();');
-  AddContent(AResponse,'  } else {');
-  AddContent(AResponse,'    // code for older browsers');
-  AddContent(AResponse,'    xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");');
-  AddContent(AResponse,'  }');
-  AddContent(AResponse,'  xmlhttp.open("GET", theUrl, true);');
-  AddContent(AResponse,'  xmlhttp.send();');
-  AddContent(AResponse,'}');
-  AddContent(AResponse,'</script>');
- end;
-
- procedure AddConfirmAction;
- begin
-  AddContent(AResponse,'<script>');
-  AddContent(AResponse,'function ConfirmAction(theUrl, thePrompt) {');
-  AddContent(AResponse,'  if (confirm(thePrompt) == true) {');
-  AddContent(AResponse,'    RemoteAction(theUrl);');
-  AddContent(AResponse,'  }');
-  AddContent(AResponse,'}');
-  AddContent(AResponse,'</script>');
- end;
-
 var
  Action:String;
  WorkTemp:Double;
  WorkTime:TDateTime;
+ Authenticated:Boolean;
 begin
  {}
  Result:=False;
@@ -2070,7 +2305,7 @@ begin
 
  {Get Action}
  Action:=Uppercase(ARequest.GetParam('ACTION'));
- if Action = 'RESTART' then
+ if FAllowRestart and (Action = 'RESTART') then
   begin
    {Add Result}
    AResponse.Version:=HTTP_VERSION;
@@ -2083,7 +2318,7 @@ begin
    {Restart}
    SystemRestart(1000);
   end
- else if Action = 'SHUTDOWN' then
+ else if FAllowShutdown and (Action = 'SHUTDOWN') then
   begin
    {Add Result}
    AResponse.Version:=HTTP_VERSION;
@@ -2099,13 +2334,13 @@ begin
  else
   begin
    {Add Scripts}
-   if WEBSTATUS_ALLOW_RESTART or WEBSTATUS_ALLOW_SHUTDOWN then
+   if FAllowRestart or FAllowShutdown then
     begin
      {Remote Action}
-     AddRemoteAction;
+     AddRemoteAction(AResponse);
 
      {Confirm Action}
-     AddConfirmAction;
+     AddConfirmAction(AResponse);
     end;
 
    {Add Header}
@@ -2157,11 +2392,11 @@ begin
 
    {Add Shutdown / Restart}
    AddBlank(AResponse);
-   if WEBSTATUS_ALLOW_RESTART then
+   if FAllowRestart then
     begin
      AddItem(AResponse,'Actions:','<button onclick="ConfirmAction(''' + Name + '?action=restart'', ''Restart system?'')" style="width: 30%; height: 100%">Restart</button>');
     end;
-   if WEBSTATUS_ALLOW_SHUTDOWN then
+   if FAllowShutdown then
     begin
      AddItem(AResponse,'','<button onclick="ConfirmAction(''' + Name + '?action=shutdown'', ''Shutdown system?'')" style="width: 30%; height: 100%">Shutdown</button>');
     end;
@@ -2176,24 +2411,139 @@ end;
 
 {==============================================================================}
 
-function TWebStatusMain.RegisterSubPage(ASub:TWebStatusSub):Boolean;
+function TWebStatusMain.DoAuthenticate(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var AAuthenticated:Boolean):Boolean;
+var
+ Location:String;
+begin
+ {}
+ Result:=False;
+
+ {Set Defaults}
+ AAuthenticated:=False;
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Check Authenticators, Login and Logout pages}
+ if (UserAuthenticator = nil) or (SessionAuthenticator = nil) or (FLoginPage = nil) or (FLogoutPage = nil) then
+  begin
+   {Internal Server Error}
+   AResponse.Version:=HTTP_VERSION;
+   AResponse.Status:=HTTP_STATUS_INTERNAL_SERVER_ERROR;
+   AResponse.Reason:=HTTP_REASON_500;
+
+   {Do Error}
+   Result:=DoError(AHost,ARequest,AResponse);
+  end
+ else
+  begin
+   {Call inherited}
+   Result:=inherited DoAuthenticate(AHost,ARequest,AResponse,AAuthenticated);
+   if Result then
+    begin
+     {Check Authenticated}
+     if AAuthenticated then Exit;
+
+     {Update Location}
+     Location:=FLoginPage.Name;
+
+     {Check for parameter separator}
+     if Pos('?',Location) > 0 then
+      begin
+       {Add Return URL}
+       Location:=Location + '&' + SessionAuthenticator.ReturnURLName + '=' + ARequest.Path;
+      end
+     else
+      begin
+       {Add Return URL}
+       Location:=Location + '?' + SessionAuthenticator.ReturnURLName + '=' + ARequest.Path;
+      end;
+
+     {Replace Location Header}
+     AResponse.SetHeader(HTTP_RESPONSE_HEADER_LOCATION,Location);
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function TWebStatusMain.DoDeauthenticate(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var ADeauthenticated:Boolean):Boolean;
+var
+ Location:String;
+begin
+ {}
+ Result:=False;
+
+ {Set Defaults}
+ ADeauthenticated:=False;
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Check Authenticators, Login and Logout pages}
+ if (UserAuthenticator = nil) or (SessionAuthenticator = nil) or (FLoginPage = nil) or (FLogoutPage = nil) then
+  begin
+   {Internal Server Error}
+   AResponse.Version:=HTTP_VERSION;
+   AResponse.Status:=HTTP_STATUS_INTERNAL_SERVER_ERROR;
+   AResponse.Reason:=HTTP_REASON_500;
+
+   {Do Error}
+   Result:=DoError(AHost,ARequest,AResponse);
+  end
+ else
+  begin
+   {Call inherited}
+   Result:=inherited DoDeauthenticate(AHost,ARequest,AResponse,ADeauthenticated);
+   if Result then
+    begin
+     {Update Location}
+     Location:=FLoginPage.Name;
+
+     {Replace Location Header}
+     AResponse.SetHeader(HTTP_RESPONSE_HEADER_LOCATION,Location);
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function TWebStatusMain.RegisterPage(APage:TWebStatusPage):Boolean;
 begin
  {}
  AcquireLock;
  try
   Result:=False;
 
-  {Check Sub Page}
-  if ASub = nil then Exit;
+  {Check Page}
+  if APage = nil then Exit;
 
   {Check Caption}
-  //--if FSubPages.IndexOf(ASub.Caption) <> -1 then Exit; //To Do //Need to fix Ansi functions in Unicode.pas (see AnsiCompareStr etc in sysstr.inc)
+  //--if FPages.IndexOf(APage.Caption) <> -1 then Exit; //To Do //Need to fix Ansi functions in Unicode.pas (see AnsiCompareStr etc in sysstr.inc)
 
   {Check Object}
-  if FSubPages.IndexOfObject(ASub) <> -1 then Exit;
+  if FPages.IndexOfObject(APage) <> -1 then Exit;
 
-  {Add Sub Page}
-  Result:=(FSubPages.AddObject(ASub.Caption,ASub) <> -1);
+  {Update Page}
+  APage.UserAuthenticator:=UserAuthenticator;
+  APage.SessionAuthenticator:=SessionAuthenticator;
+  APage.RequireAuthorization:=RequireAuthorization;
+  APage.RequireAuthentication:=RequireAuthentication;
+
+  {Add Page}
+  Result:=(FPages.AddObject(APage.Caption,APage) <> -1);
  finally
   ReleaseLock;
  end;
@@ -2201,7 +2551,7 @@ end;
 
 {==============================================================================}
 
-function TWebStatusMain.DeregisterSubPage(ASub:TWebStatusSub):Boolean;
+function TWebStatusMain.DeregisterPage(APage:TWebStatusPage):Boolean;
 var
  Index:Integer;
 begin
@@ -2210,15 +2560,366 @@ begin
  try
   Result:=False;
 
-  {Check Sub Page}
-  if ASub = nil then Exit;
+  {Check Page}
+  if APage = nil then Exit;
 
   {Check Object}
-  Index:=FSubPages.IndexOfObject(ASub);
+  Index:=FPages.IndexOfObject(APage);
   if Index = -1 then Exit;
 
-  {Remove Sub Page}
-  FSubPages.Delete(Index);
+  {Remove Page}
+  FPages.Delete(Index);
+
+  {Update Page}
+  APage.UserAuthenticator:=nil;
+  APage.SessionAuthenticator:=nil;
+  APage.RequireAuthorization:=False;
+  APage.RequireAuthentication:=False;
+
+  Result:=True;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+function TWebStatusMain.RegisterPages:Boolean;
+begin
+ {}
+ AcquireLock;
+ try
+  Result:=False;
+
+  {Register Platform Page}
+  TWebStatusPlatform.Create(Self);
+
+  {Register Memory Page}
+  TWebStatusMemory.Create(Self);
+
+  {Register Heap Page}
+  TWebStatusHeap.Create(Self);
+
+  {Register CPU Page}
+  TWebStatusCPU.Create(Self);
+
+  {Register FPU Page}
+  TWebStatusFPU.Create(Self);
+
+  {Register GPU Page}
+  TWebStatusGPU.Create(Self);
+
+  {Register RTL Page}
+  TWebStatusRTL.Create(Self);
+
+  {Register Clock Page}
+  TWebStatusClock.Create(Self);
+
+  {Register Locale Page}
+  TWebStatusLocale.Create(Self);
+
+  {Register Threading Page}
+  TWebStatusThreading.Create(Self);
+
+  {Register ThreadList Page}
+  TWebStatusThreadList.Create(Self);
+
+  {Register Scheduler Page}
+  TWebStatusScheduler.Create(Self);
+
+  {Register Devices Page}
+  TWebStatusDevices.Create(Self);
+
+  {Register Drivers Page}
+  TWebStatusDrivers.Create(Self);
+
+  {Register Handles Page}
+  TWebStatusHandles.Create(Self);
+
+  {Register USB Page}
+  TWebStatusUSB.Create(Self);
+
+  {Register PCI Page}
+  TWebStatusPCI.Create(Self);
+
+  {Register MMC Page}
+  TWebStatusMMC.Create(Self);
+
+  {Register HID Page}
+  TWebStatusHID.Create(Self);
+
+  {Register Network Page}
+  TWebStatusNetwork.Create(Self);
+
+  {Register Storage Page}
+  TWebStatusStorage.Create(Self);
+
+  {Register Filesystem Page}
+  TWebStatusFilesystem.Create(Self);
+
+  {Register Cache Page}
+  TWebStatusCache.Create(Self);
+
+  {Register Keyboard Page}
+  TWebStatusKeyboard.Create(Self);
+
+  {Register Mouse Page}
+  TWebStatusMouse.Create(Self);
+
+  {Register Touch Page}
+  TWebStatusTouch.Create(Self);
+
+  {Register Joystick Page}
+  TWebStatusJoystick.Create(Self);
+
+  {Register Framebuffer Page}
+  TWebStatusFramebuffer.Create(Self);
+
+  {Register Environment Page}
+  TWebStatusEnvironment.Create(Self);
+
+  {Register PageTables Page}
+  TWebStatusPageTables.Create(Self);
+
+  {Register VectorTables Page}
+  TWebStatusVectorTables.Create(Self);
+
+  {Register IRQFIQSWI Page}
+  TWebStatusIRQFIQSWI.Create(Self);
+
+  {Register GPIO Page}
+  TWebStatusGPIO.Create(Self);
+
+  {Register Configuration Page}
+  TWebStatusConfiguration.Create(Self);
+
+  {Register DeviceTree Page}
+  TWebStatusDeviceTree.Create(Self);
+
+  {$IF DEFINED(LOCK_DEBUG) or DEFINED(SPIN_DEBUG) or DEFINED(MUTEX_DEBUG) or DEFINED(CLOCK_DEBUG) or DEFINED(SCHEDULER_DEBUG) or DEFINED(INTERRUPT_DEBUG)}
+  {Register Debug Page}
+  TWebStatusDebug.Create(Self);
+  {$ENDIF}
+
+  Result:=True;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+function TWebStatusMain.DeregisterPages:Boolean;
+var
+ Count:Integer;
+ Page:TWebStatusPage;
+begin
+ {}
+ AcquireLock;
+ try
+  Result:=False;
+
+  {Deregister Pages}
+  for Count:=FPages.Count - 1 downto 0 do
+   begin
+    Page:=TWebStatusPage(FPages.Objects[Count]);
+    if Page <> nil then Page.Free;
+   end;
+
+  Result:=True;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+function TWebStatusMain.EnableUserAuthentication(AUserAuthenticator:TAuthenticator):Boolean;
+var
+ Count:Integer;
+ Sub:TWebStatusSub;
+begin
+ {}
+ AcquireLock;
+ try
+  Result:=False;
+
+  {Check User Authenticator}
+  if AUserAuthenticator = nil then Exit;
+  if AUserAuthenticator.Mode <> AUTHENTICATOR_MODE_USER then Exit;
+
+  {Update Authenticators}
+  UserAuthenticator:=AUserAuthenticator;
+  SessionAuthenticator:=nil;
+
+  {Enable Authorization}
+  RequireAuthorization:=True;
+
+  {Remove Logout Page}
+  if FLogoutPage <> nil then
+   begin
+    {Destory Page}
+    FLogoutPage.Free;
+    FLogoutPage:=nil;
+   end;
+
+  {Remove Login Page}
+  if FLoginPage <> nil then
+   begin
+    {Destory Page}
+    FLoginPage.Free;
+    FLoginPage:=nil;
+   end;
+
+  {Update Pages}
+  for Count:=0 to FPages.Count - 1 do
+   begin
+    Sub:=TWebStatusSub(FPages.Objects[Count]);
+    if Sub <> nil then
+     begin
+      {Update Authenticators}
+      Sub.UserAuthenticator:=AUserAuthenticator;
+      Sub.SessionAuthenticator:=nil;
+
+      {Enable Authorization}
+      Sub.RequireAuthorization:=True;
+     end;
+   end;
+
+  Result:=True;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+function TWebStatusMain.EnableSessionAuthentication(AUserAuthenticator,ASessionAuthenticator:TAuthenticator):Boolean;
+var
+ Count:Integer;
+ Sub:TWebStatusSub;
+begin
+ {}
+ AcquireLock;
+ try
+  Result:=False;
+
+  {Check User Authenticator}
+  if AUserAuthenticator = nil then Exit;
+  if AUserAuthenticator.Mode <> AUTHENTICATOR_MODE_USER then Exit;
+
+  {Check Session Authenticator}
+  if ASessionAuthenticator = nil then Exit;
+  if ASessionAuthenticator.Mode <> AUTHENTICATOR_MODE_SESSION then Exit;
+
+  {Update Authenticators}
+  UserAuthenticator:=AUserAuthenticator;
+  SessionAuthenticator:=ASessionAuthenticator;
+
+  {Enable Authentication}
+  RequireAuthentication:=True;
+
+  {Create Login Page}
+  if FLoginPage = nil then
+   begin
+    FLoginPage:=TWebStatusLogin.Create(Self);
+
+    {Update Authenticators}
+    FLoginPage.UserAuthenticator:=AUserAuthenticator;
+    FLoginPage.SessionAuthenticator:=ASessionAuthenticator;
+
+    {Don't Enable Authentication for the Login Page}
+   end;
+
+  {Create Logout Page}
+  if FLogoutPage = nil then
+   begin
+    FLogoutPage:=TWebStatusLogout.Create(Self);
+
+    {Update Authenticators}
+    FLogoutPage.UserAuthenticator:=AUserAuthenticator;
+    FLogoutPage.SessionAuthenticator:=ASessionAuthenticator;
+
+    {Enable Authentication}
+    FLogoutPage.RequireAuthentication:=True;
+   end;
+
+  {Update Pages}
+  for Count:=0 to FPages.Count - 1 do
+   begin
+    Sub:=TWebStatusSub(FPages.Objects[Count]);
+    if Sub <> nil then
+     begin
+      {Update Authenticators}
+      Sub.UserAuthenticator:=AUserAuthenticator;
+      Sub.SessionAuthenticator:=ASessionAuthenticator;
+
+      {Enable Authentication}
+      Sub.RequireAuthentication:=True;
+     end;
+   end;
+
+  Result:=True;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+function TWebStatusMain.DisableAuthentication:Boolean;
+var
+ Count:Integer;
+ Sub:TWebStatusSub;
+begin
+ {}
+ AcquireLock;
+ try
+  Result:=False;
+
+  {Update Pages}
+  for Count:=0 to FPages.Count - 1 do
+   begin
+    Sub:=TWebStatusSub(FPages.Objects[Count]);
+    if Sub <> nil then
+     begin
+      {Update Authenticators}
+      Sub.UserAuthenticator:=nil;
+      Sub.SessionAuthenticator:=nil;
+
+      {Disable Authorization}
+      Sub.RequireAuthorization:=False;
+
+      {Disable Authentication}
+      Sub.RequireAuthentication:=False;
+     end;
+   end;
+
+  {Remove Logout Page}
+  if FLogoutPage <> nil then
+   begin
+    {Destory Page}
+    FLogoutPage.Free;
+    FLogoutPage:=nil;
+   end;
+
+  {Remove Login Page}
+  if FLoginPage <> nil then
+   begin
+    {Destory Page}
+    FLoginPage.Free;
+    FLoginPage:=nil;
+   end;
+
+  {Update Authenticators}
+  UserAuthenticator:=nil;
+  SessionAuthenticator:=nil;
+
+  {Disable Authorization}
+  RequireAuthorization:=False;
+
+  {Disable Authentication}
+  RequireAuthentication:=False;
 
   Result:=True;
  finally
@@ -2234,9 +2935,20 @@ begin
  {}
  inherited Create;
  FMain:=AMain;
- {FCaption:='';} {Must be set by descendant}
+ {FPath:='';} {Must be set by descendant before calling inherted Create}
+ {FCaption:='';} {Must be set by descendant before calling inherted Create}
 
- if FMain <> nil then FMain.RegisterSubPage(Self);
+ if FMain <> nil then
+  begin
+   {Set Name}
+   Name:=FMain.Name + FPath;
+
+   {Register Page}
+   {FMain.RegisterPage(Self);} {Done by TWebStatusPage}
+
+   {Register Document}
+   if FMain.Listener <> nil then FMain.Listener.RegisterDocument(FMain.Host,Self);
+  end;
 end;
 
 {==============================================================================}
@@ -2246,7 +2958,15 @@ begin
  {}
  AcquireLock;
  try
-  if FMain <> nil then FMain.DeregisterSubPage(Self);
+  if FMain <> nil then
+   begin
+    {Deregister Document}
+    if FMain.Listener <> nil then FMain.Listener.DeregisterDocument(FMain.Host,Self);
+
+    {Deregister Page}
+    {FMain.DeregisterPage(Self);} {Done by TWebStatusPage}
+   end;
+
   FMain:=nil;
  finally
   ReleaseLock;
@@ -2264,6 +2984,19 @@ begin
  if FMain = nil then Exit;
 
  Result:=FMain.Title;
+end;
+
+{==============================================================================}
+
+function TWebStatusSub.GetPath:String;
+begin
+ {}
+ AcquireLock;
+
+ Result:=FPath;
+ UniqueString(Result);
+
+ ReleaseLock;
 end;
 
 {==============================================================================}
@@ -2349,6 +3082,26 @@ begin
  if FMain = nil then Exit;
 
  Result:=FMain.MakeLink(AName,ALink);
+end;
+
+{==============================================================================}
+
+procedure TWebStatusSub.AddRemoteAction(AResponse:THTTPServerResponse);
+begin
+ {}
+ if FMain = nil then Exit;
+
+ FMain.AddRemoteAction(AResponse);
+end;
+
+{==============================================================================}
+
+procedure TWebStatusSub.AddConfirmAction(AResponse:THTTPServerResponse);
+begin
+ {}
+ if FMain = nil then Exit;
+
+ FMain.AddConfirmAction(AResponse);
 end;
 
 {==============================================================================}
@@ -2581,6 +3334,38 @@ end;
 
 {==============================================================================}
 
+function TWebStatusSub.FindUserAuthenticator(AHost:THTTPHost;ARequest:THTTPServerRequest):TAuthenticator;
+var
+ Authenticator:TAuthenticator;
+begin
+ {}
+ Result:=nil;
+
+ {Get User Authenticator}
+ Authenticator:=UserAuthenticator;
+ if Authenticator = nil then Authenticator:=AHost.UserAuthenticator;
+ if Authenticator = nil then Authenticator:=ARequest.UserAuthenticator;
+ if (Authenticator <> nil) and (Authenticator.Mode = AUTHENTICATOR_MODE_USER) then Result:=Authenticator;
+end;
+
+{==============================================================================}
+
+function TWebStatusSub.FindSessionAuthenticator(AHost:THTTPHost;ARequest:THTTPServerRequest):TAuthenticator;
+var
+ Authenticator:TAuthenticator;
+begin
+ {}
+ Result:=nil;
+
+ {Get Session Authenticator}
+ Authenticator:=SessionAuthenticator;
+ if Authenticator = nil then Authenticator:=AHost.SessionAuthenticator;
+ if Authenticator = nil then Authenticator:=ARequest.SessionAuthenticator;
+ if (Authenticator <> nil) and (Authenticator.Mode = AUTHENTICATOR_MODE_SESSION) then Result:=Authenticator;
+end;
+
+{==============================================================================}
+
 function TWebStatusSub.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
 begin
  {}
@@ -2609,16 +3394,59 @@ begin
 end;
 
 {==============================================================================}
+
+function TWebStatusSub.DoAuthenticate(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var AAuthenticated:Boolean):Boolean;
+begin
+ {}
+ Result:=False;
+
+ if FMain = nil then Exit;
+
+ Result:=FMain.DoAuthenticate(AHost,ARequest,AResponse,AAuthenticated);
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TWebStatusPage}
+constructor TWebStatusPage.Create(AMain:TWebStatusMain);
+begin
+ {}
+ inherited Create(AMain);
+
+ if FMain <> nil then
+  begin
+   {Register Page}
+   FMain.RegisterPage(Self);
+  end;
+end;
+
+{==============================================================================}
+
+destructor TWebStatusPage.Destroy;
+begin
+ {}
+ AcquireLock;
+ try
+  if FMain <> nil then
+   begin
+    {Deregister Page}
+    FMain.DeregisterPage(Self);
+   end;
+ finally
+  ReleaseLock;
+  inherited Destroy;
+ end;
+end;
+
+{==============================================================================}
 {==============================================================================}
 {TWebStatusPlatform}
 constructor TWebStatusPlatform.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/platform'; {Must be before create for register}
  FCaption:='Platform'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/platform';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -2975,11 +3803,9 @@ end;
 constructor TWebStatusMemory.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/memory'; {Must be before create for register}
  FCaption:='Memory'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/memory';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -3233,11 +4059,11 @@ end;
 constructor TWebStatusHeap.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/heap'; {Must be before create for register}
  FCaption:='Heap Blocks'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/heap';
-
- if FMain <> nil then Name:=FMain.Name + Name;
+ FFreeCount:=WEBSTATUS_HEAP_FREE_COUNT;
+ FUsedCount:=WEBSTATUS_HEAP_USED_COUNT;
 end;
 
 {==============================================================================}
@@ -3338,7 +4164,7 @@ begin
 
      {Update Count}
      Inc(Count);
-     if (WEBSTATUS_HEAP_FREE_COUNT > 0) and (Count >= WEBSTATUS_HEAP_FREE_COUNT) then
+     if (FFreeCount > 0) and (Count >= FFreeCount) then
       begin
        AddItem5Column(AResponse,'','(Terminated due to WEBSTATUS_HEAP_FREE_COUNT limit)','','','');
        Break;
@@ -3372,7 +4198,7 @@ begin
 
      {Update Count}
      Inc(Count);
-     if (WEBSTATUS_HEAP_USED_COUNT > 0) and (Count >= WEBSTATUS_HEAP_USED_COUNT) then
+     if (FUsedCount > 0) and (Count >= FUsedCount) then
       begin
        AddItem5Column(AResponse,'','(Terminated due to WEBSTATUS_HEAP_USED_COUNT limit)','','','');
        Break;
@@ -3399,11 +4225,9 @@ end;
 constructor TWebStatusCPU.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/cpu'; {Must be before create for register}
  FCaption:='CPU'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/cpu';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -3522,11 +4346,9 @@ end;
 constructor TWebStatusFPU.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/fpu'; {Must be before create for register}
  FCaption:='FPU'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/fpu';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -3566,11 +4388,9 @@ end;
 constructor TWebStatusGPU.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/gpu'; {Must be before create for register}
  FCaption:='GPU'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/gpu';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -3621,11 +4441,9 @@ end;
 constructor TWebStatusRTL.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/rtl'; {Must be before create for register}
  FCaption:='RTL'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/rtl';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -3864,11 +4682,9 @@ end;
 constructor TWebStatusClock.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/clock'; {Must be before create for register}
  FCaption:='Clock'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/clock';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -3946,11 +4762,9 @@ end;
 constructor TWebStatusLocale.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/locale'; {Must be before create for register}
  FCaption:='Locale'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/locale';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -4011,11 +4825,9 @@ end;
 constructor TWebStatusThreading.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/threading'; {Must be before create for register}
  FCaption:='Threading'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/threading';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -4312,11 +5124,9 @@ end;
 constructor TWebStatusThreadList.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/threadlist'; {Must be before create for register}
  FCaption:='Thread List'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/threadlist';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -4554,11 +5364,9 @@ end;
 constructor TWebStatusScheduler.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/scheduler'; {Must be before create for register}
  FCaption:='Scheduler'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/scheduler';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -4724,11 +5532,9 @@ end;
 constructor TWebStatusDevices.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/devices'; {Must be before create for register}
  FCaption:='Devices'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/devices';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -7652,11 +8458,9 @@ end;
 constructor TWebStatusDrivers.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/drivers'; {Must be before create for register}
  FCaption:='Drivers'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/drivers';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -7708,11 +8512,9 @@ end;
 constructor TWebStatusHandles.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/handles'; {Must be before create for register}
  FCaption:='Handles'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/handles';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -7788,11 +8590,9 @@ end;
 constructor TWebStatusUSB.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/usb'; {Must be before create for register}
  FCaption:='USB'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/usb';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -8206,11 +9006,9 @@ end;
 constructor TWebStatusPCI.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/pci'; {Must be before create for register}
  FCaption:='PCI'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/pci';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -8466,11 +9264,9 @@ end;
 constructor TWebStatusMMC.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/mmc'; {Must be before create for register}
  FCaption:='MMC / SD / SDIO'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/mmc';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -9746,11 +10542,9 @@ end;
 constructor TWebStatusHID.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/hid'; {Must be before create for register}
  FCaption:='HID'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/hid';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -10259,11 +11053,9 @@ end;
 constructor TWebStatusNetwork.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/network'; {Must be before create for register}
  FCaption:='Network'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/network';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -10824,11 +11616,9 @@ end;
 constructor TWebStatusStorage.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/storage'; {Must be before create for register}
  FCaption:='Storage'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/storage';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -11020,11 +11810,9 @@ end;
 constructor TWebStatusFilesystem.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/filesystem'; {Must be before create for register}
  FCaption:='Filesystem'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/filesystem';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -11260,11 +12048,9 @@ end;
 constructor TWebStatusCache.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/cache'; {Must be before create for register}
  FCaption:='Disk Cache'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/cache';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -11346,11 +12132,9 @@ end;
 constructor TWebStatusKeyboard.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/keyboard'; {Must be before create for register}
  FCaption:='Keyboard'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/keyboard';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -11552,11 +12336,9 @@ end;
 constructor TWebStatusMouse.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/mouse'; {Must be before create for register}
  FCaption:='Mouse'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/mouse';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -11798,11 +12580,9 @@ end;
 constructor TWebStatusTouch.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/touch'; {Must be before create for register}
  FCaption:='Touch'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/touch';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -11988,11 +12768,9 @@ end;
 constructor TWebStatusJoystick.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/joystick'; {Must be before create for register}
  FCaption:='Joystick'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/joystick';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -12192,11 +12970,9 @@ end;
 constructor TWebStatusFramebuffer.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/framebuffer'; {Must be before create for register}
  FCaption:='Framebuffer'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/framebuffer';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -12422,11 +13198,9 @@ end;
 constructor TWebStatusEnvironment.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/environment'; {Must be before create for register}
  FCaption:='Environment'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/environment';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -12592,11 +13366,9 @@ end;
 constructor TWebStatusPageTables.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/pagetables'; {Must be before create for register}
  FCaption:='Page Tables'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/pagetables';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -12770,11 +13542,9 @@ end;
 constructor TWebStatusVectorTables.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/vectortables'; {Must be before create for register}
  FCaption:='Vector Tables'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/vectortables';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -12834,15 +13604,13 @@ end;
 constructor TWebStatusIRQFIQSWI.Create(AMain:TWebStatusMain);
 begin
  {}
- FCaption:='IRQ';
+ FPath:='/irqfiqswi'; {Must be before create for register}
+ FCaption:='IRQ'; {Must be before create for register}
  if FIQ_ENABLED then FCaption:=FCaption + ' / FIQ';
  if IPI_ENABLED then FCaption:=FCaption + ' / IPI';
  if SWI_ENABLED then FCaption:=FCaption + ' / SWI';
 
  inherited Create(AMain);
- Name:='/irqfiqswi';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -13137,11 +13905,9 @@ end;
 constructor TWebStatusGPIO.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/gpio'; {Must be before create for register}
  FCaption:='GPIO'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/gpio';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -13235,11 +14001,9 @@ end;
 constructor TWebStatusConfiguration.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/configuration'; {Must be before create for register}
  FCaption:='Configuration'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/configuration';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -13773,11 +14537,9 @@ end;
 constructor TWebStatusDeviceTree.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/devicetree'; {Must be before create for register}
  FCaption:='Device Tree'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/devicetree';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -13894,11 +14656,9 @@ end;
 constructor TWebStatusDebug.Create(AMain:TWebStatusMain);
 begin
  {}
+ FPath:='/debug'; {Must be before create for register}
  FCaption:='Debug'; {Must be before create for register}
  inherited Create(AMain);
- Name:='/debug';
-
- if FMain <> nil then Name:=FMain.Name + Name;
 end;
 
 {==============================================================================}
@@ -14457,12 +15217,18 @@ end;
 constructor TWebStatusCustom.Create(const AName,APath:String;AColumns:LongWord);
 begin
  {}
- FCaption:=AName; {Must be before create for register}
- inherited Create(WebStatusMain);
- Name:=APath;
- FColumns:=AColumns;
+ CreateEx(nil,'',AName,APath,AColumns);
+end;
 
- if FMain <> nil then Name:=FMain.Name + Name;
+{==============================================================================}
+
+constructor TWebStatusCustom.CreateEx(AListener:THTTPListener;const AHost,AName,APath:String;AColumns:LongWord);
+begin
+ {}
+ FPath:=APath; {Must be before create for register}
+ FCaption:=AName; {Must be before create for register}
+ inherited Create(WebStatusFind(AListener,AHost));
+ FColumns:=AColumns;
 end;
 
 {==============================================================================}
@@ -14522,191 +15288,438 @@ end;
 
 {==============================================================================}
 {==============================================================================}
-{Initialization Functions}
+{TWebStatusLogin}
+constructor TWebStatusLogin.Create(AMain:TWebStatusMain);
+begin
+ {}
+ FPath:='/login'; {Must be before create for register}
+ FCaption:='Login'; {Must be before create for register}
+ inherited Create(AMain);
+end;
 
 {==============================================================================}
-{==============================================================================}
-{Web Status Functions}
-function WebStatusRegister(AListener:THTTPListener;const AHost,AURL:String;ARedirect:Boolean):Boolean;
-var
- WorkInt:LongWord;
- WorkBool:LongBool;
+
+function TWebStatusLogin.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
 begin
  {}
  Result:=False;
 
- {Check Listener}
- if AListener = nil then Exit;
+ {Check Host}
+ if AHost = nil then Exit;
 
- {Register Main Page}
- WebStatusMain:=TWebStatusMain.Create;
- if Length(AURL) <> 0 then WebStatusMain.Name:=AURL;
- AListener.RegisterDocument(AHost,WebStatusMain);
+ {Check Request}
+ if ARequest = nil then Exit;
 
- {Register Platform Page}
- WebStatusPlatform:=TWebStatusPlatform.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusPlatform);
+ {Check Response}
+ if AResponse = nil then Exit;
 
- {Register Memory Page}
- WebStatusMemory:=TWebStatusMemory.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusMemory);
+ {Add Header (4 column)}
+ AddHeaderEx(AResponse,GetTitle,'',Self,4);
 
- {Register Heap Page}
- WebStatusHeap:=TWebStatusHeap.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusHeap);
+ {Add Form}
+ AddForm(AHost,ARequest,AResponse);
 
- {Register CPU Page}
- WebStatusCPU:=TWebStatusCPU.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusCPU);
+ {Add Script}
+ AddScript(AHost,ARequest,AResponse);
 
- {Register FPU Page}
- WebStatusFPU:=TWebStatusFPU.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusFPU);
+ {Add Footer (4 column)}
+ AddFooterEx(AResponse,4);
 
- {Register GPU Page}
- WebStatusGPU:=TWebStatusGPU.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusGPU);
+ {Return Result}
+ Result:=True;
+end;
 
- {Register RTL Page}
- WebStatusRTL:=TWebStatusRTL.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusRTL);
+{==============================================================================}
 
- {Register Clock Page}
- WebStatusClock:=TWebStatusClock.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusClock);
+function TWebStatusLogin.DoPost(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+var
+ Value:String;
+ Token:String;
+ Timeout:Int64;
+ Username:String;
+ Password:String;
+ Cookie:THTTPCookie;
+ FormParams:THTTPParams;
+ Authenticator:TAuthenticator;
+begin
+ {}
+ Result:=False;
 
- {Register Locale Page}
- WebStatusLocale:=TWebStatusLocale.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusLocale);
+ {Check Host}
+ if AHost = nil then Exit;
 
- {Register Threading Page}
- WebStatusThreading:=TWebStatusThreading.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusThreading);
+ {Check Request}
+ if ARequest = nil then Exit;
 
- {Register ThreadList Page}
- WebStatusThreadList:=TWebStatusThreadList.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusThreadList);
+ {Check Response}
+ if AResponse = nil then Exit;
 
- {Register Scheduler Page}
- WebStatusScheduler:=TWebStatusScheduler.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusScheduler);
-
- {Register Devices Page}
- WebStatusDevices:=TWebStatusDevices.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusDevices);
-
- {Register Drivers Page}
- WebStatusDrivers:=TWebStatusDrivers.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusDrivers);
-
- {Register Handles Page}
- WebStatusHandles:=TWebStatusHandles.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusHandles);
-
- {Register USB Page}
- WebStatusUSB:=TWebStatusUSB.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusUSB);
-
- {Register PCI Page}
- WebStatusPCI:=TWebStatusPCI.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusPCI);
-
- {Register MMC Page}
- WebStatusMMC:=TWebStatusMMC.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusMMC);
-
- {Register HID Page}
- WebStatusHID:=TWebStatusHID.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusHID);
-
- {Register Network Page}
- WebStatusNetwork:=TWebStatusNetwork.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusNetwork);
-
- {Register Storage Page}
- WebStatusStorage:=TWebStatusStorage.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusStorage);
-
- {Register Filesystem Page}
- WebStatusFilesystem:=TWebStatusFilesystem.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusFilesystem);
-
- {Register Cache Page}
- WebStatusCache:=TWebStatusCache.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusCache);
-
- {Register Keyboard Page}
- WebStatusKeyboard:=TWebStatusKeyboard.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusKeyboard);
-
- {Register Mouse Page}
- WebStatusMouse:=TWebStatusMouse.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusMouse);
-
- {Register Touch Page}
- WebStatusTouch:=TWebStatusTouch.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusTouch);
-
- {Register Joystick Page}
- WebStatusJoystick:=TWebStatusJoystick.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusJoystick);
-
- {Register Framebuffer Page}
- WebStatusFramebuffer:=TWebStatusFramebuffer.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusFramebuffer);
-
- {Register Environment Page}
- WebStatusEnvironment:=TWebStatusEnvironment.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusEnvironment);
-
- {Register PageTables Page}
- WebStatusPageTables:=TWebStatusPageTables.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusPageTables);
-
- {Register VectorTables Page}
- WebStatusVectorTables:=TWebStatusVectorTables.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusVectorTables);
-
- {Register IRQFIQSWI Page}
- WebStatusIRQFIQSWI:=TWebStatusIRQFIQSWI.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusIRQFIQSWI);
-
- {Register GPIO Page}
- WebStatusGPIO:=TWebStatusGPIO.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusGPIO);
-
- {Register Configuration Page}
- WebStatusConfiguration:=TWebStatusConfiguration.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusConfiguration);
-
- {Register DeviceTree Page}
- WebStatusDeviceTree:=TWebStatusDeviceTree.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusDeviceTree);
-
- {$IF DEFINED(LOCK_DEBUG) or DEFINED(SPIN_DEBUG) or DEFINED(MUTEX_DEBUG) or DEFINED(CLOCK_DEBUG) or DEFINED(SCHEDULER_DEBUG) or DEFINED(INTERRUPT_DEBUG)}
- {Register Debug Page}
- WebStatusDebug:=TWebStatusDebug.Create(WebStatusMain);
- AListener.RegisterDocument(AHost,WebStatusDebug);
- {$ENDIF}
-
- {Register Redirect Page}
- WebStatusRedirect:=nil;
- if ARedirect then
+ {Get Form Params}
+ FormParams:=ParseFormParams(AHost,ARequest);
+ if FormParams <> nil then
   begin
-   WebStatusRedirect:=THTTPRedirect.Create;
-   WebStatusRedirect.Name:='/';
-   WebStatusRedirect.Location:=WebStatusMain.Name;
-   AListener.RegisterDocument(AHost,WebStatusRedirect);
+   try
+    {Set Response}
+    AResponse.Version:=HTTP_VERSION;
+    AResponse.Status:=HTTP_STATUS_OK;
+    AResponse.Reason:=HTTP_REASON_200;
+
+    {Get Username}
+    Username:=ARequest.GetParamExt('username',FormParams);
+    if Length(Username) = 0 then
+     begin
+      {Set Content}
+      AResponse.ContentString:='Username cannot be empty';
+
+      {Return Result}
+      Result:=True;
+      Exit;
+     end;
+
+    {Get Password}
+    Password:=ARequest.GetParamExt('password',FormParams);
+    if Length(Password) = 0 then
+     begin
+      {Set Content}
+      AResponse.ContentString:='Password cannot be empty';
+
+      {Return Result}
+      Result:=True;
+      Exit;
+     end;
+
+    {Find User Authenticator}
+    Authenticator:=FindUserAuthenticator(AHost,ARequest);
+    if Authenticator <> nil then
+     begin
+      {Check Username and Password}
+      if Authenticator.CheckUserPassword(Username,Password) <> ERROR_SUCCESS then
+       begin
+        {Set Content}
+        AResponse.ContentString:='Username or password is incorrect';
+
+        {Return Result}
+        Result:=True;
+        Exit;
+       end;
+
+      {Find Session Authenticator}
+      Authenticator:=FindSessionAuthenticator(AHost,ARequest);
+      if Authenticator <> nil then
+       begin
+        {Create Value}
+        Value:=ARequest.Thread.Server.PeerAddress + ARequest.GetHeader(HTTP_REQUEST_HEADER_USER_AGENT);
+
+        {Create Token}
+        if Authenticator.CreateToken(Value,Token,Authenticator.TokenTimeout) <> ERROR_SUCCESS then
+         begin
+          {Set Content}
+          AResponse.ContentString:='Unable to create session, please try again';
+
+          {Return Result}
+          Result:=True;
+          Exit;
+         end;
+
+        {Check Cookie}
+        if Authenticator.UseCookie then
+         begin
+          {Set Cookie}
+          AResponse.SetCookie(Authenticator.CookieName,Token,nil);
+
+          {Set Expiry}
+          Cookie:=AResponse.Cookies.FindCookie(Authenticator.CookieName);
+          if Cookie <> nil then
+           begin
+            {Get Timeout}
+            if (Authenticator.TokenTimeout = 0) or (Authenticator.TokenTimeout = INFINITE) then
+             begin
+              {Infinite Timeout (Default to 1 year)}
+              Timeout:=(SECONDS_PER_DAY * 365) * TIME_TICKS_PER_SECOND;
+             end
+            else
+             begin
+              {Specified Timeout}
+              Timeout:=Authenticator.TokenTimeout; {Avoid 32 bit overflow}
+              Timeout:=Timeout * TIME_TICKS_PER_SECOND;
+             end;
+
+            {Set Expires Attribute}
+            Cookie.Attributes.Expires:=SystemFileTimeToDateTime(TFileTime(ClockGetTime + Timeout));
+           end;
+         end;
+
+        {Set Content}
+        AResponse.ContentString:=Authenticator.TokenName + '=' + Token;
+
+        {Return Result}
+        Result:=True;
+       end;
+     end;
+   finally
+    FormParams.Free;
+   end;
   end;
 
+ {Check Result}
+ if not Result then
+  begin
+   {Internal Server Error}
+   AResponse.Version:=HTTP_VERSION;
+   AResponse.Status:=HTTP_STATUS_INTERNAL_SERVER_ERROR;
+   AResponse.Reason:=HTTP_REASON_500;
+
+   {Do Error}
+   Result:=DoError(AHost,ARequest,AResponse);
+  end;
+end;
+
+{==============================================================================}
+
+function TWebStatusLogin.AddForm(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+var
+ ReturnURL:String;
+begin
+ {}
+ Result:=False;
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Get Return URL}
+ ReturnURL:=ARequest.GetParam('returnurl');
+ if (Length(ReturnURL) = 0) and (FMain <> nil) then ReturnURL:=FMain.Name;
+ if Length(ReturnURL) = 0 then ReturnURL:='/';
+
+ {Add Form}
+ AddContent(AResponse,'  <form id="loginForm" name="loginForm" method="post" onsubmit="processLogin(''' + Name + ''', ''' + ReturnURL + ''', ''loginStatus'')">');
+ AddItem4Column(AResponse,'','<label for="username" style="text-align: right;"><b>Username</b></label>','<input type="text" placeholder="Enter username" id="username" name="username" style="width: 200px;">','');
+ AddItem4Column(AResponse,'','<label for="password" style="text-align: right;"><b>Password</b></label>','<input type="password" placeholder="Enter password" id="password" name="password" style="width: 200px;">','');
+ AddItem4Column(AResponse,'','','<button type="submit" style="width: 200px;">Login</button>','');
+ AddItemSpan(AResponse,'<div id="loginStatus" class="container" style="text-align: center;"></div>',4,False);
+ AddContent(AResponse,'  </form>');
+
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function TWebStatusLogin.AddScript(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+var
+ TokenName:String;
+ UseCookie:Boolean;
+ Authenticator:TAuthenticator;
+begin
+ {}
+ Result:=False;
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Get Token Name}
+ TokenName:='token';
+ UseCookie:=False;
+ Authenticator:=FindSessionAuthenticator(AHost,ARequest);
+ if Authenticator <> nil then
+  begin
+   TokenName:=Authenticator.TokenName;
+   UseCookie:=Authenticator.UseCookie;
+  end;
+
+ {Add Script}
+ AddContent(AResponse,'  <script>');
+ AddContent(AResponse,'  document.getElementById(''loginForm'').addEventListener(''submit'', function(event) {');
+ AddContent(AResponse,'    event.preventDefault();');
+ AddContent(AResponse,'    });');
+ AddContent(AResponse,'');
+ AddContent(AResponse,'  function processLogin(theUrl, theReturn, theStatus) {');
+ AddContent(AResponse,'    const username = document.forms["loginForm"]["username"].value;');
+ AddContent(AResponse,'    const password = document.forms["loginForm"]["password"].value;');
+ AddContent(AResponse,'');
+ AddContent(AResponse,'    const formData = new FormData();');
+ AddContent(AResponse,'    formData.append("username", username);');
+ AddContent(AResponse,'    formData.append("password", password); ');
+ AddContent(AResponse,'    const queryString = new URLSearchParams(formData).toString();');
+ AddContent(AResponse,'');
+ AddContent(AResponse,'    var xmlhttp;');
+ AddContent(AResponse,'    if (window.XMLHttpRequest) {');
+ AddContent(AResponse,'      xmlhttp = new XMLHttpRequest();');
+ AddContent(AResponse,'    } else {');
+ AddContent(AResponse,'      // code for older browsers');
+ AddContent(AResponse,'      xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");');
+ AddContent(AResponse,'    }');
+ AddContent(AResponse,'');
+ AddContent(AResponse,'    xmlhttp.onreadystatechange = function() {');
+ AddContent(AResponse,'      if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {');
+ AddContent(AResponse,'        const responseString = xmlhttp.responseText;');
+ AddContent(AResponse,'        if (responseString.startsWith("' + TokenName + '=") == true) {');
+ if UseCookie then
+  begin
+   AddContent(AResponse,'          let locationString = theReturn;');
+  end
+ else
+  begin
+   AddContent(AResponse,'          let locationString = "";');
+   AddContent(AResponse,'          if (theReturn.includes("?") == true) {');
+   AddContent(AResponse,'            locationString = theReturn.concat("&", responseString);');
+   AddContent(AResponse,'          } else {');
+   AddContent(AResponse,'            locationString = theReturn.concat("?", responseString);');
+   AddContent(AResponse,'          }');
+  end;
+ AddContent(AResponse,'          window.location.replace(locationString);');
+ AddContent(AResponse,'        } else {');
+ AddContent(AResponse,'          document.getElementById(theStatus).innerHTML = xmlhttp.responseText;');
+ AddContent(AResponse,'        }');
+ AddContent(AResponse,'      }');
+ AddContent(AResponse,'    };');
+ AddContent(AResponse,'');
+ AddContent(AResponse,'    xmlhttp.open("POST", theUrl, true);');
+ AddContent(AResponse,'    xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");');
+ AddContent(AResponse,'    xmlhttp.send(queryString);');
+ AddContent(AResponse,'}');
+ AddContent(AResponse,'</script>');
+
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{TWebStatusLogout}
+constructor TWebStatusLogout.Create(AMain:TWebStatusMain);
+begin
+ {}
+ FPath:='/logout'; {Must be before create for register}
+ FCaption:='Logout'; {Must be before create for register}
+ inherited Create(AMain);
+end;
+
+{==============================================================================}
+
+function TWebStatusLogout.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+var
+ Action:String;
+ ReturnURL:String;
+ Deauthenticated:Boolean;
+ Authenticator:TAuthenticator;
+begin
+ {}
+ Result:=False;
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Get Return URL}
+ ReturnURL:=ARequest.GetParam('returnurl');
+ if (Length(ReturnURL) = 0) and (FMain <> nil) then ReturnURL:=FMain.Name;
+ if Length(ReturnURL) = 0 then ReturnURL:='/';
+
+ {Get Action}
+ Action:=Uppercase(ARequest.GetParam('ACTION'));
+ if Action = 'CANCEL' then
+  begin
+   {Check Method}
+   if ARequest.Method = HTTP_METHOD_GET then
+    begin
+     {Send Found Redirect}
+     AResponse.Version:=HTTP_VERSION;
+     AResponse.Status:=HTTP_STATUS_FOUND;
+     AResponse.Reason:=HTTP_REASON_302;
+    end
+   else
+    begin
+     {Send See Other Redirect}
+     AResponse.Version:=HTTP_VERSION;
+     AResponse.Status:=HTTP_STATUS_SEE_OTHER;
+     AResponse.Reason:=HTTP_REASON_303;
+    end;
+
+   {Add Location Header}
+   AResponse.SetHeader(HTTP_RESPONSE_HEADER_LOCATION,ReturnURL);
+
+   {Set Content}
+   AResponse.ContentString:='<html><head><title>' + AResponse.Reason + ' (' + HTTPStatusToString(AResponse.Status) + ')</title></head><body>' + AResponse.Reason + ' (' + HTTPStatusToString(AResponse.Status) + ') to <a href="' + ReturnURL + '">' + ReturnURL + '</a></body></html>' + HTTP_LINE_END;
+
+   {Return Result}
+   Result:=True;
+  end
+ else if Action = 'LOGOUT' then
+  begin
+   {Deauthenticate}
+   Result:=DoDeauthenticate(AHost,ARequest,AResponse,Deauthenticated);
+  end
+ else
+  begin
+   {Add Header (4 column)}
+   AddHeaderEx(AResponse,GetTitle,'',Self,4);
+
+   AddItemSpan(AResponse,'<div class="container" style="text-align: center;">Logout Session?</div>',4,False);
+   AddItem4Column(AResponse,'','<div class="container" style="text-align: right;"><button onclick="document.location=''' + Name + '?action=cancel&returnurl=' + ReturnURL + '''" style="width: 150px;">Cancel</button></div>','<div class="container" style="text-align: left;"><button onclick="document.location=''' + Name + '?action=logout&returnurl=' + ReturnURL + '''" style="width: 150px;">Logout</button></div>','');
+
+   {Add Footer (4 column)}
+   AddFooterEx(AResponse,4);
+  end;
+
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function TWebStatusLogout.DoDeauthenticate(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var ADeauthenticated:Boolean):Boolean;
+begin
+ {}
+ Result:=False;
+
+ if FMain = nil then Exit;
+
+ Result:=FMain.DoDeauthenticate(AHost,ARequest,AResponse,ADeauthenticated);
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Initialization Functions}
+procedure WebStatusInit;
+var
+ WorkInt:LongWord;
+ WorkBool:LongBool;
+ WorkBuffer:String;
+begin
+ {}
+ {Check Initialized}
+ if WebStatusInitialized then Exit;
+
  {Check Environment Variables}
+ {WEBSTATUS_FONT_NAME}
+ WorkBuffer:=EnvironmentGet('WEBSTATUS_FONT_NAME');
+ if Length(WorkBuffer) <> 0 then WEBSTATUS_FONT_NAME:=WorkBuffer;
+
  {WEBSTATUS_HEAP_FREE_COUNT}
- WorkInt:=StrToIntDef(EnvironmentGet('WEBSTATUS_HEAP_FREE_COUNT'),0);
- if WorkInt > 0 then WEBSTATUS_HEAP_FREE_COUNT:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('WEBSTATUS_HEAP_FREE_COUNT'),WEBSTATUS_HEAP_FREE_COUNT);
+ if WorkInt <> WEBSTATUS_HEAP_FREE_COUNT then WEBSTATUS_HEAP_FREE_COUNT:=WorkInt;
 
  {WEBSTATUS_HEAP_USED_COUNT}
- WorkInt:=StrToIntDef(EnvironmentGet('WEBSTATUS_HEAP_USED_COUNT'),0);
- if WorkInt > 0 then WEBSTATUS_HEAP_USED_COUNT:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('WEBSTATUS_HEAP_USED_COUNT'),WEBSTATUS_HEAP_USED_COUNT);
+ if WorkInt <> WEBSTATUS_HEAP_USED_COUNT then WEBSTATUS_HEAP_USED_COUNT:=WorkInt;
 
  {WEBSTATUS_ALLOW_RESTART}
  WorkBool:=StrToBoolDef(EnvironmentGet('WEBSTATUS_ALLOW_RESTART'),WEBSTATUS_ALLOW_RESTART);
@@ -14716,13 +15729,74 @@ begin
  WorkBool:=StrToBoolDef(EnvironmentGet('WEBSTATUS_ALLOW_SHUTDOWN'),WEBSTATUS_ALLOW_SHUTDOWN);
  if WorkBool <> WEBSTATUS_ALLOW_SHUTDOWN then WEBSTATUS_ALLOW_SHUTDOWN:=WorkBool;
 
- {Return Result}
- Result:=True;
+ {Initialize Lock}
+ WebStatusLock:=CriticalSectionCreate;
+
+ {Create Instances List}
+ WebStatusInstances:=TList.Create;
+
+ WebStatusInitialized:=True;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Web Status Functions}
+function WebStatusFind(AListener:THTTPListener;const AHost:String):TWebStatusMain;
+{Find the WebStatus instance associated with the supplied Listener and Host}
+{Listener: The HTTP listener to find an instance for}
+{Host: The HTTP host name to find an instance for (eg host.domain.com)}
+{Return: The Main object of the requested instance or nil if not found}
+{Note: If Listerner is nil and Host is empty then return the default (first) instance}
+var
+ Count:Integer;
+ Main:TWebStatusMain;
+begin
+ {}
+ Result:=nil;
+
+ {Check Listener}
+ {if AListener = nil then Exit;} {May be nil}
+
+ {Acquire Lock}
+ if CriticalSectionLock(WebStatusLock) = ERROR_SUCCESS then
+  begin
+   try
+    for Count:=0 to WebStatusInstances.Count - 1 do
+     begin
+      Main:=TWebStatusMain(WebStatusInstances.Items[Count]);
+      if Main <> nil then
+       begin
+        if (AListener = nil) and (Length(AHost) = 0) then
+         begin
+          Result:=Main;
+          Exit;
+         end
+        else if (Main.Listener = AListener) and (Uppercase(Main.Host) = Uppercase(AHost)) then
+         begin
+          Result:=Main;
+          Exit;
+         end;
+       end;
+     end;
+   finally
+    {Release Lock}
+    CriticalSectionUnlock(WebStatusLock);
+   end;
+  end;
 end;
 
 {==============================================================================}
 
-function WebStatusDeregister(AListener:THTTPListener;const AHost:String):Boolean;
+function WebStatusRegister(AListener:THTTPListener;const AHost,AURL:String;ARedirect:Boolean):Boolean;
+{Create and register an instance of WebStatus associated with the supplied
+ Listener and Host and automatically register all standard internal pages}
+{Listener: The HTTP listener to create an instance for}
+{Host: The HTTP host name to create an instance for (eg host.domain.com) (Optional)}
+{URL: The base path on this host of the WebStatus pages (eg /status) (Optional)}
+{Redirect: If True add a redirection from / to the WebStatus path}
+{Return: True if successful or False if an error occurred}
+var
+ Main:TWebStatusMain;
 begin
  {}
  Result:=False;
@@ -14730,157 +15804,206 @@ begin
  {Check Listener}
  if AListener = nil then Exit;
 
- {Deregister Redirect Page}
- if WebStatusRedirect <> nil then
+ {Acquire Lock}
+ if CriticalSectionLock(WebStatusLock) = ERROR_SUCCESS then
   begin
-   AListener.DeregisterDocument(AHost,WebStatusRedirect);
-   WebStatusRedirect.Free;
+   try
+    {Check Main Page}
+    Main:=WebStatusFind(AListener,AHost);
+    if Main <> nil then Exit;
+
+    {Create Main Page}
+    Main:=TWebStatusMain.Create(AListener,AHost,AURL,ARedirect);
+
+    {Update Instances List}
+    WebStatusInstances.Add(Main);
+
+    {Register Pages}
+    Result:=Main.RegisterPages;
+   finally
+    {Release Lock}
+    CriticalSectionUnlock(WebStatusLock);
+   end;
   end;
+end;
 
- {$IF DEFINED(LOCK_DEBUG) or DEFINED(SPIN_DEBUG) or DEFINED(MUTEX_DEBUG) or DEFINED(CLOCK_DEBUG) or DEFINED(SCHEDULER_DEBUG) or DEFINED(INTERRUPT_DEBUG)}
- {Deregister Debug Page}
- AListener.DeregisterDocument(AHost,WebStatusDebug);
- WebStatusDebug.Free;
- {$ENDIF}
+{==============================================================================}
 
- {Deregister DeviceTree Page}
- AListener.DeregisterDocument(AHost,WebStatusDeviceTree);
- WebStatusDeviceTree.Free;
+function WebStatusRegisterEx(AListener:THTTPListener;const AHost,AURL:String;ARedirect:Boolean;AClass:TWebStatusClass):Boolean;
+{Create and register an instance of WebStatus associated with the supplied
+ Listener and Host and / or register a page of the supplied class only
 
- {Deregister Configuration Page}
- AListener.DeregisterDocument(AHost,WebStatusConfiguration);
- WebStatusConfiguration.Free;
+ If a WebStatus instance already exists for the supplied Listener and Host
+ then add a new page of the supplied class to the existing instance}
+{Listener: The HTTP listener to create an instance for}
+{Host: The HTTP host name to create an instance for (eg host.domain.com) (Optional)}
+{URL: The base path on this host of the WebStatus pages (eg /status) (Optional)}
+{Redirect: If True add a redirection from / to the WebStatus path}
+{Class: The class of the page to be created and added to the instance}
+{Return: True if successful or False if an error occurred}
+var
+ Main:TWebStatusMain;
+begin
+ {}
+ Result:=False;
 
- {Deregister IRQFIQSWI Page}
- AListener.DeregisterDocument(AHost,WebStatusIRQFIQSWI);
- WebStatusIRQFIQSWI.Free;
+ {Check Listener}
+ if AListener = nil then Exit;
 
- {Deregister VectorTables Page}
- AListener.DeregisterDocument(AHost,WebStatusVectorTables);
- WebStatusVectorTables.Free;
+ {Acquire Lock}
+ if CriticalSectionLock(WebStatusLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Main Page}
+    Main:=WebStatusFind(AListener,AHost);
+    if Main = nil then
+     begin
+      {Create Main Page}
+      Main:=TWebStatusMain.Create(AListener,AHost,AURL,ARedirect);
 
- {Deregister PageTables Page}
- AListener.DeregisterDocument(AHost,WebStatusPageTables);
- WebStatusPageTables.Free;
+      {Update Instances List}
+      WebStatusInstances.Add(Main);
+     end;
 
- {Deregister Environment Page}
- AListener.DeregisterDocument(AHost,WebStatusEnvironment);
- WebStatusEnvironment.Free;
+    {Create and Register Page}
+    AClass.Create(Main);
 
- {Deregister Framebuffer Page}
- AListener.DeregisterDocument(AHost,WebStatusFramebuffer);
- WebStatusFramebuffer.Free;
+    {Return Result}
+    Result:=True;
+   finally
+    {Release Lock}
+    CriticalSectionUnlock(WebStatusLock);
+   end;
+  end;
+end;
 
- {Deregister Joystick Page}
- AListener.DeregisterDocument(AHost,WebStatusJoystick);
- WebStatusJoystick.Free;
+{==============================================================================}
 
- {Deregister Touch Page}
- AListener.DeregisterDocument(AHost,WebStatusTouch);
- WebStatusTouch.Free;
+function WebStatusDeregister(AListener:THTTPListener;const AHost:String):Boolean;
+{Deregister and destroy the instance of WebStatus associated with the supplied Listener and Host}
+{Listener: The HTTP listener to destroy the instance for}
+{Host: The HTTP host name to destroy the instance for (eg host.domain.com)}
+{Return: True if successful or False if an error occurred}
+var
+ Main:TWebStatusMain;
+begin
+ {}
+ Result:=False;
 
- {Deregister Mouse Page}
- AListener.DeregisterDocument(AHost,WebStatusMouse);
- WebStatusMouse.Free;
+ {Check Listener}
+ if AListener = nil then Exit;
 
- {Deregister Keyboard Page}
- AListener.DeregisterDocument(AHost,WebStatusKeyboard);
- WebStatusKeyboard.Free;
+ {Acquire Lock}
+ if CriticalSectionLock(WebStatusLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Main Page}
+    Main:=WebStatusFind(AListener,AHost);
+    if Main = nil then Exit;
 
- {Deregister Cache Page}
- AListener.DeregisterDocument(AHost,WebStatusCache);
- WebStatusCache.Free;
+    {Deregister Pages}
+    if not Main.DeregisterPages then Exit;
 
- {Deregister Filesystem Page}
- AListener.DeregisterDocument(AHost,WebStatusFilesystem);
- WebStatusFilesystem.Free;
+    {Update Instances List}
+    WebStatusInstances.Remove(Main);
 
- {Deregister Storage Page}
- AListener.DeregisterDocument(AHost,WebStatusStorage);
- WebStatusStorage.Free;
+    {Destroy Main Page}
+    Main.Free;
 
- {Deregister Network Page}
- AListener.DeregisterDocument(AHost,WebStatusNetwork);
- WebStatusNetwork.Free;
+    {Return Result}
+    Result:=True;
+   finally
+    {Release Lock}
+    CriticalSectionUnlock(WebStatusLock);
+   end;
+  end;
+end;
 
- {Deregister HID Page}
- AListener.DeregisterDocument(AHost,WebStatusHID);
- WebStatusHID.Free;
+{==============================================================================}
 
- {Deregister MMC Page}
- AListener.DeregisterDocument(AHost,WebStatusMMC);
- WebStatusMMC.Free;
+function WebStatusEnableUserAuthentication(AListener:THTTPListener;const AHost:String;AUserAuthenticator:TAuthenticator):Boolean;
+var
+ Main:TWebStatusMain;
+begin
+ {}
+ Result:=False;
 
- {Deregister USB Page}
- AListener.DeregisterDocument(AHost,WebStatusUSB);
- WebStatusUSB.Free;
+ {Check Listener}
+ if AListener = nil then Exit;
 
- {Deregister PCI Page}
- AListener.DeregisterDocument(AHost,WebStatusPCI);
- WebStatusPCI.Free;
+ {Acquire Lock}
+ if CriticalSectionLock(WebStatusLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Main Page}
+    Main:=WebStatusFind(AListener,AHost);
+    if Main = nil then Exit;
 
- {Deregister Drivers Page}
- AListener.DeregisterDocument(AHost,WebStatusDrivers);
- WebStatusDrivers.Free;
+    {Enable User Authentication}
+    Result:=Main.EnableUserAuthentication(AUserAuthenticator);
+   finally
+    {Release Lock}
+    CriticalSectionUnlock(WebStatusLock);
+   end;
+  end;
+end;
 
- {Deregister Devices Page}
- AListener.DeregisterDocument(AHost,WebStatusDevices);
- WebStatusDevices.Free;
+{==============================================================================}
 
- {Deregister Scheduler Page}
- AListener.DeregisterDocument(AHost,WebStatusScheduler);
- WebStatusScheduler.Free;
+function WebStatusEnableSessionAuthentication(AListener:THTTPListener;const AHost:String;AUserAuthenticator,ASessionAuthenticator:TAuthenticator):Boolean;
+var
+ Main:TWebStatusMain;
+begin
+ {}
+ Result:=False;
 
- {Deregister ThreadList Page}
- AListener.DeregisterDocument(AHost,WebStatusThreadList);
- WebStatusThreadList.Free;
+ {Check Listener}
+ if AListener = nil then Exit;
 
- {Deregister Threading Page}
- AListener.DeregisterDocument(AHost,WebStatusThreading);
- WebStatusThreading.Free;
+ {Acquire Lock}
+ if CriticalSectionLock(WebStatusLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Main Page}
+    Main:=WebStatusFind(AListener,AHost);
+    if Main = nil then Exit;
 
- {Deregister Locale Page}
- AListener.DeregisterDocument(AHost,WebStatusLocale);
- WebStatusLocale.Free;
+    {Enable Session Authentication}
+    Result:=Main.EnableSessionAuthentication(AUserAuthenticator,ASessionAuthenticator);
+   finally
+    {Release Lock}
+    CriticalSectionUnlock(WebStatusLock);
+   end;
+  end;
+end;
 
- {Deregister Clock Page}
- AListener.DeregisterDocument(AHost,WebStatusClock);
- WebStatusClock.Free;
+{==============================================================================}
 
- {Deregister RTL Page}
- AListener.DeregisterDocument(AHost,WebStatusRTL);
- WebStatusRTL.Free;
+function WebStatusDisableAuthentication(AListener:THTTPListener;const AHost:String):Boolean;
+var
+ Main:TWebStatusMain;
+begin
+ {}
+ Result:=False;
 
- {Deregister GPU Page}
- AListener.DeregisterDocument(AHost,WebStatusGPU);
- WebStatusGPU.Free;
+ {Check Listener}
+ if AListener = nil then Exit;
 
- {Deregister FPU Page}
- AListener.DeregisterDocument(AHost,WebStatusFPU);
- WebStatusFPU.Free;
+ {Acquire Lock}
+ if CriticalSectionLock(WebStatusLock) = ERROR_SUCCESS then
+  begin
+   try
+    {Check Main Page}
+    Main:=WebStatusFind(AListener,AHost);
+    if Main = nil then Exit;
 
- {Deregister CPU Page}
- AListener.DeregisterDocument(AHost,WebStatusCPU);
- WebStatusCPU.Free;
-
- {Deregister Heap Page}
- AListener.DeregisterDocument(AHost,WebStatusHeap);
- WebStatusHeap.Free;
-
- {Deregister Memory Page}
- AListener.DeregisterDocument(AHost,WebStatusMemory);
- WebStatusMemory.Free;
-
- {Deregister Platform Page}
- AListener.DeregisterDocument(AHost,WebStatusPlatform);
- WebStatusPlatform.Free;
-
- {Deregister Main Page}
- AListener.DeregisterDocument(AHost,WebStatusMain);
- WebStatusMain.Free;
-
- {Return Result}
- Result:=True;
+    {Disable Authentication}
+    Result:=Main.DisableAuthentication;
+   finally
+    {Release Lock}
+    CriticalSectionUnlock(WebStatusLock);
+   end;
+  end;
 end;
 
 {==============================================================================}
@@ -15770,6 +16893,17 @@ begin
 
  Result:=ERROR_SUCCESS;
 end;
+
+{==============================================================================}
+{==============================================================================}
+
+initialization
+ WebStatusInit;
+
+{==============================================================================}
+
+finalization
+ {Nothing}
 
 {==============================================================================}
 {==============================================================================}
