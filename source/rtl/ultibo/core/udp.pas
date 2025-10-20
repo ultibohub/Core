@@ -845,6 +845,12 @@ begin
      {Set Local Port}
      ASocket.ProtocolState.LocalPort:=FNextPort;
 
+     {Increment Next Port}
+     Inc(FNextPort);
+
+     {Check for wrap around}
+     if FNextPort > UDP_PORT_STOP then FNextPort:=UDP_PORT_START;
+
      {Return Result}
      Result:=True;
     finally

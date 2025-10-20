@@ -2207,6 +2207,12 @@ begin
      {Set Local Port}
      ASocket.ProtocolState.LocalPort:=FNextPort;
 
+     {Increment Next Port}
+     Inc(FNextPort);
+
+     {Check for wrap around}
+     if FNextPort > TCP_PORT_STOP then FNextPort:=TCP_PORT_START;
+
      {Return Result}
      Result:=True;
     finally
