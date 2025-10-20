@@ -4547,7 +4547,7 @@ end;
 
 {==============================================================================}
 
-procedure TSyslogListener.SetListenerStackSize(AListenerStackSize:LongWord);
+procedure TSyslogListener.SetListenerStackSize(AListenerStackSize:SizeUInt);
 begin
  {}
  if FListenerStackSize = AListenerStackSize then Exit;
@@ -4634,7 +4634,7 @@ end;
 
 {==============================================================================}
 
-procedure TSyslogListener.SetServerStackSize(AServerStackSize:LongWord);
+procedure TSyslogListener.SetServerStackSize(AServerStackSize:SizeUInt);
 begin
  {}
  if FServerStackSize = AServerStackSize then Exit;
