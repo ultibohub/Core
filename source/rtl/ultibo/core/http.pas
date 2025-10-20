@@ -30,6 +30,12 @@ References
  RFC2068 - Hypertext Transfer Protocol (HTTP/1.1) - https://tools.ietf.org/html/rfc2068
  RFC2616 - Hypertext Transfer Protocol (HTTP/1.1) - http://www.w3.org/Protocols/rfc2616/rfc2616.html
 
+ Headers - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers
+
+ Cookies - https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies
+           https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cookie
+           https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie
+           https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie
 
 HTTP
 ====
@@ -114,6 +120,8 @@ const
  HTTP_QUERY_SEPARATOR = '?';        {?}
  HTTP_PARAM_SEPARATOR = '=';        {=}
  HTTP_PARAM_DELIMITER = '&';        {&}
+ HTTP_COOKIE_SEPARATOR = '=';       {=}
+ HTTP_COOKIE_DELIMITER = '; ';      {; }
  HTTP_HEADER_SEPARATOR = ':';       {:}
  HTTP_BOOKMARK_SEPARATOR = '#';     {#}
  HTTP_PROTOCOL_SEPARATOR = '://';   {://}
@@ -187,6 +195,10 @@ const
  HTTP_ENCODING_STRING_COMPRESS = 'compress';
  HTTP_ENCODING_STRING_DEFLATE  = 'deflate';
 
+ {HTTP Authentication constants}
+ HTTP_AUTHENTICATION_BASIC = 'Basic ';
+ HTTP_AUTHENTICATION_DIGEST = 'Digest ';
+
  {HTTP General Header constants}
  HTTP_GENERAL_HEADER_CACHE_CONTROL = 'Cache-Control';
  HTTP_GENERAL_HEADER_CONNECTION = 'Connection';
@@ -218,6 +230,7 @@ const
  HTTP_REQUEST_HEADER_REFERER = 'Referer';
  HTTP_REQUEST_HEADER_TE = 'TE';
  HTTP_REQUEST_HEADER_USER_AGENT = 'User-Agent';
+ HTTP_REQUEST_HEADER_COOKIE = 'Cookie';
 
  {HTTP Response Header constants}
  HTTP_RESPONSE_HEADER_ACCEPT_RANGES = 'Accept-Ranges';
@@ -229,6 +242,7 @@ const
  HTTP_RESPONSE_HEADER_SERVER = 'Server';
  HTTP_RESPONSE_HEADER_VARY = 'Vary';
  HTTP_RESPONSE_HEADER_WWW_AUTHENTICATE = 'WWW-Authenticate';
+ HTTP_RESPONSE_HEADER_SET_COOKIE = 'Set-Cookie';
 
  {HTTP Entity Header constants}
  HTTP_ENTITY_HEADER_ALLOW = 'Allow';
@@ -383,11 +397,16 @@ const
  HTTP_MODULE_FLAG_NONE    = $00000000;
 
  {HTTP Document flags}
- HTTP_DOCUMENT_FLAG_NONE      = $00000000;
- HTTP_DOCUMENT_FLAG_DEFAULT   = $00000001;
- HTTP_DOCUMENT_FLAG_FOLDER    = $00000002;
- HTTP_DOCUMENT_FLAG_SUBTREE   = $00000004;
- HTTP_DOCUMENT_FLAG_EXTENSION = $00000008;
+ HTTP_DOCUMENT_FLAG_NONE           = $00000000;
+ HTTP_DOCUMENT_FLAG_DEFAULT        = $00000001;
+ HTTP_DOCUMENT_FLAG_FOLDER         = $00000002;
+ HTTP_DOCUMENT_FLAG_SUBTREE        = $00000004;
+ HTTP_DOCUMENT_FLAG_EXTENSION      = $00000008;
+ HTTP_DOCUMENT_FLAG_AUTHORIZATION  = $00000010; {Document requires authorization by a user authenticator (Basic or User mode)}
+                                                {The browser will present a sign in dialog asking for a username and password}
+ HTTP_DOCUMENT_FLAG_AUTHENTICATION = $00000020; {Document requires authentication using both user and session mode authenticators}
+                                                {The browser will be redirected to a login page and a successful login will return}
+                                                {a token or a cookie that can be used in successive requests to continue the session}
 
  {HTTP Mime Types (See: Apache mime.types file)}
  HTTP_MIME_TYPE_MAX = 29;
@@ -425,6 +444,7 @@ const
   );
 
  HTTP_MIME_TYPE_DEFAULT = 'application/octet-stream';
+ HTTP_MIME_TYPE_FORM_URLENCODED = 'application/x-www-form-urlencoded';
 
  {HTTP logging}
  HTTP_LOG_LEVEL_DEBUG     = LOG_LEVEL_DEBUG;  {HTTP debugging messages}
@@ -497,7 +517,7 @@ type
   FValue:String;
 
  protected
-  {Internal Methods}
+  {Protected Methods}
 
  public
   {Public Properties}
@@ -516,7 +536,7 @@ type
   FParams:TLinkedObjList;
 
  protected
-  {Internal Methods}
+  {Protected Methods}
 
  public
   {Public Properties}
@@ -533,8 +553,76 @@ type
   function DeleteParam(const AName:String):Boolean;
  end;
 
- //THTTPCookie //To Do
- //THTTPCookies //To Do
+ THTTPCookieAttributes = class;
+
+ THTTPCookie = class(TListObject)
+ public
+  {}
+  constructor Create(const AName:String);
+  destructor Destroy; override;
+ private
+  {Internal Variables}
+  FName:String;
+  FHash:LongWord;
+  FValue:String;
+  FAttributes:THTTPCookieAttributes;
+ protected
+  {Protected Methods}
+  function GetAttributes:THTTPCookieAttributes;
+ public
+  {Public Properties}
+  property Name:String read FName;
+  property Hash:LongWord read FHash;
+  property Value:String read FValue write FValue;
+  property Attributes:THTTPCookieAttributes read GetAttributes;
+ end;
+
+ THTTPCookieAttributes = class(TObject)
+ protected
+  {Protected Methods}
+  constructor Create;
+ public
+  {Public Properties}
+  Domain:String;
+  Expires:TDateTime;
+  HttpOnly:Boolean;
+  MaxAge:Integer;
+  Partitioned:Boolean;
+  Path:String;
+  Secure:Boolean;
+  SameSite:String;
+
+  {Public Methods}
+  function SetAttributes(AAttributes:THTTPCookieAttributes):Boolean;
+  procedure ClearAttributes;
+ end;
+
+ THTTPCookies = class(TObject)
+ public
+  {}
+  constructor Create;
+  destructor Destroy; override;
+ private
+  {Internal Variables}
+  FCookies:TLinkedObjList;
+
+ protected
+  {Protected Methods}
+
+ public
+  {Public Properties}
+
+  {Public Methods}
+  procedure Clear;
+
+  function GetCount:Integer;
+
+  function GetCookie(APrevious:THTTPCookie):THTTPCookie;
+  function FindCookie(const AName:String):THTTPCookie;
+
+  function AddCookie(const AName,AValue:String;AAttributes:THTTPCookieAttributes):Boolean;
+  function DeleteCookie(const AName:String):Boolean;
+ end;
 
  THTTPHeader = class(TListObject)
  public
@@ -548,7 +636,7 @@ type
   FValues:TLinkedStringList;
 
  protected
-  {Internal Methods}
+  {Protected Methods}
 
  public
   {Public Properties}
@@ -576,7 +664,7 @@ type
   FHeaders:TLinkedObjList;
 
  protected
-  {Internal Methods}
+  {Protected Methods}
 
  public
   {Public Properties}
@@ -610,10 +698,10 @@ type
   function GetHeadersSent:Boolean;
   function GetContentSent:Boolean;
  protected
-  {Internal Variables}
+  {Protected Variables}
   FClient:THTTPClient;
 
-  {Internal Methods}
+  {Protected Methods}
 
  public
   {Request Properties}
@@ -622,7 +710,7 @@ type
   Version:LongWord;
 
   Params:THTTPParams;
-  //Cookies //To Do
+  Cookies:THTTPCookies;
   Headers:THTTPHeaders;
 
   Protocol:String;
@@ -650,6 +738,9 @@ type
 
   function SetParam(const AName,AValue:String):Boolean;
   function SetParamEx(const AName,AValue:String;AReplace:Boolean):Boolean;
+
+  function SetCookie(const AName,AValue:String):Boolean;
+  function SetCookieEx(const AName,AValue:String;AReplace:Boolean):Boolean;
 
   function SetHeader(const AName,AValue:String):Boolean;
   function SetHeaderEx(const AName,AValue:String;AReplace:Boolean):Boolean;
@@ -679,10 +770,10 @@ type
   function GetConnectionClose:Boolean;
   procedure SetConnectionClose(AConnectionClose:Boolean);
  protected
-  {Internal Variables}
+  {Protected Variables}
   FClient:THTTPClient;
 
-  {Internal Methods}
+  {Protected Methods}
 
  public
   {Response Properties}
@@ -690,7 +781,7 @@ type
   Status:LongWord;
   Version:LongWord;
 
-  //Cookies //To Do
+  Cookies:THTTPCookies;
   Headers:THTTPHeaders;
 
   {Public Properties}
@@ -704,6 +795,8 @@ type
 
   {Public Methods}
   function Clear:Boolean;
+
+  function GetCookie(const AName:String;AAttributes:THTTPCookieAttributes):String;
 
   function GetHeader(const AName:String):String;
   function GetHeaderEx(const AName:String):TStringList;
@@ -809,7 +902,7 @@ type
   function GetResponseEncoding:LongWord;
   function GetResponseContentSize:LongWord;
  protected
-  {Internal Methods}
+  {Protected Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
 
@@ -888,7 +981,8 @@ type
   function SetRequestParam(const AName,AValue:String):Boolean;
   function SetRequestParamEx(const AName,AValue:String;AReplace:Boolean):Boolean;
 
-  //To Do //Cookies
+  function SetRequestCookie(const AName,AValue:String):Boolean;
+  function SetRequestCookieEx(const AName,AValue:String;AReplace:Boolean):Boolean;
 
   function SetRequestHeader(const AName,AValue:String):Boolean;
   function SetRequestHeaderEx(const AName,AValue:String;AReplace:Boolean):Boolean;
@@ -898,7 +992,8 @@ type
   function SetRequestContentString(const AContent:String):Boolean;
 
   {Response Methods}
-  //To Do //Cookies
+  function GetResponseCookies:TStringList;
+  function GetResponseCookie(const AName:String;AAttributes:THTTPCookieAttributes):String;
 
   function GetResponseHeader(const AName:String):String;
   function GetResponseHeaderEx(const AName:String):TStringList;
@@ -921,12 +1016,18 @@ type
   FThread:TWinsock2TCPServerThread;
 
   {Internal Methods}
+  function GetMimeType:String;
+  function GetEncoding:LongWord;
+  function GetContentSize:LongWord;
   function GetContentReceived:Boolean;
+
+  function GetUserAuthenticator:TAuthenticator;
+  function GetSessionAuthenticator:TAuthenticator;
  protected
-  {Internal Variables}
+  {Protected Variables}
   FListener:THTTPListener;
 
-  {Internal Methods}
+  {Protected Methods}
 
  public
   {Request Properties}
@@ -935,6 +1036,7 @@ type
   Version:LongWord;
 
   Params:THTTPParams;
+  Cookies:THTTPCookies;
   Headers:THTTPHeaders;
 
   Protocol:String;
@@ -950,10 +1052,21 @@ type
   property Flags:LongWord read FFlags;
   property Thread:TWinsock2TCPServerThread read FThread;
 
+  property MimeType:String read GetMimeType;
+  property Encoding:LongWord read GetEncoding;
+  property ContentSize:LongWord read GetContentSize;
   property ContentReceived:Boolean read GetContentReceived;
+
+  property UserAuthenticator:TAuthenticator read GetUserAuthenticator;
+  property SessionAuthenticator:TAuthenticator read GetSessionAuthenticator;
 
   {Public Methods}
   function GetParam(const AName:String):String;
+  function GetParamExt(const AName:String;AParams:THTTPParams):String;
+
+  function GetCookie(const AName:String):String;
+  function GetCookieExt(const AName:String;ACookies:THTTPCookies):String;
+
   function GetHeader(const AName:String):String;
   function GetHeaderEx(const AName:String):TStringList;
 
@@ -983,10 +1096,10 @@ type
   function GetConnectionClose:Boolean;
   procedure SetConnectionClose(AConnectionClose:Boolean);
  protected
-  {Internal Variables}
+  {Protected Variables}
   FListener:THTTPListener;
 
-  {Internal Methods}
+  {Protected Methods}
 
  public
   {Response Properties}
@@ -994,6 +1107,7 @@ type
   Status:LongWord;
   Version:LongWord;
 
+  Cookies:THTTPCookies;
   Headers:THTTPHeaders;
 
   ContentStream:TStream;
@@ -1011,6 +1125,9 @@ type
   property ConnectionClose:Boolean read GetConnectionClose write SetConnectionClose;
 
   {Public Methods}
+  function SetCookie(const AName,AValue:String;AAttributes:THTTPCookieAttributes):Boolean;
+  function SetCookieEx(const AName,AValue:String;AAttributes:THTTPCookieAttributes;AReplace:Boolean):Boolean;
+
   function SetHeader(const AName,AValue:String):Boolean;
   function SetHeaderEx(const AName,AValue:String;AReplace:Boolean):Boolean;
 
@@ -1038,6 +1155,9 @@ type
  THTTPErrorEvent = function(AHost:THTTPHost;AError:THTTPError;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean of Object;
  THTTPModuleEvent = function(AHost:THTTPHost;AModule:THTTPModule;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean of Object;
  THTTPDocumentEvent = function(AHost:THTTPHost;ADocument:THTTPDocument;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean of Object;
+ THTTPAuthorizationEvent = function(AHost:THTTPHost;ADocument:THTTPDocument;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var AAuthorized:Boolean):Boolean of Object;
+ THTTPAuthenticationEvent = function(AHost:THTTPHost;ADocument:THTTPDocument;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var AAuthenticated:Boolean):Boolean of Object;
+ THTTPDeauthenticationEvent = function(AHost:THTTPHost;ADocument:THTTPDocument;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var ADeauthenticated:Boolean):Boolean of Object;
 
  THTTPHost = class(TListObject)
  public
@@ -1053,6 +1173,9 @@ type
   FFlags:LongWord;
 
   FDefaultMimeType:String;
+
+  FUserAuthenticator:TAuthenticator;
+  FSessionAuthenticator:TAuthenticator;
 
   FErrors:TLinkedList;
   FAliases:TLinkedList;
@@ -1077,12 +1200,17 @@ type
   function GetDefaultMimeType:String;
   procedure SetDefaultMimeType(const ADefaultMimeType:String);
 
+  function GetUserAuthenticator:TAuthenticator;
+  procedure SetUserAuthenticator(AAuthenticator:TAuthenticator);
+  function GetSessionAuthenticator:TAuthenticator;
+  procedure SetSessionAuthenticator(AAuthenticator:TAuthenticator);
+
   function GetIsDefault:Boolean;
   procedure SetIsDefault(AIsDefault:Boolean);
   function GetIsDomain:Boolean;
   procedure SetIsDomain(AIsDomain:Boolean);
  protected
-  {Internal Methods}
+  {Protected Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
 
@@ -1107,6 +1235,9 @@ type
   property IsDomain:Boolean read GetIsDomain write SetIsDomain;
 
   property DefaultMimeType:String read GetDefaultMimeType write SetDefaultMimeType;
+
+  property UserAuthenticator:TAuthenticator read GetUserAuthenticator write SetUserAuthenticator;
+  property SessionAuthenticator:TAuthenticator read GetSessionAuthenticator write SetSessionAuthenticator;
 
   property OnGet:THTTPHostEvent read FOnGet write FOnGet;
   property OnHead:THTTPHostEvent read FOnHead write FOnHead;
@@ -1170,7 +1301,7 @@ type
   function GetIsDefault:Boolean;
   procedure SetIsDefault(AIsDefault:Boolean);
  protected
-  {Internal Methods}
+  {Protected Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
 
@@ -1201,7 +1332,7 @@ type
   function GetName:String;
   procedure SetName(const AName:String);
  protected
-  {Internal Methods}
+  {Protected Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
  public
@@ -1227,7 +1358,7 @@ type
   {Internal Methods}
   procedure SetFlags(AFlags:LongWord);
  protected
-  {Internal Methods}
+  {Protected Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
 
@@ -1254,17 +1385,30 @@ type
   FHash:LongWord;
   FFlags:LongWord;
 
+  FUserAuthenticator:TAuthenticator;
+  FSessionAuthenticator:TAuthenticator;
+
   FAliases:TLinkedList;
 
   FOnGet:THTTPDocumentEvent;
   FOnHead:THTTPDocumentEvent;
   FOnPost:THTTPDocumentEvent;
   FOnPut:THTTPDocumentEvent;
+  FOnError:THTTPDocumentEvent;
+
+  FOnAuthorize:THTTPAuthorizationEvent;
+  FOnAuthenticate:THTTPAuthenticationEvent;
+  FOnDeauthenticate:THTTPDeauthenticationEvent;
 
   {Internal Methods}
   function GetName:String;
   procedure SetName(const AName:String);
   procedure SetFlags(AFlags:LongWord);
+
+  function GetUserAuthenticator:TAuthenticator;
+  procedure SetUserAuthenticator(AAuthenticator:TAuthenticator);
+  function GetSessionAuthenticator:TAuthenticator;
+  procedure SetSessionAuthenticator(AAuthenticator:TAuthenticator);
 
   function GetIsDefault:Boolean;
   procedure SetIsDefault(AIsDefault:Boolean);
@@ -1274,15 +1418,26 @@ type
   procedure SetIsSubtree(AIsSubtree:Boolean);
   function GetIsExtension:Boolean;
   procedure SetIsExtension(AIsExtension:Boolean);
+  function GetRequireAuthorization:Boolean;
+  procedure SetRequireAuthorization(ARequireAuthorization:Boolean);
+  function GetRequireAuthentication:Boolean;
+  procedure SetRequireAuthentication(ARequireAuthentication:Boolean);
  protected
-  {Internal Methods}
+  {Protected Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
+
+  function ParseFormParams(AHost:THTTPHost;ARequest:THTTPServerRequest):THTTPParams; virtual;
 
   function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; virtual;
   function DoHead(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; virtual;
   function DoPost(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; virtual;
   function DoPut(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; virtual;
+  function DoError(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; virtual;
+
+  function DoAuthorize(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var AAuthorized:Boolean):Boolean; virtual;
+  function DoAuthenticate(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var AAuthenticated:Boolean):Boolean; virtual;
+  function DoDeauthenticate(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var ADeauthenticated:Boolean):Boolean; virtual;
  public
   {Public Properties}
   property Name:String read GetName write SetName;
@@ -1293,11 +1448,21 @@ type
   property IsFolder:Boolean read GetIsFolder write SetIsFolder;
   property IsSubtree:Boolean read GetIsSubtree write SetIsSubtree;
   property IsExtension:Boolean read GetIsExtension write SetIsExtension;
+  property RequireAuthorization:Boolean read GetRequireAuthorization write SetRequireAuthorization;
+  property RequireAuthentication:Boolean read GetRequireAuthentication write SetRequireAuthentication;
+
+  property UserAuthenticator:TAuthenticator read GetUserAuthenticator write SetUserAuthenticator;
+  property SessionAuthenticator:TAuthenticator read GetSessionAuthenticator write SetSessionAuthenticator;
 
   property OnGet:THTTPDocumentEvent read FOnGet write FOnGet;
   property OnHead:THTTPDocumentEvent read FOnHead write FOnHead;
   property OnPost:THTTPDocumentEvent read FOnPost write FOnPost;
   property OnPut:THTTPDocumentEvent read FOnPut write FOnPut;
+  property OnError:THTTPDocumentEvent read FOnError write FOnError;
+
+  property OnAuthorize:THTTPAuthorizationEvent read FOnAuthorize write FOnAuthorize;
+  property OnAuthenticate:THTTPAuthenticationEvent read FOnAuthenticate write FOnAuthenticate;
+  property OnDeauthenticate:THTTPDeauthenticationEvent read FOnDeauthenticate write FOnDeauthenticate;
 
   {Public Methods}
   function FindAlias(const AName:String):THTTPAlias;
@@ -1326,7 +1491,7 @@ type
   function GetMimeType:String;
   procedure SetMimeType(const AMimeType:String);
  protected
-  {Internal Methods}
+  {Protected Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
  public
@@ -1343,19 +1508,69 @@ type
  private
   {Internal Variables}
   FLocation:String;
-  FPermanent:Boolean;
+  FFound:Boolean;  {Send a 302 Found redirect instead of a 307 Moved Temporarily redirect}
+  FSeeOther:Boolean;  {Send a 303 See Other redirect instead of a 307 Moved Temporarily redirect}
+  FPermanent:Boolean;  {Send a 301 Moved Permanently redirect instead of a 307 Moved Temporarily redirect}
 
   {Internal Methods}
   function GetLocation:String;
   procedure SetLocation(const ALocation:String);
+  procedure SetFound(AFound:Boolean);
+  procedure SetSeeOther(ASeeOther:Boolean);
   procedure SetPermanent(APermanent:Boolean);
  protected
-  {Internal Methods}
+  {Protected Methods}
   function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
  public
   {Public Properties}
   property Location:String read GetLocation write SetLocation;
+  property Found:Boolean read FFound write SetFound;
+  property SeeOther:Boolean read FSeeOther write SetSeeOther;
   property Permanent:Boolean read FPermanent write SetPermanent;
+ end;
+
+ THTTPLogin = class(THTTPDocument)
+ public
+  {}
+  constructor Create;
+ private
+  {Internal Variables}
+  FTitle:String;  {The page title shown in the browser (Default: 'Login')}
+  FFormName:String;  {The name to use for the form in HTML content (Default: 'loginForm')}
+  FUsernameName:String;  {The parameter name to use for the username in form parameters (Default: 'username')}
+  FPasswordName:String;  {The parameter name to use for the password in form parameters (Default: 'password')}
+  FReturnURLName:String;  {The parameter name to use for the return URL in request URLs (Default: 'returnurl')}
+
+  {Internal Methods}
+  function GetTitle:String;
+  procedure SetTitle(const ATitle:String);
+  function GetFormName:String;
+  procedure SetFormName(const AName:String);
+  function GetUsernameName:String;
+  procedure SetUsernameName(const AName:String);
+  function GetPasswordName:String;
+  procedure SetPasswordName(const AName:String);
+  function GetReturnURLName:String;
+  procedure SetReturnURLName(const AName:String);
+ protected
+  {Protected Methods}
+  function FindUserAuthenticator(AHost:THTTPHost;ARequest:THTTPServerRequest):TAuthenticator;
+  function FindSessionAuthenticator(AHost:THTTPHost;ARequest:THTTPServerRequest):TAuthenticator;
+
+  function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+  function DoPost(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
+
+  function AddHeader(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; virtual;
+  function AddForm(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; virtual;
+  function AddScript(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; virtual;
+  function AddFooter(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; virtual;
+ public
+  {Public Properties}
+  property Title:String read GetTitle write SetTitle;
+  property FormName:String read GetFormName write SetFormName;
+  property UsernameName:String read GetUsernameName write SetUsernameName;
+  property PasswordName:String read GetPasswordName write SetPasswordName;
+  property ReturnURLName:String read GetReturnURLName write SetReturnURLName;
  end;
 
  THTTPFolder = class(THTTPDocument)
@@ -1385,7 +1600,7 @@ type
   procedure SetHideSubfolders(AHideSubfolders:Boolean);
   procedure SetForceTrailingSlash(AForceTrailingSlash:Boolean);
  protected
-  {Internal Methods}
+  {Protected Methods}
   function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
   function DoHead(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
 
@@ -1417,7 +1632,7 @@ type
   procedure SetFilename(const AFilename:String);
   procedure SetAllowCache(AAllowCache:Boolean);
  protected
-  {Internal Methods}
+  {Protected Methods}
   function DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
   function DoHead(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean; override;
  public
@@ -1439,12 +1654,18 @@ type
   FHosts:TLinkedList;
 
   FServer:String;
+  FUserAuthenticator:TAuthenticator;
+  FSessionAuthenticator:TAuthenticator;
 
   {Internal Methods}
   function GetServer:String;
   procedure SetServer(const AServer:String);
+  function GetUserAuthenticator:TAuthenticator;
+  procedure SetUserAuthenticator(AAuthenticator:TAuthenticator);
+  function GetSessionAuthenticator:TAuthenticator;
+  procedure SetSessionAuthenticator(AAuthenticator:TAuthenticator);
  protected
-  {Internal Methods}
+  {Protected Methods}
   function AcquireLock:Boolean;
   function ReleaseLock:Boolean;
 
@@ -1469,6 +1690,8 @@ type
  public
   {Public Properties}
   property Server:String read GetServer write SetServer;
+  property UserAuthenticator:TAuthenticator read GetUserAuthenticator write SetUserAuthenticator;
+  property SessionAuthenticator:TAuthenticator read GetSessionAuthenticator write SetSessionAuthenticator;
 
   {Public Methods}
   function FindHost(const AName:String):THTTPHost;
@@ -1533,7 +1756,13 @@ function HTTPBuildParam(const AName,AValue:String;var AParam:String):Boolean;
 function HTTPParseQuery(const AQuery:String;AParams:THTTPParams):Boolean;
 function HTTPBuildQuery(AParams:THTTPParams;var AQuery:String):Boolean;
 
-//To Do //HTTPParseCookie/HTTPBuildCookie
+function HTTPParseCookie(const ACookie:String;var AName,AValue:String;AAttributes:THTTPCookieAttributes):Boolean;
+function HTTPBuildCookie(const AName,AValue:String;AAttributes:THTTPCookieAttributes;var ACookie:String):Boolean;
+
+function HTTPParseCookies(const AHeader:String;ACookies:THTTPCookies):Boolean;
+function HTTPParseCookiesEx(AHeaders:TStringList;ACookies:THTTPCookies):Boolean;
+function HTTPBuildCookies(ACookies:THTTPCookies;var AHeader:String):Boolean;
+function HTTPBuildCookiesEx(ACookies:THTTPCookies;AHeaders:TStringList):Boolean;
 
 function HTTPParseHeader(const AHeader:String;var AName,AValue:String):Boolean;
 function HTTPBuildHeader(const AName,AValue:String;var AHeader:String):Boolean;
@@ -1965,6 +2194,214 @@ end;
 
 {==============================================================================}
 {==============================================================================}
+{THTTPCookie}
+constructor THTTPCookie.Create(const AName:String);
+begin
+ {}
+ inherited Create;
+ FName:=AName;
+ FHash:=GenerateNameHash(FName,stringHashSize);
+ FValue:='';
+ FAttributes:=nil; {Created as required}
+end;
+
+{==============================================================================}
+
+destructor THTTPCookie.Destroy;
+begin
+ {}
+ if FAttributes <> nil then FAttributes.Free;
+ inherited Destroy;
+end;
+
+{==============================================================================}
+
+function THTTPCookie.GetAttributes:THTTPCookieAttributes;
+begin
+ {}
+ if FAttributes = nil then FAttributes:=THTTPCookieAttributes.Create;
+
+ Result:=FAttributes;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{THTTPCookieAttributes}
+constructor THTTPCookieAttributes.Create;
+begin
+ {}
+ inherited Create;
+ MaxAge:=-1;
+end;
+
+{==============================================================================}
+
+function THTTPCookieAttributes.SetAttributes(AAttributes:THTTPCookieAttributes):Boolean;
+begin
+ {}
+ Result:=False;
+
+ if AAttributes = nil then Exit;
+
+ {Copy Attributes}
+ Domain:=AAttributes.Domain;
+ Expires:=AAttributes.Expires;
+ HttpOnly:=AAttributes.HttpOnly;
+ MaxAge:=AAttributes.MaxAge;
+ Partitioned:=AAttributes.Partitioned;
+ Path:=AAttributes.Path;
+ Secure:=AAttributes.Secure;
+ SameSite:=AAttributes.SameSite;
+
+ Result:=True;
+end;
+
+{==============================================================================}
+
+procedure THTTPCookieAttributes.ClearAttributes;
+begin
+ {}
+ {Clear Attributes}
+ Domain:='';
+ Expires:=0;
+ HttpOnly:=False;
+ MaxAge:=-1;
+ Partitioned:=False;
+ Path:='';
+ Secure:=False;
+ SameSite:='';
+end;
+
+{==============================================================================}
+{==============================================================================}
+{THTTPCookies}
+constructor THTTPCookies.Create;
+begin
+ {}
+ inherited Create;
+ FCookies:=TLinkedObjList.Create;
+end;
+
+{==============================================================================}
+
+destructor THTTPCookies.Destroy;
+begin
+ {}
+ FCookies.Free;
+ inherited Destroy;
+end;
+
+{==============================================================================}
+
+procedure THTTPCookies.Clear;
+begin
+ {}
+ FCookies.ClearList;
+end;
+
+{==============================================================================}
+
+function THTTPCookies.GetCount:Integer;
+begin
+ {}
+ Result:=FCookies.Count;
+end;
+
+{==============================================================================}
+
+function THTTPCookies.GetCookie(APrevious:THTTPCookie):THTTPCookie;
+begin
+ {}
+ Result:=nil;
+
+ if APrevious = nil then
+  begin
+   Result:=THTTPCookie(FCookies.First);
+  end
+ else
+  begin
+   Result:=THTTPCookie(APrevious.Next);
+  end;
+end;
+
+{==============================================================================}
+
+function THTTPCookies.FindCookie(const AName:String):THTTPCookie;
+var
+ Hash:LongWord;
+ Cookie:THTTPCookie;
+begin
+ {}
+ Result:=nil;
+
+ Hash:=GenerateNameHash(AName,stringHashSize);
+ Cookie:=THTTPCookie(FCookies.First);
+ while Cookie <> nil do
+  begin
+   if Cookie.Hash = Hash then
+    begin
+     if Uppercase(Cookie.Name) = Uppercase(AName) then
+      begin
+       Result:=Cookie;
+       Exit;
+      end;
+    end;
+
+   Cookie:=THTTPCookie(Cookie.Next);
+  end;
+end;
+
+{==============================================================================}
+
+function THTTPCookies.AddCookie(const AName,AValue:String;AAttributes:THTTPCookieAttributes):Boolean;
+var
+ Cookie:THTTPCookie;
+begin
+ {}
+ Result:=False;
+
+ if Length(AName) = 0 then Exit;
+
+ if FindCookie(AName) <> nil then Exit;
+
+ Cookie:=THTTPCookie.Create(AName);
+ Cookie.Value:=AValue;
+
+ if AAttributes <> nil then Cookie.Attributes.SetAttributes(AAttributes);
+
+ if FCookies.Add(Cookie) then
+  begin
+   Result:=True;
+  end
+ else
+  begin
+   Cookie.Free;
+  end;
+end;
+
+{==============================================================================}
+
+function THTTPCookies.DeleteCookie(const AName:String):Boolean;
+var
+ Cookie:THTTPCookie;
+begin
+ {}
+ Result:=False;
+
+ if Length(AName) = 0 then Exit;
+
+ Cookie:=FindCookie(AName);
+ if Cookie = nil then Exit;
+
+ if FCookies.Remove(Cookie) then
+  begin
+   Cookie.Free;
+   Result:=True;
+  end;
+end;
+
+{==============================================================================}
+{==============================================================================}
 {THTTPHeader}
 constructor THTTPHeader.Create(const AName:String);
 begin
@@ -2192,6 +2629,7 @@ begin
  Version:=HTTP_VERSION;
 
  Params:=THTTPParams.Create;
+ Cookies:=THTTPCookies.Create;
  Headers:=THTTPHeaders.Create;
 
  Protocol:='';
@@ -2212,6 +2650,7 @@ destructor THTTPClientRequest.Destroy;
 begin
  {}
  Params.Free;
+ Cookies.Free;
  Headers.Free;
  inherited Destroy;
 end;
@@ -2277,6 +2716,7 @@ begin
  Version:=HTTP_VERSION;
 
  Params.Clear;
+ Cookies.Clear;
  Headers.Clear;
 
  Protocol:='';
@@ -2331,6 +2771,49 @@ begin
   begin
    {Add Param}
    Result:=Params.AddParam(AName,AValue);
+  end;
+end;
+
+{==============================================================================}
+
+function THTTPClientRequest.SetCookie(const AName,AValue:String):Boolean;
+begin
+ {}
+ Result:=SetCookieEx(AName,AValue,True);
+end;
+
+{==============================================================================}
+
+function THTTPClientRequest.SetCookieEx(const AName,AValue:String;AReplace:Boolean):Boolean;
+var
+ Cookie:THTTPCookie;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Request: SetCookieEx');
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Request:  Name = ' + AName);
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Request:  Value = ' + AValue);
+ {$ENDIF}
+
+ Cookie:=Cookies.FindCookie(AName);
+ if Cookie <> nil then
+  begin
+   {Check Replace}
+   if not AReplace then Exit;
+
+   {Replace Value}
+   Cookie.Value:=AValue;
+
+   {No Attributes}
+
+   Result:=True;
+  end
+ else
+  begin
+   {Add Cookie}
+   Result:=Cookies.AddCookie(AName,AValue,nil);
   end;
 end;
 
@@ -2621,6 +3104,7 @@ begin
  Status:=HTTP_STATUS_NONE;
  Version:=HTTP_VERSION_00;
 
+ Cookies:=THTTPCookies.Create;
  Headers:=THTTPHeaders.Create;
 end;
 
@@ -2629,6 +3113,7 @@ end;
 destructor THTTPClientResponse.Destroy;
 begin
  {}
+ Cookies.Free;
  Headers.Free;
  inherited Destroy;
 end;
@@ -2700,9 +3185,32 @@ begin
  Status:=HTTP_STATUS_NONE;
  Version:=HTTP_VERSION_00;
 
+ Cookies.Clear;
  Headers.Clear;
 
  Result:=True;
+end;
+
+{==============================================================================}
+
+function THTTPClientResponse.GetCookie(const AName:String;AAttributes:THTTPCookieAttributes):String;
+var
+ Cookie:THTTPCookie;
+begin
+ {}
+ Result:='';
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Response: GetCookie');
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Response:  Name = ' + AName);
+ {$ENDIF}
+
+ Cookie:=Cookies.FindCookie(AName);
+ if Cookie = nil then Exit;
+
+ Result:=Cookie.Value;
+
+ if AAttributes <> nil then AAttributes.SetAttributes(Cookie.Attributes);
 end;
 
 {==============================================================================}
@@ -2769,7 +3277,7 @@ begin
  Header:=Headers.FindHeader(AName);
  if Header = nil then Exit;
 
- Result:=(Header.FindValue(AValue) <> -1);
+ if Length(AValue) = 0 then Result:=True else Result:=(Header.FindValue(AValue) <> -1);
 end;
 
 {==============================================================================}
@@ -3599,6 +4107,7 @@ var
  WorkBuffer:String;
  HeaderName:String;
  HeaderValue:String;
+ Header:THTTPHeader;
 begin
  {}
  Result:=False;
@@ -3680,8 +4189,20 @@ begin
   {Parse Response Header}
   if not HTTPParseHeader(WorkBuffer,HeaderName,HeaderValue) then Exit;
 
-  {Add Response Header} //To Do //This will fail if a header is repeated or split, how to handle ? //See RFCs //Allow Multiple Headers and Folded Headers //See RFC (Check for Space or Tab)
-  if not AResponse.Headers.AddHeader(HeaderName,HeaderValue) then Exit;
+  {Note: This will fail if a folded header (header split across multiple lines) is encounter but they are now deprecated}
+
+  {Check Response Header}
+  Header:=AResponse.Headers.FindHeader(HeaderName);
+  if Header <> nil then
+   begin
+    {Add Response Header Value}
+    if not Header.AddValue(HeaderValue) then Exit;
+   end
+  else
+   begin
+    {Add Response Header}
+    if not AResponse.Headers.AddHeader(HeaderName,HeaderValue) then Exit;
+   end;
 
  until Length(WorkBuffer) = 0;
 
@@ -3730,7 +4251,7 @@ begin
     try
      {Get Size}
      BytesRemain:=ASize;
-     if ASize = 0 then BytesRemain:=ResponseContentSize;
+     if (ASize = 0) or (ASize > ResponseContentSize) then BytesRemain:=ResponseContentSize;
 
      {Read Content}
      while BytesRemain > 0 do
@@ -3835,7 +4356,7 @@ begin
 
     {Get Size}
     BytesRemain:=ASize;
-    if ASize = 0 then BytesRemain:=ResponseContentSize;
+    if (ASize = 0) or (ASize > ResponseContentSize) then BytesRemain:=ResponseContentSize;
 
     {Read Content}
     if BytesRemain > 0 then
@@ -3970,14 +4491,17 @@ begin
    for Count:=0 to Header.GetCount - 1 do
     begin
      {Build Header}
-     if Count = 0 then
+     if not HTTPBuildHeader(Header.Name,Header.GetValue(Count),WorkBuffer) then Exit;
+
+     {Build Header} {Note: Folded headers are deprecated in HTTP/1.1 and not supported in HTTP/2}
+     {if Count = 0 then
       begin
        if not HTTPBuildHeader(Header.Name,Header.GetValue(Count),WorkBuffer) then Exit;
       end
      else
       begin
        if not HTTPBuildHeader('',Header.GetValue(Count),WorkBuffer) then Exit;
-      end;
+      end;}
 
      {$IFDEF HTTP_DEBUG}
      if HTTP_LOG_ENABLED then HTTPLogDebug('Client:  Header = ' + WorkBuffer);
@@ -4298,6 +4822,7 @@ var
  WorkBuffer:String;
  WorkUsername:String;
  WorkPassword:String;
+ WorkStrings:TStringList;
 begin
  {}
  Result:=False;
@@ -4354,7 +4879,8 @@ begin
     end;
 
    {Add Cookies}
-   //To Do
+   if not HTTPBuildCookies(FRequest.Cookies,WorkBuffer) then Exit;
+   if Length(WorkBuffer) <> 0 then FRequest.SetHeader(HTTP_REQUEST_HEADER_COOKIE,WorkBuffer);
 
    {Add Ranges}
    if (RequestRangeStart > 0) or (RequestRangeEnd > 0) then
@@ -4372,13 +4898,13 @@ begin
    {Add Authorization}
    if Length(Username) <> 0 then
     begin
-     FRequest.SetHeader(HTTP_REQUEST_HEADER_AUTHORIZATION,'Basic ' +  Base64EncodeString(Username + ':' + Password));
+     FRequest.SetHeader(HTTP_REQUEST_HEADER_AUTHORIZATION,HTTP_AUTHENTICATION_BASIC + Base64EncodeString(Username + ':' + Password));
     end;
 
    {Add Proxy-Authorization}
    if (Length(ProxyHost) <> 0) and (Length(ProxyUsername) <> 0) then
     begin
-     FRequest.SetHeader(HTTP_REQUEST_HEADER_PROXY_AUTH,'Basic ' +  Base64EncodeString(ProxyUsername + ':' + ProxyPassword));
+     FRequest.SetHeader(HTTP_REQUEST_HEADER_PROXY_AUTH,HTTP_AUTHENTICATION_BASIC + Base64EncodeString(ProxyUsername + ':' + ProxyPassword));
     end;
 
    {Setup Host/Port}
@@ -4432,7 +4958,16 @@ begin
           FResponse.ConnectionClose:=True;
          end;
 
-        //To Do //Cookies
+        {Get Cookies}
+        if FResponse.FindHeader(HTTP_RESPONSE_HEADER_SET_COOKIE,'') then
+         begin
+          WorkStrings:=FResponse.GetHeaderEx(HTTP_RESPONSE_HEADER_SET_COOKIE);
+          try
+           if not HTTPParseCookiesEx(WorkStrings,FResponse.Cookies) then Exit;
+          finally
+           WorkStrings.Free;
+          end;
+         end;
 
         {Check Status}
         case FResponse.Status of
@@ -4651,6 +5186,39 @@ end;
 
 {==============================================================================}
 
+function THTTPClient.SetRequestCookie(const AName,AValue:String):Boolean;
+begin
+ {}
+ Result:=SetRequestCookieEx(AName,AValue,True);
+end;
+
+{==============================================================================}
+
+function THTTPClient.SetRequestCookieEx(const AName,AValue:String;AReplace:Boolean):Boolean;
+begin
+ {}
+ Result:=False;
+
+ if not AcquireLock then Exit;
+ try
+  {Check State}
+  if FState = HTTP_CLIENT_STATE_REQUEST then Exit;
+
+  {$IFDEF HTTP_DEBUG}
+  if HTTP_LOG_ENABLED then HTTPLogDebug('Client: SetRequestCookieEx');
+  if HTTP_LOG_ENABLED then HTTPLogDebug('Client:  Name = ' + AName);
+  if HTTP_LOG_ENABLED then HTTPLogDebug('Client:  Value = ' + AValue);
+  {$ENDIF}
+
+  {Set Cookie}
+  Result:=FRequest.SetCookieEx(AName,AValue,AReplace);
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
 function THTTPClient.SetRequestHeader(const AName,AValue:String):Boolean;
 begin
  {}
@@ -4768,6 +5336,61 @@ end;
 
 {==============================================================================}
 
+function THTTPClient.GetResponseCookies:TStringList;
+var
+ Cookie:THTTPCookie;
+begin
+ {}
+ Result:=nil;
+
+ if not AcquireLock then Exit;
+ try
+  {Check State}
+  if FState <= HTTP_CLIENT_STATE_REQUEST then Exit;
+
+  {$IFDEF HTTP_DEBUG}
+  if HTTP_LOG_ENABLED then HTTPLogDebug('Client: GetResponseCookies');
+  {$ENDIF}
+
+  Result:=TStringList.Create;
+
+  Cookie:=FResponse.Cookies.GetCookie(nil);
+  while Cookie <> nil do
+   begin
+    Result.Add(Cookie.Name);
+
+    Cookie:=FResponse.Cookies.GetCookie(Cookie);
+   end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
+function THTTPClient.GetResponseCookie(const AName:String;AAttributes:THTTPCookieAttributes):String;
+begin
+ {}
+ Result:='';
+
+ if not AcquireLock then Exit;
+ try
+  {Check State}
+  if FState <= HTTP_CLIENT_STATE_REQUEST then Exit;
+
+  {$IFDEF HTTP_DEBUG}
+  if HTTP_LOG_ENABLED then HTTPLogDebug('Client: GetResponseCookie');
+  if HTTP_LOG_ENABLED then HTTPLogDebug('Client:  Name = ' + AName);
+  {$ENDIF}
+
+  Result:=FResponse.GetCookie(AName,AAttributes);
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
 function THTTPClient.GetResponseHeader(const AName:String):String;
 begin
  {}
@@ -4874,6 +5497,7 @@ begin
  Version:=HTTP_VERSION_00;
 
  Params:=THTTPParams.Create;
+ Cookies:=THTTPCookies.Create;
  Headers:=THTTPHeaders.Create;
 
  Protocol:='';
@@ -4894,8 +5518,33 @@ destructor THTTPServerRequest.Destroy;
 begin
  {}
  Params.Free;
+ Cookies.Free;
  Headers.Free;
  inherited Destroy;
+end;
+
+{==============================================================================}
+
+function THTTPServerRequest.GetMimeType:String;
+begin
+ {}
+ Result:=GetHeader(HTTP_ENTITY_HEADER_CONTENT_TYPE);
+end;
+
+{==============================================================================}
+
+function THTTPServerRequest.GetEncoding:LongWord;
+begin
+ {}
+ Result:=StringToHTTPEncoding(GetHeader(HTTP_GENERAL_HEADER_TRANSFER_ENCODING));
+end;
+
+{==============================================================================}
+
+function THTTPServerRequest.GetContentSize:LongWord;
+begin
+ {}
+ Result:=StrToIntDef(GetHeader(HTTP_ENTITY_HEADER_CONTENT_LENGTH),0);
 end;
 
 {==============================================================================}
@@ -4904,6 +5553,32 @@ function THTTPServerRequest.GetContentReceived:Boolean;
 begin
  {}
  Result:=((FFlags and HTTP_REQUEST_FLAG_CONTENT_RECEIVED) <> 0);
+end;
+
+{==============================================================================}
+
+function THTTPServerRequest.GetUserAuthenticator:TAuthenticator;
+begin
+ {}
+ Result:=nil;
+
+ {Check Listener}
+ if FListener = nil then Exit;
+
+ Result:=FListener.UserAuthenticator;
+end;
+
+{==============================================================================}
+
+function THTTPServerRequest.GetSessionAuthenticator:TAuthenticator;
+begin
+ {}
+ Result:=nil;
+
+ {Check Listener}
+ if FListener = nil then Exit;
+
+ Result:=FListener.SessionAuthenticator;
 end;
 
 {==============================================================================}
@@ -4924,6 +5599,70 @@ begin
  if Param = nil then Exit;
 
  Result:=Param.Value;
+end;
+
+{==============================================================================}
+
+function THTTPServerRequest.GetParamExt(const AName:String;AParams:THTTPParams):String;
+var
+ Param:THTTPParam;
+begin
+ {}
+ Result:='';
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Request: GetParamExt');
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Request:  Name = ' + AName);
+ {$ENDIF}
+
+ if AParams = nil then Exit;
+
+ Param:=AParams.FindParam(AName);
+ if Param = nil then Exit;
+
+ Result:=Param.Value;
+end;
+
+{==============================================================================}
+
+function THTTPServerRequest.GetCookie(const AName:String):String;
+var
+ Cookie:THTTPCookie;
+begin
+ {}
+ Result:='';
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Request: GetCookie');
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Request:  Name = ' + AName);
+ {$ENDIF}
+
+ Cookie:=Cookies.FindCookie(AName);
+ if Cookie = nil then Exit;
+
+ Result:=Cookie.Value;
+end;
+
+{==============================================================================}
+
+function THTTPServerRequest.GetCookieExt(const AName:String;ACookies:THTTPCookies):String;
+var
+ Cookie:THTTPCookie;
+begin
+ {}
+ Result:='';
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Request: GetCookieExt');
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Request:  Name = ' + AName);
+ {$ENDIF}
+
+ if ACookies = nil then Exit;
+
+ Cookie:=ACookies.FindCookie(AName);
+ if Cookie = nil then Exit;
+
+ Result:=Cookie.Value;
 end;
 
 {==============================================================================}
@@ -4990,7 +5729,7 @@ begin
  Header:=Headers.FindHeader(AName);
  if Header = nil then Exit;
 
- Result:=(Header.FindValue(AValue) <> -1);
+ if Length(AValue) = 0 then Result:=True else Result:=(Header.FindValue(AValue) <> -1);
 end;
 
 {==============================================================================}
@@ -5067,6 +5806,7 @@ begin
  Status:=HTTP_STATUS_NONE;
  Version:=HTTP_VERSION_00;
 
+ Cookies:=THTTPCookies.Create;
  Headers:=THTTPHeaders.Create;
 
  ContentStream:=nil;
@@ -5080,6 +5820,7 @@ end;
 destructor THTTPServerResponse.Destroy;
 begin
  {}
+ Cookies.Free;
  Headers.Free;
 
  if ContentStream <> nil then ContentStream.Free;
@@ -5154,6 +5895,50 @@ begin
  else
   begin
    FFlags:=FFlags and not(HTTP_RESPONSE_FLAG_CONNECTION_CLOSE);
+  end;
+end;
+
+{==============================================================================}
+
+function THTTPServerResponse.SetCookie(const AName,AValue:String;AAttributes:THTTPCookieAttributes):Boolean;
+begin
+ {}
+ Result:=SetCookieEx(AName,AValue,AAttributes,True);
+end;
+
+{==============================================================================}
+
+function THTTPServerResponse.SetCookieEx(const AName,AValue:String;AAttributes:THTTPCookieAttributes;AReplace:Boolean):Boolean;
+var
+ Cookie:THTTPCookie;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Response: SetCookieEx');
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Response:  Name = ' + AName);
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Response:  Value = ' + AValue);
+ {$ENDIF}
+
+ Cookie:=Cookies.FindCookie(AName);
+ if Cookie <> nil then
+  begin
+   {Check Replace}
+   if not AReplace then Exit;
+
+   {Replace Value}
+   Cookie.Value:=AValue;
+
+   {Replace Attributes}
+   Cookie.Attributes.SetAttributes(AAttributes);
+
+   Result:=True;
+  end
+ else
+  begin
+   {Add Cookie}
+   Result:=Cookies.AddCookie(AName,AValue,AAttributes);
   end;
 end;
 
@@ -5356,6 +6141,9 @@ end;
 {==============================================================================}
 
 function THTTPServerResponse.WriteHeaders:Boolean;
+var
+ Count:Integer;
+ Values:TStringList;
 begin
  {}
  Result:=False;
@@ -5373,6 +6161,24 @@ begin
  {Check Sent}
  if not HeadersSent then
   begin
+   {Check Cookies}
+   if (Cookies.GetCount > 0) and (Headers.FindHeader(HTTP_RESPONSE_HEADER_SET_COOKIE) = nil) then
+    begin
+     Values:=TStringList.Create;
+     try
+      {Get Cookies}
+      if not HTTPBuildCookiesEx(Cookies,Values) then Exit;
+
+      {Add Set-Cookie Headers}
+      for Count:=0 to Values.Count - 1 do
+       begin
+        SetHeaderEx(HTTP_RESPONSE_HEADER_SET_COOKIE,Values.Strings[Count],False);
+       end;
+     finally
+      Values.Free;
+     end;
+    end;
+
    {Write Headers}
    Result:=FListener.SendResponseHeaders(FThread,Self);
    if not Result then Exit;
@@ -5565,6 +6371,58 @@ begin
 
  FDefaultMimeType:=ADefaultMimeType;
  UniqueString(FDefaultMimeType);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function THTTPHost.GetUserAuthenticator:TAuthenticator;
+begin
+ {}
+ Result:=nil;
+
+ if not AcquireLock then Exit;
+
+ Result:=FUserAuthenticator;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPHost.SetUserAuthenticator(AAuthenticator:TAuthenticator);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FUserAuthenticator:=AAuthenticator;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function THTTPHost.GetSessionAuthenticator:TAuthenticator;
+begin
+ {}
+ Result:=nil;
+
+ if not AcquireLock then Exit;
+
+ Result:=FSessionAuthenticator;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPHost.SetSessionAuthenticator(AAuthenticator:TAuthenticator);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FSessionAuthenticator:=AAuthenticator;
 
  ReleaseLock;
 end;
@@ -5842,6 +6700,8 @@ function THTTPHost.DoGet(ARequest:THTTPServerRequest;AResponse:THTTPServerRespon
 var
  Alias:THTTPAlias;
  Document:THTTPDocument;
+ Authorized:Boolean;
+ Authenticated:Boolean;
 begin
  {}
  Result:=False;
@@ -5881,6 +6741,51 @@ begin
      ARequest.BasePath:=Alias.Name;
     end;
 
+   {Check Authorization}
+   if Document.RequireAuthorization then
+    begin
+     {Do Authorize}
+     Result:=Document.DoAuthorize(Self,ARequest,AResponse,Authorized);
+     if Result then
+      begin
+       {Check Authorized}
+       if not Authorized then Exit;
+      end
+     else
+      begin
+       {Internal Server Error}
+       AResponse.Version:=HTTP_VERSION;
+       AResponse.Status:=HTTP_STATUS_INTERNAL_SERVER_ERROR;
+       AResponse.Reason:=HTTP_REASON_500;
+
+       {Do Error}
+       Result:=DoError(ARequest,AResponse);
+       Exit;
+      end;
+    end
+   {Check Authentication}
+   else if Document.RequireAuthentication then
+    begin
+     {Do Authenticate}
+     Result:=Document.DoAuthenticate(Self,ARequest,AResponse,Authenticated);
+     if Result then
+      begin
+       {Check Authenticated}
+       if not Authenticated then Exit;
+      end
+     else
+      begin
+       {Internal Server Error}
+       AResponse.Version:=HTTP_VERSION;
+       AResponse.Status:=HTTP_STATUS_INTERNAL_SERVER_ERROR;
+       AResponse.Reason:=HTTP_REASON_500;
+
+       {Do Error}
+       Result:=DoError(ARequest,AResponse);
+       Exit;
+      end;
+    end;
+
    {Do Get}
    Result:=Document.DoGet(Self,ARequest,AResponse);
   end
@@ -5912,6 +6817,8 @@ function THTTPHost.DoHead(ARequest:THTTPServerRequest;AResponse:THTTPServerRespo
 var
  Alias:THTTPAlias;
  Document:THTTPDocument;
+ Authorized:Boolean;
+ Authenticated:Boolean;
 begin
  {}
  Result:=False;
@@ -5951,6 +6858,51 @@ begin
      ARequest.BasePath:=Alias.Name;
     end;
 
+   {Check Authorization}
+   if Document.RequireAuthorization then
+    begin
+     {Do Authorize}
+     Result:=Document.DoAuthorize(Self,ARequest,AResponse,Authorized);
+     if Result then
+      begin
+       {Check Authorized}
+       if not Authorized then Exit;
+      end
+     else
+      begin
+       {Internal Server Error}
+       AResponse.Version:=HTTP_VERSION;
+       AResponse.Status:=HTTP_STATUS_INTERNAL_SERVER_ERROR;
+       AResponse.Reason:=HTTP_REASON_500;
+
+       {Do Error}
+       Result:=DoError(ARequest,AResponse);
+       Exit;
+      end;
+    end
+   {Check Authentication}
+   else if Document.RequireAuthentication then
+    begin
+     {Do Authenticate}
+     Result:=Document.DoAuthenticate(Self,ARequest,AResponse,Authenticated);
+     if Result then
+      begin
+       {Check Authenticated}
+       if not Authenticated then Exit;
+      end
+     else
+      begin
+       {Internal Server Error}
+       AResponse.Version:=HTTP_VERSION;
+       AResponse.Status:=HTTP_STATUS_INTERNAL_SERVER_ERROR;
+       AResponse.Reason:=HTTP_REASON_500;
+
+       {Do Error}
+       Result:=DoError(ARequest,AResponse);
+       Exit;
+      end;
+    end;
+
    {Do Head}
    Result:=Document.DoHead(Self,ARequest,AResponse);
   end
@@ -5982,6 +6934,8 @@ function THTTPHost.DoPost(ARequest:THTTPServerRequest;AResponse:THTTPServerRespo
 var
  Alias:THTTPAlias;
  Document:THTTPDocument;
+ Authorized:Boolean;
+ Authenticated:Boolean;
 begin
  {}
  Result:=False;
@@ -6021,6 +6975,51 @@ begin
      ARequest.BasePath:=Alias.Name;
     end;
 
+   {Check Authorization}
+   if Document.RequireAuthorization then
+    begin
+     {Do Authorize}
+     Result:=Document.DoAuthorize(Self,ARequest,AResponse,Authorized);
+     if Result then
+      begin
+       {Check Authorized}
+       if not Authorized then Exit;
+      end
+     else
+      begin
+       {Internal Server Error}
+       AResponse.Version:=HTTP_VERSION;
+       AResponse.Status:=HTTP_STATUS_INTERNAL_SERVER_ERROR;
+       AResponse.Reason:=HTTP_REASON_500;
+
+       {Do Error}
+       Result:=DoError(ARequest,AResponse);
+       Exit;
+      end;
+    end
+   {Check Authentication}
+   else if Document.RequireAuthentication then
+    begin
+     {Do Authenticate}
+     Result:=Document.DoAuthenticate(Self,ARequest,AResponse,Authenticated);
+     if Result then
+      begin
+       {Check Authenticated}
+       if not Authenticated then Exit;
+      end
+     else
+      begin
+       {Internal Server Error}
+       AResponse.Version:=HTTP_VERSION;
+       AResponse.Status:=HTTP_STATUS_INTERNAL_SERVER_ERROR;
+       AResponse.Reason:=HTTP_REASON_500;
+
+       {Do Error}
+       Result:=DoError(ARequest,AResponse);
+       Exit;
+      end;
+    end;
+
    {Do Post}
    Result:=Document.DoPost(Self,ARequest,AResponse);
   end
@@ -6052,6 +7051,8 @@ function THTTPHost.DoPut(ARequest:THTTPServerRequest;AResponse:THTTPServerRespon
 var
  Alias:THTTPAlias;
  Document:THTTPDocument;
+ Authorized:Boolean;
+ Authenticated:Boolean;
 begin
  {}
  Result:=False;
@@ -6089,6 +7090,51 @@ begin
 
      {Set Base Path}
      ARequest.BasePath:=Alias.Name;
+    end;
+
+   {Check Authorization}
+   if Document.RequireAuthorization then
+    begin
+     {Do Authorize}
+     Result:=Document.DoAuthorize(Self,ARequest,AResponse,Authorized);
+     if Result then
+      begin
+       {Check Authorized}
+       if not Authorized then Exit;
+      end
+     else
+      begin
+       {Internal Server Error}
+       AResponse.Version:=HTTP_VERSION;
+       AResponse.Status:=HTTP_STATUS_INTERNAL_SERVER_ERROR;
+       AResponse.Reason:=HTTP_REASON_500;
+
+       {Do Error}
+       Result:=DoError(ARequest,AResponse);
+       Exit;
+      end;
+    end
+   {Check Authentication}
+   else if Document.RequireAuthentication then
+    begin
+     {Do Authenticate}
+     Result:=Document.DoAuthenticate(Self,ARequest,AResponse,Authenticated);
+     if Result then
+      begin
+       {Check Authenticated}
+       if not Authenticated then Exit;
+      end
+     else
+      begin
+       {Internal Server Error}
+       AResponse.Version:=HTTP_VERSION;
+       AResponse.Status:=HTTP_STATUS_INTERNAL_SERVER_ERROR;
+       AResponse.Reason:=HTTP_REASON_500;
+
+       {Do Error}
+       Result:=DoError(ARequest,AResponse);
+       Exit;
+      end;
     end;
 
    {Do Put}
@@ -7232,6 +8278,58 @@ end;
 
 {==============================================================================}
 
+function THTTPDocument.GetUserAuthenticator:TAuthenticator;
+begin
+ {}
+ Result:=nil;
+
+ if not AcquireLock then Exit;
+
+ Result:=FUserAuthenticator;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPDocument.SetUserAuthenticator(AAuthenticator:TAuthenticator);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FUserAuthenticator:=AAuthenticator;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function THTTPDocument.GetSessionAuthenticator:TAuthenticator;
+begin
+ {}
+ Result:=nil;
+
+ if not AcquireLock then Exit;
+
+ Result:=FSessionAuthenticator;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPDocument.SetSessionAuthenticator(AAuthenticator:TAuthenticator);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FSessionAuthenticator:=AAuthenticator;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
 function THTTPDocument.GetIsDefault:Boolean;
 begin
  {}
@@ -7364,6 +8462,78 @@ end;
 
 {==============================================================================}
 
+function THTTPDocument.GetRequireAuthorization:Boolean;
+begin
+ {}
+ Result:=False;
+
+ if not AcquireLock then Exit;
+
+ Result:=((FFlags and HTTP_DOCUMENT_FLAG_AUTHORIZATION) <> 0);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPDocument.SetRequireAuthorization(ARequireAuthorization:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ if ARequireAuthorization then
+  begin
+   FFlags:=FFlags or HTTP_DOCUMENT_FLAG_AUTHORIZATION;
+
+   {Disable Authentication}
+   FFlags:=FFlags and not(HTTP_DOCUMENT_FLAG_AUTHENTICATION);
+  end
+ else
+  begin
+   FFlags:=FFlags and not(HTTP_DOCUMENT_FLAG_AUTHORIZATION);
+  end;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function THTTPDocument.GetRequireAuthentication:Boolean;
+begin
+ {}
+ Result:=False;
+
+ if not AcquireLock then Exit;
+
+ Result:=((FFlags and HTTP_DOCUMENT_FLAG_AUTHENTICATION) <> 0);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPDocument.SetRequireAuthentication(ARequireAuthentication:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ if ARequireAuthentication then
+  begin
+   FFlags:=FFlags or HTTP_DOCUMENT_FLAG_AUTHENTICATION;
+
+   {Disable Authorization}
+   FFlags:=FFlags and not(HTTP_DOCUMENT_FLAG_AUTHORIZATION);
+  end
+ else
+  begin
+   FFlags:=FFlags and not(HTTP_DOCUMENT_FLAG_AUTHENTICATION);
+  end;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
 function THTTPDocument.AcquireLock:Boolean;
 begin
  {}
@@ -7376,6 +8546,41 @@ function THTTPDocument.ReleaseLock:Boolean;
 begin
  {}
  Result:=(CriticalSectionUnlock(FLock) = ERROR_SUCCESS);
+end;
+
+{==============================================================================}
+
+function THTTPDocument.ParseFormParams(AHost:THTTPHost;ARequest:THTTPServerRequest):THTTPParams;
+var
+ WorkBuffer:String;
+ Params:THTTPParams;
+begin
+ {}
+ Result:=nil;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Document: ParseFormParams');
+ {$ENDIF}
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Mime Type}
+ if Uppercase(ARequest.MimeType) = Uppercase(HTTP_MIME_TYPE_FORM_URLENCODED) then
+  begin
+   {Get Content}
+   if ARequest.ReadContentString(WorkBuffer,0) then
+    begin
+     {Create Params}
+     Params:=THTTPParams.Create;
+
+     {Parse Content}
+     if HTTPParseQuery(WorkBuffer,Params) then Result:=Params else Params.Free;
+    end;
+  end;
 end;
 
 {==============================================================================}
@@ -7528,6 +8733,373 @@ begin
    AResponse.Version:=HTTP_VERSION;
    AResponse.Status:=HTTP_STATUS_METHOD_NOT_ALLOWED;
    AResponse.Reason:=HTTP_REASON_405;
+
+   {Do Error}
+   Result:=AHost.DoError(ARequest,AResponse);
+  end;
+end;
+
+{==============================================================================}
+
+function THTTPDocument.DoError(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+{Base Error Method for an HTTP Document}
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Document: DoPut');
+ {$ENDIF}
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Check Method}
+ if Assigned(FOnError) then
+  begin
+   {Error Method}
+   Result:=FOnError(AHost,Self,ARequest,AResponse);
+  end
+ else
+  begin
+   {Do Error}
+   Result:=AHost.DoError(ARequest,AResponse);
+  end;
+end;
+
+{==============================================================================}
+
+function THTTPDocument.DoAuthorize(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var AAuthorized:Boolean):Boolean;
+{Base Authorize Method for an HTTP Document}
+var
+ Index:Integer;
+ Username:String;
+ Password:String;
+ WorkBuffer:String;
+ Authenticator:TAuthenticator;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Document: DoAuthorize');
+ {$ENDIF}
+
+ {Set Defaults}
+ AAuthorized:=False;
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Check Method}
+ if Assigned(FOnAuthorize) then
+  begin
+   {Authorize Method}
+   Result:=FOnAuthorize(AHost,Self,ARequest,AResponse,AAuthorized);
+  end
+ else
+  begin
+   {Default Method}
+   {Get Authorization}
+   WorkBuffer:=ARequest.GetHeader(HTTP_REQUEST_HEADER_AUTHORIZATION);
+
+   {$IFDEF HTTP_DEBUG}
+   if HTTP_LOG_ENABLED then HTTPLogDebug('Document: Authorization Header = ' + WorkBuffer);
+   {$ENDIF}
+
+   {Get Authenticator}
+   Authenticator:=UserAuthenticator;
+   if Authenticator = nil then Authenticator:=AHost.UserAuthenticator;
+   if Authenticator = nil then Authenticator:=ARequest.UserAuthenticator;
+   if Authenticator = nil then Exit;
+
+   {Check Authorization}
+   if (Length(WorkBuffer) <> 0) and (Uppercase(Copy(WorkBuffer,1,Length(HTTP_AUTHENTICATION_BASIC))) = Uppercase(HTTP_AUTHENTICATION_BASIC)) then
+    begin
+     {Extract Authorization}
+     WorkBuffer:=Trim(Copy(WorkBuffer,Length(HTTP_AUTHENTICATION_BASIC),Length(WorkBuffer)));
+
+     {Decode Authorization}
+     WorkBuffer:=Base64DecodeString(WorkBuffer);
+
+     {Get Username and Password}
+     Index:=Pos(':',WorkBuffer);
+     if Index > 0 then
+      begin
+       Username:=Copy(WorkBuffer,1,Index - 1);
+       Password:=Copy(WorkBuffer,Index + 1,Length(WorkBuffer));
+
+       {$IFDEF HTTP_DEBUG}
+       if HTTP_LOG_ENABLED then HTTPLogDebug('Document:   Username = ' + Username);
+       if HTTP_LOG_ENABLED then HTTPLogDebug('Document:   Password = ' + Password);
+       {$ENDIF}
+
+       {Check Mode}
+       if Authenticator.Mode = AUTHENTICATOR_MODE_BASIC then
+        begin
+         {Check Password}
+         AAuthorized:=Authenticator.CheckPassword(Password) = ERROR_SUCCESS;
+        end
+       else if Authenticator.Mode = AUTHENTICATOR_MODE_USER then
+        begin
+         {Check Username and Password}
+         AAuthorized:=Authenticator.CheckUserPassword(Username,Password) = ERROR_SUCCESS;
+        end;
+      end;
+    end;
+
+   if AAuthorized then
+    begin
+     {Return Result}
+     Result:=True;
+    end
+   else
+    begin
+     {Add Authenticate Header}
+     AResponse.SetHeader(HTTP_RESPONSE_HEADER_WWW_AUTHENTICATE,HTTP_AUTHENTICATION_BASIC + 'realm="Authorization Required"');
+
+     {Unauthorized}
+     AResponse.Version:=HTTP_VERSION;
+     AResponse.Status:=HTTP_STATUS_UNAUTHORIZED;
+     AResponse.Reason:=HTTP_REASON_401;
+
+     {Do Error}
+     Result:=AHost.DoError(ARequest,AResponse);
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function THTTPDocument.DoAuthenticate(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var AAuthenticated:Boolean):Boolean;
+{Base Authenticate Method for an HTTP Document}
+var
+ Value:String;
+ Token:String;
+ Cookie:String;
+ Location:String;
+ Authenticator:TAuthenticator;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Document: DoAuthenticate');
+ {$ENDIF}
+
+ {Set Defaults}
+ AAuthenticated:=False;
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Get Session Authenticator}
+ Authenticator:=SessionAuthenticator;
+ if Authenticator = nil then Authenticator:=AHost.SessionAuthenticator;
+ if Authenticator = nil then Authenticator:=ARequest.SessionAuthenticator;
+ if (Authenticator <> nil) and (Authenticator.Mode = AUTHENTICATOR_MODE_SESSION) then
+  begin
+   {Create Value}
+   Value:=ARequest.Thread.Server.PeerAddress + ARequest.GetHeader(HTTP_REQUEST_HEADER_USER_AGENT);
+
+   {Check Cookie}
+   if Authenticator.UseCookie then
+    begin
+     {Get Cookie}
+     Token:=ARequest.GetCookie(Authenticator.CookieName);
+    end
+   else
+    begin
+     {Get Token}
+     Token:=ARequest.GetParam(Authenticator.TokenName);
+    end;
+
+   {$IFDEF HTTP_DEBUG}
+   if HTTP_LOG_ENABLED then HTTPLogDebug('Document:  Value = ' + Value);
+   if HTTP_LOG_ENABLED then HTTPLogDebug('Document:  Token = ' + Token);
+   {$ENDIF}
+
+   {Check Token}
+   AAuthenticated:=Authenticator.CheckToken(Token,Value) = ERROR_SUCCESS;
+   if AAuthenticated then
+    begin
+     {Return Result}
+     Result:=True;
+    end
+   else
+    begin
+     {Check Method}
+     if ARequest.Method = HTTP_METHOD_GET then
+      begin
+       {Send Found Redirect}
+       AResponse.Version:=HTTP_VERSION;
+       AResponse.Status:=HTTP_STATUS_FOUND;
+       AResponse.Reason:=HTTP_REASON_302;
+      end
+     else
+      begin
+       {Send See Other Redirect}
+       AResponse.Version:=HTTP_VERSION;
+       AResponse.Status:=HTTP_STATUS_SEE_OTHER;
+       AResponse.Reason:=HTTP_REASON_303;
+      end;
+
+     {Get Location}
+     Location:=Authenticator.AuthenticateURL;
+
+     {Check for parameter separator}
+     if Pos('?',Location) > 0 then
+      begin
+       {Add Return URL}
+       Location:=Location + '&' + Authenticator.ReturnURLName + '=' + ARequest.Path;
+      end
+     else
+      begin
+       {Add Return URL}
+       Location:=Location + '?' + Authenticator.ReturnURLName + '=' + ARequest.Path;
+      end;
+
+     {$IFDEF HTTP_DEBUG}
+     if HTTP_LOG_ENABLED then HTTPLogDebug('Document:  Location = ' + Location);
+     {$ENDIF}
+
+     {Add Location Header}
+     AResponse.SetHeader(HTTP_RESPONSE_HEADER_LOCATION,Location);
+
+     {Set Content}
+     AResponse.ContentString:='<html><head><title>' + AResponse.Reason + ' (' + HTTPStatusToString(AResponse.Status) + ')</title></head><body>' + AResponse.Reason + ' (' + HTTPStatusToString(AResponse.Status) + ') to <a href="' + Location + '">' + Location + '</a></body></html>' + HTTP_LINE_END;
+
+     {Return Result}
+     Result:=True;
+    end;
+  end;
+
+ {Check Result}
+ if not Result then
+  begin
+   {Internal Server Error}
+   AResponse.Version:=HTTP_VERSION;
+   AResponse.Status:=HTTP_STATUS_INTERNAL_SERVER_ERROR;
+   AResponse.Reason:=HTTP_REASON_500;
+
+   {Do Error}
+   Result:=AHost.DoError(ARequest,AResponse);
+  end;
+end;
+
+{==============================================================================}
+
+function THTTPDocument.DoDeauthenticate(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse;var ADeauthenticated:Boolean):Boolean;
+{Base Deauthenticate Session Method for an HTTP Document}
+var
+ Value:String;
+ Token:String;
+ Cookie:String;
+ Location:String;
+ Authenticator:TAuthenticator;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Document: DoDeauthenticate');
+ {$ENDIF}
+
+ {Set Defaults}
+ ADeauthenticated:=False;
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Get Session Authenticator}
+ Authenticator:=SessionAuthenticator;
+ if Authenticator = nil then Authenticator:=AHost.SessionAuthenticator;
+ if Authenticator = nil then Authenticator:=ARequest.SessionAuthenticator;
+ if (Authenticator <> nil) and (Authenticator.Mode = AUTHENTICATOR_MODE_SESSION) then
+  begin
+   {Create Value}
+   Value:=ARequest.Thread.Server.PeerAddress + ARequest.GetHeader(HTTP_REQUEST_HEADER_USER_AGENT);
+
+   {Check Cookie}
+   if Authenticator.UseCookie then
+    begin
+     {Get Cookie}
+     Token:=ARequest.GetCookie(Authenticator.CookieName);
+    end
+   else
+    begin
+     {Get Token}
+     Token:=ARequest.GetParam(Authenticator.TokenName);
+    end;
+
+   {$IFDEF HTTP_DEBUG}
+   if HTTP_LOG_ENABLED then HTTPLogDebug('Document:  Value = ' + Value);
+   if HTTP_LOG_ENABLED then HTTPLogDebug('Document:  Token = ' + Token);
+   {$ENDIF}
+
+   {Delete Token}
+   ADeauthenticated:=Authenticator.DeleteToken(Token,Value) = ERROR_SUCCESS;
+
+   {Check Method}
+   if ARequest.Method = HTTP_METHOD_GET then
+    begin
+     {Send Found Redirect}
+     AResponse.Version:=HTTP_VERSION;
+     AResponse.Status:=HTTP_STATUS_FOUND;
+     AResponse.Reason:=HTTP_REASON_302;
+    end
+   else
+    begin
+     {Send See Other Redirect}
+     AResponse.Version:=HTTP_VERSION;
+     AResponse.Status:=HTTP_STATUS_SEE_OTHER;
+     AResponse.Reason:=HTTP_REASON_303;
+    end;
+
+   {Get Location}
+   Location:=Authenticator.DeauthenticateURL;
+
+   {Add Location Header}
+   AResponse.SetHeader(HTTP_RESPONSE_HEADER_LOCATION,Location);
+
+   {Set Content}
+   AResponse.ContentString:='<html><head><title>' + AResponse.Reason + ' (' + HTTPStatusToString(AResponse.Status) + ')</title></head><body>' + AResponse.Reason + ' (' + HTTPStatusToString(AResponse.Status) + ') to <a href="' + Location + '">' + Location + '</a></body></html>' + HTTP_LINE_END;
+
+   {Return Result}
+   Result:=True;
+  end;
+
+ {Check Result}
+ if not Result then
+  begin
+   {Internal Server Error}
+   AResponse.Version:=HTTP_VERSION;
+   AResponse.Status:=HTTP_STATUS_INTERNAL_SERVER_ERROR;
+   AResponse.Reason:=HTTP_REASON_500;
 
    {Do Error}
    Result:=AHost.DoError(ARequest,AResponse);
@@ -7830,6 +9402,8 @@ begin
  inherited Create;
 
  FLocation:='';
+ FFound:=False;
+ FSeeOther:=False;
  FPermanent:=False;
 end;
 
@@ -7857,6 +9431,30 @@ begin
 
  FLocation:=ALocation;
  UniqueString(FLocation);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPRedirect.SetFound(AFound:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FFound:=AFound;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPRedirect.SetSeeOther(ASeeOther:Boolean);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FSeeOther:=ASeeOther;
 
  ReleaseLock;
 end;
@@ -7908,20 +9506,31 @@ begin
      AResponse.Version:=HTTP_VERSION;
      AResponse.Status:=HTTP_STATUS_MOVED_PERMANENT;
      AResponse.Reason:=HTTP_REASON_301;
-
-     {Add Location Header}
-     AResponse.SetHeader(HTTP_RESPONSE_HEADER_LOCATION,Location);
+    end
+   else if Found then
+    begin
+     {Found Redirect}
+     AResponse.Version:=HTTP_VERSION;
+     AResponse.Status:=HTTP_STATUS_FOUND;
+     AResponse.Reason:=HTTP_REASON_302;
+    end
+   else if SeeOther then
+    begin
+     {See Other Redirect}
+     AResponse.Version:=HTTP_VERSION;
+     AResponse.Status:=HTTP_STATUS_SEE_OTHER;
+     AResponse.Reason:=HTTP_REASON_303; {Same as HTTP_REASON_302 but guarantees that the client will change the request to the GET method}
     end
    else
     begin
      {Temporary Redirect}
      AResponse.Version:=HTTP_VERSION;
      AResponse.Status:=HTTP_STATUS_TEMPORARY_REDIRECT;
-     AResponse.Reason:=HTTP_REASON_307;
-
-     {Add Location Header}
-     AResponse.SetHeader(HTTP_RESPONSE_HEADER_LOCATION,Location);
+     AResponse.Reason:=HTTP_REASON_307; {Same as HTTP_REASON_302 but guarantees that the client will not change the request method and body}
     end;
+
+   {Add Location Header}
+   AResponse.SetHeader(HTTP_RESPONSE_HEADER_LOCATION,Location);
 
    {Set Content}
    AResponse.ContentString:='<html><head><title>' + AResponse.Reason + ' (' + HTTPStatusToString(AResponse.Status) + ')</title></head><body>' + AResponse.Reason + ' (' + HTTPStatusToString(AResponse.Status) + ') to <a href="' + Location + '">' + Location + '</a></body></html>' + HTTP_LINE_END;
@@ -7929,6 +9538,641 @@ begin
    {Return Result}
    Result:=True;
   end;
+end;
+
+{==============================================================================}
+{==============================================================================}
+{THTTPLogin}
+constructor THTTPLogin.Create;
+begin
+ {}
+ inherited Create;
+
+ Name:='/login';
+ Title:='Login';
+ FormName:='loginForm';
+ UsernameName:='username';
+ PasswordName:='password';
+ ReturnURLName:='returnurl';
+end;
+
+{==============================================================================}
+
+function THTTPLogin.GetTitle:String;
+begin
+ {}
+ Result:='';
+
+ if not AcquireLock then Exit;
+
+ Result:=FTitle;
+ UniqueString(Result);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPLogin.SetTitle(const ATitle:String);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FTitle:=ATitle;
+ UniqueString(FTitle);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function THTTPLogin.GetReturnURLName:String;
+begin
+ {}
+ Result:='';
+
+ if not AcquireLock then Exit;
+
+ Result:=FReturnURLName;
+ UniqueString(Result);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPLogin.SetReturnURLName(const AName:String);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FReturnURLName:=AName;
+ UniqueString(FReturnURLName);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function THTTPLogin.GetFormName:String;
+begin
+ {}
+ Result:='';
+
+ if not AcquireLock then Exit;
+
+ Result:=FFormName;
+ UniqueString(Result);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPLogin.SetFormName(const AName:String);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FFormName:=AName;
+ UniqueString(FFormName);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function THTTPLogin.GetUsernameName:String;
+begin
+ {}
+ Result:='';
+
+ if not AcquireLock then Exit;
+
+ Result:=FUsernameName;
+ UniqueString(Result);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPLogin.SetUsernameName(const AName:String);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FUsernameName:=AName;
+ UniqueString(FUsernameName);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function THTTPLogin.GetPasswordName:String;
+begin
+ {}
+ Result:='';
+
+ if not AcquireLock then Exit;
+
+ Result:=FPasswordName;
+ UniqueString(Result);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPLogin.SetPasswordName(const AName:String);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FPasswordName:=AName;
+ UniqueString(FPasswordName);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function THTTPLogin.FindUserAuthenticator(AHost:THTTPHost;ARequest:THTTPServerRequest):TAuthenticator;
+var
+ Authenticator:TAuthenticator;
+begin
+ {}
+ Result:=nil;
+
+ {Get User Authenticator}
+ Authenticator:=UserAuthenticator;
+ if Authenticator = nil then Authenticator:=AHost.UserAuthenticator;
+ if Authenticator = nil then Authenticator:=ARequest.UserAuthenticator;
+ if (Authenticator <> nil) and (Authenticator.Mode = AUTHENTICATOR_MODE_USER) then Result:=Authenticator;
+end;
+
+{==============================================================================}
+
+function THTTPLogin.FindSessionAuthenticator(AHost:THTTPHost;ARequest:THTTPServerRequest):TAuthenticator;
+var
+ Authenticator:TAuthenticator;
+begin
+ {}
+ Result:=nil;
+
+ {Get Session Authenticator}
+ Authenticator:=SessionAuthenticator;
+ if Authenticator = nil then Authenticator:=AHost.SessionAuthenticator;
+ if Authenticator = nil then Authenticator:=ARequest.SessionAuthenticator;
+ if (Authenticator <> nil) and (Authenticator.Mode = AUTHENTICATOR_MODE_SESSION) then Result:=Authenticator;
+end;
+
+{==============================================================================}
+
+function THTTPLogin.DoGet(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+{Base GET Method for an HTTP Login}
+var
+ Content:String;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Login: DoGet');
+ {$ENDIF}
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Check Method}
+ if Assigned(FOnGet) then
+  begin
+   {Get Method}
+   Result:=FOnGet(AHost,Self,ARequest,AResponse);
+  end
+ else
+  begin
+   {Set Response}
+   AResponse.Version:=HTTP_VERSION;
+   AResponse.Status:=HTTP_STATUS_OK;
+   AResponse.Reason:=HTTP_REASON_200;
+
+   {Add Header}
+   AddHeader(AHost,ARequest,AResponse);
+
+   {Add Form}
+   AddForm(AHost,ARequest,AResponse);
+
+   {Add Script}
+   AddScript(AHost,ARequest,AResponse);
+
+   {Add Footer}
+   AddFooter(AHost,ARequest,AResponse);
+
+   {Return Result}
+   Result:=True;
+  end;
+end;
+
+{==============================================================================}
+
+function THTTPLogin.DoPost(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+{Base POST Method for an HTTP Login}
+var
+ Value:String;
+ Token:String;
+ Timeout:Int64;
+ Username:String;
+ Password:String;
+ Cookie:THTTPCookie;
+ FormParams:THTTPParams;
+ Authenticator:TAuthenticator;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Login: DoPost');
+ {$ENDIF}
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Check Method}
+ if Assigned(FOnPost) then
+  begin
+   {Get Method}
+   Result:=FOnPost(AHost,Self,ARequest,AResponse);
+  end
+ else
+  begin
+   {Get Form Params}
+   FormParams:=ParseFormParams(AHost,ARequest);
+   if FormParams <> nil then
+    begin
+     try
+      {Set Response}
+      AResponse.Version:=HTTP_VERSION;
+      AResponse.Status:=HTTP_STATUS_OK;
+      AResponse.Reason:=HTTP_REASON_200;
+
+      {Get Username}
+      Username:=ARequest.GetParamExt(UsernameName,FormParams);
+      if Length(Username) = 0 then
+       begin
+        {Set Content}
+        AResponse.ContentString:='Username cannot be empty';
+
+        {Return Result}
+        Result:=True;
+        Exit;
+       end;
+
+      {Get Password}
+      Password:=ARequest.GetParamExt(PasswordName,FormParams);
+      if Length(Password) = 0 then
+       begin
+        {Set Content}
+        AResponse.ContentString:='Password cannot be empty';
+
+        {Return Result}
+        Result:=True;
+        Exit;
+       end;
+
+      {Find User Authenticator}
+      Authenticator:=FindUserAuthenticator(AHost,ARequest);
+      if Authenticator <> nil then
+       begin
+        {$IFDEF HTTP_DEBUG}
+        if HTTP_LOG_ENABLED then HTTPLogDebug('Login:  Username = ' + Username);
+        if HTTP_LOG_ENABLED then HTTPLogDebug('Login:  Password = ' + Password);
+        {$ENDIF}
+
+        {Check Username and Password}
+        if Authenticator.CheckUserPassword(Username,Password) <> ERROR_SUCCESS then
+         begin
+          {Set Content}
+          AResponse.ContentString:='Username or password is incorrect';
+
+          {Return Result}
+          Result:=True;
+          Exit;
+         end;
+
+        {Find Session Authenticator}
+        Authenticator:=FindSessionAuthenticator(AHost,ARequest);
+        if Authenticator <> nil then
+         begin
+          {Create Value}
+          Value:=ARequest.Thread.Server.PeerAddress + ARequest.GetHeader(HTTP_REQUEST_HEADER_USER_AGENT);
+
+          {$IFDEF HTTP_DEBUG}
+          if HTTP_LOG_ENABLED then HTTPLogDebug('Login:  Value = ' + Value);
+          {$ENDIF}
+
+          {Create Token}
+          if Authenticator.CreateToken(Value,Token,Authenticator.TokenTimeout) <> ERROR_SUCCESS then
+           begin
+            {Set Content}
+            AResponse.ContentString:='Unable to create session, please try again';
+
+            {Return Result}
+            Result:=True;
+            Exit;
+           end;
+
+          {$IFDEF HTTP_DEBUG}
+          if HTTP_LOG_ENABLED then HTTPLogDebug('Login:  Token = ' + Token);
+          {$ENDIF}
+
+          {Check Cookie}
+          if Authenticator.UseCookie then
+           begin
+            {Set Cookie}
+            AResponse.SetCookie(Authenticator.CookieName,Token,nil);
+
+            {Set Expiry}
+            Cookie:=AResponse.Cookies.FindCookie(Authenticator.CookieName);
+            if Cookie <> nil then
+             begin
+              {Get Timeout}
+              if (Authenticator.TokenTimeout = 0) or (Authenticator.TokenTimeout = INFINITE) then
+               begin
+                {Infinite Timeout (Default to 1 year)}
+                Timeout:=(SECONDS_PER_DAY * 365) * TIME_TICKS_PER_SECOND;
+               end
+              else
+               begin
+                {Specified Timeout}
+                Timeout:=Authenticator.TokenTimeout; {Avoid 32 bit overflow}
+                Timeout:=Timeout * TIME_TICKS_PER_SECOND;
+               end;
+
+              {Set Expires Attribute}
+              Cookie.Attributes.Expires:=SystemFileTimeToDateTime(TFileTime(ClockGetTime + Timeout));
+             end;
+           end;
+
+          {Set Content}
+          AResponse.ContentString:=Authenticator.TokenName + '=' + Token;
+
+          {Return Result}
+          Result:=True;
+         end;
+       end;
+     finally
+      FormParams.Free;
+     end;
+    end;
+
+   {Check Result}
+   if not Result then
+    begin
+     {Internal Server Error}
+     AResponse.Version:=HTTP_VERSION;
+     AResponse.Status:=HTTP_STATUS_INTERNAL_SERVER_ERROR;
+     AResponse.Reason:=HTTP_REASON_500;
+
+     {Do Error}
+     Result:=AHost.DoError(ARequest,AResponse);
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+function THTTPLogin.AddHeader(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+var
+ Content:String;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Login: AddHeader');
+ {$ENDIF}
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Add Header}
+ Content:='';
+ Content:=Content + '<html>' + HTTP_LINE_END;
+ Content:=Content + ' <head>' + HTTP_LINE_END;
+ Content:=Content + '  <title>' + Title + '</title>' + HTTP_LINE_END;
+ Content:=Content + '  <style>' + HTTP_LINE_END;
+ Content:=Content + '   body {font-family: Arial, sans-serif; }' + HTTP_LINE_END;
+ Content:=Content + '   .columnlayout {display: grid; grid-template-columns: 1fr 300px 1fr; gap: 5px; }' + HTTP_LINE_END;
+ Content:=Content + '   .headercolumn {padding: 10px; text-align: center; background-color: white; color: dimgray; border: none; font-size: 24px; font-weight: bold; cursor: default; }' + HTTP_LINE_END;
+ Content:=Content + '   .emptycolumn  {padding: 0px 0px; background-color: white; color: dimgray; border: none; cursor: default; }' + HTTP_LINE_END;
+ Content:=Content + '   .textcolumn {padding: 0px 25px; text-align: left; background-color: white; color: dimgray; border: none; font-size: 16px; font-weight: normal; cursor: default; }' + HTTP_LINE_END;
+ Content:=Content + '   .inputcolumn {padding: 0px 25px 5px; text-align: left; background-color: white; color: dimgray; border: none; font-size: 18px; font-weight: normal; cursor: default; }' + HTTP_LINE_END;
+ Content:=Content + '   .logincolumn {padding: 10px 25px; text-align: left; background-color: white; color: dimgray; border: none; font-size: 18px; font-weight: normal; cursor: default; }' + HTTP_LINE_END;
+ Content:=Content + '   .statuscolumn {padding: 0px 0px; text-align: center; background-color: white; color: dimgray; border: none; font-size: 16px; font-weight: bold; cursor: default; }' + HTTP_LINE_END;
+ Content:=Content + '   .usernameinput {width: 250px; font-size: 18px; background-color: white; color: dimgray; }' + HTTP_LINE_END;
+ Content:=Content + '   .passwordinput {width: 250px;  font-size: 18px; background-color: white; color: dimgray; }' + HTTP_LINE_END;
+ Content:=Content + '   .loginbutton {width: 250px; border: none; font-size: 18px; background-color: dimgray; color: white; padding: 10px 20px; cursor: pointer; }' + HTTP_LINE_END;
+ Content:=Content + '  </style>' + HTTP_LINE_END;
+ Content:=Content + ' </head>' + HTTP_LINE_END;
+ Content:=Content + ' <body>' + HTTP_LINE_END;
+
+ {Set Content}
+ AResponse.ContentString:=AResponse.ContentString + Content;
+
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function THTTPLogin.AddForm(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+var
+ Content:String;
+ ReturnURL:String;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Login: AddForm');
+ {$ENDIF}
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Get Return URL}
+ ReturnURL:=ARequest.GetParam(ReturnURLName);
+ if Length(ReturnURL) = 0 then ReturnURL:='/';
+
+ {Add Form}
+ Content:='';
+ Content:=Content + '  <form id="' + FormName + '" name="' + FormName + '" method="post" onsubmit="processLogin(''' + Name + ''', ''' + ReturnURL + ''', ''loginStatus'')">' + HTTP_LINE_END;
+ Content:=Content + '   <div class="columnlayout">' + HTTP_LINE_END;
+ Content:=Content + '    <div class="emptycolumn"></div><div class="headercolumn">' + Title + '</div><div class="emptycolumn"></div>' + HTTP_LINE_END;
+ Content:=Content + '    <div class="emptycolumn"></div><div class="textcolumn"><label for="' + UsernameName + '">Username</label></div><div class="emptycolumn"></div>' + HTTP_LINE_END;
+ Content:=Content + '    <div class="emptycolumn"></div><div class="inputcolumn"><input type="text" class="usernameinput" placeholder="Enter username" id="' + UsernameName + '" name="' + UsernameName + '"></div><div class="emptycolumn"></div>' + HTTP_LINE_END;
+ Content:=Content + '    <div class="emptycolumn"></div><div class="textcolumn"<label for="' + PasswordName + '">Password</label></div><div class="emptycolumn"></div>' + HTTP_LINE_END;
+ Content:=Content + '    <div class="emptycolumn"></div><div class="inputcolumn"><input type="password" class="passwordinput" placeholder="Enter password" id="' + PasswordName + '" name="' + PasswordName + '"></div><div class="emptycolumn"></div>' + HTTP_LINE_END;
+ Content:=Content + '    <div class="emptycolumn"></div><div class="logincolumn"><input type="submit" class="loginbutton" value="Login"></div><div class="emptycolumn"></div>' + HTTP_LINE_END;
+ Content:=Content + '    <div class="emptycolumn"></div><div class="statuscolumn" id="loginStatus"></div><div class="emptycolumn"></div>' + HTTP_LINE_END;
+ Content:=Content + '   </div>' + HTTP_LINE_END;
+ Content:=Content + '  </form>' + HTTP_LINE_END;
+
+ {Set Content}
+ AResponse.ContentString:=AResponse.ContentString + Content;
+
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function THTTPLogin.AddScript(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+var
+ Content:String;
+ TokenName:String;
+ UseCookie:Boolean;
+ Authenticator:TAuthenticator;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Login: AddScript');
+ {$ENDIF}
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Check Response}
+ if AResponse = nil then Exit;
+
+ {Get Token Name}
+ TokenName:='token';
+ UseCookie:=False;
+ Authenticator:=FindSessionAuthenticator(AHost,ARequest);
+ if Authenticator <> nil then
+  begin
+   TokenName:=Authenticator.TokenName;
+   UseCookie:=Authenticator.UseCookie;
+  end;
+
+ {Add Script}
+ Content:='';
+ Content:=Content + '  <script>' + HTTP_LINE_END;
+ Content:=Content + '  document.getElementById(''' + FormName + ''').addEventListener(''submit'', function(event) {' + HTTP_LINE_END;
+ Content:=Content + '    event.preventDefault();' + HTTP_LINE_END;
+ Content:=Content + '    });' + HTTP_LINE_END;
+ Content:=Content + '' + HTTP_LINE_END;
+ Content:=Content + '  function processLogin(theUrl, theReturn, theStatus) {' + HTTP_LINE_END;
+ Content:=Content + '    const username = document.forms["' + FormName + '"]["' + UsernameName + '"].value;' + HTTP_LINE_END;
+ Content:=Content + '    const password = document.forms["' + FormName + '"]["' + PasswordName + '"].value;' + HTTP_LINE_END;
+ Content:=Content + '' + HTTP_LINE_END;
+ Content:=Content + '    const formData = new FormData();' + HTTP_LINE_END;
+ Content:=Content + '    formData.append("' + UsernameName + '", username);' + HTTP_LINE_END;
+ Content:=Content + '    formData.append("' + PasswordName + '", password); ' + HTTP_LINE_END;
+ Content:=Content + '    const queryString = new URLSearchParams(formData).toString();' + HTTP_LINE_END;
+ Content:=Content + '' + HTTP_LINE_END;
+ Content:=Content + '    var xmlhttp;' + HTTP_LINE_END;
+ Content:=Content + '    if (window.XMLHttpRequest) {' + HTTP_LINE_END;
+ Content:=Content + '      xmlhttp = new XMLHttpRequest();' + HTTP_LINE_END;
+ Content:=Content + '    } else {' + HTTP_LINE_END;
+ Content:=Content + '      // code for older browsers' + HTTP_LINE_END;
+ Content:=Content + '      xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");' + HTTP_LINE_END;
+ Content:=Content + '    }' + HTTP_LINE_END;
+ Content:=Content + '' + HTTP_LINE_END;
+ Content:=Content + '    xmlhttp.onreadystatechange = function() {' + HTTP_LINE_END;
+ Content:=Content + '      if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {' + HTTP_LINE_END;
+ Content:=Content + '        const responseString = xmlhttp.responseText;' + HTTP_LINE_END;
+ Content:=Content + '        if (responseString.startsWith("' + TokenName + '=") == true) {' + HTTP_LINE_END;
+ if UseCookie then
+  begin
+   Content:=Content + '          let locationString = theReturn;' + HTTP_LINE_END;
+  end
+ else
+  begin
+   Content:=Content + '          let locationString = "";' + HTTP_LINE_END;
+   Content:=Content + '          if (theReturn.includes("?") == true) {' + HTTP_LINE_END;
+   Content:=Content + '            locationString = theReturn.concat("&", responseString);' + HTTP_LINE_END;
+   Content:=Content + '          } else {' + HTTP_LINE_END;
+   Content:=Content + '            locationString = theReturn.concat("?", responseString);' + HTTP_LINE_END;
+   Content:=Content + '          }' + HTTP_LINE_END;
+  end;
+ Content:=Content + '          window.location.replace(locationString);' + HTTP_LINE_END;
+ Content:=Content + '        } else {' + HTTP_LINE_END;
+ Content:=Content + '          document.getElementById(theStatus).innerHTML = xmlhttp.responseText;' + HTTP_LINE_END;
+ Content:=Content + '        }' + HTTP_LINE_END;
+ Content:=Content + '      }' + HTTP_LINE_END;
+ Content:=Content + '    };' + HTTP_LINE_END;
+ Content:=Content + '' + HTTP_LINE_END;
+ Content:=Content + '    xmlhttp.open("POST", theUrl, true);' + HTTP_LINE_END;
+ Content:=Content + '    xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");' + HTTP_LINE_END;
+ Content:=Content + '    xmlhttp.send(queryString);' + HTTP_LINE_END;
+ Content:=Content + '}' + HTTP_LINE_END;
+ Content:=Content + '</script>' + HTTP_LINE_END;
+
+ {Set Content}
+ AResponse.ContentString:=AResponse.ContentString + Content;
+
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function THTTPLogin.AddFooter(AHost:THTTPHost;ARequest:THTTPServerRequest;AResponse:THTTPServerResponse):Boolean;
+var
+ Content:String;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Login: AddFooter');
+ {$ENDIF}
+
+ {Check Host}
+ if AHost = nil then Exit;
+
+ {Check Request}
+ if ARequest = nil then Exit;
+
+ {Add Header}
+ Content:='';
+ Content:=Content + ' </body>' + HTTP_LINE_END;
+ Content:=Content + '</html>' + HTTP_LINE_END;
+
+ {Set Content}
+ AResponse.ContentString:=AResponse.ContentString + Content;
+
+ {Return Result}
+ Result:=True;
 end;
 
 {==============================================================================}
@@ -8778,6 +11022,8 @@ begin
  FHosts:=TLinkedList.Create;
 
  FServer:=HTTP_SERVER_STRING;
+ FUserAuthenticator:=nil;
+ FSessionAuthenticator:=nil;
 
  {Add Default Host}
  FHost:=THTTPHost.Create;
@@ -8795,6 +11041,10 @@ begin
  try
   FHost.Free;
   FHosts.Free;
+
+  FUserAuthenticator:=nil;
+  FSessionAuthenticator:=nil;
+
   inherited Destroy;
  finally
   {ReleaseLock;} {Can destroy Critical Section while holding lock}
@@ -8826,6 +11076,58 @@ begin
 
  FServer:=AServer;
  UniqueString(FServer);
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function THTTPListener.GetUserAuthenticator:TAuthenticator;
+begin
+ {}
+ Result:=nil;
+
+ if not AcquireLock then Exit;
+
+ Result:=FUserAuthenticator;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPListener.SetUserAuthenticator(AAuthenticator:TAuthenticator);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FUserAuthenticator:=AAuthenticator;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+function THTTPListener.GetSessionAuthenticator:TAuthenticator;
+begin
+ {}
+ Result:=nil;
+
+ if not AcquireLock then Exit;
+
+ Result:=FSessionAuthenticator;
+
+ ReleaseLock;
+end;
+
+{==============================================================================}
+
+procedure THTTPListener.SetSessionAuthenticator(AAuthenticator:TAuthenticator);
+begin
+ {}
+ if not AcquireLock then Exit;
+
+ FSessionAuthenticator:=AAuthenticator;
 
  ReleaseLock;
 end;
@@ -8995,6 +11297,13 @@ begin
           Response.ConnectionClose:=True;
          end;
 
+        {Get Cookies}
+        WorkBuffer:=Request.GetHeader(HTTP_REQUEST_HEADER_COOKIE);
+        if Length(WorkBuffer) > 0 then
+         begin
+          HTTPParseCookies(WorkBuffer,Request.Cookies);
+         end;
+
         {Check Method}
         case Request.Method of
          HTTP_METHOD_GET:begin
@@ -9082,6 +11391,13 @@ begin
 
            {Write Response}
            Result:=Response.WriteResponse;
+          end;
+
+         {Check Content Length and Received}
+         if (Request.ContentSize > 0) and not(Request.ContentReceived) then
+          begin
+           {Set Connection Close if content is not consumed}
+           Response.ConnectionClose:=True;
           end;
         end;
        end;
@@ -9355,6 +11671,7 @@ var
  HeaderName:String;
  HeaderValue:String;
  Buffer:THTTPBuffer;
+ Header:THTTPHeader;
 begin
  {}
  Result:=False;
@@ -9444,8 +11761,20 @@ begin
   {Parse Request Header}
   if not HTTPParseHeader(WorkBuffer,HeaderName,HeaderValue) then Exit;
 
-  {Add Request Header} //To Do //This will fail if a header is repeated or split, how to handle ? //See RFCs //Allow Multiple Headers and Folded Headers //See RFC (Check for Space or Tab)
-  if not ARequest.Headers.AddHeader(HeaderName,HeaderValue) then Exit;
+  {Note: This will fail if a folded header (header split across multiple lines) is encounter but they are now deprecated}
+
+  {Check Request Header}
+  Header:=ARequest.Headers.FindHeader(HeaderName);
+  if Header <> nil then
+   begin
+    {Add Request Header Value}
+    if not Header.AddValue(HeaderValue) then Exit;
+   end
+  else
+   begin
+    {Add Request Header}
+    if not ARequest.Headers.AddHeader(HeaderName,HeaderValue) then Exit;
+   end;
 
  until Length(WorkBuffer) = 0;
 
@@ -9458,6 +11787,13 @@ end;
 function THTTPListener.GetRequestContentStream(AThread:TWinsock2TCPServerThread;ARequest:THTTPServerRequest;AContent:TStream;ASize:LongWord):Boolean;
 {If Size is 0 then read the entire content to the stream}
 var
+ Data:Pointer;
+ Size:LongWord;
+ Count:LongWord;
+
+ Content:Pointer;
+ BytesRemain:Int64;
+ BlockSize:LongWord;
  Buffer:THTTPBuffer;
 begin
  {}
@@ -9472,13 +11808,101 @@ begin
 
  {$IFDEF HTTP_DEBUG}
  if HTTP_LOG_ENABLED then HTTPLogDebug('Listener: GetRequestContentStream');
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Size = ' + IntToStr(ASize));
  {$ENDIF}
+
+ {Check Content}
+ if AContent = nil then Exit;
 
  {Get Buffer}
  Buffer:=THTTPBuffer(AThread.Data);
  if Buffer = nil then Exit;
 
- //To Do //ReadLock/ReadUnlock
+ {Read Request Content}
+ case ARequest.Encoding of
+  HTTP_ENCODING_NONE,HTTP_ENCODING_IDENTITY:begin
+    {$IFDEF HTTP_DEBUG}
+    if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Encoding = ' + HTTPEncodingToString(ARequest.Encoding));
+    {$ENDIF}
+
+    {Allocate Content Buffer}
+    BlockSize:=Min(SegmentSize,SIZE_2M - (SIZE_2M mod MaxSegmentSize)); {SIZE_256K;}
+    Content:=GetMem(BlockSize);
+    if Content = nil then Exit;
+    try
+     {Get Size}
+     BytesRemain:=ASize;
+     if (ASize = 0) or (ASize > ARequest.ContentSize) then BytesRemain:=ARequest.ContentSize;
+
+     {Read Content}
+     while BytesRemain > 0 do
+      begin
+       {Read from Buffer}
+       while Buffer.Count > 0 do
+        begin
+         {Read Buffer}
+         Data:=Buffer.ReadLock(Size);
+         if Data = nil then Exit;
+         try
+          {$IFDEF HTTP_DEBUG}
+          if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Buffer FStart = ' + IntToStr(Buffer.FStart));
+          if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Buffer Read Size = ' + IntToStr(Size));
+          {$ENDIF}
+
+          if BytesRemain >= Size then
+           begin
+            AContent.WriteBuffer(Data^,Size);
+            Count:=Size;
+
+            Dec(BytesRemain,Size);
+           end
+          else
+           begin
+            AContent.WriteBuffer(Data^,BytesRemain);
+            Count:=BytesRemain;
+
+            BytesRemain:=0;
+            Break;
+           end;
+         finally
+          Buffer.ReadUnlock(Count);
+         end;
+        end;
+
+       {Check Remain}
+       if BytesRemain = 0 then Break;
+
+       {Read from Socket}
+       if BytesRemain >= BlockSize then
+        begin
+         if not AThread.Server.ReadData(Content,BlockSize) then Exit;
+         AContent.WriteBuffer(Content^,BlockSize);
+
+         Dec(BytesRemain,BlockSize);
+        end
+       else
+        begin
+         if not AThread.Server.ReadData(Content,BytesRemain) then Exit;
+         AContent.WriteBuffer(Content^,BytesRemain);
+
+         BytesRemain:=0;
+        end;
+      end;
+
+     {Return Result}
+     Result:=True;
+    finally
+     FreeMem(Content);
+    end;
+   end;
+  HTTP_ENCODING_CHUNKED:begin
+    {$IFDEF HTTP_DEBUG}
+    if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Encoding = ' + HTTPEncodingToString(ARequest.Encoding));
+    {$ENDIF}
+
+    //To Do
+   end;
+ end;
 end;
 
 {==============================================================================}
@@ -9486,6 +11910,12 @@ end;
 function THTTPListener.GetRequestContentString(AThread:TWinsock2TCPServerThread;ARequest:THTTPServerRequest;var AContent:String;ASize:LongWord):Boolean;
 {If Size is 0 then read the entire content to the string}
 var
+ Data:Pointer;
+ Size:LongWord;
+ Count:LongWord;
+
+ Content:PChar;
+ BytesRemain:Int64;
  Buffer:THTTPBuffer;
 begin
  {}
@@ -9500,13 +11930,87 @@ begin
 
  {$IFDEF HTTP_DEBUG}
  if HTTP_LOG_ENABLED then HTTPLogDebug('Listener: GetRequestContentString');
+ if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Size = ' + IntToStr(ASize));
  {$ENDIF}
 
  {Get Buffer}
  Buffer:=THTTPBuffer(AThread.Data);
  if Buffer = nil then Exit;
 
- //To Do //ReadLock/ReadUnlock
+ {Read Request Content}
+ case ARequest.Encoding of
+  HTTP_ENCODING_NONE,HTTP_ENCODING_IDENTITY:begin
+    {$IFDEF HTTP_DEBUG}
+    if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Encoding = ' + HTTPEncodingToString(ARequest.Encoding));
+    {$ENDIF}
+
+    {Get Size}
+    BytesRemain:=ASize;
+    if (ASize = 0) or (ASize > ARequest.ContentSize) then BytesRemain:=ARequest.ContentSize;
+
+    {Read Content}
+    if BytesRemain > 0 then
+     begin
+      {Size Content}
+      SetLength(AContent,BytesRemain);
+
+      {Get Content}
+      Content:=PChar(AContent);
+
+      {Read from Buffer}
+      while Buffer.Count > 0 do
+       begin
+        {Read Buffer}
+        Data:=Buffer.ReadLock(Size);
+        if Data = nil then Exit;
+        try
+         {$IFDEF HTTP_DEBUG}
+         if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Buffer FStart = ' + IntToStr(Buffer.FStart));
+         if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Buffer Read Size = ' + IntToStr(Size));
+         {$ENDIF}
+
+         if BytesRemain >= Size then
+          begin
+           System.Move(Data^,Content^,Size);
+           Count:=Size;
+
+           Inc(Content,Size);
+           Dec(BytesRemain,Size);
+          end
+         else
+          begin
+           System.Move(Data^,Content^,BytesRemain);
+           Count:=BytesRemain;
+
+           BytesRemain:=0;
+           Break;
+          end;
+        finally
+         Buffer.ReadUnlock(Count);
+        end;
+       end;
+
+      {Check Remain}
+      if BytesRemain > 0 then
+       begin
+        {Read from Socket}
+        if not AThread.Server.ReadData(Content,BytesRemain) then Exit;
+
+        BytesRemain:=0;
+       end;
+     end;
+
+    {Return Result}
+    Result:=True;
+   end;
+  HTTP_ENCODING_CHUNKED:begin
+    {$IFDEF HTTP_DEBUG}
+    if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Encoding = ' + HTTPEncodingToString(ARequest.Encoding));
+    {$ENDIF}
+
+    //To Do
+   end;
+ end;
 end;
 
 {==============================================================================}
@@ -9572,14 +12076,17 @@ begin
    for Count:=0 to Header.GetCount - 1 do
     begin
      {Build Header}
-     if Count = 0 then
+     if not HTTPBuildHeader(Header.Name,Header.GetValue(Count),WorkBuffer) then Exit;
+
+     {Build Header} {Note: Folded headers are deprecated in HTTP/1.1 and not supported in HTTP/2}
+     {if Count = 0 then
       begin
        if not HTTPBuildHeader(Header.Name,Header.GetValue(Count),WorkBuffer) then Exit;
       end
      else
       begin
        if not HTTPBuildHeader('',Header.GetValue(Count),WorkBuffer) then Exit;
-      end;
+      end;}
 
      {$IFDEF HTTP_DEBUG}
      if HTTP_LOG_ENABLED then HTTPLogDebug('Listener:  Header = ' + WorkBuffer);
@@ -10038,6 +12545,9 @@ begin
  {Initialize Logging}
  HTTP_LOG_ENABLED:=(HTTP_DEFAULT_LOG_LEVEL <> HTTP_LOG_LEVEL_NONE);
 
+ {Check Environment Variables}
+ {Nothing}
+
  HTTPInitialized:=True;
 end;
 
@@ -10494,6 +13004,347 @@ end;
 
 {==============================================================================}
 
+function HTTPParseCookie(const ACookie:String;var AName,AValue:String;AAttributes:THTTPCookieAttributes):Boolean;
+var
+ Name:String;
+ Value:String;
+ WorkBuffer:String;
+ CookieBuffer:String;
+begin
+ {}
+ Result:=False;
+
+ {Check Cookie}
+ if Length(ACookie) = 0 then Exit;
+ CookieBuffer:=ACookie;
+
+ {Get Name}
+ AName:=GetFirstWord(CookieBuffer,HTTP_COOKIE_SEPARATOR);
+ if Length(AName) = 0 then Exit;
+
+ {Get Value}
+ AValue:=GetFirstWord(CookieBuffer,HTTP_COOKIE_DELIMITER);
+ {if Length(AValue) = 0 then Exit;} {Do not check}
+
+ {Parse Attributes}
+ if (AAttributes <> nil) and (Length(CookieBuffer) > 0) then
+  begin
+   while Length(CookieBuffer) <> 0 do
+    begin
+     WorkBuffer:=GetFirstWord(CookieBuffer,HTTP_COOKIE_DELIMITER);
+
+     {$IFDEF HTTP_DEBUG}
+     if HTTP_LOG_ENABLED then HTTPLogDebug('ParseCookie: Attribute = ' + WorkBuffer);
+     {$ENDIF}
+
+     {Parse Attribute}
+     Name:=GetFirstWord(WorkBuffer,HTTP_COOKIE_SEPARATOR);
+     Value:=WorkBuffer;
+
+     {Check Attribute}
+     WorkBuffer:=Uppercase(Name);
+     if WorkBuffer = 'DOMAIN' then
+      begin
+       {Get Domain}
+       AAttributes.Domain:=Value;
+      end
+     else if WorkBuffer = 'EXPIRES' then
+      begin
+       {Get Expires}
+       AAttributes.Expires:=HTTPDateToDateTime(Value);
+      end
+     else if WorkBuffer = 'HTTPONLY' then
+      begin
+       {Get HttpOnly}
+       AAttributes.HttpOnly:=True;
+      end
+     else if WorkBuffer = 'MAXAGE' then
+      begin
+       {Get MaxAge}
+       AAttributes.MaxAge:=StrToIntDef(Value,-1);
+      end
+     else if WorkBuffer = 'PARTITIONED' then
+      begin
+       {Get Partitioned}
+       AAttributes.Partitioned:=True;
+      end
+     else if WorkBuffer = 'PATH' then
+      begin
+       {Get Path}
+       AAttributes.Path:=Value;
+      end
+     else if WorkBuffer = 'SECURE' then
+      begin
+       {Get Secure}
+       AAttributes.Secure:=True;
+      end
+     else if WorkBuffer = 'SAMESITE' then
+      begin
+       {Get SameSite}
+       AAttributes.SameSite:=Value;
+      end;
+    end;
+
+   {$IFDEF HTTP_DEBUG}
+   if HTTP_LOG_ENABLED then
+    begin
+     HTTPLogDebug('ParseCookie: Attributes: Domain      = ' + AAttributes.Domain);
+     HTTPLogDebug('ParseCookie:             Expires     = ' + DateTimeToHTTPDate(AAttributes.Expires));
+     HTTPLogDebug('ParseCookie:             HttpOnly    = ' + BooleanToString(AAttributes.HttpOnly));
+     HTTPLogDebug('ParseCookie:             MaxAge      = ' + IntToStr(AAttributes.MaxAge));
+     HTTPLogDebug('ParseCookie:             Partitioned = ' + BooleanToString(AAttributes.Partitioned));
+     HTTPLogDebug('ParseCookie:             Path        = ' + AAttributes.Path);
+     HTTPLogDebug('ParseCookie:             Secure      = ' + BooleanToString(AAttributes.Secure));
+     HTTPLogDebug('ParseCookie:             SameSite    = ' + AAttributes.SameSite);
+    end;
+   {$ENDIF}
+  end;
+
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function HTTPBuildCookie(const AName,AValue:String;AAttributes:THTTPCookieAttributes;var ACookie:String):Boolean;
+begin
+ {}
+ Result:=True;
+
+ {Build Cookie}
+ ACookie:=AName + HTTP_COOKIE_SEPARATOR + AValue;
+
+ {Add Attributes}
+ if AAttributes <> nil then
+  begin
+   {Domain}
+   if Length(AAttributes.Domain) > 0 then ACookie:=ACookie + HTTP_COOKIE_DELIMITER + 'Domain' + HTTP_COOKIE_SEPARATOR + AAttributes.Domain;
+
+   {Expires}
+   if AAttributes.Expires > 0 then ACookie:=ACookie + HTTP_COOKIE_DELIMITER + 'Expires' + HTTP_COOKIE_SEPARATOR + DateTimeToHTTPDate(AAttributes.Expires);
+
+   {HttpOnly}
+   if AAttributes.HttpOnly then ACookie:=ACookie + HTTP_COOKIE_DELIMITER + 'HttpOnly';
+
+   {MaxAge}
+   if AAttributes.MaxAge >= 0 then ACookie:=ACookie + HTTP_COOKIE_DELIMITER + 'MaxAge' + HTTP_COOKIE_SEPARATOR + IntToStr(AAttributes.MaxAge);
+
+   {Partitioned}
+   if AAttributes.Partitioned then ACookie:=ACookie + HTTP_COOKIE_DELIMITER + 'Partitioned';
+
+   {Path}
+   if Length(AAttributes.Path) > 0 then ACookie:=ACookie + HTTP_COOKIE_DELIMITER + 'Path' + HTTP_COOKIE_SEPARATOR + AAttributes.Path;
+
+   {Secure}
+   if AAttributes.Secure then ACookie:=ACookie + HTTP_COOKIE_DELIMITER + 'Secure';
+
+   {SameSite}
+   if Length(AAttributes.SameSite) > 0 then ACookie:=ACookie + HTTP_COOKIE_DELIMITER + 'SameSite' + HTTP_COOKIE_SEPARATOR + AAttributes.SameSite;
+  end;
+end;
+
+{==============================================================================}
+
+function HTTPParseCookies(const AHeader:String;ACookies:THTTPCookies):Boolean;
+{Parse one or more cookies from a single header (normally the Cookie request header)}
+
+{Note: Cookie attributes are not supported in the supplied header}
+var
+ Name:String;
+ Value:String;
+ WorkBuffer:String;
+ HeaderBuffer:String;
+begin
+ {}
+ Result:=False;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('ParseCookies: Header = ' + AHeader);
+ {$ENDIF}
+
+ {Check Header}
+ if Length(AHeader) <> 0 then
+  begin
+   HeaderBuffer:=AHeader;
+
+   {Check Cookies}
+   if ACookies = nil then Exit;
+
+   {Get Cookie}
+   while Length(HeaderBuffer) <> 0 do
+    begin
+     WorkBuffer:=GetFirstWord(HeaderBuffer,HTTP_COOKIE_DELIMITER);
+
+     {$IFDEF HTTP_DEBUG}
+     if HTTP_LOG_ENABLED then HTTPLogDebug('ParseCookies: Cookie = ' + HTTPDecode(WorkBuffer));
+     {$ENDIF}
+
+     {Parse Cookie}
+     if HTTPParseCookie(HTTPDecode(WorkBuffer),Name,Value,nil) then
+      begin
+       {Check Cookie}
+       if (Length(Name) <> 0) and (ACookies.FindCookie(Name) = nil) then
+        begin
+         {Add Cookie}
+         if not ACookies.AddCookie(Name,Value,nil) then Exit;
+        end;
+      end;
+    end;
+  end;
+
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function HTTPParseCookiesEx(AHeaders:TStringList;ACookies:THTTPCookies):Boolean;
+{Parse one or more cookies from multiple headers (normally the Set-Cookie response header)}
+
+{Note: Cookie attributes are supported in the supplied headers}
+var
+ Count:Integer;
+ Name:String;
+ Value:String;
+ WorkBuffer:String;
+ Attributes:THTTPCookieAttributes;
+begin
+ {}
+ Result:=False;
+
+ {Check Headers}
+ if AHeaders = nil then Exit;
+
+ {Check Cookies}
+ if ACookies = nil then Exit;
+
+ Attributes:=THTTPCookieAttributes.Create;
+ try
+  {Get Headers}
+  for Count:=0 to AHeaders.Count - 1 do
+   begin
+    WorkBuffer:=AHeaders.Strings[Count];
+    if Length(WorkBuffer) <> 0 then
+     begin
+      {$IFDEF HTTP_DEBUG}
+      if HTTP_LOG_ENABLED then HTTPLogDebug('ParseCookiesEx: Cookie = ' + HTTPDecode(WorkBuffer));
+      {$ENDIF}
+
+      {Clear Attributes}
+      Attributes.ClearAttributes;
+
+      {Parse Cookie}
+      if HTTPParseCookie(HTTPDecode(WorkBuffer),Name,Value,Attributes) then
+       begin
+        {Check Cookie}
+        if (Length(Name) <> 0) and (ACookies.FindCookie(Name) = nil) then
+         begin
+          {Add Cookie}
+          if not ACookies.AddCookie(Name,Value,Attributes) then Exit;
+         end;
+       end;
+     end;
+   end;
+
+  {Return Result}
+  Result:=True;
+ finally
+  Attributes.Free;
+ end;
+end;
+
+{==============================================================================}
+
+function HTTPBuildCookies(ACookies:THTTPCookies;var AHeader:String):Boolean;
+{Format one or more cookies into a single header (normally the Cookie request header)}
+
+{Note: Cookie attributes are not included in the resulting header}
+var
+ WorkBuffer:String;
+ Cookie:THTTPCookie;
+begin
+ {}
+ Result:=False;
+
+ {Set Header}
+ AHeader:='';
+
+ {Check Cookies}
+ if ACookies = nil then Exit;
+
+ {Get Cookie}
+ Cookie:=ACookies.GetCookie(nil);
+ while Cookie <> nil do
+  begin
+   {Build Cookie}
+   if not HTTPBuildCookie(Cookie.Name,HTTPEncode(Cookie.Value,HTTPReservedElementChars),nil,WorkBuffer) then Exit;
+
+   {$IFDEF HTTP_DEBUG}
+   if HTTP_LOG_ENABLED then HTTPLogDebug('BuildCookies: Cookie = ' + WorkBuffer);
+   {$ENDIF}
+
+   {Add Cookie}
+   AHeader:=AHeader + HTTP_COOKIE_DELIMITER + WorkBuffer;
+
+   {Get Cookie}
+   Cookie:=ACookies.GetCookie(Cookie);
+  end;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('BuildCookies: Header = ' + AHeader);
+ {$ENDIF}
+
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+
+function HTTPBuildCookiesEx(ACookies:THTTPCookies;AHeaders:TStringList):Boolean;
+{Format one or more cookies into multiple headers (normally the Set-Cookie response header)}
+
+{Note: Cookie attributes are included in the resulting headers}
+var
+ WorkBuffer:String;
+ Cookie:THTTPCookie;
+begin
+ {}
+ Result:=False;
+
+ {Check Cookies}
+ if ACookies = nil then Exit;
+
+ {Check Headers}
+ if AHeaders = nil then Exit;
+
+ {Get Cookie}
+ Cookie:=ACookies.GetCookie(nil);
+ while Cookie <> nil do
+  begin
+   {Build Cookie}
+   if not HTTPBuildCookie(Cookie.Name,HTTPEncode(Cookie.Value,HTTPReservedElementChars),Cookie.Attributes,WorkBuffer) then Exit;
+
+   {$IFDEF HTTP_DEBUG}
+   if HTTP_LOG_ENABLED then HTTPLogDebug('BuildCookiesEx: Cookie = ' + WorkBuffer);
+   {$ENDIF}
+
+   {Add Cookie}
+   AHeaders.Add(WorkBuffer);
+
+   {Get Cookie}
+   Cookie:=ACookies.GetCookie(Cookie);
+  end;
+
+ {$IFDEF HTTP_DEBUG}
+ if HTTP_LOG_ENABLED then HTTPLogDebug('BuildCookiesEx: Header Count = ' + IntToStr(AHeaders.Count));
+ {$ENDIF}
+
+ {Return Result}
+ Result:=True;
+end;
+
+{==============================================================================}
+
 function HTTPParseHeader(const AHeader:String;var AName,AValue:String):Boolean;
 var
  HeaderBuffer:String;
@@ -10508,7 +13359,7 @@ begin
  {Check Tab/Space}
  if (Copy(HeaderBuffer,1,Length(HTTP_SPACE)) = HTTP_SPACE) or (Copy(HeaderBuffer,1,Length(HTTP_TAB)) = HTTP_TAB) then
   begin
-   {Get Name}
+   {Get Name} {Note: Folded headers are deprecated in HTTP/1.1 and not supported in HTTP/2}
    AName:='';
 
    {Get Value}
@@ -10540,7 +13391,7 @@ begin
  {Check Name}
  if Length(AName) = 0 then
   begin
-   {Build Header}
+   {Build Header} {Note: Folded headers are deprecated in HTTP/1.1 and not supported in HTTP/2}
    AHeader:=HTTP_SPACE + AValue;
   end
  else
@@ -11039,7 +13890,7 @@ end;
 function HTTPEncodingToString(AEncoding:LongWord):String;
 begin
  {}
- Result:='';
+ Result:='none';
 
  case AEncoding of
   HTTP_ENCODING_IDENTITY:Result:=HTTP_ENCODING_STRING_IDENTITY;

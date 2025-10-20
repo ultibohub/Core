@@ -52,12 +52,12 @@ interface
 {Global constants}
 const
  {Version constants}
- ULTIBO_RELEASE_DATE             = '18 October 2025';
+ ULTIBO_RELEASE_DATE             = '20 October 2025';
  ULTIBO_RELEASE_NAME             = 'Beetroot';
- ULTIBO_RELEASE_VERSION          = '2.6.123';
+ ULTIBO_RELEASE_VERSION          = '2.6.125';
  ULTIBO_RELEASE_VERSION_MAJOR    = 2;
  ULTIBO_RELEASE_VERSION_MINOR    = 6;
- ULTIBO_RELEASE_VERSION_REVISION = 123;
+ ULTIBO_RELEASE_VERSION_REVISION = 125;
 
  FPC_COMPILER_VERSION = {$I %FPCVERSION%}; {The version of FPC used to compile the RTL}
 
@@ -1000,6 +1000,8 @@ const
  MILLISECONDS_PER_SECOND = 1000;
  MICROSECONDS_PER_SECOND = 1000000;
  NANOSECONDS_PER_SECOND  = 1000000000;
+ MILLISECONDS_PER_DAY    = 86400000; {60*60*24*1000;}
+ SECONDS_PER_DAY         = 86400;    {60*60*24;}
 
 const
  {Ultibo time constants (100 nanosecond ticks since 1/1/1601)}
