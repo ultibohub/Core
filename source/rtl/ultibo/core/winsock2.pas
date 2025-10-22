@@ -12438,6 +12438,7 @@ begin
   {Not Implemented}
   Result:=False;
   NetworkSetLastError(WSAEOPNOTSUPP);
+  if NETWORK_LOG_ENABLED then NetworkLogWarn(nil,'Winsock2: WSAGetOverlappedResult: Overlapped I/O Not Supported');
 
   {Unlock Socket}
   Socket.ReaderUnlock;
@@ -12628,6 +12629,7 @@ begin
    begin
     {Not Implemented}
     NetworkSetLastError(WSAEOPNOTSUPP);
+    if NETWORK_LOG_ENABLED then NetworkLogWarn(nil,'Winsock2: WSAIoctl: Overlapped I/O Not Supported');
 
     {Unlock Socket}
     Socket.ReaderUnlock;
@@ -12846,6 +12848,7 @@ begin
    begin
     {Not Implemented}
     NetworkSetLastError(WSAEOPNOTSUPP);
+    if NETWORK_LOG_ENABLED then NetworkLogWarn(nil,'Winsock2: WSARecv: Overlapped I/O Not Supported');
 
     {Unlock Socket}
     Socket.ReaderUnlock;
@@ -12979,6 +12982,7 @@ begin
    begin
     {Not Implemented}
     NetworkSetLastError(WSAEOPNOTSUPP);
+    if NETWORK_LOG_ENABLED then NetworkLogWarn(nil,'Winsock2: WSARecvFrom: Overlapped I/O Not Supported');
 
     {Unlock Socket}
     Socket.ReaderUnlock;
@@ -13119,6 +13123,7 @@ begin
    begin
     {Not Implemented}
     NetworkSetLastError(WSAEOPNOTSUPP);
+    if NETWORK_LOG_ENABLED then NetworkLogWarn(nil,'Winsock2: WSARecvMsg: Overlapped I/O Not Supported');
 
     {Unlock Socket}
     Socket.ReaderUnlock;
@@ -13276,6 +13281,7 @@ begin
    begin
     {Not Implemented}
     NetworkSetLastError(WSAEOPNOTSUPP);
+    if NETWORK_LOG_ENABLED then NetworkLogWarn(nil,'Winsock2: WSASend: Overlapped I/O Not Supported');
 
     {Unlock Socket}
     Socket.ReaderUnlock;
@@ -13405,6 +13411,7 @@ begin
    begin
     {Not Implemented}
     NetworkSetLastError(WSAEOPNOTSUPP);
+    if NETWORK_LOG_ENABLED then NetworkLogWarn(nil,'Winsock2: WSASendTo: Overlapped I/O Not Supported');
 
     {Unlock Socket}
     Socket.ReaderUnlock;
@@ -13546,6 +13553,7 @@ begin
    begin
     {Not Implemented}
     NetworkSetLastError(WSAEOPNOTSUPP);
+    if NETWORK_LOG_ENABLED then NetworkLogWarn(nil,'Winsock2: WSASendMsg: Overlapped I/O Not Supported');
 
     {Unlock Socket}
     Socket.ReaderUnlock;
