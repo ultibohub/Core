@@ -35044,6 +35044,7 @@ end;
 {Locale Functions}
 {$IFDEF API_EXPORT_LOCALE}
 function IsValidCodePage(codepage: UINT): BOOL; stdcall;
+{Determine if a specified code page is valid}
 begin
  {}
  Result:=Locale.IsValidCodePage(codepage);
@@ -35052,6 +35053,7 @@ end;
 {==============================================================================}
 
 function GetACP: UINT; stdcall;
+{Retrieve the current ANSI code page identifier for the system}
 begin
  {}
  Result:=Locale.GetACP;
@@ -35060,6 +35062,7 @@ end;
 {==============================================================================}
 
 function GetOEMCP: UINT; stdcall;
+{Return the current original equipment manufacturer (OEM) code page identifier for the system}
 begin
  {}
  Result:=Locale.GetOEMCP;
@@ -35068,6 +35071,7 @@ end;
 {==============================================================================}
 
 function SetACP(codepage: UINT): BOOL; stdcall;
+{Set the current ANSI code page identifier for the system}
 begin
  {}
  Result:=Locale.SetACP(codepage);
@@ -35076,6 +35080,7 @@ end;
 {==============================================================================}
 
 function SetOEMCP(codepage: UINT): BOOL; stdcall;
+{Set the current original equipment manufacturer (OEM) code page identifier for the system}
 begin
  {}
  Result:=Locale.SetOEMCP(codepage);
@@ -35084,6 +35089,7 @@ end;
 {==============================================================================}
 
 function GetConsoleCP: UINT; stdcall;
+{Retrieve the input code page used by the console for the system}
 begin
  {}
  Result:=Locale.GetConsoleCP;
@@ -35092,6 +35098,7 @@ end;
 {==============================================================================}
 
 function SetConsoleCP(wcodepageid: UINT): BOOL; stdcall;
+{Set the input code page used by the console for the system}
 begin
  {}
  Result:=Locale.SetConsoleCP(wcodepageid);
@@ -35100,6 +35107,7 @@ end;
 {==============================================================================}
 
 function GetConsoleOutputCP: UINT; stdcall;
+{Retrieve the output code page used by the console for the system}
 begin
  {}
  Result:=Locale.GetConsoleOutputCP;
@@ -35108,6 +35116,7 @@ end;
 {==============================================================================}
 
 function SetConsoleOutputCP(wcodepageid: UINT): BOOL; stdcall;
+{Set the output code page used by the console for the system}
 begin
  {}
  Result:=Locale.SetConsoleOutputCP(wcodepageid);
@@ -35116,6 +35125,7 @@ end;
 {==============================================================================}
 
 function GetCPInfo(codepage: UINT; var lpcpinfo: CPINFO): BOOL; stdcall;
+{Retrieve information about any valid installed or available code page}
 begin
  {}
  Result:=Locale.GetCPInfo(codepage,lpcpinfo);
@@ -35124,6 +35134,7 @@ end;
 {==============================================================================}
 
 function GetCPInfoEx(codepage: UINT; dwflags: uint32_t; var lpcpinfoex: CPINFOEXA): BOOL; stdcall;
+{Retrieve information about any valid installed or available code page}
 begin
  {}
  Result:=Locale.GetCPInfoEx(codepage,dwflags,lpcpinfoex);
@@ -35132,6 +35143,7 @@ end;
 {==============================================================================}
 
 function GetCPInfoExA(codepage: UINT; dwflags: uint32_t; var lpcpinfoex: CPINFOEXA): BOOL; stdcall;
+{Retrieve information about any valid installed or available code page}
 begin
  {}
  Result:=Locale.GetCPInfoExA(codepage,dwflags,lpcpinfoex);
@@ -35140,6 +35152,7 @@ end;
 {==============================================================================}
 
 function GetCPInfoExW(codepage: UINT; dwflags: uint32_t; var lpcpinfoex: CPINFOEXW): BOOL; stdcall;
+{Retrieve information about any valid installed or available code page}
 begin
  {}
  Result:=Locale.GetCPInfoExW(codepage,dwflags,lpcpinfoex);
@@ -35148,6 +35161,7 @@ end;
 {==============================================================================}
 
 function IsValidLocale(_locale: LCID; dwflags: uint32_t): BOOL; stdcall;
+{Determine if the specified locale is installed or supported on the system}
 begin
  {}
  Result:=Locale.IsValidLocale(_locale,dwflags);
@@ -35156,6 +35170,8 @@ end;
 {==============================================================================}
 
 function GetSystemDefaultLCID: LCID; stdcall;
+{Return the locale identifier for the system locale}
+{Note: System and User values are the same for Ultibo}
 begin
  {}
  Result:=Locale.GetSystemDefaultLCID;
@@ -35164,6 +35180,8 @@ end;
 {==============================================================================}
 
 function GetUserDefaultLCID: LCID; stdcall;
+{Return the locale identifier for the user default locale}
+{Note: System and User values are the same for Ultibo}
 begin
  {}
  Result:=Locale.GetUserDefaultLCID;
@@ -35172,6 +35190,8 @@ end;
 {==============================================================================}
 
 function SetSystemDefaultLCID(_locale: LCID): BOOL; stdcall;
+{Set the locale identifier for the system locale}
+{Note: System and User values are the same for Ultibo}
 begin
  {}
  Result:=Locale.SetSystemDefaultLCID(_locale);

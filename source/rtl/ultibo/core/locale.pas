@@ -1,7 +1,7 @@
 {
 Ultibo Locale interface unit.
 
-Copyright (C) 2015 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -880,6 +880,7 @@ end;
 {==============================================================================}
 {Locale Functions}
 function IsValidCodePage(CodePage:UINT):BOOL;
+{Determine if a specified code page is valid}
 var
  PageID:Word;
 begin
@@ -893,6 +894,7 @@ end;
 {==============================================================================}
 
 function GetACP:UINT;
+{Retrieve the current ANSI code page identifier for the system}
 begin
  {}
  Result:=CODEPAGE_ANSI_DEFAULT;
@@ -901,6 +903,7 @@ end;
 {==============================================================================}
 
 function GetOEMCP:UINT;
+{Return the current original equipment manufacturer (OEM) code page identifier for the system}
 begin
  {}
  Result:=CODEPAGE_OEM_DEFAULT;
@@ -909,6 +912,7 @@ end;
 {==============================================================================}
 
 function SetACP(CodePage:UINT):BOOL;
+{Set the current ANSI code page identifier for the system}
 var
  AnsiID:Word;
  Ansi:PCodePage;
@@ -968,6 +972,7 @@ end;
 {==============================================================================}
 
 function SetOEMCP(CodePage:UINT):BOOL;
+{Set the current original equipment manufacturer (OEM) code page identifier for the system}
 var
  OemID:Word;
  Oem:PCodePage;
@@ -1039,6 +1044,7 @@ end;
 {==============================================================================}
 
 function GetConsoleCP:UINT;
+{Retrieve the input code page used by the console for the system}
 begin
  {}
  Result:=CODEPAGE_CONSOLE_INPUT;
@@ -1047,6 +1053,7 @@ end;
 {==============================================================================}
 
 function SetConsoleCP(wCodePageID:UINT):BOOL;
+{Set the input code page used by the console for the system}
 begin
  {}
  Result:=IsValidCodePage(wCodePageID);
@@ -1059,6 +1066,7 @@ end;
 {==============================================================================}
 
 function GetConsoleOutputCP:UINT;
+{Retrieve the output code page used by the console for the system}
 begin
  {}
  Result:=CODEPAGE_CONSOLE_OUTPUT;
@@ -1067,6 +1075,7 @@ end;
 {==============================================================================}
 
 function SetConsoleOutputCP(wCodePageID:UINT):BOOL;
+{Set the output code page used by the console for the system}
 begin
  {}
  Result:=IsValidCodePage(wCodePageID);
@@ -1079,6 +1088,7 @@ end;
 {==============================================================================}
 
 function GetCPInfo(CodePage:UINT;var lpCPInfo:TCPInfo):BOOL;
+{Retrieve information about any valid installed or available code page}
 var
  PageID:Word;
  Page:PCodePage;
@@ -1104,6 +1114,7 @@ end;
 {==============================================================================}
 
 function GetCPInfoEx(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL;
+{Retrieve information about any valid installed or available code page}
 begin
  {}
  Result:=GetCPInfoExA(CodePage,dwFlags,lpCPInfoEx);
@@ -1112,6 +1123,7 @@ end;
 {==============================================================================}
 
 function GetCPInfoExA(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXA):BOOL;
+{Retrieve information about any valid installed or available code page}
 var
  PageID:Word;
  Page:PCodePage;
@@ -1140,6 +1152,7 @@ end;
 {==============================================================================}
 
 function GetCPInfoExW(CodePage:UINT;dwFlags:DWORD;var lpCPInfoEx:CPINFOEXW):BOOL;
+{Retrieve information about any valid installed or available code page}
 var
  PageID:Word;
  Page:PCodePage;
@@ -1168,6 +1181,7 @@ end;
 {==============================================================================}
 
 function IsValidLocale(Locale:LCID;dwFlags:DWORD):BOOL;
+{Determine if the specified locale is installed or supported on the system}
 begin
  {}
  Result:=False;
@@ -1180,6 +1194,8 @@ end;
 {==============================================================================}
 
 function GetSystemDefaultLCID:LCID;
+{Return the locale identifier for the system locale}
+{Note: System and User values are the same for Ultibo}
 begin
  {}
  Result:=LOCALE_DEFAULT;
@@ -1188,6 +1204,8 @@ end;
 {==============================================================================}
 
 function GetUserDefaultLCID:LCID;
+{Return the locale identifier for the user default locale}
+{Note: System and User values are the same for Ultibo}
 begin
  {}
  Result:=LOCALE_DEFAULT;
@@ -1196,6 +1214,8 @@ end;
 {==============================================================================}
 
 function SetSystemDefaultLCID(Locale:LCID):BOOL;
+{Set the locale identifier for the system locale}
+{Note: System and User values are the same for Ultibo}
 begin
  {}
  Result:=False;
