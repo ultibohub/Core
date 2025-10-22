@@ -38380,6 +38380,8 @@ end;
 {Iphlpapi Functions}
 {$IFDEF API_EXPORT_IPHLPAPI}
 function GetNumberOfInterfaces(var pdwnumif: uint32_t): uint32_t; stdcall;
+{Retrieve the number of interfaces on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetNumberOfInterfaces(pdwnumif);
@@ -38388,6 +38390,8 @@ end;
 {==============================================================================}
 
 function GetIfEntry(pifrow: PMIB_IFROW): uint32_t; stdcall;
+{Retrieve information for the specified interface on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetIfEntry(pifrow);
@@ -38396,6 +38400,8 @@ end;
 {==============================================================================}
 
 function GetIfTable(piftable: PMIB_IFTABLE; var pdwsize: uint32_t; border: BOOL): uint32_t; stdcall;
+{Retrieve the MIB-II interface table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetIfTable(piftable,pdwsize,border);
@@ -38404,6 +38410,8 @@ end;
 {==============================================================================}
 
 function GetIpAddrTable(pipaddrtable: PMIB_IPADDRTABLE; var pdwsize: uint32_t; border: BOOL): uint32_t; stdcall;
+{Retrieve the interface to IPv4 address mapping table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetIpAddrTable(pipaddrtable,pdwsize,border);
@@ -38412,6 +38420,8 @@ end;
 {==============================================================================}
 
 function GetIpNetTable(pipnettable: PMIB_IPNETTABLE; var pdwsize: uint32_t; border: BOOL): uint32_t; stdcall;
+{Retrieve the IPv4 to physical address mapping table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetIpNetTable(pipnettable,pdwsize,border);
@@ -38420,6 +38430,8 @@ end;
 {==============================================================================}
 
 function GetIpForwardTable(pipforwardtable: PMIB_IPFORWARDTABLE; var pdwsize: uint32_t; border: BOOL): uint32_t; stdcall;
+{Retrieve the IPv4 routing table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetIpForwardTable(pipforwardtable,pdwsize,border);
@@ -38428,6 +38440,8 @@ end;
 {==============================================================================}
 
 function GetTcpTable(ptcptable: PMIB_TCPTABLE; var pdwsize: uint32_t; border: BOOL): uint32_t; stdcall;
+{Retrieve the IPv4 TCP connection table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetTcpTable(ptcptable,pdwsize,border);
@@ -38436,6 +38450,8 @@ end;
 {==============================================================================}
 
 function GetUdpTable(pudptable: PMIB_UDPTABLE; var pdwsize: uint32_t; border: BOOL): uint32_t; stdcall;
+{Retrieve the IPv4 User Datagram Protocol (UDP) listener table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetUdpTable(pudptable,pdwsize,border);
@@ -38444,6 +38460,8 @@ end;
 {==============================================================================}
 
 function GetIpStatistics(var pstats: MIB_IPSTATS): uint32_t; stdcall;
+{Retrieve the IP statistics for the current computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetIpStatistics(pstats);
@@ -38452,6 +38470,8 @@ end;
 {==============================================================================}
 
 function GetIcmpStatistics(var pstats: MIB_ICMP): uint32_t; stdcall;
+{Retrieve the Internet Control Message Protocol (ICMP) for IPv4 statistics for the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetIcmpStatistics(pstats);
@@ -38460,6 +38480,8 @@ end;
 {==============================================================================}
 
 function GetTcpStatistics(var pstats: MIB_TCPSTATS): uint32_t; stdcall;
+{Retrieve the TCP statistics for the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetTcpStatistics(pstats);
@@ -38468,6 +38490,8 @@ end;
 {==============================================================================}
 
 function GetUdpStatistics(var pstats: MIB_UDPSTATS): uint32_t; stdcall;
+{Retrieve the User Datagram Protocol (UDP) statistics for the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetUdpStatistics(pstats);
@@ -38476,6 +38500,8 @@ end;
 {==============================================================================}
 
 function SetIfEntry(const pifrow: MIB_IFROW): uint32_t; stdcall;
+{Set the administrative status of an interface}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.SetIfEntry(pifrow);
@@ -38484,6 +38510,8 @@ end;
 {==============================================================================}
 
 function CreateIpForwardEntry(const proute: MIB_IPFORWARDROW): uint32_t; stdcall;
+{Create a route in the local computer's IPv4 routing table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.CreateIpForwardEntry(proute);
@@ -38492,6 +38520,8 @@ end;
 {==============================================================================}
 
 function SetIpForwardEntry(const proute: MIB_IPFORWARDROW): uint32_t; stdcall;
+{Modify an existing route in the local computer's IPv4 routing table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.SetIpForwardEntry(proute);
@@ -38500,6 +38530,8 @@ end;
 {==============================================================================}
 
 function DeleteIpForwardEntry(const proute: MIB_IPFORWARDROW): uint32_t; stdcall;
+{Delete an existing route in the local computer's IPv4 routing table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.DeleteIpForwardEntry(proute);
@@ -38508,6 +38540,8 @@ end;
 {==============================================================================}
 
 function SetIpStatistics(const pipstats: MIB_IPSTATS): uint32_t; stdcall;
+{Toggle IP forwarding on or off and set the default time-to-live (TTL) value for the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.SetIpStatistics(pipstats);
@@ -38516,6 +38550,8 @@ end;
 {==============================================================================}
 
 function SetIpTTL(nttl: UINT): uint32_t; stdcall;
+{Set the default time-to-live (TTL) value for the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.SetIpTTL(nttl);
@@ -38524,6 +38560,8 @@ end;
 {==============================================================================}
 
 function CreateIpNetEntry(const parpentry: MIB_IPNETROW): uint32_t; stdcall;
+{Create an Address Resolution Protocol (ARP) entry in the ARP table on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.CreateIpNetEntry(parpentry);
@@ -38532,6 +38570,8 @@ end;
 {==============================================================================}
 
 function SetIpNetEntry(const parpentry: MIB_IPNETROW): uint32_t; stdcall;
+{Modify an existing ARP entry in the ARP table on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.SetIpNetEntry(parpentry);
@@ -38540,6 +38580,8 @@ end;
 {==============================================================================}
 
 function DeleteIpNetEntry(const parpentry: MIB_IPNETROW): uint32_t; stdcall;
+{Delete an ARP entry from the ARP table on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.DeleteIpNetEntry(parpentry);
@@ -38548,6 +38590,8 @@ end;
 {==============================================================================}
 
 function FlushIpNetTable(dwifindex: uint32_t): uint32_t; stdcall;
+{Delete all ARP entries for the specified interface from the ARP table on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.FlushIpNetTable(dwifindex);
@@ -38556,6 +38600,8 @@ end;
 {==============================================================================}
 
 function CreateProxyArpEntry(dwaddress, dwmask, dwifindex: uint32_t): uint32_t; stdcall;
+{Create a Proxy Address Resolution Protocol (PARP) entry on the local computer for the specified IPv4 address}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.CreateProxyArpEntry(dwaddress,dwmask,dwifindex);
@@ -38564,6 +38610,8 @@ end;
 {==============================================================================}
 
 function DeleteProxyArpEntry(dwaddress, dwmask, dwifindex: uint32_t): uint32_t; stdcall;
+{Delete the PARP entry on the local computer specified by the dwAddress and dwIfIndex parameters}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.DeleteProxyArpEntry(dwaddress,dwmask,dwifindex);
@@ -38572,6 +38620,8 @@ end;
 {==============================================================================}
 
 function SetTcpEntry(const ptcprow: MIB_TCPROW): uint32_t; stdcall;
+{Set the state of a TCP connection}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.SetTcpEntry(ptcprow);
@@ -38580,6 +38630,8 @@ end;
 {==============================================================================}
 
 function GetInterfaceInfo(piftable: PIP_INTERFACE_INFO; var dwoutbuflen: uint32_t): uint32_t; stdcall;
+{Obtain the list of the network interface adapters with IPv4 enabled on the local system}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetInterfaceInfo(piftable,dwoutbuflen);
@@ -38588,6 +38640,8 @@ end;
 {==============================================================================}
 
 function GetUniDirectionalAdapterInfo(pipifinfo: PIP_UNIDIRECTIONAL_ADAPTER_ADDRESS; var dwoutbuflen: uint32_t): uint32_t; stdcall;
+{Retrieve information about the unidirectional adapters installed on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetUniDirectionalAdapterInfo(pipifinfo,dwoutbuflen);
@@ -38596,6 +38650,8 @@ end;
 {==============================================================================}
 
 function GetBestInterface(dwdestaddr: IPAddr; var pdwbestifindex: uint32_t): uint32_t; stdcall;
+{Retrieve the index of the interface that has the best route to the specified IPv4 address}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetBestInterface(dwdestaddr,pdwbestifindex);
@@ -38604,6 +38660,8 @@ end;
 {==============================================================================}
 
 function GetBestRoute(dwdestaddr, dwsourceaddr: uint32_t; pbestroute: PMIB_IPFORWARDROW): uint32_t; stdcall;
+{Retrieve the best route to the specified destination IP address}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetBestRoute(dwdestaddr,dwsourceaddr,pbestroute);
@@ -38612,6 +38670,8 @@ end;
 {==============================================================================}
 
 function NotifyAddrChange(var handle: THANDLE; overlapped: POVERLAPPED): uint32_t; stdcall;
+{Cause a notification to be sent to the caller whenever a change occurs in the table that maps IPv4 addresses to interfaces}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.NotifyAddrChange(handle,overlapped);
@@ -38620,6 +38680,8 @@ end;
 {==============================================================================}
 
 function NotifyRouteChange(var handle: THANDLE; overlapped: POVERLAPPED): uint32_t; stdcall;
+{Cause a notification to be sent to the caller whenever a change occurs in the IPv4 routing table}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.NotifyRouteChange(handle,overlapped);
@@ -38628,6 +38690,8 @@ end;
 {==============================================================================}
 
 function GetAdapterIndex(adaptername: LPWSTR; var ifindex: uint32_t): uint32_t; stdcall;
+{Obtain the index of an adapter, given its name}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetAdapterIndex(adaptername,ifindex);
@@ -38636,6 +38700,8 @@ end;
 {==============================================================================}
 
 function AddIPAddress(address: IPAddr; ipmask: IPMask; ifindex: uint32_t; var ntecontext, nteinstance: uint32_t): uint32_t; stdcall;
+{Add the specified IPv4 address to the specified adapter}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.AddIPAddress(address,ipmask,ifindex,ntecontext,nteinstance);
@@ -38644,6 +38710,8 @@ end;
 {==============================================================================}
 
 function DeleteIPAddress(ntecontext: uint32_t): uint32_t; stdcall;
+{Delete an IP address previously added using AddIPAddress}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.DeleteIPAddress(ntecontext);
@@ -38652,6 +38720,8 @@ end;
 {==============================================================================}
 
 function GetNetworkParams(pfixedinfo: PFIXED_INFO; var poutbuflen: uint32_t): uint32_t; stdcall;
+{Retrieve network parameters for the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetNetworkParams(pfixedinfo,poutbuflen);
@@ -38660,6 +38730,8 @@ end;
 {==============================================================================}
 
 function GetAdaptersInfo(padapterinfo: PIP_ADAPTER_INFO; var poutbuflen: uint32_t): uint32_t; stdcall;
+{Retrieve adapter information for the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetAdaptersInfo(padapterinfo,poutbuflen);
@@ -38668,6 +38740,8 @@ end;
 {==============================================================================}
 
 function GetPerAdapterInfo(ifindex: uint32_t; pperadapterinfo: PIP_PER_ADAPTER_INFO; var poutbuflen: uint32_t): uint32_t; stdcall;
+{Retrieve information about the adapter corresponding to the specified interface}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetPerAdapterInfo(ifindex,pperadapterinfo,poutbuflen);
@@ -38676,6 +38750,8 @@ end;
 {==============================================================================}
 
 function IpReleaseAddress(const adapterinfo: IP_ADAPTER_INDEX_MAP): uint32_t; stdcall;
+{Release an IPv4 address previously obtained through the Dynamic Host Configuration Protocol (DHCP)}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.IpReleaseAddress(adapterinfo);
@@ -38684,6 +38760,8 @@ end;
 {==============================================================================}
 
 function IpRenewAddress(const adapterinfo: IP_ADAPTER_INDEX_MAP): uint32_t; stdcall;
+{Renew a lease on an IPv4 address previously obtained through Dynamic Host Configuration Protocol (DHCP)}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.IpRenewAddress(adapterinfo);
@@ -38692,6 +38770,8 @@ end;
 {==============================================================================}
 
 function SendARP(const destip, srcip: IPAddr; pmacaddr: PDWORD; var phyaddrlen: uint32_t): uint32_t; stdcall;
+{Sends an Address Resolution Protocol (ARP) request to obtain the physical address that corresponds to the specified destination IPv4 address}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.SendARP(destip,srcip,pmacaddr,phyaddrlen);
@@ -38700,6 +38780,8 @@ end;
 {==============================================================================}
 
 function GetRTTAndHopCount(destipaddress: IPAddr; var hopcount: uint32_t; maxhops: uint32_t; var rtt: uint32_t): BOOL; stdcall;
+{Determine the round-trip time (RTT) and hop count to the specified destination}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetRTTAndHopCount(destipaddress,hopcount,maxhops,rtt);
@@ -38708,6 +38790,8 @@ end;
 {==============================================================================}
 
 function GetFriendlyIfIndex(ifindex: uint32_t): uint32_t; stdcall;
+{Take an interface index and return a backward-compatible interface index}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.GetFriendlyIfIndex(ifindex);
@@ -38716,6 +38800,8 @@ end;
 {==============================================================================}
 
 function EnableRouter(var phandle: THANDLE; poverlapped: POVERLAPPED): uint32_t; stdcall;
+{Turn on IPv4 forwarding on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.EnableRouter(phandle,poverlapped);
@@ -38724,6 +38810,8 @@ end;
 {==============================================================================}
 
 function UnenableRouter(poverlapped: POVERLAPPED; lpdwenablecount: LPDWORD): uint32_t; stdcall;
+{Turn off IPv4 forwarding on the local computer}
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=Iphlpapi.UnenableRouter(poverlapped,lpdwenablecount);

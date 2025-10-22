@@ -1,7 +1,7 @@
 {
 Ultibo IP Helper interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -693,6 +693,9 @@ end;
 {==============================================================================}
 {IP Helper Functions}
 function GetNumberOfInterfaces(var pdwNumIf: DWORD): DWORD;
+{Retrieve the number of interfaces on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -717,6 +720,9 @@ end;
 {==============================================================================}
 
 function GetIfEntry(pIfRow: PMIB_IFROW): DWORD;
+{Retrieve information for the specified interface on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -741,6 +747,9 @@ end;
 {==============================================================================}
 
 function GetIfTable(pIfTable: PMIB_IFTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+{Retrieve the MIB-II interface table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
@@ -764,6 +773,9 @@ end;
 {==============================================================================}
 
 function GetIpAddrTable(pIpAddrTable: PMIB_IPADDRTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+{Retrieve the interface to IPv4 address mapping table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
@@ -787,6 +799,9 @@ end;
 {==============================================================================}
 
 function GetIpNetTable(pIpNetTable: PMIB_IPNETTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+{Retrieve the IPv4 to physical address mapping table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
@@ -810,6 +825,9 @@ end;
 {==============================================================================}
 
 function GetIpForwardTable(pIpForwardTable: PMIB_IPFORWARDTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+{Retrieve the IPv4 routing table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
@@ -833,6 +851,9 @@ end;
 {==============================================================================}
 
 function GetTcpTable(pTcpTable: PMIB_TCPTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+{Retrieve the IPv4 TCP connection table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
@@ -856,6 +877,9 @@ end;
 {==============================================================================}
 
 function GetUdpTable(pUdpTable: PMIB_UDPTABLE; var pdwSize: DWORD; bOrder: BOOL): DWORD;
+{Retrieve the IPv4 User Datagram Protocol (UDP) listener table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
@@ -879,6 +903,9 @@ end;
 {==============================================================================}
 
 function GetIpStatistics(var pStats: MIB_IPSTATS): DWORD;
+{Retrieve the IP statistics for the current computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -903,6 +930,9 @@ end;
 {==============================================================================}
 
 function GetIcmpStatistics(var pStats: MIB_ICMP): DWORD;
+{Retrieve the Internet Control Message Protocol (ICMP) for IPv4 statistics for the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -927,6 +957,9 @@ end;
 {==============================================================================}
 
 function GetTcpStatistics(var pStats: MIB_TCPSTATS): DWORD;
+{Retrieve the TCP statistics for the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -951,6 +984,9 @@ end;
 {==============================================================================}
 
 function GetUdpStatistics(var pStats: MIB_UDPSTATS): DWORD;
+{Retrieve the User Datagram Protocol (UDP) statistics for the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -975,6 +1011,9 @@ end;
 {==============================================================================}
 
 function SetIfEntry(const pIfRow: MIB_IFROW): DWORD;
+{Set the administrative status of an interface}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -999,6 +1038,9 @@ end;
 {==============================================================================}
 
 function CreateIpForwardEntry(const pRoute: MIB_IPFORWARDROW): DWORD;
+{Create a route in the local computer's IPv4 routing table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -1023,6 +1065,9 @@ end;
 {==============================================================================}
 
 function SetIpForwardEntry(const pRoute: MIB_IPFORWARDROW): DWORD;
+{Modify an existing route in the local computer's IPv4 routing table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -1047,6 +1092,9 @@ end;
 {==============================================================================}
 
 function DeleteIpForwardEntry(const pRoute: MIB_IPFORWARDROW): DWORD;
+{Delete an existing route in the local computer's IPv4 routing table}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -1071,6 +1119,9 @@ end;
 {==============================================================================}
 
 function SetIpStatistics(const pIpStats: MIB_IPSTATS): DWORD;
+{Toggle IP forwarding on or off and set the default time-to-live (TTL) value for the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -1095,6 +1146,9 @@ end;
 {==============================================================================}
 
 function SetIpTTL(nTTL: UINT): DWORD;
+{Set the default time-to-live (TTL) value for the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -1119,6 +1173,9 @@ end;
 {==============================================================================}
 
 function CreateIpNetEntry(const pArpEntry: MIB_IPNETROW): DWORD;
+{Create an Address Resolution Protocol (ARP) entry in the ARP table on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -1143,6 +1200,9 @@ end;
 {==============================================================================}
 
 function SetIpNetEntry(const pArpEntry: MIB_IPNETROW): DWORD;
+{Modify an existing ARP entry in the ARP table on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -1167,6 +1227,9 @@ end;
 {==============================================================================}
 
 function DeleteIpNetEntry(const pArpEntry: MIB_IPNETROW): DWORD;
+{Delete an ARP entry from the ARP table on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -1191,6 +1254,9 @@ end;
 {==============================================================================}
 
 function FlushIpNetTable(dwIfIndex: DWORD): DWORD;
+{Delete all ARP entries for the specified interface from the ARP table on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -1215,22 +1281,31 @@ end;
 {==============================================================================}
 
 function CreateProxyArpEntry(dwAddress, dwMask, dwIfIndex: DWORD): DWORD;
+{Create a Proxy Address Resolution Protocol (PARP) entry on the local computer for the specified IPv4 address}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ Result:=ERROR_CALL_NOT_IMPLEMENTED;
 end;
 
 {==============================================================================}
 
 function DeleteProxyArpEntry(dwAddress, dwMask, dwIfIndex: DWORD): DWORD;
+{Delete the PARP entry on the local computer specified by the dwAddress and dwIfIndex parameters}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ Result:=ERROR_CALL_NOT_IMPLEMENTED;
 end;
 
 {==============================================================================}
 
 function SetTcpEntry(const pTcpRow: MIB_TCPROW): DWORD;
+{Set the state of a TCP connection}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -1255,6 +1330,9 @@ end;
 {==============================================================================}
 
 function GetInterfaceInfo(pIfTable: PIP_INTERFACE_INFO; var dwOutBufLen: DWORD): DWORD;
+{Obtain the list of the network interface adapters with IPv4 enabled on the local system}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
@@ -1278,14 +1356,20 @@ end;
 {==============================================================================}
 
 function GetUniDirectionalAdapterInfo(pIPIfInfo: PIP_UNIDIRECTIONAL_ADAPTER_ADDRESS; var dwOutBufLen: DWORD): DWORD;
+{Retrieve information about the unidirectional adapters installed on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ Result:=ERROR_CALL_NOT_IMPLEMENTED;
 end;
 
 {==============================================================================}
 
 function GetBestInterface(dwDestAddr: IPAddr; var pdwBestIfIndex: DWORD): DWORD;
+{Retrieve the index of the interface that has the best route to the specified IPv4 address}
+
+{See the Windows IP Helper documentation for additional information}
 var
  DestSize:DWORD;
  IndexSize:DWORD;
@@ -1312,6 +1396,9 @@ end;
 {==============================================================================}
 
 function GetBestRoute(dwDestAddr, dwSourceAddr: DWORD; pBestRoute: PMIB_IPFORWARDROW): DWORD;
+{Retrieve the best route to the specified destination IP address}
+
+{See the Windows IP Helper documentation for additional information}
 var
  DestSize:DWORD;
  SourceSize:DWORD;
@@ -1340,22 +1427,31 @@ end;
 {==============================================================================}
 
 function NotifyAddrChange(var Handle: THandle; overlapped: POVERLAPPED): DWORD;
+{Cause a notification to be sent to the caller whenever a change occurs in the table that maps IPv4 addresses to interfaces}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ Result:=ERROR_CALL_NOT_IMPLEMENTED;
 end;
 
 {==============================================================================}
 
 function NotifyRouteChange(var Handle: THandle; overlapped: POVERLAPPED): DWORD;
+{Cause a notification to be sent to the caller whenever a change occurs in the IPv4 routing table}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {Not Implemented}
- Result:=ERROR_INVALID_FUNCTION;
+ Result:=ERROR_CALL_NOT_IMPLEMENTED;
 end;
 
 {==============================================================================}
 
 function GetAdapterIndex(AdapterName: LPWSTR; var IfIndex: DWORD): DWORD;
+{Obtain the index of an adapter, given its name}
+
+{See the Windows IP Helper documentation for additional information}
 var
  NameSize:DWORD;
  IndexSize:DWORD;
@@ -1382,6 +1478,9 @@ end;
 {==============================================================================}
 
 function AddIPAddress(Address: IPAddr; IpMask: IPMask; IfIndex: DWORD; var NTEContext, NTEInstance: DWORD): DWORD;
+{Add the specified IPv4 address to the specified adapter}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=ERROR_NOT_READY;
@@ -1397,6 +1496,9 @@ end;
 {==============================================================================}
 
 function DeleteIPAddress(NTEContext: DWORD): DWORD;
+{Delete an IP address previously added using AddIPAddress}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=ERROR_NOT_READY;
@@ -1412,6 +1514,9 @@ end;
 {==============================================================================}
 
 function GetNetworkParams(pFixedInfo: PFIXED_INFO; var pOutBufLen: DWORD): DWORD;
+{Retrieve network parameters for the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
@@ -1435,6 +1540,9 @@ end;
 {==============================================================================}
 
 function GetAdaptersInfo(pAdapterInfo: PIP_ADAPTER_INFO; var pOutBufLen: DWORD): DWORD;
+{Retrieve adapter information for the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Required:DWORD;
 begin
@@ -1458,6 +1566,9 @@ end;
 {==============================================================================}
 
 function GetPerAdapterInfo(IfIndex: DWORD; pPerAdapterInfo: PIP_PER_ADAPTER_INFO; var pOutBufLen: DWORD): DWORD;
+{Retrieve information about the adapter corresponding to the specified interface}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
  Required:DWORD;
@@ -1485,6 +1596,9 @@ end;
 {==============================================================================}
 
 function IpReleaseAddress(const AdapterInfo: IP_ADAPTER_INDEX_MAP): DWORD;
+{Release an IPv4 address previously obtained through the Dynamic Host Configuration Protocol (DHCP)}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -1509,6 +1623,9 @@ end;
 {==============================================================================}
 
 function IpRenewAddress(const AdapterInfo: IP_ADAPTER_INDEX_MAP): DWORD;
+{Renew a lease on an IPv4 address previously obtained through Dynamic Host Configuration Protocol (DHCP)}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -1533,6 +1650,9 @@ end;
 {==============================================================================}
 
 function SendARP(const DestIP, SrcIP: IPAddr; pMacAddr: PDWORD; var PhyAddrLen: DWORD): DWORD;
+{Sends an Address Resolution Protocol (ARP) request to obtain the physical address that corresponds to the specified destination IPv4 address}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=ERROR_NOT_READY;
@@ -1548,6 +1668,9 @@ end;
 {==============================================================================}
 
 function GetRTTAndHopCount(DestIpAddress: IPAddr; var HopCount: DWORD; MaxHops: DWORD; var RTT: DWORD): BOOL;
+{Determine the round-trip time (RTT) and hop count to the specified destination}
+
+{See the Windows IP Helper documentation for additional information}
 begin
  {}
  Result:=False;
@@ -1563,6 +1686,9 @@ end;
 {==============================================================================}
 
 function GetFriendlyIfIndex(IfIndex: DWORD): DWORD;
+{Take an interface index and return a backward-compatible interface index}
+
+{See the Windows IP Helper documentation for additional information}
 var
  Size:DWORD;
 begin
@@ -1587,6 +1713,9 @@ end;
 {==============================================================================}
 
 function EnableRouter(var pHandle: THandle; pOverlapped: POVERLAPPED): DWORD;
+{Turn on IPv4 forwarding on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  HandleSize:DWORD;
  OverlappedSize:DWORD;
@@ -1613,6 +1742,9 @@ end;
 {==============================================================================}
 
 function UnenableRouter(pOverlapped: POVERLAPPED; lpdwEnableCount: LPDWORD): DWORD;
+{Turn off IPv4 forwarding on the local computer}
+
+{See the Windows IP Helper documentation for additional information}
 var
  OverlappedSize:DWORD;
  EnableCountSize:DWORD;
