@@ -1560,11 +1560,11 @@ type
   {}
   function Listen(ABacklog:Integer):LongInt;
 
-  function ReadFromSocket(AData:Pointer;ASize:Integer):LongInt;
-  function WriteToSocket(AData:Pointer;ASize:Integer):LongInt;
+  function ReadFromSocket(AData:Pointer;ASize:Integer):LongInt; virtual;
+  function WriteToSocket(AData:Pointer;ASize:Integer):LongInt; virtual;
 
-  function ReadFromSocketEx(AData:Pointer;ASize:Integer;var ACount:Integer;var AClosed:Boolean;AWait:Boolean;ATimeout:Integer):LongInt;
-  function WriteToSocketEx(AData:Pointer;ASize:Integer;var ACount:Integer;AWait:Boolean;ATimeout:Integer):LongInt;
+  function ReadFromSocketEx(AData:Pointer;ASize:Integer;var ACount:Integer;var AClosed:Boolean;AWait:Boolean;ATimeout:Integer):LongInt; virtual;
+  function WriteToSocketEx(AData:Pointer;ASize:Integer;var ACount:Integer;AWait:Boolean;ATimeout:Integer):LongInt; virtual;
  public
   {}
   property Backlog:Integer read FBacklog write SetBacklog;
@@ -1575,10 +1575,10 @@ type
   property MaxSegmentSize:LongWord read GetMaxSegmentSize write SetMaxSegmentSize;
 
   {}
-  function ReadData(AData:Pointer;ACount:Integer):Boolean;
-  function WriteData(AData:Pointer;ACount:Integer):Boolean;
+  function ReadData(AData:Pointer;ACount:Integer):Boolean; virtual;
+  function WriteData(AData:Pointer;ACount:Integer):Boolean; virtual;
 
-  function ReadAvailable(AData:Pointer;ASize:Integer;var ACount:Integer;var AClosed:Boolean):Boolean;
+  function ReadAvailable(AData:Pointer;ASize:Integer;var ACount:Integer;var AClosed:Boolean):Boolean; virtual;
  end;
 
  {Datagram Socket (SOCK_DGRAM) classes}
@@ -1746,6 +1746,9 @@ type
   FPeerPort:Word;
   FPeerAddress:String;
 
+  FLastReadTime:Int64;
+  FLastWriteTime:Int64;
+
   FListener:TWinsock2TCPListener;
  protected
   {}
@@ -1755,9 +1758,18 @@ type
   {}
   property PeerPort:Word read FPeerPort;
   property PeerAddress:String read FPeerAddress;
+
+  property LastReadTime:Int64 read FLastReadTime;
+  property LastWriteTime:Int64 read FLastWriteTime;
+
   property Listener:TWinsock2TCPListener read FListener;
 
   function Disconnect:Boolean; override;
+
+  function ReadData(AData:Pointer;ACount:Integer):Boolean; override;
+  function WriteData(AData:Pointer;ACount:Integer):Boolean; override;
+
+  function ReadAvailable(AData:Pointer;ASize:Integer;var ACount:Integer;var AClosed:Boolean):Boolean; override;
  end;
 
  TWinsock2TCPServerThread = class(TWinsock2SocketThread)
@@ -1807,6 +1819,8 @@ type
   {}
  public
   {}
+  procedure ThreadTimeout(ATimeout:LongWord);
+
   procedure TerminateAll;
   function Terminate(AThread:TWinsock2TCPServerThread):Boolean;
  end;
@@ -1834,6 +1848,9 @@ type
   FServerPriority:LongWord;
   FServerStackSize:SizeUInt;
 
+  FConnectionTimeout:LongWord;    {Timeout in seconds before an idle connection is closed (0 or INFINITE = No Timeout)}
+  FConnectionTimer:TTimerHandle;
+
   FThreads:TWinsock2TCPServerThreads;
   FListenerThread:TWinsock2TCPListenerThread;
 
@@ -1851,8 +1868,12 @@ type
   procedure SetServerName(const AServerName:String);
   procedure SetServerPriority(AServerPriority:LongWord);
   procedure SetServerStackSize(AServerStackSize:SizeUInt);
+
+  procedure SetConnectionTimeout(AConnectionTimeout:LongWord);
  protected
   {}
+  procedure ProcessTimeout; virtual;
+
   procedure SetLastError(ALastError:LongInt); virtual;
 
   procedure DoConnect(AThread:TWinsock2TCPServerThread); virtual;
@@ -1870,6 +1891,8 @@ type
   property ServerName:String read FServerName write SetServerName;
   property ServerPriority:LongWord read FServerPriority write SetServerPriority;
   property ServerStackSize:SizeUInt read FServerStackSize write SetServerStackSize;
+
+  property ConnectionTimeout:LongWord read FConnectionTimeout write SetConnectionTimeout;
 
   property Threads:TWinsock2TCPServerThreads read FThreads;
 
@@ -1910,6 +1933,7 @@ type
   {}
   property PeerPort:Word read FPeerPort;
   property PeerAddress:String read FPeerAddress;
+
   property UseListener:Boolean read FUseListener write SetUseListener;
   property Listener:TWinsock2UDPListener read FListener;
 
@@ -1990,7 +2014,7 @@ type
   FLimit:Integer;         {Absolute thread count limit, new threads will not be created once reached (0 = No Limit)}
 
   FWait:TSemaphoreHandle;
-  FWaitTimeout:LongWord;  {Time to wait for a thread to be available before creating a new thread (0 = No Wait / INFINITE = Wait Forever)}
+  FWaitTimeout:LongWord;  {Time in milliseconds to wait for a thread to be available before creating a new thread (0 = No Wait / INFINITE = Wait Forever)}
 
   FListener:TWinsock2UDPListener;
   {}
@@ -2061,7 +2085,7 @@ type
   FMax:Integer;           {Maximum buffer count to maintain in buffer pool, buffers above max will be destroyed on completion}
 
   FWait:TSemaphoreHandle;
-  FWaitTimeout:LongWord;  {Time to wait for a buffer to be available before creating a new buffer (0 = No Wait / INFINITE = Wait Forever)}
+  FWaitTimeout:LongWord;  {Time in milliseconds to wait for a buffer to be available before creating a new buffer (0 = No Wait / INFINITE = Wait Forever)}
 
   FListener:TWinsock2UDPListener;
   {}
@@ -2389,6 +2413,11 @@ var
 
  WS2TextIOInputSocket:TSocket = INVALID_SOCKET;
  WS2TextIOOutputSocket:TSocket = INVALID_SOCKET;
+
+{==============================================================================}
+{==============================================================================}
+{Forward Declarations}
+procedure WS2TCPListenerProcessTimeout(Data:Pointer); forward;
 
 {==============================================================================}
 {==============================================================================}
@@ -5705,6 +5734,12 @@ end;
 {==============================================================================}
 
 function TWinsock2TCPSocket.ReadData(AData:Pointer;ACount:Integer):Boolean;
+{Read data from the TCP stream socket associated with this object}
+{Data: A pointer to a buffer to receive the data}
+{Count: The number of bytes to read}
+{Return: True if the data was read successfully or False on error}
+
+{Note: This function will not return until Count bytes has been read or an error occurs}
 var
  Size:Integer;
  Offset:Integer;
@@ -5739,6 +5774,12 @@ end;
 {==============================================================================}
 
 function TWinsock2TCPSocket.WriteData(AData:Pointer;ACount:Integer):Boolean;
+{Write data to the TCP stream socket associated with this object}
+{Data: A pointer to a buffer containing the data to write}
+{Count: The number of bytes to be written}
+{Return: True if the data was written successfully or False on error}
+
+{Note: This function will not return until Count bytes has been written or an error occurs}
 var
  Size:Integer;
  Offset:Integer;
@@ -5773,6 +5814,14 @@ end;
 {==============================================================================}
 
 function TWinsock2TCPSocket.ReadAvailable(AData:Pointer;ASize:Integer;var ACount:Integer;var AClosed:Boolean):Boolean;
+{Read all available data from the TCP stream socket associated with this object}
+{Data: A pointer to a buffer to receive the data}
+{Size: The size in bytes of the buffer}
+{Count: On return the total number of bytes read, may be less than Size if socket has been Closed}
+{Closed: On return True if the socket has been closed}
+{Return: True if the data was read successfully or False on error}
+
+{Note: This function will not return until Size bytes has been read, the socket is Closed or an error occurs}
 begin
  {}
  Result:=False;
@@ -7867,6 +7916,9 @@ constructor TWinsock2TCPServer.Create(AListener:TWinsock2TCPListener);
 begin
  {}
  inherited Create;
+ FLastReadTime:=GetTickCount64;
+ FLastWriteTime:=GetTickCount64;
+
  FListener:=AListener;
 end;
 
@@ -7898,6 +7950,33 @@ begin
  FPeerPort:=0;
  FPeerAddress:='';
  Result:=inherited Disconnect;
+end;
+
+{==============================================================================}
+
+function TWinsock2TCPServer.ReadData(AData:Pointer;ACount:Integer):Boolean;
+begin
+ {}
+ Result:=inherited ReadData(AData,ACount);
+ if Result then FLastReadTime:=GetTickCount64;
+end;
+
+{==============================================================================}
+
+function TWinsock2TCPServer.WriteData(AData:Pointer;ACount:Integer):Boolean;
+begin
+ {}
+ Result:=inherited WriteData(AData,ACount);
+ if Result then FLastWriteTime:=GetTickCount64;
+end;
+
+{==============================================================================}
+
+function TWinsock2TCPServer.ReadAvailable(AData:Pointer;ASize:Integer;var ACount:Integer;var AClosed:Boolean):Boolean;
+begin
+ {}
+ Result:=inherited ReadAvailable(AData,ASize,ACount,AClosed);
+ if Result then FLastReadTime:=GetTickCount64;
 end;
 
 {==============================================================================}
@@ -8110,6 +8189,50 @@ end;
 
 {==============================================================================}
 
+procedure TWinsock2TCPServerThreads.ThreadTimeout(ATimeout:LongWord);
+{Check each thread to determine if the idle timeout has been exceeded}
+{Timeout: The number of in seconds before an idle connection is closed}
+var
+ Timeout:Int64;
+ CurrentTime:Int64;
+ Next:TWinsock2TCPServerThread;
+ Thread:TWinsock2TCPServerThread;
+begin
+ {}
+ if ATimeout = INFINITE then Exit;
+
+ {Get Timeout}
+ Timeout:=ATimeout; {Avoid 32 bit overflow}
+ Timeout:=Timeout * MILLISECONDS_PER_SECOND;
+
+ if not AcquireLock then Exit;
+ try
+  {Get Current Time}
+  CurrentTime:=GetTickCount64;
+
+  Next:=TWinsock2TCPServerThread(First);
+  while Next <> nil do
+   begin
+    {Save Thread}
+    Thread:=Next;
+
+    {Get Next}
+    Next:=TWinsock2TCPServerThread(Thread.Next);
+
+    {Check Timeout}
+    if (Thread.Server <> nil) and ((Thread.Server.LastReadTime + Timeout) < CurrentTime) and ((Thread.Server.LastWriteTime + Timeout) < CurrentTime) then
+     begin
+      {Close Connection}
+      Thread.Server.Disconnect;
+     end;
+   end;
+ finally
+  ReleaseLock;
+ end;
+end;
+
+{==============================================================================}
+
 procedure TWinsock2TCPServerThreads.TerminateAll;
 var
  Thread:TWinsock2TCPServerThread;
@@ -8151,6 +8274,9 @@ begin
 
  FServerName:=WINSOCK_TCP_SERVER_THREAD_NAME;
  FServerPriority:=WINSOCK_TCP_SERVER_THREAD_PRIORITY;
+
+ FConnectionTimeout:=INFINITE;
+ FConnectionTimer:=INVALID_HANDLE_VALUE;
 
  FThreads:=TWinsock2TCPServerThreads.Create;
  FListenerThread:=nil;
@@ -8197,9 +8323,19 @@ begin
 
    {Start Thread}
    FListenerThread.Start;
+
+   {Create Timer}
+   if FConnectionTimeout <> INFINITE then
+    begin
+     FConnectionTimer:=TimerCreateEx(MILLISECONDS_PER_SECOND,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(WS2TCPListenerProcessTimeout),Self); {Rescheduled by Timer Event}
+    end;
   end
  else
   begin
+   {Destroy Timer}
+   if FConnectionTimer <> INVALID_HANDLE_VALUE then TimerDestroy(FConnectionTimer);
+   FConnectionTimer:=INVALID_HANDLE_VALUE;
+
    {Disconnect Thread}
    FListenerThread.FListener.Disconnect;
 
@@ -8288,6 +8424,48 @@ begin
 
    {if FThreads <> nil then FThreads.ThreadStackSize(AServerStackSize);} {Can only be set at thread create}
   end;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2TCPListener.SetConnectionTimeout(AConnectionTimeout:LongWord);
+begin
+ {}
+ if AConnectionTimeout = 0 then AConnectionTimeout:=INFINITE;
+
+ if FConnectionTimeout <> AConnectionTimeout then
+  begin
+   FConnectionTimeout:=AConnectionTimeout;
+
+   if not FActive then Exit;
+
+   if FConnectionTimeout <> INFINITE then
+    begin
+     {Create Timer}
+     if FConnectionTimer = INVALID_HANDLE_VALUE then
+      begin
+       FConnectionTimer:=TimerCreateEx(MILLISECONDS_PER_SECOND,TIMER_STATE_ENABLED,TIMER_FLAG_WORKER,TTimerEvent(WS2TCPListenerProcessTimeout),Self); {Rescheduled by Timer Event}
+      end;
+    end
+   else
+    begin
+     {Destroy Timer}
+     if FConnectionTimer <> INVALID_HANDLE_VALUE then TimerDestroy(FConnectionTimer);
+     FConnectionTimer:=INVALID_HANDLE_VALUE;
+    end;
+  end;
+end;
+
+{==============================================================================}
+
+procedure TWinsock2TCPListener.ProcessTimeout;
+begin
+ {}
+ {Check Thread Timeout}
+ if FThreads <> nil then FThreads.ThreadTimeout(FConnectionTimeout);
+
+ {Enable Timer}
+ TimerEnable(FConnectionTimer);
 end;
 
 {==============================================================================}
@@ -15491,6 +15669,20 @@ function Winsock2ErrorToString(AError:LongInt):String;
 begin
  {}
  Result:=SocketErrorToString(AError);
+end;
+
+{==============================================================================}
+{==============================================================================}
+{Winsock2 Internal Functions}
+procedure WS2TCPListenerProcessTimeout(Data:Pointer);
+begin
+ {}
+ if Data = nil then Exit;
+
+ if TObject(Data) is TWinsock2TCPListener then
+  begin
+   TWinsock2TCPListener(Data).ProcessTimeout;
+  end;
 end;
 
 {==============================================================================}
