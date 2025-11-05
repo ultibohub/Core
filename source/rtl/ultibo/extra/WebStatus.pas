@@ -15746,7 +15746,7 @@ function WebStatusFind(AListener:THTTPListener;const AHost:String):TWebStatusMai
 {Listener: The HTTP listener to find an instance for}
 {Host: The HTTP host name to find an instance for (eg host.domain.com)}
 {Return: The Main object of the requested instance or nil if not found}
-{Note: If Listerner is nil and Host is empty then return the default (first) instance}
+{Note: If Listener is nil and Host is empty then return the default (first) instance}
 var
  Count:Integer;
  Main:TWebStatusMain;

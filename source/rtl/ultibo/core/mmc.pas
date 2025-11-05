@@ -1,7 +1,7 @@
 {
 Ultibo MMC/SD/SDIO interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -14257,7 +14257,7 @@ begin
      if (Capabilities and SDHCI_CAN_DO_8BIT) <> 0 then
       begin
        {Don't report 8 bit data unless the host explicitly adds it to the presets}
-       {Some host may be 8 bit capable but only have 4 data lines connected}
+       {Some hosts may be 8 bit capable but only have 4 data lines connected}
        {SDHCI.Capabilities:=SDHCI.Capabilities or MMC_CAP_8_BIT_DATA;}
       end;
     end;
