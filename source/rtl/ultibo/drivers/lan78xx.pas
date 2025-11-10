@@ -2372,21 +2372,8 @@ begin
  Result:=ERROR_NOT_READY;
  if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
 
- {Acquire the Lock}
- if MutexLock(Network.Lock) = ERROR_SUCCESS then
-  begin
-   try
-    {Free Entry (Receive Buffer)}
-    Result:=BufferFree(Entry);
-   finally
-    {Release the Lock}
-    MutexUnlock(Network.Lock);
-   end;
-  end
- else
-  begin
-   Result:=ERROR_CAN_NOT_COMPLETE;
-  end;
+ {Free Entry (Receive Buffer)}
+ Result:=BufferFree(Entry);
 end;
 
 {==============================================================================}
@@ -2419,22 +2406,20 @@ begin
    {Acquire the Lock}
    if MutexLock(Network.Lock) = ERROR_SUCCESS then
     begin
-     try
-      {Remove Entry}
-      Entry:=Network.ReceiveQueue.Entries[Network.ReceiveQueue.Start];
+     {Remove Entry}
+     Entry:=Network.ReceiveQueue.Entries[Network.ReceiveQueue.Start];
 
-      {Update Start}
-      Network.ReceiveQueue.Start:=(Network.ReceiveQueue.Start + 1) mod PLAN78XXNetwork(Network).ReceiveEntryCount;
+     {Update Start}
+     Network.ReceiveQueue.Start:=(Network.ReceiveQueue.Start + 1) mod PLAN78XXNetwork(Network).ReceiveEntryCount;
 
-      {Update Count}
-      Dec(Network.ReceiveQueue.Count);
+     {Update Count}
+     Dec(Network.ReceiveQueue.Count);
 
-      {Return Result}
-      Result:=ERROR_SUCCESS;
-     finally
-      {Release the Lock}
-      MutexUnlock(Network.Lock);
-     end;
+     {Return Result}
+     Result:=ERROR_SUCCESS;
+
+     {Release the Lock}
+     MutexUnlock(Network.Lock);
     end
    else
     begin
@@ -2480,29 +2465,27 @@ begin
    {Acquire the Lock}
    if MutexLock(Network.Lock) = ERROR_SUCCESS then
     begin
-     try
-      {Check Empty}
-      Empty:=(Network.TransmitQueue.Count = 0);
+     {Check Empty}
+     Empty:=(Network.TransmitQueue.Count = 0);
 
-      {Add Entry}
-      Network.TransmitQueue.Entries[(Network.TransmitQueue.Start + Network.TransmitQueue.Count) mod PLAN78XXNetwork(Network).TransmitEntryCount]:=Entry;
+     {Add Entry}
+     Network.TransmitQueue.Entries[(Network.TransmitQueue.Start + Network.TransmitQueue.Count) mod PLAN78XXNetwork(Network).TransmitEntryCount]:=Entry;
 
-      {Update Count}
-      Inc(Network.TransmitQueue.Count);
+     {Update Count}
+     Inc(Network.TransmitQueue.Count);
 
-      {Check Empty}
-      if Empty then
-       begin
-        {Start Transmit}
-        LAN78XXTransmitStart(PLAN78XXNetwork(Network));
-       end;
+     {Check Empty}
+     if Empty then
+      begin
+       {Start Transmit}
+       LAN78XXTransmitStart(PLAN78XXNetwork(Network));
+      end;
 
-      {Return Result}
-      Result:=ERROR_SUCCESS;
-     finally
-      {Release the Lock}
-      MutexUnlock(Network.Lock);
-     end;
+     {Return Result}
+     Result:=ERROR_SUCCESS;
+
+     {Release the Lock}
+     MutexUnlock(Network.Lock);
     end
    else
     begin

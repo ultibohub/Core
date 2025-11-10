@@ -1,7 +1,7 @@
 {
 Ralink RT2800 USB Wireless Driver.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -2169,7 +2169,9 @@ begin
  Entry:=BufferGet(Network.TransmitQueue.Buffer);
  if Entry <> nil then
   begin
+
    //To Do //Continuing //Update Packet ?
+
    {Return Result}
    Result:=ERROR_SUCCESS;
   end;
@@ -2198,21 +2200,8 @@ begin
  Result:=ERROR_NOT_READY;
  if Network.NetworkState <> NETWORK_STATE_OPEN then Exit;
 
- {Acquire the Lock}
- if MutexLock(Network.Lock) = ERROR_SUCCESS then
-  begin
-   try
-    {Free Entry}
-    Result:=BufferFree(Entry);
-   finally
-    {Release the Lock}
-    MutexUnlock(Network.Lock);
-   end;
-  end
- else
-  begin
-   Result:=ERROR_CAN_NOT_COMPLETE;
-  end;
+ {Free Entry}
+ Result:=BufferFree(Entry);
 end;
 
 {==============================================================================}
@@ -2244,22 +2233,20 @@ begin
    {Acquire the Lock}
    if MutexLock(Network.Lock) = ERROR_SUCCESS then
     begin
-     try
-      {Remove Entry}
-      Entry:=Network.ReceiveQueue.Entries[Network.ReceiveQueue.Start];
+     {Remove Entry}
+     Entry:=Network.ReceiveQueue.Entries[Network.ReceiveQueue.Start];
 
-      {Update Start}
-      Network.ReceiveQueue.Start:=(Network.ReceiveQueue.Start + 1) mod RT2800USB_MAX_RX_ENTRIES;
+     {Update Start}
+     Network.ReceiveQueue.Start:=(Network.ReceiveQueue.Start + 1) mod RT2800USB_MAX_RX_ENTRIES;
 
-      {Update Count}
-      Dec(Network.ReceiveQueue.Count);
+     {Update Count}
+     Dec(Network.ReceiveQueue.Count);
 
-      {Return Result}
-      Result:=ERROR_SUCCESS;
-     finally
-      {Release the Lock}
-      MutexUnlock(Network.Lock);
-     end;
+     {Return Result}
+     Result:=ERROR_SUCCESS;
+
+     {Release the Lock}
+     MutexUnlock(Network.Lock);
     end
    else
     begin
@@ -2298,17 +2285,15 @@ begin
  {Acquire the Lock}
  if MutexLock(Network.Lock) = ERROR_SUCCESS then
   begin
-   try
 
-    //To Do //Continuing //Use the TransmitQueue ? and Wait for completion ?
-                         //Need to check empty and do Submit ?
+   //To Do //Continuing //Use the TransmitQueue ? and Wait for completion ?
+                        //Need to check empty and do Submit ?
 
-    {Return Result}
-    Result:=ERROR_SUCCESS;
-   finally
-    {Release the Lock}
-    MutexUnlock(Network.Lock);
-   end;
+   {Return Result}
+   Result:=ERROR_SUCCESS;
+
+   {Release the Lock}
+   MutexUnlock(Network.Lock);
   end
  else
   begin
