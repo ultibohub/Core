@@ -1291,7 +1291,7 @@ var
  {NTP}
  NTP_SERVER_DEFAULT:String = 'pool.ntp.org';    {The default NTP server(s) to poll}
  NTP_PORT_DEFAULT:Word = 123;                   {The default NTP port to poll}
- NTP_POLLING_INTERVAL:LongWord = 300;           {The default NTP polling interval (300 seconds / 5 minutes)}
+ NTP_POLLING_INTERVAL:LongWord = 900;           {The default NTP polling interval (900 seconds / 15 minutes)}
  NTP_POLLING_TIMEOUT:LongWord = 2000;           {The default NTP polling timeout (2000 milliseconds / 2 seconds)}
  NTP_POLLING_RETRIES:LongWord = 3;              {The default NTP polling retry count}
  NTP_RETRY_TIMEOUT:LongWord = 1000;             {The default NTP retry interval (1000 milliseconds / 1 second)}
