@@ -4099,6 +4099,7 @@ var
  Count:LongWord;
  Cluster:LongWord;
  BlockNo:LongWord;
+ FreeCount:LongWord;
  Block:TCDFSDiskBlock;
 begin
  {}
@@ -4125,7 +4126,7 @@ begin
    try
     {Get Params}
     Cluster:=0;
-    FFreeClusterCount:=0;
+    FreeCount:=0;
 
     {Check each Block}
     while Cluster < FTotalClusterCount do
@@ -4137,11 +4138,14 @@ begin
 
       {Get Free Count}
       Count:=GetBlockFreeCount(Block);
-      if Count <> cdfsUnknownCluster then Inc(FFreeClusterCount,Count);
+      if Count <> cdfsUnknownCluster then Inc(FreeCount,Count);
 
       {Move next Block}
       Inc(Cluster,Block.BlockCount);
      end;
+
+    {Store Free Cluster Count}
+    FFreeClusterCount:=FreeCount;
    finally
     FBlocks.WriterUnlock;
    end;

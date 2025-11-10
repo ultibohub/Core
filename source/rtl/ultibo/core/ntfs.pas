@@ -2791,12 +2791,6 @@ begin
     if FLastFreeCluster >= FTotalClusterCount then FLastFreeCluster:=0;   {Check for Wraparound of Last Free}
     if FLastFreeCluster <> ntfsUnknownCluster then Cluster:=FLastFreeCluster;
    end;
-  //Remove
-  //Cluster:=FMftZoneCluster; {0;} {Always start looking after the MFT until full}
-  //Wrapped:=False;
-  //if (FLastFreeCluster <> ntfsUnknownCluster) and not(AMft) then Inc(FLastFreeCluster); {Increment on each Get Next (unless MFT) as NTFS may reject the last returned value}
-  //if FLastFreeCluster >= FTotalClusterCount then FLastFreeCluster:=0;   {Check for Wraparound of Last Free}
-  //if FLastFreeCluster <> ntfsUnknownCluster then Cluster:=FLastFreeCluster;
 
   {Check MFT}
   if (AMft) and (FMftZoneReservation > 0) then
@@ -2811,9 +2805,6 @@ begin
       {Check if starting Cluster is outside the Mft Zone} {Note: >= to avoid allocating last cluster of MFT zone first}
       if (Cluster < FMftZoneStart) or (Cluster >= FMftZoneCluster) then Cluster:=FMftZoneStart;
      end;
-    //Remove
-    //{Check if starting Cluster is outside the Mft Zone} {Note: >= to avoid allocating last cluster of MFT zone first}
-    //if (Cluster < FMftStartCluster) or (Cluster >= FMftZoneCluster) then Cluster:=FMftStartCluster;
    end
   else
    begin
@@ -2829,9 +2820,6 @@ begin
         {Check if starting Cluster is within the Mft Zone}
         if (Cluster >= FMftZoneStart) and (Cluster <= FMftZoneCluster) then Cluster:=FMftZoneCluster;
        end;
-      //Remove
-      //{Check if starting Cluster is within the Mft Zone}
-      //if (Cluster >= FMftStartCluster) and (Cluster <= FMftZoneCluster) then Cluster:=FMftZoneCluster;
      end;
    end;
 
@@ -2867,9 +2855,6 @@ begin
         FLastFreeCluster:=Next;
         Result:=FLastFreeCluster;
        end;
-      //Remove
-      //FLastFreeCluster:=Next;
-      //Result:=FLastFreeCluster;
 
       {$IFDEF NTFS_DEBUG}
       if FILESYS_LOG_ENABLED then FileSysLogDebug('TNTFSFileSystem.GetNextFreeCluster - Result = ' + IntToHex(Result,16));
@@ -2916,18 +2901,8 @@ begin
           {Check if Cluster is within the Mft Zone (Skip the Mft Zone if it is)}
           if (Cluster >= FMftZoneStart) and (Cluster <= FMftZoneCluster) then Cluster:=FMftZoneCluster;
          end;
-        //Remove
-        //{Check if Cluster is within the Mft Zone (Skip the Mft Zone if it is)}
-        //if (Cluster >= FMftStartCluster) and (Cluster <= FMftZoneCluster) then Cluster:=FMftZoneCluster;
        end;
      end;
-    //Remove
-    //{Check MFT}
-    //if (AMft = False) and (FMftZoneReservation > 0) then
-    // begin
-    //  {Check if Cluster is within the Mft Zone (Skip the Mft Zone if it is)}
-    //  if (Cluster >= FMftStartCluster) and (Cluster <= FMftZoneCluster) then Cluster:=FMftZoneCluster;
-    // end;
 
     {Check for Wrap}
     if (Origin > 0) and (Cluster >= FTotalClusterCount) then Cluster:=0;
@@ -2949,6 +2924,7 @@ function TNTFSFileSystem.GetFreeClusterCount:Int64;
 var
  Count:Int64;
  Cluster:Int64;
+ FreeCount:Int64;
  BlockNo:LongWord;
  Block:TNTFSDiskBlock;
 begin
@@ -2976,7 +2952,7 @@ begin
    try
     {Get Params}
     Cluster:=0;
-    FFreeClusterCount:=0;
+    FreeCount:=0;
 
     {Check each Block}
     while Cluster < FTotalClusterCount do
@@ -2988,11 +2964,14 @@ begin
 
       {Get Free Count}
       Count:=GetBlockFreeCount(Block);
-      if Count <> ntfsUnknownCluster then Inc(FFreeClusterCount,Count);
+      if Count <> ntfsUnknownCluster then Inc(FreeCount,Count);
 
       {Move next Block}
       Inc(Cluster,Block.BlockCount);
      end;
+
+    {Store Free Cluster Count}
+    FFreeClusterCount:=FreeCount;
    finally
     FBlocks.WriterUnlock;
    end;

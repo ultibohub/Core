@@ -3170,6 +3170,7 @@ var
  Cluster:LongWord;
 
  BlockNo:LongWord;
+ FreeCount:LongWord;
  EntryCount:LongWord;
  ClusterOffset:LongWord;
  DiskBlock:TFATDiskBlock;
@@ -3225,7 +3226,7 @@ begin
 
     {Get Start}
     Cluster:=0;
-    FFreeClusterCount:=0;
+    FreeCount:=0;
 
     {Check each Cluster}
     while Cluster < FTotalClusterCount do
@@ -3255,7 +3256,7 @@ begin
                {Entry is Even}
                if (Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and $0FFF) and not(FReservedBits) = FFreeCluster then
                 begin
-                 Inc(FFreeClusterCount);
+                 Inc(FreeCount);
                 end;
               end
              else
@@ -3263,7 +3264,7 @@ begin
                {Entry is Odd}
                if (Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) shr 4) and not(FReservedBits) = FFreeCluster then
                 begin
-                 Inc(FFreeClusterCount);
+                 Inc(FreeCount);
                 end;
               end;
             end;
@@ -3272,7 +3273,7 @@ begin
              ClusterOffset:=((Cluster - DiskBlock.BlockNo) shl 1); {Multiply by SizeOf(Word)}
              if Word(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and not(FReservedBits) = FFreeCluster then
               begin
-               Inc(FFreeClusterCount);
+               Inc(FreeCount);
               end;
             end;
            ftFAT32:begin
@@ -3280,7 +3281,7 @@ begin
              ClusterOffset:=((Cluster - DiskBlock.BlockNo) shl 2); {Multiply by SizeOf(LongWord)}
              if LongWord(Pointer(PtrUInt(DiskBlock.BlockBuffer) + ClusterOffset)^) and not(FReservedBits) = FFreeCluster then
               begin
-               Inc(FFreeClusterCount);
+               Inc(FreeCount);
               end;
             end;
           end;
@@ -3301,6 +3302,9 @@ begin
         Inc(Cluster);
        end;
      end;
+
+    {Store Free Cluster Count}
+    FFreeClusterCount:=FreeCount;
    finally
     FBlocks.WriterUnlock;
    end;
