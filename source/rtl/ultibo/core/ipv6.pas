@@ -3205,6 +3205,9 @@ begin
  Result.Address:=AAddress;
  Result.RouteType:=AType;
 
+ {Lock Route (Before Add)}
+ if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
+
  {Acquire Lock}
  FRoutes.ReaderLock;
  try
@@ -3225,23 +3228,18 @@ begin
   if FRoutes.ReaderConvert then
    begin
     {Insert Route}
-    if FRoutes.Insert(Route,Result) then
+    if not FRoutes.Insert(Route,Result) then
      begin
-      {Convert Lock}
-      FRoutes.WriterConvert;
-
-      {Lock Route}
-      if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
-     end
-    else
-     begin
-      {Convert Lock}
-      FRoutes.WriterConvert;
+      {Unlock Route (Before Free, writer lock acquired during destroy)}
+      if ALock and (AState = NETWORK_LOCK_READ) then Result.ReaderUnlock;
 
       {Free Route}
       Result.Free;
       Result:=nil;
      end;
+
+    {Convert Lock}
+    FRoutes.WriterConvert;
    end;
  finally
   FRoutes.ReaderUnlock;
@@ -3278,14 +3276,11 @@ begin
       {Check Address}
       if CompareAddress(Route.Address,AAddress) then
        begin
-        {Lock Route}
-        {Route.WriterLock;} {Must be after acquiring writer lock}
-
         {Convert Lock}
         if FRoutes.ReaderConvert then
          begin
-          {Lock Route}
-          if CheckRoute(Route,True,NETWORK_LOCK_WRITE) then
+          {Check Route (No lock needed while holding the writer lock)}
+          if CheckRoute(Route,False,NETWORK_LOCK_NONE) then
            begin
             {Remove Route}
             Result:=FRoutes.Remove(Route);
@@ -3293,10 +3288,7 @@ begin
             {Convert Lock}
             FRoutes.WriterConvert;
 
-            {Unlock Route}
-            Route.WriterUnlock;
-
-            {Free Route}
+            {Free Route (Will acquire writer lock during destroy)}
             Route.Free;
            end;
          end;
@@ -3320,8 +3312,8 @@ procedure TIP6Transport.FlushRoutes(All:Boolean);
 {All: If True flush all routes, otherwise flush expired routes}
 var
  CurrentTime:Int64;
+ Next:TIP6RouteEntry;
  Route:TIP6RouteEntry;
- Current:TIP6RouteEntry;
 begin
  {}
  {$IFDEF IP6_DEBUG}
@@ -3339,42 +3331,38 @@ begin
    {Check Route Type and Expiry}
    if ((Route.RouteType = ROUTE_TYPE_DYNAMIC) and ((Route.RouteTime + MAX_ROUTE_LIFE) < CurrentTime)) or (All) then
     begin
+     {Get Next} {No lock until after remove}
+     Next:=GetRouteByNext(Route,False,False,NETWORK_LOCK_NONE);
+
      {Unlock Route (While waiting for writer lock)}
      Route.ReaderUnlock;
 
      {Acquire Lock}
      FRoutes.WriterLock;
 
-     {Lock Route}
-     if CheckRoute(Route,True,NETWORK_LOCK_WRITE) then
+     {Check Route (No lock needed while holding the writer lock)}
+     if CheckRoute(Route,False,NETWORK_LOCK_NONE) then
       begin
-       {Save Route}
-       Current:=Route;
-
-       {Get Next}
-       Route:=GetRouteByNext(Current,True,False,NETWORK_LOCK_READ);
-
        {Remove Route}
-       FRoutes.Remove(Current);
+       FRoutes.Remove(Route);
 
        {Release Lock}
        FRoutes.WriterUnlock;
 
-       {Unlock Route}
-       Current.WriterUnlock;
-
-       {Free Route}
-       Current.Free;
-       Current:=nil;
+       {Free Route (Will acquire writer lock during destroy)}
+       Route.Free;
       end
      else
       begin
        {Release Lock}
        FRoutes.WriterUnlock;
-
-       {Get Next}
-       if All then Route:=GetRouteByNext(nil,True,False,NETWORK_LOCK_READ);
       end;
+
+     {Get Next}
+     Route:=Next;
+
+     {Lock Next}
+     if not CheckRoute(Route,True,NETWORK_LOCK_READ) then Exit;
     end
    else
     begin
@@ -3686,7 +3674,7 @@ begin
    if (GetAdapterByAdapter(Address.Adapter,False,NETWORK_LOCK_NONE) = nil) or (All) then {Do not lock}
     begin
      {Check Type}
-     case Current.AddressType of
+     case Address.AddressType of
       ADDRESS_TYPE_SECONDARY:begin
         {Remove Route}
         //RemoveRoute(Address.Address,IP_LOOPBACK_ADDRESS); //To Do
@@ -3706,7 +3694,7 @@ begin
      {Acquire Lock}
      FAddresses.WriterLock;
 
-     {Check Address} {No lock needed while holding the writer lock}
+     {Check Address (No lock needed while holding the writer lock)}
      if CheckAddress(Address,False,NETWORK_LOCK_NONE) then
       begin
        {Remove Address}
@@ -3715,7 +3703,7 @@ begin
        {Release Lock}
        FAddresses.WriterUnlock;
 
-       {Free Address} {Will acquire writer lock during destroy}
+       {Free Address (Will acquire writer lock during destroy)}
        Address.Free;
       end
      else
