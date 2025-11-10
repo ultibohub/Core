@@ -89,7 +89,7 @@ uses
 const
  {DHCP specific constants}
  {BOOTP/DHCP Constants}
- BOOTP_DELAY   = 250;   {Wait 250 ms before starting initial request (Previously 1000 ms)}
+ BOOTP_DELAY   = 500;   {Wait 500 ms before starting initial request (Previously 1000 ms)}
  BOOTP_TIMEOUT = 4000;  {Wait up to 4 seconds for a BOOTP reply (Previous 8 seconds)}
  BOOTP_RETRIES = 6;     {Retry BOOTP requests up to 6 times}
 
@@ -100,7 +100,7 @@ const
  BOOTP_MIN_RETRIES = 1;
  BOOTP_MAX_RETRIES = 100;
 
- DHCP_DELAY   = 250;     {Wait 250 ms before starting initial request (Previously 1000 ms)}
+ DHCP_DELAY   = 500;     {Wait 500 ms before starting initial request (Previously 1000 ms)}
  DHCP_TIMEOUT = 4000;    {Wait up to 4 seconds for a DHCP reply (Previous 8 seconds)}
  DHCP_RETRIES = 6;       {Retry DHCP requests up to 6 times}
  DHCP_BROADCAST = False; {If True set the broadcast flag in the DHCP request}
