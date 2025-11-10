@@ -1,7 +1,7 @@
 {
 Ultibo IPv6 (Internet Protocol version 6) unit.
 
-Copyright (C) 2022 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3390,6 +3390,7 @@ function TIP6Transport.GetAddressByAddress(const AAddress:TIn6Addr;ALock:Boolean
 {Find the IP6 address in the address cache}
 {Address: The IP6 address to find}
 {Lock: If True then lock the found entry before returning}
+{State: The lock type if Lock is True (NETWORK_LOCK_READ or NETWORK_LOCK_WRITE)}
 var
  Address:TIP6AddressEntry;
 begin
@@ -3432,6 +3433,11 @@ end;
 {==============================================================================}
 
 function TIP6Transport.GetAddressByNext(APrevious:TIP6AddressEntry;ALock,AUnlock:Boolean;AState:LongWord):TIP6AddressEntry;
+{Iterate though IP6 addresses in the address cache}
+{Previous: The IP6 address returned by the previous call to this function}
+{Lock: If True then lock the found entry before returning}
+{Unlock: If True then unlock the previous entry before returning}
+{State: The lock type if Lock is True (NETWORK_LOCK_READ or NETWORK_LOCK_WRITE)}
 var
  Address:TIP6AddressEntry;
 begin
@@ -3530,6 +3536,7 @@ function TIP6Transport.AddAddress(const AAddress:TIn6Addr;AType:Word;AAdapter:TN
 {Adapter: The adapter the address is on}
 {Type: The type of the added entry (eg ADDRESS_TYPE_PRIMARY)}
 {Lock: If True then lock the added entry before returning}
+{State: The lock type if Lock is True (NETWORK_LOCK_READ or NETWORK_LOCK_WRITE)}
 
 {Note: The handling of Secondary addresses should probably change in future to use a Binding type mechanism (eg AddBinding/RemoveBinding)}
 var
@@ -3572,30 +3579,25 @@ begin
  Result.Adapter:=AAdapter;
  Result.AddressType:=AType;
 
+ {Lock Address (Before Add)}
+ if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
+
  {Acquire Lock}
- FAddresses.WriterLock; {Acquire as Writer}
- try
-  {Add Address}
-  if FAddresses.Add(Result) then
-   begin
-    {Convert Lock}
-    FAddresses.WriterConvert;
+ FAddresses.WriterLock;
 
-    {Lock Address}
-    if ALock then if AState = NETWORK_LOCK_READ then Result.ReaderLock else Result.WriterLock;
-   end
-  else
-   begin
-    {Convert Lock}
-    FAddresses.WriterConvert;
+ {Add Address}
+ if not FAddresses.Add(Result) then
+  begin
+   {Unlock Address (Before Free, writer lock acquired during destroy)}
+   if ALock and (AState = NETWORK_LOCK_READ) then Result.ReaderUnlock;
 
-    {Free Address}
-    Result.Free;
-    Result:=nil;
-   end;
- finally
-  FAddresses.ReaderUnlock; {Converted to Reader}
- end;
+   {Free Address}
+   Result.Free;
+   Result:=nil;
+  end;
+
+ {Release Lock}
+ FAddresses.WriterUnlock;
 end;
 
 {==============================================================================}
@@ -3633,14 +3635,11 @@ begin
         end;
       end;
 
-      {Lock Address}
-      {Address.WriterLock;} {Must be after acquiring writer lock}
-
       {Convert Lock}
       if FAddresses.ReaderConvert then
        begin
-        {Lock Address}
-        if CheckAddress(Address,True,NETWORK_LOCK_WRITE) then
+        {Check Address (No lock needed while holding the writer lock)}
+        if CheckAddress(Address,False,NETWORK_LOCK_NONE) then
          begin
           {Remove Address}
           Result:=FAddresses.Remove(Address);
@@ -3648,10 +3647,7 @@ begin
           {Convert Lock}
           FAddresses.WriterConvert;
 
-          {Unlock Address}
-          Address.WriterUnlock;
-
-          {Free Address}
+          {Free Address (Will acquire writer lock during destroy)}
           Address.Free;
          end;
        end;
@@ -3673,8 +3669,8 @@ procedure TIP6Transport.FlushAddresses(All:Boolean);
 {Flush addresses from the adresses cache}
 {All: If True flush all addresses, otherwise flush invalid addresses}
 var
+ Next:TIP6AddressEntry;
  Address:TIP6AddressEntry;
- Current:TIP6AddressEntry;
 begin
  {}
  {$IFDEF IP6_DEBUG}
@@ -3701,42 +3697,38 @@ begin
               //See Binding
      end;
 
+     {Get Next} {No lock until after remove}
+     Next:=GetAddressByNext(Address,False,False,NETWORK_LOCK_NONE);
+
      {Unlock Address (While waiting for writer lock)}
      Address.ReaderUnlock;
 
      {Acquire Lock}
      FAddresses.WriterLock;
 
-     {Lock Address}
-     if CheckAddress(Address,True,NETWORK_LOCK_WRITE) then
+     {Check Address} {No lock needed while holding the writer lock}
+     if CheckAddress(Address,False,NETWORK_LOCK_NONE) then
       begin
-       {Save Address}
-       Current:=Address;
-
-       {Get Next}
-       Address:=GetAddressByNext(Current,True,False,NETWORK_LOCK_READ);
-
        {Remove Address}
-       FAddresses.Remove(Current);
+       FAddresses.Remove(Address);
 
        {Release Lock}
        FAddresses.WriterUnlock;
 
-       {Unlock Address}
-       Current.WriterUnlock;
-
-       {Free Address}
-       Current.Free;
-       Current:=nil;
+       {Free Address} {Will acquire writer lock during destroy}
+       Address.Free;
       end
      else
       begin
        {Release Lock}
        FAddresses.WriterUnlock;
-
-       {Get Next}
-       if All then Address:=GetAddressByNext(nil,True,False,NETWORK_LOCK_READ);
       end;
+
+     {Get Next}
+     Address:=Next;
+
+     {Lock Next}
+     if not CheckAddress(Address,True,NETWORK_LOCK_READ) then Exit;
     end
    else
     begin

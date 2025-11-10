@@ -31,10 +31,8 @@ References
 DNS
 ===
 
- Note: DNS Client is IPv4 based, for IPv6 see new
-       Winsock2 functions
-
-       See RFC 1035 Section 4 for details
+ Note: The DNS Client supports both IPv4 and IPv6 for all functions
+       where an address type or address family can be specified
 
 }
 
@@ -1109,11 +1107,12 @@ begin
        begin
         {Create Address Info}
         AddrInfo:=AddressEntryToAddrInfo(IPAddressEntry,AFlags,AFamily,AProtocol,ASocketType,APort,(Result = nil));
-        if AddrInfo = nil then Exit;
-
-        {Check Last}
-        LastInfo:=GetLastAddrInfo(Result);
-        if LastInfo = nil then Result:=AddrInfo else LastInfo.ai_next:=AddrInfo;
+        if AddrInfo <> nil then
+         begin
+          {Check Last}
+          LastInfo:=GetLastAddrInfo(Result);
+          if LastInfo = nil then Result:=AddrInfo else LastInfo.ai_next:=AddrInfo;
+         end;
        end;
 
       {Get Next}
@@ -1132,11 +1131,12 @@ begin
        begin
         {Create Address Info}
         AddrInfo:=AddressEntryToAddrInfo(IPAddressEntry,AFlags,AFamily,AProtocol,ASocketType,APort,(Result = nil));
-        if AddrInfo = nil then Exit;
-
-        {Check Last}
-        LastInfo:=GetLastAddrInfo(Result);
-        if LastInfo = nil then Result:=AddrInfo else LastInfo.ai_next:=AddrInfo;
+        if AddrInfo <> nil then
+         begin
+          {Check Last}
+          LastInfo:=GetLastAddrInfo(Result);
+          if LastInfo = nil then Result:=AddrInfo else LastInfo.ai_next:=AddrInfo;
+         end;
        end;
 
       {Get Next}
@@ -1187,11 +1187,12 @@ begin
        begin
         {Create Address Info}
         AddrInfo:=AddressEntryToAddrInfo(IPAddressEntry,AFlags,AFamily,AProtocol,ASocketType,APort,(Result = nil));
-        if AddrInfo = nil then Exit;
-
-        {Check Last}
-        LastInfo:=GetLastAddrInfo(Result);
-        if LastInfo = nil then Result:=AddrInfo else LastInfo.ai_next:=AddrInfo;
+        if AddrInfo <> nil then
+         begin
+          {Check Last}
+          LastInfo:=GetLastAddrInfo(Result);
+          if LastInfo = nil then Result:=AddrInfo else LastInfo.ai_next:=AddrInfo;
+         end;
        end;
 
       {Get Next}
@@ -1210,11 +1211,12 @@ begin
        begin
         {Create Address Info}
         AddrInfo:=AddressEntryToAddrInfo(IPAddressEntry,AFlags,AFamily,AProtocol,ASocketType,APort,(Result = nil));
-        if AddrInfo = nil then Exit;
-
-        {Check Last}
-        LastInfo:=GetLastAddrInfo(Result);
-        if LastInfo = nil then Result:=AddrInfo else LastInfo.ai_next:=AddrInfo;
+        if AddrInfo <> nil then
+         begin
+          {Check Last}
+          LastInfo:=GetLastAddrInfo(Result);
+          if LastInfo = nil then Result:=AddrInfo else LastInfo.ai_next:=AddrInfo;
+         end;
        end;
 
       {Get Next}
