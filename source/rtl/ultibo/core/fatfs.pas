@@ -548,6 +548,7 @@ type
    function SetVolumeFlags(AFlags:LongWord):Boolean;
 
    {Sector Methods}
+   function CheckInfoSector(ALock:Boolean;var ABuffer):Boolean;
    function UpdateInfoSector:Boolean;
 
    {Cluster Methods}
@@ -2772,6 +2773,70 @@ end;
 
 {==============================================================================}
 
+function TFATFileSystem.CheckInfoSector(ALock:Boolean;var ABuffer):Boolean;
+{Check the FAT32 Info Sector for valid values}
+{Note: Caller must hold any required lock on buffer}
+var
+ Buffer:Pointer;
+begin
+ {}
+ Result:=False;
+
+ {Check Type}
+ case FFATType of
+  ftFAT12,ftFAT16:begin
+    Result:=True;
+   end;
+  ftFAT32:begin
+    {Get Buffer}
+    Buffer:=@ABuffer;
+
+    {Check Buffer}
+    if (PFATInfoSector(Buffer).LeadSignature <> fat32LeadSignature) or
+       (PFATInfoSector(Buffer).StructureSignature <> fat32StructSignature) or
+       (PFATInfoSector(Buffer).TrailSignature <> fat32TrailSignature) then
+     begin
+      if ALock and not(InfoLock) then Exit;
+      try
+       {$IFDEF FAT_DEBUG}
+       if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.CheckInfoSector - Initializing Info Sector');
+       {$ENDIF}
+
+       {Initialize Info Sector}
+       PFATInfoSector(Buffer).LeadSignature:=fat32LeadSignature;
+       {PFATInfoSector(Buffer).Reserved1}
+       PFATInfoSector(Buffer).StructureSignature:=fat32StructSignature;
+       PFATInfoSector(Buffer).FreeClusterCount:=fatUnknownCluster;
+       PFATInfoSector(Buffer).LastFreeCluster:=fatUnknownCluster;
+       {PFATInfoSector(Buffer).Reserved2}
+       PFATInfoSector(Buffer).TrailSignature:=fat32TrailSignature;
+
+       {Check ReadOnly}
+       if not FReadOnly then
+        begin
+         {$IFDEF FAT_DEBUG}
+         if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.CheckInfoSector - Writing Info Sector');
+         {$ENDIF}
+
+         {Write Info Sector}
+         if not WriteSectors(FInfoSector,1,Buffer^) then Exit;
+        end;
+
+       {$IFDEF FAT_DEBUG}
+       if FILESYS_LOG_ENABLED then FileSysLogDebug('TFATFileSystem.CheckInfoSector - Info Sector Initialized');
+       {$ENDIF}
+      finally
+       if ALock then InfoUnlock;
+      end;
+     end;
+
+    Result:=True;
+   end;
+ end;
+end;
+
+{==============================================================================}
+
 function TFATFileSystem.UpdateInfoSector:Boolean;
 {Update the FAT32 Info Sector with current values}
 begin
@@ -2803,6 +2868,9 @@ begin
 
        {Read Info Sector}
        if not ReadSectors(FInfoSector,1,FInfoBuffer^) then Exit;
+
+       {Check Info Sector}
+       if not CheckInfoSector(False,FInfoBuffer^) then Exit;
       end;
 
      {Check Enable}
@@ -2973,9 +3041,11 @@ begin
 
          {Get Info Sector}
          if not ReadSectors(FInfoSector,1,FSectorBuffer^) then Exit;
-         if PFATInfoSector(FSectorBuffer).LeadSignature <> fat32LeadSignature then Exit;
-         if PFATInfoSector(FSectorBuffer).StructureSignature <> fat32StructSignature then Exit;
-         if PFATInfoSector(FSectorBuffer).TrailSignature <> fat32TrailSignature then Exit;
+
+         {Check Info Sector}
+         if not CheckInfoSector(True,FSectorBuffer^) then Exit;
+
+         {Check Last Free Cluster}
          if PFATInfoSector(FSectorBuffer).LastFreeCluster <> fatUnknownCluster then
           begin
            {Get Last Free Cluster}
@@ -3105,7 +3175,7 @@ var
  DiskBlock:TFATDiskBlock;
 begin
  {}
- Result:=0;
+ Result:=fatUnknownCluster;
 
  if FDriver = nil then Exit;
  if FTotalClusterCount = 0 then Exit;
@@ -3129,9 +3199,11 @@ begin
 
          {Get Info Sector}
          if not ReadSectors(FInfoSector,1,FSectorBuffer^) then Exit;
-         if PFATInfoSector(FSectorBuffer).LeadSignature <> fat32LeadSignature then Exit;
-         if PFATInfoSector(FSectorBuffer).StructureSignature <> fat32StructSignature then Exit;
-         if PFATInfoSector(FSectorBuffer).TrailSignature <> fat32TrailSignature then Exit;
+
+         {Check Info Sector}
+         if not CheckInfoSector(True,FSectorBuffer^) then Exit;
+
+         {Check Free Cluster Count}
          if PFATInfoSector(FSectorBuffer).FreeClusterCount <> fatUnknownCluster then
           begin
            {Get Free Cluster Count}
@@ -3260,9 +3332,9 @@ begin
 
       {Get Info Sector}
       if not ReadSectors(FInfoSector,1,FSectorBuffer^) then Exit;
-      if PFATInfoSector(FSectorBuffer).LeadSignature <> fat32LeadSignature then Exit;
-      if PFATInfoSector(FSectorBuffer).StructureSignature <> fat32StructSignature then Exit;
-      if PFATInfoSector(FSectorBuffer).TrailSignature <> fat32TrailSignature then Exit;
+
+      {Check Info Sector}
+      if not CheckInfoSector(True,FSectorBuffer^) then Exit;
 
       {Set Last Free Cluster}
       PFATInfoSector(FSectorBuffer).LastFreeCluster:=ACluster;
@@ -3301,9 +3373,9 @@ begin
 
       {Get Info Sector}
       if not ReadSectors(FInfoSector,1,FSectorBuffer^) then Exit;
-      if PFATInfoSector(FSectorBuffer).LeadSignature <> fat32LeadSignature then Exit;
-      if PFATInfoSector(FSectorBuffer).StructureSignature <> fat32StructSignature then Exit;
-      if PFATInfoSector(FSectorBuffer).TrailSignature <> fat32TrailSignature then Exit;
+
+      {Check Info Sector}
+      if not CheckInfoSector(True,FSectorBuffer^) then Exit;
 
       {Set Free Cluster Count}
       PFATInfoSector(FSectorBuffer).FreeClusterCount:=ACount;
