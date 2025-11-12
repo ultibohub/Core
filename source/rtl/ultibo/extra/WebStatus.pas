@@ -5340,7 +5340,7 @@ begin
      while Current <> nil do
       begin
        {Add Item}
-       AddItem5Column(AResponse,MakeLink('0x' + HandleToHex(Current.Handle),Name + '?action=thread&handle=' + IntToHex(Current.Handle,8)),Current.Name,ThreadStateToString(Current.State),ThreadPriorityToString(Current.Priority),CPUIDToString(Current.CPU));
+       AddItem5Column(AResponse,MakeLink('0x' + HandleToHex(Current.Handle),Name + '?action=thread&handle=' + HandleToHex(Current.Handle)),Current.Name,ThreadStateToString(Current.State),ThreadPriorityToString(Current.Priority),CPUIDToString(Current.CPU));
 
        {Get Next}
        Current:=Current.Next;
@@ -7025,7 +7025,7 @@ begin
      AddItem(AResponse,'Bus:',DeviceBusToString(Device.DeviceBus));
      AddItem(AResponse,'Type:',IntToStr(Device.DeviceType) + ' (Class specific)');
      AddItem(AResponse,'Flags:','0x' + IntToHex(Device.DeviceFlags,8) + ' (Class specific)');
-     AddItem(AResponse,'Data:','0x' + IntToHex(PtrUInt(Device.DeviceData),8));
+     AddItem(AResponse,'Data:','0x' + PtrToHex(Device.DeviceData));
      AddItem(AResponse,'Description:',Device.DeviceDescription);
      AddBlank(AResponse);
 
@@ -11221,7 +11221,7 @@ begin
      AddItem(AResponse,'Buffered Transmit:',BooleanToString(Adapter.BufferedTransmit));
      AddBlank(AResponse);
      AddItem(AResponse,'Last Error:',ErrorToString(Adapter.LastError));
-     AddItem(AResponse,'Thread:',ThreadGetName(Adapter.ThreadID) + ' (0x' + IntToHex(Adapter.ThreadID,8) + ')');
+     AddItem(AResponse,'Thread:',ThreadGetName(Adapter.ThreadID) + ' (0x' + AddrToHex(Adapter.ThreadID) + ')');
      AddBlank(AResponse);
      AddItem(AResponse,'Hardware Address:',HardwareAddressToString(Adapter.GetHardwareAddress(INVALID_HANDLE_VALUE)));
      AddBlank(AResponse);

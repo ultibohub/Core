@@ -1421,6 +1421,18 @@ var
 function Min(A,B:LongInt):LongInt; inline;
 function Max(A,B:LongInt):LongInt; inline;
 
+function Min32(A,B:LongInt):LongInt; inline;
+function Max32(A,B:LongInt):LongInt; inline;
+
+function Min64(A,B:Int64):Int64; inline;
+function Max64(A,B:Int64):Int64; inline;
+
+function MinU32(A,B:LongWord):LongWord; inline;
+function MaxU32(A,B:LongWord):LongWord; inline;
+
+function MinU64(A,B:QWord):QWord; inline;
+function MaxU64(A,B:QWord):QWord; inline;
+
 function Clamp(Value,Low,High:LongInt):LongInt;
 
 function RoundUp(Value,Multiple:LongWord):LongWord;
@@ -1428,6 +1440,12 @@ function RoundDown(Value,Multiple:LongWord):LongWord;
 
 function DivRoundUp(Value,Divisor:LongInt):LongWord;
 function DivRoundClosest(Value,Divisor:LongInt):LongWord;
+
+function Rol32(Value:LongWord;Count:Byte):LongWord; inline;
+function Ror32(Value:LongWord;Count:Byte):LongWord; inline;
+
+function Rol64(Value:QWord;Count:Byte):QWord; inline;
+function Ror64(Value:QWord;Count:Byte):QWord; inline;
 
 function SignExtend32(Value,Bits:LongWord):LongInt;
 function SignExtend64(Value:UInt64;Bits:LongWord):Int64;
@@ -1525,6 +1543,11 @@ function PtrToHex(Value:Pointer):String; inline;
 function AddrToHex(Value:PtrUInt):String; inline;
 function HandleToHex(Value:THandle):String; inline;
 
+function ByteToHex(Value:Byte):String; inline;
+function WordToHex(Value:Word):String; inline;
+function LongToHex(Value:LongWord):String; inline;
+function QuadToHex(Value:QWord):String; inline;
+
 function FirstBitSet(Value:LongWord):LongWord; inline;
 function FirstBitSet64(Value:UInt64):LongWord; inline;
 function LastBitSet(Value:LongWord):LongWord; inline;
@@ -1599,6 +1622,7 @@ implementation
 {==============================================================================}
 {Global functions}
 function Min(A,B:LongInt):LongInt; inline;
+{Return the lowest value of A or B (32 bit signed values)}
 begin
  {}
  if A < B then Result:=A else Result:=B;
@@ -1607,6 +1631,79 @@ end;
 {==============================================================================}
 
 function Max(A,B:LongInt):LongInt; inline;
+{Return the highest value of A or B (32 bit signed values)}
+begin
+ {}
+ if A > B then Result:=A else Result:=B;
+end;
+
+{==============================================================================}
+
+function Min32(A,B:LongInt):LongInt; inline;
+{Return the lowest value of A or B (32 bit signed values)}
+begin
+ {}
+ if A < B then Result:=A else Result:=B;
+end;
+
+{==============================================================================}
+
+function Max32(A,B:LongInt):LongInt; inline;
+{Return the highest value of A or B (32 bit signed values)}
+begin
+ {}
+ if A > B then Result:=A else Result:=B;
+end;
+
+{==============================================================================}
+
+function Min64(A,B:Int64):Int64; inline;
+{Return the lowest value of A or B (64 bit signed values)}
+begin
+ {}
+ if A < B then Result:=A else Result:=B;
+end;
+
+{==============================================================================}
+
+function Max64(A,B:Int64):Int64; inline;
+{Return the highest value of A or B (64 bit signed values)}
+begin
+ {}
+ if A > B then Result:=A else Result:=B;
+end;
+
+{==============================================================================}
+
+function MinU32(A,B:LongWord):LongWord; inline;
+{Return the lowest value of A or B (32 bit unsigned values)}
+begin
+ {}
+ if A < B then Result:=A else Result:=B;
+end;
+
+{==============================================================================}
+
+function MaxU32(A,B:LongWord):LongWord; inline;
+{Return the highest value of A or B (32 bit unsigned values)}
+begin
+ {}
+ if A > B then Result:=A else Result:=B;
+end;
+
+{==============================================================================}
+
+function MinU64(A,B:QWord):QWord; inline;
+{Return the lowest value of A or B (64 bit unsigned values)}
+begin
+ {}
+ if A < B then Result:=A else Result:=B;
+end;
+
+{==============================================================================}
+
+function MaxU64(A,B:QWord):QWord; inline;
+{Return the highest value of A or B (64 bit unsigned values)}
 begin
  {}
  if A > B then Result:=A else Result:=B;
@@ -1615,6 +1712,7 @@ end;
 {==============================================================================}
 
 function Clamp(Value,Low,High:LongInt):LongInt;
+{Ensure value is greater than or equal to low and less than or equal to high}
 begin
  {}
  Result:=Min(Max(Value,Low),High);
@@ -1623,6 +1721,7 @@ end;
 {==============================================================================}
 
 function RoundUp(Value,Multiple:LongWord):LongWord;
+{Round value up to the nearest multiple of multiple}
 begin
  {}
  if Multiple > 0 then
@@ -1645,6 +1744,7 @@ end;
 {==============================================================================}
 
 function RoundDown(Value,Multiple:LongWord):LongWord;
+{Round value down to the nearest multiple of multiple}
 begin
  {}
  if Multiple > 0 then
@@ -1689,6 +1789,42 @@ begin
   begin
    Result:=(Value - (Divisor div 2)) div Divisor;
   end;
+end;
+
+{==============================================================================}
+
+function Rol32(Value:LongWord;Count:Byte):LongWord; inline;
+{Rotate (shift with wrap) a 32 bit (LongWord) value to the left by count bits}
+begin
+ {}
+ Result:=RolDWord(Value,Count);
+end;
+
+{==============================================================================}
+
+function Ror32(Value:LongWord;Count:Byte):LongWord; inline;
+{Rotate (shift with wrap) a 32 bit (LongWord) value to the right by count bits}
+begin
+ {}
+ Result:=RorDWord(Value,Count);
+end;
+
+{==============================================================================}
+
+function Rol64(Value:QWord;Count:Byte):QWord; inline;
+{Rotate (shift with wrap) a 64 bit (QuadWord) value to the left by count bits}
+begin
+ {}
+ Result:=RolQWord(Value,Count);
+end;
+
+{==============================================================================}
+
+function Ror64(Value:QWord;Count:Byte):QWord; inline;
+{Rotate (shift with wrap) a 64 bit (QuadWord) value to the right by count bits}
+begin
+ {}
+ Result:=RorQWord(Value,Count);
 end;
 
 {==============================================================================}
@@ -2397,6 +2533,7 @@ end;
 {==============================================================================}
 
 function PtrToHex(Value:Pointer):String; inline;
+{Convert a pointer to a string value of the correct length for the current architecture}
 begin
  {}
  Result:=IntToHex(PtrUInt(Value),SizeOf(Pointer) shl 1);
@@ -2405,6 +2542,7 @@ end;
 {==============================================================================}
 
 function AddrToHex(Value:PtrUInt):String; inline;
+{Convert an address to a string value of the correct length for the current architecture}
 begin
  {}
  Result:=IntToHex(Value,SizeOf(PtrUInt) shl 1);
@@ -2413,9 +2551,46 @@ end;
 {==============================================================================}
 
 function HandleToHex(Value:THandle):String; inline;
+{Convert a handle to a string value of the correct length for the current architecture}
 begin
  {}
  Result:=IntToHex(Value,SizeOf(THandle) shl 1);
+end;
+
+{==============================================================================}
+
+function ByteToHex(Value:Byte):String; inline;
+{Convert a byte (8 bits) to a string value of 2 digits}
+begin
+ {}
+ Result:=IntToHex(Value,2);
+end;
+
+{==============================================================================}
+
+function WordToHex(Value:Word):String; inline;
+{Convert a word (16 bits) to a string value of 4 digits}
+begin
+ {}
+ Result:=IntToHex(Value,4);
+end;
+
+{==============================================================================}
+
+function LongToHex(Value:LongWord):String; inline;
+{Convert a long word (32 bits) to a string value of 8 digits}
+begin
+ {}
+ Result:=IntToHex(Value,8);
+end;
+
+{==============================================================================}
+
+function QuadToHex(Value:QWord):String; inline;
+{Convert a quad word (64 bits) to a string value of 16 digits}
+begin
+ {}
+ Result:=IntToHex(Value,16);
 end;
 
 {==============================================================================}
