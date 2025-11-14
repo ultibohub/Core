@@ -13374,7 +13374,7 @@ begin
 
    {Get Value}
    AValue:=Trim(HeaderBuffer);
-   if Length(AValue) = 0 then Exit;
+   {if Length(AValue) = 0 then Exit;} {Note: Empty header values are permitted by RFC7230}
   end;
 
  {Return Result}
