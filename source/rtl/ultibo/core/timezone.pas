@@ -1975,7 +1975,7 @@ begin
  {Check Environment Variables}
  {TIMEZONE_DEFAULT_NAME}
  WorkBuffer:=EnvironmentGet('TIMEZONE_DEFAULT_NAME');
- if Length(WorkBuffer) <> 0 then TIMEZONE_DEFAULT_NAME:=TimezoneNameReplaceChar(WorkBuffer,'_',' ');
+ if Length(WorkBuffer) > 0 then TIMEZONE_DEFAULT_NAME:=TimezoneNameReplaceChar(WorkBuffer,'_',' ');
 
  {Load Timezone Table}
  for Count:=0 to TimezoneList.TimezoneCount - 1 do

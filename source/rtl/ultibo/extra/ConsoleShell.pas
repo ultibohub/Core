@@ -1,7 +1,7 @@
 {
 Ultibo Console Shell unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -1685,6 +1685,7 @@ end;
 procedure ConsoleShellInit;
 var
  WorkInt:LongWord;
+ WorkBool:LongBool;
  WorkBuffer:String;
 begin
  {}
@@ -1693,16 +1694,16 @@ begin
 
  {Check Environment Variables}
  {CONSOLE_SHELL_ENABLED}
- WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_SHELL_ENABLED'),0);
- if WorkInt <> 0 then CONSOLE_SHELL_ENABLED:=True;
+ WorkBool:=StrToBoolDef(EnvironmentGet('CONSOLE_SHELL_ENABLED'),CONSOLE_SHELL_ENABLED);
+ if WorkBool <> CONSOLE_SHELL_ENABLED then CONSOLE_SHELL_ENABLED:=WorkBool;
 
  {CONSOLE_SHELL_POSITION}
- WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_SHELL_POSITION'),0);
- if WorkInt > 0 then CONSOLE_SHELL_POSITION:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_SHELL_POSITION'),CONSOLE_SHELL_POSITION);
+ if WorkInt <> CONSOLE_SHELL_POSITION then CONSOLE_SHELL_POSITION:=WorkInt;
 
  {CONSOLE_SHELL_DEVICE}
  WorkBuffer:=EnvironmentGet('CONSOLE_SHELL_DEVICE');
- if Length(WorkBuffer) <> 0 then CONSOLE_SHELL_DEVICE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then CONSOLE_SHELL_DEVICE:=WorkBuffer;
 
  {Enumerate Consoles}
  ConsoleDeviceEnumerate(ConsoleShellDeviceEnum,nil);

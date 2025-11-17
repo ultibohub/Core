@@ -5070,7 +5070,7 @@ begin
  {Check Environment Variables (NTP)}
  {NTP_SERVER_DEFAULT}
  WorkBuffer:=EnvironmentGet('NTP_SERVER_DEFAULT');
- if Length(WorkBuffer) <> 0 then NTP_SERVER_DEFAULT:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then NTP_SERVER_DEFAULT:=WorkBuffer;
 
  {NTP_PORT_DEFAULT}
  WorkInt:=StrToIntDef(EnvironmentGet('NTP_PORT_DEFAULT'),NTP_PORT_DEFAULT);
@@ -5103,7 +5103,7 @@ begin
 
  {SYSLOG_SERVER_DEFAULT}
  WorkBuffer:=EnvironmentGet('SYSLOG_SERVER_DEFAULT');
- if Length(WorkBuffer) <> 0 then SYSLOG_SERVER_DEFAULT:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then SYSLOG_SERVER_DEFAULT:=WorkBuffer;
 
  {SYSLOG_PORT_DEFAULT}
  WorkInt:=StrToIntDef(EnvironmentGet('SYSLOG_PORT_DEFAULT'),SYSLOG_PORT_DEFAULT);

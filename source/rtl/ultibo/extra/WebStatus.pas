@@ -15711,7 +15711,7 @@ begin
  {Check Environment Variables}
  {WEBSTATUS_FONT_NAME}
  WorkBuffer:=EnvironmentGet('WEBSTATUS_FONT_NAME');
- if Length(WorkBuffer) <> 0 then WEBSTATUS_FONT_NAME:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then WEBSTATUS_FONT_NAME:=WorkBuffer;
 
  {WEBSTATUS_HEAP_FREE_COUNT}
  WorkInt:=StrToIntDef(EnvironmentGet('WEBSTATUS_HEAP_FREE_COUNT'),WEBSTATUS_HEAP_FREE_COUNT);

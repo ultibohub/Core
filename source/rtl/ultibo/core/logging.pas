@@ -1,7 +1,7 @@
 {
 Ultibo Logging interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -303,6 +303,7 @@ threadvar
 procedure LoggingInit;
 var
  WorkInt:LongWord;
+ WorkBool:LongBool;
  WorkBuffer:String;
  Thread:TThreadHandle;
 begin
@@ -353,20 +354,20 @@ begin
 
  {Check Environment Variables}
  {CONSOLE_REGISTER_LOGGING}
- WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_REGISTER_LOGGING'),0);
- if WorkInt <> 0 then CONSOLE_REGISTER_LOGGING:=True;
+ WorkBool:=StrToBoolDef(EnvironmentGet('CONSOLE_REGISTER_LOGGING'),CONSOLE_REGISTER_LOGGING);
+ if WorkBool <> CONSOLE_REGISTER_LOGGING then CONSOLE_REGISTER_LOGGING:=WorkBool;
 
  {CONSOLE_LOGGING_DEFAULT}
- WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_LOGGING_DEFAULT'),0);
- if WorkInt <> 0 then CONSOLE_LOGGING_DEFAULT:=True;
+ WorkBool:=StrToBoolDef(EnvironmentGet('CONSOLE_LOGGING_DEFAULT'),CONSOLE_LOGGING_DEFAULT);
+ if WorkBool <> CONSOLE_LOGGING_DEFAULT then CONSOLE_LOGGING_DEFAULT:=WorkBool;
 
  {CONSOLE_LOGGING_POSITION}
- WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_LOGGING_POSITION'),0);
- if WorkInt > 0 then CONSOLE_LOGGING_POSITION:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('CONSOLE_LOGGING_POSITION'),CONSOLE_LOGGING_POSITION);
+ if WorkInt <> CONSOLE_LOGGING_POSITION then CONSOLE_LOGGING_POSITION:=WorkInt;
 
  {CONSOLE_LOGGING_DEVICE}
  WorkBuffer:=EnvironmentGet('CONSOLE_LOGGING_DEVICE');
- if Length(WorkBuffer) <> 0 then CONSOLE_LOGGING_DEVICE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then CONSOLE_LOGGING_DEVICE:=WorkBuffer;
 
  {Enumerate Consoles}
  ConsoleDeviceEnumerate(LoggingConsoleDeviceEnum,nil);

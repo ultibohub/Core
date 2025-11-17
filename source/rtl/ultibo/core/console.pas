@@ -1,7 +1,7 @@
 {
 Ultibo Console interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -888,7 +888,7 @@ begin
 
  {CONSOLE_DEFAULT_FONT_NAME}
  WorkBuffer:=EnvironmentGet('CONSOLE_DEFAULT_FONT_NAME');
- if Length(WorkBuffer) <> 0 then CONSOLE_DEFAULT_FONT_NAME:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then CONSOLE_DEFAULT_FONT_NAME:=WorkBuffer;
 
  {WINDOW_DEFAULT_FORECOLOR}
  WorkInt:=StrToIntDef(EnvironmentGet('WINDOW_DEFAULT_FORECOLOR'),WINDOW_DEFAULT_FORECOLOR);
@@ -912,7 +912,7 @@ begin
 
  {WINDOW_DEFAULT_FONT_NAME}
  WorkBuffer:=EnvironmentGet('WINDOW_DEFAULT_FONT_NAME');
- if Length(WorkBuffer) <> 0 then WINDOW_DEFAULT_FONT_NAME:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then WINDOW_DEFAULT_FONT_NAME:=WorkBuffer;
 
  {FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET}
  WorkInt:=StrToIntDef(EnvironmentGet('FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET'),FRAMEBUFFER_CONSOLE_DEFAULT_DESKTOPOFFSET);

@@ -3514,8 +3514,8 @@ begin
 
  {Default Environment Options}
  {CPU_COUNT}
- WorkInt:=StrToIntDef(EnvironmentGet('CPU_COUNT'),0);
- if WorkInt > 0 then
+ WorkInt:=StrToIntDef(EnvironmentGet('CPU_COUNT'),CPU_COUNT);
+ if WorkInt <> CPU_COUNT then
   begin
    CPU_COUNT:=WorkInt;
 
@@ -3541,8 +3541,8 @@ begin
   end;
 
  {SCHEDULER_CPU_RESERVE}
- WorkInt:=StrToIntDef('0x' + EnvironmentGet('SCHEDULER_CPU_RESERVE'),0);
- if WorkInt > 0 then
+ WorkInt:=StrToIntDef('0x' + EnvironmentGet('SCHEDULER_CPU_RESERVE'),SCHEDULER_CPU_RESERVE);
+ if WorkInt <> SCHEDULER_CPU_RESERVE then
   begin
    {Set Mask}
    SCHEDULER_CPU_RESERVE:=(WorkInt and CPU_MASK);
@@ -3552,18 +3552,20 @@ begin
   end;
 
  {TIMER_THREAD_COUNT}
- WorkInt:=StrToIntDef(EnvironmentGet('TIMER_THREAD_COUNT'),0);
- if WorkInt > 0 then TIMER_THREAD_COUNT:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('TIMER_THREAD_COUNT'),TIMER_THREAD_COUNT);
+ if WorkInt <> TIMER_THREAD_COUNT then TIMER_THREAD_COUNT:=WorkInt;
+
  {TIMER_PRIORITY_THREAD_COUNT}
- WorkInt:=StrToIntDef(EnvironmentGet('TIMER_PRIORITY_THREAD_COUNT'),0);
- if WorkInt > 0 then TIMER_PRIORITY_THREAD_COUNT:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('TIMER_PRIORITY_THREAD_COUNT'),TIMER_PRIORITY_THREAD_COUNT);
+ if WorkInt <> TIMER_PRIORITY_THREAD_COUNT then TIMER_PRIORITY_THREAD_COUNT:=WorkInt;
 
  {WORKER_THREAD_COUNT}
- WorkInt:=StrToIntDef(EnvironmentGet('WORKER_THREAD_COUNT'),0);
- if WorkInt > 0 then WORKER_THREAD_COUNT:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('WORKER_THREAD_COUNT'),WORKER_THREAD_COUNT);
+ if WorkInt <> WORKER_THREAD_COUNT then WORKER_THREAD_COUNT:=WorkInt;
+
  {WORKER_PRIORITY_THREAD_COUNT}
- WorkInt:=StrToIntDef(EnvironmentGet('WORKER_PRIORITY_THREAD_COUNT'),0);
- if WorkInt > 0 then WORKER_PRIORITY_THREAD_COUNT:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('WORKER_PRIORITY_THREAD_COUNT'),WORKER_PRIORITY_THREAD_COUNT);
+ if WorkInt <> WORKER_PRIORITY_THREAD_COUNT then WORKER_PRIORITY_THREAD_COUNT:=WorkInt;
 
  {Check the Handler}
  if Assigned(OptionsInitHandler) then

@@ -1,7 +1,7 @@
 {
 Ultibo Serial interface unit.
 
-Copyright (C) 2024 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -440,7 +440,7 @@ procedure SerialInit;
 
 {Note: Called only during system startup}
 var
- WorkInt:LongWord;
+ WorkBool:LongBool;
  WorkBuffer:String;
 begin
  {}
@@ -462,16 +462,16 @@ begin
 
  {Check Environment Variables}
  {SERIAL_REGISTER_LOGGING}
- WorkInt:=StrToIntDef(EnvironmentGet('SERIAL_REGISTER_LOGGING'),0);
- if WorkInt <> 0 then SERIAL_REGISTER_LOGGING:=True;
+ WorkBool:=StrToBoolDef(EnvironmentGet('SERIAL_REGISTER_LOGGING'),SERIAL_REGISTER_LOGGING);
+ if WorkBool <> SERIAL_REGISTER_LOGGING then SERIAL_REGISTER_LOGGING:=WorkBool;
 
  {SERIAL_LOGGING_DEFAULT}
- WorkInt:=StrToIntDef(EnvironmentGet('SERIAL_LOGGING_DEFAULT'),0);
- if WorkInt <> 0 then SERIAL_LOGGING_DEFAULT:=True;
+ WorkBool:=StrToBoolDef(EnvironmentGet('SERIAL_LOGGING_DEFAULT'),SERIAL_LOGGING_DEFAULT);
+ if WorkBool <> SERIAL_LOGGING_DEFAULT then SERIAL_LOGGING_DEFAULT:=WorkBool;
 
  {SERIAL_LOGGING_PARAMETERS}
  WorkBuffer:=EnvironmentGet('SERIAL_LOGGING_PARAMETERS');
- if Length(WorkBuffer) <> 0 then SERIAL_LOGGING_PARAMETERS:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then SERIAL_LOGGING_PARAMETERS:=WorkBuffer;
 
  {Enumerate Serial Devices}
  SerialDeviceEnumerate(SerialLoggingDeviceEnum,nil);

@@ -5027,6 +5027,8 @@ function partition_id_to_string(id: uint8_t; _string: PCHAR; len: uint32_t): uin
 function string_to_partition_id(partitionid: PCHAR): uint8_t; stdcall; public name 'string_to_partition_id';
 
 function cache_mode_to_string(cachemode: TCACHE_MODE; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'cache_mode_to_string';
+function const_to_cache_mode(cachemode: uint32_t): TCACHE_MODE; stdcall; public name 'const_to_cache_mode';
+function string_to_cache_mode(cachemode: PCHAR): TCACHE_MODE; stdcall; public name 'string_to_cache_mode';
 function cache_state_to_string(cachestate: TCACHE_STATE; _string: PCHAR; len: uint32_t): uint32_t; stdcall; public name 'cache_state_to_string';
 {$ENDIF}
 {==============================================================================}
@@ -36264,6 +36266,28 @@ function cache_mode_to_string(cachemode: TCACHE_MODE; _string: PCHAR; len: uint3
 begin
  {}
  Result:=APIStringToPCharBuffer(FileSystem.CacheModeToString(cachemode),_string,len);
+end;
+
+{==============================================================================}
+
+function const_to_cache_mode(cachemode: uint32_t): TCACHE_MODE; stdcall;
+{Convert a cache mode constant to a cache mode enum}
+{CacheMode: The cache mode constant (eg FILESYS_CACHE_MODE_READONLY)}
+{Return: The cache mode enum value (eg cmREADONLY)}
+begin
+ {}
+ Result:=FileSystem.ConstToCacheMode(cachemode);
+end;
+
+{==============================================================================}
+
+function string_to_cache_mode(cachemode: PCHAR): TCACHE_MODE; stdcall;
+{Convert a string value to a cache mode enum}
+{CacheMode: The cache mode string value (eg READONLY)}
+{Return: The cache mode enum value (eg cmREADONLY)}
+begin
+ {}
+ Result:=FileSystem.StringToCacheMode(cachemode);
 end;
 
 {==============================================================================}

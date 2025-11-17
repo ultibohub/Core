@@ -5500,6 +5500,8 @@ function PartitionIdToString(AId:Byte):String;
 function StringToPartitionId(const APartitionId:String):Byte;
 
 function CacheModeToString(ACacheMode:TCacheMode):String;
+function ConstToCacheMode(ACacheMode:LongWord):TCacheMode;
+function StringToCacheMode(const ACacheMode:String):TCacheMode;
 function CacheStateToString(ACacheState:TCacheState):String;
 
 function CachePageTimeToDateTime(const APageTime:Int64):TDateTime;
@@ -52043,6 +52045,7 @@ procedure FileSysInit;
 var
  Status:LongWord;
  WorkInt:LongWord;
+ WorkBool:LongBool;
  WorkBuffer:String;
  Logging:PFileSysLogging;
 begin
@@ -52252,44 +52255,45 @@ begin
 
  {Check Environment Variables (Cache)}
  {FILESYS_CACHE_SIZE}
- WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_CACHE_SIZE'),0);
- if WorkInt > 0 then FILESYS_CACHE_SIZE:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_CACHE_SIZE'),FILESYS_CACHE_SIZE);
+ if WorkInt <> FILESYS_CACHE_SIZE then FILESYS_CACHE_SIZE:=WorkInt;
 
  {FILESYS_CACHE_PAGE}
- WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_CACHE_PAGE'),0);
- if WorkInt > 0 then FILESYS_CACHE_PAGE:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_CACHE_PAGE'),FILESYS_CACHE_PAGE);
+ if WorkInt <> FILESYS_CACHE_PAGE then FILESYS_CACHE_PAGE:=WorkInt;
 
  {FILESYS_CACHE_KEYS}
- WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_CACHE_KEYS'),0);
- if WorkInt > 0 then FILESYS_CACHE_KEYS:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_CACHE_KEYS'),FILESYS_CACHE_KEYS);
+ if WorkInt <> FILESYS_CACHE_KEYS then FILESYS_CACHE_KEYS:=WorkInt;
 
  {FILESYS_CACHE_MODE}
- //To Do
+ WorkBuffer:=EnvironmentGet('FILESYS_CACHE_MODE');
+ if Length(WorkBuffer) > 0 then FILESYS_CACHE_MODE:=Ord(StringToCacheMode(WorkBuffer));
 
  {Check Environment Variables (Logging)}
  {FILESYS_REGISTER_LOGGING}
- WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_REGISTER_LOGGING'),0);
- if WorkInt <> 0 then FILESYS_REGISTER_LOGGING:=True;
+ WorkBool:=StrToBoolDef(EnvironmentGet('FILESYS_REGISTER_LOGGING'),FILESYS_REGISTER_LOGGING);
+ if WorkBool <> FILESYS_REGISTER_LOGGING then FILESYS_REGISTER_LOGGING:=WorkBool;
 
  {FILESYS_LOGGING_DEFAULT}
- WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_DEFAULT'),0);
- if WorkInt <> 0 then FILESYS_LOGGING_DEFAULT:=True;
+ WorkBool:=StrToBoolDef(EnvironmentGet('FILESYS_LOGGING_DEFAULT'),FILESYS_LOGGING_DEFAULT);
+ if WorkBool <> FILESYS_LOGGING_DEFAULT then FILESYS_LOGGING_DEFAULT:=WorkBool;
 
  {FILESYS_LOGGING_FILE}
  WorkBuffer:=EnvironmentGet('FILESYS_LOGGING_FILE');
- if Length(WorkBuffer) <> 0 then FILESYS_LOGGING_FILE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then FILESYS_LOGGING_FILE:=WorkBuffer;
 
  {FILESYS_LOGGING_MAXSIZE}
- WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_MAXSIZE'),0);
- if WorkInt > 0 then FILESYS_LOGGING_MAXSIZE:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_MAXSIZE'),FILESYS_LOGGING_MAXSIZE);
+ if WorkInt <> FILESYS_LOGGING_MAXSIZE then FILESYS_LOGGING_MAXSIZE:=WorkInt;
 
  {FILESYS_LOGGING_MAXCOPIES}
- WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_MAXCOPIES'),0);
- if WorkInt > 0 then FILESYS_LOGGING_MAXCOPIES:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_MAXCOPIES'),FILESYS_LOGGING_MAXCOPIES);
+ if WorkInt <> FILESYS_LOGGING_MAXCOPIES then FILESYS_LOGGING_MAXCOPIES:=WorkInt;
 
  {FILESYS_LOGGING_RESET}
- WorkInt:=StrToIntDef(EnvironmentGet('FILESYS_LOGGING_RESET'),0);
- if WorkInt <> 0 then FILESYS_LOGGING_RESET:=True;
+ WorkBool:=StrToBoolDef(EnvironmentGet('FILESYS_LOGGING_RESET'),FILESYS_LOGGING_RESET);
+ if WorkBool <> FILESYS_LOGGING_RESET then FILESYS_LOGGING_RESET:=WorkBool;
 
  {Create Logging}
  if FILESYS_REGISTER_LOGGING then
@@ -52418,7 +52422,7 @@ begin
       StorageDeviceEnumerate(FileSysStorageDeviceEnum,nil);
 
       {Start Cache}
-      FileSysDriver.Cache.OpenCache(FILESYS_CACHE_SIZE,FILESYS_CACHE_KEYS,FILESYS_CACHE_PAGE,cmREADWRITE); //To Do //FILESYS_CACHE_MODE
+      FileSysDriver.Cache.OpenCache(FILESYS_CACHE_SIZE,FILESYS_CACHE_KEYS,FILESYS_CACHE_PAGE,ConstToCacheMode(FILESYS_CACHE_MODE));
 
       {Locate Devices, Partitions, Volumes, Drives}
       FileSysDriver.LocateDevices;
@@ -56416,6 +56420,44 @@ begin
   cmREADONLY:Result:='READONLY';
   cmREADWRITE:Result:='READWRITE';
  end;
+end;
+
+{==============================================================================}
+
+function ConstToCacheMode(ACacheMode:LongWord):TCacheMode;
+{Convert a cache mode constant to a cache mode enum}
+{CacheMode: The cache mode constant (eg FILESYS_CACHE_MODE_READONLY)}
+{Return: The cache mode enum value (eg cmREADONLY)}
+begin
+ {}
+ Result:=cmNONE;
+
+ case FILESYS_CACHE_MODE of
+  FILESYS_CACHE_MODE_READONLY:Result:=cmREADONLY;
+  FILESYS_CACHE_MODE_READWRITE:Result:=cmREADWRITE;
+ end;
+end;
+
+{==============================================================================}
+
+function StringToCacheMode(const ACacheMode:String):TCacheMode;
+{Convert a string value to a cache mode enum}
+{CacheMode: The cache mode string value (eg READONLY)}
+{Return: The cache mode enum value (eg cmREADONLY)}
+begin
+ {}
+ Result:=cmNONE;
+
+ if Trim(ACacheMode) = '' then Exit;
+
+ if Uppercase(Trim(ACacheMode)) = 'READONLY' then
+  begin
+   Result:=cmREADONLY;
+  end
+ else if Uppercase(Trim(ACacheMode)) = 'READWRITE' then
+  begin
+   Result:=cmREADWRITE;
+  end;
 end;
 
 {==============================================================================}
