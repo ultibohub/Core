@@ -955,7 +955,7 @@ function DWCHostSetupInterrupts(Host:PDWCUSBHost):LongWord; forward;
 procedure DWCInit;
 var
  Status:LongWord;
- WorkInt:LongWord;
+ WorkBool:LongBool;
  DWCHost:PDWCUSBHost;
 begin
  {}
@@ -967,16 +967,16 @@ begin
 
  {Check Environment Variables}
  {DWCOTG_FULL_SPEED_ONLY}
- WorkInt:=StrToIntDef(EnvironmentGet('DWCOTG_FULL_SPEED_ONLY'),0);
- if WorkInt <> 0 then DWCOTG_FULL_SPEED_ONLY:=True;
+ WorkBool:=StrToBoolDef(EnvironmentGet('DWCOTG_FULL_SPEED_ONLY'),DWCOTG_FULL_SPEED_ONLY);
+ if WorkBool <> DWCOTG_FULL_SPEED_ONLY then DWCOTG_FULL_SPEED_ONLY:=WorkBool;
 
  {DWCOTG_FS_LS_LOW_POWER_CLOCK}
- WorkInt:=StrToIntDef(EnvironmentGet('DWCOTG_FS_LS_LOW_POWER_CLOCK'),0);
- if WorkInt <> 0 then DWCOTG_FS_LS_LOW_POWER_CLOCK:=True;
+ WorkBool:=StrToBoolDef(EnvironmentGet('DWCOTG_FS_LS_LOW_POWER_CLOCK'),DWCOTG_FS_LS_LOW_POWER_CLOCK);
+ if WorkBool <> DWCOTG_FS_LS_LOW_POWER_CLOCK then DWCOTG_FS_LS_LOW_POWER_CLOCK:=WorkBool;
 
  {DWCOTG_LS_LOW_PWR_PHY_CLOCK_6MHZ}
- WorkInt:=StrToIntDef(EnvironmentGet('DWCOTG_LS_LOW_PWR_PHY_CLOCK_6MHZ'),0);
- if WorkInt <> 0 then DWCOTG_LS_LOW_PWR_PHY_CLOCK_6MHZ:=True;
+ WorkBool:=StrToBoolDef(EnvironmentGet('DWCOTG_LS_LOW_PWR_PHY_CLOCK_6MHZ'),DWCOTG_LS_LOW_PWR_PHY_CLOCK_6MHZ);
+ if WorkBool <> DWCOTG_LS_LOW_PWR_PHY_CLOCK_6MHZ then DWCOTG_LS_LOW_PWR_PHY_CLOCK_6MHZ:=WorkBool;
 
  {Create USB Host}
  if DWCOTG_REGISTER_HOST then

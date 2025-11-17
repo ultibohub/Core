@@ -189,6 +189,7 @@ procedure AF16x2LCDInit;
 {Note: Called only during system startup}
 var
  WorkInt:LongWord;
+ WorkBool:LongBool;
  WorkBuffer:String;
 begin
  {}
@@ -197,20 +198,20 @@ begin
 
  {Check Environment Variables}
  {AF16X2LCD_AUTOSTART}
- WorkInt:=StrToIntDef(EnvironmentGet('AF16X2LCD_AUTOSTART'),1);
- if WorkInt = 0 then AF16X2LCD_AUTOSTART:=False;
+ WorkBool:=StrToBoolDef(EnvironmentGet('AF16X2LCD_AUTOSTART'),AF16X2LCD_AUTOSTART);
+ if WorkBool <> AF16X2LCD_AUTOSTART then AF16X2LCD_AUTOSTART:=WorkBool;
 
  {AF16X2LCD_MODEL}
  WorkInt:=StrToIntDef(EnvironmentGet('AF16X2LCD_MODEL'),AF16X2LCD_MODEL);
  if WorkInt <> AF16X2LCD_MODEL then AF16X2LCD_MODEL:=WorkInt;
 
  {AF16X2LCD_I2C_ADDRESS}
- WorkInt:=StrToIntDef(EnvironmentGet('AF16X2LCD_I2C_ADDRESS'),0);
- if WorkInt > 0 then AF16X2LCD_I2C_ADDRESS:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('AF16X2LCD_I2C_ADDRESS'),AF16X2LCD_I2C_ADDRESS);
+ if WorkInt <> AF16X2LCD_I2C_ADDRESS then AF16X2LCD_I2C_ADDRESS:=WorkInt;
 
  {AF16X2LCD_I2C_DEVICE}
  WorkBuffer:=EnvironmentGet('AF16X2LCD_I2C_DEVICE');
- if Length(WorkBuffer) <> 0 then AF16X2LCD_I2C_DEVICE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then AF16X2LCD_I2C_DEVICE:=WorkBuffer;
 
  {Start 16x2 LCD}
  if AF16X2LCD_AUTOSTART then

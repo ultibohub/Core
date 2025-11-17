@@ -529,8 +529,8 @@ begin
 
  {Check Environment Variables}
  {PL2303_MAX_TRANSMIT}
- WorkInt:=StrToIntDef(EnvironmentGet('PL2303_MAX_TRANSMIT'),0);
- if WorkInt <> 0 then PL2303_MAX_TRANSMIT:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('PL2303_MAX_TRANSMIT'),PL2303_MAX_TRANSMIT);
+ if WorkInt <> PL2303_MAX_TRANSMIT then PL2303_MAX_TRANSMIT:=WorkInt;
 
  PL2303Initialized:=True;
 end;

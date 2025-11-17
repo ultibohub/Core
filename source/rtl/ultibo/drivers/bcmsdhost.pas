@@ -244,7 +244,7 @@ type
 
 {==============================================================================}
 {Initialization Functions}
-procedure BCMSDHOSTInit;
+procedure BCMSDHOSTInit;{$IFDEF API_EXPORT_BCMSDHOST} stdcall; public name 'bcmsdhost_init';{$ENDIF}
 
 {==============================================================================}
 {BCMSDHOST Functions}
@@ -314,10 +314,10 @@ function BCMSDHOSTBlockInterrupt(SDHCI:PSDHCIHost;InterruptMask:LongWord):LongWo
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
-procedure BCMSDHOSTInit;
+procedure BCMSDHOSTInit;{$IFDEF API_EXPORT_BCMSDHOST} stdcall;{$ENDIF}
 {Initialize the BCMSDHOST unit and parameters}
 
-{Note: Called only during system startup}
+{Note: Called internally by other functions}
 var
  WorkInt:LongWord;
  WorkBool:LongBool;
@@ -368,6 +368,9 @@ var
 begin
  {}
  Result:=nil;
+
+ {Initialize}
+ BCMSDHOSTInit;
 
  {$IF DEFINED(BCMSDHOST_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'BCMSDHOST: SDHCI Create (Address=' + AddrToHex(Address) + ' Name=' + Name + ' IRQ=' + IntToStr(IRQ) + ' DREQ=' + IntToStr(DREQ) + ')');
@@ -3386,8 +3389,8 @@ end;
 {==============================================================================}
 {==============================================================================}
 
-initialization
- BCMSDHOSTInit;
+{initialization}
+ {Nothing}
 
 {==============================================================================}
 
@@ -3398,6 +3401,3 @@ initialization
 {==============================================================================}
 
 end.
-
-
-

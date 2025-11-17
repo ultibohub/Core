@@ -207,6 +207,7 @@ procedure PiTFT35Init;
 {Note: Called only during system startup}
 var
  WorkInt:LongWord;
+ WorkBool:LongBool;
  WorkBuffer:String;
 begin
  {}
@@ -215,20 +216,20 @@ begin
 
  {Check Environment Variables}
  {PITFT35_AUTOSTART}
- WorkInt:=StrToIntDef(EnvironmentGet('PITFT35_AUTOSTART'),1);
- if WorkInt = 0 then PITFT35_AUTOSTART:=False;
+ WorkBool:=StrToBoolDef(EnvironmentGet('PITFT35_AUTOSTART'),PITFT35_AUTOSTART);
+ if WorkBool <> PITFT35_AUTOSTART then PITFT35_AUTOSTART:=WorkBool;
 
  {PITFT35_SPI_DEVICE}
  WorkBuffer:=EnvironmentGet('PITFT35_SPI_DEVICE');
- if Length(WorkBuffer) <> 0 then PITFT35_SPI_DEVICE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then PITFT35_SPI_DEVICE:=WorkBuffer;
 
  {PITFT35_LCD_CHIPSELECT}
- WorkInt:=StrToIntDef(EnvironmentGet('PITFT35_LCD_CHIPSELECT'),0);
- if WorkInt > 0 then PITFT35_LCD_CHIPSELECT:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('PITFT35_LCD_CHIPSELECT'),PITFT35_LCD_CHIPSELECT);
+ if WorkInt <> PITFT35_LCD_CHIPSELECT then PITFT35_LCD_CHIPSELECT:=WorkInt;
 
  {PITFT35_TOUCH_CHIPSELECT}
- WorkInt:=StrToIntDef(EnvironmentGet('PITFT35_TOUCH_CHIPSELECT'),0);
- if WorkInt > 0 then PITFT35_TOUCH_CHIPSELECT:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('PITFT35_TOUCH_CHIPSELECT'),PITFT35_TOUCH_CHIPSELECT);
+ if WorkInt <> PITFT35_TOUCH_CHIPSELECT then PITFT35_TOUCH_CHIPSELECT:=WorkInt;
 
  {Start PiTFT35}
  if PITFT35_AUTOSTART then

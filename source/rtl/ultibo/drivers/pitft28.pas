@@ -259,11 +259,11 @@ begin
 
  {PITFT28_SPI_DEVICE}
  WorkBuffer:=EnvironmentGet('PITFT28_SPI_DEVICE');
- if Length(WorkBuffer) <> 0 then PITFT28_SPI_DEVICE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then PITFT28_SPI_DEVICE:=WorkBuffer;
 
  {PITFT28_I2C_DEVICE}
  WorkBuffer:=EnvironmentGet('PITFT28_I2C_DEVICE');
- if Length(WorkBuffer) <> 0 then PITFT28_I2C_DEVICE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then PITFT28_I2C_DEVICE:=WorkBuffer;
 
  {PITFT28_LCD_CHIPSELECT}
  WorkInt:=StrToIntDef(EnvironmentGet('PITFT28_LCD_CHIPSELECT'),PITFT28_LCD_CHIPSELECT);

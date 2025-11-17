@@ -184,6 +184,7 @@ procedure IPSTFT19Init;
 {Note: Called only during system startup}
 var
  WorkInt:LongWord;
+ WorkBool:LongBool;
  WorkBuffer:String;
 begin
  {}
@@ -192,16 +193,16 @@ begin
 
  {Check Environment Variables}
  {IPSTFT19_AUTOSTART}
- WorkInt:=StrToIntDef(EnvironmentGet('IPSTFT19_AUTOSTART'),1);
- if WorkInt = 0 then IPSTFT19_AUTOSTART:=False;
+ WorkBool:=StrToBoolDef(EnvironmentGet('IPSTFT19_AUTOSTART'),IPSTFT19_AUTOSTART);
+ if WorkBool <> IPSTFT19_AUTOSTART then IPSTFT19_AUTOSTART:=WorkBool;
 
  {IPSTFT19_SPI_DEVICE}
  WorkBuffer:=EnvironmentGet('IPSTFT19_SPI_DEVICE');
- if Length(WorkBuffer) <> 0 then IPSTFT19_SPI_DEVICE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then IPSTFT19_SPI_DEVICE:=WorkBuffer;
 
  {IPSTFT19_LCD_CHIPSELECT}
- WorkInt:=StrToIntDef(EnvironmentGet('IPSTFT19_LCD_CHIPSELECT'),0);
- if WorkInt > 0 then IPSTFT19_LCD_CHIPSELECT:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('IPSTFT19_LCD_CHIPSELECT'),IPSTFT19_LCD_CHIPSELECT);
+ if WorkInt <> IPSTFT19_LCD_CHIPSELECT then IPSTFT19_LCD_CHIPSELECT:=WorkInt;
 
  {Start IPSTFT19}
  if IPSTFT19_AUTOSTART then

@@ -953,6 +953,7 @@ var
 
 {==============================================================================}
 {Initialization Functions}
+procedure GENETInit;{$IFDEF API_EXPORT_GENET} stdcall; public name 'genet_init';{$ENDIF}
 
 {==============================================================================}
 {GENET Functions}
@@ -1029,8 +1030,9 @@ implementation
 
 {==============================================================================}
 {==============================================================================}
-{var}
+var
  {GENET specific variables}
+ GENETInitialized:Boolean;
 
 {==============================================================================}
 {==============================================================================}
@@ -1162,6 +1164,38 @@ procedure _UniMACMDIOWrite(Network:PGENETNetwork;Offset,Value:LongWord); forward
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
+procedure GENETInit;{$IFDEF API_EXPORT_GENET} stdcall;{$ENDIF}
+{Initialize the GENET unit and parameters}
+
+{Note: Called internally by other functions}
+var
+ WorkInt:LongWord;
+ WorkBool:LongBool;
+ WorkBuffer:String;
+begin
+ {}
+ {Check Initialized}
+ if GENETInitialized then Exit;
+
+ {Check Environment Variables}
+ {GENET_PHY_MODE}
+ WorkBuffer:=EnvironmentGet('GENET_PHY_MODE');
+ if Length(WorkBuffer) > 0 then GENET_PHY_MODE:=WorkBuffer;
+
+ {GENET_PHY_ADDR}
+ WorkInt:=StrToIntDef(EnvironmentGet('GENET_PHY_ADDR'),GENET_PHY_ADDR);
+ if WorkInt <> GENET_PHY_ADDR then GENET_PHY_ADDR:=WorkInt;
+
+ {GENET_SKIP_UMAC_RESET}
+ WorkBool:=StrToBoolDef(EnvironmentGet('GENET_SKIP_UMAC_RESET'),GENET_SKIP_UMAC_RESET);
+ if WorkBool <> GENET_SKIP_UMAC_RESET then GENET_SKIP_UMAC_RESET:=WorkBool;
+
+ {GENET_NO_PHY_INTERRUPT}
+ WorkBool:=StrToBoolDef(EnvironmentGet('GENET_NO_PHY_INTERRUPT'),GENET_NO_PHY_INTERRUPT);
+ if WorkBool <> GENET_NO_PHY_INTERRUPT then GENET_NO_PHY_INTERRUPT:=WorkBool;
+
+ GENETInitialized:=True;
+end;
 
 {==============================================================================}
 {==============================================================================}
@@ -1175,12 +1209,13 @@ function GENETNetworkCreate(Address:PtrUInt;MDIOOffset:LongWord;IRQ0,IRQ1:LongWo
 {Return: Pointer to the new Network device or nil if the Network device could not be created}
 var
  Status:LongWord;
- WorkInt:LongWord;
- WorkBuffer:String;
  GENETNetwork:PGENETNetwork;
 begin
  {}
  Result:=nil;
+
+ {Initialize}
+ GENETInit;
 
  {$IF DEFINED(GENET_DEBUG) or DEFINED(NETWORK_DEBUG)}
  if NETWORK_LOG_ENABLED then NetworkLogDebug(nil,'GENET: Network Create (Address=' + AddrToHex(Address) + ' MDIOOffset=' + IntToHex(MDIOOffset,8) + ' IRQ0=' + IntToStr(IRQ0) + ' IRQ1=' + IntToStr(IRQ1) + ')');
@@ -1194,23 +1229,6 @@ begin
 
  {Check IRQ1}
  {if IRQ1 = 0 then Exit;} {IRQ 0 is valid}
-
- {Check Environment Variables}
- {GENET_PHY_MODE}
- WorkBuffer:=EnvironmentGet('GENET_PHY_MODE');
- if Length(WorkBuffer) <> 0 then GENET_PHY_MODE:=WorkBuffer;
-
- {GENET_PHY_ADDR}
- WorkInt:=StrToIntDef(EnvironmentGet('GENET_PHY_ADDR'),GENET_PHY_ADDR);
- if WorkInt <> GENET_PHY_ADDR then GENET_PHY_ADDR:=WorkInt;
-
- {GENET_SKIP_UMAC_RESET}
- WorkInt:=StrToIntDef(EnvironmentGet('GENET_SKIP_UMAC_RESET'),0);
- if WorkInt <> 0 then GENET_SKIP_UMAC_RESET:=True;
-
- {GENET_NO_PHY_INTERRUPT}
- WorkInt:=StrToIntDef(EnvironmentGet('GENET_NO_PHY_INTERRUPT'),0);
- if WorkInt <> 0 then GENET_NO_PHY_INTERRUPT:=True;
 
  {Create Network}
  GENETNetwork:=PGENETNetwork(NetworkDeviceCreateEx(SizeOf(TGENETNetwork)));

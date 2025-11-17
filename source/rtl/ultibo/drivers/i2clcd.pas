@@ -171,6 +171,7 @@ procedure I2CLCDInit;
 {Note: Called only during system startup}
 var
  WorkInt:LongWord;
+ WorkBool:LongBool;
  WorkBuffer:String;
 begin
  {}
@@ -179,16 +180,16 @@ begin
 
  {Check Environment Variables}
  {I2CLCD_AUTOSTART}
- WorkInt:=StrToIntDef(EnvironmentGet('I2CLCD_AUTOSTART'),1);
- if WorkInt = 0 then I2CLCD_AUTOSTART:=False;
+ WorkBool:=StrToBoolDef(EnvironmentGet('I2CLCD_AUTOSTART'),I2CLCD_AUTOSTART);
+ if WorkBool <> I2CLCD_AUTOSTART then I2CLCD_AUTOSTART:=WorkBool;
 
  {I2CLCD_I2C_ADDRESS}
- WorkInt:=StrToIntDef(EnvironmentGet('I2CLCD_I2C_ADDRESS'),0);
- if WorkInt > 0 then I2CLCD_I2C_ADDRESS:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('I2CLCD_I2C_ADDRESS'),I2CLCD_I2C_ADDRESS);
+ if WorkInt <> I2CLCD_I2C_ADDRESS then I2CLCD_I2C_ADDRESS:=WorkInt;
 
  {I2CLCD_I2C_DEVICE}
  WorkBuffer:=EnvironmentGet('I2CLCD_I2C_DEVICE');
- if Length(WorkBuffer) <> 0 then I2CLCD_I2C_DEVICE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then I2CLCD_I2C_DEVICE:=WorkBuffer;
 
  {I2CLCD_LCD_WIDTH}
  WorkInt:=StrToIntDef(EnvironmentGet('I2CLCD_LCD_WIDTH'),I2CLCD_LCD_WIDTH);

@@ -297,7 +297,7 @@ begin
 
  {GOODIX_LOAD_CONFIG_FILE}
  WorkBuffer:=EnvironmentGet('GOODIX_LOAD_CONFIG_FILE');
- if Length(WorkBuffer) <> 0 then GOODIX_LOAD_CONFIG_FILE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then GOODIX_LOAD_CONFIG_FILE:=WorkBuffer;
 
  {GOODIX_RESET_CONTROLLER}
  WorkBool:=StrToBoolDef(EnvironmentGet('GOODIX_RESET_CONTROLLER'),GOODIX_RESET_CONTROLLER);

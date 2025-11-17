@@ -310,6 +310,7 @@ procedure RPiSenseInit;
 {Note: Called only during system startup}
 var
  WorkInt:LongWord;
+ WorkBool:LongBool;
  WorkBuffer:String;
 begin
  {}
@@ -318,28 +319,28 @@ begin
 
  {Check Environment Variables}
  {RPISENSE_AUTOSTART}
- WorkInt:=StrToIntDef(EnvironmentGet('RPISENSE_AUTOSTART'),1);
- if WorkInt = 0 then RPISENSE_AUTOSTART:=False;
+ WorkBool:=StrToBoolDef(EnvironmentGet('RPISENSE_AUTOSTART'),RPISENSE_AUTOSTART);
+ if WorkBool <> RPISENSE_AUTOSTART then RPISENSE_AUTOSTART:=WorkBool;
 
  {RPISENSE_I2C_DEVICE}
  WorkBuffer:=EnvironmentGet('RPISENSE_I2C_DEVICE');
- if Length(WorkBuffer) <> 0 then RPISENSE_I2C_DEVICE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then RPISENSE_I2C_DEVICE:=WorkBuffer;
 
  {RPISENSE_GPIO_DEVICE}
  WorkBuffer:=EnvironmentGet('RPISENSE_GPIO_DEVICE');
- if Length(WorkBuffer) <> 0 then RPISENSE_GPIO_DEVICE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then RPISENSE_GPIO_DEVICE:=WorkBuffer;
 
  {RPISENSE_FRAMEBUFFER_ROTATION}
- WorkInt:=StrToIntDef(EnvironmentGet('RPISENSE_FRAMEBUFFER_ROTATION'),0);
- if WorkInt > FRAMEBUFFER_ROTATION_0 then RPISENSE_FRAMEBUFFER_ROTATION:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('RPISENSE_FRAMEBUFFER_ROTATION'),RPISENSE_FRAMEBUFFER_ROTATION);
+ if WorkInt <> RPISENSE_FRAMEBUFFER_ROTATION then RPISENSE_FRAMEBUFFER_ROTATION:=WorkInt;
 
  {RPISENSE_FRAMEBUFFER_WIDTH}
- WorkInt:=StrToIntDef(EnvironmentGet('RPISENSE_FRAMEBUFFER_WIDTH'),0);
- if WorkInt > 0 then RPISENSE_FRAMEBUFFER_WIDTH:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('RPISENSE_FRAMEBUFFER_WIDTH'),RPISENSE_FRAMEBUFFER_WIDTH);
+ if WorkInt <> RPISENSE_FRAMEBUFFER_WIDTH then RPISENSE_FRAMEBUFFER_WIDTH:=WorkInt;
 
  {RPISENSE_FRAMEBUFFER_HEIGHT}
- WorkInt:=StrToIntDef(EnvironmentGet('RPISENSE_FRAMEBUFFER_HEIGHT'),0);
- if WorkInt > 0 then RPISENSE_FRAMEBUFFER_HEIGHT:=WorkInt;
+ WorkInt:=StrToIntDef(EnvironmentGet('RPISENSE_FRAMEBUFFER_HEIGHT'),RPISENSE_FRAMEBUFFER_HEIGHT);
+ if WorkInt <> RPISENSE_FRAMEBUFFER_HEIGHT then RPISENSE_FRAMEBUFFER_HEIGHT:=WorkInt;
 
  {Start RPiSense}
  if RPISENSE_AUTOSTART then

@@ -402,7 +402,7 @@ var
 
 {==============================================================================}
 {Initialization Functions}
-procedure PL18XInit;
+procedure PL18XInit;{$IFDEF API_EXPORT_PL18X} stdcall; public name 'pl18x_init';{$ENDIF}
 
 {==============================================================================}
 {PL18X Functions}
@@ -502,10 +502,10 @@ var
 {==============================================================================}
 {==============================================================================}
 {Initialization Functions}
-procedure PL18XInit;
+procedure PL18XInit;{$IFDEF API_EXPORT_PL18X} stdcall;{$ENDIF}
 {Initialize the PL18X unit and version table}
 
-{Note: Called only during system startup}
+{Note: Called internally by other functions}
 begin
  {}
  {Check Initialized}
@@ -639,6 +639,9 @@ begin
  {}
  Result:=nil;
 
+ {Initialize}
+ PL18XInit;
+
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL180: SDHCI Create (Address=' + AddrToHex(Address) + ' Name=' + Name + ' IRQ0=' + IntToStr(IRQ0) + ' IRQ1=' + IntToStr(IRQ1) + ')');
  {$ENDIF}
@@ -748,6 +751,9 @@ var
 begin
  {}
  Result:=nil;
+
+ {Initialize}
+ PL18XInit;
 
  {$IF DEFINED(PL18X_DEBUG) or DEFINED(MMC_DEBUG)}
  if MMC_LOG_ENABLED then MMCLogDebug(nil,'PL181: SDHCI Create (Address=' + AddrToHex(Address) + ' Name=' + Name + ' IRQ0=' + IntToStr(IRQ0) + ' IRQ1=' + IntToStr(IRQ1) + ')');
@@ -1546,7 +1552,7 @@ begin
   end;
 
  {Check Non Removeable}
- if StrToIntDef(EnvironmentGet(DeviceGetName(@MMC.Device) + '_NON_REMOVABLE'),0) = 1 then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_NON_REMOVABLE;
+ if StrToBoolDef(EnvironmentGet(DeviceGetName(@MMC.Device) + '_NON_REMOVABLE'),False) then MMC.Device.DeviceFlags:=MMC.Device.DeviceFlags or MMC_FLAG_NON_REMOVABLE;
 
  {Enable Host}
  SDHCI.SDHCIState:=SDHCI_STATE_ENABLED;
@@ -2812,8 +2818,8 @@ end;
 {==============================================================================}
 {==============================================================================}
 
-initialization
- PL18XInit;
+{initialization}
+ {Nothing}
 
 {==============================================================================}
 

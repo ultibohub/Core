@@ -255,6 +255,9 @@ var
 {==============================================================================}
 {Initialization Functions}
 procedure DS1307Init;
+{Initialize the DS1307 unit and parameters}
+
+{Note: Called only during system startup}
 var
  WorkInt:LongWord;
  WorkBool:LongBool;

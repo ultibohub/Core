@@ -209,7 +209,7 @@ begin
 
  {LCDA35_SPI_DEVICE}
  WorkBuffer:=EnvironmentGet('LCDA35_SPI_DEVICE');
- if Length(WorkBuffer) <> 0 then LCDA35_SPI_DEVICE:=WorkBuffer;
+ if Length(WorkBuffer) > 0 then LCDA35_SPI_DEVICE:=WorkBuffer;
 
  {LCDA35_LCD_CHIPSELECT}
  WorkInt:=StrToIntDef(EnvironmentGet('LCDA35_LCD_CHIPSELECT'),LCDA35_LCD_CHIPSELECT);
