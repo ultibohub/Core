@@ -237,6 +237,7 @@ uses
  pitft28,
  pitft35,
  ipstft19,
+ ads1x15,
  pl011,
  pl110,
  pl2303,
