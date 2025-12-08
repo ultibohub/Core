@@ -5105,6 +5105,7 @@ begin
 
   {Clear Request}
   FState:=HTTP_CLIENT_STATE_NONE;
+  FBuffer.Clear;
 
   FRequest.Clear;
   FResponse.Clear;
