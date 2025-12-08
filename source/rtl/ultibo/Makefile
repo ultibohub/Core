@@ -394,14 +394,17 @@ override FPCOPT+=@rtl.cfg
 ifeq ($(FPC_VERSION),$(STABLEVERSION))
 override FPCOPT+=-dFPC_STABLE
 COMPATIBILITY_SORTBASE=1
+COMPATIBILITY_INTRINSICS=1
 endif
 ifeq ($(FPC_VERSION),$(FIXESVERSION))
 override FPCOPT+=-dFPC_FIXES
 COMPATIBILITY_SORTBASE=1
+COMPATIBILITY_INTRINSICS=1
 endif
 ifeq ($(FPC_VERSION),$(LEGACYVERSION))
 override FPCOPT+=-dFPC_LEGACY
 COMPATIBILITY_SORTBASE=1
+COMPATIBILITY_INTRINSICS=1
 endif
 ifdef RELEASE
 override FPCOPT+=-Ur
@@ -622,6 +625,9 @@ ifeq ($(ARCH),arm)
 override ULTIBO_PLATFORM_UNITS+=platformarm
 ifeq ($(SUBARCH),armv6)
 CPU_UNITS=
+ifndef COMPATIBILITY_INTRINSICS
+override CPU_UNITS+=intrinsics
+endif
 CPU_UNITS_DEFINED=1
 override ULTIBO_PLATFORM_UNITS+=bcm2835 \
 				platformarmv6 \
@@ -632,6 +638,9 @@ override ULTIBO_PLATFORM_EXTRAS+=RaspberryPi
 endif
 ifeq ($(SUBARCH),armv7a)
 CPU_UNITS=
+ifndef COMPATIBILITY_INTRINSICS
+override CPU_UNITS+=intrinsics
+endif
 CPU_UNITS_DEFINED=1
 override ULTIBO_PLATFORM_UNITS+=bcm2836 \
 				bcm2837 \
@@ -685,6 +694,9 @@ ifeq ($(ARCH),aarch64)
 override ULTIBO_PLATFORM_UNITS+=platformaarch64
 ifeq ($(SUBARCH),armv8)
 CPU_UNITS=
+ifndef COMPATIBILITY_INTRINSICS
+override CPU_UNITS+=intrinsics
+endif
 CPU_UNITS_DEFINED=1
 override ULTIBO_PLATFORM_UNITS+=bcm2837 \
 				bcm2838 \
@@ -2081,7 +2093,7 @@ extpas$(PPUEXT) : $(INC)/extpas.pp dos$(PPUEXT) $(SYSTEMUNIT)$(PPUEXT)
 fpwidestring$(PPUEXT): $(OBJPASDIR)/fpwidestring.pp character$(PPUEXT)
 	$(COMPILER) $(OBJPASDIR)/fpwidestring.pp
 define CPU_UNITS_RULE
-$(1)$(PPUEXT): $(ARCH)/$(1).pp $(SYSTEMUNIT)$(PPUEXT)
+$(1)$(PPUEXT): $(PROCINC)/$(1).pp $(SYSTEMUNIT)$(PPUEXT)
 endef
 $(foreach unit,$(CPU_UNITS),$(eval $(call CPU_UNITS_RULE,$(unit))))
 $(addsuffix $(PPUEXT),$(CPU_UNITS)):
