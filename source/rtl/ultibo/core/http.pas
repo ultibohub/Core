@@ -1,7 +1,7 @@
 {
 Ultibo HTTP interface unit.
 
-Copyright (C) 2023 - SoftOz Pty Ltd.
+Copyright (C) 2025 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -3565,6 +3565,7 @@ var
  WorkBuffer:String;
  HeaderName:String;
  HeaderValue:String;
+ Header:THTTPHeader;
 begin
  {}
  Result:=False;
@@ -3646,8 +3647,20 @@ begin
   {Parse Response Header}
   if not HTTPParseHeader(WorkBuffer,HeaderName,HeaderValue) then Exit;
   
-  {Add Response Header} //To Do //This will fail if a header is repeated or split, how to handle ? //See RFCs //Allow Multiple Headers and Folded Headers //See RFC (Check for Space or Tab)
-  if not AResponse.Headers.AddHeader(HeaderName,HeaderValue) then Exit;
+  {Note: This will fail if a folded header (header split across multiple lines) is encounter but they are now deprecated}
+
+  {Check Response Header}
+  Header:=AResponse.Headers.FindHeader(HeaderName);
+  if Header <> nil then
+   begin
+    {Add Response Header Value}
+    if not Header.AddValue(HeaderValue) then Exit;
+   end
+  else
+   begin
+    {Add Response Header}
+    if not AResponse.Headers.AddHeader(HeaderName,HeaderValue) then Exit;
+   end;
   
  until Length(WorkBuffer) = 0;
  
@@ -9317,6 +9330,7 @@ var
  HeaderName:String;
  HeaderValue:String;
  Buffer:THTTPBuffer;
+ Header:THTTPHeader;
 begin
  {}
  Result:=False;
@@ -9406,8 +9420,20 @@ begin
   {Parse Request Header}
   if not HTTPParseHeader(WorkBuffer,HeaderName,HeaderValue) then Exit;
   
-  {Add Request Header} //To Do //This will fail if a header is repeated or split, how to handle ? //See RFCs //Allow Multiple Headers and Folded Headers //See RFC (Check for Space or Tab)
-  if not ARequest.Headers.AddHeader(HeaderName,HeaderValue) then Exit;
+  {Note: This will fail if a folded header (header split across multiple lines) is encounter but they are now deprecated}
+
+  {Check Request Header}
+  Header:=ARequest.Headers.FindHeader(HeaderName);
+  if Header <> nil then
+   begin
+    {Add Request Header Value}
+    if not Header.AddValue(HeaderValue) then Exit;
+   end
+  else
+   begin
+    {Add Request Header}
+    if not ARequest.Headers.AddHeader(HeaderName,HeaderValue) then Exit;
+   end;
   
  until Length(WorkBuffer) = 0;
  
