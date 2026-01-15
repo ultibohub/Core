@@ -56,7 +56,7 @@ Libraries
  libwriter_mp4.a
  libwriter_raw_video.a
  libwriter_simple.a
- 
+
 
 Licence
 -------
