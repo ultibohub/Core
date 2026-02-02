@@ -2,7 +2,7 @@
 Ultibo Newlib C Library Syscalls interface unit.
 
 Copyright (C) 2016 - Paul Jervois.
-Copyright (C) 2025 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -11446,10 +11446,12 @@ function socket_recvmsg(socket: int; msg: Pmsghdr; flags: int): ssize_t; cdecl;
 {Note: Exported function for use by C libraries, not intended to be called by applications}
 var
  ptr:P_reent;
+ Size:int;
  Count:ssize_t;
  Total:ssize_t;
  Status:ssize_t;
  Vector:Piovec;
+ SocketType:int;
  SockAddr:PSockAddr;
  SockAddrBuf:LongInt;
  SockAddrLen:PLongInt;
@@ -11509,6 +11511,16 @@ begin
      Exit;
     end;
 
+   {Get Socket Type}
+   Size:=SizeOf(int);
+   if Sockets.fpgetsockopt(Entry^.Handle,SOL_SOCKET,SO_TYPE,@SocketType,psocklen(@Size)) = SOCKET_ERROR then
+    begin
+     {Return Error}
+     ptr:=__getreent;
+     if ptr <> nil then ptr^._errno:=EINVAL;
+     Exit;
+    end;
+
    {Get Start}
    Count:=0;
    Total:=0;
@@ -11539,12 +11551,12 @@ begin
      {Update Total}
      Inc(Total,Status);
 
-     {Check Received}
-     if Status < Vector^.iov_len then Break;
+     {Check Received (Stream Socket Only)}
+     if (SocketType = SOCK_STREAM) and (Status < Vector^.iov_len) then Break;
 
      {Get Next}
      Inc(Count);
-     Inc(Vector);
+     Inc(Vector); {Increments by size of Tiovec}
     end;
 
    {Convert Address}
@@ -11795,7 +11807,7 @@ begin
 
      {Get Next}
      Inc(Count);
-     Inc(Vector);
+     Inc(Vector); {Increments by size of Tiovec}
     end;
 
    {Free Address}

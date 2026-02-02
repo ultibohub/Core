@@ -1,7 +1,7 @@
 {
 Ultibo Winsock2 interface unit.
 
-Copyright (C) 2025 - SoftOz Pty Ltd.
+Copyright (C) 2026 - SoftOz Pty Ltd.
 
 Arch
 ====
@@ -13290,6 +13290,10 @@ begin
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
+  {Check Socket Struct}
+  NetworkSetLastError(WSAEOPNOTSUPP);
+  if (Socket.Struct <> SOCK_DGRAM) and (Socket.Struct <> SOCK_RAW) then Exit;
+
   {Check Manager}
   if ProtocolManager = nil then Exit;
 
@@ -13360,11 +13364,11 @@ begin
       Inc(Total,Status);
 
       {Check Received}
-      if Status < Buffer.len then Break;
+      {if Status < Buffer.len then Break;} {Received length may be less than buffer length}
 
       {Get Next}
       Inc(Count);
-      Inc(Buffer);
+      Inc(Buffer); {Increments by size of WSABUF}
      end;
 
     {Update Flags}
@@ -13720,6 +13724,10 @@ begin
   Socket:=TProtocolSocket(s);
   if Socket = nil then Exit;
 
+  {Check Socket Struct}
+  NetworkSetLastError(WSAEOPNOTSUPP);
+  if (Socket.Struct <> SOCK_DGRAM) and (Socket.Struct <> SOCK_RAW) then Exit;
+
   {Check Manager}
   if ProtocolManager = nil then Exit;
 
@@ -13794,7 +13802,7 @@ begin
 
       {Get Next}
       Inc(Count);
-      Inc(Buffer);
+      Inc(Buffer); {Increments by size of WSABUF}
      end;
 
     {Update Bytes Sent}
